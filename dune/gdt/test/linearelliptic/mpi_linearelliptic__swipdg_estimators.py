@@ -14,7 +14,12 @@
 import itertools
 from dune.xt.codegen import typeid_to_typedef_name, la_backends, is_found
 
-grids = []
+# this file exists both with and without the "mpi" prefix
+# we dedup some permutations according to our filename
+
+grids = ['Yasp2Grid']
+mpi_case = 'mpi' in __file__
+
 try:
     if cache['dune-alugrid']:
         grids.extend(['AluSimplex2dGridType'])
@@ -27,7 +32,12 @@ try:
     cache['DXT_DISABLE_LARGE_TESTS']
 except KeyError:
     casenames.append('Spe10Model1TestCase')
-testcases = ['Dune::GDT::LinearElliptic::{}<{}>'.format(c, g) for c, g in itertools.product(casenames, grids)]
 
-permutations = itertools.product(testcases, ('gdt',), ('istl_sparse',))
+if mpi_case:
+    la = ('istl_sparse',)
+else:
+    la = la_backends(cache)
+
+testcases = ['Dune::GDT::LinearElliptic::{}<{}>'.format(c, g) for c, g in itertools.product(casenames, grids)]
+permutations = itertools.product(testcases, ('gdt',), la)
 permutations = [(t, s, l, typeid_to_typedef_name('{}_{}_{}'.format(t, s, l))) for t, s, l in permutations]
