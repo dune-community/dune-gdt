@@ -15,7 +15,7 @@ import itertools
 from dune.xt.codegen import typeid_to_typedef_name, la_backends
 
 # this file exists both with and without the "mpi" prefix
-# we dedup some permutations accroding to our filename
+# we dedup some permutations according to our filename
 
 grids = ['Yasp2Grid']
 mpi_case = 'mpi' in __file__
