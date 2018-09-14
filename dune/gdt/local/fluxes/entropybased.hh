@@ -620,7 +620,8 @@ public:
       } else {
         StateRangeType u_iso = basis_functions_.u_iso();
         const RangeFieldType dim_factor = is_full_moment_basis<BasisfunctionType>::value ? 1. : std::sqrt(dimDomain);
-        RangeFieldType tau_prime = tau_ / ((1 + dim_factor * u_prime.two_norm()) * density + dim_factor * tau_);
+        RangeFieldType tau_prime =
+            std::min(tau_ / ((1 + dim_factor * u_prime.two_norm()) * density + dim_factor * tau_), tau_);
 
         // define further variables
         VectorType g_k, beta_in, beta_out, v;
@@ -1374,8 +1375,8 @@ public:
         mutex_.unlock();
         DUNE_THROW(Dune::MathError, "Cache was not used!");
       } else {
-        RangeFieldType tau_prime =
-            tau_ / ((1 + std::sqrt(dimRange) * u_prime_in.two_norm()) * density + std::sqrt(dimRange) * tau_);
+        RangeFieldType tau_prime = std::min(
+            tau_ / ((1 + std::sqrt(dimRange) * u_prime_in.two_norm()) * density + std::sqrt(dimRange) * tau_), tau_);
 
         // calculate moment vector for isotropic distribution
         StateRangeType u_iso_in = basis_functions_.u_iso();
@@ -2318,7 +2319,7 @@ public:
       } else {
         StateRangeType u_iso = basis_functions_.u_iso();
         RangeFieldType tau_prime =
-            tau_ / ((1 + std::sqrt(dimRange) * u_prime.two_norm()) * density + std::sqrt(dimRange) * tau_);
+            std::min(tau_ / ((1 + std::sqrt(dimRange) * u_prime.two_norm()) * density + std::sqrt(dimRange) * tau_), tau_);
         // define further variables
         thread_local std::unique_ptr<MatrixType> H_k = XT::Common::make_unique<MatrixType>();
         StateRangeType v;
@@ -2955,8 +2956,8 @@ public:
         mutex_.unlock();
         DUNE_THROW(Dune::MathError, "Cache was not used!");
       } else {
-        RangeFieldType tau_prime =
-            tau_ / ((1 + std::sqrt(dimRange) * u_prime.two_norm()) * density + std::sqrt(dimRange) * tau_);
+        RangeFieldType tau_prime = std::min(
+            tau_ / ((1 + std::sqrt(dimRange) * u_prime.two_norm()) * density + std::sqrt(dimRange) * tau_), tau_);
         // The hessian H is always symmetric and tridiagonal, so we only need to store the diagonal and subdiagonal
         // elements
         RangeType H_diag;
