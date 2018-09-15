@@ -1429,11 +1429,6 @@ public:
             BlockVectorType d_k = g_k;
             d_k *= -1;
 
-            if (kk > 200) {
-              static volatile int dings = 0;
-              std::cout << kk << " " << dings << std::endl;
-            }
-
             // Calculate stopping criteria (in original basis). Variables with _k are in current basis, without k in
             // original basis.
             BlockVectorType alpha_tilde, u_alpha_tilde, u_alpha_prime, d_alpha_tilde, g_alpha_tilde;
