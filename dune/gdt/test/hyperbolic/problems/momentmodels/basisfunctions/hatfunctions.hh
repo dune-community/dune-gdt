@@ -258,16 +258,6 @@ public:
     return std::accumulate(u.begin(), u.end(), RangeFieldType(0));
   }
 
-  virtual RangeFieldType density_min(const RangeType& u) const override final
-  {
-    return *std::min_element(u.begin(), u.end());
-  }
-
-  virtual size_t density_factor() const override final
-  {
-    return dimRange;
-  }
-
   virtual std::string short_id() const override final
   {
     return "1dhf";
@@ -425,16 +415,6 @@ public:
   virtual RangeFieldType density(const RangeType& u) const override final
   {
     return std::accumulate(u.begin(), u.end(), RangeFieldType(0));
-  }
-
-  virtual RangeFieldType density_min(const RangeType& u) const override final
-  {
-    return *std::min_element(u.begin(), u.end());
-  }
-
-  virtual size_t density_factor() const override final
-  {
-    return dimRange;
   }
 
   virtual std::string short_id() const override final

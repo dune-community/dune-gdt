@@ -359,12 +359,6 @@ public:
       u += u_iso() * min_density;
   }
 
-  // Number of factors the density is calculated from
-  virtual size_t density_factor() const
-  {
-    return 1;
-  }
-
   // Volume of integration domain. For the Mn models it is important that u_iso has density 1. If the basis is exactly
   // integrated, we thus use the exact unit ball volume. If the basis is only integrated by quadrature, we have to use
   // <1> as volume to get a density of 1.

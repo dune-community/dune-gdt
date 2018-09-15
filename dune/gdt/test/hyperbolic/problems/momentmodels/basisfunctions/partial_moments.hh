@@ -283,11 +283,6 @@ public:
     }
   }
 
-  virtual size_t density_factor() const override final
-  {
-    return num_intervals;
-  }
-
   virtual std::string short_id() const override final
   {
     return "1dpm";
@@ -479,11 +474,6 @@ public:
           u[4 * jj + ii] += u_iso_min[4 * jj + ii];
       }
     }
-  }
-
-  virtual size_t density_factor() const override final
-  {
-    return dimRange / 4;
   }
 
   virtual std::string short_id() const override final
