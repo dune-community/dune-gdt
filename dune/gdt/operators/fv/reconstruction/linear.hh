@@ -108,42 +108,54 @@ public:
     auto& reconstructed_values_map = reconstructed_function_.values()[entity_index];
 
     // get jacobian
+    bool disable_reconstruction = false;
+    const auto& u_entity = source_values_[entity_index];
     auto& jac = *jacobian_wrapper_;
     if (!jac.computed() || !analytical_flux_.is_affine()) {
-      const auto& u_entity = source_values_[entity_index];
       const DomainType x_in_inside_coords = entity.geometry().local(entity.geometry().center());
-      jac.get_jacobian(entity, analytical_flux_, x_in_inside_coords, u_entity, param_);
-      jac.compute();
+      try {
+        jac.get_jacobian(entity, analytical_flux_, x_in_inside_coords, u_entity, param_);
+        jac.compute();
+      } catch (const Dune::MathError&) {
+        // Failed to compute jacobian, disable reconstruction
+        disable_reconstruction = true;
+      }
       if (analytical_flux_.is_affine())
         jac.jacobian() = nullptr;
     }
 
     for (size_t dd = 0; dd < dimDomain; ++dd) {
       if (quadrature_.size() == 1) {
-        // no need to reconstruct in all directions, as we are only regarding the center of the face, which will always
-        // have the same value assigned, independent of the slope in the other directions
-        std::array<size_t, dimDomain> indices;
-        indices.fill(1);
-        FieldVector<VectorType, axis_size> stencil_1d, stencil_1d_char;
-        FieldVector<VectorType, 2> reconstructed_values;
-        for (size_t ii = 0; ii < axis_size; ++ii) { // transform to characteristic variables
-          indices[dd] = ii;
-          stencil_1d[ii] = *stencil(indices);
-          jac.apply_inverse_eigenvectors(dd, stencil_1d[ii], stencil_1d_char[ii]);
+        if (!disable_reconstruction) {
+          // no need to reconstruct in all directions, as we are only regarding the center of the face, which will
+          // always
+          // have the same value assigned, independent of the slope in the other directions
+          std::array<size_t, dimDomain> indices;
+          indices.fill(1);
+          FieldVector<VectorType, axis_size> stencil_1d, stencil_1d_char;
+          FieldVector<VectorType, 2> reconstructed_values;
+          for (size_t ii = 0; ii < axis_size; ++ii) { // transform to characteristic variables
+            indices[dd] = ii;
+            stencil_1d[ii] = *stencil(indices);
+            jac.apply_inverse_eigenvectors(dd, stencil_1d[ii], stencil_1d_char[ii]);
+          }
+          // perform the actual reconstruction
+          linear_reconstruction_1d(stencil_1d, stencil_1d_char, reconstructed_values, jac.eigenvectors(dd));
+
+          // convert back to non-characteristic variables
+          auto tmp_value = reconstructed_values[0];
+          jac.apply_eigenvectors(dd, tmp_value, reconstructed_values[0]);
+          tmp_value = reconstructed_values[1];
+          jac.apply_eigenvectors(dd, tmp_value, reconstructed_values[1]);
+
+          // store reconstructed values
+          reconstructed_values_map.emplace(intersections[2 * dd].geometryInInside().center(), reconstructed_values[0]);
+          reconstructed_values_map.emplace(intersections[2 * dd + 1].geometryInInside().center(),
+                                           reconstructed_values[1]);
+        } else {
+          reconstructed_values_map.emplace(intersections[2 * dd].geometryInInside().center(), u_entity);
+          reconstructed_values_map.emplace(intersections[2 * dd + 1].geometryInInside().center(), u_entity);
         }
-        // perform the actual reconstruction
-        linear_reconstruction_1d(stencil_1d, stencil_1d_char, reconstructed_values, jac.eigenvectors(dd));
-
-        // convert back to non-characteristic variables
-        auto tmp_value = reconstructed_values[0];
-        jac.apply_eigenvectors(dd, tmp_value, reconstructed_values[0]);
-        tmp_value = reconstructed_values[1];
-        jac.apply_eigenvectors(dd, tmp_value, reconstructed_values[1]);
-
-        // store reconstructed values
-        reconstructed_values_map.emplace(intersections[2 * dd].geometryInInside().center(), reconstructed_values[0]);
-        reconstructed_values_map.emplace(intersections[2 * dd + 1].geometryInInside().center(),
-                                         reconstructed_values[1]);
       } else {
         thread_local MultiArrayType reconstructed_values(stencil_sizes);
         thread_local auto tmp_multiarray = reconstructed_values;
