@@ -176,6 +176,7 @@ public:
   using QuadratureRuleType = Dune::QuadratureRule<DomainFieldType, dimDomain>;
   using AlphaReturnType = std::pair<VectorType, RangeFieldType>;
   using LocalCacheType = EntropyLocalCache<StateRangeType, VectorType>;
+  using AlphaStorageType = std::map<DomainType, StateRangeType, XT::Common::FieldVectorLess>;
   static const size_t cache_size = 4 * dimDomain + 2;
 
   // get permutation instead of sorting directly to be able to sort two vectors the same way
@@ -263,6 +264,7 @@ public:
     , T_minus_one_(T_minus_one)
     , name_(name)
     , cache_(index_set_.size(0), LocalCacheType(cache_size))
+    , alpha_storage_(index_set_.size(0))
     , mutexes_(index_set_.size(0))
   {
     size_t ll = 0;
@@ -311,6 +313,7 @@ public:
                   const RangeFieldType epsilon,
                   const MatrixType& T_minus_one,
                   LocalCacheType& cache,
+                  AlphaStorageType& alpha_storage,
                   std::mutex& mutex
 #if HAVE_CLP
                   ,
@@ -333,6 +336,7 @@ public:
       , epsilon_(epsilon)
       , T_minus_one_(T_minus_one)
       , cache_(cache)
+      , alpha_storage_(alpha_storage)
       , mutex_(mutex)
 #if HAVE_CLP
       , realizability_helper_(basis_functions_, quad_points_, lp)
@@ -583,11 +587,20 @@ public:
 #endif
     }
 
-    AlphaReturnType get_alpha(const DomainType& /*x_local*/,
+    void store_alpha(const DomainType& x_local, const StateRangeType& alpha) const
+    {
+      alpha_storage_[x_local] = alpha;
+    }
+
+    StateRangeType get_stored_alpha(const DomainType& x_local) const
+    {
+      return alpha_storage_.at(x_local);
+    }
+
+    AlphaReturnType get_alpha(const DomainType& x_local,
                               const StateRangeType& u,
                               const XT::Common::Parameter& param,
-                              const bool regularize,
-                              const bool only_cache) const
+                              const bool regularize) const
     {
       const bool boundary = bool(param.get("boundary")[0]);
       // get initial multiplier and basis matrix from last time step
@@ -611,12 +624,9 @@ public:
         const auto alpha_prime = cache_iterator->second;
         ret.first = alpha_prime + alpha_iso * std::log(density);
         ret.second = 0.;
-        cache_.keep(cache_iterator->first);
+        alpha_storage_[x_local] = ret.first;
         mutex_.unlock();
         return ret;
-      } else if (only_cache) {
-        mutex_.unlock();
-        DUNE_THROW(Dune::MathError, "Cache was not used!");
       } else {
         StateRangeType u_iso = basis_functions_.u_iso();
         const RangeFieldType dim_factor = is_full_moment_basis<BasisfunctionType>::value ? 1. : std::sqrt(dimDomain);
@@ -695,6 +705,7 @@ public:
               ret.first = alpha_prime + alpha_iso * std::log(density);
               ret.second = r;
               cache_.insert(v, alpha_prime);
+              alpha_storage_[x_local] = ret.first;
               goto outside_all_loops;
             } else {
               RangeFieldType zeta_k = 1;
@@ -759,7 +770,7 @@ public:
                               const XT::Common::Parameter& param) const override
     {
       std::fill(ret.begin(), ret.end(), 0.);
-      const auto alpha = get_alpha(x_local, u, param, true, false).first;
+      const auto alpha = get_alpha(x_local, u, param, true).first;
       auto& work_vecs = working_storage();
       calculate_scalar_products(alpha, M_, work_vecs);
       apply_exponential(work_vecs);
@@ -772,11 +783,11 @@ public:
     } // void evaluate_col(...)
 
     virtual void partial_u(const DomainType& x_local,
-                           const StateRangeType& u,
+                           const StateRangeType& /*u*/,
                            PartialURangeType& ret,
-                           const XT::Common::Parameter& param) const override
+                           const XT::Common::Parameter& /*param*/) const override
     {
-      const auto alpha = get_alpha(x_local, u, param, false, true).first;
+      const auto alpha = get_stored_alpha(x_local);
       thread_local auto H = XT::Common::make_unique<MatrixType>();
       calculate_hessian(alpha, M_, *H);
       helper<dimDomain>::partial_u(M_, *H, ret, this);
@@ -784,11 +795,11 @@ public:
 
     virtual void partial_u_col(const size_t col,
                                const DomainType& x_local,
-                               const StateRangeType& u,
+                               const StateRangeType& /*u*/,
                                ColPartialURangeType& ret,
-                               const XT::Common::Parameter& param) const override
+                               const XT::Common::Parameter& /*param*/) const override
     {
-      const auto alpha = get_alpha(x_local, u, param, false, true).first;
+      const auto alpha = get_stored_alpha(x_local);
       thread_local auto H = XT::Common::make_unique<MatrixType>();
       calculate_hessian(alpha, M_, *H);
       partial_u_col_helper(col, M_, *H, ret);
@@ -955,6 +966,7 @@ public:
     const std::string name_;
     // constructor)
     LocalCacheType& cache_;
+    AlphaStorageType& alpha_storage_;
     std::mutex& mutex_;
     RealizabilityHelper<BasisfunctionType, true, true> realizability_helper_;
   }; // class Localfunction
@@ -987,6 +999,7 @@ public:
                                            epsilon_,
                                            T_minus_one_,
                                            cache_[index],
+                                           alpha_storage_[index],
                                            mutexes_[index]
 #if HAVE_CLP
                                            ,
@@ -1002,13 +1015,13 @@ public:
   // As we are using cartesian grids, n_i == 0 in all but one dimension, so only evaluate for i == dd
   StateRangeType evaluate_kinetic_flux(const EntityType& entity,
                                        const DomainType& x_local_entity,
-                                       const StateRangeType& u_i,
+                                       const StateRangeType& /*u_i*/,
                                        const EntityType& neighbor,
                                        const DomainType& x_local_neighbor,
                                        const StateRangeType& u_j,
                                        const DomainType& n_ij,
                                        const size_t dd,
-                                       const XT::Common::Parameter& param,
+                                       const XT::Common::Parameter& /*param*/,
                                        const XT::Common::Parameter& param_neighbor) const
   {
     assert(XT::Common::FloatCmp::ne(n_ij[dd], 0.));
@@ -1016,9 +1029,12 @@ public:
     // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
     const auto local_function_entity = derived_local_function(entity);
     const auto local_function_neighbor = derived_local_function(neighbor);
-    const auto alpha_i = local_function_entity->get_alpha(x_local_entity, u_i, param, false, true).first;
-    const auto alpha_j =
-        local_function_neighbor->get_alpha(x_local_neighbor, u_j, param_neighbor, boundary, !boundary).first;
+    const auto alpha_i = local_function_entity->get_stored_alpha(x_local_entity);
+    StateRangeType alpha_j;
+    if (boundary)
+      alpha_j = local_function_neighbor->get_alpha(x_local_neighbor, u_j, param_neighbor, true).first;
+    else
+      alpha_j = local_function_neighbor->get_stored_alpha(x_local_neighbor);
     thread_local FieldVector<std::vector<RangeFieldType>, 2> work_vecs;
     work_vecs[0].resize(quad_points_.size());
     work_vecs[1].resize(quad_points_.size());
@@ -1062,6 +1078,7 @@ private:
   // (see
   // constructor)
   mutable std::vector<LocalCacheType> cache_;
+  mutable std::vector<AlphaStorageType> alpha_storage_;
   mutable std::vector<std::mutex> mutexes_;
 #if HAVE_CLP
   mutable XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>> lp_;
@@ -1131,6 +1148,7 @@ public:
       PartialMomentBasis<DomainFieldType, dimDomain, RangeFieldType, dimRange_or_refinements, 1, dimDomain>;
   using AlphaReturnType = std::pair<BlockVectorType, RangeFieldType>;
   using LocalCacheType = EntropyLocalCache<StateRangeType, BlockVectorType>;
+  using AlphaStorageType = std::map<DomainType, BlockVectorType, XT::Common::FieldVectorLess>;
   using TemporaryVectorType = std::vector<RangeFieldType, boost::alignment::aligned_allocator<RangeFieldType, 64>>;
   using TemporaryVectorsType = FieldVector<TemporaryVectorType, num_blocks>;
   static const size_t cache_size = 4 * dimDomain + 2;
@@ -1158,6 +1176,7 @@ public:
                   const RangeFieldType epsilon,
                   const BlockMatrixType& T_minus_one,
                   LocalCacheType& cache,
+                  AlphaStorageType& alpha_storage,
                   std::mutex& mutex)
       : LocalfunctionType(e)
       , basis_functions_(basis_functions)
@@ -1174,6 +1193,7 @@ public:
       , epsilon_(epsilon)
       , T_minus_one_(T_minus_one)
       , cache_(cache)
+      , alpha_storage_(alpha_storage)
       , mutex_(mutex)
     {
     }
@@ -1338,11 +1358,20 @@ public:
         apply_inverse_matrix_block(jj, T_k.block(jj), M[jj]);
     }
 
-    AlphaReturnType get_alpha(const DomainType& /*x_local*/,
+    void store_alpha(const DomainType& x_local, const BlockVectorType& alpha) const
+    {
+      alpha_storage_[x_local] = alpha;
+    }
+
+    BlockVectorType get_stored_alpha(const DomainType& x_local) const
+    {
+      return alpha_storage_.at(x_local);
+    }
+
+    AlphaReturnType get_alpha(const DomainType& x_local,
                               const StateRangeType& u_in,
                               const XT::Common::Parameter& param,
-                              const bool regularize,
-                              const bool only_cache = false) const
+                              const bool regularize) const
     {
       const bool boundary = static_cast<bool>(param.get("boundary")[0]);
       // get initial multiplier and basis matrix from last time step
@@ -1368,12 +1397,9 @@ public:
         const auto alpha_prime = cache_iterator->second;
         ret.first = alpha_prime + alpha_iso * std::log(density);
         ret.second = 0.;
-        cache_.keep(cache_iterator->first);
+        alpha_storage_[x_local] = ret.first;
         mutex_.unlock();
         return ret;
-      } else if (only_cache) {
-        mutex_.unlock();
-        DUNE_THROW(Dune::MathError, "Cache was not used!");
       } else {
         RangeFieldType tau_prime = std::min(
             tau_ / ((1 + std::sqrt(dimRange) * u_prime_in.two_norm()) * density + std::sqrt(dimRange) * tau_), tau_);
@@ -1450,6 +1476,7 @@ public:
               ret.first = alpha_prime + alpha_iso * std::log(density);
               ret.second = r;
               cache_.insert(v_in, alpha_prime);
+              alpha_storage_[x_local] = ret.first;
               goto outside_all_loops;
             } else {
               RangeFieldType zeta_k = 1;
@@ -1531,11 +1558,11 @@ public:
     } // void evaluate_col_helper(...)
 
     virtual void partial_u(const DomainType& x_local,
-                           const StateRangeType& u,
+                           const StateRangeType& /*u*/,
                            PartialURangeType& ret,
-                           const XT::Common::Parameter& param) const override
+                           const XT::Common::Parameter& /*param*/) const override
     {
-      const auto alpha = get_alpha(x_local, u, param, false, true).first;
+      const auto alpha = get_stored_alpha(x_local);
       thread_local auto H = XT::Common::make_unique<BlockMatrixType>();
       calculate_hessian(alpha, M_, *H);
       helper<dimDomain>::partial_u(M_, *H, ret, this);
@@ -1543,11 +1570,11 @@ public:
 
     virtual void partial_u_col(const size_t col,
                                const DomainType& x_local,
-                               const StateRangeType& u,
+                               const StateRangeType& /*u*/,
                                ColPartialURangeType& ret,
-                               const XT::Common::Parameter& param) const override
+                               const XT::Common::Parameter& /*param*/) const override
     {
-      const auto alpha = get_alpha(x_local, u, param, false, true).first;
+      const auto alpha = get_stored_alpha(x_local);
       thread_local auto H = XT::Common::make_unique<BlockMatrixType>();
       calculate_hessian(alpha, M_, *H);
       helper<dimDomain>::partial_u_col(col, M_, *H, ret, this);
@@ -1793,6 +1820,7 @@ public:
     const std::string name_;
     // constructor)
     LocalCacheType& cache_;
+    AlphaStorageType& alpha_storage_;
     std::mutex& mutex_;
   }; // class Localfunction
 
@@ -1826,6 +1854,7 @@ public:
     , T_minus_one_(T_minus_one)
     , name_(name)
     , cache_(index_set_.size(0), LocalCacheType(cache_size))
+    , alpha_storage_(index_set_.size(0))
     , mutexes_(index_set_.size(0))
   {
     Localfunction::template helper<dimDomain>::calculate_plane_coefficients(basis_functions_);
@@ -1879,6 +1908,7 @@ public:
                                            epsilon_,
                                            T_minus_one_,
                                            cache_[index],
+                                           alpha_storage_[index],
                                            mutexes_[index]);
   }
 
@@ -1889,25 +1919,26 @@ public:
   // As we are using cartesian grids, n_i == 0 in all but one dimension, so only evaluate for i == dd
   StateRangeType evaluate_kinetic_flux(const EntityType& entity,
                                        const DomainType& x_local_entity,
-                                       const StateRangeType& u_i,
+                                       const StateRangeType& /*u_i*/,
                                        const EntityType& neighbor,
                                        const DomainType& x_local_neighbor,
                                        const StateRangeType u_j,
                                        const DomainType& n_ij,
                                        const size_t dd,
-                                       const XT::Common::Parameter& param,
+                                       const XT::Common::Parameter& /*param*/,
                                        const XT::Common::Parameter& param_neighbor) const
   {
     assert(XT::Common::FloatCmp::ne(n_ij[dd], 0.));
     // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
     const auto local_function_entity = derived_local_function(entity);
     const auto local_function_neighbor = derived_local_function(neighbor);
-    const auto alpha_i = local_function_entity->get_alpha(x_local_entity, u_i, param, false, true).first;
-    const auto alpha_j =
-        local_function_neighbor
-            ->get_alpha(
-                x_local_neighbor, u_j, param_neighbor, false, !static_cast<bool>(param_neighbor.get("boundary")[0]))
-            .first;
+    const auto alpha_i = local_function_entity->get_stored_alpha(x_local_entity);
+    const bool boundary = static_cast<bool>(param_neighbor.get("boundary")[0]);
+    BlockVectorType alpha_j;
+    if (boundary)
+      alpha_j = local_function_neighbor->get_alpha(x_local_neighbor, u_j, param_neighbor, true).first;
+    else
+      alpha_j = local_function_neighbor->get_stored_alpha(x_local_neighbor);
     thread_local FieldVector<TemporaryVectorsType, 2> work_vecs;
     for (size_t jj = 0; jj < num_blocks; ++jj) {
       work_vecs[0][jj].resize(quad_points_[jj].size());
@@ -1953,6 +1984,7 @@ private:
   const BlockMatrixType T_minus_one_;
   const std::string name_;
   mutable std::vector<LocalCacheType> cache_;
+  mutable std::vector<AlphaStorageType> alpha_storage_;
   mutable std::vector<std::mutex> mutexes_;
 };
 #endif
@@ -2041,6 +2073,7 @@ public:
 
   using AlphaReturnType = typename std::pair<StateRangeType, RangeFieldType>;
   using LocalCacheType = EntropyLocalCache<StateRangeType, StateRangeType>;
+  using AlphaStorageType = std::map<DomainType, StateRangeType, XT::Common::FieldVectorLess>;
   static constexpr size_t cache_size = 4 * dimDomain + 2;
 
 private:
@@ -2130,6 +2163,7 @@ public:
     , p5_(typename P5Type::value_type(num_faces_))
     , vertex_indices_(num_faces_)
     , cache_(index_set_.size(0), LocalCacheType(cache_size))
+    , alpha_storage_(index_set_.size(0))
     , mutexes_(index_set_.size(0))
   {
     const auto& faces = basis_functions_.triangulation().faces();
@@ -2245,6 +2279,7 @@ public:
                   const P5Type& p5,
                   const std::vector<FieldVector<size_t, 3>>& vertex_indices,
                   LocalCacheType& cache,
+    AlphaStorageType& alpha_storage,
                   std::mutex& mutex)
       : LocalfunctionType(e)
       , basis_functions_(basis_functions)
@@ -2265,6 +2300,7 @@ public:
       , p5_(p5)
       , vertex_indices_(vertex_indices)
       , cache_(cache)
+      , alpha_storage_(alpha_storage)
       , mutex_(mutex)
     {
     }
@@ -2279,11 +2315,21 @@ public:
       return true;
     }
 
-    AlphaReturnType get_alpha(const DomainType& /*x_local*/,
+     void store_alpha(const DomainType& x_local, const StateRangeType& alpha) const
+     {
+       alpha_storage_[x_local] = alpha;
+     }
+
+     StateRangeType get_stored_alpha(const DomainType& x_local) const
+     {
+       return alpha_storage_.at(x_local);
+     }
+
+
+    AlphaReturnType get_alpha(const DomainType& x_local,
                               const StateRangeType& u,
                               const XT::Common::Parameter& param,
-                              const bool regularize,
-                              const bool only_cache) const
+                              const bool regularize) const
     {
       const bool boundary = bool(param.get("boundary")[0]);
       // get initial multiplier and basis matrix from last time step
@@ -2305,12 +2351,9 @@ public:
         const auto alpha_prime = cache_iterator->second;
         ret.first = alpha_prime + alpha_iso * std::log(density);
         ret.second = 0.;
-        cache_.keep(cache_iterator->first);
+        alpha_storage_[x_local] = ret.first;
         mutex_.unlock();
         return ret;
-      } else if (only_cache) {
-        mutex_.unlock();
-        DUNE_THROW(Dune::MathError, "Cache was not used!");
       } else {
         StateRangeType u_iso = basis_functions_.u_iso();
         RangeFieldType tau_prime =
@@ -2372,6 +2415,7 @@ public:
               ret.first = alpha_prime + alpha_iso * std::log(density);
               ret.second = r;
               cache_.insert(v, alpha_prime);
+              alpha_storage_[x_local] = ret.first;
               goto outside_all_loops;
             } else {
               RangeFieldType zeta_k = 1;
@@ -2471,7 +2515,7 @@ public:
                               const XT::Common::Parameter& param) const override
     {
       std::fill(ret.begin(), ret.end(), 0.);
-      const auto alpha = get_alpha(x_local, u, param, true, false).first;
+      const auto alpha = get_alpha(x_local, u, param, true).first;
       for (size_t jj = 0; jj < num_faces_; ++jj) {
         evaluate_on_face(jj, alpha, col, ret);
       } // jj
@@ -2482,7 +2526,7 @@ public:
                            PartialURangeType& ret,
                            const XT::Common::Parameter& param) const override
     {
-      const auto alpha = get_alpha(x_local, u, param, false, true).first;
+      const auto alpha = get_stored_alpha(x_local);
       thread_local std::unique_ptr<MatrixType> H = XT::Common::make_unique<MatrixType>(0.);
       calculate_hessian(alpha, *H);
       for (size_t dd = 0; dd < dimDomain; ++dd) {
@@ -2497,7 +2541,7 @@ public:
                                ColPartialURangeType& ret,
                                const XT::Common::Parameter& param) const override
     {
-      const auto alpha = get_alpha(x_local, u, param, false, true).first;
+      const auto alpha = get_stored_alpha(x_local);
       thread_local std::unique_ptr<MatrixType> H = XT::Common::make_unique<MatrixType>(0.);
       calculate_hessian(alpha, *H);
       calculate_J(alpha, ret, col);
@@ -2674,6 +2718,7 @@ public:
     const std::string name_;
     const std::vector<FieldVector<size_t, 3>>& vertex_indices_;
     LocalCacheType& cache_;
+    AlphaStorageType& alpha_storage_;
     std::mutex& mutex_;
   }; // class Localfunction>
 
@@ -2709,6 +2754,7 @@ public:
                                            p5_,
                                            vertex_indices_,
                                            cache_[index],
+                                           alpha_storage_[index],
                                            mutexes_[index]);
   }
 
@@ -2718,23 +2764,26 @@ public:
   // As we are using cartesian grids, n_i == 0 in all but one dimension, so only evaluate for i == dd
   StateRangeType evaluate_kinetic_flux(const EntityType& entity,
                                        const DomainType& x_local_entity,
-                                       const StateRangeType& u_i,
+                                       const StateRangeType& /*u_i*/,
                                        const EntityType& neighbor,
                                        const DomainType& x_local_neighbor,
                                        const StateRangeType& u_j,
                                        const DomainType& n_ij,
                                        const size_t dd,
-                                       const XT::Common::Parameter& param,
+                                       const XT::Common::Parameter& /*param*/,
                                        const XT::Common::Parameter& param_neighbor) const
   {
     assert(XT::Common::FloatCmp::ne(n_ij[dd], 0.));
-    const bool boundary = static_cast<bool>(param_neighbor.get("boundary")[0]);
     // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
     const auto local_function_entity = derived_local_function(entity);
     const auto local_function_neighbor = derived_local_function(neighbor);
-    const auto alpha_i = local_function_entity->get_alpha(x_local_entity, u_i, param, false, true).first;
-    const auto alpha_j =
-        local_function_neighbor->get_alpha(x_local_neighbor, u_j, param_neighbor, boundary, !boundary).first;
+    const auto alpha_i = local_function_entity->get_stored_alpha(x_local_entity);
+    const bool boundary = static_cast<bool>(param_neighbor.get("boundary")[0]);
+    StateRangeType alpha_j;
+    if (boundary)
+      alpha_j = local_function_neighbor->get_alpha(x_local_neighbor, u_j, param_neighbor, true).first;
+    else
+      alpha_j = local_function_neighbor->get_stored_alpha(x_local_neighbor);
     StateRangeType ret(0);
     for (const auto jj : pos_faces_[dd]) {
       const auto& alpha = n_ij[dd] > 0. ? alpha_i : alpha_j;
@@ -2776,6 +2825,7 @@ private:
   // contains the three basis function indices k_1, k_2, k_3 for each face k
   std::vector<FieldVector<size_t, 3>> vertex_indices_;
   mutable std::vector<LocalCacheType> cache_;
+  mutable std::vector<AlphaStorageType> alpha_storage_;
   mutable std::vector<std::mutex> mutexes_;
 };
 #endif
@@ -2832,6 +2882,7 @@ public:
   using MatrixType = FieldMatrix<RangeFieldType, dimRange, dimRange>;
   using AlphaReturnType = typename std::pair<StateRangeType, RangeFieldType>;
   using LocalCacheType = EntropyLocalCache<StateRangeType, StateRangeType>;
+  using AlphaStorageType = std::map<DomainType, StateRangeType, XT::Common::FieldVectorLess>;
   static const size_t cache_size = 4 * dimDomain + 2;
 
   explicit EntropyBasedLocalFlux(
@@ -2863,6 +2914,7 @@ public:
     , max_taylor_order_(max_taylor_order)
     , name_(name)
     , cache_(index_set_.size(0), LocalCacheType(cache_size))
+    , alpha_storage_(index_set_.size(0))
     , mutexes_(index_set_.size(0))
   {
   }
@@ -2888,6 +2940,7 @@ public:
                   const RangeFieldType taylor_tol,
                   const size_t max_taylor_order,
                   LocalCacheType& cache,
+                  AlphaStorageType& alpha_storage,
                   std::mutex& mutex)
       : LocalfunctionType(e)
       , basis_functions_(basis_functions)
@@ -2903,6 +2956,7 @@ public:
       , taylor_tol_(taylor_tol)
       , max_taylor_order_(max_taylor_order)
       , cache_(cache)
+      , alpha_storage_(alpha_storage)
       , mutex_(mutex)
     {
     }
@@ -2917,11 +2971,20 @@ public:
       return true;
     }
 
-    AlphaReturnType get_alpha(const DomainType& /*x_local*/,
+    void store_alpha(const DomainType& x_local, const StateRangeType& alpha) const
+    {
+      alpha_storage_[x_local] = alpha;
+    }
+
+    StateRangeType get_stored_alpha(const DomainType& x_local) const
+    {
+      return alpha_storage_.at(x_local);
+    }
+
+    AlphaReturnType get_alpha(const DomainType& x_local,
                               const StateRangeType& u,
                               const XT::Common::Parameter& param,
-                              const bool regularize,
-                              const bool only_cache) const
+                              const bool regularize) const
     {
       const bool boundary = bool(param.get("boundary")[0]);
       AlphaReturnType ret;
@@ -2944,12 +3007,9 @@ public:
         const auto alpha_prime = cache_iterator->second;
         ret.first = alpha_prime + alpha_iso * std::log(density);
         ret.second = 0.;
-        cache_.keep(cache_iterator->first);
+        alpha_storage_[x_local] = ret.first;
         mutex_.unlock();
         return ret;
-      } else if (only_cache) {
-        mutex_.unlock();
-        DUNE_THROW(Dune::MathError, "Cache was not used!");
       } else {
         RangeFieldType tau_prime = std::min(
             tau_ / ((1 + std::sqrt(dimRange) * u_prime.two_norm()) * density + std::sqrt(dimRange) * tau_), tau_);
@@ -3017,6 +3077,7 @@ public:
               ret.first = alpha_prime + alpha_iso * std::log(density);
               ret.second = r;
               cache_.insert(v, alpha_prime);
+              alpha_storage_[x_local] = ret.first;
               goto outside_all_loops;
             } else {
               RangeFieldType zeta_k = 1;
@@ -3066,7 +3127,7 @@ public:
                           RangeType& ret,
                           const XT::Common::Parameter& param) const override
     {
-      const auto alpha = get_alpha(x_local, u, param, true, false).first;
+      const auto alpha = get_alpha(x_local, u, param, true).first;
 
       std::fill(ret.begin(), ret.end(), 0.);
       // calculate < \mu m G_\alpha(u) >
@@ -3135,11 +3196,11 @@ public:
     } // void evaluate_col(...)
 
     virtual void partial_u(const DomainType& x_local,
-                           const StateRangeType& u,
+                           const StateRangeType& /*u*/,
                            PartialURangeType& ret,
-                           const XT::Common::Parameter& param) const override
+                           const XT::Common::Parameter& /*param*/) const override
     {
-      const auto alpha = get_alpha(x_local, u, param, false, true).first;
+      const auto alpha = get_stored_alpha(x_local);
       RangeType H_diag, J_diag;
       FieldVector<RangeFieldType, dimRange - 1> H_subdiag, J_subdiag;
       calculate_hessian(alpha, H_diag, H_subdiag);
@@ -3457,6 +3518,7 @@ public:
     const size_t max_taylor_order_;
     const std::string name_;
     LocalCacheType& cache_;
+    AlphaStorageType& alpha_storage_;
     std::mutex& mutex_;
   }; // class Localfunction>
 
@@ -3487,6 +3549,7 @@ public:
                                            taylor_tol_,
                                            max_taylor_order_,
                                            cache_[index],
+                                           alpha_storage_[index],
                                            mutexes_[index]);
   }
 
@@ -3496,25 +3559,26 @@ public:
   // As we are using cartesian grids, n_i == 0 in all but one dimension, so only evaluate for i == dd
   StateRangeType evaluate_kinetic_flux(const EntityType& entity,
                                        const DomainType& x_local_entity,
-                                       const StateRangeType& u_i,
+                                       const StateRangeType& /*u_i*/,
                                        const EntityType& neighbor,
                                        const DomainType& x_local_neighbor,
                                        const StateRangeType u_j,
                                        const DomainType& n_ij,
                                        const size_t DXTC_DEBUG_ONLY(dd),
-                                       const XT::Common::Parameter& param,
+                                       const XT::Common::Parameter& /*param*/,
                                        const XT::Common::Parameter& param_neighbor) const
   {
     assert(dd == 0);
     // calculate < \mu m G_\alpha(u) > * n_ij
     const auto local_function_entity = derived_local_function(entity);
     const auto local_function_neighbor = derived_local_function(neighbor);
-    const auto alpha_i = local_function_entity->get_alpha(x_local_entity, u_i, param, false, true).first;
-    const auto alpha_j =
-        local_function_neighbor
-            ->get_alpha(
-                x_local_neighbor, u_j, param_neighbor, false, !static_cast<bool>(param_neighbor.get("boundary")[0]))
-            .first;
+    const auto alpha_i = local_function_entity->get_stored_alpha(x_local_entity);
+    StateRangeType alpha_j;
+    const bool boundary = bool(param_neighbor.get("boundary")[0]);
+    if (boundary)
+      alpha_j = local_function_neighbor->get_alpha(x_local_neighbor, u_j, param_neighbor, true).first;
+    else
+      alpha_j = local_function_neighbor->get_stored_alpha(x_local_neighbor);
     RangeType ret(0);
     for (size_t nn = 0; nn < dimRange; ++nn) {
       if (nn > 0) {
@@ -3694,6 +3758,7 @@ private:
   // Use unique_ptr in the vectors to avoid the memory cost for storing twice as many matrices or vectors as needed
   // (see constructor)
   mutable std::vector<LocalCacheType> cache_;
+  mutable std::vector<AlphaStorageType> alpha_storage_;
   mutable std::vector<std::mutex> mutexes_;
 };
 #endif

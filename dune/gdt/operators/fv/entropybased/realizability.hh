@@ -153,9 +153,9 @@ protected:
     try {
       for (const auto& pair : local_reconstructed_values) {
         current_pair = pair;
-        const auto x_in_inside_coords = entity.geometry().local(pair.first);
+        const auto x_in_inside_coords = pair.first;
         const auto& u = pair.second;
-        local_func->get_alpha(x_in_inside_coords, u, param_, false, false);
+        local_func->get_alpha(x_in_inside_coords, u, param_, false);
       } // local_reconstructed_values
     } catch (const Dune::MathError&) {
       //  std::cout << "Reconstruction disabled at time " << XT::Common::to_string(param_.get("t")[0], 15)
@@ -164,10 +164,13 @@ protected:
       //  std::cout << "Solving failed for moments " << XT::Common::to_string(current_pair.second, 15)
       //            << " at x = " << XT::Common::to_string(current_pair.first, 15) << std::endl;
       // solving failed for reconstructed value, so check that it works with u_bar ...
-      local_func->get_alpha(entity.geometry().local(entity.geometry().center()), u_bar, param_, false, false);
+      const auto alpha_bar =
+          local_func->get_alpha(entity.geometry().local(entity.geometry().center()), u_bar, param_, false).first;
       // ... and set all reconstructed values to u_bar
-      for (auto& pair : local_reconstructed_values)
+      for (auto& pair : local_reconstructed_values) {
+        local_func->store_alpha(pair.first, alpha_bar);
         pair.second = u_bar;
+      }
     }
   }
 

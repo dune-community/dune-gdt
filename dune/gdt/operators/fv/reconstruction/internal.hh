@@ -422,8 +422,20 @@ public:
             eigvecs[row][col] /= two_norm;
         }
       } else {
-        XT::LA::internal::fmatrix_compute_real_eigenvalues_and_real_right_eigenvectors_using_qr(
-            jacobian(dd).block(jj), eigenvalues_[dd][jj], eigenvectors_[dd].block(jj));
+        // For the small matrices (usually 4x4) used here it causes a lot of overhead to call into LAPACK every time, so
+        // we just use our own eigensolver most of the time. Occasionally, however, our eigensolver fails where the
+        // LAPACK eigensolver succeeds (due to a superior shifting strategy), so in these cases we call LAPACK.
+        try {
+          XT::LA::internal::fmatrix_compute_real_eigenvalues_and_real_right_eigenvectors_using_qr(
+              jacobian(dd).block(jj), eigenvalues_[dd][jj], eigenvectors_[dd].block(jj));
+        } catch (const Dune::MathError&) {
+          // Our own eigensolver failed, try the default one instead (Lapacke, Eigen or Numpy, if none of these is
+          // available, we solve again using our own eigensolver, which will throw the error again.
+          static auto eigensolver_options = hyperbolic_default_eigensolver_options<LocalMatrixType>();
+          const auto eigensolver = EigenSolverType(jacobian(dd).block(jj), &eigensolver_options);
+          eigenvectors_[dd].block(jj) = eigensolver.real_eigenvectors();
+          eigenvalues_[dd][jj] = eigensolver.real_eigenvalues();
+        }
       } // else (block_size == 2)
       QR_[dd].block(jj) = eigenvectors_[dd].block(jj);
       XT::LA::qr(QR_[dd].block(jj), tau_[dd].block(jj), permutations_[dd].block(jj));
