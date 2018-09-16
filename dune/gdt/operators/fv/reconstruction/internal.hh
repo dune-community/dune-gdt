@@ -230,7 +230,11 @@ public:
                             const StateRangeType& u,
                             const XT::Common::Parameter& param) override final
   {
-    return analytical_flux.local_function(entity)->partial_u_col(dd, x_in_inside_coords, u, jacobian(dd), param);
+    try {
+      analytical_flux.local_function(entity)->partial_u_col(dd, x_in_inside_coords, u, jacobian(dd), param);
+    } catch (const Dune::MathError&) {
+      XT::LA::eye_matrix(jacobian(dd));
+    }
   }
 
   virtual void get_jacobian(const EntityType& entity,
@@ -239,7 +243,12 @@ public:
                             const StateRangeType& u,
                             const XT::Common::Parameter& param) override final
   {
-    analytical_flux.local_function(entity)->partial_u(x_in_inside_coords, u, *jacobian(), param);
+    try {
+      analytical_flux.local_function(entity)->partial_u(x_in_inside_coords, u, *jacobian(), param);
+    } catch (const Dune::MathError&) {
+      for (size_t dd = 0; dd < dimDomain; ++dd)
+        XT::LA::eye_matrix(jacobian(dd));
+    }
   }
 
   using BaseType::compute;
@@ -286,7 +295,7 @@ public:
     }
     (*QR_)[dd] = (*eigenvectors_)[dd];
     XT::LA::qr((*QR_)[dd], tau_[dd], permutations_[dd]);
-#if HAVE_MKL || HAVE_LAPACKE
+#if 0 // HAVE_MKL || HAVE_LAPACKE
     int info = XT::Common::Lapacke::dtrcon(XT::Common::Lapacke::row_major(),
                                            '1',
                                            'U',
@@ -456,7 +465,11 @@ public:
                             const XT::Common::Parameter& param) override final
   {
     const auto local_func = analytical_flux.local_function(entity);
-    local_func->partial_u_col(dd, x_in_inside_coords, u, (*nonblocked_jacobians_)[dd], param);
+    try {
+      local_func->partial_u_col(dd, x_in_inside_coords, u, (*nonblocked_jacobians_)[dd], param);
+    } catch (const Dune::MathError&) {
+      XT::LA::eye_matrix((*nonblocked_jacobians_)[dd]);
+    }
     jacobian(dd) = (*nonblocked_jacobians_)[dd];
   }
 
@@ -467,7 +480,12 @@ public:
                             const XT::Common::Parameter& param) override final
   {
     const auto local_func = analytical_flux.local_function(entity);
-    local_func->partial_u(x_in_inside_coords, u, *nonblocked_jacobians_, param);
+    try {
+      local_func->partial_u(x_in_inside_coords, u, *nonblocked_jacobians_, param);
+    } catch (const Dune::MathError&) {
+      for (size_t dd = 0; dd < dimDomain; ++dd)
+        XT::LA::eye_matrix((*nonblocked_jacobians_)[dd]);
+    }
     for (size_t dd = 0; dd < dimDomain; ++dd)
       jacobian(dd) = (*nonblocked_jacobians_)[dd];
   }
