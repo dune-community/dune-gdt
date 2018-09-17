@@ -22,6 +22,7 @@
 #include <dune/xt/common/convergence-study.hh>
 #include <dune/xt/common/fvector.hh>
 #include <dune/xt/common/string.hh>
+#include <dune/xt/common/timedlogging.hh>
 #include <dune/xt/common/test/gtest/gtest.h>
 #include <dune/xt/la/container.hh>
 #include <dune/xt/la/container/vector-array/list.hh>
@@ -38,6 +39,8 @@
 #include <dune/gdt/local/integrands/abs.hh>
 #include <dune/gdt/local/integrands/identity.hh>
 #include <dune/gdt/local/integrands/product.hh>
+#include <dune/gdt/operators/constant.hh>
+#include <dune/gdt/operators/identity.hh>
 #include <dune/gdt/operators/interfaces.hh>
 #include <dune/gdt/operators/localizable-bilinear-form.hh>
 #include <dune/gdt/operators/matrix-based.hh>
@@ -447,84 +450,32 @@ XT::LA::ListVectorArray<V> solve_instationary_system_explicit_euler(const Discre
 
 
 template <class V, class GV, size_t m, class M>
-XT::LA::ListVectorArray<V>
-solve_instationary_system_implicit_euler_newton(const DiscreteFunction<V, GV, m>& initial_values,
-                                                const OperatorInterface<M, GV, m>& spatial_op,
-                                                const double T_end,
-                                                const double dt)
+XT::LA::ListVectorArray<V> solve_instationary_system_implicit_euler(const DiscreteFunction<V, GV, m>& initial_values,
+                                                                    const OperatorInterface<M, GV, m>& spatial_op,
+                                                                    const double T_end,
+                                                                    const double dt)
 {
+  // some preparations
+  auto id = make_identity_operator(spatial_op);
+  V zero(spatial_op.range_space().mapper().size(), 0.);
+  auto logger = XT::Common::TimedLogger().get("gdt.test.solve_instationary_system_implicit_euler");
   // initial values
   XT::LA::ListVectorArray<V> solution(
       spatial_op.source_space().mapper().size(), /*length=*/0, /*reserve=*/std::ceil(T_end / (dt)));
   solution.append(initial_values.dofs().vector(), {"_t", 0.});
-  // some helpers
-  auto residual = [&](const auto& u_old, const auto& u_new) { return (u_new - u_old) / dt + spatial_op.apply(u_new); };
-  auto jacobi_matrix = [&](const auto& u) {
-    auto jacobian_op = spatial_op.jacobian(u);
-    jacobian_op.assemble(/*use_tbb=*/true);
-    // add the scaled L^2 matrix (since we act on the Dofs this is simply the scaled unit matrix)
-    auto& mat = jacobian_op.matrix();
-    for (size_t ii = 0; ii < std::min(mat.rows(), mat.cols()); ++ii)
-      mat.add_to_entry(ii, ii, 1. / dt);
-    return mat;
-  };
   // timestepping
   double time = 0.;
-  const bool verbose = DXTC_CONFIG_GET("newton.verbose", false);
-  auto lambda = DXTC_CONFIG_GET("newton.lambda", 1.0);
-  auto max_iter = DXTC_CONFIG_GET("newton.max_iter", 100);
-  auto TOL = DXTC_CONFIG_GET("newton.TOL", 1e-7);
-  if (verbose)
-    std::cout << "\n";
   while (time < T_end + dt) {
-    if (verbose)
-      std::cout << "time = " << time << ": stepping with dt = " << dt << "\n";
+    logger.debug() << "time = " << time << ": stepping with dt..." << std::endl;
     time += dt;
     const auto& u_n = solution.back().vector();
-    // newton
-    auto psi_l = u_n;
-    size_t l = 0;
-    while (true) {
-      Timer timer;
-      if (verbose)
-        std::cout << "   l = " << l << ": evaluating residual ... " << std::flush;
-      auto F_h = residual(u_n, psi_l);
-      auto res = F_h.l2_norm();
-      if (verbose)
-        std::cout << "took " << timer.elapsed() << "s, |F_h| = " << res << std::endl;
-      if (res < TOL) {
-        if (verbose)
-          std::cout << "          residual below tolerance, proceeding to next time step" << std::endl;
-        break;
-      }
-      DUNE_THROW_IF(l >= max_iter, Exceptions::newton_error, "max iterations " << max_iter << " reached!");
-      if (verbose) {
-        std::cout << "          computing jacobi matrix ... " << std::flush;
-        timer.reset();
-      }
-      auto D_h = jacobi_matrix(psi_l);
-      if (verbose) {
-        std::cout << "took " << timer.elapsed() << "s" << std::endl;
-        std::cout << "          solving for defect ... " << std::flush;
-        timer.reset();
-      }
-      F_h *= -1.;
-      auto delta_l = XT::LA::solve(D_h, F_h);
-      if (verbose) {
-        std::cout << "took " << timer.elapsed() << "s" << std::endl;
-        std::cout << "          computing update ... " << std::flush;
-        timer.reset();
-      }
-      psi_l += delta_l * lambda;
-      if (verbose)
-        std::cout << "took " << timer.elapsed() << "s" << std::endl;
-      l += 1;
-    }
-    auto u_n_plus_one = psi_l;
+    auto residual_op = (id - u_n) / dt + spatial_op;
+    auto u_n_plus_one = u_n.copy();
+    residual_op.apply_inverse(zero, u_n_plus_one);
     solution.append(std::move(u_n_plus_one), {"_t", time});
   }
   return solution;
-} // ... solve_instationary_system_implicit_euler_newton(...)
+} // ... solve_instationary_system_implicit_euler(...)
 
 
 } // namespace Tests

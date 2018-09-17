@@ -207,7 +207,7 @@ protected:
     const auto dt = dt_factor_ * this->current_data_["target"]["h"];
     this->current_data_["quantity"]["dt"] = dt;
     this->current_data_["quantity"]["explicit_fv_dt"] = this->estimate_fixed_explicit_fv_dt(space);
-    return solve_instationary_system_implicit_euler_newton(u_0, *op, T_end, dt);
+    return solve_instationary_system_implicit_euler(u_0, *op, T_end, dt);
   }
 
   double dt_factor_;
