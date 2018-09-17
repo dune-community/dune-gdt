@@ -17,8 +17,10 @@
 
 #include <dune/xt/common/parameter.hh>
 #include <dune/xt/common/configuration.hh>
+#include <dune/xt/common/timedlogging.hh>
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/la/container/vector-interface.hh>
+#include <dune/xt/la/solver.hh>
 #include <dune/xt/la/type_traits.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
@@ -357,8 +359,7 @@ public:
    */
   virtual std::vector<std::string> invert_options() const
   {
-    DUNE_THROW(Exceptions::operator_error, "This operator is not invertible!");
-    return std::vector<std::string>();
+    return {"newton"};
   }
 
   /**
@@ -368,20 +369,87 @@ public:
 invert_options(some_type).get<std::string>("type") == some_type
 \endcode
    * and possibly other key/value pairs.
+   *
+   * \todo Allow to pass jacobian options as subcfg in newton.
    */
-  virtual XT::Common::Configuration invert_options(const std::string& /*type*/) const
+  virtual XT::Common::Configuration invert_options(const std::string& type) const
   {
-    DUNE_THROW(Exceptions::operator_error, "This operator is not invertible!");
-    return XT::Common::Configuration();
-  }
+    if (type == "newton") {
+      return {{"type", type}, {"precision", "1e-7"}, {"max_iter", "100"}, {"lambda", "1."}};
+    } else
+      DUNE_THROW(Exceptions::operator_error, "type = " << type);
+  } // ... invert_options(...)
 
-  virtual void apply_inverse(const VectorType& /*range*/,
-                             VectorType& /*source*/,
-                             const XT::Common::Configuration& /*opts*/,
-                             const XT::Common::Parameter& /*param*/ = {}) const
+  /**
+   * Given source is used as initial guess.
+   *
+   * \todo Allow to pass jacobian options as subcfg in newton.
+   **/
+  virtual void apply_inverse(const VectorType& range,
+                             VectorType& source,
+                             const XT::Common::Configuration& opts,
+                             const XT::Common::Parameter& param = {}) const
   {
-    DUNE_THROW(Exceptions::operator_error, "This operator is not invertible!");
-  }
+    DUNE_THROW_IF(!opts.has_key("type"), Exceptions::operator_error, "opts = " << opts);
+    const auto type = opts.get<std::string>("type");
+    const XT::Common::Configuration default_opts = this->invert_options(type);
+    auto logger = XT::Common::TimedLogger().get("gdt.operator.apply_inverse");
+    if (type == "newton") {
+      // some preparations
+      auto residual_op = *this - range;
+      auto residual = range.copy();
+      auto update = source.copy();
+      // one matrix for all jacobians
+      MatrixOperatorType jacobian_op(this->source_space().grid_view(),
+                                     this->source_space(),
+                                     this->range_space(),
+                                     make_element_and_intersection_sparsity_pattern(
+                                         this->source_space(), this->range_space(), this->source_space().grid_view()));
+      XT::LA::Solver<M> jacobian_solver(jacobian_op.matrix());
+      const auto precision = opts.get("precision", default_opts.get<double>("precision"));
+      const auto max_iter = opts.get("max_iter", default_opts.get<size_t>("max_iter"));
+      const auto lambda = opts.get("lambda", default_opts.get<double>("lambda"));
+      size_t l = 0;
+      Timer timer;
+      while (true) {
+        timer.reset();
+        logger.debug() << "l = " << l << ": computing residual ... " << std::flush;
+        residual_op.apply(source, residual, param);
+        auto res = residual.l2_norm();
+        logger.debug() << "took " << timer.elapsed() << "s, |residual|_L^2 = " << res << std::endl;
+        if (res < precision) {
+          logger.debug() << "       residual below tolerance, succeeded!" << std::endl;
+          break;
+        }
+        DUNE_THROW_IF(l >= max_iter,
+                      Exceptions::operator_error,
+                      "max iterations " << max_iter << " reached!\n   opts = " << opts);
+        logger.debug() << "       computing jacobi matrix ... " << std::flush;
+        timer.reset();
+        jacobian_op.matrix() *= 0.;
+        residual_op.jacobian(source, jacobian_op, {{"type", residual_op.jacobian_options().at(0)}}, param);
+        jacobian_op.walk(/*use_tbb=*/true);
+        logger.debug() << "took " << timer.elapsed() << "s"
+                       << "\n"
+                       << "       solving for defect ... " << std::flush;
+        timer.reset();
+        residual *= -1.;
+        update = source; // <- initial guess for the linear solver
+        jacobian_solver.apply(
+            residual,
+            update,
+            {{"type", jacobian_solver.types().at(0)}, {"precision", XT::Common::to_string(0.1 * precision)}});
+        logger.debug() << "took " << timer.elapsed() << "s"
+                       << "\n"
+                       << "       computing update ... " << std::flush;
+        timer.reset();
+        source += update * lambda;
+        logger.debug() << "took " << timer.elapsed() << "s" << std::endl;
+        l += 1;
+      }
+    } else
+      DUNE_THROW(Exceptions::operator_error, "type = " << type);
+  } // ... apply_inverse(...)
 
   /// \}
   /// \name These methods should be implemented and define the functionality of the operators jacobian.
