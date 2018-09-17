@@ -56,6 +56,9 @@ class AssertArgumentsOfOperatorInterface
 
 // forwards, required for operator +-*/
 template <class M, class SGV, size_t s_r, size_t s_rC, size_t r_r, size_t r_rC, class RGV>
+class ConstantOperator;
+
+template <class M, class SGV, size_t s_r, size_t s_rC, size_t r_r, size_t r_rC, class RGV>
 class ConstLincombOperator;
 
 template <class M, class SGV, size_t s_r, size_t s_rC, size_t r_r, size_t r_rC, class RGV>
@@ -164,10 +167,24 @@ public:
 
   /// \}
 
+  virtual ConstLincombOperatorType operator*(const FieldType& alpha) const
+  {
+    ConstLincombOperatorType ret(this->source_space(), this->range_space());
+    ret.add(*this, alpha);
+    return ret;
+  }
+
   virtual LincombOperatorType operator*(const FieldType& alpha)
   {
     LincombOperatorType ret(this->source_space(), this->range_space());
     ret.add(*this, alpha);
+    return ret;
+  }
+
+  virtual ConstLincombOperatorType operator/(const FieldType& alpha) const
+  {
+    ConstLincombOperatorType ret(this->source_space(), this->range_space());
+    ret.add(*this, 1. / alpha);
     return ret;
   }
 
@@ -178,15 +195,10 @@ public:
     return ret;
   }
 
-  virtual ConstLincombOperatorType operator+(const ConstLincombOperatorType& other) const
-  {
-    ConstLincombOperatorType ret(this->source_space(), this->range_space());
-    ret.add(*this, 1.);
-    ret.add(other, 1.);
-    return ret;
-  }
+  /// \name const operator+ variants
+  /// \{
 
-  virtual ConstLincombOperatorType operator+(const LincombOperatorType& other) const
+  virtual ConstLincombOperatorType operator+(const ConstLincombOperatorType& other) const
   {
     ConstLincombOperatorType ret(this->source_space(), this->range_space());
     ret.add(*this, 1.);
@@ -201,6 +213,23 @@ public:
     ret.add(other, 1.);
     return ret;
   }
+
+  /**
+   * \note vector is interpreted as a ConstantOperator
+   * \sa ConstantOperator
+   */
+  virtual ConstLincombOperatorType operator+(const VectorType& vector) const
+  {
+    ConstLincombOperatorType ret(this->source_space(), this->range_space());
+    ret.add(*this, 1.);
+    ret.add(new ConstantOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>(this->source_space(), this->range_space(), vector),
+            1.);
+    return ret;
+  }
+
+  /// \}
+  /// \name mutable operator+ variants
+  /// \{
 
   virtual LincombOperatorType operator+(LincombOperatorType& other)
   {
@@ -218,15 +247,24 @@ public:
     return ret;
   }
 
-  virtual ConstLincombOperatorType operator-(const ConstLincombOperatorType& other) const
+  /**
+   * \note vector is interpreted as a ConstantOperator
+   * \sa ConstantOperator
+   */
+  virtual LincombOperatorType operator+(const VectorType& vector)
   {
-    ConstLincombOperatorType ret(this->source_space(), this->range_space());
+    LincombOperatorType ret(this->source_space(), this->range_space());
     ret.add(*this, 1.);
-    ret.add(other, -1.);
+    ret.add(new ConstantOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>(this->source_space(), this->range_space(), vector),
+            1.);
     return ret;
   }
 
-  virtual ConstLincombOperatorType operator-(const LincombOperatorType& other) const
+  /// \}
+  /// \name const operator- variants
+  /// \{
+
+  virtual ConstLincombOperatorType operator-(const ConstLincombOperatorType& other) const
   {
     ConstLincombOperatorType ret(this->source_space(), this->range_space());
     ret.add(*this, 1.);
@@ -241,6 +279,23 @@ public:
     ret.add(other, -1.);
     return ret;
   }
+
+  /**
+   * \note vector is interpreted as a ConstantOperator
+   * \sa ConstantOperator
+   */
+  virtual ConstLincombOperatorType operator-(const VectorType& vector) const
+  {
+    ConstLincombOperatorType ret(this->source_space(), this->range_space());
+    ret.add(*this, 1.);
+    ret.add(new ConstantOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>(this->source_space(), this->range_space(), vector),
+            -1.);
+    return ret;
+  }
+
+  /// \}
+  /// \name mutable operator- variants between arbitrary operators
+  /// \{
 
   virtual LincombOperatorType operator-(LincombOperatorType& other)
   {
@@ -257,6 +312,21 @@ public:
     ret.add(other, -1.);
     return ret;
   }
+
+  /**
+   * \note vector is interpreted as a ConstantOperator
+   * \sa ConstantOperator
+   */
+  virtual LincombOperatorType operator-(const VectorType& vector)
+  {
+    LincombOperatorType ret(this->source_space(), this->range_space());
+    ret.add(*this, 1.);
+    ret.add(new ConstantOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>(this->source_space(), this->range_space(), vector),
+            -1.);
+    return ret;
+  }
+
+  /// \}
 
   /**
    * Allows the implementation to do preparatory work (i.e., assemble the matrix of a matrix-based operator).
@@ -676,6 +746,7 @@ invert_options(some_type).get<std::string>("type") == some_type
 } // namespace GDT
 } // namespace Dune
 
+#include "constant.hh"
 #include "lincomb.hh"
 #include "matrix-based.hh"
 
