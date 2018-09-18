@@ -416,14 +416,15 @@ invert_options(some_type).get<std::string>("type") == some_type
         logger.debug() << "l = " << l << ": computing residual ... " << std::flush;
         residual_op.apply(source, residual, param);
         auto res = residual.l2_norm();
-        logger.debug() << "took " << timer.elapsed() << "s, |residual|_L^2 = " << res << std::endl;
+        logger.debug() << "took " << timer.elapsed() << "s, |residual|_l2 = " << res << std::endl;
         if (res < precision) {
           logger.debug() << "       residual below tolerance, succeeded!" << std::endl;
           break;
         }
         DUNE_THROW_IF(l >= max_iter,
                       Exceptions::operator_error,
-                      "max iterations " << max_iter << " reached!\n   opts = " << opts);
+                      "max iterations " << max_iter << " reached!\n   |residual|_l2 = " << res << "\n   opts:\n"
+                                        << opts);
         logger.debug() << "       computing jacobi matrix ... " << std::flush;
         timer.reset();
         jacobian_op.matrix() *= 0.;
