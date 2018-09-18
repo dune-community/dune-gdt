@@ -471,7 +471,11 @@ XT::LA::ListVectorArray<V> solve_instationary_system_implicit_euler(const Discre
     const auto& u_n = solution.back().vector();
     auto residual_op = (id - u_n) / dt + spatial_op;
     auto u_n_plus_one = u_n.copy();
-    residual_op.apply_inverse(zero, u_n_plus_one);
+    residual_op.apply_inverse(zero,
+                              u_n_plus_one,
+                              DXTC_CONFIG.has_sub("solve_instationary_system_implicit_euler.apply_inverse")
+                                  ? DXTC_CONFIG.sub("solve_instationary_system_implicit_euler.apply_inverse")
+                                  : residual_op.invert_options(residual_op.invert_options().at(0)));
     solution.append(std::move(u_n_plus_one), {"_t", time});
   }
   return solution;
