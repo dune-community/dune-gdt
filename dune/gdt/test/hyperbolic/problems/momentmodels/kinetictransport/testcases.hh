@@ -562,8 +562,8 @@ struct PointSourceMnExpectedResults<HatFunctionMomentBasis<double, 3, double, 0,
   static constexpr double linfnorm = reconstruct ? 10.420529174853563 : 10.459179185635332;
 #else
   static constexpr double l1norm = reconstruct ? 1.0008292531174403 : 1.0008261813728858;
-  static constexpr double l2norm = reconstruct ? 2.7095647696183893 : 2.7081198646304396;
-  static constexpr double linfnorm = reconstruct ? 10.424228258642177 : 10.459457807164178;
+  static constexpr double l2norm = reconstruct ? 2.7073824166781426 : 2.7081198646304396;
+  static constexpr double linfnorm = reconstruct ? 10.420805181413158 : 10.459457807164178;
 #endif
   // The matrices in this test case all have eigenvalues [+-0.808311035811965, 0, 0, 0, 0].
   // Thus, the eigenvectors are not unique, and the eigensolvers are extremely sensitive

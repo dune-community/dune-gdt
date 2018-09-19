@@ -159,7 +159,7 @@ public:
     return FieldVector<MatrixType, dimDomain>(B);
   }
 
-  // returns matrices with entries <v h_i h_j>_- and <v h_i h_j>_+
+  // returns V M^-1 where the matrix V has entries <v h_i h_j>_- and <v h_i h_j>_+
   virtual FieldVector<FieldVector<MatrixType, 2>, 1> kinetic_flux_matrices() const override final
   {
     FieldVector<FieldVector<MatrixType, 2>, 1> ret(FieldVector<MatrixType, 2>(MatrixType(dimRange, dimRange, 0.)));
@@ -198,6 +198,14 @@ public:
             ret_pos[nn][mm] = mm_with_v[0][nn][mm];
       }
     } // nn
+    // apply M^{-1} from the right
+    const auto M = std::make_unique<XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange>>(mass_matrix());
+    MatrixType tmp_mat = ret_neg;
+    for (size_t rr = 0; rr < dimRange; ++rr)
+      M->solve(ret_neg[rr], tmp_mat[rr]);
+    tmp_mat = ret_pos;
+    for (size_t rr = 0; rr < dimRange; ++rr)
+      M->solve(ret_pos[rr], tmp_mat[rr]);
     return ret;
   }
 

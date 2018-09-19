@@ -100,7 +100,7 @@ public:
     return B;
   }
 
-  // returns matrices with entries <v h_i h_j>_- and <v h_i h_j>_+
+  // returns V M^-1 where the matrix V has entries <v h_i h_j>_- and <v h_i h_j>_+
   virtual FieldVector<FieldVector<MatrixType, 2>, 1> kinetic_flux_matrices() const override final
   {
     FieldVector<FieldVector<MatrixType, 2>, 1> ret(FieldVector<MatrixType, 2>(MatrixType(dimRange, dimRange, 0.)));
@@ -130,6 +130,9 @@ public:
         ret_neg[nn][mm] = mm_with_v[0][nn][mm] - ret_pos[nn][mm];
       } // mm
     } // nn
+    // apply M^{-1} from the right
+    ret_neg.rightmultiply(mass_matrix_inverse());
+    ret_pos.rightmultiply(mass_matrix_inverse());
     return ret;
   }
 

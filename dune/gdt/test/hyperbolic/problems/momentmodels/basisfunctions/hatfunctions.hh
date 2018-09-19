@@ -200,6 +200,14 @@ public:
         } // else (N % 2)
       } // mm
     } // nn
+    // apply M^{-1} from the right
+    const auto M = std::make_unique<XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange>>(mass_matrix());
+    MatrixType tmp_mat = ret_neg;
+    for (size_t rr = 0; rr < dimRange; ++rr)
+      M->solve(ret_neg[rr], tmp_mat[rr]);
+    tmp_mat = ret_pos;
+    for (size_t rr = 0; rr < dimRange; ++rr)
+      M->solve(ret_pos[rr], tmp_mat[rr]);
     return ret;
   }
 
