@@ -159,7 +159,7 @@ public:
     return ret;
   }
 
-  // returns matrices with entries <v h_i h_j>_- and <v h_i h_j>_+
+  // returns V M^-1 where the matrix V has entries <v h_i h_j>_- and <v h_i h_j>_+
   virtual FieldVector<FieldVector<MatrixType, 2>, 1> kinetic_flux_matrices() const override final
   {
     FieldVector<FieldVector<MatrixType, 2>, 1> ret(FieldVector<MatrixType, 2>(MatrixType(dimRange, dimRange, 0.)));

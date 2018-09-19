@@ -43,6 +43,7 @@ public:
   using BaseType::dimDomain;
   using BaseType::dimRange;
   using BaseType::dimRangeCols;
+  using BaseType::dimFlux;
 
   using typename BaseType::FluxType;
   using typename BaseType::RhsType;
@@ -99,12 +100,15 @@ public:
   virtual XT::Common::Parameter parameters() const = 0;
 
   template <class VectorType>
-  void
-  solve(const MatrixType& mat,
-        VectorType& x,
-        const VectorType& rhs,
-        const BasisfunctionsInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols, dimDomain>&)
-      const
+  void solve(const MatrixType& mat,
+             VectorType& x,
+             const VectorType& rhs,
+             const BasisfunctionsInterface<DomainFieldType,
+                                           BasisfunctionType::dimDomain,
+                                           RangeFieldType,
+                                           dimRange,
+                                           dimRangeCols,
+                                           dimFlux>&) const
   {
     // copy to our FieldMatrix as the DenseMatrix in dune-common has a bug in its solve method (fixed in 2.6)
     auto field_mat = std::make_unique<XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange>>(mat);
