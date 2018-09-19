@@ -205,7 +205,7 @@ protected:
       RangeType ret(0);
       // For the MN-Models, we have to use the quadrature also used in the optimization problem to guarantee
       // realizability of the boundary_values.
-      // For the PN-Models, we do not have these issues and just use a very fine quadrature (which is a performance
+      // For the PN-Models, we do not have these issues and just use a very fine quadrature (which is not a performance
       // problem as the integration is only done once).
       const auto& quadratures =
           is_mn_model ? basis_functions.quadratures() : BasisfunctionImp::gauss_lobatto_quadratures(100, 31);

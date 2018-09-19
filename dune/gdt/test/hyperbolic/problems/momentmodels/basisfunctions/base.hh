@@ -32,6 +32,7 @@
 #include <dune/gdt/operators/l2.hh>
 #include <dune/gdt/spaces/cg.hh>
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/triangulation.hh>
+#include <dune/gdt/test/hyperbolic/quadratures/gausslobatto.hh>
 #include <dune/gdt/test/hyperbolic/spherical_quadratures/fekete.hh>
 #include <dune/gdt/test/hyperbolic/spherical_quadratures/lebedev.hh>
 #include <dune/gdt/test/hyperbolic/spherical_quadratures/octant.hh>
@@ -403,10 +404,7 @@ public:
     QuadraturesType ret(num_intervals);
     auto interval_boundaries = create_1d_triangulation(num_intervals);
     // quadrature on reference interval [0, 1]
-    const auto reference_quadrature = Dune::QuadratureRules<DomainFieldType, dimDomain>::rule(
-        Dune::GeometryType(Dune::GeometryType::BasicType::simplex, 1),
-        static_cast<int>(quad_order),
-        Dune::QuadratureType::GaussLobatto);
+    const auto reference_quadrature = GaussLobattoQuadrature<DomainFieldType>::get(quad_order);
     // map to quadrature on interval [a, b] by
     // x_i -> (1-x_i) a + x_i b
     // w_i -> w_i * (b-a)

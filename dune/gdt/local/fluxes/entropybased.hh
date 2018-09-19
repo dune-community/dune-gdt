@@ -587,7 +587,7 @@ public:
 #endif
     }
 
-    void store_alpha(const DomainType& x_local, const StateRangeType& alpha) const
+    void store_alpha(const DomainType& x_local, const StateRangeType& alpha)
     {
       alpha_storage_[x_local] = alpha;
     }
@@ -595,6 +595,15 @@ public:
     StateRangeType get_stored_alpha(const DomainType& x_local) const
     {
       return alpha_storage_.at(x_local);
+    }
+
+    template <class GridLayerType>
+    void center_results_to_intersections(const GridLayerType& grid_layer)
+    {
+      const auto center = entity().geometry().local(entity().geometry().center());
+      const auto center_alpha = get_stored_alpha(center);
+      for (const auto& intersection : Dune::intersections(grid_layer, entity()))
+        store_alpha(entity().geometry().local(intersection.geometry().center()), center_alpha);
     }
 
     AlphaReturnType get_alpha(const DomainType& x_local,
@@ -1358,7 +1367,7 @@ public:
         apply_inverse_matrix_block(jj, T_k.block(jj), M[jj]);
     }
 
-    void store_alpha(const DomainType& x_local, const BlockVectorType& alpha) const
+    void store_alpha(const DomainType& x_local, const BlockVectorType& alpha)
     {
       alpha_storage_[x_local] = alpha;
     }
@@ -1366,6 +1375,15 @@ public:
     BlockVectorType get_stored_alpha(const DomainType& x_local) const
     {
       return alpha_storage_.at(x_local);
+    }
+
+    template <class GridLayerType>
+    void center_results_to_intersections(const GridLayerType& grid_layer)
+    {
+      const auto center = entity().geometry().local(entity().geometry().center());
+      const auto center_alpha = get_stored_alpha(center);
+      for (const auto& intersection : Dune::intersections(grid_layer, entity()))
+        store_alpha(entity().geometry().local(intersection.geometry().center()), center_alpha);
     }
 
     AlphaReturnType get_alpha(const DomainType& x_local,
@@ -2315,7 +2333,7 @@ public:
       return true;
     }
 
-     void store_alpha(const DomainType& x_local, const StateRangeType& alpha) const
+     void store_alpha(const DomainType& x_local, const StateRangeType& alpha)
      {
        alpha_storage_[x_local] = alpha;
      }
@@ -2325,6 +2343,14 @@ public:
        return alpha_storage_.at(x_local);
      }
 
+    template<class GridLayerType>
+    void center_results_to_intersections(const GridLayerType& grid_layer)
+    {
+      const auto center = entity().geometry().local(entity().geometry().center());
+      const auto center_alpha = get_stored_alpha(center);
+      for (const auto& intersection: Dune::intersections(grid_layer, entity()))
+        store_alpha(entity().geometry().local(intersection.geometry().center()), center_alpha);
+    }
 
     AlphaReturnType get_alpha(const DomainType& x_local,
                               const StateRangeType& u,
@@ -2971,7 +2997,7 @@ public:
       return true;
     }
 
-    void store_alpha(const DomainType& x_local, const StateRangeType& alpha) const
+    void store_alpha(const DomainType& x_local, const StateRangeType& alpha)
     {
       alpha_storage_[x_local] = alpha;
     }
@@ -2979,6 +3005,15 @@ public:
     StateRangeType get_stored_alpha(const DomainType& x_local) const
     {
       return alpha_storage_.at(x_local);
+    }
+
+    template <class GridLayerType>
+    void center_results_to_intersections(const GridLayerType& grid_layer)
+    {
+      const auto center = entity().geometry().local(entity().geometry().center());
+      const auto center_alpha = get_stored_alpha(center);
+      for (const auto& intersection : Dune::intersections(grid_layer, entity()))
+        store_alpha(entity().geometry().local(intersection.geometry().center()), center_alpha);
     }
 
     AlphaReturnType get_alpha(const DomainType& x_local,

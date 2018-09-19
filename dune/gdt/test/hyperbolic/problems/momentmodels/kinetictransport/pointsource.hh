@@ -97,9 +97,6 @@ public:
         [=](const DomainType& x, const XT::Common::Parameter&) {
           static const auto first_factor = 1. / (4 * M_PI * std::pow(M_PI * sigma, 3));
           static const auto second_factor = 1. / (M_PI * std::pow(sigma, 2));
-          //          ret *= std::max(1. / (8. * M_PI * sigma * sigma) * std::exp(-1. * x.two_norm2() / (2. * sigma *
-          //          sigma)),
-          //                          1e-4 / (4. * M_PI));
           return basis_integrated * std::max(first_factor * std::exp(-x.two_norm2() * second_factor), psi_vac_);
         },
         61);

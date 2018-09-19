@@ -32,7 +32,7 @@ template <class TestCaseType>
 struct HyperbolicMnDiscretization
 {
   // returns: (l1norm, l2norm, linfnorm, MPI rank)
-  std::pair<Dune::FieldVector<double, 3>, int>
+  static std::pair<Dune::FieldVector<double, 3>, int>
   run(size_t num_save_steps = 1,
       size_t num_output_steps = 0,
       size_t num_quad_refinements = TestCaseType::RealizabilityLimiterChooserType::num_quad_refinements,
