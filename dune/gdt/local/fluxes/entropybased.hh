@@ -176,7 +176,7 @@ public:
   using QuadratureRuleType = Dune::QuadratureRule<DomainFieldType, dimDomain>;
   using AlphaReturnType = std::pair<VectorType, RangeFieldType>;
   using LocalCacheType = EntropyLocalCache<StateRangeType, VectorType>;
-  using AlphaStorageType = std::map<DomainType, StateRangeType, XT::Common::FieldVectorLess>;
+  using AlphaStorageType = std::map<DomainType, StateRangeType, XT::Common::FieldVectorFloatLess>;
   static const size_t cache_size = 4 * dimDomain + 2;
 
   // get permutation instead of sorting directly to be able to sort two vectors the same way
@@ -1157,7 +1157,7 @@ public:
       PartialMomentBasis<DomainFieldType, dimDomain, RangeFieldType, dimRange_or_refinements, 1, dimDomain>;
   using AlphaReturnType = std::pair<BlockVectorType, RangeFieldType>;
   using LocalCacheType = EntropyLocalCache<StateRangeType, BlockVectorType>;
-  using AlphaStorageType = std::map<DomainType, BlockVectorType, XT::Common::FieldVectorLess>;
+  using AlphaStorageType = std::map<DomainType, BlockVectorType, XT::Common::FieldVectorFloatLess>;
   using TemporaryVectorType = std::vector<RangeFieldType, boost::alignment::aligned_allocator<RangeFieldType, 64>>;
   using TemporaryVectorsType = FieldVector<TemporaryVectorType, num_blocks>;
   static const size_t cache_size = 4 * dimDomain + 2;
@@ -2091,7 +2091,7 @@ public:
 
   using AlphaReturnType = typename std::pair<StateRangeType, RangeFieldType>;
   using LocalCacheType = EntropyLocalCache<StateRangeType, StateRangeType>;
-  using AlphaStorageType = std::map<DomainType, StateRangeType, XT::Common::FieldVectorLess>;
+  using AlphaStorageType = std::map<DomainType, StateRangeType, XT::Common::FieldVectorFloatLess>;
   static constexpr size_t cache_size = 4 * dimDomain + 2;
 
 private:
@@ -2908,7 +2908,7 @@ public:
   using MatrixType = FieldMatrix<RangeFieldType, dimRange, dimRange>;
   using AlphaReturnType = typename std::pair<StateRangeType, RangeFieldType>;
   using LocalCacheType = EntropyLocalCache<StateRangeType, StateRangeType>;
-  using AlphaStorageType = std::map<DomainType, StateRangeType, XT::Common::FieldVectorLess>;
+  using AlphaStorageType = std::map<DomainType, StateRangeType, XT::Common::FieldVectorFloatLess>;
   static const size_t cache_size = 4 * dimDomain + 2;
 
   explicit EntropyBasedLocalFlux(
