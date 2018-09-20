@@ -83,7 +83,7 @@ public:
                                   std::make_pair("sigma_s", std::vector<double>(12 * 4 * 3, 0.)),
                                   std::make_pair("Q", std::vector<double>(12 * 4 * 3, 0.)),
                                   std::make_pair("CFL", std::vector<double>{0.49 * 1 / std::sqrt(dimDomain)}),
-                                  std::make_pair("t_end", std::vector<double>{4})});
+                                  std::make_pair("t_end", std::vector<double>{20})});
   }
 
   // Boundary value of kinetic equation is either \dirac(v - (1, 0, 0)) or an isotropic beam with density 2 (i.e. 2/(4
@@ -93,6 +93,7 @@ public:
   {
     auto basis_integrated = basis_functions_.integrated();
 #define USE_DIRAC_BOUNDARY 0
+#define USE_REFLECTING_BOUNDARY 0
 #if USE_DIRAC_BOUNDARY
     auto dirac_integrated = basis_functions_.integrate_dirac_at(DomainType{1, 0, 0});
     auto dirichlet_boundary_values = std::make_unique<ActualDirichletBoundaryValueType>(
@@ -113,10 +114,14 @@ public:
         },
         1);
 #endif // USE_DIRAC_BOUNDARY
+#if USE_REFLECTING_BOUNDARY
     auto boundary_info = std::make_unique<XT::Grid::NormalBasedBoundaryInfo<IntersectionType>>(
         1e-10, new XT::Grid::ReflectingBoundary{});
     boundary_info->register_new_normal({-1, 0, 0}, new XT::Grid::DirichletBoundary{});
     boundary_info->register_new_normal({1, 0, 0}, new XT::Grid::DirichletBoundary{});
+#else // USE_REFLECTING_BOUNDARY
+    auto boundary_info = XT::Grid::make_alldirichlet_boundaryinfo<IntersectionType>();
+#endif // USE_REFLECTING_BOUNDARY
     return new ActualBoundaryValueType(
         std::move(boundary_info), basis_functions_, std::move(dirichlet_boundary_values));
   } // ... create_boundary_values()
