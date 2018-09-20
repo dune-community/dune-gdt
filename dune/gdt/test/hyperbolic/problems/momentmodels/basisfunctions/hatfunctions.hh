@@ -99,7 +99,7 @@ public:
     return ret;
   } // ... evaluate(...)
 
-  virtual RangeType integrated() const override final
+  virtual RangeType integrated(const bool /*use_fine_quadratures*/ = false) const override final
   {
     RangeType ret(0);
     ret[0] = triangulation_[1] - triangulation_[0];
@@ -111,7 +111,7 @@ public:
   }
 
   // returns matrix with entries <h_i h_j>
-  virtual MatrixType mass_matrix() const override final
+  virtual MatrixType mass_matrix(const bool /*use_fine_quadratures*/ = false) const override final
   {
     MatrixType ret(dimRange, dimRange, 0);
     ret[0][0] = (triangulation_[1] - triangulation_[0]) / 3.;
@@ -127,9 +127,9 @@ public:
     return ret;
   }
 
-  virtual MatrixType mass_matrix_inverse() const override final
+  virtual MatrixType mass_matrix_inverse(const bool use_fine_quadratures = false) const override final
   {
-    return tridiagonal_matrix_inverse<RangeFieldType, dimRange>(mass_matrix());
+    return tridiagonal_matrix_inverse<RangeFieldType, dimRange>(mass_matrix(use_fine_quadratures));
   }
 
   // returns matrix with entries <v h_i h_j>
@@ -316,8 +316,8 @@ public:
 
   using BaseType::barycentre_rule;
 
-  HatFunctionMomentBasis(const QuadraturesType& quadratures)
-    : BaseType(refinements, quadratures)
+  HatFunctionMomentBasis(const QuadraturesType& quadratures, const QuadraturesType& fine_quadratures)
+    : BaseType(refinements, quadratures, fine_quadratures)
   {
     assert(triangulation_.vertices().size() == dimRange);
   }
@@ -327,6 +327,7 @@ public:
     : BaseType(refinements)
   {
     quadratures_ = triangulation_.quadrature_rules(quad_refinements, reference_quadrature_rule);
+    fine_quadratures_ = triangulation_.quadrature_rules(quad_refinements + 3, reference_quadrature_rule);
     assert(triangulation_.vertices().size() == dimRange);
   }
 
@@ -349,6 +350,7 @@ public:
     const QuadratureRule<RangeFieldType, 2> reference_quadrature_rule = barycentre_rule();
 #endif
     quadratures_ = triangulation_.quadrature_rules(quad_refinements, reference_quadrature_rule);
+    fine_quadratures_ = triangulation_.quadrature_rules(quad_refinements + 3, reference_quadrature_rule);
     assert(triangulation_.vertices().size() == dimRange);
   }
 
@@ -410,9 +412,9 @@ public:
     return triangulation_;
   }
 
-  virtual RangeFieldType unit_ball_volume() const override final
+  virtual RangeFieldType unit_ball_volume(const bool use_fine_quadratures = false) const override final
   {
-    return BaseType::unit_ball_volume_quad();
+    return BaseType::unit_ball_volume_quad(use_fine_quadratures);
   }
 
   virtual RangeType alpha_iso() const override final
@@ -506,6 +508,7 @@ protected:
   } // bool calculate_barycentric_coordinates(...)
 
   using BaseType::quadratures_;
+  using BaseType::fine_quadratures_;
   using BaseType::triangulation_;
 }; // class HatFunctionMomentBasis<DomainFieldType, 3, ...>
 

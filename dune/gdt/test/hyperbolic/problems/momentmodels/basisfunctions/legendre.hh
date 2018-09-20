@@ -63,14 +63,14 @@ public:
     return ret;
   } // ... evaluate(...)
 
-  virtual RangeType integrated() const override
+  virtual RangeType integrated(const bool /*use_fine_quadratures*/ = false) const override
   {
     RangeType ret(0);
     ret[0] = 2;
     return ret;
   }
 
-  virtual MatrixType mass_matrix() const override
+  virtual MatrixType mass_matrix(const bool /*use_fine_quadratures*/ = false) const override
   {
     MatrixType M(dimRange, dimRange, 0.);
     for (size_t rr = 0; rr < dimRange; ++rr)
@@ -78,7 +78,7 @@ public:
     return M;
   }
 
-  virtual MatrixType mass_matrix_inverse() const override
+  virtual MatrixType mass_matrix_inverse(const bool /*use_fine_quadratures*/ = false) const override
   {
     MatrixType Minv(dimRange, dimRange, 0.);
     for (size_t rr = 0; rr < dimRange; ++rr)

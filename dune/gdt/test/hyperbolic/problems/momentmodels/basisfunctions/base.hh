@@ -250,13 +250,18 @@ public:
   using SphericalTriangulationType = SphericalTriangulation<RangeFieldType>;
   using MergedQuadratureIterator = typename QuadraturesType::MergedQuadratureType::ConstIteratorType;
 
-  BasisfunctionsInterface(const QuadraturesType& quadratures = QuadraturesType())
+  BasisfunctionsInterface(const QuadraturesType& quadratures = QuadraturesType(),
+                          const QuadraturesType& fine_quadratures = QuadraturesType())
     : quadratures_(quadratures)
+    , fine_quadratures_(fine_quadratures)
   {
   }
 
-  BasisfunctionsInterface(const size_t refinements, const QuadraturesType& quadratures = QuadraturesType())
+  BasisfunctionsInterface(const size_t refinements,
+                          const QuadraturesType& quadratures = QuadraturesType(),
+                          const QuadraturesType& fine_quadratures = QuadraturesType())
     : quadratures_(quadratures)
+    , fine_quadratures_(fine_quadratures)
     , triangulation_(refinements)
   {
   }
@@ -273,22 +278,24 @@ public:
   }
 
   // returns <b>, where b is the basis functions vector
-  virtual RangeType integrated() const
+  virtual RangeType integrated(const bool use_fine_quadratures = false) const
   {
     static const RangeType ret = integrated_initializer(quadratures_);
+    if (use_fine_quadratures)
+      return integrated_initializer(fine_quadratures_);
     return ret;
   }
 
-  virtual MatrixType mass_matrix() const
+  virtual MatrixType mass_matrix(const bool use_fine_quadratures = false) const
   {
     MatrixType M(dimRange, dimRange, 0.);
-    parallel_quadrature(quadratures_, M, size_t(-1));
+    parallel_quadrature(use_fine_quadratures ? fine_quadratures_ : quadratures_, M, size_t(-1));
     return M;
   } // ... mass_matrix()
 
-  virtual MatrixType mass_matrix_inverse() const
+  virtual MatrixType mass_matrix_inverse(bool use_fine_quadratures = false) const
   {
-    auto ret = mass_matrix();
+    auto ret = mass_matrix(use_fine_quadratures);
     ret.invert();
     return ret;
   }
@@ -357,13 +364,13 @@ public:
   virtual void ensure_min_density(RangeType& u, const RangeFieldType min_density) const
   {
     if (density(u) < min_density)
-      u += u_iso() * min_density;
+      u = u_iso() * min_density;
   }
 
   // Volume of integration domain. For the Mn models it is important that u_iso has density 1. If the basis is exactly
   // integrated, we thus use the exact unit ball volume. If the basis is only integrated by quadrature, we have to use
   // <1> as volume to get a density of 1.
-  virtual RangeFieldType unit_ball_volume() const
+  virtual RangeFieldType unit_ball_volume(const bool /*use_fine_quadratures*/ = false) const
   {
     return unit_ball_volume_exact();
   }
@@ -441,10 +448,10 @@ public:
     }
   }
 
-  RangeFieldType unit_ball_volume_quad() const
+  RangeFieldType unit_ball_volume_quad(const bool use_fine_quadratures = false) const
   {
     RangeFieldType ret(0.);
-    for (const auto& quad_point : quadratures_.merged())
+    for (const auto& quad_point : (use_fine_quadratures ? fine_quadratures_ : quadratures_).merged())
       ret += quad_point.weight();
     return ret;
   }
@@ -567,6 +574,7 @@ protected:
   } // void calculate_in_thread(...)
 
   QuadraturesType quadratures_;
+  QuadraturesType fine_quadratures_;
   SphericalTriangulationType triangulation_;
 };
 

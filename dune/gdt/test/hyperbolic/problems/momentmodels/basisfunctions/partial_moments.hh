@@ -118,7 +118,7 @@ public:
     return ret;
   } // ... evaluate(...)
 
-  virtual RangeType integrated() const override final
+  virtual RangeType integrated(const bool /*use_fine_quadratures*/ = false) const override final
   {
     RangeType ret(0);
     for (size_t ii = 0; ii < num_intervals; ++ii) {
@@ -129,7 +129,7 @@ public:
   }
 
   // returns matrix with entries <h_i h_j>
-  virtual MatrixType mass_matrix() const override final
+  virtual MatrixType mass_matrix(const bool /*use_fine_quadratures*/ = false) const override final
   {
     MatrixType M(dimRange, dimRange, 0.);
     for (size_t ii = 0; ii < num_intervals; ++ii) {
@@ -141,7 +141,7 @@ public:
     return M;
   }
 
-  virtual MatrixType mass_matrix_inverse() const override final
+  virtual MatrixType mass_matrix_inverse(const bool /*use_fine_quadratures*/ = false) const override final
   {
     return tridiagonal_matrix_inverse<RangeFieldType, dimRange>(mass_matrix());
   }
@@ -285,8 +285,8 @@ public:
     const auto u_iso_min = u_iso() * min_density;
     for (size_t jj = 0; jj < num_intervals; ++jj) {
       if (u[2 * jj] < u_iso_min[2 * jj]) {
-        u[2 * jj] += u_iso_min[2 * jj];
-        u[2 * jj + 1] += u_iso_min[2 * jj + 1];
+        u[2 * jj] = u_iso_min[2 * jj];
+        u[2 * jj + 1] = u_iso_min[2 * jj + 1];
       }
     }
   }
@@ -350,8 +350,8 @@ public:
 
   using BaseType::barycentre_rule;
 
-  PartialMomentBasis(const QuadraturesType& quadratures)
-    : BaseType(refinements, quadratures)
+  PartialMomentBasis(const QuadraturesType& quadratures, const QuadraturesType& fine_quadratures)
+    : BaseType(refinements, quadratures, fine_quadratures)
   {
     assert(4 * triangulation_.faces().size() == dimRange);
   }
@@ -360,6 +360,7 @@ public:
     : BaseType(refinements)
   {
     quadratures_ = triangulation_.quadrature_rules(quad_refinements, reference_quadrature_rule);
+    fine_quadratures_ = triangulation_.quadrature_rules(quad_refinements + 3, reference_quadrature_rule);
     assert(4 * triangulation_.faces().size() == dimRange);
   }
 
@@ -382,6 +383,7 @@ public:
     const QuadratureRule<RangeFieldType, 2> reference_quadrature_rule = barycentre_rule();
 #endif
     quadratures_ = triangulation_.quadrature_rules(quad_refinements, reference_quadrature_rule);
+    fine_quadratures_ = triangulation_.quadrature_rules(quad_refinements + 3, reference_quadrature_rule);
     assert(4 * triangulation_.faces().size() == dimRange);
   }
 
@@ -439,9 +441,9 @@ public:
     };
   } // ... stringifier()
 
-  virtual RangeFieldType unit_ball_volume() const override final
+  virtual RangeFieldType unit_ball_volume(const bool use_fine_quadratures = false) const override final
   {
-    return BaseType::unit_ball_volume_quad();
+    return BaseType::unit_ball_volume_quad(use_fine_quadratures);
   }
 
   virtual RangeType alpha_iso() const override final
@@ -477,7 +479,8 @@ public:
   {
     const auto u_iso_min = u_iso() * min_density;
     for (size_t jj = 0; jj < num_blocks; ++jj) {
-      if (u[4 * jj] < u_iso_min[4 * jj]) {
+      const auto block_density = u[4 * jj];
+      if (block_density < u_iso_min[4 * jj]) {
         for (size_t ii = 0; ii < block_size; ++ii)
           u[4 * jj + ii] += u_iso_min[4 * jj + ii];
       }
@@ -536,16 +539,16 @@ public:
       threads[jj].join();
   }
 
-  BlockMatrixType block_mass_matrix() const
+  BlockMatrixType block_mass_matrix(const bool use_fine_quadratures = false) const
   {
     BlockMatrixType block_matrix;
-    parallel_quadrature_blocked(quadratures_, block_matrix, size_t(-1));
+    parallel_quadrature_blocked(use_fine_quadratures ? fine_quadratures_ : quadratures_, block_matrix, size_t(-1));
     return block_matrix;
   } // ... mass_matrix()
 
-  virtual MatrixType mass_matrix() const override final
+  virtual MatrixType mass_matrix(const bool use_fine_quadratures = false) const override final
   {
-    return block_mass_matrix().convert_to_dynamic_matrix();
+    return block_mass_matrix(use_fine_quadratures).convert_to_dynamic_matrix();
   } // ... mass_matrix()
 
   virtual FieldVector<MatrixType, dimFlux> mass_matrix_with_v() const override final
@@ -691,6 +694,7 @@ private:
   }
 
   using BaseType::quadratures_;
+  using BaseType::fine_quadratures_;
   using BaseType::triangulation_;
   mutable PlaneCoefficientsType plane_coefficients_;
 }; // class PartialMomentBasis<DomainFieldType, 3, ...>
