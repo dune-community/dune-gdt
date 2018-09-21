@@ -26,6 +26,10 @@ namespace GDT {
 
 
 /**
+ * \attention This operator will not work on a grid view with hanging nodes.
+ *
+ * \todo Refactor the coupling op as in the DG case to be applied on each side individually.
+ *
  * \note See OperatorInterface for a description of the template arguments.
  *
  * \sa OperatorInterface
