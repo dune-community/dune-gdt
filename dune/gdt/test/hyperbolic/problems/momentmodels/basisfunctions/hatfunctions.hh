@@ -266,6 +266,16 @@ public:
     return std::accumulate(u.begin(), u.end(), RangeFieldType(0));
   }
 
+  using BaseType::u_iso;
+
+  virtual void ensure_min_density(RangeType& u, const RangeFieldType min_density) const override final
+  {
+    const auto u_iso_min = u_iso() * min_density;
+    for (size_t ii = 0; ii < dimRange; ++ii)
+      if (u[ii] < u_iso_min[ii])
+        u[ii] = u_iso_min[ii];
+  }
+
   virtual std::string short_id() const override final
   {
     return "1dhf";
@@ -442,6 +452,16 @@ public:
   RangeType integrate_dirac_at(const DomainType& dirac_position) const
   {
     return evaluate(dirac_position);
+  }
+
+  using BaseType::u_iso;
+
+  virtual void ensure_min_density(RangeType& u, const RangeFieldType min_density) const override final
+  {
+    const auto u_iso_min = u_iso() * min_density;
+    for (size_t ii = 0; ii < dimRange; ++ii)
+      if (u[ii] < u_iso_min[ii])
+        u[ii] = u_iso_min[ii];
   }
 
 protected:

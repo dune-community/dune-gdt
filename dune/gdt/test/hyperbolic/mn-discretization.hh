@@ -137,7 +137,7 @@ struct HyperbolicMnDiscretization
     AdvectionOperatorType advection_operator(analytical_flux, boundary_values, *basis_functions);
     RhsOperatorType rhs_operator(rhs);
 
-    constexpr double epsilon = 1e-12;
+    constexpr double epsilon = 1e-11;
     auto slope = TestCaseType::RealizabilityLimiterChooserType::template make_slope<
         typename ReconstructionOperatorType::MatrixType>(*basis_functions, epsilon);
     ReconstructionOperatorType reconstruction_operator(

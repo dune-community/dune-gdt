@@ -255,58 +255,66 @@ public:
 
   virtual void compute(const size_t dd) override
   {
-    if (false) {
-      ;
+    try {
+      if (false) {
+        ;
 #if HAVE_MKL || HAVE_LAPACKE
-    } else if (M::storage_layout == XT::Common::StorageLayout::dense_row_major) {
-      int ilo, ihi;
-      double norm;
-      int info = XT::Common::Lapacke::dgeevx_work(XT::Common::Lapacke::row_major(),
-                                                  /*both diagonally scale and permute*/ 'B',
-                                                  /*do not compute left eigenvectors*/ 'N',
-                                                  /*compute right eigenvectors*/ 'V',
-                                                  /*do not compute condition numbers*/ 'N',
-                                                  static_cast<int>(dimRange),
-                                                  M::data(jacobian(dd)),
-                                                  static_cast<int>(dimRange),
-                                                  eigenvalues_[dd].data(),
-                                                  &(dummy_complex_eigenvalues_[0]),
-                                                  nullptr,
-                                                  static_cast<int>(dimRange),
-                                                  M::data((*eigenvectors_)[dd]),
-                                                  static_cast<int>(dimRange),
-                                                  &ilo,
-                                                  &ihi,
-                                                  scale_.data(),
-                                                  &norm,
-                                                  rconde_.data(),
-                                                  rcondv_.data(),
-                                                  work_.data(),
-                                                  static_cast<int>(work_.size()),
-                                                  iwork_.data());
-      if (info != 0)
-        DUNE_THROW(Dune::XT::LA::Exceptions::eigen_solver_failed, "The lapack backend reported '" << info << "'!");
+      } else if (M::storage_layout == XT::Common::StorageLayout::dense_row_major) {
+        int ilo, ihi;
+        double norm;
+        int info = XT::Common::Lapacke::dgeevx_work(XT::Common::Lapacke::row_major(),
+                                                    /*both diagonally scale and permute*/ 'B',
+                                                    /*do not compute left eigenvectors*/ 'N',
+                                                    /*compute right eigenvectors*/ 'V',
+                                                    /*do not compute condition numbers*/ 'N',
+                                                    static_cast<int>(dimRange),
+                                                    M::data(jacobian(dd)),
+                                                    static_cast<int>(dimRange),
+                                                    eigenvalues_[dd].data(),
+                                                    &(dummy_complex_eigenvalues_[0]),
+                                                    nullptr,
+                                                    static_cast<int>(dimRange),
+                                                    M::data((*eigenvectors_)[dd]),
+                                                    static_cast<int>(dimRange),
+                                                    &ilo,
+                                                    &ihi,
+                                                    scale_.data(),
+                                                    &norm,
+                                                    rconde_.data(),
+                                                    rcondv_.data(),
+                                                    work_.data(),
+                                                    static_cast<int>(work_.size()),
+                                                    iwork_.data());
+        if (info != 0)
+          DUNE_THROW(Dune::MathError, "The lapack backend reported '" << info << "'!");
 #endif // HAVE_MKL || HAVE_LAPACKE
-    } else {
-      static auto eigensolver_options = hyperbolic_default_eigensolver_options<MatrixType>();
-      const auto eigensolver = EigenSolverType(jacobian(dd), &eigensolver_options);
-      (*eigenvectors_)[dd] = eigensolver.real_eigenvectors();
-      eigenvalues_[dd] = eigensolver.real_eigenvalues();
-    }
-    (*QR_)[dd] = (*eigenvectors_)[dd];
-    XT::LA::qr((*QR_)[dd], tau_[dd], permutations_[dd]);
-#if 0 // HAVE_MKL || HAVE_LAPACKE
-    int info = XT::Common::Lapacke::dtrcon(XT::Common::Lapacke::row_major(),
-                                           '1',
-                                           'U',
-                                           'N',
-                                           static_cast<int>(dimRange),
-                                           M::data((*QR_)[dd]),
-                                           static_cast<int>(dimRange),
-                                           &(eigenvectors_rcond_[dd]));
-    if (info)
-      eigenvectors_rcond_[dd] = 0.;
+      } else {
+        static auto eigensolver_options = hyperbolic_default_eigensolver_options<MatrixType>();
+        const auto eigensolver = EigenSolverType(jacobian(dd), &eigensolver_options);
+        (*eigenvectors_)[dd] = eigensolver.real_eigenvectors();
+        eigenvalues_[dd] = eigensolver.real_eigenvalues();
+      }
+      (*QR_)[dd] = (*eigenvectors_)[dd];
+      XT::LA::qr((*QR_)[dd], tau_[dd], permutations_[dd]);
+#if HAVE_MKL || HAVE_LAPACKE
+      int info = XT::Common::Lapacke::dtrcon(XT::Common::Lapacke::row_major(),
+                                             '1',
+                                             'U',
+                                             'N',
+                                             static_cast<int>(dimRange),
+                                             M::data((*QR_)[dd]),
+                                             static_cast<int>(dimRange),
+                                             &(eigenvectors_rcond_[dd]));
+      if (info || eigenvectors_rcond_[dd] < 1e-5)
+        DUNE_THROW(Dune::MathError, "Eigenvector condition too high!");
 #endif
+    } catch (const Dune::MathError&) {
+      // use scalar limiters, i.e. eigenvectors matrix is eye-matrix.
+      XT::LA::eye_matrix((*eigenvectors_)[dd]);
+      std::fill(eigenvalues_[dd].begin(), eigenvalues_[dd].end(), 1.);
+      (*QR_)[dd] = (*eigenvectors_)[dd];
+      XT::LA::qr((*QR_)[dd], tau_[dd], permutations_[dd]);
+    }
     computed_[dd] = true;
   }
 

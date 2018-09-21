@@ -482,7 +482,7 @@ public:
       const auto block_density = u[4 * jj];
       if (block_density < u_iso_min[4 * jj]) {
         for (size_t ii = 0; ii < block_size; ++ii)
-          u[4 * jj + ii] += u_iso_min[4 * jj + ii];
+          u[4 * jj + ii] = u_iso_min[4 * jj + ii];
       }
     }
   }
