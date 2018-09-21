@@ -83,7 +83,7 @@ public:
   using ElementFilterType = XT::Grid::ElementFilter<AssemblyGridViewType>;
   using IntersectionFilterType = XT::Grid::IntersectionFilter<AssemblyGridViewType>;
   using ApplyOnAllElements = XT::Grid::ApplyOn::AllElements<AssemblyGridViewType>;
-  using ApplyOnAllIntersection = XT::Grid::ApplyOn::AllIntersections<AssemblyGridViewType>;
+  using ApplyOnAllIntersections = XT::Grid::ApplyOn::AllIntersections<AssemblyGridViewType>;
 
   using GenericLocalElementOperatorType = GenericLocalElementOperator<SV, SGV, s_r, s_rC, SF, r_r, r_rC, RF, RGV, RV>;
   using GenericLocalElementFunctionType = typename GenericLocalElementOperatorType::GenericFunctionType;
@@ -138,7 +138,7 @@ public:
   ThisType&
   append(const LocalIntersectionOperatorInterface<I, SV, SGV, s_r, s_rC, SF, r_r, r_rC, RF, RGV, RV>& local_operator,
          const XT::Common::Parameter& param = {},
-         const IntersectionFilterType& filter = ApplyOnAllIntersection())
+         const IntersectionFilterType& filter = ApplyOnAllIntersections())
   {
     this->append(make_local_intersection_operator_applicator(local_operator, source_, range_, param).release(), filter);
     return *this;
@@ -146,7 +146,7 @@ public:
 
   ThisType& append(GenericLocalIntersectionFunctionType generic_function,
                    const XT::Common::Parameter& param = {},
-                   const IntersectionFilterType& filter = ApplyOnAllIntersection())
+                   const IntersectionFilterType& filter = ApplyOnAllIntersections())
   {
     this->append(GenericLocalIntersectionFunctionType(generic_function, param.type()), param, filter);
     return *this;
