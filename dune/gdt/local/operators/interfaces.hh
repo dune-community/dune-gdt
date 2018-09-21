@@ -60,6 +60,7 @@ public:
 
   static const constexpr size_t d = LocalRangeType::d;
   using D = typename LocalRangeType::D;
+  using E = typename LocalRangeType::E;
 
   using ThisType = LocalElementOperatorInterface<SV, SGV, s_r, s_rC, SR, r_r, r_rC, RR, RGV, RV>;
 
