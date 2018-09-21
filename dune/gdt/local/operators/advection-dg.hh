@@ -127,15 +127,17 @@ public:
 
   using NumericalFluxType = NumericalFluxInterface<d, m, RR>;
 
-  LocalAdvectionDgCouplingOperator(const NumericalFluxType& numerical_flux)
+  LocalAdvectionDgCouplingOperator(const NumericalFluxType& numerical_flux, bool compute_outside = true)
     : BaseType(numerical_flux.parameter_type())
     , numerical_flux_(numerical_flux.copy())
+    , compute_outside_(compute_outside)
   {
   }
 
   LocalAdvectionDgCouplingOperator(const ThisType& other)
     : BaseType(other.parameter_type())
     , numerical_flux_(other.numerical_flux_->copy())
+    , compute_outside_(other.compute_outside_)
   {
   }
 
@@ -171,7 +173,8 @@ public:
           intersection.geometryInOutside().global(point_in_reference_intersection);
       // evaluate
       inside_basis.evaluate(point_in_inside_reference_element, inside_basis_values_);
-      outside_basis.evaluate(point_in_outside_reference_element, outside_basis_values_);
+      if (compute_outside_)
+        outside_basis.evaluate(point_in_outside_reference_element, outside_basis_values_);
       const auto g = numerical_flux_->apply(u->evaluate(point_in_inside_reference_element),
                                             v->evaluate(point_in_outside_reference_element),
                                             normal,
@@ -179,13 +182,15 @@ public:
       // compute
       for (size_t ii = 0; ii < inside_basis.size(param); ++ii)
         local_range_inside.dofs()[ii] += integration_factor * quadrature_weight * (g * inside_basis_values_[ii]);
-      for (size_t ii = 0; ii < outside_basis.size(param); ++ii)
-        local_range_outside.dofs()[ii] -= integration_factor * quadrature_weight * (g * outside_basis_values_[ii]);
+      if (compute_outside_)
+        for (size_t ii = 0; ii < outside_basis.size(param); ++ii)
+          local_range_outside.dofs()[ii] -= integration_factor * quadrature_weight * (g * outside_basis_values_[ii]);
     }
   } // ... apply(...)
 
 private:
-  std::unique_ptr<NumericalFluxType> numerical_flux_;
+  const std::unique_ptr<const NumericalFluxType> numerical_flux_;
+  const bool compute_outside_;
   mutable std::vector<typename LocalInsideRangeType::LocalBasisType::RangeType> inside_basis_values_;
   mutable std::vector<typename LocalOutsideRangeType::LocalBasisType::RangeType> outside_basis_values_;
 }; // class LocalAdvectionDgCouplingOperator
