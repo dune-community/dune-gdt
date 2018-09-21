@@ -375,7 +375,7 @@ invert_options(some_type).get<std::string>("type") == some_type
   virtual XT::Common::Configuration invert_options(const std::string& type) const
   {
     if (type == "newton") {
-      return {{"type", type}, {"precision", "1e-7"}, {"max_iter", "100"}, {"lambda", "1."}};
+      return {{"type", type}, {"precision", "1e-7"}, {"max_iter", "100"}, {"max_dampening_iter", "1000"}};
     } else
       DUNE_THROW(Exceptions::operator_error, "type = " << type);
   } // ... invert_options(...)
@@ -399,6 +399,7 @@ invert_options(some_type).get<std::string>("type") == some_type
       auto residual_op = *this - range;
       auto residual = range.copy();
       auto update = source.copy();
+      auto candidate = source.copy();
       // one matrix for all jacobians
       MatrixOperatorType jacobian_op(this->source_space().grid_view(),
                                      this->source_space(),
@@ -408,7 +409,7 @@ invert_options(some_type).get<std::string>("type") == some_type
       XT::LA::Solver<M> jacobian_solver(jacobian_op.matrix());
       const auto precision = opts.get("precision", default_opts.get<double>("precision"));
       const auto max_iter = opts.get("max_iter", default_opts.get<size_t>("max_iter"));
-      const auto lambda = opts.get("lambda", default_opts.get<double>("lambda"));
+      const auto max_dampening_iter = opts.get("max_dampening_iter", default_opts.get<size_t>("max_iter"));
       size_t l = 0;
       Timer timer;
       while (true) {
@@ -423,8 +424,8 @@ invert_options(some_type).get<std::string>("type") == some_type
         }
         DUNE_THROW_IF(l >= max_iter,
                       Exceptions::operator_error,
-                      "max iterations " << max_iter << " reached!\n   |residual|_l2 = " << res << "\n   opts:\n"
-                                        << opts);
+                      "max iterations reached!\n|residual|_l2 = " << res << "\nopts:\n"
+                                                                  << opts);
         logger.debug() << "       computing jacobi matrix ... " << std::flush;
         timer.reset();
         jacobian_op.matrix() *= 0.;
@@ -440,12 +441,28 @@ invert_options(some_type).get<std::string>("type") == some_type
             residual,
             update,
             {{"type", jacobian_solver.types().at(0)}, {"precision", XT::Common::to_string(0.1 * precision)}});
-        logger.debug() << "took " << timer.elapsed() << "s"
-                       << "\n"
-                       << "       computing update ... " << std::flush;
+        logger.debug() << "took " << timer.elapsed() << "s\n       computing update ... " << std::flush;
         timer.reset();
-        source += update * lambda;
-        logger.debug() << "took " << timer.elapsed() << "s" << std::endl;
+        // try the automatic dampening strategy proposed in [DF2015, Sec. 8.4.4.1, p. 432]
+        size_t k = 0;
+        auto candidate_res = 2 * res; // any number such that we enter the while loop at least once
+        double lambda = 1;
+        while (!(candidate_res / res < 1)) {
+          DUNE_THROW_IF(
+              k >= max_dampening_iter,
+              Exceptions::operator_error,
+              "max iterations reached when trying to compute automatic dampening!\n|residual|_l2 = " << res << "\nl = "
+                                                                                                     << l
+                                                                                                     << "\nopts:\n"
+                                                                                                     << opts);
+          candidate = source + update * lambda;
+          residual_op.apply(candidate, residual, param);
+          candidate_res = residual.l2_norm();
+          lambda /= 2;
+          k += 1;
+        }
+        source = candidate;
+        logger.debug() << "took " << timer.elapsed() << "s and a dampening of " << 2 * lambda << std::endl;
         l += 1;
       }
     } else
