@@ -28,6 +28,11 @@ namespace Dune {
 namespace GDT {
 
 
+/**
+ * \note See also LocalElementOperatorInterface for a description of the template arguments.
+ *
+ * \sa LocalElementOperatorInterface
+ */
 template <class SV, class SGV, size_t m = 1, class SF = double, class RF = SF, class RGV = SGV, class RV = SV>
 class LocalAdvectionDgVolumeOperator : public LocalElementOperatorInterface<SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>
 {
@@ -77,7 +82,7 @@ public:
       // evaluate
       basis.jacobians(point_in_reference_element, basis_jacobians_, param);
       const auto source_value = local_source->evaluate(point_in_reference_element, param);
-      const auto flux_value = flux_.evaluate(source_value);
+      const auto flux_value = flux_.evaluate(source_value, param);
       // compute
       for (size_t ii = 0; ii < basis.size(param); ++ii)
         local_range.dofs()[ii] += integration_factor * quadrature_weight * -1. * (flux_value * basis_jacobians_[ii]);
@@ -186,6 +191,11 @@ private:
 }; // class LocalAdvectionDgCouplingOperator
 
 
+/**
+ * \note See also LocalIntersectionOperatorInterface for a description of the template arguments.
+ *
+ * \sa LocalIntersectionOperatorInterface
+ */
 template <class I, class SV, class SGV, size_t m = 1, class SF = double, class RF = SF, class RGV = SGV, class RV = SV>
 class LocalAdvectionDgBoundaryTreatmentByCustomNumericalFluxOperator
     : public LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>
@@ -263,6 +273,11 @@ private:
 }; // class LocalAdvectionDgBoundaryTreatmentByCustomNumericalFluxOperator
 
 
+/**
+ * \note See also LocalIntersectionOperatorInterface for a description of the template arguments.
+ *
+ * \sa LocalIntersectionOperatorInterface
+ */
 template <class I, class SV, class SGV, size_t m = 1, class SF = double, class RF = SF, class RGV = SGV, class RV = SV>
 class LocalAdvectionDgBoundaryTreatmentByCustomExtrapolationOperator
     : public LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>
