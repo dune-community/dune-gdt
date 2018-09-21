@@ -52,100 +52,100 @@ public:
     std::vector<std::pair<std::array<double, 3>, double>> quad_vector;
     switch (order) {
       case 3:
-        internal::LebedevData<3>::get(quad_vector);
+        Dune::GDT::internal::LebedevData<3>::get(quad_vector);
         break;
       case 5:
-        internal::LebedevData<5>::get(quad_vector);
+        Dune::GDT::internal::LebedevData<5>::get(quad_vector);
         break;
       case 7:
-        internal::LebedevData<7>::get(quad_vector);
+        Dune::GDT::internal::LebedevData<7>::get(quad_vector);
         break;
       case 9:
-        internal::LebedevData<9>::get(quad_vector);
+        Dune::GDT::internal::LebedevData<9>::get(quad_vector);
         break;
       case 11:
-        internal::LebedevData<11>::get(quad_vector);
+        Dune::GDT::internal::LebedevData<11>::get(quad_vector);
         break;
       case 13:
-        internal::LebedevData<13>::get(quad_vector);
+        Dune::GDT::internal::LebedevData<13>::get(quad_vector);
         break;
       case 15:
-        internal::LebedevData<15>::get(quad_vector);
+        Dune::GDT::internal::LebedevData<15>::get(quad_vector);
         break;
       case 17:
-        internal::LebedevData<17>::get(quad_vector);
+        Dune::GDT::internal::LebedevData<17>::get(quad_vector);
         break;
       case 19:
-        internal::LebedevData<19>::get(quad_vector);
+        Dune::GDT::internal::LebedevData<19>::get(quad_vector);
         break;
       case 21:
-        internal::LebedevData<21>::get(quad_vector);
+        Dune::GDT::internal::LebedevData<21>::get(quad_vector);
         break;
       case 23:
-        internal::LebedevData<23>::get(quad_vector);
+        Dune::GDT::internal::LebedevData<23>::get(quad_vector);
         break;
       case 25:
-        internal::LebedevData<25>::get(quad_vector);
+        Dune::GDT::internal::LebedevData<25>::get(quad_vector);
         break;
       case 27:
-        internal::LebedevData<27>::get(quad_vector);
+        Dune::GDT::internal::LebedevData<27>::get(quad_vector);
         break;
       case 29:
-        internal::LebedevData<29>::get(quad_vector);
+        Dune::GDT::internal::LebedevData<29>::get(quad_vector);
         break;
       case 31:
-        internal::LebedevData<31>::get(quad_vector);
+        Dune::GDT::internal::LebedevData<31>::get(quad_vector);
         break;
       case 35:
-        internal::LebedevData<35>::get(quad_vector);
+        Dune::GDT::internal::LebedevData<35>::get(quad_vector);
         break;
       case 41:
-        internal::LebedevData<41>::get(quad_vector);
+        Dune::GDT::internal::LebedevData<41>::get(quad_vector);
         break;
       case 47:
-        internal::LebedevData<47>::get(quad_vector);
+        Dune::GDT::internal::LebedevData<47>::get(quad_vector);
         break;
       case 53:
-        internal::LebedevData<53>::get(quad_vector);
+        Dune::GDT::internal::LebedevData<53>::get(quad_vector);
         break;
       case 59:
-        internal::LebedevData<59>::get(quad_vector);
+        Dune::GDT::internal::LebedevData<59>::get(quad_vector);
         break;
       case 65:
-        internal::LebedevData<65>::get(quad_vector);
+        Dune::GDT::internal::LebedevData<65>::get(quad_vector);
         break;
       case 71:
-        internal::LebedevData<71>::get(quad_vector);
+        Dune::GDT::internal::LebedevData<71>::get(quad_vector);
         break;
       case 77:
-        internal::LebedevData<77>::get(quad_vector);
+        Dune::GDT::internal::LebedevData<77>::get(quad_vector);
         break;
       case 83:
-        internal::LebedevData<83>::get(quad_vector);
+        Dune::GDT::internal::LebedevData<83>::get(quad_vector);
         break;
       case 89:
-        internal::LebedevData<89>::get(quad_vector);
+        Dune::GDT::internal::LebedevData<89>::get(quad_vector);
         break;
       case 95:
-        internal::LebedevData<95>::get(quad_vector);
+        Dune::GDT::internal::LebedevData<95>::get(quad_vector);
         break;
       case 101:
-        internal::LebedevData<101>::get(quad_vector);
+        Dune::GDT::internal::LebedevData<101>::get(quad_vector);
         break;
       case 107:
-        internal::LebedevData<107>::get(quad_vector);
+        Dune::GDT::internal::LebedevData<107>::get(quad_vector);
         break;
       case 113:
-        internal::LebedevData<113>::get(quad_vector);
+        Dune::GDT::internal::LebedevData<113>::get(quad_vector);
         break;
       case 119:
-        internal::LebedevData<119>::get(quad_vector);
+        Dune::GDT::internal::LebedevData<119>::get(quad_vector);
         break;
       case 125:
-        internal::LebedevData<125>::get(quad_vector);
+        Dune::GDT::internal::LebedevData<125>::get(quad_vector);
         break;
       case 131:
-        internal::LebedevData<131>::get(quad_vector);
+        Dune::GDT::internal::LebedevData<131>::get(quad_vector);
         break;
       default:
         DUNE_THROW(NotImplemented, "Requested order is not available!");

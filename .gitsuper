@@ -1,13 +1,13 @@
 [supermodule]
-remote = https://github.com/dune-community/dune-gdt-super
+remote = https://github.com/dune-community/dune-gdt-super.git
 status = 1a3bcab04b011a5d6e44f9983cae6ff89fa695e8 bin (heads/master)
-	 20a673b9dad7e2e25bd97defa8849debb59d247c config.opts (heads/master)
+	 20a673b9dad7e2e25bd97defa8849debb59d247c config.opts (20a673b)
 	 8f2c5aba441417bf2c42f22272f538c68a89cc4a dune-alugrid (remotes/origin/releases/2.5)
 	 707acf201d5a754c80f87cc4d71aa36bf29a6e3f dune-common (v2.5.1-9-g707acf20)
-	 a29fcf710ade8d324f9f56a02337cdbffdb43deb dune-gdt (heads/finite_volume_example)
+	 eb34e538d8c91c44189dbb497d6b82359ba20552 dune-gdt (heads/finite_volume_example)
 	 390a2c503783bbed778a8ff610f8c5ca09c238d0 dune-geometry (v2.5.1-5-g390a2c5)
 	 d7b20bbc5f6fdcfc312beb0ea5d16d39ea26904e dune-grid (v2.5.1-2-gd7b20bbc5)
-	+9e29a333e8af02382d80b95335a784d5ce1ea2c8 dune-grid-glue (v2.4.0-70-g9e29a33)
+	 e9d9a3336735090648637e044e279866bbea3597 dune-grid-glue (v2.4.0-60-ge9d9a33)
 	 63df56a54f81eda308233a683eb329e77e69f0a9 dune-istl (v2.5.1rc1)
 	 0d757d65e5d57134a7ecf304e35d063f4ccc7116 dune-localfunctions (v2.5.1rc1)
 	 8a69fc68165780921bbba77da338b6932daf983c dune-pybindxi (v2.2.1-16-g8a69fc6)
@@ -20,7 +20,7 @@ status = 1a3bcab04b011a5d6e44f9983cae6ff89fa695e8 bin (heads/master)
 	 d4d2b463a75b557fdec45069c1f43b20b40b6265 dune-xt-grid (heads/master)
 	 3c2499d9a3267f7d0a23efd2fa7dfdf073dfa671 dune-xt-la (heads/master)
 	 09d0378f616b94d68bcdd9fc6114813181849ec0 scripts (heads/master)
-commit = 1089f2949474fe69d5a68d23e5e72048570ebacf
+commit = 339ecdca5432c51e96bbd4f4178f8d3a688d904c
 
 [submodule.bin]
 remote = https://github.com/dune-community/local-bin.git
@@ -45,7 +45,7 @@ commit = 707acf201d5a754c80f87cc4d71aa36bf29a6e3f
 [submodule.dune-gdt]
 remote = https://github.com/dune-community/dune-gdt.git
 status = 2424627f0ad5de7e4aaa5e7f48bc2a02414d95a1 .vcsetup (heads/master)
-commit = a29fcf710ade8d324f9f56a02337cdbffdb43deb
+commit = eb34e538d8c91c44189dbb497d6b82359ba20552
 
 [submodule.dune-geometry]
 remote = https://github.com/dune-community/dune-geometry.git
@@ -60,7 +60,7 @@ commit = d7b20bbc5f6fdcfc312beb0ea5d16d39ea26904e
 [submodule.dune-grid-glue]
 remote = https://github.com/dune-mirrors/dune-grid-glue.git
 status = 
-commit = 9e29a333e8af02382d80b95335a784d5ce1ea2c8
+commit = e9d9a3336735090648637e044e279866bbea3597
 
 [submodule.dune-istl]
 remote = https://github.com/dune-mirrors/dune-istl.git
