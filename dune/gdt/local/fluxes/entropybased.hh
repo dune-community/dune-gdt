@@ -401,7 +401,7 @@ public:
       bool is_realizable(const StateRangeType& u) const
       {
         const auto density = basis_functions_.density(u);
-        if (!(density > 0.))
+        if (!(density > 0.) || std::isinf(density))
           return false;
         const auto u_prime = u / density;
         setup_linear_program();
@@ -465,7 +465,7 @@ public:
       static bool is_realizable(const StateRangeType& u)
       {
         for (const auto& u_i : u)
-          if (!(u_i > 0.))
+          if (!(u_i > 0.) || std::isinf(u_i))
             return false;
         return true;
       }
@@ -623,9 +623,9 @@ public:
 
       // rescale u such that the density <psi> is 1
       RangeFieldType density = basis_functions_.density(u);
-      if (!(density > 0.)) {
+      if (!(density > 0.) || std::isinf(density)) {
         mutex_.unlock();
-        DUNE_THROW(Dune::MathError, "Negative density!");
+        DUNE_THROW(Dune::MathError, "Negative, inf or NaN density!");
       }
       VectorType u_prime = u / density;
       VectorType alpha_iso = basis_functions_.alpha_iso();
@@ -702,7 +702,7 @@ public:
             calculate_vector_integral(alpha_tilde, M_, M_, u_alpha_tilde);
             VectorType g_alpha_tilde = u_alpha_tilde - v;
             auto density_tilde = basis_functions_.density(u_alpha_tilde);
-            if (!(density_tilde > 0.))
+            if (!(density_tilde > 0.) || std::isinf(density_tilde))
               break;
             const auto alpha_prime = alpha_tilde - alpha_iso * std::log(density_tilde);
             VectorType u_alpha_prime;
@@ -1403,9 +1403,9 @@ public:
 
       // rescale u such that the density <psi> is 1
       RangeFieldType density = basis_functions_.density(u_in);
-      if (!(density > 0.)) {
+      if (!(density > 0. || !(basis_functions_.min_density(u_in) > 0.)) || std::isinf(density)) {
         mutex_.unlock();
-        DUNE_THROW(Dune::MathError, "Negative density!");
+        DUNE_THROW(Dune::MathError, "Negative, inf or NaN density!");
       }
       StateRangeType u_prime_in = u_in / density;
       StateRangeType alpha_iso_in = basis_functions_.alpha_iso();
@@ -1464,10 +1464,12 @@ public:
               if (r < r_max)
                 break;
               mutex_.unlock();
-              std::cerr << "Failed to converge for " << XT::Common::to_string(u_in, 15) << " with density "
-                        << XT::Common::to_string(density, 15) << " at position "
-                        << XT::Common::to_string(entity().geometry().center(), 15) << " due to too many iterations!"
-                        << std::endl;
+              //              std::cerr << "Failed to converge for " << XT::Common::to_string(u_in, 15) << " with
+              //              density "
+              //                        << XT::Common::to_string(density, 15) << " at position "
+              //                        << XT::Common::to_string(entity().geometry().center(), 15) << " due to too many
+              //                        iterations!"
+              //                        << std::endl;
               DUNE_THROW(Dune::MathError, "Failure to converge!");
             }
 
@@ -1478,15 +1480,17 @@ public:
             // Calculate stopping criteria (in original basis). Variables with _k are in current basis, without k in
             // original basis.
             BlockVectorType alpha_tilde, u_alpha_tilde, u_alpha_prime, d_alpha_tilde, g_alpha_tilde;
-            auto u_alpha_tilde_k = g_k + v_k;
             // convert everything to original basis
-            T_k->mv(u_alpha_tilde_k, u_alpha_tilde);
-            T_k->mv(g_k, g_alpha_tilde);
             for (size_t jj = 0; jj < num_blocks; ++jj) {
               XT::LA::solve_lower_triangular_transposed(T_k->block(jj), alpha_tilde.block(jj), beta_out.block(jj));
               XT::LA::solve_lower_triangular_transposed(T_k->block(jj), d_alpha_tilde.block(jj), d_k.block(jj));
             } // jj
+            calculate_vector_integral(alpha_tilde, M_, M_, u_alpha_tilde);
+            g_alpha_tilde = u_alpha_tilde - v;
             auto density_tilde = basis_functions_.density(u_alpha_tilde);
+            if (!(density_tilde > 0.) || !(basis_functions_.min_density(u_alpha_tilde) > 0.)
+                || std::isinf(density_tilde))
+              break;
             const auto alpha_prime = alpha_tilde - alpha_iso * std::log(density_tilde);
             calculate_vector_integral(alpha_prime, M_, M_, u_alpha_prime);
             auto u_eps_diff = v - u_alpha_prime * (1 - epsilon_gamma_);
@@ -1519,10 +1523,10 @@ public:
           } // k loop (Newton iterations)
         } // r loop (Regularization parameter)
         mutex_.unlock();
-        std::cerr << "Failed to converge for " << XT::Common::to_string(u_in, 15) << " with density "
-                  << XT::Common::to_string(density, 15) << " at position "
-                  << XT::Common::to_string(entity().geometry().center(), 15) << " due to too many iterations!"
-                  << std::endl;
+        //        std::cerr << "Failed to converge for " << XT::Common::to_string(u_in, 15) << " with density "
+        //                  << XT::Common::to_string(density, 15) << " at position "
+        //                  << XT::Common::to_string(entity().geometry().center(), 15) << " due to too many iterations!"
+        //                  << std::endl;
         DUNE_THROW(MathError, "Failed to converge");
       } // else ( value has not been calculated before )
 
@@ -1695,7 +1699,7 @@ public:
       {
         for (size_t jj = 0; jj < num_blocks; ++jj)
           for (const auto& coeff : basis_functions.plane_coefficients()[jj])
-            if (u.block(jj) * coeff.first > coeff.second)
+            if (!(u.block(jj) * coeff.first < coeff.second))
               return false;
         return true;
       }
@@ -2330,7 +2334,7 @@ public:
     static bool is_realizable(const StateRangeType& u)
     {
       for (const auto& u_i : u)
-        if (u_i < 0.)
+        if (!(u_i > 0.) || std::isinf(u_i))
           return false;
       return true;
     }
@@ -2367,7 +2371,7 @@ public:
         cache_.set_capacity(cache_size+dimDomain);
       // rescale u such that the density <psi> is 1
       RangeFieldType density = basis_functions_.density(u);
-      if (!(density > 0.)) {
+      if (!(density > 0.) || std::isinf(density)) {
         mutex_.unlock();
         DUNE_THROW(Dune::MathError, "Negative density!");
       }
@@ -2428,7 +2432,7 @@ public:
                 break;
               } else {
                 mutex_.unlock();
-                std::cerr << "Failed to converge for " << XT::Common::to_string(u, 15) << " with density " << XT::Common::to_string(density, 15) << " at position " << XT::Common::to_string(entity().geometry().center(), 15) << " due to errors in the Cholesky decomposition!" << std::endl;
+//                std::cerr << "Failed to converge for " << XT::Common::to_string(u, 15) << " with density " << XT::Common::to_string(density, 15) << " at position " << XT::Common::to_string(entity().geometry().center(), 15) << " due to errors in the Cholesky decomposition!" << std::endl;
                 DUNE_THROW(Dune::MathError, "Failure to converge!");
               }
             }
@@ -2436,6 +2440,8 @@ public:
             const auto& alpha_tilde = alpha_k;
             auto u_alpha_tilde = g_k + v;
             auto density_tilde = basis_functions_.density(u_alpha_tilde);
+      if (!(density_tilde > 0.) || std::isinf(density_tilde)) {
+              break;
             const auto alpha_prime = alpha_tilde - alpha_iso * std::log(density_tilde);
             StateRangeType u_alpha_prime = calculate_u(alpha_prime);
             auto u_eps_diff = v - u_alpha_prime * (1 - epsilon_gamma_);
@@ -2468,7 +2474,7 @@ public:
           } // k loop (Newton iterations)
         } // r loop (Regularization parameter)
         mutex_.unlock();
-        std::cerr << "Failed to converge for " << XT::Common::to_string(u, 15) << " with density " << XT::Common::to_string(density, 15) << " at position " << XT::Common::to_string(entity().geometry().center(), 15) << " due to too many iterations!" << std::endl;
+//        std::cerr << "Failed to converge for " << XT::Common::to_string(u, 15) << " with density " << XT::Common::to_string(density, 15) << " at position " << XT::Common::to_string(entity().geometry().center(), 15) << " due to too many iterations!" << std::endl;
         DUNE_THROW(MathError, "Failed to converge");
       } // else ( value has not been calculated before )
 
@@ -2994,7 +3000,7 @@ public:
     static bool is_realizable(const RangeType& u)
     {
       for (const auto& u_i : u)
-        if (u_i < 0.)
+        if (!(u_i > 0.) || std::isinf(u_i))
           return false;
       return true;
     }
@@ -3031,7 +3037,7 @@ public:
 
       // rescale u such that the density <psi> is 1
       RangeFieldType density = basis_functions_.density(u);
-      if (!(density > 0.)) {
+      if (!(density > 0.) || std::isinf(density)) {
         mutex_.unlock();
         DUNE_THROW(Dune::MathError, "Negative density!");
       }
@@ -3095,10 +3101,11 @@ public:
                 break;
               } else {
                 mutex_.unlock();
-                std::cerr << "Failed to converge for " << XT::Common::to_string(u, 15) << " with density "
-                          << XT::Common::to_string(density, 15) << " at position "
-                          << XT::Common::to_string(entity().geometry().center(), 15)
-                          << " due to errors in the Cholesky decomposition!" << std::endl;
+                //                std::cerr << "Failed to converge for " << XT::Common::to_string(u, 15) << " with
+                //                density "
+                //                          << XT::Common::to_string(density, 15) << " at position "
+                //                          << XT::Common::to_string(entity().geometry().center(), 15)
+                //                          << " due to errors in the Cholesky decomposition!" << std::endl;
                 DUNE_THROW(Dune::MathError, "Failure to converge!");
               }
             }
@@ -3106,6 +3113,8 @@ public:
             const auto& alpha_tilde = alpha_k;
             const auto u_alpha_tilde = g_k + v;
             auto density_tilde = basis_functions_.density(u_alpha_tilde);
+            if (!(density_tilde > 0.) || std::isinf(density_tilde))
+              break;
             const auto alpha_prime = alpha_tilde - alpha_iso * std::log(density_tilde);
             const auto u_alpha_prime = calculate_u(alpha_prime);
             auto u_eps_diff = v - u_alpha_prime * (1 - epsilon_gamma_);
@@ -3142,10 +3151,10 @@ public:
           } // k loop (Newton iterations)
         } // r loop (Regularization parameter)
         mutex_.unlock();
-        std::cerr << "Failed to converge for " << XT::Common::to_string(u, 15) << " with density "
-                  << XT::Common::to_string(density, 15) << " at position "
-                  << XT::Common::to_string(entity().geometry().center(), 15) << " due to too many iterations!"
-                  << std::endl;
+        //        std::cerr << "Failed to converge for " << XT::Common::to_string(u, 15) << " with density "
+        //                  << XT::Common::to_string(density, 15) << " at position "
+        //                  << XT::Common::to_string(entity().geometry().center(), 15) << " due to too many iterations!"
+        //                  << std::endl;
         DUNE_THROW(MathError, "Failed to converge");
       } // else ( value has not been calculated before )
 

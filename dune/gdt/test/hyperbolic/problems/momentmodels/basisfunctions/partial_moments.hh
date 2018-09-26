@@ -275,6 +275,14 @@ public:
     return ret;
   }
 
+  RangeFieldType min_density(const XT::Common::BlockedFieldVector<RangeFieldType, num_intervals, 2>& u) const
+  {
+    RangeFieldType ret(u.block(0)[0]);
+    for (size_t jj = 1; jj < num_intervals; ++jj)
+      ret = std::min(ret, u.block(jj)[0]);
+    return ret;
+  }
+
   using BaseType::u_iso;
 
   // For the partial moments, we might not be able to solve the optimization problem for some moments where the density
@@ -467,6 +475,14 @@ public:
     RangeFieldType ret(0.);
     for (size_t jj = 0; jj < dimRange / 4; ++jj)
       ret += u.block(jj)[0];
+    return ret;
+  }
+
+  RangeFieldType min_density(const XT::Common::BlockedFieldVector<RangeFieldType, dimRange / 4, 4>& u) const
+  {
+    RangeFieldType ret(u.block(0)[0]);
+    for (size_t jj = 1; jj < dimRange / 4; ++jj)
+      ret = std::min(ret, u.block(jj)[0]);
     return ret;
   }
 

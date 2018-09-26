@@ -192,7 +192,7 @@ public:
                                                   /*both diagonally scale and permute*/ 'B',
                                                   /*do_not_compute_left_eigenvectors:*/ 'N',
                                                   /*compute_right_eigenvectors:*/ 'V',
-                                                  /*compute condition numbers for right eigenvectors */ 'V',
+                                                  /*do not compute condition numbers*/ 'N',
                                                   static_cast<int>(dimRange),
                                                   M::data(jacobian(0)),
                                                   static_cast<int>(dimRange),
@@ -261,7 +261,7 @@ public:
                                                     /*both diagonally scale and permute*/ 'B',
                                                     /*do not compute left eigenvectors*/ 'N',
                                                     /*compute right eigenvectors*/ 'V',
-                                                    /*compute condition numbers for right eigenvectors */ 'V',
+                                                    /*do not compute condition numbers*/ 'N',
                                                     static_cast<int>(dimRange),
                                                     M::data(jacobian(dd)),
                                                     static_cast<int>(dimRange),
@@ -282,9 +282,10 @@ public:
                                                     iwork_.data());
         if (info != 0)
           DUNE_THROW(Dune::MathError, "The lapack backend reported '" << info << "'!");
-        static const double machine_eps = XT::Common::Lapacke::dlamch('E');
-        if (machine_eps * norm / *std::min_element(rcondv_.begin(), rcondv_.end()) > 1e-8)
-          DUNE_THROW(Dune::MathError, "Bad condition of eigendecomposition!");
+// see https://www.netlib.org/lapack/lug/node91.html
+// static const double machine_eps = XT::Common::Lapacke::dlamch('E');
+// if (machine_eps * norm / *std::min_element(rcondv_.begin(), rcondv_.end()) > 1e-8)
+//   DUNE_THROW(Dune::MathError, "Bad condition of eigendecomposition!");
 #endif // HAVE_MKL || HAVE_LAPACKE
       } else {
         static auto eigensolver_options = hyperbolic_default_eigensolver_options<MatrixType>();
