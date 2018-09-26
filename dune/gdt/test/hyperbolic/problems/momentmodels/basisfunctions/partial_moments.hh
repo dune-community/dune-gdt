@@ -391,7 +391,14 @@ public:
     const QuadratureRule<RangeFieldType, 2> reference_quadrature_rule = barycentre_rule();
 #endif
     quadratures_ = triangulation_.quadrature_rules(quad_refinements, reference_quadrature_rule);
-    fine_quadratures_ = triangulation_.quadrature_rules(quad_refinements + 3, reference_quadrature_rule);
+    fine_quadratures_ = triangulation_.quadrature_rules(quad_refinements +
+#if HAVE_FEKETE
+                                                            3
+#else
+                                                            0
+#endif
+                                                        ,
+                                                        reference_quadrature_rule);
     assert(4 * triangulation_.faces().size() == dimRange);
   }
 
