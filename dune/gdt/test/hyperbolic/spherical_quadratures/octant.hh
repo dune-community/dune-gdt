@@ -188,6 +188,8 @@ public:
                             return sum + quad_point.weight();
                           });
       DXT_ASSERT(XT::Common::FloatCmp::eq(summed_weights, 0.5 * M_PI, 1e-4, 1e-4));
+      for (const auto& quad_point : ret[ii])
+        DXT_ASSERT(XT::Common::FloatCmp::eq(quad_point.position().two_norm(), 1., 1e-10, 1e-10));
     }
 #endif
     return ret;

@@ -133,11 +133,6 @@ public:
     return (*jacobian_)[dd];
   }
 
-  virtual RangeFieldType eigenvectors_reciprocal_cond(const size_t /*dd*/) const
-  {
-    return 1.;
-  }
-
   virtual void apply_eigenvectors(const size_t dd, const VectorType& x, VectorType& ret) const = 0;
 
   virtual void apply_inverse_eigenvectors(const size_t dd, const VectorType& x, VectorType& ret) const = 0;
@@ -197,7 +192,7 @@ public:
                                                   /*both diagonally scale and permute*/ 'B',
                                                   /*do_not_compute_left_eigenvectors:*/ 'N',
                                                   /*compute_right_eigenvectors:*/ 'V',
-                                                  /*do not compute condition numbers*/ 'N',
+                                                  /*compute condition numbers for right eigenvectors */ 'V',
                                                   static_cast<int>(dimRange),
                                                   M::data(jacobian(0)),
                                                   static_cast<int>(dimRange),
@@ -266,7 +261,7 @@ public:
                                                     /*both diagonally scale and permute*/ 'B',
                                                     /*do not compute left eigenvectors*/ 'N',
                                                     /*compute right eigenvectors*/ 'V',
-                                                    /*do not compute condition numbers*/ 'N',
+                                                    /*compute condition numbers for right eigenvectors */ 'V',
                                                     static_cast<int>(dimRange),
                                                     M::data(jacobian(dd)),
                                                     static_cast<int>(dimRange),
@@ -287,6 +282,9 @@ public:
                                                     iwork_.data());
         if (info != 0)
           DUNE_THROW(Dune::MathError, "The lapack backend reported '" << info << "'!");
+        static const double machine_eps = XT::Common::Lapacke::dlamch('E');
+        if (machine_eps * norm / *std::min_element(rcondv_.begin(), rcondv_.end()) > 1e-8)
+          DUNE_THROW(Dune::MathError, "Bad condition of eigendecomposition!");
 #endif // HAVE_MKL || HAVE_LAPACKE
       } else {
         static auto eigensolver_options = hyperbolic_default_eigensolver_options<MatrixType>();
@@ -304,8 +302,8 @@ public:
                                              static_cast<int>(dimRange),
                                              M::data((*QR_)[dd]),
                                              static_cast<int>(dimRange),
-                                             &(eigenvectors_rcond_[dd]));
-      if (info || eigenvectors_rcond_[dd] < 1e-5)
+                                             &eigenvectors_rcond_);
+      if (info || eigenvectors_rcond_ < 1e-5)
         DUNE_THROW(Dune::MathError, "Eigenvector condition too high!");
 #endif
     } catch (const Dune::MathError&) {
@@ -316,11 +314,6 @@ public:
       XT::LA::qr((*QR_)[dd], tau_[dd], permutations_[dd]);
     }
     computed_[dd] = true;
-  }
-
-  virtual RangeFieldType eigenvectors_reciprocal_cond(const size_t dd) const override final
-  {
-    return eigenvectors_rcond_[dd];
   }
 
   virtual void apply_eigenvectors(const size_t dd, const VectorType& x, VectorType& ret) const override final
@@ -344,7 +337,7 @@ protected:
   std::vector<int> iwork_;
   using BaseType::computed_;
   std::unique_ptr<JacobianType> eigenvectors_;
-  DomainType eigenvectors_rcond_;
+  RangeFieldType eigenvectors_rcond_;
   FieldVector<std::vector<RangeFieldType>, dimDomain> eigenvalues_;
   FieldVector<RangeFieldType, dimRange> dummy_complex_eigenvalues_;
   std::unique_ptr<JacobianType> QR_;
@@ -403,59 +396,80 @@ public:
   virtual void compute(const size_t dd) override final
   {
     for (size_t jj = 0; jj < num_blocks; ++jj) {
-      if (block_size == 2) {
-        const auto& jac = jacobian(dd).block(jj);
-        const auto trace = jac[0][0] + jac[1][1];
-        const auto det = jac[0][0] * jac[1][1] - jac[0][1] * jac[1][0];
-        const auto sqrt_val = std::sqrt(0.25 * trace * trace - det);
-        auto& eigvals = eigenvalues_[dd][jj];
-        eigvals[0] = 0.5 * trace + sqrt_val;
-        eigvals[1] = 0.5 * trace - sqrt_val;
-        auto& eigvecs = eigenvectors_[dd].block(jj);
-        if (std::abs(jac[1][0]) > std::abs(jac[0][1])) {
-          if (XT::Common::FloatCmp::ne(jac[1][0], 0.)) {
-            eigvecs[0][0] = eigvals[0] - jac[1][1];
-            eigvecs[0][1] = eigvals[1] - jac[1][1];
-            eigvecs[1][0] = eigvecs[1][1] = jac[1][0];
+      try {
+        if (block_size == 2) {
+          const auto& jac = jacobian(dd).block(jj);
+          const auto trace = jac[0][0] + jac[1][1];
+          const auto det = jac[0][0] * jac[1][1] - jac[0][1] * jac[1][0];
+          const auto sqrt_val = std::sqrt(0.25 * trace * trace - det);
+          auto& eigvals = eigenvalues_[dd][jj];
+          eigvals[0] = 0.5 * trace + sqrt_val;
+          eigvals[1] = 0.5 * trace - sqrt_val;
+          auto& eigvecs = eigenvectors_[dd].block(jj);
+          if (std::abs(jac[1][0]) > std::abs(jac[0][1])) {
+            if (XT::Common::FloatCmp::ne(jac[1][0], 0.)) {
+              eigvecs[0][0] = eigvals[0] - jac[1][1];
+              eigvecs[0][1] = eigvals[1] - jac[1][1];
+              eigvecs[1][0] = eigvecs[1][1] = jac[1][0];
+            } else {
+              eigvecs[0][0] = eigvecs[1][1] = 1.;
+              eigvecs[0][1] = eigvecs[1][0] = 0.;
+            }
           } else {
-            eigvecs[0][0] = eigvecs[1][1] = 1.;
-            eigvecs[0][1] = eigvecs[1][0] = 0.;
+            if (XT::Common::FloatCmp::ne(jac[0][1], 0.)) {
+              eigvecs[1][0] = eigvals[0] - jac[0][0];
+              eigvecs[1][1] = eigvals[1] - jac[0][0];
+              eigvecs[0][0] = eigvecs[0][1] = jac[0][1];
+            } else {
+              eigvecs[0][0] = eigvecs[1][1] = 1.;
+              eigvecs[0][1] = eigvecs[1][0] = 0.;
+            }
+          }
+          // normalize such that the eigenvectors have norm 1
+          for (size_t col = 0; col < 2; ++col) {
+            RangeFieldType two_norm = 0;
+            two_norm = std::sqrt(std::pow(eigvecs[0][col], 2) + std::pow(eigvecs[1][col], 2));
+            for (size_t row = 0; row < 2; ++row)
+              eigvecs[row][col] /= two_norm;
           }
         } else {
-          if (XT::Common::FloatCmp::ne(jac[0][1], 0.)) {
-            eigvecs[1][0] = eigvals[0] - jac[0][0];
-            eigvecs[1][1] = eigvals[1] - jac[0][0];
-            eigvecs[0][0] = eigvecs[0][1] = jac[0][1];
-          } else {
-            eigvecs[0][0] = eigvecs[1][1] = 1.;
-            eigvecs[0][1] = eigvecs[1][0] = 0.;
+          // For the small matrices (usually 4x4) used here it causes a lot of overhead to call into LAPACK every time,
+          // so
+          // we just use our own eigensolver most of the time. Occasionally, however, our eigensolver fails where the
+          // LAPACK eigensolver succeeds (due to a superior shifting strategy), so in these cases we call LAPACK.
+          try {
+            XT::LA::internal::fmatrix_compute_real_eigenvalues_and_real_right_eigenvectors_using_qr(
+                jacobian(dd).block(jj), eigenvalues_[dd][jj], eigenvectors_[dd].block(jj));
+          } catch (const Dune::MathError&) {
+            // Our own eigensolver failed, try the default one instead (Lapacke, Eigen or Numpy, if none of these is
+            // available, we solve again using our own eigensolver, which will throw the error again.
+            static auto eigensolver_options = hyperbolic_default_eigensolver_options<LocalMatrixType>();
+            const auto eigensolver = EigenSolverType(jacobian(dd).block(jj), &eigensolver_options);
+            eigenvectors_[dd].block(jj) = eigensolver.real_eigenvectors();
+            eigenvalues_[dd][jj] = eigensolver.real_eigenvalues();
           }
-        }
-        // normalize such that the eigenvectors have norm 1
-        for (size_t col = 0; col < 2; ++col) {
-          RangeFieldType two_norm = 0;
-          two_norm = std::sqrt(std::pow(eigvecs[0][col], 2) + std::pow(eigvecs[1][col], 2));
-          for (size_t row = 0; row < 2; ++row)
-            eigvecs[row][col] /= two_norm;
-        }
-      } else {
-        // For the small matrices (usually 4x4) used here it causes a lot of overhead to call into LAPACK every time, so
-        // we just use our own eigensolver most of the time. Occasionally, however, our eigensolver fails where the
-        // LAPACK eigensolver succeeds (due to a superior shifting strategy), so in these cases we call LAPACK.
-        try {
-          XT::LA::internal::fmatrix_compute_real_eigenvalues_and_real_right_eigenvectors_using_qr(
-              jacobian(dd).block(jj), eigenvalues_[dd][jj], eigenvectors_[dd].block(jj));
-        } catch (const Dune::MathError&) {
-          // Our own eigensolver failed, try the default one instead (Lapacke, Eigen or Numpy, if none of these is
-          // available, we solve again using our own eigensolver, which will throw the error again.
-          static auto eigensolver_options = hyperbolic_default_eigensolver_options<LocalMatrixType>();
-          const auto eigensolver = EigenSolverType(jacobian(dd).block(jj), &eigensolver_options);
-          eigenvectors_[dd].block(jj) = eigensolver.real_eigenvectors();
-          eigenvalues_[dd][jj] = eigensolver.real_eigenvalues();
-        }
-      } // else (block_size == 2)
-      QR_[dd].block(jj) = eigenvectors_[dd].block(jj);
-      XT::LA::qr(QR_[dd].block(jj), tau_[dd].block(jj), permutations_[dd].block(jj));
+        } // else (block_size == 2)
+        QR_[dd].block(jj) = eigenvectors_[dd].block(jj);
+        XT::LA::qr(QR_[dd].block(jj), tau_[dd].block(jj), permutations_[dd].block(jj));
+#if HAVE_MKL || HAVE_LAPACKE
+        int info = XT::Common::Lapacke::dtrcon(XT::Common::Lapacke::row_major(),
+                                               '1',
+                                               'U',
+                                               'N',
+                                               static_cast<int>(block_size),
+                                               LocalM::data(QR_[dd].block(jj)),
+                                               static_cast<int>(block_size),
+                                               &eigenvectors_rcond_);
+        if (info || eigenvectors_rcond_ < 1e-5)
+          DUNE_THROW(Dune::MathError, "Eigenvector condition too high!");
+#endif
+      } catch (const Dune::MathError&) {
+        // use scalar limiters, i.e. eigenvectors matrix is eye-matrix.
+        XT::LA::eye_matrix(eigenvectors_[dd].block(jj));
+        std::fill(eigenvalues_[dd][jj].begin(), eigenvalues_[dd][jj].end(), 1.);
+        QR_[dd].block(jj) = eigenvectors_[dd].block(jj);
+        XT::LA::qr(QR_[dd].block(jj), tau_[dd].block(jj), permutations_[dd].block(jj));
+      }
     } // jj
     computed_[dd] = true;
   }
@@ -518,6 +532,7 @@ protected:
   FieldVector<MatrixType, dimDomain> eigenvectors_;
   FieldVector<MatrixType, dimDomain> QR_;
   FieldVector<VectorType, dimDomain> tau_;
+  RangeFieldType eigenvectors_rcond_;
   FieldVector<BlockedIntVectorType, dimDomain> permutations_;
 }; // BlockedJacobianWrapper<...>
 
