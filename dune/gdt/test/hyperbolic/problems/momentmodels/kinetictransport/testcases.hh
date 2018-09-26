@@ -457,8 +457,8 @@ struct PointSourcePnExpectedResults<HatFunctionMomentBasis<double, 3, double, 1,
   static_assert(!reconstruct, "Results with reconstruction not available yet!");
 #if HAVE_FEKETE
   static constexpr double l1norm = 1.0007953754379604;
-  static constexpr double l2norm = 2.7069180208261652;
-  static constexpr double linfnorm = 10.4578353362239;
+  static constexpr double l2norm = 2.706918020431714;
+  static constexpr double linfnorm = 10.457835334492009;
 #else
   static constexpr double l1norm = 1.0008031432622411;
   static constexpr double l2norm = 2.7069365027580932;
@@ -473,9 +473,9 @@ struct PointSourcePnExpectedResults<PartialMomentBasis<double, 3, double, 0, 1, 
 {
 // If Fekete is not available, we use a different quadrature, which gives slightly different results
 #if HAVE_FEKETE
-  static constexpr double l1norm = reconstruct ? 1.0008081476462325 : 1.0008081476365056;
-  static constexpr double l2norm = reconstruct ? 2.7100893563191693 : 2.7070071430786014;
-  static constexpr double linfnorm = reconstruct ? 10.428361386931211 : 10.458405903819866;
+  static constexpr double l1norm = reconstruct ? 1.0008081477045041 : 1.0008081476903916;
+  static constexpr double l2norm = reconstruct ? 2.7100901615434085 : 2.7070079769035056;
+  static constexpr double linfnorm = reconstruct ? 10.4283649637553 : 10.458409561552882;
 #else
   static constexpr double l1norm = reconstruct ? 1.0008261813756092 : 1.0008261813658712;
   static constexpr double l2norm = reconstruct ? 2.7101429263071872 : 2.7070608309129254;
@@ -491,8 +491,8 @@ struct PointSourcePnExpectedResults<PartialMomentBasis<double, 3, double, 1, 1, 
 // If Fekete is not available, we use a different quadrature, which gives slightly different results
 #if HAVE_FEKETE
   static constexpr double l1norm = 1.0007953754377614;
-  static constexpr double l2norm = 2.7069901509556513;
-  static constexpr double linfnorm = 10.458345325407425;
+  static constexpr double l2norm = 2.7069901465323016;
+  static constexpr double linfnorm = 10.458345306015792;
 #else
   static constexpr double l1norm = 1.0008031432620421;
   static constexpr double l2norm = 2.707008617216633;
