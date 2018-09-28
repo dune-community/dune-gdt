@@ -270,7 +270,7 @@ template <bool reconstruct>
 struct SourceBeamMnExpectedResults<LegendreMomentBasis<double, double, 7>, reconstruct>
 {
   static constexpr double l1norm = reconstruct ? 0.33140386483109008 : 0.33140386481818457;
-  static constexpr double l2norm = reconstruct ? 0.45585376243502651 : 0.44485813650515416;
+  static constexpr double l2norm = reconstruct ? 0.45584414862238876 : 0.44485813650515416;
   static constexpr double linfnorm = reconstruct ? 0.99172157113852111 : 0.98930892893952782;
   static constexpr double tol = 1e-11;
 };
@@ -278,9 +278,9 @@ struct SourceBeamMnExpectedResults<LegendreMomentBasis<double, double, 7>, recon
 template <bool reconstruct>
 struct SourceBeamMnExpectedResults<HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, reconstruct>
 {
-  static constexpr double l1norm = reconstruct ? 0.33140398337391835 : 0.33140398337416183;
-  static constexpr double l2norm = reconstruct ? 0.4558537477320847 : 0.44485696908325384;
-  static constexpr double linfnorm = reconstruct ? 0.99172209693069713 : 0.98930944853163161;
+  static constexpr double l1norm = reconstruct ? 0.33140398330545301 : 0.33140398330533227;
+  static constexpr double l2norm = reconstruct ? 0.45585374774462212 : 0.44485696909412309;
+  static constexpr double linfnorm = reconstruct ? 0.99172209691933066 : 0.98930944851824631;
   static constexpr double tol = 1e-11;
 };
 
@@ -370,17 +370,17 @@ template <bool reconstruct>
 struct PlaneSourceMnExpectedResults<LegendreMomentBasis<double, double, 7>, reconstruct>
 {
   static constexpr double l1norm = reconstruct ? 2.0000000240000007 : 2.0000000240000029;
-  static constexpr double l2norm = reconstruct ? 2.7939341249097027 : 2.746101358507282;
-  static constexpr double linfnorm = reconstruct ? 4.9064834161325548 : 5.327698357914608;
+  static constexpr double l2norm = reconstruct ? 2.7939953115214706 : 2.746101358507282;
+  static constexpr double linfnorm = reconstruct ? 4.9072600770478081 : 5.327698357914608;
   static constexpr double tol = 1e-11;
 };
 
 template <bool reconstruct>
 struct PlaneSourceMnExpectedResults<HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, reconstruct>
 {
-  static constexpr double l1norm = 2.0000000240000158;
-  static constexpr double l2norm = reconstruct ? 2.7968403961837289 : 2.7457197084885276;
-  static constexpr double linfnorm = reconstruct ? 5.2473683761014218 : 4.9918923122844596;
+  static constexpr double l1norm = 2.0000000239315696;
+  static constexpr double l2norm = reconstruct ? 2.7968403962496664 : 2.7457197085397627;
+  static constexpr double linfnorm = reconstruct ? 5.2473683762218588 : 4.9918923123730856;
   static constexpr double tol = 1e-11;
 };
 
@@ -547,7 +547,7 @@ template <bool reconstruct>
 struct PointSourceMnExpectedResults<RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, reconstruct>
 {
   static constexpr double l1norm = reconstruct ? 1.000795464063172 : 1.0007954640529739;
-  static constexpr double l2norm = reconstruct ? 2.7008947054264092 : 2.7026044260940152;
+  static constexpr double l2norm = reconstruct ? 2.7008947053634786 : 2.7026044260940152;
   static constexpr double linfnorm = reconstruct ? 10.402113653484697 : 10.438830932976025;
   static constexpr double tol = 1e-11;
 };
@@ -580,9 +580,9 @@ struct PointSourceMnExpectedResults<PartialMomentBasis<double, 3, double, 0, 1, 
 {
 // If Fekete is not available, we use a different quadrature, which gives slightly different results
 #if HAVE_FEKETE
-  static constexpr double l1norm = reconstruct ? 1.00080814764654 : 1.0008081476364998;
-  static constexpr double l2norm = reconstruct ? 2.7100989741977273 : 2.7070280881783577;
-  static constexpr double linfnorm = reconstruct ? 10.428410325041893 : 10.458452422344131;
+  static constexpr double l1norm = reconstruct ? 1.0008081477041464 : 1.0008081476903943;
+  static constexpr double l2norm = reconstruct ? 2.7100997765320529 : 2.7070289193746917;
+  static constexpr double linfnorm = reconstruct ? 10.428413886570137 : 10.458456067931758;
 #else
   static constexpr double l1norm = reconstruct ? 1.0008292531175822 : 1.0008292531061092;
   static constexpr double l2norm = reconstruct ? 2.7099187578817849 : 2.7066524774407608;
