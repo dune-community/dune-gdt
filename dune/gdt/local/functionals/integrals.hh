@@ -14,6 +14,7 @@
 #include <dune/geometry/quadraturerules.hh>
 
 #include <dune/gdt/local/integrands/interfaces.hh>
+#include <dune/gdt/local/integrands/generic.hh>
 
 #include "interfaces.hh"
 
@@ -32,10 +33,21 @@ public:
   using BaseType::d;
   using typename BaseType::LocalBasisType;
   using IntegrandType = LocalUnaryElementIntegrandInterface<E, r, rC, R>;
+  using GenericIntegrand = GenericLocalUnaryElementIntegrand<E, r, rC, R>;
 
   LocalElementIntegralFunctional(const IntegrandType& integrand, const int over_integrate = 0)
     : BaseType(integrand.parameter_type())
     , integrand_(integrand.copy())
+    , over_integrate_(over_integrate)
+  {
+  }
+
+  LocalElementIntegralFunctional(typename GenericIntegrand::GenericOrderFunctionType order_function,
+                                 typename GenericIntegrand::GenericEvalauteFunctionType evaluate_function,
+                                 const XT::Common::ParameterType& param_type = {},
+                                 const int over_integrate = 0)
+    : BaseType(param_type)
+    , integrand_(GenericIntegrand(order_function, evaluate_function).copy())
     , over_integrate_(over_integrate)
   {
   }
