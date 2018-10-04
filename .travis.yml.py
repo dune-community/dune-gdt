@@ -52,6 +52,10 @@ script:
 after_script:
     - ${DOCKER_RUN} /home/dune-ci/src/${MY_MODULE}/.ci/travis/after_script.bash
 
+after_failure:
+    - echo $DOCKER_PW | docker login --username="$DOCKER_USER" --password-stdin
+    - docker push ${IMAGE}
+
 notifications:
   email:
     on_success: change
