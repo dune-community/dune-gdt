@@ -42,6 +42,7 @@ install:
     - wait
     - export ENV_FILE=${HOME}/env
     - python3 ./.ci/make_env_file.py
+    - docker inspect ${IMAGE}
     - export DOCKER_RUN="docker run --env-file ${ENV_FILE} -v ${TRAVIS_BUILD_DIR}:/home/dune-ci/src/${MY_MODULE} ${IMAGE}"
 
 script:
@@ -113,7 +114,7 @@ newyml = tpl.render(builders=range(0, builder_count))
 if newyml != oldyml:
     with open(ymlfn, 'wt') as yml:
         yml.write(newyml)
-    
+
 travis = where.first('travis')
 if travis:
     try:
