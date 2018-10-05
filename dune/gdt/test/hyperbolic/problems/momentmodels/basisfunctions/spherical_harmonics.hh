@@ -62,6 +62,8 @@ public:
     assert(quad_refinements == 0 && "Refinement of the quadrature intervals not implemented for this basis!");
   }
 
+  using BaseType::evaluate;
+
   virtual RangeType evaluate(const DomainType& v) const override
   {
     const auto v_spherical = XT::Common::CoordinateConverter<DomainFieldType>::to_spherical(v);
@@ -294,6 +296,8 @@ public:
   {
     assert(quad_refinements == 0 && "Refinement of the quadrature intervals not implemented for this basis!");
   }
+
+  using BaseType::evaluate;
 
   virtual RangeType evaluate(const DomainType& v) const override
   {

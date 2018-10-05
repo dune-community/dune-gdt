@@ -648,7 +648,7 @@ public:
         // define further variables
         VectorType g_k, beta_in, beta_out, v;
         beta_in = cache_iterator != cache_.end() ? cache_iterator->second : alpha_iso;
-        static thread_local auto T_k = XT::Common::make_unique<MatrixType>();
+        thread_local auto T_k = XT::Common::make_unique<MatrixType>();
 
         const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
         const auto r_max = r_sequence.back();
@@ -666,7 +666,7 @@ public:
           // calculate T_k u
           VectorType v_k = v;
           // calculate values of basis p = S_k m
-          static thread_local BasisValuesMatrixType P_k(M_.backend(), false, 0., 0);
+          thread_local BasisValuesMatrixType P_k(M_.backend(), false, 0., 0);
           std::copy_n(M_.data(), M_.rows() * M_.cols(), P_k.data());
           // calculate f_0
           RangeFieldType f_k = calculate_scalar_integral(beta_in, P_k);

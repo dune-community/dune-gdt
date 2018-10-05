@@ -98,7 +98,7 @@ public:
 
     size_t second_index()
     {
-      return first_index_;
+      return second_index;
     }
 
   private:

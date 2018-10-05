@@ -52,6 +52,8 @@ public:
     return "legendre";
   }
 
+  using BaseType::evaluate;
+
   virtual RangeType evaluate(const DomainType& v) const override
   {
     RangeType ret;

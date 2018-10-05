@@ -300,6 +300,16 @@ public:
     return ret;
   }
 
+  virtual RangeType get_moment_vector(const std::function<RangeFieldType(DomainType)>& psi) const
+  {
+    RangeType ret(0.);
+    for (const auto& quad_point : quadratures().merged()) {
+      const auto& v = quad_point.position();
+      ret += evaluate(v) * psi(v) * quad_point.weight();
+    }
+    return ret;
+  }
+
   virtual FieldVector<MatrixType, dimFlux> mass_matrix_with_v() const
   {
     FieldVector<MatrixType, dimFlux> B(MatrixType(dimRange, dimRange, 0));
