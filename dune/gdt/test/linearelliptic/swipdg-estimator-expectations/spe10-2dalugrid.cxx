@@ -122,7 +122,7 @@ public:
       return {2.90e+00, 1.91e+00};
 #endif
     } else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_residual_ESV2007_id()) {
-      return {2.65e-10, 6.03e-11};
+      return {1.90e-14, 6.32e-14};
     } else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_diffusive_flux_ESV2007_id()) {
 #if DXT_DISABLE_LARGE_TESTS
       return {9.93e+00, 8.07e+00};
