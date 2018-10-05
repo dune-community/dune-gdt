@@ -16,7 +16,7 @@ import itertools
 from dune.xt.codegen import typeid_to_typedef_name, la_backends, is_found
 
 
-grid = []
+grids = []
 # ///TODO re-add alugrid
 
 casenames = ['AO2013TestCase', 'ER2007TestCase', 'ESV2007TestCase', 'MixedBoundaryTestCase',
