@@ -14,14 +14,25 @@
 import itertools
 from dune.xt.codegen import typeid_to_typedef_name, la_backends, is_found
 
+
+def  _perm_to_tuple(perm):
+    t, s, l = perm
+    return t, s, l, typeid_to_typedef_name('{}_{}_{}'.format(t, s, l))
+
+def _filter(perm):
+    t, s, l = perm
+    if 'Spe10Model1TestCase' in t:
+        return l == 'eigen_sparse'
+    return True
+
 # this file exists both with and without the "mpi" prefix
 # we dedup some permutations according to our filename
 
 grids = ['Yasp2Grid']
+grids = []
 mpi_case = 'mpi' in __file__
-
 try:
-    if cache['dune-alugrid']:
+    if not mpi_case and cache['dune-alugrid']:
         grids.extend(['AluSimplex2dGridType'])
 except KeyError:
     pass
@@ -40,4 +51,4 @@ else:
 
 testcases = ['Dune::GDT::LinearElliptic::{}<{}>'.format(c, g) for c, g in itertools.product(casenames, grids)]
 permutations = itertools.product(testcases, ('gdt',), la)
-permutations = [(t, s, l, typeid_to_typedef_name('{}_{}_{}'.format(t, s, l))) for t, s, l in permutations]
+permutations = [_perm_to_tuple(perm) for perm in permutations if _filter(perm)]
