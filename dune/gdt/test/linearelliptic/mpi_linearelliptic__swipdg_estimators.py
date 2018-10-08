@@ -31,9 +31,13 @@ def _filter(perm):
 
 # this file exists both with and without the "mpi" prefix
 # we dedup some permutations according to our filename
-
-grids = ['Yasp2Grid']
 mpi_case = 'mpi' in __file__
+
+if mpi_case:
+    grids = []
+else:
+    grids = ['Yasp2Grid']
+
 try:
     if not mpi_case and cache['dune-alugrid']:
         grids.extend(['AluSimplex2dGridType'])
