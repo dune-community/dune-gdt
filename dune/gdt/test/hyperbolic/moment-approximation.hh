@@ -72,23 +72,26 @@ struct MomentApproximation
 
     // ***************** project initial values to discrete function *********************
     // Heaviside
-    // const auto psi = [](const DomainType& v) { return v[0] < 0 ? RangeFieldType(5e-9) : RangeFieldType(1); };
+    //     const auto psi = [](const DomainType& v, const bool left) { return v[0] < 0 || (XT::Common::is_zero(v[0]) &&
+    //     left) ? RangeFieldType(5e-9) : RangeFieldType(1); };
     // Gauss
-    // const RangeFieldType sigma = 0.5;
-    // const RangeFieldType mu = 0.;
-    // const auto psi = [sigma, mu](const DomainType& v){ return 1./std::sqrt(2. * M_PI * std::pow(sigma, 2)) *
-    // std::exp(std::pow(v[0]-mu, 2)/(-2 *std::pow(sigma, 2))); };
+    //     const RangeFieldType sigma = 0.5;
+    //     const RangeFieldType mu = 0.;
+    //     const auto psi = [sigma, mu](const DomainType& v, const bool){ return 1./std::sqrt(2. * M_PI *
+    //     std::pow(sigma, 2)) *
+    //     std::exp(std::pow(v[0]-mu, 2)/(-2 *std::pow(sigma, 2))); };
     // Gauss on sphere
-    // const RangeFieldType sigma = 0.5;
-    // const RangeFieldType mu = 1.;
-    // const auto psi = [sigma, mu](const DomainType& v){ return 1./std::sqrt(2. * M_PI * std::pow(sigma, 2)) *
-    // std::exp(std::pow(v[0]-mu, 2)/(-2 *std::pow(sigma, 2))); };
+    //     const RangeFieldType sigma = 0.5;
+    //     const RangeFieldType mu = 1.;
+    //     const auto psi = [sigma, mu](const DomainType& v, const bool){ return 1./std::sqrt(2. * M_PI *
+    //     std::pow(sigma, 2)) *
+    //     std::exp(std::pow(v[0]-mu, 2)/(-2 *std::pow(sigma, 2))); };
     // Square on sphere
-    const auto psi = [](const DomainType& v) {
+    const auto psi = [](const DomainType& v, const bool) {
       if (v[0] > 0 && std::abs(v[1]) < 0.5 && std::abs(v[2]) < 0.5)
         return RangeFieldType(1);
       else
-        return RangeFieldType(5e-9);
+        return RangeFieldType(1e-8 / (4 * M_PI));
     };
     const RangeType u = basis_functions->get_moment_vector(psi);
     // const RangeType u{2.82081e-09,  1.47519e-13,  1.47552e-13,  -1.86436e-16, 1.32958e-19,  -1.8985e-13,
@@ -111,7 +114,9 @@ struct MomentApproximation
     using MnFluxType = EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, DiscreteFunctionType>;
     MnFluxType mn_flux(*basis_functions, grid_layer);
     auto local_mn_flux = mn_flux.derived_local_function(*(grid_layer.template begin<0>()));
-    const auto alpha = local_mn_flux->get_alpha(DomainType(0), u, {"boundary", {0}}, false).first;
+    const auto mn_ret = local_mn_flux->get_alpha(DomainType(0), u, {"boundary", {0}}, true);
+    std::cout << "Regularized with epsilon = " << mn_ret.second << std::endl;
+    const auto alpha = mn_ret.first;
 
     std::string filename_mn = filename;
     filename += "_" + basis_functions->short_id();
@@ -144,12 +149,12 @@ struct MomentApproximation
       }
       mn_file << XT::Common::to_string(psi_mn, 15) << std::endl;
       pn_file << XT::Common::to_string(psi_pn, 15) << std::endl;
-      l1error_mn += std::abs(psi_mn - psi(v)) * weight;
-      l2error_mn += std::pow(psi_mn - psi(v), 2) * weight;
-      linferror_mn = std::max(std::abs(psi_mn - psi(v)), linferror_mn);
-      l1error_pn += std::abs(psi_pn - psi(v)) * weight;
-      l2error_pn += std::pow(psi_pn - psi(v), 2) * weight;
-      linferror_pn = std::max(std::abs(psi_pn - psi(v)), linferror_pn);
+      l1error_mn += std::abs(psi_mn - psi(v, basis_functions->is_negative(it))) * weight;
+      l2error_mn += std::pow(psi_mn - psi(v, basis_functions->is_negative(it)), 2) * weight;
+      linferror_mn = std::max(std::abs(psi_mn - psi(v, basis_functions->is_negative(it))), linferror_mn);
+      l1error_pn += std::abs(psi_pn - psi(v, basis_functions->is_negative(it))) * weight;
+      l2error_pn += std::pow(psi_pn - psi(v, basis_functions->is_negative(it)), 2) * weight;
+      linferror_pn = std::max(std::abs(psi_pn - psi(v, basis_functions->is_negative(it))), linferror_pn);
     }
     mn_errors_file << dimRange << " " << XT::Common::to_string(l1error_mn, 15) << " "
                    << XT::Common::to_string(l2error_mn, 15) << " " << XT::Common::to_string(linferror_mn, 15)

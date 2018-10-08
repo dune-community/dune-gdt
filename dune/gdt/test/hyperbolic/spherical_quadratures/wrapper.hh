@@ -91,12 +91,17 @@ public:
       return (*quadratures_)[first_index_][second_index_];
     }
 
-    size_t first_index()
+    const QuadPointType* operator->() const
+    {
+      return &(operator*());
+    }
+
+    size_t first_index() const
     {
       return first_index_;
     }
 
-    size_t second_index()
+    size_t second_index() const
     {
       return second_index;
     }

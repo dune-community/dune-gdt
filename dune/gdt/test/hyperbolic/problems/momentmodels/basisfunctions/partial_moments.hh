@@ -128,6 +128,24 @@ public:
     return ret;
   }
 
+  virtual RangeType get_moment_vector(const std::function<RangeFieldType(DomainType, bool)>& psi) const override final
+  {
+    RangeType ret(0.);
+    const auto merged_quadratures = quadratures_.merged();
+    for (auto it = merged_quadratures.begin(); it != merged_quadratures.end(); ++it) {
+      const auto& quad_point = *it;
+      const auto& v = quad_point.position();
+      ret += evaluate(v, it.first_index()) * psi(v, is_negative(it)) * quad_point.weight();
+    }
+    return ret;
+  }
+
+  virtual bool is_negative(
+      const typename MergedQuadrature<RangeFieldType, dimDomain>::MergedQuadratureIterator& it) const override final
+  {
+    return it.first_index() < num_intervals / 2;
+  }
+
   // returns matrix with entries <h_i h_j>
   virtual MatrixType mass_matrix(const bool /*use_fine_quadratures*/ = false) const override final
   {
@@ -317,6 +335,7 @@ public:
 
 private:
   const TriangulationType triangulation_;
+  using BaseType::quadratures_;
 }; // class PartialMomentBasis<DomainFieldType, 1, ...>
 
 template <class DomainFieldType, class RangeFieldType, size_t refinements, size_t dimFlux>

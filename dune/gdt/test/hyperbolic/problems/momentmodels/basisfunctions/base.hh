@@ -300,14 +300,22 @@ public:
     return ret;
   }
 
-  virtual RangeType get_moment_vector(const std::function<RangeFieldType(DomainType)>& psi) const
+  virtual RangeType get_moment_vector(const std::function<RangeFieldType(DomainType, bool)>& psi) const
   {
     RangeType ret(0.);
-    for (const auto& quad_point : quadratures().merged()) {
+    const auto merged_quads = quadratures().merged();
+    for (auto it = merged_quads.begin(); it != merged_quads.end(); ++it) {
+      const auto& quad_point = *it;
       const auto& v = quad_point.position();
-      ret += evaluate(v) * psi(v) * quad_point.weight();
+      ret += evaluate(v, it.first_index()) * psi(v, is_negative(it)) * quad_point.weight();
     }
     return ret;
+  }
+
+  virtual bool
+  is_negative(const typename MergedQuadrature<RangeFieldType, dimDomain>::MergedQuadratureIterator& /*it*/) const
+  {
+    return false;
   }
 
   virtual FieldVector<MatrixType, dimFlux> mass_matrix_with_v() const
