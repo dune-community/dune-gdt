@@ -21,6 +21,10 @@ def  _perm_to_tuple(perm):
 
 def _filter(perm):
     t, s, l = perm
+    # currently only expectations for one testcase
+    if 'Yasp' in t:
+        return 'ESV2007TestCase' in t
+    # diverging results for istl/eigen, see #137
     if 'Spe10Model1TestCase' in t:
         return l == 'eigen_sparse'
     return True
@@ -29,7 +33,6 @@ def _filter(perm):
 # we dedup some permutations according to our filename
 
 grids = ['Yasp2Grid']
-grids = []
 mpi_case = 'mpi' in __file__
 try:
     if not mpi_case and cache['dune-alugrid']:
@@ -48,7 +51,7 @@ if mpi_case:
     la = ('istl_sparse',)
 else:
     la = la_backends(cache)
-
+casenames = ['ESV2007TestCase']
 testcases = ['Dune::GDT::LinearElliptic::{}<{}>'.format(c, g) for c, g in itertools.product(casenames, grids)]
 permutations = itertools.product(testcases, ('gdt',), la)
 permutations = [_perm_to_tuple(perm) for perm in permutations if _filter(perm)]
