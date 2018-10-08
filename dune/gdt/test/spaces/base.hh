@@ -72,7 +72,7 @@ class SpaceBase : public ::testing::Test
 
 public:
   SpaceBase()
-    : grid_provider_(Dune::XT::Grid::make_cube_grid<GridType>(0.0, 1.0, 3u))
+    : grid_provider_(Dune::XT::Grid::make_cube_grid<GridType>(0.0, 1.0, 9u))
     , space_(grid_provider_.template layer<Dune::XT::Grid::Layers::leaf, SpaceType::layer_backend>())
   {
   }
