@@ -274,7 +274,7 @@ private:
             assert(!(range_vector[global_DoF_index] < infinity));
             range_vector[global_DoF_index] = rhs / lhs;
           }
-        } else if (intersection.boundary() && !intersection.neighbor()) {
+        } else if (!intersection.neighbor()) {
           const size_t local_intersection_index = intersection.indexInInside();
           const size_t local_DoF_index = local_DoF_indices[local_intersection_index];
           // do a face quadrature
