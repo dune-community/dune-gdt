@@ -10,6 +10,7 @@
 
 #include <dune/xt/common/test/main.hxx> // <- This one has to come first!
 
+#include <dune/xt/common/type_traits.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/grid/gridprovider.hh>
 
@@ -34,10 +35,18 @@ GTEST_TEST(DiscretefunctionTest_{{Name}}, visualize)
 {
   using Grid = Dune::XT::Grid::extract_grid_t<{{View}}>;
   auto grid = Dune::XT::Grid::make_cube_grid<Grid>(0.0, 1.0, 6u);
-  {{View}} view = grid.level_view(0);
-  {{SpaceType}} space{view};
-  DiscreteFunction<{{SpaceType}}> function{space};
-  function.visualize("foo");
+  grid.grid().globalRefine(2);
+  boost::format viz_name{"df_viz_%s_lvl_%d"};
+
+  for (auto&& ii : Dune::XT::Common::value_range(grid.max_level()+1)) {
+    {{View}} view = grid.level_view(ii);
+    {{SpaceType}} space{view};
+    DiscreteFunction<{{SpaceType}}> function{space};
+    const std::string view_name{"{{Name}}"};
+    function.visualize((viz_name % view_name % ii).str());
+    auto func_copy = function;
+    func_copy.visualize((viz_name % (view_name + "_copy") % ii).str());
+  }
 }
 
 
