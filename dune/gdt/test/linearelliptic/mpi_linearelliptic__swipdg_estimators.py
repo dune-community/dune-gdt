@@ -33,10 +33,7 @@ def _filter(perm):
 # we dedup some permutations according to our filename
 mpi_case = 'mpi' in __file__
 
-if mpi_case:
-    grids = []
-else:
-    grids = ['Yasp2Grid']
+grids = ['Yasp2Grid']
 
 try:
     if not mpi_case and cache['dune-alugrid']:
@@ -55,6 +52,7 @@ if mpi_case:
     la = ('istl_sparse',)
 else:
     la = la_backends(cache)
+
 casenames = ['ESV2007TestCase']
 testcases = ['Dune::GDT::LinearElliptic::{}<{}>'.format(c, g) for c, g in itertools.product(casenames, grids)]
 permutations = itertools.product(testcases, ('gdt',), la)
