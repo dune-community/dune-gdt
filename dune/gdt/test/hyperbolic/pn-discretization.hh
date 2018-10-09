@@ -230,7 +230,6 @@ struct HyperbolicPnDiscretization
     using BoundaryValueType = typename ProblemType::BoundaryValueType;
     const BoundaryValueType& boundary_values = problem.boundary_values();
 
-    const RhsType& rhs = problem.rhs();
     const RangeFieldType CFL = problem.CFL();
 
     // ***************** project initial values to discrete function *********************

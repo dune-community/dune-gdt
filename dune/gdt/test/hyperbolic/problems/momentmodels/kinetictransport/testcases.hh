@@ -215,9 +215,9 @@ struct SourceBeamPnExpectedResults;
 template <bool reconstruct>
 struct SourceBeamPnExpectedResults<LegendreMomentBasis<double, double, 7>, reconstruct>
 {
-  static constexpr double l1norm = reconstruct ? 0.33066818456325631 : 0.33107004463414536;
-  static constexpr double l2norm = reconstruct ? 0.46157514055648519 : 0.44609169128864312;
-  static constexpr double linfnorm = reconstruct ? 1.1553979882432861 : 1.0882801946666156;
+  static constexpr double l1norm = reconstruct ? 0.33066818400954934 : 0.33107004408036839;
+  static constexpr double l2norm = reconstruct ? 0.46157513947778089 : 0.44609169019738981;
+  static constexpr double linfnorm = reconstruct ? 1.1553979853516545 : 1.0882801917423524;
   static constexpr double tol = 1e-9;
 };
 
@@ -421,9 +421,9 @@ struct PointSourcePnExpectedResults
 template <bool reconstruct>
 struct PointSourcePnExpectedResults<RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, reconstruct>
 {
-  static constexpr double l1norm = reconstruct ? 1.0007954640626138 : 1.0007954640529835;
-  static constexpr double l2norm = reconstruct ? 2.7018734377354714 : 2.6999617861637795;
-  static constexpr double linfnorm = reconstruct ? 10.391017138477658 : 10.426558946481034;
+  static constexpr double l1norm = reconstruct ? 1.0007949755175201 : 1.0007949755078884;
+  static constexpr double l2norm = reconstruct ? 2.7018721426023751 : 2.6999604945131082;
+  static constexpr double linfnorm = reconstruct ? 10.391021968264951 : 10.426561889449596;
   static constexpr double tol = 1e-9;
 };
 
@@ -474,8 +474,8 @@ struct PointSourcePnExpectedResults<PartialMomentBasis<double, 3, double, 0, 1, 
 // If Fekete is not available, we use a different quadrature, which gives slightly different results
 #if HAVE_FEKETE
   static constexpr double l1norm = reconstruct ? 1.0008081477045041 : 1.0008081476903916;
-  static constexpr double l2norm = reconstruct ? 2.7100901615434085 : 2.7070079769035056;
-  static constexpr double linfnorm = reconstruct ? 10.4283649637553 : 10.458409561552882;
+  static constexpr double l2norm = reconstruct ? 2.7100893563191693 : 2.7070071430786005;
+  static constexpr double linfnorm = reconstruct ? 10.42836138693121 : 10.458405903819862;
 #else
   static constexpr double l1norm = reconstruct ? 1.0008261813756092 : 1.0008261813658712;
   static constexpr double l2norm = reconstruct ? 2.7101429263071872 : 2.7070608309129254;
@@ -491,8 +491,8 @@ struct PointSourcePnExpectedResults<PartialMomentBasis<double, 3, double, 1, 1, 
 // If Fekete is not available, we use a different quadrature, which gives slightly different results
 #if HAVE_FEKETE
   static constexpr double l1norm = 1.0007953754377614;
-  static constexpr double l2norm = 2.7069901465323016;
-  static constexpr double linfnorm = 10.458345306015792;
+  static constexpr double l2norm = 2.7069901509556522;
+  static constexpr double linfnorm = 10.458345325407427;
 #else
   static constexpr double l1norm = 1.0008031432620421;
   static constexpr double l2norm = 2.707008617216633;
@@ -509,11 +509,7 @@ struct PointSourcePnTestCase : SourceBeamPnTestCase<GridImp, BasisfunctionImp, r
   using RangeFieldType = typename BaseType::RangeFieldType;
   using ProblemType =
       PointSourcePn<BasisfunctionImp, typename BaseType::GridLayerType, typename BaseType::DiscreteFunctionType>;
-#if DXT_DISABLE_LARGE_TESTS
-  static constexpr RangeFieldType t_end = 0.01;
-#else
   static constexpr RangeFieldType t_end = 0.1;
-#endif
   static constexpr bool reconstruction = reconstruct;
   using ExpectedResultsType = PointSourcePnExpectedResults<BasisfunctionImp, reconstruction>;
 };
@@ -602,11 +598,7 @@ struct PointSourceMnTestCase : SourceBeamMnTestCase<GridImp, BasisfunctionImp, r
   using ProblemType =
       PointSourceMn<BasisfunctionImp, typename BaseType::GridLayerType, typename BaseType::DiscreteFunctionType>;
   using typename BaseType::RangeFieldType;
-#if DXT_DISABLE_LARGE_TESTS
-  static constexpr RangeFieldType t_end = 0.01;
-#else
   static constexpr RangeFieldType t_end = 0.1;
-#endif
   static constexpr bool reconstruction = reconstruct;
   using ExpectedResultsType = PointSourceMnExpectedResults<BasisfunctionImp, reconstruction>;
   using RealizabilityLimiterChooserType = RealizabilityLimiterChooser<BasisfunctionImp,

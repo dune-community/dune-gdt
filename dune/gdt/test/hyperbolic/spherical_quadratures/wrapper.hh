@@ -52,7 +52,7 @@ public:
       , second_index_(second_index)
     {
       assert(first_index_ <= quadratures_->size());
-      assert(second_index_ <= (*quadratures_)[first_index_].size());
+      assert(first_index == quadratures_->size() || second_index_ <= (*quadratures_)[first_index_].size());
     }
 
     MergedQuadratureIterator& operator++()

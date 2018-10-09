@@ -42,25 +42,25 @@ using YaspGridTestCasesAll = testing::
           Dune::GDT::Hyperbolic::Problems::KineticTransport::
               PlaneSourcePnTestCase<Yasp1, Dune::GDT::PartialMomentBasis<double, 1, double, 8, 1, 1>, true>,
           Dune::GDT::Hyperbolic::Problems::KineticTransport::
-              PointSourcePnTestCase<Yasp3, Dune::GDT::RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, false>,
+              PointSourcePnTestCase<Yasp3, Dune::GDT::RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, false>
+#if !DXT_DISABLE_LARGE_TESTS
+          ,
           Dune::GDT::Hyperbolic::Problems::KineticTransport::
               PointSourcePnTestCase<Yasp3, Dune::GDT::RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, true>,
           Dune::GDT::Hyperbolic::Problems::KineticTransport::
               PointSourcePnTestCase<Yasp3, Dune::GDT::HatFunctionMomentBasis<double, 3, double, 0, 1, 3>, false>,
-#if !DXT_DISABLE_LARGE_TESTS
           Dune::GDT::Hyperbolic::Problems::KineticTransport::
               PointSourcePnTestCase<Yasp3, Dune::GDT::HatFunctionMomentBasis<double, 3, double, 1, 1, 3>, false>,
-#endif
           Dune::GDT::Hyperbolic::Problems::KineticTransport::
               PointSourcePnTestCase<Yasp3, Dune::GDT::HatFunctionMomentBasis<double, 3, double, 0, 1, 3>, true>,
           Dune::GDT::Hyperbolic::Problems::KineticTransport::
               PointSourcePnTestCase<Yasp3, Dune::GDT::PartialMomentBasis<double, 3, double, 0, 1, 3>, false>,
-#if !DXT_DISABLE_LARGE_TESTS
           Dune::GDT::Hyperbolic::Problems::KineticTransport::
               PointSourcePnTestCase<Yasp3, Dune::GDT::PartialMomentBasis<double, 3, double, 1, 1, 3>, false>,
-#endif
           Dune::GDT::Hyperbolic::Problems::KineticTransport::
-              PointSourcePnTestCase<Yasp3, Dune::GDT::PartialMomentBasis<double, 3, double, 0, 1, 3>, true>>;
+              PointSourcePnTestCase<Yasp3, Dune::GDT::PartialMomentBasis<double, 3, double, 0, 1, 3>, true>
+#endif
+          >;
 
 TYPED_TEST_CASE(HyperbolicPnTest, YaspGridTestCasesAll);
 TYPED_TEST(HyperbolicPnTest, check)
