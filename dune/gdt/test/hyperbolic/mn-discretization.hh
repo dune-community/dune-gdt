@@ -53,9 +53,7 @@ struct HyperbolicMnDiscretization
     using GridLayerType = typename TestCaseType::GridLayerType;
     using ProblemType = typename TestCaseType::ProblemType;
     using EquationType = Hyperbolic::Problems::KineticEquation<ProblemType>;
-    using DomainFieldType = typename EquationType::DomainFieldType;
     using RangeFieldType = typename EquationType::RangeFieldType;
-    using RhsType = typename EquationType::RhsType;
     using InitialValueType = typename EquationType::InitialValueType;
     static constexpr size_t dimDomain = BasisfunctionType::dimDomain;
     static constexpr size_t dimRange = BasisfunctionType::dimRange;
@@ -80,7 +78,6 @@ struct HyperbolicMnDiscretization
     const InitialValueType& initial_values = problem.initial_values();
     using BoundaryValueType = typename ProblemType::BoundaryValueType;
     const BoundaryValueType& boundary_values = problem.boundary_values();
-    const RhsType& rhs = problem.rhs();
     const RangeFieldType CFL = problem.CFL();
 
     // ***************** project initial values to discrete function *********************

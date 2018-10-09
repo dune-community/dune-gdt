@@ -509,7 +509,11 @@ struct PointSourcePnTestCase : SourceBeamPnTestCase<GridImp, BasisfunctionImp, r
   using RangeFieldType = typename BaseType::RangeFieldType;
   using ProblemType =
       PointSourcePn<BasisfunctionImp, typename BaseType::GridLayerType, typename BaseType::DiscreteFunctionType>;
+#if DXT_DISABLE_LARGE_TESTS
+  static constexpr RangeFieldType t_end = 0.01;
+#else
   static constexpr RangeFieldType t_end = 0.1;
+#endif
   static constexpr bool reconstruction = reconstruct;
   using ExpectedResultsType = PointSourcePnExpectedResults<BasisfunctionImp, reconstruction>;
 };
@@ -598,7 +602,11 @@ struct PointSourceMnTestCase : SourceBeamMnTestCase<GridImp, BasisfunctionImp, r
   using ProblemType =
       PointSourceMn<BasisfunctionImp, typename BaseType::GridLayerType, typename BaseType::DiscreteFunctionType>;
   using typename BaseType::RangeFieldType;
+#if DXT_DISABLE_LARGE_TESTS
+  static constexpr RangeFieldType t_end = 0.01;
+#else
   static constexpr RangeFieldType t_end = 0.1;
+#endif
   static constexpr bool reconstruction = reconstruct;
   using ExpectedResultsType = PointSourceMnExpectedResults<BasisfunctionImp, reconstruction>;
   using RealizabilityLimiterChooserType = RealizabilityLimiterChooser<BasisfunctionImp,

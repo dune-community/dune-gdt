@@ -197,7 +197,6 @@ struct HyperbolicPnDiscretization
     using GridLayerType = typename TestCaseType::GridLayerType;
     using ProblemType = typename TestCaseType::ProblemType;
     using EquationType = Hyperbolic::Problems::KineticEquation<ProblemType>;
-    //    using DomainFieldType = typename EquationType::DomainFieldType;
     using RangeFieldType = typename EquationType::RangeFieldType;
     using RhsType = typename EquationType::RhsType;
     using InitialValueType = typename EquationType::InitialValueType;
@@ -252,12 +251,6 @@ struct HyperbolicPnDiscretization
     // ******************** choose flux and rhs operator and timestepper ******************************************
     using AdvectionOperatorType =
         AdvectionKineticOperator<AnalyticalFluxType, BoundaryValueType, BasisfunctionType, GridLayerType>;
-
-    //    using ConstantFunctionType =
-    //        Dune::XT::Functions::ConstantFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1>;
-    //    using AdvectionOperatorType =
-    //        AdvectionLaxFriedrichsOperator<AnalyticalFluxType, BoundaryValueType, ConstantFunctionType>;
-
     using JacobianWrapperType = typename JacobianChooser<BasisfunctionType, AnalyticalFluxType>::type;
     using ReconstructionOperatorType =
         LinearReconstructionOperator<AnalyticalFluxType, BoundaryValueType, JacobianWrapperType>;
@@ -265,7 +258,6 @@ struct HyperbolicPnDiscretization
         AdvectionWithReconstructionOperator<AdvectionOperatorType, ReconstructionOperatorType>;
     using FvOperatorType =
         std::conditional_t<TestCaseType::reconstruction, ReconstructionFvOperatorType, AdvectionOperatorType>;
-
     using OperatorTimeStepperType = typename TimeStepperFactory<FvOperatorType,
                                                                 DiscreteFunctionType,
                                                                 TestCaseType::time_stepper_method>::TimeStepperType;

@@ -47,14 +47,18 @@ using YaspGridTestCasesAll = testing::
               PointSourcePnTestCase<Yasp3, Dune::GDT::RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, true>,
           Dune::GDT::Hyperbolic::Problems::KineticTransport::
               PointSourcePnTestCase<Yasp3, Dune::GDT::HatFunctionMomentBasis<double, 3, double, 0, 1, 3>, false>,
+#if !DXT_DISABLE_LARGE_TESTS
           Dune::GDT::Hyperbolic::Problems::KineticTransport::
               PointSourcePnTestCase<Yasp3, Dune::GDT::HatFunctionMomentBasis<double, 3, double, 1, 1, 3>, false>,
+#endif
           Dune::GDT::Hyperbolic::Problems::KineticTransport::
               PointSourcePnTestCase<Yasp3, Dune::GDT::HatFunctionMomentBasis<double, 3, double, 0, 1, 3>, true>,
           Dune::GDT::Hyperbolic::Problems::KineticTransport::
               PointSourcePnTestCase<Yasp3, Dune::GDT::PartialMomentBasis<double, 3, double, 0, 1, 3>, false>,
+#if !DXT_DISABLE_LARGE_TESTS
           Dune::GDT::Hyperbolic::Problems::KineticTransport::
               PointSourcePnTestCase<Yasp3, Dune::GDT::PartialMomentBasis<double, 3, double, 1, 1, 3>, false>,
+#endif
           Dune::GDT::Hyperbolic::Problems::KineticTransport::
               PointSourcePnTestCase<Yasp3, Dune::GDT::PartialMomentBasis<double, 3, double, 0, 1, 3>, true>>;
 
