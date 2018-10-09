@@ -14,8 +14,5 @@
 import spaces as sp
 from grids import LevelGrids
 
-fv = sp.FV(cache, base=LevelGrids, rdim=[1])
-spaces_with_names = []
-for sp, nm, grid in zip(fv.spaces ,fv.names, fv.grids ):
-    if not ('AluConform2dLevelGrid' in sp):
-        spaces_with_names.append((sp, nm, grid))
+all = sp.all_spaces_with_names_and_grids(cache, base=LevelGrids, rdim=[1])
+spaces_with_names = [(space, nm, grid) for space, nm, grid in all if 'AluConform2dLevelGrid' not in space]
