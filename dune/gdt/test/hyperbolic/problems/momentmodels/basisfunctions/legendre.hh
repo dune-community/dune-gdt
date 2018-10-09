@@ -40,11 +40,13 @@ public:
   LegendreMomentBasis(const QuadraturesType& quadratures)
     : BaseType(quadratures)
   {
+    BaseType::initialize_base_values();
   }
 
   LegendreMomentBasis(const size_t quad_order = 31, const size_t quad_refinements = 0)
     : BaseType(BaseType::gauss_lobatto_quadratures(std::pow(2, quad_refinements), quad_order))
   {
+    BaseType::initialize_base_values();
   }
 
   static std::string static_id()
@@ -65,7 +67,7 @@ public:
     return ret;
   } // ... evaluate(...)
 
-  virtual RangeType integrated(const bool /*use_fine_quadratures*/ = false) const override
+  RangeType integrated_exactly(const bool /*use_fine_quadratures*/ = false) const
   {
     RangeType ret(0);
     ret[0] = 2;

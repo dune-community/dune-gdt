@@ -209,17 +209,18 @@ protected:
       // problem as the integration is only done once).
       const auto& quadratures =
           is_mn_model ? basis_functions.quadratures() : BasisfunctionImp::gauss_lobatto_quadratures(100, 31);
-      for (const auto& quadrature : quadratures) {
+      for (size_t ii = 0; ii < quadratures.size(); ++ii) {
+        const auto& quadrature = quadratures[ii];
         for (const auto& quad_point : quadrature) {
           const auto& v = quad_point.position()[0];
-          auto summand = basis_functions.evaluate(v);
+          auto summand = basis_functions.evaluate(v, ii);
           summand *= numerator(v) * quad_point.weight();
           ret += summand;
         }
       }
       ret /= denominator();
       // add small vacuum concentration to move away from realizable boundary
-      ret += basis_functions.integrated() * psi_vac;
+      ret += basis_functions.integrated(!is_mn_model) * psi_vac;
       return ret;
     }
   };

@@ -63,8 +63,7 @@ auto get_factor_discrete_function(const size_t ii,
                                   const DiscreteFunctionType& discrete_function)
     -> DiscreteFunction<FactorSpaceType, typename DiscreteFunctionType::VectorType>
 {
-  static constexpr size_t dimRange = DiscreteFunctionType::dimRange;
-  assert(ii < dimRange);
+  assert(ii < DiscreteFunctionType::dimRange);
   using VectorType = typename DiscreteFunctionType::VectorType;
   using FactorDiscreteFunctionType = typename Dune::GDT::DiscreteFunction<FactorSpaceType, VectorType>;
   const auto& space = discrete_function.space();
@@ -280,10 +279,9 @@ public:
   // returns <b>, where b is the basis functions vector
   virtual RangeType integrated(const bool use_fine_quadratures = false) const
   {
-    static const RangeType ret = integrated_initializer(quadratures_);
     if (use_fine_quadratures)
       return integrated_initializer(fine_quadratures_);
-    return ret;
+    return integrated_;
   }
 
   virtual MatrixType mass_matrix(const bool use_fine_quadratures = false) const
@@ -395,8 +393,7 @@ public:
 
   virtual RangeType u_iso() const
   {
-    static RangeType ret = integrated() / unit_ball_volume();
-    return ret;
+    return u_iso_;
   }
 
   virtual std::string short_id() const = 0;
@@ -475,6 +472,12 @@ public:
   }
 
 protected:
+  void initialize_base_values()
+  {
+    integrated_ = integrated_initializer(quadratures_);
+    u_iso_ = integrated() / density(integrated());
+  }
+
   void
   get_pos_and_neg_quadratures(QuadraturesType& neg_quadratures, QuadraturesType& pos_quadratures, const size_t dd) const
   {
@@ -594,6 +597,8 @@ protected:
   QuadraturesType quadratures_;
   QuadraturesType fine_quadratures_;
   SphericalTriangulationType triangulation_;
+  RangeType integrated_;
+  RangeType u_iso_;
 };
 
 

@@ -17,10 +17,13 @@
 
 #include <dune/xt/la/container.hh>
 
+#include <dune/xt/functions/checkerboard.hh>
+
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/operators/fv.hh>
 #include <dune/gdt/projections/l2.hh>
 #include <dune/gdt/spaces/fv/product.hh>
+#include <dune/gdt/timestepper/matrix-exponential-kinetic-isotropic.hh>
 #include <dune/gdt/timestepper/factory.hh>
 #include <dune/gdt/operators/fv/quadrature.hh>
 
@@ -247,8 +250,6 @@ struct HyperbolicPnDiscretization
     const AnalyticalFluxType& analytical_flux = problem.flux();
 
     // ******************** choose flux and rhs operator and timestepper ******************************************
-    using RhsOperatorType = AdvectionRhsOperator<RhsType>;
-
     using AdvectionOperatorType =
         AdvectionKineticOperator<AnalyticalFluxType, BoundaryValueType, BasisfunctionType, GridLayerType>;
 
@@ -268,11 +269,9 @@ struct HyperbolicPnDiscretization
     using OperatorTimeStepperType = typename TimeStepperFactory<FvOperatorType,
                                                                 DiscreteFunctionType,
                                                                 TestCaseType::time_stepper_method>::TimeStepperType;
-    using RhsOperatorTimeStepperType =
-        typename TimeStepperFactory<RhsOperatorType, DiscreteFunctionType, TestCaseType::rhs_time_stepper_method>::
-            TimeStepperType;
+    using RhsTimeStepperType = KineticIsotropicTimeStepper<DiscreteFunctionType, BasisfunctionType>;
     using TimeStepperType =
-        typename Dune::GDT::TimeStepperSplittingFactory<RhsOperatorTimeStepperType,
+        typename Dune::GDT::TimeStepperSplittingFactory<RhsTimeStepperType,
                                                         OperatorTimeStepperType,
                                                         TestCaseType::time_stepper_splitting_method>::TimeStepperType;
 
@@ -290,8 +289,6 @@ struct HyperbolicPnDiscretization
     AdvectionOperatorType advection_operator(analytical_flux, boundary_values, *basis_functions);
     //    ConstantFunctionType dx_func(dx);
     //    AdvectionOperatorType advection_operator(analytical_flux, boundary_values, dx_func);
-    RhsOperatorType rhs_operator(rhs);
-
     MinmodSlope<typename ReconstructionOperatorType::VectorType, typename ReconstructionOperatorType::MatrixType> slope;
     ReconstructionOperatorType reconstruction_operator(
         analytical_flux, boundary_values, slope, Dune::GDT::default_1d_quadrature<double>(1));
@@ -302,7 +299,8 @@ struct HyperbolicPnDiscretization
 
     // ******************************** do the time steps ***********************************************************
     OperatorTimeStepperType timestepper_op(fv_operator, u, -1.0);
-    RhsOperatorTimeStepperType timestepper_rhs(rhs_operator, u);
+    RhsTimeStepperType timestepper_rhs(
+        *basis_functions, u, problem_imp->get_sigma_a(), problem_imp->get_sigma_s(), problem_imp->get_Q());
     TimeStepperType timestepper(timestepper_rhs, timestepper_op);
 
     filename += "_" + ProblemType::static_id();

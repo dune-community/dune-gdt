@@ -56,6 +56,10 @@ public:
   using typename BaseType::ActualDirichletBoundaryValueType;
   using typename BaseType::ActualBoundaryValueType;
   using typename BaseType::RhsAffineFunctionType;
+  using CheckerboardType =
+      XT::Functions::CheckerboardFunction<typename U_::EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1>;
+  using ConstantType =
+      XT::Functions::ConstantFunction<typename U_::EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1>;
 
   using BaseType::default_grid_cfg;
   using BaseType::default_boundary_cfg;
@@ -201,6 +205,48 @@ public:
     } // ii
     return new ActualRhsType(lower_left, upper_right, num_segments_, affine_functions);
   } // ... create_rhs(...)
+
+  virtual CheckerboardType get_sigma_a() const
+  {
+    const auto param = parse_parameter(parameters());
+    const auto sigma_a = param.get("sigma_a");
+    const auto num_regions = get_num_regions(num_segments_);
+    std::vector<ConstantType> sigma_a_funcs;
+    for (size_t ii = 0; ii < num_regions; ++ii)
+      sigma_a_funcs.emplace_back(sigma_a[ii]);
+    assert(sigma_a.size() == num_regions);
+    const DomainType lower_left = XT::Common::from_string<DomainType>(grid_cfg_["lower_left"]);
+    const DomainType upper_right = XT::Common::from_string<DomainType>(grid_cfg_["upper_right"]);
+    return CheckerboardType(lower_left, upper_right, num_segments_, sigma_a_funcs);
+  } // ... sigma_a(...)
+
+  virtual CheckerboardType get_sigma_s() const
+  {
+    const auto param = parse_parameter(parameters());
+    const auto sigma_s = param.get("sigma_s");
+    const auto num_regions = get_num_regions(num_segments_);
+    std::vector<ConstantType> sigma_s_funcs;
+    for (size_t ii = 0; ii < num_regions; ++ii)
+      sigma_s_funcs.emplace_back(sigma_s[ii]);
+    assert(sigma_s.size() == num_regions);
+    const DomainType lower_left = XT::Common::from_string<DomainType>(grid_cfg_["lower_left"]);
+    const DomainType upper_right = XT::Common::from_string<DomainType>(grid_cfg_["upper_right"]);
+    return CheckerboardType(lower_left, upper_right, num_segments_, sigma_s_funcs);
+  } // ... sigma_s(...)
+
+  virtual CheckerboardType get_Q() const
+  {
+    const auto param = parse_parameter(parameters());
+    const auto Q = param.get("Q");
+    const auto num_regions = get_num_regions(num_segments_);
+    std::vector<ConstantType> Q_funcs;
+    for (size_t ii = 0; ii < num_regions; ++ii)
+      Q_funcs.emplace_back(Q[ii]);
+    assert(Q.size() == num_regions);
+    const DomainType lower_left = XT::Common::from_string<DomainType>(grid_cfg_["lower_left"]);
+    const DomainType upper_right = XT::Common::from_string<DomainType>(grid_cfg_["upper_right"]);
+    return CheckerboardType(lower_left, upper_right, num_segments_, Q_funcs);
+  } // ... Q(...)
 
   // Initial value of the kinetic equation is a constant vacuum concentration psi_vac.
   // Thus, the initial value of the n-th moment is basis_integrated * psi_vac.

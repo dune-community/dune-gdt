@@ -74,6 +74,7 @@ public:
     : BaseType(quadratures)
     , triangulation_(BaseType::create_1d_triangulation(num_intervals))
   {
+    BaseType::initialize_base_values();
   }
 
   PartialMomentBasis(const size_t quad_order = 15, const size_t DXTC_DEBUG_ONLY(quad_refinements) = 0)
@@ -81,6 +82,7 @@ public:
     , triangulation_(BaseType::create_1d_triangulation(num_intervals))
   {
     assert(quad_refinements == 0 && "Refinement of the quadrature intervals not implemented for this basis!");
+    BaseType::initialize_base_values();
   }
 
   virtual RangeType evaluate(const DomainType& v) const override final
@@ -381,6 +383,7 @@ public:
     : BaseType(refinements, quadratures, fine_quadratures)
   {
     assert(4 * triangulation_.faces().size() == dimRange);
+    BaseType::initialize_base_values();
   }
 
   PartialMomentBasis(const size_t quad_refinements, const QuadratureRule<RangeFieldType, 2>& reference_quadrature_rule)
@@ -389,6 +392,7 @@ public:
     quadratures_ = triangulation_.quadrature_rules(quad_refinements, reference_quadrature_rule);
     fine_quadratures_ = triangulation_.quadrature_rules(quad_refinements + 3, reference_quadrature_rule);
     assert(4 * triangulation_.faces().size() == dimRange);
+    BaseType::initialize_base_values();
   }
 
   // This constructor is here for compatibility with the one-dimensional basis to simplify testing
@@ -419,6 +423,7 @@ public:
                                                         ,
                                                         reference_quadrature_rule);
     assert(4 * triangulation_.faces().size() == dimRange);
+    BaseType::initialize_base_values();
   }
 
   virtual RangeType evaluate(const DomainType& v) const override final

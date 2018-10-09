@@ -53,6 +53,7 @@ public:
   SphericalHarmonicsMomentBasis(const QuadraturesType& quadratures)
     : BaseType(quadratures)
   {
+    BaseType::initialize_base_values();
   }
 
   SphericalHarmonicsMomentBasis(const size_t quad_order = 2 * order + 2,
@@ -60,6 +61,7 @@ public:
     : BaseType(OctantQuadrature<DomainFieldType>::get(quad_order))
   {
     assert(quad_refinements == 0 && "Refinement of the quadrature intervals not implemented for this basis!");
+    BaseType::initialize_base_values();
   }
 
   using BaseType::evaluate;
@@ -82,7 +84,7 @@ public:
     return ret;
   } // ... evaluate(...)
 
-  virtual RangeType integrated(const bool /*use_fine_quadratures*/ = false) const override
+  RangeType integrated_exactly(const bool /*use_fine_quadratures*/ = false) const
   {
     RangeType ret(0);
     ret[0] = std::sqrt(4. * M_PI);
@@ -288,6 +290,7 @@ public:
   RealSphericalHarmonicsMomentBasis(const QuadraturesType& quadratures)
     : BaseType(quadratures)
   {
+    BaseType::initialize_base_values();
   }
 
   RealSphericalHarmonicsMomentBasis(const size_t quad_order = 2 * order + 2,
@@ -295,6 +298,7 @@ public:
     : BaseType(OctantQuadrature<DomainFieldType>::get(quad_order))
   {
     assert(quad_refinements == 0 && "Refinement of the quadrature intervals not implemented for this basis!");
+    BaseType::initialize_base_values();
   }
 
   using BaseType::evaluate;
@@ -317,7 +321,7 @@ public:
     return ret;
   } // ... evaluate(...)
 
-  virtual RangeType integrated(const bool /*use_fine_quadratures*/ = false) const override
+  RangeType integrated_exactly(const bool /*use_fine_quadratures*/ = false) const
   {
     RangeType ret(0.);
     ret[0] = std::sqrt(4. * M_PI);

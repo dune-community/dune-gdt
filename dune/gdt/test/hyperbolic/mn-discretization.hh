@@ -53,6 +53,7 @@ struct HyperbolicMnDiscretization
     using GridLayerType = typename TestCaseType::GridLayerType;
     using ProblemType = typename TestCaseType::ProblemType;
     using EquationType = Hyperbolic::Problems::KineticEquation<ProblemType>;
+    using DomainFieldType = typename EquationType::DomainFieldType;
     using RangeFieldType = typename EquationType::RangeFieldType;
     using RhsType = typename EquationType::RhsType;
     using InitialValueType = typename EquationType::InitialValueType;
@@ -99,7 +100,6 @@ struct HyperbolicMnDiscretization
     using JacobianWrapperType = typename JacobianChooser<BasisfunctionType, AnalyticalFluxType>::type;
 
     // ******************** choose flux and rhs operator and timestepper ******************************************
-    using RhsOperatorType = AdvectionRhsOperator<RhsType>;
     using AdvectionOperatorType =
         AdvectionKineticOperator<AnalyticalFluxType, BoundaryValueType, BasisfunctionType, GridLayerType>;
     using ReconstructionOperatorType =
@@ -116,11 +116,9 @@ struct HyperbolicMnDiscretization
     using OperatorTimeStepperType = typename TimeStepperFactory<FvOperatorType,
                                                                 DiscreteFunctionType,
                                                                 TestCaseType::time_stepper_method>::TimeStepperType;
-    using RhsOperatorTimeStepperType =
-        typename TimeStepperFactory<RhsOperatorType, DiscreteFunctionType, TestCaseType::rhs_time_stepper_method>::
-            TimeStepperType;
+    using RhsTimeStepperType = KineticIsotropicTimeStepper<DiscreteFunctionType, BasisfunctionType>;
     using TimeStepperType =
-        typename Dune::GDT::TimeStepperSplittingFactory<RhsOperatorTimeStepperType,
+        typename Dune::GDT::TimeStepperSplittingFactory<RhsTimeStepperType,
                                                         OperatorTimeStepperType,
                                                         TestCaseType::time_stepper_splitting_method>::TimeStepperType;
 
@@ -135,7 +133,6 @@ struct HyperbolicMnDiscretization
 
     // *********************** create operators and timesteppers ************************************
     AdvectionOperatorType advection_operator(analytical_flux, boundary_values, *basis_functions);
-    RhsOperatorType rhs_operator(rhs);
 
     constexpr double epsilon = 1e-11;
     auto slope = TestCaseType::RealizabilityLimiterChooserType::template make_slope<
@@ -163,7 +160,8 @@ struct HyperbolicMnDiscretization
 
     // ******************************** do the time steps ***********************************************************
     OperatorTimeStepperType timestepper_op(fv_operator, u, -1.0);
-    RhsOperatorTimeStepperType timestepper_rhs(rhs_operator, u);
+    RhsTimeStepperType timestepper_rhs(
+        *basis_functions, u, problem_imp->get_sigma_a(), problem_imp->get_sigma_s(), problem_imp->get_Q());
     TimeStepperType timestepper(timestepper_rhs, timestepper_op);
     auto visualizer = basis_functions->template visualizer<DiscreteFunctionType>();
     timestepper.solve(t_end,

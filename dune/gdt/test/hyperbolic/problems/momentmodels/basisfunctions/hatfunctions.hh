@@ -66,6 +66,7 @@ public:
     : BaseType(quadratures)
     , triangulation_(BaseType::create_1d_triangulation(dimRange - 1))
   {
+    BaseType::initialize_base_values();
   }
 
   HatFunctionMomentBasis(const size_t quad_order = 15, const size_t DXTC_DEBUG_ONLY(quad_refinements) = 0)
@@ -73,6 +74,7 @@ public:
     , triangulation_(BaseType::create_1d_triangulation(dimRange - 1))
   {
     assert(quad_refinements == 0 && "Refinement of the quadrature intervals not implemented for this basis!");
+    BaseType::initialize_base_values();
   }
 
   virtual RangeType evaluate(const DomainType& v) const override final
@@ -330,6 +332,7 @@ public:
     : BaseType(refinements, quadratures, fine_quadratures)
   {
     assert(triangulation_.vertices().size() == dimRange);
+    BaseType::initialize_base_values();
   }
 
   HatFunctionMomentBasis(const size_t quad_refinements,
@@ -339,6 +342,7 @@ public:
     quadratures_ = triangulation_.quadrature_rules(quad_refinements, reference_quadrature_rule);
     fine_quadratures_ = triangulation_.quadrature_rules(quad_refinements + 3, reference_quadrature_rule);
     assert(triangulation_.vertices().size() == dimRange);
+    BaseType::initialize_base_values();
   }
 
   // This constructor is here for compatibility with the one-dimensional basis to simplify testing
@@ -369,6 +373,7 @@ public:
                                                         ,
                                                         reference_quadrature_rule);
     assert(triangulation_.vertices().size() == dimRange);
+    BaseType::initialize_base_values();
   }
 
   virtual RangeType evaluate(const DomainType& v) const override
@@ -472,9 +477,6 @@ public:
   }
 
 protected:
-  using BaseType::parallel_quadrature;
-  using BaseType::integrated_initializer;
-
   template <class VertexVectorType>
   bool calculate_barycentric_coordinates(const DomainType& v, const VertexVectorType& vertices, DomainType& ret) const
   {
