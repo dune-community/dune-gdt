@@ -47,10 +47,19 @@ def FV(cache, base=LeafGrids, rdim=None):
 
 def RT(cache, base=LeafGrids):
     rt = base(cache)
-    rt.spaces = ['Dune::GDT::RaviartThomasSpace<{}, 0>'.format(s.format(d))
-                   for s, d in itertools.product(rt.all_views_fmt, rt.world_dim)]
+    rt.grids = [s.format(d) for s, d in itertools.product(rt.all_views_fmt, rt.world_dim)]
+    rt.spaces = ['Dune::GDT::RaviartThomasSpace<{}, 0>'.format(g) for g in rt.grids]
     rt.names = [typeid_to_typedef_name(sp) for sp in rt.spaces]
     return rt
+
+
+def all_spaces_with_names_and_grids(cache, base=LeafGrids, rdim=None):
+    cg = CG(cache, base)
+    dg = DG(cache, base)
+    fv = FV(cache, base, rdim)
+    rt = RT(cache, base)
+    return ((s,n,g) for s,n,g in zip(cg.spaces+dg.spaces+fv.spaces+rt.spaces, cg.names+dg.names+fv.names+rt.names,
+            cg.grids+dg.grids+fv.grids+rt.grids))
 
 
 if __name__ == '__dxt_codegen__':
