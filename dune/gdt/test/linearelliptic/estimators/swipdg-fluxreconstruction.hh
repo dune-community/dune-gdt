@@ -121,7 +121,7 @@ public:
   {
     ThisType estimator(grid_layer, space, vector, diffusion_factor, diffusion_tensor, over_int);
     XT::Grid::Walker<GridLayerType> grid_walker(grid_layer);
-    grid_walker.append(estimator);
+    grid_walker.append(estimator, new XT::Grid::ApplyOn::PartitionSetEntities<GridLayerType, Partitions::Interior>());
     grid_walker.walk();
     return std::sqrt(estimator.result());
   } // ... estimate(...)
@@ -169,7 +169,8 @@ public:
 
   virtual ReturnType result() const override
   {
-    return result_;
+    double result = result_;
+    return grid_layer_.grid().comm().sum(result);
   }
 
 private:
@@ -247,7 +248,7 @@ public:
   {
     ThisType estimator(grid_layer, space, vector, force, diffusion_factor, diffusion_tensor, over_int);
     XT::Grid::Walker<GridLayerType> grid_walker(grid_layer);
-    grid_walker.append(estimator);
+    grid_walker.append(estimator, new XT::Grid::ApplyOn::PartitionSetEntities<GridLayerType, Partitions::Interior>());
     grid_walker.walk();
     return std::sqrt(estimator.result());
   } // ... estimate(...)
@@ -302,7 +303,8 @@ public:
 
   virtual ReturnType result() const override final
   {
-    return result_;
+    double result = result_;
+    return grid_layer_.grid().comm().sum(result);
   }
 
 private:
@@ -406,7 +408,7 @@ public:
     ThisType estimator(
         grid_layer, space, vector, diffusion_factor_norm, diffusion_factor_reconstruction, diffusion_tensor, over_int);
     XT::Grid::Walker<GridLayerType> grid_walker(grid_layer);
-    grid_walker.append(estimator);
+    grid_walker.append(estimator, new XT::Grid::ApplyOn::PartitionSetEntities<GridLayerType, Partitions::Interior>());
     grid_walker.walk();
     return std::sqrt(estimator.result());
   } // ... estimate(...)
@@ -458,7 +460,8 @@ public:
 
   virtual ReturnType result() const override final
   {
-    return result_;
+    double result = result_;
+    return grid_layer_.grid().comm().sum(result);
   }
 
 private:
@@ -564,7 +567,7 @@ public:
                        diffusion_tensor,
                        over_int);
     XT::Grid::Walker<GridLayerType> grid_walker(grid_layer);
-    grid_walker.append(estimator);
+    grid_walker.append(estimator, new XT::Grid::ApplyOn::PartitionSetEntities<GridLayerType, Partitions::Interior>());
     grid_walker.walk();
     return std::sqrt(estimator.result());
   } // ... estimate(...)
@@ -616,6 +619,7 @@ public:
     , eta_df_(
           grid_layer, space, vector, diffusion_factor_norm, diffusion_factor_reconstruction, diffusion_tensor, over_int)
     , result_(0.0)
+    , grid_layer_(grid_layer)
   {
   }
 
@@ -639,7 +643,8 @@ public:
 
   virtual ReturnType result() const override
   {
-    return result_;
+    double result = result_;
+    return grid_layer_.grid().comm().sum(result);
   }
 
 protected:
@@ -647,6 +652,7 @@ protected:
   LocalResidualEstimator eta_r_;
   LocalDiffusiveFluxEstimator eta_df_;
   ReturnType result_;
+  const GridLayerType& grid_layer_;
 }; // class ESV2007
 
 
@@ -734,7 +740,7 @@ public:
                        diffusion_tensor,
                        over_int);
     XT::Grid::Walker<GridLayerType> grid_walker(grid_layer);
-    grid_walker.append(estimator);
+    grid_walker.append(estimator, new XT::Grid::ApplyOn::PartitionSetEntities<GridLayerType, Partitions::Interior>());
     grid_walker.walk();
     return std::sqrt(estimator.result());
   } // ... estimate(...)
@@ -792,7 +798,11 @@ public:
 
   virtual ReturnType result() const override
   {
-    return std::sqrt(eta_nc_squared_) + std::sqrt(eta_r_squared_) + std::sqrt(eta_df_squared_);
+    ReturnType res{0.};
+    for (auto var : {eta_nc_squared_, eta_r_squared_, eta_df_squared_}) {
+      res += std::sqrt(BaseType::grid_layer_.grid().comm().sum(var));
+    }
+    return res;
   }
 
 private:
