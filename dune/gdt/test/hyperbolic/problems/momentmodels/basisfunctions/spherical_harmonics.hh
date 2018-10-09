@@ -84,7 +84,7 @@ public:
     return ret;
   } // ... evaluate(...)
 
-  RangeType integrated_exactly(const bool /*use_fine_quadratures*/ = false) const
+  virtual RangeType integrated(const bool /*use_fine_quadratures*/ = false) const override final
   {
     RangeType ret(0);
     ret[0] = std::sqrt(4. * M_PI);
