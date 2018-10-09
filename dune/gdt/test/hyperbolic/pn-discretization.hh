@@ -198,9 +198,7 @@ struct HyperbolicPnDiscretization
     using ProblemType = typename TestCaseType::ProblemType;
     using EquationType = Hyperbolic::Problems::KineticEquation<ProblemType>;
     using RangeFieldType = typename EquationType::RangeFieldType;
-    using RhsType = typename EquationType::RhsType;
     using InitialValueType = typename EquationType::InitialValueType;
-    //    using EntityType = typename GridLayerType::template Codim<0>::Entity;
     static constexpr size_t dimDomain = BasisfunctionType::dimDomain;
     static constexpr size_t dimRange = BasisfunctionType::dimRange;
 
