@@ -364,9 +364,11 @@ public:
       {
       }
 
-      void setup_linear_program() const
+      // The ClpSimplex structure seems to get corrupted sometimes (maybe some problems with infs/NaNs?), so we
+      // reinitialize it if the stopping conditions is always false
+      void setup_linear_program(const bool reinitialize) const
       {
-        if (!*lp_) {
+        if (!*lp_ || reinitialize) {
           // We start with creating a model with dimRange rows and num_quad_points columns */
           constexpr int num_rows = static_cast<int>(dimRange);
           assert(quad_points_.size() < std::numeric_limits<int>::max());
@@ -398,13 +400,13 @@ public:
         } // if (!lp_)
       }
 
-      bool is_realizable(const StateRangeType& u) const
+      bool is_realizable(const StateRangeType& u, const bool reinitialize) const
       {
         const auto density = basis_functions_.density(u);
         if (!(density > 0.) || std::isinf(density))
           return false;
         const auto u_prime = u / density;
-        setup_linear_program();
+        setup_linear_program(reinitialize);
         auto& lp = **lp_;
         constexpr int num_rows = static_cast<int>(dimRange);
         // set rhs (equality constraints, so set both bounds equal
@@ -432,7 +434,7 @@ public:
         DUNE_THROW(Dune::NotImplemented, "You are missing Clp!");
       }
 
-      bool is_realizable(const StateRangeType& /*u*/) const
+      bool is_realizable(const StateRangeType& /*u*/, const bool /*reinitialize*/) const
       {
         DUNE_THROW(Dune::NotImplemented, "You are missing Clp!");
         return false;
@@ -462,7 +464,7 @@ public:
       {
       }
 
-      static bool is_realizable(const StateRangeType& u)
+      static bool is_realizable(const StateRangeType& u, const bool /*reinitialize*/)
       {
         for (const auto& u_i : u)
           if (!(u_i > 0.) || std::isinf(u_i))
@@ -629,6 +631,8 @@ public:
       }
       VectorType u_prime = u / density;
       VectorType alpha_iso = basis_functions_.alpha_iso();
+      VectorType v, u_eps_diff, beta_in;
+      RangeFieldType first_error_cond, second_error_cond, tau_prime;
 
       // if value has already been calculated for these values, skip computation
       const auto cache_iterator = cache_.find_closest(u_prime);
@@ -642,11 +646,10 @@ public:
       } else {
         StateRangeType u_iso = basis_functions_.u_iso();
         const RangeFieldType dim_factor = is_full_moment_basis<BasisfunctionType>::value ? 1. : std::sqrt(dimDomain);
-        RangeFieldType tau_prime =
-            std::min(tau_ / ((1 + dim_factor * u_prime.two_norm()) * density + dim_factor * tau_), tau_);
+        tau_prime = std::min(tau_ / ((1 + dim_factor * u_prime.two_norm()) * density + dim_factor * tau_), tau_);
 
         // define further variables
-        VectorType g_k, beta_in, beta_out, v;
+        VectorType g_k, beta_out;
         beta_in = cache_iterator != cache_.end() ? cache_iterator->second : alpha_iso;
         thread_local auto T_k = XT::Common::make_unique<MatrixType>();
 
@@ -685,11 +688,14 @@ public:
               if (r < r_max)
                 break;
               mutex_.unlock();
-              //              std::cerr << "Failed to converge for " << XT::Common::to_string(u, 15) << " with density "
-              //                        << XT::Common::to_string(density, 15) << " at position "
-              //                        << XT::Common::to_string(entity().geometry().center(), 15)
-              //                        << " due to errors in the Cholesky decomposition!" << std::endl;
-              DUNE_THROW(Dune::MathError, "Failure to converge!");
+              const std::string err_msg =
+                  "Failed to converge for " + XT::Common::to_string(u) + " with density "
+                  + XT::Common::to_string(density) + " and multiplier " + XT::Common::to_string(beta_in)
+                  + " at position " + XT::Common::to_string(entity().geometry().center())
+                  + " due to errors in change_basis! Last u_eps_diff = " + XT::Common::to_string(u_eps_diff)
+                  + ", first_error_cond = " + XT::Common::to_string(first_error_cond) + ", second_error_cond = "
+                  + XT::Common::to_string(second_error_cond) + ", tau_prime = " + XT::Common::to_string(tau_prime);
+              DUNE_THROW(MathError, err_msg);
             }
             // calculate descent direction d_k;
             VectorType d_k = g_k;
@@ -707,12 +713,13 @@ public:
             const auto alpha_prime = alpha_tilde - alpha_iso * std::log(density_tilde);
             VectorType u_alpha_prime;
             calculate_vector_integral(alpha_prime, M_, M_, u_alpha_prime);
-            auto u_eps_diff = v - u_alpha_prime * (1 - epsilon_gamma_);
+            u_eps_diff = v - u_alpha_prime * (1 - epsilon_gamma_);
             VectorType d_alpha_tilde;
             XT::LA::solve_lower_triangular_transposed(*T_k, d_alpha_tilde, d_k);
-            if (g_alpha_tilde.two_norm() < tau_prime
-                && 1 - epsilon_gamma_ < std::exp(d_alpha_tilde.one_norm() + std::abs(std::log(density_tilde)))
-                && realizability_helper_.is_realizable(u_eps_diff)) {
+            first_error_cond = g_alpha_tilde.two_norm();
+            second_error_cond = std::exp(d_alpha_tilde.one_norm() + std::abs(std::log(density_tilde)));
+            if (first_error_cond < tau_prime && 1 - epsilon_gamma_ < second_error_cond
+                && realizability_helper_.is_realizable(u_eps_diff, kk == static_cast<size_t>(0.8 * k_0_))) {
               ret.first = alpha_prime + alpha_iso * std::log(density);
               ret.second = r;
               cache_.insert(v, alpha_prime);
@@ -737,18 +744,20 @@ public:
                 }
                 zeta_k = chi_ * zeta_k;
               } // backtracking linesearch while
-              // if (zeta_k <= epsilon_ * beta_out.two_norm() / d_k.two_norm() * 100.)
               if (zeta_k <= epsilon_ * beta_out.two_norm() / d_k.two_norm())
                 ++pure_newton;
             } // else (stopping conditions)
           } // k loop (Newton iterations)
         } // r loop (Regularization parameter)
         mutex_.unlock();
-        //        std::cerr << "Failed to converge for " << XT::Common::to_string(u, 15) << " with density "
-        //                  << XT::Common::to_string(density, 15) << " at position "
-        //                  << XT::Common::to_string(entity().geometry().center(), 15) << " due to too many iterations!"
-        //                  << std::endl;
-        DUNE_THROW(MathError, "Failed to converge");
+        const std::string err_msg =
+            "Failed to converge for " + XT::Common::to_string(u) + " with density " + XT::Common::to_string(density)
+            + " and multiplier " + XT::Common::to_string(beta_in) + " at position "
+            + XT::Common::to_string(entity().geometry().center()) + " due to too many iterations! Last u_eps_diff = "
+            + XT::Common::to_string(u_eps_diff) + ", first_error_cond = " + XT::Common::to_string(first_error_cond)
+            + ", second_error_cond = " + XT::Common::to_string(second_error_cond) + ", tau_prime = "
+            + XT::Common::to_string(tau_prime);
+        DUNE_THROW(MathError, err_msg);
       } // else ( value has not been calculated before )
 
     outside_all_loops:
