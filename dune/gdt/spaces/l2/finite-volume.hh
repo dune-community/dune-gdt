@@ -153,6 +153,12 @@ FiniteVolumeSpace<GV, r, 1, double> make_finite_volume_space(const GV& grid_view
   return FiniteVolumeSpace<GV, r, 1, double>(grid_view);
 }
 
+template <class GV>
+FiniteVolumeSpace<GV, 1, 1, double> make_finite_volume_space(const GV& grid_view)
+{
+  return FiniteVolumeSpace<GV, 1, 1, double>(grid_view);
+}
+
 
 } // namespace GDT
 } // namespace Dune
