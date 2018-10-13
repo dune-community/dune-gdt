@@ -32,7 +32,7 @@ pipeline:
     commands:
       - echo $DOCKER_PW | docker login --username="$DOCKER_USER" --password-stdin
       - docker push dunecommunity/dune-gdt-testing_${CC}:${DRONE_COMMIT_SHA}
-      - docker rmi dunecommunity/dune-gdt-testing_${CC}:${DRONE_COMMIT_SHA}
+      - docker rmi -f dunecommunity/dune-gdt-testing_${CC}:${DRONE_COMMIT_SHA}
 
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -43,7 +43,7 @@ pipeline:
   cleanup_success:
     image: dunecommunity/gitlabci_dockerindocker-dockerindocker
     commands:
-      - docker rmi dunecommunity/dune-gdt-testing_${CC}:${DRONE_COMMIT_SHA}
+      - docker rmi -f dunecommunity/dune-gdt-testing_${CC}:${DRONE_COMMIT_SHA}
 
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
