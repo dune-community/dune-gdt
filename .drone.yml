@@ -18,6 +18,7 @@ pipeline:
       - MY_MODULE=dune-gdt
     commands:
       - /home/dune-ci/src/dune-gdt/.ci/drone/script.bash
+    secrets: [ codecov_token ]
 
   python:
     image: dunecommunity/dune-gdt-testing_${CC}:${DRONE_COMMIT_SHA}
@@ -26,6 +27,7 @@ pipeline:
       - MY_MODULE=dune-gdt
     commands:
       - /home/dune-ci/src/dune-gdt/.ci/travis/test_python.bash
+    secrets: [ codecov_token ]
 
   cleanup_fail:
     image: dunecommunity/gitlabci_dockerindocker-dockerindocker
