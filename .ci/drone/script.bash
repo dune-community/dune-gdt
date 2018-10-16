@@ -25,6 +25,9 @@ ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make
 # this will fail (with file permission denied)
 #$ if there is a diff between current and regenerated timings/listings
 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ninja -v -j 1 refresh_test_timings
+pushd ${SUPERDIR}/${MY_MODULE}
+    git diff --exit-code dune/gdt/test/{builder_definitions.cmake,compiles_totals.pickle}
+popd
 
 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ninja -v -j 1 check
 
@@ -49,6 +52,6 @@ for d in "dune-common" "dune-pybindxi" "dune-geometry"  "dune-istl"  "dune-grid"
 done
 lcov --directory . --output-file ${COVERAGE_INFO} -r ${COVERAGE_INFO} "${SUPERDIR}/${MY_MODULE}/dune/xt/*/test/*"
 cd ${SUPERDIR}/${MY_MODULE}
-${MY_BUILD_DIR}/dune-env pip install codecov
+${MY_BUILD_DIR}/dune-env pip install --no-cache codecov
 ${MY_BUILD_DIR}/dune-env codecov -v -X gcov -X coveragepy -F ctest -f ${COVERAGE_INFO} -t ${CODECOV_TOKEN}
 popd
