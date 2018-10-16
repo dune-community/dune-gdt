@@ -62,9 +62,9 @@ int main(int argc, char** argv)
 
   using BasisfunctionType =
       // LegendreMomentBasis<double, double, momentOrder>; // 1d
-      RealSphericalHarmonicsMomentBasis<double, double, momentOrder>; // 3d
-  // HatFunctionMomentBasis<double, 1, double, momentOrder, 1, 1>; // 1d
-  // HatFunctionMomentBasis<double, 3, double, momentOrder, 1, 3>; // 3d
+      // RealSphericalHarmonicsMomentBasis<double, double, momentOrder>; // 3d
+      // HatFunctionMomentBasis<double, 1, double, momentOrder, 1, 1>; // 1d
+      HatFunctionMomentBasis<double, 3, double, momentOrder, 1, 3>; // 3d
   // PartialMomentBasis<double, 1, double, momentOrder, 1, 1>; // 1d
   // PartialMomentBasis<double, 3, double, momentOrder, 1, 3>; // 3d
 
