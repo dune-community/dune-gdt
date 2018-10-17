@@ -22,8 +22,6 @@
 
 namespace Dune {
 namespace GDT {
-namespace Hyperbolic {
-namespace Problems {
 
 
 template <class DomainFieldType,
@@ -32,13 +30,13 @@ template <class DomainFieldType,
           size_t dimRange,
           size_t dimRangeCols = 1,
           size_t dimFlux = dimDomain>
-class HatFunctions
+class HatFunctionMomentBasis
 {
   //  static_assert(false, "Not implemented for this dimension!");
 };
 
 template <class DomainFieldType, class RangeFieldType, size_t rangeDim, size_t rangeDimCols, size_t fluxDim>
-class HatFunctions<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, fluxDim>
+class HatFunctionMomentBasis<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, fluxDim>
     : public BasisfunctionsInterface<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, fluxDim>
 {
 public:
@@ -64,10 +62,19 @@ public:
     return "hatfunctions";
   }
 
-  HatFunctions(const QuadraturesType& quadratures = BaseType::gauss_lobatto_quadratures(dimRange - 1, 15))
+  HatFunctionMomentBasis(const QuadraturesType& quadratures)
     : BaseType(quadratures)
     , triangulation_(BaseType::create_1d_triangulation(dimRange - 1))
   {
+    BaseType::initialize_base_values();
+  }
+
+  HatFunctionMomentBasis(const size_t quad_order = 15, const size_t DXTC_DEBUG_ONLY(quad_refinements) = 0)
+    : BaseType(BaseType::gauss_lobatto_quadratures(dimRange - 1, quad_order))
+    , triangulation_(BaseType::create_1d_triangulation(dimRange - 1))
+  {
+    assert(quad_refinements == 0 && "Refinement of the quadrature intervals not implemented for this basis!");
+    BaseType::initialize_base_values();
   }
 
   virtual RangeType evaluate(const DomainType& v) const override final
@@ -94,7 +101,7 @@ public:
     return ret;
   } // ... evaluate(...)
 
-  virtual RangeType integrated() const override final
+  virtual RangeType integrated(const bool /*use_fine_quadratures*/ = false) const override final
   {
     RangeType ret(0);
     ret[0] = triangulation_[1] - triangulation_[0];
@@ -106,7 +113,7 @@ public:
   }
 
   // returns matrix with entries <h_i h_j>
-  virtual MatrixType mass_matrix() const override final
+  virtual MatrixType mass_matrix(const bool /*use_fine_quadratures*/ = false) const override final
   {
     MatrixType ret(dimRange, dimRange, 0);
     ret[0][0] = (triangulation_[1] - triangulation_[0]) / 3.;
@@ -122,9 +129,9 @@ public:
     return ret;
   }
 
-  virtual MatrixType mass_matrix_inverse() const override final
+  virtual MatrixType mass_matrix_inverse(const bool use_fine_quadratures = false) const override final
   {
-    return tridiagonal_matrix_inverse<RangeFieldType, dimRange>(mass_matrix());
+    return tridiagonal_matrix_inverse<RangeFieldType, dimRange>(mass_matrix(use_fine_quadratures));
   }
 
   // returns matrix with entries <v h_i h_j>
@@ -154,7 +161,7 @@ public:
     return ret;
   }
 
-  // returns matrices with entries <v h_i h_j>_- and <v h_i h_j>_+
+  // returns V M^-1 where the matrix V has entries <v h_i h_j>_- and <v h_i h_j>_+
   virtual FieldVector<FieldVector<MatrixType, 2>, 1> kinetic_flux_matrices() const override final
   {
     FieldVector<FieldVector<MatrixType, 2>, 1> ret(FieldVector<MatrixType, 2>(MatrixType(dimRange, dimRange, 0.)));
@@ -195,6 +202,14 @@ public:
         } // else (N % 2)
       } // mm
     } // nn
+    // apply M^{-1} from the right
+    const auto M = std::make_unique<XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange>>(mass_matrix());
+    MatrixType tmp_mat = ret_neg;
+    for (size_t rr = 0; rr < dimRange; ++rr)
+      M->solve(ret_neg[rr], tmp_mat[rr]);
+    tmp_mat = ret_pos;
+    for (size_t rr = 0; rr < dimRange; ++rr)
+      M->solve(ret_pos[rr], tmp_mat[rr]);
     return ret;
   }
 
@@ -224,7 +239,7 @@ public:
   VisualizerType<DiscreteFunctionType> visualizer() const
   {
     return [](const DiscreteFunctionType& u_n, const std::string& filename_prefix, const size_t ii) {
-      sum_visualizer<DiscreteFunctionType, dimRange>(u_n, filename_prefix, ii);
+      sum_visualizer(u_n, filename_prefix, ii);
     };
   }
 
@@ -253,9 +268,19 @@ public:
     return std::accumulate(u.begin(), u.end(), RangeFieldType(0));
   }
 
+  using BaseType::u_iso;
+
+  virtual void ensure_min_density(RangeType& u, const RangeFieldType min_density) const override final
+  {
+    const auto u_iso_min = u_iso() * min_density;
+    for (size_t ii = 0; ii < dimRange; ++ii)
+      if (u[ii] < u_iso_min[ii])
+        u[ii] = u_iso_min[ii];
+  }
+
   virtual std::string short_id() const override final
   {
-    return "hf1d";
+    return "1dhf";
   }
 
   // get indices of all faces that contain point v
@@ -271,17 +296,22 @@ public:
 
 private:
   const TriangulationType triangulation_;
-}; // class HatFunctions<DomainFieldType, 1, ...>
+}; // class HatFunctionMomentBasis<DomainFieldType, 1, ...>
 
-template <class DomainFieldType, class RangeFieldType, size_t rangeDim, size_t rangeDimCols, size_t fluxDim>
-class HatFunctions<DomainFieldType, 3, RangeFieldType, rangeDim, rangeDimCols, fluxDim>
-    : public BasisfunctionsInterface<DomainFieldType, 3, RangeFieldType, rangeDim, rangeDimCols, fluxDim>
+template <class DomainFieldType, class RangeFieldType, size_t refinements, size_t fluxDim>
+class HatFunctionMomentBasis<DomainFieldType, 3, RangeFieldType, refinements, 1, fluxDim>
+    : public BasisfunctionsInterface<DomainFieldType,
+                                     3,
+                                     RangeFieldType,
+                                     OctaederStatistics<refinements>::num_vertices(),
+                                     1,
+                                     fluxDim>
 {
 public:
-  static const size_t dimDomain = 3;
-  static const size_t dimRange = rangeDim;
-  static const size_t dimRangeCols = rangeDimCols;
-  static const size_t dimFlux = fluxDim;
+  static constexpr size_t dimDomain = 3;
+  static constexpr size_t dimRange = OctaederStatistics<refinements>::num_vertices();
+  static constexpr size_t dimRangeCols = 1;
+  static constexpr size_t dimFlux = fluxDim;
 
 private:
   typedef BasisfunctionsInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols, dimFlux> BaseType;
@@ -298,31 +328,52 @@ public:
 
   using BaseType::barycentre_rule;
 
-  HatFunctions(
-      const size_t refinements = 0,
-#if HAVE_FEKETE
-      const size_t quadrature_refinements = 0,
-      const QuadratureRule<RangeFieldType, 2>& reference_quadrature_rule = FeketeQuadrature<DomainFieldType>::get(3),
-#else
-      const size_t quadrature_refinements = 7,
-      const QuadratureRule<RangeFieldType, 2>& reference_quadrature_rule = barycentre_rule(),
-#endif
-      std::vector<Dune::XT::Common::FieldVector<DomainFieldType, dimDomain>> initial_points =
-          {{1., 0., 0.}, {-1., 0., 0.}, {0., 1., 0.}, {0., -1., 0.}, {0., 0., 1.}, {0., 0., -1.}})
-    : triangulation_(initial_points, refinements, reference_quadrature_rule)
+  HatFunctionMomentBasis(const QuadraturesType& quadratures, const QuadraturesType& fine_quadratures)
+    : BaseType(refinements, quadratures, fine_quadratures)
   {
-    quadratures_ = triangulation_.quadrature_rules(quadrature_refinements);
     assert(triangulation_.vertices().size() == dimRange);
+    BaseType::initialize_base_values();
   }
 
-  HatFunctions(const size_t refinements,
-               const QuadraturesType& quadratures,
-               std::vector<Dune::XT::Common::FieldVector<DomainFieldType, dimDomain>> initial_points =
-                   {{1., 0., 0.}, {-1., 0., 0.}, {0., 1., 0.}, {0., -1., 0.}, {0., 0., 1.}, {0., 0., -1.}})
-    : BaseType(quadratures)
-    , triangulation_(initial_points, refinements)
+  HatFunctionMomentBasis(const size_t quad_refinements,
+                         const QuadratureRule<RangeFieldType, 2>& reference_quadrature_rule)
+    : BaseType(refinements)
   {
+    quadratures_ = triangulation_.quadrature_rules(quad_refinements, reference_quadrature_rule);
+    fine_quadratures_ = triangulation_.quadrature_rules(quad_refinements + 3, reference_quadrature_rule);
     assert(triangulation_.vertices().size() == dimRange);
+    BaseType::initialize_base_values();
+  }
+
+  // This constructor is here for compatibility with the one-dimensional basis to simplify testing
+  HatFunctionMomentBasis(const size_t fekete_rule_num = 3,
+                         const size_t quad_refinements =
+#if HAVE_FEKETE
+                             0
+#else
+                             7
+#endif
+                         )
+    : BaseType(refinements)
+  {
+#if HAVE_FEKETE
+    const QuadratureRule<RangeFieldType, 2> reference_quadrature_rule =
+        FeketeQuadrature<DomainFieldType>::get(fekete_rule_num);
+#else
+    DUNE_UNUSED_PARAMETER(fekete_rule_num);
+    const QuadratureRule<RangeFieldType, 2> reference_quadrature_rule = barycentre_rule();
+#endif
+    quadratures_ = triangulation_.quadrature_rules(quad_refinements, reference_quadrature_rule);
+    fine_quadratures_ = triangulation_.quadrature_rules(quad_refinements +
+#if HAVE_FEKETE
+                                                            3
+#else
+                                                            0
+#endif
+                                                        ,
+                                                        reference_quadrature_rule);
+    assert(triangulation_.vertices().size() == dimRange);
+    BaseType::initialize_base_values();
   }
 
   virtual RangeType evaluate(const DomainType& v) const override
@@ -351,9 +402,12 @@ public:
     const auto& vertices = face->vertices();
     DomainType barycentric_coords(0);
     bool success = calculate_barycentric_coordinates(v, vertices, barycentric_coords);
+    assert(success);
+#ifdef NDEBUG
+    static_cast<void>(success);
+#endif
     for (size_t ii = 0; ii < 3; ++ii)
       ret[vertices[ii]->index()] = barycentric_coords[ii];
-    assert(success);
     return ret;
   } // ... evaluate(...)
 
@@ -361,7 +415,7 @@ public:
   VisualizerType<DiscreteFunctionType> visualizer() const
   {
     return [](const DiscreteFunctionType& u_n, const std::string& filename_prefix, const size_t ii) {
-      sum_visualizer<DiscreteFunctionType, dimRange>(u_n, filename_prefix, ii);
+      sum_visualizer(u_n, filename_prefix, ii);
     };
   }
 
@@ -380,6 +434,11 @@ public:
     return triangulation_;
   }
 
+  virtual RangeFieldType unit_ball_volume(const bool use_fine_quadratures = false) const override final
+  {
+    return BaseType::unit_ball_volume_quad(use_fine_quadratures);
+  }
+
   virtual RangeType alpha_iso() const override final
   {
     return RangeType(1.);
@@ -392,7 +451,7 @@ public:
 
   virtual std::string short_id() const override final
   {
-    return "hf3d";
+    return "3dhf";
   }
 
   // get indices of all faces that contain point v
@@ -407,10 +466,17 @@ public:
     return evaluate(dirac_position);
   }
 
-protected:
-  using BaseType::parallel_quadrature;
-  using BaseType::integrated_initializer;
+  using BaseType::u_iso;
 
+  virtual void ensure_min_density(RangeType& u, const RangeFieldType min_density) const override final
+  {
+    const auto u_iso_min = u_iso() * min_density;
+    for (size_t ii = 0; ii < dimRange; ++ii)
+      if (u[ii] < u_iso_min[ii])
+        u[ii] = u_iso_min[ii];
+  }
+
+protected:
   template <class VertexVectorType>
   bool calculate_barycentric_coordinates(const DomainType& v, const VertexVectorType& vertices, DomainType& ret) const
   {
@@ -421,7 +487,7 @@ protected:
       // copy vertices to gradients
       gradients[ii] = vertices[ii]->position();
       const auto scalar_prod = v * gradients[ii];
-      // if v is not on the same octant of the sphere as the vertices, return false
+      // if v is not on the same half space of the sphere as the vertices, return false
       // assumes the triangulation is fine enough that vertices[ii]*vertices[jj] >= 0 for all triangles
       if (XT::Common::FloatCmp::lt(scalar_prod, 0.))
         return false;
@@ -470,13 +536,12 @@ protected:
     return true;
   } // bool calculate_barycentric_coordinates(...)
 
-  const TriangulationType triangulation_;
   using BaseType::quadratures_;
-}; // class HatFunctions<DomainFieldType, 3, ...>
+  using BaseType::fine_quadratures_;
+  using BaseType::triangulation_;
+}; // class HatFunctionMomentBasis<DomainFieldType, 3, ...>
 
 
-} // namespace Problems
-} // namespace Hyperbolic
 } // namespace GDT
 } // namespace Dune
 

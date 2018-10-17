@@ -16,6 +16,10 @@
 
 #include <dune/xt/grid/gridprovider/cube.hh>
 
+#include <dune/xt/functions/affine.hh>
+#include <dune/xt/functions/lambda/global-flux-function.hh>
+#include <dune/xt/functions/lambda/global-function.hh>
+
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/spaces.hh>
 
@@ -35,18 +39,26 @@ template <class GridType,
           size_t dimRangeCols = 1,
           GDT::Backends space_backend = GDT::default_space_backend,
           XT::LA::Backends container_backend = XT::LA::default_backend,
-          XT::Grid::Layers layer_type = XT::Grid::Layers::leaf>
+          XT::Grid::Layers layer_type = XT::Grid::Layers::leaf,
+          bool periodic = false>
 class DiscreteFunctionProvider
 {
-  typedef typename GDT::
-      SpaceProvider<GridType, layer_type, space_type, space_backend, polOrder, RangeFieldType, dimRange, dimRangeCols>
-          SpaceProviderType;
+  using SpaceProviderType = typename GDT::SpaceProvider<GridType,
+                                                        layer_type,
+                                                        space_type,
+                                                        space_backend,
+                                                        polOrder,
+                                                        RangeFieldType,
+                                                        dimRange,
+                                                        dimRangeCols,
+                                                        layer_from_backend<space_backend>::type,
+                                                        periodic>;
 
 public:
-  typedef typename SpaceProviderType::type SpaceImp;
-  typedef typename SpaceProviderType::GridLayerType GridLayerType;
-  typedef typename XT::LA::Container<RangeFieldType, container_backend>::VectorType VectorType;
-  typedef DiscreteFunction<SpaceImp, VectorType> type;
+  using SpaceImp = typename SpaceProviderType::type;
+  using GridLayerType = typename SpaceProviderType::GridLayerType;
+  using VectorType = typename XT::LA::Container<RangeFieldType, container_backend>::VectorType;
+  using type = DiscreteFunction<SpaceImp, VectorType>;
 
   static type create(GridLayerType grd_layer)
   {
@@ -63,13 +75,25 @@ template <class EntityType, class DomainFieldType, int domainDim, class U_, clas
 class ProblemBase : public ProblemInterface<EntityType, DomainFieldType, domainDim, U_, RangeFieldType, rangeDim>
 {
 private:
-  typedef ProblemInterface<EntityType, DomainFieldType, domainDim, U_, RangeFieldType, rangeDim> BaseType;
+  using BaseType = ProblemInterface<EntityType, DomainFieldType, domainDim, U_, RangeFieldType, rangeDim>;
 
 public:
   using typename BaseType::FluxType;
   using typename BaseType::RhsType;
   using typename BaseType::InitialValueType;
+  using typename BaseType::DirichletBoundaryValueType;
   using typename BaseType::BoundaryValueType;
+  using typename BaseType::GridLayerType;
+  using typename BaseType::IntersectionType;
+
+  using ActualFluxType = typename XT::Functions::GlobalLambdaFluxFunction<U_, 0, RangeFieldType, rangeDim, domainDim>;
+  using ActualRhsType = typename XT::Functions::
+      AffineFluxFunction<EntityType, DomainFieldType, domainDim, U_, RangeFieldType, rangeDim, 1>;
+  using ActualDirichletBoundaryValueType =
+      XT::Functions::GlobalLambdaFunction<EntityType, DomainFieldType, domainDim, RangeFieldType, rangeDim, 1>;
+  using ActualInitialValueType = ActualDirichletBoundaryValueType;
+  using ActualBoundaryValueType =
+      LocalizableFunctionBasedLocalizableDirichletBoundaryValue<IntersectionType, DirichletBoundaryValueType>;
 
   ProblemBase(const FluxType& _flux,
               const RhsType& _rhs,

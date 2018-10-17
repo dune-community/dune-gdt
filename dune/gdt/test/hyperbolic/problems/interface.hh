@@ -15,6 +15,8 @@
 #include <dune/xt/common/configuration.hh>
 #include <dune/xt/functions/interfaces.hh>
 
+#include <dune/gdt/operators/fv/boundary.hh>
+
 namespace Dune {
 namespace GDT {
 namespace Hyperbolic {
@@ -23,39 +25,37 @@ namespace Hyperbolic {
 template <class EntityImp, class DomainFieldImp, size_t domainDim, class U_, class RangeFieldImp, size_t rangeDim>
 class ProblemInterface
 {
-  typedef ProblemInterface<EntityImp, DomainFieldImp, domainDim, U_, RangeFieldImp, rangeDim> ThisType;
+  using ThisType = ProblemInterface<EntityImp, DomainFieldImp, domainDim, U_, RangeFieldImp, rangeDim>;
 
 public:
-  typedef EntityImp EntityType;
-  typedef DomainFieldImp DomainFieldType;
+  using EntityType = EntityImp;
+  using DomainFieldType = DomainFieldImp;
   static const size_t dimDomain = domainDim;
-  typedef RangeFieldImp RangeFieldType;
+  using RangeFieldType = RangeFieldImp;
   static const size_t dimRange = rangeDim;
 
-  typedef XT::Functions::LocalizableFluxFunctionInterface<EntityType,
-                                                          DomainFieldType,
-                                                          dimDomain,
-                                                          U_,
-                                                          0,
-                                                          RangeFieldType,
-                                                          dimRange,
-                                                          dimDomain>
-      FluxType;
-  typedef XT::Functions::
-      LocalizableFluxFunctionInterface<EntityType, DomainFieldType, dimDomain, U_, 0, RangeFieldType, dimRange, 1>
-          RhsType;
-  typedef XT::Functions::
-      LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>
-          InitialValueType;
-  typedef XT::Functions::
-      LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>
-          BoundaryValueType;
-  typedef BoundaryValueType SolutionType;
-
-  typedef typename InitialValueType::DomainType DomainType;
-  typedef typename InitialValueType::RangeType RangeType;
-  typedef U_ StateType;
-  typedef typename StateType::RangeType StateRangeType;
+  using FluxType = XT::Functions::LocalizableFluxFunctionInterface<EntityType,
+                                                                   DomainFieldType,
+                                                                   dimDomain,
+                                                                   U_,
+                                                                   0,
+                                                                   RangeFieldType,
+                                                                   dimRange,
+                                                                   dimDomain>;
+  using RhsType = XT::Functions::
+      LocalizableFluxFunctionInterface<EntityType, DomainFieldType, dimDomain, U_, 0, RangeFieldType, dimRange, 1>;
+  using InitialValueType =
+      XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>;
+  using DirichletBoundaryValueType =
+      XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>;
+  using GridLayerType = typename U_::SpaceType::GridLayerType;
+  using IntersectionType = typename GridLayerType::Intersection;
+  using StateType = U_;
+  using StateRangeType = typename StateType::RangeType;
+  using RangeType = typename InitialValueType::RangeType;
+  using DomainType = typename InitialValueType::DomainType;
+  using BoundaryValueType = LocalizableBoundaryValueInterface<EntityType, IntersectionType, RangeType>;
+  using SolutionType = DirichletBoundaryValueType;
 
   virtual ~ProblemInterface()
   {

@@ -33,13 +33,12 @@ class KineticEquation : public ProblemBase<typename ImplementationType::EntityTy
                                            ImplementationType::dimRange>
 {
 protected:
-  typedef ProblemBase<typename ImplementationType::EntityType,
-                      typename ImplementationType::DomainFieldType,
-                      ImplementationType::dimDomain,
-                      typename ImplementationType::StateType,
-                      typename ImplementationType::RangeFieldType,
-                      ImplementationType::dimRange>
-      BaseType;
+  using BaseType = ProblemBase<typename ImplementationType::EntityType,
+                               typename ImplementationType::DomainFieldType,
+                               ImplementationType::dimDomain,
+                               typename ImplementationType::StateType,
+                               typename ImplementationType::RangeFieldType,
+                               ImplementationType::dimRange>;
 
 
 public:
@@ -88,50 +87,48 @@ public:
 template <class BasisfunctionImp, class GridLayerImp, class U_>
 class KineticEquationImplementationInterface
 {
-  typedef KineticEquationImplementationInterface<BasisfunctionImp, GridLayerImp, U_> ThisType;
+  using ThisType = KineticEquationImplementationInterface<BasisfunctionImp, GridLayerImp, U_>;
 
 public:
-  typedef BasisfunctionImp BasisfunctionType;
-  typedef GridLayerImp GridLayerType;
-  typedef typename GridLayerType::template Codim<0>::Entity EntityType;
-  typedef typename BasisfunctionType::DomainFieldType DomainFieldType;
-  typedef U_ StateType;
-  typedef typename U_::RangeType StateRangeType;
-  typedef typename BasisfunctionType::RangeFieldType RangeFieldType;
+  using BasisfunctionType = BasisfunctionImp;
+  using GridLayerType = GridLayerImp;
+  using IntersectionType = typename GridLayerType::Intersection;
+  using EntityType = typename GridLayerType::template Codim<0>::Entity;
+  using DomainFieldType = typename BasisfunctionType::DomainFieldType;
+  using StateType = U_;
+  using StateRangeType = typename U_::RangeType;
+  using RangeFieldType = typename BasisfunctionType::RangeFieldType;
   static const size_t dimDomain = BasisfunctionType::dimFlux;
   static const size_t dimRange = BasisfunctionType::dimRange;
-
-  typedef XT::Functions::GlobalLambdaFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>
-      GlobalLambdaFunctionType;
-  typedef XT::Functions::GlobalLambdaFluxFunction<U_, 0, RangeFieldType, dimRange, 1> GlobalLambdaFluxFunctionType;
-
-  typedef typename KineticEquation<ThisType>::FluxType FluxType;
-  typedef typename KineticEquation<ThisType>::RhsType RhsType;
-  typedef typename KineticEquation<ThisType>::InitialValueType InitialValueType;
-  typedef typename KineticEquation<ThisType>::BoundaryValueType BoundaryValueType;
-
-  typedef typename XT::Functions::
-      AffineFluxFunction<EntityType, DomainFieldType, dimDomain, U_, RangeFieldType, dimRange, 1>
-          RhsAffineFunctionType;
-  typedef typename XT::Functions::
-      AffineFluxFunction<EntityType, DomainFieldType, dimDomain, U_, RangeFieldType, dimRange, dimDomain>
-          ActualFluxType;
-  typedef XT::Functions::
-      CheckerboardFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1, RhsAffineFunctionType>
-          ActualRhsType;
-  typedef XT::Functions::CheckerboardFunction<EntityType,
-                                              DomainFieldType,
-                                              dimDomain,
-                                              RangeFieldType,
-                                              dimRange,
-                                              1,
-                                              GlobalLambdaFunctionType>
-      ActualInitialValueType;
-  typedef GlobalLambdaFunctionType ActualBoundaryValueType;
-
-  typedef typename Dune::DynamicMatrix<RangeFieldType> MatrixType;
-  typedef typename RhsAffineFunctionType::DomainType DomainType;
-  typedef typename RhsAffineFunctionType::RangeType RangeType;
+  static const size_t dimRangeCols = BasisfunctionType::dimRangeCols;
+  static const size_t dimFlux = BasisfunctionType::dimFlux;
+  using GlobalLambdaFunctionType =
+      XT::Functions::GlobalLambdaFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>;
+  using GlobalLambdaFluxFunctionType = XT::Functions::GlobalLambdaFluxFunction<U_, 0, RangeFieldType, dimRange, 1>;
+  using FluxType = typename KineticEquation<ThisType>::FluxType;
+  using RhsType = typename KineticEquation<ThisType>::RhsType;
+  using InitialValueType = typename KineticEquation<ThisType>::InitialValueType;
+  using DirichletBoundaryValueType = typename KineticEquation<ThisType>::DirichletBoundaryValueType;
+  using BoundaryValueType = typename KineticEquation<ThisType>::BoundaryValueType;
+  using RhsAffineFunctionType = typename XT::Functions::
+      AffineFluxFunction<EntityType, DomainFieldType, dimDomain, U_, RangeFieldType, dimRange, 1>;
+  using ActualFluxType = typename XT::Functions::
+      AffineFluxFunction<EntityType, DomainFieldType, dimDomain, U_, RangeFieldType, dimRange, dimDomain>;
+  using ActualRhsType = XT::Functions::
+      CheckerboardFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1, RhsAffineFunctionType>;
+  using ActualInitialValueType = XT::Functions::CheckerboardFunction<EntityType,
+                                                                     DomainFieldType,
+                                                                     dimDomain,
+                                                                     RangeFieldType,
+                                                                     dimRange,
+                                                                     1,
+                                                                     GlobalLambdaFunctionType>;
+  using ActualDirichletBoundaryValueType = GlobalLambdaFunctionType;
+  using ActualBoundaryValueType =
+      LocalizableFunctionBasedLocalizableDirichletBoundaryValue<IntersectionType, ActualDirichletBoundaryValueType>;
+  using MatrixType = typename Dune::DynamicMatrix<RangeFieldType>;
+  using DomainType = typename RhsAffineFunctionType::DomainType;
+  using RangeType = typename RhsAffineFunctionType::RangeType;
 
   KineticEquationImplementationInterface(const BasisfunctionType& basis_functions, const GridLayerType& grid_layer)
     : basis_functions_(basis_functions)

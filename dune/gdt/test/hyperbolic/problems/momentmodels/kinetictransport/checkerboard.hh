@@ -39,13 +39,13 @@ namespace KineticTransport {
 template <class BasisfunctionImp, class GridLayerImp, class U_>
 class CheckerboardPn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>
 {
-  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_> BaseType;
+  using BaseType = KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>;
 
 public:
   using typename BaseType::BasisfunctionType;
   using typename BaseType::GridLayerType;
   using typename BaseType::BoundaryValueType;
-  using typename BaseType::ActualBoundaryValueType;
+  using typename BaseType::ActualDirichletBoundaryValueType;
   using typename BaseType::DomainType;
   using typename BaseType::RangeType;
   using BaseType::dimDomain;
@@ -90,7 +90,7 @@ public:
     return XT::Common::Parameter({std::make_pair("sigma_a", create_sigma_a()),
                                   std::make_pair("sigma_s", create_sigma_s()),
                                   std::make_pair("Q", create_Q()),
-                                  std::make_pair("CFL", std::vector<double>{0.4}),
+                                  std::make_pair("CFL", std::vector<double>{0.49 * 1 / std::sqrt(dimDomain)}),
                                   std::make_pair("t_end", std::vector<double>{3.2})});
   }
 
@@ -161,12 +161,12 @@ protected:
 template <class BasisfunctionType, class GridLayerType, class U_>
 class CheckerboardMn : public CheckerboardPn<BasisfunctionType, GridLayerType, U_>
 {
-  typedef CheckerboardPn<BasisfunctionType, GridLayerType, U_> BaseType;
+  using BaseType = CheckerboardPn<BasisfunctionType, GridLayerType, U_>;
 
 public:
   using typename BaseType::FluxType;
   using typename BaseType::RangeType;
-  typedef GDT::EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_> ActualFluxType;
+  using ActualFluxType = GDT::EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_>;
 
   using BaseType::default_grid_cfg;
   using BaseType::default_boundary_cfg;
@@ -205,58 +205,62 @@ class CheckerboardTestCase
           InstationaryTestCase<G,
                                Problems::
                                    KineticEquation<Problems::KineticTransport::
-                                                       CheckerboardPn<Hyperbolic::Problems::
-                                                                          SphericalHarmonics<double,
-                                                                                             double,
-                                                                                             momentOrder,
-                                                                                             G::dimension,
-                                                                                             true>,
-                                                                      typename G::LevelGridView,
+                                                       CheckerboardPn<SphericalHarmonicsMomentBasis<double,
+                                                                                                    double,
+                                                                                                    momentOrder,
+                                                                                                    G::dimension,
+                                                                                                    true>,
+                                                                      XT::Grid::PeriodicGridLayer<
+                                                                          typename G::LevelGridView>,
                                                                       typename internal::
                                                                           DiscreteFunctionProvider<G,
                                                                                                    GDT::SpaceType::
                                                                                                        product_fv,
                                                                                                    0,
                                                                                                    R,
-                                                                                                   Hyperbolic::Problems::
-                                                                                                       SphericalHarmonics<double,
-                                                                                                                          double,
-                                                                                                                          momentOrder,
-                                                                                                                          G::dimension,
-                                                                                                                          true>::
-                                                                                                           dimRange,
+                                                                                                   SphericalHarmonicsMomentBasis<double,
+                                                                                                                                 double,
+                                                                                                                                 momentOrder,
+                                                                                                                                 G::dimension,
+                                                                                                                                 true>::
+                                                                                                       dimRange,
                                                                                                    1,
-                                                                                                   GDT::Backends::gdt>::
-                                                                              type>>>
+                                                                                                   GDT::Backends::gdt,
+                                                                                                   XT::LA::
+                                                                                                       default_backend,
+                                                                                                   XT::Grid::Layers::
+                                                                                                       leaf,
+                                                                                                   true>::type>>>
 {
-  typedef typename G::ctype D;
+  using D = typename G::ctype;
   static const size_t d = G::dimension;
-  typedef Hyperbolic::Problems::SphericalHarmonics<double, double, momentOrder, G::dimension, true> BasisfunctionType;
+  using BasisfunctionType = SphericalHarmonicsMomentBasis<double, double, momentOrder, G::dimension, true>;
 
 public:
-  typedef Problems::
+  using ProblemType = Problems::
       KineticEquation<Problems::KineticTransport::
                           CheckerboardPn<BasisfunctionType,
-                                         typename G::LevelGridView,
+                                         XT::Grid::PeriodicGridLayer<typename G::LevelGridView>,
                                          typename internal::
                                              DiscreteFunctionProvider<G,
                                                                       GDT::SpaceType::product_fv,
                                                                       0,
                                                                       R,
-                                                                      Hyperbolic::Problems::
-                                                                          SphericalHarmonics<double,
-                                                                                             double,
-                                                                                             momentOrder,
-                                                                                             G::dimension,
-                                                                                             true>::dimRange,
+                                                                      SphericalHarmonicsMomentBasis<double,
+                                                                                                    double,
+                                                                                                    momentOrder,
+                                                                                                    G::dimension,
+                                                                                                    true>::dimRange,
                                                                       1,
-                                                                      GDT::Backends::gdt>::type>>
-          ProblemType;
+                                                                      GDT::Backends::gdt,
+                                                                      XT::LA::default_backend,
+                                                                      XT::Grid::Layers::leaf,
+                                                                      true>::type>>;
   static const size_t dimRange = ProblemType::dimRange;
   static const size_t dimRangeCols = 1;
 
 private:
-  typedef typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType> BaseType;
+  using BaseType = typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType>;
 
 public:
   using typename BaseType::GridType;

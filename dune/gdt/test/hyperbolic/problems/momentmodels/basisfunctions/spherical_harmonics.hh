@@ -20,13 +20,11 @@
 
 namespace Dune {
 namespace GDT {
-namespace Hyperbolic {
-namespace Problems {
 
 
 // TODO: use complex arithmetic, currently only usable for Pn Models in 2D, test for only_positive = false
-template <class DomainFieldType, class RangeFieldType, size_t order, size_t fluxDim, bool only_positive = true>
-class SphericalHarmonics
+template <class DomainFieldType, class RangeFieldType, size_t order, size_t fluxDim = 3, bool only_positive = true>
+class SphericalHarmonicsMomentBasis
     : public BasisfunctionsInterface<DomainFieldType,
                                      3,
                                      RangeFieldType,
@@ -52,15 +50,21 @@ public:
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
   static_assert(order <= std::numeric_limits<int>::max(), "");
 
-  SphericalHarmonics(const QuadraturesType& quadratures = default_quadratures())
+  SphericalHarmonicsMomentBasis(const QuadraturesType& quadratures)
     : BaseType(quadratures)
   {
+    BaseType::initialize_base_values();
   }
 
-  static QuadraturesType default_quadratures(const size_t quad_order = 10 + 2 * order)
+  SphericalHarmonicsMomentBasis(const size_t quad_order = 2 * order + 2,
+                                const size_t DXTC_DEBUG_ONLY(quad_refinements) = 0)
+    : BaseType(OctantQuadrature<DomainFieldType>::get(quad_order))
   {
-    return BaseType::lebedev_quadrature(quad_order);
+    assert(quad_refinements == 0 && "Refinement of the quadrature intervals not implemented for this basis!");
+    BaseType::initialize_base_values();
   }
+
+  using BaseType::evaluate;
 
   virtual RangeType evaluate(const DomainType& v) const override
   {
@@ -80,14 +84,14 @@ public:
     return ret;
   } // ... evaluate(...)
 
-  virtual RangeType integrated() const override
+  virtual RangeType integrated(const bool /*use_fine_quadratures*/ = false) const override final
   {
     RangeType ret(0);
     ret[0] = std::sqrt(4. * M_PI);
     return ret;
   }
 
-  virtual MatrixType mass_matrix() const override
+  virtual MatrixType mass_matrix(const bool /*use_fine_quadratures*/ = false) const override
   {
     MatrixType M(dimRange, dimRange, 0);
     for (size_t rr = 0; rr < dimRange; ++rr)
@@ -95,7 +99,7 @@ public:
     return M;
   }
 
-  virtual MatrixType mass_matrix_inverse() const override
+  virtual MatrixType mass_matrix_inverse(const bool /*use_fine_quadratures*/ = false) const override
   {
     return mass_matrix();
   }
@@ -254,11 +258,11 @@ private:
       return static_cast<size_t>(ret);
     }
   };
-}; // class SphericalHarmonics<DomainFieldType, 3, ...>
+}; // class SphericalHarmonicsMomentBasis<DomainFieldType, 3, ...>
 
 
-template <class DomainFieldType, class RangeFieldType, size_t order, size_t fluxDim, bool only_even = false>
-class RealSphericalHarmonics
+template <class DomainFieldType, class RangeFieldType, size_t order, size_t fluxDim = 3, bool only_even = false>
+class RealSphericalHarmonicsMomentBasis
     : public BasisfunctionsInterface<DomainFieldType,
                                      3,
                                      RangeFieldType,
@@ -283,15 +287,21 @@ public:
   template <class DiscreteFunctionType>
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
 
-  RealSphericalHarmonics(const QuadraturesType& quadratures = default_quadratures())
+  RealSphericalHarmonicsMomentBasis(const QuadraturesType& quadratures)
     : BaseType(quadratures)
   {
+    BaseType::initialize_base_values();
   }
 
-  static QuadraturesType default_quadratures(const size_t quad_order = 10 + 2 * order)
+  RealSphericalHarmonicsMomentBasis(const size_t quad_order = 2 * order + 2,
+                                    const size_t DXTC_DEBUG_ONLY(quad_refinements) = 0)
+    : BaseType(OctantQuadrature<DomainFieldType>::get(quad_order))
   {
-    return BaseType::lebedev_quadrature(quad_order);
+    assert(quad_refinements == 0 && "Refinement of the quadrature intervals not implemented for this basis!");
+    BaseType::initialize_base_values();
   }
+
+  using BaseType::evaluate;
 
   virtual RangeType evaluate(const DomainType& v) const override
   {
@@ -311,14 +321,14 @@ public:
     return ret;
   } // ... evaluate(...)
 
-  virtual RangeType integrated() const override
+  RangeType integrated_exactly(const bool /*use_fine_quadratures*/ = false) const
   {
     RangeType ret(0.);
     ret[0] = std::sqrt(4. * M_PI);
     return ret;
   }
 
-  virtual MatrixType mass_matrix() const override
+  virtual MatrixType mass_matrix(const bool /*use_fine_quadratures*/ = false) const override
   {
     MatrixType M(dimRange, dimRange, 0.);
     for (size_t rr = 0; rr < dimRange; ++rr)
@@ -326,7 +336,7 @@ public:
     return M;
   }
 
-  virtual MatrixType mass_matrix_inverse() const override
+  virtual MatrixType mass_matrix_inverse(const bool /*use_fine_quadratures*/ = false) const override
   {
     return mass_matrix();
   }
@@ -345,7 +355,7 @@ public:
   VisualizerType<DiscreteFunctionType> visualizer() const
   {
     return [](const DiscreteFunctionType& u_n, const std::string& filename_prefix, const size_t ii) {
-      component_visualizer<DiscreteFunctionType, dimRange, 0>(u_n, filename_prefix, ii, std::sqrt(4 * M_PI));
+      component_visualizer(0, u_n, filename_prefix, ii, std::sqrt(4 * M_PI));
     };
   }
 
@@ -369,6 +379,11 @@ public:
   virtual std::string short_id() const override final
   {
     return "rhm";
+  }
+
+  RangeType integrate_dirac_at(const DomainType& dirac_position) const
+  {
+    return evaluate(dirac_position);
   }
 
 private:
@@ -535,11 +550,9 @@ private:
   }
 
   using BaseType::quadratures_;
-}; // class RealSphericalHarmonics<DomainFieldType, 3, ...>
+}; // class RealSphericalHarmonicsMomentBasis<DomainFieldType, 3, ...>
 
 
-} // namespace Problems
-} // namespace Hyperbolic
 } // namespace GDT
 } // namespace Dune
 

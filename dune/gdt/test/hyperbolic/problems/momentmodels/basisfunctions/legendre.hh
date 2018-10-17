@@ -15,12 +15,10 @@
 
 namespace Dune {
 namespace GDT {
-namespace Hyperbolic {
-namespace Problems {
 
 
 template <class DomainFieldType, class RangeFieldType, size_t order, size_t dimRangeCols = 1>
-class LegendrePolynomials : public BasisfunctionsInterface<DomainFieldType, 1, RangeFieldType, order + 1, dimRangeCols>
+class LegendreMomentBasis : public BasisfunctionsInterface<DomainFieldType, 1, RangeFieldType, order + 1, dimRangeCols>
 {
 public:
   static const size_t dimDomain = 1;
@@ -39,20 +37,24 @@ public:
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
   using TriangulationType = typename BaseType::Triangulation1dType;
 
-  LegendrePolynomials(const QuadraturesType& quadratures = default_quadratures())
+  LegendreMomentBasis(const QuadraturesType& quadratures)
     : BaseType(quadratures)
   {
+    BaseType::initialize_base_values();
   }
 
-  static QuadraturesType default_quadratures(const size_t num_quad_intervals = 2, const size_t quad_order = 31)
+  LegendreMomentBasis(const size_t quad_order = 31, const size_t quad_refinements = 0)
+    : BaseType(BaseType::gauss_lobatto_quadratures(std::pow(2, quad_refinements), quad_order))
   {
-    return BaseType::gauss_lobatto_quadratures(num_quad_intervals, quad_order);
+    BaseType::initialize_base_values();
   }
 
   static std::string static_id()
   {
     return "legendre";
   }
+
+  using BaseType::evaluate;
 
   virtual RangeType evaluate(const DomainType& v) const override
   {
@@ -65,14 +67,14 @@ public:
     return ret;
   } // ... evaluate(...)
 
-  virtual RangeType integrated() const override
+  RangeType integrated_exactly(const bool /*use_fine_quadratures*/ = false) const
   {
     RangeType ret(0);
     ret[0] = 2;
     return ret;
   }
 
-  virtual MatrixType mass_matrix() const override
+  virtual MatrixType mass_matrix(const bool /*use_fine_quadratures*/ = false) const override
   {
     MatrixType M(dimRange, dimRange, 0.);
     for (size_t rr = 0; rr < dimRange; ++rr)
@@ -80,7 +82,7 @@ public:
     return M;
   }
 
-  virtual MatrixType mass_matrix_inverse() const override
+  virtual MatrixType mass_matrix_inverse(const bool /*use_fine_quadratures*/ = false) const override
   {
     MatrixType Minv(dimRange, dimRange, 0.);
     for (size_t rr = 0; rr < dimRange; ++rr)
@@ -102,7 +104,7 @@ public:
     return B;
   }
 
-  // returns matrices with entries <v h_i h_j>_- and <v h_i h_j>_+
+  // returns V M^-1 where the matrix V has entries <v h_i h_j>_- and <v h_i h_j>_+
   virtual FieldVector<FieldVector<MatrixType, 2>, 1> kinetic_flux_matrices() const override final
   {
     FieldVector<FieldVector<MatrixType, 2>, 1> ret(FieldVector<MatrixType, 2>(MatrixType(dimRange, dimRange, 0.)));
@@ -132,6 +134,9 @@ public:
         ret_neg[nn][mm] = mm_with_v[0][nn][mm] - ret_pos[nn][mm];
       } // mm
     } // nn
+    // apply M^{-1} from the right
+    ret_neg.rightmultiply(mass_matrix_inverse());
+    ret_pos.rightmultiply(mass_matrix_inverse());
     return ret;
   }
 
@@ -162,7 +167,7 @@ public:
   VisualizerType<DiscreteFunctionType> visualizer() const
   {
     return [](const DiscreteFunctionType& u_n, const std::string& filename_prefix, const size_t ii) {
-      component_visualizer<DiscreteFunctionType, dimRange, 0>(u_n, filename_prefix, ii);
+      component_visualizer(0, u_n, filename_prefix, ii);
     };
   }
 
@@ -218,11 +223,9 @@ private:
     ret *= std::pow(-1., (m + n + 1) / 2) / ((m - n) * (m + n + 1) * std::pow(2., m + n - 1 - std::max(m, n)));
     return ret;
   } // ... fmn(...)
-}; // class LegendrePolynomials<DomainFieldType, 1, ...>
+}; // class LegendreMomentBasis<DomainFieldType, 1, ...>
 
 
-} // namespace Problems
-} // namespace Hyperbolic
 } // namespace GDT
 } // namespace Dune
 

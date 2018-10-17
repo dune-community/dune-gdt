@@ -17,8 +17,6 @@
 
 namespace Dune {
 namespace GDT {
-namespace Hyperbolic {
-namespace Problems {
 
 
 // forward
@@ -54,7 +52,7 @@ public:
       , second_index_(second_index)
     {
       assert(first_index_ <= quadratures_->size());
-      assert(second_index_ <= (*quadratures_)[first_index_].size());
+      assert(first_index == quadratures_->size() || second_index_ <= (*quadratures_)[first_index_].size());
     }
 
     MergedQuadratureIterator& operator++()
@@ -93,14 +91,19 @@ public:
       return (*quadratures_)[first_index_][second_index_];
     }
 
-    size_t first_index()
+    const QuadPointType* operator->() const
+    {
+      return &(operator*());
+    }
+
+    size_t first_index() const
     {
       return first_index_;
     }
 
-    size_t second_index()
+    size_t second_index() const
     {
-      return first_index_;
+      return second_index;
     }
 
   private:
@@ -124,11 +127,14 @@ public:
   // iterator pointing to element at position ii in merged quadrature
   ConstIteratorType iterator(const size_t index) const
   {
-    size_t ii = 0;
-    size_t jj = index;
-    while (jj >= quadratures_[ii].size())
-      jj -= quadratures_[ii++].size();
-    return ConstIteratorType(quadratures_, ii, jj);
+    const auto indices = get_indices(index);
+    return ConstIteratorType(quadratures_, indices[0], indices[1]);
+  }
+
+  const QuadPointType& operator[](const size_t index) const
+  {
+    const auto indices = get_indices(index);
+    return quadratures_[indices[0]][indices[1]];
   }
 
   size_t size() const
@@ -140,6 +146,13 @@ public:
   }
 
 private:
+  FieldVector<size_t, 2> get_indices(size_t index) const
+  {
+    FieldVector<size_t, 2> ret{0, index};
+    while (ret[0] < quadratures_.size() && ret[1] >= quadratures_[ret[0]].size())
+      ret[1] -= quadratures_[ret[0]++].size();
+    return ret;
+  }
   const QuadraturesWrapperType& quadratures_;
 };
 
@@ -211,8 +224,6 @@ private:
 };
 
 
-} // namespace Problems
-} // namespace Hyperbolic
 } // namespace GDT
 } // namespace Dune
 

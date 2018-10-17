@@ -38,12 +38,13 @@ namespace KineticTransport {
 template <class BasisfunctionImp, class GridLayerImp, class U_>
 class SourceBeamPn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>
 {
-  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_> BaseType;
+  using BaseType = KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>;
 
 public:
   using typename BaseType::InitialValueType;
   using typename BaseType::BoundaryValueType;
   using typename BaseType::ActualInitialValueType;
+  using typename BaseType::ActualDirichletBoundaryValueType;
   using typename BaseType::ActualBoundaryValueType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
@@ -51,6 +52,7 @@ public:
   using typename BaseType::RangeType;
   using typename BaseType::BasisfunctionType;
   using typename BaseType::GridLayerType;
+  using typename BaseType::IntersectionType;
   using typename BaseType::FluxType;
   using BaseType::dimDomain;
   using BaseType::dimRange;
@@ -101,19 +103,20 @@ public:
   // at x = 3.
   virtual BoundaryValueType* create_boundary_values() const override final
   {
-    return new ActualBoundaryValueType(
-        [&](const DomainType& x, const XT::Common::Parameter&) {
-          if (x[0] < 1.5) {
-            static auto ret =
-                helper<BasisfunctionType>::get_left_boundary_values(basis_functions_, psi_vac_, is_mn_model_);
-            return ret;
-          } else {
-            auto ret = basis_functions_.integrated();
-            ret *= psi_vac_;
-            return ret;
-          }
-        },
-        1);
+    return new ActualBoundaryValueType(XT::Grid::make_alldirichlet_boundaryinfo<IntersectionType>(),
+                                       std::make_unique<ActualDirichletBoundaryValueType>(
+                                           [&](const DomainType& x, const XT::Common::Parameter&) {
+                                             if (x[0] < 1.5) {
+                                               static auto ret = helper<BasisfunctionType>::get_left_boundary_values(
+                                                   basis_functions_, psi_vac_, is_mn_model_);
+                                               return ret;
+                                             } else {
+                                               auto ret = basis_functions_.integrated();
+                                               ret *= psi_vac_;
+                                               return ret;
+                                             }
+                                           },
+                                           1));
   } // ... create_boundary_values()
 
   RangeType left_boundary_value() const
@@ -202,27 +205,29 @@ protected:
       RangeType ret(0);
       // For the MN-Models, we have to use the quadrature also used in the optimization problem to guarantee
       // realizability of the boundary_values.
-      // For the PN-Models, we do not have these issues and just use a very fine quadrature (which is a performance
+      // For the PN-Models, we do not have these issues and just use a very fine quadrature (which is not a performance
       // problem as the integration is only done once).
       const auto& quadratures =
           is_mn_model ? basis_functions.quadratures() : BasisfunctionImp::gauss_lobatto_quadratures(100, 31);
-      for (const auto& quadrature : quadratures) {
+      for (size_t ii = 0; ii < quadratures.size(); ++ii) {
+        const auto& quadrature = quadratures[ii];
         for (const auto& quad_point : quadrature) {
           const auto& v = quad_point.position()[0];
-          auto summand = basis_functions.evaluate(v);
+          auto summand = basis_functions.evaluate(v, ii);
           summand *= numerator(v) * quad_point.weight();
           ret += summand;
         }
       }
       ret /= denominator();
       // add small vacuum concentration to move away from realizable boundary
-      ret += basis_functions.integrated() * psi_vac;
+      ret += basis_functions.integrated(!is_mn_model) * psi_vac;
       return ret;
     }
   };
 
   template <class anything>
-  struct helper<HatFunctions<DomainFieldType, dimDomain, RangeFieldType, dimRange>, anything> : public helper_base
+  struct helper<HatFunctionMomentBasis<DomainFieldType, dimDomain, RangeFieldType, dimRange>, anything>
+      : public helper_base
   {
     using helper_base::numerator;
     using helper_base::denominator;
@@ -254,7 +259,7 @@ protected:
   };
 
   template <class anything>
-  struct helper<PiecewiseMonomials<DomainFieldType, dimDomain, RangeFieldType, dimRange>, anything> : public helper_base
+  struct helper<PartialMomentBasis<DomainFieldType, dimDomain, RangeFieldType, dimRange>, anything> : public helper_base
   {
     using helper_base::denominator;
     using helper_base::integral_1;
@@ -285,13 +290,13 @@ protected:
 template <class BasisfunctionType, class GridLayerType, class U_>
 class SourceBeamMn : public SourceBeamPn<BasisfunctionType, GridLayerType, U_>
 {
-  typedef SourceBeamPn<BasisfunctionType, GridLayerType, U_> BaseType;
-  typedef SourceBeamMn ThisType;
+  using BaseType = SourceBeamPn<BasisfunctionType, GridLayerType, U_>;
+  using ThisType = SourceBeamMn;
 
 public:
   using typename BaseType::FluxType;
   using typename BaseType::RangeType;
-  typedef EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_> ActualFluxType;
+  using ActualFluxType = EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_>;
 
   using BaseType::default_grid_cfg;
   using BaseType::default_boundary_cfg;

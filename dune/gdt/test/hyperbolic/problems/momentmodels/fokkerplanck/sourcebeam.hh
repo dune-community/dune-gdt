@@ -32,18 +32,20 @@ namespace FokkerPlanck {
 template <class BasisfunctionImp, class GridLayerImp, class U_>
 class SourceBeamPn : public FokkerPlanckEquation<BasisfunctionImp, GridLayerImp, U_>
 {
-  typedef FokkerPlanckEquation<BasisfunctionImp, GridLayerImp, U_> BaseType;
+  using BaseType = FokkerPlanckEquation<BasisfunctionImp, GridLayerImp, U_>;
 
 public:
   using typename BaseType::InitialValueType;
   using typename BaseType::BoundaryValueType;
   using typename BaseType::ActualInitialValueType;
+  using typename BaseType::ActualDirichletBoundaryValueType;
   using typename BaseType::ActualBoundaryValueType;
   using typename BaseType::DomainType;
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeType;
   using typename BaseType::BasisfunctionType;
   using typename BaseType::GridLayerType;
+  using typename BaseType::IntersectionType;
 
   using BaseType::default_boundary_cfg;
 
@@ -90,16 +92,17 @@ public:
   {
     const auto basis_evaluated_at_one = basis_functions_.evaluate(DomainType(1));
     const auto basis_integrated = basis_functions_.integrated();
-    return new ActualBoundaryValueType(
-        [=](const DomainType& x, const XT::Common::Parameter&) {
-          RangeType ret = basis_integrated;
-          ret *= x[0] / 3. * psi_vac_;
-          RangeType summand2 = basis_evaluated_at_one;
-          summand2 *= (1 - x[0] / 3.) * 0.5;
-          ret += summand2;
-          return ret;
-        },
-        1);
+    return new ActualBoundaryValueType(XT::Grid::make_alldirichlet_boundaryinfo<IntersectionType>(),
+                                       std::make_unique<ActualDirichletBoundaryValueType>(
+                                           [=](const DomainType& x, const XT::Common::Parameter&) {
+                                             RangeType ret = basis_integrated;
+                                             ret *= x[0] / 3. * psi_vac_;
+                                             RangeType summand2 = basis_evaluated_at_one;
+                                             summand2 *= (1 - x[0] / 3.) * 0.5;
+                                             ret += summand2;
+                                             return ret;
+                                           },
+                                           1));
   } // ... create_boundary_values()
 
 protected:
@@ -116,37 +119,50 @@ template <class G, class R = double>
 class SourceBeamTestCase
     : public Dune::GDT::Test::
           InstationaryTestCase<G,
-                               Problems::KineticEquation<Problems::FokkerPlanck::
-                                                             SourceBeamPn<Hyperbolic::Problems::
-                                                                              LegendrePolynomials<double, double, 5>,
-                                                                          typename G::LevelGridView,
-                                                                          typename internal::
-                                                                              DiscreteFunctionProvider<G,
-                                                                                                       GDT::SpaceType::
-                                                                                                           product_fv,
-                                                                                                       0,
-                                                                                                       R,
-                                                                                                       6,
-                                                                                                       1,
-                                                                                                       GDT::Backends::
-                                                                                                           gdt>::type>>>
+                               Problems::
+                                   KineticEquation<Problems::FokkerPlanck::
+                                                       SourceBeamPn<LegendreMomentBasis<double, double, 5>,
+                                                                    typename XT::Grid::PeriodicGridLayer<
+                                                                        typename G::LevelGridView>,
+                                                                    typename internal::
+                                                                        DiscreteFunctionProvider<G,
+                                                                                                 GDT::SpaceType::
+                                                                                                     product_fv,
+                                                                                                 0,
+                                                                                                 R,
+                                                                                                 6,
+                                                                                                 1,
+                                                                                                 GDT::Backends::gdt,
+                                                                                                 XT::LA::
+                                                                                                     default_backend,
+                                                                                                 XT::Grid::Layers::leaf,
+                                                                                                 true>::type>>>
 {
-  typedef typename G::ctype D;
+  using D = typename G::ctype;
   static const size_t d = G::dimension;
 
 public:
-  typedef typename Hyperbolic::Problems::LegendrePolynomials<double, double, 5> BasisfunctionType;
+  using BasisfunctionType = LegendreMomentBasis<double, double, 5>;
   static const size_t dimRange = 6;
   static const size_t dimRangeCols = 1;
-  typedef
-      typename internal::DiscreteFunctionProvider<G, GDT::SpaceType::product_fv, 0, R, 6, 1, GDT::Backends::gdt>::type
-          U;
-  typedef typename Problems::
-      KineticEquation<Problems::FokkerPlanck::SourceBeamPn<BasisfunctionType, typename G::LevelGridView, U>>
-          ProblemType;
+  using U = typename internal::DiscreteFunctionProvider<G,
+                                                        GDT::SpaceType::product_fv,
+                                                        0,
+                                                        R,
+                                                        6,
+                                                        1,
+                                                        GDT::Backends::gdt,
+                                                        XT::LA::default_backend,
+                                                        XT::Grid::Layers::leaf,
+                                                        true>::type;
+  using ProblemType =
+      typename Problems::KineticEquation<Problems::FokkerPlanck::SourceBeamPn<BasisfunctionType,
+                                                                              typename XT::Grid::PeriodicGridLayer<
+                                                                                  typename G::LevelGridView>,
+                                                                              U>>;
 
 private:
-  typedef typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType> BaseType;
+  using BaseType = typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType>;
 
 public:
   SourceBeamTestCase(const size_t num_refs = 1, const double divide_t_end_by = 1.0)
@@ -189,7 +205,7 @@ public:
 
 private:
   const BasisfunctionType basis_functions_;
-  const typename G::LevelGridView level_grid_view_;
+  const XT::Grid::PeriodicGridLayer<typename G::LevelGridView> level_grid_view_;
   const ProblemType problem_;
 }; // class SourceBeamTestCase
 

@@ -22,15 +22,15 @@ namespace Dune {
 namespace GDT {
 
 
-template <class GridLayerImp, class RangeImp>
+template <class EntityImp, class IntersectionImp, class RangeImp>
 class LocalBoundaryValueInterface
 {
 public:
-  using GridLayerType = GridLayerImp;
+  using EntityType = EntityImp;
+  using IntersectionType = IntersectionImp;
   using RangeType = RangeImp;
-  using IntersectionType = typename GridLayerType::Intersection;
-  using DomainFieldType = typename GridLayerType::ctype;
-  static const size_t dimDomain = GridLayerType::dimension;
+  using DomainFieldType = typename EntityType::Geometry::ctype;
+  static const size_t dimDomain = EntityType::dimension;
   using DomainType = FieldVector<DomainFieldType, dimDomain>;
   using BoundaryInfoType = XT::Grid::BoundaryInfo<IntersectionType>;
   using RangeFieldType = typename RangeType::field_type;
@@ -52,23 +52,23 @@ protected:
 };
 
 
-template <class GridLayerImp, class RangeImp>
+template <class EntityImp, class IntersectionImp, class RangeImp>
 class LocalizableBoundaryValueInterface
 {
 public:
-  using GridLayerType = GridLayerImp;
+  using EntityType = EntityImp;
+  using IntersectionType = IntersectionImp;
   using RangeType = RangeImp;
-  using LocalBoundaryValueInterfaceType = LocalBoundaryValueInterface<GridLayerType, RangeType>;
+  using LocalBoundaryValueInterfaceType = LocalBoundaryValueInterface<EntityType, IntersectionType, RangeType>;
   using BoundaryInfoType = typename LocalBoundaryValueInterfaceType::BoundaryInfoType;
   using DomainFieldType = typename LocalBoundaryValueInterfaceType::DomainFieldType;
   using DomainType = typename LocalBoundaryValueInterfaceType::DomainType;
-  using EntityType = typename GridLayerType::template Codim<0>::Entity;
   using RangeFieldType = typename LocalBoundaryValueInterfaceType::RangeFieldType;
-  static const size_t dimDomain = GridLayerType::dimension;
+  static const size_t dimDomain = EntityType::dimension;
   static const size_t dimRange = RangeType::dimension;
 
-  LocalizableBoundaryValueInterface(const BoundaryInfoType& boundary_info)
-    : boundary_info_(boundary_info)
+  LocalizableBoundaryValueInterface(std::unique_ptr<const BoundaryInfoType>&& boundary_info)
+    : boundary_info_(std::move(boundary_info))
   {
   }
 
@@ -77,15 +77,19 @@ public:
   virtual std::unique_ptr<LocalBoundaryValueInterfaceType> local_function(const EntityType& entity) const = 0;
 
 protected:
-  const BoundaryInfoType& boundary_info_;
+  const std::unique_ptr<const BoundaryInfoType> boundary_info_;
 };
 
 
-template <class GridLayerType, class LocalizableFunctionType>
+template <class IntersectionImp, class LocalizableFunctionType>
 class LocalizableFunctionBasedLocalDirichletBoundaryValue
-    : public LocalBoundaryValueInterface<GridLayerType, typename LocalizableFunctionType::RangeType>
+    : public LocalBoundaryValueInterface<typename LocalizableFunctionType::EntityType,
+                                         IntersectionImp,
+                                         typename LocalizableFunctionType::RangeType>
 {
-  using BaseType = LocalBoundaryValueInterface<GridLayerType, typename LocalizableFunctionType::RangeType>;
+  using BaseType = LocalBoundaryValueInterface<typename LocalizableFunctionType::EntityType,
+                                               IntersectionImp,
+                                               typename LocalizableFunctionType::RangeType>;
   using LocalfunctionType = typename LocalizableFunctionType::LocalfunctionType;
 
 public:
@@ -95,7 +99,7 @@ public:
   using typename BaseType::RangeType;
 
   LocalizableFunctionBasedLocalDirichletBoundaryValue(const BoundaryInfoType& boundary_info,
-                                                      std::unique_ptr<LocalfunctionType>&& local_boundary_values)
+                                                      std::unique_ptr<const LocalfunctionType>&& local_boundary_values)
     : BaseType(boundary_info)
     , local_boundary_values_(std::move(local_boundary_values))
   {
@@ -113,46 +117,54 @@ public:
 
 private:
   using BaseType::boundary_info_;
-  const std::unique_ptr<LocalfunctionType> local_boundary_values_;
+  const std::unique_ptr<const LocalfunctionType> local_boundary_values_;
 };
 
 
-template <class GridLayerType, class LocalizableFunctionType>
+template <class IntersectionImp, class LocalizableFunctionType>
 class LocalizableFunctionBasedLocalizableDirichletBoundaryValue
-    : public LocalizableBoundaryValueInterface<GridLayerType, typename LocalizableFunctionType::RangeType>
+    : public LocalizableBoundaryValueInterface<typename LocalizableFunctionType::EntityType,
+                                               IntersectionImp,
+                                               typename LocalizableFunctionType::RangeType>
 {
-  using BaseType = LocalizableBoundaryValueInterface<GridLayerType, typename LocalizableFunctionType::RangeType>;
+  using BaseType = LocalizableBoundaryValueInterface<typename LocalizableFunctionType::EntityType,
+                                                     IntersectionImp,
+                                                     typename LocalizableFunctionType::RangeType>;
   using LocalBoundaryValueType =
-      LocalizableFunctionBasedLocalDirichletBoundaryValue<GridLayerType, LocalizableFunctionType>;
+      LocalizableFunctionBasedLocalDirichletBoundaryValue<IntersectionImp, LocalizableFunctionType>;
 
 public:
   using typename BaseType::BoundaryInfoType;
   using typename BaseType::EntityType;
   using typename BaseType::LocalBoundaryValueInterfaceType;
 
-  LocalizableFunctionBasedLocalizableDirichletBoundaryValue(const BoundaryInfoType& boundary_info,
-                                                            const LocalizableFunctionType& boundary_values)
-    : BaseType(boundary_info)
-    , boundary_values_(boundary_values)
+  LocalizableFunctionBasedLocalizableDirichletBoundaryValue(
+      std::unique_ptr<const BoundaryInfoType>&& boundary_info,
+      std::unique_ptr<const LocalizableFunctionType>&& boundary_values)
+    : BaseType(std::move(boundary_info))
+    , boundary_values_(std::move(boundary_values))
   {
   }
 
   virtual std::unique_ptr<LocalBoundaryValueInterfaceType> local_function(const EntityType& entity) const override
   {
-    return std::make_unique<LocalBoundaryValueType>(boundary_info_, boundary_values_.local_function(entity));
+    return std::make_unique<LocalBoundaryValueType>(*boundary_info_, boundary_values_->local_function(entity));
   }
 
 private:
   using BaseType::boundary_info_;
-  const LocalizableFunctionType& boundary_values_;
+  const std::unique_ptr<const LocalizableFunctionType> boundary_values_;
 };
 
 
-template <class GridLayerType, class LocalizableFunctionType>
-class LocalMomentModelBoundaryValue
-    : public LocalBoundaryValueInterface<GridLayerType, typename LocalizableFunctionType::RangeType>
+template <class IntersectionImp, class LocalizableFunctionType>
+class LocalMomentModelBoundaryValue : public LocalBoundaryValueInterface<typename LocalizableFunctionType::EntityType,
+                                                                         IntersectionImp,
+                                                                         typename LocalizableFunctionType::RangeType>
 {
-  using BaseType = LocalBoundaryValueInterface<GridLayerType, typename LocalizableFunctionType::RangeType>;
+  using BaseType = LocalBoundaryValueInterface<typename LocalizableFunctionType::EntityType,
+                                               IntersectionImp,
+                                               typename LocalizableFunctionType::RangeType>;
   using RangeFieldType = typename LocalizableFunctionType::RangeFieldType;
 
 public:
@@ -166,7 +178,7 @@ public:
   LocalMomentModelBoundaryValue(
       const BoundaryInfoType& boundary_info,
       const XT::Common::FieldVector<MatrixType, 2 * dimDomain>& reflection_matrices,
-      std::unique_ptr<typename LocalizableFunctionType::LocalfunctionType>&& local_dirichlet_boundary_values)
+      std::unique_ptr<const typename LocalizableFunctionType::LocalfunctionType>&& local_dirichlet_boundary_values)
     : BaseType(boundary_info)
     , reflection_matrices_(reflection_matrices)
     , local_dirichlet_boundary_values_(std::move(local_dirichlet_boundary_values))
@@ -196,18 +208,21 @@ public:
 
 private:
   using BaseType::boundary_info_;
-  const Dune::FieldVector<MatrixType, 2 * dimDomain>& reflection_matrices_;
-  const std::unique_ptr<typename LocalizableFunctionType::LocalfunctionType> local_dirichlet_boundary_values_;
+  const XT::Common::FieldVector<MatrixType, 2 * dimDomain>& reflection_matrices_;
+  const std::unique_ptr<const typename LocalizableFunctionType::LocalfunctionType> local_dirichlet_boundary_values_;
 };
 
 
-template <class GridLayerType, class BasisfunctionType, class LocalizableFunctionType>
-class MomentModelBoundaryValue
-    : public LocalizableBoundaryValueInterface<GridLayerType, typename BasisfunctionType::RangeType>
+template <class IntersectionType, class BasisfunctionType, class LocalizableFunctionType>
+class MomentModelBoundaryValue : public LocalizableBoundaryValueInterface<typename LocalizableFunctionType::EntityType,
+                                                                          IntersectionType,
+                                                                          typename BasisfunctionType::RangeType>
 {
   static_assert(std::is_same<typename BasisfunctionType::RangeType, typename LocalizableFunctionType::RangeType>::value,
                 "RangeTypes have to match!");
-  using BaseType = LocalizableBoundaryValueInterface<GridLayerType, typename BasisfunctionType::RangeType>;
+  using BaseType = LocalizableBoundaryValueInterface<typename LocalizableFunctionType::EntityType,
+                                                     IntersectionType,
+                                                     typename BasisfunctionType::RangeType>;
 
 public:
   using typename BaseType::BoundaryInfoType;
@@ -215,17 +230,16 @@ public:
   using typename BaseType::EntityType;
   using typename BaseType::LocalBoundaryValueInterfaceType;
   using typename BaseType::RangeType;
-  using LocalBoundaryValueType = LocalMomentModelBoundaryValue<GridLayerType, LocalizableFunctionType>;
+  using LocalBoundaryValueType = LocalMomentModelBoundaryValue<IntersectionType, LocalizableFunctionType>;
   using MatrixType = typename LocalBoundaryValueType::MatrixType;
   static const size_t dimDomain = BasisfunctionType::dimDomain;
   static const size_t dimRange = BasisfunctionType::dimRange;
 
-
-  MomentModelBoundaryValue(const BoundaryInfoType& boundary_info,
+  MomentModelBoundaryValue(std::unique_ptr<const BoundaryInfoType>&& boundary_info,
                            const BasisfunctionType& basis_functions,
-                           const LocalizableFunctionType& dirichlet_boundary_values)
-    : BaseType(boundary_info)
-    , dirichlet_boundary_values_(dirichlet_boundary_values)
+                           std::unique_ptr<const LocalizableFunctionType>&& dirichlet_boundary_values)
+    : BaseType(std::move(boundary_info))
+    , dirichlet_boundary_values_(std::move(dirichlet_boundary_values))
   {
     for (size_t ii = 0; ii < dimDomain; ++ii) {
       DomainType n(0);
@@ -239,13 +253,13 @@ public:
   virtual std::unique_ptr<LocalBoundaryValueInterfaceType> local_function(const EntityType& entity) const override
   {
     return std::make_unique<LocalBoundaryValueType>(
-        boundary_info_, reflection_matrices_, dirichlet_boundary_values_.local_function(entity));
+        *boundary_info_, reflection_matrices_, dirichlet_boundary_values_->local_function(entity));
   }
 
 private:
   using BaseType::boundary_info_;
-  Dune::FieldVector<MatrixType, 2 * dimDomain> reflection_matrices_;
-  const LocalizableFunctionType& dirichlet_boundary_values_;
+  Dune::XT::Common::FieldVector<MatrixType, 2 * dimDomain> reflection_matrices_;
+  const std::unique_ptr<const LocalizableFunctionType> dirichlet_boundary_values_;
 };
 
 

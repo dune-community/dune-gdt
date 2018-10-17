@@ -31,12 +31,13 @@ namespace FokkerPlanck {
 template <class BasisfunctionImp, class GridLayerImp, class U_>
 class TwoBeamsPn : public FokkerPlanckEquation<BasisfunctionImp, GridLayerImp, U_>
 {
-  typedef FokkerPlanckEquation<BasisfunctionImp, GridLayerImp, U_> BaseType;
+  using BaseType = FokkerPlanckEquation<BasisfunctionImp, GridLayerImp, U_>;
 
 public:
   using typename BaseType::InitialValueType;
   using typename BaseType::BoundaryValueType;
   using typename BaseType::ActualInitialValueType;
+  using typename BaseType::ActualDirichletBoundaryValueType;
   using typename BaseType::ActualBoundaryValueType;
   using typename BaseType::DomainType;
   using typename BaseType::RangeFieldType;
@@ -44,6 +45,7 @@ public:
   using typename BaseType::BasisfunctionType;
   using typename BaseType::GridLayerType;
   using typename BaseType::QuadratureType;
+  using typename BaseType::IntersectionType;
 
   using BaseType::default_boundary_cfg;
 
@@ -89,16 +91,17 @@ public:
   {
     const auto basis_evaluated_at_one = basis_functions_.evaluate(DomainType(1));
     const auto basis_evaluated_at_minus_one = basis_functions_.evaluate(DomainType(-1));
-    return new ActualBoundaryValueType(
-        [=](const DomainType& x, const XT::Common::Parameter&) {
-          RangeType ret = basis_evaluated_at_minus_one;
-          ret *= (x[0] + 0.5) * 50;
-          RangeType summand2 = basis_evaluated_at_one;
-          summand2 *= (0.5 - x[0]) * 50;
-          ret += summand2;
-          return ret;
-        },
-        1);
+    return new ActualBoundaryValueType(XT::Grid::make_alldirichlet_boundaryinfo<IntersectionType>(),
+                                       std::make_unique<ActualDirichletBoundaryValueType>(
+                                           [=](const DomainType& x, const XT::Common::Parameter&) {
+                                             RangeType ret = basis_evaluated_at_minus_one;
+                                             ret *= (x[0] + 0.5) * 50;
+                                             RangeType summand2 = basis_evaluated_at_one;
+                                             summand2 *= (0.5 - x[0]) * 50;
+                                             ret += summand2;
+                                             return ret;
+                                           },
+                                           1));
   } // ... create_boundary_values()
 
 protected:
@@ -108,14 +111,14 @@ protected:
 template <class BasisfunctionType, class GridLayerType, class U_>
 class TwoBeamsMn : public TwoBeamsPn<BasisfunctionType, GridLayerType, U_>
 {
-  typedef TwoBeamsPn<BasisfunctionType, GridLayerType, U_> BaseType;
-  typedef TwoBeamsMn ThisType;
+  using BaseType = TwoBeamsPn<BasisfunctionType, GridLayerType, U_>;
+  using ThisType = TwoBeamsMn;
 
 public:
   using typename BaseType::FluxType;
   using typename BaseType::RangeType;
   using typename BaseType::QuadratureType;
-  typedef EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_> ActualFluxType;
+  using ActualFluxType = EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_>;
 
 
   using BaseType::default_grid_cfg;

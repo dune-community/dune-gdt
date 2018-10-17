@@ -109,9 +109,9 @@ template <class EntityImp, class DomainFieldImp, size_t domainDim>
 class PeriodicTransportFunction
     : public XT::Functions::GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, DomainFieldImp, domainDim, 1>
 {
-  typedef XT::Functions::GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, DomainFieldImp, domainDim, 1>
-      BaseType;
-  typedef PeriodicTransportFunction<EntityImp, DomainFieldImp, domainDim> ThisType;
+  using BaseType =
+      XT::Functions::GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, DomainFieldImp, domainDim, 1>;
+  using ThisType = PeriodicTransportFunction<EntityImp, DomainFieldImp, domainDim>;
 
 public:
   using typename BaseType::DomainType;
@@ -197,9 +197,8 @@ class TransportInitialValues
     : public XT::Functions::
           GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, rangeDimCols>
 {
-  typedef typename XT::Functions::
-      GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, rangeDimCols>
-          BaseType;
+  using BaseType = typename XT::Functions::
+      GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, rangeDimCols>;
 
 public:
   using BaseType::dimDomain;
@@ -226,13 +225,12 @@ class TransportSolution
                               LocalizableFunctionType,
                               GridLayerType>
 {
-  typedef PeriodicTransportFunction<typename LocalizableFunctionType::EntityType,
-                                    typename LocalizableFunctionType::DomainFieldType,
-                                    LocalizableFunctionType::dimDomain>
-      PeriodicTransportFunctionType;
-  typedef typename PeriodicTransportFunctionType::DomainType DomainType;
-  typedef XT::Functions::CompositionFunction<PeriodicTransportFunctionType, LocalizableFunctionType, GridLayerType>
-      BaseType;
+  using PeriodicTransportFunctionType = PeriodicTransportFunction<typename LocalizableFunctionType::EntityType,
+                                                                  typename LocalizableFunctionType::DomainFieldType,
+                                                                  LocalizableFunctionType::dimDomain>;
+  using DomainType = typename PeriodicTransportFunctionType::DomainType;
+  using BaseType =
+      XT::Functions::CompositionFunction<PeriodicTransportFunctionType, LocalizableFunctionType, GridLayerType>;
 
 public:
   TransportSolution(const LocalizableFunctionType initial_values, const DomainType velocity)
@@ -248,8 +246,8 @@ namespace Problems {
 template <class E, class D, size_t d, class U, class R, size_t r>
 class Transport : public ProblemBase<E, D, d, U, R, r>
 {
-  typedef Transport<E, D, d, U, R, r> ThisType;
-  typedef ProblemBase<E, D, d, U, R, r> BaseType;
+  using ThisType = Transport<E, D, d, U, R, r>;
+  using BaseType = ProblemBase<E, D, d, U, R, r>;
 
 public:
   static const bool linear = true;
@@ -259,18 +257,17 @@ public:
   using typename BaseType::RangeType;
   using BaseType::dimDomain;
   using BaseType::dimRange;
-
-  typedef typename XT::Functions::AffineFluxFunction<E, D, d, U, R, r, d> ActualFluxType;
-  typedef typename XT::Functions::AffineFluxFunction<E, D, d, U, R, r, 1> ActualRhsType;
-  typedef XT::Functions::GlobalLambdaFunction<E, D, d, R, r, 1> ActualBoundaryValueType;
-  typedef ActualBoundaryValueType ActualInitialValueType;
-
-  typedef FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
-
+  using typename BaseType::IntersectionType;
   using typename BaseType::FluxType;
   using typename BaseType::RhsType;
   using typename BaseType::InitialValueType;
   using typename BaseType::BoundaryValueType;
+  using typename BaseType::ActualRhsType;
+  using typename BaseType::ActualInitialValueType;
+  using typename BaseType::ActualDirichletBoundaryValueType;
+  using typename BaseType::ActualBoundaryValueType;
+  using ActualFluxType = typename XT::Functions::AffineFluxFunction<E, D, d, U, R, r, d>;
+  using MatrixType = FieldMatrix<RangeFieldType, dimRange, dimRange>;
 
   Transport(const XT::Common::Configuration& grid_cfg = BaseType::default_grid_cfg(),
             const XT::Common::Configuration& boundary_cfg = BaseType::default_boundary_cfg())
@@ -322,7 +319,9 @@ public:
 
   virtual BoundaryValueType* create_boundary_values()
   {
-    return new ActualBoundaryValueType([=](const DomainType&, const XT::Common::Parameter&) { return 0; }, 0);
+    return new ActualBoundaryValueType(XT::Grid::make_alldirichlet_boundaryinfo<IntersectionType>(),
+                                       std::make_unique<ActualDirichletBoundaryValueType>(
+                                           [=](const DomainType&, const XT::Common::Parameter&) { return 0; }, 0));
   } // ... create_boundary_values()
 }; // class Transport<...>
 
@@ -344,24 +343,34 @@ class TransportTestCase
                                                                                R,
                                                                                r,
                                                                                1,
-                                                                               GDT::Backends::gdt>::type,
+                                                                               GDT::Backends::gdt,
+                                                                               XT::LA::default_backend,
+                                                                               XT::Grid::Layers::leaf,
+                                                                               true>::type,
                                    R,
                                    r>>
 {
-  typedef typename G::template Codim<0>::Entity E;
-  typedef typename G::ctype D;
+  using E = typename G::template Codim<0>::Entity;
+  using D = typename G::ctype;
   static const size_t d = G::dimension;
 
 public:
   static const size_t dimRange = r;
   static const size_t dimRangeCols = 1;
-  typedef
-      typename internal::DiscreteFunctionProvider<G, GDT::SpaceType::product_fv, 0, R, r, 1, GDT::Backends::gdt>::type
-          U;
-  typedef typename Problems::Transport<E, D, d, U, R, r> ProblemType;
+  using U = typename internal::DiscreteFunctionProvider<G,
+                                                        GDT::SpaceType::product_fv,
+                                                        0,
+                                                        R,
+                                                        r,
+                                                        1,
+                                                        GDT::Backends::gdt,
+                                                        XT::LA::default_backend,
+                                                        XT::Grid::Layers::leaf,
+                                                        true>::type;
+  using ProblemType = typename Problems::Transport<E, D, d, U, R, r>;
 
 private:
-  typedef typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType> BaseType;
+  using BaseType = typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType>;
 
 public:
   using typename BaseType::GridType;
@@ -371,7 +380,7 @@ public:
   TransportTestCase(const size_t num_refs = (d == 1 ? 4 : 2), const double divide_t_end_by = 1.0)
     : BaseType(divide_t_end_by, ProblemType::default_grid_cfg(), num_refs)
   {
-    typedef TransportInitialValues<E, D, d, R, r, 1> LocalizableInitialValueType;
+    using LocalizableInitialValueType = TransportInitialValues<E, D, d, R, r, 1>;
     exact_solution_ = std::make_shared<const TransportSolution<LocalizableInitialValueType, LevelGridViewType>>(
         LocalizableInitialValueType{},
         Dune::XT::Common::from_string<typename Dune::XT::Common::FieldVector<D, d>>("[1.0 2.0 3.0]"));

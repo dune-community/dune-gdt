@@ -108,9 +108,9 @@ public:
     auto& reconstructed_values_map = reconstructed_function_.values()[entity_index];
 
     // get jacobian
+    const auto& u_entity = source_values_[entity_index];
     auto& jac = *jacobian_wrapper_;
     if (!jac.computed() || !analytical_flux_.is_affine()) {
-      const auto& u_entity = source_values_[entity_index];
       const DomainType x_in_inside_coords = entity.geometry().local(entity.geometry().center());
       jac.get_jacobian(entity, analytical_flux_, x_in_inside_coords, u_entity, param_);
       jac.compute();
@@ -120,7 +120,8 @@ public:
 
     for (size_t dd = 0; dd < dimDomain; ++dd) {
       if (quadrature_.size() == 1) {
-        // no need to reconstruct in all directions, as we are only regarding the center of the face, which will always
+        // no need to reconstruct in all directions, as we are only regarding the center of the face, which will
+        // always
         // have the same value assigned, independent of the slope in the other directions
         std::array<size_t, dimDomain> indices;
         indices.fill(1);
@@ -445,7 +446,7 @@ public:
 
   LinearReconstructionOperator(const AnalyticalFluxType& analytical_flux,
                                const BoundaryValueType& boundary_values,
-                               const SlopeType& slope,
+                               const SlopeType& slope = default_minmod_slope(),
                                const Quadrature1dType& quadrature_1d = default_1d_quadrature<DomainFieldType>(1))
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
@@ -495,6 +496,12 @@ public:
   } // void apply(...)
 
 private:
+  static SlopeType& default_minmod_slope()
+  {
+    static MinmodSlope<VectorType, MatrixType> minmod_slope_;
+    return minmod_slope_;
+  }
+
   const AnalyticalFluxType& analytical_flux_;
   const BoundaryValueType& boundary_values_;
   const SlopeType& slope_;

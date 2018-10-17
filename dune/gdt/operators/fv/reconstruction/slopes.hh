@@ -11,9 +11,6 @@
 #ifndef DUNE_GDT_OPERATORS_FV_SLOPES_HH
 #define DUNE_GDT_OPERATORS_FV_SLOPES_HH
 
-#include <boost/iostreams/stream.hpp>
-#include <boost/iostreams/device/null.hpp>
-
 #if HAVE_CLP
 #include <coin/ClpSimplex.hpp>
 #endif // HAVE_CLP
@@ -28,9 +25,10 @@
 #include <dune/geometry/quadraturerules.hh>
 
 #include <dune/xt/common/float_cmp.hh>
+#include <dune/xt/common/fvector.hh>
 #include <dune/xt/common/parallel/threadstorage.hh>
 
-#include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions/piecewise_monomials.hh>
+#include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions/partial_moments.hh>
 
 #include "internal.hh"
 
@@ -217,6 +215,7 @@ public:
 // Realizability limiter that ensures positivity of the components of u in noncharacteristic variables. Uses single
 // limiter variable for all components.
 // TODO: Make usable with interface quadratures different from the midpoint quadrature
+// See dune/gdt/operators/fv/entropybased/realizability.hh
 template <class RangeFieldType,
           size_t dimRange,
           class MatrixType,
@@ -283,6 +282,7 @@ private:
 // Realizability limiter that ensures positivity of the components of u in noncharacteristic variables. Uses single
 // limiter variable for all components.
 // TODO: Make usable with interface quadratures different from the midpoint quadrature
+// See dune/gdt/operators/fv/entropybased/realizability.hh
 template <class RangeFieldType,
           size_t dimRange,
           class MatrixType,
@@ -292,15 +292,15 @@ class Dg1dRealizabilityLimitedSlope
 {
   using VectorType = XT::Common::BlockedFieldVector<RangeFieldType, dimRange / 2, 2>;
   using BaseType = SlopeBase<VectorType, MatrixType, 3>;
-  using BasisfunctionType =
-      Dune::GDT::Hyperbolic::Problems::PiecewiseMonomials<RangeFieldType, 1, RangeFieldType, dimRange, 1, 1, 1>;
+  using BasisfunctionType = Dune::GDT::PartialMomentBasis<RangeFieldType, 1, RangeFieldType, dimRange, 1, 1, 1>;
 
 public:
   using typename BaseType::StencilType;
 
   // This limiter ensures u_i >= epsilon for all components u_i of u.
-  Dg1dRealizabilityLimitedSlope(const RangeFieldType epsilon = 0.)
-    : epsilon_(epsilon)
+  Dg1dRealizabilityLimitedSlope(const BasisfunctionType& basis_functions, const RangeFieldType epsilon = 0.)
+    : basis_functions_(basis_functions)
+    , epsilon_(epsilon)
   {
   }
 
@@ -364,8 +364,8 @@ private:
     return ret;
   }
 
+  const BasisfunctionType& basis_functions_;
   const RangeFieldType epsilon_;
-  const BasisfunctionType basis_functions_;
   const SlopeType slope_limiter_;
 }; // class Dg1dRealizabilityLimitedSlope<...>
 
@@ -374,6 +374,7 @@ private:
 // Realizability limiter that ensures that the limited values are within the convex hull of the quadrature points. Uses
 // single limiter variable for all components.
 // TODO: Make usable with interface quadratures different from the midpoint quadrature
+// See dune/gdt/operators/fv/entropybased/realizability.hh
 template <class BasisfunctionType,
           class MatrixType,
           class SlopeType =
@@ -389,16 +390,12 @@ class ConvexHullRealizabilityLimitedSlope
   using VectorType = FieldVector<RangeFieldType, dimRange>;
   using BaseType = SlopeBase<VectorType, MatrixType, 3>;
   using PlaneCoefficientsType = typename std::vector<std::pair<VectorType, RangeFieldType>>;
-  using QuadratureType = typename BasisfunctionType::QuadratureType;
 
 public:
   using typename BaseType::StencilType;
 
-  ConvexHullRealizabilityLimitedSlope(const QuadratureType& quadrature,
-                                      const BasisfunctionType& basis_functions,
-                                      const RangeFieldType epsilon = 0.)
-    : quadrature_(quadrature)
-    , basis_functions_(basis_functions)
+  ConvexHullRealizabilityLimitedSlope(const BasisfunctionType& basis_functions, const RangeFieldType epsilon = 0.)
+    : basis_functions_(basis_functions)
     , epsilon_(epsilon)
   {
     calculate_plane_coefficients();
@@ -450,10 +447,11 @@ private:
   {
     using orgQhull::Qhull;
     Qhull qhull;
-    std::vector<FieldVector<RangeFieldType, dimRange>> points(quadrature_.size() + 1);
+    const auto& quadrature = basis_functions_.quadratures().merged();
+    std::vector<FieldVector<RangeFieldType, dimRange>> points(quadrature.size() + 1);
     points[0] = FieldVector<RangeFieldType, dimRange>(0);
     size_t ii = 1;
-    for (const auto& quad_point : quadrature_)
+    for (const auto& quad_point : quadrature)
       points[ii++] = basis_functions_.evaluate(quad_point.position());
     std::cout << "Starting qhull..." << std::endl;
     qhull.runQhull("Realizable set", int(dimRange), int(points.size()), &(points[0][0]), "Qt T1");
@@ -469,8 +467,7 @@ private:
     }
   } // void calculate_plane_coefficients()
 
-  const QuadratureType quadrature_;
-  const BasisfunctionType basis_functions_;
+  const BasisfunctionType& basis_functions_;
   const RangeFieldType epsilon_;
   const SlopeType slope_limiter_;
   PlaneCoefficientsType plane_coefficients_;
@@ -480,57 +477,45 @@ private:
 // Realizability limiter that ensures that the limited values are within the convex hull of the quadrature points. Uses
 // single limiter variable for all components.
 // TODO: Make usable with interface quadratures different from the midpoint quadrature
+// See dune/gdt/operators/fv/entropybased/realizability.hh
 template <class BasisfunctionType,
           class MatrixType,
           class SlopeType =
               MinmodSlope<FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>,
                           MatrixType>>
 class DgConvexHullRealizabilityLimitedSlope
-    : public SlopeBase<FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>,
+    : public SlopeBase<XT::Common::BlockedFieldVector<typename BasisfunctionType::RangeFieldType,
+                                                      BasisfunctionType::dimRange
+                                                          / ((BasisfunctionType::dimDomain == 1) ? 2 : 4),
+                                                      (BasisfunctionType::dimDomain == 1) ? 2 : 4>,
                        MatrixType,
                        3>
 {
   using ThisType = DgConvexHullRealizabilityLimitedSlope;
   using RangeFieldType = typename BasisfunctionType::RangeFieldType;
   static const size_t dimRange = BasisfunctionType::dimRange;
-  using VectorType = FieldVector<RangeFieldType, dimRange>;
-  using BaseType = SlopeBase<VectorType, MatrixType, 3>;
-  using QuadratureType = typename BasisfunctionType::QuadratureType;
   static const size_t block_size = (BasisfunctionType::dimDomain == 1) ? 2 : 4;
   static const size_t num_blocks = dimRange / block_size;
-  using BlockRangeType = FieldVector<RangeFieldType, block_size>;
+  using VectorType = XT::Common::BlockedFieldVector<RangeFieldType, num_blocks, block_size>;
+  using BaseType = SlopeBase<VectorType, MatrixType, 3>;
+  using BlockRangeType = typename VectorType::BlockType;
   using BlockPlaneCoefficientsType = typename std::vector<std::pair<BlockRangeType, RangeFieldType>>;
   using PlaneCoefficientsType = FieldVector<BlockPlaneCoefficientsType, num_blocks>;
 
 public:
   using typename BaseType::StencilType;
 
-  DgConvexHullRealizabilityLimitedSlope(const QuadratureType& quadrature,
-                                        const BasisfunctionType& basis_functions,
-                                        const RangeFieldType epsilon = 0.)
+  DgConvexHullRealizabilityLimitedSlope(const BasisfunctionType& basis_functions, const RangeFieldType epsilon = 0.)
     : basis_functions_(basis_functions)
     , epsilon_(epsilon)
   {
-    // convert global quadrature to vector of interval/spherical triangle quadratures. If a quadrature point is on the
-    // boundary between several intervals/spherical triangles, add that point to all num_faces quadratures with weight
-    // w/num_faces.
-    for (const auto& quad_point : quadrature) {
-      const auto face_indices = basis_functions_.get_face_indices(quad_point.position());
-      const size_t num_adjacent_faces = face_indices.size();
-      for (const auto& kk : face_indices)
-        blocked_quadrature_[kk].emplace_back(quad_point.position(), quad_point.weight() / num_adjacent_faces);
-    } // ii
-    calculate_plane_coefficients();
-  }
-
-  DgConvexHullRealizabilityLimitedSlope(const FieldVector<QuadratureType, num_blocks>& blocked_quadrature,
-                                        const BasisfunctionType& basis_functions,
-                                        const RangeFieldType epsilon = 0.)
-    : blocked_quadrature_(blocked_quadrature)
-    , basis_functions_(basis_functions)
-    , epsilon_(epsilon)
-  {
-    calculate_plane_coefficients();
+    if (!basis_functions_.plane_coefficients()[0].size())
+      basis_functions_.calculate_plane_coefficients();
+    // replace the coefficients b by \tilde{b} = b - eps  \twonorm(a) to guarantee distance of eps to boundary
+    plane_coefficients_ = basis_functions_.plane_coefficients();
+    for (size_t jj = 0; jj < num_blocks; ++jj)
+      for (auto& coeff : plane_coefficients_[jj])
+        coeff.second -= epsilon_ * coeff.first.two_norm();
   }
 
   virtual VectorType
@@ -541,28 +526,22 @@ public:
 
     // this needs to be changed for other interface quadratures (see above)
     const VectorType& u_bar_char = stencil_char[1];
-    const FieldVector<VectorType, 2> reconstructed_values{u_bar_char - 0.5 * slope, u_bar_char + 0.5 * slope};
+    const FieldVector<VectorType, 2> reconstructed_values{u_bar_char - slope * 0.5, u_bar_char + slope * 0.5};
 
     // vector to store thetas for each local reconstructed value
-    FieldVector<RangeFieldType, num_blocks> thetas(0.), u;
+    FieldVector<RangeFieldType, num_blocks> thetas(0.);
+    VectorType u;
     for (size_t kk = 0; kk < reconstructed_values.size(); ++kk) {
       const VectorType& u_char = reconstructed_values[kk];
       // convert back to ordinary coordinates
       A.mv(u_char, u);
-      FieldVector<RangeFieldType, block_size> u_block, u_bar_block;
       for (size_t jj = 0; jj < num_blocks; ++jj) {
-        const size_t offset = jj * block_size;
-        // copy to local vectors
-        for (size_t ii = 0; ii < block_size; ++ii) {
-          u_block[ii] = u[offset + ii];
-          u_bar_block[ii] = u_bar[offset + ii];
-        }
         // Check realizability of u_bar in this block. The first condition avoids unnecessary repeated checking.
-        if (thetas[jj] == 1. || !is_epsilon_realizable(u_bar_block, jj)) {
+        if (thetas[jj] == 1. || !is_epsilon_realizable(u_bar.block(jj), jj)) {
           thetas[jj] = 1.;
           continue;
         }
-        thetas[jj] = std::max(thetas[jj], get_block_theta(u_block, u_bar_block, jj));
+        thetas[jj] = std::max(thetas[jj], get_block_theta(u.block(jj), u_bar.block(jj), jj));
       } // jj
     } // kk
 
@@ -570,13 +549,13 @@ public:
     for (size_t jj = 0; jj < num_blocks; ++jj) {
       assert(XT::Common::FloatCmp::le(thetas[jj], 1.) && XT::Common::FloatCmp::ge(thetas[jj], 0.));
       for (size_t ii = 0; ii < block_size; ++ii)
-        ret[jj * block_size + ii] = slope[jj * block_size + ii] * (1 - thetas[jj]);
+        ret.block(jj)[ii] = slope.block(jj)[ii] * (1 - thetas[jj]);
     }
     return ret;
   } // ... get(...)
 
 private:
-  bool is_epsilon_realizable(const BlockRangeType& u, const size_t jj)
+  bool is_epsilon_realizable(const BlockRangeType& u, const size_t jj) const
   {
     for (const auto& coeff : plane_coefficients_[jj])
       if (u * coeff.first > coeff.second)
@@ -584,7 +563,7 @@ private:
     return true;
   }
 
-  RangeFieldType get_block_theta(const BlockRangeType& u, const BlockRangeType& u_bar, const size_t jj)
+  RangeFieldType get_block_theta(const BlockRangeType& u, const BlockRangeType& u_bar, const size_t jj) const
   {
     RangeFieldType theta(0.);
     auto u_bar_minus_u = u_bar - u;
@@ -595,93 +574,10 @@ private:
       if (XT::Common::FloatCmp::le(theta_li, 1.))
         theta = std::max(theta, theta_li);
     } // coeffs
-    theta = std::min(epsilon_ + theta, 1.);
+    return theta;
   } // ... get_block_theta(...)
 
-  // calculate half space representation of realizable set
-  void calculate_plane_coefficients()
-  {
-    FieldVector<std::vector<FieldVector<RangeFieldType, block_size>>, num_blocks> points;
-
-    size_t num_faces;
-    for (size_t jj = 0; jj < num_blocks; ++jj) {
-      points[jj].resize(blocked_quadrature_[jj].size() + 1);
-      for (size_t ll = 0; ll < blocked_quadrature_[jj].size(); ++ll) {
-        const auto val = basis_functions_.evaluate(blocked_quadrature_[jj][ll].position(), false, num_faces);
-        for (size_t ii = 0; ii < block_size; ++ii)
-          points[jj][ll][ii] = val[block_size * jj + ii];
-      } // ll
-      points[jj][blocked_quadrature_[jj].size()] = FieldVector<RangeFieldType, block_size>(0.);
-    }
-    std::vector<std::thread> threads(num_blocks);
-    // Calculate plane coefficients for each block in a separate thread
-    for (size_t jj = 0; jj < num_blocks; ++jj)
-      threads[jj] = std::thread(&ThisType::calculate_plane_coefficient_block, this, std::ref(points[jj]), jj);
-    // Join the threads with the main thread
-    for (size_t jj = 0; jj < num_blocks; ++jj)
-      threads[jj].join();
-  }
-
-  void calculate_plane_coefficient_block(std::vector<FieldVector<RangeFieldType, block_size>>& points, const size_t jj)
-  {
-    orgQhull::Qhull qhull;
-    // ignore output
-    boost::iostreams::stream<boost::iostreams::null_sink> null_ostream((boost::iostreams::null_sink()));
-    qhull.setOutputStream(&null_ostream);
-    qhull.setErrorStream(&null_ostream);
-    // calculate convex hull
-    assert(points.size() < std::numeric_limits<int>::max());
-    qhull.runQhull(
-        "Realizable set", static_cast<int>(block_size), static_cast<int>(points.size()), &(points[0][0]), "Qt T1");
-    const auto facet_end = qhull.endFacet();
-    BlockPlaneCoefficientsType block_plane_coefficients(qhull.facetList().count());
-    //    std::cout << "num_vertices: " << qhull.vertexList().count() << std::endl;
-    size_t ll = 0;
-    for (auto facet = qhull.beginFacet(); facet != facet_end; facet = facet.next(), ++ll) {
-      for (size_t ii = 0; ii < block_size; ++ii)
-        block_plane_coefficients[ll].first[ii] = *(facet.hyperplane().coordinates() + ii);
-      block_plane_coefficients[ll].second = -facet.hyperplane().offset();
-    } // ii
-    // discard duplicate facets (qhull triangulates output, so there may be several facets on the same hyperplane)
-    using CoeffType = typename BlockPlaneCoefficientsType::value_type;
-    std::sort(block_plane_coefficients.begin(),
-              block_plane_coefficients.end(),
-              [](const CoeffType& first, const CoeffType& second) {
-                // Check component-wise if first.a[ii] < second.a[ii]. If they are equal, check next component.
-                for (size_t ii = 0; ii < block_size; ++ii) {
-                  if (XT::Common::FloatCmp::lt(first.first[ii], second.first[ii]))
-                    return true;
-                  else if (XT::Common::FloatCmp::gt(first.first[ii], second.first[ii]))
-                    return false;
-                }
-                // first.a and second.a are equal, check first.b and second.b
-                if (XT::Common::FloatCmp::lt(first.second, second.second))
-                  return true;
-                return false;
-              });
-    static const auto pair_float_cmp = [](const CoeffType& first, const CoeffType& second) {
-      return XT::Common::FloatCmp::eq(first.first, second.first)
-             && XT::Common::FloatCmp::eq(first.second, second.second);
-    };
-    block_plane_coefficients.erase(
-        std::unique(block_plane_coefficients.begin(), block_plane_coefficients.end(), pair_float_cmp),
-        block_plane_coefficients.end());
-    // discard facets belonging to the condition u0 < 1, i.e. with a = (1, 0, 0, ...) and b = 1
-    CoeffType coeff_to_erase{BlockRangeType(0), 1.};
-    coeff_to_erase.first[0] = 1.;
-    auto coeff_to_erase_it =
-        std::find(block_plane_coefficients.begin(), block_plane_coefficients.end(), coeff_to_erase, pair_float_cmp);
-    if (coeff_to_erase_it == block_plane_coefficients.end())
-      DUNE_THROW(Dune::MathError, "There should be such a coefficient!");
-    block_plane_coefficients.erase(coeff_to_erase_it);
-    // replace the coefficients b by \tilde{b} = b - eps  \twonorm(a) to guarantee distance of eps to boundary
-    for (auto& coeff : block_plane_coefficients)
-      coeff.second -= epsilon_ * coeff.first.two_norm();
-    plane_coefficients_[jj] = block_plane_coefficients;
-  }
-
-  FieldVector<QuadratureType, num_blocks> blocked_quadrature_;
-  const BasisfunctionType basis_functions_;
+  const BasisfunctionType& basis_functions_;
   const RangeFieldType epsilon_;
   const SlopeType slope_limiter_;
   PlaneCoefficientsType plane_coefficients_;
@@ -714,6 +610,7 @@ class DgConvexHullRealizabilityLimitedSlopeSlope
 // Characteristic component-wise realizability limiter that ensures positivity of the components of u in
 // noncharacteristic variables by solving a linear program.
 // TODO: Make usable with interface quadratures different from the midpoint quadrature
+// See dune/gdt/operators/fv/entropybased/realizability.hh
 template <class RangeFieldType,
           size_t dimRange,
           class MatrixType,
@@ -826,10 +723,12 @@ private:
 // Realizability limiter that solves a linear program to ensure the reconstructed values are still in the numerically
 // realizable set, i.e. in the convex hull of basis evaluations.
 // TODO: Make usable with interface quadratures different from the midpoint quadrature
+// See dune/gdt/operators/fv/entropybased/realizability.hh
 template <class BasisfunctionType,
           class MatrixType,
           class SlopeType =
-              McSlope<FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>, MatrixType>>
+              MinmodSlope<FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>,
+                          MatrixType>>
 class LpConvexhullRealizabilityLimitedSlope
     : public SlopeBase<FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>, MatrixType>
 {
@@ -842,14 +741,13 @@ class LpConvexhullRealizabilityLimitedSlope
 
 public:
   using typename BaseType::StencilType;
-  using QuadratureType = Dune::QuadratureRule<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimDomain>;
 
-  LpConvexhullRealizabilityLimitedSlope(const BasisfunctionType& basis_functions,
-                                        const QuadratureType& quadrature,
-                                        const RangeFieldType epsilon)
+  LpConvexhullRealizabilityLimitedSlope(const BasisfunctionType& basis_functions, const RangeFieldType epsilon)
     : epsilon_(epsilon)
-    , basis_values_(quadrature.size())
+    , basis_functions_(basis_functions)
+    , basis_values_(basis_functions_.quadratures().merged().size())
   {
+    const auto& quadrature = basis_functions.quadratures().merged();
     for (size_t ii = 0; ii < quadrature.size(); ++ii)
       basis_values_[ii] = basis_functions.evaluate(quadrature[ii].position());
   }
@@ -857,24 +755,42 @@ public:
   virtual VectorType
   get(const StencilType& stencil, const StencilType& stencil_char, const MatrixType& A) const override final
   {
-    const VectorType slope = slope_limiter_.get(stencil, stencil_char, A);
+    const VectorType slope_char = slope_limiter_.get(stencil, stencil_char, A);
     static const VectorType zero_vector(0.);
-    if (XT::Common::FloatCmp::eq(slope, zero_vector))
+    if (XT::Common::FloatCmp::eq(slope_char, zero_vector))
       return zero_vector;
     FieldVector<VectorType, 2> thetas;
     // this needs to be changed for other interface quadratures (see above)
     const auto& u_bar_char = stencil_char[1];
-    const FieldVector<VectorType, 2> reconstructed_values{u_bar_char - 0.5 * slope, u_bar_char + 0.5 * slope};
+    const FieldVector<VectorType, 2> reconstructed_values_char{u_bar_char - 0.5 * slope_char,
+                                                               u_bar_char + 0.5 * slope_char};
     auto& A_tilde_transposed = *A_tilde_transposed_;
-    for (size_t kk = 0; kk < reconstructed_values.size(); ++kk)
-      thetas[kk] = solve_linear_program(reconstructed_values[kk], u_bar_char, A, A_tilde_transposed);
+    for (size_t kk = 0; kk < reconstructed_values_char.size(); ++kk)
+      thetas[kk] = solve_linear_program(reconstructed_values_char[kk], u_bar_char, A, A_tilde_transposed);
     VectorType ret;
     for (size_t ii = 0; ii < dimRange; ++ii) {
       auto theta_max_ii = std::max(thetas[0][ii], thetas[1][ii]);
       if (theta_max_ii > 0.)
         theta_max_ii = std::min(1., theta_max_ii + epsilon_);
-      ret[ii] = slope[ii] * (1 - theta_max_ii);
+      ret[ii] = slope_char[ii] * (1 - theta_max_ii);
     }
+    // Ensure positive density
+    // For that purpose, get slope in ordinary coordinates
+    VectorType slope;
+    A.mv(ret, slope);
+    const auto& u_bar = stencil[1];
+    const FieldVector<VectorType, 2> reconstructed_values{u_bar - 0.5 * slope, u_bar + 0.5 * slope};
+    RangeFieldType theta_pos(0);
+    for (size_t kk = 0; kk < reconstructed_values.size(); ++kk) {
+      const auto& u = reconstructed_values[kk];
+      const auto density_u = basis_functions_.density(u);
+      const auto density_u_bar = basis_functions_.density(u_bar);
+      if (density_u >= density_u_bar)
+        continue;
+      else if (density_u < epsilon_)
+        theta_pos = std::max(theta_pos, (epsilon_ - density_u) / (density_u_bar - density_u));
+    } // kk
+    ret *= 1 - theta_pos;
     return ret;
   }
 
@@ -968,6 +884,7 @@ private:
   }
 
   const RangeFieldType epsilon_;
+  const BasisfunctionType& basis_functions_;
   std::vector<VectorType> basis_values_;
   mutable XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>> lp_;
   mutable XT::Common::PerThreadValue<MatrixType> A_tilde_transposed_;

@@ -27,30 +27,39 @@ template <class BasisfunctionImp, class GridLayerImp, class U_>
 class KineticTransportEquation : public KineticEquationImplementationInterface<BasisfunctionImp, GridLayerImp, U_>,
                                  public XT::Common::ParametricInterface
 {
-  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_> ThisType;
-  typedef KineticEquationImplementationInterface<BasisfunctionImp, GridLayerImp, U_> BaseType;
+  using ThisType = KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>;
+  using BaseType = KineticEquationImplementationInterface<BasisfunctionImp, GridLayerImp, U_>;
 
 public:
   using typename BaseType::BasisfunctionType;
   using typename BaseType::GridLayerType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::StateType;
+  using typename BaseType::IntersectionType;
   using typename BaseType::RangeFieldType;
   using typename BaseType::DomainType;
   using typename BaseType::RangeType;
   using typename BaseType::MatrixType;
   using BaseType::dimDomain;
   using BaseType::dimRange;
+  using BaseType::dimRangeCols;
+  using BaseType::dimFlux;
 
   using typename BaseType::FluxType;
   using typename BaseType::RhsType;
   using typename BaseType::InitialValueType;
+  using typename BaseType::DirichletBoundaryValueType;
   using typename BaseType::BoundaryValueType;
   using typename BaseType::ActualFluxType;
   using typename BaseType::ActualRhsType;
   using typename BaseType::ActualInitialValueType;
+  using typename BaseType::ActualDirichletBoundaryValueType;
   using typename BaseType::ActualBoundaryValueType;
   using typename BaseType::RhsAffineFunctionType;
+  using CheckerboardType =
+      XT::Functions::CheckerboardFunction<typename U_::EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1>;
+  using ConstantType =
+      XT::Functions::ConstantFunction<typename U_::EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1>;
 
   using BaseType::default_grid_cfg;
   using BaseType::default_boundary_cfg;
@@ -94,6 +103,46 @@ public:
 
   virtual XT::Common::Parameter parameters() const = 0;
 
+  template <class VectorType>
+  void solve(const MatrixType& mat,
+             VectorType& x,
+             const VectorType& rhs,
+             const BasisfunctionsInterface<DomainFieldType,
+                                           BasisfunctionType::dimDomain,
+                                           RangeFieldType,
+                                           dimRange,
+                                           dimRangeCols,
+                                           dimFlux>&) const
+  {
+    // copy to our FieldMatrix as the DenseMatrix in dune-common has a bug in its solve method (fixed in 2.6)
+    auto field_mat = std::make_unique<XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange>>(mat);
+    field_mat->solve(x, rhs);
+  }
+
+  template <class VectorType, size_t refinements>
+  void solve(const MatrixType& mat,
+             VectorType& x,
+             const VectorType& rhs,
+             const PartialMomentBasis<DomainFieldType, 3, RangeFieldType, refinements, dimRangeCols, 3, 1>&) const
+  {
+    const size_t num_blocks = dimRange / 4;
+    const size_t block_size = 4;
+    XT::Common::FieldMatrix<RangeFieldType, block_size, block_size> local_mat;
+    XT::Common::FieldVector<RangeFieldType, block_size> local_x, local_rhs;
+    for (size_t jj = 0; jj < num_blocks; ++jj) {
+      const size_t offset = jj * block_size;
+      // copy to local matrix and vector
+      for (size_t rr = 0; rr < block_size; ++rr) {
+        local_rhs[rr] = rhs[offset + rr];
+        for (size_t cc = 0; cc < block_size; ++cc)
+          local_mat[rr][cc] = mat[offset + rr][offset + cc];
+      } // rr
+      local_mat.solve(local_x, local_rhs);
+      for (size_t rr = 0; rr < block_size; ++rr)
+        x[offset + rr] = local_x[rr];
+    } // jj
+  }
+
   using XT::Common::ParametricInterface::parse_parameter;
 
   // flux matrix A = B M^{-1} with B_{ij} = <v h_i h_j>
@@ -106,9 +155,7 @@ public:
     DynamicVector<RangeFieldType> tmp_row(M_T.N(), 0.);
     for (size_t dd = 0; dd < dimDomain; ++dd) {
       for (size_t ii = 0; ii < M_T.N(); ++ii) {
-        // copy to our FieldMatrix as the DenseMatrix in dune-common has a bug in its solve method (fixed in 2.6)
-        auto M_T_FieldMat = std::make_unique<XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange>>(M_T);
-        M_T_FieldMat->solve(tmp_row, A[dd][ii]);
+        solve(M_T, tmp_row, A[dd][ii], basis_functions_);
         A[dd][ii] = tmp_row;
       }
     }
@@ -131,13 +178,11 @@ public:
     auto sigma_t = sigma_a;
     for (size_t ii = 0; ii < num_regions; ++ii)
       sigma_t[ii] += sigma_s[ii];
-    const RangeType basis_integrated = basis_functions_.integrated();
+    const RangeType basis_integrated = basis_functions_.integrated(true);
     // calculate c = M^{-T} <b>
-    const auto M_T = basis_functions_.mass_matrix(); // mass matrix is symmetric
+    const auto M_T = basis_functions_.mass_matrix(true); // mass matrix is symmetric
     RangeType c(0.);
-    // copy to our FieldMatrix as the DenseMatrix in dune-common has a bug in its solve method (fixed in 2.6)
-    auto M_T_FieldMat = std::make_unique<XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange>>(M_T);
-    M_T_FieldMat->solve(c, basis_integrated);
+    solve(M_T, c, basis_integrated, basis_functions_);
     MatrixType I(dimRange, dimRange, 0.);
     for (size_t rr = 0; rr < dimRange; ++rr)
       I[rr][rr] = 1;
@@ -145,7 +190,7 @@ public:
     for (size_t rr = 0; rr < dimRange; ++rr)
       for (size_t cc = 0; cc < dimRange; ++cc)
         G[rr][cc] = basis_integrated[rr] * c[cc];
-    const auto vol = unit_ball_volume();
+    const auto vol = basis_functions_.unit_ball_volume(true);
     std::vector<RhsAffineFunctionType> affine_functions;
     for (size_t ii = 0; ii < num_regions; ++ii) {
       MatrixType G_scaled = G;
@@ -160,6 +205,48 @@ public:
     } // ii
     return new ActualRhsType(lower_left, upper_right, num_segments_, affine_functions);
   } // ... create_rhs(...)
+
+  virtual CheckerboardType get_sigma_a() const
+  {
+    const auto param = parse_parameter(parameters());
+    const auto sigma_a = param.get("sigma_a");
+    const auto num_regions = get_num_regions(num_segments_);
+    std::vector<ConstantType> sigma_a_funcs;
+    for (size_t ii = 0; ii < num_regions; ++ii)
+      sigma_a_funcs.emplace_back(sigma_a[ii]);
+    assert(sigma_a.size() == num_regions);
+    const DomainType lower_left = XT::Common::from_string<DomainType>(grid_cfg_["lower_left"]);
+    const DomainType upper_right = XT::Common::from_string<DomainType>(grid_cfg_["upper_right"]);
+    return CheckerboardType(lower_left, upper_right, num_segments_, sigma_a_funcs);
+  } // ... sigma_a(...)
+
+  virtual CheckerboardType get_sigma_s() const
+  {
+    const auto param = parse_parameter(parameters());
+    const auto sigma_s = param.get("sigma_s");
+    const auto num_regions = get_num_regions(num_segments_);
+    std::vector<ConstantType> sigma_s_funcs;
+    for (size_t ii = 0; ii < num_regions; ++ii)
+      sigma_s_funcs.emplace_back(sigma_s[ii]);
+    assert(sigma_s.size() == num_regions);
+    const DomainType lower_left = XT::Common::from_string<DomainType>(grid_cfg_["lower_left"]);
+    const DomainType upper_right = XT::Common::from_string<DomainType>(grid_cfg_["upper_right"]);
+    return CheckerboardType(lower_left, upper_right, num_segments_, sigma_s_funcs);
+  } // ... sigma_s(...)
+
+  virtual CheckerboardType get_Q() const
+  {
+    const auto param = parse_parameter(parameters());
+    const auto Q = param.get("Q");
+    const auto num_regions = get_num_regions(num_segments_);
+    std::vector<ConstantType> Q_funcs;
+    for (size_t ii = 0; ii < num_regions; ++ii)
+      Q_funcs.emplace_back(Q[ii]);
+    assert(Q.size() == num_regions);
+    const DomainType lower_left = XT::Common::from_string<DomainType>(grid_cfg_["lower_left"]);
+    const DomainType upper_right = XT::Common::from_string<DomainType>(grid_cfg_["upper_right"]);
+    return CheckerboardType(lower_left, upper_right, num_segments_, Q_funcs);
+  } // ... Q(...)
 
   // Initial value of the kinetic equation is a constant vacuum concentration psi_vac.
   // Thus, the initial value of the n-th moment is basis_integrated * psi_vac.
@@ -179,7 +266,9 @@ public:
   virtual BoundaryValueType* create_boundary_values() const override
   {
     RangeType value = basis_functions_.integrated() * psi_vac_;
-    return new ActualBoundaryValueType([=](const DomainType&, const XT::Common::Parameter&) { return value; }, 0);
+    return new ActualBoundaryValueType(XT::Grid::make_alldirichlet_boundaryinfo<IntersectionType>(),
+                                       std::make_unique<ActualDirichletBoundaryValueType>(
+                                           [=](const DomainType&, const XT::Common::Parameter&) { return value; }, 0));
   } // ... create_boundary_values()
 
   virtual RangeFieldType CFL() const override
@@ -216,20 +305,6 @@ protected:
   static size_t get_num_regions(const DynamicVector<size_t>& num_segments)
   {
     return std::accumulate(num_segments.begin(), num_segments.end(), size_t(1), [](auto a, auto b) { return a * b; });
-  }
-
-  static RangeFieldType unit_ball_volume()
-  {
-    if (BasisfunctionType::dimDomain == 1)
-      return 2;
-    else if (BasisfunctionType::dimDomain == 2)
-      return 2 * M_PI;
-    else if (BasisfunctionType::dimDomain == 3)
-      return 4 * M_PI;
-    else {
-      DUNE_THROW(NotImplemented, "");
-      return 0;
-    }
   }
 
   using BaseType::basis_functions_;

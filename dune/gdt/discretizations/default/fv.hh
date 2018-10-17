@@ -53,21 +53,20 @@ class HyperbolicFvDefaultDiscretizationTraits
 {
   // no checks of the arguments needed, those are done in the interfaces
 public:
-  typedef HyperbolicFvDefaultDiscretization<TestCaseImp,
-                                            FvSpaceImp,
-                                            numerical_flux,
-                                            reconstruction_order,
-                                            time_stepper_method,
-                                            rhs_time_stepper_method,
-                                            time_stepper_splitting_method,
-                                            HyperbolicFvDefaultDiscretizationTraits>
-      derived_type;
-  typedef typename TestCaseImp::ProblemType ProblemType;
-  typedef FvSpaceImp SpaceType;
-  typedef typename SpaceType::RangeFieldType RangeFieldType;
-  typedef typename Dune::XT::LA::CommonDenseVector<RangeFieldType> VectorType;
-  typedef DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
-  typedef std::map<double, DiscreteFunctionType, Dune::GDT::internal::FloatCmpLt> DiscreteSolutionType;
+  using derived_type = HyperbolicFvDefaultDiscretization<TestCaseImp,
+                                                         FvSpaceImp,
+                                                         numerical_flux,
+                                                         reconstruction_order,
+                                                         time_stepper_method,
+                                                         rhs_time_stepper_method,
+                                                         time_stepper_splitting_method,
+                                                         HyperbolicFvDefaultDiscretizationTraits>;
+  using ProblemType = typename TestCaseImp::ProblemType;
+  using SpaceType = FvSpaceImp;
+  using RangeFieldType = typename SpaceType::RangeFieldType;
+  using VectorType = typename Dune::XT::LA::CommonDenseVector<RangeFieldType>;
+  using DiscreteFunctionType = DiscreteFunction<SpaceType, VectorType>;
+  using DiscreteSolutionType = std::map<double, DiscreteFunctionType, Dune::GDT::internal::FloatCmpLt>;
 }; // class HyperbolicFvDefaultDiscretizationTraits
 
 
@@ -91,11 +90,11 @@ template <class TestCaseImp,
 class HyperbolicFvDefaultDiscretization : public FvDiscretizationInterface<Traits>
 {
   static_assert(reconstruction_order <= 1, "Not yet implemented for higher reconstruction orders!");
-  typedef FvDiscretizationInterface<Traits> BaseType;
-  typedef HyperbolicFvDefaultDiscretization ThisType;
+  using BaseType = FvDiscretizationInterface<Traits>;
+  using ThisType = HyperbolicFvDefaultDiscretization;
 
 public:
-  typedef TestCaseImp TestCaseType;
+  using TestCaseType = TestCaseImp;
   using typename BaseType::SpaceType;
   using typename BaseType::ProblemType;
   using typename BaseType::DiscreteSolutionType;
@@ -107,39 +106,36 @@ private:
   using IntersectionType = typename GridLayerType::Intersection;
 
   static const size_t dimDomain = ProblemType::dimDomain;
-  typedef typename ProblemType::FluxType AnalyticalFluxType;
-  typedef typename ProblemType::RhsType RhsType;
-  typedef typename ProblemType::InitialValueType InitialValueType;
-  using BoundaryValueType =
-      LocalizableFunctionBasedLocalizableDirichletBoundaryValue<GridLayerType, typename ProblemType::BoundaryValueType>;
-  typedef typename ProblemType::DomainFieldType DomainFieldType;
-  typedef typename ProblemType::RangeFieldType RangeFieldType;
-  typedef typename DiscreteFunctionType::RangeType RangeType;
-  typedef typename Dune::XT::Functions::
-      ConstantFunction<typename SpaceType::EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1>
-          ConstantFunctionType;
-  typedef typename Dune::GDT::AdvectionRhsOperator<RhsType> RhsOperatorType;
+  using AnalyticalFluxType = typename ProblemType::FluxType;
+  using RhsType = typename ProblemType::RhsType;
+  using InitialValueType = typename ProblemType::InitialValueType;
+  using BoundaryValueType = typename ProblemType::BoundaryValueType;
+  using DomainFieldType = typename ProblemType::DomainFieldType;
+  using RangeFieldType = typename ProblemType::RangeFieldType;
+  using RangeType = typename DiscreteFunctionType::RangeType;
+  using ConstantFunctionType = typename Dune::XT::Functions::
+      ConstantFunction<typename SpaceType::EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1>;
+  using RhsOperatorType = typename Dune::GDT::AdvectionRhsOperator<RhsType>;
 
-  typedef internal::
-      AdvectionOperatorCreator<AnalyticalFluxType, BoundaryValueType, ConstantFunctionType, numerical_flux>
-          AdvectionOperatorCreatorType;
-  typedef typename AdvectionOperatorCreatorType::type AdvectionOperatorType;
-  typedef typename AdvectionOperatorType::NumericalCouplingFluxType NumericalCouplingFluxType;
-  typedef typename AdvectionOperatorType::NumericalBoundaryFluxType NumericalBoundaryFluxType;
+  using AdvectionOperatorCreatorType =
+      internal::AdvectionOperatorCreator<AnalyticalFluxType, BoundaryValueType, ConstantFunctionType, numerical_flux>;
+  using AdvectionOperatorType = typename AdvectionOperatorCreatorType::type;
+  using NumericalCouplingFluxType = typename AdvectionOperatorType::NumericalCouplingFluxType;
+  using NumericalBoundaryFluxType = typename AdvectionOperatorType::NumericalBoundaryFluxType;
   using ReconstructionOperatorType = LinearReconstructionOperator<AnalyticalFluxType, BoundaryValueType>;
   using AdvectionWithReconstructionOperatorType =
       AdvectionWithReconstructionOperator<AdvectionOperatorType, ReconstructionOperatorType>;
   using FvOperatorType =
       std::conditional_t<reconstruction_order == 0, AdvectionOperatorType, AdvectionWithReconstructionOperatorType>;
 
-  typedef typename TimeStepperFactory<FvOperatorType, DiscreteFunctionType, time_stepper_method>::TimeStepperType
-      OperatorTimeStepperType;
-  typedef typename TimeStepperFactory<RhsOperatorType, DiscreteFunctionType, rhs_time_stepper_method>::TimeStepperType
-      RhsOperatorTimeStepperType;
-  typedef
+  using OperatorTimeStepperType =
+      typename TimeStepperFactory<FvOperatorType, DiscreteFunctionType, time_stepper_method>::TimeStepperType;
+  using RhsOperatorTimeStepperType =
+      typename TimeStepperFactory<RhsOperatorType, DiscreteFunctionType, rhs_time_stepper_method>::TimeStepperType;
+  using TimeStepperType =
       typename Dune::GDT::TimeStepperSplittingFactory<OperatorTimeStepperType,
                                                       RhsOperatorTimeStepperType,
-                                                      time_stepper_splitting_method>::TimeStepperType TimeStepperType;
+                                                      time_stepper_splitting_method>::TimeStepperType;
 
 public:
   HyperbolicFvDefaultDiscretization(const TestCaseImp& tst_cs, const std::shared_ptr<const SpaceType> fv_space_ptr)
@@ -170,9 +166,7 @@ public:
       // get analytical flux, initial and boundary values
       const AnalyticalFluxType& analytical_flux = problem.flux();
       const InitialValueType& initial_values = problem.initial_values();
-      const auto& dirichlet_boundary_values = problem.boundary_values();
-      const auto boundary_info = XT::Grid::AllDirichletBoundaryInfo<IntersectionType>();
-      const BoundaryValueType boundary_values(boundary_info, dirichlet_boundary_values);
+      const auto& boundary_values = problem.boundary_values();
       const RhsType& rhs = problem.rhs();
 
       // create a discrete function for the solution

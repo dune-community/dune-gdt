@@ -73,7 +73,7 @@ template <class SpaceImp, class VectorImp>
 class DiscreteFunction;
 
 // from #include <dune/gdt/operators/fv/boundary.hh>
-template <class GridLayerImp, class RangeImp>
+template <class EntityImp, class IntersectionImp, class RangeImp>
 class LocalizableBoundaryValueInterface;
 
 // from #include <dune/gdt/operators/fv/reconstructed_function.hh>
@@ -90,6 +90,32 @@ class LocalizableProductBase;
 
 template <class GridLayerImp, class SourceImp, class RangeImp>
 class LocalizableOperatorBase;
+
+template <class DomainFieldType,
+          size_t dimDomain,
+          class RangeFieldType,
+          size_t dimRange,
+          size_t dimRangeCols,
+          size_t dimFlux>
+class HatFunctionMomentBasis;
+
+template <class DomainFieldType, class RangeFieldType, size_t order, size_t dimRangeCols>
+class LegendreMomentBasis;
+
+template <class DomainFieldType,
+          size_t dimDomain,
+          class RangeFieldType,
+          size_t dimRange,
+          size_t dimRangeCols,
+          size_t dimFlux,
+          size_t order>
+class PartialMomentBasis;
+
+template <class DomainFieldType, class RangeFieldType, size_t order, size_t fluxDim, bool only_positive>
+class SphericalHarmonicsMomentBasis;
+
+template <class DomainFieldType, class RangeFieldType, size_t order, size_t fluxDim, bool only_even>
+class RealSphericalHarmonicsMomentBasis;
 
 
 namespace internal {
@@ -218,10 +244,13 @@ struct is_const_discrete_function_helper
 template <class Tt>
 struct is_localizable_boundary_value_helper
 {
-  DXTC_has_typedef_initialize_once(GridLayerType);
+  DXTC_has_typedef_initialize_once(EntityType);
+  DXTC_has_typedef_initialize_once(IntersectionType);
   DXTC_has_typedef_initialize_once(RangeType);
 
-  static const bool is_candidate = DXTC_has_typedef(GridLayerType)<Tt>::value && DXTC_has_typedef(RangeType)<Tt>::value;
+  static const bool is_candidate = DXTC_has_typedef(EntityType)<Tt>::value
+                                   && DXTC_has_typedef(IntersectionType)<Tt>::value
+                                   && DXTC_has_typedef(RangeType)<Tt>::value;
 };
 
 
@@ -464,7 +493,10 @@ struct is_discrete_function<T, false> : public std::false_type
 // from #include <dune/gdt/operators/fv/boundary.hh>
 template <class T, bool candidate = internal::is_localizable_boundary_value_helper<T>::is_candidate>
 struct is_localizable_boundary_value
-    : public std::is_base_of<LocalizableBoundaryValueInterface<typename T::GridLayerType, typename T::RangeType>, T>
+    : public std::is_base_of<LocalizableBoundaryValueInterface<typename T::EntityType,
+                                                               typename T::IntersectionType,
+                                                               typename T::RangeType>,
+                             T>
 {
 };
 
@@ -489,6 +521,101 @@ struct is_reconstructed_localizable_function
 template <class T>
 struct is_reconstructed_localizable_function<T, false> : public std::false_type
 {
+};
+
+// from #include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions.hh>
+template <class T>
+struct is_hatfunction_basis : public std::false_type
+{
+};
+
+template <class DomainFieldType,
+          size_t dimDomain,
+          class RangeFieldType,
+          size_t dimRange_or_refinements,
+          size_t dimRangeCols,
+          size_t dimFlux>
+struct is_hatfunction_basis<HatFunctionMomentBasis<DomainFieldType,
+                                                   dimDomain,
+                                                   RangeFieldType,
+                                                   dimRange_or_refinements,
+                                                   dimRangeCols,
+                                                   dimFlux>> : public std::true_type
+{
+};
+
+template <class T>
+struct is_legendre_basis : public std::false_type
+{
+};
+
+template <class DomainFieldType, class RangeFieldType, size_t order, size_t dimRangeCols>
+struct is_legendre_basis<LegendreMomentBasis<DomainFieldType, RangeFieldType, order, dimRangeCols>>
+    : public std::true_type
+{
+};
+
+template <class T>
+struct is_partial_moment_basis : public std::false_type
+{
+};
+
+template <class DomainFieldType,
+          size_t dimDomain,
+          class RangeFieldType,
+          size_t dimRange_or_refinements,
+          size_t dimRangeCols,
+          size_t dimFlux,
+          size_t order>
+struct is_partial_moment_basis<PartialMomentBasis<DomainFieldType,
+                                                  dimDomain,
+                                                  RangeFieldType,
+                                                  dimRange_or_refinements,
+                                                  dimRangeCols,
+                                                  dimFlux,
+                                                  order>> : public std::true_type
+{
+};
+
+template <class T>
+struct is_spherical_harmonics_basis : public std::false_type
+{
+};
+
+template <class DomainFieldType, class RangeFieldType, size_t order, size_t fluxDim, bool only_positive>
+class SphericalHarmonicsMomentBasis;
+
+template <class DomainFieldType, class RangeFieldType, size_t order, size_t fluxDim, bool only_positive>
+struct is_spherical_harmonics_basis<SphericalHarmonicsMomentBasis<DomainFieldType,
+                                                                  RangeFieldType,
+                                                                  order,
+                                                                  fluxDim,
+                                                                  only_positive>> : public std::true_type
+{
+};
+
+template <class T>
+struct is_real_spherical_harmonics_basis : public std::false_type
+{
+};
+
+template <class DomainFieldType, class RangeFieldType, size_t order, size_t fluxDim, bool only_positive>
+class SphericalHarmonicsMomentBasis;
+
+template <class DomainFieldType, class RangeFieldType, size_t order, size_t fluxDim, bool only_even>
+struct is_real_spherical_harmonics_basis<RealSphericalHarmonicsMomentBasis<DomainFieldType,
+                                                                           RangeFieldType,
+                                                                           order,
+                                                                           fluxDim,
+                                                                           only_even>> : public std::true_type
+{
+};
+
+template <class T>
+struct is_full_moment_basis
+{
+  static constexpr bool value = is_legendre_basis<T>::value || is_spherical_harmonics_basis<T>::value
+                                || is_real_spherical_harmonics_basis<T>::value;
 };
 
 

@@ -32,13 +32,13 @@ namespace KineticTransport {
 template <class BasisfunctionImp, class GridLayerImp, class U_>
 class PointSourcePn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>
 {
-  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_> BaseType;
+  using BaseType = KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>;
 
 public:
   using typename BaseType::InitialValueType;
   using typename BaseType::BoundaryValueType;
   using typename BaseType::ActualInitialValueType;
-  using typename BaseType::ActualBoundaryValueType;
+  using typename BaseType::ActualDirichletBoundaryValueType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
   using typename BaseType::RangeFieldType;
@@ -78,7 +78,7 @@ public:
     return XT::Common::Parameter({std::make_pair("sigma_a", std::vector<double>{0}),
                                   std::make_pair("sigma_s", std::vector<double>{1}),
                                   std::make_pair("Q", std::vector<double>{0}),
-                                  std::make_pair("CFL", std::vector<double>{0.3}),
+                                  std::make_pair("CFL", std::vector<double>{0.49 * 1 / std::sqrt(3)}),
                                   std::make_pair("t_end", std::vector<double>{0.45})});
   }
 
@@ -95,14 +95,9 @@ public:
 
     initial_vals.emplace_back(
         [=](const DomainType& x, const XT::Common::Parameter&) {
-          auto ret = basis_integrated;
-          //          ret *= std::max(1. / (8. * M_PI * sigma * sigma) * std::exp(-1. * x.two_norm2() / (2. * sigma *
-          //          sigma)),
-          //                          1e-4 / (4. * M_PI));
-          ret *= std::max(1. / (4 * M_PI * std::pow(M_PI * sigma, 3))
-                              * std::exp(-x.two_norm2() / (M_PI * std::pow(sigma, 2))),
-                          1e-4 / (4. * M_PI));
-          return ret;
+          static const auto first_factor = 1. / (4 * M_PI * std::pow(M_PI * sigma, 3));
+          static const auto second_factor = 1. / (M_PI * std::pow(sigma, 2));
+          return basis_integrated * std::max(first_factor * std::exp(-x.two_norm2() * second_factor), psi_vac_);
         },
         61);
 
@@ -119,13 +114,13 @@ protected:
 template <class BasisfunctionType, class GridLayerType, class U_>
 class PointSourceMn : public PointSourcePn<BasisfunctionType, GridLayerType, U_>
 {
-  typedef PointSourcePn<BasisfunctionType, GridLayerType, U_> BaseType;
-  typedef PointSourceMn ThisType;
+  using BaseType = PointSourcePn<BasisfunctionType, GridLayerType, U_>;
+  using ThisType = PointSourceMn;
 
 public:
   using typename BaseType::FluxType;
   using typename BaseType::RangeType;
-  typedef GDT::EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_> ActualFluxType;
+  using ActualFluxType = GDT::EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_>;
 
   using BaseType::default_grid_cfg;
   using BaseType::default_boundary_cfg;
@@ -161,7 +156,7 @@ protected:
 template <class G,
           class R = double,
           size_t rangeDim = 6,
-          class B = Hyperbolic::Problems::HatFunctions<typename G::ctype, 3, typename G::ctype, rangeDim, 1, 3>>
+          class B = HatFunctionMomentBasis<typename G::ctype, 3, typename G::ctype, rangeDim, 1, 3>>
 class PointSourceTestCase
     : public Dune::GDT::Test::
           InstationaryTestCase<G,
@@ -178,24 +173,23 @@ class PointSourceTestCase
                                                                                   1,
                                                                                   GDT::Backends::gdt>::type>>>
 {
-  typedef typename G::ctype D;
+  using D = typename G::ctype;
 
 public:
   static const size_t d = G::dimension;
   static_assert(d == 3, "Only implemented for dimension 3.");
-  typedef typename Hyperbolic::Problems::KineticEquation<
+  using ProblemType = typename Hyperbolic::Problems::KineticEquation<
       typename Problems::KineticTransport::
           PointSourcePn<B,
                         typename G::LeafGridLayer,
                         DiscreteFunction<FvProductSpace<typename G::LeafGridLayer, double, rangeDim, 1>,
-                                         typename Dune::XT::LA::Container<double,
-                                                                          XT::LA::default_sparse_backend>::VectorType>>>
-      ProblemType;
+                                         typename Dune::XT::LA::Container<double, XT::LA::default_sparse_backend>::
+                                             VectorType>>>;
   static const size_t dimRange = ProblemType::dimRange;
   static const size_t dimRangeCols = 1;
 
 private:
-  typedef typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType> BaseType;
+  using BaseType = typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType>;
 
 public:
   using typename BaseType::GridType;

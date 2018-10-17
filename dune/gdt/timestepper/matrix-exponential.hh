@@ -190,7 +190,7 @@ private:
     auto A = affine_function.A()[0].operator std::unique_ptr<FieldMatrixType>();
 
     // calculate matrix exponential exp(A*dt)
-    auto Adt = XT::Common::make_unique<DenseMatrixType>(*A);
+    auto Adt = std::make_unique<DenseMatrixType>(*A);
     *Adt *= dt;
     // get pointer to the underlying array of the FieldMatrix
     RangeFieldType* Adt_array = &((*Adt)[0][0]);
@@ -204,52 +204,14 @@ private:
     // see https://math.stackexchange.com/questions/658276/integral-of-matrix-exponential
     // if A is invertible, the integral is -A^{-1}(exp(-Adt)-I)
     // in general, it is the power series dt*(I + (-Adt)/(2!) + (-Adt)^2/(3!) + ... + (-Adt)^{n-1}/(n!) + ...)
-    auto A_inverse = XT::Common::make_unique<DenseMatrixType>(*A);
+    // we always use the power series as it (hopefully) numerically stable
+    auto A_inverse = std::make_unique<DenseMatrixType>(*A);
     auto& int_exp_mAdt = *Adt; // use Adt's storage again
-    try {
-      // For 1x1, 2x2 and 3x3 matrices, dune-common only checks whether the matrix is actually invertible if
-      // DUNE_FMatrix_WITH_CHECKING is set. We always want to check to
-      // be able to catch the error, so we have to copy the checks over from dune/common/fmatrix.hh.
-      if (dimRange == 1) {
-        if (fvmeta::absreal((*A)[0][0]) < FMatrixPrecision<>::absolute_limit())
-          DUNE_THROW(FMatrixError, "matrix is singular");
-      } else if (dimRange == 2) {
-        RangeFieldType det = (*A)[0][0] * (*A)[1][1] - (*A)[0][1] * (*A)[1][0];
-        if (fvmeta::absreal(det) < FMatrixPrecision<>::absolute_limit())
-          DUNE_THROW(FMatrixError, "matrix is singular");
-      } else if (dimRange == 3) {
-        RangeFieldType t4 = (*A)[0][0] * (*A)[1][1];
-        RangeFieldType t6 = (*A)[0][0] * (*A)[1][2];
-        RangeFieldType t8 = (*A)[0][1] * (*A)[1][0];
-        RangeFieldType t10 = (*A)[0][2] * (*A)[1][0];
-        RangeFieldType t12 = (*A)[0][1] * (*A)[2][0];
-        RangeFieldType t14 = (*A)[0][2] * (*A)[2][0];
-        RangeFieldType det = (t4 * (*A)[2][2] - t6 * (*A)[2][1] - t8 * (*A)[2][2] + t10 * (*A)[2][1] + t12 * (*A)[1][2]
-                              - t14 * (*A)[1][1]);
-        if (fvmeta::absreal(det) < FMatrixPrecision<>::absolute_limit())
-          DUNE_THROW(FMatrixError, "matrix is singular");
-      }
-      A_inverse->invert();
-      *A_inverse *= -1.;
-
-      // calculate matrix exponential exp(-A*dt)
-      auto* mAdt = A.get();
-      *mAdt *= -dt;
-      // get pointer to the underlying array of the FieldMatrix
-      double* mAdt_array = &((*mAdt)[0][0]);
-      const double* exp_mAdt_array = r8mat_expm1(dimRange, mAdt_array);
-      std::copy_n(exp_mAdt_array, dimRange * dimRange, &(int_exp_mAdt[0][0]));
-      delete[] exp_mAdt_array;
-      for (size_t ii = 0; ii < dimRange; ++ii)
-        int_exp_mAdt[ii][ii] -= 1.;
-      int_exp_mAdt.leftmultiply(*A_inverse);
-    } catch (Dune::FMatrixError&) { // A not invertible
-      auto* minus_A = A.get();
-      *minus_A *= -1.;
-      const double* int_exp_mAdt_array = r8mat_expm_integral(dimRange, &((*minus_A)[0][0]), dt);
-      std::copy_n(int_exp_mAdt_array, dimRange * dimRange, &(int_exp_mAdt[0][0]));
-      delete[] int_exp_mAdt_array;
-    } // catch(...)
+    auto* minus_A = A.get();
+    *minus_A *= -1.;
+    const double* int_exp_mAdt_array = r8mat_expm_integral(dimRange, &((*minus_A)[0][0]), dt);
+    std::copy_n(int_exp_mAdt_array, dimRange * dimRange, &(int_exp_mAdt[0][0]));
+    delete[] int_exp_mAdt_array;
     matrix_exponential_integrals_[index] = SparseMatrixType(int_exp_mAdt, true);
   } // void get_matrix_exponential(...)
 

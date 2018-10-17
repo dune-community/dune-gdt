@@ -32,96 +32,60 @@
 #include <dune/gdt/operators/l2.hh>
 #include <dune/gdt/spaces/cg.hh>
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/triangulation.hh>
+#include <dune/gdt/test/hyperbolic/quadratures/gausslobatto.hh>
 #include <dune/gdt/test/hyperbolic/spherical_quadratures/fekete.hh>
 #include <dune/gdt/test/hyperbolic/spherical_quadratures/lebedev.hh>
+#include <dune/gdt/test/hyperbolic/spherical_quadratures/octant.hh>
 #include <dune/gdt/test/hyperbolic/spherical_quadratures/wrapper.hh>
 
 namespace Dune {
 namespace GDT {
-namespace Hyperbolic {
-namespace Problems {
 
 
-// take a DiscreteFunction and return a DiscreteFunction corresponding to component ii
-template <size_t ii, class DiscreteFunctionType>
-auto get_factor_discrete_function(const DiscreteFunctionType& discrete_function) ->
-    typename Dune::GDT::DiscreteFunction<
-        typename XT::Common::tuple_element<ii, typename DiscreteFunctionType::SpaceType::SpaceTupleType>::type,
-        typename DiscreteFunctionType::VectorType>
+template <class DiscreteFunctionType>
+auto get_factor_space(const DiscreteFunctionType& discrete_function)
+    -> FvSpace<typename DiscreteFunctionType::SpaceType::GridLayerType,
+               typename DiscreteFunctionType::RangeFieldType,
+               1,
+               1>
 {
-  typedef typename Dune::GDT::DiscreteFunction<
-      typename XT::Common::tuple_element<ii, typename DiscreteFunctionType::SpaceType::SpaceTupleType>::type,
-      typename DiscreteFunctionType::VectorType>
-      FactorDiscreteFunctionType;
-  static_assert(ii < DiscreteFunctionType::SpaceType::num_factors, "This factor does not exist.");
+  using FactorSpaceType = FvSpace<typename DiscreteFunctionType::SpaceType::GridLayerType,
+                                  typename DiscreteFunctionType::RangeFieldType,
+                                  1,
+                                  1>;
+  return FactorSpaceType(discrete_function.space().grid_layer());
+}
+
+// take a FiniteVolume-DiscreteFunction and return a DiscreteFunction corresponding to component ii
+template <class FactorSpaceType, class DiscreteFunctionType>
+auto get_factor_discrete_function(const size_t ii,
+                                  const FactorSpaceType& factor_space,
+                                  const DiscreteFunctionType& discrete_function)
+    -> DiscreteFunction<FactorSpaceType, typename DiscreteFunctionType::VectorType>
+{
+  assert(ii < DiscreteFunctionType::dimRange);
+  using VectorType = typename DiscreteFunctionType::VectorType;
+  using FactorDiscreteFunctionType = typename Dune::GDT::DiscreteFunction<FactorSpaceType, VectorType>;
   const auto& space = discrete_function.space();
-  const auto& factor_space = space.template factor<ii>();
-  typename DiscreteFunctionType::VectorType factor_vector(factor_space.mapper().size());
+  FactorDiscreteFunctionType factor_discrete_function(factor_space);
+  auto& factor_vector = factor_discrete_function.vector();
   const auto it_end = space.grid_layer().template end<0>();
   for (auto it = space.grid_layer().template begin<0>(); it != it_end; ++it) {
     const auto& entity = *it;
-    for (size_t jj = 0; jj < factor_space.mapper().numDofs(entity); ++jj)
-      factor_vector.set_entry(factor_space.mapper().mapToGlobal(entity, jj),
-                              discrete_function.vector().get_entry(space.mapper().mapToGlobal(ii, entity, jj)));
+    factor_vector.set_entry(factor_space.mapper().mapToGlobal(entity, 0),
+                            discrete_function.vector().get_entry(space.mapper().mapToGlobal(entity, ii)));
   }
-  FactorDiscreteFunctionType factor_discrete_function(factor_space);
-  factor_discrete_function.vector() = factor_vector;
-  //  typedef Dune::GDT::DiscreteFunctionDataHandle<FactorDiscreteFunctionType> DataHandleType;
-  //  DataHandleType handle(factor_discrete_function);
-  //  factor_space.grid_layer().template communicate<DataHandleType>(
-  //      handle, Dune::InteriorBorder_All_Interface, Dune::ForwardCommunication);
   return factor_discrete_function;
 }
 
-// static for loop to sum components of a DiscreteFunction
-template <size_t index, size_t N>
-struct static_discrete_function_loop
-{
-  template <class DiscreteFunctionType>
-  static typename DiscreteFunctionType::VectorType sum_vectors(const DiscreteFunctionType& discrete_function)
-  {
-    return static_discrete_function_loop<index, N / 2>::sum_vectors(discrete_function)
-           + static_discrete_function_loop<index + N / 2, N - N / 2>::sum_vectors(discrete_function);
-  }
-
-  template <class DiscreteFunctionType>
-  static typename DiscreteFunctionType::VectorType
-  sum_vectors_divisible_by(const DiscreteFunctionType& discrete_function, const size_t divisor)
-  {
-    return static_discrete_function_loop<index, N / 2>::sum_vectors_divisible_by(discrete_function, divisor)
-           + static_discrete_function_loop<index + N / 2, N - N / 2>::sum_vectors_divisible_by(discrete_function,
-                                                                                               divisor);
-  }
-};
-
-// specialization to end the loop
-template <size_t index>
-struct static_discrete_function_loop<index, 1>
-{
-  template <class DiscreteFunctionType>
-  static typename DiscreteFunctionType::VectorType sum_vectors(const DiscreteFunctionType& discrete_function)
-  {
-    return get_factor_discrete_function<index, DiscreteFunctionType>(discrete_function).vector();
-  }
-
-  template <class DiscreteFunctionType>
-  static typename DiscreteFunctionType::VectorType
-  sum_vectors_divisible_by(const DiscreteFunctionType& discrete_function, const size_t divisor)
-  {
-    if (!(index % divisor))
-      return get_factor_discrete_function<index, DiscreteFunctionType>(discrete_function).vector();
-    else
-      return typename DiscreteFunctionType::VectorType(
-          discrete_function.space().template factor<index>().mapper().size(), 0.);
-  }
-};
-
 // visualizes sum of components of discrete_function
-template <class DiscreteFunctionType, size_t dimRange>
+template <class DiscreteFunctionType>
 void sum_visualizer(const DiscreteFunctionType& u_n, const std::string& filename_prefix, const size_t ii)
 {
-  auto sum_function = get_factor_discrete_function<0, DiscreteFunctionType>(u_n);
-  sum_function.vector() = static_discrete_function_loop<0, dimRange>::sum_vectors(u_n);
+  auto factor_space = get_factor_space(u_n);
+  auto sum_function = get_factor_discrete_function(0, factor_space, u_n);
+  for (size_t jj = 1; jj < DiscreteFunctionType::dimRange; ++jj)
+    sum_function.vector() += get_factor_discrete_function(jj, factor_space, u_n).vector();
   sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(ii));
 }
 
@@ -132,19 +96,23 @@ void sum_divisible_by_visualizer(const DiscreteFunctionType& u_n,
                                  const size_t ii,
                                  const size_t divisor)
 {
-  auto sum_function = get_factor_discrete_function<0, DiscreteFunctionType>(u_n);
-  sum_function.vector() = static_discrete_function_loop<0, dimRange>::sum_vectors_divisible_by(u_n, divisor);
+  auto factor_space = get_factor_space(u_n);
+  auto sum_function = get_factor_discrete_function(0, factor_space, u_n);
+  for (size_t jj = divisor; jj < DiscreteFunctionType::dimRange; jj += divisor)
+    sum_function.vector() += get_factor_discrete_function(jj, factor_space, u_n).vector();
   sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(ii));
 }
 
 // visualizes factor * component of discrete function
-template <class DiscreteFunctionType, size_t dimRange, size_t component>
-void component_visualizer(const DiscreteFunctionType& u_n,
+template <class DiscreteFunctionType>
+void component_visualizer(const size_t component,
+                          const DiscreteFunctionType& u_n,
                           const std::string& filename_prefix,
                           const size_t ii,
                           const double factor = 1.)
 {
-  auto u_n_comp = get_factor_discrete_function<component, DiscreteFunctionType>(u_n);
+  auto factor_space = get_factor_space(u_n);
+  auto u_n_comp = get_factor_discrete_function(component, factor_space, u_n);
   u_n_comp.vector() *= factor;
   u_n_comp.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(ii));
 }
@@ -211,9 +179,14 @@ Dune::DynamicMatrix<FieldType> tridiagonal_matrix_inverse(const DynamicMatrix<Fi
 template <size_t refinements>
 struct OctaederStatistics
 {
+  static constexpr size_t constexpr_pow(size_t base, size_t exponent)
+  {
+    return (exponent == 0) ? 1 : (base * constexpr_pow(base, exponent - 1));
+  }
+
   static constexpr size_t num_faces()
   {
-    return 8 * (1 << 2 * refinements);
+    return 8 * constexpr_pow(4, refinements);
   }
 
   static constexpr size_t num_intersections()
@@ -273,10 +246,22 @@ public:
   using VisualizerType = std::function<void(const DiscreteFunctionType&, const std::string&, const size_t)>;
   using StringifierType = std::function<std::string(const RangeType&)>;
   using Triangulation1dType = std::vector<RangeFieldType>;
+  using SphericalTriangulationType = SphericalTriangulation<RangeFieldType>;
   using MergedQuadratureIterator = typename QuadraturesType::MergedQuadratureType::ConstIteratorType;
 
-  BasisfunctionsInterface(const QuadraturesType& quadratures = QuadraturesType())
+  BasisfunctionsInterface(const QuadraturesType& quadratures = QuadraturesType(),
+                          const QuadraturesType& fine_quadratures = QuadraturesType())
     : quadratures_(quadratures)
+    , fine_quadratures_(fine_quadratures)
+  {
+  }
+
+  BasisfunctionsInterface(const size_t refinements,
+                          const QuadraturesType& quadratures = QuadraturesType(),
+                          const QuadraturesType& fine_quadratures = QuadraturesType())
+    : quadratures_(quadratures)
+    , fine_quadratures_(fine_quadratures)
+    , triangulation_(refinements)
   {
   }
 
@@ -292,24 +277,43 @@ public:
   }
 
   // returns <b>, where b is the basis functions vector
-  virtual RangeType integrated() const
+  virtual RangeType integrated(const bool use_fine_quadratures = false) const
   {
-    static const RangeType ret = integrated_initializer(quadratures_);
-    return ret;
+    if (use_fine_quadratures)
+      return integrated_initializer(fine_quadratures_);
+    return integrated_;
   }
 
-  virtual MatrixType mass_matrix() const
+  virtual MatrixType mass_matrix(const bool use_fine_quadratures = false) const
   {
     MatrixType M(dimRange, dimRange, 0.);
-    parallel_quadrature(quadratures_, M, size_t(-1));
+    parallel_quadrature(use_fine_quadratures ? fine_quadratures_ : quadratures_, M, size_t(-1));
     return M;
   } // ... mass_matrix()
 
-  virtual MatrixType mass_matrix_inverse() const
+  virtual MatrixType mass_matrix_inverse(bool use_fine_quadratures = false) const
   {
-    auto ret = mass_matrix();
+    auto ret = mass_matrix(use_fine_quadratures);
     ret.invert();
     return ret;
+  }
+
+  virtual RangeType get_moment_vector(const std::function<RangeFieldType(DomainType, bool)>& psi) const
+  {
+    RangeType ret(0.);
+    const auto merged_quads = quadratures().merged();
+    for (auto it = merged_quads.begin(); it != merged_quads.end(); ++it) {
+      const auto& quad_point = *it;
+      const auto& v = quad_point.position();
+      ret += evaluate(v, it.first_index()) * psi(v, is_negative(it)) * quad_point.weight();
+    }
+    return ret;
+  }
+
+  virtual bool
+  is_negative(const typename MergedQuadrature<RangeFieldType, dimDomain>::MergedQuadratureIterator& /*it*/) const
+  {
+    return false;
   }
 
   virtual FieldVector<MatrixType, dimFlux> mass_matrix_with_v() const
@@ -320,27 +324,23 @@ public:
     return B;
   }
 
-  // returns matrices with entries <v h_i h_j>_- and <v h_i h_j>_+
+  // returns V M^-1 where the matrix V has entries <v h_i h_j>_- and <v h_i h_j>_+
   virtual FieldVector<FieldVector<MatrixType, 2>, dimFlux> kinetic_flux_matrices() const
   {
+    const auto M = std::make_unique<XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange>>(mass_matrix());
     FieldVector<FieldVector<MatrixType, 2>, dimFlux> B_kinetic(
         FieldVector<MatrixType, 2>(MatrixType(dimRange, dimRange, 0.)));
+    MatrixType tmp_mat(dimRange, dimRange, 0.);
     for (size_t dd = 0; dd < dimFlux; ++dd) {
       QuadraturesType neg_quadratures(quadratures_.size());
       QuadraturesType pos_quadratures(quadratures_.size());
-      for (size_t ii = 0; ii < quadratures_.size(); ++ii) {
-        for (const auto& quad_point : quadratures_[ii]) {
-          const auto& v = quad_point.position();
-          const auto& weight = quad_point.weight();
-          // if v[dd] = 0 the quad_point does not contribute to the integral
-          if (v[dd] > 0.)
-            pos_quadratures[ii].emplace_back(v, weight);
-          else if (v[dd] < 0.)
-            neg_quadratures[ii].emplace_back(v, weight);
-        } // quad_points
-      } // quadratures
-      parallel_quadrature(neg_quadratures, B_kinetic[dd][0], dd);
-      parallel_quadrature(pos_quadratures, B_kinetic[dd][1], dd);
+      get_pos_and_neg_quadratures(neg_quadratures, pos_quadratures, dd);
+      parallel_quadrature(neg_quadratures, tmp_mat, dd);
+      for (size_t rr = 0; rr < dimRange; ++rr)
+        M->solve(B_kinetic[dd][0][rr], tmp_mat[rr]);
+      parallel_quadrature(pos_quadratures, tmp_mat, dd);
+      for (size_t rr = 0; rr < dimRange; ++rr)
+        M->solve(B_kinetic[dd][1][rr], tmp_mat[rr]);
     } // dd
     return B_kinetic;
   } // ... kinetic_flux_matrices()
@@ -358,6 +358,18 @@ public:
     }
     parallel_quadrature(quadratures_, ret, direction, true);
     ret.rightmultiply(mass_matrix_inverse());
+    // We need the exact reflection matrix to guarantee Q-realizability, the matrix should only contain 0, +-1, so just
+    // ensure it does
+    for (size_t ii = 0; ii < dimRange; ++ii) {
+      for (size_t jj = 0; jj < dimRange; ++jj) {
+        if (std::abs(ret[ii][jj]) > 0.99 && std::abs(ret[ii][jj]) < 1.01)
+          ret[ii][jj] = ret[ii][jj] / std::abs(ret[ii][jj]);
+        else if (std::abs(ret[ii][jj]) < 0.01)
+          ret[ii][jj] = 0;
+        else
+          DUNE_THROW(Dune::MathError, "Invalid reflection matrix!");
+      }
+    }
     return ret;
   }
 
@@ -365,9 +377,23 @@ public:
 
   virtual RangeFieldType density(const RangeType& u) const = 0;
 
+  virtual void ensure_min_density(RangeType& u, const RangeFieldType min_density) const
+  {
+    if (density(u) < min_density)
+      u = u_iso() * min_density;
+  }
+
+  // Volume of integration domain. For the Mn models it is important that u_iso has density 1. If the basis is exactly
+  // integrated, we thus use the exact unit ball volume. If the basis is only integrated by quadrature, we have to use
+  // <1> as volume to get a density of 1.
+  virtual RangeFieldType unit_ball_volume(const bool /*use_fine_quadratures*/ = false) const
+  {
+    return unit_ball_volume_exact();
+  }
+
   virtual RangeType u_iso() const
   {
-    return integrated() * 0.5;
+    return u_iso_;
   }
 
   virtual std::string short_id() const = 0;
@@ -400,10 +426,7 @@ public:
     QuadraturesType ret(num_intervals);
     auto interval_boundaries = create_1d_triangulation(num_intervals);
     // quadrature on reference interval [0, 1]
-    const auto reference_quadrature = Dune::QuadratureRules<DomainFieldType, dimDomain>::rule(
-        Dune::GeometryType(Dune::GeometryType::BasicType::simplex, 1),
-        static_cast<int>(quad_order),
-        Dune::QuadratureType::GaussLobatto);
+    const auto reference_quadrature = GaussLobattoQuadrature<DomainFieldType>::get(quad_order);
     // map to quadrature on interval [a, b] by
     // x_i -> (1-x_i) a + x_i b
     // w_i -> w_i * (b-a)
@@ -426,7 +449,50 @@ public:
     return QuadraturesType(1, LebedevQuadrature<DomainFieldType, true>::get(quad_order));
   }
 
+  static RangeFieldType unit_ball_volume_exact()
+  {
+    if (dimDomain == 1)
+      return 2;
+    else if (dimDomain == 2)
+      return 2 * M_PI;
+    else if (dimDomain == 3)
+      return 4 * M_PI;
+    else {
+      DUNE_THROW(NotImplemented, "");
+      return 0;
+    }
+  }
+
+  RangeFieldType unit_ball_volume_quad(const bool use_fine_quadratures = false) const
+  {
+    RangeFieldType ret(0.);
+    for (const auto& quad_point : (use_fine_quadratures ? fine_quadratures_ : quadratures_).merged())
+      ret += quad_point.weight();
+    return ret;
+  }
+
 protected:
+  void initialize_base_values()
+  {
+    integrated_ = integrated_initializer(quadratures_);
+    u_iso_ = integrated() / density(integrated());
+  }
+
+  void
+  get_pos_and_neg_quadratures(QuadraturesType& neg_quadratures, QuadraturesType& pos_quadratures, const size_t dd) const
+  {
+    for (size_t ii = 0; ii < quadratures_.size(); ++ii) {
+      for (const auto& quad_point : quadratures_[ii]) {
+        const auto& v = quad_point.position();
+        const auto& weight = quad_point.weight();
+        // if v[dd] = 0 the quad_point does not contribute to the integral
+        if (v[dd] > 0.)
+          pos_quadratures[ii].emplace_back(v, weight);
+        else if (v[dd] < 0.)
+          neg_quadratures[ii].emplace_back(v, weight);
+      } // quad_points
+    } // quadratures
+  }
   static std::vector<MergedQuadratureIterator> create_decomposition(const QuadraturesType& quadratures,
                                                                     const size_t num_threads)
   {
@@ -471,16 +537,20 @@ protected:
                                    const size_t ii,
                                    const bool reflecting) const
   {
+    const auto& reflected_indices = triangulation_.reflected_face_indices();
     for (auto it = decomposition[ii]; it != decomposition[ii + 1]; ++it) {
       const auto& quad_point = *it;
       const auto& v = quad_point.position();
-      auto v_reflected = v;
-      if (reflecting)
-        v_reflected[v_index] *= -1.;
       const auto basis_evaluated = evaluate(v, it.first_index());
-      if (reflecting)
-        DUNE_THROW(Dune::NotImplemented, "TODO: Think about evaluation below.");
-      const auto basis_reflected = evaluate(v_reflected);
+      auto basis_reflected = basis_evaluated;
+      if (reflecting) {
+        auto v_reflected = v;
+        v_reflected[v_index] *= -1.;
+        // If the basis functions have a triangulation, get index of reflected triangle. Otherwise set to 0, will be
+        // ignored.
+        const size_t reflected_index = reflected_indices.size() ? reflected_indices[it.first_index()][v_index] : 0;
+        basis_reflected = evaluate(v_reflected, reflected_index);
+      }
       const auto& weight = quad_point.weight();
       const auto factor = (reflecting || v_index == size_t(-1)) ? 1. : v[v_index];
       for (size_t nn = 0; nn < local_matrix.N(); ++nn)
@@ -525,11 +595,13 @@ protected:
   } // void calculate_in_thread(...)
 
   QuadraturesType quadratures_;
+  QuadraturesType fine_quadratures_;
+  SphericalTriangulationType triangulation_;
+  RangeType integrated_;
+  RangeType u_iso_;
 };
 
 
-} // namespace Problems
-} // namespace Hyperbolic
 } // namespace GDT
 } // namespace Dune
 

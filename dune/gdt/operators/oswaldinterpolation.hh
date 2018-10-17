@@ -122,7 +122,7 @@ private:
 
       // loop over all vertices of the entitity, to find their associated global DoF indices
       for (auto local_vertex_id : XT::Common::value_range(num_vertices)) {
-        const auto vertex = entity.template subEntity<dimDomain>(local_vertex_id);
+        const auto vertex = entity.template subEntity<dimDomain>(static_cast<int>(local_vertex_id));
         const auto global_vertex_id = grid_layer_.indexSet().index(vertex);
         const auto vertex_center = vertex.geometry().center();
         // find the local basis function which corresponds to this vertex
@@ -169,7 +169,7 @@ private:
             // now, we need to find the entity's vertex this intersection's corner point equals to, so we
             // loop over all vertices of the entity
             for (auto local_vertex_id : XT::Common::value_range(num_vertices)) {
-              const auto vertex = entity.template subEntity<dimDomain>(local_vertex_id);
+              const auto vertex = entity.template subEntity<dimDomain>(static_cast<int>(local_vertex_id));
               const auto global_vertex_id = grid_layer_.indexSet().index(vertex);
               const auto vertex_center = vertex.geometry().center();
               if (XT::Common::FloatCmp::eq(global_intersection_corner, vertex_center))

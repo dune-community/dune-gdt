@@ -22,8 +22,6 @@
 
 namespace Dune {
 namespace GDT {
-namespace Hyperbolic {
-namespace Problems {
 
 
 // use product quadrature for phi and theta to get quadrature on sphere
@@ -71,8 +69,6 @@ Dune::QuadratureRule<FieldType, 3> product_quadrature(const size_t theta_grid_si
 }
 
 
-} // namespace Problems
-} // namespace Hyperbolic
 } // namespace GDT
 } // namespace Dune
 

@@ -25,8 +25,7 @@
 
 namespace Dune {
 namespace GDT {
-namespace Hyperbolic {
-namespace Problems {
+
 
 // The tabulated values are in cartesian coordinates (x, y, z). If cartesian is false, the
 // quadrature points are converted to spherical coordinates (\theta, \varphi), with
@@ -192,8 +191,7 @@ const std::vector<size_t> LebedevQuadrature<FieldType, cartesian>::allowed_order
     3,  5,  7,  9,  11, 13, 15, 17, 19, 21, 23,  25,  27,  29,  31,  35,
     41, 47, 53, 59, 65, 71, 77, 83, 89, 95, 101, 107, 113, 119, 125, 131};
 
-} // namespace Problems
-} // namespace Hyperbolic
+
 } // namespace GDT
 } // namespace Dune
 

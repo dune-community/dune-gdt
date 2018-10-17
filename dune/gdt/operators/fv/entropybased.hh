@@ -102,7 +102,9 @@ public:
     static_assert(is_discrete_function<RangeType>::value, "RangeType has to be derived from DiscreteFunction!");
     // solve optimization problems and regularize if necessary
     RangeType regularized = range;
-    regularization_operator_.apply(source, regularized, param);
+    auto regularization_param = param;
+    regularization_param.set("center_results_are_intersection_results", {1});
+    regularization_operator_.apply(source, regularized, regularization_param);
 
     std::fill(range.vector().begin(), range.vector().end(), 0.);
     advection_operator_.apply(regularized, range, param);

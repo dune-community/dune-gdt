@@ -13,8 +13,6 @@
 #include <boost/iostreams/stream.hpp>
 #include <boost/iostreams/device/null.hpp>
 
-#include <dune/geometry/quadraturerules.hh>
-
 #include <dune/xt/common/fvector.hh>
 
 #include <dune/xt/grid/walker.hh>
@@ -38,6 +36,18 @@ namespace Dune {
 namespace GDT {
 
 
+// The limiters in this file act on the reconstructed values on the reconstructed values to ensure realizability.
+// Another possibility is to include the realizability limiting in the slope limiting, see
+// dune/gdt/operators/fv/reconstruction/slopes.hh.
+// Which one of the two limiting approaches is more suitable depends on the actual reconstruction. If the values are
+// reconstructed on the midpoint of each intersection only, the slope limiting is easy to use and it is possible to
+// limit in characteristic variables at no extra computational cost. Moreover, if the the values are not only
+// reconstructed at the interfaces but also within the cell, limiting the slope before calculating the reconstructed
+// values might be less expensive than limiting the reconstructed values afterwards. However, if we have a quadrature
+// with several points on each interface, we do a dimension by dimension reconstruction on the whole stencil, and in the
+// current implementation slope limiting is performed at every step. It might be enough to perform the realizability
+// limiting in the last step only, which would bring the slope limiters on a par with the reconstructions in this file
+// performance-wise.
 template <class AnalyticalFluxImp, class DiscreteFunctionImp, class BasisfunctionImp>
 class LocalRealizabilityLimiterBase
     : public XT::Grid::Functor::Codim0<typename DiscreteFunctionImp::SpaceType::GridLayerType>
@@ -55,7 +65,6 @@ public:
   using DomainFieldType = typename DiscreteFunctionType::DomainFieldType;
   static const size_t dimDomain = DiscreteFunctionType::dimDomain;
   static const size_t dimRange = DiscreteFunctionType::dimRange;
-  using QuadratureType = typename Dune::QuadratureRule<RangeFieldType, dimDomain>;
   using ReconstructedFunctionType =
       ReconstructedLocalizableFunction<GridLayerType, DomainFieldType, dimDomain, RangeFieldType, dimRange>;
   using EntropyFluxType = EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, DiscreteFunctionType>;
@@ -65,7 +74,6 @@ public:
                                 const DiscreteFunctionType& source,
                                 ReconstructedFunctionType& reconstructed_function,
                                 const BasisfunctionType& basis_functions,
-                                const QuadratureType& quadrature,
                                 const RangeFieldType epsilon,
                                 const std::vector<RangeType>& basis_values,
                                 const XT::Common::Parameter& param)
@@ -73,7 +81,6 @@ public:
     , source_(source)
     , reconstructed_function_(reconstructed_function)
     , basis_functions_(basis_functions)
-    , quadrature_(quadrature)
     , epsilon_(epsilon)
     , basis_values_(basis_values)
     , param_(param)
@@ -142,20 +149,28 @@ protected:
     // Try to solve optimization problem for all reconstructed values. If it fails for one value,
     // we cannot guarantee realizability preservation, so disable reconstruction in that case.
     const auto local_func = dynamic_cast<const EntropyFluxType*>(&analytical_flux_)->derived_local_function(entity);
+    std::pair<DomainType, RangeType> current_pair = *local_reconstructed_values.begin();
     try {
       for (const auto& pair : local_reconstructed_values) {
-        const auto x_in_inside_coords = entity.geometry().local(pair.first);
+        current_pair = pair;
+        const auto x_in_inside_coords = pair.first;
         const auto& u = pair.second;
-        local_func->get_alpha(x_in_inside_coords, u, param_, false, false);
+        local_func->get_alpha(x_in_inside_coords, u, param_, false);
       } // local_reconstructed_values
     } catch (const Dune::MathError&) {
+      //  std::cout << "Reconstruction disabled at time " << XT::Common::to_string(param_.get("t")[0], 15)
+      //            << " and entity with center " << XT::Common::to_string(entity.geometry().center(), 15) <<
+      //            std::endl;
+      //  std::cout << "Solving failed for moments " << XT::Common::to_string(current_pair.second, 15)
+      //            << " at x = " << XT::Common::to_string(current_pair.first, 15) << std::endl;
       // solving failed for reconstructed value, so check that it works with u_bar ...
-      local_func->get_alpha(entity.geometry().local(entity.geometry().center()), u_bar, param_, false, false);
+      const auto alpha_bar =
+          local_func->get_alpha(entity.geometry().local(entity.geometry().center()), u_bar, param_, false).first;
       // ... and set all reconstructed values to u_bar
-      for (auto& pair : local_reconstructed_values)
+      for (auto& pair : local_reconstructed_values) {
+        local_func->store_alpha(pair.first, alpha_bar);
         pair.second = u_bar;
-      std::cout << "Reconstruction disabled at time " << XT::Common::to_string(param_.get("t")[0], 15)
-                << " and entity with center " << XT::Common::to_string(entity.geometry().center(), 15) << std::endl;
+      }
     }
   }
 
@@ -177,7 +192,6 @@ protected:
   const DiscreteFunctionType& source_;
   ReconstructedFunctionType& reconstructed_function_;
   const BasisfunctionType& basis_functions_;
-  const QuadratureType& quadrature_;
   const RangeFieldType epsilon_;
   const std::vector<RangeType>& basis_values_;
   XT::Common::Parameter param_;
@@ -223,7 +237,6 @@ public:
   using typename BaseType::DomainType;
   using typename BaseType::RangeType;
   using typename BaseType::RangeFieldType;
-  using typename BaseType::QuadratureType;
   static const size_t dimDomain = BaseType::dimDomain;
   static const size_t dimRange = BaseType::dimRange;
 
@@ -277,7 +290,6 @@ public:
   using typename BaseType::DiscreteFunctionType;
   using typename BaseType::EntityType;
   using typename BaseType::GridLayerType;
-  using typename BaseType::QuadratureType;
   using typename BaseType::RangeType;
   using typename BaseType::RangeFieldType;
   using typename BaseType::ReconstructedFunctionType;
@@ -364,12 +376,11 @@ public:
   using typename BaseType::DomainType;
   using typename BaseType::RangeType;
   using typename BaseType::RangeFieldType;
-  using typename BaseType::QuadratureType;
   using typename BaseType::ReconstructedFunctionType;
   using typename BaseType::BasisfunctionType;
   static const size_t dimDomain = BaseType::dimDomain;
   static const size_t dimRange = BaseType::dimRange;
-  typedef typename std::vector<std::pair<RangeType, RangeFieldType>> PlaneCoefficientsType;
+  using PlaneCoefficientsType = typename std::vector<std::pair<RangeType, RangeFieldType>>;
 
   template <class... Args>
   ConvexHullLocalRealizabilityLimiter(Args&&... args)
@@ -441,10 +452,11 @@ private:
   {
     using orgQhull::Qhull;
     Qhull qhull;
-    std::vector<FieldVector<RangeFieldType, dimRange>> points(quadrature_.size() + 1);
+    const auto& quadrature = basis_functions_.quadratures().merged();
+    std::vector<FieldVector<RangeFieldType, dimRange>> points(quadrature.size() + 1);
     points[0] = FieldVector<RangeFieldType, dimRange>(0);
     size_t ii = 1;
-    for (const auto& quad_point : quadrature_)
+    for (const auto& quad_point : quadrature)
       points[ii++] = basis_functions_.evaluate(quad_point.position());
 
     std::cout << "Starting qhull..." << std::endl;
@@ -464,7 +476,6 @@ private:
   using BaseType::basis_functions_;
   using BaseType::source_;
   using BaseType::reconstructed_function_;
-  using BaseType::quadrature_;
   using BaseType::epsilon_;
   static bool is_instantiated_;
   static std::shared_ptr<PlaneCoefficientsType> plane_coefficients_;
@@ -492,14 +503,13 @@ public:
   using typename BaseType::DomainType;
   using typename BaseType::RangeType;
   using typename BaseType::RangeFieldType;
-  using typename BaseType::QuadratureType;
   using typename BaseType::ReconstructedFunctionType;
   using typename BaseType::BasisfunctionType;
   static const size_t dimDomain = BaseType::dimDomain;
   static const size_t dimRange = BaseType::dimRange;
   static const size_t block_size = (dimDomain == 1) ? 2 : 4;
   static const size_t num_blocks = dimRange / block_size;
-  typedef FieldVector<RangeFieldType, block_size - 1> BlockRangeType;
+  typedef FieldVector<RangeFieldType, block_size> BlockRangeType;
   typedef typename std::vector<std::pair<BlockRangeType, RangeFieldType>> BlockPlaneCoefficientsType;
   typedef FieldVector<BlockPlaneCoefficientsType, num_blocks> PlaneCoefficientsType;
 
@@ -580,24 +590,17 @@ private:
   // calculate half space representation of realizable set
   void calculate_plane_coefficients()
   {
+    const auto& quadratures = basis_functions_.quadratures();
     plane_coefficients_ = std::make_shared<PlaneCoefficientsType>();
-    FieldVector<std::vector<FieldVector<RangeFieldType, block_size - 1>>, num_blocks> points;
-    FieldVector<QuadratureType, num_blocks> blocked_quadrature;
-    for (const auto& quad_point : quadrature_) {
-      const auto face_indices = basis_functions_.get_face_indices(quad_point.position());
-      const size_t num_adjacent_faces = face_indices.size();
-      for (const auto& kk : face_indices)
-        blocked_quadrature[kk].emplace_back(quad_point.position(), quad_point.weight() / num_adjacent_faces);
-    } // ii
-    size_t num_faces;
+    FieldVector<std::vector<FieldVector<RangeFieldType, block_size>>, num_blocks> points;
     for (size_t jj = 0; jj < num_blocks; ++jj) {
-      points[jj].resize(blocked_quadrature[jj].size() + 1);
-      for (size_t ii = 0; ii < blocked_quadrature[jj].size(); ++ii) {
-        const auto val = basis_functions_.evaluate(blocked_quadrature[jj][ii].position(), false, num_faces);
-        for (size_t ll = 0; ll < block_size - 1; ++ll)
-          points[jj][ii][ll] = val[block_size * jj + 1 + ll];
+      points[jj].resize(quadratures[jj].size() + 1);
+      for (size_t ii = 0; ii < quadratures[jj].size(); ++ii) {
+        const auto val = basis_functions_.evaluate(quadratures()[jj][ii].position(), jj);
+        for (size_t ll = 0; ll < block_size; ++ll)
+          points[jj][ii][ll] = val[block_size * jj + ll];
       } // ii
-      points[jj][blocked_quadrature[jj].size()] = FieldVector<RangeFieldType, block_size - 1>(0.);
+      points[jj][quadratures[jj].size()] = FieldVector<RangeFieldType, block_size>(0.);
     }
     std::vector<std::thread> threads(num_blocks);
     // Launch a group of threads
@@ -608,30 +611,28 @@ private:
       threads[jj].join();
   }
 
-  void calculate_plane_coefficient_block(std::vector<FieldVector<RangeFieldType, block_size - 1>>& points, size_t jj)
+  void calculate_plane_coefficient_block(std::vector<FieldVector<RangeFieldType, block_size>>& points, size_t jj)
   {
     orgQhull::Qhull qhull;
     boost::iostreams::stream<boost::iostreams::null_sink> null_ostream((boost::iostreams::null_sink()));
     qhull.setOutputStream(&null_ostream);
     qhull.setErrorStream(&null_ostream);
-    qhull.runQhull("Realizable set", int(block_size) - 1, int(points.size()), &(points[0][0]), "Qt T1");
+    qhull.runQhull("Realizable set", int(block_size), int(points.size()), &(points[0][0]), "Qt T1");
     const auto facet_end = qhull.endFacet();
     BlockPlaneCoefficientsType block_plane_coefficients(qhull.facetList().count());
     //    std::cout << "num_vertices: " << qhull.vertexList().count() << std::endl;
     size_t ii = 0;
     for (auto facet = qhull.beginFacet(); facet != facet_end; facet = facet.next(), ++ii) {
-      for (size_t ll = 0; ll < block_size - 1; ++ll)
+      for (size_t ll = 0; ll < block_size; ++ll)
         block_plane_coefficients[ii].first[ll] = *(facet.hyperplane().coordinates() + ll);
       block_plane_coefficients[ii].second = -facet.hyperplane().offset();
     } // ii
     (*plane_coefficients_)[jj] = block_plane_coefficients;
   }
 
-
   using BaseType::basis_functions_;
   using BaseType::source_;
   using BaseType::reconstructed_function_;
-  using BaseType::quadrature_;
   using BaseType::epsilon_;
   static bool is_instantiated_;
   static std::shared_ptr<PlaneCoefficientsType> plane_coefficients_;
@@ -677,7 +678,6 @@ public:
   using typename BaseType::DomainType;
   using typename BaseType::RangeType;
   using typename BaseType::RangeFieldType;
-  using typename BaseType::QuadratureType;
   static const size_t dimDomain = BaseType::dimDomain;
   static const size_t dimRange = BaseType::dimRange;
 
@@ -716,10 +716,11 @@ private:
   void setup_linear_program()
   {
     if (!*lp_) {
+      const auto& quadrature = basis_functions_.quadratures().merged();
       // We start with creating a model with dimRange rows and num_quad_points+1 columns */
       constexpr int num_rows = static_cast<int>(dimRange);
-      assert(quadrature_.size() < std::numeric_limits<int>::max());
-      int num_cols = static_cast<int>(quadrature_.size() + 1); /* variables are x_1, ..., x_{num_quad_points}, theta */
+      assert(quadrature.size() < std::numeric_limits<int>::max());
+      int num_cols = static_cast<int>(quadrature.size() + 1); /* variables are x_1, ..., x_{num_quad_points}, theta */
       *lp_ = std::make_unique<ClpSimplex>(false);
       auto& lp = **lp_;
       // set number of rows
@@ -759,7 +760,8 @@ private:
     setup_linear_program();
     auto& lp = **lp_;
     constexpr int num_rows = static_cast<int>(dimRange);
-    int num_cols = static_cast<int>(quadrature_.size() + 1); /* variables are x_1, ..., x_{num_quad_points}, theta */
+    int num_cols = static_cast<int>(basis_functions_.quadratures().merged().size()
+                                    + 1); /* variables are x_1, ..., x_{num_quad_points}, theta */
     RangeFieldType theta;
     const auto u_l_minus_u_bar = u_l - u_bar;
 
@@ -791,7 +793,7 @@ private:
 
   using BaseType::source_;
   using BaseType::reconstructed_function_;
-  using BaseType::quadrature_;
+  using BaseType::basis_functions_;
   using BaseType::epsilon_;
   using BaseType::basis_values_;
   XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>> lp_;
@@ -821,7 +823,6 @@ struct RealizabilityLimiterTraits
   using LocalRealizabilityLimiterType = LocalRealizabilityLimiterImp;
   using AnalyticalFluxType = typename LocalRealizabilityLimiterImp::AnalyticalFluxType;
   using BasisfunctionType = typename LocalRealizabilityLimiterImp::BasisfunctionType;
-  using QuadratureType = typename LocalRealizabilityLimiterImp::QuadratureType;
   using RangeFieldType = typename LocalRealizabilityLimiterImp::RangeFieldType;
   using FieldType = RangeFieldType;
   using JacobianType = NoJacobian;
@@ -842,23 +843,21 @@ public:
   using LocalRealizabilityLimiterType = typename Traits::LocalRealizabilityLimiterType;
   using AnalyticalFluxType = typename Traits::AnalyticalFluxType;
   using BasisfunctionType = typename Traits::BasisfunctionType;
-  using QuadratureType = typename Traits::QuadratureType;
   using RangeFieldType = typename Traits::RangeFieldType;
   using RangeType = typename Traits::RangeType;
   using ReconstructedFunctionType = typename Traits::ReconstructedFunctionType;
 
   RealizabilityLimiter(const AnalyticalFluxType& analytical_flux,
                        const BasisfunctionType& basis_functions,
-                       const QuadratureType& quadrature,
                        const RangeFieldType epsilon = 1e-8)
     : analytical_flux_(analytical_flux)
     , basis_functions_(basis_functions)
-    , quadrature_(quadrature)
     , epsilon_(epsilon)
-    , basis_values_(quadrature_.size())
+    , basis_values_(basis_functions_.quadratures().merged().size())
   {
-    for (size_t ii = 0; ii < quadrature_.size(); ++ii)
-      basis_values_[ii] = basis_functions_.evaluate(quadrature_[ii].position());
+    const auto& quadrature = basis_functions_.quadratures().merged();
+    for (size_t ii = 0; ii < quadrature.size(); ++ii)
+      basis_values_[ii] = basis_functions_.evaluate(quadrature[ii].position());
   }
 
   template <class SourceType>
@@ -867,7 +866,7 @@ public:
     static_assert(is_discrete_function<SourceType>::value,
                   "SourceType has to be derived from DiscreteFunction (use the non-reconstructed values!)");
     LocalRealizabilityLimiterType local_realizability_limiter(
-        analytical_flux_, source, range, basis_functions_, quadrature_, epsilon_, basis_values_, param);
+        analytical_flux_, source, range, basis_functions_, epsilon_, basis_values_, param);
     auto walker = XT::Grid::Walker<typename SourceType::SpaceType::GridLayerType>(source.space().grid_layer());
     walker.append(local_realizability_limiter);
     walker.walk(true);
@@ -876,7 +875,6 @@ public:
 private:
   const AnalyticalFluxType& analytical_flux_;
   const BasisfunctionType& basis_functions_;
-  const QuadratureType& quadrature_;
   const RangeFieldType epsilon_;
   std::vector<RangeType> basis_values_;
 }; // class RealizabilityLimiter<...>

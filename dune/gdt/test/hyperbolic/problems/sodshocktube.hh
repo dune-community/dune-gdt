@@ -43,7 +43,7 @@ template <class EntityImp, class DomainFieldImp, class RangeFieldImp>
 class ShocktubeSolution
     : public XT::Functions::GlobalFunctionInterface<EntityImp, DomainFieldImp, 1, RangeFieldImp, 3, 1>
 {
-  typedef XT::Functions::GlobalFunctionInterface<EntityImp, DomainFieldImp, 1, RangeFieldImp, 3, 1> BaseType;
+  using BaseType = XT::Functions::GlobalFunctionInterface<EntityImp, DomainFieldImp, 1, RangeFieldImp, 3, 1>;
 
 public:
   static const bool is_linear = false;
@@ -189,8 +189,8 @@ namespace Problems {
 template <class E, class D, class U>
 class ShockTube : public ProblemBase<E, D, 1, U, typename U::RangeFieldType, 3>
 {
-  typedef ShockTube<E, D, U> ThisType;
-  typedef ProblemBase<E, D, 1, U, typename U::RangeFieldType, 3> BaseType;
+  using ThisType = ShockTube<E, D, U>;
+  using BaseType = ProblemBase<E, D, 1, U, typename U::RangeFieldType, 3>;
 
 public:
   static const bool linear = false;
@@ -199,16 +199,15 @@ public:
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeType;
   using typename BaseType::StateRangeType;
+  using typename BaseType::IntersectionType;
   using BaseType::dimDomain;
   using BaseType::dimRange;
-
-  typedef typename XT::Functions::GlobalLambdaFluxFunction<U, 0, RangeFieldType, dimRange, dimDomain> ActualFluxType;
-  typedef typename XT::Functions::AffineFluxFunction<E, D, dimDomain, U, RangeFieldType, dimRange, 1> ActualRhsType;
-  typedef XT::Functions::GlobalLambdaFunction<E, D, dimDomain, RangeFieldType, dimRange, 1> ActualBoundaryValueType;
-  typedef XT::Functions::CheckerboardFunction<E, D, dimDomain, RangeFieldType, dimRange, 1> ActualInitialValueType;
-
-  typedef FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
-
+  using typename BaseType::ActualFluxType;
+  using typename BaseType::ActualRhsType;
+  using typename BaseType::ActualDirichletBoundaryValueType;
+  using typename BaseType::ActualBoundaryValueType;
+  using ActualInitialValueType = XT::Functions::CheckerboardFunction<E, D, dimDomain, RangeFieldType, dimRange, 1>;
+  using MatrixType = FieldMatrix<RangeFieldType, dimRange, dimRange>;
   using typename BaseType::FluxType;
   using typename BaseType::RhsType;
   using typename BaseType::InitialValueType;
@@ -296,11 +295,12 @@ public:
 
   virtual BoundaryValueType* create_boundary_values()
   {
-    return new ActualBoundaryValueType(
-        [=](const DomainType& x, const XT::Common::Parameter&) {
-          return RangeType{1 - x[0] * 0.875, 0., 2.5 - x[0] * 2.25};
-        },
-        1);
+    return new ActualBoundaryValueType(XT::Grid::make_alldirichlet_boundaryinfo<IntersectionType>(),
+                                       std::make_unique<ActualDirichletBoundaryValueType>(
+                                           [=](const DomainType& x, const XT::Common::Parameter&) {
+                                             return RangeType{1 - x[0] * 0.875, 0., 2.5 - x[0] * 2.25};
+                                           },
+                                           1));
   } // ... create_boundary_values()
 }; // class Shocktube<...>
 
@@ -321,20 +321,30 @@ class ShockTubeTestCase
                                                                                R,
                                                                                3,
                                                                                1,
-                                                                               GDT::Backends::gdt>::type>>
+                                                                               GDT::Backends::gdt,
+                                                                               XT::LA::default_backend,
+                                                                               XT::Grid::Layers::leaf,
+                                                                               true>::type>>
 {
-  typedef typename G::template Codim<0>::Entity E;
-  typedef typename G::ctype D;
+  using E = typename G::template Codim<0>::Entity;
+  using D = typename G::ctype;
   static const size_t d = G::dimension;
 
 public:
-  typedef
-      typename internal::DiscreteFunctionProvider<G, GDT::SpaceType::product_fv, 0, R, 3, 1, GDT::Backends::gdt>::type
-          U;
-  typedef typename Problems::ShockTube<E, D, U> ProblemType;
+  using U = typename internal::DiscreteFunctionProvider<G,
+                                                        GDT::SpaceType::product_fv,
+                                                        0,
+                                                        R,
+                                                        3,
+                                                        1,
+                                                        GDT::Backends::gdt,
+                                                        XT::LA::default_backend,
+                                                        XT::Grid::Layers::leaf,
+                                                        true>::type;
+  using ProblemType = typename Problems::ShockTube<E, D, U>;
 
 private:
-  typedef typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType> BaseType;
+  using BaseType = typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType>;
 
 public:
   static const size_t dimRange = 3;

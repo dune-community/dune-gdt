@@ -203,7 +203,8 @@ public:
     size_t time_step_counter = 0;
 
     const RangeFieldType save_interval = (t_end - t) / num_save_steps;
-    const RangeFieldType output_interval = (t_end - t) / num_output_steps;
+    const RangeFieldType output_interval =
+        (num_output_steps == 0 ? std::numeric_limits<RangeFieldType>::max() : (t_end - t) / num_output_steps);
     RangeFieldType next_save_time = t + save_interval > t_end ? t_end : t + save_interval;
     RangeFieldType next_output_time = t + output_interval > t_end ? t_end : t + output_interval;
     size_t save_step_counter = 1;
@@ -255,7 +256,8 @@ public:
         ++save_step_counter;
       }
       if (num_output_steps && (Dune::XT::Common::FloatCmp::ge(t, next_output_time) || num_output_steps == size_t(-1))) {
-        std::cout << "time step " << time_step_counter << " done, time =" << t << ", current dt= " << dt << std::endl;
+        if (current_solution().space().grid_layer().comm().rank() == 0)
+          std::cout << "time step " << time_step_counter << " done, time =" << t << ", current dt= " << dt << std::endl;
         next_output_time += output_interval;
       }
     } // while (t < t_end)
@@ -387,20 +389,31 @@ public:
                                 const std::string& prefix,
                                 const size_t step,
                                 const RangeFieldType t,
-                                const StringifierType& stringifier)
+                                const StringifierType& stringifier,
+                                const bool intersection_wise = false)
   {
     // write one file per MPI rank
     std::ofstream rankfile(rankfile_name(prefix, grid_layer.comm().rank(), step));
     for (const auto& entity : elements(grid_layer, Dune::Partitions::interiorBorder)) {
       const auto local_func = u_n.local_function(entity);
       const auto entity_center = entity.geometry().center();
-      for (const auto& intersection : Dune::intersections(grid_layer, entity)) {
-        auto position = intersection.geometry().center();
+      if (intersection_wise) {
+        for (const auto& intersection : Dune::intersections(grid_layer, entity)) {
+          auto position = intersection.geometry().center();
+          assert(position.size() == dimDomain);
+          // avoid ambiguity at interface
+          for (size_t ii = 0; ii < dimDomain; ++ii)
+            if (position[ii] < entity_center[ii])
+              position[ii] += 1e-6 * (entity_center[ii] - position[ii]);
+          const auto val = local_func->evaluate(entity.geometry().local(position), {"t", t});
+          for (size_t ii = 0; ii < dimDomain; ++ii)
+            rankfile << XT::Common::to_string(position[ii], 15) << " ";
+          rankfile << stringifier(val) << std::endl;
+        } // intersections
+      } else {
+        auto position = entity_center;
         assert(position.size() == dimDomain);
         // avoid ambiguity at interface
-        for (size_t ii = 0; ii < dimDomain; ++ii)
-          if (position[ii] < entity_center[ii])
-            position[ii] += 1e-6 * (entity_center[ii] - position[ii]);
         const auto val = local_func->evaluate(entity.geometry().local(position), {"t", t});
         for (size_t ii = 0; ii < dimDomain; ++ii)
           rankfile << XT::Common::to_string(position[ii], 15) << " ";

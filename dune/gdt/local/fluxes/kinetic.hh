@@ -153,18 +153,12 @@ private:
   initialize_flux_matrices(const BasisfunctionType& basis_functions)
   {
     // calculate < v_i b b^T >_- M^{-1} and < v_i b b^T >_+ M^{-1}
-    auto kinetic_flux_matrices = basis_functions.kinetic_flux_matrices();
-    auto mass_matrix = basis_functions.mass_matrix();
-    auto flux_matrices_dense = kinetic_flux_matrices;
+    const auto flux_matrices_dense = basis_functions.kinetic_flux_matrices();
     FieldVector<FieldVector<SparseMatrixType, 2>, dimDomain> flux_matrices(
         FieldVector<SparseMatrixType, 2>(SparseMatrixType(dimRange, dimRange, size_t(0))));
-    for (size_t dd = 0; dd < dimDomain; ++dd) {
-      for (size_t kk = 0; kk < 2; ++kk) {
-        for (size_t rr = 0; rr < dimRange; ++rr)
-          mass_matrix.solve(flux_matrices_dense[dd][kk][rr], kinetic_flux_matrices[dd][kk][rr]);
+    for (size_t dd = 0; dd < dimDomain; ++dd)
+      for (size_t kk = 0; kk < 2; ++kk)
         flux_matrices[dd][kk] = flux_matrices_dense[dd][kk];
-      } // kk
-    } // dd
     return flux_matrices;
   }
 
