@@ -21,7 +21,7 @@
 
 #include <boost/numeric/conversion/cast.hpp>
 
-#include <dune/common/float_cmp.hh>
+#include <dune/xt/common/math.hh>
 #include <dune/common/fvector.hh>
 #include <dune/common/fmatrix.hh>
 #include <dune/common/parallel/mpihelper.hh>
@@ -126,7 +126,7 @@ cg(TestCase& test_case, GridProvider& grid_provider)
   try {
     XT::Common::ScopedTiming solve("cg.solve");
     cg_disc.solve(cg_solution_vector, solver_options);
-  } catch (XT::LA::Exceptions::linear_solver_failed_bc_it_did_not_converge) {
+  } catch (XT::LA::Exceptions::linear_solver_failed_bc_it_did_not_converge&) {
     cg_solution_vector += std::nan("failed");
   }
   if (DXTC_CONFIG_GET("global.visualize", false)) {
@@ -149,7 +149,7 @@ block_ipdg(BlockTestCase& test_case, GridProvider& grid_provider)
   try {
     XT::Common::ScopedTiming solve("block_ipdg.solve");
     block_ipdg_disc.solve(block_ipdg_solution_vector, solver_options);
-  } catch (XT::LA::Exceptions::linear_solver_failed_bc_it_did_not_converge) {
+  } catch (XT::LA::Exceptions::linear_solver_failed_bc_it_did_not_converge&) {
     block_ipdg_solution_vector += std::nan("failed");
   }
   if (DXTC_CONFIG_GET("global.visualize", false)) {
@@ -171,7 +171,7 @@ plain_ipdg(TestCase& test_case, GridProvider& grid_provider)
   try {
     XT::Common::ScopedTiming solve("ipdg.solve");
     ipdg_disc.solve(ipdg_solution_vector, solver_options);
-  } catch (XT::LA::Exceptions::linear_solver_failed_bc_it_did_not_converge) {
+  } catch (XT::LA::Exceptions::linear_solver_failed_bc_it_did_not_converge&) {
     ipdg_solution_vector += std::nan("failed");
   }
   if (DXTC_CONFIG_GET("global.visualize", false)) {
