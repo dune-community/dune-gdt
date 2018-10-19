@@ -22,17 +22,6 @@ endif()
 
 end_testcases()
 
-# (re)generated from refresh_test_timings target
-if(DEFINED ENV{TRAVIS})
-  include("builder_definitions.cmake") # make sure there's the same amount of builders in travis as bins from
-                                       # distribution
-  add_custom_target(regenerate_travis_yml
-                    ${CMAKE_BINARY_DIR}/dune-env
-                    "${CMAKE_SOURCE_DIR}/.travis.yml.py"
-                    "${DXT_BIN_COUNT}")
-  add_dependencies(refresh_test_timings regenerate_travis_yml)
-endif(DEFINED ENV{TRAVIS})
-
 # link spe10 data file if present
 if(NOT ${SPE10MODEL1DATA} STREQUAL "SPE10MODEL1DATA-NOTFOUND")
   set(SPE10MODEL1DATA_TARGET_FILENAME "${CMAKE_CURRENT_BINARY_DIR}/perm_case1.dat")
