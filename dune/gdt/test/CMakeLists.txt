@@ -22,14 +22,3 @@ endif()
 
 end_testcases()
 
-# (re)generated from refresh_test_timings target
-if(DEFINED ENV{TRAVIS})
-  include("builder_definitions.cmake") # make sure there's the same amount of builders in travis as bins from
-                                       # distribution
-  add_custom_target(regenerate_travis_yml
-                    ${CMAKE_BINARY_DIR}/dune-env
-                    "${CMAKE_SOURCE_DIR}/.travis.yml.py"
-                    "${DXT_BIN_COUNT}")
-  add_dependencies(refresh_test_timings regenerate_travis_yml)
-endif(DEFINED ENV{TRAVIS})
-
