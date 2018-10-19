@@ -55,7 +55,7 @@ pipeline:
   notify:
     image: drillster/drone-email
     host: mail.milk.pm
-    from: drone@pymor.org
+    from: drone@dune-community.ovh
     when:
       status: [ changed, failure ]
     secrets:  [ email_username, email_password ]
