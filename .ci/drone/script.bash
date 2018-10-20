@@ -21,14 +21,6 @@ MY_BUILD_DIR=${DUNE_BUILD_DIR}/${MY_MODULE}
 cd ${SUPERDIR}
 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} configure
 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make
-
-# this will fail (with file permission denied)
-#$ if there is a diff between current and regenerated timings/listings
-${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ninja -v -j 1 refresh_test_timings
-pushd ${SUPERDIR}/${MY_MODULE}
-    git diff --exit-code dune/gdt/test/{builder_definitions.cmake,compiles_totals.pickle}
-popd
-
 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ninja -v -j 1 check
 
 
