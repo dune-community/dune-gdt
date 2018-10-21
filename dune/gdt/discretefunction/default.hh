@@ -173,23 +173,26 @@ public:
   using DofVectorType = DofVector<Vector, GridView>;
   using LocalDiscreteFunctionType = LocalDiscreteFunction<Vector, GridView, range_dim, range_dim_cols, RangeField>;
 
-  DiscreteFunction(const SpaceType& spc, VectorType& vector, const std::string nm = "dune.gdt.discretefunction")
+  DiscreteFunction(SpaceType& spc, VectorType& vector, const std::string nm = "dune.gdt.discretefunction")
     : VectorStorage(vector)
     , BaseType(spc, VectorStorage::access(), nm)
+    , space_(spc)
     , dofs_(space_.mapper(), VectorStorage::access())
   {
   }
 
-  DiscreteFunction(const SpaceType& spc, VectorType&& vector, const std::string nm = "dune.gdt.discretefunction")
+  DiscreteFunction(SpaceType& spc, VectorType&& vector, const std::string nm = "dune.gdt.discretefunction")
     : VectorStorage(new VectorType(std::move(vector)))
     , BaseType(spc, VectorStorage::access(), nm)
+    , space_(spc)
     , dofs_(space_.mapper(), VectorStorage::access())
   {
   }
 
-  DiscreteFunction(const SpaceType& spc, const std::string nm = "dune.gdt.discretefunction")
+  DiscreteFunction(SpaceType& spc, const std::string nm = "dune.gdt.discretefunction")
     : VectorStorage(new VectorType(spc.mapper().size(), 0))
     , BaseType(spc, VectorStorage::access(), nm)
+    , space_(spc)
     , dofs_(space_.mapper(), VectorStorage::access())
   {
   }
@@ -199,6 +202,13 @@ public:
 
   ThisType& operator=(const ThisType&) = delete;
   ThisType& operator=(ThisType&&) = delete;
+
+  using BaseType::space;
+
+  SpaceType& space()
+  {
+    return space_;
+  }
 
   using BaseType::dofs;
 
@@ -226,14 +236,14 @@ public:
    */
 
 private:
-  using BaseType::space_;
+  SpaceType& space_;
   DofVectorType dofs_;
 }; // class DiscreteFunction
 
 
 template <class V, class GV, size_t r, size_t rC, class R>
 DiscreteFunction<typename XT::LA::VectorInterface<V>::derived_type, GV, r, rC, R>
-make_discrete_function(const SpaceInterface<GV, r, rC, R>& space,
+make_discrete_function(SpaceInterface<GV, r, rC, R>& space,
                        XT::LA::VectorInterface<V>& vector,
                        const std::string nm = "dune.gdt.discretefunction")
 {
@@ -243,7 +253,7 @@ make_discrete_function(const SpaceInterface<GV, r, rC, R>& space,
 
 template <class V, class GV, size_t r, size_t rC, class R>
 DiscreteFunction<typename XT::LA::VectorInterface<V>::derived_type, GV, r, rC, R>
-make_discrete_function(const SpaceInterface<GV, r, rC, R>& space,
+make_discrete_function(SpaceInterface<GV, r, rC, R>& space,
                        XT::LA::VectorInterface<V>&& vector,
                        const std::string nm = "dune.gdt.discretefunction")
 {
@@ -253,7 +263,7 @@ make_discrete_function(const SpaceInterface<GV, r, rC, R>& space,
 
 
 template <class VectorType, class GV, size_t r, size_t rC, class R>
-DiscreteFunction<VectorType, GV, r, rC, R> make_discrete_function(const SpaceInterface<GV, r, rC, R>& space,
+DiscreteFunction<VectorType, GV, r, rC, R> make_discrete_function(SpaceInterface<GV, r, rC, R>& space,
                                                                   const std::string nm = "dune.gdt.discretefunction")
 {
   return DiscreteFunction<VectorType, GV, r, rC, R>(space, nm);
@@ -262,7 +272,7 @@ DiscreteFunction<VectorType, GV, r, rC, R> make_discrete_function(const SpaceInt
 
 template <class GV, size_t r, size_t rC, class R>
 DiscreteFunction<typename XT::LA::Container<R>::VectorType, GV, r, rC, R>
-make_discrete_function(const SpaceInterface<GV, r, rC, R>& space, const std::string nm = "dune.gdt.discretefunction")
+make_discrete_function(SpaceInterface<GV, r, rC, R>& space, const std::string nm = "dune.gdt.discretefunction")
 {
   return DiscreteFunction<typename XT::LA::Container<R>::VectorType, GV, r, rC, R>(space, nm);
 }
