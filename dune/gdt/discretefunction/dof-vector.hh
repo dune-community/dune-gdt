@@ -96,6 +96,16 @@ public:
     return LocalDofVectorType(mapper_, vector_);
   }
 
+  /// \name These methods are required for grid adaptation.
+  /// \{
+
+  void resize_after_adapt()
+  {
+    vector_.resize(mapper_.size());
+  }
+
+  /// \}
+
 private:
   using BaseType::mapper_;
   VectorType& vector_;

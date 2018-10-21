@@ -59,6 +59,16 @@ public:
     lb->bind(grid_element);
     return lb;
   }
+
+  /// \name These methods are required for grid adaptation.
+  /// \{
+
+  virtual void update_after_adapt()
+  {
+    DUNE_THROW(Exceptions::basis_error, "This basis does not support adaptation!");
+  }
+
+  /// \}
 }; // class GlobalBasisInterface
 
 

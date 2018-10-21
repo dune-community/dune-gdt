@@ -15,6 +15,8 @@
 
 #include <dune/geometry/type.hh>
 
+#include <dune/grid/utility/persistentcontainer.hh>
+
 #include <dune/xt/la/container/vector-interface.hh>
 #include <dune/xt/grid/type_traits.hh>
 
@@ -42,6 +44,10 @@ class SpaceInterface
 public:
   using GridViewType = GridView;
   using GV = GridViewType;
+  using ElementType = XT::Grid::extract_entity_t<GV>;
+  using E = ElementType;
+  using Grid = typename GridView::Grid;
+  using G = Grid;
   using D = typename GridViewType::ctype;
   static const constexpr size_t d = GridViewType::dimension;
   using R = RangeField;
@@ -61,7 +67,7 @@ public:
 
   virtual ~SpaceInterface() = default;
 
-  /// \name These methods provide the actual functionality, they have to be implemented.
+  /// \name These methods provide most functionality, they have to be implemented.
   /// \{
 
   virtual const GridViewType& grid_view() const = 0;
@@ -93,6 +99,36 @@ public:
    * If this returns true, every finite_element() is expected to provide lagrange_points().
    */
   virtual bool is_lagrangian() const = 0;
+
+  /// \}
+  /// \name These methods are required for grid adaptation.
+  /// \{
+
+  virtual void restrict_to(const ElementType& /*element*/,
+                           PersistentContainer<G, DynamicVector<R>>& /*persistent_data*/) const
+  {
+    DUNE_THROW(Exceptions::space_error, "This space does not support adaptation!");
+  }
+
+  virtual void update_after_adapt()
+  {
+    DUNE_THROW(Exceptions::space_error, "This space does not support adaptation!");
+  }
+
+  virtual void prolong_onto(const ElementType& /*element*/,
+                            const PersistentContainer<G, DynamicVector<R>>& /*persistent_data*/,
+                            DynamicVector<R>& /*element_data*/) const
+  {
+    DUNE_THROW(Exceptions::space_error, "This space does not support adaptation!");
+  }
+
+  virtual DynamicVector<R> prolong_onto(const ElementType& element,
+                                        const PersistentContainer<G, DynamicVector<R>>& persistent_data) const
+  {
+    DynamicVector<R> element_data;
+    this->prolong_onto(element, persistent_data, element_data);
+    return element_data;
+  }
 
   /// \}
   /// \name These methods are required for MPI communication, they are provided.

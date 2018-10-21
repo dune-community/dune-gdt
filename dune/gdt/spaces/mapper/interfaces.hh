@@ -56,6 +56,16 @@ public:
     global_indices(element, ret);
     return ret;
   }
+
+  /// \name These methods are required for grid adaptation.
+  /// \{
+
+  virtual void update_after_adapt()
+  {
+    DUNE_THROW(Exceptions::mapper_error, "This mapper does not support adaptation!");
+  }
+
+  /// \}
 }; // class MapperInterface
 
 
