@@ -107,10 +107,6 @@ public:
    * \name ``These methods are required by XT::Functions::GridFunctionInterface.''
    * \{
    */
-  std::string type() const override
-  {
-    return "dune.gdt.constdiscretefunction";
-  }
 
   std::string name() const override final
   {
@@ -223,16 +219,6 @@ public:
     auto ldf = local_discrete_function();
     ldf->bind(grid_element);
     return ldf;
-  }
-
-  /**
-   * \name ``These methods are required by XT::Functions::GridFunctionInterface.''
-   * \{
-   */
-
-  std::string type() const override final
-  {
-    return "dune.gdt.discretefunction";
   }
 
   /**

@@ -17,7 +17,7 @@
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/functions/interfaces/grid-function.hh>
 #include <dune/xt/functions/interfaces/function.hh>
-#include <dune/xt/functions/lambda/function.hh>
+#include <dune/xt/functions/generic/function.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 
