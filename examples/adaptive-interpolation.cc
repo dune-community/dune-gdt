@@ -19,20 +19,19 @@
 #include <dune/common/exceptions.hh>
 #include <dune/common/parallel/mpihelper.hh>
 #include <dune/grid/common/rangegenerators.hh>
-#include <dune/grid/utility/persistentcontainer.hh>
 
 #include <dune/xt/common/float_cmp.hh>
 #include <dune/xt/common/string.hh>
 #include <dune/xt/common/timedlogging.hh>
-#include <dune/xt/la/container/conversion.hh>
 #include <dune/xt/la/container/common/vector/dense.hh>
 #include <dune/xt/grid/entity.hh>
 #include <dune/xt/grid/grids.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/grid/walker.hh>
-#include <dune/xt/functions/lambda/function.hh>
+#include <dune/xt/functions/generic/function.hh>
 
+#include <dune/gdt/discretefunction/adaptation.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/interpolations.hh>
 #include <dune/gdt/local/bilinear-forms/integrals.hh>
@@ -132,34 +131,6 @@ void mark_elements(
 } // ... mark_elements(...)
 
 
-/**
- * \note At some point this functionality should find its way into the spaces.
- *
- * On the domain covered by the coarser element, this computes an L^2 projection of the function defined on the finer
- * elements (which corresponds to weighted averaging in the FV case).
- */
-void compute_restriction(const E& element, PersistentContainer<G, DynamicVector<double>>& persistent_data)
-{
-  auto& element_restriction_data = persistent_data[element];
-  if (element_restriction_data.size() == 0) {
-    DUNE_THROW_IF(element.isLeaf(), InvalidStateException, "");
-    for (auto&& child_element : descendantElements(element, element.level() + 1)) {
-      // ensure we have data on all descendant elements of the next level
-      compute_restriction(child_element, persistent_data);
-      // compute restriction
-      auto child_restriction_data = persistent_data[child_element];
-      child_restriction_data *= child_element.geometry().volume();
-      if (element_restriction_data.size() == 0)
-        element_restriction_data = child_restriction_data; // initialize with child data
-      else
-        element_restriction_data += child_restriction_data;
-    }
-    // now we have assembled h*value
-    element_restriction_data /= element.geometry().volume();
-  }
-} // ... compute_restriction(...)
-
-
 int main(int argc, char* argv[])
 {
   try {
@@ -177,20 +148,20 @@ int main(int argc, char* argv[])
     auto grid_view = grid.leafGridView();
 
     // funtion to interpolate
-    const XT::Functions::LambdaFunction<d> cosh(/*approx_pol_order=*/10,
-                                                [](const auto& x, const auto& /*param*/) { return std::cosh(x); });
+    const XT::Functions::GenericFunction<d> cosh(/*approx_pol_order=*/10,
+                                                 [](const auto& x, const auto& /*param*/) { return std::cosh(x); });
     const auto reference_norm = compute_local_l2_norms(cosh.as_grid_function(grid_view), grid_view).l2_norm();
 
-    // fake solution vector to demonstrate prolongation
-    V current_solution_vector = GDT::interpolate<V>(cosh, GDT::make_finite_volume_space<1>(grid_view)).dofs().vector();
+    // fake solution to demonstrate restriction/prolongation
+    auto fv_space = GDT::make_finite_volume_space<1>(grid_view);
+    auto current_solution = GDT::make_discrete_function<V>(fv_space);
+    GDT::interpolate(cosh, current_solution);
 
     // the main adaptation loop
+    auto helper = make_adaptation_helper(grid, current_solution);
     const double tolerance = DXTC_CONFIG_GET("tolerance", 1e-3);
     size_t counter = 0;
     while (true) {
-      // interpret current_solution as a discrete FV function on the current grid
-      auto fv_space = GDT::make_finite_volume_space<1>(grid_view);
-      auto current_solution = GDT::make_discrete_function(fv_space, current_solution_vector);
       logger.info() << "step " << counter << ", space has " << fv_space.mapper().size() << " DoFs" << std::endl;
       current_solution.visualize("interpolated_function_" + XT::Common::to_string(counter));
 
@@ -209,75 +180,13 @@ int main(int argc, char* argv[])
                     DXTC_CONFIG_GET("mark.refine_factor", 0.25),
                     DXTC_CONFIG_GET("mark.coarsen_factor", 0.01));
 
-      // now the actual adaptation
-      // * call preadapt, this will mark elements which might vanish due to coarsening
-      const bool elements_may_be_coarsened = grid.preAdapt();
-      //   - now we need some persistent storage to keep our data: all kept leaf elements might change their indices and
-      //                                                           all coarsened elements might vanish
-      //     this should keep local DoF vectors, which can be converted to DynamicVector<double>
-      PersistentContainer<G, DynamicVector<double>> persistent_data(grid, 0);
-      //   - we also need a container to recall those elements where we need to restrict to
-      PersistentContainer<G, bool> restriction_required(grid, 0, false);
-      //   - first of all, walk the current leaf of the grid ...
-      auto current_local_solution = current_solution.local_discrete_function();
-      for (auto&& element : elements(grid_view)) {
-        current_local_solution->bind(element);
-        //   ... to store the local DoFs ...
-        persistent_data[element] = XT::LA::convert_to<DynamicVector<double>>(current_local_solution->dofs());
-        //   ... and to mark father elements
-        if (element.mightVanish())
-          restriction_required[element.father()] = true;
-      }
-      //   - now walk the grid up all coarser levels ...
-      if (elements_may_be_coarsened) {
-        for (int level = grid.maxLevel() - 1; level >= 0; --level) {
-          auto level_view = grid.levelGridView(level);
-          for (auto&& element : elements(level_view)) {
-            // ... to compute restrictions ...
-            if (restriction_required[element])
-              compute_restriction(element, persistent_data);
-            // ... and to mark father elements
-            if (element.mightVanish())
-              restriction_required[element.father()] = true;
-          }
-        }
-      }
-      // from here on, restriction_required is not required any more
-      // * next, we actually adapt the grid
-      grid.adapt();
-      //   - from now on, fv_space, current_solution and current_local_solution must not be used any more,
-      //     this is not yet implemented!
-      //   - clean up data structures
-      persistent_data.resize();
-      persistent_data.shrinkToFit();
-      // * create a new space, resize the solution vector and create a new discrete function to hold the
-      //   prolongated/restricted values
-      auto new_fv_space = GDT::make_finite_volume_space<1>(grid_view);
-      current_solution_vector.resize(new_fv_space.mapper().size());
-      auto new_solution = GDT::make_discrete_function(new_fv_space, current_solution_vector);
-      // * copy the persistent data back to the discrete function ...
-      auto new_local_solution = new_solution.local_discrete_function();
-      for (auto&& element : elements(grid_view)) {
-        new_local_solution->bind(element);
-        if (element.isNew()) {
-          // ... by prolongation from the father element ...
-          const auto& father_data = persistent_data[element.father()];
-          DUNE_THROW_IF(father_data.size() == 0, InvalidStateException, "");
-          new_local_solution->dofs().assign_from(father_data);
-        } else {
-          // ... or by copying the data from this unchanged element
-          const auto& element_data = persistent_data[element];
-          DUNE_THROW_IF(element_data.size() == 0, InvalidStateException, "");
-          new_local_solution->dofs().assign_from(element_data);
-        }
-      }
-      // * clean up the grid
-      grid.postAdapt();
-      // from here on, persistent_data is not required any more
-      new_solution.visualize("interpolated_function_after_refinement_" + XT::Common::to_string(counter));
+      // adapt the grid (restricts/prolongs the solution)
+      helper.preAdapt();
+      helper.adapt();
+      helper.postAdapt();
 
       // now that the grid is adapted, interpolate the function on the new grid
-      GDT::interpolate(cosh, new_solution);
+      GDT::interpolate(cosh, current_solution);
 
       ++counter;
     }
