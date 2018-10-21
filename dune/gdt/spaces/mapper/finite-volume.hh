@@ -125,9 +125,18 @@ public:
       }
   } // ... global_indices(...)
 
+  /**
+   * \note In general, we would have to check for newly created GeometryTypes and to recreate the local FEs accordingly.
+   *       This is postponed until we have the LocalFiniteElementFamily.
+   */
+  void update_after_adapt() override final
+  {
+    mapper_->update();
+  }
+
 private:
   const GridViewType& grid_view_;
-  const std::shared_ptr<Implementation> mapper_;
+  std::shared_ptr<Implementation> mapper_;
   std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElement>>> finite_elements_;
 }; // class FiniteVolumeMapper
 

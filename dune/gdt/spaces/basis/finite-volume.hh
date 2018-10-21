@@ -83,6 +83,15 @@ public:
     return std::make_unique<LocalizedFiniteVolumeGlobalBasis>();
   }
 
+  /**
+   * \note In general, we would have to check for newly created GeometryTypes and to recreate the local FEs accordingly.
+   *       This is postponed until we have the LocalFiniteElementFamily.
+   */
+  void update_after_adapt() override final
+  {
+    // there is nothing to do
+  }
+
 private:
   class LocalizedFiniteVolumeGlobalBasis : public XT::Functions::ElementFunctionSetInterface<E, r, 1, R>
   {

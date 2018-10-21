@@ -12,6 +12,8 @@
 #ifndef DUNE_GDT_SPACES_L2_FINITE_VOLUME_HH
 #define DUNE_GDT_SPACES_L2_FINITE_VOLUME_HH
 
+#include <dune/grid/common/rangegenerators.hh>
+
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/grid/type_traits.hh>
 
@@ -41,6 +43,8 @@ class FiniteVolumeSpace<GV, r, 1, R> : public SpaceInterface<GV, r, 1, R>
 public:
   using typename BaseType::D;
   using BaseType::d;
+  using typename BaseType::G;
+  using typename BaseType::ElementType;
   using typename BaseType::GridViewType;
   using typename BaseType::GlobalBasisType;
   using typename BaseType::MapperType;
@@ -127,10 +131,69 @@ public:
     return true;
   }
 
+  /**
+   * On the domain covered by the coarser element, this computes an L^2 projection of the function defined on the finer
+   * elements (which corresponds to weighted averaging in the FV case).
+   */
+  void restrict_to(const ElementType& element,
+                   PersistentContainer<G, DynamicVector<R>>& persistent_data) const override final
+  {
+    auto& element_restriction_data = persistent_data[element];
+    if (element_restriction_data.size() == 0) {
+      DUNE_THROW_IF(element.isLeaf(), Exceptions::space_error, "");
+      for (auto&& child_element : descendantElements(element, element.level() + 1)) {
+        // ensure we have data on all descendant elements of the next level
+        this->restrict_to(child_element, persistent_data);
+        // compute restriction
+        auto child_restriction_data = persistent_data[child_element];
+        child_restriction_data *= child_element.geometry().volume();
+        if (element_restriction_data.size() == 0)
+          element_restriction_data = child_restriction_data; // initialize with child data
+        else
+          element_restriction_data += child_restriction_data;
+      }
+      // now we have assembled h*value
+      element_restriction_data /= element.geometry().volume();
+    }
+  } // ... restrict_to(...)
+
+  /**
+   * \note In general, we would have to check for newly created GeometryTypes and to recreate the local FEs accordingly.
+   *       This is postponed until we have the LocalFiniteElementFamily.
+   */
+  virtual void update_after_adapt()
+  {
+    basis_->update_after_adapt();
+    mapper_->update_after_adapt();
+  }
+
+  using BaseType::prolong_onto;
+
+  void prolong_onto(const ElementType& element,
+                    const PersistentContainer<G, DynamicVector<R>>& persistent_data,
+                    DynamicVector<R>& element_data) const override final
+  {
+    if (element.isNew()) {
+      // ... by prolongation from the father element ...
+      const auto& father_data = persistent_data[element.father()];
+      DUNE_THROW_IF(father_data.size() == 0, Exceptions::space_error, "");
+      if (element_data.size() != father_data.size())
+        element_data.resize(father_data.size());
+      element_data = father_data;
+    } else {
+      // ... or by copying the data from this unchanged element
+      const auto& original_element_data = persistent_data[element];
+      DUNE_THROW_IF(original_element_data.size() == 0, Exceptions::space_error, "");
+      if (element_data.size() != original_element_data.size())
+        element_data.resize(original_element_data.size());
+      element_data = original_element_data;
+    }
+  } // ... prolong_onto(...)
+
 private:
   const GridViewType grid_view_;
   std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements_;
-  const std::shared_ptr<MapperImplementation> mapper_;
+  std::shared_ptr<MapperImplementation> mapper_;
   const std::shared_ptr<GlobalBasisImplementation> basis_;
 }; // class FiniteVolumeSpace< ..., r, 1 >
 
