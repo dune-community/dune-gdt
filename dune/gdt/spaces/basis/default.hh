@@ -79,6 +79,8 @@ public:
     return max_size_;
   }
 
+  using BaseType::localize;
+
   std::unique_ptr<LocalizedBasisType> localize() const override final
   {
     return std::make_unique<LocalizedDefaultGlobalBasis>(*this);

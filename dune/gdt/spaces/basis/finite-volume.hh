@@ -76,6 +76,8 @@ public:
     return 1;
   }
 
+  using BaseType::localize;
+
   std::unique_ptr<LocalizedBasisType> localize() const override final
   {
     return std::make_unique<LocalizedFiniteVolumeGlobalBasis>();
