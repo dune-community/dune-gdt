@@ -24,6 +24,7 @@
 #include <dune/xt/grid/gridprovider/cube.hh>
 
 #include <dune/gdt/spaces/dg.hh>
+#include <dune/gdt/discretefunction/default.hh>
 
 
 template <class GridLayerType, int p>
