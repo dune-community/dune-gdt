@@ -16,7 +16,7 @@
 #include <dune/xt/la/container/vector-interface.hh>
 #include <dune/xt/grid/functors/interfaces.hh>
 #include <dune/xt/grid/walker.hh>
-#include <dune/xt/grid/walker/filters.hh>
+#include <dune/xt/grid/filters.hh>
 #include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/exceptions.hh>
@@ -227,7 +227,7 @@ public:
                    std::function<bool(const AssemblyGridViewType&, const ElementType&)> filter_lambda)
   {
     return append(
-        local_functional, param, XT::Grid::ApplyOn::LambdaFilteredElements<AssemblyGridViewType>(filter_lambda));
+        local_functional, param, XT::Grid::ApplyOn::GenericFilteredElements<AssemblyGridViewType>(filter_lambda));
   }
 
   // similar append for LocalIntersectionFunctionalInterface ...
