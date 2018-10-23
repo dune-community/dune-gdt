@@ -110,6 +110,9 @@ public:
     DUNE_THROW(Exceptions::space_error, "This space does not support adaptation!");
   }
 
+  /**
+   * \todo Detect if this is called more than once per adaptation.
+   */
   virtual void update_after_adapt()
   {
     DUNE_THROW(Exceptions::space_error, "This space does not support adaptation!");

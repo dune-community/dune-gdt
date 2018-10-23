@@ -158,7 +158,7 @@ int main(int argc, char* argv[])
     GDT::interpolate(cosh, current_solution);
 
     // the main adaptation loop
-    auto helper = make_adaptation_helper(grid, current_solution);
+    auto helper = make_adaptation_helper(grid, fv_space, current_solution);
     const double tolerance = DXTC_CONFIG_GET("tolerance", 1e-3);
     size_t counter = 0;
     while (true) {

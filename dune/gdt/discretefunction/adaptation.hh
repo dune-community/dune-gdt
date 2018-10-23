@@ -21,6 +21,7 @@
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/exceptions.hh>
+#include <dune/gdt/spaces/interface.hh>
 
 namespace Dune {
 namespace GDT {
@@ -37,6 +38,7 @@ class AdaptationHelper
 
 public:
   using DiscreteFunctionType = DiscreteFunction<V, GV, r, rC, RF>;
+  using SpaceType = SpaceInterface<GV, r, rC, RF>;
   using G = typename GV::Grid;
 
   AdaptationHelper(G& grd)
@@ -45,9 +47,10 @@ public:
   {
   }
 
-  ThisType& append(DiscreteFunctionType& discrete_function)
+  ThisType& append(SpaceType& space, DiscreteFunctionType& discrete_function)
   {
-    data_.emplace_back(discrete_function,
+    data_.emplace_back(space,
+                       discrete_function,
                        PersistentContainer<G, DynamicVector<RF>>(grid_, 0),
                        discrete_function.local_discrete_function());
     return *this;
@@ -69,10 +72,10 @@ public:
     // * walk the current leaf of the grid ...
     for (auto&& element : elements(grid_view)) {
       for (auto& data : data_) {
-        auto& local_function = std::get<2>(data);
+        auto& local_function = std::get<3>(data);
         local_function->bind(element);
         //   ... to store the local DoFs ...
-        auto& persistent_data = std::get<1>(data);
+        auto& persistent_data = std::get<2>(data);
         persistent_data[element] = XT::LA::convert_to<DynamicVector<RF>>(local_function->dofs());
       }
       //   ... and to mark father elements
@@ -86,8 +89,8 @@ public:
         for (auto&& element : elements(level_view)) {
           // ... to compute restrictions ...
           for (auto& data : data_) {
-            const auto& space = std::get<0>(data).access().space();
-            auto& persistent_data = std::get<1>(data);
+            const auto& space = std::get<0>(data).access();
+            auto& persistent_data = std::get<2>(data);
             if (restriction_required[element])
               space.restrict_to(element, persistent_data);
           }
@@ -106,22 +109,23 @@ public:
       grid_.adapt();
     // * clean up data structures
     for (auto& data : data_) {
-      auto& persistent_data = std::get<1>(data);
+      auto& persistent_data = std::get<2>(data);
       persistent_data.resize();
       persistent_data.shrinkToFit();
     }
     // * update spaces and resize vectors
     for (auto& data : data_) {
-      auto& discrete_function = std::get<0>(data).access();
-      discrete_function.space().update_after_adapt();
+      auto& space = std::get<0>(data).access();
+      auto& discrete_function = std::get<1>(data).access();
+      space.update_after_adapt();
       discrete_function.dofs().resize_after_adapt();
     }
     // * get the data back to the discrete function
     for (auto&& element : elements(grid_view)) {
       for (auto& data : data_) {
-        const auto& space = std::get<0>(data).access().space();
-        const auto& persistent_data = std::get<1>(data);
-        auto& local_function = std::get<2>(data);
+        auto& space = std::get<0>(data).access();
+        const auto& persistent_data = std::get<2>(data);
+        auto& local_function = std::get<3>(data);
         local_function->bind(element);
         local_function->dofs().assign_from(space.prolong_onto(element, persistent_data));
       }
@@ -138,13 +142,14 @@ public:
       auto old_data = std::move(data_);
       data_ = decltype(data_)();
       for (auto& data : old_data)
-        this->append(std::get<0>(data).access());
+        this->append(std::get<0>(data).access(), std::get<1>(data).access());
     }
   } // ... postAdapt(...)
 
 private:
   G& grid_;
-  std::list<std::tuple<XT::Common::StorageProvider<DiscreteFunctionType>,
+  std::list<std::tuple<XT::Common::StorageProvider<SpaceType>,
+                       XT::Common::StorageProvider<DiscreteFunctionType>,
                        PersistentContainer<G, DynamicVector<RF>>,
                        std::unique_ptr<typename DiscreteFunctionType::LocalDiscreteFunctionType>>>
       data_;
@@ -153,10 +158,11 @@ private:
 
 template <class V, class GV, size_t r, size_t rC, class RF>
 AdaptationHelper<V, GV, r, rC, RF> make_adaptation_helper(typename GV::Grid& grid,
+                                                          SpaceInterface<GV, r, rC, RF>& space,
                                                           DiscreteFunction<V, GV, r, rC, RF>& discrete_function)
 {
   AdaptationHelper<V, GV, r, rC, RF> helper(grid);
-  helper.append(discrete_function);
+  helper.append(space, discrete_function);
   return helper;
 }
 
