@@ -85,7 +85,7 @@ std::enable_if_t<XT::LA::is_vector<VectorType>::value
                                      typename IGV::Grid::template Codim<0>::Entity>::value,
                  DiscreteFunction<VectorType, GV, r, rC, R>>
 interpolate(const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, r, rC, R>& source,
-            SpaceInterface<GV, r, rC, R>& target_space,
+            const SpaceInterface<GV, r, rC, R>& target_space,
             const GridView<IGV>& interpolation_grid_view)
 {
   auto target_function = make_discrete_function<VectorType>(target_space);
@@ -101,7 +101,7 @@ interpolate(const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_
 template <class VectorType, class GV, size_t r, size_t rC, class R>
 std::enable_if_t<XT::LA::is_vector<VectorType>::value, DiscreteFunction<VectorType, GV, r, rC, R>>
 interpolate(const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, r, rC, R>& source,
-            SpaceInterface<GV, r, rC, R>& target_space)
+            const SpaceInterface<GV, r, rC, R>& target_space)
 {
   auto target_function = make_discrete_function<VectorType>(target_space);
   interpolate(source, target_function);
@@ -149,7 +149,7 @@ std::enable_if_t<XT::LA::is_vector<VectorType>::value
                                      typename IGV::Grid::template Codim<0>::Entity>::value,
                  DiscreteFunction<VectorType, GV, r, rC, R>>
 interpolate(const XT::Functions::FunctionInterface<GridView<IGV>::dimension, r, rC, R>& source,
-            SpaceInterface<GV, r, rC, R>& target_space,
+            const SpaceInterface<GV, r, rC, R>& target_space,
             const GridView<IGV>& interpolation_grid_view)
 {
   return interpolate<VectorType>(
@@ -164,54 +164,54 @@ interpolate(const XT::Functions::FunctionInterface<GridView<IGV>::dimension, r, 
 template <class VectorType, class GV, size_t r, size_t rC, class R>
 std::enable_if_t<XT::LA::is_vector<VectorType>::value, DiscreteFunction<VectorType, GV, r, rC, R>>
 interpolate(const XT::Functions::FunctionInterface<GV::dimension, r, rC, R>& source,
-            SpaceInterface<GV, r, rC, R>& target_space)
+            const SpaceInterface<GV, r, rC, R>& target_space)
 {
   return interpolate<VectorType>(source, target_space, target_space.grid_view());
 }
 
 
-// ### Variants for GenericFunction
+// ### Variants for LambdaFunction
 
 
 /**
- * \brief Interpolates a function given as a generic function within a given space [most general variant].
+ * \brief Interpolates a function given as a lambda expression within a given space [most general variant].
  *
- * Simply creates a XT::Functions::GenericFunction and redirects to the appropriate interpolate() function.
+ * Simply creates a XT::Functions::LambdaFunction and redirects to the appropriate interpolate() function.
  */
 template <class GV, size_t r, size_t rC, class R, class V, class IGV>
 std::enable_if_t<std::is_same<XT::Grid::extract_entity_t<GV>, typename IGV::Grid::template Codim<0>::Entity>::value,
                  void>
 interpolate(
     const int source_order,
-    const std::function<typename XT::Functions::GenericFunction<GridView<IGV>::dimension, r, rC, R>::RangeReturnType(
-        const typename XT::Functions::GenericFunction<GridView<IGV>::dimension, r, rC, R>::DomainType&,
-        const XT::Common::Parameter&)> source_evaluate_func,
+    const std::function<typename XT::Functions::LambdaFunction<GridView<IGV>::dimension, r, rC, R>::RangeReturnType(
+        const typename XT::Functions::LambdaFunction<GridView<IGV>::dimension, r, rC, R>::DomainType&,
+        const XT::Common::Parameter&)> source_evaluate_lambda,
     DiscreteFunction<V, GV, r, rC, R>& target,
     const GridView<IGV>& interpolation_grid_view)
 {
-  interpolate(XT::Functions::GenericFunction<GridView<IGV>::dimension, r, rC, R>(source_order, source_evaluate_func),
+  interpolate(XT::Functions::LambdaFunction<GridView<IGV>::dimension, r, rC, R>(source_order, source_evaluate_lambda),
               target,
               interpolation_grid_view);
 }
 
 
 /**
- * \brief Interpolates a function given as a generic function within a given space [uses
+ * \brief Interpolates a function given as a lambda expression within a given space [uses
  *        target.space().grid_view() as interpolation_grid_view].
  **/
 template <class GV, size_t r, size_t rC, class R, class V>
 void interpolate(const int source_order,
-                 const std::function<typename XT::Functions::GenericFunction<GV::dimension, r, rC, R>::RangeReturnType(
-                     const typename XT::Functions::GenericFunction<GV::dimension, r, rC, R>::DomainType&,
-                     const XT::Common::Parameter&)> source_evaluate_func,
+                 const std::function<typename XT::Functions::LambdaFunction<GV::dimension, r, rC, R>::RangeReturnType(
+                     const typename XT::Functions::LambdaFunction<GV::dimension, r, rC, R>::DomainType&,
+                     const XT::Common::Parameter&)> source_evaluate_lambda,
                  DiscreteFunction<V, GV, r, rC, R>& target)
 {
-  interpolate(XT::Functions::GenericFunction<GV::dimension, r, rC, R>(source_order, source_evaluate_func), target);
+  interpolate(XT::Functions::LambdaFunction<GV::dimension, r, rC, R>(source_order, source_evaluate_lambda), target);
 }
 
 
 /**
- * \brief Interpolates a function given as a generic function within a given space [creates a suitable target
+ * \brief Interpolates a function given as a lambda expression within a given space [creates a suitable target
  *        function].
  **/
 template <class VectorType, class GV, size_t r, size_t rC, class R, class IGV>
@@ -221,33 +221,33 @@ std::enable_if_t<XT::LA::is_vector<VectorType>::value
                  DiscreteFunction<VectorType, GV, r, rC, R>>
 interpolate(
     const int source_order,
-    const std::function<typename XT::Functions::GenericFunction<GridView<IGV>::dimension, r, rC, R>::RangeReturnType(
-        const typename XT::Functions::GenericFunction<GridView<IGV>::dimension, r, rC, R>::DomainType&,
-        const XT::Common::Parameter&)> source_evaluate_func,
-    SpaceInterface<GV, r, rC, R>& target_space,
+    const std::function<typename XT::Functions::LambdaFunction<GridView<IGV>::dimension, r, rC, R>::RangeReturnType(
+        const typename XT::Functions::LambdaFunction<GridView<IGV>::dimension, r, rC, R>::DomainType&,
+        const XT::Common::Parameter&)> source_evaluate_lambda,
+    const SpaceInterface<GV, r, rC, R>& target_space,
     const GridView<IGV>& interpolation_grid_view)
 {
   return interpolate<VectorType>(
-      XT::Functions::GenericFunction<GridView<IGV>::dimension, r, rC, R>(source_order, source_evaluate_func),
+      XT::Functions::LambdaFunction<GridView<IGV>::dimension, r, rC, R>(source_order, source_evaluate_lambda),
       target_space,
       interpolation_grid_view);
 }
 
 
 /**
- * \brief Interpolates a function given as a generic function within a given space [creates a suitable target
+ * \brief Interpolates a function given as a lambda expression within a given space [creates a suitable target
  *        function, uses target_space.grid_view() as interpolation_grid_view].
  **/
 template <class VectorType, class GV, size_t r, size_t rC, class R>
 std::enable_if_t<XT::LA::is_vector<VectorType>::value, DiscreteFunction<VectorType, GV, r, rC, R>>
 interpolate(const int source_order,
-            const std::function<typename XT::Functions::GenericFunction<GV::dimension, r, rC, R>::RangeReturnType(
-                const typename XT::Functions::GenericFunction<GV::dimension, r, rC, R>::DomainType&,
-                const XT::Common::Parameter&)> source_evaluate_func,
-            SpaceInterface<GV, r, rC, R>& target_space)
+            const std::function<typename XT::Functions::LambdaFunction<GV::dimension, r, rC, R>::RangeReturnType(
+                const typename XT::Functions::LambdaFunction<GV::dimension, r, rC, R>::DomainType&,
+                const XT::Common::Parameter&)> source_evaluate_lambda,
+            const SpaceInterface<GV, r, rC, R>& target_space)
 {
   return interpolate<VectorType>(
-      XT::Functions::GenericFunction<GV::dimension, r, rC, R>(source_order, source_evaluate_func), target_space);
+      XT::Functions::LambdaFunction<GV::dimension, r, rC, R>(source_order, source_evaluate_lambda), target_space);
 }
 
 
