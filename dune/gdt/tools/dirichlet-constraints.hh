@@ -9,15 +9,10 @@
 //   Rene Milk       (2014, 2016)
 //   Tobias Leibner  (2014, 2016)
 
-#ifndef DUNE_GDT_SPACES_CONSTRAINTS_HH
-#define DUNE_GDT_SPACES_CONSTRAINTS_HH
-
-#include <mutex>
-
-#include <dune/common/unused.hh>
+#ifndef DUNE_GDT_SPACES_TOOLS_DIRICHLET_CONSTRAINTS_HH
+#define DUNE_GDT_SPACES_TOOLS_DIRICHLET_CONSTRAINTS_HH
 
 #include <dune/xt/common/parallel/threadstorage.hh>
-#include <dune/xt/common/crtp.hh>
 #include <dune/xt/grid/boundaryinfo.hh>
 #include <dune/xt/grid/functors/interfaces.hh>
 #include <dune/xt/la/container/interfaces.hh>
@@ -64,11 +59,10 @@ public:
   static const constexpr size_t rC = SpaceType::rC;
   using R = typename SpaceType::R;
 
-  DirichletConstraints(const BoundaryInfoType& bnd_info, const SpaceType& space, const bool set = true)
+  DirichletConstraints(const BoundaryInfoType& bnd_info, const SpaceType& space)
     : Propagator(this)
     , boundary_info_(bnd_info)
     , space_(space)
-    , set_(set)
   {
   }
 
@@ -81,7 +75,6 @@ public:
     const auto intersection_it_end = space_.grid_view().iend(element);
     for (auto intersection_it = space_.grid_view().ibegin(element); intersection_it != intersection_it_end;
          ++intersection_it) {
-      // only work on dirichlet ones
       const auto& intersection = *intersection_it;
       // actual dirichlet intersections + process boundaries for parallel runs
       if (boundary_info_.type(intersection) == XT::Grid::DirichletBoundary()
@@ -89,10 +82,12 @@ public:
         const auto intersection_index = intersection.indexInInside();
         for (const auto& local_DoF : local_key_indices[1][intersection_index])
           local_DoFs.insert(local_DoF);
-        for (int ii = 0; ii < reference_element.size(intersection_index, 1, d); ++ii) {
-          const auto element_vertex_id = reference_element.subEntity(intersection_index, 1, ii, d);
-          for (const auto& local_DoF : local_key_indices[d][element_vertex_id])
-            local_DoFs.insert(local_DoF);
+        for (int cc = 2; cc <= d; ++cc) {
+          for (int ii = 0; ii < reference_element.size(intersection_index, 1, cc); ++ii) {
+            const auto subentity_id = reference_element.subEntity(intersection_index, 1, ii, cc);
+            for (const auto& local_DoF : local_key_indices[cc][subentity_id])
+              local_DoFs.insert(local_DoF);
+          }
         }
       }
     }
@@ -101,7 +96,7 @@ public:
         dirichlet_DoFs_.insert(space_.mapper().global_index(element, local_DoF));
       }
     }
-  }
+  } // ... apply_local(...)
 
   const BoundaryInfoType& boundary_info() const
   {
@@ -114,14 +109,26 @@ public:
   }
 
   template <class M>
-  void apply(XT::LA::MatrixInterface<M>& matrix) const
+  void apply(XT::LA::MatrixInterface<M>& matrix, const bool only_clear = false, const bool ensure_symmetry = true) const
   {
-    if (set_) {
-      for (const auto& DoF : dirichlet_DoFs_)
-        matrix.unit_row(DoF);
+    if (only_clear) {
+      if (ensure_symmetry)
+        for (const auto& DoF : dirichlet_DoFs_) {
+          matrix.clear_col(DoF);
+          matrix.clear_row(DoF);
+        }
+      else
+        for (const auto& DoF : dirichlet_DoFs_)
+          matrix.clear_row(DoF);
     } else {
-      for (const auto& DoF : dirichlet_DoFs_)
-        matrix.clear_row(DoF);
+      if (ensure_symmetry)
+        for (const auto& DoF : dirichlet_DoFs_) {
+          matrix.unit_col(DoF);
+          matrix.unit_row(DoF);
+        }
+      else
+        for (const auto& DoF : dirichlet_DoFs_)
+          matrix.unit_row(DoF);
     }
   } // ... apply(...)
 
@@ -133,28 +140,44 @@ public:
   }
 
   template <class M, class V>
-  void apply(XT::LA::MatrixInterface<M>& matrix, XT::LA::VectorInterface<V>& vector) const
+  void apply(XT::LA::MatrixInterface<M>& matrix,
+             XT::LA::VectorInterface<V>& vector,
+             const bool only_clear = false,
+             const bool ensure_symmetry = true) const
   {
-    if (set_) {
-      for (const auto& DoF : dirichlet_DoFs_) {
-        matrix.unit_row(DoF);
-        matrix.unit_col(DoF);
-        vector[DoF] = 0.0;
-      }
+    if (only_clear) {
+      if (ensure_symmetry)
+        for (const auto& DoF : dirichlet_DoFs_) {
+          matrix.clear_col(DoF);
+          matrix.clear_row(DoF);
+          vector[DoF] = 0.0;
+        }
+      else
+        for (const auto& DoF : dirichlet_DoFs_) {
+          matrix.clear_row(DoF);
+          vector[DoF] = 0.0;
+        }
     } else {
-      for (const auto& DoF : dirichlet_DoFs_) {
-        matrix.clear_row(DoF);
-        vector[DoF] = 0.0;
-      }
+      if (ensure_symmetry)
+        for (const auto& DoF : dirichlet_DoFs_) {
+          matrix.unit_col(DoF);
+          matrix.unit_row(DoF);
+          vector[DoF] = 0.0;
+        }
+      else
+        for (const auto& DoF : dirichlet_DoFs_) {
+          matrix.unit_row(DoF);
+          vector[DoF] = 0.0;
+        }
     }
   } // ... apply(...)
 
-  void finalize() override
+  void finalize() override final
   {
     this->finalize_imp();
   }
 
-  BaseType* copy() override
+  BaseType* copy() override final
   {
     return Propagator::copy_imp();
   }
@@ -171,8 +194,7 @@ public:
 
 private:
   const BoundaryInfoType& boundary_info_;
-  const SpaceInterface<GridView, r, rC, R>& space_;
-  const bool set_;
+  const SpaceType& space_;
   std::set<size_t> dirichlet_DoFs_;
 }; // class DirichletConstraints
 
@@ -180,4 +202,4 @@ private:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_SPACES_CONSTRAINTS_HH
+#endif // DUNE_GDT_SPACES_TOOLS_DIRICHLET_CONSTRAINTS_HH
