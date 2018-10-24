@@ -13,6 +13,7 @@
 #include <dune/geometry/quadraturerules.hh>
 
 #include <dune/gdt/local/integrands/interfaces.hh>
+#include <dune/gdt/local/integrands/generic.hh>
 
 #include "interfaces.hh"
 
@@ -43,10 +44,21 @@ public:
   using typename BaseType::LocalAnsatzBasisType;
 
   using IntegrandType = LocalBinaryElementIntegrandInterface<E, t_r, t_rC, TR, F, a_r, a_rC, AR>;
+  using GenericIntegrand = GenericLocalBinaryElementIntegrand<E, t_r, t_rC, TR, F, a_r, a_rC, AR>;
 
   LocalElementIntegralBilinearForm(const IntegrandType& integrand, const int over_integrate = 0)
     : BaseType(integrand.parameter_type())
     , integrand_(integrand.copy())
+    , over_integrate_(over_integrate)
+  {
+  }
+
+  LocalElementIntegralBilinearForm(typename GenericIntegrand::GenericOrderFunctionType order_function,
+                                   typename GenericIntegrand::GenericEvalauteFunctionType evaluate_function,
+                                   const XT::Common::ParameterType& param_type = {},
+                                   const int over_integrate = 0)
+    : BaseType(param_type)
+    , integrand_(GenericIntegrand(order_function, evaluate_function).copy())
     , over_integrate_(over_integrate)
   {
   }
