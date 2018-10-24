@@ -199,6 +199,15 @@ private:
 }; // class DirichletConstraints
 
 
+template <class GV, size_t r, size_t rC, class R>
+DirichletConstraints<XT::Grid::extract_intersection_t<GV>, SpaceInterface<GV, r, rC, R>>
+make_dirichlet_constraints(const SpaceInterface<GV, r, rC, R>& space,
+                           const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GV>>& boundary_info)
+{
+  return DirichletConstraints<XT::Grid::extract_intersection_t<GV>, SpaceInterface<GV, r, rC, R>>(boundary_info, space);
+}
+
+
 } // namespace GDT
 } // namespace Dune
 
