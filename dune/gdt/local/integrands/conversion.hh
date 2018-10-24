@@ -114,8 +114,8 @@ private:
  */
 template <class E, size_t t_r, size_t t_rC, class TF, class F, size_t a_r, size_t a_rC, class AF>
 LocalBinaryToUnaryElementIntegrand<E, t_r, t_rC, TF, F, a_r, a_rC, AF> local_binary_to_unary_element_integrand(
-    const XT::Functions::GridFunctionInterface<E, t_r, t_rC, TF>& inducing_function_as_test_basis,
-    const LocalBinaryElementIntegrandInterface<E, t_r, t_rC, TF, F, a_r, a_rC, AF>& local_binary_element_integrand)
+    const LocalBinaryElementIntegrandInterface<E, t_r, t_rC, TF, F, a_r, a_rC, AF>& local_binary_element_integrand,
+    const XT::Functions::GridFunctionInterface<E, t_r, t_rC, TF>& inducing_function_as_test_basis)
 {
   return LocalBinaryToUnaryElementIntegrand<E, t_r, t_rC, TF, F, a_r, a_rC, AF>(inducing_function_as_test_basis,
                                                                                 local_binary_element_integrand);
