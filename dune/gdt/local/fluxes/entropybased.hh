@@ -415,6 +415,8 @@ public:
           lp.setRowLower(ii, u_prime[uii]);
           lp.setRowUpper(ii, u_prime[uii]);
         }
+        // set maximal wall time. If this is not set, in rare cases the primal method never returns
+        lp.setMaximumWallSeconds(60);
         // Now check solvability
         lp.primal();
         return lp.primalFeasible();

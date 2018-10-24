@@ -683,7 +683,7 @@ private:
     constexpr int num_cols = static_cast<int>(dimRange);
     auto lp_ptr = std::make_unique<ClpSimplex>(false);
     auto& lp = *lp_ptr;
-    ;
+
     // set number of rows, columns will be added below
     lp.resize(num_rows, 0);
 
@@ -698,6 +698,8 @@ private:
       lp.addColumn(num_rows, row_indices.data(), &(A_tilde_transposed[jj][0]), 0., 1., 1.);
 
     lp.setLogLevel(0);
+
+    lp.setMaximumWallSeconds(60);
 
     // set rhs
     for (int ii = 0; ii < num_rows; ++ii)
@@ -797,7 +799,13 @@ public:
 private:
   void setup_linear_program() const
   {
-    if (!*lp_) {
+    // It should be possible to reuse the same ClpSimplex class over and over again, only changing the relevant columns.
+    // However, in rare cases the class seems to get corrupted, always claiming the LP is infeasible, even if it is not.
+    // Creating a new LP from time to time seems to fix this problem.
+    thread_local int counter;
+    ++counter;
+    if (!*lp_ || !(counter % 100)) {
+      counter = 0;
       // We start with creating a model with dimRange rows and num_quad_points+1 columns */
       assert(basis_values_.size() + dimRange < std::numeric_limits<int>::max());
       size_t num_cols = basis_values_.size() + dimRange; /* variables are x_1, ..., x_{num_quad_points}, theta_1,
@@ -863,6 +871,7 @@ private:
       lp.addColumn(num_rows, row_indices.data(), &(A_tilde_transposed[jj][0]), 0., 1., 1.);
 
     // Now solve
+    lp.setMaximumWallSeconds(60);
     lp.primal();
     const auto* thetas_ptr = lp.primalColumnSolution();
     VectorType thetas;

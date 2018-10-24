@@ -715,7 +715,13 @@ public:
 private:
   void setup_linear_program()
   {
-    if (!*lp_) {
+    // It should be possible to reuse the same ClpSimplex class over and over again, only changing the relevant columns.
+    // However, in rare cases the class seems to get corrupted, always claiming the LP is infeasible, even if it is not.
+    // Creating a new LP from time to time seems to fix this problem.
+    thread_local int counter;
+    ++counter;
+    if (!*lp_ || !(counter % 100)) {
+      counter = 0;
       const auto& quadrature = basis_functions_.quadratures().merged();
       // We start with creating a model with dimRange rows and num_quad_points+1 columns */
       constexpr int num_rows = static_cast<int>(dimRange);
@@ -783,6 +789,7 @@ private:
     lp.addColumn(num_rows, row_indices.data(), &(u_l_minus_u_bar[0]), -0.1, 1., 1.);
 
     // Now solve
+    lp.setMaximumWallSeconds(60);
     lp.primal();
     theta = lp.objectiveValue();
     if (!lp.isProvenOptimal())
