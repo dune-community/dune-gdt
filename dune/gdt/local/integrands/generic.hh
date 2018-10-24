@@ -88,6 +88,93 @@ private:
 }; // class GenericLocalUnaryElementIntegrand
 
 
+template <class E,
+          size_t t_r = 1,
+          size_t t_rC = 1,
+          class TF = double,
+          class F = double,
+          size_t a_r = t_r,
+          size_t a_rC = t_rC,
+          class AF = TF>
+class GenericLocalBinaryElementIntegrand
+    : public LocalBinaryElementIntegrandInterface<E, t_r, t_rC, TF, F, a_r, a_rC, AF>
+{
+  using ThisType = GenericLocalBinaryElementIntegrand<E, t_r, t_rC, TF, F, a_r, a_rC, AF>;
+  using BaseType = LocalBinaryElementIntegrandInterface<E, t_r, t_rC, TF, F, a_r, a_rC, AF>;
+
+public:
+  using typename BaseType::LocalTestBasisType;
+  using typename BaseType::LocalAnsatzBasisType;
+  using typename BaseType::DomainType;
+
+  using GenericOrderFunctionType = std::function<int(const LocalTestBasisType& /*test_basis*/,
+                                                     const LocalAnsatzBasisType& /*ansatz_basis*/,
+                                                     const XT::Common::Parameter& /*param*/)>;
+  using GenericEvalauteFunctionType = std::function<void(const LocalTestBasisType& /*test_basis*/,
+                                                         const LocalAnsatzBasisType& /*ansatz_basis*/,
+                                                         const DomainType& /*point_in_reference_element*/,
+                                                         DynamicMatrix<F>& /*result*/,
+                                                         const XT::Common::Parameter& /*param*/)>;
+
+  GenericLocalBinaryElementIntegrand(GenericOrderFunctionType order_function,
+                                     GenericEvalauteFunctionType evaluate_function,
+                                     const XT::Common::ParameterType& param_type = {})
+    : BaseType(param_type)
+    , order_(order_function)
+    , evaluate_(evaluate_function)
+  {
+  }
+
+  GenericLocalBinaryElementIntegrand(const ThisType& other)
+    : BaseType(other.parameter_type())
+    , order_(other.order_)
+    , evaluate_(other.evaluate_)
+  {
+  }
+
+  std::unique_ptr<BaseType> copy() const
+  {
+    return std::make_unique<ThisType>(*this);
+  }
+
+  int order(const LocalTestBasisType& test_basis,
+            const LocalAnsatzBasisType& ansatz_basis,
+            const XT::Common::Parameter& param = {}) const
+  {
+    return order_(test_basis, ansatz_basis, this->parse_parameter(param));
+  }
+
+  using BaseType::evaluate;
+
+  void evaluate(const LocalTestBasisType& test_basis,
+                const LocalAnsatzBasisType& ansatz_basis,
+                const DomainType& point_in_reference_element,
+                DynamicMatrix<F>& result,
+                const XT::Common::Parameter& param = {}) const
+  {
+    // prepare storage
+    const size_t rows = test_basis.size(param);
+    const size_t cols = ansatz_basis.size(param);
+    if (result.rows() < rows || result.cols() < cols)
+      result.resize(rows, cols);
+    // evaluate
+    evaluate_(test_basis, ansatz_basis, point_in_reference_element, result, this->parse_parameter(param));
+    // check
+    DUNE_THROW_IF(result.rows() < rows || result.cols() < cols,
+                  Exceptions::integrand_error,
+                  "test_basis.size(param) = " << rows << "\n   result.rows() = " << result.rows()
+                                              << "ansatz_basis.size(param) = "
+                                              << cols
+                                              << "\n   result.cols() = "
+                                              << result.cols());
+  } // ... evaluate(...)
+
+private:
+  const GenericOrderFunctionType order_;
+  const GenericEvalauteFunctionType evaluate_;
+}; // class GenericLocalBinaryElementIntegrand
+
+
 } // namespace GDT
 } // namespace Dun
 
