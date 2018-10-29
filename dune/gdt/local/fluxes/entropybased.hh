@@ -21,6 +21,7 @@
 #include <boost/align/aligned_allocator.hpp>
 
 #include <dune/xt/common/debug.hh>
+#include <dune/xt/common/fmatrix.hh>
 #include <dune/xt/common/fvector.hh>
 #include <dune/xt/common/lapacke.hh>
 #include <dune/xt/common/math.hh>
@@ -244,9 +245,6 @@ public:
       const size_t k_0 = 500,
       const size_t k_max = 1000,
       const RangeFieldType epsilon = std::pow(2, -52),
-      const MatrixType& T_minus_one = XT::LA::eye_matrix<MatrixType>(dimRange,
-                                                                     dimRange,
-                                                                     XT::LA::dense_pattern(dimRange, dimRange)),
       const std::string name = static_id())
     : index_set_(grid_layer.indexSet())
     , basis_functions_(basis_functions)
@@ -261,12 +259,13 @@ public:
     , k_0_(k_0)
     , k_max_(k_max)
     , epsilon_(epsilon)
-    , T_minus_one_(T_minus_one)
+    , T_minus_one_(std::make_unique<MatrixType>())
     , name_(name)
     , cache_(index_set_.size(0), LocalCacheType(cache_size))
     , alpha_storage_(index_set_.size(0))
     , mutexes_(index_set_.size(0))
   {
+    XT::LA::eye_matrix(*T_minus_one_);
     size_t ll = 0;
     for (const auto& quad_point : basis_functions_.quadratures().merged()) {
       quad_points_[ll] = quad_point.position();
@@ -962,7 +961,9 @@ public:
       calculate_hessian(beta_in, P_k, H);
       XT::LA::cholesky(H);
       const auto& L = H;
-      T_k.rightmultiply(L);
+      thread_local std::unique_ptr<MatrixType> tmp_mat = std::make_unique<MatrixType>();
+      *tmp_mat = T_k;
+      rightmultiply(T_k, *tmp_mat, L);
       L.mtv(beta_in, beta_out);
       StateRangeType tmp_vec;
       XT::LA::solve_lower_triangular(L, tmp_vec, v_k);
@@ -1019,7 +1020,7 @@ public:
                                            k_0_,
                                            k_max_,
                                            epsilon_,
-                                           T_minus_one_,
+                                           *T_minus_one_,
                                            cache_[index],
                                            alpha_storage_[index],
                                            mutexes_[index]
@@ -1094,7 +1095,7 @@ private:
   const size_t k_0_;
   const size_t k_max_;
   const RangeFieldType epsilon_;
-  const MatrixType T_minus_one_;
+  const std::unique_ptr<MatrixType> T_minus_one_;
   const std::string name_;
   // Use unique_ptr in the vectors to avoid the memory cost for storing twice as many matrices or vectors as needed
   // (see
@@ -1870,10 +1871,6 @@ public:
       const size_t k_0 = 500,
       const size_t k_max = 1000,
       const RangeFieldType epsilon = std::pow(2, -52),
-      const FieldMatrix<RangeFieldType, block_size, block_size>& T_minus_one =
-          XT::LA::eye_matrix<FieldMatrix<RangeFieldType, block_size, block_size>>(block_size,
-                                                                                  XT::LA::dense_pattern(block_size,
-                                                                                                        block_size)),
       const std::string name = static_id())
     : index_set_(grid_layer.indexSet())
     , basis_functions_(basis_functions)
@@ -1886,12 +1883,12 @@ public:
     , k_0_(k_0)
     , k_max_(k_max)
     , epsilon_(epsilon)
-    , T_minus_one_(T_minus_one)
     , name_(name)
     , cache_(index_set_.size(0), LocalCacheType(cache_size))
     , alpha_storage_(index_set_.size(0))
     , mutexes_(index_set_.size(0))
   {
+    XT::LA::eye_matrix(T_minus_one_);
     Localfunction::template helper<dimDomain>::calculate_plane_coefficients(basis_functions_);
     const auto& quadratures = basis_functions_.quadratures();
     assert(quadratures.size() == num_blocks);
@@ -2016,7 +2013,7 @@ private:
   const size_t k_0_;
   const size_t k_max_;
   const RangeFieldType epsilon_;
-  const BlockMatrixType T_minus_one_;
+  BlockMatrixType T_minus_one_;
   const std::string name_;
   mutable std::vector<LocalCacheType> cache_;
   mutable std::vector<AlphaStorageType> alpha_storage_;
