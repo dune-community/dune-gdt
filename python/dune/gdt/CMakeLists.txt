@@ -19,8 +19,12 @@ dune_pybindxi_add_module(__projections EXCLUDE_FROM_ALL ${header} projections/bi
 
 dune_pybindxi_add_module(__spaces EXCLUDE_FROM_ALL ${header} spaces/bindings.cc)
 
-dune_pybindxi_add_module(
-  __assembler EXCLUDE_FROM_ALL ${header} assembler/system.cc assembler/system/alu.cc assembler/system/yasp.cc)
+dune_pybindxi_add_module(__assembler
+                         EXCLUDE_FROM_ALL
+                         ${header}
+                         assembler/system.cc
+                         assembler/system/alu.cc
+                         assembler/system/yasp.cc)
 
 dune_pybindxi_add_module(__spaces_block EXCLUDE_FROM_ALL ${header} playground/spaces/block.cc)
 
@@ -34,8 +38,11 @@ dune_pybindxi_add_module(__local_diffusive_flux_estimation_operator
 dune_pybindxi_add_module(__local_elliptic_ipdg_operators EXCLUDE_FROM_ALL ${header} local/elliptic-ipdg-operators.cc)
 
 # the operators * elliptic
-dune_pybindxi_add_module(
-  __operators_elliptic EXCLUDE_FROM_ALL ${header} operators/elliptic/bindings.cc operators/elliptic/istl.cc)
+dune_pybindxi_add_module(__operators_elliptic
+                         EXCLUDE_FROM_ALL
+                         ${header}
+                         operators/elliptic/bindings.cc
+                         operators/elliptic/istl.cc)
 # * elliptic-ipdg
 dune_pybindxi_add_module(__operators_elliptic_ipdg
                          EXCLUDE_FROM_ALL
@@ -77,4 +84,3 @@ dune_pybindxi_add_module(__functionals_l2
                          functionals/l2/bindings.cc
                          functionals/l2/alu_istl.cc
                          functionals/l2/yasp_istl.cc)
-

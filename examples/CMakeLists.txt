@@ -11,10 +11,24 @@
 # ~~~
 
 macro(cleanup_target_name arg)
-  string(REPLACE ${PROJECT_SOURCE_DIR} "" targname ${arg})
-  string(REPLACE ".cc" "" targname ${targname})
-  string(REGEX REPLACE "/" "__" targname ${targname})
-  string(REGEX REPLACE "^__" "" targname ${targname})
+  string(REPLACE ${PROJECT_SOURCE_DIR}
+                 ""
+                 targname
+                 ${arg})
+  string(REPLACE ".cc"
+                 ""
+                 targname
+                 ${targname})
+  string(REGEX
+         REPLACE "/"
+                 "__"
+                 targname
+                 ${targname})
+  string(REGEX
+         REPLACE "^__"
+                 ""
+                 targname
+                 ${targname})
 endmacro(cleanup_target_name)
 
 file(GLOB_RECURSE example_sources "${CMAKE_CURRENT_SOURCE_DIR}/*.cc")

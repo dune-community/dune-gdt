@@ -11,7 +11,7 @@
 #   Rene Milk       (2016)
 
 Module: dune-gdt
-Version: 0.3-dev
+Version: 18.11-dev
 Maintainer: felix.schindler@wwu.de
-Depends: dune-common (>= 2.4) dune-localfunctions dune-xt-grid dune-xt-la dune-xt-functions
+Depends: dune-localfunctions dune-xt-grid (>= 18.11) dune-xt-la (>= 18.11) dune-xt-functions (>= 18.11)
 Suggests: dune-fem (>= 1.3)

@@ -18,7 +18,10 @@ project("dune-gdt" CXX)
 cmake_minimum_required(VERSION 3.1)
 
 if(NOT (dune-common_DIR OR dune-common_ROOT OR "${CMAKE_PREFIX_PATH}" MATCHES ".*dune-common.*"))
-  string(REPLACE ${CMAKE_PROJECT_NAME} dune-common dune-common_DIR ${PROJECT_BINARY_DIR})
+  string(REPLACE ${CMAKE_PROJECT_NAME}
+                 dune-common
+                 dune-common_DIR
+                 ${PROJECT_BINARY_DIR})
 endif()
 
 # dune-common
@@ -48,7 +51,8 @@ endif(EIGEN3_FOUND)
 find_file(SPE10MODEL1DATA
           NAMES perm_case1.dat
           PATHS "${dune-gdt_SOURCE_DIR}/../local/src/spe10/model1"
-          DOC "Location of perm_case1.dat" NO_DEFAULT_PATH)
+          DOC "Location of perm_case1.dat"
+          NO_DEFAULT_PATH)
 
 add_subdirectory(doc)
 add_subdirectory(dune)
