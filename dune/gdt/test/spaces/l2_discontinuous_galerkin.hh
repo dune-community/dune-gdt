@@ -18,9 +18,9 @@ namespace Dune {
 namespace GDT {
 
 
-template <class G, size_t r, int p>
+template <class G, size_t r, class R, int p>
 struct DiscontinuousLagrangeSpaceTest
-    : public SpaceTestBase<DiscontinuousLagrangeSpace<typename XT::Grid::GridProvider<G>::LeafGridViewType, p, r>, p>
+    : public SpaceTestBase<DiscontinuousLagrangeSpace<typename XT::Grid::GridProvider<G>::LeafGridViewType, r, R>, p>
 {
   XT::Grid::GridProvider<G> grid_provider;
 
@@ -44,41 +44,41 @@ struct DiscontinuousLagrangeSpaceTest
 }; // struct DiscontinuousLagrangeSpace
 
 
-template <class G, size_t r, int p>
-struct DiscontinuousLagrangeSpaceOnSimplicialLeafViewTest : public DiscontinuousLagrangeSpaceTest<G, r, p>
+template <class G, size_t r, class R, int p>
+struct DiscontinuousLagrangeSpaceOnSimplicialLeafViewTest : public DiscontinuousLagrangeSpaceTest<G, r, R, p>
 {
   DiscontinuousLagrangeSpaceOnSimplicialLeafViewTest()
-    : DiscontinuousLagrangeSpaceTest<G, r, p>(make_simplicial_grid<G>())
+    : DiscontinuousLagrangeSpaceTest<G, r, R, p>(make_simplicial_grid<G>())
   {
   }
 };
 
 
-template <class G, size_t r, int p>
-struct DiscontinuousLagrangeSpaceOnCubicLeafViewTest : public DiscontinuousLagrangeSpaceTest<G, r, p>
+template <class G, size_t r, class R, int p>
+struct DiscontinuousLagrangeSpaceOnCubicLeafViewTest : public DiscontinuousLagrangeSpaceTest<G, r, R, p>
 {
   DiscontinuousLagrangeSpaceOnCubicLeafViewTest()
-    : DiscontinuousLagrangeSpaceTest<G, r, p>(make_cubic_grid<G>())
+    : DiscontinuousLagrangeSpaceTest<G, r, R, p>(make_cubic_grid<G>())
   {
   }
 };
 
 
-template <class G, size_t r, int p>
-struct DiscontinuousLagrangeSpaceOnPrismLeafViewTest : public DiscontinuousLagrangeSpaceTest<G, r, p>
+template <class G, size_t r, class R, int p>
+struct DiscontinuousLagrangeSpaceOnPrismLeafViewTest : public DiscontinuousLagrangeSpaceTest<G, r, R, p>
 {
   DiscontinuousLagrangeSpaceOnPrismLeafViewTest()
-    : DiscontinuousLagrangeSpaceTest<G, r, p>(make_prism_grid<G>())
+    : DiscontinuousLagrangeSpaceTest<G, r, R, p>(make_prism_grid<G>())
   {
   }
 };
 
 
-template <class G, size_t r, int p>
-struct DiscontinuousLagrangeSpaceOnMixedLeafViewTest : public DiscontinuousLagrangeSpaceTest<G, r, p>
+template <class G, size_t r, class R, int p>
+struct DiscontinuousLagrangeSpaceOnMixedLeafViewTest : public DiscontinuousLagrangeSpaceTest<G, r, R, p>
 {
   DiscontinuousLagrangeSpaceOnMixedLeafViewTest()
-    : DiscontinuousLagrangeSpaceTest<G, r, p>(make_mixed_grid<G>())
+    : DiscontinuousLagrangeSpaceTest<G, r, R, p>(make_mixed_grid<G>())
   {
   }
 };

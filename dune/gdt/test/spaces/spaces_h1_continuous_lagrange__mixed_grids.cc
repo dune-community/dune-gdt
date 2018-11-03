@@ -16,7 +16,7 @@ using namespace Dune::GDT;
 
 
 template <class G>
-using Order1MixedContinuousLagrangeSpace = ContinuousLagrangeSpaceOnMixedLeafViewTest<G, 1>;
+using Order1MixedContinuousLagrangeSpace = ContinuousLagrangeSpaceOnMixedLeafViewTest<G, double, 1>;
 TYPED_TEST_CASE(Order1MixedContinuousLagrangeSpace, MixedGridsWithConformingIntersections);
 TYPED_TEST(Order1MixedContinuousLagrangeSpace, gives_correct_identification)
 {
@@ -61,7 +61,7 @@ TYPED_TEST(Order1MixedContinuousLagrangeSpace, local_interpolation_seems_to_be_c
 
 
 template <class G>
-using Order2MixedContinuousLagrangeSpace = ContinuousLagrangeSpaceOnMixedLeafViewTest<G, 2>;
+using Order2MixedContinuousLagrangeSpace = ContinuousLagrangeSpaceOnMixedLeafViewTest<G, double, 2>;
 TYPED_TEST_CASE(Order2MixedContinuousLagrangeSpace, MixedGridsWithConformingIntersections);
 TYPED_TEST(Order2MixedContinuousLagrangeSpace, gives_correct_identification)
 {

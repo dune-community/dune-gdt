@@ -30,7 +30,7 @@
 #include <dune/xt/grid/gridprovider/provider.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/functions/base/sliced.hh>
-#include <dune/xt/functions/lambda/function.hh>
+#include <dune/xt/functions/generic/function.hh>
 
 #include <dune/gdt/exceptions.hh>
 #include <dune/gdt/functionals/localizable-functional.hh>
@@ -289,11 +289,13 @@ public:
                               spatial_norm(make_discrete_function(reference_space, u[ii].vector() - u_h[ii].vector())));
           current_data_["norm"][norm_id] = result;
         } else if (temporal_norm_id == "L_2") {
-          const XT::Functions::LambdaFunction<1> spatial_norm_function(1, [&](const auto& time, const auto& /*param*/) {
-            const auto u_t = make_discrete_bochner_function(reference_bochner_space, u).evaluate(time);
-            const auto u_h_t = make_discrete_bochner_function(reference_bochner_space, u_h).evaluate(time);
-            return spatial_norm(make_discrete_function(reference_space, u_t.dofs().vector() - u_h_t.dofs().vector()));
-          });
+          const XT::Functions::GenericFunction<1> spatial_norm_function(
+              1, [&](const auto& time, const auto& /*param*/) {
+                const auto u_t = make_discrete_bochner_function(reference_bochner_space, u).evaluate(time);
+                const auto u_h_t = make_discrete_bochner_function(reference_bochner_space, u_h).evaluate(time);
+                return spatial_norm(
+                    make_discrete_function(reference_space, u_t.dofs().vector() - u_h_t.dofs().vector()));
+              });
           auto temporal_grid_view = reference_bochner_space.temporal_space().grid_view();
           using TE = XT::Grid::extract_entity_t<decltype(temporal_grid_view)>;
           const auto& spatial_norm_as_temporal_grid_function = spatial_norm_function.template as_grid_function<TE>();

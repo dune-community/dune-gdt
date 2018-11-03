@@ -55,7 +55,7 @@ public:
           std::make_pair(geometry_type, make_local_lagrange_finite_element<D, d, R, r>(geometry_type, 0)));
   }
 
-  const GridViewType& grid_view() const
+  const GridViewType& grid_view() const override
   {
     return grid_view_;
   }

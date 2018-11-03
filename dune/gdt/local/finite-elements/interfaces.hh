@@ -174,7 +174,7 @@ for (size_t codim = 0; codim < codim_to_subentity_index_to_key_indices_map.size(
     // pepare
     const auto& reference_element = ReferenceElements<D, d>::general(geometry_type());
     std::vector<std::vector<std::vector<size_t>>> codim_to_subentity_index_to_key_indices_map(d + 1);
-    for (size_t codim = 0; codim <= d; ++codim)
+    for (int codim = 0; codim <= static_cast<int>(d); ++codim)
       codim_to_subentity_index_to_key_indices_map[codim] =
           std::vector<std::vector<size_t>>(reference_element.size(codim));
     // fill

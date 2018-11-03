@@ -82,7 +82,7 @@ public:
         const auto intersection_index = intersection.indexInInside();
         for (const auto& local_DoF : local_key_indices[1][intersection_index])
           local_DoFs.insert(local_DoF);
-        for (int cc = 2; cc <= d; ++cc) {
+        for (int cc = 2; cc <= static_cast<int>(d); ++cc) {
           for (int ii = 0; ii < reference_element.size(intersection_index, 1, cc); ++ii) {
             const auto subentity_id = reference_element.subEntity(intersection_index, 1, ii, cc);
             for (const auto& local_DoF : local_key_indices[cc][subentity_id])

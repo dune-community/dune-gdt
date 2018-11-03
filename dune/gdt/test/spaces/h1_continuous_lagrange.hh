@@ -18,9 +18,9 @@ namespace Dune {
 namespace GDT {
 
 
-template <class G, int p>
+template <class G, class R, int p>
 struct ContinuousLagrangeSpaceTest
-    : public SpaceTestBase<ContinuousLagrangeSpace<typename XT::Grid::GridProvider<G>::LeafGridViewType, p>, p>
+    : public SpaceTestBase<ContinuousLagrangeSpace<typename XT::Grid::GridProvider<G>::LeafGridViewType, R>, p>
 {
   using D = typename G::ctype;
   static const constexpr size_t d = G::dimension;
@@ -83,41 +83,41 @@ struct ContinuousLagrangeSpaceTest
 }; // struct ContinuousLagrangeSpace
 
 
-template <class G, int p>
-struct ContinuousLagrangeSpaceOnSimplicialLeafViewTest : public ContinuousLagrangeSpaceTest<G, p>
+template <class G, class R, int p>
+struct ContinuousLagrangeSpaceOnSimplicialLeafViewTest : public ContinuousLagrangeSpaceTest<G, R, p>
 {
   ContinuousLagrangeSpaceOnSimplicialLeafViewTest()
-    : ContinuousLagrangeSpaceTest<G, p>(make_simplicial_grid<G>())
+    : ContinuousLagrangeSpaceTest<G, R, p>(make_simplicial_grid<G>())
   {
   }
 };
 
 
-template <class G, int p>
-struct ContinuousLagrangeSpaceOnCubicLeafViewTest : public ContinuousLagrangeSpaceTest<G, p>
+template <class G, class R, int p>
+struct ContinuousLagrangeSpaceOnCubicLeafViewTest : public ContinuousLagrangeSpaceTest<G, R, p>
 {
   ContinuousLagrangeSpaceOnCubicLeafViewTest()
-    : ContinuousLagrangeSpaceTest<G, p>(make_cubic_grid<G>())
+    : ContinuousLagrangeSpaceTest<G, R, p>(make_cubic_grid<G>())
   {
   }
 };
 
 
-template <class G, int p>
-struct ContinuousLagrangeSpaceOnPrismLeafViewTest : public ContinuousLagrangeSpaceTest<G, p>
+template <class G, class R, int p>
+struct ContinuousLagrangeSpaceOnPrismLeafViewTest : public ContinuousLagrangeSpaceTest<G, R, p>
 {
   ContinuousLagrangeSpaceOnPrismLeafViewTest()
-    : ContinuousLagrangeSpaceTest<G, p>(make_prism_grid<G>())
+    : ContinuousLagrangeSpaceTest<G, R, p>(make_prism_grid<G>())
   {
   }
 };
 
 
-template <class G, int p>
-struct ContinuousLagrangeSpaceOnMixedLeafViewTest : public ContinuousLagrangeSpaceTest<G, p>
+template <class G, class R, int p>
+struct ContinuousLagrangeSpaceOnMixedLeafViewTest : public ContinuousLagrangeSpaceTest<G, R, p>
 {
   ContinuousLagrangeSpaceOnMixedLeafViewTest()
-    : ContinuousLagrangeSpaceTest<G, p>(make_mixed_grid<G>())
+    : ContinuousLagrangeSpaceTest<G, R, p>(make_mixed_grid<G>())
   {
   }
 };

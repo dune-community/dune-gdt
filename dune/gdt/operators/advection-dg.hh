@@ -18,7 +18,7 @@
 #include <dune/xt/la/solver.hh>
 #include <dune/xt/grid/intersection.hh>
 #include <dune/xt/grid/type_traits.hh>
-#include <dune/xt/grid/walker/filters.hh>
+#include <dune/xt/grid/filters.hh>
 
 #include <dune/gdt/local/bilinear-forms/integrals.hh>
 #include <dune/gdt/local/functionals/integrals.hh>

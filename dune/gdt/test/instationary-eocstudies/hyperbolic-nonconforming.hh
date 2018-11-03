@@ -12,7 +12,7 @@
 
 #include <dune/xt/common/bisect.hh>
 #include <dune/xt/grid/view/periodic.hh>
-#include <dune/xt/functions/lambda/function.hh>
+#include <dune/xt/functions/generic/function.hh>
 
 #include <dune/gdt/local/numerical-fluxes/engquist-osher.hh>
 #include <dune/gdt/local/numerical-fluxes/lax-friedrichs.hh>

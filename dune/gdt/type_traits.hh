@@ -54,7 +54,7 @@ enum class Stencil
 };
 
 
-static std::ostream& operator<<(std::ostream& out, const Stencil& stencil)
+static inline std::ostream& operator<<(std::ostream& out, const Stencil& stencil)
 {
   if (stencil == Stencil::element)
     out << "element";

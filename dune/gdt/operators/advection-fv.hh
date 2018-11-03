@@ -12,7 +12,7 @@
 
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/grid/type_traits.hh>
-#include <dune/xt/grid/walker/filters.hh>
+#include <dune/xt/grid/filters.hh>
 #include <dune/xt/la/container.hh>
 
 #include <dune/gdt/local/assembler/operator-fd-jacobian-assemblers.hh>

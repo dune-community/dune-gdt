@@ -58,7 +58,7 @@ public:
       max_size_ = std::max(max_size_, geometry_and_fe_pair.second->basis().size());
   }
 
-  const GridViewType& grid_view() const
+  const GridViewType& grid_view() const override
   {
     return grid_view_;
   }

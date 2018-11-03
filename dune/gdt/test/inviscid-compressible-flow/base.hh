@@ -42,7 +42,7 @@ struct InviscidCompressibleFlowEulerProblem
   using RangeType = XT::Common::FieldVector<double, m>;
 
   const EulerTools<d> euler_tools;
-  const XT::Functions::LambdaFunction<m, d, m> flux;
+  const XT::Functions::GenericFunction<m, d, m> flux;
   const double T_end;
 
   InviscidCompressibleFlowEulerProblem()
@@ -225,7 +225,7 @@ protected:
       return op;
     } else if (boundary_treatment == "inflow_from_the_left_by_heuristic_euler_treatment_impermeable_wall_right") {
       periodic_density_variation_ =
-          std::unique_ptr<XT::Functions::LambdaFunction<d, m>>(new XT::Functions::LambdaFunction<d, m>(
+          std::unique_ptr<XT::Functions::GenericFunction<d, m>>(new XT::Functions::GenericFunction<d, m>(
               /*order=*/0,
               [&](const auto& /*xx*/, const auto& param) {
                 const auto t = param.get("_t").at(0);
@@ -318,7 +318,7 @@ protected:
   size_t visualization_steps_;
   std::string boundary_treatment;
   std::unique_ptr<XT::Grid::NormalBasedBoundaryInfo<XT::Grid::extract_intersection_t<GV>>> boundary_info;
-  std::unique_ptr<XT::Functions::LambdaFunction<d, m>> periodic_density_variation_;
+  std::unique_ptr<XT::Functions::GenericFunction<d, m>> periodic_density_variation_;
   std::unique_ptr<typename XT::Functions::ElementFunctionInterface<E, m>> local_periodic_density_variation_;
 }; // class InviscidCompressibleFlowEulerTest
 

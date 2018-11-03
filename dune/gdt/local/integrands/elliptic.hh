@@ -68,7 +68,7 @@ public:
   }
 
 protected:
-  void post_bind(const ElementType& ele)
+  void post_bind(const ElementType& ele) override
   {
     local_diffusion_factor_->bind(ele);
     local_diffusion_tensor_->bind(ele);

@@ -265,8 +265,8 @@ public:
     : MatrixStorage(mat)
     , OperatorBaseType(source_spc, range_spc, MatrixStorage::access())
     , WalkerBaseType(assembly_grid_view)
-    , assembled_(false)
     , scaling(1.)
+    , assembled_(false)
   {
     // to detect assembly
     this->append(
@@ -284,8 +284,8 @@ public:
     : MatrixStorage(new MatrixType(range_spc.mapper().size(), source_spc.mapper().size(), pattern))
     , OperatorBaseType(source_spc, range_spc, MatrixStorage::access())
     , WalkerBaseType(assembly_grid_view)
-    , assembled_(false)
     , scaling(1.)
+    , assembled_(false)
   {
     // to detect assembly
     this->append(

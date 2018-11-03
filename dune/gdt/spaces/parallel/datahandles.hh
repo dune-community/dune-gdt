@@ -43,7 +43,13 @@ private:
   }
 
   template <class GV, class Entity>
-  static size_t local_size(const MapperInterface<GV>& mapper, const Entity& e, std::integral_constant<int, 1>)
+  static size_t local_size(const MapperInterface<GV>& /*mapper*/, const Entity& /*e*/, std::integral_constant<int, 1>)
+  {
+    return 0;
+  }
+
+  template <class GV, class Entity>
+  static size_t local_size(const MapperInterface<GV>& /*mapper*/, const Entity& /*e*/, std::integral_constant<int, 2>)
   {
     return 0;
   }
@@ -64,7 +70,7 @@ public:
   typedef E OriginalDataType;
 
   template <class GV, size_t r, size_t rD, class R>
-  bool contains(const SpaceInterface<GV, r, rD, R>& space, int dim, int codim) const
+  bool contains(const SpaceInterface<GV, r, rD, R>& space, int /*dim*/, int codim) const
   {
     return space_associates_data_with(space, codim);
   }
@@ -219,7 +225,7 @@ public:
   typedef std::size_t size_t;
 
   template <typename MessageBuffer, typename Entity, typename LocalView>
-  bool gather(MessageBuffer& buff, const Entity& e, const LocalView& local_view) const
+  bool gather(MessageBuffer& buff, const Entity& /*e*/, const LocalView& local_view) const
   {
     for (std::size_t i = 0; i < local_view.size(); ++i)
       _gather_scatter.gather(buff, local_view[i]);
@@ -369,7 +375,7 @@ class GhostGatherScatter
 {
 public:
   template <typename MessageBuffer, typename Entity, typename LocalView>
-  bool gather(MessageBuffer& buff, const Entity& e, LocalView& local_view) const
+  bool gather(MessageBuffer& buff, const Entity& e, LocalView& /*local_view*/) const
   {
     // Figure out where we are...
     const bool ghost = e.partitionType() != Dune::InteriorEntity && e.partitionType() != Dune::BorderEntity;
@@ -381,7 +387,7 @@ public:
   }
 
   template <typename MessageBuffer, typename Entity, typename LocalView>
-  bool scatter(MessageBuffer& buff, std::size_t n, const Entity& e, LocalView& local_view) const
+  bool scatter(MessageBuffer& buff, std::size_t /*n*/, const Entity& e, LocalView& local_view) const
   {
     // Figure out where we are - we have to do this again on the receiving side due to the asymmetric
     // communication interface!
@@ -451,7 +457,7 @@ class DisjointPartitioningGatherScatter
 
 public:
   template <typename MessageBuffer, typename Entity, typename LocalView>
-  bool gather(MessageBuffer& buff, const Entity& e, LocalView& local_view) const
+  bool gather(MessageBuffer& buff, const Entity& /*e*/, LocalView& /*local_view*/) const
   {
     // We only gather from interior and border entities, so we can throw in our ownership
     // claim without any further checks.
@@ -461,7 +467,7 @@ public:
   }
 
   template <typename MessageBuffer, typename Entity, typename LocalView>
-  bool scatter(MessageBuffer& buff, std::size_t n, const Entity& e, LocalView& local_view) const
+  bool scatter(MessageBuffer& buff, std::size_t /*n*/, const Entity& e, LocalView& local_view) const
   {
     // Value used for DOFs with currently unknown rank.
     const RankIndex unknown_rank = std::numeric_limits<RankIndex>::max();
@@ -567,14 +573,14 @@ struct SharedDOFGatherScatter
 {
 
   template <typename MessageBuffer, typename Entity, typename LocalView>
-  bool gather(MessageBuffer& buff, const Entity& e, LocalView& local_view) const
+  bool gather(MessageBuffer& buff, const Entity& /*e*/, LocalView& local_view) const
   {
     buff.write(local_view.size() > 0);
     return false;
   }
 
   template <typename MessageBuffer, typename Entity, typename LocalView>
-  bool scatter(MessageBuffer& buff, std::size_t n, const Entity& e, LocalView& local_view) const
+  bool scatter(MessageBuffer& buff, std::size_t /*n*/, const Entity& /*e*/, LocalView& local_view) const
   {
     bool remote_entity_has_dofs;
     buff.read(remote_entity_has_dofs);
@@ -674,7 +680,7 @@ public:
   }
 
   template <typename MessageBuffer, typename Entity>
-  void scatter(MessageBuffer& buff, const Entity& e, size_t n)
+  void scatter(MessageBuffer& buff, const Entity& /*e*/, size_t /*n*/)
   {
     RankIndex rank;
     buff.read(rank);

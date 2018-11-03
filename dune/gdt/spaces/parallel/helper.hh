@@ -18,6 +18,8 @@
 
 #include <dune/istl/owneroverlapcopy.hh>
 
+#include <dune/xt/common/math.hh>
+
 #include <dune/xt/la/container/istl.hh>
 
 #include "datahandles.hh"

@@ -15,7 +15,7 @@
 #include <dune/xt/common/float_cmp.hh>
 #include <dune/xt/common/fvector.hh>
 #include <dune/xt/common/memory.hh>
-#include <dune/xt/functions/lambda/function.hh>
+#include <dune/xt/functions/generic/function.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
 
 #include <dune/gdt/interpolations.hh>
@@ -34,7 +34,7 @@ struct LinearTransportProblem
   using DomainType = XT::Common::FieldVector<double, d>;
 
   const DomainType direction;
-  const XT::Functions::LambdaFunction<1, d, 1> flux;
+  const XT::Functions::GenericFunction<1, d, 1> flux;
   const double T_end;
 
   LinearTransportProblem()
