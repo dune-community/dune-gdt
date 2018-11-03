@@ -13,12 +13,16 @@
 
 #include <dune/common/parallel/mpihelper.hh>
 
+#include <dune/xt/common/math.hh>
+
 #include <dune/xt/la/container/istl.hh>
 #include <dune/xt/la/solver.hh>
+
 #include <dune/xt/grid/boundaryinfo.hh>
 #include <dune/xt/grid/grids.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
 #include <dune/xt/grid/type_traits.hh>
+
 #include <dune/xt/functions/constant.hh>
 #include <dune/xt/functions/generic/function.hh>
 
@@ -79,14 +83,20 @@ int main(int argc, char* argv[])
           return result;
         });
 
+    // Both Neumann and Dirichlet boundary conditions
     auto grid = XT::Grid::make_cube_grid<G>(/*lower_left=*/0., /*upper_right=*/1., /*num_elements=*/128);
-    auto grid_view = grid.leaf_view();
-
     XT::Grid::NormalBasedBoundaryInfo<I> boundary_info;
     boundary_info.register_new_normal({0., -1.}, new XT::Grid::NeumannBoundary());
-    boundary_info.register_new_normal({0., 1.}, new XT::Grid::NeumannBoundary());
-    boundary_info.register_new_normal({-1., 0.}, new XT::Grid::DirichletBoundary());
+    boundary_info.register_new_normal({0., 1.}, new XT::Grid::DirichletBoundary());
+    boundary_info.register_new_normal({-1., 0.}, new XT::Grid::NeumannBoundary());
     boundary_info.register_new_normal({1., 0.}, new XT::Grid::DirichletBoundary());
+
+    // Only Dirichlet boundary conditions, in that case we need to change the domain to [-1,1]^2 to ensure correct
+    // boundary conditions
+    // auto grid = XT::Grid::make_cube_grid<G>(/*lower_left=*/-1., /*upper_right=*/1., /*num_elements=*/128);
+    // XT::Grid::AllDirichletBoundaryInfo<I> boundary_info;
+
+    auto grid_view = grid.leaf_view();
 
     auto space = make_continuous_lagrange_space(grid_view, /*polorder=*/1);
 
@@ -125,8 +135,8 @@ int main(int argc, char* argv[])
     walker.append(l2_prod);
     walker.walk(/*thread_parallel=*/true);
 
-    logger.info() << "error in H^1 semi-norm: " << std::sqrt(h1_prod.result());
-    logger.info() << "error in L^2 norm:      " << std::sqrt(l2_prod.result());
+    logger.info() << "error in H^1 semi-norm: " << std::sqrt(h1_prod.result()) << std::endl;
+    logger.info() << "error in L^2 norm:      " << std::sqrt(l2_prod.result()) << std::endl;
 
   } catch (Exception& e) {
     std::cerr << "\nDUNE reported error: " << e.what() << std::endl;
