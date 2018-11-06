@@ -83,20 +83,10 @@ int main(int argc, char* argv[])
           return result;
         });
 
-    // Both Neumann and Dirichlet boundary conditions
-    auto grid = XT::Grid::make_cube_grid<G>(/*lower_left=*/0., /*upper_right=*/1., /*num_elements=*/128);
-    XT::Grid::NormalBasedBoundaryInfo<I> boundary_info;
-    boundary_info.register_new_normal({0., -1.}, new XT::Grid::NeumannBoundary());
-    boundary_info.register_new_normal({0., 1.}, new XT::Grid::DirichletBoundary());
-    boundary_info.register_new_normal({-1., 0.}, new XT::Grid::NeumannBoundary());
-    boundary_info.register_new_normal({1., 0.}, new XT::Grid::DirichletBoundary());
-
-    // Only Dirichlet boundary conditions, in that case we need to change the domain to [-1,1]^2 to ensure correct
-    // boundary conditions
-    // auto grid = XT::Grid::make_cube_grid<G>(/*lower_left=*/-1., /*upper_right=*/1., /*num_elements=*/128);
-    // XT::Grid::AllDirichletBoundaryInfo<I> boundary_info;
-
+    auto grid = XT::Grid::make_cube_grid<G>(/*lower_left=*/-1., /*upper_right=*/1., /*num_elements=*/128);
     auto grid_view = grid.leaf_view();
+
+    XT::Grid::AllDirichletBoundaryInfo<I> boundary_info;
 
     auto space = make_continuous_lagrange_space(grid_view, /*polorder=*/1);
 
