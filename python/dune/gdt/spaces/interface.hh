@@ -298,7 +298,7 @@ public:
             return XT::LA::SparsityPatternDefault();
           },
           "type"_a = "default");
-
+    c.def_property_readonly("dof_communicator", &type::dof_communicator);
     return c;
   } // ... bind(...)
 }; // class SpaceInterfaceWoFactory

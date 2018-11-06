@@ -372,6 +372,7 @@ public:
             return type(self.dd_grid(), neighborhood_spaces);
           },
           "neighborhood"_a);
+    c.def_property_readonly("dof_communicator", &type::dof_communicator);
 
 //    addbind_vector<XT::LA::Backends::common_dense>(c);
 //#if HAVE_EIGEN
