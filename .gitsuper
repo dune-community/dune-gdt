@@ -4,7 +4,7 @@ status = 1a3bcab04b011a5d6e44f9983cae6ff89fa695e8 bin (heads/master)
 	 20a673b9dad7e2e25bd97defa8849debb59d247c config.opts (20a673b)
 	 8f2c5aba441417bf2c42f22272f538c68a89cc4a dune-alugrid (remotes/origin/releases/2.5)
 	 707acf201d5a754c80f87cc4d71aa36bf29a6e3f dune-common (v2.5.1-9-g707acf20)
-	+5847e0c24f0ca6da5ebbb68f02e9945ea408c72e dune-gdt (heads/new-master)
+	+cb992cf33366dc2d1e60a912718a57e760b0b31f dune-gdt (heads/new-master)
 	 390a2c503783bbed778a8ff610f8c5ca09c238d0 dune-geometry (v2.5.1-5-g390a2c5)
 	 d7b20bbc5f6fdcfc312beb0ea5d16d39ea26904e dune-grid (v2.5.1-2-gd7b20bbc5)
 	 9e29a333e8af02382d80b95335a784d5ce1ea2c8 dune-grid-glue (v2.4.0-70-g9e29a33)
@@ -17,10 +17,10 @@ status = 1a3bcab04b011a5d6e44f9983cae6ff89fa695e8 bin (heads/master)
 	 f3fb573585a5239db7c790a5fd2da2ba765d916f dune-xt-common (heads/master)
 	 3e3f3bf06e21cbbf3c0a559891b44c6f5d987d0f dune-xt-data (heads/master)
 	+5b56980a4197badfe3fe5708087889b536192c9b dune-xt-functions (heads/new-master)
-	+82ddaff8c04d5c3ea57452d89c9b5fdbc272f036 dune-xt-grid (heads/new-master)
+	 7960307789e83d8da00efdad48ccdbc7d4201e6b dune-xt-grid (heads/master)
 	+ad6d09c610a89863c0030808a8cb95a134af7ce9 dune-xt-la (heads/match-dune-gdt-refactor)
 	 09d0378f616b94d68bcdd9fc6114813181849ec0 scripts (heads/master)
-commit = f3ac7b0c0a5ff1b07f7e3e58cac29946cb6ecfed
+commit = cea8a02417e825962b0bb972d9a2cb48ae260295
 
 [submodule.bin]
 remote = git@github.com:dune-community/local-bin.git
@@ -45,7 +45,7 @@ commit = 707acf201d5a754c80f87cc4d71aa36bf29a6e3f
 [submodule.dune-gdt]
 remote = git@github.com:dune-community/dune-gdt.git
 status = 2424627f0ad5de7e4aaa5e7f48bc2a02414d95a1 .vcsetup (heads/master)
-commit = 5847e0c24f0ca6da5ebbb68f02e9945ea408c72e
+commit = cb992cf33366dc2d1e60a912718a57e760b0b31f
 
 [submodule.dune-geometry]
 remote = git@github.com:dune-community/dune-geometry.git
@@ -110,7 +110,7 @@ commit = 5b56980a4197badfe3fe5708087889b536192c9b
 [submodule.dune-xt-grid]
 remote = git@github.com:dune-community/dune-xt-grid.git
 status = 2424627f0ad5de7e4aaa5e7f48bc2a02414d95a1 .vcsetup (heads/master)
-commit = 82ddaff8c04d5c3ea57452d89c9b5fdbc272f036
+commit = 7960307789e83d8da00efdad48ccdbc7d4201e6b
 
 [submodule.dune-xt-la]
 remote = git@github.com:dune-community/dune-xt-la.git

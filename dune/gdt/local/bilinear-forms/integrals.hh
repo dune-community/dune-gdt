@@ -95,10 +95,8 @@ public:
       result.resize(rows, cols);
     result *= 0;
     // loop over all quadrature points
-    const size_t integrand_order = integrand_->order(test_basis, ansatz_basis) + over_integrate_;
-    assert(integrand_order < std::numeric_limits<int>::max());
-    for (const auto& quadrature_point :
-         QuadratureRules<D, d>::rule(element.geometry().type(), static_cast<int>(integrand_order))) {
+    const auto integrand_order = integrand_->order(test_basis, ansatz_basis) + over_integrate_;
+    for (const auto& quadrature_point : QuadratureRules<D, d>::rule(element.geometry().type(), integrand_order)) {
       const auto point_in_reference_element = quadrature_point.position();
       // integration factors
       const auto integration_factor = element.geometry().integrationElement(point_in_reference_element);
