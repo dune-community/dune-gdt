@@ -10,11 +10,15 @@
 
 #include "config.h"
 
+#include <dune/xt/common/math.hh> // this prolly fixes abs(bigunsignedint) error
+#include <dune/common/fvector.hh>
+#include <dune/common/fmatrix.hh>
 #include <dune/common/parallel/mpihelper.hh>
 
 #include <dune/pybindxi/pybind11.h>
 #include <dune/pybindxi/stl.h>
 
+#include <dune/xt/common/vector.hh>
 #include <python/dune/xt/common/bindings.hh>
 #include <dune/xt/grid/grids.hh>
 
