@@ -162,7 +162,7 @@ public:
   using RangeFieldType = R;
   static const constexpr XT::Grid::Backends layer_backend = XT::Grid::Backends::view;
   static const constexpr Backends backend_type{Backends::gdt};
-  typedef DofCommunicationChooser<GridLayerType, false> DofCommunicationChooserType;
+  typedef DofCommunicationChooser<GridLayerType, true> DofCommunicationChooserType;
   typedef typename DofCommunicationChooserType::Type DofCommunicatorType;
 
 private:
