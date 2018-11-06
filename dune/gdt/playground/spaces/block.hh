@@ -163,7 +163,6 @@ public:
     if (!communicator_prepared_)
       communicator_prepared_ = DofCommunicationChooserType::prepare(*this, *communicator_);
     return *communicator_;
-    return *communicator_;
   }
 
   const DdSubdomainsGridType& dd_grid() const

@@ -497,7 +497,7 @@ public:
       else
         number = XT::Common::to_string(ii) + "th";
       const auto iith_baseFunction =
-          std::make_shared<BasisVisualization<GridViewType>>(this->as_imp(*this), ii, number + " basis");
+          std::make_shared<BasisVisualization<GridViewType>>(this->as_imp(), ii, number + " basis");
       vtk_writer.addVertexData(iith_baseFunction);
     }
     vtk_writer.write(filename);

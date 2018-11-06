@@ -65,7 +65,7 @@ struct space_name_base
   {
     using XT::Common::to_string;
     return XT::Grid::layer_names[layer] + "_" + XT::Grid::bindings::backend_name<g>::value() + "_to_" + to_string(r)
-           + "x" + to_string(rC) + "_" + backend_name<backend>::value();
+           + "x" + to_string(rC) + "_" + backend_names[backend];
   }
 
   static std::string value()

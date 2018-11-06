@@ -180,13 +180,15 @@ public:
           "source"_a,
           "opts"_a);
     c.def("invert_options", [](type& self) { return self.invert_options(); });
-    c.def("invert_options", [](type& self, const std::string& type) { return self.invert_options(type); }, "type"_a);
+    c.def("invert_options",
+          [](type& self, const std::string& strtype) { return self.invert_options(strtype); },
+          "type"_a);
 
     // from OperatorInterface
     c.def("apply_inverse",
-          [](type& self, const V& range, V& source, const std::string& type) {
+          [](type& self, const V& range, V& source, const std::string& strtype) {
             py::gil_scoped_release DUNE_UNUSED release;
-            self.apply_inverse(range, source, type);
+            self.apply_inverse(range, source, strtype);
           },
           "range"_a,
           "source"_a,
@@ -195,9 +197,9 @@ public:
           [](type& self,
              const GDT::ConstDiscreteFunction<R, V>& range,
              GDT::ConstDiscreteFunction<S, V>& source,
-             const std::string& type) {
+             const std::string& strtype) {
             py::gil_scoped_release DUNE_UNUSED release;
-            self.apply_inverse(range, source, type);
+            self.apply_inverse(range, source, strtype);
           },
           "range"_a,
           "source"_a,
