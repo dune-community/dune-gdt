@@ -523,10 +523,10 @@ struct RtSpaceOnMixedLeafView : public RtSpace<typename Dune::XT::Grid::GridProv
                               Dune::XT::Common::FieldVector<D, d>({-1.75, -1.25})}) {
           factory.insertVertex(vertex);
         }
-        factory.insertElement(Dune::GeometryType(Dune::GeometryType::cube, 2), {3, 0, 4, 1});
-        factory.insertElement(Dune::GeometryType(Dune::GeometryType::cube, 2), {4, 1, 5, 2});
-        factory.insertElement(Dune::GeometryType(Dune::GeometryType::simplex, 2), {4, 6, 3});
-        factory.insertElement(Dune::GeometryType(Dune::GeometryType::simplex, 2), {4, 5, 6});
+        factory.insertElement(Dune::GeometryTypes::cube(2), {3, 0, 4, 1});
+        factory.insertElement(Dune::GeometryTypes::cube(2), {4, 1, 5, 2});
+        factory.insertElement(Dune::GeometryTypes::simplex(2), {4, 6, 3});
+        factory.insertElement(Dune::GeometryTypes::simplex(2), {4, 5, 6});
         grid_provider = std::make_shared<GridProviderType>(factory.createGrid());
         grid_provider->global_refine(1);
         leaf_view = std::make_shared<LeafGridViewType>(grid_provider->leaf_view());
@@ -549,10 +549,10 @@ struct RtSpaceOnMixedLeafView : public RtSpace<typename Dune::XT::Grid::GridProv
                               Dune::XT::Common::FieldVector<D, d>({-1.75, -1.25, -1.})}) {
           factory.insertVertex(vertex);
         }
-        factory.insertElement(Dune::GeometryType(Dune::GeometryType::cube, 3), {3, 0, 4, 1, 9, 6, 10, 7});
-        factory.insertElement(Dune::GeometryType(Dune::GeometryType::cube, 3), {4, 1, 5, 2, 10, 7, 11, 8});
-        factory.insertElement(Dune::GeometryType(Dune::GeometryType::simplex, 3), {4, 12, 3, 10});
-        factory.insertElement(Dune::GeometryType(Dune::GeometryType::simplex, 3), {4, 5, 12, 10});
+        factory.insertElement(Dune::GeometryTypes::cube(3), {3, 0, 4, 1, 9, 6, 10, 7});
+        factory.insertElement(Dune::GeometryTypes::cube(3), {4, 1, 5, 2, 10, 7, 11, 8});
+        factory.insertElement(Dune::GeometryTypes::simplex(3), {4, 12, 3, 10});
+        factory.insertElement(Dune::GeometryTypes::simplex(3), {4, 5, 12, 10});
         grid_provider = std::make_shared<GridProviderType>(factory.createGrid());
         grid_provider->global_refine(1);
         leaf_view = std::make_shared<LeafGridViewType>(grid_provider->leaf_view());

@@ -29,8 +29,10 @@ find_package(dune-common REQUIRED)
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules" "${dune-common_MODULE_PATH}")
 include(DuneMacros)
 
+# dune-xt-common
 find_package(dune-xt-common REQUIRED)
-list(APPEND CMAKE_MODULE_PATH "${dune-xt-common_MODULE_PATH}")
+find_package(dune-pybindxi REQUIRED)
+list(APPEND CMAKE_MODULE_PATH "${dune-xt-common_MODULE_PATH}" "${dune-pybindxi_MODULE_PATH}")
 include(DuneUtils)
 
 # start a dune project with information from dune.module
@@ -62,7 +64,7 @@ add_subdirectory(examples EXCLUDE_FROM_ALL)
 include(DuneXTInstallPythonPackage)
 # this symlinks all files in python/ to the binary dir and install into the virtualenv from there thereby making the
 # compiled extensions directly usable from the venv
-dune_xt_install_python_package(PATH python)
+dune_python_install_package(PATH python)
 include_dependent_binary_python_dirs()
 # do not change order here
 if(dune-pybindxi_FOUND)

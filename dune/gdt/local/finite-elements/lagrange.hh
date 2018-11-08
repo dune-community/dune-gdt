@@ -104,20 +104,20 @@ class LocalLagrangeFiniteElementFactory
       if (d == 1)
         DUNE_THROW_IF(order > 18, Exceptions::finite_element_error, order_error(geometry_type, order));
       else if (d == 2) {
-        if (geometry_type == GeometryType(GeometryType::simplex, 2))
+        if (geometry_type == GeometryTypes::simplex(2))
           DUNE_THROW_IF(order > 15, Exceptions::finite_element_error, order_error(geometry_type, order));
-        else if (geometry_type == GeometryType(GeometryType::cube, 2))
+        else if (geometry_type == GeometryTypes::cube(2))
           DUNE_THROW_IF(order > 10, Exceptions::finite_element_error, order_error(geometry_type, order));
         else
           DUNE_THROW(Exceptions::finite_element_error, geometry_error(geometry_type, order));
       } else if (d == 3) {
-        if (geometry_type == GeometryType(GeometryType::simplex, 3))
+        if (geometry_type == GeometryTypes::simplex(3))
           DUNE_THROW_IF(order > 14, Exceptions::finite_element_error, order_error(geometry_type, order));
-        else if (geometry_type == GeometryType(GeometryType::cube, 3))
+        else if (geometry_type == GeometryTypes::cube(3))
           DUNE_THROW_IF(order > 7, Exceptions::finite_element_error, order_error(geometry_type, order));
-        else if (geometry_type == GeometryType(GeometryType::prism, 3))
+        else if (geometry_type == GeometryTypes::prism)
           DUNE_THROW_IF(order > 9, Exceptions::finite_element_error, order_error(geometry_type, order));
-        else if (geometry_type == GeometryType(GeometryType::pyramid, 3))
+        else if (geometry_type == GeometryTypes::pyramid)
           DUNE_THROW(
               Exceptions::finite_element_error,
               "when creating a local Lagrange finite element: the LagrangeLocalFiniteElement is known to fail on "
@@ -125,9 +125,9 @@ class LocalLagrangeFiniteElementFactory
         else
           DUNE_THROW(Exceptions::finite_element_error, geometry_error(geometry_type, order));
       } else if (d == 4) {
-        if (geometry_type == GeometryType(GeometryType::simplex, 4))
+        if (geometry_type == GeometryTypes::simplex(4))
           DUNE_THROW_IF(order > 13, Exceptions::finite_element_error, order_error(geometry_type, order));
-        else if (geometry_type == GeometryType(GeometryType::cube, 4))
+        else if (geometry_type == GeometryTypes::cube(4))
           DUNE_THROW_IF(order > 5, Exceptions::finite_element_error, order_error(geometry_type, order));
         else
           DUNE_THROW(Exceptions::finite_element_error, geometry_error(geometry_type, order));

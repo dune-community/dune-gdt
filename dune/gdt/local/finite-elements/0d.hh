@@ -38,7 +38,7 @@ public:
   using typename BaseType::RangeType;
 
   Local0dFiniteElementBasis()
-    : geometry_type_(GeometryType::simplex, 0)
+    : geometry_type_(GeometryTypes::simplex(0))
   {}
 
   Local0dFiniteElementBasis(const ThisType& other) = default;
@@ -104,7 +104,7 @@ public:
   using typename BaseType::RangeType;
 
   Local0dFiniteElementInterpolation()
-    : geometry_type_(GeometryType::simplex, 0)
+    : geometry_type_(GeometryTypes::simplex(0))
   {}
 
   Local0dFiniteElementInterpolation(const ThisType& other) = default;
@@ -154,7 +154,7 @@ class Local0dFiniteElementCoefficients : public LocalFiniteElementCoefficientsIn
 
 public:
   Local0dFiniteElementCoefficients()
-    : geometry_type_(GeometryType::simplex, 0)
+    : geometry_type_(GeometryTypes::simplex(0))
     , local_key_(0, 0, 0)
   {}
 

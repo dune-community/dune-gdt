@@ -333,7 +333,7 @@ XT::Grid::GridProvider<G> make_prism_grid()
                         XT::Common::FieldVector<D, d>({-1.5, -1.5, -1.})}) {
     factory.insertVertex(vertex);
   }
-  factory.insertElement(GeometryType(GeometryType::prism, 3), {0, 1, 2, 3, 4, 5});
+  factory.insertElement(GeometryTypes::prism, {0, 1, 2, 3, 4, 5});
   XT::Grid::GridProvider<G> grid(factory.createGrid());
   grid.global_refine(1);
   return grid;
@@ -366,10 +366,10 @@ XT::Grid::GridProvider<G> make_mixed_grid()
                           XT::Common::FieldVector<D, d>({-1.75, -1.25})}) {
       factory.insertVertex(vertex);
     }
-    factory.insertElement(GeometryType(GeometryType::cube, 2), {3, 0, 4, 1});
-    factory.insertElement(GeometryType(GeometryType::cube, 2), {4, 1, 5, 2});
-    factory.insertElement(GeometryType(GeometryType::simplex, 2), {4, 6, 3});
-    factory.insertElement(GeometryType(GeometryType::simplex, 2), {4, 5, 6});
+    factory.insertElement(GeometryTypes::cube(2), {3, 0, 4, 1});
+    factory.insertElement(GeometryTypes::cube(2), {4, 1, 5, 2});
+    factory.insertElement(GeometryTypes::simplex(2), {4, 6, 3});
+    factory.insertElement(GeometryTypes::simplex(2), {4, 5, 6});
     XT::Grid::GridProvider<G> grid(factory.createGrid());
     grid.global_refine(1);
     return grid;
@@ -390,10 +390,10 @@ XT::Grid::GridProvider<G> make_mixed_grid()
                           XT::Common::FieldVector<D, d>({-1.75, -1.25, -1.})}) {
       factory.insertVertex(vertex);
     }
-    factory.insertElement(GeometryType(GeometryType::cube, 3), {3, 0, 4, 1, 9, 6, 10, 7});
-    factory.insertElement(GeometryType(GeometryType::cube, 3), {4, 1, 5, 2, 10, 7, 11, 8});
-    factory.insertElement(GeometryType(GeometryType::simplex, 3), {4, 12, 3, 10});
-    factory.insertElement(GeometryType(GeometryType::simplex, 3), {4, 5, 12, 10});
+    factory.insertElement(GeometryTypes::cube(3), {3, 0, 4, 1, 9, 6, 10, 7});
+    factory.insertElement(GeometryTypes::cube(3), {4, 1, 5, 2, 10, 7, 11, 8});
+    factory.insertElement(GeometryTypes::simplex(3), {4, 12, 3, 10});
+    factory.insertElement(GeometryTypes::simplex(3), {4, 5, 12, 10});
     XT::Grid::GridProvider<G> grid(factory.createGrid());
     grid.global_refine(1);
     return grid;
