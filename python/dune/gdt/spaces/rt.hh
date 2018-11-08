@@ -9,12 +9,13 @@
 
 #ifndef PYTHON_DUNE_GDT_SPACES_RT_BINDINGS_HH
 #define PYTHON_DUNE_GDT_SPACES_RT_BINDINGS_HH
-#if HAVE_DUNE_PYBINDXI
+// Todo: python bindings need to be updated to the new-master
+#if 0 // HAVE_DUNE_PYBINDXI
 
 #include <python/dune/xt/grid/grids.bindings.hh>
 
 #include <python/dune/gdt/spaces/interface.hh>
-#include <dune/gdt/spaces/rt.hh>
+#include <dune/gdt/spaces/hdiv/raviart-thomas.hh>
 
 
 // begin: this is what we need for the .so

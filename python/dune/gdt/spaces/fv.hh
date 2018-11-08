@@ -9,7 +9,8 @@
 
 #ifndef PYTHON_DUNE_GDT_SPACES_FV_BINDINGS_HH
 #define PYTHON_DUNE_GDT_SPACES_FV_BINDINGS_HH
-#if HAVE_DUNE_PYBINDXI
+// TODO: python bindings need to be updated to the new-master
+#if 0 // HAVE_DUNE_PYBINDXI
 
 #include <python/dune/xt/grid/grids.bindings.hh>
 

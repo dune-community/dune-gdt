@@ -10,6 +10,9 @@
 #ifndef DUNE_GDT_PLAYGROUND_OPERATORS_OS2015_HH
 #define DUNE_GDT_PLAYGROUND_OPERATORS_OS2015_HH
 
+// TODO: python bindings need to be updated to the new-master
+#if 0 // HAVE_DUNE_PYBINDXI
+
 #include <dune/common/typetraits.hh>
 
 #include <dune/geometry/quadraturerules.hh>
@@ -342,4 +345,5 @@ private:
 } // namespace GDT
 } // namespace Dune
 
+#endif // HAVE_DUNE_PYBINDXI
 #endif // DUNE_GDT_PLAYGROUND_OPERATORS_OS2015_HH

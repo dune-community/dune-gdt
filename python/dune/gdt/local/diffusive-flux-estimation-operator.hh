@@ -9,7 +9,8 @@
 
 #ifndef PYTHON_DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BINDINGS_HH
 #define PYTHON_DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BINDINGS_HH
-#if HAVE_DUNE_PYBINDXI
+// Todo: python bindings need to be updated to the new-master
+#if 0 // HAVE_DUNE_PYBINDXI
 
 #include <dune/pybindxi/pybind11.h>
 

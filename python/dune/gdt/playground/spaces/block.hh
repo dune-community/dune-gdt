@@ -9,7 +9,8 @@
 
 #ifndef PYTHON_DUNE_GDT_PLAYGROUND_SPACES_BLOCK_BINDINGS_HH
 #define PYTHON_DUNE_GDT_PLAYGROUND_SPACES_BLOCK_BINDINGS_HH
-//#if HAVE_DUNE_PYBINDXI
+// TODO: python bindings need to be updated to the new-master
+#if 0 // HAVE_DUNE_PYBINDXI
 
 #include <dune/pybindxi/pybind11.h>
 
@@ -446,5 +447,5 @@ public:
 // end: this is what we need for the .so
 
 
-//#endif // HAVE_DUNE_PYBINDXI
+#endif // HAVE_DUNE_PYBINDXI
 #endif // PYTHON_DUNE_GDT_PLAYGROUND_SPACES_BLOCK_BINDINGS_HH

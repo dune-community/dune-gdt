@@ -10,6 +10,8 @@
 #ifndef DUNE_GDT_PLAYGROUND_OPERATORS_RS2017_HH
 #define DUNE_GDT_PLAYGROUND_OPERATORS_RS2017_HH
 
+// TODO: python bindings need to be updated to the new-master
+#if 0 // HAVE_DUNE_PYBINDXI
 #include <type_traits>
 
 #include <dune/common/typetraits.hh>
@@ -1303,4 +1305,5 @@ void bind_neighborhood_reconstruction(pybind11::module& /*m*/)
 } // namespace GDT
 } // namespace Dune
 
+#endif // 0
 #endif // DUNE_GDT_PLAYGROUND_OPERATORS_RS2017_HH

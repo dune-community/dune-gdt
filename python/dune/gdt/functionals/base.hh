@@ -9,7 +9,9 @@
 
 #ifndef PYTHON_DUNE_GDT_FUNCTIONALS_BASE_BINDINGS_H
 #define PYTHON_DUNE_GDT_FUNCTIONALS_BASE_BINDINGS_H
-#if HAVE_DUNE_PYBINDXI
+
+// Todo: python bindings need to be updated to the new-master
+#if 0 // HAVE_DUNE_PYBINDXI
 
 #include <dune/pybindxi/pybind11.h>
 

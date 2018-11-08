@@ -10,6 +10,9 @@
 #ifndef DUNE_GDT_PLAYGROUND_OPERATORS_RS2017_HH
 #define DUNE_GDT_PLAYGROUND_OPERATORS_RS2017_HH
 
+// TODO: python bindings need to be updated to the new-master
+#if 0 // HAVE_DUNE_PYBINDXI
+
 #include <dune/common/typetraits.hh>
 
 #include <dune/xt/common/fmatrix.hh>
@@ -378,5 +381,7 @@ private:
 } // namespace ESV2007
 } // namespace GDT
 } // namespace Dune
+
+#endif // 0
 
 #endif // DUNE_GDT_PLAYGROUND_OPERATORS_RS2017_HH
