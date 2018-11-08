@@ -25,7 +25,7 @@ commit = 76d7f0c9886a061571cb8dc66dd45a4ef86e7a58
 [submodule.dune-gdt]
 remote = git@github.com:dune-community/dune-gdt.git
 status = 2424627f0ad5de7e4aaa5e7f48bc2a02414d95a1 .vcsetup (heads/master)
-commit = c2237b9042be283848ad379c6f35f012cafba0a6
+commit = 1a585c7124624bcd65a4398d9dd0d19b36acec04
 
 [submodule.dune-geometry]
 remote = git@github.com:dune-community/dune-geometry.git

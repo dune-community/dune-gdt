@@ -69,7 +69,7 @@ public:
       max_size_ = std::max(max_size_, geometry_and_fe_pair.second->basis().size());
   }
 
-  const GridViewType& grid_view() const
+  virtual const GridViewType& grid_view() const override final
   {
     return grid_view_;
   }
@@ -104,7 +104,7 @@ private:
     using BaseType = XT::Functions::ElementFunctionSetInterface<E, r, rC, R>;
 
   public:
-    using typename BaseType::EntityType;
+    using typename BaseType::ElementType;
     using typename BaseType::DomainType;
     using typename BaseType::RangeType;
     using typename BaseType::DerivativeRangeType;
@@ -129,7 +129,7 @@ private:
     }
 
   protected:
-    void post_bind(const EntityType& elemnt) override final
+    void post_bind(const ElementType& elemnt) override final
     {
       shape_functions_ = std::make_unique<XT::Common::ConstStorageProvider<ShapeFunctionsType>>(
           self_.shape_functions(elemnt.geometry().type()));
@@ -171,7 +171,7 @@ private:
       for (size_t ii = 0; ii < shape_functions_->access().size(); ++ii)
         result[ii] *= (*self_.switches_)[element_index_][ii];
       // apply piola transformation
-      const auto J_T = this->entity().geometry().jacobianTransposed(point_in_reference_element);
+      const auto J_T = this->element().geometry().jacobianTransposed(point_in_reference_element);
       const auto det_J_T = std::abs(J_T.determinant());
       RangeType tmp_value;
       for (size_t ii = 0; ii < shape_functions_->access().size(); ++ii) {
@@ -195,9 +195,9 @@ private:
       for (size_t ii = 0; ii < shape_functions_->access().size(); ++ii)
         result[ii] *= (*self_.switches_)[element_index_][ii];
       // apply piola transformation
-      const auto J_T = this->entity().geometry().jacobianTransposed(point_in_reference_element);
+      const auto J_T = this->element().geometry().jacobianTransposed(point_in_reference_element);
       const auto det_J_T = std::abs(J_T.determinant());
-      const auto J_inv_T = this->entity().geometry().jacobianInverseTransposed(point_in_reference_element);
+      const auto J_inv_T = this->element().geometry().jacobianInverseTransposed(point_in_reference_element);
       auto tmp_jacobian_row = result[0][0];
       for (size_t ii = 0; ii < shape_functions_->access().size(); ++ii) {
         for (size_t jj = 0; jj < d; ++jj) {

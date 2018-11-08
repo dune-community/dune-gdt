@@ -61,7 +61,7 @@ struct SpaceTestBase : public ::testing::Test
   void SetUp() override final
   {
     ASSERT_NE(grid_view, nullptr) << "Any derived test has to create the grid_view on construction!";
-    space = std::shared_ptr<SpaceType>(new SpaceType(*grid_view));
+    space = std::shared_ptr<SpaceType>(new SpaceType(*grid_view, p));
   }
 
   void TearDown() override final

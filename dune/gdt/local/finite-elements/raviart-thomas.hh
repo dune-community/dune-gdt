@@ -138,7 +138,7 @@ public:
         }
         XT::LA::CommonDenseVector<R> intersection_dofs(local_keys_assosiated_with_intersection.size(), 0);
         try {
-          XT::LA::solve(lhs, rhs, intersection_dofs);
+          intersection_dofs = XT::LA::solve(lhs, rhs);
         } catch (const XT::LA::Exceptions::linear_solver_failed& ee) {
           DUNE_THROW(Exceptions::finite_element_error,
                      error_msg_prefix() << "Failed to solve for DoFs associated with intersection "
@@ -190,7 +190,7 @@ public:
       }
       XT::LA::CommonDenseVector<R> intersection_dofs(local_keys_assosiated_with_element.size(), 0);
       try {
-        XT::LA::solve(lhs, rhs, intersection_dofs);
+        intersection_dofs = XT::LA::solve(lhs, rhs);
       } catch (const XT::LA::Exceptions::linear_solver_failed& ee) {
         DUNE_THROW(Exceptions::finite_element_error,
                    error_msg_prefix() << "Failed to solve for volume DoFs, this was the original error:\n   "

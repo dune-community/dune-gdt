@@ -12,6 +12,9 @@
 #ifndef DUNE_GDT_SPACES_MAPPER_PRODUCT_HH
 #define DUNE_GDT_SPACES_MAPPER_PRODUCT_HH
 
+// TODO: reenable or remove
+#if 0
+
 #include <dune/common/dynvector.hh>
 
 #include <dune/xt/common/debug.hh>
@@ -295,4 +298,5 @@ private:
 } // namespace GDT
 } // namespace Dune
 
+#endif // 0
 #endif // DUNE_GDT_SPACES_MAPPER_PRODUCT_HH

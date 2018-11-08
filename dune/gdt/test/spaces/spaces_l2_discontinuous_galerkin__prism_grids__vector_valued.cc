@@ -17,7 +17,7 @@ using namespace Dune::GDT;
 
 template <class G>
 using Order0VectorValuedPrismDiscontinuousLagrangeSpace =
-    DiscontinuousLagrangeSpaceOnPrismLeafViewTest<G, G::dimension + 1, 0>;
+    DiscontinuousLagrangeSpaceOnPrismLeafViewTest<G, G::dimension + 1, double, 0>;
 TYPED_TEST_CASE(Order0VectorValuedPrismDiscontinuousLagrangeSpace, PrismGrids);
 TYPED_TEST(Order0VectorValuedPrismDiscontinuousLagrangeSpace, gives_correct_identification)
 {
@@ -63,7 +63,7 @@ TYPED_TEST(Order0VectorValuedPrismDiscontinuousLagrangeSpace, local_interpolatio
 
 template <class G>
 using Order1VectorValuedPrismDiscontinuousLagrangeSpace =
-    DiscontinuousLagrangeSpaceOnPrismLeafViewTest<G, G::dimension + 1, 1>;
+    DiscontinuousLagrangeSpaceOnPrismLeafViewTest<G, G::dimension + 1, double, 1>;
 TYPED_TEST_CASE(Order1VectorValuedPrismDiscontinuousLagrangeSpace, PrismGrids);
 TYPED_TEST(Order1VectorValuedPrismDiscontinuousLagrangeSpace, gives_correct_identification)
 {
@@ -109,7 +109,7 @@ TYPED_TEST(Order1VectorValuedPrismDiscontinuousLagrangeSpace, local_interpolatio
 
 template <class G>
 using Order2VectorValuedPrismDiscontinuousLagrangeSpace =
-    DiscontinuousLagrangeSpaceOnPrismLeafViewTest<G, G::dimension + 1, 2>;
+    DiscontinuousLagrangeSpaceOnPrismLeafViewTest<G, G::dimension + 1, double, 2>;
 TYPED_TEST_CASE(Order2VectorValuedPrismDiscontinuousLagrangeSpace, PrismGrids);
 TYPED_TEST(Order2VectorValuedPrismDiscontinuousLagrangeSpace, gives_correct_identification)
 {

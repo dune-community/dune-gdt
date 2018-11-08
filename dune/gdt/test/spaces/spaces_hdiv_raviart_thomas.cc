@@ -30,7 +30,7 @@ template <class GridViewType, int p>
 struct RtSpace : public ::testing::Test
 {
   static_assert(p == 0, "The space cannot handle higher orders (yet)!");
-  using SpaceType = Dune::GDT::RaviartThomasSpace<GridViewType, p>;
+  using SpaceType = Dune::GDT::RaviartThomasSpace<GridViewType, double>;
   using D = typename SpaceType::D;
   static const constexpr size_t d = SpaceType::d;
 
@@ -43,7 +43,7 @@ struct RtSpace : public ::testing::Test
   void SetUp() override final
   {
     ASSERT_NE(grid_view(), nullptr);
-    space = std::shared_ptr<SpaceType>(new SpaceType(*grid_view()));
+    space = std::shared_ptr<SpaceType>(new SpaceType(*grid_view(), p));
   }
 
   void TearDown() override final

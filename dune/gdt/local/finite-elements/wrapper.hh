@@ -329,7 +329,7 @@ public:
   {
     if (ii >= size())
       DUNE_THROW(Exceptions::finite_element_error, "ii = " << ii << "\n   size() = " << size());
-    return imp_->localCoefficients().localKey(ii);
+    return imp_->localCoefficients().localKey(XT::Common::numeric_cast<int>(ii));
   }
 
 private:

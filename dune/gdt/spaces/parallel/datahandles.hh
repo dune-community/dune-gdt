@@ -42,14 +42,9 @@ private:
     return mapper.local_size(e);
   }
 
-  template <class GV, class Entity>
-  static size_t local_size(const MapperInterface<GV>& /*mapper*/, const Entity& /*e*/, std::integral_constant<int, 1>)
-  {
-    return 0;
-  }
-
-  template <class GV, class Entity>
-  static size_t local_size(const MapperInterface<GV>& /*mapper*/, const Entity& /*e*/, std::integral_constant<int, 2>)
+  template <class GV, class Entity, int codim>
+  static std::enable_if_t<codim != 0, size_t>
+  local_size(const MapperInterface<GV>& /*mapper*/, const Entity& /*e*/, std::integral_constant<int, codim>)
   {
     return 0;
   }
