@@ -37,6 +37,7 @@
 #include <dune/gdt/local/bilinear-forms/integrals.hh>
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/spaces/l2/finite-volume.hh>
+#include <dune/gdt/tools/dorfler-marking.hh>
 
 using namespace Dune;
 
@@ -79,33 +80,12 @@ V compute_local_l2_norms(const XT::Functions::GridFunctionInterface<E>& func, co
 void mark_elements(
     G& grid, const GV& grid_view, const V& local_indicators, const double& refine_factor, const double& coarsen_factor)
 {
-  // mark all elements with a contribution above coarsen_threashhold for coarsening
-  // * therefore: as above, use a scalar FV space as index mapper
+  // compute dörfler marking
+  auto marked_elements = GDT::doerfler_marking(local_indicators, refine_factor, coarsen_factor);
+  const auto& elements_to_be_coarsened = marked_elements.first;
+  const auto& elements_to_be_refined = marked_elements.second;
+  // mark elements, as above, use a scalar FV space as index mapper
   auto fv_space = GDT::make_finite_volume_space<1>(grid_view);
-  //              ... and a corresponding discrete function to associate data with grid elements
-  //  auto local_indicators_function = GDT::make_discrete_function(fv_space, local_indicators);
-  //  auto local_indicators_local_function = local_indicators_function.local_discrete_function();
-  // prepare dörfler marking
-  std::vector<std::pair<double, size_t>> accumulated_sorted_local_indicators(local_indicators.size());
-  for (size_t ii = 0; ii < local_indicators.size(); ++ii)
-    accumulated_sorted_local_indicators[ii] = {std::pow(local_indicators[ii], 2), ii};
-  std::sort(accumulated_sorted_local_indicators.begin(),
-            accumulated_sorted_local_indicators.end(),
-            [](const auto& a, const auto& b) { return a.first < b.first; });
-  for (size_t ii = 1; ii < accumulated_sorted_local_indicators.size(); ++ii)
-    accumulated_sorted_local_indicators[ii].first += accumulated_sorted_local_indicators[ii - 1].first;
-  // select smallest coarsen_factor contributions for coarsening
-  std::set<size_t> elements_to_be_coarsened;
-  const double total_indicators = std::pow(local_indicators.l2_norm(), 2);
-  for (const auto& indicator : accumulated_sorted_local_indicators)
-    if (indicator.first < (coarsen_factor * total_indicators))
-      elements_to_be_coarsened.insert(indicator.second);
-  // select largest refine_factor contributions
-  std::set<size_t> elements_to_be_refined;
-  for (const auto& indicator : accumulated_sorted_local_indicators)
-    if (indicator.first > ((1 - refine_factor) * total_indicators))
-      elements_to_be_refined.insert(indicator.second);
-  // mark elements
   size_t corsend_elements = 0;
   size_t refined_elements = 0;
   for (auto&& element : elements(grid_view)) {
