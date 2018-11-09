@@ -181,9 +181,9 @@ int main(int argc, char* argv[])
                     DXTC_CONFIG_GET("mark.coarsen_factor", 0.01));
 
       // adapt the grid (restricts/prolongs the solution)
-      helper.preAdapt();
+      helper.pre_adapt();
       helper.adapt();
-      helper.postAdapt();
+      helper.post_adapt();
 
       // now that the grid is adapted, interpolate the function on the new grid
       GDT::interpolate(cosh, current_solution);

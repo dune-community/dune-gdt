@@ -56,13 +56,17 @@ public:
     return *this;
   }
 
-  void preAdapt(const bool pre_adapt_grid = true)
+  void pre_adapt(const bool pre_adapt_grid = true)
   {
     auto grid_view = grid_.leafGridView();
     // * preadapt will mark elements which might vanish due to coarsening
     bool elements_may_be_coarsened = true;
     if (pre_adapt_grid)
       elements_may_be_coarsened = grid_.preAdapt();
+    for (auto& data : data_) {
+      auto& space = std::get<0>(data).access();
+      space.pre_adapt();
+    }
     // * each discrete function is associated with persistent storage (keeps local DoF vectors, which can be converted
     //   to DynamicVector<RF>) to keep our data:
     //   - all kept leaf elements might change their indices and
@@ -100,7 +104,7 @@ public:
         }
       }
     }
-  } // ... preAdapt(...)
+  } // ... pre_adapt(...)
 
   void adapt(const bool adapt_grid = true)
   {
@@ -117,7 +121,7 @@ public:
     for (auto& data : data_) {
       auto& space = std::get<0>(data).access();
       auto& discrete_function = std::get<1>(data).access();
-      space.update_after_adapt();
+      space.adapt();
       discrete_function.dofs().resize_after_adapt();
     }
     // * get the data back to the discrete function
@@ -132,10 +136,14 @@ public:
     }
   } // ... adapt(...)
 
-  void postAdapt(const bool post_adapt_grid = true, const bool clear = false)
+  void post_adapt(const bool post_adapt_grid = true, const bool clear = false)
   {
     if (post_adapt_grid)
       grid_.postAdapt();
+    for (auto& data : data_) {
+      auto& space = std::get<0>(data).access();
+      space.post_adapt();
+    }
     if (clear)
       data_.clear();
     else {
@@ -144,7 +152,7 @@ public:
       for (auto& data : old_data)
         this->append(std::get<0>(data).access(), std::get<1>(data).access());
     }
-  } // ... postAdapt(...)
+  } // ... post_adapt(...)
 
 private:
   G& grid_;

@@ -157,16 +157,18 @@ public:
     }
   } // ... restrict_to(...)
 
+protected:
   /**
    * \note In general, we would have to check for newly created GeometryTypes and to recreate the local FEs accordingly.
    *       This is postponed until we have the LocalFiniteElementFamily.
    */
-  virtual void update_after_adapt() override
+  void update_after_adapt() override final
   {
     basis_->update_after_adapt();
     mapper_->update_after_adapt();
   }
 
+public:
   using BaseType::prolong_onto;
 
   void prolong_onto(const ElementType& element,

@@ -62,6 +62,8 @@ public:
 
   SpaceInterface()
     : dof_communicator_(nullptr)
+    , pre_adapted_(false)
+    , adapted_(false)
   {
   }
 
@@ -110,12 +112,35 @@ public:
     DUNE_THROW(Exceptions::space_error, "This space does not support adaptation!");
   }
 
+  virtual void pre_adapt()
+  {
+    if (pre_adapted_)
+      return;
+    pre_adapted_ = true;
+  }
+
+protected:
   /**
    * \todo Detect if this is called more than once per adaptation.
    */
   virtual void update_after_adapt()
   {
     DUNE_THROW(Exceptions::space_error, "This space does not support adaptation!");
+  }
+
+public:
+  virtual void adapt()
+  {
+    DUNE_THROW_IF(!pre_adapted_, Exceptions::space_error, "You need to call pre_adapt() first!");
+    if (adapted_)
+      return;
+    this->update_after_adapt();
+  }
+
+  virtual void post_adapt()
+  {
+    adapted_ = false;
+    pre_adapted_ = false;
   }
 
   virtual void prolong_onto(const ElementType& /*element*/,
@@ -189,6 +214,8 @@ protected:
 
 private:
   std::shared_ptr<DofCommunicatorType> dof_communicator_;
+  bool pre_adapted_;
+  bool adapted_;
 }; // class SpaceInterface
 
 
