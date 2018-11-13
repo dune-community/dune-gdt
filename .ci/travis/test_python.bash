@@ -4,7 +4,7 @@ set -e
 set -x
 
 source ${SUPERDIR}/scripts/bash/retry_command.bash
-
+cd ${SUPERDIR}
 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} configure
 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD}
 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD} bindings
