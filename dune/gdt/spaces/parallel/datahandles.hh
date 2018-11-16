@@ -352,8 +352,8 @@ class MinDataHandle : public SpaceDataHandle<GV,
       BaseType;
 
 public:
-  MinDataHandle(const SpaceInterface<GV, r, rD, R>& space_, VectorType& v_)
-    : BaseType(space_, v_, DofDataCommunicationDescriptor<typename VectorType::ScalarType>())
+  MinDataHandle(const SpaceInterface<GV, r, rD, R>& sp, VectorType& v_)
+    : BaseType(sp, v_, DofDataCommunicationDescriptor<typename VectorType::ScalarType>())
   {
   }
 };
@@ -428,8 +428,8 @@ public:
    * \param v_           The result vector.
    * \param init_vector  Flag to control whether the result vector will be initialized.
    */
-  GhostDataHandle(const SpaceInterface<GV, r, rD, R>& space_, VectorType& v_, bool init_vector = true)
-    : BaseType(space_, v_, EntityDataCommunicationDescriptor<bool>(space_.mapper().max_local_size()))
+  GhostDataHandle(const SpaceInterface<GV, r, rD, R>& sp, VectorType& v_, bool init_vector = true)
+    : BaseType(sp, v_, EntityDataCommunicationDescriptor<bool>(sp.mapper().max_local_size()))
   {
     if (init_vector)
       v_.set_all(false);

@@ -242,7 +242,8 @@ public:
   }
 
   LocalIntersectionOperatorFiniteDifferenceJacobianAssembler(const ThisType& other)
-    : source_space_(other.source_space_)
+    : BaseType(other)
+    , source_space_(other.source_space_)
     , range_space_(other.range_space_)
     , matrix_(other.matrix_)
     , source_vector_(other.source_vector_)
