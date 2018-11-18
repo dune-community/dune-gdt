@@ -325,7 +325,7 @@ public:
       if (id == "time to solution (s)") {
         DUNE_THROW_IF(current_data_["quantity"].find(id) == current_data_["quantity"].end(),
                       InvalidStateException,
-                      current_data_["quantity"]);
+                      "Could not find id " << id << "in current_data_ map");
       } else if (id == "rel mass conserv error") {
         const auto compute_masses = [&](const auto& vec) {
           auto func = make_discrete_function(current_space, vec);
