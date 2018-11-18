@@ -243,8 +243,8 @@ class AdvectionDgArtificialViscosityOperator : public AdvectionDgOperator<M, SGV
 {
   using ThisType = AdvectionDgArtificialViscosityOperator<M, SGV, m, RGV>;
   using BaseType = AdvectionDgOperator<M, SGV, m, RGV>;
-  using BaseType::d;
   using typename BaseType::D;
+  static constexpr size_t d = BaseType::d;
 
 public:
   using typename BaseType::NumericalFluxType;

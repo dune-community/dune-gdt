@@ -480,8 +480,8 @@ public:
         .visualize(grid_layer, prefix + "density_times_velocity" + suffix, subsampling);
     XT::Functions::make_sliced_function<1>(u_conservative, {energy_index()}, "energy")
         .visualize(grid_layer, prefix + "energy" + suffix, subsampling);
-    const auto u_primitive =
-        XT::Functions::make_transformed_function<m, 1, R>(u_conservative, [&](const auto& w) { return primitive(w); });
+    const auto u_primitive = XT::Functions::make_transformed_function<m, 1, R>(
+        u_conservative, [&](const auto& w) { return this->primitive(w); });
     XT::Functions::make_sliced_function<d>(u_primitive, velocity_indices(), "velocity")
         .visualize(grid_layer, prefix + "velocity" + suffix, subsampling);
     XT::Functions::make_sliced_function<1>(u_primitive, {pressure_index()}, "pressure")

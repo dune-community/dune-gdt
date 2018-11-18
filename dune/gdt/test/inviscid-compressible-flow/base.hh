@@ -104,13 +104,13 @@ protected:
 public:
   InviscidCompressibleFlowEulerTest(const std::string timestepping)
     : Problem(new InviscidCompressibleFlowEulerProblem<G>())
-    , BaseType(Problem::access().T_end,
+    , BaseType(this->access().T_end,
                timestepping,
                [&](const auto& solution, const auto& prefix) {
                  for (size_t ii = 0; ii < this->visualization_steps_; ++ii) {
                    const double time = ii * (this->T_end_ / this->visualization_steps_);
                    const auto u_t = solution.evaluate(time);
-                   Problem::access().euler_tools.visualize(
+                   this->access().euler_tools.visualize(
                        u_t, u_t.space().grid_view(), prefix, XT::Common::to_string(ii));
                  }
                })
@@ -122,31 +122,31 @@ public:
 protected:
   const F& flux() const override final
   {
-    return Problem::access().flux;
+    return this->access().flux;
   }
 
   DF make_initial_values(const S& space) override final
   {
     if (boundary_treatment == "inflow_from_the_left_by_heuristic_euler_treatment_impermeable_wall_right") {
-      const auto& euler_tools = Problem::access().euler_tools;
+      const auto& euler_tools = this->access().euler_tools;
       return interpolate<V>(0,
                             [&](const auto& /*xx*/, const auto& /*param*/) {
                               return euler_tools.conservative(/*density=*/0.5, /*velocity=*/0., /*pressure=*/0.4);
                             },
                             space);
     } else
-      return Problem::access().template make_initial_values<V>(space);
+      return this->access().template make_initial_values<V>(space);
   } // ... make_initial_values(...)
 
   GP make_initial_grid() override final
   {
-    return Problem::access().make_initial_grid();
+    return this->access().make_initial_grid();
   }
 
   std::unique_ptr<O> make_lhs_operator(const S& space) override final
   {
     auto& self = *this;
-    const auto& euler_tools = Problem::access().euler_tools;
+    const auto& euler_tools = this->access().euler_tools;
     const NumericalVijayasundaramFlux<d, m> numerical_flux(
         self.flux(),
         /*flux_eigen_decomposition=*/[&](const auto& /*f*/, const auto& w, const auto& n, const auto&
