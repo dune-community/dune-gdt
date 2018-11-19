@@ -15,6 +15,11 @@ import itertools
 from dune.xt.codegen import typeid_to_typedef_name, la_backends
 
 grids = ['Yasp2Grid']
+try:
+    if cache['dune-alugrid']:
+        grids.extend(['AluSimplex2dGridType'])
+except KeyError:
+    pass
 
 casenames = ['ESV2007DdSubdomainsTestCase',]
 testcases = ['Dune::GDT::LinearElliptic::{}<{}>'.format(c, g) for c, g in itertools.product(casenames, grids)]

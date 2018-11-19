@@ -4,7 +4,7 @@ status = 1a3bcab04b011a5d6e44f9983cae6ff89fa695e8 bin (heads/master)
 	 81cfc08e7f7e78f7a7cd91ce22b88322fbb98c58 config.opts (remotes/origin/HEAD)
 	 8f2c5aba441417bf2c42f22272f538c68a89cc4a dune-alugrid (remotes/origin/releases/2.5)
 	 707acf201d5a754c80f87cc4d71aa36bf29a6e3f dune-common (v2.5.1-9-g707acf20)
-	+0d992a429e0ff1ed48819e4735675c3a9c03a7a6 dune-gdt (heads/rene/parabolic-lrbms-2017)
+	+7d765ffeeed451dc425fdfb2613b0d45d71fd6fc dune-gdt (heads/rene/parabolic-lrbms-2017)
 	 6bd2463d53617b8c0c0f11a485277a32e9c8e98a dune-geometry (v2.5.2)
 	 d7b20bbc5f6fdcfc312beb0ea5d16d39ea26904e dune-grid (v2.5.1-2-gd7b20bbc5)
 	 e9d9a3336735090648637e044e279866bbea3597 dune-grid-glue (v2.4.0-60-ge9d9a33)
@@ -14,13 +14,14 @@ status = 1a3bcab04b011a5d6e44f9983cae6ff89fa695e8 bin (heads/master)
 	 741e4f8e53bdd3e1b6e19d84eb22b6e3dc48526c dune-python (remotes/origin/releases/2.5)
 	 26cc8cb4161a3a51002ab2a81b8c81d2c951ee79 dune-testtools (heads/dune_xt)
 	 8fe883e99c58c9f0c2f92457d546a0ac9f5a9bf9 dune-uggrid (v2.5.2-1-g8fe883e9)
-	+8697678b6eaa7227216e2775a6450666390846dc dune-xt-common (heads/rene/parabolic-lrbms-2017)
+	+df85c799dbd9cd6d331a27a9ead834da59ec0549 dune-xt-common (heads/rene/parabolic-lrbms-2017)
 	 e69fd76a2344e7ed99858ff9cb0988437c439b5a dune-xt-data (heads/rene/parabolic-lrbms-2017)
 	 841cdccca42c349ff92991639a2466837617d29c dune-xt-functions (heads/rene/parabolic-lrbms-2017)
-	 0622536cb9781d206af744f456b9f716c26f4505 dune-xt-grid (heads/rene/parabolic-lrbms-2017)
-	 3af9db50129a87a2e2426540ab7c5c7432209ef3 dune-xt-la (heads/rene/parabolic-lrbms-2017)
-	+e92de3e126394b150443f06b8f0a0d44cd55051d pylrbms (heads/master)
-	+6729114d45095b9846d5ec5a9f4991f3b8da2554 pymor (0.1.0-3242-g6729114d)
+	+fde955b17de07ee7f2156545c42b5e28c45955c6 dune-xt-grid (heads/rene/parabolic-lrbms-2017)
+	+1cc646328ea60712c9f09b3d797878cce873f7e1 dune-xt-la (heads/rene/parabolic-lrbms-2017)
+	+3fd4dbd57b54f412e28b84aa6f77fb440c120f7d mpi4py (3.0.0)
+	+7e8bf5f1a6e1401621da83b8d012df6a4d4d78d1 pylrbms (heads/master)
+	+ef092c1221aef5559e08e974ef6d2199fbbc3b0e pymor (0.1.0-3243-gef092c12)
 	 60cd896bf3f1eb99066563aa1a07113e5a791d47 scripts (heads/master)
 commit = 3cab7e6f5c88fbfe96df7ccee92e32c5c2a4549f
 
@@ -47,7 +48,7 @@ commit = 707acf201d5a754c80f87cc4d71aa36bf29a6e3f
 [submodule.dune-gdt]
 remote = https://github.com/dune-community/dune-gdt.git
 status = 2424627f0ad5de7e4aaa5e7f48bc2a02414d95a1 .vcsetup (heads/master)
-commit = 0d992a429e0ff1ed48819e4735675c3a9c03a7a6
+commit = 7d765ffeeed451dc425fdfb2613b0d45d71fd6fc
 
 [submodule.dune-geometry]
 remote = https://github.com/dune-mirrors/dune-geometry.git
@@ -97,7 +98,7 @@ commit = 8fe883e99c58c9f0c2f92457d546a0ac9f5a9bf9
 [submodule.dune-xt-common]
 remote = https://github.com/dune-community/dune-xt-common.git
 status = 2424627f0ad5de7e4aaa5e7f48bc2a02414d95a1 .vcsetup (heads/master)
-commit = 8697678b6eaa7227216e2775a6450666390846dc
+commit = df85c799dbd9cd6d331a27a9ead834da59ec0549
 
 [submodule.dune-xt-data]
 remote = https://github.com/dune-community/dune-xt-data
@@ -112,22 +113,27 @@ commit = 841cdccca42c349ff92991639a2466837617d29c
 [submodule.dune-xt-grid]
 remote = https://github.com/dune-community/dune-xt-grid.git
 status = 2424627f0ad5de7e4aaa5e7f48bc2a02414d95a1 .vcsetup (heads/master)
-commit = 0622536cb9781d206af744f456b9f716c26f4505
+commit = fde955b17de07ee7f2156545c42b5e28c45955c6
 
 [submodule.dune-xt-la]
 remote = https://github.com/dune-community/dune-xt-la.git
 status = 2424627f0ad5de7e4aaa5e7f48bc2a02414d95a1 .vcsetup (heads/master)
-commit = 3af9db50129a87a2e2426540ab7c5c7432209ef3
+commit = 1cc646328ea60712c9f09b3d797878cce873f7e1
+
+[submodule.mpi4py]
+remote = https://github.com/mpi4py/mpi4py
+status = 
+commit = 3fd4dbd57b54f412e28b84aa6f77fb440c120f7d
 
 [submodule.pylrbms]
 remote = https://github.com/dune-community/pylrbms
 status = 
-commit = e92de3e126394b150443f06b8f0a0d44cd55051d
+commit = 7e8bf5f1a6e1401621da83b8d012df6a4d4d78d1
 
 [submodule.pymor]
 remote = https://zivgitlab.uni-muenster.de/srave_01/pymor.git
 status = 
-commit = 6729114d45095b9846d5ec5a9f4991f3b8da2554
+commit = ef092c1221aef5559e08e974ef6d2199fbbc3b0e
 
 [submodule.scripts]
 remote = https://github.com/wwu-numerik/scripts.git
