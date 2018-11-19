@@ -60,8 +60,9 @@ static_assert(DUNE_GRID_EXPERIMENTAL_GRID_EXTENSIONS, "grid extensions are manda
 
 //  using GridType = Dune::ALUGrid<3, 3, simplex, nonconforming, ALUGridMPIComm>;
 // using GridType = Dune::ALUGrid<2, 2, simplex, nonconforming, ALUGridMPIComm>;
+using GridType = Dune::ALUGrid<2, 2, simplex, conforming, ALUGridMPIComm>;
 // using GridType = Dune::ALUGrid<2, 2, cube, nonconforming, ALUGridMPIComm>;
-using GridType = Yasp2Grid;
+// using GridType = Yasp2Grid;
 using GridProvider = XT::Grid::GridProvider<GridType, XT::Grid::DD::SubdomainGrid<GridType>>;
 using Errors = std::pair<double, double>;
 constexpr const size_t pol_order = 1;
