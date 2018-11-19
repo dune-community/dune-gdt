@@ -32,15 +32,18 @@ template <class ViewImp,
 struct DofCommunicationChooser
 {
   typedef Dune::XT::SequentialCommunication Type;
+  static_assert(Dune::AlwaysFalse<ViewImp>::value, "");
 
   static Type* create(const ViewImp& /*gridView*/)
   {
+    static_assert(Dune::AlwaysFalse<ViewImp>::value, "");
     return new Type;
   }
 
   template <class SpaceBackend>
   static bool prepare(const SpaceBackend& /*space_backend*/, Type& /*communicator*/)
   {
+    static_assert(Dune::AlwaysFalse<SpaceBackend>::value, "");
     return false;
   }
 }; // struct DofCommunicationChooser
@@ -71,7 +74,9 @@ public:
   template <class Space>
   static bool prepare(const Space& space, Type& communicator)
   {
+    DXTC_LOG_DEBUG << "Preparing dof_comm ...\n";
     GDT::GenericParallelHelper<Space>(space, 1).setup_parallel_indexset(communicator);
+    DXTC_LOG_DEBUG << "Preparing dof_comm done\n";
     return true;
   } // ... prepare(...)
 
