@@ -92,6 +92,6 @@ PYBIND11_MODULE(__assembler, m)
       [](const Dune::GDT::bindings::ResultStorage& self) { return self.result(); },
       [](Dune::GDT::bindings::ResultStorage& self, const double& value) { self.result() = value; });
 
-
+  py::module::import("dune.xt.grid.walker");
   BIND_GRID(GDT_BINDINGS_GRID)
 }
