@@ -121,7 +121,8 @@ public:
   {
     ThisType estimator(grid_layer, space, vector, diffusion_factor, diffusion_tensor, over_int);
     XT::Grid::Walker<GridLayerType> grid_walker(grid_layer);
-    grid_walker.append(estimator, new XT::Grid::ApplyOn::PartitionSetEntities<GridLayerType, Partitions::Interior>());
+    grid_walker.append(estimator,
+                       new XT::Grid::ApplyOn::PartitionSetEntities<GridLayerType, Partitions::InteriorBorder>());
     grid_walker.walk();
     return std::sqrt(estimator.result());
   } // ... estimate(...)
@@ -248,7 +249,8 @@ public:
   {
     ThisType estimator(grid_layer, space, vector, force, diffusion_factor, diffusion_tensor, over_int);
     XT::Grid::Walker<GridLayerType> grid_walker(grid_layer);
-    grid_walker.append(estimator, new XT::Grid::ApplyOn::PartitionSetEntities<GridLayerType, Partitions::Interior>());
+    grid_walker.append(estimator,
+                       new XT::Grid::ApplyOn::PartitionSetEntities<GridLayerType, Partitions::InteriorBorder>());
     grid_walker.walk();
     return std::sqrt(estimator.result());
   } // ... estimate(...)
@@ -408,7 +410,8 @@ public:
     ThisType estimator(
         grid_layer, space, vector, diffusion_factor_norm, diffusion_factor_reconstruction, diffusion_tensor, over_int);
     XT::Grid::Walker<GridLayerType> grid_walker(grid_layer);
-    grid_walker.append(estimator, new XT::Grid::ApplyOn::PartitionSetEntities<GridLayerType, Partitions::Interior>());
+    grid_walker.append(estimator,
+                       new XT::Grid::ApplyOn::PartitionSetEntities<GridLayerType, Partitions::InteriorBorder>());
     grid_walker.walk();
     return std::sqrt(estimator.result());
   } // ... estimate(...)
@@ -567,7 +570,8 @@ public:
                        diffusion_tensor,
                        over_int);
     XT::Grid::Walker<GridLayerType> grid_walker(grid_layer);
-    grid_walker.append(estimator, new XT::Grid::ApplyOn::PartitionSetEntities<GridLayerType, Partitions::Interior>());
+    grid_walker.append(estimator,
+                       new XT::Grid::ApplyOn::PartitionSetEntities<GridLayerType, Partitions::InteriorBorder>());
     grid_walker.walk();
     return std::sqrt(estimator.result());
   } // ... estimate(...)
@@ -740,7 +744,8 @@ public:
                        diffusion_tensor,
                        over_int);
     XT::Grid::Walker<GridLayerType> grid_walker(grid_layer);
-    grid_walker.append(estimator, new XT::Grid::ApplyOn::PartitionSetEntities<GridLayerType, Partitions::Interior>());
+    grid_walker.append(estimator,
+                       new XT::Grid::ApplyOn::PartitionSetEntities<GridLayerType, Partitions::InteriorBorder>());
     grid_walker.walk();
     return std::sqrt(estimator.result());
   } // ... estimate(...)
