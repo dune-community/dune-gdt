@@ -50,13 +50,16 @@ public:
 } // namespace internal
 
 
-template <class AnalyticalFluxImp,
-          class BoundaryValueImp,
-          class BasisfunctionImp,
-          class GridLayerImp,
-          class Traits = internal::
-              AdvectionKineticOperatorTraits<AnalyticalFluxImp, BoundaryValueImp, BasisfunctionImp, GridLayerImp>>
-class AdvectionKineticOperator : public Dune::GDT::OperatorInterface<Traits>, public AdvectionOperatorBase<Traits>
+template <
+    class AnalyticalFluxImp,
+    class BoundaryValueImp,
+    class BasisfunctionImp,
+    class GridLayerImp,
+    class Traits =
+        internal::AdvectionKineticOperatorTraits<AnalyticalFluxImp, BoundaryValueImp, BasisfunctionImp, GridLayerImp>>
+class AdvectionKineticOperator
+  : public Dune::GDT::OperatorInterface<Traits>
+  , public AdvectionOperatorBase<Traits>
 {
   typedef AdvectionOperatorBase<Traits> BaseType;
 
@@ -73,8 +76,7 @@ public:
                                midpoint_quadrature<DomainFieldType, BaseType::dimDomain>())
     : BaseType(analytical_flux, boundary_values, intersection_quadrature)
     , basis_functions_(basis_functions)
-  {
-  }
+  {}
 
   template <class SourceType, class RangeType>
   void apply(SourceType& source, RangeType& range, const XT::Common::Parameter& param) const

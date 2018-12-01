@@ -73,10 +73,10 @@ public:
 
 template <class GridLayerImp, class RangeFieldImp, size_t rangeDim>
 class FvSpace<GridLayerImp, RangeFieldImp, rangeDim, 1>
-    : public FvSpaceInterface<internal::FvSpaceTraits<GridLayerImp, RangeFieldImp, rangeDim, 1>,
-                              GridLayerImp::dimension,
-                              rangeDim,
-                              1>
+  : public FvSpaceInterface<internal::FvSpaceTraits<GridLayerImp, RangeFieldImp, rangeDim, 1>,
+                            GridLayerImp::dimension,
+                            rangeDim,
+                            1>
 {
   typedef FvSpace<GridLayerImp, RangeFieldImp, rangeDim, 1> ThisType;
   typedef FvSpaceInterface<internal::FvSpaceTraits<GridLayerImp, RangeFieldImp, rangeDim, 1>,
@@ -87,11 +87,11 @@ class FvSpace<GridLayerImp, RangeFieldImp, rangeDim, 1>
 
 public:
   typedef typename internal::FvSpaceTraits<GridLayerImp, RangeFieldImp, rangeDim, 1> Traits;
-  using typename BaseType::GridLayerType;
   using typename BaseType::BackendType;
-  using typename BaseType::MapperType;
-  using typename BaseType::EntityType;
   using typename BaseType::BaseFunctionSetType;
+  using typename BaseType::EntityType;
+  using typename BaseType::GridLayerType;
+  using typename BaseType::MapperType;
 
 private:
   typedef typename Traits::DofCommunicationChooserType DofCommunicationChooserType;
@@ -103,22 +103,19 @@ public:
     : grid_layer_(grd_layr)
     , mapper_(grid_layer_)
     , communicator_(DofCommunicationChooserType::create(grid_layer_))
-  {
-  }
+  {}
 
   FvSpace(const ThisType& other)
     : grid_layer_(other.grid_layer_)
     , mapper_(other.mapper_)
     , communicator_(DofCommunicationChooserType::create(grid_layer_))
-  {
-  }
+  {}
 
   FvSpace(ThisType&& source)
     : grid_layer_(std::move(source.grid_layer_))
     , mapper_(std::move(source.mapper_))
     , communicator_(DofCommunicationChooserType::create(grid_layer_))
-  {
-  }
+  {}
 
   ThisType& operator=(const ThisType& other) = delete;
 

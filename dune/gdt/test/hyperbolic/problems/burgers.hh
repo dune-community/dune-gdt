@@ -39,29 +39,29 @@ class Burgers : public ProblemBase<E, D, d, U, R, r>
 
 public:
   static const bool linear = false;
-  using typename BaseType::DomainType;
+  using BaseType::dimDomain;
+  using BaseType::dimRange;
+  using typename BaseType::ActualBoundaryValueType;
+  using typename BaseType::ActualDirichletBoundaryValueType;
+  using typename BaseType::ActualFluxType;
+  using typename BaseType::ActualInitialValueType;
+  using typename BaseType::ActualRhsType;
   using typename BaseType::DomainFieldType;
+  using typename BaseType::DomainType;
+  using typename BaseType::IntersectionType;
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeType;
   using typename BaseType::StateRangeType;
-  using typename BaseType::IntersectionType;
-  using typename BaseType::ActualFluxType;
-  using typename BaseType::ActualRhsType;
-  using typename BaseType::ActualInitialValueType;
-  using typename BaseType::ActualDirichletBoundaryValueType;
-  using typename BaseType::ActualBoundaryValueType;
-  using BaseType::dimDomain;
-  using BaseType::dimRange;
 
   using MatrixType = FieldMatrix<RangeFieldType, dimRange, dimRange>;
 
-  using typename BaseType::FluxType;
-  using typename BaseType::RhsType;
-  using typename BaseType::InitialValueType;
   using typename BaseType::BoundaryValueType;
+  using typename BaseType::FluxType;
+  using typename BaseType::InitialValueType;
+  using typename BaseType::RhsType;
 
-  using BaseType::default_grid_cfg;
   using BaseType::default_boundary_cfg;
+  using BaseType::default_grid_cfg;
 
   Burgers(const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
           const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
@@ -74,8 +74,7 @@ public:
                dimDomain == 1 ? 0.5 : (dimDomain == 2 ? 0.1 : 0.05),
                1.,
                false)
-  {
-  }
+  {}
 
   static std::string static_id()
   {
@@ -116,8 +115,9 @@ public:
           if (dimDomain == 1)
             return RangeType(std::sin(M_PI * x[0]));
           else
-            return RangeType(1.0 / 40.0 * std::exp(1 - std::pow(M_PI * (2 * x[0] - 1), 2)
-                                                   - std::pow(M_PI * (2 * x[1] - 1), 2))); // bump, only in 2D or higher
+            return RangeType(1.0 / 40.0
+                             * std::exp(1 - std::pow(M_PI * (2 * x[0] - 1), 2)
+                                        - std::pow(M_PI * (2 * x[1] - 1), 2))); // bump, only in 2D or higher
         },
         10);
   } // ... create_initial_values()
@@ -136,23 +136,23 @@ public:
 
 template <class G, class R = double, size_t r = 1>
 class BurgersTestCase
-    : public Dune::GDT::Test::
-          InstationaryTestCase<G,
-                               Problems::Burgers<typename G::template Codim<0>::Entity,
-                                                 typename G::ctype,
-                                                 G::dimension,
-                                                 typename internal::DiscreteFunctionProvider<G,
-                                                                                             GDT::SpaceType::product_fv,
-                                                                                             0,
-                                                                                             R,
-                                                                                             r,
-                                                                                             1,
-                                                                                             GDT::Backends::gdt,
-                                                                                             XT::LA::default_backend,
-                                                                                             XT::Grid::Layers::leaf,
-                                                                                             true>::type,
-                                                 R,
-                                                 r>>
+  : public Dune::GDT::Test::InstationaryTestCase<
+        G,
+        Problems::Burgers<typename G::template Codim<0>::Entity,
+                          typename G::ctype,
+                          G::dimension,
+                          typename internal::DiscreteFunctionProvider<G,
+                                                                      GDT::SpaceType::product_fv,
+                                                                      0,
+                                                                      R,
+                                                                      r,
+                                                                      1,
+                                                                      GDT::Backends::gdt,
+                                                                      XT::LA::default_backend,
+                                                                      XT::Grid::Layers::leaf,
+                                                                      true>::type,
+                          R,
+                          r>>
 {
   using E = typename G::template Codim<0>::Entity;
   using D = typename G::ctype;
@@ -180,13 +180,12 @@ private:
 
 public:
   using typename BaseType::GridType;
-  using typename BaseType::SolutionType;
   using typename BaseType::LevelGridViewType;
+  using typename BaseType::SolutionType;
 
   BurgersTestCase(const size_t num_refs = (d == 1 ? 4 : 1), const double divide_t_end_by = 1.0)
     : BaseType(divide_t_end_by, ProblemType::default_grid_cfg(), num_refs)
-  {
-  }
+  {}
 
   virtual const ProblemType& problem() const override final
   {

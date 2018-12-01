@@ -23,7 +23,7 @@ namespace GDT {
 
 template <class DiscreteFunctionType, class BasisfunctionType>
 class KineticIsotropicLocalFunctor
-    : public XT::Grid::Functor::Codim0<typename DiscreteFunctionType::SpaceType::GridLayerType>
+  : public XT::Grid::Functor::Codim0<typename DiscreteFunctionType::SpaceType::GridLayerType>
 {
   using BaseType = typename XT::Grid::Functor::Codim0<typename DiscreteFunctionType::SpaceType::GridLayerType>;
   using CheckerboardType = XT::Functions::CheckerboardFunction<typename DiscreteFunctionType::EntityType,
@@ -53,8 +53,7 @@ public:
     , Q_(Q)
     , basis_integrated_(basis_functions_.integrated())
     , u_iso_(basis_functions_.u_iso())
-  {
-  }
+  {}
 
   virtual void apply_local(const EntityType& entity)
   {
@@ -126,8 +125,7 @@ public:
     , sigma_a_(sigma_a)
     , sigma_s_(sigma_s)
     , Q_(Q)
-  {
-  }
+  {}
 
   virtual RangeFieldType step(const RangeFieldType dt, const RangeFieldType max_dt) override final
   {

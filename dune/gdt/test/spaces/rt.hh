@@ -30,22 +30,22 @@
 
 #if HAVE_DUNE_ALUGRID
 
-#define SPACE_RT_ALUCONFORMGRID(dd) Dune::GDT::RaviartThomasSpace<AluConform##dd##dLeafGridViewType, 0, double>
+#  define SPACE_RT_ALUCONFORMGRID(dd) Dune::GDT::RaviartThomasSpace<AluConform##dd##dLeafGridViewType, 0, double>
 
-#define SPACE_RT_ALUCUBEGRID(dd) Dune::GDT::RaviartThomasSpace<AluCube##dd##dLeafGridViewType, 0, double>
+#  define SPACE_RT_ALUCUBEGRID(dd) Dune::GDT::RaviartThomasSpace<AluCube##dd##dLeafGridViewType, 0, double>
 
-#define SPACES_RT_ALUGRID                                                                                              \
-  SPACE_RT_ALUCONFORMGRID(2)                                                                                           \
-  , SPACE_RT_ALUCUBEGRID(2), SPACE_RT_ALUCUBEGRID(3)
+#  define SPACES_RT_ALUGRID                                                                                            \
+    SPACE_RT_ALUCONFORMGRID(2)                                                                                         \
+    , SPACE_RT_ALUCUBEGRID(2), SPACE_RT_ALUCUBEGRID(3)
 
 
-#define SPACE_RT_ALUCONFORMGRID_LEVEL(dd) Dune::GDT::RaviartThomasSpace<AluConform##dd##dLevelGridViewType, 0, double>
+#  define SPACE_RT_ALUCONFORMGRID_LEVEL(dd) Dune::GDT::RaviartThomasSpace<AluConform##dd##dLevelGridViewType, 0, double>
 
-#define SPACE_RT_ALUCUBEGRID_LEVEL(dd) Dune::GDT::RaviartThomasSpace<AluCube##dd##dLevelGridViewType, 0, double>
+#  define SPACE_RT_ALUCUBEGRID_LEVEL(dd) Dune::GDT::RaviartThomasSpace<AluCube##dd##dLevelGridViewType, 0, double>
 
-#define SPACES_RT_ALUGRID_LEVEL                                                                                        \
-  SPACE_RT_ALUCONFORMGRID_LEVEL(2)                                                                                     \
-  , SPACE_RT_ALUCUBEGRID_LEVEL(2), SPACE_RT_ALUCUBEGRID_LEVEL(3)
+#  define SPACES_RT_ALUGRID_LEVEL                                                                                      \
+    SPACE_RT_ALUCONFORMGRID_LEVEL(2)                                                                                   \
+    , SPACE_RT_ALUCUBEGRID_LEVEL(2), SPACE_RT_ALUCUBEGRID_LEVEL(3)
 
 #endif // HAVE_DUNE_ALUGRID
 

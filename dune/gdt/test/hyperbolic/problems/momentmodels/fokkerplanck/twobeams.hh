@@ -34,18 +34,18 @@ class TwoBeamsPn : public FokkerPlanckEquation<BasisfunctionImp, GridLayerImp, U
   using BaseType = FokkerPlanckEquation<BasisfunctionImp, GridLayerImp, U_>;
 
 public:
-  using typename BaseType::InitialValueType;
-  using typename BaseType::BoundaryValueType;
-  using typename BaseType::ActualInitialValueType;
-  using typename BaseType::ActualDirichletBoundaryValueType;
   using typename BaseType::ActualBoundaryValueType;
+  using typename BaseType::ActualDirichletBoundaryValueType;
+  using typename BaseType::ActualInitialValueType;
+  using typename BaseType::BasisfunctionType;
+  using typename BaseType::BoundaryValueType;
   using typename BaseType::DomainType;
+  using typename BaseType::GridLayerType;
+  using typename BaseType::InitialValueType;
+  using typename BaseType::IntersectionType;
+  using typename BaseType::QuadratureType;
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeType;
-  using typename BaseType::BasisfunctionType;
-  using typename BaseType::GridLayerType;
-  using typename BaseType::QuadratureType;
-  using typename BaseType::IntersectionType;
 
   using BaseType::default_boundary_cfg;
 
@@ -54,8 +54,7 @@ public:
              const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
              const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
     : BaseType(basis_functions, grid_layer, 1, grid_cfg, boundary_cfg)
-  {
-  }
+  {}
 
   static std::string static_id()
   {
@@ -116,21 +115,20 @@ class TwoBeamsMn : public TwoBeamsPn<BasisfunctionType, GridLayerType, U_>
 
 public:
   using typename BaseType::FluxType;
-  using typename BaseType::RangeType;
   using typename BaseType::QuadratureType;
+  using typename BaseType::RangeType;
   using ActualFluxType = EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_>;
 
 
-  using BaseType::default_grid_cfg;
   using BaseType::default_boundary_cfg;
+  using BaseType::default_grid_cfg;
 
   TwoBeamsMn(const BasisfunctionType& basis_functions,
              const GridLayerType& grid_layer,
              const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
              const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
     : BaseType(basis_functions, grid_layer, grid_cfg, boundary_cfg)
-  {
-  }
+  {}
 
   static std::string static_id()
   {

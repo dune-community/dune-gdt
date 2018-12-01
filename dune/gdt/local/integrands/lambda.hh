@@ -103,7 +103,7 @@ public:
 
 template <class E, class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
 class LocalLambdaBinaryVolumeIntegrand
-    : public LocalVolumeIntegrandInterface<internal::LocalLambdaBinaryVolumeIntegrandTraits<E, R, rT, rCT, rA, rCA>, 2>
+  : public LocalVolumeIntegrandInterface<internal::LocalLambdaBinaryVolumeIntegrandTraits<E, R, rT, rCT, rA, rCA>, 2>
 {
   typedef LocalVolumeIntegrandInterface<internal::LocalLambdaBinaryVolumeIntegrandTraits<E, R, rT, rCT, rA, rCA>, 2>
       BaseType;
@@ -111,10 +111,10 @@ class LocalLambdaBinaryVolumeIntegrand
 
 public:
   typedef internal::LocalLambdaBinaryVolumeIntegrandTraits<E, R, rT, rCT, rA, rCA> Traits;
-  using typename BaseType::LocalfunctionTupleType;
-  using typename BaseType::EntityType;
-  using typename BaseType::D;
   using BaseType::d;
+  using typename BaseType::D;
+  using typename BaseType::EntityType;
+  using typename BaseType::LocalfunctionTupleType;
 
   typedef XT::Functions::LocalfunctionSetInterface<E, D, d, R, rT, rCT> TestBaseType;
   typedef XT::Functions::LocalfunctionSetInterface<E, D, d, R, rA, rCA> AnsatzBaseType;
@@ -128,8 +128,7 @@ public:
   LocalLambdaBinaryVolumeIntegrand(OrderLambdaType order_lambda, EvaluateLambdaType evaluate_lambda)
     : order_lambda_(order_lambda)
     , evaluate_lambda_(evaluate_lambda)
-  {
-  }
+  {}
 
   LocalLambdaBinaryVolumeIntegrand(const ThisType&) = default;
   LocalLambdaBinaryVolumeIntegrand(ThisType&&) = default;
@@ -158,14 +157,8 @@ public:
                  "Your evalaute_lambda destroyed ret!\n   "
                      << "ret is expected to be at least of size test_base.size() x ansatz_base.size(),\n   "
                      << "do not call ret.resize(...)!\n   "
-                     << "test_base.size(): "
-                     << test_base.size()
-                     << "\n   ansatz_base.size(): "
-                     << ansatz_base.size()
-                     << "\n   ret.rows(): "
-                     << ret.rows()
-                     << "\n   ret.cols(): "
-                     << ret.cols());
+                     << "test_base.size(): " << test_base.size() << "\n   ansatz_base.size(): " << ansatz_base.size()
+                     << "\n   ret.rows(): " << ret.rows() << "\n   ret.cols(): " << ret.cols());
   } // ... evaluate(...)
 
 private:
@@ -176,7 +169,7 @@ private:
 
 template <class E, class I, class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
 class LocalLambdaBinaryFaceIntegrand
-    : public LocalFaceIntegrandInterface<internal::LocalLambdaBinaryFaceIntegrandTraits<E, I, R, rT, rCT, rA, rCA>, 2>
+  : public LocalFaceIntegrandInterface<internal::LocalLambdaBinaryFaceIntegrandTraits<E, I, R, rT, rCT, rA, rCA>, 2>
 {
   typedef LocalFaceIntegrandInterface<internal::LocalLambdaBinaryFaceIntegrandTraits<E, I, R, rT, rCT, rA, rCA>, 2>
       BaseType;
@@ -184,10 +177,10 @@ class LocalLambdaBinaryFaceIntegrand
 
 public:
   typedef internal::LocalLambdaBinaryFaceIntegrandTraits<E, I, R, rT, rCT, rA, rCA> Traits;
-  using typename BaseType::LocalfunctionTupleType;
-  using typename BaseType::EntityType;
-  using typename BaseType::D;
   using BaseType::d;
+  using typename BaseType::D;
+  using typename BaseType::EntityType;
+  using typename BaseType::LocalfunctionTupleType;
 
   typedef XT::Functions::LocalfunctionSetInterface<E, D, d, R, rT, rCT> TestBaseType;
   typedef XT::Functions::LocalfunctionSetInterface<E, D, d, R, rA, rCA> AnsatzBaseType;
@@ -201,8 +194,7 @@ public:
   LocalLambdaBinaryFaceIntegrand(OrderLambdaType order_lambda, EvaluateLambdaType evaluate_lambda)
     : order_lambda_(order_lambda)
     , evaluate_lambda_(evaluate_lambda)
-  {
-  }
+  {}
 
   LocalLambdaBinaryFaceIntegrand(const ThisType&) = default;
   LocalLambdaBinaryFaceIntegrand(ThisType&&) = default;
@@ -232,14 +224,8 @@ public:
                  "Your evalaute_lambda destroyed ret!\n   "
                      << "ret is expected to be at least of size test_base.size() x ansatz_base.size(),\n   "
                      << "do not call ret.resize(...)!\n   "
-                     << "test_base.size(): "
-                     << test_base.size()
-                     << "\n   ansatz_base.size(): "
-                     << ansatz_base.size()
-                     << "\n   ret.rows(): "
-                     << ret.rows()
-                     << "\n   ret.cols(): "
-                     << ret.cols());
+                     << "test_base.size(): " << test_base.size() << "\n   ansatz_base.size(): " << ansatz_base.size()
+                     << "\n   ret.rows(): " << ret.rows() << "\n   ret.cols(): " << ret.cols());
   } // ... evaluate(...)
 
 private:
@@ -250,8 +236,7 @@ private:
 
 template <class E, class I, class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
 class LocalLambdaQuaternaryFaceIntegrand
-    : public LocalFaceIntegrandInterface<internal::LocalLambdaQuaternaryFaceIntegrandTraits<E, I, R, rT, rCT, rA, rCA>,
-                                         4>
+  : public LocalFaceIntegrandInterface<internal::LocalLambdaQuaternaryFaceIntegrandTraits<E, I, R, rT, rCT, rA, rCA>, 4>
 {
   typedef LocalFaceIntegrandInterface<internal::LocalLambdaQuaternaryFaceIntegrandTraits<E, I, R, rT, rCT, rA, rCA>, 4>
       BaseType;
@@ -259,10 +244,10 @@ class LocalLambdaQuaternaryFaceIntegrand
 
 public:
   typedef internal::LocalLambdaQuaternaryFaceIntegrandTraits<E, I, R, rT, rCT, rA, rCA> Traits;
-  using typename BaseType::LocalfunctionTupleType;
-  using typename BaseType::EntityType;
-  using typename BaseType::D;
   using BaseType::d;
+  using typename BaseType::D;
+  using typename BaseType::EntityType;
+  using typename BaseType::LocalfunctionTupleType;
 
   typedef XT::Functions::LocalfunctionSetInterface<E, D, d, R, rT, rCT> TestBaseType;
   typedef XT::Functions::LocalfunctionSetInterface<E, D, d, R, rA, rCA> AnsatzBaseType;
@@ -286,8 +271,7 @@ public:
   LocalLambdaQuaternaryFaceIntegrand(OrderLambdaType order_lambda, EvaluateLambdaType evaluate_lambda)
     : order_lambda_(order_lambda)
     , evaluate_lambda_(evaluate_lambda)
-  {
-  }
+  {}
 
   LocalLambdaQuaternaryFaceIntegrand(const ThisType&) = default;
   LocalLambdaQuaternaryFaceIntegrand(ThisType&&) = default;
@@ -336,14 +320,9 @@ public:
                      << "ret_entity_entity is expected to be at least of size test_base_entity.size() x "
                         "ansatz_base_entity.size(),\n   "
                      << "do not call ret_entity_entity.resize(...)!\n   "
-                     << "test_base_entity.size(): "
-                     << test_base_entity.size()
-                     << "\n   ansatz_base_entity.size(): "
-                     << ansatz_base_entity.size()
-                     << "\n   ret_entity_entity.rows(): "
-                     << ret_entity_entity.rows()
-                     << "\n   ret_entity_entity.cols(): "
-                     << ret_entity_entity.cols());
+                     << "test_base_entity.size(): " << test_base_entity.size() << "\n   ansatz_base_entity.size(): "
+                     << ansatz_base_entity.size() << "\n   ret_entity_entity.rows(): " << ret_entity_entity.rows()
+                     << "\n   ret_entity_entity.cols(): " << ret_entity_entity.cols());
     if (ret_neighbor_neighbor.rows() < test_base_neighbor.size()
         || ret_neighbor_neighbor.cols() < ansatz_base_neighbor.size())
       DUNE_THROW(XT::Common::Exceptions::you_are_using_this_wrong,
@@ -351,14 +330,10 @@ public:
                      << "ret_neighbor_neighbor is expected to be at least of size test_base_neighbor.size() x "
                         "ansatz_base_neighbor.size(),\n   "
                      << "do not call ret_neighbor_neighbor.resize(...)!\n   "
-                     << "test_base_neighbor.size(): "
-                     << test_base_neighbor.size()
-                     << "\n   ansatz_base_neighbor.size(): "
-                     << ansatz_base_neighbor.size()
-                     << "\n   ret_neighbor_neighbor.rows(): "
-                     << ret_neighbor_neighbor.rows()
-                     << "\n   ret_neighbor_neighbor.cols(): "
-                     << ret_neighbor_neighbor.cols());
+                     << "test_base_neighbor.size(): " << test_base_neighbor.size()
+                     << "\n   ansatz_base_neighbor.size(): " << ansatz_base_neighbor.size()
+                     << "\n   ret_neighbor_neighbor.rows(): " << ret_neighbor_neighbor.rows()
+                     << "\n   ret_neighbor_neighbor.cols(): " << ret_neighbor_neighbor.cols());
     if (ret_entity_neighbor.rows() < test_base_entity.size()
         || ret_entity_neighbor.cols() < ansatz_base_neighbor.size())
       DUNE_THROW(XT::Common::Exceptions::you_are_using_this_wrong,
@@ -366,14 +341,9 @@ public:
                      << "ret_entity_neighbor is expected to be at least of size test_base_entity.size() x "
                         "ansatz_base_neighbor.size(),\n   "
                      << "do not call ret_entity_neighbor.resize(...)!\n   "
-                     << "test_base_entity.size(): "
-                     << test_base_entity.size()
-                     << "\n   ansatz_base_neighbor.size(): "
-                     << ansatz_base_neighbor.size()
-                     << "\n   ret_entity_neighbor.rows(): "
-                     << ret_entity_neighbor.rows()
-                     << "\n   ret_entity_neighbor.cols(): "
-                     << ret_entity_neighbor.cols());
+                     << "test_base_entity.size(): " << test_base_entity.size() << "\n   ansatz_base_neighbor.size(): "
+                     << ansatz_base_neighbor.size() << "\n   ret_entity_neighbor.rows(): " << ret_entity_neighbor.rows()
+                     << "\n   ret_entity_neighbor.cols(): " << ret_entity_neighbor.cols());
     if (ret_neighbor_entity.rows() < test_base_neighbor.size()
         || ret_neighbor_entity.cols() < ansatz_base_entity.size())
       DUNE_THROW(XT::Common::Exceptions::you_are_using_this_wrong,
@@ -381,14 +351,9 @@ public:
                      << "ret_neighbor_entity is expected to be at least of size test_base_neighbor.size() x "
                         "ansatz_base_entity.size(),\n   "
                      << "do not call ret_neighbor_entity.resize(...)!\n   "
-                     << "test_base_neighbor.size(): "
-                     << test_base_neighbor.size()
-                     << "\n   ansatz_base_entity.size(): "
-                     << ansatz_base_entity.size()
-                     << "\n   ret_neighbor_entity.rows(): "
-                     << ret_neighbor_entity.rows()
-                     << "\n   ret_neighbor_entity.cols(): "
-                     << ret_neighbor_entity.cols());
+                     << "test_base_neighbor.size(): " << test_base_neighbor.size() << "\n   ansatz_base_entity.size(): "
+                     << ansatz_base_entity.size() << "\n   ret_neighbor_entity.rows(): " << ret_neighbor_entity.rows()
+                     << "\n   ret_neighbor_entity.cols(): " << ret_neighbor_entity.cols());
   } // ... evaluate(...)
 
 private:
@@ -399,17 +364,17 @@ private:
 
 template <class E, class R, size_t r, size_t rC>
 class LocalLambdaUnaryVolumeIntegrand
-    : public LocalVolumeIntegrandInterface<internal::LocalLambdaUnaryVolumeIntegrandTraits<E, R, r, rC>, 1>
+  : public LocalVolumeIntegrandInterface<internal::LocalLambdaUnaryVolumeIntegrandTraits<E, R, r, rC>, 1>
 {
   typedef LocalVolumeIntegrandInterface<internal::LocalLambdaUnaryVolumeIntegrandTraits<E, R, r, rC>, 1> BaseType;
   typedef LocalLambdaUnaryVolumeIntegrand<E, R, r, rC> ThisType;
 
 public:
   typedef internal::LocalLambdaUnaryVolumeIntegrandTraits<E, R, r, rC> Traits;
-  using typename BaseType::LocalfunctionTupleType;
-  using typename BaseType::EntityType;
-  using typename BaseType::D;
   using BaseType::d;
+  using typename BaseType::D;
+  using typename BaseType::EntityType;
+  using typename BaseType::LocalfunctionTupleType;
 
   typedef XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC> TestBaseType;
   typedef FieldVector<D, d> PointType;
@@ -421,8 +386,7 @@ public:
   LocalLambdaUnaryVolumeIntegrand(OrderLambdaType order_lambda, EvaluateLambdaType evaluate_lambda)
     : order_lambda_(order_lambda)
     , evaluate_lambda_(evaluate_lambda)
-  {
-  }
+  {}
 
   LocalLambdaUnaryVolumeIntegrand(const ThisType&) = default;
   LocalLambdaUnaryVolumeIntegrand(ThisType&&) = default;
@@ -448,10 +412,7 @@ public:
                  "Your evalaute_lambda destroyed ret!\n   "
                      << "ret is expected to be at least of size test_base.size(),\n   "
                      << "do not call ret.resize(...)!\n   "
-                     << "test_base.size(): "
-                     << test_base.size()
-                     << "\n   ret.size(): "
-                     << ret.size());
+                     << "test_base.size(): " << test_base.size() << "\n   ret.size(): " << ret.size());
   } // ... evaluate(...)
 
 private:

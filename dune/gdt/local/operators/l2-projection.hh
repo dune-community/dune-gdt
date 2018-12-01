@@ -66,8 +66,7 @@ public:
   LocalL2ProjectionOperator(const size_t over_integrate = 0, const XT::Common::Parameter& param = {})
     : over_integrate_(over_integrate)
     , param_(param)
-  {
-  }
+  {}
 
   template <class E, class D, size_t d, class R, size_t r, size_t rC, class RangeSpaceType, class VectorType>
   typename std::enable_if<StaticCheck<E, D, d, R, r, rC, RangeSpaceType, VectorType>::value
@@ -105,8 +104,7 @@ public:
     } catch (XT::LA::Exceptions::linear_solver_failed& ee) {
       DUNE_THROW(projection_error,
                  "L2 projection failed because a local matrix could not be inverted!\n\n"
-                     << "This was the original error: "
-                     << ee.what());
+                     << "This was the original error: " << ee.what());
     }
     // set local DoFs
     auto& local_range_vector = local_range.vector();

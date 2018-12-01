@@ -13,7 +13,7 @@
 
 #if HAVE_DUNE_ALUGRID
 
-#include "swipdg-mixedboundary-2dalugrid.hh"
+#  include "swipdg-mixedboundary-2dalugrid.hh"
 
 namespace Dune {
 namespace GDT {
@@ -32,17 +32,17 @@ LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<AluConform2d
             const std::string type)
 {
   if (type == "L2") {
-#if DXT_DISABLE_LARGE_TESTS
+#  if DXT_DISABLE_LARGE_TESTS
     return {2.11e-02, 5.11e-03};
-#else
+#  else
     return {4.02e-02, 1.12e-02, 2.83e-03, 6.33e-04};
-#endif
+#  endif
   } else if (type == "H1_semi" || type == "energy") {
-#if DXT_DISABLE_LARGE_TESTS
+#  if DXT_DISABLE_LARGE_TESTS
     return {1.68e-01, 8.65e-02};
-#else
+#  else
     return {2.69e-01, 1.39e-01, 6.87e-02, 3.08e-02};
-#endif
+#  endif
   } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;
   return {};
@@ -60,17 +60,17 @@ LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<AluConform2d
             const std::string type)
 {
   if (type == "L2") {
-#if DXT_DISABLE_LARGE_TESTS
+#  if DXT_DISABLE_LARGE_TESTS
     return {1.53e-03, 3.10e-04};
-#else
+#  else
     return {3.58e-03, 6.25e-04, 1.21e-04, 2.68e-05};
-#endif
+#  endif
   } else if (type == "H1_semi" || type == "energy") {
-#if DXT_DISABLE_LARGE_TESTS
+#  if DXT_DISABLE_LARGE_TESTS
     return {3.12e-02, 1.04e-02};
-#else
+#  else
     return {4.81e-02, 1.79e-02, 7.19e-03, 2.85e-03};
-#endif
+#  endif
   } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;
   return {};
@@ -88,17 +88,17 @@ LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<AluSimplex2d
             const std::string type)
 {
   if (type == "L2") {
-#if DXT_DISABLE_LARGE_TESTS
+#  if DXT_DISABLE_LARGE_TESTS
     return {6.14e-03, 1.40e-03};
-#else
+#  else
     return {6.84e-02, 2.17e-02, 5.78e-03, 1.27e-03};
-#endif
+#  endif
   } else if (type == "H1_semi" || type == "energy") {
-#if DXT_DISABLE_LARGE_TESTS
+#  if DXT_DISABLE_LARGE_TESTS
     return {1.06e-01, 4.78e-02};
-#else
+#  else
     return {3.28e-01, 1.76e-01, 8.72e-02, 3.89e-02};
-#endif
+#  endif
   } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;
   return {};
@@ -116,17 +116,17 @@ LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<AluSimplex2d
             const std::string type)
 {
   if (type == "L2") {
-#if DXT_DISABLE_LARGE_TESTS
+#  if DXT_DISABLE_LARGE_TESTS
     return {3.62e-04, 8.72e-05};
-#else
+#  else
     return {9.67e-03, 1.52e-03, 2.75e-04, 5.63e-05};
-#endif
+#  endif
   } else if (type == "H1_semi" || type == "energy") {
-#if DXT_DISABLE_LARGE_TESTS
+#  if DXT_DISABLE_LARGE_TESTS
     return {1.67e-02, 7.88e-03};
-#else
+#  else
     return {9.33e-02, 3.19e-02, 1.19e-02, 4.66e-03};
-#endif
+#  endif
   } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;
   return {};

@@ -13,7 +13,7 @@
 #define DUNE_GDT_TESTS_LINEARELLIPTIC_PROBLEMS_AO2013_HH
 
 #if HAVE_DUNE_ALUGRID
-#include <dune/alugrid/grid.hh>
+#  include <dune/alugrid/grid.hh>
 #endif
 #include <dune/grid/yaspgrid.hh>
 
@@ -41,7 +41,7 @@ class AO2013Problem : public ProblemBase<E, D, d, R, r>
 
 template <class EntityImp, class DomainFieldImp, class RangeFieldImp>
 class AO2013Problem<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
-    : public ProblemBase<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
+  : public ProblemBase<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
 {
   typedef ProblemBase<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> BaseType;
   typedef XT::Functions::ConstantFunction<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> ScalarConstantFunctionType;
@@ -79,19 +79,15 @@ public:
           new ScalarConstantFunctionType(0, "neumann"),
           grd_cfg,
           bnd_cfg)
-  {
-  }
+  {}
 }; // class AO2013Problem< ..., 1 >
 
 
 template <class G, class R = double, int r = 1>
 class AO2013TestCase
-    : public Test::StationaryTestCase<G,
-                                      LinearElliptic::AO2013Problem<typename G::template Codim<0>::Entity,
-                                                                    typename G::ctype,
-                                                                    G::dimension,
-                                                                    R,
-                                                                    r>>
+  : public Test::StationaryTestCase<
+        G,
+        LinearElliptic::AO2013Problem<typename G::template Codim<0>::Entity, typename G::ctype, G::dimension, R, r>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
@@ -137,7 +133,7 @@ private:
     }
   };
 
-#if HAVE_DUNE_ALUGRID
+#  if HAVE_DUNE_ALUGRID
   template <bool anything>
   struct Helper<AluConform2dGridType, anything>
   {
@@ -170,7 +166,7 @@ private:
     }
   };
 
-#endif // HAVE_DUNE_ALUGRID
+#  endif // HAVE_DUNE_ALUGRID
 #endif // DXT_DISABLE_LARGE_TESTS
 
   static XT::Common::Configuration grid_cfg()
@@ -192,14 +188,12 @@ public:
                  )
     : BaseType(grid_cfg(), num_refs)
     , problem_()
-  {
-  }
+  {}
 
   AO2013TestCase(XT::Common::Configuration cfg)
     : BaseType(cfg.sub("grid", false, grid_cfg()), cfg.get("grid.num_refinements", 1))
     , problem_()
-  {
-  }
+  {}
 
   virtual const ProblemType& problem() const override final
   {

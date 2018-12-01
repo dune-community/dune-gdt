@@ -51,28 +51,28 @@ public:
 
 template <class ProblemImp, class AnsatzSpaceImp, class MatrixImp, class VectorImp, class TestSpaceImp>
 class StationaryContainerBasedDefaultDiscretization
-    : public ContainerBasedStationaryDiscretizationInterface<internal::
-                                                                 StationaryContainerBasedDefaultDiscretizationTraits<ProblemImp,
-                                                                                                                     AnsatzSpaceImp,
-                                                                                                                     MatrixImp,
-                                                                                                                     VectorImp,
-                                                                                                                     TestSpaceImp>>
+  : public ContainerBasedStationaryDiscretizationInterface<
+        internal::StationaryContainerBasedDefaultDiscretizationTraits<ProblemImp,
+                                                                      AnsatzSpaceImp,
+                                                                      MatrixImp,
+                                                                      VectorImp,
+                                                                      TestSpaceImp>>
 {
-  typedef ContainerBasedStationaryDiscretizationInterface<internal::
-                                                              StationaryContainerBasedDefaultDiscretizationTraits<ProblemImp,
-                                                                                                                  AnsatzSpaceImp,
-                                                                                                                  MatrixImp,
-                                                                                                                  VectorImp,
-                                                                                                                  TestSpaceImp>>
+  typedef ContainerBasedStationaryDiscretizationInterface<
+      internal::StationaryContainerBasedDefaultDiscretizationTraits<ProblemImp,
+                                                                    AnsatzSpaceImp,
+                                                                    MatrixImp,
+                                                                    VectorImp,
+                                                                    TestSpaceImp>>
       BaseType;
   typedef StationaryContainerBasedDefaultDiscretization<ProblemImp, AnsatzSpaceImp, MatrixImp, VectorImp, TestSpaceImp>
       ThisType;
 
 public:
-  using typename BaseType::ProblemType;
   using typename BaseType::AnsatzSpaceType;
-  using typename BaseType::TestSpaceType;
   using typename BaseType::MatrixType;
+  using typename BaseType::ProblemType;
+  using typename BaseType::TestSpaceType;
   using typename BaseType::VectorType;
 
   StationaryContainerBasedDefaultDiscretization(const ProblemType& prblm,
@@ -88,8 +88,7 @@ public:
     , rhs_vector_(rhs_vec)
     , dirichlet_shift_(dirichlet)
     , has_dirichlet_shift_(true)
-  {
-  }
+  {}
 
   StationaryContainerBasedDefaultDiscretization(const ProblemType& prblm,
                                                 AnsatzSpaceType ansatz_sp,
@@ -103,8 +102,7 @@ public:
     , rhs_vector_(rhs_vec)
     , dirichlet_shift_(dirichlet)
     , has_dirichlet_shift_(true)
-  {
-  }
+  {}
 
   StationaryContainerBasedDefaultDiscretization(const ProblemType& prblm,
                                                 AnsatzSpaceType ansatz_sp,
@@ -118,8 +116,7 @@ public:
     , rhs_vector_(rhs_vec)
     , dirichlet_shift_()
     , has_dirichlet_shift_(false)
-  {
-  }
+  {}
 
   StationaryContainerBasedDefaultDiscretization(const ProblemType& prblm,
                                                 AnsatzSpaceType ansatz_sp,
@@ -132,8 +129,7 @@ public:
     , rhs_vector_(rhs_vec)
     , dirichlet_shift_()
     , has_dirichlet_shift_(false)
-  {
-  }
+  {}
 
   StationaryContainerBasedDefaultDiscretization(ThisType&& /*source*/) = default;
 

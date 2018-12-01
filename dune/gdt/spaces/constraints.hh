@@ -78,8 +78,7 @@ public:
     : boundary_info_(bnd_info)
     , size_(sz)
     , set_(set)
-  {
-  }
+  {}
 
   // manual copy ctor needed bc. of the mutex
   DirichletConstraints(const ThisType& other)
@@ -87,8 +86,7 @@ public:
     , size_(other.size_)
     , set_(other.set_)
     , dirichlet_DoFs_(other.dirichlet_DoFs_)
-  {
-  }
+  {}
 
   const BoundaryInfoType& boundary_info() const
   {

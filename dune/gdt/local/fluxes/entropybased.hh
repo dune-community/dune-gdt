@@ -38,7 +38,7 @@
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions.hh>
 
 #if HAVE_CLP
-#include <coin/ClpSimplex.hpp>
+#  include <coin/ClpSimplex.hpp>
 #endif // HAVE_CLP
 
 namespace Dune {
@@ -56,8 +56,7 @@ public:
 
   EntropyLocalCache(const size_t capacity)
     : capacity_(capacity)
-  {
-  }
+  {}
 
   void insert(const StateRangeType& u, const VectorType& alpha)
   {
@@ -133,14 +132,14 @@ class EntropyBasedLocalFlux;
  */
 template <class BasisfunctionImp, class GridLayerImp, class U>
 class EntropyBasedLocalFlux
-    : public XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
-                                                             typename BasisfunctionImp::DomainFieldType,
-                                                             BasisfunctionImp::dimFlux,
-                                                             U,
-                                                             0,
-                                                             typename BasisfunctionImp::RangeFieldType,
-                                                             BasisfunctionImp::dimRange,
-                                                             BasisfunctionImp::dimFlux>
+  : public XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
+                                                           typename BasisfunctionImp::DomainFieldType,
+                                                           BasisfunctionImp::dimFlux,
+                                                           U,
+                                                           0,
+                                                           typename BasisfunctionImp::RangeFieldType,
+                                                           BasisfunctionImp::dimRange,
+                                                           BasisfunctionImp::dimFlux>
 {
   using BaseType =
       typename XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
@@ -156,18 +155,18 @@ class EntropyBasedLocalFlux
 public:
   using BasisfunctionType = BasisfunctionImp;
   using GridLayerType = GridLayerImp;
-  using typename BaseType::EntityType;
-  using typename BaseType::DomainType;
-  using typename BaseType::DomainFieldType;
-  using typename BaseType::StateType;
-  using typename BaseType::StateRangeType;
-  using typename BaseType::RangeType;
-  using typename BaseType::RangeFieldType;
-  using typename BaseType::PartialURangeType;
-  using typename BaseType::LocalfunctionType;
   using BaseType::dimDomain;
   using BaseType::dimRange;
   using BaseType::dimRangeCols;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::DomainType;
+  using typename BaseType::EntityType;
+  using typename BaseType::LocalfunctionType;
+  using typename BaseType::PartialURangeType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::RangeType;
+  using typename BaseType::StateRangeType;
+  using typename BaseType::StateType;
   // make matrices a little larger to align to 64 byte boundary
   static constexpr size_t matrix_num_cols = dimRange % 8 ? dimRange : dimRange + (8 - dimRange % 8);
   using MatrixType = XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange>;
@@ -295,8 +294,8 @@ public:
   public:
     using LocalfunctionType::dimDomain;
     using LocalfunctionType::dimRange;
-    using typename LocalfunctionType::ColRangeType;
     using typename LocalfunctionType::ColPartialURangeType;
+    using typename LocalfunctionType::ColRangeType;
 
     Localfunction(const EntityType& e,
                   const BasisfunctionType& basis_functions,
@@ -343,8 +342,7 @@ public:
 #else
       , realizability_helper_(basis_functions_, quad_points_)
 #endif
-    {
-    }
+    {}
 
     template <class BasisFuncImp = BasisfunctionType, bool quadrature_contains_vertices = true, bool anything = true>
     struct RealizabilityHelper;
@@ -361,8 +359,7 @@ public:
         : basis_functions_(basis_functions)
         , quad_points_(quad_points)
         , lp_(lp)
-      {
-      }
+      {}
 
       // The ClpSimplex structure seems to get corrupted sometimes (maybe some problems with infs/NaNs?), so we
       // reinitialize it if the stopping conditions is always false
@@ -444,14 +441,10 @@ public:
 
     // specialization for hatfunctions
     template <size_t dimRange_or_refinements, bool anything>
-    struct RealizabilityHelper<HatFunctionMomentBasis<DomainFieldType,
-                                                      dimDomain,
-                                                      RangeFieldType,
-                                                      dimRange_or_refinements,
-                                                      1,
-                                                      dimDomain>,
-                               true,
-                               anything>
+    struct RealizabilityHelper<
+        HatFunctionMomentBasis<DomainFieldType, dimDomain, RangeFieldType, dimRange_or_refinements, 1, dimDomain>,
+        true,
+        anything>
     {
       RealizabilityHelper(const BasisfunctionType& /*basis_functions*/,
                           const std::vector<DomainType>& /*quad_points*/
@@ -459,10 +452,9 @@ public:
                           ,
                           XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>>& /*lp*/)
 #else
-                          )
+      )
 #endif
-      {
-      }
+      {}
 
       static bool is_realizable(const StateRangeType& u, const bool /*reinitialize*/)
       {
@@ -755,8 +747,8 @@ public:
             + " and multiplier " + XT::Common::to_string(beta_in) + " at position "
             + XT::Common::to_string(entity().geometry().center()) + " due to too many iterations! Last u_eps_diff = "
             + XT::Common::to_string(u_eps_diff) + ", first_error_cond = " + XT::Common::to_string(first_error_cond)
-            + ", second_error_cond = " + XT::Common::to_string(second_error_cond) + ", tau_prime = "
-            + XT::Common::to_string(tau_prime);
+            + ", second_error_cond = " + XT::Common::to_string(second_error_cond)
+            + ", tau_prime = " + XT::Common::to_string(tau_prime);
         DUNE_THROW(MathError, err_msg);
       } // else ( value has not been calculated before )
 
@@ -1025,7 +1017,7 @@ public:
                                            ,
                                            lp_);
 #else
-                                           );
+    );
 #endif
   }
 
@@ -1111,21 +1103,18 @@ private:
  * Specialization for DG basis
  */
 template <class GridLayerImp, class U, size_t domainDim, size_t dimRange_or_refinements>
-class EntropyBasedLocalFlux<PartialMomentBasis<typename U::DomainFieldType,
-                                               domainDim,
-                                               typename U::RangeFieldType,
-                                               dimRange_or_refinements,
-                                               1>,
-                            GridLayerImp,
-                            U>
-    : public XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
-                                                             typename U::DomainFieldType,
-                                                             GridLayerImp::dimension,
-                                                             U,
-                                                             0,
-                                                             typename U::RangeFieldType,
-                                                             U::dimRange,
-                                                             GridLayerImp::dimension>
+class EntropyBasedLocalFlux<
+    PartialMomentBasis<typename U::DomainFieldType, domainDim, typename U::RangeFieldType, dimRange_or_refinements, 1>,
+    GridLayerImp,
+    U>
+  : public XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
+                                                           typename U::DomainFieldType,
+                                                           GridLayerImp::dimension,
+                                                           U,
+                                                           0,
+                                                           typename U::RangeFieldType,
+                                                           U::dimRange,
+                                                           GridLayerImp::dimension>
 {
   using BaseType =
       typename XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
@@ -1140,18 +1129,18 @@ class EntropyBasedLocalFlux<PartialMomentBasis<typename U::DomainFieldType,
 
 public:
   using GridLayerType = GridLayerImp;
-  using typename BaseType::EntityType;
-  using typename BaseType::DomainType;
-  using typename BaseType::DomainFieldType;
-  using typename BaseType::StateType;
-  using typename BaseType::StateRangeType;
-  using typename BaseType::RangeType;
-  using typename BaseType::RangeFieldType;
-  using typename BaseType::PartialURangeType;
-  using typename BaseType::LocalfunctionType;
   using BaseType::dimDomain;
   using BaseType::dimRange;
   using BaseType::dimRangeCols;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::DomainType;
+  using typename BaseType::EntityType;
+  using typename BaseType::LocalfunctionType;
+  using typename BaseType::PartialURangeType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::RangeType;
+  using typename BaseType::StateRangeType;
+  using typename BaseType::StateType;
   static const size_t block_size = (dimDomain == 1) ? 2 : 4;
   static const size_t num_blocks = dimRange / block_size;
   using BlockMatrixType = XT::Common::BlockedFieldMatrix<RangeFieldType, num_blocks, block_size>;
@@ -1178,8 +1167,8 @@ public:
   public:
     using LocalfunctionType::dimDomain;
     using LocalfunctionType::dimRange;
-    using typename LocalfunctionType::ColRangeType;
     using typename LocalfunctionType::ColPartialURangeType;
+    using typename LocalfunctionType::ColRangeType;
 
     Localfunction(const EntityType& e,
                   const BasisfunctionType& basis_functions,
@@ -1215,8 +1204,7 @@ public:
       , cache_(cache)
       , alpha_storage_(alpha_storage)
       , mutex_(mutex)
-    {
-    }
+    {}
 
     using LocalfunctionType::entity;
 
@@ -1343,7 +1331,7 @@ public:
               (basis_ll[3] - T_k[3][0] * basis_ll[0] - T_k[3][1] * basis_ll[1] - T_k[3][2] * basis_ll[2]) * diag_inv[3];
         }
       } else {
-#if HAVE_MKL || HAVE_CBLAS
+#  if HAVE_MKL || HAVE_CBLAS
         thread_local LocalMatrixType T_k_trans(0.);
         assert(num_quad_points < std::numeric_limits<int>::max());
         // Calculate the transpose here first as this is much faster than passing the matrix to dtrsm and using
@@ -1361,14 +1349,14 @@ public:
                                 block_size,
                                 M.data(),
                                 block_size);
-#else
+#  else
         LocalVectorType tmp_vec, tmp_vec2;
         for (size_t ll = 0; ll < num_quad_points; ++ll) {
           std::copy_n(M.get_ptr(ll), block_size, tmp_vec.begin());
           XT::LA::solve_lower_triangular(T_k, tmp_vec2, tmp_vec);
           std::copy_n(tmp_vec2.begin(), block_size, M.get_ptr(ll));
         }
-#endif
+#  endif
       }
     }
 
@@ -1649,9 +1637,7 @@ public:
         return ret[rr];
       }
 
-      static void calculate_plane_coefficients(const BasisfunctionType& /*basis_functions*/)
-      {
-      }
+      static void calculate_plane_coefficients(const BasisfunctionType& /*basis_functions*/) {}
 
       static bool is_realizable(const BlockVectorType& u, const BasisfunctionType& basis_functions)
       {
@@ -1697,7 +1683,7 @@ public:
         return ret[rr][cc];
       }
 
-#if HAVE_QHULL
+#  if HAVE_QHULL
       static void calculate_plane_coefficients(const BasisfunctionType& basis_functions)
       {
         if (!basis_functions.plane_coefficients()[0].size())
@@ -1712,7 +1698,7 @@ public:
               return false;
         return true;
       }
-#else
+#  else
       static void calculate_plane_coefficients(const BasisfunctionType& /*basis_functions*/)
       {
         DUNE_THROW(Dune::NotImplemented, "You are missing Qhull!");
@@ -1723,7 +1709,7 @@ public:
         DUNE_THROW(Dune::NotImplemented, "You are missing Qhull!");
         return false;
       }
-#endif
+#  endif
     }; // class helper<3, ...>
 
     // calculates A = A B^{-1}. B is assumed to be symmetric positive definite.
@@ -2878,22 +2864,18 @@ private:
  * Specialization of EntropyBasedLocalFlux for 1D Hatfunctions
  */
 template <class GridLayerImp, class U>
-class EntropyBasedLocalFlux<HatFunctionMomentBasis<typename U::DomainFieldType,
-                                                   1,
-                                                   typename U::RangeFieldType,
-                                                   U::dimRange,
-                                                   1,
-                                                   1>,
-                            GridLayerImp,
-                            U>
-    : public XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
-                                                             typename U::DomainFieldType,
-                                                             GridLayerImp::dimension,
-                                                             U,
-                                                             0,
-                                                             typename U::RangeFieldType,
-                                                             U::dimRange,
-                                                             1>
+class EntropyBasedLocalFlux<
+    HatFunctionMomentBasis<typename U::DomainFieldType, 1, typename U::RangeFieldType, U::dimRange, 1, 1>,
+    GridLayerImp,
+    U>
+  : public XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
+                                                           typename U::DomainFieldType,
+                                                           GridLayerImp::dimension,
+                                                           U,
+                                                           0,
+                                                           typename U::RangeFieldType,
+                                                           U::dimRange,
+                                                           1>
 {
   using BaseType =
       typename XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
@@ -2907,18 +2889,18 @@ class EntropyBasedLocalFlux<HatFunctionMomentBasis<typename U::DomainFieldType,
   using ThisType = EntropyBasedLocalFlux;
 
 public:
-  using typename BaseType::EntityType;
-  using typename BaseType::DomainType;
-  using typename BaseType::DomainFieldType;
-  using typename BaseType::StateType;
-  using typename BaseType::StateRangeType;
-  using typename BaseType::RangeType;
-  using typename BaseType::RangeFieldType;
-  using typename BaseType::PartialURangeType;
-  using typename BaseType::LocalfunctionType;
   using BaseType::dimDomain;
   using BaseType::dimRange;
   using BaseType::dimRangeCols;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::DomainType;
+  using typename BaseType::EntityType;
+  using typename BaseType::LocalfunctionType;
+  using typename BaseType::PartialURangeType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::RangeType;
+  using typename BaseType::StateRangeType;
+  using typename BaseType::StateType;
   using BasisfunctionType = HatFunctionMomentBasis<DomainFieldType, 1, RangeFieldType, dimRange, 1, 1>;
   using GridLayerType = GridLayerImp;
   using QuadratureRuleType = Dune::QuadratureRule<DomainFieldType, 1>;
@@ -2959,15 +2941,14 @@ public:
     , cache_(index_set_.size(0), LocalCacheType(cache_size))
     , alpha_storage_(index_set_.size(0))
     , mutexes_(index_set_.size(0))
-  {
-  }
+  {}
 
   class Localfunction : public LocalfunctionType
   {
   public:
     using LocalfunctionType::dimDomain;
-    using typename LocalfunctionType::ColRangeType;
     using typename LocalfunctionType::ColPartialURangeType;
+    using typename LocalfunctionType::ColRangeType;
 
     Localfunction(const EntityType& e,
                   const BasisfunctionType& basis_functions,
@@ -3001,8 +2982,7 @@ public:
       , cache_(cache)
       , alpha_storage_(alpha_storage)
       , mutex_(mutex)
-    {
-    }
+    {}
 
     using LocalfunctionType::entity;
 
@@ -3449,8 +3429,9 @@ public:
                 (v_points_[nn] - v_points_[nn - 1])
                     * ((v_points_[nn] * std::exp(alpha_k[nn]) + v_points_[nn - 1] * std::exp(alpha_k[nn - 1]))
                            / std::pow(alpha_k[nn - 1] - alpha_k[nn], 2)
-                       + 2. * ((2 * v_points_[nn] - v_points_[nn - 1]) * std::exp(alpha_k[nn])
-                               - (2 * v_points_[nn - 1] - v_points_[nn]) * std::exp(alpha_k[nn - 1]))
+                       + 2.
+                             * ((2 * v_points_[nn] - v_points_[nn - 1]) * std::exp(alpha_k[nn])
+                                - (2 * v_points_[nn - 1] - v_points_[nn]) * std::exp(alpha_k[nn - 1]))
                              / std::pow(alpha_k[nn - 1] - alpha_k[nn], 3))
                 + 6. * std::pow(v_points_[nn] - v_points_[nn - 1], 2)
                       * (std::exp(alpha_k[nn]) - std::exp(alpha_k[nn - 1]))

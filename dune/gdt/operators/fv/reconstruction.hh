@@ -57,8 +57,7 @@ public:
                                       const ReconstructionOperatorType& reconstruction_operator)
     : advection_operator_(advection_operator)
     , reconstruction_operator_(reconstruction_operator)
-  {
-  }
+  {}
 
   template <class SourceType, class RangeType>
   void apply(const SourceType& source, RangeType& range, const XT::Common::Parameter& param) const

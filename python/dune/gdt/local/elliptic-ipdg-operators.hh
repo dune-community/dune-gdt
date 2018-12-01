@@ -154,38 +154,18 @@ public:
     XT::Common::bindings::try_register(m, [&](pybind11::module& mod) {
       const auto InterfaceName = XT::Common::to_camel_case(
           "local_coupling_two_form_interface_" + XT::Grid::bindings::grid_name<G>::value() + layer_name + "_to_"
-          + to_string(size_t(S::dimRange))
-          + "x"
-          + to_string(size_t(S::dimRangeCols))
-          + "_p"
-          + to_string(int(S::polOrder))
-          + "_"
-          + space_type_name<SP::space_type>::value()
-          + "_"
-          + backend_name<SP::space_backend>::value()
-          + "_space"
-          + intersection_postfix<>::value());
+          + to_string(size_t(S::dimRange)) + "x" + to_string(size_t(S::dimRangeCols)) + "_p"
+          + to_string(int(S::polOrder)) + "_" + space_type_name<SP::space_type>::value() + "_"
+          + backend_name<SP::space_backend>::value() + "_space" + intersection_postfix<>::value());
       py::class_<InterfaceType>(mod, InterfaceName.c_str(), InterfaceName.c_str());
     });
 
-    const auto ClassName =
-        XT::Common::to_camel_case("local_elliptic_" + LocalEllipticIpdgIntegrands::method_name<method>::value() + "_"
-                                  + diffusion_switch<>::suffix()
-                                  + "_inner_integral_operator_"
-                                  + XT::Grid::bindings::grid_name<G>::value()
-                                  + layer_name
-                                  + "_to_"
-                                  + to_string(size_t(S::dimRange))
-                                  + "x"
-                                  + to_string(size_t(S::dimRangeCols))
-                                  + "_p"
-                                  + to_string(int(S::polOrder))
-                                  + "_"
-                                  + space_type_name<SP::space_type>::value()
-                                  + "_"
-                                  + backend_name<SP::space_backend>::value()
-                                  + "_space"
-                                  + intersection_postfix<>::value());
+    const auto ClassName = XT::Common::to_camel_case(
+        "local_elliptic_" + LocalEllipticIpdgIntegrands::method_name<method>::value() + "_"
+        + diffusion_switch<>::suffix() + "_inner_integral_operator_" + XT::Grid::bindings::grid_name<G>::value()
+        + layer_name + "_to_" + to_string(size_t(S::dimRange)) + "x" + to_string(size_t(S::dimRangeCols)) + "_p"
+        + to_string(int(S::polOrder)) + "_" + space_type_name<SP::space_type>::value() + "_"
+        + backend_name<SP::space_backend>::value() + "_space" + intersection_postfix<>::value());
 
     bound_type c(m, ClassName.c_str());
 
@@ -319,38 +299,18 @@ public:
     XT::Common::bindings::try_register(m, [&](pybind11::module& mod) {
       const auto InterfaceName = XT::Common::to_camel_case(
           "local_boundary_two_form_interface_" + XT::Grid::bindings::grid_name<G>::value() + layer_name + "_to_"
-          + to_string(size_t(S::dimRange))
-          + "x"
-          + to_string(size_t(S::dimRangeCols))
-          + "_p"
-          + to_string(int(S::polOrder))
-          + "_"
-          + space_type_name<SP::space_type>::value()
-          + "_"
-          + backend_name<SP::space_backend>::value()
-          + "_space"
-          + intersection_postfix<>::value());
+          + to_string(size_t(S::dimRange)) + "x" + to_string(size_t(S::dimRangeCols)) + "_p"
+          + to_string(int(S::polOrder)) + "_" + space_type_name<SP::space_type>::value() + "_"
+          + backend_name<SP::space_backend>::value() + "_space" + intersection_postfix<>::value());
       py::class_<InterfaceType>(mod, InterfaceName.c_str(), InterfaceName.c_str());
     });
 
-    const auto ClassName =
-        XT::Common::to_camel_case("local_elliptic_" + LocalEllipticIpdgIntegrands::method_name<method>::value() + "_"
-                                  + diffusion_switch<>::suffix()
-                                  + "_boundary_integral_operator_"
-                                  + XT::Grid::bindings::grid_name<G>::value()
-                                  + layer_name
-                                  + "_to_"
-                                  + to_string(size_t(S::dimRange))
-                                  + "x"
-                                  + to_string(size_t(S::dimRangeCols))
-                                  + "_p"
-                                  + to_string(int(S::polOrder))
-                                  + "_"
-                                  + space_type_name<SP::space_type>::value()
-                                  + "_"
-                                  + backend_name<SP::space_backend>::value()
-                                  + "_space"
-                                  + intersection_postfix<>::value());
+    const auto ClassName = XT::Common::to_camel_case(
+        "local_elliptic_" + LocalEllipticIpdgIntegrands::method_name<method>::value() + "_"
+        + diffusion_switch<>::suffix() + "_boundary_integral_operator_" + XT::Grid::bindings::grid_name<G>::value()
+        + layer_name + "_to_" + to_string(size_t(S::dimRange)) + "x" + to_string(size_t(S::dimRangeCols)) + "_p"
+        + to_string(int(S::polOrder)) + "_" + space_type_name<SP::space_type>::value() + "_"
+        + backend_name<SP::space_backend>::value() + "_space" + intersection_postfix<>::value());
 
     bound_type c(m, ClassName.c_str());
 
@@ -368,221 +328,171 @@ public:
 
 // begin: this is what we need for the .so
 
-#define _DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND_1D(                                                                \
-    _m, _G, _d, _g_layer, _g_backend, _s_type, _s_backend, _i_layer_type, _p, _R, _r, _rC, _layer_name, _method)        \
-  Dune::GDT::bindings::                                                                                                 \
-      LocalEllipticIpdgInnerIntegralOperator<Dune::XT::Functions::                                                      \
-                                                 LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
-                                                                                  typename Dune::XT::Grid::             \
-                                                                                      Layer<_G,                         \
-                                                                                            Dune::XT::Grid::Layers::    \
-                                                                                                _g_layer,               \
-                                                                                            Dune::XT::Grid::Backends::  \
-                                                                                                _g_backend,             \
-                                                                                            Dune::XT::Grid::DD::        \
-                                                                                                SubdomainGrid<_G>>::    \
-                                                                                          type>,                        \
-                                                                              double,                                   \
-                                                                              _d,                                       \
-                                                                              double,                                   \
-                                                                              1,                                        \
-                                                                              1>,                                       \
-                                             Dune::XT::Functions::                                                      \
-                                                 LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
-                                                                                  typename Dune::XT::Grid::             \
-                                                                                      Layer<_G,                         \
-                                                                                            Dune::XT::Grid::Layers::    \
-                                                                                                _g_layer,               \
-                                                                                            Dune::XT::Grid::Backends::  \
-                                                                                                _g_backend,             \
-                                                                                            Dune::XT::Grid::DD::        \
-                                                                                                SubdomainGrid<_G>>::    \
-                                                                                          type>,                        \
-                                                                              double,                                   \
-                                                                              _d,                                       \
-                                                                              double,                                   \
-                                                                              _d,                                       \
-                                                                              _d>,                                      \
-                                             Dune::GDT::SpaceProvider<_G,                                               \
-                                                                      Dune::XT::Grid::Layers::_g_layer,                 \
-                                                                      Dune::GDT::SpaceType::_s_type,                    \
-                                                                      Dune::GDT::Backends::_s_backend,                  \
-                                                                      _p,                                               \
-                                                                      _R,                                               \
-                                                                      _r,                                               \
-                                                                      _rC>,                                             \
-                                             Dune::XT::Grid::Layers::_i_layer_type,                                     \
-                                             Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method>::                 \
-          bind(_m, _layer_name);                                                                                        \
-  Dune::GDT::bindings::                                                                                                 \
-      LocalEllipticIpdgInnerIntegralOperator<Dune::XT::Functions::                                                      \
-                                                 LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
-                                                                                  typename Dune::XT::Grid::             \
-                                                                                      Layer<_G,                         \
-                                                                                            Dune::XT::Grid::Layers::    \
-                                                                                                _g_layer,               \
-                                                                                            Dune::XT::Grid::Backends::  \
-                                                                                                _g_backend,             \
-                                                                                            Dune::XT::Grid::DD::        \
-                                                                                                SubdomainGrid<_G>>::    \
-                                                                                          type>,                        \
-                                                                              double,                                   \
-                                                                              _d,                                       \
-                                                                              double,                                   \
-                                                                              1,                                        \
-                                                                              1>,                                       \
-                                             void,                                                                      \
-                                             Dune::GDT::SpaceProvider<_G,                                               \
-                                                                      Dune::XT::Grid::Layers::_g_layer,                 \
-                                                                      Dune::GDT::SpaceType::_s_type,                    \
-                                                                      Dune::GDT::Backends::_s_backend,                  \
-                                                                      _p,                                               \
-                                                                      _R,                                               \
-                                                                      _r,                                               \
-                                                                      _rC>,                                             \
-                                             Dune::XT::Grid::Layers::_i_layer_type,                                     \
-                                             Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method>::                 \
-          bind(_m, _layer_name);                                                                                        \
-  Dune::GDT::bindings::                                                                                                 \
-      LocalEllipticIpdgBoundaryIntegralOperator<Dune::XT::Functions::                                                   \
-                                                    LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<      \
-                                                                                     typename Dune::XT::Grid::          \
-                                                                                         Layer<_G,                      \
-                                                                                               Dune::XT::Grid::         \
-                                                                                                   Layers::_g_layer,    \
-                                                                                               Dune::XT::Grid::         \
-                                                                                                   Backends::           \
-                                                                                                       _g_backend,      \
-                                                                                               Dune::XT::Grid::DD::     \
-                                                                                                   SubdomainGrid<_G>>:: \
-                                                                                             type>,                     \
-                                                                                 double,                                \
-                                                                                 _d,                                    \
-                                                                                 double,                                \
-                                                                                 1,                                     \
-                                                                                 1>,                                    \
-                                                Dune::XT::Functions::                                                   \
-                                                    LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<      \
-                                                                                     typename Dune::XT::Grid::          \
-                                                                                         Layer<_G,                      \
-                                                                                               Dune::XT::Grid::         \
-                                                                                                   Layers::_g_layer,    \
-                                                                                               Dune::XT::Grid::         \
-                                                                                                   Backends::           \
-                                                                                                       _g_backend,      \
-                                                                                               Dune::XT::Grid::DD::     \
-                                                                                                   SubdomainGrid<_G>>:: \
-                                                                                             type>,                     \
-                                                                                 double,                                \
-                                                                                 _d,                                    \
-                                                                                 double,                                \
-                                                                                 _d,                                    \
-                                                                                 _d>,                                   \
-                                                Dune::GDT::SpaceProvider<_G,                                            \
-                                                                         Dune::XT::Grid::Layers::_g_layer,              \
-                                                                         Dune::GDT::SpaceType::_s_type,                 \
-                                                                         Dune::GDT::Backends::_s_backend,               \
-                                                                         _p,                                            \
-                                                                         _R,                                            \
-                                                                         _r,                                            \
-                                                                         _rC>,                                          \
-                                                Dune::XT::Grid::Layers::_i_layer_type,                                  \
-                                                Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method>::              \
-          bind(_m, _layer_name);                                                                                        \
-  Dune::GDT::bindings::                                                                                                 \
-      LocalEllipticIpdgBoundaryIntegralOperator<Dune::XT::Functions::                                                   \
-                                                    LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<      \
-                                                                                     typename Dune::XT::Grid::          \
-                                                                                         Layer<_G,                      \
-                                                                                               Dune::XT::Grid::         \
-                                                                                                   Layers::_g_layer,    \
-                                                                                               Dune::XT::Grid::         \
-                                                                                                   Backends::           \
-                                                                                                       _g_backend,      \
-                                                                                               Dune::XT::Grid::DD::     \
-                                                                                                   SubdomainGrid<_G>>:: \
-                                                                                             type>,                     \
-                                                                                 double,                                \
-                                                                                 _d,                                    \
-                                                                                 double,                                \
-                                                                                 1,                                     \
-                                                                                 1>,                                    \
-                                                void,                                                                   \
-                                                Dune::GDT::SpaceProvider<_G,                                            \
-                                                                         Dune::XT::Grid::Layers::_g_layer,              \
-                                                                         Dune::GDT::SpaceType::_s_type,                 \
-                                                                         Dune::GDT::Backends::_s_backend,               \
-                                                                         _p,                                            \
-                                                                         _R,                                            \
-                                                                         _r,                                            \
-                                                                         _rC>,                                          \
-                                                Dune::XT::Grid::Layers::_i_layer_type,                                  \
-                                                Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method>::              \
-          bind(_m, _layer_name)
+#define _DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND_1D(                                                               \
+    _m, _G, _d, _g_layer, _g_backend, _s_type, _s_backend, _i_layer_type, _p, _R, _r, _rC, _layer_name, _method)       \
+  Dune::GDT::bindings::LocalEllipticIpdgInnerIntegralOperator<                                                         \
+      Dune::XT::Functions::LocalizableFunctionInterface<                                                               \
+          Dune::XT::Grid::extract_entity_t<                                                                            \
+              typename Dune::XT::Grid::Layer<_G,                                                                       \
+                                             Dune::XT::Grid::Layers::_g_layer,                                         \
+                                             Dune::XT::Grid::Backends::_g_backend,                                     \
+                                             Dune::XT::Grid::DD::SubdomainGrid<_G>>::type>,                            \
+          double,                                                                                                      \
+          _d,                                                                                                          \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          1>,                                                                                                          \
+      Dune::XT::Functions::LocalizableFunctionInterface<                                                               \
+          Dune::XT::Grid::extract_entity_t<                                                                            \
+              typename Dune::XT::Grid::Layer<_G,                                                                       \
+                                             Dune::XT::Grid::Layers::_g_layer,                                         \
+                                             Dune::XT::Grid::Backends::_g_backend,                                     \
+                                             Dune::XT::Grid::DD::SubdomainGrid<_G>>::type>,                            \
+          double,                                                                                                      \
+          _d,                                                                                                          \
+          double,                                                                                                      \
+          _d,                                                                                                          \
+          _d>,                                                                                                         \
+      Dune::GDT::SpaceProvider<_G,                                                                                     \
+                               Dune::XT::Grid::Layers::_g_layer,                                                       \
+                               Dune::GDT::SpaceType::_s_type,                                                          \
+                               Dune::GDT::Backends::_s_backend,                                                        \
+                               _p,                                                                                     \
+                               _R,                                                                                     \
+                               _r,                                                                                     \
+                               _rC>,                                                                                   \
+      Dune::XT::Grid::Layers::_i_layer_type,                                                                           \
+      Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method>::bind(_m, _layer_name);                                 \
+  Dune::GDT::bindings::LocalEllipticIpdgInnerIntegralOperator<                                                         \
+      Dune::XT::Functions::LocalizableFunctionInterface<                                                               \
+          Dune::XT::Grid::extract_entity_t<                                                                            \
+              typename Dune::XT::Grid::Layer<_G,                                                                       \
+                                             Dune::XT::Grid::Layers::_g_layer,                                         \
+                                             Dune::XT::Grid::Backends::_g_backend,                                     \
+                                             Dune::XT::Grid::DD::SubdomainGrid<_G>>::type>,                            \
+          double,                                                                                                      \
+          _d,                                                                                                          \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          1>,                                                                                                          \
+      void,                                                                                                            \
+      Dune::GDT::SpaceProvider<_G,                                                                                     \
+                               Dune::XT::Grid::Layers::_g_layer,                                                       \
+                               Dune::GDT::SpaceType::_s_type,                                                          \
+                               Dune::GDT::Backends::_s_backend,                                                        \
+                               _p,                                                                                     \
+                               _R,                                                                                     \
+                               _r,                                                                                     \
+                               _rC>,                                                                                   \
+      Dune::XT::Grid::Layers::_i_layer_type,                                                                           \
+      Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method>::bind(_m, _layer_name);                                 \
+  Dune::GDT::bindings::LocalEllipticIpdgBoundaryIntegralOperator<                                                      \
+      Dune::XT::Functions::LocalizableFunctionInterface<                                                               \
+          Dune::XT::Grid::extract_entity_t<                                                                            \
+              typename Dune::XT::Grid::Layer<_G,                                                                       \
+                                             Dune::XT::Grid::Layers::_g_layer,                                         \
+                                             Dune::XT::Grid::Backends::_g_backend,                                     \
+                                             Dune::XT::Grid::DD::SubdomainGrid<_G>>::type>,                            \
+          double,                                                                                                      \
+          _d,                                                                                                          \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          1>,                                                                                                          \
+      Dune::XT::Functions::LocalizableFunctionInterface<                                                               \
+          Dune::XT::Grid::extract_entity_t<                                                                            \
+              typename Dune::XT::Grid::Layer<_G,                                                                       \
+                                             Dune::XT::Grid::Layers::_g_layer,                                         \
+                                             Dune::XT::Grid::Backends::_g_backend,                                     \
+                                             Dune::XT::Grid::DD::SubdomainGrid<_G>>::type>,                            \
+          double,                                                                                                      \
+          _d,                                                                                                          \
+          double,                                                                                                      \
+          _d,                                                                                                          \
+          _d>,                                                                                                         \
+      Dune::GDT::SpaceProvider<_G,                                                                                     \
+                               Dune::XT::Grid::Layers::_g_layer,                                                       \
+                               Dune::GDT::SpaceType::_s_type,                                                          \
+                               Dune::GDT::Backends::_s_backend,                                                        \
+                               _p,                                                                                     \
+                               _R,                                                                                     \
+                               _r,                                                                                     \
+                               _rC>,                                                                                   \
+      Dune::XT::Grid::Layers::_i_layer_type,                                                                           \
+      Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method>::bind(_m, _layer_name);                                 \
+  Dune::GDT::bindings::LocalEllipticIpdgBoundaryIntegralOperator<                                                      \
+      Dune::XT::Functions::LocalizableFunctionInterface<                                                               \
+          Dune::XT::Grid::extract_entity_t<                                                                            \
+              typename Dune::XT::Grid::Layer<_G,                                                                       \
+                                             Dune::XT::Grid::Layers::_g_layer,                                         \
+                                             Dune::XT::Grid::Backends::_g_backend,                                     \
+                                             Dune::XT::Grid::DD::SubdomainGrid<_G>>::type>,                            \
+          double,                                                                                                      \
+          _d,                                                                                                          \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          1>,                                                                                                          \
+      void,                                                                                                            \
+      Dune::GDT::SpaceProvider<_G,                                                                                     \
+                               Dune::XT::Grid::Layers::_g_layer,                                                       \
+                               Dune::GDT::SpaceType::_s_type,                                                          \
+                               Dune::GDT::Backends::_s_backend,                                                        \
+                               _p,                                                                                     \
+                               _R,                                                                                     \
+                               _r,                                                                                     \
+                               _rC>,                                                                                   \
+      Dune::XT::Grid::Layers::_i_layer_type,                                                                           \
+      Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method>::bind(_m, _layer_name)
 
-#define _DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND_DD(                                                                \
-    _m, _G, _d, _g_layer, _g_backend, _s_type, _s_backend, _i_layer_type, _p, _R, _r, _rC, _layer_name, _method)        \
-  _DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND_1D(                                                                      \
-      _m, _G, _d, _g_layer, _g_backend, _s_type, _s_backend, _i_layer_type, _p, _R, _r, _rC, _layer_name, _method);     \
-  Dune::GDT::bindings::                                                                                                 \
-      LocalEllipticIpdgInnerIntegralOperator<Dune::XT::Functions::                                                      \
-                                                 LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
-                                                                                  typename Dune::XT::Grid::             \
-                                                                                      Layer<_G,                         \
-                                                                                            Dune::XT::Grid::Layers::    \
-                                                                                                _g_layer,               \
-                                                                                            Dune::XT::Grid::Backends::  \
-                                                                                                _g_backend,             \
-                                                                                            Dune::XT::Grid::DD::        \
-                                                                                                SubdomainGrid<_G>>::    \
-                                                                                          type>,                        \
-                                                                              double,                                   \
-                                                                              _d,                                       \
-                                                                              double,                                   \
-                                                                              _d,                                       \
-                                                                              _d>,                                      \
-                                             void,                                                                      \
-                                             Dune::GDT::SpaceProvider<_G,                                               \
-                                                                      Dune::XT::Grid::Layers::_g_layer,                 \
-                                                                      Dune::GDT::SpaceType::_s_type,                    \
-                                                                      Dune::GDT::Backends::_s_backend,                  \
-                                                                      _p,                                               \
-                                                                      _R,                                               \
-                                                                      _r,                                               \
-                                                                      _rC>,                                             \
-                                             Dune::XT::Grid::Layers::_i_layer_type,                                     \
-                                             Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method>::                 \
-          bind(_m, _layer_name);                                                                                        \
-  Dune::GDT::bindings::                                                                                                 \
-      LocalEllipticIpdgBoundaryIntegralOperator<Dune::XT::Functions::                                                   \
-                                                    LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<      \
-                                                                                     typename Dune::XT::Grid::          \
-                                                                                         Layer<_G,                      \
-                                                                                               Dune::XT::Grid::         \
-                                                                                                   Layers::_g_layer,    \
-                                                                                               Dune::XT::Grid::         \
-                                                                                                   Backends::           \
-                                                                                                       _g_backend,      \
-                                                                                               Dune::XT::Grid::DD::     \
-                                                                                                   SubdomainGrid<_G>>:: \
-                                                                                             type>,                     \
-                                                                                 double,                                \
-                                                                                 _d,                                    \
-                                                                                 double,                                \
-                                                                                 _d,                                    \
-                                                                                 _d>,                                   \
-                                                void,                                                                   \
-                                                Dune::GDT::SpaceProvider<_G,                                            \
-                                                                         Dune::XT::Grid::Layers::_g_layer,              \
-                                                                         Dune::GDT::SpaceType::_s_type,                 \
-                                                                         Dune::GDT::Backends::_s_backend,               \
-                                                                         _p,                                            \
-                                                                         _R,                                            \
-                                                                         _r,                                            \
-                                                                         _rC>,                                          \
-                                                Dune::XT::Grid::Layers::_i_layer_type,                                  \
-                                                Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method>::              \
-          bind(_m, _layer_name)
+#define _DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND_DD(                                                               \
+    _m, _G, _d, _g_layer, _g_backend, _s_type, _s_backend, _i_layer_type, _p, _R, _r, _rC, _layer_name, _method)       \
+  _DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND_1D(                                                                     \
+      _m, _G, _d, _g_layer, _g_backend, _s_type, _s_backend, _i_layer_type, _p, _R, _r, _rC, _layer_name, _method);    \
+  Dune::GDT::bindings::LocalEllipticIpdgInnerIntegralOperator<                                                         \
+      Dune::XT::Functions::LocalizableFunctionInterface<                                                               \
+          Dune::XT::Grid::extract_entity_t<                                                                            \
+              typename Dune::XT::Grid::Layer<_G,                                                                       \
+                                             Dune::XT::Grid::Layers::_g_layer,                                         \
+                                             Dune::XT::Grid::Backends::_g_backend,                                     \
+                                             Dune::XT::Grid::DD::SubdomainGrid<_G>>::type>,                            \
+          double,                                                                                                      \
+          _d,                                                                                                          \
+          double,                                                                                                      \
+          _d,                                                                                                          \
+          _d>,                                                                                                         \
+      void,                                                                                                            \
+      Dune::GDT::SpaceProvider<_G,                                                                                     \
+                               Dune::XT::Grid::Layers::_g_layer,                                                       \
+                               Dune::GDT::SpaceType::_s_type,                                                          \
+                               Dune::GDT::Backends::_s_backend,                                                        \
+                               _p,                                                                                     \
+                               _R,                                                                                     \
+                               _r,                                                                                     \
+                               _rC>,                                                                                   \
+      Dune::XT::Grid::Layers::_i_layer_type,                                                                           \
+      Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method>::bind(_m, _layer_name);                                 \
+  Dune::GDT::bindings::LocalEllipticIpdgBoundaryIntegralOperator<                                                      \
+      Dune::XT::Functions::LocalizableFunctionInterface<                                                               \
+          Dune::XT::Grid::extract_entity_t<                                                                            \
+              typename Dune::XT::Grid::Layer<_G,                                                                       \
+                                             Dune::XT::Grid::Layers::_g_layer,                                         \
+                                             Dune::XT::Grid::Backends::_g_backend,                                     \
+                                             Dune::XT::Grid::DD::SubdomainGrid<_G>>::type>,                            \
+          double,                                                                                                      \
+          _d,                                                                                                          \
+          double,                                                                                                      \
+          _d,                                                                                                          \
+          _d>,                                                                                                         \
+      void,                                                                                                            \
+      Dune::GDT::SpaceProvider<_G,                                                                                     \
+                               Dune::XT::Grid::Layers::_g_layer,                                                       \
+                               Dune::GDT::SpaceType::_s_type,                                                          \
+                               Dune::GDT::Backends::_s_backend,                                                        \
+                               _p,                                                                                     \
+                               _R,                                                                                     \
+                               _r,                                                                                     \
+                               _rC>,                                                                                   \
+      Dune::XT::Grid::Layers::_i_layer_type,                                                                           \
+      Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method>::bind(_m, _layer_name)
 
 #define _DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND_METHODS_1D(                                                       \
     _m, _G, _d, _g_layer, _g_backend, _s_type, _s_backend, _i_layer_type, _p, _R, _r, _rC, _layer_name)                \

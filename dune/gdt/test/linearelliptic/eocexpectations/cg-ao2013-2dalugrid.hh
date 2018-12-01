@@ -14,11 +14,11 @@
 
 #if HAVE_DUNE_ALUGRID
 
-#include <dune/alugrid/grid.hh>
+#  include <dune/alugrid/grid.hh>
 
-#include "../problems/AO2013.hh"
+#  include "../problems/AO2013.hh"
 
-#include <dune/gdt/test/linearelliptic/eocexpectations_base.hh>
+#  include <dune/gdt/test/linearelliptic/eocexpectations_base.hh>
 
 namespace Dune {
 namespace GDT {

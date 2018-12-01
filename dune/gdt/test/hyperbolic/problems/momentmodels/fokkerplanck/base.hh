@@ -63,21 +63,21 @@ class FokkerPlanckEquation : public KineticTransportEquation<BasisfunctionImp, G
   using BaseType = KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>;
 
 public:
+  using BaseType::dimDomain;
   using typename BaseType::BasisfunctionType;
+  using typename BaseType::DomainType;
   using typename BaseType::GridLayerType;
   using typename BaseType::RangeFieldType;
-  using typename BaseType::DomainType;
   using typename BaseType::RangeType;
-  using BaseType::dimDomain;
   static_assert(BaseType::dimDomain == 1, "Not implemented for dimDomain > 1!");
   using BaseType::dimRange;
-  using typename BaseType::RhsType;
   using typename BaseType::ActualRhsType;
-  using typename BaseType::RhsAffineFunctionType;
   using typename BaseType::MatrixType;
+  using typename BaseType::RhsAffineFunctionType;
+  using typename BaseType::RhsType;
 
-  using BaseType::default_grid_cfg;
   using BaseType::default_boundary_cfg;
+  using BaseType::default_grid_cfg;
 
   FokkerPlanckEquation(const BasisfunctionType& basis_functions,
                        const GridLayerType grid_layer,
@@ -96,11 +96,10 @@ public:
                                           std::make_pair("Q", get_num_regions({num_segments})),
                                           std::make_pair("CFL", 1),
                                           std::make_pair("t_end", 1)}))
-  {
-  }
+  {}
 
-  using BaseType::parse_parameter;
   using BaseType::parameters;
+  using BaseType::parse_parameter;
 
   // RHS is (-\sigma_a*I + 0.5*T*S M^{-1}) u + Q<b>
   virtual RhsType* create_rhs() const override
@@ -138,10 +137,10 @@ public:
   } // ... create_rhs(...)
 
 protected:
-  using BaseType::num_segments_;
-  using BaseType::get_num_regions;
   using BaseType::basis_functions_;
+  using BaseType::get_num_regions;
   using BaseType::grid_cfg_;
+  using BaseType::num_segments_;
 }; // class FokkerPlanckEquation<...>
 
 

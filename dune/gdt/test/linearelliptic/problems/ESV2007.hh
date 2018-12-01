@@ -13,7 +13,7 @@
 #define DUNE_GDT_TESTS_LINEARELLIPTIC_PROBLEMS_ESV2007_HH
 
 #if HAVE_DUNE_ALUGRID
-#include <dune/alugrid/grid.hh>
+#  include <dune/alugrid/grid.hh>
 #endif
 #include <dune/grid/yaspgrid.hh>
 
@@ -46,7 +46,7 @@ class ESV2007Problem : public ProblemBase<E, D, d, R, r>
 
 template <class EntityImp, class DomainFieldImp, class RangeFieldImp>
 class ESV2007Problem<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
-    : public ProblemBase<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
+  : public ProblemBase<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
 {
   typedef ProblemBase<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> BaseType;
   typedef XT::Functions::ConstantFunction<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> ScalarConstantFunctionType;
@@ -81,19 +81,15 @@ public:
           new ScalarConstantFunctionType(0, "neumann"),
           grd_cfg,
           bnd_cfg)
-  {
-  }
+  {}
 }; // class ESV2007Problem< ..., 1 >
 
 
 template <class G, class R = double, int r = 1>
 class ESV2007TestCase
-    : public Test::StationaryTestCase<G,
-                                      LinearElliptic::ESV2007Problem<typename G::template Codim<0>::Entity,
-                                                                     typename G::ctype,
-                                                                     G::dimension,
-                                                                     R,
-                                                                     r>>
+  : public Test::StationaryTestCase<
+        G,
+        LinearElliptic::ESV2007Problem<typename G::template Codim<0>::Entity, typename G::ctype, G::dimension, R, r>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
@@ -142,7 +138,7 @@ private:
     }
   };
 
-#if HAVE_DUNE_SPGRID
+#  if HAVE_DUNE_SPGRID
   template <class ct, int dim, template <int> class Ref, class Comm, bool anything>
   struct Helper<SPGrid<ct, dim, Ref, Comm>, anything>
   {
@@ -152,9 +148,9 @@ private:
       return cfg;
     }
   };
-#endif
+#  endif
 
-#if HAVE_DUNE_ALUGRID
+#  if HAVE_DUNE_ALUGRID
 
   template <bool anything>
   struct Helper<AluConform2dGridType, anything>
@@ -189,7 +185,7 @@ private:
     }
   };
 
-#endif // HAVE_DUNE_ALUGRID
+#  endif // HAVE_DUNE_ALUGRID
 #endif // DXT_DISABLE_LARGE_TESTS
 
 public:
@@ -210,15 +206,13 @@ public:
     : BaseType(grid_cfg(), num_refs)
     , problem_()
     , exact_solution_()
-  {
-  }
+  {}
 
   ESV2007TestCase(XT::Common::Configuration cfg)
     : BaseType(cfg.sub("grid", false, grid_cfg()), cfg.get("grid.num_refinements", 1))
     , problem_()
     , exact_solution_()
-  {
-  }
+  {}
 
   const ProblemType& problem() const override final
   {
@@ -262,13 +256,10 @@ private:
 
 template <class G, class R, int r>
 class ESV2007DdSubdomainsTestCase
-    : public Test::StationaryTestCase<G,
-                                      LinearElliptic::ESV2007Problem<typename G::template Codim<0>::Entity,
-                                                                     typename G::ctype,
-                                                                     G::dimension,
-                                                                     R,
-                                                                     r>,
-                                      XT::Grid::DD::SubdomainGrid<G>>
+  : public Test::StationaryTestCase<
+        G,
+        LinearElliptic::ESV2007Problem<typename G::template Codim<0>::Entity, typename G::ctype, G::dimension, R, r>,
+        XT::Grid::DD::SubdomainGrid<G>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
@@ -300,15 +291,13 @@ public:
     : BaseType(grid_cfg(), num_refs)
     , problem_()
     , exact_solution_()
-  {
-  }
+  {}
 
   ESV2007DdSubdomainsTestCase(XT::Common::Configuration cfg)
     : BaseType(cfg.sub("grid", false, grid_cfg()), cfg.get("grid.num_refinements", 1))
     , problem_()
     , exact_solution_()
-  {
-  }
+  {}
 
   const ProblemType& problem() const override final
   {

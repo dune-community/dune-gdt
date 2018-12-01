@@ -24,15 +24,14 @@ namespace GDT {
 // datahandle for a Dune::XT::LA::MatrixInterface matrix that can be assembled from local matrices on each entity
 template <class MatrixType, class SpaceType>
 class MatrixDataHandle
-    : public Dune::CommDataHandleIF<MatrixDataHandle<MatrixType, SpaceType>, typename MatrixType::ScalarType>
+  : public Dune::CommDataHandleIF<MatrixDataHandle<MatrixType, SpaceType>, typename MatrixType::ScalarType>
 {
 public:
   MatrixDataHandle(MatrixType& matrix, const SpaceType& space, bool fixed_size = true)
     : matrix_(matrix)
     , space_(space)
     , fixed_size_(fixed_size)
-  {
-  }
+  {}
 
   //! export type of data for message buffer
   typedef typename MatrixType::ScalarType DataType;
@@ -71,8 +70,7 @@ public:
   //! pack data from user to message buffer
   template <class MessageBuffer, class EntityType>
   std::enable_if_t<EntityType::codimension != 0> gather(MessageBuffer& /*buff*/, const EntityType& /*entity*/) const
-  {
-  }
+  {}
 
   template <class MessageBuffer, class EntityType>
   std::enable_if_t<EntityType::codimension == 0> gather(MessageBuffer& buff, const EntityType& entity) const
@@ -90,8 +88,7 @@ public:
   template <class MessageBuffer, class EntityType>
   std::enable_if_t<EntityType::codimension != 0>
   scatter(MessageBuffer& /*buff*/, const EntityType& /*entity*/, size_t /*n*/)
-  {
-  }
+  {}
 
   template <class MessageBuffer, class EntityType>
   std::enable_if_t<EntityType::codimension == 0>

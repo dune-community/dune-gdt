@@ -35,8 +35,7 @@ class BaseHolder
 public:
   BaseHolder(Space s)
     : s_(s)
-  {
-  }
+  {}
 
   const Space& space()
   {
@@ -56,14 +55,13 @@ class DerivedHolder : public BaseHolder<Space>
 public:
   DerivedHolder(Provider& p)
     : BaseType(Space(p.template layer<Dune::XT::Grid::Layers::leaf, Space::layer_backend>()))
-  {
-  }
+  {}
 };
 
 
 /**
-  * \brief Checks any space derived from SpaceInterface for it's interface compliance, especially concerning CRTP.
-  */
+ * \brief Checks any space derived from SpaceInterface for it's interface compliance, especially concerning CRTP.
+ */
 template <class SpaceType>
 class SpaceBase : public ::testing::Test
 {
@@ -74,16 +72,13 @@ public:
   SpaceBase()
     : grid_provider_(Dune::XT::Grid::make_cube_grid<GridType>(0.0, 1.0, 9u))
     , space_(grid_provider_.template layer<Dune::XT::Grid::Layers::leaf, SpaceType::layer_backend>())
-  {
-  }
+  {}
 
-  virtual ~SpaceBase()
-  {
-  }
+  virtual ~SpaceBase() {}
 
   /**
-    * \brief Checks the space for it's interface compliance.
-    */
+   * \brief Checks the space for it's interface compliance.
+   */
   void fulfills_interface() const
   {
     static_assert(Dune::GDT::is_space<SpaceType>::value, "");
@@ -242,8 +237,8 @@ public:
   } // ... check_for_correct_copy()
 
   /**
-    * \brief Checks the spaces mapper for it's interface compliance.
-    */
+   * \brief Checks the spaces mapper for it's interface compliance.
+   */
   void mapper_fulfills_interface() const
   {
     using namespace Dune;
@@ -309,9 +304,9 @@ public:
   } // ... mapper_fulfills_interface()
 
   /**
-    * \brief  Checks the spaces basefunctionsets for their interface compliance.
-    * \note   We do not check for the functionality enforced by LocalfuntionSetInterface at the moment!
-    */
+   * \brief  Checks the spaces basefunctionsets for their interface compliance.
+   * \note   We do not check for the functionality enforced by LocalfuntionSetInterface at the moment!
+   */
   void basefunctionset_fulfills_interface(bool special_case_rt_check = false) const
   {
     using namespace Dune;

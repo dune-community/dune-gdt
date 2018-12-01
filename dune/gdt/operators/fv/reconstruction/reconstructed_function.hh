@@ -32,12 +32,12 @@ template <class GridLayerImp,
           size_t rangeDim,
           size_t rangeDimCols = 1>
 class ReconstructedLocalizableFunction
-    : public XT::Functions::LocalizableFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
-                                                         DomainFieldImp,
-                                                         domainDim,
-                                                         RangeFieldImp,
-                                                         rangeDim,
-                                                         rangeDimCols>
+  : public XT::Functions::LocalizableFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
+                                                       DomainFieldImp,
+                                                       domainDim,
+                                                       RangeFieldImp,
+                                                       rangeDim,
+                                                       rangeDimCols>
 {
   typedef XT::Functions::LocalizableFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
                                                       DomainFieldImp,
@@ -64,8 +64,8 @@ public:
 
 private:
   class ReconstructedLocalfunction
-      : public XT::Functions::
-            LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols>
+    : public XT::Functions::
+          LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols>
   {
     using BaseType = typename XT::Functions::
         LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols>;
@@ -76,8 +76,7 @@ private:
     ReconstructedLocalfunction(const EntityType& ent, const LocalReconstructedValuesType& values)
       : BaseType(ent)
       , values_(values)
-    {
-    }
+    {}
 
     virtual size_t order(const XT::Common::Parameter& /*mu*/ = {}) const override
     {
@@ -93,11 +92,10 @@ private:
         ret = values_.at(xx);
       } catch (const std::out_of_range& /*e*/) {
         DUNE_THROW(Dune::RangeError,
-                   "There are no values for local coord " << XT::Common::to_string(xx) << " (global coord "
-                                                          << XT::Common::to_string(entity().geometry().global(xx))
-                                                          << ") on entity "
-                                                          << XT::Common::to_string(entity().geometry().center())
-                                                          << " in this function!");
+                   "There are no values for local coord "
+                       << XT::Common::to_string(xx) << " (global coord "
+                       << XT::Common::to_string(entity().geometry().global(xx)) << ") on entity "
+                       << XT::Common::to_string(entity().geometry().center()) << " in this function!");
       }
     }
 

@@ -131,9 +131,8 @@ public:
  */
 template <class DiffusionFactorImp, class DiffusionTensorImp>
 class LocalEllipticIntegrand
-    : public LocalVolumeIntegrandInterface<internal::LocalEllipticIntegrandTraits<DiffusionFactorImp,
-                                                                                  DiffusionTensorImp>,
-                                           2>
+  : public LocalVolumeIntegrandInterface<internal::LocalEllipticIntegrandTraits<DiffusionFactorImp, DiffusionTensorImp>,
+                                         2>
 {
   typedef LocalVolumeIntegrandInterface<internal::LocalEllipticIntegrandTraits<DiffusionFactorImp, DiffusionTensorImp>,
                                         2>
@@ -152,9 +151,9 @@ public:
 private:
   typedef XT::Common::ConstStorageProvider<DiffusionFactorType> DiffusionFactorProvider;
   typedef XT::Common::ConstStorageProvider<DiffusionTensorType> DiffusionTensorProvider;
-  using typename BaseType::E;
-  using typename BaseType::D;
   using BaseType::d;
+  using typename BaseType::D;
+  using typename BaseType::E;
 
 public:
   LocalEllipticIntegrand(const DiffusionFactorType& diff_factor,
@@ -163,16 +162,14 @@ public:
     : diffusion_factor_(diff_factor)
     , diffusion_tensor_(diff_tensor)
     , param_(param)
-  {
-  }
+  {}
 
   LocalEllipticIntegrand(const DiffusionFactorType& diff_factor, const XT::Common::Parameter& param = {})
     : diffusion_factor_(diff_factor)
     , diffusion_tensor_(new DiffusionTensorType(
           XT::Functions::internal::UnitMatrix<typename DiffusionTensorType::RangeFieldType, dimDomain>::value()))
     , param_(param)
-  {
-  }
+  {}
 
 
   template < // This disables the ctor if dimDomain == 1, since factor and tensor are then identical and the
@@ -183,8 +180,7 @@ public:
     : diffusion_factor_(new DiffusionFactorType(1.))
     , diffusion_tensor_(diffusion)
     , param_(param)
-  {
-  }
+  {}
 
   /**
    * \attention Due to the nature of XT::Common::ConstStorageProvider, this copy may leave you with a dead reference,
@@ -194,8 +190,7 @@ public:
     : diffusion_factor_(other.diffusion_factor())
     , diffusion_tensor_(other.diffusion_tensor())
     , param_(other.param_)
-  {
-  }
+  {}
 
   LocalEllipticIntegrand(ThisType&& source) = default;
 

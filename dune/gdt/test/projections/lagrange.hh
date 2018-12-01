@@ -22,12 +22,11 @@ namespace Test {
 
 template <class SpaceType>
 struct LagrangeProjectionLocalizableOperatorTest
-    : public LocalizableProjectionOperatorBase<SpaceType,
-                                               LagrangeProjectionLocalizableOperator<
-                                                   typename SpaceType::GridLayerType,
-                                                   typename internal::OperatorBaseTraits<SpaceType>::FunctionType,
-                                                   typename internal::OperatorBaseTraits<SpaceType>::
-                                                       DiscreteFunctionType>>
+  : public LocalizableProjectionOperatorBase<
+        SpaceType,
+        LagrangeProjectionLocalizableOperator<typename SpaceType::GridLayerType,
+                                              typename internal::OperatorBaseTraits<SpaceType>::FunctionType,
+                                              typename internal::OperatorBaseTraits<SpaceType>::DiscreteFunctionType>>
 {
   void constructible_by_factory()
   {
@@ -42,7 +41,7 @@ struct LagrangeProjectionLocalizableOperatorTest
 
 template <class SpaceType>
 struct LagrangeProjectionOperatorTest
-    : public ProjectionOperatorBase<SpaceType, LagrangeProjectionOperator<typename SpaceType::GridLayerType, double>>
+  : public ProjectionOperatorBase<SpaceType, LagrangeProjectionOperator<typename SpaceType::GridLayerType, double>>
 {
   void constructible_by_factory()
   {

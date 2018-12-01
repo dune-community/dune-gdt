@@ -13,7 +13,7 @@
 
 #if HAVE_DUNE_ALUGRID
 
-#include "swipdg-esv2007-2dalugrid.hh"
+#  include "swipdg-esv2007-2dalugrid.hh"
 
 namespace Dune {
 namespace GDT {
@@ -22,26 +22,26 @@ namespace Test {
 
 // polorder 1, conforming
 
-std::vector<double> LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluConform2dGridType, double, 1>,
-                                                  LinearElliptic::ChooseDiscretizer::swipdg,
-                                                  1>::
-    results(const LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluConform2dGridType, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::swipdg,
-                                                1>::TestCaseType&,
-            const std::string type)
+std::vector<double> LinearEllipticEocExpectations<
+    LinearElliptic::ESV2007TestCase<AluConform2dGridType, double, 1>,
+    LinearElliptic::ChooseDiscretizer::swipdg,
+    1>::results(const LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluConform2dGridType, double, 1>,
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    1>::TestCaseType&,
+                const std::string type)
 {
   if (type == "L2") {
-#if DXT_DISABLE_LARGE_TESTS
+#  if DXT_DISABLE_LARGE_TESTS
     return {8.33e-02, 1.82e-02};
-#else
+#  else
     return {1.82e-02, 4.53e-03, 1.12e-03, 2.78e-04};
-#endif
+#  endif
   } else if (type == "H1_semi" || type == "energy") {
-#if DXT_DISABLE_LARGE_TESTS
+#  if DXT_DISABLE_LARGE_TESTS
     return {3.04e-01, 1.48e-01};
-#else
+#  else
     return {1.48e-01, 7.28e-02, 3.62e-02, 1.80e-02};
-#endif
+#  endif
   } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;
   return {};
@@ -49,26 +49,26 @@ std::vector<double> LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCas
 
 // polorder 2, conforming
 
-std::vector<double> LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluConform2dGridType, double, 1>,
-                                                  LinearElliptic::ChooseDiscretizer::swipdg,
-                                                  2>::
-    results(const LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluConform2dGridType, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::swipdg,
-                                                2>::TestCaseType&,
-            const std::string type)
+std::vector<double> LinearEllipticEocExpectations<
+    LinearElliptic::ESV2007TestCase<AluConform2dGridType, double, 1>,
+    LinearElliptic::ChooseDiscretizer::swipdg,
+    2>::results(const LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluConform2dGridType, double, 1>,
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    2>::TestCaseType&,
+                const std::string type)
 {
   if (type == "L2") {
-#if DXT_DISABLE_LARGE_TESTS
+#  if DXT_DISABLE_LARGE_TESTS
     return {5.77e-03, 8.55e-04};
-#else
+#  else
     return {8.55e-04, 1.06e-04, 1.31e-05, 1.63e-06};
-#endif
+#  endif
   } else if (type == "H1_semi" || type == "energy") {
-#if DXT_DISABLE_LARGE_TESTS
+#  if DXT_DISABLE_LARGE_TESTS
     return {5.20e-02, 1.41e-02};
-#else
+#  else
     return {1.41e-02, 3.56e-03, 8.91e-04, 2.23e-04};
-#endif
+#  endif
   } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;
   return {};
@@ -76,27 +76,27 @@ std::vector<double> LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCas
 
 // polorder 1, nonconforming
 
-std::vector<double> LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluSimplex2dGridType, double, 1>,
-                                                  LinearElliptic::ChooseDiscretizer::swipdg,
-                                                  1>::
-    results(const LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluSimplex2dGridType, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::swipdg,
-                                                1>::TestCaseType&,
-            const std::string type)
+std::vector<double> LinearEllipticEocExpectations<
+    LinearElliptic::ESV2007TestCase<AluSimplex2dGridType, double, 1>,
+    LinearElliptic::ChooseDiscretizer::swipdg,
+    1>::results(const LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluSimplex2dGridType, double, 1>,
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    1>::TestCaseType&,
+                const std::string type)
 
 {
   if (type == "L2") {
-#if DXT_DISABLE_LARGE_TESTS
+#  if DXT_DISABLE_LARGE_TESTS
     return {8.33e-02, 2.31e-02};
-#else
+#  else
     return {2.31e-02, 5.96e-03, 1.50e-03, 3.76e-04};
-#endif
+#  endif
   } else if (type == "H1_semi" || type == "energy") {
-#if DXT_DISABLE_LARGE_TESTS
+#  if DXT_DISABLE_LARGE_TESTS
     return {3.04e-01, 1.49e-01};
-#else
+#  else
     return {1.49e-01, 7.33e-02, 3.63e-02, 1.81e-02};
-#endif
+#  endif
   } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;
   return {};
@@ -104,26 +104,26 @@ std::vector<double> LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCas
 
 // polorder 2, nonconforming
 
-std::vector<double> LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluSimplex2dGridType, double, 1>,
-                                                  LinearElliptic::ChooseDiscretizer::swipdg,
-                                                  2>::
-    results(const LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluSimplex2dGridType, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::swipdg,
-                                                2>::TestCaseType&,
-            const std::string type)
+std::vector<double> LinearEllipticEocExpectations<
+    LinearElliptic::ESV2007TestCase<AluSimplex2dGridType, double, 1>,
+    LinearElliptic::ChooseDiscretizer::swipdg,
+    2>::results(const LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluSimplex2dGridType, double, 1>,
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    2>::TestCaseType&,
+                const std::string type)
 {
   if (type == "L2") {
-#if DXT_DISABLE_LARGE_TESTS
+#  if DXT_DISABLE_LARGE_TESTS
     return {5.77e-03, 6.78e-04};
-#else
+#  else
     return {6.78e-04, 8.23e-05, 1.02e-05, 1.26e-06};
-#endif
+#  endif
   } else if (type == "H1_semi" || type == "energy") {
-#if DXT_DISABLE_LARGE_TESTS
+#  if DXT_DISABLE_LARGE_TESTS
     return {5.20e-02, 1.32e-02};
-#else
+#  else
     return {1.32e-02, 3.30e-03, 8.25e-04, 2.06e-04};
-#endif
+#  endif
   } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;
   return {};

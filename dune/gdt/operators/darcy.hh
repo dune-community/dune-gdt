@@ -68,9 +68,9 @@ public:
 
 
 /**
-  * \note Only works for scalar valued function atm.
-  * \todo add make_darcy_operator
-  **/
+ * \note Only works for scalar valued function atm.
+ * \todo add make_darcy_operator
+ **/
 template <class GridLayerImp, class FunctionImp>
 class DarcyOperator : public OperatorInterface<internal::DarcyOperatorTraits<GridLayerImp, FunctionImp>>
 {
@@ -88,8 +88,7 @@ public:
   DarcyOperator(const GridLayerType& grd_vw, const FunctionImp& function)
     : grid_layer_(grd_vw)
     , function_(function)
-  {
-  }
+  {}
 
   /**
    * \brief Applies the operator.
@@ -198,8 +197,7 @@ private:
     } catch (XT::LA::Exceptions::linear_solver_failed& ee) {
       DUNE_THROW(operator_error,
                  "Application of the Darcy operator failed because a matrix could not be inverted!\n\n"
-                     << "This was the original error: "
-                     << ee.what());
+                     << "This was the original error: " << ee.what());
     }
   } // ... redirect_apply(...)
 

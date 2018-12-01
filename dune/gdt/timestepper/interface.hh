@@ -48,10 +48,10 @@ struct FloatCmpLt
 
 
 template <class DiscreteFunctionImp>
-class TimeStepperInterface : Dune::XT::Common::StorageProvider<DiscreteFunctionImp>,
-                             Dune::XT::Common::StorageProvider<std::map<typename DiscreteFunctionImp::RangeFieldType,
-                                                                        DiscreteFunctionImp,
-                                                                        typename internal::FloatCmpLt>>
+class TimeStepperInterface
+  : Dune::XT::Common::StorageProvider<DiscreteFunctionImp>
+  , Dune::XT::Common::StorageProvider<
+        std::map<typename DiscreteFunctionImp::RangeFieldType, DiscreteFunctionImp, typename internal::FloatCmpLt>>
 {
 public:
   using DiscreteFunctionType = DiscreteFunctionImp;
@@ -74,8 +74,8 @@ public:
 
 private:
   using CurrentSolutionStorageProviderType = typename Dune::XT::Common::StorageProvider<DiscreteFunctionImp>;
-  using SolutionStorageProviderType = typename Dune::XT::Common::
-      StorageProvider<std::map<RangeFieldType, DiscreteFunctionImp, typename internal::FloatCmpLt>>;
+  using SolutionStorageProviderType = typename Dune::XT::Common::StorageProvider<
+      std::map<RangeFieldType, DiscreteFunctionImp, typename internal::FloatCmpLt>>;
 
 protected:
   TimeStepperInterface(const RangeFieldType t_0, DiscreteFunctionType& initial_values)
@@ -84,8 +84,7 @@ protected:
     , t_(t_0)
     , u_n_(&CurrentSolutionStorageProviderType::access())
     , solution_(&SolutionStorageProviderType::access())
-  {
-  }
+  {}
 
 public:
   TimeStepperInterface(const ThisType& other) = delete;

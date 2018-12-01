@@ -78,7 +78,7 @@ public:
 }; // HyperbolicEocExpectations
 
 
-} // namespace Tests
+} // namespace Test
 } // namespace GDT
 } // namespace Dune
 

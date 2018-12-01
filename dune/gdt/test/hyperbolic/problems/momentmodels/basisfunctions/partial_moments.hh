@@ -15,10 +15,10 @@
 #include <boost/iostreams/device/null.hpp>
 
 #if HAVE_QHULL
-#include <dune/xt/common/disable_warnings.hh>
-#include <libqhullcpp/Qhull.h>
-#include <libqhullcpp/QhullFacetList.h>
-#include <dune/xt/common/reenable_warnings.hh>
+#  include <dune/xt/common/disable_warnings.hh>
+#  include <libqhullcpp/Qhull.h>
+#  include <libqhullcpp/QhullFacetList.h>
+#  include <dune/xt/common/reenable_warnings.hh>
 #endif // HAVE_QHULL
 
 #include <dune/xt/common/fvector.hh>
@@ -43,7 +43,7 @@ class PartialMomentBasis
 
 template <class DomainFieldType, class RangeFieldType, size_t rangeDim, size_t rangeDimCols, size_t dimFlux>
 class PartialMomentBasis<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, dimFlux, 1>
-    : public BasisfunctionsInterface<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, dimFlux>
+  : public BasisfunctionsInterface<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, dimFlux>
 {
 public:
   static constexpr size_t dimDomain = 1;
@@ -342,12 +342,12 @@ private:
 
 template <class DomainFieldType, class RangeFieldType, size_t refinements, size_t dimFlux>
 class PartialMomentBasis<DomainFieldType, 3, RangeFieldType, refinements, 1, dimFlux, 1>
-    : public BasisfunctionsInterface<DomainFieldType,
-                                     3,
-                                     RangeFieldType,
-                                     OctaederStatistics<refinements>::num_faces() * 4,
-                                     1,
-                                     dimFlux>
+  : public BasisfunctionsInterface<DomainFieldType,
+                                   3,
+                                   RangeFieldType,
+                                   OctaederStatistics<refinements>::num_faces() * 4,
+                                   1,
+                                   dimFlux>
 {
 public:
   static const size_t dimDomain = 3;
@@ -740,8 +740,8 @@ private:
     ret = V.convert_to_dynamic_matrix();
   }
 
-  using BaseType::quadratures_;
   using BaseType::fine_quadratures_;
+  using BaseType::quadratures_;
   using BaseType::triangulation_;
   mutable PlaneCoefficientsType plane_coefficients_;
 }; // class PartialMomentBasis<DomainFieldType, 3, ...>

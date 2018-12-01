@@ -23,12 +23,11 @@ namespace Test {
 
 template <class SpaceType>
 struct L2GlobalProjectionLocalizableOperatorTest
-    : public LocalizableProjectionOperatorBase<SpaceType,
-                                               L2GlobalProjectionLocalizableOperator<
-                                                   typename SpaceType::GridLayerType,
-                                                   typename internal::OperatorBaseTraits<SpaceType>::FunctionType,
-                                                   typename internal::OperatorBaseTraits<SpaceType>::
-                                                       DiscreteFunctionType>>
+  : public LocalizableProjectionOperatorBase<
+        SpaceType,
+        L2GlobalProjectionLocalizableOperator<typename SpaceType::GridLayerType,
+                                              typename internal::OperatorBaseTraits<SpaceType>::FunctionType,
+                                              typename internal::OperatorBaseTraits<SpaceType>::DiscreteFunctionType>>
 {
   void constructible_by_factory()
   {
@@ -48,7 +47,7 @@ struct L2GlobalProjectionLocalizableOperatorTest
 
 template <class SpaceType>
 struct L2GlobalProjectionOperatorTest
-    : public ProjectionOperatorBase<SpaceType, L2GlobalProjectionOperator<typename SpaceType::GridLayerType, double>>
+  : public ProjectionOperatorBase<SpaceType, L2GlobalProjectionOperator<typename SpaceType::GridLayerType, double>>
 {
   void constructible_by_factory()
   {

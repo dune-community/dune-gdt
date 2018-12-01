@@ -25,7 +25,7 @@ namespace Test {
 
 template <class SpaceType>
 struct L2LocalProlongationLocalizableOperatorTest
-    : public LocalizableProlongationOperatorBase<SpaceType, SpaceType, L2LocalProlongationLocalizableOperator>
+  : public LocalizableProlongationOperatorBase<SpaceType, SpaceType, L2LocalProlongationLocalizableOperator>
 {
   typedef LocalizableProlongationOperatorBase<SpaceType, SpaceType, L2LocalProlongationLocalizableOperator> BaseType;
   using typename BaseType::ProlongationOperatorType;
@@ -60,7 +60,7 @@ struct L2LocalProlongationLocalizableOperatorTest
 
 template <class SpaceType>
 struct L2LocalProlongationOperatorTest
-    : public ProlongationOperatorBase<SpaceType, SpaceType, L2LocalProlongationOperator>
+  : public ProlongationOperatorBase<SpaceType, SpaceType, L2LocalProlongationOperator>
 {
   typedef ProlongationOperatorBase<SpaceType, SpaceType, L2LocalProlongationOperator> BaseType;
   using typename BaseType::ProlongationOperatorType;

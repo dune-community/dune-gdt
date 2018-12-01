@@ -146,10 +146,10 @@ class DiagonallyImplicitRungeKuttaTimeStepper : public TimeStepperInterface<Disc
   using ButcherArrayProviderType = internal::ButcherArrayProvider<typename BaseType::RangeFieldType, method>;
 
 public:
+  using typename BaseType::DataHandleType;
   using typename BaseType::DiscreteFunctionType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::RangeFieldType;
-  using typename BaseType::DataHandleType;
 
   using OperatorType = OperatorImp;
   using MatrixType = DynamicMatrix<RangeFieldType>;

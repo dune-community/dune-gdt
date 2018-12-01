@@ -140,13 +140,9 @@ template <class AnalyticalFluxType,
           size_t dimDomain,
           class RangeFieldType,
           size_t dimRange_or_refinements>
-struct JacobianChooser<Dune::GDT::PartialMomentBasis<DomainFieldType,
-                                                     dimDomain,
-                                                     RangeFieldType,
-                                                     dimRange_or_refinements,
-                                                     1,
-                                                     dimDomain>,
-                       AnalyticalFluxType>
+struct JacobianChooser<
+    Dune::GDT::PartialMomentBasis<DomainFieldType, dimDomain, RangeFieldType, dimRange_or_refinements, 1, dimDomain>,
+    AnalyticalFluxType>
 {
   using type = Dune::GDT::internal::BlockedJacobianWrapper<AnalyticalFluxType>;
 };
@@ -335,7 +331,9 @@ struct HyperbolicPnDiscretization
 };
 
 template <class TestCaseType>
-struct HyperbolicPnTest : public HyperbolicPnDiscretization<TestCaseType>, public ::testing::Test
+struct HyperbolicPnTest
+  : public HyperbolicPnDiscretization<TestCaseType>
+  , public ::testing::Test
 {
   void run()
   {

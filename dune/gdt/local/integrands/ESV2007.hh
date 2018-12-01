@@ -100,28 +100,26 @@ public:
 
 template <class DiffusionType, class DiffusiveFluxType>
 class LocalDiffusiveFluxEstimateESV2007Integrand<DiffusionType, DiffusiveFluxType, void>
-    : public LocalVolumeIntegrandInterface<internal::
-                                               LocalDiffusiveFluxEstimateESV2007IntegrandTraits<DiffusionType,
-                                                                                                DiffusiveFluxType>,
-                                           2>
+  : public LocalVolumeIntegrandInterface<
+        internal::LocalDiffusiveFluxEstimateESV2007IntegrandTraits<DiffusionType, DiffusiveFluxType>,
+        2>
 {
-  typedef LocalVolumeIntegrandInterface<internal::LocalDiffusiveFluxEstimateESV2007IntegrandTraits<DiffusionType,
-                                                                                                   DiffusiveFluxType>,
-                                        2>
+  typedef LocalVolumeIntegrandInterface<
+      internal::LocalDiffusiveFluxEstimateESV2007IntegrandTraits<DiffusionType, DiffusiveFluxType>,
+      2>
       BaseType;
 
 public:
   typedef internal::LocalDiffusiveFluxEstimateESV2007IntegrandTraits<DiffusionType, DiffusiveFluxType> Traits;
-  using typename BaseType::LocalfunctionTupleType;
-  using typename BaseType::EntityType;
-  using typename BaseType::DomainFieldType;
   using BaseType::dimDomain;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::EntityType;
+  using typename BaseType::LocalfunctionTupleType;
 
   LocalDiffusiveFluxEstimateESV2007Integrand(const DiffusionType& diffusion, const DiffusiveFluxType& diffusive_flux)
     : diffusion_(diffusion)
     , diffusive_flux_(diffusive_flux)
-  {
-  }
+  {}
 
   /// \name Required by LocalVolumeIntegrandInterface< ..., 2 >
   /// \{
@@ -235,11 +233,11 @@ private:
 
 template <class DiffusionFactorType, class DiffusiveFluxType, class DiffusionTensorType>
 class LocalDiffusiveFluxEstimateESV2007Integrand
-    : public LocalVolumeIntegrandInterface<internal::
-                                               LocalDiffusiveFluxEstimateESV2007IntegrandTraits<DiffusionFactorType,
-                                                                                                DiffusiveFluxType,
-                                                                                                DiffusionTensorType>,
-                                           2>
+  : public LocalVolumeIntegrandInterface<
+        internal::LocalDiffusiveFluxEstimateESV2007IntegrandTraits<DiffusionFactorType,
+                                                                   DiffusiveFluxType,
+                                                                   DiffusionTensorType>,
+        2>
 {
   typedef LocalVolumeIntegrandInterface<internal::LocalDiffusiveFluxEstimateESV2007IntegrandTraits<DiffusionFactorType,
                                                                                                    DiffusiveFluxType,
@@ -251,10 +249,10 @@ public:
   typedef internal::
       LocalDiffusiveFluxEstimateESV2007IntegrandTraits<DiffusionFactorType, DiffusiveFluxType, DiffusionTensorType>
           Traits;
-  using typename BaseType::LocalfunctionTupleType;
-  using typename BaseType::EntityType;
-  using typename BaseType::DomainFieldType;
   using BaseType::dimDomain;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::EntityType;
+  using typename BaseType::LocalfunctionTupleType;
 
   LocalDiffusiveFluxEstimateESV2007Integrand(const DiffusionFactorType& diffusion_factor,
                                              const DiffusionTensorType& diffusion_tensor,
@@ -262,8 +260,7 @@ public:
     : diffusion_factor_(diffusion_factor)
     , diffusion_tensor_(diffusion_tensor)
     , diffusive_flux_(diffusive_flux)
-  {
-  }
+  {}
 
   /// \name Required by LocalVolumeIntegrandInterface< ..., 2 >
   /// \{

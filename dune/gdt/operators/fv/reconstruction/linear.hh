@@ -418,16 +418,15 @@ struct LinearReconstructionOperatorTraits
 } // namespace internal
 
 
-template <class AnalyticalFluxImp,
-          class BoundaryValueImp,
-          class JacobianWrapperImp = internal::JacobianWrapper<AnalyticalFluxImp,
-                                                               FieldMatrix<typename BoundaryValueImp::RangeFieldType,
-                                                                           BoundaryValueImp::dimRange,
-                                                                           BoundaryValueImp::dimRange>,
-                                                               FieldVector<typename BoundaryValueImp::RangeFieldType,
-                                                                           BoundaryValueImp::dimRange>>,
-          class Traits =
-              internal::LinearReconstructionOperatorTraits<AnalyticalFluxImp, BoundaryValueImp, JacobianWrapperImp>>
+template <
+    class AnalyticalFluxImp,
+    class BoundaryValueImp,
+    class JacobianWrapperImp = internal::JacobianWrapper<
+        AnalyticalFluxImp,
+        FieldMatrix<typename BoundaryValueImp::RangeFieldType, BoundaryValueImp::dimRange, BoundaryValueImp::dimRange>,
+        FieldVector<typename BoundaryValueImp::RangeFieldType, BoundaryValueImp::dimRange>>,
+    class Traits =
+        internal::LinearReconstructionOperatorTraits<AnalyticalFluxImp, BoundaryValueImp, JacobianWrapperImp>>
 class LinearReconstructionOperator : public OperatorInterface<Traits>
 {
 public:
@@ -453,8 +452,7 @@ public:
     , slope_(slope)
     , quadrature_1d_(quadrature_1d)
     , product_quadrature_(product_quadrature_on_intersection<DomainFieldType, dimDomain>(quadrature_1d))
-  {
-  }
+  {}
 
   const ProductQuadratureType& quadrature() const
   {

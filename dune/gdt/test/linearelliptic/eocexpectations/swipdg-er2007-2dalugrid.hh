@@ -14,10 +14,10 @@
 
 #if HAVE_DUNE_ALUGRID
 
-#include <dune/alugrid/grid.hh>
+#  include <dune/alugrid/grid.hh>
 
-#include "../problems/ER2007.hh"
-#include "../eocexpectations.hh"
+#  include "../problems/ER2007.hh"
+#  include "../eocexpectations.hh"
 
 
 namespace Dune {

@@ -33,7 +33,7 @@ namespace internal {
 
 template <class AnalyticalFluxImp, class LocalizableFunctionImp>
 class MustaLocalNumericalCouplingFluxTraits
-    : public LaxFriedrichsLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, LocalizableFunctionImp>
+  : public LaxFriedrichsLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, LocalizableFunctionImp>
 {
 public:
   typedef MustaLocalNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionImp> derived_type;
@@ -41,9 +41,9 @@ public:
 
 template <class AnalyticalFluxImp, class BoundaryValueImp, class LocalizableFunctionImp>
 class MustaLocalDirichletNumericalBoundaryFluxTraits
-    : public LaxFriedrichsLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
-                                                                    BoundaryValueImp,
-                                                                    LocalizableFunctionImp>
+  : public LaxFriedrichsLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
+                                                                  BoundaryValueImp,
+                                                                  LocalizableFunctionImp>
 {
 public:
   typedef MustaLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp, BoundaryValueImp, LocalizableFunctionImp>
@@ -243,9 +243,8 @@ private:
  */
 template <class AnalyticalFluxImp, class LocalizableFunctionImp>
 class MustaLocalNumericalCouplingFlux
-    : public LocalNumericalCouplingFluxInterface<internal::
-                                                     MustaLocalNumericalCouplingFluxTraits<AnalyticalFluxImp,
-                                                                                           LocalizableFunctionImp>>
+  : public LocalNumericalCouplingFluxInterface<
+        internal::MustaLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, LocalizableFunctionImp>>
 {
 public:
   typedef internal::MustaLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, LocalizableFunctionImp> Traits;
@@ -266,8 +265,7 @@ public:
                                            const size_t num_stages = 2)
     : dx_(dx)
     , implementation_(analytical_flux, param, num_stages, false)
-  {
-  }
+  {}
 
   LocalfunctionTupleType local_functions(const EntityType& entity) const
   {
@@ -305,15 +303,14 @@ private:
 }; // class MustaLocalNumericalCouplingFlux
 
 /**
-*  \brief  MUSTA flux evaluation for Dirichlet boundary intersections.
-*  \see    MustaLocalNumericalCouplingFlux
-*/
+ *  \brief  MUSTA flux evaluation for Dirichlet boundary intersections.
+ *  \see    MustaLocalNumericalCouplingFlux
+ */
 template <class AnalyticalFluxImp, class BoundaryValueImp, class LocalizableFunctionImp>
 class MustaLocalDirichletNumericalBoundaryFlux
-    : public LocalNumericalBoundaryFluxInterface<internal::
-                                                     MustaLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
-                                                                                                    BoundaryValueImp,
-                                                                                                    LocalizableFunctionImp>>
+  : public LocalNumericalBoundaryFluxInterface<
+        internal::
+            MustaLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp, BoundaryValueImp, LocalizableFunctionImp>>
 {
 public:
   typedef internal::
@@ -339,8 +336,7 @@ public:
     : boundary_values_(boundary_values)
     , dx_(dx)
     , implementation_(analytical_flux, param, num_stages, true)
-  {
-  }
+  {}
 
   LocalfunctionTupleType local_functions(const EntityType& entity) const
   {

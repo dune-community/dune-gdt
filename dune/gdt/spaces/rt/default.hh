@@ -175,12 +175,12 @@ private:
 
 template <class FE, class E, class R>
 class RaviartThomasBasefunctionSet
-    : public BaseFunctionSetInterface<internal::RaviartThomasBasefunctionSetTraits<FE, E, R>,
-                                      typename E::Geometry::ctype,
-                                      E::dimension,
-                                      R,
-                                      E::dimension,
-                                      1>
+  : public BaseFunctionSetInterface<internal::RaviartThomasBasefunctionSetTraits<FE, E, R>,
+                                    typename E::Geometry::ctype,
+                                    E::dimension,
+                                    R,
+                                    E::dimension,
+                                    1>
 {
 public:
   using Traits = internal::RaviartThomasBasefunctionSetTraits<FE, E, R>;
@@ -190,12 +190,12 @@ private:
   using ThisType = RaviartThomasBasefunctionSet<FE, E, R>;
 
 public:
-  using typename BaseType::BackendType;
-  using typename BaseType::EntityType;
-  using typename BaseType::DomainType;
-  using typename BaseType::RangeType;
-  using typename BaseType::JacobianRangeType;
   using BaseType::d;
+  using typename BaseType::BackendType;
+  using typename BaseType::DomainType;
+  using typename BaseType::EntityType;
+  using typename BaseType::JacobianRangeType;
+  using typename BaseType::RangeType;
 
   RaviartThomasBasefunctionSet(const EntityType& en, const BackendType& finite_element, const std::vector<R>& switches)
     : BaseType(en)
@@ -289,7 +289,7 @@ private:
 
 template <class GL, int p, class R>
 class RaviartThomasSpace
-    : public RtSpaceInterface<internal::RaviartThomasSpaceTraits<GL, p, R>, GL::dimension, GL::dimension>
+  : public RtSpaceInterface<internal::RaviartThomasSpaceTraits<GL, p, R>, GL::dimension, GL::dimension>
 {
 public:
   using Traits = internal::RaviartThomasSpaceTraits<GL, p, R>;
@@ -303,11 +303,11 @@ private:
   typedef typename Traits::DofCommunicationChooserType DofCommunicationChooserType;
 
 public:
-  using typename BaseType::GridLayerType;
   using typename BaseType::BackendType;
-  using typename BaseType::EntityType;
-  using typename BaseType::MapperType;
   using typename BaseType::BaseFunctionSetType;
+  using typename BaseType::EntityType;
+  using typename BaseType::GridLayerType;
+  using typename BaseType::MapperType;
   typedef typename Traits::DofCommunicatorType DofCommunicatorType;
 
   RaviartThomasSpace(GridLayerType grd_lr)

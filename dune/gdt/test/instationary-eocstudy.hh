@@ -62,8 +62,7 @@ public:
     , current_solution_(nullptr)
     , discrete_exact_solution_(nullptr)
     , visualize_prefix_(visualize_prefix)
-  {
-  }
+  {}
 
   virtual ~InstationaryEocStudy() = default;
 
@@ -305,7 +304,7 @@ protected:
 }; // class InstationaryEocStudy
 
 
-} // namespace Tests
+} // namespace Test
 } // namespace GDT
 } // namespace Dune
 

@@ -174,8 +174,8 @@ struct ContinuousLagrangeSpace : public ::testing::Test
           if (!reference_element.checkInside(xx_plus_h)) {
             xx_plus_h[dd] -= 2. * h;
           }
-          ASSERT_TRUE(reference_element.checkInside(xx_plus_h)) << "xx_plus_h = " << xx_plus_h
-                                                                << " is not inside the reference element!";
+          ASSERT_TRUE(reference_element.checkInside(xx_plus_h))
+              << "xx_plus_h = " << xx_plus_h << " is not inside the reference element!";
           const auto values_xx_plus_h = basis.evaluate(xx_plus_h);
           EXPECT_EQ(basis.size(), values_xx_plus_h.size());
           for (size_t ii = 0; ii < basis.size(); ++ii) {
@@ -206,8 +206,8 @@ struct ContinuousLagrangeSpace : public ::testing::Test
 
 template <class G, int p>
 struct ContinuousLagrangeSpaceOnSimplicialLeafView
-    : public ContinuousLagrangeSpace<typename Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>::LeafGridViewType,
-                                     p>
+  : public ContinuousLagrangeSpace<typename Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>::LeafGridViewType,
+                                   p>
 {
   using GridProviderType = Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;
@@ -216,7 +216,7 @@ struct ContinuousLagrangeSpaceOnSimplicialLeafView
   std::shared_ptr<LeafGridViewType> leaf_view;
 
   ContinuousLagrangeSpaceOnSimplicialLeafView() //        (i) negative coordinates and not the same as the reference
-      : grid_provider(Dune::XT::Grid::make_cube_grid<G>(-1.5, -1, 3).grid_ptr()) //                          element,
+    : grid_provider(Dune::XT::Grid::make_cube_grid<G>(-1.5, -1, 3).grid_ptr()) //                          element,
   { //                                                   (ii) at least 3 elements to have fully inner ones,
     grid_provider.global_refine(1); //                  (iii) refine at least once to obtain all kinds of orientations
     leaf_view = std::make_shared<LeafGridViewType>(grid_provider.leaf_view());
@@ -329,8 +329,8 @@ TYPED_TEST(Order2SimplicialContinuousLagrangeSpace, basis_jacobians_seem_to_be_c
 
 template <class G, int p>
 struct ContinuousLagrangeSpaceOnCubicLeafView
-    : public ContinuousLagrangeSpace<typename Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>::LeafGridViewType,
-                                     p>
+  : public ContinuousLagrangeSpace<typename Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>::LeafGridViewType,
+                                   p>
 {
   using GridProviderType = Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;
@@ -457,8 +457,8 @@ TYPED_TEST(Order2CubicContinuousLagrangeSpace, basis_jacobians_seem_to_be_correc
 
 template <class G, int p>
 struct ContinuousLagrangeSpaceOnPrismLeafView
-    : public ContinuousLagrangeSpace<typename Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>::LeafGridViewType,
-                                     p>
+  : public ContinuousLagrangeSpace<typename Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>::LeafGridViewType,
+                                   p>
 {
   using GridProviderType = Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;
@@ -583,8 +583,8 @@ TYPED_TEST(Order2PrismContinuousLagrangeSpace, basis_jacobians_seem_to_be_correc
 
 template <class G, int p>
 struct ContinuousLagrangeSpaceOnMixedLeafView
-    : public ContinuousLagrangeSpace<typename Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>::LeafGridViewType,
-                                     p>
+  : public ContinuousLagrangeSpace<typename Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>::LeafGridViewType,
+                                   p>
 {
   using GridProviderType = Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;

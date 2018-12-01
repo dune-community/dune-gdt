@@ -168,8 +168,8 @@ struct DiscontinuousLagrangeSpace : public ::testing::Test
           if (!reference_element.checkInside(xx_plus_h)) {
             xx_plus_h[dd] -= 2. * h;
           }
-          ASSERT_TRUE(reference_element.checkInside(xx_plus_h)) << "xx_plus_h = " << xx_plus_h
-                                                                << " is not inside the reference element!";
+          ASSERT_TRUE(reference_element.checkInside(xx_plus_h))
+              << "xx_plus_h = " << xx_plus_h << " is not inside the reference element!";
           const auto values_xx_plus_h = basis.evaluate(xx_plus_h);
           EXPECT_EQ(basis.size(), values_xx_plus_h.size());
           for (size_t ii = 0; ii < basis.size(); ++ii) {
@@ -202,9 +202,9 @@ struct DiscontinuousLagrangeSpace : public ::testing::Test
 
 template <class G, int p>
 struct DiscontinuousLagrangeSpaceOnSimplicialLeafView
-    : public DiscontinuousLagrangeSpace<
-          typename Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>::LeafGridViewType,
-          p>
+  : public DiscontinuousLagrangeSpace<
+        typename Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>::LeafGridViewType,
+        p>
 {
   using GridProviderType = Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;
@@ -213,7 +213,7 @@ struct DiscontinuousLagrangeSpaceOnSimplicialLeafView
   std::shared_ptr<LeafGridViewType> leaf_view;
 
   DiscontinuousLagrangeSpaceOnSimplicialLeafView() //     (i) negative coordinates and not the same as the reference
-      : grid_provider(Dune::XT::Grid::make_cube_grid<G>(-1.5, -1, 3).grid_ptr()) //                          element,
+    : grid_provider(Dune::XT::Grid::make_cube_grid<G>(-1.5, -1, 3).grid_ptr()) //                          element,
   { //                                                   (ii) at least 3 elements to have fully inner ones,
     grid_provider.global_refine(1); //                  (iii) refine at least once to obtain all kinds of orientations
     leaf_view = std::make_shared<LeafGridViewType>(grid_provider.leaf_view());
@@ -363,9 +363,9 @@ TYPED_TEST(Order2SimplicialDiscontinuousLagrangeSpace, basis_jacobians_seem_to_b
 
 template <class G, int p>
 struct DiscontinuousLagrangeSpaceOnCubicLeafView
-    : public DiscontinuousLagrangeSpace<
-          typename Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>::LeafGridViewType,
-          p>
+  : public DiscontinuousLagrangeSpace<
+        typename Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>::LeafGridViewType,
+        p>
 {
   using GridProviderType = Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;
@@ -530,9 +530,9 @@ TYPED_TEST(Order2CubicDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_cor
 
 template <class G, int p>
 struct DiscontinuousLagrangeSpaceOnPrismLeafView
-    : public DiscontinuousLagrangeSpace<
-          typename Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>::LeafGridViewType,
-          p>
+  : public DiscontinuousLagrangeSpace<
+        typename Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>::LeafGridViewType,
+        p>
 {
   using GridProviderType = Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;
@@ -696,9 +696,9 @@ TYPED_TEST(Order2PrismDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_cor
 
 template <class G, int p>
 struct DiscontinuousLagrangeSpaceOnMixedLeafView
-    : public DiscontinuousLagrangeSpace<
-          typename Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>::LeafGridViewType,
-          p>
+  : public DiscontinuousLagrangeSpace<
+        typename Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>::LeafGridViewType,
+        p>
 {
   using GridProviderType = Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;

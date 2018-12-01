@@ -15,7 +15,7 @@
 #include <dune/grid/yaspgrid.hh>
 
 #if HAVE_DUNE_ALUGRID
-#include <dune/alugrid/grid.hh>
+#  include <dune/alugrid/grid.hh>
 #endif
 
 #include <dune/xt/common/test/gtest/gtest.h>
@@ -44,48 +44,41 @@ namespace Test {
 #if HAVE_DUNE_ALUGRID
 
 
-extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::
-                                                                    AO2013TestCase<AluConform2dGridType, double, 1>,
-                                                                LinearElliptic::ChooseDiscretizer::swipdg,
-                                                                1>;
-extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::
-                                                                    AO2013TestCase<AluSimplex2dGridType, double, 1>,
-                                                                LinearElliptic::ChooseDiscretizer::swipdg,
-                                                                1>;
+extern template class LinearEllipticSwipdgEstimatorExpectations<
+    LinearElliptic::AO2013TestCase<AluConform2dGridType, double, 1>,
+    LinearElliptic::ChooseDiscretizer::swipdg,
+    1>;
+extern template class LinearEllipticSwipdgEstimatorExpectations<
+    LinearElliptic::AO2013TestCase<AluSimplex2dGridType, double, 1>,
+    LinearElliptic::ChooseDiscretizer::swipdg,
+    1>;
 
-extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::
-                                                                    ESV2007TestCase<AluConform2dGridType, double, 1>,
-                                                                LinearElliptic::ChooseDiscretizer::swipdg,
-                                                                1>;
-extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::
-                                                                    ESV2007TestCase<AluSimplex2dGridType, double, 1>,
-                                                                LinearElliptic::ChooseDiscretizer::swipdg,
-                                                                1>;
+extern template class LinearEllipticSwipdgEstimatorExpectations<
+    LinearElliptic::ESV2007TestCase<AluConform2dGridType, double, 1>,
+    LinearElliptic::ChooseDiscretizer::swipdg,
+    1>;
+extern template class LinearEllipticSwipdgEstimatorExpectations<
+    LinearElliptic::ESV2007TestCase<AluSimplex2dGridType, double, 1>,
+    LinearElliptic::ChooseDiscretizer::swipdg,
+    1>;
 
-extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::
-                                                                    Spe10Model1TestCase<AluConform2dGridType,
-                                                                                        double,
-                                                                                        1>,
-                                                                LinearElliptic::ChooseDiscretizer::swipdg,
-                                                                1>;
-extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::
-                                                                    Spe10Model1TestCase<AluSimplex2dGridType,
-                                                                                        double,
-                                                                                        1>,
-                                                                LinearElliptic::ChooseDiscretizer::swipdg,
-                                                                1>;
+extern template class LinearEllipticSwipdgEstimatorExpectations<
+    LinearElliptic::Spe10Model1TestCase<AluConform2dGridType, double, 1>,
+    LinearElliptic::ChooseDiscretizer::swipdg,
+    1>;
+extern template class LinearEllipticSwipdgEstimatorExpectations<
+    LinearElliptic::Spe10Model1TestCase<AluSimplex2dGridType, double, 1>,
+    LinearElliptic::ChooseDiscretizer::swipdg,
+    1>;
 
 
 #endif // HAVE_DUNE_ALUGRID
 
 
-extern template class
-    LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::
-                                                  ESV2007TestCase<YaspGrid<2, EquidistantOffsetCoordinates<double, 2>>,
-                                                                  double,
-                                                                  1>,
-                                              LinearElliptic::ChooseDiscretizer::swipdg,
-                                              1>;
+extern template class LinearEllipticSwipdgEstimatorExpectations<
+    LinearElliptic::ESV2007TestCase<YaspGrid<2, EquidistantOffsetCoordinates<double, 2>>, double, 1>,
+    LinearElliptic::ChooseDiscretizer::swipdg,
+    1>;
 
 
 } // namespace Test

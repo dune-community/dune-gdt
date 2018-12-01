@@ -57,9 +57,7 @@ public:
   using BoundaryValueType = LocalizableBoundaryValueInterface<EntityType, IntersectionType, RangeType>;
   using SolutionType = DirichletBoundaryValueType;
 
-  virtual ~ProblemInterface()
-  {
-  }
+  virtual ~ProblemInterface() {}
 
   virtual const FluxType& flux() const = 0;
 

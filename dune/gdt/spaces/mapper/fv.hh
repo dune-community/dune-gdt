@@ -94,8 +94,7 @@ public:
 
   FvMapper(const GridLayerType& grd_layr)
     : mapper_(new BackendType(grd_layr))
-  {
-  }
+  {}
 
   const BackendType& backend() const
   {
@@ -159,8 +158,7 @@ public:
 
   FvMapper(const GridLayerType& grd_layr)
     : mapper_(new BackendType(grd_layr))
-  {
-  }
+  {}
 
   const BackendType& backend() const
   {
@@ -205,7 +203,7 @@ private:
 
 template <class GridLayerImp, size_t rangeDim>
 class FvProductMapper<GridLayerImp, rangeDim, 1>
-    : public ProductMapperInterface<internal::FvProductMapperTraits<GridLayerImp, rangeDim, 1>>
+  : public ProductMapperInterface<internal::FvProductMapperTraits<GridLayerImp, rangeDim, 1>>
 {
   typedef ProductMapperInterface<internal::FvProductMapperTraits<GridLayerImp, rangeDim, 1>> BaseType;
   typedef FvMapper<GridLayerImp, rangeDim, 1> FvMapperType;
@@ -214,13 +212,12 @@ public:
   typedef internal::FvProductMapperTraits<GridLayerImp, rangeDim, 1> Traits;
   typedef typename Traits::GridLayerType GridLayerType;
   static const size_t dimRange = Traits::dimRange;
-  using typename BaseType::EntityType;
   using typename BaseType::BackendType;
+  using typename BaseType::EntityType;
 
   FvProductMapper(const GridLayerType& grd_layr)
     : fv_mapper_(grd_layr)
-  {
-  }
+  {}
 
   // These methods are required by the ProductMapperInterface
   size_t numDofs(const size_t /*factor_index*/, const EntityType& /*entity*/) const

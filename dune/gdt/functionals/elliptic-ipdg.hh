@@ -147,11 +147,11 @@ private:
     this->append(local_functional_, new XT::Grid::ApplyOn::DirichletIntersections<GridLayerType>(boundary_info));
   }
 
-  const LocalFaceIntegralFunctional<LocalEllipticIpdgIntegrands::
-                                        BoundaryRHS<DirichletType, DiffusionFactorType, DiffusionTensorType>,
-                                    typename Space::BaseFunctionSetType,
-                                    IntersectionType,
-                                    Field>
+  const LocalFaceIntegralFunctional<
+      LocalEllipticIpdgIntegrands::BoundaryRHS<DirichletType, DiffusionFactorType, DiffusionTensorType>,
+      typename Space::BaseFunctionSetType,
+      IntersectionType,
+      Field>
       local_functional_;
 }; // class EllipticIpdgDirichletVectorFunctional
 
@@ -174,17 +174,16 @@ template <class VectorType,
           class DiffusionFactorType,
           class DiffusionTensorType,
           class SpaceType>
-typename std::enable_if<XT::LA::is_vector<VectorType>::value
-                            && XT::Functions::is_localizable_function<DirichletType>::value
-                            && XT::Functions::is_localizable_function<DiffusionFactorType>::value
-                            && XT::Functions::is_localizable_function<DiffusionTensorType>::value
-                            && is_space<SpaceType>::value,
-                        std::unique_ptr<EllipticIpdgDirichletVectorFunctional<DirichletType,
-                                                                              DiffusionFactorType,
-                                                                              DiffusionTensorType,
-                                                                              SpaceType,
-                                                                              method,
-                                                                              VectorType>>>::type
+typename std::enable_if<
+    XT::LA::is_vector<VectorType>::value && XT::Functions::is_localizable_function<DirichletType>::value
+        && XT::Functions::is_localizable_function<DiffusionFactorType>::value
+        && XT::Functions::is_localizable_function<DiffusionTensorType>::value && is_space<SpaceType>::value,
+    std::unique_ptr<EllipticIpdgDirichletVectorFunctional<DirichletType,
+                                                          DiffusionFactorType,
+                                                          DiffusionTensorType,
+                                                          SpaceType,
+                                                          method,
+                                                          VectorType>>>::type
 make_elliptic_ipdg_dirichlet_vector_functional(
     const DirichletType& dirichlet,
     const DiffusionFactorType& diffusion_factor,
@@ -205,25 +204,23 @@ make_elliptic_ipdg_dirichlet_vector_functional(
 // no vector given, both diffusion factor and tensor, no grid layer given, default method
 
 template <class VectorType, class DirichletType, class DiffusionFactorType, class DiffusionTensorType, class SpaceType>
-typename std::
-    enable_if<XT::LA::is_vector<VectorType>::value && XT::Functions::is_localizable_function<DirichletType>::value
-                  && XT::Functions::is_localizable_function<DiffusionFactorType>::value
-                  && XT::Functions::is_localizable_function<DiffusionTensorType>::value
-                  && is_space<SpaceType>::value,
-              std::unique_ptr<EllipticIpdgDirichletVectorFunctional<DirichletType,
-                                                                    DiffusionFactorType,
-                                                                    DiffusionTensorType,
-                                                                    SpaceType,
-                                                                    LocalEllipticIpdgIntegrands::default_method,
-                                                                    VectorType>>>::type
-    make_elliptic_ipdg_dirichlet_vector_functional(
-        const DirichletType& dirichlet,
-        const DiffusionFactorType& diffusion_factor,
-        const DiffusionTensorType& diffusion_tensor,
-        const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<typename SpaceType::GridLayerType>>&
-            boundary_info,
-        const SpaceType& space,
-        const size_t over_integrate = 0)
+typename std::enable_if<
+    XT::LA::is_vector<VectorType>::value && XT::Functions::is_localizable_function<DirichletType>::value
+        && XT::Functions::is_localizable_function<DiffusionFactorType>::value
+        && XT::Functions::is_localizable_function<DiffusionTensorType>::value && is_space<SpaceType>::value,
+    std::unique_ptr<EllipticIpdgDirichletVectorFunctional<DirichletType,
+                                                          DiffusionFactorType,
+                                                          DiffusionTensorType,
+                                                          SpaceType,
+                                                          LocalEllipticIpdgIntegrands::default_method,
+                                                          VectorType>>>::type
+make_elliptic_ipdg_dirichlet_vector_functional(
+    const DirichletType& dirichlet,
+    const DiffusionFactorType& diffusion_factor,
+    const DiffusionTensorType& diffusion_tensor,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<typename SpaceType::GridLayerType>>& boundary_info,
+    const SpaceType& space,
+    const size_t over_integrate = 0)
 {
   return make_elliptic_ipdg_dirichlet_vector_functional<VectorType, LocalEllipticIpdgIntegrands::default_method>(
       dirichlet, diffusion_factor, diffusion_tensor, boundary_info, space, over_integrate);
@@ -244,16 +241,11 @@ template <class VectorType,
           class DirichletType,
           class DiffusionType,
           class SpaceType>
-typename std::enable_if<XT::LA::is_vector<VectorType>::value
-                            && XT::Functions::is_localizable_function<DirichletType>::value
-                            && XT::Functions::is_localizable_function<DiffusionType>::value
-                            && is_space<SpaceType>::value,
-                        std::unique_ptr<EllipticIpdgDirichletVectorFunctional<DirichletType,
-                                                                              DiffusionType,
-                                                                              void,
-                                                                              SpaceType,
-                                                                              method,
-                                                                              VectorType>>>::type
+typename std::enable_if<
+    XT::LA::is_vector<VectorType>::value && XT::Functions::is_localizable_function<DirichletType>::value
+        && XT::Functions::is_localizable_function<DiffusionType>::value && is_space<SpaceType>::value,
+    std::unique_ptr<
+        EllipticIpdgDirichletVectorFunctional<DirichletType, DiffusionType, void, SpaceType, method, VectorType>>>::type
 make_elliptic_ipdg_dirichlet_vector_functional(
     const DirichletType& dirichlet,
     const DiffusionType& diffusion,
@@ -261,12 +253,8 @@ make_elliptic_ipdg_dirichlet_vector_functional(
     const SpaceType& space,
     const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::make_unique<EllipticIpdgDirichletVectorFunctional<DirichletType,
-                                                                             DiffusionType,
-                                                                             void,
-                                                                             SpaceType,
-                                                                             method,
-                                                                             VectorType>>(
+  return Dune::XT::Common::make_unique<
+      EllipticIpdgDirichletVectorFunctional<DirichletType, DiffusionType, void, SpaceType, method, VectorType>>(
       over_integrate, boundary_info, dirichlet, diffusion, space);
 }
 
@@ -293,8 +281,7 @@ template <LocalEllipticIpdgIntegrands::Method method,
 typename std::enable_if<XT::Functions::is_localizable_function<DirichletType>::value
                             && XT::Functions::is_localizable_function<DiffusionFactorType>::value
                             && XT::Functions::is_localizable_function<DiffusionTensorType>::value
-                            && XT::LA::is_vector<VectorType>::value
-                            && is_space<SpaceType>::value,
+                            && XT::LA::is_vector<VectorType>::value && is_space<SpaceType>::value,
                         std::unique_ptr<EllipticIpdgDirichletVectorFunctional<DirichletType,
                                                                               DiffusionFactorType,
                                                                               DiffusionTensorType,
@@ -338,16 +325,12 @@ template <LocalEllipticIpdgIntegrands::Method method,
           class DiffusionType,
           class VectorType,
           class SpaceType>
-typename std::enable_if<XT::Functions::is_localizable_function<DirichletType>::value
-                            && XT::Functions::is_localizable_function<DiffusionType>::value
-                            && XT::LA::is_vector<VectorType>::value
-                            && is_space<SpaceType>::value,
-                        std::unique_ptr<EllipticIpdgDirichletVectorFunctional<DirichletType,
-                                                                              DiffusionType,
-                                                                              void,
-                                                                              SpaceType,
-                                                                              method,
-                                                                              VectorType>>>::type
+typename std::enable_if<
+    XT::Functions::is_localizable_function<DirichletType>::value
+        && XT::Functions::is_localizable_function<DiffusionType>::value && XT::LA::is_vector<VectorType>::value
+        && is_space<SpaceType>::value,
+    std::unique_ptr<
+        EllipticIpdgDirichletVectorFunctional<DirichletType, DiffusionType, void, SpaceType, method, VectorType>>>::type
 make_elliptic_ipdg_dirichlet_vector_functional(
     const DirichletType& dirichlet,
     const DiffusionType& diffusion,
@@ -356,12 +339,8 @@ make_elliptic_ipdg_dirichlet_vector_functional(
     const SpaceType& space,
     const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::make_unique<EllipticIpdgDirichletVectorFunctional<DirichletType,
-                                                                             DiffusionType,
-                                                                             void,
-                                                                             SpaceType,
-                                                                             method,
-                                                                             VectorType>>(
+  return Dune::XT::Common::make_unique<
+      EllipticIpdgDirichletVectorFunctional<DirichletType, DiffusionType, void, SpaceType, method, VectorType>>(
       over_integrate, boundary_info, dirichlet, diffusion, vector, space);
 }
 

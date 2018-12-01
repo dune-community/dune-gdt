@@ -97,15 +97,14 @@ make_l2_volume_vector_functional(const FunctionType& function, const SpaceType& 
 }
 
 template <class VectorType, class FunctionType, class SpaceType, class GridLayerType>
-typename std::
-    enable_if<XT::LA::is_vector<VectorType>::value && XT::Functions::is_localizable_function<FunctionType>::value
-                  && is_space<SpaceType>::value
-                  && XT::Grid::is_layer<GridLayerType>::value,
-              std::unique_ptr<L2VolumeVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>>::type
-    make_l2_volume_vector_functional(const FunctionType& function,
-                                     const SpaceType& space,
-                                     const GridLayerType& grid_layer,
-                                     const size_t over_integrate = 0)
+typename std::enable_if<
+    XT::LA::is_vector<VectorType>::value && XT::Functions::is_localizable_function<FunctionType>::value
+        && is_space<SpaceType>::value && XT::Grid::is_layer<GridLayerType>::value,
+    std::unique_ptr<L2VolumeVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>>::type
+make_l2_volume_vector_functional(const FunctionType& function,
+                                 const SpaceType& space,
+                                 const GridLayerType& grid_layer,
+                                 const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<L2VolumeVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
       over_integrate, function, space, grid_layer);
@@ -113,8 +112,7 @@ typename std::
 
 template <class FunctionType, class VectorType, class SpaceType>
 typename std::enable_if<XT::Functions::is_localizable_function<FunctionType>::value
-                            && XT::LA::is_vector<VectorType>::value
-                            && is_space<SpaceType>::value,
+                            && XT::LA::is_vector<VectorType>::value && is_space<SpaceType>::value,
                         std::unique_ptr<L2VolumeVectorFunctional<FunctionType, SpaceType, VectorType>>>::type
 make_l2_volume_vector_functional(const FunctionType& function,
                                  VectorType& vector,
@@ -126,16 +124,15 @@ make_l2_volume_vector_functional(const FunctionType& function,
 }
 
 template <class FunctionType, class VectorType, class SpaceType, class GridLayerType>
-typename std::
-    enable_if<XT::Functions::is_localizable_function<FunctionType>::value && XT::LA::is_vector<VectorType>::value
-                  && is_space<SpaceType>::value
-                  && XT::Grid::is_layer<GridLayerType>::value,
-              std::unique_ptr<L2VolumeVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>>::type
-    make_l2_volume_vector_functional(const FunctionType& function,
-                                     VectorType& vector,
-                                     const SpaceType& space,
-                                     const GridLayerType& grid_layer,
-                                     const size_t over_integrate = 0)
+typename std::enable_if<
+    XT::Functions::is_localizable_function<FunctionType>::value && XT::LA::is_vector<VectorType>::value
+        && is_space<SpaceType>::value && XT::Grid::is_layer<GridLayerType>::value,
+    std::unique_ptr<L2VolumeVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>>::type
+make_l2_volume_vector_functional(const FunctionType& function,
+                                 VectorType& vector,
+                                 const SpaceType& space,
+                                 const GridLayerType& grid_layer,
+                                 const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<L2VolumeVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
       over_integrate, function, vector, space, grid_layer);
@@ -223,73 +220,70 @@ make_l2_face_vector_functional(const FunctionType& function, const SpaceType& sp
 }
 
 template <class VectorType, class FunctionType, class SpaceType, class GridLayerType>
-typename std::
-    enable_if<XT::LA::is_vector<VectorType>::value && XT::Functions::is_localizable_function<FunctionType>::value
-                  && is_space<SpaceType>::value,
-              std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>>::type
-    make_l2_face_vector_functional(const FunctionType& function,
-                                   const SpaceType& space,
-                                   const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where)
+typename std::enable_if<
+    XT::LA::is_vector<VectorType>::value && XT::Functions::is_localizable_function<FunctionType>::value
+        && is_space<SpaceType>::value,
+    std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>>::type
+make_l2_face_vector_functional(const FunctionType& function,
+                               const SpaceType& space,
+                               const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where)
 {
   return Dune::XT::Common::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
       where, function, space);
 }
 
 template <class VectorType, class FunctionType, class SpaceType, class GridLayerType>
-typename std::
-    enable_if<XT::LA::is_vector<VectorType>::value && XT::Functions::is_localizable_function<FunctionType>::value
-                  && is_space<SpaceType>::value,
-              std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>>::type
-    make_l2_face_vector_functional(const FunctionType& function,
-                                   const SpaceType& space,
-                                   const size_t over_integrate,
-                                   const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where)
+typename std::enable_if<
+    XT::LA::is_vector<VectorType>::value && XT::Functions::is_localizable_function<FunctionType>::value
+        && is_space<SpaceType>::value,
+    std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>>::type
+make_l2_face_vector_functional(const FunctionType& function,
+                               const SpaceType& space,
+                               const size_t over_integrate,
+                               const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where)
 {
   return Dune::XT::Common::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
       over_integrate, where, function, space);
 }
 
 template <class VectorType, class FunctionType, class SpaceType, class GridLayerType>
-typename std::
-    enable_if<XT::LA::is_vector<VectorType>::value && XT::Functions::is_localizable_function<FunctionType>::value
-                  && is_space<SpaceType>::value
-                  && XT::Grid::is_layer<GridLayerType>::value,
-              std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>>::type
-    make_l2_face_vector_functional(const FunctionType& function,
-                                   const SpaceType& space,
-                                   const GridLayerType& grid_layer,
-                                   const size_t over_integrate = 0)
+typename std::enable_if<
+    XT::LA::is_vector<VectorType>::value && XT::Functions::is_localizable_function<FunctionType>::value
+        && is_space<SpaceType>::value && XT::Grid::is_layer<GridLayerType>::value,
+    std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>>::type
+make_l2_face_vector_functional(const FunctionType& function,
+                               const SpaceType& space,
+                               const GridLayerType& grid_layer,
+                               const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
       over_integrate, function, space, grid_layer);
 }
 
 template <class VectorType, class FunctionType, class SpaceType, class GridLayerType>
-typename std::
-    enable_if<XT::LA::is_vector<VectorType>::value && XT::Functions::is_localizable_function<FunctionType>::value
-                  && is_space<SpaceType>::value
-                  && XT::Grid::is_layer<GridLayerType>::value,
-              std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>>::type
-    make_l2_face_vector_functional(const FunctionType& function,
-                                   const SpaceType& space,
-                                   const GridLayerType& grid_layer,
-                                   const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where)
+typename std::enable_if<
+    XT::LA::is_vector<VectorType>::value && XT::Functions::is_localizable_function<FunctionType>::value
+        && is_space<SpaceType>::value && XT::Grid::is_layer<GridLayerType>::value,
+    std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>>::type
+make_l2_face_vector_functional(const FunctionType& function,
+                               const SpaceType& space,
+                               const GridLayerType& grid_layer,
+                               const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where)
 {
   return Dune::XT::Common::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
       where, function, space, grid_layer);
 }
 
 template <class VectorType, class FunctionType, class SpaceType, class GridLayerType>
-typename std::
-    enable_if<XT::LA::is_vector<VectorType>::value && XT::Functions::is_localizable_function<FunctionType>::value
-                  && is_space<SpaceType>::value
-                  && XT::Grid::is_layer<GridLayerType>::value,
-              std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>>::type
-    make_l2_face_vector_functional(const FunctionType& function,
-                                   const SpaceType& space,
-                                   const GridLayerType& grid_layer,
-                                   const size_t over_integrate,
-                                   const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where)
+typename std::enable_if<
+    XT::LA::is_vector<VectorType>::value && XT::Functions::is_localizable_function<FunctionType>::value
+        && is_space<SpaceType>::value && XT::Grid::is_layer<GridLayerType>::value,
+    std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>>::type
+make_l2_face_vector_functional(const FunctionType& function,
+                               const SpaceType& space,
+                               const GridLayerType& grid_layer,
+                               const size_t over_integrate,
+                               const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where)
 {
   return Dune::XT::Common::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
       over_integrate, where, function, space, grid_layer);
@@ -297,8 +291,7 @@ typename std::
 
 template <class FunctionType, class VectorType, class SpaceType>
 typename std::enable_if<XT::Functions::is_localizable_function<FunctionType>::value
-                            && XT::LA::is_vector<VectorType>::value
-                            && is_space<SpaceType>::value,
+                            && XT::LA::is_vector<VectorType>::value && is_space<SpaceType>::value,
                         std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType>>>::type
 make_l2_face_vector_functional(const FunctionType& function,
                                VectorType& vector,
@@ -310,78 +303,75 @@ make_l2_face_vector_functional(const FunctionType& function,
 }
 
 template <class FunctionType, class VectorType, class SpaceType, class GridLayerType>
-typename std::
-    enable_if<XT::Functions::is_localizable_function<FunctionType>::value && XT::LA::is_vector<VectorType>::value
-                  && is_space<SpaceType>::value,
-              std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>>::type
-    make_l2_face_vector_functional(const FunctionType& function,
-                                   VectorType& vector,
-                                   const SpaceType& space,
-                                   const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where)
+typename std::enable_if<
+    XT::Functions::is_localizable_function<FunctionType>::value && XT::LA::is_vector<VectorType>::value
+        && is_space<SpaceType>::value,
+    std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>>::type
+make_l2_face_vector_functional(const FunctionType& function,
+                               VectorType& vector,
+                               const SpaceType& space,
+                               const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where)
 {
   return Dune::XT::Common::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
       where, function, vector, space);
 }
 
 template <class FunctionType, class VectorType, class SpaceType, class GridLayerType>
-typename std::
-    enable_if<XT::Functions::is_localizable_function<FunctionType>::value && XT::LA::is_vector<VectorType>::value
-                  && is_space<SpaceType>::value,
-              std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>>::type
-    make_l2_face_vector_functional(const FunctionType& function,
-                                   VectorType& vector,
-                                   const SpaceType& space,
-                                   const size_t over_integrate,
-                                   const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where)
+typename std::enable_if<
+    XT::Functions::is_localizable_function<FunctionType>::value && XT::LA::is_vector<VectorType>::value
+        && is_space<SpaceType>::value,
+    std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>>::type
+make_l2_face_vector_functional(const FunctionType& function,
+                               VectorType& vector,
+                               const SpaceType& space,
+                               const size_t over_integrate,
+                               const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where)
 {
   return Dune::XT::Common::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
       over_integrate, where, function, vector, space);
 }
 
 template <class FunctionType, class VectorType, class SpaceType, class GridLayerType>
-typename std::
-    enable_if<XT::Functions::is_localizable_function<FunctionType>::value && XT::LA::is_vector<VectorType>::value
-                  && is_space<SpaceType>::value
-                  && XT::Grid::is_layer<GridLayerType>::value,
-              std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>>::type
-    make_l2_face_vector_functional(const FunctionType& function,
-                                   VectorType& vector,
-                                   const SpaceType& space,
-                                   const GridLayerType& grid_layer,
-                                   const size_t over_integrate = 0)
+typename std::enable_if<
+    XT::Functions::is_localizable_function<FunctionType>::value && XT::LA::is_vector<VectorType>::value
+        && is_space<SpaceType>::value && XT::Grid::is_layer<GridLayerType>::value,
+    std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>>::type
+make_l2_face_vector_functional(const FunctionType& function,
+                               VectorType& vector,
+                               const SpaceType& space,
+                               const GridLayerType& grid_layer,
+                               const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
       over_integrate, function, vector, space, grid_layer);
 }
 
 template <class FunctionType, class VectorType, class SpaceType, class GridLayerType>
-typename std::
-    enable_if<XT::Functions::is_localizable_function<FunctionType>::value && XT::LA::is_vector<VectorType>::value
-                  && is_space<SpaceType>::value
-                  && XT::Grid::is_layer<GridLayerType>::value,
-              std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>>::type
-    make_l2_face_vector_functional(const FunctionType& function,
-                                   VectorType& vector,
-                                   const SpaceType& space,
-                                   const GridLayerType& grid_layer,
-                                   const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where)
+typename std::enable_if<
+    XT::Functions::is_localizable_function<FunctionType>::value && XT::LA::is_vector<VectorType>::value
+        && is_space<SpaceType>::value && XT::Grid::is_layer<GridLayerType>::value,
+    std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>>::type
+make_l2_face_vector_functional(const FunctionType& function,
+                               VectorType& vector,
+                               const SpaceType& space,
+                               const GridLayerType& grid_layer,
+                               const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where)
 {
   return Dune::XT::Common::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
       where, function, vector, space, grid_layer);
 }
 
 template <class FunctionType, class VectorType, class SpaceType, class GridLayerType>
-typename std::
-    enable_if<XT::Functions::is_localizable_function<FunctionType>::value && XT::LA::is_vector<VectorType>::value
-                  && is_space<SpaceType>::value
-                  && XT::Grid::is_layer<GridLayerType>::value,
-              std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>>::type
-    make_l2_face_vector_functional(const FunctionType& function,
-                                   VectorType& vector,
-                                   const SpaceType& space,
-                                   const GridLayerType& grid_layer,
-                                   const size_t over_integrate,
-                                   const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where)
+typename std::enable_if<
+    XT::Functions::is_localizable_function<FunctionType>::value && XT::LA::is_vector<VectorType>::value
+        && is_space<SpaceType>::value && XT::Grid::is_layer<GridLayerType>::value,
+    std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>>::type
+make_l2_face_vector_functional(const FunctionType& function,
+                               VectorType& vector,
+                               const SpaceType& space,
+                               const GridLayerType& grid_layer,
+                               const size_t over_integrate,
+                               const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where)
 {
   return Dune::XT::Common::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
       over_integrate, where, function, vector, space, grid_layer);

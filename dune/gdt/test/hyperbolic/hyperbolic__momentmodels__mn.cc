@@ -47,27 +47,27 @@ using YaspGridTestCasesAll = testing::Types<
         PlaneSourceMnTestCase<Yasp1, Dune::GDT::PartialMomentBasis<double, 1, double, 8, 1, 1>, true>
 #if !DXT_DISABLE_LARGE_TESTS
     ,
-#if HAVE_CLP
+#  if HAVE_CLP
     Dune::GDT::Hyperbolic::Problems::KineticTransport::
         PointSourceMnTestCase<Yasp3, Dune::GDT::RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, false>,
     Dune::GDT::Hyperbolic::Problems::KineticTransport::
         PointSourceMnTestCase<Yasp3, Dune::GDT::RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, true>,
-#endif
+#  endif
     Dune::GDT::Hyperbolic::Problems::KineticTransport::
         PointSourceMnTestCase<Yasp3, Dune::GDT::HatFunctionMomentBasis<double, 3, double, 0, 1, 3>, false>
 // Our shifted qr eigensolver fails for this problem, needs better shifting strategy
-#if HAVE_MKL || HAVE_LAPACKE || HAVE_EIGEN
+#  if HAVE_MKL || HAVE_LAPACKE || HAVE_EIGEN
     ,
     Dune::GDT::Hyperbolic::Problems::KineticTransport::
         PointSourceMnTestCase<Yasp3, Dune::GDT::HatFunctionMomentBasis<double, 3, double, 0, 1, 3>, true>
-#endif
-#if HAVE_QHULL
+#  endif
+#  if HAVE_QHULL
     ,
     Dune::GDT::Hyperbolic::Problems::KineticTransport::
         PointSourceMnTestCase<Yasp3, Dune::GDT::PartialMomentBasis<double, 3, double, 0, 1, 3>, false>,
     Dune::GDT::Hyperbolic::Problems::KineticTransport::
         PointSourceMnTestCase<Yasp3, Dune::GDT::PartialMomentBasis<double, 3, double, 0, 1, 3>, true>
-#endif
+#  endif
 #endif
     >;
 

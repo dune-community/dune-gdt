@@ -72,12 +72,9 @@ public:
 
   JacobianWrapperBase()
     : computed_(false)
-  {
-  }
+  {}
 
-  virtual ~JacobianWrapperBase()
-  {
-  }
+  virtual ~JacobianWrapperBase() {}
 
   virtual void get_jacobian(const size_t dd,
                             const EntityType& entity,
@@ -163,9 +160,9 @@ protected:
 public:
   static constexpr size_t dimDomain = AnalyticalFluxType::dimDomain;
   static constexpr size_t dimRange = AnalyticalFluxType::dimRange;
-  using typename BaseType::JacobianType;
-  using typename BaseType::EntityType;
   using typename BaseType::DomainType;
+  using typename BaseType::EntityType;
+  using typename BaseType::JacobianType;
   using typename BaseType::StateRangeType;
 
   using BaseType::jacobian;
@@ -349,13 +346,13 @@ protected:
 
 template <class AnalyticalFluxType, size_t block_size = (AnalyticalFluxType::dimDomain == 1) ? 2 : 4>
 class BlockedJacobianWrapper
-    : public JacobianWrapperBase<AnalyticalFluxType,
-                                 XT::Common::BlockedFieldMatrix<typename AnalyticalFluxType::RangeFieldType,
-                                                                AnalyticalFluxType::dimRange / block_size,
-                                                                block_size>,
-                                 XT::Common::BlockedFieldVector<typename AnalyticalFluxType::RangeFieldType,
-                                                                AnalyticalFluxType::dimRange / block_size,
-                                                                block_size>>
+  : public JacobianWrapperBase<AnalyticalFluxType,
+                               XT::Common::BlockedFieldMatrix<typename AnalyticalFluxType::RangeFieldType,
+                                                              AnalyticalFluxType::dimRange / block_size,
+                                                              block_size>,
+                               XT::Common::BlockedFieldVector<typename AnalyticalFluxType::RangeFieldType,
+                                                              AnalyticalFluxType::dimRange / block_size,
+                                                              block_size>>
 {
   using BaseType = JacobianWrapperBase<AnalyticalFluxType,
                                        XT::Common::BlockedFieldMatrix<typename AnalyticalFluxType::RangeFieldType,
@@ -368,13 +365,13 @@ class BlockedJacobianWrapper
 public:
   using BaseType::dimDomain;
   using BaseType::dimRange;
-  using typename BaseType::RangeFieldType;
-  using typename BaseType::MatrixType;
-  using typename BaseType::VectorType;
   using typename BaseType::DomainType;
   using typename BaseType::EntityType;
   using typename BaseType::JacobianType;
+  using typename BaseType::MatrixType;
+  using typename BaseType::RangeFieldType;
   using typename BaseType::StateRangeType;
+  using typename BaseType::VectorType;
   static constexpr size_t num_blocks = VectorType::num_blocks;
   static_assert(dimRange % block_size == 0, "dimRange has to be a multiple of block_size");
   using BlockedIntVectorType = XT::Common::BlockedFieldVector<int, num_blocks, block_size>;
@@ -391,8 +388,8 @@ public:
     nonblocked_jacobians_ = std::make_unique<FieldVector<FieldMatrix<RangeFieldType, dimRange, dimRange>, dimDomain>>();
   }
 
-  using BaseType::jacobian;
   using BaseType::compute;
+  using BaseType::jacobian;
 
   virtual void compute(const size_t dd) override final
   {
@@ -550,8 +547,7 @@ public:
   MultiIndexIterator(const MultiArrayType& multi_array, const IndicesType& indices)
     : multi_array_(multi_array)
     , indices_(indices)
-  {
-  }
+  {}
 
   IndicesType& operator*()
   {
@@ -612,8 +608,7 @@ public:
 
   MultiIndexProvider(const MultiArrayType& multi_array)
     : multi_array_(multi_array)
-  {
-  }
+  {}
 
   IteratorType begin()
   {
@@ -662,8 +657,7 @@ struct IndicesBuilder<RangeArrayType, 0, dimension>
 
 template <class RangeType, size_t dimDomain>
 class Slice : public boost::multi_array<RangeType, dimDomain - 1>
-{
-};
+{};
 
 template <class RangeType>
 class Slice<RangeType, 1>
@@ -677,8 +671,7 @@ public:
 
   template <class IndicesType>
   void resize(const IndicesType&)
-  {
-  }
+  {}
 
 private:
   RangeType value_;

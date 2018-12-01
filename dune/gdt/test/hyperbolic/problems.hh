@@ -178,6 +178,6 @@ extern template class HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Ya
                                                 TimeStepperMethods::explicit_euler>;
 
 
-} // namespace Tests
+} // namespace Test
 } // namespace GDT
 } // namespace Dune

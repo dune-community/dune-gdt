@@ -17,13 +17,13 @@ namespace GDT {
 namespace Test {
 
 
-std::vector<double> LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase<Yasp2Grid, double, 1>,
-                                                  LinearElliptic::ChooseDiscretizer::cg,
-                                                  1>::
-    results(const LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase<Yasp2Grid, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::cg,
-                                                1>::TestCaseType&,
-            const std::string type)
+std::vector<double> LinearEllipticEocExpectations<
+    LinearElliptic::ER2007TestCase<Yasp2Grid, double, 1>,
+    LinearElliptic::ChooseDiscretizer::cg,
+    1>::results(const LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase<Yasp2Grid, double, 1>,
+                                                    LinearElliptic::ChooseDiscretizer::cg,
+                                                    1>::TestCaseType&,
+                const std::string type)
 {
   if (type == "L2") {
 #if DXT_DISABLE_LARGE_TESTS

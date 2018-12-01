@@ -29,24 +29,19 @@ struct TimeStepperFactory
 {
   typedef typename DiscreteFunctionImp::RangeFieldType RangeFieldType;
 
-  typedef typename std::
-      conditional<method == TimeStepperMethods::bogacki_shampine || method == TimeStepperMethods::dormand_prince
-                      || method == TimeStepperMethods::adaptive_rungekutta_other,
-                  typename Dune::GDT::AdaptiveRungeKuttaTimeStepper<OperatorImp, DiscreteFunctionImp, method>,
-                  typename std::
-                      conditional<method == TimeStepperMethods::implicit_euler
-                                      || method == TimeStepperMethods::implicit_midpoint
-                                      || method == TimeStepperMethods::trapezoidal_rule,
-                                  typename Dune::GDT::
-                                      DiagonallyImplicitRungeKuttaTimeStepper<OperatorImp, DiscreteFunctionImp, method>,
-                                  typename std::
-                                      conditional<method == TimeStepperMethods::matrix_exponential,
-                                                  typename Dune::GDT::MatrixExponentialTimeStepper<OperatorImp,
-                                                                                                   DiscreteFunctionImp>,
-                                                  typename Dune::GDT::ExplicitRungeKuttaTimeStepper<OperatorImp,
-                                                                                                    DiscreteFunctionImp,
-                                                                                                    method>>::type>::
-                          type>::type TimeStepperType;
+  typedef typename std::conditional<
+      method == TimeStepperMethods::bogacki_shampine || method == TimeStepperMethods::dormand_prince
+          || method == TimeStepperMethods::adaptive_rungekutta_other,
+      typename Dune::GDT::AdaptiveRungeKuttaTimeStepper<OperatorImp, DiscreteFunctionImp, method>,
+      typename std::conditional<
+          method == TimeStepperMethods::implicit_euler || method == TimeStepperMethods::implicit_midpoint
+              || method == TimeStepperMethods::trapezoidal_rule,
+          typename Dune::GDT::DiagonallyImplicitRungeKuttaTimeStepper<OperatorImp, DiscreteFunctionImp, method>,
+          typename std::conditional<
+              method == TimeStepperMethods::matrix_exponential,
+              typename Dune::GDT::MatrixExponentialTimeStepper<OperatorImp, DiscreteFunctionImp>,
+              typename Dune::GDT::ExplicitRungeKuttaTimeStepper<OperatorImp, DiscreteFunctionImp, method>>::type>::
+          type>::type TimeStepperType;
 
 
   static std::unique_ptr<TimeStepperType> create(const OperatorImp& op,

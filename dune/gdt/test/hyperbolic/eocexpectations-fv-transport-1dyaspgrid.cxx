@@ -111,21 +111,21 @@ std::vector<double> Dune::GDT::Test::HyperbolicEocExpectations<Hyperbolic::Trans
   return {};
 }
 
-std::vector<double> Dune::GDT::Test::HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp1, double, 1>,
-                                                               Hyperbolic::ChooseDiscretizer::fv,
-                                                               1,
-                                                               NumericalFluxes::godunov,
-                                                               TimeStepperMethods::explicit_euler,
-                                                               TimeStepperMethods::explicit_euler,
-                                                               1>::
-    results(const Dune::GDT::Test::HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp1, double, 1>,
-                                                             Hyperbolic::ChooseDiscretizer::fv,
-                                                             1,
-                                                             NumericalFluxes::godunov,
-                                                             TimeStepperMethods::explicit_euler,
-                                                             TimeStepperMethods::explicit_euler,
-                                                             1>::TestCaseType& test_case,
-            const std::string type)
+std::vector<double> Dune::GDT::Test::HyperbolicEocExpectations<
+    Hyperbolic::TransportTestCase<Yasp1, double, 1>,
+    Hyperbolic::ChooseDiscretizer::fv,
+    1,
+    NumericalFluxes::godunov,
+    TimeStepperMethods::explicit_euler,
+    TimeStepperMethods::explicit_euler,
+    1>::results(const Dune::GDT::Test::HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp1, double, 1>,
+                                                                 Hyperbolic::ChooseDiscretizer::fv,
+                                                                 1,
+                                                                 NumericalFluxes::godunov,
+                                                                 TimeStepperMethods::explicit_euler,
+                                                                 TimeStepperMethods::explicit_euler,
+                                                                 1>::TestCaseType& test_case,
+                const std::string type)
 {
   if (type == "L1") {
     if (test_case.num_refinements() == 1) {

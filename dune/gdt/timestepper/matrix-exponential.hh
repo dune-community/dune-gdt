@@ -28,7 +28,7 @@ namespace GDT {
 
 template <class DiscreteFunctionType, class RhsEvaluationType, class MatrixType>
 class MatrixExponentialFunctor
-    : public XT::Grid::Functor::Codim0<typename DiscreteFunctionType::SpaceType::GridLayerType>
+  : public XT::Grid::Functor::Codim0<typename DiscreteFunctionType::SpaceType::GridLayerType>
 {
   typedef typename XT::Grid::Functor::Codim0<typename DiscreteFunctionType::SpaceType::GridLayerType> BaseType;
   typedef typename RhsEvaluationType::RangeFieldType FieldType;
@@ -136,8 +136,7 @@ public:
     , matrix_exponentials_(num_subdomains_, SparseMatrixType(dimRange, dimRange))
     , matrix_exponential_integrals_(num_subdomains_, SparseMatrixType(dimRange, dimRange))
     , last_dt_(0)
-  {
-  }
+  {}
 
   virtual RangeFieldType step(const RangeFieldType dt, const RangeFieldType max_dt) override final
   {

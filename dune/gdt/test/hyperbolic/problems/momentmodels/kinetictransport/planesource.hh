@@ -35,28 +35,27 @@ class PlaneSourcePn : public KineticTransportEquation<BasisfunctionImp, GridLaye
   using BaseType = KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>;
 
 public:
-  using typename BaseType::InitialValueType;
-  using typename BaseType::BoundaryValueType;
-  using typename BaseType::ActualInitialValueType;
-  using typename BaseType::ActualDirichletBoundaryValueType;
-  using typename BaseType::DomainFieldType;
-  using typename BaseType::DomainType;
-  using typename BaseType::RangeFieldType;
-  using typename BaseType::RangeType;
-  using typename BaseType::BasisfunctionType;
-  using typename BaseType::GridLayerType;
-  using typename BaseType::FluxType;
   using BaseType::default_boundary_cfg;
   using BaseType::dimDomain;
   using BaseType::dimRange;
+  using typename BaseType::ActualDirichletBoundaryValueType;
+  using typename BaseType::ActualInitialValueType;
+  using typename BaseType::BasisfunctionType;
+  using typename BaseType::BoundaryValueType;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::DomainType;
+  using typename BaseType::FluxType;
+  using typename BaseType::GridLayerType;
+  using typename BaseType::InitialValueType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::RangeType;
 
   PlaneSourcePn(const BasisfunctionType& basis_functions,
                 const GridLayerType& grid_layer,
                 const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                 const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
     : BaseType(basis_functions, grid_layer, {1}, grid_cfg, boundary_cfg)
-  {
-  }
+  {}
 
   static std::string static_id()
   {
@@ -161,9 +160,9 @@ public:
   }
 
 protected:
+  using BaseType::basis_functions_;
   using BaseType::grid_cfg_;
   using BaseType::grid_layer_;
-  using BaseType::basis_functions_;
   using BaseType::num_segments_;
   using BaseType::psi_vac_;
 }; // class PlaneSourcePn<...>
@@ -181,16 +180,15 @@ public:
   using ActualFluxType = EntropyBasedLocalFlux<BasisfunctionType, GridLayerImp, U_>;
   using typename BaseType::GridLayerType;
 
-  using BaseType::default_grid_cfg;
   using BaseType::default_boundary_cfg;
+  using BaseType::default_grid_cfg;
 
   PlaneSourceMn(const BasisfunctionType& basis_functions,
                 const GridLayerType& grid_layer,
                 const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                 const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
     : BaseType(basis_functions, grid_layer, grid_cfg, boundary_cfg)
-  {
-  }
+  {}
 
   static std::string static_id()
   {

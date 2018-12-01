@@ -73,15 +73,13 @@ PYBIND11_MODULE(__operators_l2, m)
   using LayerType =
       typename XT::Grid::Layer<G, Layers::dd_subdomain, XT::Grid::Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type;
 
-  Dune::GDT::bindings::internal::
-      L2MatrixOperator<GDT::RestrictedSpace<
-                           typename GDT::
-                               SpaceProvider<G, Layers::leaf, GDT::SpaceType::rt, GDT::Backends::gdt, 0, double, 2>::
-                                   type,
-                           LayerType>,
-                       XT::LA::IstlRowMajorSparseMatrix<double>>::bind(m,
-                                                                       "RtAlu2dSimplexLeafRestrictedSubdomainPartSpace",
-                                                                       "istl_row_major_sparse_matrix_double");
+  Dune::GDT::bindings::internal::L2MatrixOperator<
+      GDT::RestrictedSpace<
+          typename GDT::SpaceProvider<G, Layers::leaf, GDT::SpaceType::rt, GDT::Backends::gdt, 0, double, 2>::type,
+          LayerType>,
+      XT::LA::IstlRowMajorSparseMatrix<double>>::bind(m,
+                                                      "RtAlu2dSimplexLeafRestrictedSubdomainPartSpace",
+                                                      "istl_row_major_sparse_matrix_double");
 
   Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.operators.elliptic");
 }

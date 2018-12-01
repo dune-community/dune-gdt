@@ -46,9 +46,7 @@ public:
   typedef XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
 
-  virtual ~ProblemInterface()
-  {
-  }
+  virtual ~ProblemInterface() {}
 
   virtual const DiffusionFactorType& diffusion_factor() const = 0;
 
@@ -118,20 +116,19 @@ struct is_problem_helper
 
 
 template <class P, bool candidate = internal::is_problem_helper<P>::is_candidate>
-struct is_problem : public std::is_base_of<ProblemInterface<typename P::EntityType,
-                                                            typename P::DomainFieldType,
-                                                            P::dimDomain,
-                                                            typename P::RangeFieldType,
-                                                            P::dimRange>,
-                                           P>
-{
-};
+struct is_problem
+  : public std::is_base_of<ProblemInterface<typename P::EntityType,
+                                            typename P::DomainFieldType,
+                                            P::dimDomain,
+                                            typename P::RangeFieldType,
+                                            P::dimRange>,
+                           P>
+{};
 
 
 template <class P>
 struct is_problem<P, false> : public std::false_type
-{
-};
+{};
 
 
 } // namespace LinearElliptic

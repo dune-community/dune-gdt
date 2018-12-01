@@ -31,14 +31,14 @@ class LinearEllipticSwipdgEstimatorStudy : public LinearEllipticEocStudy<TestCas
   typedef LinearEllipticEocStudy<TestCaseImp, DiscretizerImp> BaseType;
 
 public:
-  using typename BaseType::TestCaseType;
-  using typename BaseType::Discretizer;
   using typename BaseType::DiscretizationType;
+  using typename BaseType::Discretizer;
   using typename BaseType::FunctionType;
-  using typename BaseType::VectorType;
-  using typename BaseType::SpaceType;
-  using typename BaseType::ProblemType;
   using typename BaseType::GridViewType;
+  using typename BaseType::ProblemType;
+  using typename BaseType::SpaceType;
+  using typename BaseType::TestCaseType;
+  using typename BaseType::VectorType;
 
 private:
   typedef typename ProblemType::DiffusionFactorType DiffusionFactorType;
@@ -73,8 +73,7 @@ public:
                                      const std::string visualize_prefix = "",
                                      const size_t over_integrate = 2)
     : BaseType(test_case, only_these_norms, visualize_prefix, over_integrate)
-  {
-  }
+  {}
 
   virtual ~LinearEllipticSwipdgEstimatorStudy() = default;
 

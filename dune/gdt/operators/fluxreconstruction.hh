@@ -62,8 +62,8 @@ class LocalizableDiffusiveFluxReconstructionOperator : public LocalizableOperato
 
 public:
   using typename BaseType::GridLayerType;
-  using typename BaseType::SourceType;
   using typename BaseType::RangeType;
+  using typename BaseType::SourceType;
 
   LocalizableDiffusiveFluxReconstructionOperator(GridLayerType grd_layr,
                                                  const ScalarFunctionType& diffusion_factor,
@@ -268,8 +268,7 @@ public:
     , diffusion_factor_(diffusion_factor)
     , diffusion_tensor_(diffusion_tensor)
     , over_integrate_(over_integrate)
-  {
-  }
+  {}
 
   template <class GL, class V>
   void
@@ -465,8 +464,7 @@ public:
     : grid_layer_(grid_layer)
     , diffusion_(diffusion)
     , over_integrate_(over_integrate)
-  {
-  }
+  {}
 
   template <class GL, class V>
   void

@@ -58,8 +58,7 @@ struct EllipticProductBase
     , constant_gradient_("x", "fake_value", 1, "constant gradient", {{"1.0", "1.0", "1.0"}})
     , linear_gradient_("x", "fake_value", 2, "affine gradient", {{"x[0] - 1.0", "x[0] - 1.0", "x[0] - 1.0"}})
     , quadratic_gradient_("x", "fake_value", 3, "quadratic gradient", {{"x[0]*x[0]", "x[0]*x[0]", "x[0]*x[0]"}})
-  {
-  }
+  {}
 
   virtual ~EllipticProductBase() = default;
 
@@ -95,7 +94,9 @@ struct EllipticProductBase
 
 
 template <class SpaceType>
-struct EllipticLocalizableProductTest : public EllipticProductBase<SpaceType>, public LocalizableProductBase<SpaceType>
+struct EllipticLocalizableProductTest
+  : public EllipticProductBase<SpaceType>
+  , public LocalizableProductBase<SpaceType>
 {
   typedef EllipticProductBase<SpaceType> EllipticBaseType;
   typedef LocalizableProductBase<SpaceType> LocalizableBaseType;
@@ -197,7 +198,9 @@ struct EllipticLocalizableProductTest : public EllipticProductBase<SpaceType>, p
  * \note Assumes that Operators::Projection does the right thing!
  */
 template <class SpaceType>
-struct EllipticMatrixOperatorTest : public EllipticProductBase<SpaceType>, public MatrixOperatorBase<SpaceType>
+struct EllipticMatrixOperatorTest
+  : public EllipticProductBase<SpaceType>
+  , public MatrixOperatorBase<SpaceType>
 {
   typedef EllipticProductBase<SpaceType> EllipticBaseType;
   typedef MatrixOperatorBase<SpaceType> MatrixBaseType;
@@ -211,8 +214,7 @@ struct EllipticMatrixOperatorTest : public EllipticProductBase<SpaceType>, publi
 
   EllipticMatrixOperatorTest(const double factor_value = 42.)
     : EllipticBaseType(factor_value)
-  {
-  }
+  {}
 
   void constructible_by_ctor()
   {
@@ -564,19 +566,21 @@ struct EllipticMatrixOperatorTest : public EllipticProductBase<SpaceType>, publi
 
 
 template <class SpaceType>
-struct EllipticOperatorTest : public EllipticProductBase<SpaceType>, public OperatorBase<SpaceType>
+struct EllipticOperatorTest
+  : public EllipticProductBase<SpaceType>
+  , public OperatorBase<SpaceType>
 {
   typedef EllipticProductBase<SpaceType> EllipticBaseType;
   typedef OperatorBase<SpaceType> OperatorBaseType;
-  using typename OperatorBaseType::GridLayerType;
+  using EllipticBaseType::dimDomain;
   using typename EllipticBaseType::ExpressionFunctionType;
   using typename OperatorBaseType::DiscreteFunctionType;
+  using typename OperatorBaseType::GridLayerType;
+  using typename OperatorBaseType::MatrixType;
+  using typename OperatorBaseType::RangeFieldType;
   using typename OperatorBaseType::ScalarFunctionType;
   using typename OperatorBaseType::TensorFunctionType;
-  using typename OperatorBaseType::RangeFieldType;
-  using typename OperatorBaseType::MatrixType;
   using typename OperatorBaseType::VectorType;
-  using EllipticBaseType::dimDomain;
 
   void constructible_by_ctor()
   {

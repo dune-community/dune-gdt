@@ -62,7 +62,7 @@ struct RealizabilityLimiterChooser<LegendreMomentBasis<double, double, order>, A
 #endif
 
 #ifndef USE_LP_POSITIVITY_LIMITER
-#define USE_LP_POSITIVITY_LIMITER 0
+#  define USE_LP_POSITIVITY_LIMITER 0
 #endif // USE_LP_POSITIVITY_LIMITER
 template <size_t dimRange, class AnalyticalFluxType, class DiscreteFunctionType>
 struct RealizabilityLimiterChooser<HatFunctionMomentBasis<double, 1, double, dimRange, 1, 1>,

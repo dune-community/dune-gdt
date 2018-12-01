@@ -32,23 +32,20 @@ class HyperbolicEocStudy : public InstationaryEocStudy<TestCaseImp, DiscretizerI
   typedef InstationaryEocStudy<TestCaseImp, DiscretizerImp> BaseType;
 
 public:
-  using typename BaseType::TestCaseType;
-  using typename BaseType::Discretizer;
-  using typename BaseType::DiscretizationType;
-  using typename BaseType::GridLayerType;
   using typename BaseType::DiscreteSolutionType;
+  using typename BaseType::DiscretizationType;
+  using typename BaseType::Discretizer;
+  using typename BaseType::GridLayerType;
+  using typename BaseType::TestCaseType;
 
   // a perfect forwarding ctor did not do the job here, since it was not able to match the std::initializer_list: {"L2"}
   HyperbolicEocStudy(TestCaseType& test_case,
                      const std::vector<std::string> only_these_norms = {},
                      const std::string visualize_prefix = TestCaseType::ProblemType::static_id())
     : BaseType(test_case, only_these_norms, visualize_prefix)
-  {
-  }
+  {}
 
-  virtual ~HyperbolicEocStudy()
-  {
-  }
+  virtual ~HyperbolicEocStudy() {}
 
   virtual std::string identifier() const override final
   {
@@ -137,7 +134,7 @@ public:
 }; // class HyperbolicEocStudy
 
 
-} // namespace Tests
+} // namespace Test
 } // namespace GDT
 } // namespace Dune
 

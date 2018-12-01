@@ -57,8 +57,7 @@ public:
     , where_(where)
     , result_per_thread_(0.)
     , finalized_(false)
-  {
-  }
+  {}
 
   void prepare() override final
   {

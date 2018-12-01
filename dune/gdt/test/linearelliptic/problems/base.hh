@@ -45,8 +45,7 @@ public:
     , neumann_(neum)
     , grid_cfg_(grd_cfg)
     , boundary_info_cfg_(bnd_cfg)
-  {
-  }
+  {}
 
   /**
    * \note Do not manually delete these pointers, they are managed automaticall from here on!
@@ -65,8 +64,7 @@ public:
     , neumann_(std::move(neum))
     , grid_cfg_(grd_cfg)
     , boundary_info_cfg_(bnd_cfg)
-  {
-  }
+  {}
 
   virtual const DiffusionFactorType& diffusion_factor() const override
   {

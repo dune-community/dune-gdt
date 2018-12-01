@@ -132,8 +132,7 @@ public:
               DUNE_THROW(
                   XT::Common::Exceptions::wrong_input_given,
                   "Given layer has to be one of ('leaf', 'level', 'dd_subdomain', 'dd_subdomain_oversampled'), is '"
-                      << layer
-                      << "'!");
+                      << layer << "'!");
           },
           "dd_grid_provider"_a,
           "layer"_a = "leaf",
@@ -218,25 +217,20 @@ public:
   }
 
   template <XT::Grid::Backends backend, XT::Grid::Layers layer>
-  static
-      typename internal::DiscreteFunction<GDT::RestrictedSpace<S,
-                                                               typename XT::Grid::Layer<XT::Grid::extract_grid_t<
-                                                                                            typename S::GridLayerType>,
-                                                                                        layer,
-                                                                                        backend>::type>,
-                                          V>::bound_type
-      bind_restricted(pybind11::module& m)
+  static typename internal::DiscreteFunction<
+      GDT::RestrictedSpace<
+          S,
+          typename XT::Grid::Layer<XT::Grid::extract_grid_t<typename S::GridLayerType>, layer, backend>::type>,
+      V>::bound_type
+  bind_restricted(pybind11::module& m)
   {
-    return internal::DiscreteFunction<GDT::RestrictedSpace<S,
-                                                           typename XT::Grid::Layer<XT::Grid::extract_grid_t<
-                                                                                        typename S::GridLayerType>,
-                                                                                    layer,
-                                                                                    backend>::type>,
-                                      V>::bind(m,
-                                               space_name<SP>::value() + "_restricted_to_"
-                                                   + XT::Grid::layer_names[layer]
-                                                   + "_"
-                                                   + XT::Grid::bindings::backend_name<backend>::value());
+    return internal::DiscreteFunction<
+        GDT::RestrictedSpace<
+            S,
+            typename XT::Grid::Layer<XT::Grid::extract_grid_t<typename S::GridLayerType>, layer, backend>::type>,
+        V>::bind(m,
+                 space_name<SP>::value() + "_restricted_to_" + XT::Grid::layer_names[layer] + "_"
+                     + XT::Grid::bindings::backend_name<backend>::value());
   } // ... addbind_restricted(...)
 
 }; // class DiscreteFunction

@@ -53,30 +53,27 @@ class LocalVolumeIntegralOperator : public LocalVolumeTwoFormInterface<TestBase,
   static const size_t d = TestBase::dimDomain;
 
 public:
-  using typename BaseType::TestBaseType;
   using typename BaseType::AnsatzBaseType;
   using typename BaseType::FieldType;
+  using typename BaseType::TestBaseType;
 
   template <class... Args>
   explicit LocalVolumeIntegralOperator(Args&&... args)
     : integrand_(std::forward<Args>(args)...)
     , over_integrate_(0)
-  {
-  }
+  {}
 
   template <class... Args>
   explicit LocalVolumeIntegralOperator(const int over_integrate, Args&&... args)
     : integrand_(std::forward<Args>(args)...)
     , over_integrate_(boost::numeric_cast<size_t>(over_integrate))
-  {
-  }
+  {}
 
   template <class... Args>
   explicit LocalVolumeIntegralOperator(const size_t over_integrate, Args&&... args)
     : integrand_(std::forward<Args>(args)...)
     , over_integrate_(over_integrate)
-  {
-  }
+  {}
 
   LocalVolumeIntegralOperator(const ThisType& other) = default;
   LocalVolumeIntegralOperator(ThisType&& source) = default;
@@ -160,12 +157,13 @@ template <class QuaternaryFaceIntegrandType,
           class TestBaseNeighbor = TestBaseEntity,
           class AnsatzBaseNeighbor = AnsatzBaseEntity,
           class Field = typename TestBaseEntity::RangeFieldType>
-class LocalCouplingIntegralOperator : public LocalCouplingTwoFormInterface<TestBaseEntity,
-                                                                           Intersection,
-                                                                           AnsatzBaseEntity,
-                                                                           TestBaseNeighbor,
-                                                                           AnsatzBaseNeighbor,
-                                                                           Field>
+class LocalCouplingIntegralOperator
+  : public LocalCouplingTwoFormInterface<TestBaseEntity,
+                                         Intersection,
+                                         AnsatzBaseEntity,
+                                         TestBaseNeighbor,
+                                         AnsatzBaseNeighbor,
+                                         Field>
 {
   static_assert(is_quaternary_face_integrand<QuaternaryFaceIntegrandType>::value, "");
   static_assert(std::is_same<typename TestBaseEntity::EntityType, typename AnsatzBaseEntity::EntityType>::value, "");
@@ -200,33 +198,30 @@ class LocalCouplingIntegralOperator : public LocalCouplingTwoFormInterface<TestB
   static const size_t d = TestBaseEntity::dimDomain;
 
 public:
-  using typename BaseType::TestBaseEntityType;
   using typename BaseType::AnsatzBaseEntityType;
-  using typename BaseType::TestBaseNeighborType;
   using typename BaseType::AnsatzBaseNeighborType;
-  using typename BaseType::IntersectionType;
   using typename BaseType::FieldType;
+  using typename BaseType::IntersectionType;
+  using typename BaseType::TestBaseEntityType;
+  using typename BaseType::TestBaseNeighborType;
 
   template <class... Args>
   explicit LocalCouplingIntegralOperator(Args&&... args)
     : integrand_(std::forward<Args>(args)...)
     , over_integrate_(0)
-  {
-  }
+  {}
 
   template <class... Args>
   explicit LocalCouplingIntegralOperator(const int over_integrate, Args&&... args)
     : integrand_(std::forward<Args>(args)...)
     , over_integrate_(boost::numeric_cast<size_t>(over_integrate))
-  {
-  }
+  {}
 
   template <class... Args>
   explicit LocalCouplingIntegralOperator(const size_t over_integrate, Args&&... args)
     : integrand_(std::forward<Args>(args)...)
     , over_integrate_(over_integrate)
-  {
-  }
+  {}
 
   LocalCouplingIntegralOperator(const ThisType& other) = default;
   LocalCouplingIntegralOperator(ThisType&& source) = default;
@@ -351,31 +346,28 @@ class LocalBoundaryIntegralOperator : public LocalBoundaryTwoFormInterface<TestB
   static const size_t d = TestBase::dimDomain;
 
 public:
-  using typename BaseType::TestBaseType;
   using typename BaseType::AnsatzBaseType;
-  using typename BaseType::IntersectionType;
   using typename BaseType::FieldType;
+  using typename BaseType::IntersectionType;
+  using typename BaseType::TestBaseType;
 
   template <class... Args>
   LocalBoundaryIntegralOperator(Args&&... args)
     : integrand_(std::forward<Args>(args)...)
     , over_integrate_(0)
-  {
-  }
+  {}
 
   template <class... Args>
   LocalBoundaryIntegralOperator(const int over_integrate, Args&&... args)
     : integrand_(std::forward<Args>(args)...)
     , over_integrate_(boost::numeric_cast<size_t>(over_integrate))
-  {
-  }
+  {}
 
   template <class... Args>
   LocalBoundaryIntegralOperator(const size_t over_integrate, Args&&... args)
     : integrand_(std::forward<Args>(args)...)
     , over_integrate_(over_integrate)
-  {
-  }
+  {}
 
   void apply2(const TestBaseType& test_base,
               const AnsatzBaseType& ansatz_base,
