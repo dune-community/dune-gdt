@@ -7,14 +7,14 @@
 
 #if HAVE_DUNE_PYBINDXI
 
-#include <dune/common/parallel/mpihelper.hh>
+#  include <dune/common/parallel/mpihelper.hh>
 
-#include <dune/pybindxi/pybind11.h>
-#include <dune/pybindxi/stl.h>
+#  include <dune/pybindxi/pybind11.h>
+#  include <dune/pybindxi/stl.h>
 
-#include <python/dune/xt/common/bindings.hh>
-#include <dune/xt/common/numeric_cast.hh>
-#include <dune/xt/common/timedlogging.hh>
+#  include <python/dune/xt/common/bindings.hh>
+#  include <dune/xt/common/numeric_cast.hh>
+#  include <dune/xt/common/timedlogging.hh>
 
 static void add_initialization(pybind11::module& m, std::string logger_name)
 {

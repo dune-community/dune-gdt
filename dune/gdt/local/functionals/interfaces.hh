@@ -55,8 +55,7 @@ public:
 
   LocalElementFunctionalInterface(const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type)
-  {
-  }
+  {}
 
   virtual ~LocalElementFunctionalInterface() = default;
 
@@ -69,8 +68,8 @@ public:
   apply(const LocalBasisType& basis, DynamicVector<F>& result, const XT::Common::Parameter& param = {}) const = 0;
 
   /**
-    * This method is provided for convenience and should not be used within library code.
-    */
+   * This method is provided for convenience and should not be used within library code.
+   */
   virtual DynamicVector<F> apply(const LocalBasisType& basis, const XT::Common::Parameter& param = {}) const
   {
     DynamicVector<F> ret(basis.size(param));

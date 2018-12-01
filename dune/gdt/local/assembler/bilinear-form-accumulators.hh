@@ -41,9 +41,9 @@ template <class GV,
           size_t r_rC = s_rC,
           class RF = SF>
 class LocalElementBilinearFormAccumulator
-    : public XT::Grid::ElementFunctor<GV>,
-      public XT::Common::
-          ThreadResultPropagator<LocalElementBilinearFormAccumulator<GV, s_r, s_rC, SF, R, r_r, r_rC, RF>, R>
+  : public XT::Grid::ElementFunctor<GV>
+  , public XT::Common::ThreadResultPropagator<LocalElementBilinearFormAccumulator<GV, s_r, s_rC, SF, R, r_r, r_rC, RF>,
+                                              R>
 {
   static_assert(XT::Grid::is_view<GV>::value, "");
 
@@ -76,8 +76,7 @@ public:
     , param_(param)
     , local_source_(source_.local_function())
     , local_range_(range_.local_function())
-  {
-  }
+  {}
 
   LocalElementBilinearFormAccumulator(const ThisType& other)
     : BaseType(other)
@@ -89,8 +88,7 @@ public:
     , param_(other.param_)
     , local_source_(source_.local_function())
     , local_range_(range_.local_function())
-  {
-  }
+  {}
 
   BaseType* copy() override final
   {

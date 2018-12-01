@@ -8,9 +8,9 @@
 //   Felix Schindler (2018)
 
 /**
-  * There is similar functionality in dune/localfunctions/meta/power.hh, but that one is only implemented for the
-  * "global" finite elements, while we use the local finite elements.
-  **/
+ * There is similar functionality in dune/localfunctions/meta/power.hh, but that one is only implemented for the
+ * "global" finite elements, while we use the local finite elements.
+ **/
 
 
 #ifndef DUNE_GDT_LOCAL_FINITE_ELEMENTS_POWER_HH
@@ -51,21 +51,19 @@ class LocalPowerFiniteElementBasis<power, D, d, R, r, 1> : public LocalFiniteEle
   using BaseType = LocalFiniteElementBasisInterface<D, d, R, power * r>;
 
 public:
+  using typename BaseType::DerivativeRangeType;
   using typename BaseType::DomainType;
   using typename BaseType::RangeType;
-  using typename BaseType::DerivativeRangeType;
 
   using UnpoweredType = LocalFiniteElementBasisInterface<D, d, R, r>;
 
   LocalPowerFiniteElementBasis(const UnpoweredType& unpowered)
     : unpowered_(unpowered.copy())
-  {
-  }
+  {}
 
   LocalPowerFiniteElementBasis(const ThisType& other)
     : unpowered_(other.unpowered_->copy())
-  {
-  }
+  {}
 
   BaseType* copy() const override final
   {
@@ -148,7 +146,7 @@ class LocalPowerFiniteElementInterpolation
 
 template <size_t power, class D, size_t d, class R, size_t r>
 class LocalPowerFiniteElementInterpolation<power, D, d, R, r, 1>
-    : public LocalFiniteElementInterpolationInterface<D, d, R, power * r, 1>
+  : public LocalFiniteElementInterpolationInterface<D, d, R, power * r, 1>
 {
   using ThisType = LocalPowerFiniteElementInterpolation<power, D, d, R, r, 1>;
   using BaseType = LocalFiniteElementInterpolationInterface<D, d, R, power * r, 1>;
@@ -161,13 +159,11 @@ public:
 
   LocalPowerFiniteElementInterpolation(const UnpoweredType& unpowered)
     : unpowered_(unpowered.copy())
-  {
-  }
+  {}
 
   LocalPowerFiniteElementInterpolation(const ThisType& other)
     : unpowered_(other.unpowered_->copy())
-  {
-  }
+  {}
 
   BaseType* copy() const override final
   {
@@ -258,8 +254,7 @@ public:
     : unpowered_(other.unpowered_->copy())
     , power_(other.power_)
     , local_keys_(other.local_keys_)
-  {
-  }
+  {}
 
   BaseType* copy() const override final
   {
@@ -325,8 +320,7 @@ public:
                unpowered.coefficients().copy(),
                unpowered.interpolation().copy(),
                unpowered.is_lagrangian() ? unpowered.lagrange_points() : std::vector<DomainType>())
-  {
-  }
+  {}
 }; // class LocalPowerFiniteElement<1, ...>
 
 
@@ -348,8 +342,7 @@ public:
                new LocalPowerFiniteElementCoefficients<D, d>(unpowered.coefficients(), power),
                new LocalPowerFiniteElementInterpolation<power, D, d, R, r>(unpowered.interpolation()),
                unpowered.is_lagrangian() ? unpowered.lagrange_points() : std::vector<DomainType>())
-  {
-  }
+  {}
 }; // class LocalPowerFiniteElement
 
 

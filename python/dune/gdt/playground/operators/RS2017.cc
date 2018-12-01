@@ -11,24 +11,24 @@
 
 #if HAVE_DUNE_ALUGRID && HAVE_DUNE_PYBINDXI
 
-#include <dune/common/parallel/mpihelper.hh>
+#  include <dune/common/parallel/mpihelper.hh>
 
-#include <dune/pybindxi/pybind11.h>
-#include <dune/pybindxi/stl.h>
+#  include <dune/pybindxi/pybind11.h>
+#  include <dune/pybindxi/stl.h>
 
-#include <python/dune/xt/common/bindings.hh>
-#include <python/dune/gdt/shared.hh>
+#  include <python/dune/xt/common/bindings.hh>
+#  include <python/dune/gdt/shared.hh>
 
-#include <dune/xt/la/eigen-solver.hh>
+#  include <dune/xt/la/eigen-solver.hh>
 
-#include <dune/gdt/operators/elliptic.hh>
+#  include <dune/gdt/operators/elliptic.hh>
 
-#include <python/dune/gdt/playground/operators/RS2017.hh>
+#  include <python/dune/gdt/playground/operators/RS2017.hh>
 
 using namespace Dune;
 using namespace Dune::GDT::RS2017;
-using XT::Grid::Layers;
 using XT::Grid::Backends;
+using XT::Grid::Layers;
 namespace py = pybind11;
 
 
@@ -154,18 +154,18 @@ PYBIND11_MODULE(__operators_RS2017, m)
         "v"_a,
         "over_integrate"_a = 2);
 
-  typedef GDT::EllipticMatrixOperator<XT::Functions::GridFunctionInterface<E, D, d, R, 1>,
-                                      XT::Functions::GridFunctionInterface<E, D, d, R, d, d>,
-                                      typename GDT::SpaceProvider<ALU_2D_SIMPLEX_CONFORMING,
-                                                                  Layers::dd_subdomain,
-                                                                  GDT::SpaceType::dg,
-                                                                  GDT::Backends::gdt,
-                                                                  1,
-                                                                  double,
-                                                                  1>::type,
-                                      XT::LA::IstlRowMajorSparseMatrix<double>,
-                                      typename XT::Grid::
-                                          Layer<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::view>::type>
+  typedef GDT::EllipticMatrixOperator<
+      XT::Functions::GridFunctionInterface<E, D, d, R, 1>,
+      XT::Functions::GridFunctionInterface<E, D, d, R, d, d>,
+      typename GDT::SpaceProvider<ALU_2D_SIMPLEX_CONFORMING,
+                                  Layers::dd_subdomain,
+                                  GDT::SpaceType::dg,
+                                  GDT::Backends::gdt,
+                                  1,
+                                  double,
+                                  1>::type,
+      XT::LA::IstlRowMajorSparseMatrix<double>,
+      typename XT::Grid::Layer<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::view>::type>
       EllipticMatrixOperatorType;
   try { // we might not be the first to add this
     py::class_<EllipticMatrixOperatorType,

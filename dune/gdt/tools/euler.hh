@@ -65,9 +65,8 @@ public:
   static const constexpr size_t m = d + 2;
 
   EulerTools(const double& gmma) // air or water at roughly 20 deg Cels.: gmma = 1.4
-      : gamma_(gmma)
-  {
-  }
+    : gamma_(gmma)
+  {}
 
   /// \note While the indices may seem silly, using them helps to reduce typo induced errors.
   /// \name To convert between primitive and conservative variables.

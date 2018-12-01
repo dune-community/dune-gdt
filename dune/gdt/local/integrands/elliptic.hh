@@ -25,7 +25,7 @@ namespace GDT {
 /**
  * Given an inducing scalar function lambda and an inducing matrix-valued function kappa, computes
  * `lambda(x) * {[kappa(x) \nabla phi(x)] * \nabla psi(x)}` for all combinations of phi and psi in the bases.
-   */
+ */
 template <class E, size_t r = 1, class F = double>
 class LocalEllipticIntegrand : public LocalBinaryElementIntegrandInterface<E, r, 1, F, F, r, 1, F>
 {
@@ -34,10 +34,10 @@ class LocalEllipticIntegrand : public LocalBinaryElementIntegrandInterface<E, r,
 
 public:
   using BaseType::d;
+  using typename BaseType::DomainType;
   using typename BaseType::ElementType;
   using typename BaseType::LocalAnsatzBasisType;
   using typename BaseType::LocalTestBasisType;
-  using typename BaseType::DomainType;
 
   using DiffusionFactorType = XT::Functions::GridFunctionInterface<E, 1, 1, F>;
   using DiffusionTensorType = XT::Functions::GridFunctionInterface<E, d, d, F>;
@@ -48,8 +48,7 @@ public:
     , diffusion_tensor_(diffusion_tensor)
     , local_diffusion_factor_(diffusion_factor_.local_function())
     , local_diffusion_tensor_(diffusion_tensor_.local_function())
-  {
-  }
+  {}
 
   LocalEllipticIntegrand(const ThisType& other)
     : BaseType(other.parameter_type())
@@ -57,8 +56,7 @@ public:
     , diffusion_tensor_(other.diffusion_tensor_)
     , local_diffusion_factor_(diffusion_factor_.local_function())
     , local_diffusion_tensor_(diffusion_tensor_.local_function())
-  {
-  }
+  {}
 
   LocalEllipticIntegrand(ThisType&& source) = default;
 

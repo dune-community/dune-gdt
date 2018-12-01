@@ -40,14 +40,12 @@ public:
   NumericalFluxInterface(const FluxType& flx, const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type + flx.parameter_type())
     , flux_(flx)
-  {
-  }
+  {}
 
   NumericalFluxInterface(FluxType*&& flx_ptr, const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type + flx_ptr->parameter_type())
     , flux_(flx_ptr)
-  {
-  }
+  {}
 
   virtual std::unique_ptr<ThisType> copy() const = 0;
 
@@ -122,8 +120,8 @@ class ThisNumericalFluxIsNotAvailableForTheseDimensions : public NumericalFluxIn
   using BaseType = NumericalFluxInterface<d, m, R>;
 
 public:
-  using typename BaseType::StateRangeType;
   using typename BaseType::PhysicalDomainType;
+  using typename BaseType::StateRangeType;
 
   template <class... Args>
   explicit ThisNumericalFluxIsNotAvailableForTheseDimensions(Args&&... /*args*/)

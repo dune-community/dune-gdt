@@ -25,8 +25,7 @@ public:
   template <class... Args>
   explicit NumericalLaxFriedrichsFlux(Args&&... /*args*/)
     : internal::ThisNumericalFluxIsNotAvailableForTheseDimensions<d, m, R>()
-  {
-  }
+  {}
 };
 
 template <size_t d, class R>
@@ -43,8 +42,7 @@ public:
 
   NumericalLaxFriedrichsFlux(const FluxType& flx)
     : BaseType(flx)
-  {
-  }
+  {}
 
   NumericalLaxFriedrichsFlux(const ThisType& other) = default;
 

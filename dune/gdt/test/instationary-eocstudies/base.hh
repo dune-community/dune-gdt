@@ -55,7 +55,9 @@ namespace Test {
 
 
 template <class GridView, size_t m_ = 1, XT::LA::Backends la = XT::LA::Backends::istl_sparse>
-class InstationaryEocStudy : public XT::Common::ConvergenceStudy, public ::testing::Test
+class InstationaryEocStudy
+  : public XT::Common::ConvergenceStudy
+  , public ::testing::Test
 {
   static_assert(XT::Grid::is_view<GridView>::value, "");
 
@@ -98,8 +100,7 @@ public:
     , reference_space_(nullptr)
     , current_solution_on_reference_grid_(nullptr)
     , reference_solution_on_reference_grid_(nullptr)
-  {
-  }
+  {}
 
   virtual size_t num_refinements() const override
   {
@@ -484,7 +485,7 @@ XT::LA::ListVectorArray<V> solve_instationary_system_implicit_euler(const Discre
 } // ... solve_instationary_system_implicit_euler(...)
 
 
-} // namespace Tests
+} // namespace Test
 } // namespace GDT
 } // namespace Dune
 

@@ -205,8 +205,8 @@ class LocalIntersectionOperatorFiniteDifferenceJacobianAssembler : public XT::Gr
 
 public:
   using typename BaseType::ElementType;
-  using typename BaseType::IntersectionType;
   using typename BaseType::I;
+  using typename BaseType::IntersectionType;
 
   using MatrixType = M;
   using VectorType = XT::LA::vector_t<M>;

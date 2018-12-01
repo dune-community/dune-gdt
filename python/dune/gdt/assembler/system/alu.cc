@@ -11,7 +11,7 @@
 
 #if HAVE_DUNE_PYBINDXI && HAVE_DUNE_ALUGRID
 
-#include "../system.hh"
+#  include "../system.hh"
 
 
 namespace Dune {

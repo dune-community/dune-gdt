@@ -27,8 +27,8 @@ class GenericLocalUnaryElementIntegrand : public LocalUnaryElementIntegrandInter
   using BaseType = LocalUnaryElementIntegrandInterface<E, r, rC, R, F>;
 
 public:
-  using typename BaseType::LocalBasisType;
   using typename BaseType::DomainType;
+  using typename BaseType::LocalBasisType;
 
   using GenericOrderFunctionType =
       std::function<int(const LocalBasisType& /*basis*/, const XT::Common::Parameter& /*param*/)>;
@@ -43,15 +43,13 @@ public:
     : BaseType(param_type)
     , order_(order_function)
     , evaluate_(evaluate_function)
-  {
-  }
+  {}
 
   GenericLocalUnaryElementIntegrand(const ThisType& other)
     : BaseType(other.parameter_type())
     , order_(other.order_)
     , evaluate_(other.evaluate_)
-  {
-  }
+  {}
 
   std::unique_ptr<BaseType> copy() const
   {
@@ -97,15 +95,15 @@ template <class E,
           size_t a_rC = t_rC,
           class AF = TF>
 class GenericLocalBinaryElementIntegrand
-    : public LocalBinaryElementIntegrandInterface<E, t_r, t_rC, TF, F, a_r, a_rC, AF>
+  : public LocalBinaryElementIntegrandInterface<E, t_r, t_rC, TF, F, a_r, a_rC, AF>
 {
   using ThisType = GenericLocalBinaryElementIntegrand<E, t_r, t_rC, TF, F, a_r, a_rC, AF>;
   using BaseType = LocalBinaryElementIntegrandInterface<E, t_r, t_rC, TF, F, a_r, a_rC, AF>;
 
 public:
-  using typename BaseType::LocalTestBasisType;
-  using typename BaseType::LocalAnsatzBasisType;
   using typename BaseType::DomainType;
+  using typename BaseType::LocalAnsatzBasisType;
+  using typename BaseType::LocalTestBasisType;
 
   using GenericOrderFunctionType = std::function<int(const LocalTestBasisType& /*test_basis*/,
                                                      const LocalAnsatzBasisType& /*ansatz_basis*/,
@@ -122,15 +120,13 @@ public:
     : BaseType(param_type)
     , order_(order_function)
     , evaluate_(evaluate_function)
-  {
-  }
+  {}
 
   GenericLocalBinaryElementIntegrand(const ThisType& other)
     : BaseType(other.parameter_type())
     , order_(other.order_)
     , evaluate_(other.evaluate_)
-  {
-  }
+  {}
 
   std::unique_ptr<BaseType> copy() const
   {
@@ -163,10 +159,8 @@ public:
     DUNE_THROW_IF(result.rows() < rows || result.cols() < cols,
                   Exceptions::integrand_error,
                   "test_basis.size(param) = " << rows << "\n   result.rows() = " << result.rows()
-                                              << "ansatz_basis.size(param) = "
-                                              << cols
-                                              << "\n   result.cols() = "
-                                              << result.cols());
+                                              << "ansatz_basis.size(param) = " << cols
+                                              << "\n   result.cols() = " << result.cols());
   } // ... evaluate(...)
 
 private:
@@ -176,6 +170,6 @@ private:
 
 
 } // namespace GDT
-} // namespace Dun
+} // namespace Dune
 
 #endif // DUNE_GDT_LOCAL_INTEGRANDS_GENERIC_HH

@@ -12,21 +12,21 @@
 // TODO: python bindings need to be updated to the new-master
 #if 0 // HAVE_DUNE_PYBINDXI
 
-#include <dune/pybindxi/pybind11.h>
+#  include <dune/pybindxi/pybind11.h>
 
-#include <python/dune/xt/common/bindings.hh>
-#include <dune/xt/grid/dd/subdomains/grid.hh>
-#include <python/dune/xt/grid/grids.bindings.hh>
-#include <dune/xt/grid/layers.hh>
-#include <dune/xt/la/type_traits.hh>
-#include <python/dune/xt/la/container.bindings.hh>
+#  include <python/dune/xt/common/bindings.hh>
+#  include <dune/xt/grid/dd/subdomains/grid.hh>
+#  include <python/dune/xt/grid/grids.bindings.hh>
+#  include <dune/xt/grid/layers.hh>
+#  include <dune/xt/la/type_traits.hh>
+#  include <python/dune/xt/la/container.bindings.hh>
 
-#include <dune/gdt/spaces/bindings.hh>
-#include <dune/gdt/playground/spaces/block.hh>
-#include <dune/gdt/playground/spaces/restricted.hh>
-#include <dune/gdt/type_traits.hh>
+#  include <dune/gdt/spaces/bindings.hh>
+#  include <dune/gdt/playground/spaces/block.hh>
+#  include <dune/gdt/playground/spaces/restricted.hh>
+#  include <dune/gdt/type_traits.hh>
 
-#include <dune/gdt/discretefunction/default.hh>
+#  include <dune/gdt/discretefunction/default.hh>
 
 namespace Dune {
 namespace GDT {
@@ -255,71 +255,71 @@ public:
 // begin: this is what we need for the .so
 
 
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC, _la)               \
-  Dune::GDT::bindings::                                                                                                \
-      DiscreteFunction<Dune::GDT::SpaceProvider<_G,                                                                    \
-                                                Dune::XT::Grid::Layers::_g_layer,                                      \
-                                                Dune::GDT::SpaceType::_s_type,                                         \
-                                                Dune::GDT::Backends::_s_backend,                                       \
-                                                _p,                                                                    \
-                                                double,                                                                \
-                                                _r,                                                                    \
-                                                _rC>,                                                                  \
-                       typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType>::bind(_m)
+#  define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC, _la)             \
+    Dune::GDT::bindings::DiscreteFunction<                                                                             \
+        Dune::GDT::SpaceProvider<_G,                                                                                   \
+                                 Dune::XT::Grid::Layers::_g_layer,                                                     \
+                                 Dune::GDT::SpaceType::_s_type,                                                        \
+                                 Dune::GDT::Backends::_s_backend,                                                      \
+                                 _p,                                                                                   \
+                                 double,                                                                               \
+                                 _r,                                                                                   \
+                                 _rC>,                                                                                 \
+        typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType>::bind(_m)
 
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_COMMON(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC)             \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC, common_dense)
+#  define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_COMMON(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC)           \
+    _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC, common_dense)
 
-#if HAVE_EIGEN
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_EIGEN(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC)              \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC, eigen_dense)
-#else
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_EIGEN(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC)
-#endif
+#  if HAVE_EIGEN
+#    define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_EIGEN(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC)          \
+      _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC, eigen_dense)
+#  else
+#    define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_EIGEN(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC)
+#  endif
 
-#if HAVE_DUNE_ISTL
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ISTL(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC)               \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC, istl_dense)
-#else
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ISTL(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC)
-#endif
+#  if HAVE_DUNE_ISTL
+#    define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ISTL(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC)           \
+      _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC, istl_dense)
+#  else
+#    define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ISTL(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC)
+#  endif
 
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_LA(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC)             \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_COMMON(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC);                  \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_EIGEN(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC);                   \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ISTL(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC)
+#  define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_LA(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC)           \
+    _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_COMMON(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC);                \
+    _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_EIGEN(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC);                 \
+    _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ISTL(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC)
 
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_YASP(_m, _g_layer, _s_type, _s_backend, _p, _r, _rC)                   \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_LA(                                                                      \
-      _m, YASP_1D_EQUIDISTANT_OFFSET, _g_layer, _s_type, _s_backend, _p, _r, _rC);                                     \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_LA(                                                                      \
-      _m, YASP_2D_EQUIDISTANT_OFFSET, _g_layer, _s_type, _s_backend, _p, _r, _rC)
+#  define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_YASP(_m, _g_layer, _s_type, _s_backend, _p, _r, _rC)                 \
+    _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_LA(                                                                    \
+        _m, YASP_1D_EQUIDISTANT_OFFSET, _g_layer, _s_type, _s_backend, _p, _r, _rC);                                   \
+    _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_LA(                                                                    \
+        _m, YASP_2D_EQUIDISTANT_OFFSET, _g_layer, _s_type, _s_backend, _p, _r, _rC)
 
-#if HAVE_DUNE_ALUGRID
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALU(_m, _g_layer, _s_type, _s_backend, _p, _r, _rC)                    \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_LA(                                                                      \
-      _m, ALU_2D_SIMPLEX_CONFORMING, _g_layer, _s_type, _s_backend, _p, _r, _rC)
-#else
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALU(_m, _g_layer, _s_type, _s_backend, _p, _r, _rC)
-#endif
+#  if HAVE_DUNE_ALUGRID
+#    define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALU(_m, _g_layer, _s_type, _s_backend, _p, _r, _rC)                \
+      _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_LA(                                                                  \
+          _m, ALU_2D_SIMPLEX_CONFORMING, _g_layer, _s_type, _s_backend, _p, _r, _rC)
+#  else
+#    define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALU(_m, _g_layer, _s_type, _s_backend, _p, _r, _rC)
+#  endif
 
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, _g_layer, _s_type, _s_backend, _p, _r, _rC)              \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_YASP(_m, _g_layer, _s_type, _s_backend, _p, _r, _rC);                        \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALU(_m, _g_layer, _s_type, _s_backend, _p, _r, _rC)
+#  define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, _g_layer, _s_type, _s_backend, _p, _r, _rC)            \
+    _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_YASP(_m, _g_layer, _s_type, _s_backend, _p, _r, _rC);                      \
+    _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALU(_m, _g_layer, _s_type, _s_backend, _p, _r, _rC)
 
-#define DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(_m)                                                                     \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, leaf, dg, gdt, 1, 1, 1);                                       \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, level, dg, gdt, 1, 1, 1);                                      \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, leaf, fv, gdt, 0, 1, 1);                                       \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, level, fv, gdt, 0, 1, 1);                                      \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, leaf, cg, gdt, 1, 1, 1);                                       \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, level, cg, gdt, 1, 1, 1);
+#  define DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(_m)                                                                   \
+    _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, leaf, dg, gdt, 1, 1, 1);                                     \
+    _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, level, dg, gdt, 1, 1, 1);                                    \
+    _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, leaf, fv, gdt, 0, 1, 1);                                     \
+    _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, level, fv, gdt, 0, 1, 1);                                    \
+    _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, leaf, cg, gdt, 1, 1, 1);                                     \
+    _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, level, cg, gdt, 1, 1, 1);
 
-#define DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_DD(_m)                                                                  \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, dd_subdomain, dg, gdt, 1, 1, 1);                               \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, dd_subdomain, block_dg, gdt, 1, 1, 1);                         \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, dd_subdomain, cg, gdt, 1, 1, 1);                               \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, dd_subdomain, block_cg, gdt, 1, 1, 1);
+#  define DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_DD(_m)                                                                \
+    _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, dd_subdomain, dg, gdt, 1, 1, 1);                             \
+    _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, dd_subdomain, block_dg, gdt, 1, 1, 1);                       \
+    _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, dd_subdomain, cg, gdt, 1, 1, 1);                             \
+    _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, dd_subdomain, block_cg, gdt, 1, 1, 1);
 
 // end: this is what we need for the .so
 

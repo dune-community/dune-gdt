@@ -34,8 +34,8 @@ namespace GDT {
  */
 template <class GridView, size_t r = 1, size_t rC = 1, class R = double, class F = double>
 class LocalElementFunctionalAccumulator
-    : public XT::Grid::ElementFunctor<GridView>,
-      public XT::Common::ThreadResultPropagator<LocalElementFunctionalAccumulator<GridView, r, rC, R, F>, F>
+  : public XT::Grid::ElementFunctor<GridView>
+  , public XT::Common::ThreadResultPropagator<LocalElementFunctionalAccumulator<GridView, r, rC, R, F>, F>
 {
   static_assert(XT::Grid::is_view<GridView>::value, "");
 
@@ -63,8 +63,7 @@ public:
     , result_(result)
     , param_(param)
     , local_source_(source_.local_function())
-  {
-  }
+  {}
 
   LocalElementFunctionalAccumulator(const ThisType& other)
     : BaseType(other)
@@ -74,8 +73,7 @@ public:
     , result_(other.result_)
     , param_(other.param_)
     , local_source_(source_.local_function())
-  {
-  }
+  {}
 
   BaseType* copy() override final
   {

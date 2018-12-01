@@ -51,12 +51,12 @@ class ContinuousLagrangeSpace : public SpaceInterface<GV, 1, 1, R>
   using BaseType = SpaceInterface<GV, 1, 1, R>;
 
 public:
-  using typename BaseType::D;
   using BaseType::d;
-  using typename BaseType::GridViewType;
-  using typename BaseType::GlobalBasisType;
-  using typename BaseType::MapperType;
+  using typename BaseType::D;
   using typename BaseType::FiniteElementType;
+  using typename BaseType::GlobalBasisType;
+  using typename BaseType::GridViewType;
+  using typename BaseType::MapperType;
 
 private:
   using MapperImplementation = ContinuousMapper<GridViewType, FiniteElementType>;
@@ -112,8 +112,7 @@ public:
     if (finite_element_search_result == finite_elements_->end())
       DUNE_THROW(XT::Common::Exceptions::internal_error,
                  "This must not happen, the grid layer did not report all geometry types!"
-                     << "\n   entity.geometry().type() = "
-                     << geometry_type);
+                     << "\n   entity.geometry().type() = " << geometry_type);
     return *finite_element_search_result->second;
   }
 

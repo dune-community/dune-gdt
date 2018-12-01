@@ -33,13 +33,13 @@ class DefaultGlobalBasis : public GlobalBasisInterface<GV, r, rC, R>
   using BaseType = GlobalBasisInterface<GV, r, rC, R>;
 
 public:
-  using typename BaseType::E;
-  using typename BaseType::D;
   using BaseType::d;
-  using typename BaseType::GridViewType;
+  using typename BaseType::D;
+  using typename BaseType::E;
   using typename BaseType::ElementType;
-  using typename BaseType::ShapeFunctionsType;
+  using typename BaseType::GridViewType;
   using typename BaseType::LocalizedBasisType;
+  using typename BaseType::ShapeFunctionsType;
   using FiniteElementType = LocalFiniteElementInterface<D, d, R, r, rC>;
 
   DefaultGlobalBasis(const ThisType&) = default;
@@ -69,8 +69,7 @@ public:
     if (finite_element_search_result == finite_elements_->end())
       DUNE_THROW(XT::Common::Exceptions::internal_error,
                  "This must not happen, the grid layer did not report all geometry types!"
-                     << "\n   geometry_type = "
-                     << geometry_type);
+                     << "\n   geometry_type = " << geometry_type);
     return finite_element_search_result->second->basis();
   }
 
@@ -93,17 +92,16 @@ private:
     using BaseType = XT::Functions::ElementFunctionSetInterface<E, r, rC, R>;
 
   public:
-    using typename BaseType::ElementType;
-    using typename BaseType::DomainType;
-    using typename BaseType::RangeType;
     using typename BaseType::DerivativeRangeType;
+    using typename BaseType::DomainType;
+    using typename BaseType::ElementType;
+    using typename BaseType::RangeType;
 
     LocalizedDefaultGlobalBasis(const DefaultGlobalBasis<GV, r, rC, R>& self)
       : BaseType()
       , self_(self)
       , shape_functions_(nullptr)
-    {
-    }
+    {}
 
     LocalizedDefaultGlobalBasis(const ThisType&) = delete;
     LocalizedDefaultGlobalBasis(ThisType&&) = default;

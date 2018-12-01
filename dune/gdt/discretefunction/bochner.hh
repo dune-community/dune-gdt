@@ -53,8 +53,7 @@ public:
     , dof_vectors_(new XT::LA::ListVectorArray<V>(bochner_space_.spatial_space().mapper().size(),
                                                   bochner_space_.temporal_space().mapper().size()))
     , name_(nm.empty() ? "DiscreteBochnerFunction" : nm)
-  {
-  }
+  {}
 
   const BochnerSpace<GV, r, rC, R>& space() const
   {

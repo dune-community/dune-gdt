@@ -13,25 +13,25 @@
 
 #if HAVE_DUNE_PYBINDXI
 
-#include <dune/common/parallel/mpihelper.hh>
+#  include <dune/common/parallel/mpihelper.hh>
 
-#include <dune/pybindxi/pybind11.h>
-#include <dune/pybindxi/stl.h>
+#  include <dune/pybindxi/pybind11.h>
+#  include <dune/pybindxi/stl.h>
 
-#include <python/dune/xt/common/bindings.hh>
-#include <python/dune/gdt/shared.hh>
-#include <python/dune/xt/grid/grids.bindings.hh>
-#include <dune/xt/grid/layers.hh>
+#  include <python/dune/xt/common/bindings.hh>
+#  include <python/dune/gdt/shared.hh>
+#  include <python/dune/xt/grid/grids.bindings.hh>
+#  include <dune/xt/grid/layers.hh>
 
-#include <python/dune/gdt/operators/weighted-l2.hh>
+#  include <python/dune/gdt/operators/weighted-l2.hh>
 
 
 PYBIND11_MODULE(__operators_weighted_l2, m)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
-  using Dune::XT::Grid::Layers;
   using Dune::XT::Grid::Backends;
+  using Dune::XT::Grid::Layers;
 
   Dune::XT::Common::bindings::addbind_exceptions(m);
 
@@ -42,12 +42,12 @@ PYBIND11_MODULE(__operators_weighted_l2, m)
   py::module::import("dune.gdt.__spaces");
   py::module::import("dune.gdt.__discretefunction");
 
-#if HAVE_DUNE_ALUGRID
+#  if HAVE_DUNE_ALUGRID
   Dune::GDT::bindings::WeightedL2LocalizableProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::view>::bind(m);
   Dune::GDT::bindings::WeightedL2LocalizableProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::level, Backends::view>::bind(m);
   Dune::GDT::bindings::WeightedL2LocalizableProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::view>::
       bind(m);
-#endif // HAVE_DUNE_ALUGRID
+#  endif // HAVE_DUNE_ALUGRID
 
   add_initialization(m, "dune.gdt.operators.elliptic");
 }

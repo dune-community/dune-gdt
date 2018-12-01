@@ -174,8 +174,7 @@ XT::LA::SparsityPatternDefault make_sparsity_pattern(const SpaceInterface<TGV, t
   else
     DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
                "Unknown Stencil encountered (see below), add an appropriate method!"
-                   << "\n   stencil = "
-                   << stencil);
+                   << "\n   stencil = " << stencil);
 } // ... make_sparsity_pattern(...)
 
 

@@ -12,15 +12,15 @@
 // TODO: python bindings need to be updated to the new-master
 #if 0 // HAVE_DUNE_PYBINDXI
 
-#include <dune/pybindxi/pybind11.h>
+#  include <dune/pybindxi/pybind11.h>
 
-#include <python/dune/xt/grid/grids.bindings.hh>
-#include <python/dune/xt/la/container.bindings.hh>
+#  include <python/dune/xt/grid/grids.bindings.hh>
+#  include <python/dune/xt/la/container.bindings.hh>
 
-#include <dune/gdt/spaces/bindings.hh>
-#include <dune/gdt/type_traits.hh>
+#  include <dune/gdt/spaces/bindings.hh>
+#  include <dune/gdt/type_traits.hh>
 
-#include <dune/gdt/projections/dirichlet.hh>
+#  include <dune/gdt/projections/dirichlet.hh>
 
 namespace Dune {
 namespace GDT {
@@ -82,72 +82,66 @@ public:
 
 // begin: this is what we need for the .so
 
-#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m, _GRID, _layer, _backend, _r, _rC, _la)                                \
-  Dune::GDT::bindings::                                                                                                \
-      DirichletProjectionLocalizableOperator<Dune::GDT::CgSpaceProvider<_GRID,                                         \
-                                                                        Dune::XT::Grid::Layers::_layer,                \
-                                                                        Dune::GDT::Backends::_backend,                 \
-                                                                        1,                                             \
-                                                                        double,                                        \
-                                                                        _r,                                            \
-                                                                        _rC>,                                          \
-                                             typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::   \
-                                                 VectorType>::bind(_m)
+#  define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m, _GRID, _layer, _backend, _r, _rC, _la)                              \
+    Dune::GDT::bindings::DirichletProjectionLocalizableOperator<                                                       \
+        Dune::GDT::                                                                                                    \
+            CgSpaceProvider<_GRID, Dune::XT::Grid::Layers::_layer, Dune::GDT::Backends::_backend, 1, double, _r, _rC>, \
+        typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType>::bind(_m)
 
 //#if HAVE_ALBERTA
 //#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ALBERTA(_m, _layer, _backend, _la)                                      \
 //  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m, ALBERTA_2D, _layer, _backend, 1, 1, _la)
 //#else
-#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ALBERTA(_m, _layer, _backend, _la)
+#  define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ALBERTA(_m, _layer, _backend, _la)
 //#endif
 
-#if HAVE_DUNE_ALUGRID
-#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ALU(_m, _layer, _backend, _la)                                            \
-  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m, ALU_2D_SIMPLEX_CONFORMING, _layer, _backend, 1, 1, _la)
-#else
-#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ALU(_m, _layer, _backend, _la)
-#endif
+#  if HAVE_DUNE_ALUGRID
+#    define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ALU(_m, _layer, _backend, _la)                                        \
+      _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m, ALU_2D_SIMPLEX_CONFORMING, _layer, _backend, 1, 1, _la)
+#  else
+#    define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ALU(_m, _layer, _backend, _la)
+#  endif
 
 //#if HAVE_DUNE_UGGRID || HAVE_UG
 //#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_UG(_m, _layer, _backend, _la)                                           \
 //  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m, UG_2D, _layer, _backend, 1, 1, _la)
 //#else
-#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_UG(_m, _layer, _backend, _la)
+#  define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_UG(_m, _layer, _backend, _la)
 //#endif
 
-#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_YASP(_m, _layer, _backend, _la)                                           \
-  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m, YASP_1D_EQUIDISTANT_OFFSET, _layer, _backend, 1, 1, _la);                   \
-  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, _backend, 1, 1, _la)
+#  define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_YASP(_m, _layer, _backend, _la)                                         \
+    _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m, YASP_1D_EQUIDISTANT_OFFSET, _layer, _backend, 1, 1, _la);                 \
+    _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, _backend, 1, 1, _la)
 
-#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_GDT(_m, _la)                                                              \
-  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ALBERTA(_m, leaf, gdt, _la);                                                    \
-  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ALU(_m, leaf, gdt, _la);                                                        \
-  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_UG(_m, leaf, gdt, _la);                                                         \
-  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_YASP(_m, leaf, gdt, _la)
+#  define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_GDT(_m, _la)                                                            \
+    _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ALBERTA(_m, leaf, gdt, _la);                                                  \
+    _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ALU(_m, leaf, gdt, _la);                                                      \
+    _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_UG(_m, leaf, gdt, _la);                                                       \
+    _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_YASP(_m, leaf, gdt, _la)
 
 
-#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_BACKENDS(_m, _la) _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_GDT(_m, _la);
+#  define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_BACKENDS(_m, _la) _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_GDT(_m, _la);
 
-#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_COMMON(_m)
+#  define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_COMMON(_m)
 //_DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_BACKENDS(_m, common_dense)
 
 //#if HAVE_EIGEN
 //#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_EIGEN(_m) _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_BACKENDS(_m, eigen_dense)
 //#else
-#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_EIGEN(_m)
+#  define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_EIGEN(_m)
 //#endif
 
-#if HAVE_DUNE_ISTL
-#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ISTL(_m) _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_BACKENDS(_m, istl_dense)
-#else
-#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ISTL(_m)
-#endif
+#  if HAVE_DUNE_ISTL
+#    define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ISTL(_m) _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_BACKENDS(_m, istl_dense)
+#  else
+#    define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ISTL(_m)
+#  endif
 
 
-#define DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m)                                                                        \
-  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_COMMON(_m);                                                                     \
-  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_EIGEN(_m);                                                                      \
-  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ISTL(_m)
+#  define DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m)                                                                      \
+    _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_COMMON(_m);                                                                   \
+    _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_EIGEN(_m);                                                                    \
+    _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ISTL(_m)
 
 // end: this is what we need for the .so
 

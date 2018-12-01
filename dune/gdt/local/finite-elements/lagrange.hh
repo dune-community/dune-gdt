@@ -37,8 +37,8 @@ namespace GDT {
  */
 template <class D, size_t d, class R>
 class LocalZeroOrderLagrangeFiniteElement
-    : XT::Common::ConstStorageProvider<LocalFiniteElementWrapper<P0LocalFiniteElement<D, R, d>, D, d, R, 1>>,
-      public LocalFiniteElementDefault<D, d, R, 1>
+  : XT::Common::ConstStorageProvider<LocalFiniteElementWrapper<P0LocalFiniteElement<D, R, d>, D, d, R, 1>>
+  , public LocalFiniteElementDefault<D, d, R, 1>
 {
   using ThisType = LocalZeroOrderLagrangeFiniteElement<D, d, R>;
   using Implementation = P0LocalFiniteElement<D, R, d>;
@@ -54,8 +54,7 @@ public:
                Storage::access().coefficients().copy(),
                Storage::access().interpolation().copy(),
                {ReferenceElements<D, d>::general(geometry_type).position(0, 0)})
-  {
-  }
+  {}
 }; // class LocalZeroOrderLagrangeFiniteElement
 
 

@@ -34,14 +34,11 @@ public:
   using typename BaseType::PhysicalDomainType;
   using typename BaseType::StateRangeType;
 
-  using FluxEigenDecompositionLambdaType =
-      std::function<std::tuple<std::vector<XT::Common::real_t<R>>,
-                               XT::Common::FieldMatrix<XT::Common::real_t<R>, m, m>,
-                               XT::Common::FieldMatrix<XT::Common::real_t<R>, m, m>>(
-          const FluxType&,
-          const FieldVector<R, m>&,
-          const FieldVector<double, d>&,
-          const XT::Common::Parameter& param)>;
+  using FluxEigenDecompositionLambdaType = std::function<std::tuple<
+      std::vector<XT::Common::real_t<R>>,
+      XT::Common::FieldMatrix<XT::Common::real_t<R>, m, m>,
+      XT::Common::FieldMatrix<XT::Common::real_t<R>, m, m>>(
+      const FluxType&, const FieldVector<R, m>&, const FieldVector<double, d>&, const XT::Common::Parameter& param)>;
 
   NumericalVijayasundaramFlux(const FluxType& flx)
     : BaseType(flx)
@@ -54,14 +51,12 @@ public:
       return std::make_tuple(
           eigensolver.real_eigenvalues(), eigensolver.real_eigenvectors(), eigensolver.real_eigenvectors_inverse());
     })
-  {
-  }
+  {}
 
   NumericalVijayasundaramFlux(const FluxType& flx, FluxEigenDecompositionLambdaType flux_eigen_decomposition)
     : BaseType(flx)
     , flux_eigen_decomposition_(flux_eigen_decomposition)
-  {
-  }
+  {}
 
   std::unique_ptr<BaseType> copy() const override final
   {

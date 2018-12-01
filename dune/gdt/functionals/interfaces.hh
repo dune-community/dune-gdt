@@ -72,9 +72,7 @@ public:
    *
    * \note In general, you have to call this method before calling apply!
    */
-  virtual void assemble(const bool /*use_tbb*/ = 0)
-  {
-  }
+  virtual void assemble(const bool /*use_tbb*/ = 0) {}
 }; // class FunctionalInterface
 
 

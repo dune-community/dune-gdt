@@ -61,10 +61,10 @@ public:
   using BoundaryTreatmentByCustomExtrapolationOperatorType =
       LocalAdvectionDgBoundaryTreatmentByCustomExtrapolationOperator<I, V, SGV, m, F, F, RGV, V>;
 
+  using typename BaseType::RangeFunctionType;
+  using typename BaseType::RangeSpaceType;
   using typename BaseType::SourceSpaceType;
   using typename BaseType::VectorType;
-  using typename BaseType::RangeSpaceType;
-  using typename BaseType::RangeFunctionType;
 
   AdvectionDgOperator(
       const SGV& assembly_grid_view,
@@ -78,8 +78,7 @@ public:
     , source_space_(source_space)
     , range_space_(range_space)
     , periodicity_exception_(periodicity_exception.copy())
-  {
-  }
+  {}
 
   AdvectionDgOperator(ThisType&& source) = default;
 
@@ -247,11 +246,11 @@ class AdvectionDgArtificialViscosityOperator : public AdvectionDgOperator<M, SGV
   static constexpr size_t d = BaseType::d;
 
 public:
-  using typename BaseType::NumericalFluxType;
-  using typename BaseType::SourceSpaceType;
-  using typename BaseType::RangeSpaceType;
-  using typename BaseType::VectorType;
   using typename BaseType::F;
+  using typename BaseType::NumericalFluxType;
+  using typename BaseType::RangeSpaceType;
+  using typename BaseType::SourceSpaceType;
+  using typename BaseType::VectorType;
 
   AdvectionDgArtificialViscosityOperator(
       const SGV& assembly_grid_view,
@@ -266,8 +265,7 @@ public:
     , jump_indicator_component_(jump_indicator_component)
     , nu_1_(nu_1)
     , alpha_1_(alpha_1)
-  {
-  }
+  {}
 
   AdvectionDgArtificialViscosityOperator(ThisType&& source) = default;
 

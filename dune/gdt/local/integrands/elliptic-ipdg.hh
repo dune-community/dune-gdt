@@ -151,12 +151,12 @@ static inline double inner_sigma(const size_t pol_order)
     sigma *= 38.0;
   else {
 #ifndef NDEBUG
-#ifndef DUNE_GDT_DISABLE_WARNINGS
+#  ifndef DUNE_GDT_DISABLE_WARNINGS
     Dune::XT::Common::TimedLogger().get("gdt.local.integrands.elliptic-ipdg.inner").warn()
         << "a polynomial order of " << pol_order << " is untested!\n"
         << "  #define DUNE_GDT_DISABLE_WARNINGS to statically disable this warning\n"
         << "  or dynamically disable warnings of the TimedLogger() instance!" << std::endl;
-#endif
+#  endif
 #endif
     sigma *= 50.0;
   }
@@ -178,12 +178,12 @@ static inline double boundary_sigma(const size_t pol_order)
     sigma *= 74.0;
   else {
 #ifndef NDEBUG
-#ifndef DUNE_GDT_DISABLE_WARNINGS
+#  ifndef DUNE_GDT_DISABLE_WARNINGS
     Dune::XT::Common::TimedLogger().get("gdt.local.integrands.elliptic-ipdg.boundary").warn()
         << "a polynomial order of " << pol_order << " is untested!\n"
         << "  #define DUNE_GDT_DISABLE_WARNINGS to statically disable this warning\n"
         << "  or dynamically disable warnings of the TimedLogger() instance!" << std::endl;
-#endif
+#  endif
 #endif
     sigma *= 100.0;
   }
@@ -204,12 +204,12 @@ class Inner : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F
   using ThisType = Inner<I, F, method>;
 
 public:
-  using typename BaseType::IntersectionType;
-  using typename BaseType::E;
   using BaseType::d;
-  using typename BaseType::LocalTestBasisType;
-  using typename BaseType::LocalAnsatzBasisType;
   using typename BaseType::DomainType;
+  using typename BaseType::E;
+  using typename BaseType::IntersectionType;
+  using typename BaseType::LocalAnsatzBasisType;
+  using typename BaseType::LocalTestBasisType;
 
   using DiffusionFactorType = XT::Functions::GridFunctionInterface<E, 1, 1, F>;
   using DiffusionTensorType = XT::Functions::GridFunctionInterface<E, d, d, F>;
@@ -225,8 +225,7 @@ public:
     , local_diffusion_factor_out_(diffusion_factor_.local_function())
     , local_diffusion_tensor_in_(diffusion_tensor_.local_function())
     , local_diffusion_tensor_out_(diffusion_tensor_.local_function())
-  {
-  }
+  {}
 
   Inner(const ThisType& other)
     : BaseType(other.parameter_type())
@@ -237,8 +236,7 @@ public:
     , local_diffusion_factor_out_(diffusion_factor_.local_function())
     , local_diffusion_tensor_in_(diffusion_tensor_.local_function())
     , local_diffusion_tensor_out_(diffusion_tensor_.local_function())
-  {
-  }
+  {}
 
   Inner(ThisType&& source) = default;
 
@@ -699,12 +697,12 @@ class DirichletBoundaryLhs : public LocalQuaternaryIntersectionIntegrandInterfac
   using ThisType = DirichletBoundaryLhs<I, F, method>;
 
 public:
-  using typename BaseType::IntersectionType;
-  using typename BaseType::E;
   using BaseType::d;
-  using typename BaseType::LocalTestBasisType;
-  using typename BaseType::LocalAnsatzBasisType;
   using typename BaseType::DomainType;
+  using typename BaseType::E;
+  using typename BaseType::IntersectionType;
+  using typename BaseType::LocalAnsatzBasisType;
+  using typename BaseType::LocalTestBasisType;
 
   using DiffusionFactorType = XT::Functions::GridFunctionInterface<E, 1, 1, F>;
   using DiffusionTensorType = XT::Functions::GridFunctionInterface<E, d, d, F>;
@@ -718,8 +716,7 @@ public:
     , diffusion_tensor_(diffusion_tensor)
     , local_diffusion_factor_(diffusion_factor_.local_function())
     , local_diffusion_tensor_(diffusion_tensor_.local_function())
-  {
-  }
+  {}
 
   DirichletBoundaryLhs(const ThisType& other)
     : BaseType(other.parameter_type())
@@ -728,8 +725,7 @@ public:
     , diffusion_tensor_(other.diffusion_tensor_)
     , local_diffusion_factor_(diffusion_factor_.local_function())
     , local_diffusion_tensor_(diffusion_tensor_.local_function())
-  {
-  }
+  {}
 
   DirichletBoundaryLhs(ThisType&& source) = default;
 
@@ -796,13 +792,11 @@ private:
 
   template <class Anything>
   struct IPDG<Method::swipdg_affine_factor, Anything> : public IPDG<Method::swipdg, Anything>
-  {
-  };
+  {};
 
   template <class Anything>
   struct IPDG<Method::swipdg_affine_tensor, Anything> : public IPDG<Method::swipdg, Anything>
-  {
-  };
+  {};
 
   template <class Anything>
   struct IPDG<Method::sipdg, Anything>
@@ -1488,12 +1482,12 @@ class InnerOnlyPenalty : public LocalQuaternaryIntersectionIntegrandInterface<I,
   using ThisType = InnerOnlyPenalty<I, F, method>;
 
 public:
-  using typename BaseType::IntersectionType;
-  using typename BaseType::E;
   using BaseType::d;
-  using typename BaseType::LocalTestBasisType;
-  using typename BaseType::LocalAnsatzBasisType;
   using typename BaseType::DomainType;
+  using typename BaseType::E;
+  using typename BaseType::IntersectionType;
+  using typename BaseType::LocalAnsatzBasisType;
+  using typename BaseType::LocalTestBasisType;
 
   using DiffusionFactorType = XT::Functions::GridFunctionInterface<E, 1, 1, F>;
   using DiffusionTensorType = XT::Functions::GridFunctionInterface<E, d, d, F>;
@@ -1509,8 +1503,7 @@ public:
     , local_diffusion_factor_out_(diffusion_factor_.local_function())
     , local_diffusion_tensor_in_(diffusion_tensor_.local_function())
     , local_diffusion_tensor_out_(diffusion_tensor_.local_function())
-  {
-  }
+  {}
 
   InnerOnlyPenalty(const ThisType& other)
     : BaseType(other.parameter_type())
@@ -1521,8 +1514,7 @@ public:
     , local_diffusion_factor_out_(diffusion_factor_.local_function())
     , local_diffusion_tensor_in_(diffusion_tensor_.local_function())
     , local_diffusion_tensor_out_(diffusion_tensor_.local_function())
-  {
-  }
+  {}
 
   InnerOnlyPenalty(ThisType&& source) = default;
 
@@ -1940,12 +1932,12 @@ class DirichletBoundaryLhsOnlyPenalty : public LocalQuaternaryIntersectionIntegr
   using ThisType = DirichletBoundaryLhsOnlyPenalty<I, F, method>;
 
 public:
-  using typename BaseType::IntersectionType;
-  using typename BaseType::E;
   using BaseType::d;
-  using typename BaseType::LocalTestBasisType;
-  using typename BaseType::LocalAnsatzBasisType;
   using typename BaseType::DomainType;
+  using typename BaseType::E;
+  using typename BaseType::IntersectionType;
+  using typename BaseType::LocalAnsatzBasisType;
+  using typename BaseType::LocalTestBasisType;
 
   using DiffusionFactorType = XT::Functions::GridFunctionInterface<E, 1, 1, F>;
   using DiffusionTensorType = XT::Functions::GridFunctionInterface<E, d, d, F>;
@@ -1959,8 +1951,7 @@ public:
     , diffusion_tensor_(diffusion_tensor)
     , local_diffusion_factor_(diffusion_factor_.local_function())
     , local_diffusion_tensor_(diffusion_tensor_.local_function())
-  {
-  }
+  {}
 
   DirichletBoundaryLhsOnlyPenalty(const ThisType& other)
     : BaseType(other.parameter_type())
@@ -1969,8 +1960,7 @@ public:
     , diffusion_tensor_(other.diffusion_tensor_)
     , local_diffusion_factor_(diffusion_factor_.local_function())
     , local_diffusion_tensor_(diffusion_tensor_.local_function())
-  {
-  }
+  {}
 
   DirichletBoundaryLhsOnlyPenalty(ThisType&& source) = default;
 
@@ -2037,13 +2027,11 @@ private:
 
   template <class Anything>
   struct IPDG<Method::swipdg_affine_factor, Anything> : public IPDG<Method::swipdg, Anything>
-  {
-  };
+  {};
 
   template <class Anything>
   struct IPDG<Method::swipdg_affine_tensor, Anything> : public IPDG<Method::swipdg, Anything>
-  {
-  };
+  {};
 
   template <class Anything>
   struct IPDG<Method::sipdg, Anything>

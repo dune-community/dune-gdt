@@ -44,11 +44,11 @@ class LocalElementProductIntegrand : public LocalBinaryElementIntegrandInterface
   using BaseType = LocalBinaryElementIntegrandInterface<E, t_r, t_rC, TR, F, a_r, a_rC, AR>;
 
 public:
-  using typename BaseType::DomainType;
   using BaseType::d;
+  using typename BaseType::DomainType;
   using typename BaseType::ElementType;
-  using typename BaseType::LocalTestBasisType;
   using typename BaseType::LocalAnsatzBasisType;
+  using typename BaseType::LocalTestBasisType;
 
   using GridFunctionType = XT::Functions::GridFunctionInterface<E, 1, 1, F>;
 
@@ -59,8 +59,7 @@ public:
     , local_function_(inducing_function_.access().local_function())
     , test_basis_values_()
     , ansatz_basis_values_()
-  {
-  }
+  {}
 
   LocalElementProductIntegrand(const XT::Functions::FunctionInterface<d, 1, 1, F>& inducing_function)
     : BaseType()
@@ -68,8 +67,7 @@ public:
     , local_function_(inducing_function_.access().local_function())
     , test_basis_values_()
     , ansatz_basis_values_()
-  {
-  }
+  {}
 
   LocalElementProductIntegrand(const GridFunctionType& inducing_function)
     : BaseType(inducing_function.parameter_type())
@@ -77,8 +75,7 @@ public:
     , local_function_(inducing_function_.access().local_function())
     , test_basis_values_()
     , ansatz_basis_values_()
-  {
-  }
+  {}
 
   LocalElementProductIntegrand(const ThisType& other)
     : BaseType(other.parameter_type())
@@ -86,8 +83,7 @@ public:
     , local_function_(inducing_function_.access().local_function())
     , test_basis_values_()
     , ansatz_basis_values_()
-  {
-  }
+  {}
 
   LocalElementProductIntegrand(ThisType&& source) = default;
 

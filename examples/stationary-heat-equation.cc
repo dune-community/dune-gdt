@@ -69,8 +69,8 @@ int main(int argc, char* argv[])
     });
     const XT::Functions::GenericFunction<d> exact_solution(
         3,
-        /*evaluate=*/[](const auto& x,
-                        const auto& /*param*/) { return std::cos(M_PI_2 * x[0]) * std::cos(M_PI_2 * x[1]); },
+        /*evaluate=*/
+        [](const auto& x, const auto& /*param*/) { return std::cos(M_PI_2 * x[0]) * std::cos(M_PI_2 * x[1]); },
         /*name=*/"exact_solution",
         /*parameter_type=*/{},
         /*jacobian=*/

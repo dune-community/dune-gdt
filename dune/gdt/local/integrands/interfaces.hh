@@ -38,8 +38,9 @@ template <class Element,
           size_t range_dim_cols = 1,
           class RangeField = double,
           class Field = double>
-class LocalUnaryElementIntegrandInterface : public XT::Common::ParametricInterface,
-                                            public XT::Grid::ElementBoundObject<Element>
+class LocalUnaryElementIntegrandInterface
+  : public XT::Common::ParametricInterface
+  , public XT::Grid::ElementBoundObject<Element>
 {
   static_assert(XT::Grid::is_entity<Element>::value, "");
 
@@ -61,8 +62,7 @@ public:
 
   LocalUnaryElementIntegrandInterface(const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type)
-  {
-  }
+  {}
 
   virtual ~LocalUnaryElementIntegrandInterface() = default;
 
@@ -117,8 +117,9 @@ template <class Element,
           size_t ansatz_range_dim = test_range_dim,
           size_t ansatz_range_dim_cols = test_range_dim_cols,
           class AnsatzRangeField = TestRangeField>
-class LocalBinaryElementIntegrandInterface : public XT::Common::ParametricInterface,
-                                             public XT::Grid::ElementBoundObject<Element>
+class LocalBinaryElementIntegrandInterface
+  : public XT::Common::ParametricInterface
+  , public XT::Grid::ElementBoundObject<Element>
 {
   static_assert(XT::Grid::is_entity<Element>::value, "");
 
@@ -152,8 +153,7 @@ public:
 
   LocalBinaryElementIntegrandInterface(const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type)
-  {
-  }
+  {}
 
   virtual ~LocalBinaryElementIntegrandInterface() = default;
 
@@ -204,8 +204,9 @@ template <class Intersection,
           size_t ansatz_range_dim = test_range_dim,
           size_t ansatz_range_dim_cols = test_range_dim_cols,
           class AnsatzRangeField = TestRangeField>
-class LocalQuaternaryIntersectionIntegrandInterface : public XT::Common::ParametricInterface,
-                                                      public XT::Grid::IntersectionBoundObject<Intersection>
+class LocalQuaternaryIntersectionIntegrandInterface
+  : public XT::Common::ParametricInterface
+  , public XT::Grid::IntersectionBoundObject<Intersection>
 {
   static_assert(XT::Grid::is_intersection<Intersection>::value, "");
 
@@ -242,8 +243,7 @@ public:
 
   LocalQuaternaryIntersectionIntegrandInterface(const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type)
-  {
-  }
+  {}
 
   virtual ~LocalQuaternaryIntersectionIntegrandInterface() = default;
 

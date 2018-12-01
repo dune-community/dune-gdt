@@ -238,25 +238,21 @@ struct is_matrix_operator_helper
 // from #include <dune/gdt/local/finite-elements/interfaces.hh>
 template <class T>
 struct is_local_finite_element : public std::false_type
-{
-};
+{};
 
 template <class D, size_t d, class R, size_t r, size_t rC>
 struct is_local_finite_element<LocalFiniteElementInterface<D, d, R, r, rC>> : public std::true_type
-{
-};
+{};
 
 
 // from #include <dune/gdt/spaces/interface.hh>
 template <class S, bool is_candidate = internal::is_space_helper<S>::is_candidate>
 struct is_space : public std::false_type
-{
-};
+{};
 
 template <class S>
 struct is_space<S, true> : public std::is_base_of<SpaceInterface<typename S::GV, S::r, S::rC, typename S::R>, S>
-{
-};
+{};
 
 
 #if 0

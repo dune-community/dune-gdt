@@ -80,10 +80,10 @@ void interpolate(const XT::Functions::GridFunctionInterface<XT::Grid::extract_en
  * \brief Interpolates a localizable function within a given space [creates a suitable target function].
  **/
 template <class VectorType, class GV, size_t r, size_t rC, class R, class IGV>
-std::enable_if_t<XT::LA::is_vector<VectorType>::value
-                     && std::is_same<XT::Grid::extract_entity_t<GV>,
-                                     typename IGV::Grid::template Codim<0>::Entity>::value,
-                 DiscreteFunction<VectorType, GV, r, rC, R>>
+std::enable_if_t<
+    XT::LA::is_vector<VectorType>::value
+        && std::is_same<XT::Grid::extract_entity_t<GV>, typename IGV::Grid::template Codim<0>::Entity>::value,
+    DiscreteFunction<VectorType, GV, r, rC, R>>
 interpolate(const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, r, rC, R>& source,
             const SpaceInterface<GV, r, rC, R>& target_space,
             const GridView<IGV>& interpolation_grid_view)
@@ -144,10 +144,10 @@ void interpolate(const XT::Functions::FunctionInterface<GV::dimension, r, rC, R>
  * \brief Interpolates a function within a given space [creates a suitable target function].
  **/
 template <class VectorType, class GV, size_t r, size_t rC, class R, class IGV>
-std::enable_if_t<XT::LA::is_vector<VectorType>::value
-                     && std::is_same<XT::Grid::extract_entity_t<GV>,
-                                     typename IGV::Grid::template Codim<0>::Entity>::value,
-                 DiscreteFunction<VectorType, GV, r, rC, R>>
+std::enable_if_t<
+    XT::LA::is_vector<VectorType>::value
+        && std::is_same<XT::Grid::extract_entity_t<GV>, typename IGV::Grid::template Codim<0>::Entity>::value,
+    DiscreteFunction<VectorType, GV, r, rC, R>>
 interpolate(const XT::Functions::FunctionInterface<GridView<IGV>::dimension, r, rC, R>& source,
             const SpaceInterface<GV, r, rC, R>& target_space,
             const GridView<IGV>& interpolation_grid_view)
@@ -215,10 +215,10 @@ void interpolate(const int source_order,
  *        function].
  **/
 template <class VectorType, class GV, size_t r, size_t rC, class R, class IGV>
-std::enable_if_t<XT::LA::is_vector<VectorType>::value
-                     && std::is_same<XT::Grid::extract_entity_t<GV>,
-                                     typename IGV::Grid::template Codim<0>::Entity>::value,
-                 DiscreteFunction<VectorType, GV, r, rC, R>>
+std::enable_if_t<
+    XT::LA::is_vector<VectorType>::value
+        && std::is_same<XT::Grid::extract_entity_t<GV>, typename IGV::Grid::template Codim<0>::Entity>::value,
+    DiscreteFunction<VectorType, GV, r, rC, R>>
 interpolate(
     const int source_order,
     const std::function<typename XT::Functions::GenericFunction<GridView<IGV>::dimension, r, rC, R>::RangeReturnType(

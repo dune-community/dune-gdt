@@ -45,8 +45,7 @@ struct LinearTransportProblem
            {},
            [&](const auto& /*u*/, const auto& /*param*/) { return direction; })
     , T_end(1.)
-  {
-  }
+  {}
 
   XT::Grid::GridProvider<G> make_initial_grid() const
   {
@@ -71,19 +70,20 @@ struct LinearTransportProblem
 
 
 template <class G>
-class LinearTransportTest : XT::Common::ConstStorageProvider<LinearTransportProblem<G>>,
-                            public InstationaryNonconformingHyperbolicEocStudy<G, 1>
+class LinearTransportTest
+  : XT::Common::ConstStorageProvider<LinearTransportProblem<G>>
+  , public InstationaryNonconformingHyperbolicEocStudy<G, 1>
 {
   using Problem = XT::Common::ConstStorageProvider<LinearTransportProblem<G>>;
   using BaseType = InstationaryNonconformingHyperbolicEocStudy<G, 1>;
 
 protected:
   using BaseType::d;
-  using typename BaseType::F;
+  using typename BaseType::BS;
   using typename BaseType::DF;
+  using typename BaseType::F;
   using typename BaseType::GP;
   using typename BaseType::S;
-  using typename BaseType::BS;
   using typename BaseType::V;
 
 public:
@@ -100,8 +100,7 @@ public:
                  }
                })
     , visualization_steps_(0)
-  {
-  }
+  {}
 
 protected:
   const F& flux() const override
@@ -171,8 +170,7 @@ protected:
 
   LinearTransportExplicitTest()
     : BaseType("explicit/fixed")
-  {
-  }
+  {}
 
   XT::LA::ListVectorArray<V> solve(const S& space, const double T_end) override
   {
@@ -197,8 +195,7 @@ protected:
   LinearTransportImplicitTest()
     : BaseType("implicit/fixed")
     , dt_factor_(1.)
-  {
-  }
+  {}
 
   XT::LA::ListVectorArray<V> solve(const S& space, const double T_end) override final
   {

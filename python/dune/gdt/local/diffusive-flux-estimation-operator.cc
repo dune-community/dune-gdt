@@ -11,15 +11,15 @@
 
 #if HAVE_DUNE_PYBINDXI
 
-#include <dune/common/parallel/mpihelper.hh>
+#  include <dune/common/parallel/mpihelper.hh>
 
-#include <dune/pybindxi/pybind11.h>
-#include <dune/pybindxi/stl.h>
+#  include <dune/pybindxi/pybind11.h>
+#  include <dune/pybindxi/stl.h>
 
-#include <python/dune/xt/common/bindings.hh>
-#include <python/dune/gdt/shared.hh>
+#  include <python/dune/xt/common/bindings.hh>
+#  include <python/dune/gdt/shared.hh>
 
-#include "diffusive-flux-estimation-operator.hh"
+#  include "diffusive-flux-estimation-operator.hh"
 
 
 PYBIND11_MODULE(__local_diffusive_flux_estimation_operator, m)

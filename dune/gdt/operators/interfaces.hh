@@ -112,14 +112,15 @@ template <class Matrix,
           size_t range_dim = source_dim,
           size_t range_dim_cols = source_dim_cols,
           class RangeGridView = SourceGridView>
-class OperatorInterface : internal::AssertArgumentsOfOperatorInterface<Matrix,
-                                                                       SourceGridView,
-                                                                       source_dim,
-                                                                       source_dim_cols,
-                                                                       range_dim,
-                                                                       range_dim_cols,
-                                                                       RangeGridView>,
-                          public XT::Common::ParametricInterface
+class OperatorInterface
+  : internal::AssertArgumentsOfOperatorInterface<Matrix,
+                                                 SourceGridView,
+                                                 source_dim,
+                                                 source_dim_cols,
+                                                 range_dim,
+                                                 range_dim_cols,
+                                                 RangeGridView>
+  , public XT::Common::ParametricInterface
 {
 public:
   using MatrixType = Matrix;
@@ -153,8 +154,7 @@ public:
 
   explicit OperatorInterface(const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type)
-  {
-  }
+  {}
 
   virtual ~OperatorInterface() = default;
 
@@ -448,13 +448,11 @@ invert_options(some_type).get<std::string>("type") == some_type
         auto candidate_res = 2 * res; // any number such that we enter the while loop at least once
         double lambda = 1;
         while (!(candidate_res / res < 1)) {
-          DUNE_THROW_IF(
-              k >= max_dampening_iter,
-              Exceptions::operator_error,
-              "max iterations reached when trying to compute automatic dampening!\n|residual|_l2 = " << res << "\nl = "
-                                                                                                     << l
-                                                                                                     << "\nopts:\n"
-                                                                                                     << opts);
+          DUNE_THROW_IF(k >= max_dampening_iter,
+                        Exceptions::operator_error,
+                        "max iterations reached when trying to compute automatic dampening!\n|residual|_l2 = "
+                            << res << "\nl = " << l << "\nopts:\n"
+                            << opts);
           candidate = source + update * lambda;
           residual_op.apply(candidate, residual, param);
           candidate_res = residual.l2_norm();
@@ -629,14 +627,14 @@ invert_options(some_type).get<std::string>("type") == some_type
   /// \name These induced_norm variants are provided for convenience.
   /// \{
 
-  template <class ParameterType_,
-            typename = /* Only enable this method, if */
-            typename std::enable_if</* param is the same as XT::Common::Parameter */ (
-                                        std::is_same<ParameterType_, XT::Common::Parameter>::value)
-                                    && /* and the vector spaces defined by SourceSpaceType/VectorType and */
-                                    /* RangeSpaceType/VectorType coincide. */ (
-                                        std::is_same<V, V>::value&& std::is_same<SGV, RGV>::value && (s_r == r_r)
-                                        && (s_rC == r_rC))>::type>
+  template <
+      class ParameterType_,
+      typename = /* Only enable this method, if */
+      typename std::enable_if<
+          /* param is the same as XT::Common::Parameter */ (std::is_same<ParameterType_, XT::Common::Parameter>::value)
+          && /* and the vector spaces defined by SourceSpaceType/VectorType and */
+          /* RangeSpaceType/VectorType coincide. */ (std::is_same<V, V>::value&& std::is_same<SGV, RGV>::value
+                                                     && (s_r == r_r) && (s_rC == r_rC))>::type>
   FieldType induced_norm(const VectorType& range, const ParameterType_& param = {}) const
   {
     using std::sqrt;
@@ -809,14 +807,14 @@ invert_options(some_type).get<std::string>("type") == some_type
     return this->jacobian(source.dofs().vector(), param);
   }
 
-  template <class ParameterType_,
-            typename = /* Only enable this method, if */
-            typename std::enable_if</* param is the same as XT::Common::Parameter */ (
-                                        std::is_same<ParameterType_, XT::Common::Parameter>::value)
-                                    && /* and the vector spaces defined by SourceSpaceType/VectorType and */
-                                    /* RangeSpaceType/VectorType coincide. */ (
-                                        std::is_same<V, V>::value&& std::is_same<SGV, RGV>::value && (s_r == r_r)
-                                        && (s_rC == r_rC))>::type>
+  template <
+      class ParameterType_,
+      typename = /* Only enable this method, if */
+      typename std::enable_if<
+          /* param is the same as XT::Common::Parameter */ (std::is_same<ParameterType_, XT::Common::Parameter>::value)
+          && /* and the vector spaces defined by SourceSpaceType/VectorType and */
+          /* RangeSpaceType/VectorType coincide. */ (std::is_same<V, V>::value&& std::is_same<SGV, RGV>::value
+                                                     && (s_r == r_r) && (s_rC == r_rC))>::type>
   FieldType induced_norm(const RangeFunctionType& range, const ParameterType_& param = {}) const
   {
     DUNE_THROW_IF(!this->range_space().contains(range),

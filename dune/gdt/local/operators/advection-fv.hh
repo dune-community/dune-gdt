@@ -45,7 +45,7 @@ template <class I,
           class ORGV = IRGV,
           class ORV = IRV>
 class LocalAdvectionFvCouplingOperator
-    : public LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SR, m, 1, RR, IRGV, IRV, ORGV, ORV>
+  : public LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SR, m, 1, RR, IRGV, IRV, ORGV, ORV>
 {
   using ThisType = LocalAdvectionFvCouplingOperator<I, SV, SGV, m, SR, RR, IRGV, IRV, ORR, ORGV, ORV>;
   using BaseType = LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SR, m, 1, RR, IRGV, IRV, ORGV, ORV>;
@@ -53,23 +53,21 @@ class LocalAdvectionFvCouplingOperator
 public:
   using BaseType::d;
   using typename BaseType::IntersectionType;
-  using typename BaseType::SourceType;
   using typename BaseType::LocalInsideRangeType;
   using typename BaseType::LocalOutsideRangeType;
+  using typename BaseType::SourceType;
 
   using NumericalFluxType = NumericalFluxInterface<d, m, RR>;
 
   LocalAdvectionFvCouplingOperator(const NumericalFluxType& numerical_flux)
     : BaseType(numerical_flux.parameter_type())
     , numerical_flux_(numerical_flux.copy())
-  {
-  }
+  {}
 
   LocalAdvectionFvCouplingOperator(const ThisType& other)
     : BaseType(other.parameter_type())
     , numerical_flux_(other.numerical_flux_->copy())
-  {
-  }
+  {}
 
   std::unique_ptr<BaseType> copy() const override final
   {
@@ -109,7 +107,7 @@ private:
 
 template <class I, class SV, class SGV, size_t m = 1, class SF = double, class RF = SF, class RGV = SGV, class RV = SV>
 class LocalAdvectionFvBoundaryTreatmentByCustomNumericalFluxOperator
-    : public LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>
+  : public LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>
 {
   using ThisType = LocalAdvectionFvBoundaryTreatmentByCustomNumericalFluxOperator<I, SV, SGV, m, SF, RF, RGV, RV>;
   using BaseType = LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>;
@@ -117,9 +115,9 @@ class LocalAdvectionFvBoundaryTreatmentByCustomNumericalFluxOperator
 public:
   using BaseType::d;
   using typename BaseType::IntersectionType;
-  using typename BaseType::SourceType;
   using typename BaseType::LocalInsideRangeType;
   using typename BaseType::LocalOutsideRangeType;
+  using typename BaseType::SourceType;
 
   using StateDomainType = FieldVector<typename SGV::ctype, SGV::dimension>;
   using StateDofsType = ConstLocalDofVector<SV, SGV>;
@@ -131,14 +129,12 @@ public:
       LambdaType numerical_boundary_flux_lambda, const XT::Common::ParameterType& boundary_treatment_param_type = {})
     : BaseType(boundary_treatment_param_type)
     , numerical_boundary_flux_(numerical_boundary_flux_lambda)
-  {
-  }
+  {}
 
   LocalAdvectionFvBoundaryTreatmentByCustomNumericalFluxOperator(const ThisType& other)
     : BaseType(other.parameter_type())
     , numerical_boundary_flux_(other.numerical_boundary_flux_)
-  {
-  }
+  {}
 
   std::unique_ptr<BaseType> copy() const override final
   {
@@ -172,7 +168,7 @@ private:
 
 template <class I, class SV, class SGV, size_t m = 1, class SF = double, class RF = SF, class RGV = SGV, class RV = SV>
 class LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator
-    : public LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>
+  : public LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>
 {
   using ThisType = LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator<I, SV, SGV, m, SF, RF, RGV, RV>;
   using BaseType = LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>;
@@ -180,9 +176,9 @@ class LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator
 public:
   using BaseType::d;
   using typename BaseType::IntersectionType;
-  using typename BaseType::SourceType;
   using typename BaseType::LocalInsideRangeType;
   using typename BaseType::LocalOutsideRangeType;
+  using typename BaseType::SourceType;
 
   using D = typename IntersectionType::ctype;
   using NumericalFluxType = NumericalFluxInterface<d, m, RF>;
@@ -203,15 +199,13 @@ public:
     : BaseType(numerical_flux.parameter_type() + boundary_treatment_param_type)
     , numerical_flux_(numerical_flux.copy())
     , extrapolate_(boundary_extrapolation_lambda)
-  {
-  }
+  {}
 
   LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator(const ThisType& other)
     : BaseType(other.parameter_type())
     , numerical_flux_(other.numerical_flux_->copy())
     , extrapolate_(other.extrapolate_)
-  {
-  }
+  {}
 
   std::unique_ptr<BaseType> copy() const override final
   {

@@ -12,16 +12,16 @@
 // TODO: python bindings need to be updated to the new-master
 #if 0 // HAVE_DUNE_PYBINDXI
 
-#include <dune/pybindxi/pybind11.h>
+#  include <dune/pybindxi/pybind11.h>
 
-#include <dune/xt/grid/dd/subdomains/grid.hh>
-#include <dune/xt/grid/gridprovider/provider.hh>
-#include <python/dune/xt/grid/layers.bindings.hh>
-#include <dune/xt/functions/interfaces/grid-function.hh>
+#  include <dune/xt/grid/dd/subdomains/grid.hh>
+#  include <dune/xt/grid/gridprovider/provider.hh>
+#  include <python/dune/xt/grid/layers.bindings.hh>
+#  include <dune/xt/functions/interfaces/grid-function.hh>
 
-#include <dune/gdt/spaces/interface.hh>
+#  include <dune/gdt/spaces/interface.hh>
 
-#include <dune/gdt/operators/weighted-l2.hh>
+#  include <dune/gdt/operators/weighted-l2.hh>
 
 namespace Dune {
 namespace GDT {

@@ -29,8 +29,7 @@ public:
     : spatial_space_(spatial_space)
     , temporal_grid_(std::forward<TemporalGridArgs>(temporal_grid_args)...)
     , temporal_space_(temporal_grid_.leafGridView(), /*order=*/1)
-  {
-  }
+  {}
 
   const ContinuousLagrangeSpace<typename OneDGrid::LeafGridView>& temporal_space() const
   {

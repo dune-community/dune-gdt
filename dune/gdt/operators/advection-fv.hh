@@ -41,8 +41,8 @@ class AdvectionFvOperator : public OperatorInterface<M, SGV, m, 1, m, 1, RGV>
   using BaseType = OperatorInterface<M, SGV, m, 1, m, 1, RGV>;
 
 public:
-  using typename BaseType::V;
   using typename BaseType::F;
+  using typename BaseType::V;
 
   using NumericalFluxType = NumericalFluxInterface<SGV::dimension, m, F>;
 
@@ -53,8 +53,8 @@ public:
       LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator<I, V, SGV, m, F, F, RGV, V>;
 
   using typename BaseType::MatrixOperatorType;
-  using typename BaseType::SourceSpaceType;
   using typename BaseType::RangeSpaceType;
+  using typename BaseType::SourceSpaceType;
   using typename BaseType::VectorType;
 
   AdvectionFvOperator(
@@ -69,8 +69,7 @@ public:
     , source_space_(source_space)
     , range_space_(range_space)
     , periodicity_exception_(periodicity_exception.copy())
-  {
-  }
+  {}
 
   AdvectionFvOperator(ThisType&& source) = default;
 

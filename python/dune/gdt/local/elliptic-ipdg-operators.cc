@@ -11,15 +11,15 @@
 
 #if HAVE_DUNE_PYBINDXI
 
-#include <dune/common/parallel/mpihelper.hh>
+#  include <dune/common/parallel/mpihelper.hh>
 
-#include <dune/pybindxi/pybind11.h>
-#include <dune/pybindxi/stl.h>
+#  include <dune/pybindxi/pybind11.h>
+#  include <dune/pybindxi/stl.h>
 
-#include <python/dune/xt/common/bindings.hh>
-#include <python/dune/gdt/shared.hh>
+#  include <python/dune/xt/common/bindings.hh>
+#  include <python/dune/gdt/shared.hh>
 
-#include "elliptic-ipdg-operators.hh"
+#  include "elliptic-ipdg-operators.hh"
 
 
 PYBIND11_MODULE(__local_elliptic_ipdg_operators, m)

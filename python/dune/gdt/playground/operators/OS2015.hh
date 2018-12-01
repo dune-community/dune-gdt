@@ -13,26 +13,26 @@
 // TODO: python bindings need to be updated to the new-master
 #if 0 // HAVE_DUNE_PYBINDXI
 
-#include <dune/common/typetraits.hh>
+#  include <dune/common/typetraits.hh>
 
-#include <dune/geometry/quadraturerules.hh>
-#include <dune/geometry/referenceelements.hh>
+#  include <dune/geometry/quadraturerules.hh>
+#  include <dune/geometry/referenceelements.hh>
 
-#include <dune/xt/common/fmatrix.hh>
-#include <dune/xt/la/container/eigen.hh>
-#include <dune/xt/la/eigen-solver.hh>
-#include <dune/xt/grid/boundaryinfo/interfaces.hh>
-#include <dune/xt/grid/entity.hh>
-#include <dune/xt/grid/type_traits.hh>
-#include <dune/xt/functions/derived.hh>
-#include <dune/xt/functions/interfaces/grid-function.hh>
+#  include <dune/xt/common/fmatrix.hh>
+#  include <dune/xt/la/container/eigen.hh>
+#  include <dune/xt/la/eigen-solver.hh>
+#  include <dune/xt/grid/boundaryinfo/interfaces.hh>
+#  include <dune/xt/grid/entity.hh>
+#  include <dune/xt/grid/type_traits.hh>
+#  include <dune/xt/functions/derived.hh>
+#  include <dune/xt/functions/interfaces/grid-function.hh>
 
-#include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/local/operators/integrals.hh>
-#include <dune/gdt/local/integrands/lambda.hh>
-#include <dune/gdt/operators/base.hh>
-#include <dune/gdt/operators/fluxreconstruction.hh>
-#include <dune/gdt/spaces/rt/default.hh>
+#  include <dune/gdt/discretefunction/default.hh>
+#  include <dune/gdt/local/operators/integrals.hh>
+#  include <dune/gdt/local/integrands/lambda.hh>
+#  include <dune/gdt/operators/base.hh>
+#  include <dune/gdt/operators/fluxreconstruction.hh>
+#  include <dune/gdt/spaces/rt/default.hh>
 
 namespace Dune {
 namespace GDT {

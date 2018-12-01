@@ -34,8 +34,8 @@ class DiscontinuousMapper : public MapperInterface<GV>
   using BaseType = MapperInterface<GV>;
 
 public:
-  using typename BaseType::D;
   using BaseType::d;
+  using typename BaseType::D;
 
 private:
   template <int>
@@ -129,8 +129,7 @@ private:
     if (finite_element_search_result == finite_elements_->end())
       DUNE_THROW(XT::Common::Exceptions::internal_error,
                  "This must not happen, the grid layer did not report all geometry types!"
-                     << "\n   geometry_type = "
-                     << geometry_type);
+                     << "\n   geometry_type = " << geometry_type);
     return *finite_element_search_result->second;
   } // ... get_finite_element(...)
 

@@ -31,21 +31,20 @@ class ConstLincombOperator : public OperatorInterface<M, SGV, s_r, s_rC, r_r, r_
   using BaseType = OperatorInterface<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
 
 public:
-  using typename BaseType::SourceSpaceType;
-  using typename BaseType::RangeSpaceType;
-  using typename BaseType::FieldType;
-  using typename BaseType::MatrixOperatorType;
-  using typename BaseType::VectorType;
   using typename BaseType::ConstLincombOperatorType;
+  using typename BaseType::FieldType;
   using typename BaseType::LincombOperatorType;
+  using typename BaseType::MatrixOperatorType;
+  using typename BaseType::RangeSpaceType;
+  using typename BaseType::SourceSpaceType;
+  using typename BaseType::VectorType;
 
   using OperatorType = BaseType;
 
   ConstLincombOperator(const SourceSpaceType& src_space, const RangeSpaceType& rng_space)
     : source_space_(src_space)
     , range_space_(rng_space)
-  {
-  }
+  {}
 
   ConstLincombOperator(const ThisType& other) = default;
 
@@ -185,8 +184,7 @@ public:
           DUNE_THROW_IF(opts.has_sub("op_" + to_string(ii) + ".opts"),
                         Exceptions::operator_error,
                         "Cannot define opts for operator " << ii << " by specifying op_" << ii << ".opts and back_op_"
-                                                           << (back_ii)
-                                                           << ".opts at the same time!\n\n\nopts = \n"
+                                                           << (back_ii) << ".opts at the same time!\n\n\nopts = \n"
                                                            << opts);
           op_opts = opts.sub("back_op_" + to_string(back_ii) + ".opts");
         }
@@ -343,18 +341,17 @@ class LincombOperator : public ConstLincombOperator<M, SGV, s_r, s_rC, r_r, r_rC
   using BaseType = ConstLincombOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
 
 public:
-  using typename BaseType::SourceSpaceType;
-  using typename BaseType::RangeSpaceType;
   using typename BaseType::FieldType;
-  using typename BaseType::OperatorType;
-  using typename BaseType::MatrixOperatorType;
   using typename BaseType::LincombOperatorType;
+  using typename BaseType::MatrixOperatorType;
+  using typename BaseType::OperatorType;
+  using typename BaseType::RangeSpaceType;
+  using typename BaseType::SourceSpaceType;
   using typename BaseType::VectorType;
 
   LincombOperator(const SourceSpaceType& src_space, const RangeSpaceType& rng_space)
     : BaseType(src_space, rng_space)
-  {
-  }
+  {}
 
   LincombOperator(ThisType& other)
     : BaseType(other)
@@ -366,8 +363,7 @@ public:
   LincombOperator(ThisType&& source)
     : BaseType(source)
     , ops_(std::move(source.ops_))
-  {
-  }
+  {}
 
   using BaseType::add;
 

@@ -75,8 +75,9 @@ public:
  *       taken here.
  */
 template <class Vector, class GridView, class Traits>
-class ConstLocalDofVector : public XT::LA::VectorInterface<Traits>,
-                            public XT::Grid::ElementBoundObject<XT::Grid::extract_entity_t<GridView>>
+class ConstLocalDofVector
+  : public XT::LA::VectorInterface<Traits>
+  , public XT::Grid::ElementBoundObject<XT::Grid::extract_entity_t<GridView>>
 {
 
   using ThisType = ConstLocalDofVector<Vector, GridView, Traits>;
@@ -93,8 +94,7 @@ public:
     , global_vector_(global_vector)
     , global_DoF_indices_(mapper_.max_local_size())
     , size_(0)
-  {
-  }
+  {}
 
   ConstLocalDofVector(const ThisType& other) = default;
   ConstLocalDofVector(ThisType&& source) = default;
@@ -199,8 +199,7 @@ public:
   LocalDofVector(const MapperType& mapper, VectorType& global_vector)
     : BaseType(mapper, global_vector)
     , global_vector_(global_vector)
-  {
-  }
+  {}
 
   LocalDofVector(const ThisType&) = default;
   LocalDofVector(ThisType&&) = default;
@@ -274,16 +273,14 @@ namespace Common {
 
 template <class Vector, class GridView, class Traits>
 struct VectorAbstraction<GDT::ConstLocalDofVector<Vector, GridView, Traits>>
-    : public LA::internal::VectorAbstractionBase<GDT::ConstLocalDofVector<Vector, GridView, Traits>>
-{
-};
+  : public LA::internal::VectorAbstractionBase<GDT::ConstLocalDofVector<Vector, GridView, Traits>>
+{};
 
 
 template <class Vector, class GridView>
 struct VectorAbstraction<GDT::LocalDofVector<Vector, GridView>>
-    : public LA::internal::VectorAbstractionBase<GDT::LocalDofVector<Vector, GridView>>
-{
-};
+  : public LA::internal::VectorAbstractionBase<GDT::LocalDofVector<Vector, GridView>>
+{};
 
 
 } // namespace Common

@@ -40,8 +40,7 @@ public:
     if (vector_.size() != mapper_.size())
       DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
                  "mapper_.size() = " << mapper_.size() << "\n   "
-                                     << "vector_.size() = "
-                                     << vector_.size());
+                                     << "vector_.size() = " << vector_.size());
   }
 
   const VectorType& vector() const
@@ -71,16 +70,15 @@ class DofVector : public ConstDofVector<Vector, GridView>
   using BaseType = ConstDofVector<Vector, GridView>;
 
 public:
-  using typename BaseType::VectorType;
   using typename BaseType::ElementType;
   using typename BaseType::MapperType;
+  using typename BaseType::VectorType;
   using LocalDofVectorType = LocalDofVector<Vector, GridView>;
 
   DofVector(const MapperType& mapper, VectorType& vec)
     : BaseType(mapper, vec)
     , vector_(vec)
-  {
-  }
+  {}
 
   using BaseType::vector;
 

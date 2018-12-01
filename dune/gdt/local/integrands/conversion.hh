@@ -54,16 +54,14 @@ public:
     : inducing_function_as_test_basis_(inducing_function_as_test_basis)
     , local_function_(inducing_function_as_test_basis_.local_function())
     , local_binary_integrand_(local_binary_integrand.copy())
-  {
-  }
+  {}
 
   LocalBinaryToUnaryElementIntegrand(const ThisType& other)
     : BaseType()
     , inducing_function_as_test_basis_(other.inducing_function_as_test_basis_)
     , local_function_(inducing_function_as_test_basis_.local_function())
     , local_binary_integrand_(other.local_binary_integrand_->copy())
-  {
-  }
+  {}
 
   std::unique_ptr<BaseType> copy() const override final
   {

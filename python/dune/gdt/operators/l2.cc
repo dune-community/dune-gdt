@@ -11,18 +11,18 @@
 
 #if HAVE_DUNE_PYBINDXI
 
-#include <dune/common/parallel/mpihelper.hh>
+#  include <dune/common/parallel/mpihelper.hh>
 
-#include <dune/pybindxi/pybind11.h>
-#include <dune/pybindxi/stl.h>
+#  include <dune/pybindxi/pybind11.h>
+#  include <dune/pybindxi/stl.h>
 
-#include <python/dune/xt/common/bindings.hh>
-#include <python/dune/gdt/shared.hh>
-#include <python/dune/xt/grid/grids.bindings.hh>
-#include <dune/xt/grid/layers.hh>
+#  include <python/dune/xt/common/bindings.hh>
+#  include <python/dune/gdt/shared.hh>
+#  include <python/dune/xt/grid/grids.bindings.hh>
+#  include <dune/xt/grid/layers.hh>
 
-#include <python/dune/gdt/operators/l2.hh>
-#include <dune/gdt/playground/spaces/restricted.hh>
+#  include <python/dune/gdt/operators/l2.hh>
+#  include <dune/gdt/playground/spaces/restricted.hh>
 
 using namespace Dune;
 namespace py = pybind11;
@@ -59,7 +59,7 @@ PYBIND11_MODULE(__operators_l2, m)
   py::module::import("dune.gdt.__spaces");
   py::module::import("dune.gdt.__discretefunction");
 
-#if HAVE_DUNE_ALUGRID
+#  if HAVE_DUNE_ALUGRID
   bind_l2_localizable_product<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, XT::Grid::Backends::view>(m);
 
   Dune::GDT::bindings::L2MatrixOperator<ALU_2D_SIMPLEX_CONFORMING,
@@ -83,9 +83,8 @@ PYBIND11_MODULE(__operators_l2, m)
                                         1,
                                         1,
                                         LA::Backends::istl_sparse>::bind(m);
-  Dune::GDT::bindings::internal::
-      L2MatrixOperator<GDT::RestrictedSpace<
-                           typename GDT::SpaceProvider<ALU_2D_SIMPLEX_CONFORMING,
+  Dune::GDT::bindings::internal::L2MatrixOperator<
+      GDT::RestrictedSpace<typename GDT::SpaceProvider<ALU_2D_SIMPLEX_CONFORMING,
                                                        Layers::leaf,
                                                        GDT::SpaceType::rt,
                                                        GDT::Backends::gdt,
@@ -96,11 +95,11 @@ PYBIND11_MODULE(__operators_l2, m)
                                                     Layers::dd_subdomain,
                                                     XT::Grid::Backends::view,
                                                     XT::Grid::DD::SubdomainGrid<ALU_2D_SIMPLEX_CONFORMING>>::type>,
-                       XT::LA::IstlRowMajorSparseMatrix<double>>::bind(m,
-                                                                       "RtAlu2dSimplexLeafRestrictedSubdomainPartSpace",
-                                                                       "istl_row_major_sparse_matrix_double");
+      XT::LA::IstlRowMajorSparseMatrix<double>>::bind(m,
+                                                      "RtAlu2dSimplexLeafRestrictedSubdomainPartSpace",
+                                                      "istl_row_major_sparse_matrix_double");
 
-#endif // HAVE_DUNE_ALUGRID
+#  endif // HAVE_DUNE_ALUGRID
 
   add_initialization(m, "dune.gdt.operators.elliptic");
 }

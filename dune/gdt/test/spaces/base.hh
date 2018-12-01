@@ -148,8 +148,8 @@ struct SpaceTestBase : public ::testing::Test
           if (!reference_element.checkInside(xx_plus_h)) {
             xx_plus_h[dd] -= 2. * h;
           }
-          ASSERT_TRUE(reference_element.checkInside(xx_plus_h)) << "xx_plus_h = " << xx_plus_h
-                                                                << " is not inside the reference element!";
+          ASSERT_TRUE(reference_element.checkInside(xx_plus_h))
+              << "xx_plus_h = " << xx_plus_h << " is not inside the reference element!";
           const auto values_xx_plus_h = basis->evaluate_set(xx_plus_h);
           EXPECT_EQ(basis->size(), values_xx_plus_h.size());
           for (size_t ii = 0; ii < basis->size(); ++ii) {
@@ -346,9 +346,10 @@ using PrismGrids = ::testing::Types<
     >;
 
 
-template <class G,
-          typename this_disables_dimensions_whithout_mixed_elements = typename std::
-              enable_if<XT::Grid::is_grid<G>::value && (G::dimension == 2 || G::dimension == 3), void>::type>
+template <
+    class G,
+    typename this_disables_dimensions_whithout_mixed_elements =
+        typename std::enable_if<XT::Grid::is_grid<G>::value && (G::dimension == 2 || G::dimension == 3), void>::type>
 XT::Grid::GridProvider<G> make_mixed_grid()
 {
   using D = typename G::ctype;

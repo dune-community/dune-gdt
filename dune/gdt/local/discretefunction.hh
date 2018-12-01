@@ -26,8 +26,8 @@ namespace GDT {
 
 template <class Vector, class GridView, size_t range_dim = 1, size_t range_dim_cols = 1, class RangeField = double>
 class ConstLocalDiscreteFunction
-    : public XT::Functions::
-          ElementFunctionInterface<XT::Grid::extract_entity_t<GridView>, range_dim, range_dim_cols, RangeField>
+  : public XT::Functions::
+        ElementFunctionInterface<XT::Grid::extract_entity_t<GridView>, range_dim, range_dim_cols, RangeField>
 {
   // No need to check the rest, is done in SpaceInterface.
   static_assert(XT::LA::is_vector<Vector>::value, "");
@@ -43,22 +43,22 @@ public:
   using ConstLocalDofVectorType = typename ConstDofVectorType::ConstLocalDofVectorType;
   using LocalBasisType = typename SpaceType::GlobalBasisType::LocalizedBasisType;
 
-  using typename BaseType::ElementType;
-  using typename BaseType::DomainType;
-  using typename BaseType::RangeSelector;
-  using typename BaseType::DerivativeRangeSelector;
-  using typename BaseType::RangeType;
-  using typename BaseType::DerivativeRangeType;
-  using typename BaseType::SingleDerivativeRangeType;
-  using typename BaseType::RangeReturnType;
-  using typename BaseType::DerivativeRangeReturnType;
-  using typename BaseType::SingleDerivativeRangeReturnType;
-  using typename BaseType::DynamicRangeType;
-  using typename BaseType::DynamicDerivativeRangeType;
   using BaseType::d;
   using BaseType::r;
   using BaseType::rC;
+  using typename BaseType::DerivativeRangeReturnType;
+  using typename BaseType::DerivativeRangeSelector;
+  using typename BaseType::DerivativeRangeType;
+  using typename BaseType::DomainType;
+  using typename BaseType::DynamicDerivativeRangeType;
+  using typename BaseType::DynamicRangeType;
+  using typename BaseType::ElementType;
   using typename BaseType::R;
+  using typename BaseType::RangeReturnType;
+  using typename BaseType::RangeSelector;
+  using typename BaseType::RangeType;
+  using typename BaseType::SingleDerivativeRangeReturnType;
+  using typename BaseType::SingleDerivativeRangeType;
 
   ConstLocalDiscreteFunction(const SpaceType& spc, const ConstDofVectorType& dof_vector)
     : BaseType()
@@ -69,8 +69,7 @@ public:
     , dynamic_basis_values_(space_.mapper().max_local_size())
     , basis_derivatives_(space_.mapper().max_local_size())
     , dynamic_basis_derivatives_(space_.mapper().max_local_size())
-  {
-  }
+  {}
 
   virtual ~ConstLocalDiscreteFunction() = default;
 
@@ -105,14 +104,14 @@ public:
     return dof_vector_;
   }
 
+  using BaseType::derivative;
   using BaseType::evaluate;
   using BaseType::jacobian;
-  using BaseType::derivative;
 
   /**
-    * \name ``These methods are required by XT::Functions::GridFunctionInterface.''
-    * \{
-    **/
+   * \name ``These methods are required by XT::Functions::GridFunctionInterface.''
+   * \{
+   **/
 
   RangeReturnType evaluate(const DomainType& point_in_reference_element,
                            const XT::Common::Parameter& param = {}) const override final
@@ -153,11 +152,8 @@ public:
     DUNE_THROW_IF(space_.type() != GDT::SpaceType::finite_volume,
                   Exceptions::discrete_function_error,
                   "arbitrary derivatives are not supported by the local finite elements!\n\n"
-                      << "alpha = "
-                      << alpha
-                      << "\n"
-                      << "point_in_reference_element = "
-                      << point_in_reference_element);
+                      << "alpha = " << alpha << "\n"
+                      << "point_in_reference_element = " << point_in_reference_element);
     DerivativeRangeReturnType result(0);
     for (size_t jj = 0; jj < d; ++jj) {
       if (alpha[jj] == 0) {
@@ -166,21 +162,18 @@ public:
       } else
         DUNE_THROW(Exceptions::discrete_function_error,
                    "arbitrary derivatives are not supported by the local finite elements!\n\n"
-                       << "alpha = "
-                       << alpha
-                       << "\n"
-                       << "point_in_reference_element = "
-                       << point_in_reference_element);
+                       << "alpha = " << alpha << "\n"
+                       << "point_in_reference_element = " << point_in_reference_element);
     }
     return result;
   } // ... derivative(...)
 
   /**
-    * \}
-    * \name ``These methods are default implemented in XT::Functions::GridFunctionInterface and are overridden
-    *         for improved performance.''
-    * \{
-    **/
+   * \}
+   * \name ``These methods are default implemented in XT::Functions::GridFunctionInterface and are overridden
+   *         for improved performance.''
+   * \{
+   **/
 
   void evaluate(const DomainType& point_in_reference_element,
                 DynamicRangeType& result,
@@ -224,11 +217,8 @@ public:
     DUNE_THROW_IF(space_.type() != GDT::SpaceType::finite_volume,
                   Exceptions::discrete_function_error,
                   "arbitrary derivatives are not supported by the local finite elements!\n\n"
-                      << "alpha = "
-                      << alpha
-                      << "\n"
-                      << "point_in_reference_element = "
-                      << point_in_reference_element);
+                      << "alpha = " << alpha << "\n"
+                      << "point_in_reference_element = " << point_in_reference_element);
     DerivativeRangeSelector::ensure_size(result);
     result *= 0;
     for (size_t jj = 0; jj < d; ++jj) {
@@ -238,20 +228,17 @@ public:
       } else
         DUNE_THROW(Exceptions::discrete_function_error,
                    "arbitrary derivatives are not supported by the local finite elements!\n\n"
-                       << "alpha = "
-                       << alpha
-                       << "\n"
-                       << "point_in_reference_element = "
-                       << point_in_reference_element);
+                       << "alpha = " << alpha << "\n"
+                       << "point_in_reference_element = " << point_in_reference_element);
     }
   } // ... derivative(...)
 
   /**
-    * \}
-    * \name ``These methods (used to access an individual range dimension) are default implemented in
-    *         XT::Functions::GridFunctionInterface and are implemented for improved performance.''
-    * \{
-    **/
+   * \}
+   * \name ``These methods (used to access an individual range dimension) are default implemented in
+   *         XT::Functions::GridFunctionInterface and are implemented for improved performance.''
+   * \{
+   **/
 
   R evaluate(const DomainType& point_in_reference_element,
              const size_t row,
@@ -309,8 +296,8 @@ class LocalDiscreteFunction : public ConstLocalDiscreteFunction<V, GV, r, rC, R>
   using BaseType = ConstLocalDiscreteFunction<V, GV, r, rC, R>;
 
 public:
-  using typename BaseType::SpaceType;
   using typename BaseType::ElementType;
+  using typename BaseType::SpaceType;
 
   using DofVectorType = DofVector<V, GV>;
   using LocalDofVectorType = typename DofVectorType::LocalDofVectorType;
@@ -318,14 +305,12 @@ public:
   LocalDiscreteFunction(const SpaceType& spc, DofVectorType& dof_vector)
     : BaseType(spc, dof_vector)
     , dof_vector_(dof_vector.localize())
-  {
-  }
+  {}
 
   LocalDiscreteFunction(const SpaceType& spc, DofVectorType& dof_vector, const ElementType& ent)
     : BaseType(spc, dof_vector, ent)
     , dof_vector_(dof_vector.localize(ent))
-  {
-  }
+  {}
 
 protected:
   void post_bind(const ElementType& ent) override final

@@ -12,33 +12,34 @@
 // Todo: python bindings need to be updated to the new-master
 #if 0 // HAVE_DUNE_PYBINDXI
 
-#include <python/dune/xt/grid/grids.bindings.hh>
+#  include <python/dune/xt/grid/grids.bindings.hh>
 
-#include <python/dune/gdt/spaces/interface.hh>
-#include <dune/gdt/spaces/hdiv/raviart-thomas.hh>
+#  include <python/dune/gdt/spaces/interface.hh>
+#  include <dune/gdt/spaces/hdiv/raviart-thomas.hh>
 
 
 // begin: this is what we need for the .so
 
-#define _DUNE_GDT_SPACES_RT_BIND(_m, _GRID, _layer)                                                                    \
-  Dune::GDT::bindings::SpaceInterface<Dune::GDT::RtSpaceProvider<_GRID,                                                \
-                                                                 Dune::XT::Grid::Layers::_layer,                       \
-                                                                 Dune::GDT::Backends::gdt,                             \
-                                                                 0,                                                    \
-                                                                 double,                                               \
-                                                                 _GRID::dimension,                                     \
-                                                                 1>>::bind(_m)
+#  define _DUNE_GDT_SPACES_RT_BIND(_m, _GRID, _layer)                                                                  \
+    Dune::GDT::bindings::SpaceInterface<Dune::GDT::RtSpaceProvider<_GRID,                                              \
+                                                                   Dune::XT::Grid::Layers::_layer,                     \
+                                                                   Dune::GDT::Backends::gdt,                           \
+                                                                   0,                                                  \
+                                                                   double,                                             \
+                                                                   _GRID::dimension,                                   \
+                                                                   1>>::bind(_m)
 
-#if HAVE_DUNE_ALUGRID
-#define _DUNE_GDT_SPACES_RT_BIND_ALU_LAYER(_m, _layer) _DUNE_GDT_SPACES_RT_BIND(_m, ALU_2D_SIMPLEX_CONFORMING, _layer)
-#define _DUNE_GDT_SPACES_RT_BIND_ALU(_m)                                                                               \
-  _DUNE_GDT_SPACES_RT_BIND_ALU_LAYER(_m, leaf);                                                                        \
-  _DUNE_GDT_SPACES_RT_BIND_ALU_LAYER(_m, level)
-#else
-#define _DUNE_GDT_SPACES_RT_BIND_ALU(_m)
-#endif
+#  if HAVE_DUNE_ALUGRID
+#    define _DUNE_GDT_SPACES_RT_BIND_ALU_LAYER(_m, _layer)                                                             \
+      _DUNE_GDT_SPACES_RT_BIND(_m, ALU_2D_SIMPLEX_CONFORMING, _layer)
+#    define _DUNE_GDT_SPACES_RT_BIND_ALU(_m)                                                                           \
+      _DUNE_GDT_SPACES_RT_BIND_ALU_LAYER(_m, leaf);                                                                    \
+      _DUNE_GDT_SPACES_RT_BIND_ALU_LAYER(_m, level)
+#  else
+#    define _DUNE_GDT_SPACES_RT_BIND_ALU(_m)
+#  endif
 
-#define DUNE_GDT_SPACES_RT_BIND(_m) _DUNE_GDT_SPACES_RT_BIND_ALU(_m)
+#  define DUNE_GDT_SPACES_RT_BIND(_m) _DUNE_GDT_SPACES_RT_BIND_ALU(_m)
 
 // end: this is what we need for the .so
 

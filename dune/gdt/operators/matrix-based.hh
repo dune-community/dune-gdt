@@ -49,11 +49,11 @@ class ConstMatrixOperator : public OperatorInterface<M, SGV, s_r, s_rC, r_r, r_r
   using BaseType = OperatorInterface<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
 
 public:
-  using typename BaseType::MatrixType;
-  using typename BaseType::VectorType;
-  using typename BaseType::SourceSpaceType;
-  using typename BaseType::RangeSpaceType;
   using typename BaseType::MatrixOperatorType;
+  using typename BaseType::MatrixType;
+  using typename BaseType::RangeSpaceType;
+  using typename BaseType::SourceSpaceType;
+  using typename BaseType::VectorType;
 
   ConstMatrixOperator(const SourceSpaceType& source_spc, const RangeSpaceType& range_spc, const MatrixType& mat)
     : source_space_(source_spc)
@@ -63,12 +63,12 @@ public:
   {
     DUNE_THROW_IF(matrix_.rows() != range_space_.mapper().size(),
                   XT::Common::Exceptions::shapes_do_not_match,
-                  "matrix_.rows() = " << matrix_.rows() << "\n   range_space_.mapper().size() = "
-                                      << range_space_.mapper().size());
+                  "matrix_.rows() = " << matrix_.rows()
+                                      << "\n   range_space_.mapper().size() = " << range_space_.mapper().size());
     DUNE_THROW_IF(matrix_.cols() != source_space_.mapper().size(),
                   XT::Common::Exceptions::shapes_do_not_match,
-                  "matrix_.cols() = " << matrix_.cols() << "\n   source_space_.mapper().size() = "
-                                      << source_space_.mapper().size());
+                  "matrix_.cols() = " << matrix_.cols()
+                                      << "\n   source_space_.mapper().size() = " << source_space_.mapper().size());
   } // ConstMatrixOperator(...)
 
   ConstMatrixOperator(ThisType&& source)
@@ -76,8 +76,7 @@ public:
     , range_space_(source.range_space_)
     , matrix_(source.matrix_)
     , linear_solver_(matrix_, source_space_.dof_communicator())
-  {
-  }
+  {}
 
   bool linear() const override final
   {
@@ -225,9 +224,10 @@ make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space, const XT::LA::Ma
  * \sa XT::Grid::Walker
  */
 template <class M, class SGV, size_t s_r = 1, size_t s_rC = 1, size_t r_r = s_r, size_t r_rC = s_rC, class RGV = SGV>
-class MatrixOperator : XT::Common::StorageProvider<M>,
-                       public ConstMatrixOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>,
-                       public XT::Grid::Walker<SGV>
+class MatrixOperator
+  : XT::Common::StorageProvider<M>
+  , public ConstMatrixOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>
+  , public XT::Grid::Walker<SGV>
 {
   using ThisType = MatrixOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
   using MatrixStorage = XT::Common::StorageProvider<M>;
@@ -237,14 +237,14 @@ class MatrixOperator : XT::Common::StorageProvider<M>,
 public:
   using AssemblyGridViewType = SGV;
 
-  using typename OperatorBaseType::MatrixType;
-  using typename OperatorBaseType::VectorType;
-  using typename OperatorBaseType::SourceSpaceType;
-  using typename OperatorBaseType::RangeSpaceType;
-  using typename OperatorBaseType::MatrixOperatorType;
-  using typename OperatorBaseType::FieldType;
-  using typename OperatorBaseType::V;
   using typename OperatorBaseType::F;
+  using typename OperatorBaseType::FieldType;
+  using typename OperatorBaseType::MatrixOperatorType;
+  using typename OperatorBaseType::MatrixType;
+  using typename OperatorBaseType::RangeSpaceType;
+  using typename OperatorBaseType::SourceSpaceType;
+  using typename OperatorBaseType::V;
+  using typename OperatorBaseType::VectorType;
 
   using typename WalkerBaseType::ElementType;
   using ElementFilterType = XT::Grid::ElementFilter<SGV>;

@@ -40,10 +40,10 @@ struct setUnion
 
 template <class IntersectionType, class SpaceType>
 class DirichletConstraints
-    : public Dune::XT::Grid::ElementFunctor<typename SpaceType::GridViewType>,
-      public XT::Common::ThreadResultPropagator<DirichletConstraints<IntersectionType, SpaceType>,
-                                                std::set<size_t>,
-                                                internal::setUnion<size_t>>
+  : public Dune::XT::Grid::ElementFunctor<typename SpaceType::GridViewType>
+  , public XT::Common::ThreadResultPropagator<DirichletConstraints<IntersectionType, SpaceType>,
+                                              std::set<size_t>,
+                                              internal::setUnion<size_t>>
 {
   using ThisType = DirichletConstraints<IntersectionType, SpaceType>;
   using BaseType = XT::Grid::ElementFunctor<typename SpaceType::GridViewType>;
@@ -63,8 +63,7 @@ public:
     : Propagator(this)
     , boundary_info_(bnd_info)
     , space_(space)
-  {
-  }
+  {}
 
   void apply_local(const ElementType& element) override final
   {

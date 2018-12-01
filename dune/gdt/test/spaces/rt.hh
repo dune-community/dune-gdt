@@ -15,42 +15,43 @@
 // TODO: fix this test
 #if 0
 
-#include <dune/xt/grid/type_traits.hh>
+#  include <dune/xt/grid/type_traits.hh>
 
-#include <dune/gdt/spaces/rt/default.hh>
+#  include <dune/gdt/spaces/rt/default.hh>
 
-#include <dune/gdt/test/grids.hh>
+#  include <dune/gdt/test/grids.hh>
 
-#include <dune/xt/grid/type_traits.hh>
+#  include <dune/xt/grid/type_traits.hh>
 
-#define SPACE_RT_YASPGRID(dd) Dune::GDT::RaviartThomasSpace<Yasp##dd##dLeafGridViewType, 0, double>
+#  define SPACE_RT_YASPGRID(dd) Dune::GDT::RaviartThomasSpace<Yasp##dd##dLeafGridViewType, 0, double>
 
-#define SPACES_RT SPACE_RT_YASPGRID(2), SPACE_RT_YASPGRID(3)
+#  define SPACES_RT SPACE_RT_YASPGRID(2), SPACE_RT_YASPGRID(3)
 
-#define SPACE_RT_YASPGRID_LEVEL(dd) Dune::GDT::RaviartThomasSpace<Yasp##dd##dLevelGridViewType, 0, double>
+#  define SPACE_RT_YASPGRID_LEVEL(dd) Dune::GDT::RaviartThomasSpace<Yasp##dd##dLevelGridViewType, 0, double>
 
-#define SPACES_RT_LEVEL SPACE_RT_YASPGRID_LEVEL(2), SPACE_RT_YASPGRID_LEVEL(3)
+#  define SPACES_RT_LEVEL SPACE_RT_YASPGRID_LEVEL(2), SPACE_RT_YASPGRID_LEVEL(3)
 
-#if HAVE_DUNE_ALUGRID
+#  if HAVE_DUNE_ALUGRID
 
-#define SPACE_RT_ALUCONFORMGRID(dd) Dune::GDT::RaviartThomasSpace<AluConform##dd##dLeafGridViewType, 0, double>
+#    define SPACE_RT_ALUCONFORMGRID(dd) Dune::GDT::RaviartThomasSpace<AluConform##dd##dLeafGridViewType, 0, double>
 
-#define SPACE_RT_ALUCUBEGRID(dd) Dune::GDT::RaviartThomasSpace<AluCube##dd##dLeafGridViewType, 0, double>
+#    define SPACE_RT_ALUCUBEGRID(dd) Dune::GDT::RaviartThomasSpace<AluCube##dd##dLeafGridViewType, 0, double>
 
-#define SPACES_RT_ALUGRID                                                                                              \
-  SPACE_RT_ALUCONFORMGRID(2)                                                                                           \
-  , SPACE_RT_ALUCUBEGRID(2), SPACE_RT_ALUCUBEGRID(3)
+#    define SPACES_RT_ALUGRID                                                                                          \
+      SPACE_RT_ALUCONFORMGRID(2)                                                                                       \
+      , SPACE_RT_ALUCUBEGRID(2), SPACE_RT_ALUCUBEGRID(3)
 
 
-#define SPACE_RT_ALUCONFORMGRID_LEVEL(dd) Dune::GDT::RaviartThomasSpace<AluConform##dd##dLevelGridViewType, 0, double>
+#    define SPACE_RT_ALUCONFORMGRID_LEVEL(dd)                                                                          \
+      Dune::GDT::RaviartThomasSpace<AluConform##dd##dLevelGridViewType, 0, double>
 
-#define SPACE_RT_ALUCUBEGRID_LEVEL(dd) Dune::GDT::RaviartThomasSpace<AluCube##dd##dLevelGridViewType, 0, double>
+#    define SPACE_RT_ALUCUBEGRID_LEVEL(dd) Dune::GDT::RaviartThomasSpace<AluCube##dd##dLevelGridViewType, 0, double>
 
-#define SPACES_RT_ALUGRID_LEVEL                                                                                        \
-  SPACE_RT_ALUCONFORMGRID_LEVEL(2)                                                                                     \
-  , SPACE_RT_ALUCUBEGRID_LEVEL(2), SPACE_RT_ALUCUBEGRID_LEVEL(3)
+#    define SPACES_RT_ALUGRID_LEVEL                                                                                    \
+      SPACE_RT_ALUCONFORMGRID_LEVEL(2)                                                                                 \
+      , SPACE_RT_ALUCUBEGRID_LEVEL(2), SPACE_RT_ALUCUBEGRID_LEVEL(3)
 
-#endif // HAVE_DUNE_ALUGRID
+#  endif // HAVE_DUNE_ALUGRID
 
 #endif
 #endif // DUNE_GDT_TEST_SPACES_RT_HH

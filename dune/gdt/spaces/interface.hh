@@ -64,8 +64,7 @@ public:
     : dof_communicator_(nullptr)
     , pre_adapted_(false)
     , adapted_(false)
-  {
-  }
+  {}
 
   virtual ~SpaceInterface() = default;
 

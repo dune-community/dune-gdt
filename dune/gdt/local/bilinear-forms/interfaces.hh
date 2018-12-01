@@ -72,8 +72,7 @@ public:
 
   LocalElementBilinearFormInterface(const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type)
-  {
-  }
+  {}
 
   virtual ~LocalElementBilinearFormInterface() = default;
 
@@ -88,8 +87,8 @@ public:
                       const XT::Common::Parameter& param = {}) const = 0;
 
   /**
-    * This method is provided for convenience and should not be used within library code.
-    */
+   * This method is provided for convenience and should not be used within library code.
+   */
   virtual DynamicMatrix<F> apply2(const LocalTestBasisType& test_basis,
                                   const LocalAnsatzBasisType& ansatz_basis,
                                   const XT::Common::Parameter& param = {}) const
@@ -152,8 +151,7 @@ public:
 
   LocalIntersectionBilinearFormInterface(const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type)
-  {
-  }
+  {}
 
   virtual ~LocalIntersectionBilinearFormInterface() = default;
 
@@ -174,8 +172,8 @@ public:
                       const XT::Common::Parameter& param = {}) const = 0;
 
   /**
-    * This method is provided for convenience and should not be used within library code.
-    */
+   * This method is provided for convenience and should not be used within library code.
+   */
   virtual std::array<DynamicMatrix<F>, 4> apply2(const IntersectionType& intersection,
                                                  const LocalTestBasisType& test_basis_inside,
                                                  const LocalAnsatzBasisType& ansatz_basis_inside,

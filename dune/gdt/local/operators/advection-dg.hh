@@ -42,22 +42,20 @@ class LocalAdvectionDgVolumeOperator : public LocalElementOperatorInterface<SV, 
 public:
   using BaseType::d;
   using typename BaseType::D;
-  using typename BaseType::SourceType;
   using typename BaseType::LocalRangeType;
+  using typename BaseType::SourceType;
 
   using FluxType = XT::Functions::FunctionInterface<m, d, m, RF>;
 
   LocalAdvectionDgVolumeOperator(const FluxType& flux)
     : BaseType(flux.parameter_type())
     , flux_(flux)
-  {
-  }
+  {}
 
   LocalAdvectionDgVolumeOperator(const ThisType& other)
     : BaseType(other.parameter_type())
     , flux_(other.flux_)
-  {
-  }
+  {}
 
   std::unique_ptr<BaseType> copy() const override final
   {
@@ -112,7 +110,7 @@ template <class I,
           class ORGV = IRGV,
           class ORV = IRV>
 class LocalAdvectionDgCouplingOperator
-    : public LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SR, m, 1, RR, IRGV, IRV, ORGV, ORV>
+  : public LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SR, m, 1, RR, IRGV, IRV, ORGV, ORV>
 {
   using ThisType = LocalAdvectionDgCouplingOperator<I, SV, SGV, m, SR, RR, IRGV, IRV, ORR, ORGV, ORV>;
   using BaseType = LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SR, m, 1, RR, IRGV, IRV, ORGV, ORV>;
@@ -121,9 +119,9 @@ public:
   using BaseType::d;
   using typename BaseType::D;
   using typename BaseType::IntersectionType;
-  using typename BaseType::SourceType;
   using typename BaseType::LocalInsideRangeType;
   using typename BaseType::LocalOutsideRangeType;
+  using typename BaseType::SourceType;
 
   using NumericalFluxType = NumericalFluxInterface<d, m, RR>;
 
@@ -131,15 +129,13 @@ public:
     : BaseType(numerical_flux.parameter_type())
     , numerical_flux_(numerical_flux.copy())
     , compute_outside_(compute_outside)
-  {
-  }
+  {}
 
   LocalAdvectionDgCouplingOperator(const ThisType& other)
     : BaseType(other.parameter_type())
     , numerical_flux_(other.numerical_flux_->copy())
     , compute_outside_(other.compute_outside_)
-  {
-  }
+  {}
 
   std::unique_ptr<BaseType> copy() const override final
   {
@@ -203,7 +199,7 @@ private:
  */
 template <class I, class SV, class SGV, size_t m = 1, class SF = double, class RF = SF, class RGV = SGV, class RV = SV>
 class LocalAdvectionDgBoundaryTreatmentByCustomNumericalFluxOperator
-    : public LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>
+  : public LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>
 {
   using ThisType = LocalAdvectionDgBoundaryTreatmentByCustomNumericalFluxOperator<I, SV, SGV, m, SF, RF, RGV, RV>;
   using BaseType = LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>;
@@ -212,9 +208,9 @@ public:
   using BaseType::d;
   using typename BaseType::D;
   using typename BaseType::IntersectionType;
-  using typename BaseType::SourceType;
   using typename BaseType::LocalInsideRangeType;
   using typename BaseType::LocalOutsideRangeType;
+  using typename BaseType::SourceType;
 
   using StateDomainType = FieldVector<typename SGV::ctype, SGV::dimension>;
   using StateRangeType = typename XT::Functions::RangeTypeSelector<SF, m, 1>::type;
@@ -228,15 +224,13 @@ public:
     : BaseType(numerical_flux_param_type)
     , numerical_boundary_flux_(numerical_boundary_flux)
     , numerical_flux_order_(numerical_flux_order)
-  {
-  }
+  {}
 
   LocalAdvectionDgBoundaryTreatmentByCustomNumericalFluxOperator(const ThisType& other)
     : BaseType(other.parameter_type())
     , numerical_boundary_flux_(other.numerical_boundary_flux_)
     , numerical_flux_order_(other.numerical_flux_order_)
-  {
-  }
+  {}
 
   std::unique_ptr<BaseType> copy() const override final
   {
@@ -285,7 +279,7 @@ private:
  */
 template <class I, class SV, class SGV, size_t m = 1, class SF = double, class RF = SF, class RGV = SGV, class RV = SV>
 class LocalAdvectionDgBoundaryTreatmentByCustomExtrapolationOperator
-    : public LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>
+  : public LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>
 {
   using ThisType = LocalAdvectionDgBoundaryTreatmentByCustomExtrapolationOperator<I, SV, SGV, m, SF, RF, RGV, RV>;
   using BaseType = LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>;
@@ -293,9 +287,9 @@ class LocalAdvectionDgBoundaryTreatmentByCustomExtrapolationOperator
 public:
   using BaseType::d;
   using typename BaseType::IntersectionType;
-  using typename BaseType::SourceType;
   using typename BaseType::LocalInsideRangeType;
   using typename BaseType::LocalOutsideRangeType;
+  using typename BaseType::SourceType;
 
   using D = typename IntersectionType::ctype;
   using NumericalFluxType = NumericalFluxInterface<d, m, RF>;
@@ -315,15 +309,13 @@ public:
     : BaseType(numerical_flux.parameter_type() + boundary_treatment_param_type)
     , numerical_flux_(numerical_flux.copy())
     , extrapolate_(boundary_extrapolation_lambda)
-  {
-  }
+  {}
 
   LocalAdvectionDgBoundaryTreatmentByCustomExtrapolationOperator(const ThisType& other)
     : BaseType(other.parameter_type())
     , numerical_flux_(other.numerical_flux_->copy())
     , extrapolate_(other.extrapolate_)
-  {
-  }
+  {}
 
   std::unique_ptr<BaseType> copy() const override final
   {

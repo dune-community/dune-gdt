@@ -12,14 +12,14 @@
 // Todo: python bindings need to be updated to the new-master
 #if 0 // HAVE_DUNE_PYBINDXI
 
-#include <dune/pybindxi/pybind11.h>
+#  include <dune/pybindxi/pybind11.h>
 
-#include <dune/xt/functions/interfaces/grid-function.hh>
-#include <python/dune/xt/grid/grids.bindings.hh>
-#include <dune/xt/grid/type_traits.hh>
+#  include <dune/xt/functions/interfaces/grid-function.hh>
+#  include <python/dune/xt/grid/grids.bindings.hh>
+#  include <dune/xt/grid/type_traits.hh>
 
-#include <dune/gdt/local/integrands/ESV2007.hh>
-#include <dune/gdt/local/operators/integrals.hh>
+#  include <dune/gdt/local/integrands/ESV2007.hh>
+#  include <dune/gdt/local/operators/integrals.hh>
 
 namespace Dune {
 namespace GDT {
@@ -97,18 +97,18 @@ public:
 // begin: this is what we need for the .so
 
 
-#define _DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BIND(_G, _m)                                                \
-  Dune::GDT::bindings::LocalDiffusiveFluxEstimationOperator<_G>::bind(_m)
+#  define _DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BIND(_G, _m)                                              \
+    Dune::GDT::bindings::LocalDiffusiveFluxEstimationOperator<_G>::bind(_m)
 
-#if HAVE_DUNE_ALUGRID
-#define _DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BIND_ALU(_m)                                                \
-  _DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BIND(ALU_2D_SIMPLEX_CONFORMING, _m)
-#else
-#define _DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BIND_ALU(_m)
-#endif
+#  if HAVE_DUNE_ALUGRID
+#    define _DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BIND_ALU(_m)                                            \
+      _DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BIND(ALU_2D_SIMPLEX_CONFORMING, _m)
+#  else
+#    define _DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BIND_ALU(_m)
+#  endif
 
-#define DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BIND(_m)                                                     \
-  _DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BIND_ALU(_m)
+#  define DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BIND(_m)                                                   \
+    _DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BIND_ALU(_m)
 
 // end: this is what we need for the .so
 

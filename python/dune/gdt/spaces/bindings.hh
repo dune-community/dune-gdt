@@ -13,12 +13,12 @@
 // TODO: python bindings need to be updated to the new-master
 #if 0 // HAVE_DUNE_PYBINDXI
 
-#include <dune/gdt/spaces.hh>
-#include <python/dune/gdt/spaces/interface.hh>
-#include <python/dune/gdt/spaces/cg.hh>
-#include <python/dune/gdt/spaces/dg.hh>
-#include <python/dune/gdt/spaces/fv.hh>
-#include <python/dune/gdt/spaces/rt.hh>
+#  include <dune/gdt/spaces.hh>
+#  include <python/dune/gdt/spaces/interface.hh>
+#  include <python/dune/gdt/spaces/cg.hh>
+#  include <python/dune/gdt/spaces/dg.hh>
+#  include <python/dune/gdt/spaces/fv.hh>
+#  include <python/dune/gdt/spaces/rt.hh>
 
 #endif // HAVE_DUNE_PYBINDXI
 #endif // PYTHON_DUNE_GDT_SPACES_BINDINGS_HH

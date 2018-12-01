@@ -43,11 +43,12 @@ struct AssertArgumentsOfConstDiscreteFunction
 
 
 template <class Vector, class GridView, size_t range_dim = 1, size_t range_dim_cols = 1, class RangeField = double>
-class ConstDiscreteFunction : public XT::Functions::GridFunctionInterface<
-                                  typename internal::AssertArgumentsOfConstDiscreteFunction<Vector, GridView>::E,
-                                  range_dim,
-                                  range_dim_cols,
-                                  RangeField>
+class ConstDiscreteFunction
+  : public XT::Functions::GridFunctionInterface<
+        typename internal::AssertArgumentsOfConstDiscreteFunction<Vector, GridView>::E,
+        range_dim,
+        range_dim_cols,
+        RangeField>
 {
   using BaseType = XT::Functions::GridFunctionInterface<
       typename internal::AssertArgumentsOfConstDiscreteFunction<Vector, GridView>::E,
@@ -63,8 +64,8 @@ public:
   using ConstLocalDiscreteFunctionType =
       ConstLocalDiscreteFunction<Vector, GridView, range_dim, range_dim_cols, RangeField>;
 
-  using typename BaseType::LocalFunctionType;
   using typename BaseType::ElementType;
+  using typename BaseType::LocalFunctionType;
 
   ConstDiscreteFunction(const SpaceType& spc,
                         const VectorType& vector,
@@ -72,8 +73,7 @@ public:
     : space_(spc)
     , dofs_(space_.mapper(), vector)
     , name_(nm)
-  {
-  }
+  {}
 
   ConstDiscreteFunction(const ThisType&) = default;
   ConstDiscreteFunction(ThisType&&) = default;
@@ -158,8 +158,9 @@ make_discrete_function(const SpaceInterface<GV, r, rC, R>& space,
 
 
 template <class Vector, class GridView, size_t range_dim = 1, size_t range_dim_cols = 1, class RangeField = double>
-class DiscreteFunction : XT::Common::StorageProvider<Vector>,
-                         public ConstDiscreteFunction<Vector, GridView, range_dim, range_dim_cols, RangeField>
+class DiscreteFunction
+  : XT::Common::StorageProvider<Vector>
+  , public ConstDiscreteFunction<Vector, GridView, range_dim, range_dim_cols, RangeField>
 {
   using ThisType = DiscreteFunction<Vector, GridView, range_dim, range_dim_cols, RangeField>;
   using VectorStorage = XT::Common::StorageProvider<Vector>;
@@ -177,22 +178,19 @@ public:
     : VectorStorage(vector)
     , BaseType(spc, VectorStorage::access(), nm)
     , dofs_(space_.mapper(), VectorStorage::access())
-  {
-  }
+  {}
 
   DiscreteFunction(const SpaceType& spc, VectorType&& vector, const std::string nm = "dune.gdt.discretefunction")
     : VectorStorage(new VectorType(std::move(vector)))
     , BaseType(spc, VectorStorage::access(), nm)
     , dofs_(space_.mapper(), VectorStorage::access())
-  {
-  }
+  {}
 
   DiscreteFunction(const SpaceType& spc, const std::string nm = "dune.gdt.discretefunction")
     : VectorStorage(new VectorType(spc.mapper().size(), 0))
     , BaseType(spc, VectorStorage::access(), nm)
     , dofs_(space_.mapper(), VectorStorage::access())
-  {
-  }
+  {}
 
   DiscreteFunction(const ThisType&) = default;
   DiscreteFunction(ThisType&&) = default;

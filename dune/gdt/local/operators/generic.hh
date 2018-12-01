@@ -41,8 +41,8 @@ class GenericLocalElementOperator : public LocalElementOperatorInterface<SV, SGV
   using BaseType = LocalElementOperatorInterface<SV, SGV, s_r, s_rC, SF, r_r, r_rC, RF, RGV, RV>;
 
 public:
-  using typename BaseType::SourceType;
   using typename BaseType::LocalRangeType;
+  using typename BaseType::SourceType;
 
   using GenericFunctionType = std::function<void(
       const SourceType& /*source*/, LocalRangeType& /*local_range*/, const XT::Common::Parameter& /*param*/)>;
@@ -50,14 +50,12 @@ public:
   GenericLocalElementOperator(GenericFunctionType func, const XT::Common::ParameterType& param_type = {})
     : BaseType(param_type)
     , func_(func)
-  {
-  }
+  {}
 
   GenericLocalElementOperator(const ThisType& other)
     : BaseType(other.parameter_type())
     , func_(other.func_)
-  {
-  }
+  {}
 
   std::unique_ptr<BaseType> copy() const override final
   {
@@ -96,16 +94,16 @@ template <class I,
           class ORGV = IRGV,
           class ORV = IRV>
 class GenericLocalIntersectionOperator
-    : public LocalIntersectionOperatorInterface<I, SV, SGV, s_r, s_rC, SF, r_r, r_rC, RF, IRGV, IRV, ORGV, ORV>
+  : public LocalIntersectionOperatorInterface<I, SV, SGV, s_r, s_rC, SF, r_r, r_rC, RF, IRGV, IRV, ORGV, ORV>
 {
   using ThisType = GenericLocalIntersectionOperator<I, SV, SGV, s_r, s_rC, SF, r_r, r_rC, RF, IRGV, IRV, ORGV, ORV>;
   using BaseType = LocalIntersectionOperatorInterface<I, SV, SGV, s_r, s_rC, SF, r_r, r_rC, RF, IRGV, IRV, ORGV, ORV>;
 
 public:
-  using typename BaseType::SourceType;
   using typename BaseType::IntersectionType;
   using typename BaseType::LocalInsideRangeType;
   using typename BaseType::LocalOutsideRangeType;
+  using typename BaseType::SourceType;
 
   using GenericFunctionType = std::function<void(const SourceType& /*source*/,
                                                  const IntersectionType& /*intersection*/,
@@ -116,14 +114,12 @@ public:
   GenericLocalIntersectionOperator(GenericFunctionType func, const XT::Common::ParameterType& param_type = {})
     : BaseType(param_type)
     , func_(func)
-  {
-  }
+  {}
 
   GenericLocalIntersectionOperator(const ThisType& other)
     : BaseType(other.parameter_type())
     , func_(other.func_)
-  {
-  }
+  {}
 
   std::unique_ptr<BaseType> copy() const override final
   {

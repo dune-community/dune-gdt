@@ -66,8 +66,7 @@ public:
 
   LocalElementOperatorInterface(const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type)
-  {
-  }
+  {}
 
   virtual ~LocalElementOperatorInterface() = default;
 
@@ -127,17 +126,16 @@ public:
 
   LocalIntersectionOperatorInterface(const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type)
-  {
-  }
+  {}
 
   virtual ~LocalIntersectionOperatorInterface() = default;
 
   virtual std::unique_ptr<ThisType> copy() const = 0;
 
   /**
-    * \note Presumes that local_range_inside is already bound to intersection.inside() and local_range_outside is
-    *       already bound to intersection.outside()!
-    **/
+   * \note Presumes that local_range_inside is already bound to intersection.inside() and local_range_outside is
+   *       already bound to intersection.outside()!
+   **/
   virtual void apply(const SourceType& source,
                      const IntersectionType& intersection,
                      LocalInsideRangeType& local_range_inside,

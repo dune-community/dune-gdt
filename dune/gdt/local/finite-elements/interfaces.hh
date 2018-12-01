@@ -202,8 +202,7 @@ for (size_t codim = 0; codim < codim_to_subentity_index_to_key_indices_map.size(
     if (codim > d)
       DUNE_THROW(Exceptions::finite_element_error,
                  "d = " << d << "\n"
-                        << "codim = "
-                        << codim);
+                        << "codim = " << codim);
     // pepare
     const auto& reference_element = ReferenceElements<D, d>::general(geometry_type());
     std::vector<std::vector<size_t>> subentity_index_to_key_indices_map(reference_element.size(codim));

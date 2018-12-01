@@ -13,23 +13,23 @@
 // TODO: python bindings need to be updated to the new-master
 #if 0 // HAVE_DUNE_PYBINDXI
 
-#include <dune/pybindxi/pybind11.h>
+#  include <dune/pybindxi/pybind11.h>
 
-#include <dune/xt/common/string.hh>
-#include <python/dune/xt/grid/grids.bindings.hh>
-#include <python/dune/xt/grid/layers.bindings.hh>
-#include <dune/xt/grid/dd/subdomains/grid.hh>
-#include <dune/xt/grid/gridprovider/provider.hh>
-#include <dune/xt/grid/type_traits.hh>
+#  include <dune/xt/common/string.hh>
+#  include <python/dune/xt/grid/grids.bindings.hh>
+#  include <python/dune/xt/grid/layers.bindings.hh>
+#  include <dune/xt/grid/dd/subdomains/grid.hh>
+#  include <dune/xt/grid/gridprovider/provider.hh>
+#  include <dune/xt/grid/type_traits.hh>
 
-#include <dune/gdt/playground/spaces/restricted.hh>
-#include <dune/gdt/spaces.hh>
-#include <dune/gdt/type_traits.hh>
+#  include <dune/gdt/playground/spaces/restricted.hh>
+#  include <dune/gdt/spaces.hh>
+#  include <dune/gdt/type_traits.hh>
 
-#include <dune/gdt/spaces/interface.hh>
-#include <dune/gdt/spaces/cg.hh>
-#include <dune/gdt/spaces/dg.hh>
-#include <dune/gdt/spaces/fv.hh>
+#  include <dune/gdt/spaces/interface.hh>
+#  include <dune/gdt/spaces/cg.hh>
+#  include <dune/gdt/spaces/dg.hh>
+#  include <dune/gdt/spaces/fv.hh>
 
 namespace Dune {
 namespace GDT {

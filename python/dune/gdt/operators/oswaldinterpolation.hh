@@ -14,14 +14,14 @@
 // TODO: python bindings need to be updated to the new-master
 #if 0 // HAVE_DUNE_PYBINDXI
 
-#include <dune/pybindxi/pybind11.h>
+#  include <dune/pybindxi/pybind11.h>
 
-#include <dune/xt/la/container.hh>
-#include <dune/xt/grid/gridprovider/provider.hh>
+#  include <dune/xt/la/container.hh>
+#  include <dune/xt/grid/gridprovider/provider.hh>
 
-#include <dune/gdt/spaces.hh>
+#  include <dune/gdt/spaces.hh>
 
-#include <dune/gdt/operators/oswaldinterpolation.hh>
+#  include <dune/gdt/operators/oswaldinterpolation.hh>
 
 namespace Dune {
 namespace GDT {

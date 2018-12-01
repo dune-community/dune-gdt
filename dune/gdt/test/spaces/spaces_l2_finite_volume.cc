@@ -163,7 +163,7 @@ struct FiniteVolumeSpace : public ::testing::Test
 
 template <class G, size_t r>
 struct FiniteVolumeSpaceOnSimplicialLeafView
-    : public FiniteVolumeSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, r>
+  : public FiniteVolumeSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, r>
 {
   using GridProviderType = Dune::XT::Grid::GridProvider<G>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;
@@ -172,7 +172,7 @@ struct FiniteVolumeSpaceOnSimplicialLeafView
   std::shared_ptr<LeafGridViewType> leaf_view;
 
   FiniteVolumeSpaceOnSimplicialLeafView() //     (i) negative coordinates and not the same as the reference
-      : grid_provider(Dune::XT::Grid::make_cube_grid<G>(-1.5, -1, 3).grid_ptr()) //                          element,
+    : grid_provider(Dune::XT::Grid::make_cube_grid<G>(-1.5, -1, 3).grid_ptr()) //                          element,
   { //                                                   (ii) at least 3 elements to have fully inner ones,
     grid_provider.global_refine(1); //                  (iii) refine at least once to obtain all kinds of orientations
     leaf_view = std::make_shared<LeafGridViewType>(grid_provider.leaf_view());
@@ -249,7 +249,7 @@ TYPED_TEST(ScalarSimplicialFiniteVolumeSpace, local_interpolation_seems_to_be_co
 
 template <class G, size_t r>
 struct FiniteVolumeSpaceOnCubicLeafView
-    : public FiniteVolumeSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, r>
+  : public FiniteVolumeSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, r>
 {
   using GridProviderType = Dune::XT::Grid::GridProvider<G>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;
@@ -340,7 +340,7 @@ TYPED_TEST(ScalarCubicFiniteVolumeSpace, local_interpolation_seems_to_be_correct
 
 template <class G, size_t r>
 struct FiniteVolumeSpaceOnPrismLeafView
-    : public FiniteVolumeSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, r>
+  : public FiniteVolumeSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, r>
 {
   using GridProviderType = Dune::XT::Grid::GridProvider<G>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;
@@ -430,7 +430,7 @@ TYPED_TEST(ScalarPrismFiniteVolumeSpace, local_interpolation_seems_to_be_correct
 
 template <class G, size_t r>
 struct FiniteVolumeSpaceOnPyramidLeafView
-    : public FiniteVolumeSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, r>
+  : public FiniteVolumeSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, r>
 {
   using GridProviderType = Dune::XT::Grid::GridProvider<G>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;
@@ -519,7 +519,7 @@ TYPED_TEST(ScalarPyramidFiniteVolumeSpace, local_interpolation_seems_to_be_corre
 
 template <class G, size_t r>
 struct FiniteVolumeSpaceOnMixedLeafView
-    : public FiniteVolumeSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, r>
+  : public FiniteVolumeSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, r>
 {
   using GridProviderType = Dune::XT::Grid::GridProvider<G>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;

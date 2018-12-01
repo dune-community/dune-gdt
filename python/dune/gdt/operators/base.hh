@@ -12,13 +12,13 @@
 // TODO: python bindings need to be updated to the new-master
 #if 0 // HAVE_DUNE_PYBINDXI
 
-#include <dune/pybindxi/pybind11.h>
+#  include <dune/pybindxi/pybind11.h>
 
-#include <dune/xt/la/container.hh>
+#  include <dune/xt/la/container.hh>
 
-#include <dune/gdt/type_traits.hh>
+#  include <dune/gdt/type_traits.hh>
 
-#include <dune/gdt/operators/base.hh>
+#  include <dune/gdt/operators/base.hh>
 
 namespace Dune {
 namespace GDT {

@@ -20,7 +20,7 @@ namespace GDT {
 
 template <class G, class R, int p>
 struct ContinuousLagrangeSpaceTest
-    : public SpaceTestBase<ContinuousLagrangeSpace<typename XT::Grid::GridProvider<G>::LeafGridViewType, R>, p>
+  : public SpaceTestBase<ContinuousLagrangeSpace<typename XT::Grid::GridProvider<G>::LeafGridViewType, R>, p>
 {
   using D = typename G::ctype;
   static const constexpr size_t d = G::dimension;
@@ -88,8 +88,7 @@ struct ContinuousLagrangeSpaceOnSimplicialLeafViewTest : public ContinuousLagran
 {
   ContinuousLagrangeSpaceOnSimplicialLeafViewTest()
     : ContinuousLagrangeSpaceTest<G, R, p>(make_simplicial_grid<G>())
-  {
-  }
+  {}
 };
 
 
@@ -98,8 +97,7 @@ struct ContinuousLagrangeSpaceOnCubicLeafViewTest : public ContinuousLagrangeSpa
 {
   ContinuousLagrangeSpaceOnCubicLeafViewTest()
     : ContinuousLagrangeSpaceTest<G, R, p>(make_cubic_grid<G>())
-  {
-  }
+  {}
 };
 
 
@@ -108,8 +106,7 @@ struct ContinuousLagrangeSpaceOnPrismLeafViewTest : public ContinuousLagrangeSpa
 {
   ContinuousLagrangeSpaceOnPrismLeafViewTest()
     : ContinuousLagrangeSpaceTest<G, R, p>(make_prism_grid<G>())
-  {
-  }
+  {}
 };
 
 
@@ -118,8 +115,7 @@ struct ContinuousLagrangeSpaceOnMixedLeafViewTest : public ContinuousLagrangeSpa
 {
   ContinuousLagrangeSpaceOnMixedLeafViewTest()
     : ContinuousLagrangeSpaceTest<G, R, p>(make_mixed_grid<G>())
-  {
-  }
+  {}
 };
 
 

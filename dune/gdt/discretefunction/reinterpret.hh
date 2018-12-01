@@ -38,9 +38,9 @@ reinterpret(const DiscreteFunction<V, SGV, r, rC, R>& source)
  * \sa XT::Functions::reinterpret
  */
 template <class SGV, size_t r, size_t rC, class R, class V, class TargetGridView>
-std::enable_if_t<XT::Grid::is_layer<TargetGridView>::value,
-                 XT::Functions::
-                     ReinterpretLocalizableFunction<SGV, XT::Grid::extract_entity_t<TargetGridView>, r, rC, R>>
+std::enable_if_t<
+    XT::Grid::is_layer<TargetGridView>::value,
+    XT::Functions::ReinterpretLocalizableFunction<SGV, XT::Grid::extract_entity_t<TargetGridView>, r, rC, R>>
 reinterpret(const DiscreteFunction<V, SGV, r, rC, R>& source, const TargetGridView& /*target_grid_view*/)
 {
   return XT::Functions::ReinterpretLocalizableFunction<SGV, XT::Grid::extract_entity_t<TargetGridView>, r, rC, R>(

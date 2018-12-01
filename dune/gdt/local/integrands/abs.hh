@@ -26,8 +26,8 @@ class LocalElementAbsIntegrand : public LocalUnaryElementIntegrandInterface<E, r
   using BaseType = LocalUnaryElementIntegrandInterface<E, r, rC, R, F>;
 
 public:
-  using typename BaseType::LocalBasisType;
   using typename BaseType::DomainType;
+  using typename BaseType::LocalBasisType;
 
   std::unique_ptr<BaseType> copy() const
   {
@@ -63,6 +63,6 @@ private:
 
 
 } // namespace GDT
-} // namespace Dun
+} // namespace Dune
 
 #endif // DUNE_GDT_LOCAL_INTEGRANDS_ABS_HH

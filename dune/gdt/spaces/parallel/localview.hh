@@ -44,8 +44,7 @@ public:
     , global_indices_(0)
     , value_cache_(0)
     , descriptor_(descriptor)
-  {
-  }
+  {}
 
   void bind(const EntityType& entity)
   {

@@ -52,8 +52,7 @@ public:
     DUNE_THROW_IF(global_vector_.size() != space_.mapper().size(),
                   XT::Common::Exceptions::shapes_do_not_match,
                   "global_vector.size() = " << global_vector_.size() << "\n  "
-                                            << "space.mapper().size()"
-                                            << space_.mapper().size());
+                                            << "space.mapper().size()" << space_.mapper().size());
   }
 
   LocalElementFunctionalAssembler(const ThisType& other)
@@ -65,8 +64,7 @@ public:
     , local_vector_(other.local_vector_)
     , global_indices_(other.global_indices_)
     , basis_(space_.basis().localize())
-  {
-  }
+  {}
 
   LocalElementFunctionalAssembler(ThisType&& source) = default;
 

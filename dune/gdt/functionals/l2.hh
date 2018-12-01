@@ -43,10 +43,10 @@ class L2VolumeVectorFunctional : public VectorBasedFunctional<V, GV, r, rC, F, A
   using BaseType = VectorBasedFunctional<V, GV, r, rC, F, AssemblyGridView>;
 
 public:
-  using typename BaseType::ElementType;
+  using typename BaseType::ApplyOnAllElements;
   using typename BaseType::DofFieldType;
   using typename BaseType::ElementFilterType;
-  using typename BaseType::ApplyOnAllElements;
+  using typename BaseType::ElementType;
   using typename BaseType::SourceSpaceType;
   using typename BaseType::SourceVectorType;
 

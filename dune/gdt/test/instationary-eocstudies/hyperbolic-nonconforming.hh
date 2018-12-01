@@ -33,29 +33,28 @@ namespace Test {
 
 template <class G, size_t m = 1, XT::LA::Backends la = XT::LA::Backends::istl_sparse>
 class InstationaryNonconformingHyperbolicEocStudy
-    : public InstationaryEocStudy<XT::Grid::PeriodicGridLayer<typename XT::Grid::Layer<G,
-                                                                                       XT::Grid::Layers::leaf,
-                                                                                       XT::Grid::Backends::view>::type>,
-                                  m,
-                                  la>
+  : public InstationaryEocStudy<
+        XT::Grid::PeriodicGridLayer<
+            typename XT::Grid::Layer<G, XT::Grid::Layers::leaf, XT::Grid::Backends::view>::type>,
+        m,
+        la>
 {
-  using BaseType =
-      InstationaryEocStudy<XT::Grid::PeriodicGridLayer<
-                               typename XT::Grid::Layer<G, XT::Grid::Layers::leaf, XT::Grid::Backends::view>::type>,
-                           m,
-                           la>;
+  using BaseType = InstationaryEocStudy<
+      XT::Grid::PeriodicGridLayer<typename XT::Grid::Layer<G, XT::Grid::Layers::leaf, XT::Grid::Backends::view>::type>,
+      m,
+      la>;
 
 protected:
   static const constexpr int m_as_int = int(ssize_t(m));
-  using typename BaseType::GV;
-  using typename BaseType::O;
-  using typename BaseType::M;
-  using typename BaseType::V;
-  using typename BaseType::R;
-  using typename BaseType::S;
+  using BaseType::d;
   using typename BaseType::DF;
   using typename BaseType::GP;
-  using BaseType::d;
+  using typename BaseType::GV;
+  using typename BaseType::M;
+  using typename BaseType::O;
+  using typename BaseType::R;
+  using typename BaseType::S;
+  using typename BaseType::V;
 
   using F = XT::Functions::FunctionInterface<m, d, m>;
   using NF = NumericalFluxInterface<d, m>;
@@ -69,8 +68,7 @@ public:
     : BaseType(T_end, timestepping, visualizer)
     , space_type_("")
     , numerical_flux_type_("")
-  {
-  }
+  {}
 
 protected:
   virtual const F& flux() const = 0;

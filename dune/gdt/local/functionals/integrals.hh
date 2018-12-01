@@ -29,8 +29,8 @@ class LocalElementIntegralFunctional : public LocalElementFunctionalInterface<E,
   using BaseType = LocalElementFunctionalInterface<E, r, rC, R, F>;
 
 public:
-  using typename BaseType::D;
   using BaseType::d;
+  using typename BaseType::D;
   using typename BaseType::LocalBasisType;
   using IntegrandType = LocalUnaryElementIntegrandInterface<E, r, rC, R>;
   using GenericIntegrand = GenericLocalUnaryElementIntegrand<E, r, rC, R>;
@@ -39,8 +39,7 @@ public:
     : BaseType(integrand.parameter_type())
     , integrand_(integrand.copy())
     , over_integrate_(over_integrate)
-  {
-  }
+  {}
 
   LocalElementIntegralFunctional(typename GenericIntegrand::GenericOrderFunctionType order_function,
                                  typename GenericIntegrand::GenericEvalauteFunctionType evaluate_function,
@@ -49,15 +48,13 @@ public:
     : BaseType(param_type)
     , integrand_(GenericIntegrand(order_function, evaluate_function).copy())
     , over_integrate_(over_integrate)
-  {
-  }
+  {}
 
   LocalElementIntegralFunctional(const ThisType& other)
     : BaseType(other.parameter_type())
     , integrand_(other.integrand_->copy())
     , over_integrate_(other.over_integrate_)
-  {
-  }
+  {}
 
   LocalElementIntegralFunctional(ThisType&& source) = default;
 

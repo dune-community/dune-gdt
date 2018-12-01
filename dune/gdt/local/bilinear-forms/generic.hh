@@ -37,8 +37,8 @@ class GenericLocalElementBilinearForm : public LocalElementBilinearFormInterface
   using BaseType = LocalElementBilinearFormInterface<E, t_r, t_rC, TR, F, a_r, a_rC, AR>;
 
 public:
-  using typename BaseType::LocalTestBasisType;
   using typename BaseType::LocalAnsatzBasisType;
+  using typename BaseType::LocalTestBasisType;
 
   using GenericFunctionType = std::function<void(const LocalTestBasisType& /*test_basis*/,
                                                  const LocalAnsatzBasisType& /*ansatz_basis*/,
@@ -48,8 +48,7 @@ public:
   GenericLocalElementBilinearForm(GenericFunctionType func, const XT::Common::ParameterType& param_type = {})
     : BaseType(param_type)
     , func_(func)
-  {
-  }
+  {}
 
   std::unique_ptr<BaseType> copy() const override final
   {
@@ -92,15 +91,15 @@ template <class I,
           size_t a_rC = t_rC,
           class AR = TR>
 class GenericLocalIntersectionBilinearForm
-    : public LocalIntersectionBilinearFormInterface<I, t_r, t_rC, TR, F, a_r, a_rC, AR>
+  : public LocalIntersectionBilinearFormInterface<I, t_r, t_rC, TR, F, a_r, a_rC, AR>
 {
   using ThisType = GenericLocalIntersectionBilinearForm<I, t_r, t_rC, TR, F, a_r, a_rC, AR>;
   using BaseType = LocalIntersectionBilinearFormInterface<I, t_r, t_rC, TR, F, a_r, a_rC, AR>;
 
 public:
   using typename BaseType::IntersectionType;
-  using typename BaseType::LocalTestBasisType;
   using typename BaseType::LocalAnsatzBasisType;
+  using typename BaseType::LocalTestBasisType;
 
   using GenericFunctionType = std::function<void(const IntersectionType& /*intersection*/,
                                                  const LocalTestBasisType& /*test_basis_inside*/,
@@ -116,8 +115,7 @@ public:
   GenericLocalIntersectionBilinearForm(GenericFunctionType func, const XT::Common::ParameterType& param_type = {})
     : BaseType(param_type)
     , func_(func)
-  {
-  }
+  {}
 
   GenericLocalIntersectionBilinearForm(ThisType&& source) = default;
 

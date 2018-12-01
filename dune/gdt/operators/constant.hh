@@ -33,18 +33,17 @@ class ConstantOperator : public OperatorInterface<M, SGV, s_r, s_rC, r_r, r_rC, 
   using BaseType = OperatorInterface<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
 
 public:
-  using typename BaseType::SourceSpaceType;
-  using typename BaseType::RangeSpaceType;
-  using typename BaseType::VectorType;
-  using typename BaseType::MatrixOperatorType;
   using typename BaseType::F;
+  using typename BaseType::MatrixOperatorType;
+  using typename BaseType::RangeSpaceType;
+  using typename BaseType::SourceSpaceType;
+  using typename BaseType::VectorType;
 
   ConstantOperator(const SourceSpaceType& src_space, const RangeSpaceType& rng_space, const VectorType& val)
     : source_space_(src_space)
     , range_space_(rng_space)
     , value_(val)
-  {
-  }
+  {}
 
   const SourceSpaceType& source_space() const override final
   {

@@ -49,10 +49,10 @@ class ConstVectorBasedFunctional : public FunctionalInterface<V, GV, r, rC, F>
 public:
   using DofFieldType = typename V::ScalarType;
 
-  using typename FunctionalBaseType::SourceSpaceType;
-  using typename FunctionalBaseType::SourceVectorType;
-  using typename FunctionalBaseType::SourceType;
   using typename FunctionalBaseType::FieldType;
+  using typename FunctionalBaseType::SourceSpaceType;
+  using typename FunctionalBaseType::SourceType;
+  using typename FunctionalBaseType::SourceVectorType;
 
   ConstVectorBasedFunctional(const SourceSpaceType& source_spc, const SourceVectorType& vec)
     : source_space_(source_spc)
@@ -61,8 +61,7 @@ public:
     if (vector_.size() != source_space_.mapper().size())
       DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
                  "vector_.size() = " << vector_.size() << "\n"
-                                     << "source_space_.mapper().size() = "
-                                     << source_space_.mapper().size());
+                                     << "source_space_.mapper().size() = " << source_space_.mapper().size());
   }
 
   ConstVectorBasedFunctional(const ThisType&) = default;
@@ -135,9 +134,10 @@ make_vector_functional(const SpaceInterface<GV, r, rC, F>& space, const XT::LA::
  * \sa GlobalAssembler
  */
 template <class V, class GV, size_t r = 1, size_t rC = 1, class F = double, class AssemblyGridView = GV>
-class VectorBasedFunctional : XT::Common::StorageProvider<V>,
-                              public ConstVectorBasedFunctional<V, GV, r, rC, F>,
-                              public XT::Grid::Walker<AssemblyGridView>
+class VectorBasedFunctional
+  : XT::Common::StorageProvider<V>
+  , public ConstVectorBasedFunctional<V, GV, r, rC, F>
+  , public XT::Grid::Walker<AssemblyGridView>
 {
   // All other types are checked elsewhere.
   static_assert(std::is_same<XT::Grid::extract_entity_t<GV>, XT::Grid::extract_entity_t<AssemblyGridView>>::value,
@@ -152,10 +152,10 @@ public:
   using AssemblyGridViewType = AssemblyGridView;
   using DofFieldType = typename V::ScalarType;
 
-  using typename FunctionalBaseType::SourceSpaceType;
-  using typename FunctionalBaseType::SourceVectorType;
-  using typename FunctionalBaseType::SourceType;
   using typename FunctionalBaseType::FieldType;
+  using typename FunctionalBaseType::SourceSpaceType;
+  using typename FunctionalBaseType::SourceType;
+  using typename FunctionalBaseType::SourceVectorType;
 
   using typename WalkerBaseType::ElementType;
   using ElementFilterType = XT::Grid::ElementFilter<AssemblyGridViewType>;

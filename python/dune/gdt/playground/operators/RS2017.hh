@@ -12,40 +12,40 @@
 
 // TODO: python bindings need to be updated to the new-master
 #if 0 // HAVE_DUNE_PYBINDXI
-#include <type_traits>
+#  include <type_traits>
 
-#include <dune/common/typetraits.hh>
+#  include <dune/common/typetraits.hh>
 
-#include <dune/pybindxi/pybind11.h>
-#include <dune/pybindxi/stl.h>
+#  include <dune/pybindxi/pybind11.h>
+#  include <dune/pybindxi/stl.h>
 
-#include <dune/xt/common/numeric_cast.hh>
-#include <dune/xt/la/container/istl.hh>
-#include <dune/xt/grid/dd/subdomains/grid.hh>
-#include <python/dune/xt/grid/grids.bindings.hh>
-#include <dune/xt/grid/layers.hh>
-#include <dune/xt/grid/type_traits.hh>
-#include <dune/xt/functions/interfaces/grid-function.hh>
+#  include <dune/xt/common/numeric_cast.hh>
+#  include <dune/xt/la/container/istl.hh>
+#  include <dune/xt/grid/dd/subdomains/grid.hh>
+#  include <python/dune/xt/grid/grids.bindings.hh>
+#  include <dune/xt/grid/layers.hh>
+#  include <dune/xt/grid/type_traits.hh>
+#  include <dune/xt/functions/interfaces/grid-function.hh>
 
-#include <python/dune/gdt/assembler/system.hh>
-#include <dune/gdt/functionals/elliptic-ipdg.hh>
-#include <dune/gdt/functionals/l2.hh>
-#include <dune/gdt/local/integrands/elliptic.hh>
-#include <dune/gdt/local/integrands/elliptic-ipdg.hh>
-#include <dune/gdt/local/integrands/lambda.hh>
-#include <dune/gdt/local/operators/integrals.hh>
-#include <dune/gdt/operators/base.hh>
-#include <python/dune/gdt/operators/base.hh>
-#include <dune/gdt/operators/elliptic-ipdg.hh>
-#include <dune/gdt/operators/fluxreconstruction.hh>
-#include <dune/gdt/operators/l2.hh>
-#include <dune/gdt/spaces.hh>
+#  include <python/dune/gdt/assembler/system.hh>
+#  include <dune/gdt/functionals/elliptic-ipdg.hh>
+#  include <dune/gdt/functionals/l2.hh>
+#  include <dune/gdt/local/integrands/elliptic.hh>
+#  include <dune/gdt/local/integrands/elliptic-ipdg.hh>
+#  include <dune/gdt/local/integrands/lambda.hh>
+#  include <dune/gdt/local/operators/integrals.hh>
+#  include <dune/gdt/operators/base.hh>
+#  include <python/dune/gdt/operators/base.hh>
+#  include <dune/gdt/operators/elliptic-ipdg.hh>
+#  include <dune/gdt/operators/fluxreconstruction.hh>
+#  include <dune/gdt/operators/l2.hh>
+#  include <dune/gdt/spaces.hh>
 
 namespace Dune {
 namespace GDT {
 namespace RS2017 {
 
-#if HAVE_DUNE_ISTL
+#  if HAVE_DUNE_ISTL
 
 
 template <class G>
@@ -162,11 +162,11 @@ public:
             XT::Common::FieldMatrix<D, d, d> diffusion_u = diffusion_hat_inverse;
             XT::Common::FieldMatrix<D, d, d> diffusion_v = diffusion_hat_inverse;
             diffusion_hat_inverse *= local_lambda_hat->evaluate(local_point);
-#ifndef NDEBUG
+#    ifndef NDEBUG
             const auto diffusion_hat = diffusion_hat_inverse;
-#endif
+#    endif
             diffusion_hat_inverse.invert();
-#ifndef NDEBUG
+#    ifndef NDEBUG
             // there is no documented way to tell if the inversion was successfull
             if (XT::Common::FloatCmp::ne(diffusion_hat_inverse * diffusion_hat, unit_matrix_))
               DUNE_THROW(XT::Common::Exceptions::internal_error,
@@ -180,7 +180,7 @@ public:
                              << diffusion_hat_inverse
                              << "\ninverse * (local_lambda_hat(x)*local_kappa(x))) = "
                              << diffusion_hat_inverse * diffusion_hat);
-#endif
+#    endif
             diffusion_u *= local_lambda_u->evaluate(local_point);
             diffusion_v *= local_lambda_v->evaluate(local_point);
             const auto test_grads = test_base.jacobian(local_point);
@@ -345,11 +345,11 @@ public:
             XT::Common::FieldMatrix<D, d, d> diffusion_hat_inverse = local_kappa->evaluate(local_point);
             XT::Common::FieldMatrix<D, d, d> diffusion_range = diffusion_hat_inverse;
             diffusion_hat_inverse *= local_lambda_hat->evaluate(local_point);
-#ifndef NDEBUG
+#    ifndef NDEBUG
             const auto diffusion_hat = diffusion_hat_inverse;
-#endif
+#    endif
             diffusion_hat_inverse.invert();
-#ifndef NDEBUG
+#    ifndef NDEBUG
             // there is no documented way to tell if the inversion was successfull
             if (XT::Common::FloatCmp::ne(diffusion_hat_inverse * diffusion_hat, unit_matrix_))
               DUNE_THROW(XT::Common::Exceptions::internal_error,
@@ -363,7 +363,7 @@ public:
                              << diffusion_hat_inverse
                              << "\ninverse * (local_lambda_hat(x)*local_kappa(x))) = "
                              << diffusion_hat_inverse * diffusion_hat);
-#endif
+#    endif
             diffusion_range *= local_lambda_range->evaluate(local_point);
             const auto test_grads = test_base.jacobian(local_point);
             const auto ansatz_values = ansatz_base.evaluate(local_point);
@@ -501,11 +501,11 @@ public:
             const auto local_kappa = kappa.local_function(entity);
             XT::Common::FieldMatrix<D, d, d> diffusion_hat_inverse = local_kappa->evaluate(local_point);
             diffusion_hat_inverse *= local_lambda_hat->evaluate(local_point);
-#ifndef NDEBUG
+#    ifndef NDEBUG
             const auto diffusion_hat = diffusion_hat_inverse;
-#endif
+#    endif
             diffusion_hat_inverse.invert();
-#ifndef NDEBUG
+#    ifndef NDEBUG
             // there is no documented way to tell if the inversion was successfull
             if (XT::Common::FloatCmp::ne(diffusion_hat_inverse * diffusion_hat, unit_matrix_))
               DUNE_THROW(XT::Common::Exceptions::internal_error,
@@ -519,7 +519,7 @@ public:
                              << diffusion_hat_inverse
                              << "\ninverse * (local_lambda_hat(x)*local_kappa(x))) = "
                              << diffusion_hat_inverse * diffusion_hat);
-#endif
+#    endif
             const auto test_values = test_base.evaluate(local_point);
             const auto ansatz_values = ansatz_base.evaluate(local_point);
             ret *= 0.;
@@ -1240,7 +1240,7 @@ void bind_neighborhood_reconstruction(pybind11::module& m)
 } // ... bind_neighborhood_reconstruction(...)
 
 
-#else // HAVE_DUNE_ISTL
+#  else // HAVE_DUNE_ISTL
 
 
 template <class G>
@@ -1299,7 +1299,7 @@ void bind_neighborhood_reconstruction(pybind11::module& /*m*/)
 }
 
 
-#endif // HAVE_DUNE_ISTL
+#  endif // HAVE_DUNE_ISTL
 
 } // namespace RS2017
 } // namespace GDT

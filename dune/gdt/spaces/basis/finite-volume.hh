@@ -27,14 +27,14 @@ class FiniteVolumeGlobalBasis : public GlobalBasisInterface<GV, r, 1, R>
   using BaseType = GlobalBasisInterface<GV, r, 1, R>;
 
 public:
-  using typename BaseType::E;
-  using typename BaseType::D;
   using BaseType::d;
   using BaseType::rC;
-  using typename BaseType::GridViewType;
+  using typename BaseType::D;
+  using typename BaseType::E;
   using typename BaseType::ElementType;
-  using typename BaseType::ShapeFunctionsType;
+  using typename BaseType::GridViewType;
   using typename BaseType::LocalizedBasisType;
+  using typename BaseType::ShapeFunctionsType;
 
 private:
   using FiniteElementType = LocalFiniteElementInterface<D, d, R, r>;
@@ -66,8 +66,7 @@ public:
     if (search_result == finite_elements_->end())
       DUNE_THROW(XT::Common::Exceptions::internal_error,
                  "This must not happen, the grid layer did not report all geometry types!"
-                     << "\n   geometry_type = "
-                     << geometry_type);
+                     << "\n   geometry_type = " << geometry_type);
     return search_result->second->basis();
   }
 
@@ -99,20 +98,19 @@ private:
     using BaseType = XT::Functions::ElementFunctionSetInterface<E, r, 1, R>;
 
   public:
-    using typename BaseType::ElementType;
-    using typename BaseType::DomainType;
-    using typename BaseType::RangeSelector;
     using typename BaseType::DerivativeRangeSelector;
-    using typename BaseType::RangeType;
     using typename BaseType::DerivativeRangeType;
-    using typename BaseType::SingleDerivativeRangeType;
-    using typename BaseType::DynamicRangeType;
+    using typename BaseType::DomainType;
     using typename BaseType::DynamicDerivativeRangeType;
+    using typename BaseType::DynamicRangeType;
+    using typename BaseType::ElementType;
+    using typename BaseType::RangeSelector;
+    using typename BaseType::RangeType;
+    using typename BaseType::SingleDerivativeRangeType;
 
     LocalizedFiniteVolumeGlobalBasis()
       : BaseType()
-    {
-    }
+    {}
 
     LocalizedFiniteVolumeGlobalBasis(const ThisType&) = default;
     LocalizedFiniteVolumeGlobalBasis(ThisType&&) = default;
@@ -135,14 +133,14 @@ private:
       return 0;
     }
 
+    using BaseType::derivatives;
     using BaseType::evaluate;
     using BaseType::jacobians;
-    using BaseType::derivatives;
 
     /**
-      * \name ``These methods are required by XT::Functions::LocalizableFunctionSetInterface.''
-      * \{
-      **/
+     * \name ``These methods are required by XT::Functions::LocalizableFunctionSetInterface.''
+     * \{
+     **/
 
     void evaluate(const DomainType& /*point_in_reference_element*/,
                   std::vector<RangeType>& result,
@@ -177,17 +175,16 @@ private:
         } else {
           DUNE_THROW(Exceptions::basis_error,
                      "arbitrary derivatives are not supported!\n\n"
-                         << "alpha = "
-                         << alpha);
+                         << "alpha = " << alpha);
         }
     } // ... derivatives(...)
 
     /**
-      * \}
-      * \name ``These methods are default implemented in XT::Functions::LocalizableFunctionSetInterface and are
-      *         overridden for improved performance.''
-      * \{
-      **/
+     * \}
+     * \name ``These methods are default implemented in XT::Functions::LocalizableFunctionSetInterface and are
+     *         overridden for improved performance.''
+     * \{
+     **/
 
     void evaluate(const DomainType& /*point_in_reference_element*/,
                   std::vector<DynamicRangeType>& result,
@@ -211,11 +208,11 @@ private:
     }
 
     /**
-      * \}
-      * \name ``These methods (used to access an individual range dimension) are default implemented in
-      *         XT::Functions::LocalizableFunctionSetInterface and are implemented for improved performance.''
-      * \{
-      **/
+     * \}
+     * \name ``These methods (used to access an individual range dimension) are default implemented in
+     *         XT::Functions::LocalizableFunctionSetInterface and are implemented for improved performance.''
+     * \{
+     **/
 
     void evaluate(const DomainType& /*point_in_reference_element*/,
                   std::vector<R>& result,

@@ -40,8 +40,7 @@ class ContinuousMapper : public MapperInterface<GV>
   {
     GeometryTypeLayout(std::set<GeometryType>&& types)
       : types_(std::move(types))
-    {
-    }
+    {}
 
     GeometryTypeLayout(const GeometryTypeLayout<d>&) = default;
     GeometryTypeLayout(GeometryTypeLayout<d>&&) = default;
@@ -57,10 +56,10 @@ class ContinuousMapper : public MapperInterface<GV>
   using Implementation = MultipleCodimMultipleGeomTypeMapper<GV, GeometryTypeLayout>;
 
 public:
-  using typename BaseType::D;
   using BaseType::d;
-  using typename BaseType::GridViewType;
+  using typename BaseType::D;
   using typename BaseType::ElementType;
+  using typename BaseType::GridViewType;
 
   ContinuousMapper(const GridViewType& grd_vw,
                    const std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElement>>>& finite_elements)
@@ -122,8 +121,7 @@ public:
     if (finite_element_search_result == finite_elements_->end())
       DUNE_THROW(XT::Common::Exceptions::internal_error,
                  "This must not happen, the grid view did not report all geometry types!"
-                     << "\n   geometry_type = "
-                     << geometry_type);
+                     << "\n   geometry_type = " << geometry_type);
     return finite_element_search_result->second->coefficients();
   }
 

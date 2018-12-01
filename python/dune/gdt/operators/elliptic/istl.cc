@@ -11,7 +11,7 @@
 
 #if HAVE_DUNE_PYBINDXI
 
-#include <python/dune/gdt/operators/elliptic/bindings.hh>
+#  include <python/dune/gdt/operators/elliptic/bindings.hh>
 
 
 DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_ISTL(template);

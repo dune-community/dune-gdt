@@ -67,13 +67,11 @@ public:
     DUNE_THROW_IF(global_matrix_.rows() != test_space_.mapper().size(),
                   XT::Common::Exceptions::shapes_do_not_match,
                   "global_matrix_.rows() = " << global_matrix_.rows() << "\n  "
-                                             << "test_space_.mapper().size()"
-                                             << test_space_.mapper().size());
+                                             << "test_space_.mapper().size()" << test_space_.mapper().size());
     DUNE_THROW_IF(global_matrix_.cols() != ansatz_space_.mapper().size(),
                   XT::Common::Exceptions::shapes_do_not_match,
                   "global_matrix_.cols() = " << global_matrix_.cols() << "\n  "
-                                             << "ansatz_space_.mapper().size()"
-                                             << ansatz_space_.mapper().size());
+                                             << "ansatz_space_.mapper().size()" << ansatz_space_.mapper().size());
   }
 
   LocalElementBilinearFormAssembler(const ThisType& other)
@@ -89,8 +87,7 @@ public:
     , global_ansatz_indices_(ansatz_space_.mapper().max_local_size())
     , test_basis_(test_space_.basis().localize())
     , ansatz_basis_(ansatz_space_.basis().localize())
-  {
-  }
+  {}
 
   LocalElementBilinearFormAssembler(ThisType&& source) = default;
 
@@ -185,13 +182,11 @@ public:
     DUNE_THROW_IF(global_matrix_.rows() != test_space_.mapper().size(),
                   XT::Common::Exceptions::shapes_do_not_match,
                   "global_matrix_.rows() = " << global_matrix_.rows() << "\n  "
-                                             << "test_space_.mapper().size()"
-                                             << test_space_.mapper().size());
+                                             << "test_space_.mapper().size()" << test_space_.mapper().size());
     DUNE_THROW_IF(global_matrix_.cols() != ansatz_space_.mapper().size(),
                   XT::Common::Exceptions::shapes_do_not_match,
                   "global_matrix_.cols() = " << global_matrix_.cols() << "\n  "
-                                             << "ansatz_space_.mapper().size()"
-                                             << ansatz_space_.mapper().size());
+                                             << "ansatz_space_.mapper().size()" << ansatz_space_.mapper().size());
   }
 
   LocalIntersectionBilinearFormAssembler(const ThisType& other)
@@ -214,8 +209,7 @@ public:
     , test_basis_outside_(test_space_.basis().localize())
     , ansatz_basis_inside_(ansatz_space_.basis().localize())
     , ansatz_basis_outside_(ansatz_space_.basis().localize())
-  {
-  }
+  {}
 
   LocalIntersectionBilinearFormAssembler(ThisType&& source) = default;
 

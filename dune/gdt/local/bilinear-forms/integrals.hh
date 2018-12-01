@@ -38,10 +38,10 @@ class LocalElementIntegralBilinearForm : public LocalElementBilinearFormInterfac
   using BaseType = LocalElementBilinearFormInterface<E, t_r, t_rC, TR, F, a_r, a_rC, AR>;
 
 public:
-  using typename BaseType::D;
   using BaseType::d;
-  using typename BaseType::LocalTestBasisType;
+  using typename BaseType::D;
   using typename BaseType::LocalAnsatzBasisType;
+  using typename BaseType::LocalTestBasisType;
 
   using IntegrandType = LocalBinaryElementIntegrandInterface<E, t_r, t_rC, TR, F, a_r, a_rC, AR>;
   using GenericIntegrand = GenericLocalBinaryElementIntegrand<E, t_r, t_rC, TR, F, a_r, a_rC, AR>;
@@ -50,8 +50,7 @@ public:
     : BaseType(integrand.parameter_type())
     , integrand_(integrand.copy())
     , over_integrate_(over_integrate)
-  {
-  }
+  {}
 
   LocalElementIntegralBilinearForm(typename GenericIntegrand::GenericOrderFunctionType order_function,
                                    typename GenericIntegrand::GenericEvalauteFunctionType evaluate_function,
@@ -60,15 +59,13 @@ public:
     : BaseType(param_type)
     , integrand_(GenericIntegrand(order_function, evaluate_function).copy())
     , over_integrate_(over_integrate)
-  {
-  }
+  {}
 
   LocalElementIntegralBilinearForm(const ThisType& other)
     : BaseType(other.parameter_type())
     , integrand_(other.integrand_->copy())
     , over_integrate_(other.over_integrate_)
-  {
-  }
+  {}
 
   LocalElementIntegralBilinearForm(ThisType&& source) = default;
 
@@ -131,17 +128,17 @@ template <class I,
           size_t a_rC = t_rC,
           class AR = TR>
 class LocalIntersectionIntegralBilinearForm
-    : public LocalIntersectionBilinearFormInterface<I, t_r, t_rC, TR, F, a_r, a_rC, AR>
+  : public LocalIntersectionBilinearFormInterface<I, t_r, t_rC, TR, F, a_r, a_rC, AR>
 {
   using ThisType = LocalIntersectionIntegralBilinearForm<I, t_r, t_rC, TR, F, a_r, a_rC, AR>;
   using BaseType = LocalIntersectionBilinearFormInterface<I, t_r, t_rC, TR, F, a_r, a_rC, AR>;
 
 public:
-  using typename BaseType::D;
   using BaseType::d;
+  using typename BaseType::D;
   using typename BaseType::IntersectionType;
-  using typename BaseType::LocalTestBasisType;
   using typename BaseType::LocalAnsatzBasisType;
+  using typename BaseType::LocalTestBasisType;
 
   using IntegrandType = LocalQuaternaryIntersectionIntegrandInterface<I, t_r, t_rC, TR, F, a_r, a_rC, AR>;
 
@@ -149,15 +146,13 @@ public:
     : BaseType(integrand.parameter_type())
     , integrand_(integrand.copy())
     , over_integrate_(over_integrate)
-  {
-  }
+  {}
 
   LocalIntersectionIntegralBilinearForm(const ThisType& other)
     : BaseType(other.parameter_type())
     , integrand_(other.integrand_->copy())
     , over_integrate_(other.over_integrate_)
-  {
-  }
+  {}
 
   LocalIntersectionIntegralBilinearForm(ThisType&& source) = default;
 

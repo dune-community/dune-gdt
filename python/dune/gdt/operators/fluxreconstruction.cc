@@ -11,18 +11,18 @@
 
 #if HAVE_DUNE_PYBINDXI
 
-#include <dune/common/parallel/mpihelper.hh>
+#  include <dune/common/parallel/mpihelper.hh>
 
-#include <dune/pybindxi/pybind11.h>
-#include <python/dune/gdt/shared.hh>
-#include <dune/pybindxi/stl.h>
+#  include <dune/pybindxi/pybind11.h>
+#  include <python/dune/gdt/shared.hh>
+#  include <dune/pybindxi/stl.h>
 
-#include <python/dune/xt/common/bindings.hh>
-#include <dune/xt/grid/dd/subdomains/grid.hh>
-#include <dune/xt/grid/grids.hh>
+#  include <python/dune/xt/common/bindings.hh>
+#  include <dune/xt/grid/dd/subdomains/grid.hh>
+#  include <dune/xt/grid/grids.hh>
 
-#include <dune/gdt/spaces.hh>
-#include <python/dune/gdt/operators/fluxreconstruction.hh>
+#  include <dune/gdt/spaces.hh>
+#  include <python/dune/gdt/operators/fluxreconstruction.hh>
 
 
 PYBIND11_MODULE(__operators_fluxreconstruction, m)
@@ -39,7 +39,7 @@ PYBIND11_MODULE(__operators_fluxreconstruction, m)
   py::module::import("dune.gdt.__spaces");
   py::module::import("dune.gdt.__discretefunction");
 
-#if HAVE_DUNE_ALUGRID && HAVE_DUNE_ISTL
+#  if HAVE_DUNE_ALUGRID && HAVE_DUNE_ISTL
   Dune::GDT::bindings::DiffusiveFluxReconstructionOperator<ALU_2D_SIMPLEX_CONFORMING,
                                                            Dune::GDT::SpaceType::rt,
                                                            Dune::GDT::Backends::gdt,
@@ -48,7 +48,7 @@ PYBIND11_MODULE(__operators_fluxreconstruction, m)
                                                            double,
                                                            2,
                                                            Dune::XT::LA::Backends::istl_dense>::bind(m);
-#endif // HAVE_DUNE_ALUGRID && HAVE_DUNE_ISTL
+#  endif // HAVE_DUNE_ALUGRID && HAVE_DUNE_ISTL
 
   add_initialization(m, "dune.gdt.operators.elliptic");
 }

@@ -13,12 +13,12 @@
 // Todo: python bindings need to be updated to the new-master
 #if 0 // HAVE_DUNE_PYBINDXI
 
-#include <dune/pybindxi/pybind11.h>
+#  include <dune/pybindxi/pybind11.h>
 
-#include <dune/xt/la/container.hh>
+#  include <dune/xt/la/container.hh>
 
-#include <dune/gdt/assembler/system.hh>
-#include <dune/gdt/discretefunction/default.hh>
+#  include <dune/gdt/assembler/system.hh>
+#  include <dune/gdt/discretefunction/default.hh>
 
 namespace Dune {
 namespace GDT {

@@ -53,8 +53,7 @@ struct InviscidCompressibleFlowEulerProblem
            {},
            [&](const auto& u, const auto& /*param*/) { return euler_tools.flux_jacobian(u); })
     , T_end(1.)
-  {
-  }
+  {}
 
   XT::Grid::GridProvider<G> make_initial_grid() const
   {
@@ -79,8 +78,8 @@ struct InviscidCompressibleFlowEulerProblem
 
 template <class G>
 class InviscidCompressibleFlowEulerTest
-    : protected XT::Common::ConstStorageProvider<InviscidCompressibleFlowEulerProblem<G>>,
-      public InstationaryNonconformingHyperbolicEocStudy<G, G::dimension + 2>
+  : protected XT::Common::ConstStorageProvider<InviscidCompressibleFlowEulerProblem<G>>
+  , public InstationaryNonconformingHyperbolicEocStudy<G, G::dimension + 2>
 {
   using BaseType = InstationaryNonconformingHyperbolicEocStudy<G, G::dimension + 2>;
 
@@ -88,17 +87,17 @@ protected:
   using Problem = XT::Common::ConstStorageProvider<InviscidCompressibleFlowEulerProblem<G>>;
   using BaseType::d;
   using BaseType::m;
+  using typename BaseType::BS;
+  using typename BaseType::DF;
   using typename BaseType::E;
   using typename BaseType::F;
-  using typename BaseType::R;
-  using typename BaseType::DF;
-  using typename BaseType::GV;
   using typename BaseType::GP;
-  using typename BaseType::S;
-  using typename BaseType::BS;
-  using typename BaseType::V;
+  using typename BaseType::GV;
   using typename BaseType::M;
   using typename BaseType::O;
+  using typename BaseType::R;
+  using typename BaseType::S;
+  using typename BaseType::V;
   using RangeType = XT::Common::FieldVector<R, m>;
 
 public:
@@ -116,8 +115,7 @@ public:
                })
     , visualization_steps_(0)
     , boundary_treatment("")
-  {
-  }
+  {}
 
 protected:
   const F& flux() const override final
@@ -333,8 +331,7 @@ class InviscidCompressibleFlowEulerExplicitTest : public InviscidCompressibleFlo
 protected:
   InviscidCompressibleFlowEulerExplicitTest()
     : BaseType("explicit/fixed")
-  {
-  }
+  {}
 
   XT::LA::ListVectorArray<V> solve(const S& space, const double T_end) override final
   {

@@ -28,9 +28,9 @@ class LocalFiniteElementDefault : public LocalFiniteElementInterface<D, d, R, r,
   using BaseType = LocalFiniteElementInterface<D, d, R, r, rC>;
 
 public:
-  using typename BaseType::DomainType;
   using typename BaseType::BasisType;
   using typename BaseType::CoefficientsType;
+  using typename BaseType::DomainType;
   using typename BaseType::InterpolationType;
 
   LocalFiniteElementDefault(const int ord,
@@ -49,8 +49,8 @@ public:
   }
 
   /**
-    * \attention Do not delete any of the moved in raw pointers manually afterwads!
-    **/
+   * \attention Do not delete any of the moved in raw pointers manually afterwads!
+   **/
   LocalFiniteElementDefault(const int ord,
                             BasisType*&& bas_ptr,
                             CoefficientsType*&& coeffs_ptr,
@@ -114,23 +114,19 @@ private:
     DUNE_THROW_IF(coefficients_.access().geometry_type() != geometry_type_,
                   Exceptions::finite_element_error,
                   "\n   coefficients_.access().geometry_type() = " << coefficients_.access().geometry_type()
-                                                                   << "\n   geometry_type_ = "
-                                                                   << geometry_type_);
+                                                                   << "\n   geometry_type_ = " << geometry_type_);
     DUNE_THROW_IF(coefficients_.access().size() != basis_.access().size(),
                   Exceptions::finite_element_error,
-                  "\n   coefficients_.access().size() = " << coefficients_.access().size()
-                                                          << "\n   basis_.access().size() = "
-                                                          << basis_.access().size());
+                  "\n   coefficients_.access().size() = "
+                      << coefficients_.access().size() << "\n   basis_.access().size() = " << basis_.access().size());
     DUNE_THROW_IF(interpolation_.access().geometry_type() != geometry_type_,
                   Exceptions::finite_element_error,
                   "\n   interpolation_.access().geometry_type() = " << interpolation_.access().geometry_type()
-                                                                    << "\n   "
-                                                                    << geometry_type_);
+                                                                    << "\n   " << geometry_type_);
     DUNE_THROW_IF(interpolation_.access().size() != basis_.access().size(),
                   Exceptions::finite_element_error,
-                  "\n   interpolation_.access().size() = " << interpolation_.access().size()
-                                                           << "\n   basis_.access().size() = "
-                                                           << basis_.access().size());
+                  "\n   interpolation_.access().size() = "
+                      << interpolation_.access().size() << "\n   basis_.access().size() = " << basis_.access().size());
     DUNE_THROW_IF(!(lagrange_points_.size() == basis_.access().size() / (r * rC) || lagrange_points_.size() == 0),
                   Exceptions::finite_element_error,
                   "\n   lagrange_points_.size() = " << lagrange_points_.size()

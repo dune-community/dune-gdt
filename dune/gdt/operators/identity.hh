@@ -34,16 +34,15 @@ class IdentityOperator : public OperatorInterface<M, GV, r, rC>
   using BaseType = OperatorInterface<M, GV, r, rC>;
 
 public:
-  using typename BaseType::SourceSpaceType;
-  using typename BaseType::RangeSpaceType;
-  using typename BaseType::VectorType;
-  using typename BaseType::MatrixOperatorType;
   using typename BaseType::F;
+  using typename BaseType::MatrixOperatorType;
+  using typename BaseType::RangeSpaceType;
+  using typename BaseType::SourceSpaceType;
+  using typename BaseType::VectorType;
 
   IdentityOperator(const SourceSpaceType& spc)
     : space_(spc)
-  {
-  }
+  {}
 
   bool linear() const override final
   {

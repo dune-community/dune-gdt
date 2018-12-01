@@ -11,28 +11,28 @@
 
 #if HAVE_DUNE_PYBINDXI
 
-#include <memory>
+#  include <memory>
 
-#include <dune/common/parallel/mpihelper.hh>
+#  include <dune/common/parallel/mpihelper.hh>
 
-#include <dune/pybindxi/pybind11.h>
-#include <dune/pybindxi/stl.h>
+#  include <dune/pybindxi/pybind11.h>
+#  include <dune/pybindxi/stl.h>
 
-#include <python/dune/xt/common/bindings.hh>
-#include <python/dune/gdt/shared.hh>
-#include <dune/xt/common/numeric_cast.hh>
-#include <dune/xt/grid/dd/subdomains/grid.hh>
-#include <python/dune/xt/grid/grids.bindings.hh>
-#include <python/dune/xt/grid/layers.bindings.hh>
-#include <dune/xt/grid/gridprovider/provider.hh>
-#include <dune/xt/grid/walker.hh>
-#include <dune/xt/grid/type_traits.hh>
+#  include <python/dune/xt/common/bindings.hh>
+#  include <python/dune/gdt/shared.hh>
+#  include <dune/xt/common/numeric_cast.hh>
+#  include <dune/xt/grid/dd/subdomains/grid.hh>
+#  include <python/dune/xt/grid/grids.bindings.hh>
+#  include <python/dune/xt/grid/layers.bindings.hh>
+#  include <dune/xt/grid/gridprovider/provider.hh>
+#  include <dune/xt/grid/walker.hh>
+#  include <dune/xt/grid/type_traits.hh>
 
-#include <python/dune/gdt/playground/operators/OS2015.hh>
+#  include <python/dune/gdt/playground/operators/OS2015.hh>
 
 using namespace Dune;
-using XT::Grid::Layers;
 using XT::Grid::Backends;
+using XT::Grid::Layers;
 namespace py = pybind11;
 
 
@@ -361,7 +361,7 @@ PYBIND11_MODULE(__operators_OS2015, m)
   py::module::import("dune.xt.functions");
   py::module::import("dune.xt.la");
 
-#if HAVE_DUNE_ALUGRID
+#  if HAVE_DUNE_ALUGRID
   // This is not efficient: we reconstruct on the whole leaf instead of only the neighborhood, but the rt space
   //                        on a dd_subdomain_oversampled grid view (which is a wrapped part) is broken, if based on
   //                        a 2d simplex alugrid.
@@ -370,7 +370,7 @@ PYBIND11_MODULE(__operators_OS2015, m)
   DiffusiveFluxProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::view>::bind(m);
   // s.a.
   DiffusiveFluxProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::view, Layers::leaf>::bind(m);
-#endif
+#  endif
 
   add_initialization(m, "dune.gdt.operators.elliptic");
 }

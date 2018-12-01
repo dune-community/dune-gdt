@@ -57,16 +57,14 @@ public:
     if (basis_->size() != coefficients_->size())
       DUNE_THROW(Exceptions::finite_element_error,
                  "basis_->size() = " << basis_->size() << "\n   "
-                                     << "coefficients_->size() = "
-                                     << coefficients_->size());
+                                     << "coefficients_->size() = " << coefficients_->size());
   }
 
   LocalRaviartThomasInterpolation(const ThisType& other)
     : order_(other.order_)
     , basis_(other.basis_->copy())
     , coefficients_(other.coefficients_->copy())
-  {
-  }
+  {}
 
   BaseType* copy() const override final
   {
@@ -142,9 +140,7 @@ public:
         } catch (const XT::LA::Exceptions::linear_solver_failed& ee) {
           DUNE_THROW(Exceptions::finite_element_error,
                      error_msg_prefix() << "Failed to solve for DoFs associated with intersection "
-                                        << intersection_index
-                                        << ", this was the original error:\n   "
-                                        << ee.what());
+                                        << intersection_index << ", this was the original error:\n   " << ee.what());
         }
         for (size_t ii = 0; ii < local_keys_assosiated_with_intersection.size(); ++ii) {
           const size_t local_key_index = local_keys_assosiated_with_intersection[ii];
@@ -209,10 +205,8 @@ public:
           !local_key_was_handled[ii],
           Exceptions::finite_element_error,
           error_msg_prefix() << "The following DoF is neither associated with an intersection, nor with the element!"
-                             << "\n   local DoF index: "
-                             << ii
-                             << "\n   associated local_key: "
-                             << coefficients_->local_key(ii));
+                             << "\n   local DoF index: " << ii
+                             << "\n   associated local_key: " << coefficients_->local_key(ii));
   } // ... interpolate(...)
 
 private:
@@ -295,14 +289,12 @@ class LocalRaviartThomasFiniteElementFactory
         } else
           DUNE_THROW(Exceptions::finite_element_error,
                      "when creating a local Raviart-Thomas finite element: there is none available on cubes for order "
-                         << order
-                         << " (if you think there is, update this class)!");
+                         << order << " (if you think there is, update this class)!");
       } else
         DUNE_THROW(Exceptions::finite_element_error,
                    "when creating a local Raviart-Thomas finite element: there is none available for the "
                    "following geometry type: "
-                       << geometry_type
-                       << "(if you think there is, update this class)!");
+                       << geometry_type << "(if you think there is, update this class)!");
     }
   }; // helper<2, ...>
 
@@ -324,14 +316,12 @@ class LocalRaviartThomasFiniteElementFactory
         } else
           DUNE_THROW(Exceptions::finite_element_error,
                      "when creating a local Raviart-Thomas finite element: there is none available on cubes for order "
-                         << order
-                         << " (if you think there is, update this class)!");
+                         << order << " (if you think there is, update this class)!");
       } else
         DUNE_THROW(Exceptions::finite_element_error,
                    "when creating a local Raviart-Thomas finite element: there is none available for the "
                    "following geometry type: "
-                       << geometry_type
-                       << "(if you think there is, update this class)!");
+                       << geometry_type << "(if you think there is, update this class)!");
     }
   }; // helper<3, ...>
 

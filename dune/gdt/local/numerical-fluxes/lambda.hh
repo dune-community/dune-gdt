@@ -38,8 +38,7 @@ public:
   NumericalLambdaFlux(const FluxType& flx, LambdaType lambda, const XT::Common::ParameterType& param_type = {})
     : BaseType(flx, param_type)
     , numerical_flux_(lambda)
-  {
-  }
+  {}
 
   std::unique_ptr<BaseType> copy() const override final
   {

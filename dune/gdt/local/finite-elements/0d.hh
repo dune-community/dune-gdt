@@ -32,14 +32,13 @@ class Local0dFiniteElementBasis : public LocalFiniteElementBasisInterface<D, 0, 
   using BaseType = LocalFiniteElementBasisInterface<D, 0, R, 1>;
 
 public:
+  using typename BaseType::DerivativeRangeType;
   using typename BaseType::DomainType;
   using typename BaseType::RangeType;
-  using typename BaseType::DerivativeRangeType;
 
   Local0dFiniteElementBasis()
     : geometry_type_(GeometryType::simplex, 0)
-  {
-  }
+  {}
 
   Local0dFiniteElementBasis(const ThisType& other) = default;
 
@@ -105,8 +104,7 @@ public:
 
   Local0dFiniteElementInterpolation()
     : geometry_type_(GeometryType::simplex, 0)
-  {
-  }
+  {}
 
   Local0dFiniteElementInterpolation(const ThisType& other) = default;
 
@@ -157,8 +155,7 @@ public:
   Local0dFiniteElementCoefficients()
     : geometry_type_(GeometryType::simplex, 0)
     , local_key_(0, 0, 0)
-  {
-  }
+  {}
 
   Local0dFiniteElementCoefficients(const ThisType& other) = default;
 
@@ -211,8 +208,7 @@ public:
                new Local0dFiniteElementCoefficients<D>(),
                new Local0dFiniteElementInterpolation<D, R>(),
                {ReferenceElements<D, 0>::simplex().position(0, 0)})
-  {
-  }
+  {}
 }; // class Local0dFiniteElement
 
 

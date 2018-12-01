@@ -15,7 +15,7 @@
 #include <dune/common/parallel/communicator.hh>
 
 #if HAVE_DUNE_ISTL
-#include <dune/istl/owneroverlapcopy.hh>
+#  include <dune/istl/owneroverlapcopy.hh>
 #endif
 
 #include <dune/xt/common/parallel/helper.hh>

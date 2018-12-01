@@ -74,10 +74,10 @@ auto target_function = prolong<TargetVectorType>(source, target_space, prolongat
 \endcode
  */
 template <class TargetVectorType, class SV, class SGV, size_t r, size_t rC, class SR, class TGV, class TR, class PGV>
-std::enable_if_t<XT::LA::is_vector<TargetVectorType>::value
-                     && std::is_same<XT::Grid::extract_entity_t<TGV>,
-                                     typename PGV::Grid::template Codim<0>::Entity>::value,
-                 DiscreteFunction<TargetVectorType, TGV, r, rC, TR>>
+std::enable_if_t<
+    XT::LA::is_vector<TargetVectorType>::value
+        && std::is_same<XT::Grid::extract_entity_t<TGV>, typename PGV::Grid::template Codim<0>::Entity>::value,
+    DiscreteFunction<TargetVectorType, TGV, r, rC, TR>>
 prolong(const DiscreteFunction<SV, SGV, r, rC, SR>& source,
         const SpaceInterface<TGV, r, rC, TR>& target_space,
         const GridView<PGV>& prolongation_grid_view)
@@ -212,10 +212,10 @@ auto target_function = prolong<TargetVectorType>(source, target_space, spatial_p
 \endcode
  */
 template <class TargetVectorType, class SV, class SGV, size_t r, size_t rC, class R, class TGV, class PGV>
-std::enable_if_t<XT::LA::is_vector<TargetVectorType>::value
-                     && std::is_same<XT::Grid::extract_entity_t<TGV>,
-                                     typename PGV::Grid::template Codim<0>::Entity>::value,
-                 DiscreteBochnerFunction<TargetVectorType, TGV, r, rC, R>>
+std::enable_if_t<
+    XT::LA::is_vector<TargetVectorType>::value
+        && std::is_same<XT::Grid::extract_entity_t<TGV>, typename PGV::Grid::template Codim<0>::Entity>::value,
+    DiscreteBochnerFunction<TargetVectorType, TGV, r, rC, R>>
 prolong(const DiscreteBochnerFunction<SV, SGV, r, rC, R>& source,
         const BochnerSpace<TGV, r, rC, R>& target_space,
         const GridView<PGV>& spatial_prolongation_grid_view)

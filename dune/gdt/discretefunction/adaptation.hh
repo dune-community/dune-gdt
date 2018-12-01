@@ -44,8 +44,7 @@ public:
   AdaptationHelper(G& grd)
     : grid_(grd)
     , data_()
-  {
-  }
+  {}
 
   ThisType& append(SpaceType& space, DiscreteFunctionType& discrete_function)
   {

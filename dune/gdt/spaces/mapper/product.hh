@@ -15,16 +15,16 @@
 // TODO: reenable or remove
 #if 0
 
-#include <dune/common/dynvector.hh>
+#  include <dune/common/dynvector.hh>
 
-#include <dune/xt/common/debug.hh>
-#include <dune/xt/common/type_traits.hh>
+#  include <dune/xt/common/debug.hh>
+#  include <dune/xt/common/type_traits.hh>
 
-#include <dune/xt/grid/type_traits.hh>
+#  include <dune/xt/grid/type_traits.hh>
 
-#include <dune/gdt/spaces/basefunctionset/product.hh>
+#  include <dune/gdt/spaces/basefunctionset/product.hh>
 
-#include "interfaces.hh"
+#  include "interfaces.hh"
 
 namespace Dune {
 namespace GDT {

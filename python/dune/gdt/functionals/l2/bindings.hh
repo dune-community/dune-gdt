@@ -12,16 +12,16 @@
 // TODO: python bindings need to be updated to the new-master
 #if 0 // HAVE_DUNE_PYBINDXI
 
-#include <dune/pybindxi/pybind11.h>
+#  include <dune/pybindxi/pybind11.h>
 
-#include <python/dune/xt/grid/grids.bindings.hh>
-#include <python/dune/xt/la/container.bindings.hh>
+#  include <python/dune/xt/grid/grids.bindings.hh>
+#  include <python/dune/xt/la/container.bindings.hh>
 
-#include <dune/gdt/spaces/bindings.hh>
-#include <dune/gdt/type_traits.hh>
+#  include <dune/gdt/spaces/bindings.hh>
+#  include <dune/gdt/type_traits.hh>
 
-#include <dune/gdt/functionals/l2.hh>
-#include <python/dune/gdt/functionals/base.hh>
+#  include <dune/gdt/functionals/l2.hh>
+#  include <python/dune/gdt/functionals/base.hh>
 
 namespace Dune {
 namespace GDT {
@@ -167,154 +167,144 @@ public:
 
 // begin: this is what we need for the lib
 
-#define _DUNE_GDT_FUNCTIONALS_L2_BIND_LIB(_prefix, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la)        \
-  _prefix class Dune::GDT::bindings::                                                                                  \
-      L2VolumeVectorFunctional<Dune::XT::Functions::                                                                   \
-                                   GridFunctionInterface<Dune::XT::Grid::extract_entity_t<                             \
-                                                             typename Dune::XT::Grid::                                 \
-                                                                 Layer<_GRID,                                          \
-                                                                       Dune::XT::Grid::Layers::_layer,                 \
-                                                                       Dune::XT::Grid::Backends::_g_backend,           \
-                                                                       Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::     \
-                                                                     type>,                                            \
-                                                         double,                                                       \
-                                                         _d,                                                           \
-                                                         double,                                                       \
-                                                         1,                                                            \
-                                                         1>,                                                           \
-                               Dune::GDT::SpaceProvider<_GRID,                                                         \
-                                                        Dune::XT::Grid::Layers::_layer,                                \
-                                                        Dune::GDT::SpaceType::_s_type,                                 \
-                                                        Dune::GDT::Backends::_s_backend,                               \
-                                                        _p,                                                            \
-                                                        double,                                                        \
-                                                        1,                                                             \
-                                                        1>,                                                            \
-                               typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType>;     \
-  _prefix class Dune::GDT::bindings::                                                                                  \
-      L2FaceVectorFunctional<Dune::XT::Functions::                                                                     \
-                                 GridFunctionInterface<Dune::XT::Grid::extract_entity_t<                               \
-                                                           typename Dune::XT::Grid::                                   \
-                                                               Layer<_GRID,                                            \
-                                                                     Dune::XT::Grid::Layers::_layer,                   \
-                                                                     Dune::XT::Grid::Backends::_g_backend,             \
-                                                                     Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>, \
-                                                       double,                                                         \
-                                                       _d,                                                             \
-                                                       double,                                                         \
-                                                       1,                                                              \
-                                                       1>,                                                             \
-                             Dune::GDT::SpaceProvider<_GRID,                                                           \
-                                                      Dune::XT::Grid::Layers::_layer,                                  \
-                                                      Dune::GDT::SpaceType::_s_type,                                   \
-                                                      Dune::GDT::Backends::_s_backend,                                 \
-                                                      _p,                                                              \
-                                                      double,                                                          \
-                                                      1,                                                               \
-                                                      1>,                                                              \
-                             typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType,        \
-                             typename Dune::XT::Grid::Layer<_GRID,                                                     \
-                                                            Dune::XT::Grid::Layers::_layer,                            \
-                                                            Dune::XT::Grid::Backends::_g_backend,                      \
-                                                            Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>
+#  define _DUNE_GDT_FUNCTIONALS_L2_BIND_LIB(_prefix, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la)      \
+    _prefix class Dune::GDT::bindings::L2VolumeVectorFunctional<                                                       \
+        Dune::XT::Functions::GridFunctionInterface<Dune::XT::Grid::extract_entity_t<typename Dune::XT::Grid::Layer<    \
+                                                       _GRID,                                                          \
+                                                       Dune::XT::Grid::Layers::_layer,                                 \
+                                                       Dune::XT::Grid::Backends::_g_backend,                           \
+                                                       Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,               \
+                                                   double,                                                             \
+                                                   _d,                                                                 \
+                                                   double,                                                             \
+                                                   1,                                                                  \
+                                                   1>,                                                                 \
+        Dune::GDT::SpaceProvider<_GRID,                                                                                \
+                                 Dune::XT::Grid::Layers::_layer,                                                       \
+                                 Dune::GDT::SpaceType::_s_type,                                                        \
+                                 Dune::GDT::Backends::_s_backend,                                                      \
+                                 _p,                                                                                   \
+                                 double,                                                                               \
+                                 1,                                                                                    \
+                                 1>,                                                                                   \
+        typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType>;                            \
+    _prefix class Dune::GDT::bindings::L2FaceVectorFunctional<                                                         \
+        Dune::XT::Functions::GridFunctionInterface<Dune::XT::Grid::extract_entity_t<typename Dune::XT::Grid::Layer<    \
+                                                       _GRID,                                                          \
+                                                       Dune::XT::Grid::Layers::_layer,                                 \
+                                                       Dune::XT::Grid::Backends::_g_backend,                           \
+                                                       Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,               \
+                                                   double,                                                             \
+                                                   _d,                                                                 \
+                                                   double,                                                             \
+                                                   1,                                                                  \
+                                                   1>,                                                                 \
+        Dune::GDT::SpaceProvider<_GRID,                                                                                \
+                                 Dune::XT::Grid::Layers::_layer,                                                       \
+                                 Dune::GDT::SpaceType::_s_type,                                                        \
+                                 Dune::GDT::Backends::_s_backend,                                                      \
+                                 _p,                                                                                   \
+                                 double,                                                                               \
+                                 1,                                                                                    \
+                                 1>,                                                                                   \
+        typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType,                             \
+        typename Dune::XT::Grid::Layer<_GRID,                                                                          \
+                                       Dune::XT::Grid::Layers::_layer,                                                 \
+                                       Dune::XT::Grid::Backends::_g_backend,                                           \
+                                       Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>
 
 
-#if HAVE_DUNE_ALUGRID
-#define DUNE_GDT_FUNCTIONALS_L2_BIND_LIB_ALU(_prefix, _layer, _g_backend, _s_type, _s_backend, _p, _la)                \
-  _DUNE_GDT_FUNCTIONALS_L2_BIND_LIB(                                                                                   \
-      _prefix, 2, ALU_2D_SIMPLEX_CONFORMING, _layer, _g_backend, _s_type, _s_backend, _p, _la)
-#else
-#define DUNE_GDT_FUNCTIONALS_L2_BIND_LIB_ALU(_prefix, _layer, _g_backend, _s_type, _s_backend, _p, _la)
-#endif
+#  if HAVE_DUNE_ALUGRID
+#    define DUNE_GDT_FUNCTIONALS_L2_BIND_LIB_ALU(_prefix, _layer, _g_backend, _s_type, _s_backend, _p, _la)            \
+      _DUNE_GDT_FUNCTIONALS_L2_BIND_LIB(                                                                               \
+          _prefix, 2, ALU_2D_SIMPLEX_CONFORMING, _layer, _g_backend, _s_type, _s_backend, _p, _la)
+#  else
+#    define DUNE_GDT_FUNCTIONALS_L2_BIND_LIB_ALU(_prefix, _layer, _g_backend, _s_type, _s_backend, _p, _la)
+#  endif
 
-#define DUNE_GDT_FUNCTIONALS_L2_BIND_LIB_YASP(_prefix, _layer, _g_backend, _s_type, _s_backend, _p, _la)               \
-  _DUNE_GDT_FUNCTIONALS_L2_BIND_LIB(                                                                                   \
-      _prefix, 1, YASP_1D_EQUIDISTANT_OFFSET, _layer, _g_backend, _s_type, _s_backend, _p, _la);                       \
-  _DUNE_GDT_FUNCTIONALS_L2_BIND_LIB(                                                                                   \
-      _prefix, 2, YASP_2D_EQUIDISTANT_OFFSET, _layer, _g_backend, _s_type, _s_backend, _p, _la)
+#  define DUNE_GDT_FUNCTIONALS_L2_BIND_LIB_YASP(_prefix, _layer, _g_backend, _s_type, _s_backend, _p, _la)             \
+    _DUNE_GDT_FUNCTIONALS_L2_BIND_LIB(                                                                                 \
+        _prefix, 1, YASP_1D_EQUIDISTANT_OFFSET, _layer, _g_backend, _s_type, _s_backend, _p, _la);                     \
+    _DUNE_GDT_FUNCTIONALS_L2_BIND_LIB(                                                                                 \
+        _prefix, 2, YASP_2D_EQUIDISTANT_OFFSET, _layer, _g_backend, _s_type, _s_backend, _p, _la)
 
 // alu_istl.cc
-#if HAVE_DUNE_ALUGRID && HAVE_DUNE_ISTL
+#  if HAVE_DUNE_ALUGRID && HAVE_DUNE_ISTL
 DUNE_GDT_FUNCTIONALS_L2_BIND_LIB_ALU(extern template, leaf, view, cg, gdt, 1, istl_sparse);
 DUNE_GDT_FUNCTIONALS_L2_BIND_LIB_ALU(extern template, level, view, cg, gdt, 1, istl_sparse);
 DUNE_GDT_FUNCTIONALS_L2_BIND_LIB_ALU(extern template, dd_subdomain, view, cg, gdt, 1, istl_sparse);
-#endif
+#  endif
 
 // yasp_istl.cc
-#if HAVE_DUNE_ISTL
+#  if HAVE_DUNE_ISTL
 DUNE_GDT_FUNCTIONALS_L2_BIND_LIB_YASP(extern template, leaf, view, cg, gdt, 1, istl_sparse);
 DUNE_GDT_FUNCTIONALS_L2_BIND_LIB_YASP(extern template, level, view, cg, gdt, 1, istl_sparse);
 DUNE_GDT_FUNCTIONALS_L2_BIND_LIB_YASP(extern template, dd_subdomain, view, cg, gdt, 1, istl_sparse);
-#endif
+#  endif
 
 // end: this is what we need for the lib
 
 
 // begin: this is what we need for the .so
 
-#define _DUNE_GDT_FUNCTIONALS_L2_BIND(_m, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la)                 \
-  Dune::GDT::bindings::                                                                                                \
-      L2VolumeVectorFunctional<Dune::XT::Functions::                                                                   \
-                                   GridFunctionInterface<Dune::XT::Grid::extract_entity_t<                             \
-                                                             typename Dune::XT::Grid::                                 \
-                                                                 Layer<_GRID,                                          \
-                                                                       Dune::XT::Grid::Layers::_layer,                 \
-                                                                       Dune::XT::Grid::Backends::_g_backend,           \
-                                                                       Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::     \
-                                                                     type>,                                            \
-                                                         double,                                                       \
-                                                         _d,                                                           \
-                                                         double,                                                       \
-                                                         1,                                                            \
-                                                         1>,                                                           \
-                               Dune::GDT::SpaceProvider<_GRID,                                                         \
-                                                        Dune::XT::Grid::Layers::_layer,                                \
-                                                        Dune::GDT::SpaceType::_s_type,                                 \
-                                                        Dune::GDT::Backends::_s_backend,                               \
-                                                        _p,                                                            \
-                                                        double,                                                        \
-                                                        1,                                                             \
-                                                        1>,                                                            \
-                               typename Dune::XT::LA::Container<double,                                                \
-                                                                Dune::XT::LA::Backends::_la>::VectorType>::bind(_m);   \
-  Dune::GDT::bindings::                                                                                                \
-      L2FaceVectorFunctional<Dune::XT::Functions::                                                                     \
-                                 GridFunctionInterface<Dune::XT::Grid::extract_entity_t<                               \
-                                                           typename Dune::XT::Grid::                                   \
-                                                               Layer<_GRID,                                            \
-                                                                     Dune::XT::Grid::Layers::_layer,                   \
-                                                                     Dune::XT::Grid::Backends::_g_backend,             \
-                                                                     Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>, \
-                                                       double,                                                         \
-                                                       _d,                                                             \
-                                                       double,                                                         \
-                                                       1,                                                              \
-                                                       1>,                                                             \
-                             Dune::GDT::SpaceProvider<_GRID,                                                           \
-                                                      Dune::XT::Grid::Layers::_layer,                                  \
-                                                      Dune::GDT::SpaceType::_s_type,                                   \
-                                                      Dune::GDT::Backends::_s_backend,                                 \
-                                                      _p,                                                              \
-                                                      double,                                                          \
-                                                      1,                                                               \
-                                                      1>,                                                              \
-                             typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType,        \
-                             typename Dune::XT::Grid::Layer<_GRID,                                                     \
-                                                            Dune::XT::Grid::Layers::_layer,                            \
-                                                            Dune::XT::Grid::Backends::_g_backend,                      \
-                                                            Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>::bind(_m)
+#  define _DUNE_GDT_FUNCTIONALS_L2_BIND(_m, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la)               \
+    Dune::GDT::bindings::L2VolumeVectorFunctional<                                                                     \
+        Dune::XT::Functions::GridFunctionInterface<Dune::XT::Grid::extract_entity_t<typename Dune::XT::Grid::Layer<    \
+                                                       _GRID,                                                          \
+                                                       Dune::XT::Grid::Layers::_layer,                                 \
+                                                       Dune::XT::Grid::Backends::_g_backend,                           \
+                                                       Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,               \
+                                                   double,                                                             \
+                                                   _d,                                                                 \
+                                                   double,                                                             \
+                                                   1,                                                                  \
+                                                   1>,                                                                 \
+        Dune::GDT::SpaceProvider<_GRID,                                                                                \
+                                 Dune::XT::Grid::Layers::_layer,                                                       \
+                                 Dune::GDT::SpaceType::_s_type,                                                        \
+                                 Dune::GDT::Backends::_s_backend,                                                      \
+                                 _p,                                                                                   \
+                                 double,                                                                               \
+                                 1,                                                                                    \
+                                 1>,                                                                                   \
+        typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType>::bind(_m);                  \
+    Dune::GDT::bindings::L2FaceVectorFunctional<                                                                       \
+        Dune::XT::Functions::GridFunctionInterface<Dune::XT::Grid::extract_entity_t<typename Dune::XT::Grid::Layer<    \
+                                                       _GRID,                                                          \
+                                                       Dune::XT::Grid::Layers::_layer,                                 \
+                                                       Dune::XT::Grid::Backends::_g_backend,                           \
+                                                       Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,               \
+                                                   double,                                                             \
+                                                   _d,                                                                 \
+                                                   double,                                                             \
+                                                   1,                                                                  \
+                                                   1>,                                                                 \
+        Dune::GDT::SpaceProvider<_GRID,                                                                                \
+                                 Dune::XT::Grid::Layers::_layer,                                                       \
+                                 Dune::GDT::SpaceType::_s_type,                                                        \
+                                 Dune::GDT::Backends::_s_backend,                                                      \
+                                 _p,                                                                                   \
+                                 double,                                                                               \
+                                 1,                                                                                    \
+                                 1>,                                                                                   \
+        typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType,                             \
+        typename Dune::XT::Grid::Layer<_GRID,                                                                          \
+                                       Dune::XT::Grid::Layers::_layer,                                                 \
+                                       Dune::XT::Grid::Backends::_g_backend,                                           \
+                                       Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>::bind(_m)
 
 
-#if HAVE_DUNE_ALUGRID
-#define DUNE_GDT_FUNCTIONALS_L2_BIND_ALU(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)                         \
-  _DUNE_GDT_FUNCTIONALS_L2_BIND(_m, 2, ALU_2D_SIMPLEX_CONFORMING, _layer, _g_backend, _s_type, _s_backend, _p, _la)
-#else
-#define DUNE_GDT_FUNCTIONALS_L2_BIND_ALU(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)
-#endif
+#  if HAVE_DUNE_ALUGRID
+#    define DUNE_GDT_FUNCTIONALS_L2_BIND_ALU(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)                     \
+      _DUNE_GDT_FUNCTIONALS_L2_BIND(_m, 2, ALU_2D_SIMPLEX_CONFORMING, _layer, _g_backend, _s_type, _s_backend, _p, _la)
+#  else
+#    define DUNE_GDT_FUNCTIONALS_L2_BIND_ALU(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)
+#  endif
 
-#define DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)                        \
-  _DUNE_GDT_FUNCTIONALS_L2_BIND(_m, 1, YASP_1D_EQUIDISTANT_OFFSET, _layer, _g_backend, _s_type, _s_backend, _p, _la);  \
-  _DUNE_GDT_FUNCTIONALS_L2_BIND(_m, 2, YASP_2D_EQUIDISTANT_OFFSET, _layer, _g_backend, _s_type, _s_backend, _p, _la)
+#  define DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)                      \
+    _DUNE_GDT_FUNCTIONALS_L2_BIND(                                                                                     \
+        _m, 1, YASP_1D_EQUIDISTANT_OFFSET, _layer, _g_backend, _s_type, _s_backend, _p, _la);                          \
+    _DUNE_GDT_FUNCTIONALS_L2_BIND(_m, 2, YASP_2D_EQUIDISTANT_OFFSET, _layer, _g_backend, _s_type, _s_backend, _p, _la)
 
 
 // end: this is what we need for the .so
