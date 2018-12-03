@@ -21,13 +21,13 @@ namespace Test {
 
 // polorder 1, conforming
 
-std::vector<double> LinearEllipticEocExpectations<LinearElliptic::ESV2007DdSubdomainsTestCase<Yasp2Grid, double, 1>,
-                                                  LinearElliptic::ChooseDiscretizer::block_ipdg,
-                                                  1>::
-    results(const LinearEllipticEocExpectations<LinearElliptic::ESV2007DdSubdomainsTestCase<Yasp2Grid, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::block_ipdg,
-                                                1>::TestCaseType&,
-            const std::string type)
+std::vector<double> LinearEllipticEocExpectations<
+    LinearElliptic::ESV2007DdSubdomainsTestCase<Yasp2Grid, double, 1>,
+    LinearElliptic::ChooseDiscretizer::block_ipdg,
+    1>::results(const LinearEllipticEocExpectations<LinearElliptic::ESV2007DdSubdomainsTestCase<Yasp2Grid, double, 1>,
+                                                    LinearElliptic::ChooseDiscretizer::block_ipdg,
+                                                    1>::TestCaseType&,
+                const std::string type)
 {
   if (type == "L2") {
 #if DXT_DISABLE_LARGE_TESTS
@@ -48,13 +48,13 @@ std::vector<double> LinearEllipticEocExpectations<LinearElliptic::ESV2007DdSubdo
 
 // polorder 2, conforming
 
-std::vector<double> LinearEllipticEocExpectations<LinearElliptic::ESV2007DdSubdomainsTestCase<Yasp2Grid, double, 1>,
-                                                  LinearElliptic::ChooseDiscretizer::block_ipdg,
-                                                  2>::
-    results(const LinearEllipticEocExpectations<LinearElliptic::ESV2007DdSubdomainsTestCase<Yasp2Grid, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::block_ipdg,
-                                                2>::TestCaseType&,
-            const std::string type)
+std::vector<double> LinearEllipticEocExpectations<
+    LinearElliptic::ESV2007DdSubdomainsTestCase<Yasp2Grid, double, 1>,
+    LinearElliptic::ChooseDiscretizer::block_ipdg,
+    2>::results(const LinearEllipticEocExpectations<LinearElliptic::ESV2007DdSubdomainsTestCase<Yasp2Grid, double, 1>,
+                                                    LinearElliptic::ChooseDiscretizer::block_ipdg,
+                                                    2>::TestCaseType&,
+                const std::string type)
 {
   if (type == "L2") {
 #if DXT_DISABLE_LARGE_TESTS

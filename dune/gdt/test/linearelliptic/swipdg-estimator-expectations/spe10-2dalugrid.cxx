@@ -90,10 +90,10 @@ public:
 }; // LinearEllipticSwipdgEstimatorExpectations
 
 
-template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::
-                                                             Spe10Model1TestCase<AluConform2dGridType, double, 1>,
-                                                         LinearElliptic::ChooseDiscretizer::swipdg,
-                                                         1>;
+template class LinearEllipticSwipdgEstimatorExpectations<
+    LinearElliptic::Spe10Model1TestCase<AluConform2dGridType, double, 1>,
+    LinearElliptic::ChooseDiscretizer::swipdg,
+    1>;
 
 
 // polorder 1, nonconforming
@@ -162,10 +162,10 @@ public:
 }; // LinearEllipticSwipdgEstimatorExpectations
 
 
-template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::
-                                                             Spe10Model1TestCase<AluSimplex2dGridType, double, 1>,
-                                                         LinearElliptic::ChooseDiscretizer::swipdg,
-                                                         1>;
+template class LinearEllipticSwipdgEstimatorExpectations<
+    LinearElliptic::Spe10Model1TestCase<AluSimplex2dGridType, double, 1>,
+    LinearElliptic::ChooseDiscretizer::swipdg,
+    1>;
 
 
 } // namespace Test

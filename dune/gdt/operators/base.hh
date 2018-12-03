@@ -108,8 +108,8 @@ class LocalizableProductBase : public XT::Grid::Walker<GridLayerImp>
   typedef XT::Grid::Walker<GridLayerImp> BaseType;
 
 public:
-  using typename BaseType::GridLayerType;
   using typename BaseType::EntityType;
+  using typename BaseType::GridLayerType;
   typedef RangeImp RangeType;
   typedef SourceImp SourceType;
   typedef FieldImp FieldType;
@@ -137,8 +137,7 @@ public:
     , result_(0.)
     , walked_(false)
     , param_(param)
-  {
-  }
+  {}
 
   LocalizableProductBase(GridLayerType grd_layr, const RangeType& rng, const XT::Common::Parameter& param = {})
     : BaseType(grd_layr)
@@ -147,8 +146,7 @@ public:
     , result_(0.)
     , walked_(false)
     , param_(param)
-  {
-  }
+  {}
 
   const SourceType& source() const
   {
@@ -160,8 +158,8 @@ public:
     return range_;
   }
 
-  using BaseType::grid_layer;
   using BaseType::append;
+  using BaseType::grid_layer;
 
   ThisType& append(const LocalVolumeTwoFormInterface<LocalRangeType, LocalSourceType, FieldType>& local_volume_twoform,
                    const XT::Grid::ApplyOn::WhichEntity<GridLayerType>* where =
@@ -225,15 +223,15 @@ template <class MatrixImp,
           class OuterRangeSpaceImp,
           class OuterSourceSpaceImp>
 class MatrixOperatorBase
-    : public OperatorInterface<internal::MatrixOperatorBaseTraits<MatrixImp,
-                                                                  RangeSpaceImp,
-                                                                  GridLayerImp,
-                                                                  SourceSpaceImp,
-                                                                  FieldImp,
-                                                                  pt,
-                                                                  OuterRangeSpaceImp,
-                                                                  OuterSourceSpaceImp>>,
-      public SystemAssembler<RangeSpaceImp, GridLayerImp, SourceSpaceImp, OuterRangeSpaceImp, OuterSourceSpaceImp>
+  : public OperatorInterface<internal::MatrixOperatorBaseTraits<MatrixImp,
+                                                                RangeSpaceImp,
+                                                                GridLayerImp,
+                                                                SourceSpaceImp,
+                                                                FieldImp,
+                                                                pt,
+                                                                OuterRangeSpaceImp,
+                                                                OuterSourceSpaceImp>>
+  , public SystemAssembler<RangeSpaceImp, GridLayerImp, SourceSpaceImp, OuterRangeSpaceImp, OuterSourceSpaceImp>
 {
 public:
   typedef OperatorInterface<internal::MatrixOperatorBaseTraits<MatrixImp,
@@ -277,16 +275,14 @@ public:
   typedef typename OuterSourceSpaceType::BaseFunctionSetType OuterSourceBaseType;
   typedef XT::LA::SparsityPatternDefault PatternType;
   typedef MatrixImp MatrixType;
-  using typename BaseOperatorType::FieldType;
-  using typename BaseOperatorType::JacobianType;
-  using typename BaseOperatorType::derived_type;
   using typename BaseAssemblerType::GridLayerType;
   using typename BaseAssemblerType::IntersectionType;
+  using typename BaseOperatorType::derived_type;
+  using typename BaseOperatorType::FieldType;
+  using typename BaseOperatorType::JacobianType;
   static const constexpr ChoosePattern pattern_type = pt;
 
-  virtual ~MatrixOperatorBase()
-  {
-  }
+  virtual ~MatrixOperatorBase() {}
 
 private:
   typedef XT::LA::Solver<MatrixType, typename SourceSpaceType::DofCommunicatorType> LinearSolverType;
@@ -366,13 +362,11 @@ public:
     if (matrix_in_in_.access().rows() != this->range_space().mapper().size())
       DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
                  "matrix.rows(): " << matrix_in_in_.access().rows() << "\n"
-                                   << "range_space().mapper().size(): "
-                                   << this->range_space().mapper().size());
+                                   << "range_space().mapper().size(): " << this->range_space().mapper().size());
     if (matrix_in_in_.access().cols() != this->source_space().mapper().size())
       DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
                  "matrix.cols(): " << matrix_in_in_.access().cols() << "\n"
-                                   << "source_space().mapper().size(): "
-                                   << this->source_space().mapper().size());
+                                   << "source_space().mapper().size(): " << this->source_space().mapper().size());
   } // MatrixOperatorBase(...)
 
   template <class... Args>
@@ -390,13 +384,11 @@ public:
     if (matrix_in_in_.access().rows() != this->range_space().mapper().size())
       DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
                  "matrix_in_in.rows(): " << matrix_in_in_.access().rows() << "\n"
-                                         << "range_space().mapper().size(): "
-                                         << this->range_space().mapper().size());
+                                         << "range_space().mapper().size(): " << this->range_space().mapper().size());
     if (matrix_in_in_.access().cols() != this->source_space().mapper().size())
       DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
                  "matrix_in_in.cols(): " << matrix_in_in_.access().cols() << "\n"
-                                         << "source_space().mapper().size(): "
-                                         << this->source_space().mapper().size());
+                                         << "source_space().mapper().size(): " << this->source_space().mapper().size());
     if (matrix_out_out_.access().rows() != this->outer_range_space().mapper().size())
       DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
                  "matrix_out_out.rows(): " << matrix_out_out_.access().rows() << "\n"
@@ -410,8 +402,7 @@ public:
     if (matrix_in_out_.access().rows() != this->range_space().mapper().size())
       DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
                  "matrix_in_out.rows(): " << matrix_in_out_.access().rows() << "\n"
-                                          << "range_space().mapper().size(): "
-                                          << this->range_space().mapper().size());
+                                          << "range_space().mapper().size(): " << this->range_space().mapper().size());
     if (matrix_in_out_.access().cols() != this->outer_source_space().mapper().size())
       DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
                  "matrix_in_out.cols(): " << matrix_in_out_.access().cols() << "\n"
@@ -439,8 +430,7 @@ public:
     , matrix_out_out_(matrix_in_in_.access())
     , matrix_in_out_(matrix_in_in_.access())
     , matrix_out_in_(matrix_in_in_.access())
-  {
-  }
+  {}
 
   /// \sa SystemAssembler
   MatrixOperatorBase(const ThisType& other) = delete;
@@ -617,8 +607,8 @@ class LocalizableOperatorBase : public XT::Grid::Walker<GridLayerImp>
   typedef XT::Grid::Walker<GridLayerImp> BaseType;
 
 public:
-  using typename BaseType::GridLayerType;
   using typename BaseType::EntityType;
+  using typename BaseType::GridLayerType;
   typedef SourceImp SourceType;
   typedef RangeImp RangeType;
 
@@ -641,8 +631,7 @@ public:
     , source_(src)
     , range_(rng)
     , walked_(false)
-  {
-  }
+  {}
 
   const SourceType& source() const
   {
@@ -659,8 +648,8 @@ public:
     return range_;
   }
 
-  using BaseType::grid_layer;
   using BaseType::append;
+  using BaseType::grid_layer;
 
   template <class L>
   ThisType& append(

@@ -260,7 +260,7 @@ public:
  */
 template <class DiffusionFactorImp, class DiffusionTensorImp, Method method>
 class Inner
-    : public LocalFaceIntegrandInterface<internal::InnerTraits<DiffusionFactorImp, DiffusionTensorImp, method>, 4>
+  : public LocalFaceIntegrandInterface<internal::InnerTraits<DiffusionFactorImp, DiffusionTensorImp, method>, 4>
 {
   typedef LocalEllipticIntegrand<DiffusionFactorImp, DiffusionTensorImp> EllipticType;
   typedef Inner<DiffusionFactorImp, DiffusionTensorImp, method> ThisType;
@@ -279,14 +279,12 @@ public:
         const double beta = internal::default_beta(dimDomain))
     : elliptic_(diffusion_factor, diffusion_tensor)
     , beta_(beta)
-  {
-  }
+  {}
 
   Inner(const DiffusionFactorType& diffusion_factor, const double beta = internal::default_beta(dimDomain))
     : elliptic_(diffusion_factor)
     , beta_(beta)
-  {
-  }
+  {}
 
   template < // This disables the ctor if dimDomain == 1, since factor and tensor are then identical and the ctors
       typename DiffusionType, //                                                                        ambiguous.
@@ -295,8 +293,7 @@ public:
   Inner(const DiffusionType& diffusion, const double beta = internal::default_beta(dimDomain))
     : elliptic_(diffusion)
     , beta_(beta)
-  {
-  }
+  {}
 
   Inner(const ThisType& other) = default;
   Inner(ThisType&& source) = default;
@@ -1068,7 +1065,7 @@ private:
 
 template <class DiffusionFactorImp, class DiffusionTensorImp, Method method>
 class BoundaryLHS
-    : public LocalFaceIntegrandInterface<internal::BoundaryLHSTraits<DiffusionFactorImp, DiffusionTensorImp, method>, 2>
+  : public LocalFaceIntegrandInterface<internal::BoundaryLHSTraits<DiffusionFactorImp, DiffusionTensorImp, method>, 2>
 {
 public:
   typedef LocalEllipticIntegrand<DiffusionFactorImp, DiffusionTensorImp> EllipticType;
@@ -1088,26 +1085,23 @@ public:
               const double beta = internal::default_beta(dimDomain))
     : elliptic_(diffusion_factor, diffusion_tensor)
     , beta_(beta)
-  {
-  }
+  {}
 
   BoundaryLHS(const DiffusionFactorType& diffusion_factor, const double beta = internal::default_beta(dimDomain))
     : elliptic_(diffusion_factor)
     , beta_(beta)
-  {
-  }
+  {}
 
-  template <
-      typename DiffusionType // This disables the ctor if dimDomain == 1, since factor and tensor are then identical
-      ,
-      typename = typename std::enable_if<(std::is_same<DiffusionType, DiffusionTensorType>::value) // and the ctors
-                                         && (dimDomain > 1)
-                                         && sizeof(DiffusionType)>::type> // ambiguous.
+  template <typename DiffusionType // This disables the ctor if dimDomain == 1, since factor and tensor are then
+                                   // identical
+            ,
+            typename = typename std::enable_if<(std::is_same<DiffusionType, DiffusionTensorType>::value) // and the
+                                                                                                         // ctors
+                                               && (dimDomain > 1) && sizeof(DiffusionType)>::type> // ambiguous.
   BoundaryLHS(const DiffusionType& diffusion, const double beta = internal::default_beta(dimDomain))
     : elliptic_(diffusion)
     , beta_(beta)
-  {
-  }
+  {}
 
   BoundaryLHS(const ThisType& other) = default;
   BoundaryLHS(ThisType&& source) = default;
@@ -1273,13 +1267,11 @@ private:
 
   template <class Anything>
   struct IPDG<Method::swipdg_affine_factor, Anything> : public IPDG<Method::swipdg, Anything>
-  {
-  };
+  {};
 
   template <class Anything>
   struct IPDG<Method::swipdg_affine_tensor, Anything> : public IPDG<Method::swipdg, Anything>
-  {
-  };
+  {};
 
   template <class Anything>
   struct IPDG<Method::sipdg, Anything>
@@ -1410,11 +1402,10 @@ private:
 
 
 template <class DirichletImp, class DiffusionFactorImp, class DiffusionTensorImp, Method method>
-class BoundaryRHS : public LocalFaceIntegrandInterface<internal::BoundaryRHSTraits<DirichletImp,
-                                                                                   DiffusionFactorImp,
-                                                                                   DiffusionTensorImp,
-                                                                                   method>,
-                                                       1>
+class BoundaryRHS
+  : public LocalFaceIntegrandInterface<
+        internal::BoundaryRHSTraits<DirichletImp, DiffusionFactorImp, DiffusionTensorImp, method>,
+        1>
 {
   typedef LocalEllipticIntegrand<DiffusionFactorImp, DiffusionTensorImp> EllipticType;
   typedef BoundaryRHS<DirichletImp, DiffusionFactorImp, DiffusionTensorImp, method> ThisType;
@@ -1436,8 +1427,7 @@ public:
     : dirichlet_(dirichlet)
     , elliptic_(diffusion_factor, diffusion_tensor)
     , beta_(beta)
-  {
-  }
+  {}
 
   BoundaryRHS(const DirichletType& dirichlet,
               const DiffusionFactorType& diffusion_factor,
@@ -1445,23 +1435,21 @@ public:
     : dirichlet_(dirichlet)
     , elliptic_(diffusion_factor)
     , beta_(beta)
-  {
-  }
+  {}
 
-  template <
-      typename DiffusionType // This disables the ctor if dimDomain == 1, since factor and tensor are then identical
-      ,
-      typename = typename std::enable_if<(std::is_same<DiffusionType, DiffusionTensorType>::value) // and the ctors
-                                         && (dimDomain > 1)
-                                         && sizeof(DiffusionType)>::type> // ambiguous.
+  template <typename DiffusionType // This disables the ctor if dimDomain == 1, since factor and tensor are then
+                                   // identical
+            ,
+            typename = typename std::enable_if<(std::is_same<DiffusionType, DiffusionTensorType>::value) // and the
+                                                                                                         // ctors
+                                               && (dimDomain > 1) && sizeof(DiffusionType)>::type> // ambiguous.
   BoundaryRHS(const DirichletType& dirichlet,
               const DiffusionType& diffusion,
               const double beta = internal::default_beta(dimDomain))
     : dirichlet_(dirichlet)
     , elliptic_(diffusion)
     , beta_(beta)
-  {
-  }
+  {}
 
   BoundaryRHS(const ThisType& other) = default;
   BoundaryRHS(ThisType&& source) = default;
@@ -1570,13 +1558,11 @@ private:
 
   template <class Anything>
   struct IPDG<Method::swipdg_affine_factor, Anything> : public IPDG<Method::swipdg, Anything>
-  {
-  };
+  {};
 
   template <class Anything>
   struct IPDG<Method::swipdg_affine_tensor, Anything> : public IPDG<Method::swipdg, Anything>
-  {
-  };
+  {};
 
   template <class Anything>
   struct IPDG<Method::sipdg, Anything>

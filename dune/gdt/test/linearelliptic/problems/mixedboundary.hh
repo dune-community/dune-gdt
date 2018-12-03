@@ -41,7 +41,7 @@ class MixedBoundaryProblem : public ProblemBase<E, D, d, R, r>
 
 template <class EntityImp, class DomainFieldImp, class RangeFieldImp>
 class MixedBoundaryProblem<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
-    : public ProblemBase<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
+  : public ProblemBase<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
 {
   typedef ProblemBase<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> BaseType;
   typedef XT::Functions::ConstantFunction<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> ScalarConstantFunctionType;
@@ -78,19 +78,16 @@ public:
           new ScalarConstantFunctionType(0.1, "neumann"),
           grd_cfg,
           bnd_cfg)
-  {
-  }
+  {}
 }; // class MixedBoundaryProblem< ..., 1 >
 
 
 template <class G, class R = double, int r = 1>
 class MixedBoundaryTestCase
-    : public Test::StationaryTestCase<G,
-                                      LinearElliptic::MixedBoundaryProblem<typename G::template Codim<0>::Entity,
-                                                                           typename G::ctype,
-                                                                           G::dimension,
-                                                                           R,
-                                                                           r>>
+  : public Test::StationaryTestCase<
+        G,
+        LinearElliptic::
+            MixedBoundaryProblem<typename G::template Codim<0>::Entity, typename G::ctype, G::dimension, R, r>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
@@ -192,14 +189,12 @@ public:
                         )
     : BaseType(grid_cfg(), num_refs)
     , problem_()
-  {
-  }
+  {}
 
   MixedBoundaryTestCase(XT::Common::Configuration cfg)
     : BaseType(cfg.sub("grid", false, grid_cfg()), cfg.get("grid.num_refinements", 1))
     , problem_()
-  {
-  }
+  {}
 
   virtual const ProblemType& problem() const override final
   {

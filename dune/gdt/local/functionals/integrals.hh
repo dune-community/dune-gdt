@@ -31,29 +31,26 @@ class LocalVolumeIntegralFunctional : public LocalVolumeFunctionalInterface<Test
   static const size_t d = TestBase::dimDomain;
 
 public:
-  using typename BaseType::TestBaseType;
   using typename BaseType::FieldType;
+  using typename BaseType::TestBaseType;
 
   template <class... Args>
   explicit LocalVolumeIntegralFunctional(Args&&... args)
     : integrand_(std::forward<Args>(args)...)
     , over_integrate_(0)
-  {
-  }
+  {}
 
   template <class... Args>
   explicit LocalVolumeIntegralFunctional(const int over_integrate, Args&&... args)
     : integrand_(std::forward<Args>(args)...)
     , over_integrate_(boost::numeric_cast<size_t>(over_integrate))
-  {
-  }
+  {}
 
   template <class... Args>
   explicit LocalVolumeIntegralFunctional(const size_t over_integrate, Args&&... args)
     : integrand_(std::forward<Args>(args)...)
     , over_integrate_(over_integrate)
-  {
-  }
+  {}
 
   LocalVolumeIntegralFunctional(const ThisType& other) = default;
   LocalVolumeIntegralFunctional(ThisType&& source) = default;
@@ -106,30 +103,27 @@ class LocalFaceIntegralFunctional : public LocalFaceFunctionalInterface<TestBase
   static const size_t d = TestBase::dimDomain;
 
 public:
-  using typename BaseType::TestBaseType;
-  using typename BaseType::IntersectionType;
   using typename BaseType::FieldType;
+  using typename BaseType::IntersectionType;
+  using typename BaseType::TestBaseType;
 
   template <class... Args>
   explicit LocalFaceIntegralFunctional(Args&&... args)
     : integrand_(std::forward<Args>(args)...)
     , over_integrate_(0)
-  {
-  }
+  {}
 
   template <class... Args>
   explicit LocalFaceIntegralFunctional(const int over_integrate, Args&&... args)
     : integrand_(std::forward<Args>(args)...)
     , over_integrate_(boost::numeric_cast<size_t>(over_integrate))
-  {
-  }
+  {}
 
   template <class... Args>
   explicit LocalFaceIntegralFunctional(const size_t over_integrate, Args&&... args)
     : integrand_(std::forward<Args>(args)...)
     , over_integrate_(over_integrate)
-  {
-  }
+  {}
 
   LocalFaceIntegralFunctional(const ThisType& other) = default;
   LocalFaceIntegralFunctional(ThisType&& source) = default;

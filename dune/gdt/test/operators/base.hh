@@ -82,8 +82,7 @@ struct OperatorBase : public ::testing::Test
     , function_("x", {"x[0]", "0", "0"}, 1)
     , tensor_function_(XT::Functions::internal::UnitMatrix<RangeFieldType, dimDomain>::value())
     , discrete_function_(space_)
-  {
-  }
+  {}
 
   GridProviderType grid_provider_;
   const SpaceType space_;

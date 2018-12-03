@@ -29,19 +29,19 @@ namespace GDT {
 
 
 template <class SpaceImp, class VectorImp>
-class ConstLocalDiscreteFunction : public XT::Functions::LocalfunctionInterface<typename SpaceImp::EntityType,
-                                                                                typename SpaceImp::DomainFieldType,
-                                                                                SpaceImp::dimDomain,
-                                                                                typename SpaceImp::RangeFieldType,
-                                                                                SpaceImp::dimRange,
-                                                                                SpaceImp::dimRangeCols>
+class ConstLocalDiscreteFunction
+  : public XT::Functions::LocalfunctionInterface<typename SpaceImp::EntityType,
+                                                 typename SpaceImp::DomainFieldType,
+                                                 SpaceImp::dimDomain,
+                                                 typename SpaceImp::RangeFieldType,
+                                                 SpaceImp::dimRange,
+                                                 SpaceImp::dimRangeCols>
 {
-  static_assert(std::is_base_of<SpaceInterface<typename SpaceImp::Traits,
-                                               SpaceImp::dimDomain,
-                                               SpaceImp::dimRange,
-                                               SpaceImp::dimRangeCols>,
-                                SpaceImp>::value,
-                "SpaceImp has to be derived from SpaceInterface!");
+  static_assert(
+      std::is_base_of<
+          SpaceInterface<typename SpaceImp::Traits, SpaceImp::dimDomain, SpaceImp::dimRange, SpaceImp::dimRangeCols>,
+          SpaceImp>::value,
+      "SpaceImp has to be derived from SpaceInterface!");
   static_assert(
       std::is_base_of<Dune::XT::LA::VectorInterface<typename VectorImp::Traits, typename VectorImp::Traits::ScalarType>,
                       VectorImp>::value,
@@ -205,9 +205,9 @@ public:
   }
 
 private:
-  using BaseType::space_;
-  using BaseType::entity_;
   using BaseType::base_;
+  using BaseType::entity_;
+  using BaseType::space_;
   std::unique_ptr<LocalDoFVectorType> localVector_;
 }; // class LocalDiscreteFunction
 

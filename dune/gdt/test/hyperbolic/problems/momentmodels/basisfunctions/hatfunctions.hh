@@ -37,7 +37,7 @@ class HatFunctionMomentBasis
 
 template <class DomainFieldType, class RangeFieldType, size_t rangeDim, size_t rangeDimCols, size_t fluxDim>
 class HatFunctionMomentBasis<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, fluxDim>
-    : public BasisfunctionsInterface<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, fluxDim>
+  : public BasisfunctionsInterface<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, fluxDim>
 {
 public:
   static const size_t dimDomain = 1;
@@ -49,10 +49,10 @@ private:
 
 public:
   using typename BaseType::DomainType;
-  using typename BaseType::RangeType;
   using typename BaseType::MatrixType;
-  using typename BaseType::StringifierType;
   using typename BaseType::QuadraturesType;
+  using typename BaseType::RangeType;
+  using typename BaseType::StringifierType;
   using TriangulationType = typename BaseType::Triangulation1dType;
   template <class DiscreteFunctionType>
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
@@ -143,10 +143,10 @@ public:
                 / 12.;
     for (size_t rr = 0; rr < dimRange; ++rr) {
       if (rr > 0 && rr < dimRange - 1)
-        ret[rr][rr] = (triangulation_[rr + 1] * triangulation_[rr + 1] + 2 * triangulation_[rr + 1] * triangulation_[rr]
-                       - 2 * triangulation_[rr] * triangulation_[rr - 1]
-                       - triangulation_[rr - 1] * triangulation_[rr - 1])
-                      / 12.;
+        ret[rr][rr] =
+            (triangulation_[rr + 1] * triangulation_[rr + 1] + 2 * triangulation_[rr + 1] * triangulation_[rr]
+             - 2 * triangulation_[rr] * triangulation_[rr - 1] - triangulation_[rr - 1] * triangulation_[rr - 1])
+            / 12.;
       if (rr > 0)
         ret[rr][rr - 1] =
             (triangulation_[rr] * triangulation_[rr] - triangulation_[rr - 1] * triangulation_[rr - 1]) / 12.;
@@ -300,12 +300,12 @@ private:
 
 template <class DomainFieldType, class RangeFieldType, size_t refinements, size_t fluxDim>
 class HatFunctionMomentBasis<DomainFieldType, 3, RangeFieldType, refinements, 1, fluxDim>
-    : public BasisfunctionsInterface<DomainFieldType,
-                                     3,
-                                     RangeFieldType,
-                                     OctaederStatistics<refinements>::num_vertices(),
-                                     1,
-                                     fluxDim>
+  : public BasisfunctionsInterface<DomainFieldType,
+                                   3,
+                                   RangeFieldType,
+                                   OctaederStatistics<refinements>::num_vertices(),
+                                   1,
+                                   fluxDim>
 {
 public:
   static constexpr size_t dimDomain = 3;
@@ -398,16 +398,23 @@ public:
   virtual RangeType evaluate(const DomainType& v, const size_t face_index) const override final
   {
     RangeType ret(0);
+    auto barycentric_coords = evaluate_on_face(v, face_index);
+    const auto& vertices = triangulation_.faces()[face_index]->vertices();
+    for (size_t ii = 0; ii < 3; ++ii)
+      ret[vertices[ii]->index()] = barycentric_coords[ii];
+    return ret;
+  } // ... evaluate(...)
+
+  DomainType evaluate_on_face(const DomainType& v, const size_t face_index) const
+  {
+    DomainType ret(0);
     const auto& face = triangulation_.faces()[face_index];
     const auto& vertices = face->vertices();
-    DomainType barycentric_coords(0);
-    bool success = calculate_barycentric_coordinates(v, vertices, barycentric_coords);
+    bool success = calculate_barycentric_coordinates(v, vertices, ret);
     assert(success);
 #ifdef NDEBUG
     static_cast<void>(success);
 #endif
-    for (size_t ii = 0; ii < 3; ++ii)
-      ret[vertices[ii]->index()] = barycentric_coords[ii];
     return ret;
   } // ... evaluate(...)
 
@@ -444,9 +451,26 @@ public:
     return RangeType(1.);
   }
 
+  template <class Vec>
+  std::enable_if_t<XT::Common::is_vector<Vec>::value, void> alpha_iso(Vec& ret) const
+  {
+    for (size_t ii = 0; ii < ret.size(); ++ii)
+      XT::Common::VectorAbstraction<Vec>::set_entry(ret, ii, 1.);
+  }
+
   virtual RangeFieldType density(const RangeType& u) const override final
   {
-    return std::accumulate(u.begin(), u.end(), RangeFieldType(0));
+    return std::accumulate(u.begin(), u.end(), 0.);
+  }
+
+  template <class Vec>
+  std::enable_if_t<XT::Common::is_vector<Vec>::value && !std::is_same<Vec, RangeType>::value, RangeFieldType>
+  density(const Vec& u) const
+  {
+    RangeFieldType ret(0.);
+    for (size_t ii = 0; ii < u.size(); ++ii)
+      ret += XT::Common::VectorAbstraction<Vec>::get_entry(u, ii);
+    return ret;
   }
 
   virtual std::string short_id() const override final
@@ -467,6 +491,15 @@ public:
   }
 
   using BaseType::u_iso;
+
+  template <class Vec>
+  std::enable_if_t<XT::Common::is_vector<Vec>::value, void> u_iso(Vec& ret) const
+  {
+    auto ret_range = u_iso();
+    using V = XT::Common::VectorAbstraction<Vec>;
+    for (size_t ii = 0; ii < dimRange; ++ii)
+      V::set_entry(ret, ii, ret_range[ii]);
+  }
 
   virtual void ensure_min_density(RangeType& u, const RangeFieldType min_density) const override final
   {
@@ -536,8 +569,8 @@ protected:
     return true;
   } // bool calculate_barycentric_coordinates(...)
 
-  using BaseType::quadratures_;
   using BaseType::fine_quadratures_;
+  using BaseType::quadratures_;
   using BaseType::triangulation_;
 }; // class HatFunctionMomentBasis<DomainFieldType, 3, ...>
 

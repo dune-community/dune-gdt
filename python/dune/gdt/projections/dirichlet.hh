@@ -82,16 +82,10 @@ public:
 // begin: this is what we need for the .so
 
 #define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m, _GRID, _layer, _backend, _r, _rC, _la)                                \
-  Dune::GDT::bindings::                                                                                                \
-      DirichletProjectionLocalizableOperator<Dune::GDT::CgSpaceProvider<_GRID,                                         \
-                                                                        Dune::XT::Grid::Layers::_layer,                \
-                                                                        Dune::GDT::Backends::_backend,                 \
-                                                                        1,                                             \
-                                                                        double,                                        \
-                                                                        _r,                                            \
-                                                                        _rC>,                                          \
-                                             typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::   \
-                                                 VectorType>::bind(_m)
+  Dune::GDT::bindings::DirichletProjectionLocalizableOperator<                                                         \
+      Dune::GDT::                                                                                                      \
+          CgSpaceProvider<_GRID, Dune::XT::Grid::Layers::_layer, Dune::GDT::Backends::_backend, 1, double, _r, _rC>,   \
+      typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType>::bind(_m)
 
 #define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_GDT(_m, _la)                                                              \
   _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m, GDT_BINDINGS_GRID, leaf, gdt, _la);

@@ -80,8 +80,7 @@ struct EntityDataCommunicationDescriptor
   //! remove default value, force handles to use actual space provided values
   explicit EntityDataCommunicationDescriptor(std::size_t count)
     : count_(count)
-  {
-  }
+  {}
 
 private:
   const std::size_t count_;
@@ -93,8 +92,8 @@ template <typename SpaceType,
           typename GatherScatter,
           typename CommunicationDescriptor = DofDataCommunicationDescriptor<typename VectorType::ScalarType>>
 class SpaceDataHandle
-    : public Dune::CommDataHandleIF<SpaceDataHandle<SpaceType, VectorType, GatherScatter, CommunicationDescriptor>,
-                                    typename CommunicationDescriptor::DataType>
+  : public Dune::CommDataHandleIF<SpaceDataHandle<SpaceType, VectorType, GatherScatter, CommunicationDescriptor>,
+                                  typename CommunicationDescriptor::DataType>
 {
 
 public:
@@ -109,8 +108,7 @@ public:
     , gather_scatter_(gather_scatter)
     , communication_descriptor_(communication_descriptor)
     , local_view_(v, space, communication_descriptor_)
-  {
-  }
+  {}
 
   //! returns true if data for this codim should be communicated
   bool contains(int dim, int codim) const
@@ -215,8 +213,7 @@ public:
 
   DataGatherScatter(GatherScatter gather_scatter = GatherScatter())
     : _gather_scatter(gather_scatter)
-  {
-  }
+  {}
 
 private:
   GatherScatter _gather_scatter;
@@ -268,8 +265,7 @@ public:
 
   DataEntityGatherScatter(GatherScatter gather_scatter = GatherScatter())
     : gather_scatter_(gather_scatter)
-  {
-  }
+  {}
 
 private:
   GatherScatter gather_scatter_;
@@ -294,10 +290,11 @@ public:
 };
 
 template <class SpaceType, class VectorType>
-class MinDataHandle : public SpaceDataHandle<SpaceType,
-                                             VectorType,
-                                             DataGatherScatter<MinGatherScatter>,
-                                             DofDataCommunicationDescriptor<typename VectorType::ScalarType>>
+class MinDataHandle
+  : public SpaceDataHandle<SpaceType,
+                           VectorType,
+                           DataGatherScatter<MinGatherScatter>,
+                           DofDataCommunicationDescriptor<typename VectorType::ScalarType>>
 {
   typedef SpaceDataHandle<SpaceType,
                           VectorType,
@@ -308,8 +305,7 @@ class MinDataHandle : public SpaceDataHandle<SpaceType,
 public:
   MinDataHandle(const SpaceType& space_in, VectorType& v_)
     : BaseType(space_in, v_, DofDataCommunicationDescriptor<typename VectorType::ScalarType>())
-  {
-  }
+  {}
 };
 
 //! GatherScatter functor for marking ghost DOFs.
@@ -363,7 +359,7 @@ public:
  */
 template <class SpaceType, class VectorType>
 class GhostDataHandle
-    : public SpaceDataHandle<SpaceType, VectorType, GhostGatherScatter, EntityDataCommunicationDescriptor<bool>>
+  : public SpaceDataHandle<SpaceType, VectorType, GhostGatherScatter, EntityDataCommunicationDescriptor<bool>>
 {
   typedef SpaceDataHandle<SpaceType, VectorType, GhostGatherScatter, EntityDataCommunicationDescriptor<bool>> BaseType;
 
@@ -452,8 +448,7 @@ public:
    */
   DisjointPartitioningGatherScatter(RankIndex rank)
     : rank_(rank)
-  {
-  }
+  {}
 
 private:
   const RankIndex rank_;
@@ -470,10 +465,10 @@ private:
  */
 template <class SpaceType, class VectorType>
 class DisjointPartitioningDataHandle
-    : public SpaceDataHandle<SpaceType,
-                             VectorType,
-                             DisjointPartitioningGatherScatter<typename VectorType::ScalarType>,
-                             EntityDataCommunicationDescriptor<typename VectorType::ScalarType>>
+  : public SpaceDataHandle<SpaceType,
+                           VectorType,
+                           DisjointPartitioningGatherScatter<typename VectorType::ScalarType>,
+                           EntityDataCommunicationDescriptor<typename VectorType::ScalarType>>
 {
   typedef SpaceDataHandle<SpaceType,
                           VectorType,
@@ -544,7 +539,7 @@ struct SharedDOFGatherScatter
  */
 template <class SpaceType, class VectorType>
 class SharedDOFDataHandle
-    : public SpaceDataHandle<SpaceType, VectorType, SharedDOFGatherScatter, EntityDataCommunicationDescriptor<bool>>
+  : public SpaceDataHandle<SpaceType, VectorType, SharedDOFGatherScatter, EntityDataCommunicationDescriptor<bool>>
 {
   typedef SpaceDataHandle<SpaceType, VectorType, SharedDOFGatherScatter, EntityDataCommunicationDescriptor<bool>>
       BaseType;
@@ -594,8 +589,7 @@ public:
     : space_(space)
     , rank_(rank)
     , neighbors_(neighbors)
-  {
-  }
+  {}
 
   bool contains(int dim, int codim) const
   {

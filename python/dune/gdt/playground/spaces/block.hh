@@ -247,8 +247,8 @@ private:
           [](const type& self, const std::vector<V>& local_vectors, const std::vector<ssize_t>& neighborhood) {
             if (local_vectors.size() != neighborhood.size())
               DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                         "local_vectors.size(): " << local_vectors.size() << "\n   neighborhood.size(): "
-                                                  << neighborhood.size());
+                         "local_vectors.size(): " << local_vectors.size()
+                                                  << "\n   neighborhood.size(): " << neighborhood.size());
             std::vector<size_t> subdomains(neighborhood.size());
             for (size_t ii = 0; ii < neighborhood.size(); ++ii)
               subdomains[ii] = XT::Common::numeric_cast<size_t>(neighborhood[ii]);
@@ -257,8 +257,7 @@ private:
               if (self.backend()[subdomain] == nullptr)
                 DUNE_THROW(XT::Common::Exceptions::you_are_using_this_wrong,
                            "This BlockSpace (restricted to a neighborhood) does not have a local space for subdomain "
-                               << subdomain
-                               << "!");
+                               << subdomain << "!");
               neighborhood_spaces[subdomain] = self.backend()[subdomain];
             }
             const type neighborhood_space(self.dd_grid(), neighborhood_spaces);

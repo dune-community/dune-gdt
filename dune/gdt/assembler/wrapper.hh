@@ -51,7 +51,7 @@ class ConstraintsWrapper<TestSpaceType,
                          AnsatzSpaceType,
                          GridLayerType,
                          DirichletConstraints<XT::Grid::extract_intersection_t<GridLayerType>>>
-    : public XT::Grid::internal::Codim0Object<GridLayerType>
+  : public XT::Grid::internal::Codim0Object<GridLayerType>
 {
   static_assert(is_space<TestSpaceType>::value, "TestSpaceType has to be derived from SpaceInterface!");
   static_assert(is_space<AnsatzSpaceType>::value, "AnsatzSpaceType has to be derived from SpaceInterface!");
@@ -70,8 +70,7 @@ public:
     , where_(where)
     , constraints_(constraints)
     , thread_local_constraints_(ConstraintsType(constraints_.boundary_info(), constraints_.size()))
-  {
-  }
+  {}
 
   bool apply_on(const GridLayerType& gv, const EntityType& entity) const override final
   {
@@ -108,7 +107,7 @@ private:
 template <class AssemblerType, class MatrixType>
 class DUNE_DEPRECATED_MSG("Use LocalVolumeTwoFormAssemblerFunctor instead or directly append the LocalVolumeTwoForm to "
                           "the SystemAssembler (13.05.2017)!") LocalVolumeTwoFormMatrixAssemblerWrapper
-    : public XT::Grid::internal::Codim0Object<typename AssemblerType::GridLayerType>
+  : public XT::Grid::internal::Codim0Object<typename AssemblerType::GridLayerType>
 {
   typedef XT::Grid::internal::Codim0Object<typename AssemblerType::GridLayerType> BaseType;
 
@@ -134,8 +133,7 @@ public:
     , where_(where)
     , local_assembler_(local_assembler)
     , matrix_(matrix)
-  {
-  }
+  {}
 
   bool apply_on(const GridLayerType& gv, const EntityType& entity) const override final
   {
@@ -176,8 +174,8 @@ struct deprecation_disabler_lvtfw
 template <class AssemblerType, class MatrixType>
 class DUNE_DEPRECATED_MSG("Use LocalVolumeTwoFormAssemblerFunctor instead or directly append the LocalVolumeTwoForm to "
                           "the SystemAssembler (13.05.2017)!") LocalVolumeTwoFormWrapper
-    : private deprecation_disabler_lvtfw<AssemblerType, MatrixType>::LocalAssemblerProviderType,
-      public deprecation_disabler_lvtfw<AssemblerType, MatrixType>::BaseType
+  : private deprecation_disabler_lvtfw<AssemblerType, MatrixType>::LocalAssemblerProviderType
+  , public deprecation_disabler_lvtfw<AssemblerType, MatrixType>::BaseType
 {
   typedef
       typename deprecation_disabler_lvtfw<AssemblerType, MatrixType>::LocalAssemblerProviderType LocalAssemblerProvider;
@@ -199,8 +197,7 @@ public:
                             MatrixType& matrix)
     : LocalAssemblerProvider(local_twoform)
     , BaseType(test_space, ansatz_space, where, LocalAssemblerProvider::access(), matrix)
-  {
-  }
+  {}
 }; // class LocalVolumeTwoFormWrapper
 
 
@@ -214,7 +211,7 @@ template <class AssemblerType, class MatrixType>
 class DUNE_DEPRECATED_MSG("Use LocalCouplingTwoFormAssemblerFunctor instead or directly append the "
                           "LocalCouplingTwoForm to the SystemAssembler (13.05.2017)!")
     LocalCouplingTwoFormMatrixAssemblerWrapper
-    : public XT::Grid::internal::Codim1Object<typename AssemblerType::GridLayerType>
+  : public XT::Grid::internal::Codim1Object<typename AssemblerType::GridLayerType>
 {
   static_assert(XT::LA::is_matrix<MatrixType>::value, "");
 
@@ -243,8 +240,7 @@ public:
             typename AnsatzSpace,
             typename = typename std::enable_if<(std::is_same<TestSpace, OuterTestSpaceType>::value)
                                                && (std::is_same<AnsatzSpace, OuterAnsatzSpaceType>::value)
-                                               && sizeof(TestSpace)
-                                               && sizeof(AnsatzSpace)>::type>
+                                               && sizeof(TestSpace) && sizeof(AnsatzSpace)>::type>
   LocalCouplingTwoFormMatrixAssemblerWrapper(const TestSpace& test_space,
                                              const AnsatzSpace& ansatz_space,
                                              const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
@@ -260,8 +256,7 @@ public:
     , out_out_matrix_(matrix)
     , in_out_matrix_(matrix)
     , out_in_matrix_(matrix)
-  {
-  }
+  {}
 
   LocalCouplingTwoFormMatrixAssemblerWrapper(const TestSpaceType& inner_test_space,
                                              const AnsatzSpaceType& inner_ansatz_space,
@@ -283,8 +278,7 @@ public:
     , out_out_matrix_(out_out_matrix)
     , in_out_matrix_(in_out_matrix)
     , out_in_matrix_(out_in_matrix)
-  {
-  }
+  {}
 
   bool apply_on(const GridLayerType& gv, const IntersectionType& intersection) const override final
   {
@@ -343,8 +337,8 @@ struct deprecation_disabler_lctfw
 template <class AssemblerType, class MatrixType>
 class DUNE_DEPRECATED_MSG("Use LocalCouplingTwoFormAssemblerFunctor instead or directly append the "
                           "LocalCouplingTwoForm to the SystemAssembler (13.05.2017)!") LocalCouplingTwoFormWrapper
-    : private deprecation_disabler_lctfw<AssemblerType, MatrixType>::LocalAssemblerProvider,
-      public deprecation_disabler_lctfw<AssemblerType, MatrixType>::BaseType
+  : private deprecation_disabler_lctfw<AssemblerType, MatrixType>::LocalAssemblerProvider
+  , public deprecation_disabler_lctfw<AssemblerType, MatrixType>::BaseType
 {
   typedef typename deprecation_disabler_lctfw<AssemblerType, MatrixType>::LocalAssemblerProvider LocalAssemblerProvider;
   typedef typename deprecation_disabler_lctfw<AssemblerType, MatrixType>::BaseType BaseType;
@@ -367,8 +361,7 @@ public:
             typename AnsatzSpace,
             typename = typename std::enable_if<(std::is_same<TestSpace, OuterTestSpaceType>::value)
                                                && (std::is_same<AnsatzSpace, OuterAnsatzSpaceType>::value)
-                                               && sizeof(TestSpace)
-                                               && sizeof(AnsatzSpace)>::type>
+                                               && sizeof(TestSpace) && sizeof(AnsatzSpace)>::type>
   LocalCouplingTwoFormWrapper(const TestSpace& test_space,
                               const AnsatzSpace& ansatz_space,
                               const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
@@ -376,8 +369,7 @@ public:
                               MatrixType& matrix)
     : LocalAssemblerProvider(local_twoform)
     , BaseType(test_space, ansatz_space, where, LocalAssemblerProvider::access(), matrix)
-  {
-  }
+  {}
 
   LocalCouplingTwoFormWrapper(const TestSpaceType& inner_test_space,
                               const AnsatzSpaceType& inner_ansatz_space,
@@ -400,8 +392,7 @@ public:
                matrix_out_out,
                matrix_in_out,
                matrix_out_in)
-  {
-  }
+  {}
 }; // class LocalCouplingTwoFormWrapper
 
 
@@ -415,7 +406,7 @@ template <class AssemblerType, class MatrixType>
 class DUNE_DEPRECATED_MSG("Use LocalBoundaryTwoFormAssemblerFunctor instead or directly append the "
                           "LocalBoundaryTwoForm to the SystemAssembler (13.05.2017)!")
     LocalBoundaryTwoFormMatrixAssemblerWrapper
-    : public XT::Grid::internal::Codim1Object<typename AssemblerType::GridLayerType>
+  : public XT::Grid::internal::Codim1Object<typename AssemblerType::GridLayerType>
 {
   typedef XT::Grid::internal::Codim1Object<typename AssemblerType::GridLayerType> BaseType;
 
@@ -440,8 +431,7 @@ public:
     , where_(where)
     , local_assembler_(local_assembler)
     , matrix_(matrix)
-  {
-  }
+  {}
 
   bool apply_on(const GridLayerType& gv, const IntersectionType& intersection) const override final
   {
@@ -485,8 +475,8 @@ struct deprecation_disabler_lbtfw
 template <class AssemblerType, class MatrixType>
 class DUNE_DEPRECATED_MSG("Use LocalBoundaryTwoFormAssemblerFunctor instead or directly append the "
                           "LocalBoundaryTwoForm to the SystemAssembler (13.05.2017)!") LocalBoundaryTwoFormWrapper
-    : private deprecation_disabler_lbtfw<AssemblerType, MatrixType>::LocalAssemblerProvider,
-      public deprecation_disabler_lbtfw<AssemblerType, MatrixType>::BaseType
+  : private deprecation_disabler_lbtfw<AssemblerType, MatrixType>::LocalAssemblerProvider
+  , public deprecation_disabler_lbtfw<AssemblerType, MatrixType>::BaseType
 {
   typedef typename deprecation_disabler_lbtfw<AssemblerType, MatrixType>::LocalAssemblerProvider LocalAssemblerProvider;
   typedef typename deprecation_disabler_lbtfw<AssemblerType, MatrixType>::BaseType BaseType;
@@ -508,8 +498,7 @@ public:
                               MatrixType& matrix)
     : LocalAssemblerProvider(local_twoform)
     , BaseType(test_space, ansatz_space, where, LocalAssemblerProvider::access(), matrix)
-  {
-  }
+  {}
 }; // class LocalBoundaryTwoFormWrapper
 
 
@@ -522,7 +511,7 @@ public:
 template <class AssemblerType, class VectorType>
 class DUNE_DEPRECATED_MSG("Use LocalFunctionalAssemblerFunctor instead or directly append the LocalFunctional to "
                           "the SystemAssembler (08.06.2017)!") LocalVolumeFunctionalVectorAssemblerWrapper
-    : public XT::Grid::internal::Codim0Object<typename AssemblerType::GridLayerType>
+  : public XT::Grid::internal::Codim0Object<typename AssemblerType::GridLayerType>
 {
   typedef XT::Grid::internal::Codim0Object<typename AssemblerType::GridLayerType> BaseType;
 
@@ -542,8 +531,7 @@ public:
     , where_(where)
     , local_assembler_(local_assembler)
     , vector_(vector)
-  {
-  }
+  {}
 
   bool apply_on(const GridLayerType& gv, const EntityType& entity) const override final
   {
@@ -570,8 +558,8 @@ template <class AssemblerType, class VectorType>
 struct deprecation_disabler_lvfw
 {
 #include <dune/xt/common/disable_warnings.hh>
-  typedef XT::Common::ConstStorageProvider<LocalVolumeFunctionalAssembler<typename AssemblerType::TestSpaceType,
-                                                                          VectorType>>
+  typedef XT::Common::ConstStorageProvider<
+      LocalVolumeFunctionalAssembler<typename AssemblerType::TestSpaceType, VectorType>>
       LocalAssemblerProvider;
   typedef LocalVolumeFunctionalVectorAssemblerWrapper<AssemblerType, VectorType> BaseType;
 #include <dune/xt/common/reenable_warnings.hh>
@@ -584,8 +572,8 @@ template <class AssemblerType, class VectorType>
 class DUNE_DEPRECATED_MSG("Use LocalFunctionalAssemblerFunctor instead or directly append the LocalFunctional to "
                           "the SystemAssembler (08.06.2017)!") LocalVolumeFunctionalWrapper
 
-    : private deprecation_disabler_lvfw<AssemblerType, VectorType>::LocalAssemblerProvider,
-      public deprecation_disabler_lvfw<AssemblerType, VectorType>::BaseType
+  : private deprecation_disabler_lvfw<AssemblerType, VectorType>::LocalAssemblerProvider
+  , public deprecation_disabler_lvfw<AssemblerType, VectorType>::BaseType
 {
   typedef typename deprecation_disabler_lvfw<AssemblerType, VectorType>::LocalAssemblerProvider LocalAssemblerProvider;
   typedef typename deprecation_disabler_lvfw<AssemblerType, VectorType>::BaseType BaseType;
@@ -602,8 +590,7 @@ public:
                                VectorType& vector)
     : LocalAssemblerProvider(local_functional)
     , BaseType(test_space, where, LocalAssemblerProvider::access(), vector)
-  {
-  }
+  {}
 }; // class LocalVolumeFunctionalWrapper
 
 
@@ -617,7 +604,7 @@ template <class AssemblerType, class VectorType>
 class DUNE_DEPRECATED_MSG(
     "Use LocalFaceFunctionalAssemblerFunctor instead or directly append the LocalFaceFunctional to "
     "the SystemAssembler (26.06.2017)!") LocalFaceFunctionalVectorAssemblerWrapper
-    : public XT::Grid::internal::Codim1Object<typename AssemblerType::GridLayerType>
+  : public XT::Grid::internal::Codim1Object<typename AssemblerType::GridLayerType>
 {
   typedef XT::Grid::internal::Codim1Object<typename AssemblerType::GridLayerType> BaseType;
 
@@ -639,8 +626,7 @@ public:
     , where_(where)
     , local_assembler_(local_assembler)
     , vector_(vector)
-  {
-  }
+  {}
 
   bool apply_on(const GridLayerType& gv, const IntersectionType& intersection) const override final
   {
@@ -684,17 +670,17 @@ template <class AssemblerType, class VectorType>
 class DUNE_DEPRECATED_MSG(
     "Use LocalFaceFunctionalAssemblerFunctor instead or directly append the LocalFaceFunctional to "
     "the SystemAssembler (26.06.2017)!") LocalFaceFunctionalWrapper
-    : private deprecation_disabler_lffw<AssemblerType, VectorType>::LocalAssemblerProviderType,
-      public deprecation_disabler_lffw<AssemblerType, VectorType>::BaseType
+  : private deprecation_disabler_lffw<AssemblerType, VectorType>::LocalAssemblerProviderType
+  , public deprecation_disabler_lffw<AssemblerType, VectorType>::BaseType
 {
   typedef
       typename deprecation_disabler_lffw<AssemblerType, VectorType>::LocalAssemblerProviderType LocalAssemblerProvider;
   typedef typename deprecation_disabler_lffw<AssemblerType, VectorType>::BaseType BaseType;
 
 public:
-  using typename BaseType::TestSpaceType;
   using typename BaseType::GridLayerType;
   using typename BaseType::IntersectionType;
+  using typename BaseType::TestSpaceType;
   typedef typename VectorType::ScalarType FieldType;
   typedef LocalFaceFunctionalInterface<typename TestSpaceType::BaseFunctionSetType, IntersectionType, FieldType>
       LocalFaceFunctionalType;
@@ -705,8 +691,7 @@ public:
                              VectorType& vector)
     : LocalAssemblerProvider(local_face_functional)
     , BaseType(test_space, where, LocalAssemblerProvider::access(), vector)
-  {
-  }
+  {}
 }; // class LocalFaceFunctionalWrapper
 
 

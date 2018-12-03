@@ -34,18 +34,18 @@ class ShadowPn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp,
   using BaseType = KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>;
 
 public:
-  using typename BaseType::InitialValueType;
+  using typename BaseType::ActualDirichletBoundaryValueType;
+  using typename BaseType::ActualInitialValueType;
+  using typename BaseType::BasisfunctionType;
   using typename BaseType::BoundaryValueType;
   using typename BaseType::DirichletBoundaryValueType;
-  using typename BaseType::ActualInitialValueType;
-  using typename BaseType::ActualDirichletBoundaryValueType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
+  using typename BaseType::GridLayerType;
+  using typename BaseType::InitialValueType;
+  using typename BaseType::IntersectionType;
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeType;
-  using typename BaseType::BasisfunctionType;
-  using typename BaseType::GridLayerType;
-  using typename BaseType::IntersectionType;
   using ActualBoundaryValueType =
       MomentModelBoundaryValue<IntersectionType, BasisfunctionType, DirichletBoundaryValueType>;
   static const size_t dimDomain = BaseType::dimDomain;
@@ -57,8 +57,7 @@ public:
            const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
            const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
     : BaseType(basis_functions, grid_layer, {12, 4, 3}, grid_cfg, boundary_cfg, 1e-8 / (4 * M_PI))
-  {
-  }
+  {}
 
   static std::string static_id()
   {
@@ -137,11 +136,11 @@ protected:
     return sigma_a;
   }
 
-  using BaseType::grid_cfg_;
   using BaseType::basis_functions_;
+  using BaseType::grid_cfg_;
+  using BaseType::grid_layer_;
   using BaseType::num_segments_;
   using BaseType::psi_vac_;
-  using BaseType::grid_layer_;
 }; // class ShadowPn<...>
 
 template <class BasisfunctionType, class GridLayerType, class U_>
@@ -155,16 +154,15 @@ public:
   using typename BaseType::RangeType;
   using ActualFluxType = GDT::EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_>;
 
-  using BaseType::default_grid_cfg;
   using BaseType::default_boundary_cfg;
+  using BaseType::default_grid_cfg;
 
   ShadowMn(const BasisfunctionType& basis_functions,
            const GridLayerType& grid_layer,
            const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
            const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
     : BaseType(basis_functions, grid_layer, grid_cfg, boundary_cfg)
-  {
-  }
+  {}
 
   static std::string static_id()
   {

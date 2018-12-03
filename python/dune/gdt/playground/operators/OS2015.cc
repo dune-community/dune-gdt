@@ -30,8 +30,8 @@
 #include <python/dune/gdt/playground/operators/OS2015.hh>
 
 using namespace Dune;
-using XT::Grid::Layers;
 using XT::Grid::Backends;
+using XT::Grid::Layers;
 namespace py = pybind11;
 
 

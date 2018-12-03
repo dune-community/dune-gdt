@@ -133,8 +133,15 @@ struct MomentApproximation
     RangeFieldType l1error_mn(0), l2error_mn(0), linferror_mn(0);
     RangeFieldType l1error_pn(0), l2error_pn(0), linferror_pn(0);
     const auto mass_matrix = basis_functions->mass_matrix();
-    RangeType pn_coeffs;
-    mass_matrix.solve(pn_coeffs, u);
+    XT::LA::IstlRowMajorSparseMatrix<double> sparse_mass_matrix(mass_matrix, true);
+    XT::LA::IstlDenseVector<double> pn_coeffs_istl(sparse_mass_matrix.rows());
+    XT::LA::IstlDenseVector<double> u_istl(pn_coeffs_istl);
+    for (size_t ii = 0; ii < u_istl.size(); ++ii)
+      u_istl.set_entry(ii, u[ii]);
+    XT::LA::solve(sparse_mass_matrix, u_istl, pn_coeffs_istl);
+    DynamicVector<double> pn_coeffs(pn_coeffs_istl.size());
+    for (size_t ii = 0; ii < pn_coeffs_istl.size(); ++ii)
+      pn_coeffs[ii] = pn_coeffs_istl.get_entry(ii);
     const auto quadrature = basis_functions->quadratures().merged();
     for (auto it = quadrature.begin(); it != quadrature.end(); ++it) {
       const auto& quad_point = *it;

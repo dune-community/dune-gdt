@@ -60,7 +60,7 @@ public:
 
 template <class TestCaseType, LinearElliptic::ChooseDiscretizer disc, int polOrder, bool anything = true>
 class LinearEllipticSwipdgEstimatorExpectations
-    : public internal::LinearEllipticSwipdgEstimatorExpectationsBase<polOrder>
+  : public internal::LinearEllipticSwipdgEstimatorExpectationsBase<polOrder>
 {
 public:
   static std::vector<double> results(const TestCaseType& /*test_case*/, const std::string type)

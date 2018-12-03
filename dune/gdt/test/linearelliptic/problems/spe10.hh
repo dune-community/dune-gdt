@@ -43,7 +43,7 @@ class Spe10Model1Problem : public ProblemBase<E, D, d, R, r>
 
 template <class EntityImp, class DomainFieldImp, class RangeFieldImp>
 class Spe10Model1Problem<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
-    : public ProblemBase<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
+  : public ProblemBase<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
 {
   typedef ProblemBase<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> BaseType;
   typedef XT::Functions::ConstantFunction<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> ScalarConstantFunctionType;
@@ -84,19 +84,16 @@ public:
           new ScalarConstantFunctionType(0, "neumann"),
           grd_cfg,
           bnd_cfg)
-  {
-  }
+  {}
 }; // class Spe10Model1Problem< ..., 1 >
 
 
 template <class G, class R = double, int r = 1>
 class Spe10Model1TestCase
-    : public Test::StationaryTestCase<G,
-                                      LinearElliptic::Spe10Model1Problem<typename G::template Codim<0>::Entity,
-                                                                         typename G::ctype,
-                                                                         G::dimension,
-                                                                         R,
-                                                                         r>>
+  : public Test::StationaryTestCase<
+        G,
+        LinearElliptic::
+            Spe10Model1Problem<typename G::template Codim<0>::Entity, typename G::ctype, G::dimension, R, r>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
@@ -192,14 +189,12 @@ public:
   Spe10Model1TestCase(const size_t num_refs = 1)
     : BaseType(grid_cfg(), num_refs)
     , problem_()
-  {
-  }
+  {}
 
   Spe10Model1TestCase(XT::Common::Configuration cfg)
     : BaseType(cfg.sub("grid", false, grid_cfg()), cfg.get("grid.num_refinements", 1))
     , problem_()
-  {
-  }
+  {}
 
   virtual const ProblemType& problem() const override final
   {

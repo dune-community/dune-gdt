@@ -58,7 +58,9 @@ template <class AnalyticalFluxImp,
           class LocalizableFunctionImp,
           class Traits =
               internal::AdvectionLaxWendroffOperatorTraits<AnalyticalFluxImp, BoundaryValueImp, LocalizableFunctionImp>>
-class AdvectionLaxWendroffOperator : public Dune::GDT::OperatorInterface<Traits>, public AdvectionOperatorBase<Traits>
+class AdvectionLaxWendroffOperator
+  : public Dune::GDT::OperatorInterface<Traits>
+  , public AdvectionOperatorBase<Traits>
 {
   typedef AdvectionOperatorBase<Traits> BaseType;
 
@@ -77,8 +79,7 @@ public:
     : BaseType(analytical_flux, boundary_values)
     , dx_(dx)
     , alpha_(alpha)
-  {
-  }
+  {}
 
   AdvectionLaxWendroffOperator(const AnalyticalFluxType& analytical_flux,
                                const BoundaryValueType& boundary_values,
@@ -88,8 +89,7 @@ public:
     : BaseType(analytical_flux, boundary_values, quadrature_1d)
     , dx_(dx)
     , alpha_(alpha)
-  {
-  }
+  {}
 
   template <class SourceType, class RangeType>
   void apply(const SourceType& source, RangeType& range, const XT::Common::Parameter& param) const

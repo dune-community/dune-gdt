@@ -33,11 +33,11 @@ class LinearEllipticEocStudy : public StationaryEocStudy<TestCaseImp, Discretize
   typedef StationaryEocStudy<TestCaseImp, DiscretizerImp> BaseType;
 
 public:
-  using typename BaseType::TestCaseType;
-  using typename BaseType::Discretizer;
   using typename BaseType::DiscretizationType;
-  using typename BaseType::GridViewType;
+  using typename BaseType::Discretizer;
   using typename BaseType::FunctionType;
+  using typename BaseType::GridViewType;
+  using typename BaseType::TestCaseType;
   using typename BaseType::VectorType;
 
 private:
@@ -52,8 +52,7 @@ public:
                          XT::Common::Configuration solver_options = DiscretizationType::solver_options())
     : BaseType(test_case, only_these_norms, visualize_prefix, solver_options)
     , over_integrate_(over_integrate)
-  {
-  }
+  {}
 
   virtual ~LinearEllipticEocStudy() = default;
 

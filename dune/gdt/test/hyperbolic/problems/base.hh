@@ -78,13 +78,13 @@ private:
   using BaseType = ProblemInterface<EntityType, DomainFieldType, domainDim, U_, RangeFieldType, rangeDim>;
 
 public:
-  using typename BaseType::FluxType;
-  using typename BaseType::RhsType;
-  using typename BaseType::InitialValueType;
-  using typename BaseType::DirichletBoundaryValueType;
   using typename BaseType::BoundaryValueType;
+  using typename BaseType::DirichletBoundaryValueType;
+  using typename BaseType::FluxType;
   using typename BaseType::GridLayerType;
+  using typename BaseType::InitialValueType;
   using typename BaseType::IntersectionType;
+  using typename BaseType::RhsType;
 
   using ActualFluxType = typename XT::Functions::GlobalLambdaFluxFunction<U_, 0, RangeFieldType, rangeDim, domainDim>;
   using ActualRhsType = typename XT::Functions::
@@ -113,8 +113,7 @@ public:
     , CFL_(_CFL)
     , t_end_(_t_end)
     , has_non_zero_rhs_(_has_non_zero_rhs)
-  {
-  }
+  {}
 
   /**
    * \note Do not manually delete these pointers, they are managed automatically from here on!
@@ -137,8 +136,7 @@ public:
     , CFL_(_CFL)
     , t_end_(_t_end)
     , has_non_zero_rhs_(_has_non_zero_rhs)
-  {
-  }
+  {}
 
   static XT::Common::Configuration default_grid_cfg()
   {

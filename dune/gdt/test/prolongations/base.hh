@@ -43,8 +43,8 @@ struct ProlongationOperatorsBaseGridHolder
 
 template <class CoarseSpaceType, class FineSpaceType>
 struct ProlongationOperatorsBase
-    : public ::testing::Test,
-      public ProlongationOperatorsBaseGridHolder<XT::Grid::extract_grid_t<typename FineSpaceType::GridLayerType>>
+  : public ::testing::Test
+  , public ProlongationOperatorsBaseGridHolder<XT::Grid::extract_grid_t<typename FineSpaceType::GridLayerType>>
 {
   typedef ProlongationOperatorsBaseGridHolder<XT::Grid::extract_grid_t<typename FineSpaceType::GridLayerType>> BaseType;
   typedef typename FineSpaceType::GridLayerType GridLayerType;
@@ -71,8 +71,7 @@ struct ProlongationOperatorsBase
     , coarse_discrete_function_(coarse_space_, "coarse discrete function")
     , fine_discrete_function_(fine_space_, "fine discrete function")
     , prepared_(false)
-  {
-  }
+  {}
 
   void prepare(const double tolerance)
   {
@@ -86,9 +85,7 @@ struct ProlongationOperatorsBase
     if (coarse_l2_error > tolerance)
       DUNE_THROW(Dune::XT::Common::Exceptions::internal_error,
                  "This should not happen, the L2 product and projection operators are tested elsewhere!\n"
-                     << coarse_l2_error
-                     << " vs. "
-                     << tolerance);
+                     << coarse_l2_error << " vs. " << tolerance);
     prepared_ = true;
   } // ... prepare(...)
 
@@ -126,9 +123,9 @@ template <class CoarseSpaceType, class FineSpaceType, template <class, class, cl
 struct LocalizableProlongationOperatorBase : public internal::ProlongationOperatorsBase<CoarseSpaceType, FineSpaceType>
 {
   typedef internal::ProlongationOperatorsBase<CoarseSpaceType, FineSpaceType> BaseType;
-  using typename BaseType::GridLayerType;
   using typename BaseType::CoarseDiscreteFunctionType;
   using typename BaseType::FineDiscreteFunctionType;
+  using typename BaseType::GridLayerType;
   using typename BaseType::RangeFieldType;
   typedef ProlongationOperatorImp<GridLayerType, CoarseDiscreteFunctionType, FineDiscreteFunctionType>
       ProlongationOperatorType;
@@ -144,10 +141,10 @@ struct LocalizableProlongationOperatorBase : public internal::ProlongationOperat
     EXPECT_LE(fine_l2_error, tolerance);
   } // ... produces_correct_results(...)
 
-  using BaseType::function_;
-  using BaseType::fine_space_;
   using BaseType::coarse_discrete_function_;
   using BaseType::fine_discrete_function_;
+  using BaseType::fine_space_;
+  using BaseType::function_;
 }; // LocalizableProlongationOperatorBase
 
 
@@ -158,9 +155,9 @@ template <class CoarseSpaceType, class FineSpaceType, template <class, class> cl
 struct ProlongationOperatorBase : public internal::ProlongationOperatorsBase<CoarseSpaceType, FineSpaceType>
 {
   typedef internal::ProlongationOperatorsBase<CoarseSpaceType, FineSpaceType> BaseType;
-  using typename BaseType::GridLayerType;
   using typename BaseType::CoarseDiscreteFunctionType;
   using typename BaseType::FineDiscreteFunctionType;
+  using typename BaseType::GridLayerType;
   using typename BaseType::RangeFieldType;
   typedef ProlongationOperatorImp<GridLayerType, RangeFieldType> ProlongationOperatorType;
 
@@ -176,10 +173,10 @@ struct ProlongationOperatorBase : public internal::ProlongationOperatorsBase<Coa
     EXPECT_LE(fine_l2_error, tolerance);
   } // ... produces_correct_results(...)
 
-  using BaseType::function_;
-  using BaseType::fine_space_;
   using BaseType::coarse_discrete_function_;
   using BaseType::fine_discrete_function_;
+  using BaseType::fine_space_;
+  using BaseType::function_;
 }; // ProlongationOperatorBase
 
 

@@ -139,8 +139,7 @@ struct static_for_loop<index, 0>
                         const bool /*subsampling*/,
                         const VTK::OutputType /*vtk_output_type*/,
                         const DiscreteFunctionType& /*discrete_function*/)
-  {
-  }
+  {}
 };
 
 
@@ -148,12 +147,13 @@ struct static_for_loop<index, 0>
 
 
 template <class SpaceImp, class VectorImp>
-class ConstDiscreteFunction : public XT::Functions::LocalizableFunctionInterface<typename SpaceImp::EntityType,
-                                                                                 typename SpaceImp::DomainFieldType,
-                                                                                 SpaceImp::dimDomain,
-                                                                                 typename SpaceImp::RangeFieldType,
-                                                                                 SpaceImp::dimRange,
-                                                                                 SpaceImp::dimRangeCols>
+class ConstDiscreteFunction
+  : public XT::Functions::LocalizableFunctionInterface<typename SpaceImp::EntityType,
+                                                       typename SpaceImp::DomainFieldType,
+                                                       SpaceImp::dimDomain,
+                                                       typename SpaceImp::RangeFieldType,
+                                                       SpaceImp::dimRange,
+                                                       SpaceImp::dimRangeCols>
 {
   static_assert(is_space<SpaceImp>::value, "SpaceImp has to be derived from SpaceInterface!");
   static_assert(XT::LA::is_vector<VectorImp>::value, "VectorImp has to be derived from XT::LA::VectorInterface!");
@@ -186,16 +186,14 @@ public:
     if (vector().size() != space_.mapper().size())
       DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
                  "space.mapper().size(): " << space_.mapper().size() << "\n   "
-                                           << "vector.size(): "
-                                           << vector_->access().size());
+                                           << "vector.size(): " << vector_->access().size());
   }
 
   ConstDiscreteFunction(const ThisType& other)
     : space_(other.space_)
     , vector_(new VectorStorageProvider(other.vector()))
     , name_(other.name_)
-  {
-  }
+  {}
 
   ConstDiscreteFunction(ThisType&& source) = default;
 
@@ -291,15 +289,10 @@ protected:
                     const bool subsampling,
                     const VTK::OutputType vtk_output_type)
     {
-      internal::static_for_loop<0,
-                                ProductSpaceInterface<SpaceTraits,
-                                                      SpaceType::dimDomain,
-                                                      SpaceType::dimRange,
-                                                      SpaceType::dimRangeCols>::num_factors>::visualize(filename_prefix,
-                                                                                                        filename_suffix,
-                                                                                                        subsampling,
-                                                                                                        vtk_output_type,
-                                                                                                        self);
+      internal::static_for_loop<
+          0,
+          ProductSpaceInterface<SpaceTraits, SpaceType::dimDomain, SpaceType::dimRange, SpaceType::dimRangeCols>::
+              num_factors>::visualize(filename_prefix, filename_suffix, subsampling, vtk_output_type, self);
     }
   };
 
@@ -312,7 +305,9 @@ private:
 
 
 template <class SpaceImp, class VectorImp = typename XT::LA::Container<typename SpaceImp::RangeFieldType>::VectorType>
-class DiscreteFunction : XT::Common::StorageProvider<VectorImp>, public ConstDiscreteFunction<SpaceImp, VectorImp>
+class DiscreteFunction
+  : XT::Common::StorageProvider<VectorImp>
+  , public ConstDiscreteFunction<SpaceImp, VectorImp>
 {
   typedef XT::Common::StorageProvider<VectorImp> VectorProviderBaseType;
   typedef ConstDiscreteFunction<SpaceImp, VectorImp> BaseType;
@@ -329,26 +324,22 @@ public:
   DiscreteFunction(const SpaceType& sp, VectorType& vec, const std::string nm = "gdt.discretefunction")
     : VectorProviderBaseType(vec)
     , BaseType(sp, VectorProviderBaseType::access(), nm)
-  {
-  }
+  {}
 
   DiscreteFunction(const SpaceType& sp, VectorType&& vec, const std::string nm = "gdt.discretefunction")
     : VectorProviderBaseType(std::move(vec))
     , BaseType(sp, VectorProviderBaseType::access(), nm)
-  {
-  }
+  {}
 
   DiscreteFunction(const SpaceType& sp, const std::string nm = "gdt.discretefunction")
     : VectorProviderBaseType(new VectorType(sp.mapper().size(), 0, 2 * XT::Common::threadManager().max_threads()))
     , BaseType(sp, VectorProviderBaseType::access(), nm)
-  {
-  }
+  {}
 
   DiscreteFunction(const ThisType& other)
     : VectorProviderBaseType(new VectorType(other.vector()))
     , BaseType(other.space(), VectorProviderBaseType::access(), other.name())
-  {
-  }
+  {}
 
   DiscreteFunction(ThisType&& source) = default;
 

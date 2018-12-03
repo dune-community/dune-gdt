@@ -72,13 +72,13 @@ LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<AluSimplex2d
   return {};
 }
 
-std::vector<double> LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<AluCube2dGridType, double, 1>,
-                                                  LinearElliptic::ChooseDiscretizer::cg,
-                                                  1>::
-    results(const LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<AluCube2dGridType, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::cg,
-                                                1>::TestCaseType&,
-            const std::string type)
+std::vector<double> LinearEllipticEocExpectations<
+    LinearElliptic::MixedBoundaryTestCase<AluCube2dGridType, double, 1>,
+    LinearElliptic::ChooseDiscretizer::cg,
+    1>::results(const LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<AluCube2dGridType, double, 1>,
+                                                    LinearElliptic::ChooseDiscretizer::cg,
+                                                    1>::TestCaseType&,
+                const std::string type)
 {
   if (type == "L2") {
 #if DXT_DISABLE_LARGE_TESTS

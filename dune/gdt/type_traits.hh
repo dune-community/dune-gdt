@@ -277,39 +277,32 @@ struct is_reconstructed_localizable_function_helper
 // from #include <dune/gdt/spaces/interface.hh>
 template <class S, bool candidate = internal::is_space_helper<S>::is_candidate>
 struct is_space
-    : public std::is_base_of<SpaceInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
-{
-};
+  : public std::is_base_of<SpaceInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
+{};
 
 template <class S>
 struct is_space<S, false> : public std::false_type
-{
-};
+{};
 
 template <class S, bool candidate = internal::is_space_helper<S>::is_candidate>
 struct is_product_space
-    : public std::is_base_of<ProductSpaceInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
-{
-};
+  : public std::is_base_of<ProductSpaceInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
+{};
 
 template <class S>
 struct is_product_space<S, false> : public std::false_type
-{
-};
+{};
 
 
 // from #include <dune/gdt/playground/spaces/restricted.hh>
 template <class S, bool candidate = internal::is_restricted_space_helper<S>::is_candidate>
 struct is_restricted_space
-    : public std::is_base_of<RestrictedSpace<typename S::UnrestrictedSpaceType, typename S::RestrictionGridLayerType>,
-                             S>
-{
-};
+  : public std::is_base_of<RestrictedSpace<typename S::UnrestrictedSpaceType, typename S::RestrictionGridLayerType>, S>
+{};
 
 template <class S>
 struct is_restricted_space<S, false> : public std::false_type
-{
-};
+{};
 
 
 // from #include <dune/gdt/spaces/cg/interface.hh>
@@ -317,19 +310,16 @@ template <class S,
           bool space_candidate = internal::is_space_helper<S>::is_candidate,
           bool restricted = is_restricted_space<S>::value>
 struct is_cg_space : public std::false_type
-{
-};
+{};
 
 template <class S>
 struct is_cg_space<S, true, false>
-    : public std::is_base_of<CgSpaceInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
-{
-};
+  : public std::is_base_of<CgSpaceInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
+{};
 
 template <class S>
 struct is_cg_space<S, true, true> : public is_cg_space<typename S::UnrestrictedSpaceType>
-{
-};
+{};
 
 
 // from #include <dune/gdt/spaces/rt/interface.hh>
@@ -337,197 +327,168 @@ template <class S,
           bool space_candidate = internal::is_space_helper<S>::is_candidate,
           bool restricted = is_restricted_space<S>::value>
 struct is_rt_space : public std::false_type
-{
-};
+{};
 
 template <class S>
 struct is_rt_space<S, true, false>
-    : public std::is_base_of<RtSpaceInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
-{
-};
+  : public std::is_base_of<RtSpaceInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
+{};
 
 template <class S>
 struct is_rt_space<S, true, true> : public is_rt_space<typename S::UnrestrictedSpaceType>
-{
-};
+{};
 
 
 // from #include <dune/gdt/local/integrands/interfaces.hh>
 template <class T, bool candidate = internal::is_unary_volume_integrand_helper<T>::is_candidate>
 struct is_unary_volume_integrand : public std::is_base_of<LocalVolumeIntegrandInterface<typename T::Traits, 1>, T>
-{
-};
+{};
 
 template <class T>
 struct is_unary_volume_integrand<T, false> : public std::false_type
-{
-};
+{};
 
 
 template <class T, bool candidate = internal::is_binary_volume_integrand_helper<T>::is_candidate>
 struct is_binary_volume_integrand : public std::is_base_of<LocalVolumeIntegrandInterface<typename T::Traits, 2>, T>
-{
-};
+{};
 
 template <class T>
 struct is_binary_volume_integrand<T, false> : public std::false_type
-{
-};
+{};
 
 
 template <class T, bool candidate = internal::is_unary_face_integrand_helper<T>::is_candidate>
 struct is_unary_face_integrand : public std::is_base_of<LocalFaceIntegrandInterface<typename T::Traits, 1>, T>
-{
-};
+{};
 
 template <class T>
 struct is_unary_face_integrand<T, false> : public std::false_type
-{
-};
+{};
 
 
 template <class T, bool candidate = internal::is_binary_face_integrand_helper<T>::is_candidate>
 struct is_binary_face_integrand : public std::is_base_of<LocalFaceIntegrandInterface<typename T::Traits, 2>, T>
-{
-};
+{};
 
 template <class T>
 struct is_binary_face_integrand<T, false> : public std::false_type
-{
-};
+{};
 
 
 template <class T, bool candidate = internal::is_quaternary_face_integrand_helper<T>::is_candidate>
 struct is_quaternary_face_integrand : public std::is_base_of<LocalFaceIntegrandInterface<typename T::Traits, 4>, T>
-{
-};
+{};
 
 template <class T>
 struct is_quaternary_face_integrand<T, false> : public std::false_type
-{
-};
+{};
 
 
 // from #include <dune/gdt/operators/interfaces.hh>
 template <class T, bool candidate = internal::is_operator_helper<T>::is_candidate>
 struct is_operator : public std::is_base_of<OperatorInterface<typename T::Traits>, T>
-{
-};
+{};
 
 template <class T>
 struct is_operator<T, false> : public std::false_type
-{
-};
+{};
 
 // from #include <dune/gdt/local/fluxes/interfaces.hh>
 template <class T, bool candidate = internal::is_operator_helper<T>::is_candidate>
 struct is_local_numerical_coupling_flux : std::is_base_of<LocalNumericalCouplingFluxInterface<typename T::Traits>, T>
-{
-};
+{};
 
 template <class T, bool candidate = internal::is_operator_helper<T>::is_candidate>
 struct is_local_numerical_boundary_flux : std::is_base_of<LocalNumericalBoundaryFluxInterface<typename T::Traits>, T>
-{
-};
+{};
 
 
 // from #include <dune/gdt/operators/base.hh>
 template <class T, bool candidate = internal::is_localizable_product_helper<T>::is_candidate>
-struct is_localizable_product : public std::is_base_of<LocalizableProductBase<typename T::GridLayerType,
-                                                                              typename T::RangeType,
-                                                                              typename T::SourceType,
-                                                                              typename T::FieldType>,
-                                                       T>
-{
-};
+struct is_localizable_product
+  : public std::is_base_of<LocalizableProductBase<typename T::GridLayerType,
+                                                  typename T::RangeType,
+                                                  typename T::SourceType,
+                                                  typename T::FieldType>,
+                           T>
+{};
 
 template <class T>
 struct is_localizable_product<T, false> : public std::false_type
-{
-};
+{};
 
 
 template <class T, bool candidate = internal::is_matrix_operator_helper<T>::is_candidate>
-struct is_matrix_operator : public std::is_base_of<MatrixOperatorBase<typename T::MatrixType,
-                                                                      typename T::RangeSpaceType,
-                                                                      typename T::GridLayerType,
-                                                                      typename T::SourceSpaceType,
-                                                                      typename T::FieldType,
-                                                                      T::pattern_type,
-                                                                      typename T::OuterRangeSpaceType,
-                                                                      typename T::OuterSourceSpaceType>,
-                                                   T>
-{
-};
+struct is_matrix_operator
+  : public std::is_base_of<MatrixOperatorBase<typename T::MatrixType,
+                                              typename T::RangeSpaceType,
+                                              typename T::GridLayerType,
+                                              typename T::SourceSpaceType,
+                                              typename T::FieldType,
+                                              T::pattern_type,
+                                              typename T::OuterRangeSpaceType,
+                                              typename T::OuterSourceSpaceType>,
+                           T>
+{};
 
 template <class T>
 struct is_matrix_operator<T, false> : public std::false_type
-{
-};
+{};
 
 
 // from #include <dune/gdt/discretefunction/default.hh>
 template <class T, bool candidate = internal::is_const_discrete_function_helper<T>::is_candidate>
 struct is_const_discrete_function
-    : public std::is_base_of<ConstDiscreteFunction<typename T::SpaceType, typename T::VectorType>, T>
-{
-};
+  : public std::is_base_of<ConstDiscreteFunction<typename T::SpaceType, typename T::VectorType>, T>
+{};
 
 template <class T>
 struct is_const_discrete_function<T, false> : public std::false_type
-{
-};
+{};
 
 
 template <class T, bool candidate = internal::is_const_discrete_function_helper<T>::is_candidate>
 struct is_discrete_function : public std::is_base_of<DiscreteFunction<typename T::SpaceType, typename T::VectorType>, T>
-{
-};
+{};
 
 template <class T>
 struct is_discrete_function<T, false> : public std::false_type
-{
-};
+{};
 
 
 // from #include <dune/gdt/operators/fv/boundary.hh>
 template <class T, bool candidate = internal::is_localizable_boundary_value_helper<T>::is_candidate>
 struct is_localizable_boundary_value
-    : public std::is_base_of<LocalizableBoundaryValueInterface<typename T::EntityType,
-                                                               typename T::IntersectionType,
-                                                               typename T::RangeType>,
-                             T>
-{
-};
+  : public std::is_base_of<
+        LocalizableBoundaryValueInterface<typename T::EntityType, typename T::IntersectionType, typename T::RangeType>,
+        T>
+{};
 
 template <class T>
 struct is_localizable_boundary_value<T, false> : public std::false_type
-{
-};
+{};
 
 // from #include <dune/gdt/operators/fv/reconstructed_function.hh>
 template <class T, bool candidate = internal::is_reconstructed_localizable_function_helper<T>::is_candidate>
 struct is_reconstructed_localizable_function
-    : public std::is_base_of<ReconstructedLocalizableFunction<typename T::GridLayerType,
-                                                              typename T::DomainFieldType,
-                                                              T::dimDomain,
-                                                              typename T::RangeFieldType,
-                                                              T::dimRange,
-                                                              T::dimRangeCols>,
-                             T>
-{
-};
+  : public std::is_base_of<ReconstructedLocalizableFunction<typename T::GridLayerType,
+                                                            typename T::DomainFieldType,
+                                                            T::dimDomain,
+                                                            typename T::RangeFieldType,
+                                                            T::dimRange,
+                                                            T::dimRangeCols>,
+                           T>
+{};
 
 template <class T>
 struct is_reconstructed_localizable_function<T, false> : public std::false_type
-{
-};
+{};
 
 // from #include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions.hh>
 template <class T>
 struct is_hatfunction_basis : public std::false_type
-{
-};
+{};
 
 template <class DomainFieldType,
           size_t dimDomain,
@@ -535,30 +496,23 @@ template <class DomainFieldType,
           size_t dimRange_or_refinements,
           size_t dimRangeCols,
           size_t dimFlux>
-struct is_hatfunction_basis<HatFunctionMomentBasis<DomainFieldType,
-                                                   dimDomain,
-                                                   RangeFieldType,
-                                                   dimRange_or_refinements,
-                                                   dimRangeCols,
-                                                   dimFlux>> : public std::true_type
-{
-};
+struct is_hatfunction_basis<
+    HatFunctionMomentBasis<DomainFieldType, dimDomain, RangeFieldType, dimRange_or_refinements, dimRangeCols, dimFlux>>
+  : public std::true_type
+{};
 
 template <class T>
 struct is_legendre_basis : public std::false_type
-{
-};
+{};
 
 template <class DomainFieldType, class RangeFieldType, size_t order, size_t dimRangeCols>
 struct is_legendre_basis<LegendreMomentBasis<DomainFieldType, RangeFieldType, order, dimRangeCols>>
-    : public std::true_type
-{
-};
+  : public std::true_type
+{};
 
 template <class T>
 struct is_partial_moment_basis : public std::false_type
-{
-};
+{};
 
 template <class DomainFieldType,
           size_t dimDomain,
@@ -574,42 +528,33 @@ struct is_partial_moment_basis<PartialMomentBasis<DomainFieldType,
                                                   dimRangeCols,
                                                   dimFlux,
                                                   order>> : public std::true_type
-{
-};
+{};
 
 template <class T>
 struct is_spherical_harmonics_basis : public std::false_type
-{
-};
+{};
 
 template <class DomainFieldType, class RangeFieldType, size_t order, size_t fluxDim, bool only_positive>
 class SphericalHarmonicsMomentBasis;
 
 template <class DomainFieldType, class RangeFieldType, size_t order, size_t fluxDim, bool only_positive>
-struct is_spherical_harmonics_basis<SphericalHarmonicsMomentBasis<DomainFieldType,
-                                                                  RangeFieldType,
-                                                                  order,
-                                                                  fluxDim,
-                                                                  only_positive>> : public std::true_type
-{
-};
+struct is_spherical_harmonics_basis<
+    SphericalHarmonicsMomentBasis<DomainFieldType, RangeFieldType, order, fluxDim, only_positive>>
+  : public std::true_type
+{};
 
 template <class T>
 struct is_real_spherical_harmonics_basis : public std::false_type
-{
-};
+{};
 
 template <class DomainFieldType, class RangeFieldType, size_t order, size_t fluxDim, bool only_positive>
 class SphericalHarmonicsMomentBasis;
 
 template <class DomainFieldType, class RangeFieldType, size_t order, size_t fluxDim, bool only_even>
-struct is_real_spherical_harmonics_basis<RealSphericalHarmonicsMomentBasis<DomainFieldType,
-                                                                           RangeFieldType,
-                                                                           order,
-                                                                           fluxDim,
-                                                                           only_even>> : public std::true_type
-{
-};
+struct is_real_spherical_harmonics_basis<
+    RealSphericalHarmonicsMomentBasis<DomainFieldType, RangeFieldType, order, fluxDim, only_even>>
+  : public std::true_type
+{};
 
 template <class T>
 struct is_full_moment_basis

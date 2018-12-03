@@ -59,10 +59,11 @@ public:
 
 
 template <class UnrestrictedSpace, class RestrictionGridLayer>
-class RestrictedSpace : public SpaceInterface<internal::RestrictedSpaceTraits<UnrestrictedSpace, RestrictionGridLayer>,
-                                              UnrestrictedSpace::dimDomain,
-                                              UnrestrictedSpace::dimRange,
-                                              UnrestrictedSpace::dimRangeCols>
+class RestrictedSpace
+  : public SpaceInterface<internal::RestrictedSpaceTraits<UnrestrictedSpace, RestrictionGridLayer>,
+                          UnrestrictedSpace::dimDomain,
+                          UnrestrictedSpace::dimRange,
+                          UnrestrictedSpace::dimRangeCols>
 {
   typedef SpaceInterface<internal::RestrictedSpaceTraits<UnrestrictedSpace, RestrictionGridLayer>,
                          UnrestrictedSpace::dimDomain,
@@ -75,21 +76,20 @@ public:
   typedef internal::RestrictedSpaceTraits<UnrestrictedSpace, RestrictionGridLayer> Traits;
   typedef UnrestrictedSpace UnrestrictedSpaceType; //       These are mainly here to detect this space type from the
   typedef RestrictionGridLayer RestrictionGridLayerType; // outside (see also type_traits.hh).
-  using typename BaseType::MapperType;
-  using typename BaseType::GridLayerType;
   using typename BaseType::BackendType;
-  using typename BaseType::EntityType;
   using typename BaseType::BaseFunctionSetType;
   using typename BaseType::DofCommunicatorType;
-  using typename BaseType::PatternType;
   using typename BaseType::DomainType;
+  using typename BaseType::EntityType;
+  using typename BaseType::GridLayerType;
+  using typename BaseType::MapperType;
+  using typename BaseType::PatternType;
 
   RestrictedSpace(const UnrestrictedSpace& unrestricted_space, RestrictionGridLayer restriction_grid_layer)
     : unrestricted_space_(unrestricted_space)
     , grid_layer_(restriction_grid_layer)
     , mapper_(unrestricted_space_, grid_layer_)
-  {
-  }
+  {}
 
   RestrictedSpace(const ThisType& other) = default;
   RestrictedSpace(ThisType&& source) = default;
@@ -174,9 +174,7 @@ private:
     if (unrestricted_space_.grid_layer().indexSet().contains(entity))
       DUNE_THROW(restricted_space_error,
                  "Entity not contained in restriction grid layer, but contained in the unrestricted grid layer "
-                     << "with index "
-                     << unrestricted_space_.grid_layer().indexSet().index(entity)
-                     << "!");
+                     << "with index " << unrestricted_space_.grid_layer().indexSet().index(entity) << "!");
     else
       DUNE_THROW(restricted_space_error,
                  "Entity neither contained in restriction grid layer nor in the unrestricted grid layer!");

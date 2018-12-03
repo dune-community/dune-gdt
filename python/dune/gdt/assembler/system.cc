@@ -23,23 +23,22 @@
 
 
 #define DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, _GRID, _layer, _backend, _layer_name)                                     \
-  auto dirichlet_constraints_##_GRID##_##_layer##_##_backend = Dune::GDT::bindings::                                   \
-      DirichletConstraints<Dune::XT::Grid::extract_intersection_t<                                                     \
-                               typename Dune::XT::Grid::Layer<_GRID,                                                   \
-                                                              Dune::XT::Grid::Layers::_layer,                          \
-                                                              Dune::XT::Grid::Backends::_backend,                      \
-                                                              Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,        \
-                           _GRID>::bind(_m, _layer_name)
+  auto dirichlet_constraints_##_GRID##_##_layer##_##_backend =                                                         \
+      Dune::GDT::bindings::DirichletConstraints<Dune::XT::Grid::extract_intersection_t<typename Dune::XT::Grid::Layer< \
+                                                    _GRID,                                                             \
+                                                    Dune::XT::Grid::Layers::_layer,                                    \
+                                                    Dune::XT::Grid::Backends::_backend,                                \
+                                                    Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,                  \
+                                                _GRID>::bind(_m, _layer_name)
 
 #define DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(_GRID, _layer, _backend, _la)                                           \
-  Dune::GDT::bindings::                                                                                                \
-      DirichletConstraints<Dune::XT::Grid::extract_intersection_t<                                                     \
-                               typename Dune::XT::Grid::Layer<_GRID,                                                   \
-                                                              Dune::XT::Grid::Layers::_layer,                          \
-                                                              Dune::XT::Grid::Backends::_backend,                      \
-                                                              Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,        \
-                           _GRID>::                                                                                    \
-          addbind<Dune::XT::LA::Backends::_la>(dirichlet_constraints_##_GRID##_##_layer##_##_backend)
+  Dune::GDT::bindings::DirichletConstraints<                                                                           \
+      Dune::XT::Grid::extract_intersection_t<                                                                          \
+          typename Dune::XT::Grid::Layer<_GRID,                                                                        \
+                                         Dune::XT::Grid::Layers::_layer,                                               \
+                                         Dune::XT::Grid::Backends::_backend,                                           \
+                                         Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,                             \
+      _GRID>::addbind<Dune::XT::LA::Backends::_la>(dirichlet_constraints_##_GRID##_##_layer##_##_backend)
 
 
 #define DUNE_GDT_ASSEMBLER_SYSTEM_BIND(                                                                                \

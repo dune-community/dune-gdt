@@ -35,17 +35,17 @@ class SourceBeamPn : public FokkerPlanckEquation<BasisfunctionImp, GridLayerImp,
   using BaseType = FokkerPlanckEquation<BasisfunctionImp, GridLayerImp, U_>;
 
 public:
-  using typename BaseType::InitialValueType;
-  using typename BaseType::BoundaryValueType;
-  using typename BaseType::ActualInitialValueType;
-  using typename BaseType::ActualDirichletBoundaryValueType;
   using typename BaseType::ActualBoundaryValueType;
+  using typename BaseType::ActualDirichletBoundaryValueType;
+  using typename BaseType::ActualInitialValueType;
+  using typename BaseType::BasisfunctionType;
+  using typename BaseType::BoundaryValueType;
   using typename BaseType::DomainType;
+  using typename BaseType::GridLayerType;
+  using typename BaseType::InitialValueType;
+  using typename BaseType::IntersectionType;
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeType;
-  using typename BaseType::BasisfunctionType;
-  using typename BaseType::GridLayerType;
-  using typename BaseType::IntersectionType;
 
   using BaseType::default_boundary_cfg;
 
@@ -54,8 +54,7 @@ public:
                const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
     : BaseType(basis_functions, grid_layer, 6, grid_cfg, boundary_cfg)
-  {
-  }
+  {}
 
   static std::string static_id()
   {
@@ -117,26 +116,21 @@ protected:
 
 template <class G, class R = double>
 class SourceBeamTestCase
-    : public Dune::GDT::Test::
-          InstationaryTestCase<G,
-                               Problems::
-                                   KineticEquation<Problems::FokkerPlanck::
-                                                       SourceBeamPn<LegendreMomentBasis<double, double, 5>,
-                                                                    typename XT::Grid::PeriodicGridLayer<
-                                                                        typename G::LevelGridView>,
-                                                                    typename internal::
-                                                                        DiscreteFunctionProvider<G,
-                                                                                                 GDT::SpaceType::
-                                                                                                     product_fv,
-                                                                                                 0,
-                                                                                                 R,
-                                                                                                 6,
-                                                                                                 1,
-                                                                                                 GDT::Backends::gdt,
-                                                                                                 XT::LA::
-                                                                                                     default_backend,
-                                                                                                 XT::Grid::Layers::leaf,
-                                                                                                 true>::type>>>
+  : public Dune::GDT::Test::InstationaryTestCase<
+        G,
+        Problems::KineticEquation<
+            Problems::FokkerPlanck::SourceBeamPn<LegendreMomentBasis<double, double, 5>,
+                                                 typename XT::Grid::PeriodicGridLayer<typename G::LevelGridView>,
+                                                 typename internal::DiscreteFunctionProvider<G,
+                                                                                             GDT::SpaceType::product_fv,
+                                                                                             0,
+                                                                                             R,
+                                                                                             6,
+                                                                                             1,
+                                                                                             GDT::Backends::gdt,
+                                                                                             XT::LA::default_backend,
+                                                                                             XT::Grid::Layers::leaf,
+                                                                                             true>::type>>>
 {
   using D = typename G::ctype;
   static const size_t d = G::dimension;
@@ -155,11 +149,9 @@ public:
                                                         XT::LA::default_backend,
                                                         XT::Grid::Layers::leaf,
                                                         true>::type;
-  using ProblemType =
-      typename Problems::KineticEquation<Problems::FokkerPlanck::SourceBeamPn<BasisfunctionType,
-                                                                              typename XT::Grid::PeriodicGridLayer<
-                                                                                  typename G::LevelGridView>,
-                                                                              U>>;
+  using ProblemType = typename Problems::KineticEquation<
+      Problems::FokkerPlanck::
+          SourceBeamPn<BasisfunctionType, typename XT::Grid::PeriodicGridLayer<typename G::LevelGridView>, U>>;
 
 private:
   using BaseType = typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType>;
@@ -170,8 +162,7 @@ public:
     , basis_functions_()
     , level_grid_view_(BaseType::level_view(0))
     , problem_(basis_functions_, level_grid_view_)
-  {
-  }
+  {}
 
   virtual const ProblemType& problem() const override final
   {

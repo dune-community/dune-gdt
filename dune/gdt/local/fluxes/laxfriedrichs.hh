@@ -60,15 +60,15 @@ public:
 
 template <class AnalyticalFluxImp, class BoundaryValueImp, class LocalizableFunctionImp>
 class LaxFriedrichsLocalDirichletNumericalBoundaryFluxTraits
-    : public NumericalBoundaryFluxTraitsBase<AnalyticalFluxImp, BoundaryValueImp>
+  : public NumericalBoundaryFluxTraitsBase<AnalyticalFluxImp, BoundaryValueImp>
 {
   typedef NumericalBoundaryFluxTraitsBase<AnalyticalFluxImp, BoundaryValueImp> BaseType;
 
 public:
   typedef LocalizableFunctionImp LocalizableFunctionType;
   typedef typename LocalizableFunctionType::LocalfunctionType LocalfunctionType;
-  using typename BaseType::LocalBoundaryValueType;
   using typename BaseType::AnalyticalFluxLocalfunctionType;
+  using typename BaseType::LocalBoundaryValueType;
   typedef std::tuple<std::unique_ptr<AnalyticalFluxLocalfunctionType>,
                      std::unique_ptr<LocalfunctionType>,
                      std::unique_ptr<LocalBoundaryValueType>>
@@ -360,8 +360,7 @@ public:
                                                    const DomainType lambda = DomainType(0))
     : dx_(dx)
     , implementation_(analytical_flux, param, use_local, alpha, lambda, false)
-  {
-  }
+  {}
 
   LocalfunctionTupleType local_functions(const EntityType& entity) const
   {
@@ -404,9 +403,9 @@ private:
 }; // class LaxFriedrichsLocalNumericalCouplingFlux
 
 /**
-*  \brief  Lax-Friedrichs flux evaluation for Dirichlet boundary intersections.
-*  \see    LaxFriedrichsLocalNumericalCouplingFlux
-*/
+ *  \brief  Lax-Friedrichs flux evaluation for Dirichlet boundary intersections.
+ *  \see    LaxFriedrichsLocalNumericalCouplingFlux
+ */
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
           class LocalizableFunctionImp,
@@ -440,8 +439,7 @@ public:
     : InterfaceType(boundary_values)
     , dx_(dx)
     , implementation_(analytical_flux, param, use_local, alpha, lambda, true)
-  {
-  }
+  {}
 
   LocalfunctionTupleType local_functions(const EntityType& entity) const
   {

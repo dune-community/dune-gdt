@@ -85,8 +85,7 @@ public:
     , ansatz_space_(ansatz)
     , outer_test_space_(test)
     , outer_ansatz_space_(ansatz)
-  {
-  }
+  {}
 
   template <typename TestSpace,
             typename AnsatzSpace,
@@ -100,23 +99,20 @@ public:
     , ansatz_space_(ansatz)
     , outer_test_space_(test)
     , outer_ansatz_space_(ansatz)
-  {
-  }
+  {}
 
   template <typename TestSpace,
-            typename =
-                typename std::enable_if<std::is_same<AnsatzSpaceType, TestSpace>::value
-                                        && std::is_same<OuterTestSpaceType, TestSpace>::value
-                                        && std::is_same<OuterAnsatzSpaceType, TestSpace>::value
-                                        && std::is_same<typename TestSpace::GridLayerType, GridLayerType>::value>::type>
+            typename = typename std::enable_if<
+                std::is_same<AnsatzSpaceType, TestSpace>::value && std::is_same<OuterTestSpaceType, TestSpace>::value
+                && std::is_same<OuterAnsatzSpaceType, TestSpace>::value
+                && std::is_same<typename TestSpace::GridLayerType, GridLayerType>::value>::type>
   explicit SystemAssembler(TestSpace test)
     : BaseType(test.grid_layer())
     , test_space_(test)
     , ansatz_space_(test)
     , outer_test_space_(test)
     , outer_ansatz_space_(test)
-  {
-  }
+  {}
 
   template <typename TestSpace,
             typename = typename std::enable_if<std::is_same<AnsatzSpaceType, TestSpace>::value
@@ -128,8 +124,7 @@ public:
     , ansatz_space_(test)
     , outer_test_space_(test)
     , outer_ansatz_space_(test)
-  {
-  }
+  {}
 
   SystemAssembler(const GridLayerType& grd_layr,
                   TestSpaceType inner_test,
@@ -141,8 +136,7 @@ public:
     , ansatz_space_(inner_ansatz)
     , outer_test_space_(outer_test)
     , outer_ansatz_space_(outer_ansatz)
-  {
-  }
+  {}
 
   /// \sa https://github.com/dune-community/dune-gdt/issues/89
   SystemAssembler(const ThisType& other) = delete; // all wrappers hold references to dead spaces after move!
@@ -150,9 +144,7 @@ public:
   ThisType& operator=(const ThisType& other) = delete;
   ThisType& operator=(ThisType&& source) = delete;
 
-  virtual ~SystemAssembler()
-  {
-  }
+  virtual ~SystemAssembler() {}
 
   const TestSpaceType& test_space() const
   {

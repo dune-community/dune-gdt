@@ -46,21 +46,22 @@ namespace Dune {
 namespace GDT {
 
 
-template <class StateRangeType, class VectorType>
+template <class KeyVectorType, class ValueVectorType>
 class EntropyLocalCache
 {
 public:
-  using MapType = typename std::map<StateRangeType, VectorType, XT::Common::FieldVectorLess>;
+  using MapType = typename std::map<KeyVectorType, ValueVectorType, XT::Common::VectorLess>;
+  using KAbs = XT::Common::VectorAbstraction<KeyVectorType>;
+  using VAbs = XT::Common::VectorAbstraction<ValueVectorType>;
   using IteratorType = typename MapType::iterator;
   using ConstIteratorType = typename MapType::const_iterator;
-  using RangeFieldType = typename StateRangeType::value_type;
+  using RangeFieldType = typename KAbs::ScalarType;
 
   EntropyLocalCache(const size_t capacity)
     : capacity_(capacity)
-  {
-  }
+  {}
 
-  void insert(const StateRangeType& u, const VectorType& alpha)
+  void insert(const KeyVectorType& u, const ValueVectorType& alpha)
   {
     cache_.insert(std::make_pair(u, alpha));
     keys_.push_back(u);
@@ -70,22 +71,29 @@ public:
     }
   }
 
-  void keep(const StateRangeType& u)
+  void keep(const KeyVectorType& u)
   {
     keys_.remove(u);
     keys_.push_back(u);
   }
 
-  ConstIteratorType find_closest(const StateRangeType& u) const
+  ConstIteratorType find_closest(const KeyVectorType& u) const
   {
     ConstIteratorType ret = cache_.begin();
     if (ret == end())
       return ret;
-    RangeFieldType distance = (u - ret->first).infinity_norm();
-    RangeFieldType new_distance = distance;
+    auto diff = u - ret->first;
+    // use infinity_norm as distance
+    RangeFieldType distance = std::abs(diff[0]);
+    for (size_t ii = 1; ii < diff.size(); ++ii)
+      distance = std::max(distance, diff[ii]);
     auto it = ret;
     while (++it != end()) {
-      if ((new_distance = (u - it->first).infinity_norm()) < distance) {
+      diff = u - it->first;
+      RangeFieldType new_distance = std::abs(diff[0]);
+      for (size_t ii = 1; ii < diff.size(); ++ii)
+        new_distance = std::max(new_distance, diff[ii]);
+      if (new_distance < distance) {
         distance = new_distance;
         ret = it;
       }
@@ -121,7 +129,7 @@ public:
 private:
   std::size_t capacity_;
   MapType cache_;
-  std::list<StateRangeType> keys_;
+  std::list<KeyVectorType> keys_;
 };
 
 template <class BasisfunctionImp, class GridLayerImp, class U>
@@ -134,14 +142,14 @@ class EntropyBasedLocalFlux;
  */
 template <class BasisfunctionImp, class GridLayerImp, class U>
 class EntropyBasedLocalFlux
-    : public XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
-                                                             typename BasisfunctionImp::DomainFieldType,
-                                                             BasisfunctionImp::dimFlux,
-                                                             U,
-                                                             0,
-                                                             typename BasisfunctionImp::RangeFieldType,
-                                                             BasisfunctionImp::dimRange,
-                                                             BasisfunctionImp::dimFlux>
+  : public XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
+                                                           typename BasisfunctionImp::DomainFieldType,
+                                                           BasisfunctionImp::dimFlux,
+                                                           U,
+                                                           0,
+                                                           typename BasisfunctionImp::RangeFieldType,
+                                                           BasisfunctionImp::dimRange,
+                                                           BasisfunctionImp::dimFlux>
 {
   using BaseType =
       typename XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
@@ -157,18 +165,18 @@ class EntropyBasedLocalFlux
 public:
   using BasisfunctionType = BasisfunctionImp;
   using GridLayerType = GridLayerImp;
-  using typename BaseType::EntityType;
-  using typename BaseType::DomainType;
-  using typename BaseType::DomainFieldType;
-  using typename BaseType::StateType;
-  using typename BaseType::StateRangeType;
-  using typename BaseType::RangeType;
-  using typename BaseType::RangeFieldType;
-  using typename BaseType::PartialURangeType;
-  using typename BaseType::LocalfunctionType;
   using BaseType::dimDomain;
   using BaseType::dimRange;
   using BaseType::dimRangeCols;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::DomainType;
+  using typename BaseType::EntityType;
+  using typename BaseType::LocalfunctionType;
+  using typename BaseType::PartialURangeType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::RangeType;
+  using typename BaseType::StateRangeType;
+  using typename BaseType::StateType;
   // make matrices a little larger to align to 64 byte boundary
   static constexpr size_t matrix_num_cols = dimRange % 8 ? dimRange : dimRange + (8 - dimRange % 8);
   using MatrixType = XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange>;
@@ -177,7 +185,7 @@ public:
   using QuadratureRuleType = Dune::QuadratureRule<DomainFieldType, dimDomain>;
   using AlphaReturnType = std::pair<VectorType, RangeFieldType>;
   using LocalCacheType = EntropyLocalCache<StateRangeType, VectorType>;
-  using AlphaStorageType = std::map<DomainType, StateRangeType, XT::Common::FieldVectorFloatLess>;
+  using AlphaStorageType = std::map<DomainType, StateRangeType, XT::Common::VectorFloatLess>;
   static const size_t cache_size = 4 * dimDomain + 2;
 
   // get permutation instead of sorting directly to be able to sort two vectors the same way
@@ -273,7 +281,7 @@ public:
       ++ll;
     }
     // Join duplicate quad_points. For that purpose, first sort the vectors
-    const auto permutation = get_sort_permutation(quad_points_, XT::Common::FieldVectorFloatLess{});
+    const auto permutation = get_sort_permutation(quad_points_, XT::Common::VectorFloatLess{});
     apply_permutation_in_place(quad_points_, permutation);
     apply_permutation_in_place(quad_weights_, permutation);
     // Now join duplicate quad_points by removing all quad_points with the same position except one and adding the
@@ -294,8 +302,8 @@ public:
   public:
     using LocalfunctionType::dimDomain;
     using LocalfunctionType::dimRange;
-    using typename LocalfunctionType::ColRangeType;
     using typename LocalfunctionType::ColPartialURangeType;
+    using typename LocalfunctionType::ColRangeType;
 
     Localfunction(const EntityType& e,
                   const BasisfunctionType& basis_functions,
@@ -342,8 +350,7 @@ public:
 #else
       , realizability_helper_(basis_functions_, quad_points_)
 #endif
-    {
-    }
+    {}
 
     template <class BasisFuncImp = BasisfunctionType, bool quadrature_contains_vertices = true, bool anything = true>
     struct RealizabilityHelper;
@@ -360,8 +367,7 @@ public:
         : basis_functions_(basis_functions)
         , quad_points_(quad_points)
         , lp_(lp)
-      {
-      }
+      {}
 
       // The ClpSimplex structure seems to get corrupted sometimes (maybe some problems with infs/NaNs?), so we
       // reinitialize it if the stopping conditions is always false
@@ -445,14 +451,10 @@ public:
 
     // specialization for hatfunctions
     template <size_t dimRange_or_refinements, bool anything>
-    struct RealizabilityHelper<HatFunctionMomentBasis<DomainFieldType,
-                                                      dimDomain,
-                                                      RangeFieldType,
-                                                      dimRange_or_refinements,
-                                                      1,
-                                                      dimDomain>,
-                               true,
-                               anything>
+    struct RealizabilityHelper<
+        HatFunctionMomentBasis<DomainFieldType, dimDomain, RangeFieldType, dimRange_or_refinements, 1, dimDomain>,
+        true,
+        anything>
     {
       RealizabilityHelper(const BasisfunctionType& /*basis_functions*/,
                           const std::vector<DomainType>& /*quad_points*/
@@ -460,10 +462,9 @@ public:
                           ,
                           XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>>& /*lp*/)
 #else
-                          )
+      )
 #endif
-      {
-      }
+      {}
 
       static bool is_realizable(const StateRangeType& u, const bool /*reinitialize*/)
       {
@@ -756,8 +757,8 @@ public:
             + " and multiplier " + XT::Common::to_string(beta_in) + " at position "
             + XT::Common::to_string(entity().geometry().center()) + " due to too many iterations! Last u_eps_diff = "
             + XT::Common::to_string(u_eps_diff) + ", first_error_cond = " + XT::Common::to_string(first_error_cond)
-            + ", second_error_cond = " + XT::Common::to_string(second_error_cond) + ", tau_prime = "
-            + XT::Common::to_string(tau_prime);
+            + ", second_error_cond = " + XT::Common::to_string(second_error_cond)
+            + ", tau_prime = " + XT::Common::to_string(tau_prime);
         DUNE_THROW(MathError, err_msg);
       } // else ( value has not been calculated before )
 
@@ -1028,7 +1029,7 @@ public:
                                            ,
                                            lp_);
 #else
-                                           );
+    );
 #endif
   }
 
@@ -1114,21 +1115,18 @@ private:
  * Specialization for DG basis
  */
 template <class GridLayerImp, class U, size_t domainDim, size_t dimRange_or_refinements>
-class EntropyBasedLocalFlux<PartialMomentBasis<typename U::DomainFieldType,
-                                               domainDim,
-                                               typename U::RangeFieldType,
-                                               dimRange_or_refinements,
-                                               1>,
-                            GridLayerImp,
-                            U>
-    : public XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
-                                                             typename U::DomainFieldType,
-                                                             GridLayerImp::dimension,
-                                                             U,
-                                                             0,
-                                                             typename U::RangeFieldType,
-                                                             U::dimRange,
-                                                             GridLayerImp::dimension>
+class EntropyBasedLocalFlux<
+    PartialMomentBasis<typename U::DomainFieldType, domainDim, typename U::RangeFieldType, dimRange_or_refinements, 1>,
+    GridLayerImp,
+    U>
+  : public XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
+                                                           typename U::DomainFieldType,
+                                                           GridLayerImp::dimension,
+                                                           U,
+                                                           0,
+                                                           typename U::RangeFieldType,
+                                                           U::dimRange,
+                                                           GridLayerImp::dimension>
 {
   using BaseType =
       typename XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
@@ -1143,18 +1141,18 @@ class EntropyBasedLocalFlux<PartialMomentBasis<typename U::DomainFieldType,
 
 public:
   using GridLayerType = GridLayerImp;
-  using typename BaseType::EntityType;
-  using typename BaseType::DomainType;
-  using typename BaseType::DomainFieldType;
-  using typename BaseType::StateType;
-  using typename BaseType::StateRangeType;
-  using typename BaseType::RangeType;
-  using typename BaseType::RangeFieldType;
-  using typename BaseType::PartialURangeType;
-  using typename BaseType::LocalfunctionType;
   using BaseType::dimDomain;
   using BaseType::dimRange;
   using BaseType::dimRangeCols;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::DomainType;
+  using typename BaseType::EntityType;
+  using typename BaseType::LocalfunctionType;
+  using typename BaseType::PartialURangeType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::RangeType;
+  using typename BaseType::StateRangeType;
+  using typename BaseType::StateType;
   static const size_t block_size = (dimDomain == 1) ? 2 : 4;
   static const size_t num_blocks = dimRange / block_size;
   using BlockMatrixType = XT::Common::BlockedFieldMatrix<RangeFieldType, num_blocks, block_size>;
@@ -1171,7 +1169,7 @@ public:
       PartialMomentBasis<DomainFieldType, dimDomain, RangeFieldType, dimRange_or_refinements, 1, dimDomain>;
   using AlphaReturnType = std::pair<BlockVectorType, RangeFieldType>;
   using LocalCacheType = EntropyLocalCache<StateRangeType, BlockVectorType>;
-  using AlphaStorageType = std::map<DomainType, BlockVectorType, XT::Common::FieldVectorFloatLess>;
+  using AlphaStorageType = std::map<DomainType, BlockVectorType, XT::Common::VectorFloatLess>;
   using TemporaryVectorType = std::vector<RangeFieldType, boost::alignment::aligned_allocator<RangeFieldType, 64>>;
   using TemporaryVectorsType = FieldVector<TemporaryVectorType, num_blocks>;
   static const size_t cache_size = 4 * dimDomain + 2;
@@ -1181,8 +1179,8 @@ public:
   public:
     using LocalfunctionType::dimDomain;
     using LocalfunctionType::dimRange;
-    using typename LocalfunctionType::ColRangeType;
     using typename LocalfunctionType::ColPartialURangeType;
+    using typename LocalfunctionType::ColRangeType;
 
     Localfunction(const EntityType& e,
                   const BasisfunctionType& basis_functions,
@@ -1218,8 +1216,7 @@ public:
       , cache_(cache)
       , alpha_storage_(alpha_storage)
       , mutex_(mutex)
-    {
-    }
+    {}
 
     using LocalfunctionType::entity;
 
@@ -1652,9 +1649,7 @@ public:
         return ret[rr];
       }
 
-      static void calculate_plane_coefficients(const BasisfunctionType& /*basis_functions*/)
-      {
-      }
+      static void calculate_plane_coefficients(const BasisfunctionType& /*basis_functions*/) {}
 
       static bool is_realizable(const BlockVectorType& u, const BasisfunctionType& basis_functions)
       {
@@ -2022,26 +2017,23 @@ private:
 #endif
 
 
-#if 0
+#if 1
 /**
  * Specialization of EntropyBasedLocalFlux for 3D Hatfunctions
  */
 template <class GridLayerImp, class U, size_t refinements>
-class EntropyBasedLocalFlux<HatFunctionMomentBasis<typename U::DomainFieldType,
-                                                               3,
-                                                               typename U::RangeFieldType,
-                                                               refinements,
-                                                               1>,
-                            GridLayerImp,
-                            U>
-    : public XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
-                                                             typename U::DomainFieldType,
-                                                             GridLayerImp::dimension,
-                                                             U,
-                                                             0,
-                                                             typename U::RangeFieldType,
-                                                             U::dimRange,
-                                                             GridLayerImp::dimension>
+class EntropyBasedLocalFlux<
+    HatFunctionMomentBasis<typename U::DomainFieldType, 3, typename U::RangeFieldType, refinements, 1>,
+    GridLayerImp,
+    U>
+  : public XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
+                                                           typename U::DomainFieldType,
+                                                           GridLayerImp::dimension,
+                                                           U,
+                                                           0,
+                                                           typename U::RangeFieldType,
+                                                           U::dimRange,
+                                                           GridLayerImp::dimension>
 {
   using BaseType =
       typename XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
@@ -2055,117 +2047,39 @@ class EntropyBasedLocalFlux<HatFunctionMomentBasis<typename U::DomainFieldType,
   using ThisType = EntropyBasedLocalFlux;
 
 public:
-  using  GridLayerType = GridLayerImp;
-  using typename BaseType::EntityType;
-  using typename BaseType::DomainType;
-  using typename BaseType::DomainFieldType;
-  using typename BaseType::StateType;
-  using typename BaseType::StateRangeType;
-  using typename BaseType::RangeType;
-  using typename BaseType::RangeFieldType;
-  using typename BaseType::PartialURangeType;
-  using typename BaseType::LocalfunctionType;
+  using GridLayerType = GridLayerImp;
   using BaseType::dimDomain;
   using BaseType::dimRange;
   using BaseType::dimRangeCols;
-  using MatrixType = FieldMatrix<RangeFieldType, dimRange, dimRange>;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::DomainType;
+  using typename BaseType::EntityType;
+  using typename BaseType::LocalfunctionType;
+  using typename BaseType::PartialURangeType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::RangeType;
+  using typename BaseType::StateRangeType;
+  using typename BaseType::StateType;
   using LocalVectorType = XT::Common::FieldVector<RangeFieldType, 3>;
   using LocalMatrixType = XT::Common::FieldMatrix<RangeFieldType, 3, 3>;
-  using BasisValuesMatrixType = std::vector<LocalVectorType>;
-  using  QuadratureRuleType = Dune::QuadratureRule<DomainFieldType, dimDomain>;
-  using  BasisfunctionType = HatFunctionMomentBasis<DomainFieldType, dimDomain, RangeFieldType, refinements, 1, dimDomain>;
-  static constexpr size_t max_order = 200;
-  // storage for precalculated factors for f = 1
-  // index1: face, index2: which of the vertices (1, 2 or 3) belongs to alpha_3, index3: k, index4: k1
-  using P1Type =
-      std::vector<XT::Common::FieldVector<XT::Common::FieldVector<std::vector<RangeFieldType>, max_order + 1>, 3>>;
-  // storage for precalculated factors for f = h_m
-  // index1: face, index2: which of the vertices (0, 1 or 2) belongs to alpha_3, index3: k, index4: k1, index5: m
-  using P2Type =
-      std::vector<XT::Common::FieldVector<XT::Common::FieldVector<std::vector<LocalVectorType>, max_order + 1>, 3>>;
-  // storage for precalculated factors for f = v_d h_m
-  // index1: direction d, index2: face, index3: which of the vertices (0, 1 or 2) belongs to alpha_3, index4: k, index5:
-  // k1, index6: m
-  using P3Type = XT::Common::
-      FieldVector<std::vector<XT::Common::
-                                  FieldVector<XT::Common::FieldVector<std::vector<LocalVectorType>, max_order + 1>, 3>>,
-                  3>;
-  // storage for precalculated factors for f = h_m h_n
-  // index1: face, index2: which of the vertices (0, 1 or 2) belongs to alpha_3, index3: k, index4: k1, index5: m,
-  // index6: n
-  using P4Type =
-      std::vector<XT::Common::FieldVector<XT::Common::FieldVector<std::vector<LocalMatrixType>, max_order + 1>, 3>>;
-  // storage for precalculated factors for f = v_d h_m h_n
-  // index1: direction d, index2: face, index3: which of the vertices (0, 1 or 2) belongs to alpha_3, index4: k, index5:
-  // k1, index6: m, index7: n,
-  using P5Type = XT::Common::
-      FieldVector<std::vector<XT::Common::
-                                  FieldVector<XT::Common::FieldVector<std::vector<LocalMatrixType>, max_order + 1>, 3>>,
-                  3>;
-
-  using AlphaReturnType = typename std::pair<StateRangeType, RangeFieldType>;
-  using LocalCacheType = EntropyLocalCache<StateRangeType, StateRangeType>;
-  using AlphaStorageType = std::map<DomainType, StateRangeType, XT::Common::FieldVectorFloatLess>;
+  using BasisValuesMatrixType = std::vector<std::vector<LocalVectorType>>;
+  using QuadratureRuleType = Dune::QuadratureRule<DomainFieldType, dimDomain>;
+  using QuadraturePointsType = std::vector<std::vector<DomainType>>;
+  using QuadratureWeightsType = std::vector<std::vector<RangeFieldType>>;
+  using BasisfunctionType =
+      HatFunctionMomentBasis<DomainFieldType, dimDomain, RangeFieldType, refinements, 1, dimDomain>;
+  using SparseMatrixType = typename XT::LA::Container<RangeFieldType, XT::LA::Backends::istl_sparse>::MatrixType;
+  //  using SparseMatrixType = typename XT::LA::Container<RangeFieldType, XT::LA::default_sparse_backend>::MatrixType;
+  //  using VectorType = typename XT::LA::Container<RangeFieldType, XT::LA::default_sparse_backend>::VectorType;
+  using VectorType = typename XT::LA::Container<RangeFieldType, XT::LA::Backends::istl_sparse>::VectorType;
+  using AlphaReturnType = typename std::pair<VectorType, RangeFieldType>;
+  using LocalCacheType = EntropyLocalCache<VectorType, VectorType>;
+  using AlphaStorageType = std::map<DomainType, VectorType, XT::Common::VectorFloatLess>;
   static constexpr size_t cache_size = 4 * dimDomain + 2;
 
-private:
-  // Stores entries h^k or h^k/k!
-  template <class VecType>
-  class PowCache
-  {
-  public:
-    PowCache()
-      : powers_{VecType(1), VecType(0)}
-    {
-    }
-
-    void update(const VecType& h_new)
-    {
-      if (XT::Common::FloatCmp::ne(h_new, h_)) {
-        h_ = h_new;
-        powers_.resize(2);
-        powers_[0] = 1.;
-        powers_[1] = h_;
-      }
-    }
-
-    // If you want to store h^k/k!, set factor = 1./ll.
-    void add(const size_t ll, const RangeFieldType factor = 1.)
-    {
-      if (ll == powers_.size())
-        powers_.push_back(multiply_componentwise(powers_[ll - 1], h_) * factor);
-    }
-
-    const VecType& get(const size_t ll)
-    {
-      return powers_[ll];
-    }
-
-  private:
-    RangeFieldType multiply_componentwise(const RangeFieldType& first, const RangeFieldType& second)
-    {
-      return first * second;
-    }
-
-    template <class FieldType, int size>
-    XT::Common::FieldVector<FieldType, size> multiply_componentwise(const FieldVector<FieldType, size>& first,
-                                                                    const FieldVector<FieldType, size>& second)
-    {
-      auto ret = first;
-      for (int ii = 0; ii < size; ++ii)
-        ret[ii] *= second[ii];
-      return ret;
-    }
-
-    VecType h_;
-    std::vector<VecType> powers_;
-  };
-
-public:
   explicit EntropyBasedLocalFlux(
       const BasisfunctionType& basis_functions,
       const GridLayerType& grid_layer,
-      const RangeFieldType tol = 1e-10,
       const RangeFieldType tau = 1e-9,
       const RangeFieldType epsilon_gamma = 0.01,
       const RangeFieldType chi = 0.5,
@@ -2174,10 +2088,12 @@ public:
       const size_t k_0 = 500,
       const size_t k_max = 1000,
       const RangeFieldType epsilon = std::pow(2, -52),
-      const std::string name = static_id())
+      const std::string name = "")
     : index_set_(grid_layer.indexSet())
     , basis_functions_(basis_functions)
-    , tol_(tol)
+    , quad_points_(basis_functions_.triangulation().faces().size())
+    , quad_weights_(basis_functions_.triangulation().faces().size())
+    , M_(basis_functions_.triangulation().faces().size())
     , tau_(tau)
     , epsilon_gamma_(epsilon_gamma)
     , chi_(chi)
@@ -2187,114 +2103,57 @@ public:
     , k_max_(k_max)
     , epsilon_(epsilon)
     , name_(name)
-    , num_faces_(basis_functions_.triangulation().faces().size())
-    , p1_(num_faces_)
-    , p2_(num_faces_)
-    , p3_(typename P3Type::value_type(num_faces_))
-    , p4_(num_faces_)
-    , p5_(typename P5Type::value_type(num_faces_))
-    , vertex_indices_(num_faces_)
     , cache_(index_set_.size(0), LocalCacheType(cache_size))
     , alpha_storage_(index_set_.size(0))
     , mutexes_(index_set_.size(0))
   {
-    const auto& faces = basis_functions_.triangulation().faces();
-    const size_t num_faces = faces.size();
-    std::vector<std::thread> threads(num_faces);
-    // Launch a group of threads
-    for (size_t jj = 0; jj < num_faces; ++jj)
-      threads[jj] = std::thread(&ThisType::precalculate_factors_on_face, this, jj);
-    // Join the threads with the main thread
-    for (size_t jj = 0; jj < num_faces; ++jj)
-      threads[jj].join();
-    for (size_t jj = 0; jj < num_faces; ++jj) {
-      // Sort in positive and negative faces for the kinetic flux
-      const auto& center = faces[jj]->center();
-      for (size_t dd = 0; dd < dimDomain; ++dd) {
-        if (center[dd] > 0.)
-          pos_faces_[dd].push_back(jj);
-        else
-          neg_faces_[dd].push_back(jj);
-      } // dd
+    const auto& triangulation = basis_functions_.triangulation();
+    const auto& vertices = triangulation.vertices();
+    const auto& faces = triangulation.faces();
+    assert(vertices.size() == dimRange);
+    // create pattern
+    XT::LA::SparsityPatternDefault pattern(dimRange);
+    for (size_t vertex_index = 0; vertex_index < dimRange; ++vertex_index) {
+      const auto& vertex = vertices[vertex_index];
+      const auto& adjacent_faces = triangulation.get_face_indices(vertex->position());
+      for (const auto& face_index : adjacent_faces) {
+        const auto& face = faces[face_index];
+        assert(face->vertices().size() == 3);
+        for (size_t jj = 0; jj < 3; ++jj)
+          pattern.insert(vertex_index, face->vertices()[jj]->index());
+      }
+    }
+    pattern.sort();
+    pattern_ = pattern;
+    // store basis evaluations
+    const auto& quadratures = basis_functions_.quadratures();
+    assert(quadratures.size() == faces.size());
+    for (size_t jj = 0; jj < faces.size(); ++jj) {
+      for (const auto& quad_point : quadratures[jj]) {
+        quad_points_[jj].emplace_back(quad_point.position());
+        quad_weights_[jj].emplace_back(quad_point.weight());
+      }
+    } // jj
+    for (size_t jj = 0; jj < faces.size(); ++jj) {
+      M_[jj] = std::vector<LocalVectorType>(quad_points_[jj].size());
+      for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll)
+        M_[jj][ll] = basis_functions_.evaluate_on_face(quad_points_[jj][ll], jj);
     } // jj
   } // constructor
-
-  // Precalculate factors for the adaptive quadrature. We need to calculate the integrals of
-  // f(v) exp(alpha^T h) over K for f in (1, h, v_i h, h h^T, v_i h h^T),
-  // where h is the hatfunction basis vector and v_i the i-th component of v.
-  // The integral will be approximated by a Taylor expansion as
-  // exp(alpha_3) \sum_{k=0}^{order} \sum_{k_1 + k_2 = k} \prod_{i=1}^{2} (alpha_i - alpha_3)^{k_i}} p
-  // where p(f, i1, i2, k_i1, k_i2) = \int_K f(v) h_i1^k_i1 / (k_i1)! can be precomputed. See above
-  // for explanation of the numbering (p1, p2, ...).
-  virtual void precalculate_factors_on_face(const size_t jj)
-  {
-    BasisValuesMatrixType M;
-    const auto& quadrature = basis_functions_.quadratures()[jj];
-    const auto& face = basis_functions_.triangulation().faces()[jj];
-    const auto& vertices = face->vertices();
-    assert(vertices.size() == 3);
-    auto& global_indices = vertex_indices_[jj];
-    for (size_t vv = 0; vv < 3; ++vv)
-      global_indices[vv] = vertices[vv]->index();
-    M.resize(quadrature.size());
-    for (size_t ll = 0; ll < quadrature.size(); ++ll) {
-      const auto val = basis_functions_.evaluate(quadrature[ll].position(), jj);
-      for (size_t vv = 0; vv < 3; ++vv)
-        M[ll][vv] = val[global_indices[vv]];
-    }
-    PowCache<LocalVectorType> pow_cache;
-    // qq = index which belongs to alpha3 in the paper
-    for (size_t qq = 0; qq < 3; ++qq) {
-      // quadrature points
-      for (size_t ll = 0; ll < M.size(); ++ll) {
-        const auto& h = M[ll];
-        pow_cache.update(h);
-        const auto& quad_point = quadrature[ll];
-        const auto& v = quad_point.position();
-        const auto& weight = quad_point.weight();
-        for (size_t kk = 0; kk <= max_order; ++kk) {
-          pow_cache.add(kk);
-          // resize inner vectors
-          p1_[jj][qq][kk].resize(kk + 1, 0.);
-          p2_[jj][qq][kk].resize(kk + 1, LocalVectorType(0.));
-          p4_[jj][qq][kk].resize(kk + 1, LocalMatrixType(0.));
-          for (size_t dd = 0; dd < dimDomain; ++dd) {
-            p3_[dd][jj][qq][kk].resize(kk + 1, LocalVectorType(0.));
-            p5_[dd][jj][qq][kk].resize(kk + 1, LocalMatrixType(0.));
-          }
-          // calculate contributions to integral
-          for (size_t kk1 = 0; kk1 <= kk; ++kk1) {
-            const size_t kk2 = kk - kk1;
-            const auto product = pow_cache.get(kk1)[(qq + 1) % 3] * pow_cache.get(kk2)[(qq + 2) % 3] * weight;
-            p1_[jj][qq][kk][kk1] += product;
-            for (size_t mm = 0; mm < 3; ++mm) {
-              const auto product_h_mm = h[mm] * product;
-              p2_[jj][qq][kk][kk1][mm] += product_h_mm;
-              for (size_t dd = 0; dd < dimDomain; ++dd)
-                p3_[dd][jj][qq][kk][kk1][mm] += product_h_mm * v[dd];
-              for (size_t nn = 0; nn < 3; ++nn) {
-                const auto product_h_mm_nn = h[nn] * product_h_mm;
-                p4_[jj][qq][kk][kk1][mm][nn] += product_h_mm_nn;
-                for (size_t dd = 0; dd < dimDomain; ++dd)
-                  p5_[dd][jj][qq][kk][kk1][mm][nn] += product_h_mm_nn * v[dd];
-              } // nn
-            } // mm
-          } // kk1
-        } // kk
-      } // ll
-    } // qq
-  }
 
   class Localfunction : public LocalfunctionType
   {
   public:
     using LocalfunctionType::dimDomain;
-    using typename LocalfunctionType::ColRangeType;
+    using LocalfunctionType::dimRange;
     using typename LocalfunctionType::ColPartialURangeType;
+    using typename LocalfunctionType::ColRangeType;
 
     Localfunction(const EntityType& e,
                   const BasisfunctionType& basis_functions,
-                  const RangeFieldType tol,
+                  const QuadraturePointsType& quad_points,
+                  const QuadratureWeightsType& quad_weights,
+                  const BasisValuesMatrixType& M,
                   const RangeFieldType tau,
                   const RangeFieldType epsilon_gamma,
                   const RangeFieldType chi,
@@ -2303,19 +2162,15 @@ public:
                   const size_t k_0,
                   const size_t k_max,
                   const RangeFieldType epsilon,
-                  const size_t num_faces_,
-                  const P1Type& p1,
-                  const P2Type& p2,
-                  const P3Type& p3,
-                  const P4Type& p4,
-                  const P5Type& p5,
-                  const std::vector<FieldVector<size_t, 3>>& vertex_indices,
                   LocalCacheType& cache,
-    AlphaStorageType& alpha_storage,
-                  std::mutex& mutex)
+                  AlphaStorageType& alpha_storage,
+                  std::mutex& mutex,
+                  const XT::LA::SparsityPatternDefault& pattern)
       : LocalfunctionType(e)
       , basis_functions_(basis_functions)
-      , tol_(tol)
+      , quad_points_(quad_points)
+      , quad_weights_(quad_weights)
+      , M_(M)
       , tau_(tau)
       , epsilon_gamma_(epsilon_gamma)
       , chi_(chi)
@@ -2324,22 +2179,13 @@ public:
       , k_0_(k_0)
       , k_max_(k_max)
       , epsilon_(epsilon)
-      , num_faces_(num_faces_)
-      , p1_(p1)
-      , p2_(p2)
-      , p3_(p3)
-      , p4_(p4)
-      , p5_(p5)
-      , vertex_indices_(vertex_indices)
       , cache_(cache)
       , alpha_storage_(alpha_storage)
       , mutex_(mutex)
-    {
-    }
+      , pattern_(pattern)
+    {}
 
-    using LocalfunctionType::entity;
-
-    static bool is_realizable(const StateRangeType& u)
+    static bool is_realizable(const VectorType& u)
     {
       for (const auto& u_i : u)
         if (!(u_i > 0.) || std::isinf(u_i))
@@ -2347,22 +2193,36 @@ public:
       return true;
     }
 
-     void store_alpha(const DomainType& x_local, const StateRangeType& alpha)
-     {
-       alpha_storage_[x_local] = alpha;
-     }
+    // temporary vectors to store inner products and exponentials
+    std::vector<std::vector<RangeFieldType>>& working_storage() const
+    {
+      thread_local std::vector<std::vector<RangeFieldType>> work_vec;
+      const auto& triangulation = basis_functions_.triangulation();
+      const auto& faces = triangulation.faces();
+      work_vec.resize(faces.size());
+      for (size_t jj = 0; jj < faces.size(); ++jj)
+        work_vec[jj].resize(quad_points_[jj].size());
+      return work_vec;
+    }
 
-     StateRangeType get_stored_alpha(const DomainType& x_local) const
-     {
-       return alpha_storage_.at(x_local);
-     }
+    void store_alpha(const DomainType& x_local, const VectorType& alpha)
+    {
+      alpha_storage_[x_local] = alpha;
+    }
 
-    template<class GridLayerType>
+    VectorType get_stored_alpha(const DomainType& x_local) const
+    {
+      return alpha_storage_.at(x_local);
+    }
+
+    using LocalfunctionType::entity;
+
+    template <class GridLayerType>
     void center_results_to_intersections(const GridLayerType& grid_layer)
     {
       const auto center = entity().geometry().local(entity().geometry().center());
       const auto center_alpha = get_stored_alpha(center);
-      for (const auto& intersection: Dune::intersections(grid_layer, entity()))
+      for (const auto& intersection : Dune::intersections(grid_layer, entity()))
         store_alpha(entity().geometry().local(intersection.geometry().center()), center_alpha);
     }
 
@@ -2372,89 +2232,106 @@ public:
                               const bool regularize) const
     {
       const bool boundary = bool(param.get("boundary")[0]);
-      // get initial multiplier and basis matrix from last time step
       AlphaReturnType ret;
       mutex_.lock();
       if (boundary)
-        cache_.set_capacity(cache_size+dimDomain);
+        cache_.set_capacity(cache_size + dimDomain);
+
       // rescale u such that the density <psi> is 1
       RangeFieldType density = basis_functions_.density(u);
       if (!(density > 0.) || std::isinf(density)) {
         mutex_.unlock();
         DUNE_THROW(Dune::MathError, "Negative density!");
       }
-      StateRangeType u_prime = u / density;
-      StateRangeType alpha_iso = basis_functions_.alpha_iso();
+      VectorType u_prime(dimRange);
+      for (size_t ii = 0; ii < dimRange; ++ii)
+        u_prime.set_entry(ii, u[ii] / density);
+      VectorType alpha_iso(dimRange);
+      basis_functions_.alpha_iso(alpha_iso);
+
       // if value has already been calculated for these values, skip computation
       const auto cache_iterator = cache_.find_closest(u_prime);
       if (cache_iterator != cache_.end() && XT::Common::FloatCmp::eq(cache_iterator->first, u_prime, 1e-14, 1e-14)) {
-        const auto alpha_prime = cache_iterator->second;
-        ret.first = alpha_prime + alpha_iso * std::log(density);
+        const auto& alpha_prime = cache_iterator->second;
+        ret.first = alpha_iso;
+        ret.first *= std::log(density);
+        ret.first += alpha_prime;
         ret.second = 0.;
         alpha_storage_[x_local] = ret.first;
         mutex_.unlock();
         return ret;
       } else {
-        StateRangeType u_iso = basis_functions_.u_iso();
-        RangeFieldType tau_prime =
-            std::min(tau_ / ((1 + std::sqrt(dimRange) * u_prime.two_norm()) * density + std::sqrt(dimRange) * tau_), tau_);
-        // define further variables
-        thread_local std::unique_ptr<MatrixType> H_k = XT::Common::make_unique<MatrixType>();
-        StateRangeType v;
-        StateRangeType alpha_k = cache_iterator != cache_.end() ? cache_iterator->second : alpha_iso;
+        RangeFieldType tau_prime = std::min(
+            tau_ / ((1 + std::sqrt(dimRange) * u_prime.l2_norm()) * density + std::sqrt(dimRange) * tau_), tau_);
+        thread_local SparseMatrixType H(dimRange, dimRange, pattern_, 0);
+        thread_local auto solver = XT::LA::make_solver(H);
+
+        // calculate moment vector for isotropic distribution
+        VectorType u_iso(dimRange);
+        ;
+        basis_functions_.u_iso(u_iso);
+        VectorType alpha_k = cache_iterator != cache_.end() ? cache_iterator->second : alpha_iso;
+        VectorType v(dimRange), g_k(dimRange), d_k(dimRange), tmp_vec(dimRange), u_alpha_tilde(dimRange),
+            alpha_prime(dimRange), u_alpha_prime(dimRange);
         const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
         const auto r_max = r_sequence.back();
-        for (const auto& r : r_sequence) {
+        for (const auto& r : r_sequence_) {
           // regularize u
           v = u_prime;
           if (r > 0) {
             alpha_k = alpha_iso;
-            StateRangeType r_times_u_iso = u_iso;
-            r_times_u_iso *= r;
+            tmp_vec = u_iso;
+            tmp_vec *= r;
             v *= 1 - r;
-            v += r_times_u_iso;
+            v += tmp_vec;
           }
+
           // calculate f_0
           RangeFieldType f_k = calculate_f(alpha_k, v);
+
           int pure_newton = 0;
           for (size_t kk = 0; kk < k_max_; ++kk) {
-            // exit inner for loop to increase r if too many iterations are used or cholesky decomposition fails
+            // exit inner for loop to increase r if too many iterations are used
             if (kk > k_0_ && r < r_max)
               break;
             // calculate gradient g
-            StateRangeType g_k = calculate_gradient(alpha_k, v);
+            calculate_gradient(alpha_k, v, g_k);
             // calculate Hessian H
-            calculate_hessian(alpha_k, *H_k);
+            calculate_hessian(alpha_k, M_, H);
             // calculate descent direction d_k;
-            StateRangeType d_k(0);
-            StateRangeType minus_g_k(g_k);
-            minus_g_k *= -1;
+            tmp_vec = g_k;
+            tmp_vec *= -1;
             try {
-              XT::LA::cholesky(*H_k);
-              const auto& L = *H_k;
-              StateRangeType tmp_vec;
-              XT::LA::solve_lower_triangular(L, tmp_vec, minus_g_k);
-              XT::LA::solve_lower_triangular_transposed(L, d_k, tmp_vec);
-            } catch (const Dune::MathError&) {
+              solver.apply(tmp_vec, d_k);
+            } catch (const XT::LA::Exceptions::linear_solver_failed& error) {
               if (r < r_max) {
                 break;
               } else {
                 mutex_.unlock();
-//                std::cerr << "Failed to converge for " << XT::Common::to_string(u, 15) << " with density " << XT::Common::to_string(density, 15) << " at position " << XT::Common::to_string(entity().geometry().center(), 15) << " due to errors in the Cholesky decomposition!" << std::endl;
-                DUNE_THROW(Dune::MathError, "Failure to converge!");
+                DUNE_THROW(XT::LA::Exceptions::linear_solver_failed,
+                           "Failure to converge, solver error was: " << error.what());
               }
             }
-            // Calculate stopping criteria
+
             const auto& alpha_tilde = alpha_k;
-            auto u_alpha_tilde = g_k + v;
+            u_alpha_tilde = g_k;
+            u_alpha_tilde += v;
             auto density_tilde = basis_functions_.density(u_alpha_tilde);
-      if (!(density_tilde > 0.) || std::isinf(density_tilde)) {
+            if (!(density_tilde > 0.) || std::isinf(density_tilde))
               break;
-            const auto alpha_prime = alpha_tilde - alpha_iso * std::log(density_tilde);
-            StateRangeType u_alpha_prime = calculate_u(alpha_prime);
-            auto u_eps_diff = v - u_alpha_prime * (1 - epsilon_gamma_);
-            if (g_k.two_norm() < tau_prime && is_realizable(u_eps_diff)) {
-              ret.first = alpha_prime + alpha_iso * std::log(density);
+            alpha_prime = alpha_iso;
+            alpha_prime *= -std::log(density_tilde);
+            alpha_prime += alpha_tilde;
+            calculate_u(alpha_prime, u_alpha_prime);
+            auto& u_eps_diff = tmp_vec;
+            u_eps_diff = u_alpha_prime;
+            u_eps_diff *= -(1 - epsilon_gamma_);
+            u_eps_diff += v;
+            // checking realizability is cheap so we do not need the second stopping criterion
+            if (g_k.l2_norm() < tau_prime && is_realizable(u_eps_diff)) {
+              ret.first = alpha_iso;
+              ret.first *= std::log(density);
+              ret.first += alpha_prime;
               ret.second = r;
               cache_.insert(v, alpha_prime);
               alpha_storage_[x_local] = ret.first;
@@ -2462,11 +2339,13 @@ public:
             } else {
               RangeFieldType zeta_k = 1;
               // backtracking line search
-              while (pure_newton >= 2 || zeta_k > epsilon_ * alpha_k.two_norm() / d_k.two_norm()) {
+              auto& alpha_new = tmp_vec;
+              while (pure_newton >= 2 || zeta_k > epsilon_ * alpha_k.l2_norm() / d_k.l2_norm()) {
                 // calculate alpha_new = alpha_k + zeta_k d_k
-                auto alpha_new = d_k;
+                alpha_new = d_k;
                 alpha_new *= zeta_k;
                 alpha_new += alpha_k;
+                // calculate f(alpha_new)
                 RangeFieldType f_new = calculate_f(alpha_new, v);
                 if (pure_newton >= 2 || XT::Common::FloatCmp::le(f_new, f_k + xi_ * zeta_k * (g_k * d_k))) {
                   alpha_k = alpha_new;
@@ -2476,13 +2355,13 @@ public:
                 }
                 zeta_k = chi_ * zeta_k;
               } // backtracking linesearch while
-              if (zeta_k <= epsilon_ * alpha_k.two_norm() / d_k.two_norm())
+              // if (zeta_k <= epsilon_ * alpha_k.two_norm() / d_k.two_norm() * 100.)
+              if (zeta_k <= epsilon_ * alpha_k.l2_norm() / d_k.l2_norm())
                 ++pure_newton;
             } // else (stopping conditions)
           } // k loop (Newton iterations)
         } // r loop (Regularization parameter)
         mutex_.unlock();
-//        std::cerr << "Failed to converge for " << XT::Common::to_string(u, 15) << " with density " << XT::Common::to_string(density, 15) << " at position " << XT::Common::to_string(entity().geometry().center(), 15) << " due to too many iterations!" << std::endl;
         DUNE_THROW(MathError, "Failed to converge");
       } // else ( value has not been calculated before )
 
@@ -2501,54 +2380,13 @@ public:
                           RangeType& ret,
                           const XT::Common::Parameter& param) const override
     {
-      ColRangeType ret_col(0.);
+      ColRangeType col_ret;
       for (size_t dd = 0; dd < dimDomain; ++dd) {
-        evaluate_col(dd, x_local, u, ret_col, param);
+        evaluate_col(dd, x_local, u, col_ret, param);
         for (size_t ii = 0; ii < dimRange; ++ii)
-          ret[ii][dd] = ret_col[ii];
+          ret[ii][dd] = col_ret[ii];
       } // dd
     } // void evaluate(...)
-
-    // The returned index qq is the local index which belongs to the smallest alpha_i (alpha_3 in the paper)
-    // The order of the local alpha is such that the smallest alpha is at index 0 in contrast to the paper.
-    size_t get_local_alpha(const StateRangeType& alpha, LocalVectorType& local_alpha, const size_t jj) const
-    {
-      const auto& global_indices = vertex_indices_[jj];
-      // qq is the local index which belongs to the smallest local alpha
-      size_t qq = 0;
-      for (size_t vv = 1; vv < 3; ++vv)
-        if (alpha[global_indices[vv]] < alpha[global_indices[qq]])
-          qq = vv;
-      for (size_t vv = 0; vv < 3; ++vv)
-        local_alpha[vv] = alpha[global_indices[(qq + vv) % 3]];
-      return qq;
-    }
-
-    void evaluate_on_face(const size_t jj, const StateRangeType& alpha, const size_t dd, StateRangeType& ret) const
-    {
-      thread_local PowCache<RangeFieldType> powers_alpha1m3;
-      thread_local PowCache<RangeFieldType> powers_alpha2m3;
-      LocalVectorType local_alpha;
-      size_t qq = get_local_alpha(alpha, local_alpha, jj);
-      powers_alpha1m3.update(local_alpha[1] - local_alpha[0]);
-      powers_alpha2m3.update(local_alpha[2] - local_alpha[0]);
-      RangeFieldType exp_alpha3 = std::exp(local_alpha[0]);
-      LocalVectorType update(0.);
-      LocalVectorType last_update;
-      size_t kk = 0;
-      do {
-        last_update = update;
-        powers_alpha1m3.add(kk, 1. / kk);
-        powers_alpha2m3.add(kk, 1. / kk);
-        // calculate_integral
-        for (size_t kk1 = 0; kk1 <= kk; ++kk1)
-          update += p3_[dd][jj][qq][kk][kk1] * powers_alpha1m3.get(kk1) * powers_alpha2m3.get(kk - kk1);
-      } while (++kk <= max_order && XT::Common::FloatCmp::ne(update, last_update, tol_));
-      if (kk == max_order)
-        std::cerr << "Maxorder reached! " << std::endl;
-      for (size_t vv = 0; vv < 3; ++vv)
-        ret[vertex_indices_[jj][vv]] += update[vv] * exp_alpha3;
-    }
 
     virtual void evaluate_col(const size_t col,
                               const DomainType& x_local,
@@ -2558,36 +2396,52 @@ public:
     {
       std::fill(ret.begin(), ret.end(), 0.);
       const auto alpha = get_alpha(x_local, u, param, true).first;
-      for (size_t jj = 0; jj < num_faces_; ++jj) {
-        evaluate_on_face(jj, alpha, col, ret);
-      } // jj
+      // calculate ret[ii] = < omega[ii] m G_\alpha(u) >
+      LocalVectorType local_alpha, local_ret;
+      const auto& triangulation = basis_functions_.triangulation();
+      const auto& faces = triangulation.faces();
+      for (size_t jj = 0; jj < faces.size(); ++jj) {
+        local_ret *= 0.;
+        const auto& face = faces[jj];
+        const auto& vertices = face->vertices();
+        for (size_t ii = 0; ii < 3; ++ii)
+          local_alpha[ii] = alpha.get_entry(vertices[ii]->index());
+        for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
+          const auto& basis_ll = M_[jj][ll];
+          auto factor_ll = std::exp(local_alpha * basis_ll) * quad_points_[jj][ll][col] * quad_weights_[jj][ll];
+          for (size_t ii = 0; ii < 3; ++ii)
+            local_ret[ii] += basis_ll[ii] * factor_ll;
+        } // ll (quad points)
+        for (size_t ii = 0; ii < 3; ++ii)
+          ret[vertices[ii]->index()] += local_ret[ii];
+      } // jj (faces)
     } // void evaluate_col(...)
 
     virtual void partial_u(const DomainType& x_local,
-                           const StateRangeType& u,
+                           const StateRangeType& /*u*/,
                            PartialURangeType& ret,
-                           const XT::Common::Parameter& param) const override
+                           const XT::Common::Parameter& /*param*/) const override
     {
       const auto alpha = get_stored_alpha(x_local);
-      thread_local std::unique_ptr<MatrixType> H = XT::Common::make_unique<MatrixType>(0.);
-      calculate_hessian(alpha, *H);
+      thread_local SparseMatrixType H(dimRange, dimRange, pattern_, 0);
+      thread_local auto solver = XT::LA::make_solver(H);
+      calculate_hessian(alpha, M_, H);
       for (size_t dd = 0; dd < dimDomain; ++dd) {
-        calculate_J(alpha, ret[dd], dd);
-        calculate_A_Binv(ret[dd], *H, dd > 0);
+        partial_u_col_helper(dd, M_, H, ret[dd], solver);
       }
     }
 
     virtual void partial_u_col(const size_t col,
                                const DomainType& x_local,
-                               const StateRangeType& u,
+                               const StateRangeType& /*u*/,
                                ColPartialURangeType& ret,
-                               const XT::Common::Parameter& param) const override
+                               const XT::Common::Parameter& /*param*/) const override
     {
       const auto alpha = get_stored_alpha(x_local);
-      thread_local std::unique_ptr<MatrixType> H = XT::Common::make_unique<MatrixType>(0.);
-      calculate_hessian(alpha, *H);
-      calculate_J(alpha, ret, col);
-      calculate_A_Binv(ret, *H);
+      thread_local SparseMatrixType H(dimRange, dimRange, pattern_, 0);
+      thread_local auto solver = XT::LA::make_solver(H);
+      calculate_hessian(alpha, M_, H);
+      partial_u_col_helper(col, M_, H, ret, solver);
     }
 
     static std::string static_id()
@@ -2596,153 +2450,146 @@ public:
     }
 
   private:
-    RangeFieldType calculate_f(const StateRangeType& alpha, const StateRangeType& v) const
+    void partial_u_col_helper(const size_t col,
+                              const BasisValuesMatrixType& M,
+                              SparseMatrixType& H,
+                              ColPartialURangeType& ret,
+                              const XT::LA::Solver<SparseMatrixType>& solver) const
     {
-      RangeFieldType ret(0.);
-      thread_local PowCache<RangeFieldType> powers_alpha1m3;
-      thread_local PowCache<RangeFieldType> powers_alpha2m3;
-      for (size_t jj = 0; jj < num_faces_; ++jj) {
-        LocalVectorType local_alpha;
-        const size_t qq = get_local_alpha(alpha, local_alpha, jj);
-        powers_alpha1m3.update(local_alpha[1] - local_alpha[0]);
-        powers_alpha2m3.update(local_alpha[2] - local_alpha[0]);
-        RangeFieldType exp_alpha3 = std::exp(local_alpha[0]);
-        RangeFieldType last_update;
-        RangeFieldType update(0.);
-        size_t kk = 0;
-        do {
-          last_update = update;
-          powers_alpha1m3.add(kk, 1. / kk);
-          powers_alpha2m3.add(kk, 1. / kk);
-          // calculate_integral
-          for (size_t kk1 = 0; kk1 <= kk; ++kk1)
-            update += p1_[jj][qq][kk][kk1] * powers_alpha1m3.get(kk1) * powers_alpha2m3.get(kk - kk1);
-        } while (++kk <= max_order && XT::Common::FloatCmp::ne(update, last_update, tol_));
-        if (kk == max_order)
-          std::cerr << "Maxorder reached! " << std::endl;
-        ret += update * exp_alpha3;
-      } // jj
-      ret -= alpha * v;
-      return ret;
-    } // .. calculate_f(...)
+      assert(col < dimDomain);
+      calculate_J(M, ret, col);
+      calculate_A_Binv(ret, H, solver);
+    } // void partial_u_col(...)
 
-    StateRangeType calculate_u(const StateRangeType& alpha) const
+    // calculates C = A B^{-1}. B is assumed to be symmetric, which gives C^T = B^{-T} A^T = B^{-1} A^T, so we just have
+    // to solve y = B^{-1} x for each row x of A
+    static void
+    calculate_A_Binv(ColPartialURangeType& A, SparseMatrixType& /*B*/, const XT::LA::Solver<SparseMatrixType>& solver)
     {
-      StateRangeType ret(0);
-      thread_local PowCache<RangeFieldType> powers_alpha1m3;
-      thread_local PowCache<RangeFieldType> powers_alpha2m3;
-      LocalVectorType local_alpha;
-      for (size_t jj = 0; jj < num_faces_; ++jj) {
-        size_t qq = get_local_alpha(alpha, local_alpha, jj);
-        powers_alpha1m3.update(local_alpha[1] - local_alpha[0]);
-        powers_alpha2m3.update(local_alpha[2] - local_alpha[0]);
-        RangeFieldType exp_alpha3 = std::exp(local_alpha[0]);
-        LocalVectorType update(0.);
-        LocalVectorType last_update;
-        size_t kk = 0;
-        do {
-          last_update = update;
-          powers_alpha1m3.add(kk, 1. / kk);
-          powers_alpha2m3.add(kk, 1. / kk);
-          // calculate_integral
-          for (size_t kk1 = 0; kk1 <= kk; ++kk1)
-            update += p2_[jj][qq][kk][kk1] * powers_alpha1m3.get(kk1) * powers_alpha2m3.get(kk - kk1);
-        } while (++kk <= max_order && XT::Common::FloatCmp::ne(update, last_update, tol_));
-        if (kk == max_order)
-          std::cerr << "Maxorder reached! " << std::endl;
-        update *= exp_alpha3;
-        for (size_t vv = 0; vv < 3; ++vv)
-          ret[vertex_indices_[jj][vv]] += update[vv];
-      } // jj
-      return ret;
-    }
-
-    StateRangeType calculate_gradient(const StateRangeType& alpha, const StateRangeType& v) const
-    {
-      return calculate_u(alpha) - v;
-    }
-
-    void calculate_hessian(const StateRangeType& alpha, MatrixType& H) const
-    {
-      std::fill(H.begin(), H.end(), 0.);
-      thread_local PowCache<RangeFieldType> powers_alpha1m3;
-      thread_local PowCache<RangeFieldType> powers_alpha2m3;
-      LocalVectorType local_alpha;
-      LocalMatrixType last_update;
-      for (size_t jj = 0; jj < num_faces_; ++jj) {
-        size_t qq = get_local_alpha(alpha, local_alpha, jj);
-        powers_alpha1m3.update(local_alpha[1] - local_alpha[0]);
-        powers_alpha2m3.update(local_alpha[2] - local_alpha[0]);
-        RangeFieldType exp_alpha3 = std::exp(local_alpha[0]);
-        size_t kk = 0;
-        LocalMatrixType update(0.);
-        do {
-          last_update = update;
-          powers_alpha1m3.add(kk, 1. / kk);
-          powers_alpha2m3.add(kk, 1. / kk);
-          // calculate_integral
-          for (size_t kk1 = 0; kk1 <= kk; ++kk1)
-            update += p4_[jj][qq][kk][kk1] * powers_alpha1m3.get(kk1) * powers_alpha2m3.get(kk - kk1);
-        } while (++kk <= max_order && XT::Common::FloatCmp::ne(update, last_update, tol_));
-        if (kk == max_order)
-          std::cerr << "Maxorder reached! " << std::endl;
-        update *= exp_alpha3;
-        for (size_t mm = 0; mm < 3; ++mm)
-          for (size_t nn = 0; nn < 3; ++nn)
-            H[vertex_indices_[jj][mm]][vertex_indices_[jj][nn]] += update[mm][nn];
-      } // jj
-    } // void calculate_hessian(...)
-
-    void calculate_J(const StateRangeType& alpha, MatrixType& J, const size_t dd) const
-    {
-      std::fill(J.begin(), J.end(), 0.);
-      thread_local PowCache<RangeFieldType> powers_alpha1m3;
-      thread_local PowCache<RangeFieldType> powers_alpha2m3;
-      LocalVectorType local_alpha;
-      LocalMatrixType last_update;
-      for (size_t jj = 0; jj < num_faces_; ++jj) {
-        size_t qq = get_local_alpha(alpha, local_alpha, jj);
-        powers_alpha1m3.update(local_alpha[1] - local_alpha[0]);
-        powers_alpha2m3.update(local_alpha[2] - local_alpha[0]);
-        RangeFieldType exp_alpha3 = std::exp(local_alpha[0]);
-        size_t kk = 0;
-        LocalMatrixType update(0.);
-        do {
-          last_update = update;
-          powers_alpha1m3.add(kk, 1. / kk);
-          powers_alpha2m3.add(kk, 1. / kk);
-          // calculate_integral
-          for (size_t kk1 = 0; kk1 <= kk; ++kk1)
-            update += p5_[dd][jj][qq][kk][kk1] * powers_alpha1m3.get(kk1) * powers_alpha2m3.get(kk - kk1);
-        } while (++kk <= max_order && XT::Common::FloatCmp::ne(update, last_update, tol_));
-        if (kk == max_order)
-          std::cerr << "Maxorder reached! " << std::endl;
-        update *= exp_alpha3;
-        for (size_t mm = 0; mm < 3; ++mm)
-          for (size_t nn = 0; nn < 3; ++nn)
-            J[vertex_indices_[jj][mm]][vertex_indices_[jj][nn]] += update[mm][nn];
-      } // jj
-    } // void calculate_J(...)
-
-    // calculates A = A B^{-1}. B is assumed to be symmetric positive definite.
-    static void calculate_A_Binv(MatrixType& A, MatrixType& B, bool L_calculated = false)
-    {
-      // if B = LL^T, then we have to calculate ret = A (L^T)^{-1} L^{-1} = C L^{-1}
-      // calculate B = LL^T
-      if (!L_calculated)
-        XT::LA::cholesky(B);
-      const auto& L = B;
-      StateRangeType tmp_vec;
+      thread_local VectorType tmp_row(dimRange, 0.), tmp_result(dimRange, 0.);
       for (size_t ii = 0; ii < dimRange; ++ii) {
-        // calculate C = A (L^T)^{-1} and store in B
-        XT::LA::solve_lower_triangular(L, tmp_vec, A[ii]);
-        // calculate ret = C L^{-1}
-        XT::LA::solve_lower_triangular_transposed(L, A[ii], tmp_vec);
-      } // ii
+        // copy row to VectorType
+        for (size_t kk = 0; kk < dimRange; ++kk)
+          tmp_row.set_entry(kk, A[ii][kk]);
+        // solve
+        solver.apply(tmp_row, tmp_result);
+        // copy result back to matrix
+        for (size_t kk = 0; kk < dimRange; ++kk)
+          A[ii][kk] = tmp_result.get_entry(kk);
+      }
     } // void calculate_A_Binv(...)
 
+    RangeFieldType calculate_f(const VectorType& alpha, const VectorType& v) const
+    {
+      RangeFieldType ret(0.);
+      XT::Common::FieldVector<RangeFieldType, 3> local_alpha;
+      const auto& triangulation = basis_functions_.triangulation();
+      const auto& faces = triangulation.faces();
+      for (size_t jj = 0; jj < faces.size(); ++jj) {
+        const auto& face = faces[jj];
+        const auto& vertices = face->vertices();
+        for (size_t ii = 0; ii < 3; ++ii)
+          local_alpha[ii] = alpha.get_entry(vertices[ii]->index());
+        for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll)
+          ret += std::exp(local_alpha * M_[jj][ll]) * quad_weights_[jj][ll];
+      } // jj (faces)
+      ret -= alpha * v;
+      return ret;
+    } // void calculate_u(...)
+
+    void calculate_u(const VectorType& alpha, VectorType& u) const
+    {
+      u *= 0.;
+      LocalVectorType local_alpha, local_u;
+      const auto& triangulation = basis_functions_.triangulation();
+      const auto& faces = triangulation.faces();
+      for (size_t jj = 0; jj < faces.size(); ++jj) {
+        const auto& face = faces[jj];
+        const auto& vertices = face->vertices();
+        local_u *= 0.;
+        for (size_t ii = 0; ii < 3; ++ii)
+          local_alpha[ii] = alpha.get_entry(vertices[ii]->index());
+        for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
+          const auto& basis_ll = M_[jj][ll];
+          auto factor_ll = std::exp(local_alpha * basis_ll) * quad_weights_[jj][ll];
+          for (size_t ii = 0; ii < 3; ++ii)
+            local_u[ii] += basis_ll[ii] * factor_ll;
+        } // ll (quad points)
+        for (size_t ii = 0; ii < 3; ++ii)
+          u.add_to_entry(vertices[ii]->index(), local_u[ii]);
+      } // jj (faces)
+    } // void calculate_u(...)
+
+    void calculate_gradient(const VectorType& alpha, const VectorType& v, VectorType& g_k) const
+    {
+      calculate_u(alpha, g_k);
+      g_k -= v;
+    }
+
+    void calculate_hessian(const VectorType& alpha, const BasisValuesMatrixType& M, SparseMatrixType& H) const
+    {
+      H *= 0.;
+      LocalVectorType local_alpha;
+      LocalMatrixType H_local(0.);
+      const auto& triangulation = basis_functions_.triangulation();
+      const auto& faces = triangulation.faces();
+      auto& work_vecs = working_storage();
+      for (size_t jj = 0; jj < faces.size(); ++jj) {
+        H_local *= 0.;
+        const auto& face = faces[jj];
+        const auto& vertices = face->vertices();
+        for (size_t ii = 0; ii < 3; ++ii)
+          local_alpha[ii] = alpha.get_entry(vertices[ii]->index());
+        for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
+          const auto& basis_ll = M[jj][ll];
+          work_vecs[jj][ll] = std::exp(local_alpha * basis_ll) * quad_weights_[jj][ll];
+          for (size_t ii = 0; ii < 3; ++ii)
+            for (size_t kk = 0; kk < 3; ++kk)
+              H_local[ii][kk] += basis_ll[ii] * basis_ll[kk] * work_vecs[jj][ll];
+        } // ll (quad points)
+        for (size_t ii = 0; ii < 3; ++ii)
+          for (size_t kk = 0; kk < 3; ++kk)
+            H.add_to_entry(vertices[ii]->index(), vertices[kk]->index(), H_local[ii][kk]);
+      } // jj (faces)
+    } // void calculate_hessian(...)
+
+    // J = df/dalpha is the derivative of the flux with respect to alpha.
+    // As F = (f_1, f_2, f_3) is matrix-valued
+    // (div f = \sum_{i=1}^d \partial_{x_i} f_i  = \sum_{i=1}^d \partial_{x_i} < v_i m \hat{psi}(alpha) > is
+    // vector-valued),
+    // the derivative is the vector of matrices (df_1/dalpha, df_2/dalpha, ...)
+    // this function returns the dd-th matrix df_dd/dalpha of J
+    // assumes work_vecs already contains the needed exp(alpha * m) values
+    void calculate_J(const BasisValuesMatrixType& M,
+                     Dune::FieldMatrix<RangeFieldType, dimRange, StateType::dimRange>& J_dd,
+                     const size_t dd) const
+    {
+      assert(dd < dimRangeCols);
+      J_dd *= 0.;
+      LocalMatrixType J_local(0.);
+      const auto& work_vecs = working_storage();
+      const auto& triangulation = basis_functions_.triangulation();
+      const auto& faces = triangulation.faces();
+      for (size_t jj = 0; jj < faces.size(); ++jj) {
+        J_local *= 0.;
+        const auto& face = faces[jj];
+        const auto& vertices = face->vertices();
+        for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
+          const auto& basis_ll = M[jj][ll];
+          for (size_t ii = 0; ii < 3; ++ii)
+            for (size_t kk = 0; kk < 3; ++kk)
+              J_local[ii][kk] += basis_ll[ii] * basis_ll[kk] * work_vecs[jj][ll] * quad_points_[jj][ll][dd];
+        } // ll (quad points)
+        for (size_t ii = 0; ii < 3; ++ii)
+          for (size_t kk = 0; kk < 3; ++kk)
+            J_dd[vertices[ii]->index()][vertices[kk]->index()] += J_local[ii][kk];
+      } // jj (faces)
+    } // void calculate_J(...)
+
     const BasisfunctionType& basis_functions_;
-    const RangeFieldType tol_;
+    const QuadraturePointsType& quad_points_;
+    const QuadratureWeightsType& quad_weights_;
+    const BasisValuesMatrixType& M_;
     const RangeFieldType tau_;
     const RangeFieldType epsilon_gamma_;
     const RangeFieldType chi_;
@@ -2751,18 +2598,13 @@ public:
     const size_t k_0_;
     const size_t k_max_;
     const RangeFieldType epsilon_;
-    const size_t num_faces_;
-    const P1Type& p1_;
-    const P2Type& p2_;
-    const P3Type& p3_;
-    const P4Type& p4_;
-    const P5Type& p5_;
     const std::string name_;
-    const std::vector<FieldVector<size_t, 3>>& vertex_indices_;
+    // constructor)
     LocalCacheType& cache_;
     AlphaStorageType& alpha_storage_;
     std::mutex& mutex_;
-  }; // class Localfunction>
+    const XT::LA::SparsityPatternDefault& pattern_;
+  }; // class Localfunction
 
   static std::string static_id()
   {
@@ -2779,7 +2621,9 @@ public:
     const auto& index = index_set_.index(entity);
     return std::make_unique<Localfunction>(entity,
                                            basis_functions_,
-                                           tol_,
+                                           quad_points_,
+                                           quad_weights_,
+                                           M_,
                                            tau_,
                                            epsilon_gamma_,
                                            chi_,
@@ -2788,16 +2632,10 @@ public:
                                            k_0_,
                                            k_max_,
                                            epsilon_,
-                                           num_faces_,
-                                           p1_,
-                                           p2_,
-                                           p3_,
-                                           p4_,
-                                           p5_,
-                                           vertex_indices_,
                                            cache_[index],
                                            alpha_storage_[index],
-                                           mutexes_[index]);
+                                           mutexes_[index],
+                                           pattern_);
   }
 
   // calculate \sum_{i=1}^d < v_i m \psi > n_i, where n is the unit outer normal,
@@ -2816,25 +2654,41 @@ public:
                                        const XT::Common::Parameter& param_neighbor) const
   {
     assert(XT::Common::FloatCmp::ne(n_ij[dd], 0.));
+    const bool boundary = static_cast<bool>(param_neighbor.get("boundary")[0]);
     // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
     const auto local_function_entity = derived_local_function(entity);
     const auto local_function_neighbor = derived_local_function(neighbor);
     const auto alpha_i = local_function_entity->get_stored_alpha(x_local_entity);
-    const bool boundary = static_cast<bool>(param_neighbor.get("boundary")[0]);
-    StateRangeType alpha_j;
+    VectorType alpha_j;
     if (boundary)
       alpha_j = local_function_neighbor->get_alpha(x_local_neighbor, u_j, param_neighbor, true).first;
     else
       alpha_j = local_function_neighbor->get_stored_alpha(x_local_neighbor);
     StateRangeType ret(0);
-    for (const auto jj : pos_faces_[dd]) {
-      const auto& alpha = n_ij[dd] > 0. ? alpha_i : alpha_j;
-      local_function_entity->evaluate_on_face(jj, alpha, dd, ret);
-    }
-    for (const auto jj : neg_faces_[dd]) {
-      const auto& alpha = n_ij[dd] < 0. ? alpha_i : alpha_j;
-      local_function_entity->evaluate_on_face(jj, alpha, dd, ret);
-    }
+    const auto& triangulation = basis_functions_.triangulation();
+    const auto& faces = triangulation.faces();
+    LocalVectorType local_alpha_i, local_alpha_j, local_ret;
+    for (size_t jj = 0; jj < faces.size(); ++jj) {
+      local_ret *= 0.;
+      const auto& face = faces[jj];
+      const auto& vertices = face->vertices();
+      for (size_t ii = 0; ii < 3; ++ii) {
+        local_alpha_i[ii] = alpha_i.get_entry(vertices[ii]->index());
+        local_alpha_j[ii] = alpha_j.get_entry(vertices[ii]->index());
+      }
+      for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
+        const auto& basis_ll = M_[jj][ll];
+        const auto position = quad_points_[jj][ll][dd];
+        RangeFieldType factor =
+            position * n_ij[dd] > 0. ? std::exp(local_alpha_i * basis_ll) : std::exp(local_alpha_j * basis_ll);
+        factor *= quad_weights_[jj][ll] * position;
+        for (size_t ii = 0; ii < 3; ++ii)
+          local_ret[ii] += basis_ll[ii] * factor;
+      } // ll (quad points)
+      for (size_t ii = 0; ii < 3; ++ii)
+        ret[vertices[ii]->index()] += local_ret[ii];
+    } // jj (faces)
+    ret *= n_ij[dd];
     return ret;
   } // StateRangeType evaluate_kinetic_flux(...)
 
@@ -2846,7 +2700,9 @@ public:
 private:
   const typename GridLayerType::IndexSet& index_set_;
   const BasisfunctionType& basis_functions_;
-  const RangeFieldType tol_;
+  QuadraturePointsType quad_points_;
+  QuadratureWeightsType quad_weights_;
+  BasisValuesMatrixType M_;
   const RangeFieldType tau_;
   const RangeFieldType epsilon_gamma_;
   const RangeFieldType chi_;
@@ -2856,19 +2712,13 @@ private:
   const size_t k_max_;
   const RangeFieldType epsilon_;
   const std::string name_;
-  const size_t num_faces_;
-  P1Type p1_;
-  P2Type p2_;
-  P3Type p3_;
-  P4Type p4_;
-  P5Type p5_;
-  XT::Common::FieldVector<std::vector<size_t>, 3> pos_faces_;
-  XT::Common::FieldVector<std::vector<size_t>, 3> neg_faces_;
-  // contains the three basis function indices k_1, k_2, k_3 for each face k
-  std::vector<FieldVector<size_t, 3>> vertex_indices_;
+  // Use unique_ptr in the vectors to avoid the memory cost for storing twice as many matrices or vectors as needed
+  // (see
+  // constructor)
   mutable std::vector<LocalCacheType> cache_;
   mutable std::vector<AlphaStorageType> alpha_storage_;
   mutable std::vector<std::mutex> mutexes_;
+  XT::LA::SparsityPatternDefault pattern_;
 };
 #endif
 
@@ -2877,22 +2727,18 @@ private:
  * Specialization of EntropyBasedLocalFlux for 1D Hatfunctions
  */
 template <class GridLayerImp, class U>
-class EntropyBasedLocalFlux<HatFunctionMomentBasis<typename U::DomainFieldType,
-                                                   1,
-                                                   typename U::RangeFieldType,
-                                                   U::dimRange,
-                                                   1,
-                                                   1>,
-                            GridLayerImp,
-                            U>
-    : public XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
-                                                             typename U::DomainFieldType,
-                                                             GridLayerImp::dimension,
-                                                             U,
-                                                             0,
-                                                             typename U::RangeFieldType,
-                                                             U::dimRange,
-                                                             1>
+class EntropyBasedLocalFlux<
+    HatFunctionMomentBasis<typename U::DomainFieldType, 1, typename U::RangeFieldType, U::dimRange, 1, 1>,
+    GridLayerImp,
+    U>
+  : public XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
+                                                           typename U::DomainFieldType,
+                                                           GridLayerImp::dimension,
+                                                           U,
+                                                           0,
+                                                           typename U::RangeFieldType,
+                                                           U::dimRange,
+                                                           1>
 {
   using BaseType =
       typename XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
@@ -2906,25 +2752,25 @@ class EntropyBasedLocalFlux<HatFunctionMomentBasis<typename U::DomainFieldType,
   using ThisType = EntropyBasedLocalFlux;
 
 public:
-  using typename BaseType::EntityType;
-  using typename BaseType::DomainType;
-  using typename BaseType::DomainFieldType;
-  using typename BaseType::StateType;
-  using typename BaseType::StateRangeType;
-  using typename BaseType::RangeType;
-  using typename BaseType::RangeFieldType;
-  using typename BaseType::PartialURangeType;
-  using typename BaseType::LocalfunctionType;
   using BaseType::dimDomain;
   using BaseType::dimRange;
   using BaseType::dimRangeCols;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::DomainType;
+  using typename BaseType::EntityType;
+  using typename BaseType::LocalfunctionType;
+  using typename BaseType::PartialURangeType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::RangeType;
+  using typename BaseType::StateRangeType;
+  using typename BaseType::StateType;
   using BasisfunctionType = HatFunctionMomentBasis<DomainFieldType, 1, RangeFieldType, dimRange, 1, 1>;
   using GridLayerType = GridLayerImp;
   using QuadratureRuleType = Dune::QuadratureRule<DomainFieldType, 1>;
   using MatrixType = FieldMatrix<RangeFieldType, dimRange, dimRange>;
   using AlphaReturnType = typename std::pair<StateRangeType, RangeFieldType>;
   using LocalCacheType = EntropyLocalCache<StateRangeType, StateRangeType>;
-  using AlphaStorageType = std::map<DomainType, StateRangeType, XT::Common::FieldVectorFloatLess>;
+  using AlphaStorageType = std::map<DomainType, StateRangeType, XT::Common::VectorFloatLess>;
   static const size_t cache_size = 4 * dimDomain + 2;
 
   explicit EntropyBasedLocalFlux(
@@ -2958,15 +2804,14 @@ public:
     , cache_(index_set_.size(0), LocalCacheType(cache_size))
     , alpha_storage_(index_set_.size(0))
     , mutexes_(index_set_.size(0))
-  {
-  }
+  {}
 
   class Localfunction : public LocalfunctionType
   {
   public:
     using LocalfunctionType::dimDomain;
-    using typename LocalfunctionType::ColRangeType;
     using typename LocalfunctionType::ColPartialURangeType;
+    using typename LocalfunctionType::ColRangeType;
 
     Localfunction(const EntityType& e,
                   const BasisfunctionType& basis_functions,
@@ -3000,8 +2845,7 @@ public:
       , cache_(cache)
       , alpha_storage_(alpha_storage)
       , mutex_(mutex)
-    {
-    }
+    {}
 
     using LocalfunctionType::entity;
 
@@ -3448,8 +3292,9 @@ public:
                 (v_points_[nn] - v_points_[nn - 1])
                     * ((v_points_[nn] * std::exp(alpha_k[nn]) + v_points_[nn - 1] * std::exp(alpha_k[nn - 1]))
                            / std::pow(alpha_k[nn - 1] - alpha_k[nn], 2)
-                       + 2. * ((2 * v_points_[nn] - v_points_[nn - 1]) * std::exp(alpha_k[nn])
-                               - (2 * v_points_[nn - 1] - v_points_[nn]) * std::exp(alpha_k[nn - 1]))
+                       + 2.
+                             * ((2 * v_points_[nn] - v_points_[nn - 1]) * std::exp(alpha_k[nn])
+                                - (2 * v_points_[nn - 1] - v_points_[nn]) * std::exp(alpha_k[nn - 1]))
                              / std::pow(alpha_k[nn - 1] - alpha_k[nn], 3))
                 + 6. * std::pow(v_points_[nn] - v_points_[nn - 1], 2)
                       * (std::exp(alpha_k[nn]) - std::exp(alpha_k[nn - 1]))

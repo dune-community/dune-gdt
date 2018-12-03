@@ -41,9 +41,7 @@ public:
     mapper.globalIndices(entity, indices_);
   }
 
-  ~ConstLocalDoFVector()
-  {
-  }
+  ~ConstLocalDoFVector() {}
 
   size_t size() const
   {
@@ -97,12 +95,9 @@ public:
   LocalDoFVector(const MapperInterface<M>& mapper, const EntityType& entity, VectorType& vector)
     : BaseType(mapper, entity, vector)
     , vector_(vector)
-  {
-  }
+  {}
 
-  ~LocalDoFVector()
-  {
-  }
+  ~LocalDoFVector() {}
 
   void set(const size_t ii, const ScalarType& val)
   {

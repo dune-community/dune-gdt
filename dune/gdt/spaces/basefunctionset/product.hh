@@ -73,8 +73,7 @@ struct DynamicTupleGetter
   template <typename... TupleArgs>
   static typename std::enable_if<I == sizeof...(TupleArgs), void>::type order(const std::tuple<TupleArgs...>& /*tuple*/,
                                                                               size_t& /*current_order*/)
-  {
-  }
+  {}
 
   template <typename... TupleArgs>
       static typename std::enable_if
@@ -92,8 +91,7 @@ struct DynamicTupleGetter
            std::vector<RangeType>& /*ret*/,
            const size_t /*first_basis_func_index*/ = 0,
            const size_t /*first_range_index*/ = 0)
-  {
-  }
+  {}
 
   template <class DomainType, class RangeType, typename... TupleArgs>
       static typename std::enable_if
@@ -124,8 +122,7 @@ struct DynamicTupleGetter
            std::vector<JacobianRangeType>& /*ret*/,
            const size_t /*first_basis_func_index*/ = 0,
            const size_t /*first_range_index*/ = 0)
-  {
-  }
+  {}
 
   template <class DomainType, class JacobianRangeType, typename... TupleArgs>
       static typename std::enable_if
@@ -166,24 +163,22 @@ public:
 
 template <class... BaseFunctionSetImps>
 class ProductDefault
-    : public BaseFunctionSetInterface<internal::ProductDefaultTraits<BaseFunctionSetImps...>,
-                                      typename std::tuple_element<0, std::tuple<BaseFunctionSetImps...>>::type::
-                                          DomainFieldType,
-                                      std::tuple_element<0, std::tuple<BaseFunctionSetImps...>>::type::dimDomain,
-                                      typename std::tuple_element<0, std::tuple<BaseFunctionSetImps...>>::type::
-                                          RangeFieldType,
-                                      internal::SumDimRange<BaseFunctionSetImps...>::dimRange,
-                                      1>
+  : public BaseFunctionSetInterface<
+        internal::ProductDefaultTraits<BaseFunctionSetImps...>,
+        typename std::tuple_element<0, std::tuple<BaseFunctionSetImps...>>::type::DomainFieldType,
+        std::tuple_element<0, std::tuple<BaseFunctionSetImps...>>::type::dimDomain,
+        typename std::tuple_element<0, std::tuple<BaseFunctionSetImps...>>::type::RangeFieldType,
+        internal::SumDimRange<BaseFunctionSetImps...>::dimRange,
+        1>
 {
   typedef ProductDefault<BaseFunctionSetImps...> ThisType;
-  typedef BaseFunctionSetInterface<internal::ProductDefaultTraits<BaseFunctionSetImps...>,
-                                   typename std::tuple_element<0, std::tuple<BaseFunctionSetImps...>>::type::
-                                       DomainFieldType,
-                                   std::tuple_element<0, std::tuple<BaseFunctionSetImps...>>::type::dimDomain,
-                                   typename std::tuple_element<0, std::tuple<BaseFunctionSetImps...>>::type::
-                                       RangeFieldType,
-                                   internal::SumDimRange<BaseFunctionSetImps...>::dimRange,
-                                   1>
+  typedef BaseFunctionSetInterface<
+      internal::ProductDefaultTraits<BaseFunctionSetImps...>,
+      typename std::tuple_element<0, std::tuple<BaseFunctionSetImps...>>::type::DomainFieldType,
+      std::tuple_element<0, std::tuple<BaseFunctionSetImps...>>::type::dimDomain,
+      typename std::tuple_element<0, std::tuple<BaseFunctionSetImps...>>::type::RangeFieldType,
+      internal::SumDimRange<BaseFunctionSetImps...>::dimRange,
+      1>
       BaseType;
 
 public:
@@ -191,22 +186,20 @@ public:
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
 
-  using typename BaseType::DomainType;
   using BaseType::dimRange;
-  using typename BaseType::RangeType;
+  using typename BaseType::DomainType;
   using typename BaseType::JacobianRangeType;
+  using typename BaseType::RangeType;
 
   ProductDefault(const EntityType& en, BaseFunctionSetImps... basefunctionsets)
     : BaseType(en)
     , basefunctionsets_(std::move(basefunctionsets)...)
-  {
-  }
+  {}
 
   ProductDefault(ThisType&& source)
     : BaseType(source)
     , basefunctionsets_(std::move(source.basefunctionsets_))
-  {
-  }
+  {}
 
   ProductDefault(const ThisType& /*other*/) = delete;
 

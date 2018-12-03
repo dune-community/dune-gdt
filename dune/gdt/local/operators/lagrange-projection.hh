@@ -58,8 +58,7 @@ public:
 
   LocalLagrangeProjectionOperator(const XT::Common::Parameter& param = {})
     : param_(param)
-  {
-  }
+  {}
 
   /**
    * \brief Applies the Lagrange projection locally.

@@ -25,12 +25,12 @@ namespace GDT {
 // TODO: use complex arithmetic, currently only usable for Pn Models in 2D, test for only_positive = false
 template <class DomainFieldType, class RangeFieldType, size_t order, size_t fluxDim = 3, bool only_positive = true>
 class SphericalHarmonicsMomentBasis
-    : public BasisfunctionsInterface<DomainFieldType,
-                                     3,
-                                     RangeFieldType,
-                                     only_positive ? ((order + 1) * (order + 2)) / 2 : (order + 1) * (order + 1),
-                                     1,
-                                     fluxDim>
+  : public BasisfunctionsInterface<DomainFieldType,
+                                   3,
+                                   RangeFieldType,
+                                   only_positive ? ((order + 1) * (order + 2)) / 2 : (order + 1) * (order + 1),
+                                   1,
+                                   fluxDim>
 {
 public:
   static const size_t dimDomain = 3;
@@ -42,8 +42,8 @@ private:
 
 public:
   using typename BaseType::DomainType;
-  using typename BaseType::QuadraturesType;
   using typename BaseType::MatrixType;
+  using typename BaseType::QuadraturesType;
   using typename BaseType::RangeType;
   using typename BaseType::StringifierType;
   template <class DiscreteFunctionType>
@@ -263,12 +263,12 @@ private:
 
 template <class DomainFieldType, class RangeFieldType, size_t order, size_t fluxDim = 3, bool only_even = false>
 class RealSphericalHarmonicsMomentBasis
-    : public BasisfunctionsInterface<DomainFieldType,
-                                     3,
-                                     RangeFieldType,
-                                     only_even ? ((order + 1) * (order + 2)) / 2 : (order + 1) * (order + 1),
-                                     1,
-                                     fluxDim>
+  : public BasisfunctionsInterface<DomainFieldType,
+                                   3,
+                                   RangeFieldType,
+                                   only_even ? ((order + 1) * (order + 2)) / 2 : (order + 1) * (order + 1),
+                                   1,
+                                   fluxDim>
 {
 public:
   static const size_t dimDomain = 3;

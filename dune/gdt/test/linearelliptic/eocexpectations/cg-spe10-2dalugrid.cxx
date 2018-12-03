@@ -82,13 +82,13 @@ std::vector<double> LinearEllipticEocExpectations<LinearElliptic::Spe10Model1Tes
   return {};
 } // ... results(...)
 
-std::vector<double> LinearEllipticEocExpectations<LinearElliptic::Spe10Model1TestCase<AluCube2dGridType, double, 1>,
-                                                  LinearElliptic::ChooseDiscretizer::cg,
-                                                  1>::
-    results(const LinearEllipticEocExpectations<LinearElliptic::Spe10Model1TestCase<AluCube2dGridType, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::cg,
-                                                1>::TestCaseType&,
-            const std::string type)
+std::vector<double> LinearEllipticEocExpectations<
+    LinearElliptic::Spe10Model1TestCase<AluCube2dGridType, double, 1>,
+    LinearElliptic::ChooseDiscretizer::cg,
+    1>::results(const LinearEllipticEocExpectations<LinearElliptic::Spe10Model1TestCase<AluCube2dGridType, double, 1>,
+                                                    LinearElliptic::ChooseDiscretizer::cg,
+                                                    1>::TestCaseType&,
+                const std::string type)
 {
   if (type == "L2") {
 #if DXT_DISABLE_LARGE_TESTS

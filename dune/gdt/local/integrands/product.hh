@@ -70,10 +70,11 @@ public:
  *  \brief  Computes a product evaluation.
  */
 template <class LocalizableFunctionImp, class TraitsImp = internal::LocalProductIntegrandTraits<LocalizableFunctionImp>>
-class LocalProductIntegrand : public LocalVolumeIntegrandInterface<TraitsImp, 1>,
-                              public LocalVolumeIntegrandInterface<TraitsImp, 2>,
-                              public LocalFaceIntegrandInterface<TraitsImp, 1>,
-                              public LocalFaceIntegrandInterface<TraitsImp, 2>
+class LocalProductIntegrand
+  : public LocalVolumeIntegrandInterface<TraitsImp, 1>
+  , public LocalVolumeIntegrandInterface<TraitsImp, 2>
+  , public LocalFaceIntegrandInterface<TraitsImp, 1>
+  , public LocalFaceIntegrandInterface<TraitsImp, 2>
 {
   using LocalVolumeIntegrandInterface<TraitsImp, 1>::as_imp;
 
@@ -88,8 +89,7 @@ public:
   LocalProductIntegrand(const LocalizableFunctionType& inducingFunction, const XT::Common::Parameter& param = {})
     : inducingFunction_(inducingFunction)
     , param_(param)
-  {
-  }
+  {}
 
   /// \name Required by all variants of LocalVolumeIntegrandInterface
   /// \{
@@ -366,17 +366,16 @@ class LocalFVProductIntegrand : public LocalProductIntegrand<LocalizableFunction
   typedef LocalProductIntegrand<LocalizableFunctionImp, TraitsImp> BaseType;
 
 public:
-  using typename BaseType::Traits;
-  using typename BaseType::LocalizableFunctionType;
-  using typename BaseType::LocalfunctionTupleType;
-  using typename BaseType::EntityType;
-  using typename BaseType::DomainFieldType;
   using BaseType::dimDomain;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::EntityType;
+  using typename BaseType::LocalfunctionTupleType;
+  using typename BaseType::LocalizableFunctionType;
+  using typename BaseType::Traits;
 
   LocalFVProductIntegrand(const LocalizableFunctionType& inducingFunction, const XT::Common::Parameter& param = {})
     : BaseType(inducingFunction, param)
-  {
-  }
+  {}
 
   using BaseType::evaluate;
   using BaseType::order;

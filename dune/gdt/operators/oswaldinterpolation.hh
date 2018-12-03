@@ -61,7 +61,7 @@ public:
 
 template <class GridLayerImp, class FieldImp>
 class OswaldInterpolationOperator
-    : public OperatorInterface<internal::OswaldInterpolationOperatorTraits<GridLayerImp, FieldImp>>
+  : public OperatorInterface<internal::OswaldInterpolationOperatorTraits<GridLayerImp, FieldImp>>
 {
 public:
   typedef internal::OswaldInterpolationOperatorTraits<GridLayerImp, FieldImp> Traits;
@@ -80,8 +80,7 @@ public:
       const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridLayerType>>& boundary_info)
     : grid_layer_(grd_layr)
     , boundary_info_(boundary_info)
-  {
-  }
+  {}
 
   template <class GL, class V>
   void apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, FieldType, 1>& source,

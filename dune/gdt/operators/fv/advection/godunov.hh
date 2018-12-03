@@ -46,7 +46,9 @@ public:
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
           class Traits = internal::AdvectionGodunovOperatorTraits<AnalyticalFluxImp, BoundaryValueImp>>
-class AdvectionGodunovOperator : public Dune::GDT::OperatorInterface<Traits>, public AdvectionOperatorBase<Traits>
+class AdvectionGodunovOperator
+  : public Dune::GDT::OperatorInterface<Traits>
+  , public AdvectionOperatorBase<Traits>
 {
   typedef AdvectionOperatorBase<Traits> BaseType;
 
@@ -61,8 +63,7 @@ public:
 
   AdvectionGodunovOperator(const AnalyticalFluxType& analytical_flux, const BoundaryValueType& boundary_values)
     : BaseType(analytical_flux, boundary_values)
-  {
-  }
+  {}
 
   template <class SourceType, class RangeType>
   void apply(const SourceType& source, RangeType& range, const XT::Common::Parameter& param) const

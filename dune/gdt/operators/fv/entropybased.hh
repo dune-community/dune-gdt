@@ -91,8 +91,7 @@ public:
                                                const RegularizationOperatorType& regularization_operator)
     : advection_operator_(advection_operator)
     , regularization_operator_(regularization_operator)
-  {
-  }
+  {}
 
   template <class SourceType, class RangeType>
   void apply(const SourceType& source, RangeType& range, const XT::Common::Parameter& param) const
@@ -139,8 +138,7 @@ public:
     , reconstruction_operator_(reconstruction_operator)
     , regularization_operator_(regularization_operator)
     , realizability_limiter_(realizability_limiter)
-  {
-  }
+  {}
 
   template <class SourceType, class RangeType>
   void apply(const SourceType& source, RangeType& range, const XT::Common::Parameter& param) const

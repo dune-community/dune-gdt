@@ -55,22 +55,22 @@ public:
 
 template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp>
 class FiniteVolume<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1>
-    : public BaseFunctionSetInterface<internal::
-                                          FiniteVolumeTraits<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1>,
-                                      DomainFieldImp,
-                                      domainDim,
-                                      RangeFieldImp,
-                                      1,
-                                      1>
+  : public BaseFunctionSetInterface<
+        internal::FiniteVolumeTraits<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1>,
+        DomainFieldImp,
+        domainDim,
+        RangeFieldImp,
+        1,
+        1>
 {
   typedef FiniteVolume<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1> ThisType;
-  typedef BaseFunctionSetInterface<internal::
-                                       FiniteVolumeTraits<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1>,
-                                   DomainFieldImp,
-                                   domainDim,
-                                   RangeFieldImp,
-                                   1,
-                                   1>
+  typedef BaseFunctionSetInterface<
+      internal::FiniteVolumeTraits<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1>,
+      DomainFieldImp,
+      domainDim,
+      RangeFieldImp,
+      1,
+      1>
       BaseType;
 
 public:
@@ -79,14 +79,13 @@ public:
   typedef typename Traits::EntityType EntityType;
 
   using typename BaseType::DomainType;
-  using typename BaseType::RangeType;
   using typename BaseType::JacobianRangeType;
+  using typename BaseType::RangeType;
 
   FiniteVolume(const EntityType& en)
     : BaseType(en)
     , backend_(1.)
-  {
-  }
+  {}
 
   FiniteVolume(ThisType&& source) = default;
 
@@ -136,30 +135,22 @@ private:
 
 template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim>
 class FiniteVolume<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
-    : public BaseFunctionSetInterface<internal::FiniteVolumeTraits<EntityImp,
-                                                                   DomainFieldImp,
-                                                                   domainDim,
-                                                                   RangeFieldImp,
-                                                                   rangeDim,
-                                                                   1>,
-                                      DomainFieldImp,
-                                      domainDim,
-                                      RangeFieldImp,
-                                      rangeDim,
-                                      1>
+  : public BaseFunctionSetInterface<
+        internal::FiniteVolumeTraits<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>,
+        DomainFieldImp,
+        domainDim,
+        RangeFieldImp,
+        rangeDim,
+        1>
 {
   typedef FiniteVolume<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> ThisType;
-  typedef BaseFunctionSetInterface<internal::FiniteVolumeTraits<EntityImp,
-                                                                DomainFieldImp,
-                                                                domainDim,
-                                                                RangeFieldImp,
-                                                                rangeDim,
-                                                                1>,
-                                   DomainFieldImp,
-                                   domainDim,
-                                   RangeFieldImp,
-                                   rangeDim,
-                                   1>
+  typedef BaseFunctionSetInterface<
+      internal::FiniteVolumeTraits<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>,
+      DomainFieldImp,
+      domainDim,
+      RangeFieldImp,
+      rangeDim,
+      1>
       BaseType;
 
 public:
@@ -167,16 +158,15 @@ public:
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
 
-  using typename BaseType::DomainType;
   using BaseType::dimRange;
-  using typename BaseType::RangeType;
+  using typename BaseType::DomainType;
   using typename BaseType::JacobianRangeType;
+  using typename BaseType::RangeType;
 
   FiniteVolume(const EntityType& en)
     : BaseType(en)
     , backend_(1.)
-  {
-  }
+  {}
 
   FiniteVolume(ThisType&& source) = default;
 

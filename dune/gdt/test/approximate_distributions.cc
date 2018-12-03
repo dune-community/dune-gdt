@@ -56,9 +56,7 @@ template <>
 struct moment_approximation_helper<0>
 // struct moment_approximation_helper<-1>
 {
-  static void run(const size_t /*quad_refinements*/, const size_t /*quad_order*/, const std::string /*filename*/)
-  {
-  }
+  static void run(const size_t /*quad_refinements*/, const size_t /*quad_order*/, const std::string /*filename*/) {}
 };
 
 

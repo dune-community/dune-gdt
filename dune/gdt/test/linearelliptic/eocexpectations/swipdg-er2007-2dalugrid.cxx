@@ -22,13 +22,13 @@ namespace Test {
 
 // polorder 1, conforming
 
-std::vector<double> LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase<AluConform2dGridType, double, 1>,
-                                                  LinearElliptic::ChooseDiscretizer::swipdg,
-                                                  1>::
-    results(const LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase<AluConform2dGridType, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::swipdg,
-                                                1>::TestCaseType&,
-            const std::string type)
+std::vector<double> LinearEllipticEocExpectations<
+    LinearElliptic::ER2007TestCase<AluConform2dGridType, double, 1>,
+    LinearElliptic::ChooseDiscretizer::swipdg,
+    1>::results(const LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase<AluConform2dGridType, double, 1>,
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    1>::TestCaseType&,
+                const std::string type)
 {
   if (type == "L2") {
 #if DXT_DISABLE_LARGE_TESTS
@@ -49,13 +49,13 @@ std::vector<double> LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase
 
 // polorder 2, conforming
 
-std::vector<double> LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase<AluConform2dGridType, double, 1>,
-                                                  LinearElliptic::ChooseDiscretizer::swipdg,
-                                                  2>::
-    results(const LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase<AluConform2dGridType, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::swipdg,
-                                                2>::TestCaseType&,
-            const std::string type)
+std::vector<double> LinearEllipticEocExpectations<
+    LinearElliptic::ER2007TestCase<AluConform2dGridType, double, 1>,
+    LinearElliptic::ChooseDiscretizer::swipdg,
+    2>::results(const LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase<AluConform2dGridType, double, 1>,
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    2>::TestCaseType&,
+                const std::string type)
 {
   if (type == "L2") {
 #if DXT_DISABLE_LARGE_TESTS
@@ -76,13 +76,13 @@ std::vector<double> LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase
 
 // polorder 1, nonconforming
 
-std::vector<double> LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase<AluSimplex2dGridType, double, 1>,
-                                                  LinearElliptic::ChooseDiscretizer::swipdg,
-                                                  1>::
-    results(const LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase<AluSimplex2dGridType, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::swipdg,
-                                                1>::TestCaseType&,
-            const std::string type)
+std::vector<double> LinearEllipticEocExpectations<
+    LinearElliptic::ER2007TestCase<AluSimplex2dGridType, double, 1>,
+    LinearElliptic::ChooseDiscretizer::swipdg,
+    1>::results(const LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase<AluSimplex2dGridType, double, 1>,
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    1>::TestCaseType&,
+                const std::string type)
 {
   if (type == "L2") {
 #if DXT_DISABLE_LARGE_TESTS
@@ -103,13 +103,13 @@ std::vector<double> LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase
 
 // polorder 2, nonconforming
 
-std::vector<double> LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase<AluSimplex2dGridType, double, 1>,
-                                                  LinearElliptic::ChooseDiscretizer::swipdg,
-                                                  2>::
-    results(const LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase<AluSimplex2dGridType, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::swipdg,
-                                                2>::TestCaseType&,
-            const std::string type)
+std::vector<double> LinearEllipticEocExpectations<
+    LinearElliptic::ER2007TestCase<AluSimplex2dGridType, double, 1>,
+    LinearElliptic::ChooseDiscretizer::swipdg,
+    2>::results(const LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase<AluSimplex2dGridType, double, 1>,
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    2>::TestCaseType&,
+                const std::string type)
 {
   if (type == "L2") {
 #if DXT_DISABLE_LARGE_TESTS

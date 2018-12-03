@@ -231,8 +231,7 @@ public:
   // This limiter ensures u_i >= epsilon for all components u_i of u.
   PositivityLimitedSlope(const RangeFieldType epsilon = 0.)
     : epsilon_(epsilon)
-  {
-  }
+  {}
 
   virtual VectorType
   get(const StencilType& stencil, const StencilType& stencil_char, const MatrixType& A) const override final
@@ -288,7 +287,7 @@ template <class RangeFieldType,
           class MatrixType,
           class SlopeType = MinmodSlope<XT::Common::BlockedFieldVector<RangeFieldType, dimRange / 2, 2>, MatrixType>>
 class Dg1dRealizabilityLimitedSlope
-    : public SlopeBase<XT::Common::BlockedFieldVector<RangeFieldType, dimRange / 2, 2>, MatrixType, 3>
+  : public SlopeBase<XT::Common::BlockedFieldVector<RangeFieldType, dimRange / 2, 2>, MatrixType, 3>
 {
   using VectorType = XT::Common::BlockedFieldVector<RangeFieldType, dimRange / 2, 2>;
   using BaseType = SlopeBase<VectorType, MatrixType, 3>;
@@ -301,8 +300,7 @@ public:
   Dg1dRealizabilityLimitedSlope(const BasisfunctionType& basis_functions, const RangeFieldType epsilon = 0.)
     : basis_functions_(basis_functions)
     , epsilon_(epsilon)
-  {
-  }
+  {}
 
   virtual VectorType
   get(const StencilType& stencil, const StencilType& stencil_char, const MatrixType& A) const override final
@@ -375,15 +373,15 @@ private:
 // single limiter variable for all components.
 // TODO: Make usable with interface quadratures different from the midpoint quadrature
 // See dune/gdt/operators/fv/entropybased/realizability.hh
-template <class BasisfunctionType,
-          class MatrixType,
-          class SlopeType =
-              MinmodSlope<FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>,
-                          MatrixType>>
+template <
+    class BasisfunctionType,
+    class MatrixType,
+    class SlopeType =
+        MinmodSlope<FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>, MatrixType>>
 class ConvexHullRealizabilityLimitedSlope
-    : public SlopeBase<FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>,
-                       MatrixType,
-                       3>
+  : public SlopeBase<FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>,
+                     MatrixType,
+                     3>
 {
   using RangeFieldType = typename BasisfunctionType::RangeFieldType;
   static const size_t dimRange = BasisfunctionType::dimRange;
@@ -478,18 +476,18 @@ private:
 // single limiter variable for all components.
 // TODO: Make usable with interface quadratures different from the midpoint quadrature
 // See dune/gdt/operators/fv/entropybased/realizability.hh
-template <class BasisfunctionType,
-          class MatrixType,
-          class SlopeType =
-              MinmodSlope<FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>,
-                          MatrixType>>
+template <
+    class BasisfunctionType,
+    class MatrixType,
+    class SlopeType =
+        MinmodSlope<FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>, MatrixType>>
 class DgConvexHullRealizabilityLimitedSlope
-    : public SlopeBase<XT::Common::BlockedFieldVector<typename BasisfunctionType::RangeFieldType,
-                                                      BasisfunctionType::dimRange
-                                                          / ((BasisfunctionType::dimDomain == 1) ? 2 : 4),
-                                                      (BasisfunctionType::dimDomain == 1) ? 2 : 4>,
-                       MatrixType,
-                       3>
+  : public SlopeBase<
+        XT::Common::BlockedFieldVector<typename BasisfunctionType::RangeFieldType,
+                                       BasisfunctionType::dimRange / ((BasisfunctionType::dimDomain == 1) ? 2 : 4),
+                                       (BasisfunctionType::dimDomain == 1) ? 2 : 4>,
+        MatrixType,
+        3>
 {
   using ThisType = DgConvexHullRealizabilityLimitedSlope;
   using RangeFieldType = typename BasisfunctionType::RangeFieldType;
@@ -585,21 +583,21 @@ private:
 
 #else // HAVE_QHULL
 
-template <class BasisfunctionType,
-          class MatrixType,
-          class SlopeType =
-              MinmodSlope<FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>,
-                          MatrixType>>
+template <
+    class BasisfunctionType,
+    class MatrixType,
+    class SlopeType =
+        MinmodSlope<FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>, MatrixType>>
 class ConvexHullRealizabilityLimitedSlope
 {
   static_assert(Dune::AlwaysFalse<BasisfunctionType>::value, "You are missing Qhull!");
 };
 
-template <class BasisfunctionType,
-          class MatrixType,
-          class SlopeType =
-              MinmodSlope<FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>,
-                          MatrixType>>
+template <
+    class BasisfunctionType,
+    class MatrixType,
+    class SlopeType =
+        MinmodSlope<FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>, MatrixType>>
 class DgConvexHullRealizabilityLimitedSlopeSlope
 {
   static_assert(Dune::AlwaysFalse<BasisfunctionType>::value, "You are missing Qhull!");
@@ -625,8 +623,7 @@ public:
 
   LpPositivityLimitedSlope(const RangeFieldType epsilon)
     : epsilon_(epsilon)
-  {
-  }
+  {}
 
   virtual VectorType
   get(const StencilType& stencil, const StencilType& stencil_char, const MatrixType& A) const override final
@@ -726,13 +723,13 @@ private:
 // realizable set, i.e. in the convex hull of basis evaluations.
 // TODO: Make usable with interface quadratures different from the midpoint quadrature
 // See dune/gdt/operators/fv/entropybased/realizability.hh
-template <class BasisfunctionType,
-          class MatrixType,
-          class SlopeType =
-              MinmodSlope<FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>,
-                          MatrixType>>
+template <
+    class BasisfunctionType,
+    class MatrixType,
+    class SlopeType =
+        MinmodSlope<FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>, MatrixType>>
 class LpConvexhullRealizabilityLimitedSlope
-    : public SlopeBase<FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>, MatrixType>
+  : public SlopeBase<FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>, MatrixType>
 {
   using RangeFieldType = typename BasisfunctionType::RangeFieldType;
   static constexpr size_t dimRange = BasisfunctionType::dimRange;

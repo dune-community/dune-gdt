@@ -16,51 +16,51 @@ using Yasp1 = Yasp1Grid;
 using Yasp2 = Yasp2Grid;
 using Yasp3 = Yasp3Grid;
 
-using YaspGridTestCasesAll = testing::
-    Types<Dune::GDT::Hyperbolic::Problems::KineticTransport::
-              SourceBeamPnTestCase<Yasp1, Dune::GDT::LegendreMomentBasis<double, double, 7>, false>,
-          Dune::GDT::Hyperbolic::Problems::KineticTransport::
-              SourceBeamPnTestCase<Yasp1, Dune::GDT::LegendreMomentBasis<double, double, 7>, true>,
-          Dune::GDT::Hyperbolic::Problems::KineticTransport::
-              PlaneSourcePnTestCase<Yasp1, Dune::GDT::LegendreMomentBasis<double, double, 7>, false>,
-          Dune::GDT::Hyperbolic::Problems::KineticTransport::
-              PlaneSourcePnTestCase<Yasp1, Dune::GDT::LegendreMomentBasis<double, double, 7>, true>,
-          Dune::GDT::Hyperbolic::Problems::KineticTransport::
-              SourceBeamPnTestCase<Yasp1, Dune::GDT::HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, false>,
-          Dune::GDT::Hyperbolic::Problems::KineticTransport::
-              SourceBeamPnTestCase<Yasp1, Dune::GDT::HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, true>,
-          Dune::GDT::Hyperbolic::Problems::KineticTransport::
-              PlaneSourcePnTestCase<Yasp1, Dune::GDT::HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, false>,
-          Dune::GDT::Hyperbolic::Problems::KineticTransport::
-              PlaneSourcePnTestCase<Yasp1, Dune::GDT::HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, true>,
-          Dune::GDT::Hyperbolic::Problems::KineticTransport::
-              SourceBeamPnTestCase<Yasp1, Dune::GDT::PartialMomentBasis<double, 1, double, 8, 1, 1>, false>,
-          Dune::GDT::Hyperbolic::Problems::KineticTransport::
-              SourceBeamPnTestCase<Yasp1, Dune::GDT::PartialMomentBasis<double, 1, double, 8, 1, 1>, true>,
-          Dune::GDT::Hyperbolic::Problems::KineticTransport::
-              PlaneSourcePnTestCase<Yasp1, Dune::GDT::PartialMomentBasis<double, 1, double, 8, 1, 1>, false>,
-          Dune::GDT::Hyperbolic::Problems::KineticTransport::
-              PlaneSourcePnTestCase<Yasp1, Dune::GDT::PartialMomentBasis<double, 1, double, 8, 1, 1>, true>,
-          Dune::GDT::Hyperbolic::Problems::KineticTransport::
-              PointSourcePnTestCase<Yasp3, Dune::GDT::RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, false>
+using YaspGridTestCasesAll = testing::Types<
+    Dune::GDT::Hyperbolic::Problems::KineticTransport::
+        SourceBeamPnTestCase<Yasp1, Dune::GDT::LegendreMomentBasis<double, double, 7>, false>,
+    Dune::GDT::Hyperbolic::Problems::KineticTransport::
+        SourceBeamPnTestCase<Yasp1, Dune::GDT::LegendreMomentBasis<double, double, 7>, true>,
+    Dune::GDT::Hyperbolic::Problems::KineticTransport::
+        PlaneSourcePnTestCase<Yasp1, Dune::GDT::LegendreMomentBasis<double, double, 7>, false>,
+    Dune::GDT::Hyperbolic::Problems::KineticTransport::
+        PlaneSourcePnTestCase<Yasp1, Dune::GDT::LegendreMomentBasis<double, double, 7>, true>,
+    Dune::GDT::Hyperbolic::Problems::KineticTransport::
+        SourceBeamPnTestCase<Yasp1, Dune::GDT::HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, false>,
+    Dune::GDT::Hyperbolic::Problems::KineticTransport::
+        SourceBeamPnTestCase<Yasp1, Dune::GDT::HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, true>,
+    Dune::GDT::Hyperbolic::Problems::KineticTransport::
+        PlaneSourcePnTestCase<Yasp1, Dune::GDT::HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, false>,
+    Dune::GDT::Hyperbolic::Problems::KineticTransport::
+        PlaneSourcePnTestCase<Yasp1, Dune::GDT::HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, true>,
+    Dune::GDT::Hyperbolic::Problems::KineticTransport::
+        SourceBeamPnTestCase<Yasp1, Dune::GDT::PartialMomentBasis<double, 1, double, 8, 1, 1>, false>,
+    Dune::GDT::Hyperbolic::Problems::KineticTransport::
+        SourceBeamPnTestCase<Yasp1, Dune::GDT::PartialMomentBasis<double, 1, double, 8, 1, 1>, true>,
+    Dune::GDT::Hyperbolic::Problems::KineticTransport::
+        PlaneSourcePnTestCase<Yasp1, Dune::GDT::PartialMomentBasis<double, 1, double, 8, 1, 1>, false>,
+    Dune::GDT::Hyperbolic::Problems::KineticTransport::
+        PlaneSourcePnTestCase<Yasp1, Dune::GDT::PartialMomentBasis<double, 1, double, 8, 1, 1>, true>,
+    Dune::GDT::Hyperbolic::Problems::KineticTransport::
+        PointSourcePnTestCase<Yasp3, Dune::GDT::RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, false>
 #if !DXT_DISABLE_LARGE_TESTS
-          ,
-          Dune::GDT::Hyperbolic::Problems::KineticTransport::
-              PointSourcePnTestCase<Yasp3, Dune::GDT::RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, true>,
-          Dune::GDT::Hyperbolic::Problems::KineticTransport::
-              PointSourcePnTestCase<Yasp3, Dune::GDT::HatFunctionMomentBasis<double, 3, double, 0, 1, 3>, false>,
-          Dune::GDT::Hyperbolic::Problems::KineticTransport::
-              PointSourcePnTestCase<Yasp3, Dune::GDT::HatFunctionMomentBasis<double, 3, double, 1, 1, 3>, false>,
-          Dune::GDT::Hyperbolic::Problems::KineticTransport::
-              PointSourcePnTestCase<Yasp3, Dune::GDT::HatFunctionMomentBasis<double, 3, double, 0, 1, 3>, true>,
-          Dune::GDT::Hyperbolic::Problems::KineticTransport::
-              PointSourcePnTestCase<Yasp3, Dune::GDT::PartialMomentBasis<double, 3, double, 0, 1, 3>, false>,
-          Dune::GDT::Hyperbolic::Problems::KineticTransport::
-              PointSourcePnTestCase<Yasp3, Dune::GDT::PartialMomentBasis<double, 3, double, 1, 1, 3>, false>,
-          Dune::GDT::Hyperbolic::Problems::KineticTransport::
-              PointSourcePnTestCase<Yasp3, Dune::GDT::PartialMomentBasis<double, 3, double, 0, 1, 3>, true>
+    ,
+    Dune::GDT::Hyperbolic::Problems::KineticTransport::
+        PointSourcePnTestCase<Yasp3, Dune::GDT::RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, true>,
+    Dune::GDT::Hyperbolic::Problems::KineticTransport::
+        PointSourcePnTestCase<Yasp3, Dune::GDT::HatFunctionMomentBasis<double, 3, double, 0, 1, 3>, false>,
+    Dune::GDT::Hyperbolic::Problems::KineticTransport::
+        PointSourcePnTestCase<Yasp3, Dune::GDT::HatFunctionMomentBasis<double, 3, double, 1, 1, 3>, false>,
+    Dune::GDT::Hyperbolic::Problems::KineticTransport::
+        PointSourcePnTestCase<Yasp3, Dune::GDT::HatFunctionMomentBasis<double, 3, double, 0, 1, 3>, true>,
+    Dune::GDT::Hyperbolic::Problems::KineticTransport::
+        PointSourcePnTestCase<Yasp3, Dune::GDT::PartialMomentBasis<double, 3, double, 0, 1, 3>, false>,
+    Dune::GDT::Hyperbolic::Problems::KineticTransport::
+        PointSourcePnTestCase<Yasp3, Dune::GDT::PartialMomentBasis<double, 3, double, 1, 1, 3>, false>,
+    Dune::GDT::Hyperbolic::Problems::KineticTransport::
+        PointSourcePnTestCase<Yasp3, Dune::GDT::PartialMomentBasis<double, 3, double, 0, 1, 3>, true>
 #endif
-          >;
+    >;
 
 TYPED_TEST_CASE(HyperbolicPnTest, YaspGridTestCasesAll);
 TYPED_TEST(HyperbolicPnTest, check)

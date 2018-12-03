@@ -203,7 +203,9 @@ struct HyperbolicMnDiscretization
 };
 
 template <class TestCaseType>
-struct HyperbolicMnTest : public HyperbolicMnDiscretization<TestCaseType>, public ::testing::Test
+struct HyperbolicMnTest
+  : public HyperbolicMnDiscretization<TestCaseType>
+  , public ::testing::Test
 {
   void run()
   {

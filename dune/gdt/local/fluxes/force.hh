@@ -34,7 +34,7 @@ namespace internal {
 
 template <class AnalyticalFluxImp, class LocalizableFunctionImp>
 class ForceLocalNumericalCouplingFluxTraits
-    : public LaxFriedrichsLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, LocalizableFunctionImp>
+  : public LaxFriedrichsLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, LocalizableFunctionImp>
 {
   typedef ForceLocalNumericalCouplingFluxTraits ThisType;
 
@@ -44,9 +44,9 @@ public:
 
 template <class AnalyticalFluxImp, class BoundaryValueImp, class LocalizableFunctionImp>
 class ForceLocalDirichletNumericalBoundaryFluxTraits
-    : public LaxFriedrichsLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
-                                                                    BoundaryValueImp,
-                                                                    LocalizableFunctionImp>
+  : public LaxFriedrichsLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
+                                                                  BoundaryValueImp,
+                                                                  LocalizableFunctionImp>
 {
   typedef ForceLocalDirichletNumericalBoundaryFluxTraits ThisType;
 
@@ -89,8 +89,7 @@ public:
                                            const RangeFieldType alpha = dimDomain)
     : lax_friedrichs_flux_(analytical_flux, param, dx, false, is_linear, alpha)
     , lax_wendroff_flux_(analytical_flux, param, dx, is_linear, alpha)
-  {
-  }
+  {}
 
   LocalfunctionTupleType local_functions(const EntityType& entity) const
   {
@@ -163,8 +162,7 @@ public:
                                                     const RangeFieldType alpha = dimDomain)
     : lax_friedrichs_flux_(analytical_flux, boundary_values, param, dx, false, is_linear, alpha)
     , lax_wendroff_flux_(analytical_flux, boundary_values, param, dx, is_linear, alpha)
-  {
-  }
+  {}
 
   LocalfunctionTupleType local_functions(const EntityType& entity) const
   {

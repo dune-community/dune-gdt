@@ -27,19 +27,20 @@ namespace Test {
 
 
 template <class SpaceType>
-struct L2LocalizableProductTest : public WeightedL2ProductBase<SpaceType>, public LocalizableProductBase<SpaceType>
+struct L2LocalizableProductTest
+  : public WeightedL2ProductBase<SpaceType>
+  , public LocalizableProductBase<SpaceType>
 {
   typedef WeightedL2ProductBase<SpaceType> WeightedL2BaseType;
   typedef LocalizableProductBase<SpaceType> LocalizableBaseType;
   using typename LocalizableBaseType::GridLayerType;
-  using typename WeightedL2BaseType::ExpressionFunctionType;
-  using typename LocalizableBaseType::ScalarFunctionType;
   using typename LocalizableBaseType::RangeFieldType;
+  using typename LocalizableBaseType::ScalarFunctionType;
+  using typename WeightedL2BaseType::ExpressionFunctionType;
 
   L2LocalizableProductTest()
     : WeightedL2BaseType(1.)
-  {
-  }
+  {}
 
   void constructible_by_ctor()
   {
@@ -93,20 +94,21 @@ struct L2LocalizableProductTest : public WeightedL2ProductBase<SpaceType>, publi
  * \note Assumes that Operators::Projection does the right thing!
  */
 template <class SpaceType>
-struct L2MatrixOperatorTest : public WeightedL2ProductBase<SpaceType>, public MatrixOperatorBase<SpaceType>
+struct L2MatrixOperatorTest
+  : public WeightedL2ProductBase<SpaceType>
+  , public MatrixOperatorBase<SpaceType>
 {
   typedef WeightedL2ProductBase<SpaceType> WeightedL2BaseType;
   typedef MatrixOperatorBase<SpaceType> MatrixBaseType;
-  using typename MatrixBaseType::GridLayerType;
-  using typename WeightedL2BaseType::ExpressionFunctionType;
   using typename MatrixBaseType::DiscreteFunctionType;
-  using typename MatrixBaseType::RangeFieldType;
+  using typename MatrixBaseType::GridLayerType;
   using typename MatrixBaseType::MatrixType;
+  using typename MatrixBaseType::RangeFieldType;
+  using typename WeightedL2BaseType::ExpressionFunctionType;
 
   L2MatrixOperatorTest()
     : WeightedL2BaseType(1.)
-  {
-  }
+  {}
 
   void constructible_by_ctor()
   {
@@ -206,19 +208,20 @@ struct L2MatrixOperatorTest : public WeightedL2ProductBase<SpaceType>, public Ma
 
 
 template <class SpaceType>
-struct L2OperatorTest : public WeightedL2ProductBase<SpaceType>, public OperatorBase<SpaceType>
+struct L2OperatorTest
+  : public WeightedL2ProductBase<SpaceType>
+  , public OperatorBase<SpaceType>
 {
   typedef WeightedL2ProductBase<SpaceType> WeightedL2BaseType;
   typedef OperatorBase<SpaceType> OperatorBaseType;
   using typename OperatorBaseType::GridLayerType;
-  using typename WeightedL2BaseType::ExpressionFunctionType;
   using typename OperatorBaseType::RangeFieldType;
   using typename OperatorBaseType::VectorType;
+  using typename WeightedL2BaseType::ExpressionFunctionType;
 
   L2OperatorTest()
     : WeightedL2BaseType(1.)
-  {
-  }
+  {}
 
   void constructible_by_ctor()
   {

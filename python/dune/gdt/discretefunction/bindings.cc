@@ -21,16 +21,16 @@
 #include <python/dune/gdt/shared.hh>
 
 #define DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(_m, _G, _g_layer, _s_backend, _s_type, _p, _r, _la)                     \
-  Dune::GDT::bindings::                                                                                                \
-      DiscreteFunction<Dune::GDT::SpaceProvider<_G,                                                                    \
-                                                Dune::XT::Grid::Layers::_g_layer,                                      \
-                                                Dune::GDT::SpaceType::_s_type,                                         \
-                                                Dune::GDT::Backends::_s_backend,                                       \
-                                                _p,                                                                    \
-                                                double,                                                                \
-                                                _r,                                                                    \
-                                                1>,                                                                    \
-                       typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType>::bind(_m)
+  Dune::GDT::bindings::DiscreteFunction<                                                                               \
+      Dune::GDT::SpaceProvider<_G,                                                                                     \
+                               Dune::XT::Grid::Layers::_g_layer,                                                       \
+                               Dune::GDT::SpaceType::_s_type,                                                          \
+                               Dune::GDT::Backends::_s_backend,                                                        \
+                               _p,                                                                                     \
+                               double,                                                                                 \
+                               _r,                                                                                     \
+                               1>,                                                                                     \
+      typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType>::bind(_m)
 
 PYBIND11_MODULE(__discretefunction, m)
 {

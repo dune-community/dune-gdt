@@ -41,10 +41,10 @@ struct ProlongationTest : public internal::ProlongationOperatorsBase<SpaceType, 
     EXPECT_LE(fine_l2_error, tolerance);
   } // ... produces_correct_results(...)
 
-  using BaseType::function_;
-  using BaseType::fine_space_;
   using BaseType::coarse_discrete_function_;
   using BaseType::fine_discrete_function_;
+  using BaseType::fine_space_;
+  using BaseType::function_;
 }; // struct ProlongationTest
 
 

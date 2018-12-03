@@ -27,19 +27,20 @@ namespace Test {
 
 
 template <class SpaceType>
-struct LaplaceLocalizableProductTest : public EllipticProductBase<SpaceType>, public LocalizableProductBase<SpaceType>
+struct LaplaceLocalizableProductTest
+  : public EllipticProductBase<SpaceType>
+  , public LocalizableProductBase<SpaceType>
 {
   typedef EllipticProductBase<SpaceType> EllipticBaseType;
   typedef LocalizableProductBase<SpaceType> LocalizableBaseType;
-  using typename LocalizableBaseType::GridLayerType;
   using typename EllipticBaseType::ExpressionFunctionType;
-  using typename LocalizableBaseType::ScalarFunctionType;
+  using typename LocalizableBaseType::GridLayerType;
   using typename LocalizableBaseType::RangeFieldType;
+  using typename LocalizableBaseType::ScalarFunctionType;
 
   LaplaceLocalizableProductTest()
     : EllipticBaseType(1.)
-  {
-  }
+  {}
 
   void constructible_by_ctor()
   {
@@ -97,16 +98,15 @@ template <class SpaceType>
 struct LaplaceMatrixOperatorTest : public EllipticMatrixOperatorTest<SpaceType>
 {
   typedef EllipticMatrixOperatorTest<SpaceType> BaseType;
-  using typename BaseType::GridLayerType;
-  using typename BaseType::ExpressionFunctionType;
   using typename BaseType::DiscreteFunctionType;
-  using typename BaseType::RangeFieldType;
+  using typename BaseType::ExpressionFunctionType;
+  using typename BaseType::GridLayerType;
   using typename BaseType::MatrixType;
+  using typename BaseType::RangeFieldType;
 
   LaplaceMatrixOperatorTest()
     : BaseType(1.)
-  {
-  }
+  {}
 
   void constructible_by_ctor()
   {
@@ -206,19 +206,20 @@ struct LaplaceMatrixOperatorTest : public EllipticMatrixOperatorTest<SpaceType>
 
 
 template <class SpaceType>
-struct LaplaceOperatorTest : public EllipticProductBase<SpaceType>, public OperatorBase<SpaceType>
+struct LaplaceOperatorTest
+  : public EllipticProductBase<SpaceType>
+  , public OperatorBase<SpaceType>
 {
   typedef EllipticProductBase<SpaceType> EllipticBaseType;
   typedef OperatorBase<SpaceType> OperatorBaseType;
-  using typename OperatorBaseType::GridLayerType;
   using typename EllipticBaseType::ExpressionFunctionType;
+  using typename OperatorBaseType::GridLayerType;
   using typename OperatorBaseType::RangeFieldType;
   using typename OperatorBaseType::VectorType;
 
   LaplaceOperatorTest()
     : EllipticBaseType(1.)
-  {
-  }
+  {}
 
   void constructible_by_ctor()
   {

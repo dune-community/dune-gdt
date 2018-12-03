@@ -28,7 +28,7 @@ namespace GDT {
 
 template <class Traits>
 class StationaryDiscretizationInterface
-    : public XT::Common::CRTPInterface<StationaryDiscretizationInterface<Traits>, Traits>
+  : public XT::Common::CRTPInterface<StationaryDiscretizationInterface<Traits>, Traits>
 {
   typedef XT::Common::CRTPInterface<StationaryDiscretizationInterface<Traits>, Traits> BaseType;
 
@@ -84,9 +84,7 @@ public:
     if (opts.empty())
       DUNE_THROW(XT::Common::Exceptions::internal_error,
                  "Reported solver_options() of the derived class (see below) for type '"
-                     << type
-                     << "'must not be empty!\n\n  "
-                     << XT::Common::Typename<derived_type>::value());
+                     << type << "'must not be empty!\n\n  " << XT::Common::Typename<derived_type>::value());
     return opts;
   } // ... solver_options(...)
 
@@ -289,14 +287,12 @@ struct is_stationary_discretization_helper
 
 template <class D, bool candidate = internal::is_stationary_discretization_helper<D>::is_candidate>
 struct is_stationary_discretization : public std::is_base_of<StationaryDiscretizationInterface<typename D::Traits>, D>
-{
-};
+{};
 
 
 template <class D>
 struct is_stationary_discretization<D, false> : public std::false_type
-{
-};
+{};
 
 
 } // namespace GDT

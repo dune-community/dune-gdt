@@ -28,8 +28,8 @@ PYBIND11_MODULE(__operators_weighted_l2, m)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
-  using Dune::XT::Grid::Layers;
   using Dune::XT::Grid::Backends;
+  using Dune::XT::Grid::Layers;
 
   Dune::GDT::bindings::WeightedL2LocalizableProduct<GDT_BINDINGS_GRID, Layers::leaf, Backends::view>::bind(m);
   Dune::GDT::bindings::WeightedL2LocalizableProduct<GDT_BINDINGS_GRID, Layers::level, Backends::view>::bind(m);

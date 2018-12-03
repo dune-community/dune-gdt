@@ -78,24 +78,24 @@ private:
           py::keep_alive<0, 2>(),
           py::keep_alive<0, 3>());
 
-      m.def(
-          std::string(method_name).c_str(),
-          [](const DF& diffusion_factor,
-             const DT& diffusion_tensor,
-             M& matrix,
-             const R& space,
-             const size_t over_integrate) {
-            return make_elliptic_matrix_operator(diffusion_factor, diffusion_tensor, matrix, space, over_integrate)
-                .release(); //                                                                     <- s.a. for release()
-          },
-          "diffusion_factor"_a,
-          "diffusion_tensor"_a,
-          "matrix"_a,
-          "space"_a,
-          "over_integrate"_a = 0,
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>(),
-          py::keep_alive<0, 3>());
+      m.def(std::string(method_name).c_str(),
+            [](const DF& diffusion_factor,
+               const DT& diffusion_tensor,
+               M& matrix,
+               const R& space,
+               const size_t over_integrate) {
+              return make_elliptic_matrix_operator(diffusion_factor, diffusion_tensor, matrix, space, over_integrate)
+                  .release(); //                                                                     <- s.a. for
+                              //                                                                     release()
+            },
+            "diffusion_factor"_a,
+            "diffusion_tensor"_a,
+            "matrix"_a,
+            "space"_a,
+            "over_integrate"_a = 0,
+            py::keep_alive<0, 1>(),
+            py::keep_alive<0, 2>(),
+            py::keep_alive<0, 3>());
     } // ... addbind_factory_methods(...)
   }; // struct diffusion_switch
 
@@ -160,9 +160,9 @@ public:
 
     MatrixOperatorBase<type>::bind_bases(m);
 
-    const auto ClassName = XT::Common::to_camel_case(
-        "elliptic_matrix_operator_" + space_name + "_" + XT::LA::bindings::container_name<M>::value() + "_"
-        + diffusion_switch<>::suffix());
+    const auto ClassName =
+        XT::Common::to_camel_case("elliptic_matrix_operator_" + space_name + "_"
+                                  + XT::LA::bindings::container_name<M>::value() + "_" + diffusion_switch<>::suffix());
 
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
     MatrixOperatorBase<type>::bind(c);

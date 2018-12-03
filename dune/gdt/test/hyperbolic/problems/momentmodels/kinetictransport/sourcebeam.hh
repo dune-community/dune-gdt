@@ -41,21 +41,21 @@ class SourceBeamPn : public KineticTransportEquation<BasisfunctionImp, GridLayer
   using BaseType = KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>;
 
 public:
-  using typename BaseType::InitialValueType;
-  using typename BaseType::BoundaryValueType;
-  using typename BaseType::ActualInitialValueType;
-  using typename BaseType::ActualDirichletBoundaryValueType;
-  using typename BaseType::ActualBoundaryValueType;
-  using typename BaseType::DomainFieldType;
-  using typename BaseType::DomainType;
-  using typename BaseType::RangeFieldType;
-  using typename BaseType::RangeType;
-  using typename BaseType::BasisfunctionType;
-  using typename BaseType::GridLayerType;
-  using typename BaseType::IntersectionType;
-  using typename BaseType::FluxType;
   using BaseType::dimDomain;
   using BaseType::dimRange;
+  using typename BaseType::ActualBoundaryValueType;
+  using typename BaseType::ActualDirichletBoundaryValueType;
+  using typename BaseType::ActualInitialValueType;
+  using typename BaseType::BasisfunctionType;
+  using typename BaseType::BoundaryValueType;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::DomainType;
+  using typename BaseType::FluxType;
+  using typename BaseType::GridLayerType;
+  using typename BaseType::InitialValueType;
+  using typename BaseType::IntersectionType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::RangeType;
 
   using BaseType::default_boundary_cfg;
 
@@ -66,8 +66,7 @@ public:
                const bool is_mn_model = false)
     : BaseType(basis_functions, grid_layer, {6}, grid_cfg, boundary_cfg)
     , is_mn_model_(is_mn_model)
-  {
-  }
+  {}
 
   static std::string static_id()
   {
@@ -195,8 +194,8 @@ protected:
   template <class B, class anything = void>
   struct helper : public helper_base
   {
-    using helper_base::numerator;
     using helper_base::denominator;
+    using helper_base::numerator;
 
     static RangeType get_left_boundary_values(const BasisfunctionImp& basis_functions,
                                               const RangeFieldType& psi_vac,
@@ -227,11 +226,11 @@ protected:
 
   template <class anything>
   struct helper<HatFunctionMomentBasis<DomainFieldType, dimDomain, RangeFieldType, dimRange>, anything>
-      : public helper_base
+    : public helper_base
   {
-    using helper_base::numerator;
     using helper_base::denominator;
     using helper_base::integral_1;
+    using helper_base::numerator;
 
     static RangeType get_left_boundary_values(const BasisfunctionImp& basis_functions,
                                               const RangeFieldType psi_vac,
@@ -298,16 +297,15 @@ public:
   using typename BaseType::RangeType;
   using ActualFluxType = EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_>;
 
-  using BaseType::default_grid_cfg;
   using BaseType::default_boundary_cfg;
+  using BaseType::default_grid_cfg;
 
   SourceBeamMn(const BasisfunctionType& basis_functions,
                const GridLayerType& grid_layer,
                const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
     : BaseType(basis_functions, grid_layer, grid_cfg, boundary_cfg, true)
-  {
-  }
+  {}
 
   static std::string static_id()
   {

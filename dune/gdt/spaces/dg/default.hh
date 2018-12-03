@@ -123,8 +123,7 @@ public:
 
   DiscontinuousLagrangeSpace(GridLayerType grd_lr)
     : BaseType(grd_lr)
-  {
-  }
+  {}
 
   std::vector<DomainType> lagrange_points(const EntityType& entity) const
   {
@@ -154,7 +153,7 @@ public:
  */
 template <class GL, int p, class R>
 class DiscontinuousLagrangeSpace
-    : public DgSpaceInterface<internal::DiscontinuousLagrangeSpaceTraits<GL, p, R>, GL::dimension, 1>
+  : public DgSpaceInterface<internal::DiscontinuousLagrangeSpaceTraits<GL, p, R>, GL::dimension, 1>
 {
 public:
   using Traits = internal::DiscontinuousLagrangeSpaceTraits<GL, p, R>;
@@ -168,10 +167,10 @@ private:
   using DofCommunicationChooserType = typename Traits::DofCommunicationChooserType;
 
 public:
-  using typename BaseType::GridLayerType;
-  using typename BaseType::EntityType;
-  using typename BaseType::MapperType;
   using typename BaseType::BaseFunctionSetType;
+  using typename BaseType::EntityType;
+  using typename BaseType::GridLayerType;
+  using typename BaseType::MapperType;
   using DomainType = typename BaseFunctionSetType::DomainType;
   using DofCommunicatorType = typename Traits::DofCommunicatorType;
 
@@ -231,8 +230,7 @@ public:
     if (finite_element_search_result == finite_elements_->end())
       DUNE_THROW(XT::Common::Exceptions::internal_error,
                  "This must not happen, the grid layer did not report all geometry types!"
-                     << "\n   entity.geometry().type() = "
-                     << entity.geometry().type());
+                     << "\n   entity.geometry().type() = " << entity.geometry().type());
     const auto& finite_element = *finite_element_search_result->second;
     return BaseFunctionSetType(entity, finite_element);
   }
@@ -249,8 +247,7 @@ public:
     if (lagrange_points_search_result == lagrange_points_->end())
       DUNE_THROW(XT::Common::Exceptions::internal_error,
                  "This must not happen, the grid layer did not report all geometry types!"
-                     << "\n   entity.geometry().type() = "
-                     << entity.geometry().type());
+                     << "\n   entity.geometry().type() = " << entity.geometry().type());
     return lagrange_points_search_result->second;
   }
 

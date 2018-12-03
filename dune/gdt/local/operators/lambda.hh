@@ -79,8 +79,7 @@ public:
 
   LocalLambdaOperator(LocalLambdaType local_lambda)
     : local_lambda_(local_lambda)
-  {
-  }
+  {}
 
   template <class UnknownSourceType, class UnknownLocalRangeType>
   void apply(const UnknownSourceType& /*source*/, UnknownLocalRangeType& /*local_range*/) const
@@ -104,7 +103,7 @@ private:
 
 template <class S, class I, class RS, class RV>
 class LocalLambdaCouplingOperator
-    : public LocalCouplingOperatorInterface<internal::LocalLambdaCouplingOperatorTraits<S, I, RS, RV>>
+  : public LocalCouplingOperatorInterface<internal::LocalLambdaCouplingOperatorTraits<S, I, RS, RV>>
 {
   using ThisType = LocalLambdaCouplingOperator<S, I, RS, RV>;
   using BaseType = LocalCouplingOperatorInterface<internal::LocalLambdaCouplingOperatorTraits<S, I, RS, RV>>;
@@ -119,8 +118,7 @@ public:
 
   LocalLambdaCouplingOperator(LocalLambdaType local_lambda)
     : local_lambda_(local_lambda)
-  {
-  }
+  {}
 
   template <class UnknownSourceType, class UnknownIntersectionType, class UnknownRangeType>
   void apply(const UnknownSourceType& /*source*/,

@@ -20,12 +20,9 @@
 // begin: this is what we need for the .so
 
 #define _DUNE_GDT_SPACES_FV_BIND_GDT(_m, _GRID, _layer, _r, _rC)                                                       \
-  Dune::GDT::bindings::SpaceInterface<Dune::GDT::FvSpaceProvider<_GRID,                                                \
-                                                                 Dune::XT::Grid::Layers::_layer,                       \
-                                                                 Dune::GDT::Backends::gdt,                             \
-                                                                 double,                                               \
-                                                                 _r,                                                   \
-                                                                 _rC>>::bind(_m)
+  Dune::GDT::bindings::SpaceInterface<                                                                                 \
+      Dune::GDT::FvSpaceProvider<_GRID, Dune::XT::Grid::Layers::_layer, Dune::GDT::Backends::gdt, double, _r, _rC>>::  \
+      bind(_m)
 
 /*#if HAVE_ALBERTA
 #define _DUNE_GDT_SPACES_FV_BIND_GDT_ALBERTA_LAYER(_m, _layer)                                                       \

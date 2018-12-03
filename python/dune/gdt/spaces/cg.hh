@@ -19,13 +19,10 @@
 // begin: this is what we need for the .so
 
 #define _DUNE_GDT_SPACES_CG_BIND(_m, _GRID, _layer, _r, _rC)                                                           \
-  Dune::GDT::bindings::SpaceInterface<Dune::GDT::CgSpaceProvider<_GRID,                                                \
-                                                                 Dune::XT::Grid::Layers::_layer,                       \
-                                                                 Dune::GDT::Backends::gdt,                             \
-                                                                 1,                                                    \
-                                                                 double,                                               \
-                                                                 _r,                                                   \
-                                                                 _rC>>::bind(_m)
+  Dune::GDT::bindings::SpaceInterface<                                                                                 \
+      Dune::GDT::                                                                                                      \
+          CgSpaceProvider<_GRID, Dune::XT::Grid::Layers::_layer, Dune::GDT::Backends::gdt, 1, double, _r, _rC>>::      \
+      bind(_m)
 
 /*#if HAVE_ALBERTA
 #define _DUNE_GDT_SPACES_CG_BIND_ALBERTA_LAYER(_m, _layer)                                                       \

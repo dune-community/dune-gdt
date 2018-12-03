@@ -35,16 +35,16 @@ class PointSourcePn : public KineticTransportEquation<BasisfunctionImp, GridLaye
   using BaseType = KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>;
 
 public:
-  using typename BaseType::InitialValueType;
-  using typename BaseType::BoundaryValueType;
-  using typename BaseType::ActualInitialValueType;
   using typename BaseType::ActualDirichletBoundaryValueType;
+  using typename BaseType::ActualInitialValueType;
+  using typename BaseType::BasisfunctionType;
+  using typename BaseType::BoundaryValueType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
+  using typename BaseType::GridLayerType;
+  using typename BaseType::InitialValueType;
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeType;
-  using typename BaseType::BasisfunctionType;
-  using typename BaseType::GridLayerType;
 
   using BaseType::default_boundary_cfg;
 
@@ -53,8 +53,7 @@ public:
                 const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                 const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
     : BaseType(basis_functions, grid_layer, {1, 1, 1}, grid_cfg, boundary_cfg, 1e-4 / (4 * M_PI))
-  {
-  }
+  {}
 
   static std::string static_id()
   {
@@ -105,8 +104,8 @@ public:
   } // ... create_initial_values()
 
 protected:
-  using BaseType::grid_cfg_;
   using BaseType::basis_functions_;
+  using BaseType::grid_cfg_;
   using BaseType::num_segments_;
   using BaseType::psi_vac_;
 }; // class PointSourcePn<...>
@@ -122,16 +121,15 @@ public:
   using typename BaseType::RangeType;
   using ActualFluxType = GDT::EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_>;
 
-  using BaseType::default_grid_cfg;
   using BaseType::default_boundary_cfg;
+  using BaseType::default_grid_cfg;
 
   PointSourceMn(const BasisfunctionType& basis_functions,
                 const GridLayerType& grid_layer,
                 const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                 const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
     : BaseType(basis_functions, grid_layer, grid_cfg, boundary_cfg)
-  {
-  }
+  {}
 
   static std::string static_id()
   {
@@ -158,33 +156,24 @@ template <class G,
           size_t rangeDim = 6,
           class B = HatFunctionMomentBasis<typename G::ctype, 3, typename G::ctype, rangeDim, 1, 3>>
 class PointSourceTestCase
-    : public Dune::GDT::Test::
-          InstationaryTestCase<G,
-                               typename Hyperbolic::Problems::KineticEquation<
-                                   typename Problems::KineticTransport::
-                                       PointSourcePn<B,
-                                                     typename G::LeafGridLayer,
-                                                     typename internal::
-                                                         DiscreteFunctionProvider<G,
-                                                                                  GDT::SpaceType::product_fv,
-                                                                                  0,
-                                                                                  R,
-                                                                                  6,
-                                                                                  1,
-                                                                                  GDT::Backends::gdt>::type>>>
+  : public Dune::GDT::Test::InstationaryTestCase<
+        G,
+        typename Hyperbolic::Problems::KineticEquation<typename Problems::KineticTransport::PointSourcePn<
+            B,
+            typename G::LeafGridLayer,
+            typename internal::DiscreteFunctionProvider<G, GDT::SpaceType::product_fv, 0, R, 6, 1, GDT::Backends::gdt>::
+                type>>>
 {
   using D = typename G::ctype;
 
 public:
   static const size_t d = G::dimension;
   static_assert(d == 3, "Only implemented for dimension 3.");
-  using ProblemType = typename Hyperbolic::Problems::KineticEquation<
-      typename Problems::KineticTransport::
-          PointSourcePn<B,
-                        typename G::LeafGridLayer,
-                        DiscreteFunction<FvProductSpace<typename G::LeafGridLayer, double, rangeDim, 1>,
-                                         typename Dune::XT::LA::Container<double, XT::LA::default_sparse_backend>::
-                                             VectorType>>>;
+  using ProblemType = typename Hyperbolic::Problems::KineticEquation<typename Problems::KineticTransport::PointSourcePn<
+      B,
+      typename G::LeafGridLayer,
+      DiscreteFunction<FvProductSpace<typename G::LeafGridLayer, double, rangeDim, 1>,
+                       typename Dune::XT::LA::Container<double, XT::LA::default_sparse_backend>::VectorType>>>;
   static const size_t dimRange = ProblemType::dimRange;
   static const size_t dimRangeCols = 1;
 
@@ -198,8 +187,7 @@ public:
   PointSourceTestCase(const size_t num_refs = 1, const double divide_t_end_by = 1.0)
     : BaseType(divide_t_end_by, ProblemType::default_grid_cfg(), num_refs)
     , problem_(B())
-  {
-  }
+  {}
 
   //  virtual const ProblemType& problem() const override final
   //  {

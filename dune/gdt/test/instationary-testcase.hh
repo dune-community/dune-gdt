@@ -44,8 +44,7 @@ public:
     : EocBaseType(std::forward<Args>(args)...)
     , divide_t_end_by_this_(divide_t_end_by_this)
     , zero_()
-  {
-  }
+  {}
 
   virtual ~InstationaryTestCase() = default;
 

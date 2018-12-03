@@ -95,11 +95,11 @@ class HyperbolicFvDefaultDiscretization : public FvDiscretizationInterface<Trait
 
 public:
   using TestCaseType = TestCaseImp;
-  using typename BaseType::SpaceType;
-  using typename BaseType::ProblemType;
-  using typename BaseType::DiscreteSolutionType;
-  using typename BaseType::VectorType;
   using typename BaseType::DiscreteFunctionType;
+  using typename BaseType::DiscreteSolutionType;
+  using typename BaseType::ProblemType;
+  using typename BaseType::SpaceType;
+  using typename BaseType::VectorType;
 
 private:
   using GridLayerType = typename SpaceType::GridLayerType;
@@ -141,8 +141,7 @@ public:
   HyperbolicFvDefaultDiscretization(const TestCaseImp& tst_cs, const std::shared_ptr<const SpaceType> fv_space_ptr)
     : test_case_(tst_cs)
     , fv_space_(fv_space_ptr)
-  {
-  }
+  {}
 
   /// \name Required by FvDiscretizationInterface.
   /// \{

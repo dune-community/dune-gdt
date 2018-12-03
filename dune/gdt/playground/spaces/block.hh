@@ -63,10 +63,11 @@ public:
 
 
 template <class LocalSpaceImp>
-class BlockSpace : public SpaceInterface<internal::BlockSpaceTraits<LocalSpaceImp>,
-                                         LocalSpaceImp::dimDomain,
-                                         LocalSpaceImp::dimRange,
-                                         LocalSpaceImp::dimRangeCols>
+class BlockSpace
+  : public SpaceInterface<internal::BlockSpaceTraits<LocalSpaceImp>,
+                          LocalSpaceImp::dimDomain,
+                          LocalSpaceImp::dimRange,
+                          LocalSpaceImp::dimRangeCols>
 {
   typedef SpaceInterface<internal::BlockSpaceTraits<LocalSpaceImp>,
                          LocalSpaceImp::dimDomain,
@@ -103,11 +104,8 @@ public:
     if (local_spaces_->size() != dd_grid_.size())
       DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
                  "You have to provide a local space (or a nullptr) for each subdomain of the DD subdomains grid!\n"
-                     << "  Number of subdomains: "
-                     << dd_grid_.size()
-                     << "\n"
-                     << "  Number of local spaces given: "
-                     << local_spaces_->size());
+                     << "  Number of subdomains: " << dd_grid_.size() << "\n"
+                     << "  Number of local spaces given: " << local_spaces_->size());
   } // BlockSpace(...)
 
   BlockSpace(const ThisType& other) = default;
@@ -204,12 +202,9 @@ private:
 #ifndef NDEBUG
     if (subdomain >= dd_grid_.size())
       DUNE_THROW(XT::Common::Exceptions::internal_error,
-                 "The DD subdomains grid is corrupted!\nIt reports Entity " << global_entity_index
-                                                                            << " to be in subdomain "
-                                                                            << subdomain
-                                                                            << " while only having "
-                                                                            << dd_grid_.size()
-                                                                            << " subdomains!");
+                 "The DD subdomains grid is corrupted!\nIt reports Entity "
+                     << global_entity_index << " to be in subdomain " << subdomain << " while only having "
+                     << dd_grid_.size() << " subdomains!");
 #endif // NDEBUG
     return subdomain;
   } // ... find_block_of(...)

@@ -25,12 +25,13 @@ namespace Problems {
 
 
 template <class ImplementationType>
-class KineticEquation : public ProblemBase<typename ImplementationType::EntityType,
-                                           typename ImplementationType::DomainFieldType,
-                                           ImplementationType::dimDomain,
-                                           typename ImplementationType::StateType,
-                                           typename ImplementationType::RangeFieldType,
-                                           ImplementationType::dimRange>
+class KineticEquation
+  : public ProblemBase<typename ImplementationType::EntityType,
+                       typename ImplementationType::DomainFieldType,
+                       ImplementationType::dimDomain,
+                       typename ImplementationType::StateType,
+                       typename ImplementationType::RangeFieldType,
+                       ImplementationType::dimRange>
 {
 protected:
   using BaseType = ProblemBase<typename ImplementationType::EntityType,
@@ -53,14 +54,12 @@ public:
                implementation.boundary_config(),
                implementation.CFL(),
                implementation.t_end())
-  {
-  }
+  {}
 
   template <class BasisfunctionType, class GridLayerType>
   KineticEquation(const BasisfunctionType& basis_funcs, const GridLayerType& grid_layer)
     : KineticEquation(ImplementationType(basis_funcs, grid_layer))
-  {
-  }
+  {}
 
   static XT::Common::Configuration default_grid_cfg()
   {
@@ -133,12 +132,9 @@ public:
   KineticEquationImplementationInterface(const BasisfunctionType& basis_functions, const GridLayerType& grid_layer)
     : basis_functions_(basis_functions)
     , grid_layer_(grid_layer)
-  {
-  }
+  {}
 
-  virtual ~KineticEquationImplementationInterface()
-  {
-  }
+  virtual ~KineticEquationImplementationInterface() {}
 
   static XT::Common::Configuration default_grid_cfg()
   {

@@ -17,4 +17,4 @@ Module: dune-gdt
 Version: 18.10
 Maintainer: felix.schindler@wwu.de
 # dunecontrol only supports the operators "<=", ">=", "=" for version checks, no ranges and no "<", ">", "|", "&", so we duplicate dependencies to get a version range
-Depends: dune-localfunctions dune-xt-grid (>=18.10) dune-xt-grid (<=18.10.99) dune-xt-la (>=18.10) dune-xt-la (<=18.10.99) dune-xt-functions (>=18.10) dune-xt-functions (<=18.10.99) dune-xt-data (>=18.10) dune-xt-data (<=18.10.99)
+Depends: dune-localfunctions dune-xt-grid (>=18.10) dune-xt-la (>=18.10) dune-xt-functions (>=18.10) dune-xt-functions (<=18.10.99) dune-xt-data (>=18.10) 

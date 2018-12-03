@@ -253,8 +253,7 @@ public:
                           const QuadraturesType& fine_quadratures = QuadraturesType())
     : quadratures_(quadratures)
     , fine_quadratures_(fine_quadratures)
-  {
-  }
+  {}
 
   BasisfunctionsInterface(const size_t refinements,
                           const QuadraturesType& quadratures = QuadraturesType(),
@@ -262,12 +261,9 @@ public:
     : quadratures_(quadratures)
     , fine_quadratures_(fine_quadratures)
     , triangulation_(refinements)
-  {
-  }
+  {}
 
-  virtual ~BasisfunctionsInterface()
-  {
-  }
+  virtual ~BasisfunctionsInterface() {}
 
   virtual RangeType evaluate(const DomainType& v) const = 0;
 

@@ -24,45 +24,46 @@ namespace Problems {
 
 
 template <class BasisfunctionImp, class GridLayerImp, class U_>
-class KineticTransportEquation : public KineticEquationImplementationInterface<BasisfunctionImp, GridLayerImp, U_>,
-                                 public XT::Common::ParametricInterface
+class KineticTransportEquation
+  : public KineticEquationImplementationInterface<BasisfunctionImp, GridLayerImp, U_>
+  , public XT::Common::ParametricInterface
 {
   using ThisType = KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>;
   using BaseType = KineticEquationImplementationInterface<BasisfunctionImp, GridLayerImp, U_>;
 
 public:
-  using typename BaseType::BasisfunctionType;
-  using typename BaseType::GridLayerType;
-  using typename BaseType::DomainFieldType;
-  using typename BaseType::StateType;
-  using typename BaseType::IntersectionType;
-  using typename BaseType::RangeFieldType;
-  using typename BaseType::DomainType;
-  using typename BaseType::RangeType;
-  using typename BaseType::MatrixType;
   using BaseType::dimDomain;
+  using BaseType::dimFlux;
   using BaseType::dimRange;
   using BaseType::dimRangeCols;
-  using BaseType::dimFlux;
+  using typename BaseType::BasisfunctionType;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::DomainType;
+  using typename BaseType::GridLayerType;
+  using typename BaseType::IntersectionType;
+  using typename BaseType::MatrixType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::RangeType;
+  using typename BaseType::StateType;
 
-  using typename BaseType::FluxType;
-  using typename BaseType::RhsType;
-  using typename BaseType::InitialValueType;
-  using typename BaseType::DirichletBoundaryValueType;
-  using typename BaseType::BoundaryValueType;
-  using typename BaseType::ActualFluxType;
-  using typename BaseType::ActualRhsType;
-  using typename BaseType::ActualInitialValueType;
-  using typename BaseType::ActualDirichletBoundaryValueType;
   using typename BaseType::ActualBoundaryValueType;
+  using typename BaseType::ActualDirichletBoundaryValueType;
+  using typename BaseType::ActualFluxType;
+  using typename BaseType::ActualInitialValueType;
+  using typename BaseType::ActualRhsType;
+  using typename BaseType::BoundaryValueType;
+  using typename BaseType::DirichletBoundaryValueType;
+  using typename BaseType::FluxType;
+  using typename BaseType::InitialValueType;
   using typename BaseType::RhsAffineFunctionType;
+  using typename BaseType::RhsType;
   using CheckerboardType =
       XT::Functions::CheckerboardFunction<typename U_::EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1>;
   using ConstantType =
       XT::Functions::ConstantFunction<typename U_::EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1>;
 
-  using BaseType::default_grid_cfg;
   using BaseType::default_boundary_cfg;
+  using BaseType::default_grid_cfg;
   KineticTransportEquation(const BasisfunctionType& basis_functions,
                            const GridLayerType& grid_layer,
                            DynamicVector<size_t> num_segments = {1, 1, 1},
@@ -87,9 +88,7 @@ public:
                                                    std::make_pair("t_end", 1)});
   }
 
-  virtual ~KineticTransportEquation() override
-  {
-  }
+  virtual ~KineticTransportEquation() override {}
 
   virtual bool is_parametric() const override
   {

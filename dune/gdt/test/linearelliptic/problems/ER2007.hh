@@ -41,7 +41,7 @@ class ER2007Problem : public ProblemBase<E, D, d, R, r>
 
 template <class EntityImp, class DomainFieldImp, class RangeFieldImp>
 class ER2007Problem<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
-    : public ProblemBase<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
+  : public ProblemBase<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
 {
   typedef ProblemBase<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> BaseType;
   typedef XT::Functions::ConstantFunction<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> ScalarConstantFunctionType;
@@ -76,8 +76,7 @@ public:
           new ScalarConstantFunctionType(0, "neumann"),
           grd_cfg,
           bnd_cfg)
-  {
-  }
+  {}
 }; // class ER2007Problem< ..., 1 >
 
 template <size_t polorder,
@@ -87,7 +86,7 @@ template <size_t polorder,
           class RangeFieldImp,
           size_t rangeDim>
 class ER2007ExactSolution
-    : public XT::Functions::ExpressionFunction<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>
+  : public XT::Functions::ExpressionFunction<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>
 {
   using BaseType = XT::Functions::ExpressionFunction<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>;
 
@@ -98,8 +97,7 @@ public:
                polorder,
                "exact solution",
                {"-8.0*pi*sin(8.0*pi*x[0])", "-8.0*pi*sin(8.0*pi*x[1])"})
-  {
-  }
+  {}
 };
 
 namespace internal {
@@ -177,12 +175,9 @@ struct ER2007GridConfig<AluSimplex2dGridType, anything>
 
 template <class G, class R = double, int r = 1>
 class ER2007TestCase
-    : public Test::StationaryTestCase<G,
-                                      LinearElliptic::ER2007Problem<typename G::template Codim<0>::Entity,
-                                                                    typename G::ctype,
-                                                                    G::dimension,
-                                                                    R,
-                                                                    r>>
+  : public Test::StationaryTestCase<
+        G,
+        LinearElliptic::ER2007Problem<typename G::template Codim<0>::Entity, typename G::ctype, G::dimension, R, r>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
@@ -214,15 +209,13 @@ public:
     : BaseType(grid_cfg(), num_refs)
     , problem_()
     , exact_solution_()
-  {
-  }
+  {}
 
   ER2007TestCase(XT::Common::Configuration cfg)
     : BaseType(cfg.sub("grid", false, grid_cfg()), cfg.get("grid.num_refinements", 1))
     , problem_()
     , exact_solution_()
-  {
-  }
+  {}
 
   virtual const ProblemType& problem() const override final
   {
@@ -263,13 +256,10 @@ private:
 
 template <class G, class R = double, int r = 1>
 class ER2007DdSubdomainsTestCase
-    : public Test::StationaryTestCase<G,
-                                      LinearElliptic::ER2007Problem<typename G::template Codim<0>::Entity,
-                                                                    typename G::ctype,
-                                                                    G::dimension,
-                                                                    R,
-                                                                    r>,
-                                      XT::Grid::DD::SubdomainGrid<G>>
+  : public Test::StationaryTestCase<
+        G,
+        LinearElliptic::ER2007Problem<typename G::template Codim<0>::Entity, typename G::ctype, G::dimension, R, r>,
+        XT::Grid::DD::SubdomainGrid<G>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
@@ -307,15 +297,13 @@ public:
     : BaseType(grid_cfg(), num_refs)
     , problem_()
     , exact_solution_()
-  {
-  }
+  {}
 
   ER2007DdSubdomainsTestCase(XT::Common::Configuration cfg)
     : BaseType(cfg.sub("grid", false, grid_cfg()), cfg.get("grid.num_refinements", default_refinements()))
     , problem_()
     , exact_solution_()
-  {
-  }
+  {}
 
   virtual const ProblemType& problem() const override final
   {
