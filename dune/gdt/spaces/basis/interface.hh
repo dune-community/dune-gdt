@@ -5,9 +5,9 @@
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Felix Schindler (2013 - 2017)
+//   Felix Schindler (2013 - 2018)
 //   Kirsten Weber   (2013)
-//   Rene Milk       (2014, 2016)
+//   René Fritze     (2014, 2016, 2018)
 //   Tobias Leibner  (2014)
 
 #ifndef DUNE_GDT_SPACES_BASIS_INTERFACE_HH

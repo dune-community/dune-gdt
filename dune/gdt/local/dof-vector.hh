@@ -5,8 +5,9 @@
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Felix Schindler (2016 - 2017)
-//   Rene Milk       (2016 - 2017)
+//   Felix Schindler (2016 - 2018)
+//   René Fritze     (2016, 2018)
+//   René Milk       (2017)
 
 #ifndef DUNE_GDT_LOCAL_DOF_VECTOR_HH
 #define DUNE_GDT_LOCAL_DOF_VECTOR_HH

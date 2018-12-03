@@ -6,6 +6,8 @@
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2017)
+//   René Fritze     (2018)
+//   Tobias Leibner  (2018)
 
 #ifndef PYTHON_DUNE_GDT_FUNCTIONALS_BASE_BINDINGS_H
 #define PYTHON_DUNE_GDT_FUNCTIONALS_BASE_BINDINGS_H

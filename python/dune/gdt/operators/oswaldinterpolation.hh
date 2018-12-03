@@ -6,8 +6,8 @@
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2017)
-//   Rene Milk       (2018)
-//   Tobias Leibner  (2017)
+//   René Fritze     (2018)
+//   Tobias Leibner  (2017 - 2018)
 
 #ifndef PYTHON_DUNE_GDT_OPERATORS_OSWALDINTERPOLATION_BINDINGS_HH
 #define PYTHON_DUNE_GDT_OPERATORS_OSWALDINTERPOLATION_BINDINGS_HH

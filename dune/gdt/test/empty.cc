@@ -5,8 +5,8 @@
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Felix Schindler (2015 - 2017)
-//   Rene Milk       (2016)
+//   Felix Schindler (2015 - 2018)
+//   René Fritze     (2016, 2018)
 
 /**
  * This file is intended as a starting point for quick testing.

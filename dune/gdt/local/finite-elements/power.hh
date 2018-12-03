@@ -6,6 +6,7 @@
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2018)
+//   René Fritze     (2018)
 
 /**
  * There is similar functionality in dune/localfunctions/meta/power.hh, but that one is only implemented for the

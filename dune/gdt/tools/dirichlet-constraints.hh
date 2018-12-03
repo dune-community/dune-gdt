@@ -5,9 +5,10 @@
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Felix Schindler (2013 - 2017)
-//   Rene Milk       (2014, 2016)
-//   Tobias Leibner  (2014, 2016)
+//   Felix Schindler (2013 - 2018)
+//   René Fritze     (2014, 2016, 2018)
+//   Tim Keil        (2018)
+//   Tobias Leibner  (2014, 2016, 2018)
 
 #ifndef DUNE_GDT_SPACES_TOOLS_DIRICHLET_CONSTRAINTS_HH
 #define DUNE_GDT_SPACES_TOOLS_DIRICHLET_CONSTRAINTS_HH

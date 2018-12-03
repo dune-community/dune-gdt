@@ -6,6 +6,7 @@
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2018)
+//   René Fritze     (2018)
 
 #ifndef DUNE_GDT_LOCAL_FINITE_ELEMENTS_DEFAULT_HH
 #define DUNE_GDT_LOCAL_FINITE_ELEMENTS_DEFAULT_HH

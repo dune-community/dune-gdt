@@ -1,3 +1,4 @@
+# ~~~
 # This file is part of the dune-gdt project:
 #   https://github.com/dune-community/dune-gdt
 # Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
@@ -6,7 +7,8 @@
 #          with "runtime exception" (http://www.dune-project.org/license.html)
 # Authors:
 #   Felix Schindler (2017)
-#   Rene Milk       (2017)
+#   René Fritze     (2017 - 2018)
+# ~~~
 
 class Grids(object):
     def __init__(self, cache):
