@@ -57,10 +57,10 @@ private:
 
 public:
   using typename BaseType::DomainType;
+  using typename BaseType::DynamicRangeType;
   using typename BaseType::MatrixType;
   using typename BaseType::QuadraturesType;
   using typename BaseType::RangeType;
-  using typename BaseType::DynamicRangeType;
   using typename BaseType::StringifierType;
   template <class DiscreteFunctionType>
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
@@ -86,24 +86,24 @@ public:
     BaseType::initialize_base_values();
   }
 
-  virtual RangeType evaluate(const DomainType& v) const override final
+  virtual DynamicRangeType evaluate(const DomainType& v) const override final
   {
     size_t dummy;
     return evaluate(v, false, dummy);
   } // ... evaluate(...)
 
   // evaluate on interval ii
-  virtual RangeType evaluate(const DomainType& v, const size_t ii) const override final
+  virtual DynamicRangeType evaluate(const DomainType& v, const size_t ii) const override final
   {
-    RangeType ret(0);
+    DynamicRangeType ret(dimRange, 0);
     ret[2 * ii] = 1;
     ret[2 * ii + 1] = v[0];
     return ret;
   } // ... evaluate(...)
 
-  virtual RangeType evaluate(const DomainType& v, bool split_boundary, size_t& /*num_faces*/) const
+  virtual DynamicRangeType evaluate(const DomainType& v, bool split_boundary, size_t& /*num_faces*/) const
   {
-    RangeType ret(0);
+    DynamicRangeType ret(dimRange, 0);
     bool boundary = false;
     for (size_t ii = 0; ii < num_intervals; ++ii) {
       if (XT::Common::FloatCmp::eq(v[0], triangulation_[ii]))
@@ -121,9 +121,9 @@ public:
     return ret;
   } // ... evaluate(...)
 
-  virtual RangeType integrated(const bool /*use_fine_quadratures*/ = false) const override final
+  virtual DynamicRangeType integrated() const override final
   {
-    RangeType ret(0);
+    DynamicRangeType ret(dimRange, 0);
     for (size_t ii = 0; ii < num_intervals; ++ii) {
       ret[2 * ii] = triangulation_[ii + 1] - triangulation_[ii];
       ret[2 * ii + 1] = (std::pow(triangulation_[ii + 1], 2) - std::pow(triangulation_[ii], 2)) / 2.;
@@ -131,9 +131,10 @@ public:
     return ret;
   }
 
-  virtual RangeType get_moment_vector(const std::function<RangeFieldType(DomainType, bool)>& psi) const override final
+  virtual DynamicRangeType
+  get_moment_vector(const std::function<RangeFieldType(DomainType, bool)>& psi) const override final
   {
-    RangeType ret(0.);
+    DynamicRangeType ret(dimRange, 0);
     const auto merged_quadratures = quadratures_.merged();
     for (auto it = merged_quadratures.begin(); it != merged_quadratures.end(); ++it) {
       const auto& quad_point = *it;
@@ -150,7 +151,7 @@ public:
   }
 
   // returns matrix with entries <h_i h_j>
-  virtual MatrixType mass_matrix(const bool /*use_fine_quadratures*/ = false) const override final
+  virtual MatrixType mass_matrix() const override final
   {
     MatrixType M(dimRange, dimRange, 0.);
     for (size_t ii = 0; ii < num_intervals; ++ii) {
@@ -162,7 +163,7 @@ public:
     return M;
   }
 
-  virtual MatrixType mass_matrix_inverse(const bool /*use_fine_quadratures*/ = false) const override final
+  virtual MatrixType mass_matrix_inverse() const override final
   {
     return tridiagonal_matrix_inverse<RangeFieldType, dimRange>(mass_matrix());
   }
@@ -271,15 +272,24 @@ public:
     return triangulation_;
   }
 
-  virtual RangeType alpha_iso() const override final
+  virtual DynamicRangeType alpha_iso() const override final
   {
-    RangeType ret(0.);
+    DynamicRangeType ret(dimRange, 0);
     for (size_t ii = 0; ii < dimRange; ii += 2)
       ret[ii] = 1.;
     return ret;
   }
 
-  virtual RangeFieldType density(const RangeType& u) const override final
+  virtual RangeFieldType density(const DynamicRangeType& u) const override final
+  {
+    RangeFieldType ret(0.);
+    for (size_t ii = 0; ii < dimRange; ii += 2) {
+      ret += u[ii];
+    }
+    return ret;
+  }
+
+  RangeFieldType density(const RangeType& u) const
   {
     RangeFieldType ret(0.);
     for (size_t ii = 0; ii < dimRange; ii += 2) {
@@ -309,6 +319,17 @@ public:
   // For the partial moments, we might not be able to solve the optimization problem for some moments where the density
   // on one interval/spherical triangle is very low. The overall density might be much higher than the density on that
   // triangle, so we specialize this function.
+  virtual void ensure_min_density(DynamicRangeType& u, const RangeFieldType min_density) const override final
+  {
+    const auto u_iso_min = u_iso() * min_density;
+    for (size_t jj = 0; jj < num_intervals; ++jj) {
+      if (u[2 * jj] < u_iso_min[2 * jj]) {
+        u[2 * jj] = u_iso_min[2 * jj];
+        u[2 * jj + 1] = u_iso_min[2 * jj + 1];
+      }
+    }
+  }
+
   virtual void ensure_min_density(RangeType& u, const RangeFieldType min_density) const override final
   {
     const auto u_iso_min = u_iso() * min_density;
@@ -364,11 +385,11 @@ private:
 public:
   typedef SphericalTriangulation<DomainFieldType> TriangulationType;
   using typename BaseType::DomainType;
+  using typename BaseType::DynamicRangeType;
   using typename BaseType::MatrixType;
   using typename BaseType::QuadraturesType;
   using typename BaseType::QuadratureType;
   using typename BaseType::RangeType;
-  using typename BaseType::DynamicRangeType;
   using typename BaseType::StringifierType;
   template <class DiscreteFunctionType>
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
@@ -381,8 +402,8 @@ public:
 
   using BaseType::barycentre_rule;
 
-  PartialMomentBasis(const QuadraturesType& quadratures, const QuadraturesType& fine_quadratures)
-    : BaseType(refinements, quadratures, fine_quadratures)
+  PartialMomentBasis(const QuadraturesType& quadratures)
+    : BaseType(refinements, quadratures)
   {
     assert(4 * triangulation_.faces().size() == dimRange);
     BaseType::initialize_base_values();
@@ -392,7 +413,6 @@ public:
     : BaseType(refinements)
   {
     quadratures_ = triangulation_.quadrature_rules(quad_refinements, reference_quadrature_rule);
-    fine_quadratures_ = quadratures_;
     assert(4 * triangulation_.faces().size() == dimRange);
     BaseType::initialize_base_values();
   }
@@ -416,7 +436,6 @@ public:
     const QuadratureRule<RangeFieldType, 2> reference_quadrature_rule = barycentre_rule();
 #endif
     quadratures_ = triangulation_.quadrature_rules(quad_refinements, reference_quadrature_rule);
-    fine_quadratures_ = quadratures_;
     assert(4 * triangulation_.faces().size() == dimRange);
     BaseType::initialize_base_values();
   }
@@ -475,9 +494,9 @@ public:
     };
   } // ... stringifier()
 
-  virtual RangeFieldType unit_ball_volume(const bool use_fine_quadratures = false) const override final
+  virtual RangeFieldType unit_ball_volume() const override final
   {
-    return BaseType::unit_ball_volume_quad(use_fine_quadratures);
+    return BaseType::unit_ball_volume_quad();
   }
 
   virtual DynamicRangeType alpha_iso() const override final
@@ -488,7 +507,7 @@ public:
     return ret;
   }
 
-  virtual RangeFieldType density(const RangeType& u) const 
+  virtual RangeFieldType density(const RangeType& u) const
   {
     RangeFieldType ret(0.);
     for (size_t ii = 0; ii < dimRange; ii += 4)
@@ -537,6 +556,21 @@ public:
     }
   }
 
+  // For the partial moments, we might not be able to solve the optimization problem for some moments where the density
+  // on one interval/spherical triangle is very low. The overall density might be much higher than the density on that
+  // triangle, so we specialize this function.
+  virtual void ensure_min_density(RangeType& u, const RangeFieldType min_density) const override final
+  {
+    const auto u_iso_min = u_iso() * min_density;
+    for (size_t jj = 0; jj < num_blocks; ++jj) {
+      const auto block_density = u[4 * jj];
+      if (block_density < u_iso_min[4 * jj]) {
+        for (size_t ii = 0; ii < block_size; ++ii)
+          u[4 * jj + ii] = u_iso_min[4 * jj + ii];
+      }
+    }
+  }
+
   virtual std::string short_id() const override final
   {
     return "3dpm";
@@ -568,37 +602,37 @@ public:
   }
 
   // calculate half space representation of realizable set
-  // void calculate_plane_coefficients() const
-  // {
-  //   XT::Common::FieldVector<std::vector<XT::Common::FieldVector<RangeFieldType, block_size>>, num_blocks> points;
-  //   for (size_t jj = 0; jj < num_blocks; ++jj) {
-  //     points[jj].resize(quadratures_[jj].size() + 1);
-  //     for (size_t ll = 0; ll < quadratures_[jj].size(); ++ll) {
-  //       const auto val = evaluate(quadratures_[jj][ll].position(), jj);
-  //       for (size_t ii = 0; ii < block_size; ++ii)
-  //         points[jj][ll][ii] = val[block_size * jj + ii];
-  //     } // ll
-  //     points[jj][quadratures_[jj].size()] = XT::Common::FieldVector<RangeFieldType, block_size>(0.);
-  //   }
-  //   std::vector<std::thread> threads(num_blocks);
-  //   // Calculate plane coefficients for each block in a separate thread
-  //   for (size_t jj = 0; jj < num_blocks; ++jj)
-  //     threads[jj] = std::thread(&ThisType::calculate_plane_coefficients_block, this, std::ref(points[jj]), jj);
-  //   // Join the threads with the main thread
-  //   for (size_t jj = 0; jj < num_blocks; ++jj)
-  //     threads[jj].join();
-  // }
+  void calculate_plane_coefficients() const
+  {
+    XT::Common::FieldVector<std::vector<XT::Common::FieldVector<RangeFieldType, block_size>>, num_blocks> points;
+    for (size_t jj = 0; jj < num_blocks; ++jj) {
+      points[jj].resize(quadratures_[jj].size() + 1);
+      for (size_t ll = 0; ll < quadratures_[jj].size(); ++ll) {
+        const auto val = evaluate(quadratures_[jj][ll].position(), jj);
+        for (size_t ii = 0; ii < block_size; ++ii)
+          points[jj][ll][ii] = val[block_size * jj + ii];
+      } // ll
+      points[jj][quadratures_[jj].size()] = XT::Common::FieldVector<RangeFieldType, block_size>(0.);
+    }
+    std::vector<std::thread> threads(num_blocks);
+    // Calculate plane coefficients for each block in a separate thread
+    for (size_t jj = 0; jj < num_blocks; ++jj)
+      threads[jj] = std::thread(&ThisType::calculate_plane_coefficients_block, this, std::ref(points[jj]), jj);
+    // Join the threads with the main thread
+    for (size_t jj = 0; jj < num_blocks; ++jj)
+      threads[jj].join();
+  }
 
-  std::unique_ptr<BlockMatrixType> block_mass_matrix(const bool use_fine_quadratures = false) const
+  std::unique_ptr<BlockMatrixType> block_mass_matrix() const
   {
     auto block_matrix = std::make_unique<BlockMatrixType>();
-    parallel_quadrature_blocked(use_fine_quadratures ? fine_quadratures_ : quadratures_, *block_matrix, size_t(-1));
+    parallel_quadrature_blocked(quadratures_, *block_matrix, size_t(-1));
     return block_matrix;
   } // ... mass_matrix()
 
-  virtual MatrixType mass_matrix(const bool use_fine_quadratures = false) const override final
+  virtual MatrixType mass_matrix() const override final
   {
-    return block_mass_matrix(use_fine_quadratures)->convert_to_dynamic_matrix();
+    return block_mass_matrix()->convert_to_dynamic_matrix();
   } // ... mass_matrix()
 
   virtual FieldVector<MatrixType, dimFlux> mass_matrix_with_v() const override final
@@ -703,14 +737,14 @@ private:
     // Launch a group of threads
     size_t blocks_done = 0;
     while (blocks_done < num_blocks) {
-      size_t inner_loop_count = std::min(num_threads, num_blocks-blocks_done);
+      size_t inner_loop_count = std::min(num_threads, num_blocks - blocks_done);
       for (size_t jj = 0; jj < inner_loop_count; ++jj)
         threads[jj] = std::thread(&ThisType::calculate_block_in_thread,
                                   this,
-                                  std::cref(quadratures[blocks_done+jj]),
-                                  std::ref(matrix.block(blocks_done+jj)),
+                                  std::cref(quadratures[blocks_done + jj]),
+                                  std::ref(matrix.block(blocks_done + jj)),
                                   v_index,
-                                  blocks_done+jj);
+                                  blocks_done + jj);
       // Join the threads with the main thread
       for (size_t jj = 0; jj < inner_loop_count; ++jj)
         threads[jj].join();
@@ -748,11 +782,13 @@ private:
     ret = V.convert_to_dynamic_matrix();
   }
 
-  using BaseType::fine_quadratures_;
   using BaseType::quadratures_;
   using BaseType::triangulation_;
   mutable PlaneCoefficientsType plane_coefficients_;
 }; // class PartialMomentBasis<DomainFieldType, 3, ...>
+
+template <class DomainFieldType, class RangeFieldType, size_t refinements, size_t dimFlux>
+constexpr size_t PartialMomentBasis<DomainFieldType, 3, RangeFieldType, refinements, 1, dimFlux, 1>::num_blocks;
 
 
 } // namespace GDT

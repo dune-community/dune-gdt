@@ -29,6 +29,7 @@ private:
 
 public:
   using typename BaseType::DomainType;
+  using typename BaseType::DynamicRangeType;
   using typename BaseType::MatrixType;
   using typename BaseType::QuadraturesType;
   using typename BaseType::RangeType;
@@ -56,9 +57,9 @@ public:
 
   using BaseType::evaluate;
 
-  virtual RangeType evaluate(const DomainType& v) const override
+  virtual DynamicRangeType evaluate(const DomainType& v) const override
   {
-    RangeType ret;
+    DynamicRangeType ret(dimRange);
     ret[0] = 1.;
     if (dimRange > 1)
       ret[1] = v[0];
@@ -67,14 +68,14 @@ public:
     return ret;
   } // ... evaluate(...)
 
-  RangeType integrated_exactly(const bool /*use_fine_quadratures*/ = false) const
+  DynamicRangeType integrated_exactly() const
   {
-    RangeType ret(0);
+    DynamicRangeType ret(dimRange, 0.);
     ret[0] = 2;
     return ret;
   }
 
-  virtual MatrixType mass_matrix(const bool /*use_fine_quadratures*/ = false) const override
+  virtual MatrixType mass_matrix() const override
   {
     MatrixType M(dimRange, dimRange, 0.);
     for (size_t rr = 0; rr < dimRange; ++rr)
@@ -82,7 +83,7 @@ public:
     return M;
   }
 
-  virtual MatrixType mass_matrix_inverse(const bool /*use_fine_quadratures*/ = false) const override
+  virtual MatrixType mass_matrix_inverse() const override
   {
     MatrixType Minv(dimRange, dimRange, 0.);
     for (size_t rr = 0; rr < dimRange; ++rr)
@@ -176,14 +177,14 @@ public:
     return [](const RangeType& val) { return XT::Common::to_string(val[0], 15); };
   } // ... stringifier()
 
-  virtual RangeType alpha_iso() const override final
+  virtual DynamicRangeType alpha_iso() const override final
   {
-    RangeType ret(0.);
+    DynamicRangeType ret(dimRange, 0.);
     ret[0] = 1.;
     return ret;
   }
 
-  virtual RangeFieldType density(const RangeType& u) const override final
+  virtual RangeFieldType density(const DynamicRangeType& u) const override final
   {
     return u[0];
   }

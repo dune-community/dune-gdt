@@ -60,7 +60,7 @@ public:
     source_.space().mapper().globalIndices(entity, vector_indices);
     basis_functions.ensure_min_density(u, min_acceptable_density_);
     auto entropy_local_func = entropy_flux->derived_local_function(entity);
-    const auto s = entropy_local_func->get_alpha(x_in_inside_coords, u, param_, true).second;
+    const auto s = entropy_local_func->get_alpha(x_in_inside_coords, u, param_, true)->second;
     // if regularization was needed, we also need to replace u_n in that cell by its regularized version
     if (s > 0.) {
       if (!filename_.empty()) {

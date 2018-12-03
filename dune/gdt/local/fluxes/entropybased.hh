@@ -247,13 +247,13 @@ public:
   explicit EntropyBasedLocalFlux(
       const BasisfunctionType& basis_functions,
       const GridLayerType& grid_layer,
-      const RangeFieldType tau = 1e-12,
+      const RangeFieldType tau = 1e-9,
       const RangeFieldType epsilon_gamma = 0.01,
       const RangeFieldType chi = 0.5,
       const RangeFieldType xi = 1e-3,
       const std::vector<RangeFieldType> r_sequence = {0, 1e-8, 1e-6, 1e-4, 1e-3, 1e-2, 5e-2, 0.1, 0.5, 1},
-      const size_t k_0 = 50,
-      const size_t k_max = 100,
+      const size_t k_0 = 500,
+      const size_t k_max = 1000,
       const RangeFieldType epsilon = std::pow(2, -52),
       const std::string name = static_id())
     : index_set_(grid_layer.indexSet())
@@ -615,14 +615,14 @@ public:
         store_alpha(entity().geometry().local(intersection.geometry().center()), center_alpha);
     }
 
-    AlphaReturnType get_alpha(const DomainType& x_local,
-                              const StateRangeType& u,
-                              const XT::Common::Parameter& param,
-                              const bool regularize) const
+    std::unique_ptr<AlphaReturnType> get_alpha(const DomainType& x_local,
+                                               const StateRangeType& u,
+                                               const XT::Common::Parameter& param,
+                                               const bool regularize) const
     {
       const bool boundary = bool(param.get("boundary")[0]);
       // get initial multiplier and basis matrix from last time step
-      AlphaReturnType ret;
+      auto ret = std::make_unique<AlphaReturnType>();
       mutex_.lock();
       if (boundary)
         cache_.set_capacity(cache_size + dimDomain);
@@ -645,9 +645,9 @@ public:
       const auto cache_iterator = cache_.find_closest(u_prime);
       if (cache_iterator != cache_.end() && XT::Common::FloatCmp::eq(cache_iterator->first, u_prime, 1e-14, 1e-14)) {
         const auto alpha_prime = cache_iterator->second;
-        ret.first = alpha_prime + alpha_iso * std::log(density);
-        ret.second = 0.;
-        alpha_storage_[x_local] = ret.first;
+        ret->first = alpha_prime + alpha_iso * std::log(density);
+        ret->second = 0.;
+        alpha_storage_[x_local] = ret->first;
         mutex_.unlock();
         return ret;
       } else {
@@ -725,12 +725,12 @@ public:
             XT::LA::solve_lower_triangular_transposed(*T_k, d_alpha_tilde, d_k);
             first_error_cond = g_alpha_tilde.two_norm();
             second_error_cond = std::exp(d_alpha_tilde.one_norm() + std::abs(std::log(density_tilde)));
-            if (first_error_cond < tau_prime && 1 - epsilon_gamma_ < second_error_cond) {
-                // && realizability_helper_.is_realizable(u_eps_diff, kk == static_cast<size_t>(0.8 * k_0_))) {
-              ret.first = alpha_prime + alpha_iso * std::log(density);
-              ret.second = r;
+            if (first_error_cond < tau_prime && 1 - epsilon_gamma_ < second_error_cond
+                && realizability_helper_.is_realizable(u_eps_diff, kk == static_cast<size_t>(0.8 * k_0_))) {
+              ret->first = alpha_prime + alpha_iso * std::log(density);
+              ret->second = r;
               cache_.insert(v, alpha_prime);
-              alpha_storage_[x_local] = ret.first;
+              alpha_storage_[x_local] = ret->first;
               goto outside_all_loops;
             } else {
               RangeFieldType zeta_k = 1;
@@ -797,7 +797,7 @@ public:
                               const XT::Common::Parameter& param) const override
     {
       std::fill(ret.begin(), ret.end(), 0.);
-      const auto alpha = get_alpha(x_local, u, param, true).first;
+      const auto alpha = get_alpha(x_local, u, param, true)->first;
       auto& work_vecs = working_storage();
       calculate_scalar_products(alpha, M_, work_vecs);
       apply_exponential(work_vecs);
@@ -1061,7 +1061,7 @@ public:
     const auto alpha_i = local_function_entity->get_stored_alpha(x_local_entity);
     StateRangeType alpha_j;
     if (boundary)
-      alpha_j = local_function_neighbor->get_alpha(x_local_neighbor, u_j, param_neighbor, true).first;
+      alpha_j = local_function_neighbor->get_alpha(x_local_neighbor, u_j, param_neighbor, true)->first;
     else
       alpha_j = local_function_neighbor->get_stored_alpha(x_local_neighbor);
     thread_local FieldVector<std::vector<RangeFieldType>, 2> work_vecs;
@@ -1403,11 +1403,10 @@ public:
     }
 
     std::unique_ptr<AlphaReturnType> get_alpha(const DomainType& x_local,
-                              const StateRangeType& u_in,
-                              const XT::Common::Parameter& param,
-                              const bool regularize) const
+                                               const StateRangeType& u_in,
+                                               const XT::Common::Parameter& param,
+                                               const bool regularize) const
     {
-      std::cout << "get_alpha start" << std::endl;
       const bool boundary = static_cast<bool>(param.get("boundary")[0]);
       // get initial multiplier and basis matrix from last time step
       auto ret = std::make_unique<AlphaReturnType>();
@@ -1428,7 +1427,8 @@ public:
 
       // if value has already been calculated for these values, skip computation
       const auto cache_iterator = cache_.find_closest(*u_prime_in);
-      if (cache_iterator != cache_.end() && XT::Common::FloatCmp::eq(cache_iterator->first, *u_prime_in, 1e-14, 1e-14)) {
+      if (cache_iterator != cache_.end()
+          && XT::Common::FloatCmp::eq(cache_iterator->first, *u_prime_in, 1e-14, 1e-14)) {
         const auto& alpha_prime = cache_iterator->second;
         ret->first = *alpha_iso;
         ret->first *= std::log(density);
@@ -1452,7 +1452,8 @@ public:
         auto beta_out = std::make_unique<BlockVectorType>();
         auto v = std::make_unique<BlockVectorType>();
         thread_local auto T_k = XT::Common::make_unique<BlockMatrixType>();
-        auto beta_in = std::make_unique<BlockVectorType>(cache_iterator != cache_.end() ? cache_iterator->second : *alpha_iso);
+        auto beta_in =
+            std::make_unique<BlockVectorType>(cache_iterator != cache_.end() ? cache_iterator->second : *alpha_iso);
 
         const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
         const auto r_max = r_sequence.back();
@@ -1469,7 +1470,7 @@ public:
             *v_in += *alpha_iso_in;
           }
           *v = *v_in;
-          for(size_t jj = 0; jj < num_blocks; ++jj)
+          for (size_t jj = 0; jj < num_blocks; ++jj)
             T_k->block(jj) = T_minus_one_;
           // calculate T_k u
           auto v_k = std::make_unique<BlockVectorType>(*v);
@@ -1521,25 +1522,25 @@ public:
               XT::LA::solve_lower_triangular_transposed(T_k->block(jj), d_alpha_tilde->block(jj), d_k->block(jj));
             } // jj
             calculate_vector_integral(*alpha_tilde, M_, M_, *u_alpha_tilde);
-            *g_alpha_tilde = *u_alpha_tilde; 
-            *g_alpha_tilde -= *v; 
+            *g_alpha_tilde = *u_alpha_tilde;
+            *g_alpha_tilde -= *v;
             auto density_tilde = basis_functions_.density(*u_alpha_tilde);
             if (!(density_tilde > 0.) || !(basis_functions_.min_density(*u_alpha_tilde) > 0.)
                 || std::isinf(density_tilde))
               break;
-            *alpha_prime = *alpha_iso; 
+            *alpha_prime = *alpha_iso;
             *alpha_prime *= -std::log(density_tilde);
-            *alpha_prime += *alpha_tilde; 
+            *alpha_prime += *alpha_tilde;
             calculate_vector_integral(*alpha_prime, M_, M_, *u_alpha_prime);
             *u_eps_diff = *u_alpha_prime;
             *u_eps_diff *= -(1 - epsilon_gamma_);
-            *u_eps_diff += *v; 
+            *u_eps_diff += *v;
             if (g_alpha_tilde->two_norm() < tau_prime
-                && 1 - epsilon_gamma_ < std::exp(d_alpha_tilde->one_norm() + std::abs(std::log(density_tilde)))) {
-                // && helper<dimDomain>::is_realizable(u_eps_diff, basis_functions_)) {
-              ret->first = *alpha_iso; 
+                && 1 - epsilon_gamma_ < std::exp(d_alpha_tilde->one_norm() + std::abs(std::log(density_tilde)))
+                && helper<dimDomain>::is_realizable(*u_eps_diff, basis_functions_)) {
+              ret->first = *alpha_iso;
               ret->first *= std::log(density);
-              ret->first += *alpha_prime; 
+              ret->first += *alpha_prime;
               ret->second = r;
               cache_.insert(*v_in, *alpha_prime);
               alpha_storage_[x_local] = ret->first;
@@ -1896,7 +1897,7 @@ public:
   explicit EntropyBasedLocalFlux(
       const BasisfunctionType& basis_functions,
       const GridLayerType& grid_layer,
-      const RangeFieldType tau = 1e-12,
+      const RangeFieldType tau = 1e-9,
       const RangeFieldType epsilon_gamma = 0.01,
       const RangeFieldType chi = 0.5,
       const RangeFieldType xi = 1e-3,
@@ -1943,7 +1944,6 @@ public:
           M_[jj].set_entry(ll, ii, val[block_size * jj + ii]);
       } // ll
     } // jj
-    std::cout << "after constructor" << std::endl;
   }
 
   static std::string static_id()
@@ -2047,7 +2047,7 @@ private:
   const size_t k_0_;
   const size_t k_max_;
   const RangeFieldType epsilon_;
-  const LocalMatrixType T_minus_one_;
+  LocalMatrixType T_minus_one_;
   const std::string name_;
   mutable std::vector<LocalCacheType> cache_;
   mutable std::vector<AlphaStorageType> alpha_storage_;
@@ -2265,13 +2265,13 @@ public:
         store_alpha(entity().geometry().local(intersection.geometry().center()), center_alpha);
     }
 
-    AlphaReturnType get_alpha(const DomainType& x_local,
+    std::unique_ptr<AlphaReturnType> get_alpha(const DomainType& x_local,
                                                const StateRangeType& u,
                                                const XT::Common::Parameter& param,
                                                const bool regularize) const
     {
       const bool boundary = bool(param.get("boundary")[0]);
-      AlphaReturnType ret;
+      auto ret = std::make_unique<AlphaReturnType>();
       mutex_.lock();
       if (boundary)
         cache_.set_capacity(cache_size + dimDomain);
@@ -2292,11 +2292,11 @@ public:
       const auto cache_iterator = cache_.find_closest(u_prime);
       if (cache_iterator != cache_.end() && XT::Common::FloatCmp::eq(cache_iterator->first, u_prime, 1e-14, 1e-14)) {
         const auto& alpha_prime = cache_iterator->second;
-        ret.first = alpha_iso;
-        ret.first *= std::log(density);
-        ret.first += alpha_prime;
-        ret.second = 0.;
-        alpha_storage_[x_local] = ret.first;
+        ret->first = alpha_iso;
+        ret->first *= std::log(density);
+        ret->first += alpha_prime;
+        ret->second = 0.;
+        alpha_storage_[x_local] = ret->first;
         mutex_.unlock();
         return ret;
       } else {
@@ -2367,12 +2367,12 @@ public:
             u_eps_diff += v;
             // checking realizability is cheap so we do not need the second stopping criterion
             if (g_k.l2_norm() < tau_prime && is_realizable(u_eps_diff)) {
-              ret.first = alpha_iso;
-              ret.first *= std::log(density);
-              ret.first += alpha_prime;
-              ret.second = r;
+              ret->first = alpha_iso;
+              ret->first *= std::log(density);
+              ret->first += alpha_prime;
+              ret->second = r;
               cache_.insert(v, alpha_prime);
-              alpha_storage_[x_local] = ret.first;
+              alpha_storage_[x_local] = ret->first;
               goto outside_all_loops;
             } else {
               RangeFieldType zeta_k = 1;
@@ -2433,7 +2433,7 @@ public:
                               const XT::Common::Parameter& param) const override
     {
       std::fill(ret.begin(), ret.end(), 0.);
-      const auto alpha = get_alpha(x_local, u, param, true).first;
+      const auto alpha = get_alpha(x_local, u, param, true)->first;
       // calculate ret[ii] = < omega[ii] m G_\alpha(u) >
       LocalVectorType local_alpha, local_ret;
       const auto& triangulation = basis_functions_.triangulation();
@@ -2699,7 +2699,7 @@ public:
     const auto alpha_i = local_function_entity->get_stored_alpha(x_local_entity);
     VectorType alpha_j;
     if (boundary)
-      alpha_j = local_function_neighbor->get_alpha(x_local_neighbor, u_j, param_neighbor, true).first;
+      alpha_j = local_function_neighbor->get_alpha(x_local_neighbor, u_j, param_neighbor, true)->first;
     else
       alpha_j = local_function_neighbor->get_stored_alpha(x_local_neighbor);
     StateRangeType ret(0);
@@ -2814,7 +2814,7 @@ public:
   explicit EntropyBasedLocalFlux(
       const BasisfunctionType& basis_functions,
       const GridLayerType& grid_layer,
-      const RangeFieldType tau = 1e-12,
+      const RangeFieldType tau = 1e-9,
       const RangeFieldType epsilon_gamma = 0.01,
       const RangeFieldType chi = 0.5,
       const RangeFieldType xi = 1e-3,
@@ -2914,13 +2914,13 @@ public:
         store_alpha(entity().geometry().local(intersection.geometry().center()), center_alpha);
     }
 
-    AlphaReturnType get_alpha(const DomainType& x_local,
-                              const StateRangeType& u,
-                              const XT::Common::Parameter& param,
-                              const bool regularize) const
+    std::unique_ptr<AlphaReturnType> get_alpha(const DomainType& x_local,
+                                               const StateRangeType& u,
+                                               const XT::Common::Parameter& param,
+                                               const bool regularize) const
     {
       const bool boundary = bool(param.get("boundary")[0]);
-      AlphaReturnType ret;
+      auto ret = std::make_unique<AlphaReturnType>();
       mutex_.lock();
       if (boundary)
         cache_.set_capacity(cache_size + dimDomain);
@@ -2938,9 +2938,9 @@ public:
       const auto cache_iterator = cache_.find_closest(u_prime);
       if (cache_iterator != cache_.end() && XT::Common::FloatCmp::eq(cache_iterator->first, u_prime, 1e-14, 1e-14)) {
         const auto alpha_prime = cache_iterator->second;
-        ret.first = alpha_prime + alpha_iso * std::log(density);
-        ret.second = 0.;
-        alpha_storage_[x_local] = ret.first;
+        ret->first = alpha_prime + alpha_iso * std::log(density);
+        ret->second = 0.;
+        alpha_storage_[x_local] = ret->first;
         mutex_.unlock();
         return ret;
       } else {
@@ -3010,10 +3010,10 @@ public:
             auto u_eps_diff = v - u_alpha_prime * (1 - epsilon_gamma_);
             // checking realizability is cheap so we do not need the second stopping criterion
             if (g_k.two_norm() < tau_prime && is_realizable(u_eps_diff)) {
-              ret.first = alpha_prime + alpha_iso * std::log(density);
-              ret.second = r;
+              ret->first = alpha_prime + alpha_iso * std::log(density);
+              ret->second = r;
               cache_.insert(v, alpha_prime);
-              alpha_storage_[x_local] = ret.first;
+              alpha_storage_[x_local] = ret->first;
               goto outside_all_loops;
             } else {
               RangeFieldType zeta_k = 1;
@@ -3063,7 +3063,7 @@ public:
                           RangeType& ret,
                           const XT::Common::Parameter& param) const override
     {
-      const auto alpha = get_alpha(x_local, u, param, true).first;
+      const auto alpha = get_alpha(x_local, u, param, true)->first;
 
       std::fill(ret.begin(), ret.end(), 0.);
       // calculate < \mu m G_\alpha(u) >
@@ -3513,7 +3513,7 @@ public:
     StateRangeType alpha_j;
     const bool boundary = bool(param_neighbor.get("boundary")[0]);
     if (boundary)
-      alpha_j = local_function_neighbor->get_alpha(x_local_neighbor, u_j, param_neighbor, true).first;
+      alpha_j = local_function_neighbor->get_alpha(x_local_neighbor, u_j, param_neighbor, true)->first;
     else
       alpha_j = local_function_neighbor->get_stored_alpha(x_local_neighbor);
     RangeType ret(0);

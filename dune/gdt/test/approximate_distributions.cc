@@ -65,6 +65,8 @@ int main(int argc, char** argv)
   using namespace Dune;
   using namespace Dune::GDT;
   MPIHelper::instance(argc, argv);
+  DXTC_CONFIG.set("threading.partition_factor", 10, true);
+  XT::Common::threadManager().set_max_threads(32);
 
   // ***************** parse arguments and set up MPI and TBB
   size_t quad_refinements = 0;

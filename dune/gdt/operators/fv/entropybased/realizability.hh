@@ -163,7 +163,7 @@ protected:
       //            << " at x = " << XT::Common::to_string(current_pair.first, 15) << std::endl;
       // solving failed for reconstructed value, so check that it works with u_bar ...
       const auto alpha_bar =
-          local_func->get_alpha(entity.geometry().local(entity.geometry().center()), u_bar, param_, false).first;
+          local_func->get_alpha(entity.geometry().local(entity.geometry().center()), u_bar, param_, false)->first;
       // ... and set all reconstructed values to u_bar
       for (auto& pair : local_reconstructed_values) {
         local_func->store_alpha(pair.first, alpha_bar);

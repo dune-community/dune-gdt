@@ -50,6 +50,7 @@ public:
   using typename BaseType::BoundaryValueType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
+  using typename BaseType::DynamicRangeType;
   using typename BaseType::FluxType;
   using typename BaseType::GridLayerType;
   using typename BaseType::InitialValueType;
@@ -197,11 +198,11 @@ protected:
     using helper_base::denominator;
     using helper_base::numerator;
 
-    static RangeType get_left_boundary_values(const BasisfunctionImp& basis_functions,
-                                              const RangeFieldType& psi_vac,
-                                              const bool is_mn_model)
+    static DynamicRangeType get_left_boundary_values(const BasisfunctionImp& basis_functions,
+                                                     const RangeFieldType& psi_vac,
+                                                     const bool is_mn_model)
     {
-      RangeType ret(0);
+      DynamicRangeType ret(dimRange, 0);
       // For the MN-Models, we have to use the quadrature also used in the optimization problem to guarantee
       // realizability of the boundary_values.
       // For the PN-Models, we do not have these issues and just use a very fine quadrature (which is not a performance
@@ -219,7 +220,7 @@ protected:
       }
       ret /= denominator();
       // add small vacuum concentration to move away from realizable boundary
-      ret += basis_functions.integrated(!is_mn_model) * psi_vac;
+      ret += basis_functions.integrated() * psi_vac;
       return ret;
     }
   };
@@ -232,11 +233,11 @@ protected:
     using helper_base::integral_1;
     using helper_base::numerator;
 
-    static RangeType get_left_boundary_values(const BasisfunctionImp& basis_functions,
-                                              const RangeFieldType psi_vac,
-                                              const bool /*is_mn_model*/)
+    static DynamicRangeType get_left_boundary_values(const BasisfunctionImp& basis_functions,
+                                                     const RangeFieldType psi_vac,
+                                                     const bool /*is_mn_model*/)
     {
-      RangeType ret(0);
+      DynamicRangeType ret(dimRange, 0);
       for (size_t nn = 0; nn < dimRange; ++nn) {
         const auto& triangulation = basis_functions.triangulation();
         const auto vn = triangulation[nn];
@@ -264,12 +265,12 @@ protected:
     using helper_base::integral_1;
     using helper_base::integral_2;
 
-    static RangeType get_left_boundary_values(const BasisfunctionImp& basis_functions,
-                                              const RangeFieldType psi_vac,
-                                              const bool /*is_mn_model*/)
+    static DynamicRangeType get_left_boundary_values(const BasisfunctionImp& basis_functions,
+                                                     const RangeFieldType psi_vac,
+                                                     const bool /*is_mn_model*/)
     {
       const auto& triangulation = basis_functions.triangulation();
-      RangeType ret(0);
+      DynamicRangeType ret(dimRange, 0);
       for (size_t ii = 0; ii < dimRange / 2; ++ii) {
         ret[2 * ii] = integral_1(triangulation[ii], triangulation[ii + 1]) / denominator();
         ret[2 * ii + 1] = integral_2(triangulation[ii], triangulation[ii + 1]) / denominator();

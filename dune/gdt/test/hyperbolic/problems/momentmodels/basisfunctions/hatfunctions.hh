@@ -49,6 +49,7 @@ private:
 
 public:
   using typename BaseType::DomainType;
+  using typename BaseType::DynamicRangeType;
   using typename BaseType::MatrixType;
   using typename BaseType::QuadraturesType;
   using typename BaseType::RangeType;
@@ -77,9 +78,9 @@ public:
     BaseType::initialize_base_values();
   }
 
-  virtual RangeType evaluate(const DomainType& v) const override final
+  virtual DynamicRangeType evaluate(const DomainType& v) const override final
   {
-    RangeType ret(0);
+    DynamicRangeType ret(dimRange, 0);
     for (size_t ii = 0; ii < dimRange; ++ii) {
       if (ii < dimRange - 1 && XT::Common::FloatCmp::ge(v[0], triangulation_[ii])
           && XT::Common::FloatCmp::le(v[0], triangulation_[ii + 1]))
@@ -91,9 +92,9 @@ public:
     return ret;
   } // ... evaluate(...)
 
-  virtual RangeType evaluate(const DomainType& v, const size_t interval_index) const override final
+  virtual DynamicRangeType evaluate(const DomainType& v, const size_t interval_index) const override final
   {
-    RangeType ret(0);
+    DynamicRangeType ret(dimRange, 0);
     ret[interval_index] = (v - triangulation_[interval_index + 1])
                           / (triangulation_[interval_index] - triangulation_[interval_index + 1]);
     ret[interval_index + 1] =
@@ -101,9 +102,9 @@ public:
     return ret;
   } // ... evaluate(...)
 
-  virtual RangeType integrated(const bool /*use_fine_quadratures*/ = false) const override final
+  virtual DynamicRangeType integrated() const override final
   {
-    RangeType ret(0);
+    DynamicRangeType ret(dimRange, 0);
     ret[0] = triangulation_[1] - triangulation_[0];
     for (size_t ii = 1; ii < dimRange - 1; ++ii)
       ret[ii] = triangulation_[ii + 1] - triangulation_[ii - 1];
@@ -113,7 +114,7 @@ public:
   }
 
   // returns matrix with entries <h_i h_j>
-  virtual MatrixType mass_matrix(const bool /*use_fine_quadratures*/ = false) const override final
+  virtual MatrixType mass_matrix() const override final
   {
     MatrixType ret(dimRange, dimRange, 0);
     ret[0][0] = (triangulation_[1] - triangulation_[0]) / 3.;
@@ -129,9 +130,9 @@ public:
     return ret;
   }
 
-  virtual MatrixType mass_matrix_inverse(const bool use_fine_quadratures = false) const override final
+  virtual MatrixType mass_matrix_inverse() const override final
   {
-    return tridiagonal_matrix_inverse<RangeFieldType, dimRange>(mass_matrix(use_fine_quadratures));
+    return tridiagonal_matrix_inverse<RangeFieldType, dimRange>(mass_matrix());
   }
 
   // returns matrix with entries <v h_i h_j>
@@ -258,17 +259,25 @@ public:
     return triangulation_;
   }
 
-  virtual RangeType alpha_iso() const override final
+  virtual DynamicRangeType alpha_iso() const override final
   {
-    return RangeType(1.);
+    return DynamicRangeType(dimRange, 1.);
   }
 
-  virtual RangeFieldType density(const RangeType& u) const override final
+  virtual RangeFieldType density(const DynamicRangeType& u) const override final
   {
     return std::accumulate(u.begin(), u.end(), RangeFieldType(0));
   }
 
   using BaseType::u_iso;
+
+  virtual void ensure_min_density(DynamicRangeType& u, const RangeFieldType min_density) const override final
+  {
+    const auto u_iso_min = u_iso() * min_density;
+    for (size_t ii = 0; ii < dimRange; ++ii)
+      if (u[ii] < u_iso_min[ii])
+        u[ii] = u_iso_min[ii];
+  }
 
   virtual void ensure_min_density(RangeType& u, const RangeFieldType min_density) const override final
   {
@@ -314,23 +323,25 @@ public:
   static constexpr size_t dimFlux = fluxDim;
 
 private:
-  typedef BasisfunctionsInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols, dimFlux> BaseType;
+  using BaseType = BasisfunctionsInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols, dimFlux>;
+  using ThisType = HatFunctionMomentBasis;
 
 public:
   typedef SphericalTriangulation<DomainFieldType> TriangulationType;
   using typename BaseType::DomainType;
+  using typename BaseType::DynamicRangeType;
   using typename BaseType::MatrixType;
   using typename BaseType::QuadraturesType;
   using typename BaseType::RangeType;
-  using typename BaseType::DynamicRangeType;
   using typename BaseType::StringifierType;
+  using LocalMatrixType = XT::Common::FieldMatrix<RangeFieldType, 3, 3>;
   template <class DiscreteFunctionType>
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
 
   using BaseType::barycentre_rule;
 
-  HatFunctionMomentBasis(const QuadraturesType& quadratures, const QuadraturesType& fine_quadratures)
-    : BaseType(refinements, quadratures, fine_quadratures)
+  HatFunctionMomentBasis(const QuadraturesType& quadratures)
+    : BaseType(refinements, quadratures)
   {
     assert(triangulation_.vertices().size() == dimRange);
     BaseType::initialize_base_values();
@@ -341,7 +352,6 @@ public:
     : BaseType(refinements)
   {
     quadratures_ = triangulation_.quadrature_rules(quad_refinements, reference_quadrature_rule);
-    fine_quadratures_ = quadratures_; 
     assert(triangulation_.vertices().size() == dimRange);
     BaseType::initialize_base_values();
   }
@@ -365,7 +375,6 @@ public:
     const QuadratureRule<RangeFieldType, 2> reference_quadrature_rule = barycentre_rule();
 #endif
     quadratures_ = triangulation_.quadrature_rules(quad_refinements, reference_quadrature_rule);
-    fine_quadratures_ = quadratures_; 
     assert(triangulation_.vertices().size() == dimRange);
     BaseType::initialize_base_values();
   }
@@ -391,7 +400,7 @@ public:
 
   virtual DynamicRangeType evaluate(const DomainType& v, const size_t face_index) const override final
   {
-    RangeType ret(0);
+    DynamicRangeType ret(dimRange, 0);
     auto barycentric_coords = evaluate_on_face(v, face_index);
     const auto& vertices = triangulation_.faces()[face_index]->vertices();
     for (size_t ii = 0; ii < 3; ++ii)
@@ -422,7 +431,7 @@ public:
 
   static StringifierType stringifier()
   {
-    return [](const DynamicRangeType& val) {
+    return [](const RangeType& val) {
       RangeFieldType psi(0);
       for (const auto& entry : val)
         psi += entry;
@@ -435,9 +444,9 @@ public:
     return triangulation_;
   }
 
-  virtual RangeFieldType unit_ball_volume(const bool use_fine_quadratures = false) const override final
+  virtual RangeFieldType unit_ball_volume() const override final
   {
-    return BaseType::unit_ball_volume_quad(use_fine_quadratures);
+    return BaseType::unit_ball_volume_quad();
   }
 
   virtual DynamicRangeType alpha_iso() const override final
@@ -445,7 +454,6 @@ public:
     return DynamicRangeType(dimRange, 1.);
   }
 
-<<<<<<< Updated upstream
   template <class Vec>
   std::enable_if_t<XT::Common::is_vector<Vec>::value, void> alpha_iso(Vec& ret) const
   {
@@ -453,13 +461,13 @@ public:
       XT::Common::VectorAbstraction<Vec>::set_entry(ret, ii, 1.);
   }
 
-  virtual RangeFieldType density(const RangeType& u) const override final
+  virtual RangeFieldType density(const DynamicRangeType& u) const override final
   {
     return std::accumulate(u.begin(), u.end(), 0.);
   }
 
   template <class Vec>
-  std::enable_if_t<XT::Common::is_vector<Vec>::value && !std::is_same<Vec, RangeType>::value, RangeFieldType>
+  std::enable_if_t<XT::Common::is_vector<Vec>::value && !std::is_same<Vec, DynamicRangeType>::value, RangeFieldType>
   density(const Vec& u) const
   {
     RangeFieldType ret(0.);
@@ -480,7 +488,7 @@ public:
   }
 
   // calculates <b(v) dirac(v-dirac_position)>
-  RangeType integrate_dirac_at(const DomainType& dirac_position) const
+  DynamicRangeType integrate_dirac_at(const DomainType& dirac_position) const
   {
     return evaluate(dirac_position);
   }
@@ -497,6 +505,14 @@ public:
   }
 
   virtual void ensure_min_density(DynamicRangeType& u, const RangeFieldType min_density) const override final
+  {
+    const auto u_iso_min = u_iso() * min_density;
+    for (size_t ii = 0; ii < dimRange; ++ii)
+      if (u[ii] < u_iso_min[ii])
+        u[ii] = u_iso_min[ii];
+  }
+
+  virtual void ensure_min_density(RangeType& u, const RangeFieldType min_density) const override final
   {
     const auto u_iso_min = u_iso() * min_density;
     for (size_t ii = 0; ii < dimRange; ++ii)
@@ -564,7 +580,79 @@ protected:
     return true;
   } // bool calculate_barycentric_coordinates(...)
 
-  using BaseType::fine_quadratures_;
+  static std::vector<size_t> create_face_decomposition(const size_t num_faces, const size_t num_threads)
+  {
+    std::vector<size_t> ret(num_threads + 1);
+    for (size_t ii = 0; ii < num_threads; ++ii)
+      ret[ii] = num_faces / num_threads * ii;
+    ret[num_threads] = num_faces;
+    return ret;
+  }
+
+  virtual void parallel_quadrature(const QuadraturesType& quadratures,
+                                   MatrixType& matrix,
+                                   const size_t v_index,
+                                   const bool reflecting = false) const override final
+  {
+    const auto& faces = triangulation_.faces();
+    size_t num_threads = std::min(XT::Common::threadManager().max_threads(), faces.size());
+    auto decomposition = create_face_decomposition(faces.size(), num_threads);
+    std::vector<std::thread> threads(num_threads);
+    // Launch a group of threads
+    std::vector<LocalMatrixType> local_matrices(num_threads, LocalMatrixType(0.));
+    for (size_t ii = 0; ii < num_threads; ++ii)
+      threads[ii] = std::thread(&ThisType::calculate_in_thread_hat,
+                                this,
+                                std::ref(local_matrices),
+                                std::cref(quadratures),
+                                v_index,
+                                std::cref(decomposition),
+                                ii,
+                                reflecting);
+    // Join the threads with the main thread
+    for (size_t ii = 0; ii < num_threads; ++ii)
+      threads[ii].join();
+    // add local matrices
+    matrix *= 0.;
+    for (size_t ii = 0; ii < num_threads; ++ii)
+      for (size_t face_index = decomposition[ii]; face_index < decomposition[ii + 1]; ++face_index) {
+        const auto& face = faces[face_index];
+        const auto& vertices = face->vertices();
+        for (size_t nn = 0; nn < 3; ++nn)
+          for (size_t mm = 0; mm < 3; ++mm)
+            matrix[vertices[nn]->index()][vertices[mm]->index()] += local_matrices[face_index][nn][mm];
+      } // faces
+  } // void parallel_quadrature(...)
+
+  virtual void calculate_in_thread_hat(std::vector<LocalMatrixType>& local_matrices,
+                                       const QuadraturesType& quadratures,
+                                       const size_t v_index,
+                                       const std::vector<size_t>& decomposition,
+                                       const size_t ii,
+                                       const bool reflecting) const
+  {
+    const auto& reflected_indices = triangulation_.reflected_face_indices();
+    for (size_t face_index = decomposition[ii]; face_index < decomposition[ii + 1]; ++face_index) {
+      for (const auto& quad_point : quadratures[face_index]) {
+        const auto& v = quad_point.position();
+        const auto basis_evaluated = evaluate(v, face_index);
+        auto basis_reflected = basis_evaluated;
+        if (reflecting) {
+          auto v_reflected = v;
+          v_reflected[v_index] *= -1.;
+          const size_t reflected_index = reflected_indices.size() ? reflected_indices[face_index][v_index] : 0;
+          basis_reflected = evaluate(v_reflected, reflected_index);
+        }
+        const auto& weight = quad_point.weight();
+        const auto factor = (reflecting || v_index == size_t(-1)) ? 1. : v[v_index];
+        for (size_t nn = 0; nn < 3; ++nn)
+          for (size_t mm = 0; mm < 3; ++mm)
+            local_matrices[face_index][nn][mm] +=
+                basis_evaluated[nn] * (reflecting ? basis_reflected[mm] : basis_evaluated[mm]) * factor * weight;
+      } // quad_points
+    } // faces
+  } // void calculate_in_thread(...)
+
   using BaseType::quadratures_;
   using BaseType::triangulation_;
 }; // class HatFunctionMomentBasis<DomainFieldType, 3, ...>

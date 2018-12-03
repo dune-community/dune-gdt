@@ -128,6 +128,7 @@ public:
   using MatrixType = typename Dune::DynamicMatrix<RangeFieldType>;
   using DomainType = typename RhsAffineFunctionType::DomainType;
   using RangeType = typename RhsAffineFunctionType::RangeType;
+  using DynamicRangeType = Dune::DynamicVector<RangeFieldType>;
 
   KineticEquationImplementationInterface(const BasisfunctionType& basis_functions, const GridLayerType& grid_layer)
     : basis_functions_(basis_functions)

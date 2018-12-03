@@ -42,6 +42,7 @@ private:
 
 public:
   using typename BaseType::DomainType;
+  using typename BaseType::DynamicRangeType;
   using typename BaseType::MatrixType;
   using typename BaseType::QuadraturesType;
   using typename BaseType::RangeType;
@@ -66,17 +67,17 @@ public:
 
   using BaseType::evaluate;
 
-  virtual RangeType evaluate(const DomainType& v) const override
+  virtual DynamicRangeType evaluate(const DomainType& v) const override
   {
     const auto v_spherical = XT::Common::CoordinateConverter<DomainFieldType>::to_spherical(v);
     return evaluate_in_spherical_coords(v_spherical);
   } // ... evaluate(...)
 
-  RangeType evaluate_in_spherical_coords(const FieldVector<DomainFieldType, 2>& coords) const
+  DynamicRangeType evaluate_in_spherical_coords(const FieldVector<DomainFieldType, 2>& coords) const
   {
     const DomainFieldType theta = coords[0];
     const DomainFieldType phi = coords[1];
-    RangeType ret(0);
+    DynamicRangeType ret(dimRange, 0.);
     // TODO: use complex arithmetic, remove real() call
     for (unsigned int ll = 0; ll <= static_cast<unsigned int>(order); ++ll)
       for (int mm = only_positive ? 0 : -static_cast<int>(ll); mm <= static_cast<int>(ll); ++mm)
@@ -84,14 +85,14 @@ public:
     return ret;
   } // ... evaluate(...)
 
-  virtual RangeType integrated(const bool /*use_fine_quadratures*/ = false) const override final
+  virtual DynamicRangeType integrated() const override final
   {
-    RangeType ret(0);
+    DynamicRangeType ret(dimRange, 0.);
     ret[0] = std::sqrt(4. * M_PI);
     return ret;
   }
 
-  virtual MatrixType mass_matrix(const bool /*use_fine_quadratures*/ = false) const override
+  virtual MatrixType mass_matrix() const override
   {
     MatrixType M(dimRange, dimRange, 0);
     for (size_t rr = 0; rr < dimRange; ++rr)
@@ -99,7 +100,7 @@ public:
     return M;
   }
 
-  virtual MatrixType mass_matrix_inverse(const bool /*use_fine_quadratures*/ = false) const override
+  virtual MatrixType mass_matrix_inverse() const override
   {
     return mass_matrix();
   }
@@ -127,14 +128,14 @@ public:
     return [](const RangeType& val) { return XT::Common::to_string(val[0] * std::sqrt(4 * M_PI), 15); };
   } // ... stringifier()
 
-  virtual RangeType alpha_iso() const override final
+  virtual DynamicRangeType alpha_iso() const override final
   {
-    RangeType ret(0.);
+    DynamicRangeType ret(dimRange, 0.);
     ret[0] = std::sqrt(4. * M_PI);
     return ret;
   }
 
-  virtual RangeFieldType density(const RangeType& u) const override final
+  virtual RangeFieldType density(const DynamicRangeType& u) const override final
   {
     return u[0] * std::sqrt(4 * M_PI);
   }
@@ -280,6 +281,7 @@ private:
 
 public:
   using typename BaseType::DomainType;
+  using typename BaseType::DynamicRangeType;
   using typename BaseType::MatrixType;
   using typename BaseType::QuadraturesType;
   using typename BaseType::RangeType;
@@ -303,17 +305,17 @@ public:
 
   using BaseType::evaluate;
 
-  virtual RangeType evaluate(const DomainType& v) const override
+  virtual DynamicRangeType evaluate(const DomainType& v) const override
   {
     const auto v_spherical = XT::Common::CoordinateConverter<DomainFieldType>::to_spherical(v);
     return evaluate_in_spherical_coords(v_spherical);
   } // ... evaluate(...)
 
-  RangeType evaluate_in_spherical_coords(const FieldVector<DomainFieldType, 2>& coords) const
+  DynamicRangeType evaluate_in_spherical_coords(const FieldVector<DomainFieldType, 2>& coords) const
   {
     const DomainFieldType theta = coords[0];
     const DomainFieldType phi = coords[1];
-    RangeType ret(0);
+    DynamicRangeType ret(dimRange, 0.);
     for (int ll = 0; ll <= static_cast<int>(order); ++ll)
       for (int mm = -ll; mm <= ll; ++mm)
         if (!only_even || !((mm + ll) % 2))
@@ -321,14 +323,14 @@ public:
     return ret;
   } // ... evaluate(...)
 
-  RangeType integrated_exactly(const bool /*use_fine_quadratures*/ = false) const
+  DynamicRangeType integrated_exactly() const
   {
-    RangeType ret(0.);
+    DynamicRangeType ret(dimRange, 0.);
     ret[0] = std::sqrt(4. * M_PI);
     return ret;
   }
 
-  virtual MatrixType mass_matrix(const bool /*use_fine_quadratures*/ = false) const override
+  virtual MatrixType mass_matrix() const override
   {
     MatrixType M(dimRange, dimRange, 0.);
     for (size_t rr = 0; rr < dimRange; ++rr)
@@ -336,7 +338,7 @@ public:
     return M;
   }
 
-  virtual MatrixType mass_matrix_inverse(const bool /*use_fine_quadratures*/ = false) const override
+  virtual MatrixType mass_matrix_inverse() const override
   {
     return mass_matrix();
   }
@@ -364,14 +366,14 @@ public:
     return [](const RangeType& val) { return XT::Common::to_string(val[0] * std::sqrt(4 * M_PI), 15); };
   } // ... stringifier()
 
-  virtual RangeType alpha_iso() const override final
+  virtual DynamicRangeType alpha_iso() const override final
   {
-    RangeType ret(0.);
+    DynamicRangeType ret(dimRange, 0.);
     ret[0] = std::sqrt(4. * M_PI);
     return ret;
   }
 
-  virtual RangeFieldType density(const RangeType& u) const override final
+  virtual RangeFieldType density(const DynamicRangeType& u) const override final
   {
     return u[0] * std::sqrt(4 * M_PI);
   }
@@ -381,7 +383,7 @@ public:
     return "rhm";
   }
 
-  RangeType integrate_dirac_at(const DomainType& dirac_position) const
+  DynamicRangeType integrate_dirac_at(const DomainType& dirac_position) const
   {
     return evaluate(dirac_position);
   }

@@ -177,9 +177,9 @@ public:
     auto sigma_t = sigma_a;
     for (size_t ii = 0; ii < num_regions; ++ii)
       sigma_t[ii] += sigma_s[ii];
-    const RangeType basis_integrated = basis_functions_.integrated(true);
+    const RangeType basis_integrated = basis_functions_.integrated();
     // calculate c = M^{-T} <b>
-    const auto M_T = basis_functions_.mass_matrix(true); // mass matrix is symmetric
+    const auto M_T = basis_functions_.mass_matrix(); // mass matrix is symmetric
     RangeType c(0.);
     solve(M_T, c, basis_integrated, basis_functions_);
     MatrixType I(dimRange, dimRange, 0.);
@@ -189,7 +189,7 @@ public:
     for (size_t rr = 0; rr < dimRange; ++rr)
       for (size_t cc = 0; cc < dimRange; ++cc)
         G[rr][cc] = basis_integrated[rr] * c[cc];
-    const auto vol = basis_functions_.unit_ball_volume(true);
+    const auto vol = basis_functions_.unit_ball_volume();
     std::vector<RhsAffineFunctionType> affine_functions;
     for (size_t ii = 0; ii < num_regions; ++ii) {
       MatrixType G_scaled = G;
