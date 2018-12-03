@@ -15,6 +15,7 @@
 
 #include <dune/xt/common/fvector.hh>
 #include <dune/xt/common/string.hh>
+#include <dune/xt/common/vector_less.hh>
 
 #include <dune/xt/functions/interfaces/localizable-function.hh>
 

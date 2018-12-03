@@ -21,6 +21,8 @@
 
 #include <dune/xt/common/fvector.hh>
 #include <dune/xt/common/numeric_cast.hh>
+#include <dune/xt/common/vector_less.hh>
+
 #include <dune/xt/grid/gridprovider/cube.hh>
 
 #include <dune/gdt/spaces/rt/default.hh>

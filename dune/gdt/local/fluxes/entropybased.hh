@@ -26,6 +26,7 @@
 #include <dune/xt/common/lapacke.hh>
 #include <dune/xt/common/math.hh>
 #include <dune/xt/common/memory.hh>
+#include <dune/xt/common/vector_less.hh>
 
 #include <dune/xt/la/algorithms/cholesky.hh>
 #include <dune/xt/la/algorithms/solve_sym_tridiag_posdef.hh>
