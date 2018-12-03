@@ -11,11 +11,8 @@
 #include <chrono>
 #include <fstream>
 
-#include <dune/xt/common/parallel/threadmanager.hh>
 #include <dune/xt/common/string.hh>
-#include <dune/xt/common/test/gtest/gtest.h>
 
-#include <dune/xt/grid/information.hh>
 #include <dune/xt/grid/gridprovider.hh>
 
 #include <dune/xt/la/container.hh>
@@ -23,52 +20,33 @@
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/operators/fv.hh>
 #include <dune/gdt/projections/l2.hh>
-#include <dune/gdt/spaces/fv/product.hh>
-#include <dune/gdt/timestepper/factory.hh>
-#include <dune/gdt/operators/fv/quadrature.hh>
 
-#include <dune/gdt/test/hyperbolic/problems/momentmodels/kineticequation.hh>
-
-#include "pn-discretization.hh"
-
-template <class TestCaseType>
+template <class BasisfunctionType, class DiscreteFunctionType>
 struct MomentApproximation
 {
-  static void run(size_t num_quad_refinements = TestCaseType::RealizabilityLimiterChooserType::num_quad_refinements,
-                  size_t quad_order = TestCaseType::RealizabilityLimiterChooserType::quad_order,
-                  std::string filename = "")
+  static void run(size_t num_quad_refinements, size_t quad_order, std::string filename = "")
   {
     using namespace Dune;
     using namespace Dune::GDT;
 
     //******************* get typedefs and constants from ProblemType **********************//
-    using BasisfunctionType = typename TestCaseType::BasisfunctionType;
-    using DiscreteFunctionType = typename TestCaseType::DiscreteFunctionType;
-    using GridType = typename TestCaseType::GridType;
-    using SpaceType = typename TestCaseType::SpaceType;
-    using GridLayerType = typename TestCaseType::GridLayerType;
-    using ProblemType = typename TestCaseType::ProblemType;
-    using EquationType = Hyperbolic::Problems::KineticEquation<ProblemType>;
-    using DomainType = typename EquationType::DomainType;
-    using RangeType = typename EquationType::RangeType;
-    using RangeFieldType = typename EquationType::RangeFieldType;
+    using SpaceType = typename DiscreteFunctionType::SpaceType;
+    using GridLayerType = typename SpaceType::GridLayerType;
+    using GridType = typename GridLayerType::Grid;
+    using DomainType = typename BasisfunctionType::DomainType;
+    using RangeFieldType = double;
     static constexpr size_t dimDomain = BasisfunctionType::dimDomain;
     static constexpr size_t dimRange = BasisfunctionType::dimRange;
 
     //******************* create grid and FV space ***************************************
-    auto grid_config = EquationType::default_grid_cfg();
+    auto grid_config = Dune::XT::Grid::cube_gridprovider_default_config();
     const auto grid_ptr =
         Dune::XT::Grid::CubeGridProviderFactory<GridType>::create(grid_config, MPIHelper::getCommunicator()).grid_ptr();
     assert(grid_ptr->comm().size() == 1 || grid_ptr->overlapSize(0) > 0);
     const GridLayerType grid_layer(grid_ptr->leafGridView());
     const SpaceType fv_space(grid_layer);
-
-    //******************* create EquationType object ***************************************
     std::shared_ptr<const BasisfunctionType> basis_functions =
         std::make_shared<const BasisfunctionType>(quad_order, num_quad_refinements);
-    const std::unique_ptr<ProblemType> problem_imp =
-        XT::Common::make_unique<ProblemType>(*basis_functions, grid_layer, grid_config);
-    const EquationType problem(*problem_imp);
 
     // ***************** project initial values to discrete function *********************
     // Heaviside
@@ -93,7 +71,7 @@ struct MomentApproximation
       else
         return RangeFieldType(1e-8 / (4 * M_PI));
     };
-    const RangeType u = basis_functions->get_moment_vector(psi);
+    const auto u = basis_functions->get_moment_vector(psi);
     // const RangeType u{2.82081e-09,  1.47519e-13,  1.47552e-13,  -1.86436e-16, 1.32958e-19,  -1.8985e-13,
     // -4.30881e-14,
     //                  2.13323e-16,  7.47148e-14,  -2.13786e-14, -2.80844e-19, 1.18799e-13,  -5.60185e-14,
@@ -117,8 +95,8 @@ struct MomentApproximation
     std::cout << "before mn " << std::endl;
     const auto mn_ret = local_mn_flux->get_alpha(DomainType(0), u, {"boundary", {0}}, true);
     std::cout << "after mn " << std::endl;
-    std::cout << "Regularized with epsilon = " << mn_ret.second << std::endl;
-    const auto alpha = mn_ret.first;
+    std::cout << "Regularized with epsilon = " << mn_ret->second << std::endl;
+    const auto alpha = mn_ret->first;
 
     std::string filename_mn = filename;
     filename += "_" + basis_functions->short_id();

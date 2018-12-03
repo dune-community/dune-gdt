@@ -596,10 +596,10 @@ protected:
   {
     const auto& faces = triangulation_.faces();
     size_t num_threads = std::min(XT::Common::threadManager().max_threads(), faces.size());
-    auto decomposition = create_face_decomposition(faces.size(), num_threads);
+    const auto decomposition = create_face_decomposition(faces.size(), num_threads);
     std::vector<std::thread> threads(num_threads);
     // Launch a group of threads
-    std::vector<LocalMatrixType> local_matrices(num_threads, LocalMatrixType(0.));
+    std::vector<LocalMatrixType> local_matrices(faces.size(), LocalMatrixType(0.));
     for (size_t ii = 0; ii < num_threads; ++ii)
       threads[ii] = std::thread(&ThisType::calculate_in_thread_hat,
                                 this,
@@ -614,7 +614,7 @@ protected:
       threads[ii].join();
     // add local matrices
     matrix *= 0.;
-    for (size_t ii = 0; ii < num_threads; ++ii)
+    for (size_t ii = 0; ii < num_threads; ++ii) {
       for (size_t face_index = decomposition[ii]; face_index < decomposition[ii + 1]; ++face_index) {
         const auto& face = faces[face_index];
         const auto& vertices = face->vertices();
@@ -622,6 +622,7 @@ protected:
           for (size_t mm = 0; mm < 3; ++mm)
             matrix[vertices[nn]->index()][vertices[mm]->index()] += local_matrices[face_index][nn][mm];
       } // faces
+    } // threads
   } // void parallel_quadrature(...)
 
   virtual void calculate_in_thread_hat(std::vector<LocalMatrixType>& local_matrices,
@@ -635,13 +636,13 @@ protected:
     for (size_t face_index = decomposition[ii]; face_index < decomposition[ii + 1]; ++face_index) {
       for (const auto& quad_point : quadratures[face_index]) {
         const auto& v = quad_point.position();
-        const auto basis_evaluated = evaluate(v, face_index);
+        const auto basis_evaluated = evaluate_on_face(v, face_index);
         auto basis_reflected = basis_evaluated;
         if (reflecting) {
           auto v_reflected = v;
           v_reflected[v_index] *= -1.;
           const size_t reflected_index = reflected_indices.size() ? reflected_indices[face_index][v_index] : 0;
-          basis_reflected = evaluate(v_reflected, reflected_index);
+          basis_reflected = evaluate_on_face(v_reflected, reflected_index);
         }
         const auto& weight = quad_point.weight();
         const auto factor = (reflecting || v_index == size_t(-1)) ? 1. : v[v_index];
