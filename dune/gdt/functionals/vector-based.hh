@@ -25,6 +25,8 @@
 
 #include "interfaces.hh"
 
+// clang-format off
+// see https://github.com/dune-community/dune-gdt/issues/142
 namespace Dune {
 namespace GDT {
 
@@ -274,5 +276,7 @@ make_vector_functional(const SpaceInterface<GV, r, rC, F>& space)
 
 } // namespace GDT
 } // namespace Dune
+
+// clang-format on
 
 #endif // DUNE_GDT_FUNCTIONALS_VECTOR_BASED_HH
