@@ -322,6 +322,7 @@ public:
   using typename BaseType::MatrixType;
   using typename BaseType::QuadraturesType;
   using typename BaseType::RangeType;
+  using typename BaseType::DynamicRangeType;
   using typename BaseType::StringifierType;
   template <class DiscreteFunctionType>
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
@@ -340,7 +341,7 @@ public:
     : BaseType(refinements)
   {
     quadratures_ = triangulation_.quadrature_rules(quad_refinements, reference_quadrature_rule);
-    fine_quadratures_ = triangulation_.quadrature_rules(quad_refinements + 3, reference_quadrature_rule);
+    fine_quadratures_ = quadratures_; 
     assert(triangulation_.vertices().size() == dimRange);
     BaseType::initialize_base_values();
   }
@@ -364,21 +365,14 @@ public:
     const QuadratureRule<RangeFieldType, 2> reference_quadrature_rule = barycentre_rule();
 #endif
     quadratures_ = triangulation_.quadrature_rules(quad_refinements, reference_quadrature_rule);
-    fine_quadratures_ = triangulation_.quadrature_rules(quad_refinements +
-#if HAVE_FEKETE
-                                                            3
-#else
-                                                            0
-#endif
-                                                        ,
-                                                        reference_quadrature_rule);
+    fine_quadratures_ = quadratures_; 
     assert(triangulation_.vertices().size() == dimRange);
     BaseType::initialize_base_values();
   }
 
-  virtual RangeType evaluate(const DomainType& v) const override
+  virtual DynamicRangeType evaluate(const DomainType& v) const override
   {
-    RangeType ret(0);
+    DynamicRangeType ret(dimRange, 0);
     bool success = false;
     // walk over faces
     for (const auto& face : triangulation_.faces()) {
@@ -395,7 +389,7 @@ public:
     return ret;
   } // ... evaluate(...)
 
-  virtual RangeType evaluate(const DomainType& v, const size_t face_index) const override final
+  virtual DynamicRangeType evaluate(const DomainType& v, const size_t face_index) const override final
   {
     RangeType ret(0);
     auto barycentric_coords = evaluate_on_face(v, face_index);
@@ -428,7 +422,7 @@ public:
 
   static StringifierType stringifier()
   {
-    return [](const RangeType& val) {
+    return [](const DynamicRangeType& val) {
       RangeFieldType psi(0);
       for (const auto& entry : val)
         psi += entry;
@@ -446,11 +440,12 @@ public:
     return BaseType::unit_ball_volume_quad(use_fine_quadratures);
   }
 
-  virtual RangeType alpha_iso() const override final
+  virtual DynamicRangeType alpha_iso() const override final
   {
-    return RangeType(1.);
+    return DynamicRangeType(dimRange, 1.);
   }
 
+<<<<<<< Updated upstream
   template <class Vec>
   std::enable_if_t<XT::Common::is_vector<Vec>::value, void> alpha_iso(Vec& ret) const
   {
@@ -501,7 +496,7 @@ public:
       V::set_entry(ret, ii, ret_range[ii]);
   }
 
-  virtual void ensure_min_density(RangeType& u, const RangeFieldType min_density) const override final
+  virtual void ensure_min_density(DynamicRangeType& u, const RangeFieldType min_density) const override final
   {
     const auto u_iso_min = u_iso() * min_density;
     for (size_t ii = 0; ii < dimRange; ++ii)

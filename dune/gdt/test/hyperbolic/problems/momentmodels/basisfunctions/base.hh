@@ -240,6 +240,7 @@ public:
   using RangeFieldType = RangeFieldImp;
   using MatrixType = DynamicMatrix<RangeFieldType>;
   using RangeType = typename XT::Functions::RangeTypeSelector<RangeFieldType, dimRange, dimRangeCols>::type;
+  using DynamicRangeType = DynamicVector<RangeFieldType>;
   using QuadraturesType = QuadraturesWrapper<DomainFieldType, dimDomain>;
   using QuadratureType = typename QuadraturesType::QuadratureType;
   template <class DiscreteFunctionType>
@@ -265,15 +266,15 @@ public:
 
   virtual ~BasisfunctionsInterface() {}
 
-  virtual RangeType evaluate(const DomainType& v) const = 0;
+  virtual DynamicRangeType evaluate(const DomainType& v) const = 0;
 
-  virtual RangeType evaluate(const DomainType& v, const size_t /*face_index*/) const
+  virtual DynamicRangeType evaluate(const DomainType& v, const size_t /*face_index*/) const
   {
     return evaluate(v);
   }
 
   // returns <b>, where b is the basis functions vector
-  virtual RangeType integrated(const bool use_fine_quadratures = false) const
+  virtual DynamicRangeType integrated(const bool use_fine_quadratures = false) const
   {
     if (use_fine_quadratures)
       return integrated_initializer(fine_quadratures_);
@@ -294,9 +295,9 @@ public:
     return ret;
   }
 
-  virtual RangeType get_moment_vector(const std::function<RangeFieldType(DomainType, bool)>& psi) const
+  virtual DynamicRangeType get_moment_vector(const std::function<RangeFieldType(DomainType, bool)>& psi) const
   {
-    RangeType ret(0.);
+    DynamicRangeType ret(dimRange, 0.);
     const auto merged_quads = quadratures().merged();
     for (auto it = merged_quads.begin(); it != merged_quads.end(); ++it) {
       const auto& quad_point = *it;
@@ -369,11 +370,11 @@ public:
     return ret;
   }
 
-  virtual RangeType alpha_iso() const = 0;
+  virtual DynamicRangeType alpha_iso() const = 0;
 
-  virtual RangeFieldType density(const RangeType& u) const = 0;
+  virtual RangeFieldType density(const DynamicRangeType& u) const = 0;
 
-  virtual void ensure_min_density(RangeType& u, const RangeFieldType min_density) const
+  virtual void ensure_min_density(DynamicRangeType& u, const RangeFieldType min_density) const
   {
     if (density(u) < min_density)
       u = u_iso() * min_density;
@@ -387,7 +388,7 @@ public:
     return unit_ball_volume_exact();
   }
 
-  virtual RangeType u_iso() const
+  virtual DynamicRangeType u_iso() const
   {
     return u_iso_;
   }
@@ -556,12 +557,12 @@ protected:
     }
   } // void calculate_in_thread(...)
 
-  RangeType integrated_initializer(const QuadraturesType& quadratures) const
+  DynamicRangeType integrated_initializer(const QuadraturesType& quadratures) const
   {
     size_t num_threads = std::min(XT::Common::threadManager().max_threads(), quadratures.merged().size());
     auto decomposition = create_decomposition(quadratures, num_threads);
     std::vector<std::thread> threads(num_threads);
-    std::vector<RangeType> local_vectors(num_threads, RangeType(0.));
+    std::vector<DynamicRangeType> local_vectors(num_threads, DynamicRangeType(dimRange, 0.));
     for (size_t ii = 0; ii < num_threads; ++ii)
       threads[ii] = std::thread(&BasisfunctionsInterface::integrated_initializer_thread,
                                 this,
@@ -572,13 +573,13 @@ protected:
     for (size_t ii = 0; ii < num_threads; ++ii)
       threads[ii].join();
     // add local matrices
-    RangeType ret(0.);
+    DynamicRangeType ret(dimRange, 0.);
     for (size_t ii = 0; ii < num_threads; ++ii)
       ret += local_vectors[ii];
     return ret;
   }
 
-  void integrated_initializer_thread(RangeType& local_range,
+  void integrated_initializer_thread(DynamicRangeType& local_range,
                                      const std::vector<MergedQuadratureIterator>& decomposition,
                                      const size_t ii) const
   {
@@ -593,8 +594,8 @@ protected:
   QuadraturesType quadratures_;
   QuadraturesType fine_quadratures_;
   SphericalTriangulationType triangulation_;
-  RangeType integrated_;
-  RangeType u_iso_;
+  DynamicRangeType integrated_;
+  DynamicRangeType u_iso_;
 };
 
 

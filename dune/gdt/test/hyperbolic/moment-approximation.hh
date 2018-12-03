@@ -81,11 +81,11 @@ struct MomentApproximation
     //     std::pow(sigma, 2)) *
     //     std::exp(std::pow(v[0]-mu, 2)/(-2 *std::pow(sigma, 2))); };
     // Gauss on sphere
-    //     const RangeFieldType sigma = 0.5;
-    //     const RangeFieldType mu = 1.;
-    //     const auto psi = [sigma, mu](const DomainType& v, const bool){ return 1./std::sqrt(2. * M_PI *
-    //     std::pow(sigma, 2)) *
-    //     std::exp(std::pow(v[0]-mu, 2)/(-2 *std::pow(sigma, 2))); };
+    //  const RangeFieldType sigma = 0.5;
+    //  const RangeFieldType mu = 1.;
+    //  const auto psi = [sigma, mu](const DomainType& v, const bool){ return 1./std::sqrt(2. * M_PI *
+    //  std::pow(sigma, 2)) *
+    //  std::exp(std::pow(v[0]-mu, 2)/(-2 *std::pow(sigma, 2))); };
     // Square on sphere
     const auto psi = [](const DomainType& v, const bool) {
       if (v[0] > 0 && std::abs(v[1]) < 0.5 && std::abs(v[2]) < 0.5)
@@ -114,7 +114,9 @@ struct MomentApproximation
     using MnFluxType = EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, DiscreteFunctionType>;
     MnFluxType mn_flux(*basis_functions, grid_layer);
     auto local_mn_flux = mn_flux.derived_local_function(*(grid_layer.template begin<0>()));
+    std::cout << "before mn " << std::endl;
     const auto mn_ret = local_mn_flux->get_alpha(DomainType(0), u, {"boundary", {0}}, true);
+    std::cout << "after mn " << std::endl;
     std::cout << "Regularized with epsilon = " << mn_ret.second << std::endl;
     const auto alpha = mn_ret.first;
 
@@ -132,23 +134,27 @@ struct MomentApproximation
     pn_file << "psi" << std::endl;
     RangeFieldType l1error_mn(0), l2error_mn(0), linferror_mn(0);
     RangeFieldType l1error_pn(0), l2error_pn(0), linferror_pn(0);
+    std::cout << "before mass " << std::endl;
     const auto mass_matrix = basis_functions->mass_matrix();
     XT::LA::IstlRowMajorSparseMatrix<double> sparse_mass_matrix(mass_matrix, true);
     XT::LA::IstlDenseVector<double> pn_coeffs_istl(sparse_mass_matrix.rows());
     XT::LA::IstlDenseVector<double> u_istl(pn_coeffs_istl);
     for (size_t ii = 0; ii < u_istl.size(); ++ii)
       u_istl.set_entry(ii, u[ii]);
+    std::cout << "before solve " << std::endl;
     XT::LA::solve(sparse_mass_matrix, u_istl, pn_coeffs_istl);
     DynamicVector<double> pn_coeffs(pn_coeffs_istl.size());
     for (size_t ii = 0; ii < pn_coeffs_istl.size(); ++ii)
       pn_coeffs[ii] = pn_coeffs_istl.get_entry(ii);
+    std::cout << "after solve " << std::endl;
     const auto quadrature = basis_functions->quadratures().merged();
     for (auto it = quadrature.begin(); it != quadrature.end(); ++it) {
       const auto& quad_point = *it;
       const auto v = quad_point.position();
       const auto weight = quad_point.weight();
       const auto basis = basis_functions->evaluate(v, it.first_index());
-      const auto psi_mn = std::exp(alpha * basis);
+      const auto psi_mn_prod = std::inner_product(basis.begin(), basis.end(), alpha.begin(), 0.);
+      const auto psi_mn = std::exp(psi_mn_prod);
       const auto psi_pn = pn_coeffs * basis;
       for (size_t dd = 0; dd < dimDomain; ++dd) {
         mn_file << XT::Common::to_string(v[dd], 15) << " ";

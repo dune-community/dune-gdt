@@ -182,6 +182,7 @@ public:
   static constexpr size_t matrix_num_cols = dimRange % 8 ? dimRange : dimRange + (8 - dimRange % 8);
   using MatrixType = XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange>;
   using VectorType = XT::Common::FieldVector<RangeFieldType, dimRange>;
+  using DynamicRangeType = DynamicVector<RangeFieldType>;
   using BasisValuesMatrixType = XT::LA::CommonDenseMatrix<RangeFieldType>;
   using QuadratureRuleType = Dune::QuadratureRule<DomainFieldType, dimDomain>;
   using AlphaReturnType = std::pair<VectorType, RangeFieldType>;
@@ -246,13 +247,13 @@ public:
   explicit EntropyBasedLocalFlux(
       const BasisfunctionType& basis_functions,
       const GridLayerType& grid_layer,
-      const RangeFieldType tau = 1e-9,
+      const RangeFieldType tau = 1e-12,
       const RangeFieldType epsilon_gamma = 0.01,
       const RangeFieldType chi = 0.5,
       const RangeFieldType xi = 1e-3,
       const std::vector<RangeFieldType> r_sequence = {0, 1e-8, 1e-6, 1e-4, 1e-3, 1e-2, 5e-2, 0.1, 0.5, 1},
-      const size_t k_0 = 500,
-      const size_t k_max = 1000,
+      const size_t k_0 = 50,
+      const size_t k_max = 100,
       const RangeFieldType epsilon = std::pow(2, -52),
       const std::string name = static_id())
     : index_set_(grid_layer.indexSet())
@@ -633,7 +634,10 @@ public:
         DUNE_THROW(Dune::MathError, "Negative, inf or NaN density!");
       }
       VectorType u_prime = u / density;
-      VectorType alpha_iso = basis_functions_.alpha_iso();
+      auto alpha_iso_dyn = basis_functions_.alpha_iso();
+      VectorType alpha_iso;
+      for (size_t ii = 0; ii < dimRange; ++ii)
+        alpha_iso[ii] = alpha_iso_dyn[ii];
       VectorType v, u_eps_diff, beta_in;
       RangeFieldType first_error_cond, second_error_cond, tau_prime;
 
@@ -647,7 +651,7 @@ public:
         mutex_.unlock();
         return ret;
       } else {
-        StateRangeType u_iso = basis_functions_.u_iso();
+        auto u_iso = basis_functions_.u_iso();
         const RangeFieldType dim_factor = is_full_moment_basis<BasisfunctionType>::value ? 1. : std::sqrt(dimDomain);
         tau_prime = std::min(tau_ / ((1 + dim_factor * u_prime.two_norm()) * density + dim_factor * tau_), tau_);
 
@@ -663,7 +667,7 @@ public:
           v = u_prime;
           if (r > 0) {
             beta_in = alpha_iso;
-            VectorType r_times_u_iso = u_iso;
+            DynamicRangeType r_times_u_iso = u_iso;
             r_times_u_iso *= r;
             v *= 1 - r;
             v += r_times_u_iso;
@@ -721,8 +725,8 @@ public:
             XT::LA::solve_lower_triangular_transposed(*T_k, d_alpha_tilde, d_k);
             first_error_cond = g_alpha_tilde.two_norm();
             second_error_cond = std::exp(d_alpha_tilde.one_norm() + std::abs(std::log(density_tilde)));
-            if (first_error_cond < tau_prime && 1 - epsilon_gamma_ < second_error_cond
-                && realizability_helper_.is_realizable(u_eps_diff, kk == static_cast<size_t>(0.8 * k_0_))) {
+            if (first_error_cond < tau_prime && 1 - epsilon_gamma_ < second_error_cond) {
+                // && realizability_helper_.is_realizable(u_eps_diff, kk == static_cast<size_t>(0.8 * k_0_))) {
               ret.first = alpha_prime + alpha_iso * std::log(density);
               ret.second = r;
               cache_.insert(v, alpha_prime);
@@ -1196,7 +1200,7 @@ public:
                   const size_t k_0,
                   const size_t k_max,
                   const RangeFieldType epsilon,
-                  const BlockMatrixType& T_minus_one,
+                  const LocalMatrixType& T_minus_one,
                   LocalCacheType& cache,
                   AlphaStorageType& alpha_storage,
                   std::mutex& mutex)
@@ -1398,15 +1402,16 @@ public:
         store_alpha(entity().geometry().local(intersection.geometry().center()), center_alpha);
     }
 
-    AlphaReturnType get_alpha(const DomainType& x_local,
+    std::unique_ptr<AlphaReturnType> get_alpha(const DomainType& x_local,
                               const StateRangeType& u_in,
                               const XT::Common::Parameter& param,
                               const bool regularize) const
     {
+      std::cout << "get_alpha start" << std::endl;
       const bool boundary = static_cast<bool>(param.get("boundary")[0]);
       // get initial multiplier and basis matrix from last time step
-      AlphaReturnType ret;
-      StateRangeType v_in;
+      auto ret = std::make_unique<AlphaReturnType>();
+      auto v_in = std::make_unique<StateRangeType>();
       mutex_.lock();
       if (boundary)
         cache_.set_capacity(cache_size + dimDomain);
@@ -1417,49 +1422,62 @@ public:
         mutex_.unlock();
         DUNE_THROW(Dune::MathError, "Negative, inf or NaN density!");
       }
-      StateRangeType u_prime_in = u_in / density;
-      StateRangeType alpha_iso_in = basis_functions_.alpha_iso();
-      BlockVectorType alpha_iso = alpha_iso_in;
+      auto u_prime_in = std::make_unique<StateRangeType>(u_in / density);
+      auto alpha_iso_in = std::make_unique<StateRangeType>(basis_functions_.alpha_iso());
+      auto alpha_iso = std::make_unique<BlockVectorType>(*alpha_iso_in);
 
       // if value has already been calculated for these values, skip computation
-      const auto cache_iterator = cache_.find_closest(u_prime_in);
-      if (cache_iterator != cache_.end() && XT::Common::FloatCmp::eq(cache_iterator->first, u_prime_in, 1e-14, 1e-14)) {
-        const auto alpha_prime = cache_iterator->second;
-        ret.first = alpha_prime + alpha_iso * std::log(density);
-        ret.second = 0.;
-        alpha_storage_[x_local] = ret.first;
+      const auto cache_iterator = cache_.find_closest(*u_prime_in);
+      if (cache_iterator != cache_.end() && XT::Common::FloatCmp::eq(cache_iterator->first, *u_prime_in, 1e-14, 1e-14)) {
+        const auto& alpha_prime = cache_iterator->second;
+        ret->first = *alpha_iso;
+        ret->first *= std::log(density);
+        ret->first += alpha_prime;
+        ret->second = 0.;
+        alpha_storage_[x_local] = ret->first;
         mutex_.unlock();
         return ret;
       } else {
         RangeFieldType tau_prime = std::min(
-            tau_ / ((1 + std::sqrt(dimRange) * u_prime_in.two_norm()) * density + std::sqrt(dimRange) * tau_), tau_);
+            tau_ / ((1 + std::sqrt(dimRange) * u_prime_in->two_norm()) * density + std::sqrt(dimRange) * tau_), tau_);
 
         // calculate moment vector for isotropic distribution
-        StateRangeType u_iso_in = basis_functions_.u_iso();
+        auto u_iso_dyn = basis_functions_.u_iso();
+        auto u_iso_in = std::make_unique<StateRangeType>();
+        for (size_t ii = 0; ii < dimRange; ++ii)
+          (*u_iso_in)[ii] = u_iso_dyn[ii];
 
         // define further variables
-        BlockVectorType g_k, beta_in, beta_out, v;
+        auto g_k = std::make_unique<BlockVectorType>();
+        auto beta_out = std::make_unique<BlockVectorType>();
+        auto v = std::make_unique<BlockVectorType>();
         thread_local auto T_k = XT::Common::make_unique<BlockMatrixType>();
-        beta_in = cache_iterator != cache_.end() ? cache_iterator->second : alpha_iso;
+        auto beta_in = std::make_unique<BlockVectorType>(cache_iterator != cache_.end() ? cache_iterator->second : *alpha_iso);
 
         const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
         const auto r_max = r_sequence.back();
         for (const auto& r : r_sequence) {
           // regularize u
-          v_in = u_prime_in;
+          *v_in = *u_prime_in;
           if (r > 0.) {
-            beta_in = alpha_iso;
-            v_in = v_in * (1 - r) + u_iso_in * r;
+            *beta_in = *alpha_iso;
+            // calculate v = (1-r) u + r u_iso
+            // use alpha_iso_in as storage for u_iso_in * r
+            *v_in *= (1 - r);
+            *alpha_iso_in = *u_iso_in;
+            *alpha_iso_in *= r;
+            *v_in += *alpha_iso_in;
           }
-          v = v_in;
-          *T_k = T_minus_one_;
+          *v = *v_in;
+          for(size_t jj = 0; jj < num_blocks; ++jj)
+            T_k->block(jj) = T_minus_one_;
           // calculate T_k u
-          BlockVectorType v_k = v;
+          auto v_k = std::make_unique<BlockVectorType>(*v);
           // calculate values of basis p = S_k m
           thread_local BasisValuesMatrixType P_k(XT::LA::CommonDenseMatrix<RangeFieldType>(0, 0, 0., 0));
           copy_basis_matrix(M_, P_k);
           // calculate f_0
-          RangeFieldType f_k = calculate_scalar_integral(beta_in, P_k) - beta_in * v_k;
+          RangeFieldType f_k = calculate_scalar_integral(*beta_in, P_k) - *beta_in * *v_k;
 
           thread_local auto H = XT::Common::make_unique<BlockMatrixType>(0.);
 
@@ -1469,7 +1487,7 @@ public:
             if (kk > k_0_ && r < r_max)
               break;
             try {
-              change_basis(beta_in, v_k, P_k, *T_k, g_k, beta_out, *H);
+              change_basis(*beta_in, *v_k, P_k, *T_k, *g_k, *beta_out, *H);
             } catch (const Dune::MathError&) {
               if (r < r_max)
                 break;
@@ -1484,50 +1502,67 @@ public:
             }
 
             // calculate descent direction d_k;
-            BlockVectorType d_k = g_k;
-            d_k *= -1;
+            thread_local auto d_k = std::make_unique<BlockVectorType>();
+            *d_k = *g_k;
+            *d_k *= -1;
 
             // Calculate stopping criteria (in original basis). Variables with _k are in current basis, without k in
             // original basis.
-            BlockVectorType alpha_tilde, u_alpha_tilde, u_alpha_prime, d_alpha_tilde, g_alpha_tilde;
+            thread_local auto alpha_tilde = std::make_unique<BlockVectorType>();
+            thread_local auto alpha_prime = std::make_unique<BlockVectorType>();
+            thread_local auto u_alpha_tilde = std::make_unique<BlockVectorType>();
+            thread_local auto u_alpha_prime = std::make_unique<BlockVectorType>();
+            thread_local auto d_alpha_tilde = std::make_unique<BlockVectorType>();
+            thread_local auto g_alpha_tilde = std::make_unique<BlockVectorType>();
+            thread_local auto u_eps_diff = std::make_unique<BlockVectorType>();
             // convert everything to original basis
             for (size_t jj = 0; jj < num_blocks; ++jj) {
-              XT::LA::solve_lower_triangular_transposed(T_k->block(jj), alpha_tilde.block(jj), beta_out.block(jj));
-              XT::LA::solve_lower_triangular_transposed(T_k->block(jj), d_alpha_tilde.block(jj), d_k.block(jj));
+              XT::LA::solve_lower_triangular_transposed(T_k->block(jj), alpha_tilde->block(jj), beta_out->block(jj));
+              XT::LA::solve_lower_triangular_transposed(T_k->block(jj), d_alpha_tilde->block(jj), d_k->block(jj));
             } // jj
-            calculate_vector_integral(alpha_tilde, M_, M_, u_alpha_tilde);
-            g_alpha_tilde = u_alpha_tilde - v;
-            auto density_tilde = basis_functions_.density(u_alpha_tilde);
-            if (!(density_tilde > 0.) || !(basis_functions_.min_density(u_alpha_tilde) > 0.)
+            calculate_vector_integral(*alpha_tilde, M_, M_, *u_alpha_tilde);
+            *g_alpha_tilde = *u_alpha_tilde; 
+            *g_alpha_tilde -= *v; 
+            auto density_tilde = basis_functions_.density(*u_alpha_tilde);
+            if (!(density_tilde > 0.) || !(basis_functions_.min_density(*u_alpha_tilde) > 0.)
                 || std::isinf(density_tilde))
               break;
-            const auto alpha_prime = alpha_tilde - alpha_iso * std::log(density_tilde);
-            calculate_vector_integral(alpha_prime, M_, M_, u_alpha_prime);
-            auto u_eps_diff = v - u_alpha_prime * (1 - epsilon_gamma_);
-            if (g_alpha_tilde.two_norm() < tau_prime
-                && 1 - epsilon_gamma_ < std::exp(d_alpha_tilde.one_norm() + std::abs(std::log(density_tilde)))
-                && helper<dimDomain>::is_realizable(u_eps_diff, basis_functions_)) {
-              ret.first = alpha_prime + alpha_iso * std::log(density);
-              ret.second = r;
-              cache_.insert(v_in, alpha_prime);
-              alpha_storage_[x_local] = ret.first;
+            *alpha_prime = *alpha_iso; 
+            *alpha_prime *= -std::log(density_tilde);
+            *alpha_prime += *alpha_tilde; 
+            calculate_vector_integral(*alpha_prime, M_, M_, *u_alpha_prime);
+            *u_eps_diff = *u_alpha_prime;
+            *u_eps_diff *= -(1 - epsilon_gamma_);
+            *u_eps_diff += *v; 
+            if (g_alpha_tilde->two_norm() < tau_prime
+                && 1 - epsilon_gamma_ < std::exp(d_alpha_tilde->one_norm() + std::abs(std::log(density_tilde)))) {
+                // && helper<dimDomain>::is_realizable(u_eps_diff, basis_functions_)) {
+              ret->first = *alpha_iso; 
+              ret->first *= std::log(density);
+              ret->first += *alpha_prime; 
+              ret->second = r;
+              cache_.insert(*v_in, *alpha_prime);
+              alpha_storage_[x_local] = ret->first;
               goto outside_all_loops;
             } else {
               RangeFieldType zeta_k = 1;
-              beta_in = beta_out;
+              *beta_in = *beta_out;
               // backtracking line search
-              while (pure_newton >= 2 || zeta_k > epsilon_ * beta_out.two_norm() / d_k.two_norm()) {
-                BlockVectorType beta_new = d_k * zeta_k + beta_out;
-                RangeFieldType f = calculate_scalar_integral(beta_new, P_k) - beta_new * v_k;
-                if (pure_newton >= 2 || f <= f_k + xi_ * zeta_k * (g_k * d_k)) {
-                  beta_in = beta_new;
+              while (pure_newton >= 2 || zeta_k > epsilon_ * beta_out->two_norm() / d_k->two_norm()) {
+                thread_local auto beta_new = std::make_unique<BlockVectorType>();
+                *beta_new = *d_k;
+                *beta_new *= zeta_k;
+                *beta_new += *beta_out;
+                RangeFieldType f = calculate_scalar_integral(*beta_new, P_k) - *beta_new * *v_k;
+                if (pure_newton >= 2 || f <= f_k + xi_ * zeta_k * (*g_k * *d_k)) {
+                  *beta_in = *beta_new;
                   f_k = f;
                   pure_newton = 0;
                   break;
                 }
                 zeta_k = chi_ * zeta_k;
               } // backtracking linesearch while
-              if (zeta_k <= epsilon_ * beta_out.two_norm() / d_k.two_norm())
+              if (zeta_k <= epsilon_ * beta_out->two_norm() / d_k->two_norm())
                 ++pure_newton;
             } // else (stopping conditions)
           } // k loop (Newton iterations)
@@ -1556,7 +1591,8 @@ public:
                           const XT::Common::Parameter& param) const override
     {
       ColRangeType col_ret;
-      const auto alpha = get_alpha(x_local, u, param, true).first;
+      const auto alpharet = get_alpha(x_local, u, param, true);
+      const auto& alpha = alpharet->first;
       for (size_t dd = 0; dd < dimDomain; ++dd) {
         evaluate_col_helper(dd, col_ret, alpha);
         for (size_t ii = 0; ii < dimRange; ++ii)
@@ -1570,7 +1606,8 @@ public:
                               ColRangeType& ret,
                               const XT::Common::Parameter& param) const override
     {
-      const auto alpha = get_alpha(x_local, u, param, true).first;
+      const auto alpharet = get_alpha(x_local, u, param, true);
+      const auto& alpha = alpharet->first;
       evaluate_col_helper(col, ret, alpha);
     }
 
@@ -1848,7 +1885,7 @@ public:
     const size_t k_0_;
     const size_t k_max_;
     const RangeFieldType epsilon_;
-    const BlockMatrixType& T_minus_one_;
+    const LocalMatrixType& T_minus_one_;
     const std::string name_;
     // constructor)
     LocalCacheType& cache_;
@@ -1859,7 +1896,7 @@ public:
   explicit EntropyBasedLocalFlux(
       const BasisfunctionType& basis_functions,
       const GridLayerType& grid_layer,
-      const RangeFieldType tau = 1e-9,
+      const RangeFieldType tau = 1e-12,
       const RangeFieldType epsilon_gamma = 0.01,
       const RangeFieldType chi = 0.5,
       const RangeFieldType xi = 1e-3,
@@ -1906,6 +1943,7 @@ public:
           M_[jj].set_entry(ll, ii, val[block_size * jj + ii]);
       } // ll
     } // jj
+    std::cout << "after constructor" << std::endl;
   }
 
   static std::string static_id()
@@ -1964,7 +2002,7 @@ public:
     const bool boundary = static_cast<bool>(param_neighbor.get("boundary")[0]);
     BlockVectorType alpha_j;
     if (boundary)
-      alpha_j = local_function_neighbor->get_alpha(x_local_neighbor, u_j, param_neighbor, true).first;
+      alpha_j = local_function_neighbor->get_alpha(x_local_neighbor, u_j, param_neighbor, true)->first;
     else
       alpha_j = local_function_neighbor->get_stored_alpha(x_local_neighbor);
     thread_local FieldVector<TemporaryVectorsType, 2> work_vecs;
@@ -2009,7 +2047,7 @@ private:
   const size_t k_0_;
   const size_t k_max_;
   const RangeFieldType epsilon_;
-  BlockMatrixType T_minus_one_;
+  const LocalMatrixType T_minus_one_;
   const std::string name_;
   mutable std::vector<LocalCacheType> cache_;
   mutable std::vector<AlphaStorageType> alpha_storage_;
@@ -2228,9 +2266,9 @@ public:
     }
 
     AlphaReturnType get_alpha(const DomainType& x_local,
-                              const StateRangeType& u,
-                              const XT::Common::Parameter& param,
-                              const bool regularize) const
+                                               const StateRangeType& u,
+                                               const XT::Common::Parameter& param,
+                                               const bool regularize) const
     {
       const bool boundary = bool(param.get("boundary")[0]);
       AlphaReturnType ret;
@@ -2269,7 +2307,6 @@ public:
 
         // calculate moment vector for isotropic distribution
         VectorType u_iso(dimRange);
-        ;
         basis_functions_.u_iso(u_iso);
         VectorType alpha_k = cache_iterator != cache_.end() ? cache_iterator->second : alpha_iso;
         VectorType v(dimRange), g_k(dimRange), d_k(dimRange), tmp_vec(dimRange), u_alpha_tilde(dimRange),
@@ -2777,7 +2814,7 @@ public:
   explicit EntropyBasedLocalFlux(
       const BasisfunctionType& basis_functions,
       const GridLayerType& grid_layer,
-      const RangeFieldType tau = 1e-9,
+      const RangeFieldType tau = 1e-12,
       const RangeFieldType epsilon_gamma = 0.01,
       const RangeFieldType chi = 0.5,
       const RangeFieldType xi = 1e-3,
