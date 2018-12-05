@@ -102,6 +102,17 @@ public:
     return ret;
   } // ... evaluate(...)
 
+  XT::Common::FieldVector<RangeFieldType, 2> evaluate_on_interval(const DomainType& v,
+                                                                  const size_t interval_index) const
+  {
+    XT::Common::FieldVector<RangeFieldType, 2> ret;
+    ret[0] = (v - triangulation_[interval_index + 1])
+             / (triangulation_[interval_index] - triangulation_[interval_index + 1]);
+    ret[1] =
+        (v - triangulation_[interval_index]) / (triangulation_[interval_index + 1] - triangulation_[interval_index]);
+    return ret;
+  } // ... evaluate(...)
+
   virtual DynamicRangeType integrated() const override final
   {
     DynamicRangeType ret(dimRange, 0);
