@@ -2107,10 +2107,13 @@ public:
   using QuadratureWeightsType = std::vector<std::vector<RangeFieldType>>;
   using BasisfunctionType =
       HatFunctionMomentBasis<DomainFieldType, dimDomain, RangeFieldType, refinements, 1, dimDomain>;
-  using SparseMatrixType = typename XT::LA::Container<RangeFieldType, XT::LA::Backends::istl_sparse>::MatrixType;
-  //  using SparseMatrixType = typename XT::LA::Container<RangeFieldType, XT::LA::default_sparse_backend>::MatrixType;
-  //  using VectorType = typename XT::LA::Container<RangeFieldType, XT::LA::default_sparse_backend>::VectorType;
-  using VectorType = typename XT::LA::Container<RangeFieldType, XT::LA::Backends::istl_sparse>::VectorType;
+#if HAVE_EIGEN
+  using SparseMatrixType = typename XT::LA::Container<RangeFieldType, XT::LA::Backends::eigen_sparse>::MatrixType;
+  using VectorType = typename XT::LA::Container<RangeFieldType, XT::LA::Backends::eigen_sparse>::VectorType;
+#else
+  using SparseMatrixType = typename XT::LA::Container<RangeFieldType, XT::LA::default_sparse_backend>::MatrixType;
+  using VectorType = typename XT::LA::Container<RangeFieldType, XT::LA::default_sparse_backend>::VectorType;
+#endif
   using AlphaReturnType = typename std::pair<VectorType, RangeFieldType>;
   using LocalCacheType = EntropyLocalCache<VectorType, VectorType>;
   using AlphaStorageType = std::map<DomainType, VectorType, XT::Common::VectorFloatLess>;
@@ -2178,6 +2181,11 @@ public:
       for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll)
         M_[jj][ll] = basis_functions_.evaluate_on_face(quad_points_[jj][ll], jj);
     } // jj
+
+    // resize temporary vectors to store inner products and exponentials
+    work_vecs_.resize(faces.size());
+    for (size_t jj = 0; jj < faces.size(); ++jj)
+      work_vecs_[jj].resize(quad_points_[jj].size());
   } // constructor
 
   class Localfunction : public LocalfunctionType
@@ -2204,7 +2212,8 @@ public:
                   LocalCacheType& cache,
                   AlphaStorageType& alpha_storage,
                   std::mutex& mutex,
-                  const XT::LA::SparsityPatternDefault& pattern)
+                  const XT::LA::SparsityPatternDefault& pattern,
+                  std::vector<std::vector<RangeFieldType>>& work_vecs)
       : LocalfunctionType(e)
       , basis_functions_(basis_functions)
       , quad_points_(quad_points)
@@ -2222,6 +2231,7 @@ public:
       , alpha_storage_(alpha_storage)
       , mutex_(mutex)
       , pattern_(pattern)
+      , work_vecs_(work_vecs)
     {}
 
     static bool is_realizable(const VectorType& u)
@@ -2230,18 +2240,6 @@ public:
         if (!(u_i > 0.) || std::isinf(u_i))
           return false;
       return true;
-    }
-
-    // temporary vectors to store inner products and exponentials
-    std::vector<std::vector<RangeFieldType>>& working_storage() const
-    {
-      thread_local std::vector<std::vector<RangeFieldType>> work_vec;
-      const auto& triangulation = basis_functions_.triangulation();
-      const auto& faces = triangulation.faces();
-      work_vec.resize(faces.size());
-      for (size_t jj = 0; jj < faces.size(); ++jj)
-        work_vec[jj].resize(quad_points_[jj].size());
-      return work_vec;
     }
 
     void store_alpha(const DomainType& x_local, const VectorType& alpha)
@@ -2282,10 +2280,10 @@ public:
         mutex_.unlock();
         DUNE_THROW(Dune::MathError, "Negative density!");
       }
-      VectorType u_prime(dimRange);
+      VectorType u_prime(dimRange, 0., 0);
       for (size_t ii = 0; ii < dimRange; ++ii)
         u_prime.set_entry(ii, u[ii] / density);
-      VectorType alpha_iso(dimRange);
+      VectorType alpha_iso(dimRange, 0., 0);
       basis_functions_.alpha_iso(alpha_iso);
 
       // if value has already been calculated for these values, skip computation
@@ -2306,11 +2304,11 @@ public:
         thread_local auto solver = XT::LA::make_solver(H);
 
         // calculate moment vector for isotropic distribution
-        VectorType u_iso(dimRange);
+        VectorType u_iso(dimRange, 0., 0);
         basis_functions_.u_iso(u_iso);
         VectorType alpha_k = cache_iterator != cache_.end() ? cache_iterator->second : alpha_iso;
-        VectorType v(dimRange), g_k(dimRange), d_k(dimRange), tmp_vec(dimRange), u_alpha_tilde(dimRange),
-            alpha_prime(dimRange), u_alpha_prime(dimRange);
+        VectorType v(dimRange, 0., 0), g_k(dimRange, 0., 0), d_k(dimRange, 0., 0), tmp_vec(dimRange, 0., 0),
+            alpha_prime(dimRange);
         const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
         const auto r_max = r_sequence.back();
         for (const auto& r : r_sequence_) {
@@ -2335,7 +2333,7 @@ public:
             // calculate gradient g
             calculate_gradient(alpha_k, v, g_k);
             // calculate Hessian H
-            calculate_hessian(alpha_k, M_, H);
+            calculate_hessian(alpha_k, M_, H, true);
             // calculate descent direction d_k;
             tmp_vec = g_k;
             tmp_vec *= -1;
@@ -2352,6 +2350,7 @@ public:
             }
 
             const auto& alpha_tilde = alpha_k;
+            auto& u_alpha_tilde = tmp_vec;
             u_alpha_tilde = g_k;
             u_alpha_tilde += v;
             auto density_tilde = basis_functions_.density(u_alpha_tilde);
@@ -2360,9 +2359,8 @@ public:
             alpha_prime = alpha_iso;
             alpha_prime *= -std::log(density_tilde);
             alpha_prime += alpha_tilde;
-            calculate_u(alpha_prime, u_alpha_prime);
             auto& u_eps_diff = tmp_vec;
-            u_eps_diff = u_alpha_prime;
+            calculate_u(alpha_prime, u_eps_diff); // store u_alpha_prime in u_eps_diff
             u_eps_diff *= -(1 - epsilon_gamma_);
             u_eps_diff += v;
             // checking realizability is cheap so we do not need the second stopping criterion
@@ -2462,10 +2460,10 @@ public:
     {
       const auto alpha = get_stored_alpha(x_local);
       thread_local SparseMatrixType H(dimRange, dimRange, pattern_, 0);
-      thread_local auto solver = XT::LA::make_solver(H);
+      thread_local SparseMatrixType J(dimRange, dimRange, pattern_, 0);
       calculate_hessian(alpha, M_, H);
       for (size_t dd = 0; dd < dimDomain; ++dd) {
-        partial_u_col_helper(dd, M_, H, ret[dd], solver);
+        partial_u_col_helper(dd, M_, H, J, ret[dd]);
       }
     }
 
@@ -2477,9 +2475,9 @@ public:
     {
       const auto alpha = get_stored_alpha(x_local);
       thread_local SparseMatrixType H(dimRange, dimRange, pattern_, 0);
-      thread_local auto solver = XT::LA::make_solver(H);
+      thread_local SparseMatrixType J(dimRange, dimRange, pattern_, 0);
       calculate_hessian(alpha, M_, H);
-      partial_u_col_helper(col, M_, H, ret, solver);
+      partial_u_col_helper(col, M_, H, J, ret);
     }
 
     static std::string static_id()
@@ -2491,31 +2489,45 @@ public:
     void partial_u_col_helper(const size_t col,
                               const BasisValuesMatrixType& M,
                               SparseMatrixType& H,
-                              ColPartialURangeType& ret,
-                              const XT::LA::Solver<SparseMatrixType>& solver) const
+                              SparseMatrixType& J,
+                              ColPartialURangeType& ret) const
     {
       assert(col < dimDomain);
-      calculate_J(M, ret, col);
-      calculate_A_Binv(ret, H, solver);
+      calculate_J(M, J, col);
+      calculate_J_Hinv(J, H, ret);
     } // void partial_u_col(...)
 
-    // calculates C = A B^{-1}. B is assumed to be symmetric, which gives C^T = B^{-T} A^T = B^{-1} A^T, so we just have
-    // to solve y = B^{-1} x for each row x of A
-    static void
-    calculate_A_Binv(ColPartialURangeType& A, SparseMatrixType& /*B*/, const XT::LA::Solver<SparseMatrixType>& solver)
+    // calculates ret = J H^{-1}. H is assumed to be symmetric positive definite, which gives ret^T = H^{-T} J^T =
+    // H^{-1} J^T, so we just have to solve y = H^{-1} x for each row x of J
+    void calculate_J_Hinv(SparseMatrixType& J, const SparseMatrixType& H, ColPartialURangeType& ret) const
     {
-      thread_local VectorType tmp_row(dimRange, 0.), tmp_result(dimRange, 0.);
+      thread_local VectorType solution(dimRange, 0., 0), tmp_rhs(dimRange, 0., 0);
+#if HAVE_EIGEN
+      typedef ::Eigen::SparseMatrix<RangeFieldType, ::Eigen::ColMajor> ColMajorBackendType;
+      ColMajorBackendType colmajor_copy(H.backend());
+      colmajor_copy.makeCompressed();
+      typedef ::Eigen::SimplicialLDLT<ColMajorBackendType> SolverType;
+      SolverType solver;
+      solver.analyzePattern(colmajor_copy);
+      solver.factorize(colmajor_copy);
+#else // HAVE_EIGEN
+      auto solver = XT::LA::make_solver(H);
+#endif // HAVE_EIGEN
       for (size_t ii = 0; ii < dimRange; ++ii) {
         // copy row to VectorType
         for (size_t kk = 0; kk < dimRange; ++kk)
-          tmp_row.set_entry(kk, A[ii][kk]);
-        // solve
-        solver.apply(tmp_row, tmp_result);
-        // copy result back to matrix
+          tmp_rhs.set_entry(kk, J.get_entry(ii, kk));
+          // solve
+#if HAVE_EIGEN
+        solution.backend() = solver.solve(tmp_rhs.backend());
+#else // HAVE_EIGEN
+        solver.apply(tmp_rhs, solution);
+#endif
+        // copy result to C
         for (size_t kk = 0; kk < dimRange; ++kk)
-          A[ii][kk] = tmp_result.get_entry(kk);
+          ret[ii][kk] = solution.get_entry(kk);
       }
-    } // void calculate_A_Binv(...)
+    } // void calculate_J_Hinv(...)
 
     RangeFieldType calculate_f(const VectorType& alpha, const VectorType& v) const
     {
@@ -2549,9 +2561,9 @@ public:
           local_alpha[ii] = alpha.get_entry(vertices[ii]->index());
         for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
           const auto& basis_ll = M_[jj][ll];
-          auto factor_ll = std::exp(local_alpha * basis_ll) * quad_weights_[jj][ll];
+          work_vecs_[jj][ll] = std::exp(local_alpha * basis_ll) * quad_weights_[jj][ll];
           for (size_t ii = 0; ii < 3; ++ii)
-            local_u[ii] += basis_ll[ii] * factor_ll;
+            local_u[ii] += basis_ll[ii] * work_vecs_[jj][ll];
         } // ll (quad points)
         for (size_t ii = 0; ii < 3; ++ii)
           u.add_to_entry(vertices[ii]->index(), local_u[ii]);
@@ -2564,14 +2576,16 @@ public:
       g_k -= v;
     }
 
-    void calculate_hessian(const VectorType& alpha, const BasisValuesMatrixType& M, SparseMatrixType& H) const
+    void calculate_hessian(const VectorType& alpha,
+                           const BasisValuesMatrixType& M,
+                           SparseMatrixType& H,
+                           const bool use_work_vecs_results = false) const
     {
       H *= 0.;
       LocalVectorType local_alpha;
       LocalMatrixType H_local(0.);
       const auto& triangulation = basis_functions_.triangulation();
       const auto& faces = triangulation.faces();
-      auto& work_vecs = working_storage();
       for (size_t jj = 0; jj < faces.size(); ++jj) {
         H_local *= 0.;
         const auto& face = faces[jj];
@@ -2580,10 +2594,11 @@ public:
           local_alpha[ii] = alpha.get_entry(vertices[ii]->index());
         for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
           const auto& basis_ll = M[jj][ll];
-          work_vecs[jj][ll] = std::exp(local_alpha * basis_ll) * quad_weights_[jj][ll];
+          if (!use_work_vecs_results)
+            work_vecs_[jj][ll] = std::exp(local_alpha * basis_ll) * quad_weights_[jj][ll];
           for (size_t ii = 0; ii < 3; ++ii)
             for (size_t kk = 0; kk < 3; ++kk)
-              H_local[ii][kk] += basis_ll[ii] * basis_ll[kk] * work_vecs[jj][ll];
+              H_local[ii][kk] += basis_ll[ii] * basis_ll[kk] * work_vecs_[jj][ll];
         } // ll (quad points)
         for (size_t ii = 0; ii < 3; ++ii)
           for (size_t kk = 0; kk < 3; ++kk)
@@ -2598,14 +2613,11 @@ public:
     // the derivative is the vector of matrices (df_1/dalpha, df_2/dalpha, ...)
     // this function returns the dd-th matrix df_dd/dalpha of J
     // assumes work_vecs already contains the needed exp(alpha * m) values
-    void calculate_J(const BasisValuesMatrixType& M,
-                     Dune::FieldMatrix<RangeFieldType, dimRange, StateType::dimRange>& J_dd,
-                     const size_t dd) const
+    void calculate_J(const BasisValuesMatrixType& M, SparseMatrixType& J_dd, const size_t dd) const
     {
       assert(dd < dimRangeCols);
       J_dd *= 0.;
       LocalMatrixType J_local(0.);
-      const auto& work_vecs = working_storage();
       const auto& triangulation = basis_functions_.triangulation();
       const auto& faces = triangulation.faces();
       for (size_t jj = 0; jj < faces.size(); ++jj) {
@@ -2616,11 +2628,11 @@ public:
           const auto& basis_ll = M[jj][ll];
           for (size_t ii = 0; ii < 3; ++ii)
             for (size_t kk = 0; kk < 3; ++kk)
-              J_local[ii][kk] += basis_ll[ii] * basis_ll[kk] * work_vecs[jj][ll] * quad_points_[jj][ll][dd];
+              J_local[ii][kk] += basis_ll[ii] * basis_ll[kk] * work_vecs_[jj][ll] * quad_points_[jj][ll][dd];
         } // ll (quad points)
         for (size_t ii = 0; ii < 3; ++ii)
           for (size_t kk = 0; kk < 3; ++kk)
-            J_dd[vertices[ii]->index()][vertices[kk]->index()] += J_local[ii][kk];
+            J_dd.add_to_entry(vertices[ii]->index(), vertices[kk]->index(), J_local[ii][kk]);
       } // jj (faces)
     } // void calculate_J(...)
 
@@ -2642,6 +2654,7 @@ public:
     AlphaStorageType& alpha_storage_;
     std::mutex& mutex_;
     const XT::LA::SparsityPatternDefault& pattern_;
+    std::vector<std::vector<RangeFieldType>>& work_vecs_;
   }; // class Localfunction
 
   static std::string static_id()
@@ -2673,7 +2686,8 @@ public:
                                            cache_[index],
                                            alpha_storage_[index],
                                            mutexes_[index],
-                                           pattern_);
+                                           pattern_,
+                                           work_vecs_);
   }
 
   // calculate \sum_{i=1}^d < v_i m \psi > n_i, where n is the unit outer normal,
@@ -2750,15 +2764,23 @@ private:
   const size_t k_max_;
   const RangeFieldType epsilon_;
   const std::string name_;
-  // Use unique_ptr in the vectors to avoid the memory cost for storing twice as many matrices or vectors as needed
-  // (see
-  // constructor)
   mutable std::vector<LocalCacheType> cache_;
   mutable std::vector<AlphaStorageType> alpha_storage_;
   mutable std::vector<std::mutex> mutexes_;
   XT::LA::SparsityPatternDefault pattern_;
+  static thread_local std::vector<std::vector<RangeFieldType>> work_vecs_;
 };
 #endif
+
+template <class GridLayerImp, class U, size_t refinements>
+thread_local std::vector<std::vector<typename EntropyBasedLocalFlux<
+    HatFunctionMomentBasis<typename U::DomainFieldType, 3, typename U::RangeFieldType, refinements, 1>,
+    GridLayerImp,
+    U>::RangeFieldType>>
+    EntropyBasedLocalFlux<
+        HatFunctionMomentBasis<typename U::DomainFieldType, 3, typename U::RangeFieldType, refinements, 1>,
+        GridLayerImp,
+        U>::work_vecs_;
 
 #if 0
 /**
