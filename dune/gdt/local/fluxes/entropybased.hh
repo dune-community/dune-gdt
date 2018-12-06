@@ -2181,11 +2181,6 @@ public:
       for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll)
         M_[jj][ll] = basis_functions_.evaluate_on_face(quad_points_[jj][ll], jj);
     } // jj
-
-    // resize temporary vectors to store inner products and exponentials
-    work_vecs_.resize(faces.size());
-    for (size_t jj = 0; jj < faces.size(); ++jj)
-      work_vecs_[jj].resize(quad_points_[jj].size());
   } // constructor
 
   class Localfunction : public LocalfunctionType
@@ -2212,8 +2207,7 @@ public:
                   LocalCacheType& cache,
                   AlphaStorageType& alpha_storage,
                   std::mutex& mutex,
-                  const XT::LA::SparsityPatternDefault& pattern,
-                  std::vector<std::vector<RangeFieldType>>& work_vecs)
+                  const XT::LA::SparsityPatternDefault& pattern)
       : LocalfunctionType(e)
       , basis_functions_(basis_functions)
       , quad_points_(quad_points)
@@ -2231,7 +2225,6 @@ public:
       , alpha_storage_(alpha_storage)
       , mutex_(mutex)
       , pattern_(pattern)
-      , work_vecs_(work_vecs)
     {}
 
     static bool is_realizable(const VectorType& u)
@@ -2250,6 +2243,18 @@ public:
     VectorType get_stored_alpha(const DomainType& x_local) const
     {
       return alpha_storage_.at(x_local);
+    }
+
+    // temporary vectors to store inner products and exponentials
+    std::vector<std::vector<RangeFieldType>>& get_work_vecs() const
+    {
+      thread_local std::vector<std::vector<RangeFieldType>> work_vecs;
+      const auto& triangulation = basis_functions_.triangulation();
+      const auto& faces = triangulation.faces();
+      work_vecs.resize(faces.size());
+      for (size_t jj = 0; jj < faces.size(); ++jj)
+        work_vecs[jj].resize(quad_points_[jj].size());
+      return work_vecs;
     }
 
     using LocalfunctionType::entity;
@@ -2553,6 +2558,7 @@ public:
       LocalVectorType local_alpha, local_u;
       const auto& triangulation = basis_functions_.triangulation();
       const auto& faces = triangulation.faces();
+      auto& work_vecs = get_work_vecs();
       for (size_t jj = 0; jj < faces.size(); ++jj) {
         const auto& face = faces[jj];
         const auto& vertices = face->vertices();
@@ -2561,9 +2567,9 @@ public:
           local_alpha[ii] = alpha.get_entry(vertices[ii]->index());
         for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
           const auto& basis_ll = M_[jj][ll];
-          work_vecs_[jj][ll] = std::exp(local_alpha * basis_ll) * quad_weights_[jj][ll];
+          work_vecs[jj][ll] = std::exp(local_alpha * basis_ll) * quad_weights_[jj][ll];
           for (size_t ii = 0; ii < 3; ++ii)
-            local_u[ii] += basis_ll[ii] * work_vecs_[jj][ll];
+            local_u[ii] += basis_ll[ii] * work_vecs[jj][ll];
         } // ll (quad points)
         for (size_t ii = 0; ii < 3; ++ii)
           u.add_to_entry(vertices[ii]->index(), local_u[ii]);
@@ -2586,6 +2592,7 @@ public:
       LocalMatrixType H_local(0.);
       const auto& triangulation = basis_functions_.triangulation();
       const auto& faces = triangulation.faces();
+      auto& work_vecs = get_work_vecs();
       for (size_t jj = 0; jj < faces.size(); ++jj) {
         H_local *= 0.;
         const auto& face = faces[jj];
@@ -2595,10 +2602,10 @@ public:
         for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
           const auto& basis_ll = M[jj][ll];
           if (!use_work_vecs_results)
-            work_vecs_[jj][ll] = std::exp(local_alpha * basis_ll) * quad_weights_[jj][ll];
+            work_vecs[jj][ll] = std::exp(local_alpha * basis_ll) * quad_weights_[jj][ll];
           for (size_t ii = 0; ii < 3; ++ii)
             for (size_t kk = 0; kk < 3; ++kk)
-              H_local[ii][kk] += basis_ll[ii] * basis_ll[kk] * work_vecs_[jj][ll];
+              H_local[ii][kk] += basis_ll[ii] * basis_ll[kk] * work_vecs[jj][ll];
         } // ll (quad points)
         for (size_t ii = 0; ii < 3; ++ii)
           for (size_t kk = 0; kk < 3; ++kk)
@@ -2618,6 +2625,7 @@ public:
       assert(dd < dimRangeCols);
       J_dd *= 0.;
       LocalMatrixType J_local(0.);
+      auto& work_vecs = get_work_vecs();
       const auto& triangulation = basis_functions_.triangulation();
       const auto& faces = triangulation.faces();
       for (size_t jj = 0; jj < faces.size(); ++jj) {
@@ -2628,7 +2636,7 @@ public:
           const auto& basis_ll = M[jj][ll];
           for (size_t ii = 0; ii < 3; ++ii)
             for (size_t kk = 0; kk < 3; ++kk)
-              J_local[ii][kk] += basis_ll[ii] * basis_ll[kk] * work_vecs_[jj][ll] * quad_points_[jj][ll][dd];
+              J_local[ii][kk] += basis_ll[ii] * basis_ll[kk] * work_vecs[jj][ll] * quad_points_[jj][ll][dd];
         } // ll (quad points)
         for (size_t ii = 0; ii < 3; ++ii)
           for (size_t kk = 0; kk < 3; ++kk)
@@ -2654,7 +2662,6 @@ public:
     AlphaStorageType& alpha_storage_;
     std::mutex& mutex_;
     const XT::LA::SparsityPatternDefault& pattern_;
-    std::vector<std::vector<RangeFieldType>>& work_vecs_;
   }; // class Localfunction
 
   static std::string static_id()
@@ -2686,8 +2693,7 @@ public:
                                            cache_[index],
                                            alpha_storage_[index],
                                            mutexes_[index],
-                                           pattern_,
-                                           work_vecs_);
+                                           pattern_);
   }
 
   // calculate \sum_{i=1}^d < v_i m \psi > n_i, where n is the unit outer normal,
@@ -2768,19 +2774,9 @@ private:
   mutable std::vector<AlphaStorageType> alpha_storage_;
   mutable std::vector<std::mutex> mutexes_;
   XT::LA::SparsityPatternDefault pattern_;
-  static thread_local std::vector<std::vector<RangeFieldType>> work_vecs_;
 };
 #endif
 
-template <class GridLayerImp, class U, size_t refinements>
-thread_local std::vector<std::vector<typename EntropyBasedLocalFlux<
-    HatFunctionMomentBasis<typename U::DomainFieldType, 3, typename U::RangeFieldType, refinements, 1>,
-    GridLayerImp,
-    U>::RangeFieldType>>
-    EntropyBasedLocalFlux<
-        HatFunctionMomentBasis<typename U::DomainFieldType, 3, typename U::RangeFieldType, refinements, 1>,
-        GridLayerImp,
-        U>::work_vecs_;
 
 #if 0
 /**
