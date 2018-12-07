@@ -136,6 +136,7 @@ private:
 template <class BasisfunctionImp, class GridLayerImp, class U>
 class EntropyBasedLocalFlux;
 
+#if 1
 /** Analytical flux \mathbf{f}(\mathbf{u}) = < \mu \mathbf{m} G_{\hat{\alpha}(\mathbf{u})} >,
  * for the notation see
  * Alldredge, Hauck, O'Leary, Tits, "Adaptive change of basis in entropy-based moment closures for linear kinetic
@@ -1113,6 +1114,928 @@ private:
   mutable XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>> lp_;
 #endif
 };
+#endif
+
+
+#if 0
+/** Analytical flux \mathbf{f}(\mathbf{u}) = < \mu \mathbf{m} G_{\hat{\alpha}(\mathbf{u})} >,
+ * Simple backtracking Newton without change of basis
+ */
+template <class BasisfunctionImp, class GridLayerImp, class U>
+class EntropyBasedLocalFlux
+  : public XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
+                                                           typename BasisfunctionImp::DomainFieldType,
+                                                           BasisfunctionImp::dimFlux,
+                                                           U,
+                                                           0,
+                                                           typename BasisfunctionImp::RangeFieldType,
+                                                           BasisfunctionImp::dimRange,
+                                                           BasisfunctionImp::dimFlux>
+{
+  using BaseType =
+      typename XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
+                                                               typename BasisfunctionImp::DomainFieldType,
+                                                               BasisfunctionImp::dimFlux,
+                                                               U,
+                                                               0,
+                                                               typename BasisfunctionImp::RangeFieldType,
+                                                               BasisfunctionImp::dimRange,
+                                                               BasisfunctionImp::dimFlux>;
+  using ThisType = EntropyBasedLocalFlux;
+
+public:
+  using BasisfunctionType = BasisfunctionImp;
+  using GridLayerType = GridLayerImp;
+  using BaseType::dimDomain;
+  using BaseType::dimRange;
+  using BaseType::dimRangeCols;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::DomainType;
+  using typename BaseType::EntityType;
+  using typename BaseType::LocalfunctionType;
+  using typename BaseType::PartialURangeType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::RangeType;
+  using typename BaseType::StateRangeType;
+  using typename BaseType::StateType;
+  // make matrices a little larger to align to 64 byte boundary
+  static constexpr size_t matrix_num_cols = dimRange % 8 ? dimRange : dimRange + (8 - dimRange % 8);
+  using MatrixType = XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange>;
+  using VectorType = XT::Common::FieldVector<RangeFieldType, dimRange>;
+  using DynamicRangeType = DynamicVector<RangeFieldType>;
+  using BasisValuesMatrixType = XT::LA::CommonDenseMatrix<RangeFieldType>;
+  using QuadratureRuleType = Dune::QuadratureRule<DomainFieldType, dimDomain>;
+  using AlphaReturnType = std::pair<VectorType, RangeFieldType>;
+  using LocalCacheType = EntropyLocalCache<StateRangeType, VectorType>;
+  using AlphaStorageType = std::map<DomainType, StateRangeType, XT::Common::VectorFloatLess>;
+  static const size_t cache_size = 4 * dimDomain + 2;
+
+  // get permutation instead of sorting directly to be able to sort two vectors the same way
+  // see
+  // https://stackoverflow.com/questions/17074324/how-can-i-sort-two-vectors-in-the-same-way-with-criteria-that-uses-only-one-of
+  template <typename T, typename Compare>
+  std::vector<std::size_t> get_sort_permutation(const std::vector<T>& vec, const Compare& compare)
+  {
+    std::vector<std::size_t> p(vec.size());
+    std::iota(p.begin(), p.end(), 0);
+    std::sort(p.begin(), p.end(), [&](std::size_t i, std::size_t j) { return compare(vec[i], vec[j]); });
+    return p;
+  }
+
+  template <typename T>
+  void apply_permutation_in_place(std::vector<T>& vec, const std::vector<std::size_t>& p)
+  {
+    std::vector<bool> done(vec.size());
+    for (std::size_t i = 0; i < vec.size(); ++i) {
+      if (done[i]) {
+        continue;
+      }
+      done[i] = true;
+      std::size_t prev_j = i;
+      std::size_t j = p[i];
+      while (i != j) {
+        std::swap(vec[prev_j], vec[j]);
+        done[j] = true;
+        prev_j = j;
+        j = p[j];
+      }
+    }
+  }
+
+  // Joins duplicate quadpoints, vectors have to be sorted!
+  void join_duplicate_quadpoints(std::vector<DomainType>& quad_points, std::vector<RangeFieldType>& quad_weights)
+  {
+    // Index of first quad_point of several quad_points with the same position
+    size_t curr_index = 0;
+    std::vector<size_t> indices_to_remove;
+    for (size_t ll = 1; ll < quad_weights.size(); ++ll) {
+      if (XT::Common::FloatCmp::eq(quad_points[curr_index], quad_points[ll])) {
+        quad_weights[curr_index] += quad_weights[ll];
+        indices_to_remove.push_back(ll);
+      } else {
+        curr_index = ll;
+      }
+    } // ll
+    assert(indices_to_remove.size() < std::numeric_limits<int>::max());
+    // remove duplicate points, from back to front to avoid invalidating indices
+    for (int ll = static_cast<int>(indices_to_remove.size()) - 1; ll >= 0; --ll) {
+      quad_points.erase(quad_points.begin() + indices_to_remove[ll]);
+      quad_weights.erase(quad_weights.begin() + indices_to_remove[ll]);
+    }
+  }
+
+  explicit EntropyBasedLocalFlux(
+      const BasisfunctionType& basis_functions,
+      const GridLayerType& grid_layer,
+      const RangeFieldType tau = 1e-9,
+      const RangeFieldType epsilon_gamma = 0.01,
+      const RangeFieldType chi = 0.5,
+      const RangeFieldType xi = 1e-3,
+      const std::vector<RangeFieldType> r_sequence = {0, 1e-8, 1e-6, 1e-4, 1e-3, 1e-2, 5e-2, 0.1, 0.5, 1},
+      const size_t k_0 = 500,
+      const size_t k_max = 1000,
+      const RangeFieldType epsilon = std::pow(2, -52),
+      const std::string name = static_id())
+    : index_set_(grid_layer.indexSet())
+    , basis_functions_(basis_functions)
+    , quad_points_(basis_functions_.quadratures().merged().size())
+    , quad_weights_(quad_points_.size())
+    , M_(quad_points_.size(), matrix_num_cols, 0., 0)
+    , tau_(tau)
+    , epsilon_gamma_(epsilon_gamma)
+    , chi_(chi)
+    , xi_(xi)
+    , r_sequence_(r_sequence)
+    , k_0_(k_0)
+    , k_max_(k_max)
+    , epsilon_(epsilon)
+    , name_(name)
+    , cache_(index_set_.size(0), LocalCacheType(cache_size))
+    , alpha_storage_(index_set_.size(0))
+    , mutexes_(index_set_.size(0))
+  {
+    size_t ll = 0;
+    for (const auto& quad_point : basis_functions_.quadratures().merged()) {
+      quad_points_[ll] = quad_point.position();
+      quad_weights_[ll] = quad_point.weight();
+      ++ll;
+    }
+    // Join duplicate quad_points. For that purpose, first sort the vectors
+    const auto permutation = get_sort_permutation(quad_points_, XT::Common::VectorFloatLess{});
+    apply_permutation_in_place(quad_points_, permutation);
+    apply_permutation_in_place(quad_weights_, permutation);
+    // Now join duplicate quad_points by removing all quad_points with the same position except one and adding the
+    // weights of the removed points to the remaining point
+    join_duplicate_quadpoints(quad_points_, quad_weights_);
+    assert(quad_points_.size() == quad_weights_.size());
+    // evaluate basis functions and store in matrix
+    M_.resize(quad_points_.size(), matrix_num_cols);
+    for (ll = 0; ll < quad_points_.size(); ++ll) {
+      const auto val = basis_functions_.evaluate(quad_points_[ll]);
+      for (size_t ii = 0; ii < dimRange; ++ii)
+        M_.set_entry(ll, ii, val[ii]);
+    }
+  }
+
+  class Localfunction : public LocalfunctionType
+  {
+  public:
+    using LocalfunctionType::dimDomain;
+    using LocalfunctionType::dimRange;
+    using typename LocalfunctionType::ColPartialURangeType;
+    using typename LocalfunctionType::ColRangeType;
+
+    Localfunction(const EntityType& e,
+                  const BasisfunctionType& basis_functions,
+                  const std::vector<DomainType>& quad_points,
+                  const std::vector<RangeFieldType>& quad_weights,
+                  const BasisValuesMatrixType& M,
+                  const RangeFieldType tau,
+                  const RangeFieldType epsilon_gamma,
+                  const RangeFieldType chi,
+                  const RangeFieldType xi,
+                  const std::vector<RangeFieldType>& r_sequence,
+                  const size_t k_0,
+                  const size_t k_max,
+                  const RangeFieldType epsilon,
+                  LocalCacheType& cache,
+                  AlphaStorageType& alpha_storage,
+                  std::mutex& mutex
+#if HAVE_CLP
+                  ,
+                  XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>>& lp)
+#else
+                  )
+#endif
+      : LocalfunctionType(e)
+      , basis_functions_(basis_functions)
+      , quad_points_(quad_points)
+      , quad_weights_(quad_weights)
+      , M_(M)
+      , tau_(tau)
+      , epsilon_gamma_(epsilon_gamma)
+      , chi_(chi)
+      , xi_(xi)
+      , r_sequence_(r_sequence)
+      , k_0_(k_0)
+      , k_max_(k_max)
+      , epsilon_(epsilon)
+      , cache_(cache)
+      , alpha_storage_(alpha_storage)
+      , mutex_(mutex)
+#if HAVE_CLP
+      , realizability_helper_(basis_functions_, quad_points_, lp)
+#else
+      , realizability_helper_(basis_functions_, quad_points_)
+#endif
+    {}
+
+    template <class BasisFuncImp = BasisfunctionType, bool quadrature_contains_vertices = true, bool anything = true>
+    struct RealizabilityHelper;
+
+#if HAVE_CLP
+    template <class BasisFuncImp, bool quadrature_contains_vertices, bool anything>
+    struct RealizabilityHelper
+    {
+      static_assert(std::is_same<BasisFuncImp, BasisfunctionType>::value, "BasisFuncImp has to be BasisfunctionType!");
+
+      RealizabilityHelper(const BasisfunctionType& basis_functions,
+                          const std::vector<DomainType>& quad_points,
+                          XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>>& lp)
+        : basis_functions_(basis_functions)
+        , quad_points_(quad_points)
+        , lp_(lp)
+      {}
+
+      // The ClpSimplex structure seems to get corrupted sometimes (maybe some problems with infs/NaNs?), so we
+      // reinitialize it if the stopping conditions is always false
+      void setup_linear_program(const bool reinitialize) const
+      {
+        if (!*lp_ || reinitialize) {
+          // We start with creating a model with dimRange rows and num_quad_points columns */
+          constexpr int num_rows = static_cast<int>(dimRange);
+          assert(quad_points_.size() < std::numeric_limits<int>::max());
+          int num_cols = static_cast<int>(quad_points_.size()); /* variables are x_1, ..., x_{num_quad_points} */
+          *lp_ = std::make_unique<ClpSimplex>(false);
+          auto& lp = **lp_;
+          // set number of rows
+          lp.resize(num_rows, 0);
+
+          // Clp wants the row indices that are non-zero in each column. We have a dense matrix, so provide all indices
+          // 0..num_rows
+          std::array<int, num_rows> row_indices;
+          for (int ii = 0; ii < num_rows; ++ii)
+            row_indices[static_cast<size_t>(ii)] = ii;
+
+          // set columns for quadrature points
+          for (int ii = 0; ii < num_cols; ++ii) {
+            const auto v_i = basis_functions_.evaluate(quad_points_[static_cast<size_t>(ii)]);
+            // First argument: number of elements in column
+            // Second/Third argument: indices/values of column entries
+            // Fourth/Fifth argument: lower/upper column bound, i.e. lower/upper bound for x_i. As all x_i should be
+            // positive, set to 0/inf, which is the default.
+            // Sixth argument: Prefactor in objective for x_i, this is 0 for all x_i, which is also the default;
+            lp.addColumn(num_rows, row_indices.data(), &(v_i[0]));
+          }
+
+          // silence lp
+          lp.setLogLevel(0);
+        } // if (!lp_)
+      }
+
+      bool is_realizable(const StateRangeType& u, const bool reinitialize) const
+      {
+        const auto density = basis_functions_.density(u);
+        if (!(density > 0.) || std::isinf(density))
+          return false;
+        const auto u_prime = u / density;
+        setup_linear_program(reinitialize);
+        auto& lp = **lp_;
+        constexpr int num_rows = static_cast<int>(dimRange);
+        // set rhs (equality constraints, so set both bounds equal
+        for (int ii = 0; ii < num_rows; ++ii) {
+          size_t uii = static_cast<size_t>(ii);
+          lp.setRowLower(ii, u_prime[uii]);
+          lp.setRowUpper(ii, u_prime[uii]);
+        }
+        // set maximal wall time. If this is not set, in rare cases the primal method never returns
+        lp.setMaximumWallSeconds(60);
+        // Now check solvability
+        lp.primal();
+        return lp.primalFeasible();
+      }
+
+    private:
+      const BasisfunctionType& basis_functions_;
+      const std::vector<DomainType>& quad_points_;
+      XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>>& lp_;
+    }; // struct RealizabilityHelper<...>
+#else // HAVE_CLP
+    template <class BasisFuncImp, bool quadrature_contains_vertices, bool anything>
+    struct RealizabilityHelper
+    {
+      RealizabilityHelper(const BasisfunctionType& /*basis_functions*/, const std::vector<DomainType>& /*quad_points*/)
+      {
+        DUNE_THROW(Dune::NotImplemented, "You are missing Clp!");
+      }
+
+      bool is_realizable(const StateRangeType& /*u*/, const bool /*reinitialize*/) const
+      {
+        DUNE_THROW(Dune::NotImplemented, "You are missing Clp!");
+        return false;
+      }
+    }; // struct RealizabilityHelper<...>
+#endif // HAVE_CLP
+
+    // specialization for hatfunctions
+    template <size_t dimRange_or_refinements, bool anything>
+    struct RealizabilityHelper<
+        HatFunctionMomentBasis<DomainFieldType, dimDomain, RangeFieldType, dimRange_or_refinements, 1, dimDomain>,
+        true,
+        anything>
+    {
+      RealizabilityHelper(const BasisfunctionType& /*basis_functions*/,
+                          const std::vector<DomainType>& /*quad_points*/
+#if HAVE_CLP
+                          ,
+                          XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>>& /*lp*/)
+#else
+      )
+#endif
+      {}
+
+      static bool is_realizable(const StateRangeType& u, const bool /*reinitialize*/)
+      {
+        for (const auto& u_i : u)
+          if (!(u_i > 0.) || std::isinf(u_i))
+            return false;
+        return true;
+      }
+    }; // struct RealizabilityHelper<Hatfunctions, ...>
+
+    void keep(const StateRangeType& u)
+    {
+      cache_.keep(u);
+    }
+
+    using LocalfunctionType::entity;
+
+    // temporary vectors to store inner products and exponentials
+    std::vector<RangeFieldType>& working_storage() const
+    {
+      thread_local std::vector<RangeFieldType> work_vec;
+      work_vec.resize(quad_points_.size());
+      return work_vec;
+    }
+
+    void calculate_scalar_products(const VectorType& beta_in,
+                                   const BasisValuesMatrixType& M,
+                                   std::vector<RangeFieldType>& scalar_products) const
+    {
+#if HAVE_MKL || HAVE_CBLAS
+      XT::Common::Blas::dgemv(XT::Common::Blas::row_major(),
+                              XT::Common::Blas::no_trans(),
+                              static_cast<int>(quad_points_.size()),
+                              dimRange,
+                              1.,
+                              M.data(),
+                              matrix_num_cols,
+                              &(beta_in[0]),
+                              1,
+                              0.,
+                              scalar_products.data(),
+                              1);
+#else
+      const size_t num_quad_points = quad_points_.size();
+      std::fill(scalar_products.begin(), scalar_products.end(), 0.);
+      for (size_t ll = 0; ll < num_quad_points; ++ll) {
+        const auto* basis_ll = M.get_ptr(ll);
+        scalar_products[ll] = std::inner_product(beta_in.begin(), beta_in.end(), basis_ll, 0.);
+      }
+#endif
+    }
+
+    void apply_exponential(std::vector<RangeFieldType>& values) const
+    {
+      assert(values.size() < std::numeric_limits<int>::max());
+      XT::Common::Mkl::exp(static_cast<int>(values.size()), values.data(), values.data());
+    }
+
+    // calculate ret = \int (exp(beta_in * m))
+    RangeFieldType calculate_scalar_integral(const VectorType& beta_in, const BasisValuesMatrixType& M) const
+    {
+      auto& work_vec = working_storage();
+      calculate_scalar_products(beta_in, M, work_vec);
+      apply_exponential(work_vec);
+      return std::inner_product(quad_weights_.begin(), quad_weights_.end(), work_vec.begin(), RangeFieldType(0.));
+    }
+
+    // calculate ret = \int (m1 exp(beta_in * m2))
+    void calculate_vector_integral(const VectorType& beta_in,
+                                   const BasisValuesMatrixType& M1,
+                                   const BasisValuesMatrixType& M2,
+                                   VectorType& ret,
+                                   bool same_beta = false,
+                                   bool only_first_component = false) const
+    {
+      auto& work_vec = working_storage();
+      if (!same_beta) {
+        calculate_scalar_products(beta_in, M2, work_vec);
+        apply_exponential(work_vec);
+      }
+      std::fill(ret.begin(), ret.end(), 0.);
+      const size_t num_quad_points = quad_weights_.size();
+      for (size_t ll = 0; ll < num_quad_points; ++ll) {
+        const auto factor_ll = work_vec[ll] * quad_weights_[ll];
+        const auto* basis_ll = M1.get_ptr(ll);
+        for (size_t ii = 0; ii < (only_first_component ? 1 : dimRange); ++ii)
+          ret[ii] += basis_ll[ii] * factor_ll;
+      } // ll
+    }
+
+    void store_alpha(const DomainType& x_local, const StateRangeType& alpha)
+    {
+      alpha_storage_[x_local] = alpha;
+    }
+
+    StateRangeType get_stored_alpha(const DomainType& x_local) const
+    {
+      return alpha_storage_.at(x_local);
+    }
+
+    template <class GridLayerType>
+    void center_results_to_intersections(const GridLayerType& grid_layer)
+    {
+      const auto center = entity().geometry().local(entity().geometry().center());
+      const auto center_alpha = get_stored_alpha(center);
+      for (const auto& intersection : Dune::intersections(grid_layer, entity()))
+        store_alpha(entity().geometry().local(intersection.geometry().center()), center_alpha);
+    }
+
+    std::unique_ptr<AlphaReturnType> get_alpha(const DomainType& x_local,
+                                               const StateRangeType& u,
+                                               const XT::Common::Parameter& param,
+                                               const bool regularize) const
+    {
+      const bool boundary = bool(param.get("boundary")[0]);
+      // get initial multiplier and basis matrix from last time step
+      auto ret = std::make_unique<AlphaReturnType>();
+      mutex_.lock();
+      if (boundary)
+        cache_.set_capacity(cache_size + dimDomain);
+
+      // rescale u such that the density <psi> is 1
+      RangeFieldType density = basis_functions_.density(u);
+      if (!(density > 0.) || std::isinf(density)) {
+        mutex_.unlock();
+        DUNE_THROW(Dune::MathError, "Negative, inf or NaN density!");
+      }
+      VectorType u_prime = u / density;
+      auto alpha_iso_dyn = basis_functions_.alpha_iso();
+      VectorType alpha_iso;
+      for (size_t ii = 0; ii < dimRange; ++ii)
+        alpha_iso[ii] = alpha_iso_dyn[ii];
+      VectorType v, u_eps_diff, alpha_k;
+      RangeFieldType first_error_cond, second_error_cond, tau_prime;
+
+      // if value has already been calculated for these values, skip computation
+      const auto cache_iterator = cache_.find_closest(u_prime);
+      if (cache_iterator != cache_.end() && XT::Common::FloatCmp::eq(cache_iterator->first, u_prime, 1e-14, 1e-14)) {
+        const auto alpha_prime = cache_iterator->second;
+        ret->first = alpha_prime + alpha_iso * std::log(density);
+        ret->second = 0.;
+        alpha_storage_[x_local] = ret->first;
+        mutex_.unlock();
+        return ret;
+      } else {
+        auto u_iso = basis_functions_.u_iso();
+        const RangeFieldType dim_factor = is_full_moment_basis<BasisfunctionType>::value ? 1. : std::sqrt(dimDomain);
+        tau_prime = std::min(tau_ / ((1 + dim_factor * u_prime.two_norm()) * density + dim_factor * tau_), tau_);
+
+        // define further variables
+        VectorType g_k, d_k, tmp_vec, alpha_prime;
+        alpha_k = cache_iterator != cache_.end() ? cache_iterator->second : alpha_iso;
+
+        const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
+        const auto r_max = r_sequence.back();
+        for (const auto& r : r_sequence) {
+          // regularize u
+          v = u_prime;
+          if (r > 0) {
+            alpha_k = alpha_iso;
+            DynamicRangeType r_times_u_iso = u_iso;
+            r_times_u_iso *= r;
+            v *= 1 - r;
+            v += r_times_u_iso;
+          }
+          // calculate T_k u
+          VectorType v_k = v;
+          // calculate f_0
+          RangeFieldType f_k = calculate_scalar_integral(alpha_k, M_);
+          f_k -= alpha_k * v_k;
+
+          thread_local auto H = XT::Common::make_unique<MatrixType>(0.);
+
+          int pure_newton = 0;
+          for (size_t kk = 0; kk < k_max_; ++kk) {
+            // exit inner for loop to increase r if too many iterations are used
+            if (kk > k_0_ && r < r_max)
+              break;
+            // calculate gradient g
+            calculate_vector_integral(alpha_k, M_, M_, g_k);
+            g_k -= v_k;
+            // calculate Hessian H
+            calculate_hessian(alpha_k, M_, *H, true);
+            // calculate descent direction d_k;
+            d_k = g_k;
+            d_k *= -1;
+            try {
+              // if H = LL^T, then we have to calculate d_k = - L^{-T} L^{-1} g_k
+              // calculate H = LL^T first
+              XT::LA::cholesky(*H);
+              VectorType tmp_vec;
+              // calculate d_tmp = -L^{-1} g_k and store in B
+              XT::LA::solve_lower_triangular(*H, tmp_vec, d_k);
+              // calculate d_k = L^{-T} d_tmp
+              XT::LA::solve_lower_triangular_transposed(*H, d_k, tmp_vec);
+            } catch (const Dune::MathError&) {
+              if (r < r_max)
+                break;
+              mutex_.unlock();
+              const std::string err_msg =
+                  "Failed to converge for " + XT::Common::to_string(u) + " with density "
+                  + XT::Common::to_string(density) + " and multiplier " + XT::Common::to_string(alpha_k)
+                  + " at position " + XT::Common::to_string(entity().geometry().center())
+                  + " due to errors in change_basis! Last u_eps_diff = " + XT::Common::to_string(u_eps_diff)
+                  + ", first_error_cond = " + XT::Common::to_string(first_error_cond) + ", second_error_cond = "
+                  + XT::Common::to_string(second_error_cond) + ", tau_prime = " + XT::Common::to_string(tau_prime);
+              DUNE_THROW(MathError, err_msg);
+            }
+
+            const auto& alpha_tilde = alpha_k;
+            auto& u_alpha_tilde = tmp_vec;
+            u_alpha_tilde = g_k;
+            u_alpha_tilde += v;
+            auto density_tilde = basis_functions_.density(u_alpha_tilde);
+            if (!(density_tilde > 0.) || std::isinf(density_tilde))
+              break;
+            alpha_prime = alpha_iso;
+            alpha_prime *= -std::log(density_tilde);
+            alpha_prime += alpha_tilde;
+            auto& u_eps_diff = tmp_vec;
+            calculate_vector_integral(alpha_prime, M_, M_, u_eps_diff);
+            u_eps_diff *= -(1 - epsilon_gamma_);
+            u_eps_diff += v;
+
+            first_error_cond = g_k.two_norm();
+            second_error_cond = std::exp(d_k.one_norm() + std::abs(std::log(density_tilde)));
+            if (first_error_cond < tau_prime && 1 - epsilon_gamma_ < second_error_cond
+                && realizability_helper_.is_realizable(u_eps_diff, kk == static_cast<size_t>(0.8 * k_0_))) {
+              ret->first = alpha_prime + alpha_iso * std::log(density);
+              ret->second = r;
+              cache_.insert(v, alpha_prime);
+              alpha_storage_[x_local] = ret->first;
+              goto outside_all_loops;
+            } else {
+              RangeFieldType zeta_k = 1;
+              // backtracking line search
+              auto& alpha_new = tmp_vec;
+              while (pure_newton >= 2 || zeta_k > epsilon_ * alpha_k.two_norm() / d_k.two_norm()) {
+                // calculate alpha_new = alpha_k + zeta_k d_k
+                alpha_new = d_k;
+                alpha_new *= zeta_k;
+                alpha_new += alpha_k;
+                // calculate f(alpha_new)
+                RangeFieldType f_new = calculate_scalar_integral(alpha_new, M_);
+                f_new -= alpha_new * v_k;
+                if (pure_newton >= 2 || XT::Common::FloatCmp::le(f_new, f_k + xi_ * zeta_k * (g_k * d_k))) {
+                  alpha_k = alpha_new;
+                  f_k = f_new;
+                  pure_newton = 0;
+                  break;
+                }
+                zeta_k = chi_ * zeta_k;
+              } // backtracking linesearch while
+              // if (zeta_k <= epsilon_ * alpha_k.two_norm() / d_k.two_norm() * 100.)
+              if (zeta_k <= epsilon_ * alpha_k.two_norm() / d_k.two_norm())
+                ++pure_newton;
+            } // else (stopping conditions)
+          } // k loop (Newton iterations)
+        } // r loop (Regularization parameter)
+        mutex_.unlock();
+        const std::string err_msg =
+            "Failed to converge for " + XT::Common::to_string(u) + " with density " + XT::Common::to_string(density)
+            + " and multiplier " + XT::Common::to_string(alpha_k) + " at position "
+            + XT::Common::to_string(entity().geometry().center()) + " due to too many iterations! Last u_eps_diff = "
+            + XT::Common::to_string(u_eps_diff) + ", first_error_cond = " + XT::Common::to_string(first_error_cond)
+            + ", second_error_cond = " + XT::Common::to_string(second_error_cond)
+            + ", tau_prime = " + XT::Common::to_string(tau_prime);
+        DUNE_THROW(MathError, err_msg);
+      } // else ( value has not been calculated before )
+
+    outside_all_loops:
+      mutex_.unlock();
+      return ret;
+    }
+
+    virtual size_t order(const XT::Common::Parameter& /*param*/) const override
+    {
+      return 1;
+    }
+
+    virtual void evaluate(const DomainType& x_local,
+                          const StateRangeType& u,
+                          RangeType& ret,
+                          const XT::Common::Parameter& param) const override
+    {
+      ColRangeType col_ret;
+      for (size_t dd = 0; dd < dimDomain; ++dd) {
+        evaluate_col(dd, x_local, u, col_ret, param);
+        for (size_t ii = 0; ii < dimRange; ++ii)
+          helper<dimDomain>::get_ref(ret, ii, dd) = col_ret[ii];
+      } // dd
+    } // void evaluate(...)
+
+    virtual void evaluate_col(const size_t col,
+                              const DomainType& x_local,
+                              const StateRangeType& u,
+                              ColRangeType& ret,
+                              const XT::Common::Parameter& param) const override
+    {
+      std::fill(ret.begin(), ret.end(), 0.);
+      const auto alpha = get_alpha(x_local, u, param, true)->first;
+      auto& work_vecs = working_storage();
+      calculate_scalar_products(alpha, M_, work_vecs);
+      apply_exponential(work_vecs);
+      // calculate ret[ii] = < omega[ii] m G_\alpha(u) >
+      for (size_t ll = 0; ll < quad_weights_.size(); ++ll) {
+        const auto factor = work_vecs[ll] * quad_weights_[ll] * quad_points_[ll][col];
+        for (size_t ii = 0; ii < dimRange; ++ii)
+          ret[ii] += M_.get_entry(ll, ii) * factor;
+      } // ll
+    } // void evaluate_col(...)
+
+    virtual void partial_u(const DomainType& x_local,
+                           const StateRangeType& /*u*/,
+                           PartialURangeType& ret,
+                           const XT::Common::Parameter& /*param*/) const override
+    {
+      const auto alpha = get_stored_alpha(x_local);
+      thread_local auto H = XT::Common::make_unique<MatrixType>();
+      calculate_hessian(alpha, M_, *H);
+      helper<dimDomain>::partial_u(M_, *H, ret, this);
+    }
+
+    virtual void partial_u_col(const size_t col,
+                               const DomainType& x_local,
+                               const StateRangeType& /*u*/,
+                               ColPartialURangeType& ret,
+                               const XT::Common::Parameter& /*param*/) const override
+    {
+      const auto alpha = get_stored_alpha(x_local);
+      thread_local auto H = XT::Common::make_unique<MatrixType>();
+      calculate_hessian(alpha, M_, *H);
+      partial_u_col_helper(col, M_, *H, ret);
+    }
+
+    static std::string static_id()
+    {
+      return "gdt.entropybasedlocalflux";
+    }
+
+  private:
+    template <size_t domainDim = dimDomain, class anything = void>
+    struct helper
+    {
+      static void partial_u(const BasisValuesMatrixType& M,
+                            MatrixType& H,
+                            PartialURangeType& ret,
+                            const Localfunction* entropy_flux)
+      {
+        for (size_t dd = 0; dd < domainDim; ++dd)
+          entropy_flux->partial_u_col_helper(dd, M, H, ret[dd], dd > 0);
+      } // void partial_u(...)
+
+      static RangeFieldType& get_ref(RangeType& ret, const size_t rr, const size_t cc)
+      {
+        return ret[rr][cc];
+      }
+    }; // class helper<...>
+
+    template <class anything>
+    struct helper<1, anything>
+    {
+      static void partial_u(const BasisValuesMatrixType& M,
+                            MatrixType& H,
+                            PartialURangeType& ret,
+                            const Localfunction* entropy_flux)
+      {
+        entropy_flux->partial_u_col_helper(0, M, H, ret, false);
+      } // void partial_u(...)
+
+      static RangeFieldType& get_ref(RangeType& ret, const size_t rr, const size_t DXTC_DEBUG_ONLY(cc))
+      {
+        assert(cc == 0);
+        return ret[rr];
+      }
+    }; // class helper<1, ...>
+
+    void partial_u_col_helper(const size_t col,
+                              const BasisValuesMatrixType& M,
+                              MatrixType& H,
+                              ColPartialURangeType& ret,
+                              bool L_calculated = false) const
+    {
+      assert(col < dimDomain);
+      calculate_J(M, ret, col);
+      calculate_A_Binv(ret, H, L_calculated);
+    } // void partial_u_col(...)
+
+    // calculates A = A B^{-1}. B is assumed to be symmetric positive definite.
+    static void calculate_A_Binv(ColPartialURangeType& A, MatrixType& B, bool L_calculated = false)
+    {
+      // if B = LL^T, then we have to calculate ret = A (L^T)^{-1} L^{-1} = C L^{-1}
+      // calculate B = LL^T first
+      if (!L_calculated)
+        XT::LA::cholesky(B);
+      VectorType tmp_vec;
+      for (size_t ii = 0; ii < dimRange; ++ii) {
+        // calculate C = A (L^T)^{-1} and store in B
+        XT::LA::solve_lower_triangular(B, tmp_vec, A[ii]);
+        // calculate ret = C L^{-1}
+        XT::LA::solve_lower_triangular_transposed(B, A[ii], tmp_vec);
+      } // ii
+    } // void calculate_A_Binv(...)
+
+    void calculate_hessian(const VectorType& alpha, const BasisValuesMatrixType& M, MatrixType& H, const bool use_work_vec_data = false) const
+    {
+      std::fill(H.begin(), H.end(), 0.);
+      auto& work_vec = working_storage();
+      if (!use_work_vec_data) {
+        calculate_scalar_products(alpha, M, work_vec);
+        apply_exponential(work_vec);
+      }
+      const size_t num_quad_points = quad_weights_.size();
+      // matrix is symmetric, we only use lower triangular part
+      for (size_t ll = 0; ll < num_quad_points; ++ll) {
+        auto factor_ll = work_vec[ll] * quad_weights_[ll];
+        const auto* basis_ll = M.get_ptr(ll);
+        for (size_t ii = 0; ii < dimRange; ++ii) {
+          auto* H_row = &(H[ii][0]);
+          const auto factor_ll_ii = basis_ll[ii] * factor_ll;
+          if (!XT::Common::is_zero(factor_ll_ii)) {
+            for (size_t kk = 0; kk <= ii; ++kk) {
+              H_row[kk] += basis_ll[kk] * factor_ll_ii;
+            } // kk
+          }
+        } // ii
+      } // ll
+    } // void calculate_hessian(...)
+
+    // J = df/dalpha is the derivative of the flux with respect to alpha.
+    // As F = (f_1, f_2, f_3) is matrix-valued
+    // (div f = \sum_{i=1}^d \partial_{x_i} f_i  = \sum_{i=1}^d \partial_{x_i} < v_i m \hat{psi}(alpha) > is
+    // vector-valued),
+    // the derivative is the vector of matrices (df_1/dalpha, df_2/dalpha, ...)
+    // this function returns the dd-th matrix df_dd/dalpha of J
+    // assumes work_vecs already contains the needed exp(alpha * m) values
+    void calculate_J(const BasisValuesMatrixType& M,
+                     Dune::FieldMatrix<RangeFieldType, dimRange, StateType::dimRange>& J_dd,
+                     const size_t dd) const
+    {
+      assert(dd < dimRangeCols);
+      const auto& work_vecs = working_storage();
+      std::fill(J_dd.begin(), J_dd.end(), 0);
+      const size_t num_quad_points = quad_points_.size();
+      for (size_t ll = 0; ll < num_quad_points; ++ll) {
+        const auto factor_ll = work_vecs[ll] * quad_points_[ll][dd] * quad_weights_[ll];
+        const auto* basis_ll = M.get_ptr(ll);
+        for (size_t ii = 0; ii < dimRange; ++ii) {
+          const auto factor_ll_ii = factor_ll * basis_ll[ii];
+          if (!XT::Common::is_zero(factor_ll_ii)) {
+            for (size_t kk = 0; kk <= ii; ++kk)
+              J_dd[ii][kk] += basis_ll[kk] * factor_ll_ii;
+          }
+        } // ii
+      } // ll
+      // symmetric update for upper triangular part of J
+      for (size_t mm = 0; mm < dimRange; ++mm)
+        for (size_t nn = mm + 1; nn < dimRange; ++nn)
+          J_dd[mm][nn] = J_dd[nn][mm];
+    } // void calculate_J(...)
+
+    const BasisfunctionType& basis_functions_;
+    const std::vector<DomainType>& quad_points_;
+    const std::vector<RangeFieldType>& quad_weights_;
+    const BasisValuesMatrixType& M_;
+    const RangeFieldType tau_;
+    const RangeFieldType epsilon_gamma_;
+    const RangeFieldType chi_;
+    const RangeFieldType xi_;
+    const std::vector<RangeFieldType>& r_sequence_;
+    const size_t k_0_;
+    const size_t k_max_;
+    const RangeFieldType epsilon_;
+    const std::string name_;
+    // constructor)
+    LocalCacheType& cache_;
+    AlphaStorageType& alpha_storage_;
+    std::mutex& mutex_;
+    RealizabilityHelper<BasisfunctionType, true, true> realizability_helper_;
+  }; // class Localfunction
+
+  static std::string static_id()
+  {
+    return "gdt.entropybasedflux";
+  }
+
+  std::unique_ptr<LocalfunctionType> local_function(const EntityType& entity) const
+  {
+    return derived_local_function(entity);
+  }
+
+  std::unique_ptr<Localfunction> derived_local_function(const EntityType& entity) const
+  {
+    const auto& index = index_set_.index(entity);
+    return std::make_unique<Localfunction>(entity,
+                                           basis_functions_,
+                                           quad_points_,
+                                           quad_weights_,
+                                           M_,
+                                           tau_,
+                                           epsilon_gamma_,
+                                           chi_,
+                                           xi_,
+                                           r_sequence_,
+                                           k_0_,
+                                           k_max_,
+                                           epsilon_,
+                                           cache_[index],
+                                           alpha_storage_[index],
+                                           mutexes_[index]
+#if HAVE_CLP
+                                           ,
+                                           lp_);
+#else
+    );
+#endif
+  }
+
+  // calculate \sum_{i=1}^d < v_i m \psi > n_i, where n is the unit outer normal,
+  // m is the basis function vector, phi_u is the ansatz corresponding to u
+  // and x, v, t are the space, velocity and time variable, respectively
+  // As we are using cartesian grids, n_i == 0 in all but one dimension, so only evaluate for i == dd
+  StateRangeType evaluate_kinetic_flux(const EntityType& entity,
+                                       const DomainType& x_local_entity,
+                                       const StateRangeType& /*u_i*/,
+                                       const EntityType& neighbor,
+                                       const DomainType& x_local_neighbor,
+                                       const StateRangeType& u_j,
+                                       const DomainType& n_ij,
+                                       const size_t dd,
+                                       const XT::Common::Parameter& /*param*/,
+                                       const XT::Common::Parameter& param_neighbor) const
+  {
+    assert(XT::Common::FloatCmp::ne(n_ij[dd], 0.));
+    const bool boundary = static_cast<bool>(param_neighbor.get("boundary")[0]);
+    // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
+    const auto local_function_entity = derived_local_function(entity);
+    const auto local_function_neighbor = derived_local_function(neighbor);
+    const auto alpha_i = local_function_entity->get_stored_alpha(x_local_entity);
+    StateRangeType alpha_j;
+    if (boundary)
+      alpha_j = local_function_neighbor->get_alpha(x_local_neighbor, u_j, param_neighbor, true)->first;
+    else
+      alpha_j = local_function_neighbor->get_stored_alpha(x_local_neighbor);
+    thread_local FieldVector<std::vector<RangeFieldType>, 2> work_vecs;
+    work_vecs[0].resize(quad_points_.size());
+    work_vecs[1].resize(quad_points_.size());
+    local_function_entity->calculate_scalar_products(alpha_i, M_, work_vecs[0]);
+    local_function_entity->calculate_scalar_products(alpha_j, M_, work_vecs[1]);
+    StateRangeType ret(0);
+    for (size_t ll = 0; ll < quad_points_.size(); ++ll) {
+      const auto position = quad_points_[ll][dd];
+      RangeFieldType factor = position * n_ij[dd] > 0. ? std::exp(work_vecs[0][ll]) : std::exp(work_vecs[1][ll]);
+      factor *= quad_weights_[ll] * position;
+      const auto* basis_ll = M_.get_ptr(ll);
+      for (size_t ii = 0; ii < dimRange; ++ii)
+        ret[ii] += basis_ll[ii] * factor;
+    } // ll
+    ret *= n_ij[dd];
+    return ret;
+  } // StateRangeType evaluate_kinetic_flux(...)
+
+  const BasisfunctionType& basis_functions() const
+  {
+    return basis_functions_;
+  }
+
+private:
+  const typename GridLayerType::IndexSet& index_set_;
+  const BasisfunctionType& basis_functions_;
+  std::vector<DomainType> quad_points_;
+  std::vector<RangeFieldType> quad_weights_;
+  BasisValuesMatrixType M_;
+  const RangeFieldType tau_;
+  const RangeFieldType epsilon_gamma_;
+  const RangeFieldType chi_;
+  const RangeFieldType xi_;
+  const std::vector<RangeFieldType> r_sequence_;
+  const size_t k_0_;
+  const size_t k_max_;
+  const RangeFieldType epsilon_;
+  const std::string name_;
+  // Use unique_ptr in the vectors to avoid the memory cost for storing twice as many matrices or vectors as needed
+  // (see
+  // constructor)
+  mutable std::vector<LocalCacheType> cache_;
+  mutable std::vector<AlphaStorageType> alpha_storage_;
+  mutable std::vector<std::mutex> mutexes_;
+#if HAVE_CLP
+  mutable XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>> lp_;
+#endif
+};
+#endif
 
 
 #if 1
