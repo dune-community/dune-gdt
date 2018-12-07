@@ -23,6 +23,6 @@ ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD} bindings
 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD} test_python
 
 cd ${SUPERDIR}/${MY_MODULE}
-${DUNE_BUILD_DIR}/${MY_MODULE}/dune-env pip install codecov
-${DUNE_BUILD_DIR}/${MY_MODULE}/dune-env codecov -X gcov -F pytest -t ${CODECOV_TOKEN}
+${DUNE_BUILD_DIR}/${MY_MODULE}/run-in-dune-env pip install codecov
+${DUNE_BUILD_DIR}/${MY_MODULE}/run-in-dune-env codecov -X gcov -F pytest -t ${CODECOV_TOKEN}
 
