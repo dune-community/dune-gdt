@@ -9,6 +9,8 @@
 
 #include "config.h"
 
+#include <dune/xt/common/fix-ambiguous-std-math-overloads.hh>
+
 #include <dune/pybindxi/pybind11.h>
 #include <dune/pybindxi/stl.h>
 #include <python/dune/xt/common/bindings.hh>
@@ -44,16 +46,17 @@ static const constexpr size_t d = G::dimension;
 using M = XT::LA::IstlRowMajorSparseMatrix<double>;
 using V = XT::LA::IstlDenseVector<double>;
 
-static const LocalEllipticIpdgIntegrands::Method ipdg_variant = LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor;
+static const LocalEllipticIpdgIntegrands::Method ipdg_variant =
+    LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor;
 
 
 template <class GV>
 std::unique_ptr<GDT::SpaceInterface<GV>> make_subdomain_space(GV subdomain_grid_view, const std::string& space_type)
 {
   if (space_type == "continuous_lagrange")
-    return std::make_unique<GDT::ContinuousLagrangeSpace<GV, /*order=*/1>>(subdomain_grid_view);
+    return std::make_unique<GDT::ContinuousLagrangeSpace<GV>>(subdomain_grid_view, /*order=*/1);
   else if (space_type == "discontinuous_lagrange")
-    return std::make_unique<GDT::DiscontinuousLagrangeSpace<GV, /*order=*/1>>(subdomain_grid_view);
+    return std::make_unique<GDT::DiscontinuousLagrangeSpace<GV>>(subdomain_grid_view, /*order=*/1);
   else
     DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
                "space_type = " << space_type << "\n   has to be 'continuous_lagrange' or 'discontinuous_lagrange'!");
@@ -75,10 +78,13 @@ public:
     , vtk_writer_(dd_grid)
     , local_spaces_(dd_grid.num_subdomains(), nullptr)
     , local_discrete_functions_(dd_grid.num_subdomains(), nullptr)
-  {
-  }
+  {}
 
-  void visualize_local(const std::string& filename_prefix, const size_t ss, const V& vec, const std::string& space_type, const std::string& name)
+  void visualize_local(const std::string& filename_prefix,
+                       const size_t ss,
+                       const V& vec,
+                       const std::string& space_type,
+                       const std::string& name)
   {
     DUNE_THROW_IF(ss >= dd_grid.num_subdomains(),
                   XT::Common::Exceptions::index_out_of_range,
@@ -87,7 +93,7 @@ public:
       if (dd_grid.subdomain(macro_element) == ss) { // this is the subdomain we are interested in
         auto local_space = make_subdomain_space(dd_grid.local_grid(macro_element).leaf_view(), space_type);
         auto local_discrete_function = make_discrete_function(*local_space, V(vec), name);
-	local_discrete_function.visualize(filename_prefix);
+        local_discrete_function.visualize(filename_prefix);
         break;
       }
     }
@@ -159,8 +165,7 @@ public:
     : macro_grid_view_(macro_grid_view)
     , macro_element_(macro_element)
     , macro_boundary_info_(macro_boundary_info)
-  {
-  }
+  {}
 
   const XT::Grid::BoundaryType& type(const IntersectionType& intersection) const override final
   {
@@ -237,19 +242,20 @@ PYBIND11_PLUGIN(usercode)
     }
     return neighboring_subdomains;
   });
-  domain_decomposition.def("visualize_local",
-                           [](DomainDecomposition& self,
-		              const std::string& filename_prefix,
-                              const size_t ss,
-                              const V& vec,
-                              const std::string& space_type,
-                              const std::string& name) { self.visualize_local(filename_prefix, ss, vec, space_type, name); },
-			   py::call_guard<py::gil_scoped_release>(),
-			   "filename_prefix"_a,
-                           "ss"_a,
-                           "subdomain_vector"_a,
-                           "space_type"_a = "discontinuous_lagrange",
-                           "name"_a = "STATE");
+  domain_decomposition.def(
+      "visualize_local",
+      [](DomainDecomposition& self,
+         const std::string& filename_prefix,
+         const size_t ss,
+         const V& vec,
+         const std::string& space_type,
+         const std::string& name) { self.visualize_local(filename_prefix, ss, vec, space_type, name); },
+      py::call_guard<py::gil_scoped_release>(),
+      "filename_prefix"_a,
+      "ss"_a,
+      "subdomain_vector"_a,
+      "space_type"_a = "discontinuous_lagrange",
+      "name"_a = "STATE");
   domain_decomposition.def("add_local_visualization",
                            [](DomainDecomposition& self,
                               const size_t ss,
@@ -300,8 +306,8 @@ PYBIND11_PLUGIN(usercode)
               subdomain_operator.append(element_bilinear_form);
               if (!subdomain_space->continuous(0)) {
                 const LocalIntersectionIntegralBilinearForm<I> coupling_bilinear_form(
-                    LocalEllipticIpdgIntegrands::Inner<I, double, ipdg_variant>(diffusion_factor.as_grid_function<E>(),
-                                                                                diffusion_tensor.as_grid_function<E>()));
+                    LocalEllipticIpdgIntegrands::Inner<I, double, ipdg_variant>(
+                        diffusion_factor.as_grid_function<E>(), diffusion_tensor.as_grid_function<E>()));
                 subdomain_operator.append(coupling_bilinear_form, {}, XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
               }
               subdomain_operator.assemble();
@@ -318,9 +324,7 @@ PYBIND11_PLUGIN(usercode)
         "space_type"_a = "discontinuous_lagrange");
 
   m.def("assemble_local_l2_matrix",
-        [](DomainDecomposition& domain_decomposition,
-           const size_t ss,
-           const std::string space_type) {
+        [](DomainDecomposition& domain_decomposition, const size_t ss, const std::string space_type) {
           DUNE_THROW_IF(ss >= domain_decomposition.dd_grid.num_subdomains(),
                         XT::Common::Exceptions::index_out_of_range,
                         "ss = " << ss << "\n   domain_decomposition.dd_grid.num_subdomains() = "
@@ -370,7 +374,7 @@ PYBIND11_PLUGIN(usercode)
               // create functional
               auto subdomain_functional = make_vector_functional<V>(*subdomain_space);
               const LocalElementIntegralFunctional<E> element_functional(local_binary_to_unary_element_integrand(
-                  force.as_grid_function<E>(), LocalElementProductIntegrand<E>()));
+                  LocalElementProductIntegrand<E>(), force.as_grid_function<E>()));
               subdomain_functional.append(element_functional);
               subdomain_functional.assemble();
               subdomain_vector = std::make_unique<V>(subdomain_functional.vector());
@@ -487,8 +491,8 @@ PYBIND11_PLUGIN(usercode)
                   using I = typename DomainDecomposition::DdGridType::GlueType::Intersection;
                   using E = typename I::InsideEntity;
                   const LocalIntersectionIntegralBilinearForm<I> intersection_bilinear_form(
-                      LocalEllipticIpdgIntegrands::Inner<I, double, ipdg_variant>(diffusion_factor.as_grid_function<E>(),
-                                                                                  diffusion_tensor.as_grid_function<E>()));
+                      LocalEllipticIpdgIntegrands::Inner<I, double, ipdg_variant>(
+                          diffusion_factor.as_grid_function<E>(), diffusion_tensor.as_grid_function<E>()));
                   for (auto coupling_intersection_it = coupling.template ibegin<0>();
                        coupling_intersection_it != coupling_intersection_it_end;
                        ++coupling_intersection_it) {
@@ -574,8 +578,8 @@ PYBIND11_PLUGIN(usercode)
               // create operator
               auto subdomain_operator = make_matrix_operator<M>(*subdomain_space, Stencil::element);
               const LocalIntersectionIntegralBilinearForm<I> dirichlet_bilinear_form(
-                  LocalEllipticIpdgIntegrands::DirichletBoundaryLhs<I, double, ipdg_variant>(diffusion_factor.as_grid_function<E>(),
-                                                                                             diffusion_tensor.as_grid_function<E>()));
+                  LocalEllipticIpdgIntegrands::DirichletBoundaryLhs<I, double, ipdg_variant>(
+                      diffusion_factor.as_grid_function<E>(), diffusion_tensor.as_grid_function<E>()));
               subdomain_operator.append(dirichlet_bilinear_form,
                                         {},
                                         XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(
@@ -586,7 +590,7 @@ PYBIND11_PLUGIN(usercode)
             }
           }
           return std::move(subdomain_matrix);
-        }, 
+        },
         py::call_guard<py::gil_scoped_release>(),
         "diffusion_factor"_a,
         "domain_decomposition"_a,
@@ -619,8 +623,8 @@ PYBIND11_PLUGIN(usercode)
               subdomain_operator.append(element_bilinear_form);
               if (!subdomain_space->continuous(0)) {
                 const LocalIntersectionIntegralBilinearForm<I> coupling_bilinear_form(
-                    LocalEllipticIpdgIntegrands::InnerOnlyPenalty<I, double, ipdg_variant>(diffusion_factor.as_grid_function<E>(),
-                                                                                           diffusion_tensor.as_grid_function<E>()));
+                    LocalEllipticIpdgIntegrands::InnerOnlyPenalty<I, double, ipdg_variant>(
+                        diffusion_factor.as_grid_function<E>(), diffusion_tensor.as_grid_function<E>()));
                 subdomain_operator.append(coupling_bilinear_form, {}, XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
               }
               subdomain_operator.assemble();
@@ -734,8 +738,8 @@ PYBIND11_PLUGIN(usercode)
                   using I = typename DomainDecomposition::DdGridType::GlueType::Intersection;
                   using E = typename I::InsideEntity;
                   const LocalIntersectionIntegralBilinearForm<I> intersection_bilinear_form(
-                      LocalEllipticIpdgIntegrands::InnerOnlyPenalty<I, double, ipdg_variant>(diffusion_factor.as_grid_function<E>(),
-                                                                                             diffusion_tensor.as_grid_function<E>()));
+                      LocalEllipticIpdgIntegrands::InnerOnlyPenalty<I, double, ipdg_variant>(
+                          diffusion_factor.as_grid_function<E>(), diffusion_tensor.as_grid_function<E>()));
                   for (auto coupling_intersection_it = coupling.template ibegin<0>();
                        coupling_intersection_it != coupling_intersection_it_end;
                        ++coupling_intersection_it) {
