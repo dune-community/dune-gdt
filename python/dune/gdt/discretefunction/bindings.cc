@@ -16,7 +16,7 @@
 #include <dune/pybindxi/stl.h>
 
 #include <python/dune/xt/common/bindings.hh>
-
+#include <python/dune/xt/grid/available_types.hh>
 #include <python/dune/gdt/discretefunction/bindings.hh>
 #include <python/dune/gdt/shared.hh>
 

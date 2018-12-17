@@ -18,6 +18,7 @@
 #include <python/dune/xt/grid/grids.bindings.hh>
 #include <python/dune/xt/grid/layers.bindings.hh>
 #include <dune/xt/grid/dd/subdomains/grid.hh>
+#include <python/dune/xt/grid/available_types.hh>
 
 #include <dune/gdt/spaces.hh>
 #include <python/dune/gdt/spaces/interface.hh>
