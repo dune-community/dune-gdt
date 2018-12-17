@@ -18,28 +18,22 @@ namespace GDT {
 
 
 class operator_error : public Dune::Exception
-{
-};
+{};
 
 class prolongation_error : public operator_error
-{
-};
+{};
 
 class projection_error : public operator_error
-{
-};
+{};
 
 class space_error : public Dune::Exception
-{
-};
+{};
 
 class restricted_space_error : public space_error
-{
-};
+{};
 
 class mapper_error : public space_error
-{
-};
+{};
 
 
 } // namespace GDT

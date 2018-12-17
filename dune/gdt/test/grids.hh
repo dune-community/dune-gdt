@@ -14,7 +14,7 @@
 
 #include <dune/grid/yaspgrid.hh>
 #if HAVE_DUNE_ALUGRID
-#include <dune/alugrid/common/declaration.hh>
+#  include <dune/alugrid/common/declaration.hh>
 #endif
 
 #include <dune/xt/grid/layers.hh>
@@ -34,11 +34,11 @@ YASPGRID_TYPES(3)
 #undef YASPGRID_TYPES
 
 #if HAVE_DUNE_ALUGRID
-#if ALU3DGRID_PARALLEL
+#  if ALU3DGRID_PARALLEL
 typedef Dune::ALUGridMPIComm AluComm;
-#else
+#  else
 typedef Dune::ALUGridNoComm AluComm;
-#endif
+#  endif
 
 typedef Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming, AluComm> AluConform2dGridType;
 typedef typename Dune::XT::Grid::Layer<AluConform2dGridType,

@@ -46,16 +46,16 @@ public:
 
   using BaseType::polOrder;
 
-  using typename BaseType::DomainFieldType;
   using BaseType::dimDomain;
+  using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
 
-  using typename BaseType::RangeFieldType;
   using BaseType::dimRange;
   using BaseType::dimRangeCols;
+  using typename BaseType::RangeFieldType;
 
-  using typename BaseType::GridLayerType;
   using typename BaseType::EntityType;
+  using typename BaseType::GridLayerType;
   using typename BaseType::PatternType;
 
 private:

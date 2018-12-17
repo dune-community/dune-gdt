@@ -51,12 +51,15 @@ public:
 
 } // namespace internal
 
-template <class AnalyticalFluxImp,
-          class BoundaryValueImp,
-          class LocalizableFunctionImp,
-          class Traits = internal::
-              AdvectionLaxFriedrichsOperatorTraits<AnalyticalFluxImp, BoundaryValueImp, LocalizableFunctionImp>>
-class AdvectionLaxFriedrichsOperator : public Dune::GDT::OperatorInterface<Traits>, public AdvectionOperatorBase<Traits>
+template <
+    class AnalyticalFluxImp,
+    class BoundaryValueImp,
+    class LocalizableFunctionImp,
+    class Traits =
+        internal::AdvectionLaxFriedrichsOperatorTraits<AnalyticalFluxImp, BoundaryValueImp, LocalizableFunctionImp>>
+class AdvectionLaxFriedrichsOperator
+  : public Dune::GDT::OperatorInterface<Traits>
+  , public AdvectionOperatorBase<Traits>
 {
   typedef AdvectionOperatorBase<Traits> BaseType;
 
@@ -79,8 +82,7 @@ public:
     , use_local_laxfriedrichs_flux_(use_local_laxfriedrichs_flux)
     , alpha_(alpha)
     , lambda_(lambda)
-  {
-  }
+  {}
 
   template <class SourceType, class RangeType>
   void apply(const SourceType& source, RangeType& range, const XT::Common::Parameter& param) const

@@ -36,8 +36,7 @@ class ResultStorage
 public:
   ResultStorage()
     : result_(0.)
-  {
-  }
+  {}
 
   ResultStorage(const ResultStorage& other) = delete;
   ResultStorage(ResultStorage&& source) = delete;
@@ -226,13 +225,9 @@ private:
             bool anything = true>
   struct addbind_switch
   {
-    static void ctors(bound_type& /*c*/)
-    {
-    }
+    static void ctors(bound_type& /*c*/) {}
 
-    static void factory_methods(pybind11::module& /*m*/)
-    {
-    }
+    static void factory_methods(pybind11::module& /*m*/) {}
   };
 
   template <bool anything>
@@ -267,9 +262,7 @@ private:
   template <bool anything>
   struct addbind_switch<false, true, anything>
   {
-    static void ctors(bound_type& /*c*/)
-    {
-    }
+    static void ctors(bound_type& /*c*/) {}
 
     static void factory_methods(pybind11::module& m)
     {

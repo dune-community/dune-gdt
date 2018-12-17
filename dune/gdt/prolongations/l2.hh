@@ -68,7 +68,7 @@ public:
 
 template <class GridLayerImp, class SourceImp, class RangeImp>
 class L2ProlongationLocalizableOperator
-    : public internal::L2ProlongationLocalizableOperatorTraits<GridLayerImp, SourceImp, RangeImp>::BaseType
+  : public internal::L2ProlongationLocalizableOperatorTraits<GridLayerImp, SourceImp, RangeImp>::BaseType
 {
   typedef
       typename internal::L2ProlongationLocalizableOperatorTraits<GridLayerImp, SourceImp, RangeImp>::BaseType BaseType;
@@ -77,8 +77,7 @@ public:
   template <class... Args>
   explicit L2ProlongationLocalizableOperator(Args&&... args)
     : BaseType(std::forward<Args>(args)...)
-  {
-  }
+  {}
 };
 
 
@@ -93,9 +92,8 @@ make_l2_prolongation_localizable_operator(const GridLayerType& grid_layer,
                                           const size_t over_integrate = 0,
                                           const XT::Common::Parameter& param = {})
 {
-  return Dune::XT::Common::make_unique<L2ProlongationLocalizableOperator<GridLayerType,
-                                                                         ConstDiscreteFunction<SS, SV>,
-                                                                         DiscreteFunction<RS, RV>>>(
+  return Dune::XT::Common::make_unique<
+      L2ProlongationLocalizableOperator<GridLayerType, ConstDiscreteFunction<SS, SV>, DiscreteFunction<RS, RV>>>(
       over_integrate, grid_layer, source, range, param);
 } // ... make_l2_prolongation_localizable_operator(...)
 
@@ -134,14 +132,12 @@ public:
   L2ProlongationOperator(const size_t over_integrate, GridLayerType grid_layer)
     : grid_layer_(grid_layer)
     , over_integrate_(over_integrate)
-  {
-  }
+  {}
 
   L2ProlongationOperator(GridLayerType grid_layer)
     : grid_layer_(grid_layer)
     , over_integrate_(0)
-  {
-  }
+  {}
 
   template <class SS, class SV, class RS, class RV>
   void apply(const ConstDiscreteFunction<SS, SV>& source,

@@ -58,13 +58,11 @@ public:
     DUNE_THROW_IF(global_matrix.rows() != test_space.mapper().size(),
                   XT::Common::Exceptions::shapes_do_not_match,
                   "global_matrix.rows() = " << global_matrix.rows() << "\n  "
-                                            << "test_space.mapper().size()"
-                                            << test_space.mapper().size());
+                                            << "test_space.mapper().size()" << test_space.mapper().size());
     DUNE_THROW_IF(global_matrix.cols() != ansatz_space.mapper().size(),
                   XT::Common::Exceptions::shapes_do_not_match,
                   "global_matrix.cols() = " << global_matrix.cols() << "\n  "
-                                            << "ansatz_space.mapper().size()"
-                                            << ansatz_space.mapper().size());
+                                            << "ansatz_space.mapper().size()" << ansatz_space.mapper().size());
     // prepare
     const size_t rows = test_space.mapper().numDofs(entity);
     const size_t cols = ansatz_space.mapper().numDofs(entity);
@@ -102,8 +100,7 @@ public:
     , where_(where)
     , local_volume_two_form_(local_volume_two_form)
     , matrix_(matrix)
-  {
-  }
+  {}
 
   bool apply_on(const GridLayerType& gv, const EntityType& entity) const override final
   {
@@ -295,8 +292,7 @@ public:
             typename AnsatzSpace,
             typename = typename std::enable_if<(std::is_same<TestSpace, OuterTestSpaceType>::value)
                                                && (std::is_same<AnsatzSpace, OuterAnsatzSpaceType>::value)
-                                               && sizeof(TestSpace)
-                                               && sizeof(AnsatzSpace)>::type>
+                                               && sizeof(TestSpace) && sizeof(AnsatzSpace)>::type>
   LocalCouplingTwoFormAssemblerFunctor(const TestSpace& test_space,
                                        const AnsatzSpace& ansatz_space,
                                        const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
@@ -315,15 +311,13 @@ public:
     , out_out_matrix_(out_out_matrix)
     , in_out_matrix_(in_out_matrix)
     , out_in_matrix_(out_in_matrix)
-  {
-  }
+  {}
 
   template <typename TestSpace,
             typename AnsatzSpace,
             typename = typename std::enable_if<(std::is_same<TestSpace, OuterTestSpaceType>::value)
                                                && (std::is_same<AnsatzSpace, OuterAnsatzSpaceType>::value)
-                                               && sizeof(TestSpace)
-                                               && sizeof(AnsatzSpace)>::type>
+                                               && sizeof(TestSpace) && sizeof(AnsatzSpace)>::type>
   LocalCouplingTwoFormAssemblerFunctor(const TestSpace& test_space,
                                        const AnsatzSpace& ansatz_space,
                                        const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
@@ -339,8 +333,7 @@ public:
     , out_out_matrix_(matrix)
     , in_out_matrix_(matrix)
     , out_in_matrix_(matrix)
-  {
-  }
+  {}
 
   LocalCouplingTwoFormAssemblerFunctor(const TestSpaceType& inner_test_space,
                                        const AnsatzSpaceType& inner_ansatz_space,
@@ -362,8 +355,7 @@ public:
     , out_out_matrix_(out_out_matrix)
     , in_out_matrix_(in_out_matrix)
     , out_in_matrix_(out_in_matrix)
-  {
-  }
+  {}
 
   LocalCouplingTwoFormAssemblerFunctor(const TestSpaceType& inner_test_space,
                                        const AnsatzSpaceType& inner_ansatz_space,
@@ -382,8 +374,7 @@ public:
     , out_out_matrix_(matrix)
     , in_out_matrix_(matrix)
     , out_in_matrix_(matrix)
-  {
-  }
+  {}
 
   bool apply_on(const GridLayerType& gv, const IntersectionType& intersection) const override final
   {
@@ -451,13 +442,11 @@ public:
     DUNE_THROW_IF(global_matrix.rows() != test_space.mapper().size(),
                   XT::Common::Exceptions::shapes_do_not_match,
                   "global_matrix.rows() = " << global_matrix.rows() << "\n  "
-                                            << "test_space.mapper().size()"
-                                            << test_space.mapper().size());
+                                            << "test_space.mapper().size()" << test_space.mapper().size());
     DUNE_THROW_IF(global_matrix.cols() != ansatz_space.mapper().size(),
                   XT::Common::Exceptions::shapes_do_not_match,
                   "global_matrix.cols() = " << global_matrix.cols() << "\n  "
-                                            << "ansatz_space.mapper().size()"
-                                            << ansatz_space.mapper().size());
+                                            << "ansatz_space.mapper().size()" << ansatz_space.mapper().size());
     // prepare
     const auto entity = intersection.inside();
     const size_t rows = test_space.mapper().numDofs(entity);
@@ -496,8 +485,7 @@ public:
     , where_(where)
     , local_boundary_two_form_(local_boundary_two_form)
     , matrix_(matrix)
-  {
-  }
+  {}
 
   bool apply_on(const GridLayerType& gv, const IntersectionType& intersection) const override final
   {
@@ -546,8 +534,7 @@ public:
     DUNE_THROW_IF(global_vector.size() != test_space.mapper().size(),
                   XT::Common::Exceptions::shapes_do_not_match,
                   "global_vector.size() = " << global_vector.size() << "\n  "
-                                            << "test_space.mapper().size()"
-                                            << test_space.mapper().size());
+                                            << "test_space.mapper().size()" << test_space.mapper().size());
     // prepare
     const size_t size = test_space.mapper().numDofs(entity);
     Dune::DynamicVector<FieldType> local_vector(size, 0.); // \todo: make mutable member, after SMP refactor
@@ -571,8 +558,7 @@ public:
     , where_(where)
     , local_volume_functional_(local_volume_functional)
     , vector_(vector)
-  {
-  }
+  {}
 
   bool apply_on(const GridLayerType& gv, const EntityType& entity) const override final
   {
@@ -641,8 +627,7 @@ public:
     , where_(where)
     , local_face_functional_(local_face_functional)
     , vector_(vector)
-  {
-  }
+  {}
 
   bool apply_on(const GridLayerType& gv, const IntersectionType& intersection) const override final
   {

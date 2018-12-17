@@ -21,8 +21,8 @@ namespace GDT {
 
 template <class DiscreteFunctionType>
 class DiscreteFunctionDataHandle
-    : public Dune::CommDataHandleIF<DiscreteFunctionDataHandle<DiscreteFunctionType>,
-                                    typename DiscreteFunctionType::SpaceType::RangeFieldType>
+  : public Dune::CommDataHandleIF<DiscreteFunctionDataHandle<DiscreteFunctionType>,
+                                  typename DiscreteFunctionType::SpaceType::RangeFieldType>
 {
 public:
   DiscreteFunctionDataHandle(DiscreteFunctionType& discrete_function, bool fixed_size = true)
@@ -30,8 +30,7 @@ public:
     , mapper_(discrete_function_.space().mapper())
     , vector_(discrete_function_.vector())
     , fixed_size_(fixed_size)
-  {
-  }
+  {}
 
   //! export type of data for message buffer
   typedef typename DiscreteFunctionType::SpaceType::DomainFieldType DataType;
@@ -70,8 +69,7 @@ public:
   //! pack data from user to message buffer
   template <class MessageBuffer, class EntityType>
   std::enable_if_t<EntityType::codimension != 0> gather(MessageBuffer& /*buff*/, const EntityType& /*entity*/) const
-  {
-  }
+  {}
 
   template <class MessageBuffer, class EntityType>
   std::enable_if_t<EntityType::codimension == 0> gather(MessageBuffer& buff, const EntityType& entity) const
@@ -87,8 +85,7 @@ public:
   template <class MessageBuffer, class EntityType>
   std::enable_if_t<EntityType::codimension != 0>
   scatter(MessageBuffer& /*buff*/, const EntityType& /*entity*/, size_t /*n*/)
-  {
-  }
+  {}
 
   template <class MessageBuffer, class EntityType>
   std::enable_if_t<EntityType::codimension == 0>

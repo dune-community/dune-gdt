@@ -110,7 +110,7 @@ public:
  */
 template <class RhsEvaluationImp, class SourceType>
 class LocalFvRhsIntegrand
-    : public LocalVolumeIntegrandInterface<internal::LocalFvRhsIntegrandTraits<RhsEvaluationImp, SourceType>, 1>
+  : public LocalVolumeIntegrandInterface<internal::LocalFvRhsIntegrandTraits<RhsEvaluationImp, SourceType>, 1>
 {
   typedef LocalVolumeIntegrandInterface<internal::LocalFvRhsIntegrandTraits<RhsEvaluationImp, SourceType>, 1> BaseType;
   typedef LocalFvRhsIntegrand<RhsEvaluationImp, SourceType> ThisType;
@@ -131,8 +131,7 @@ public:
     : rhs_evaluation_(rhs_evaluation)
     , source_(source)
     , param_(param)
-  {
-  }
+  {}
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {
@@ -174,7 +173,7 @@ private:
  */
 template <class RhsEvaluationImp, class SourceType>
 class LocalFvRhsJacobianIntegrand
-    : public LocalVolumeIntegrandInterface<internal::LocalFvRhsJacobianIntegrandTraits<RhsEvaluationImp, SourceType>, 2>
+  : public LocalVolumeIntegrandInterface<internal::LocalFvRhsJacobianIntegrandTraits<RhsEvaluationImp, SourceType>, 2>
 {
   typedef LocalVolumeIntegrandInterface<internal::LocalFvRhsJacobianIntegrandTraits<RhsEvaluationImp, SourceType>, 2>
       BaseType;
@@ -193,8 +192,7 @@ public:
   LocalFvRhsJacobianIntegrand(const RhsEvaluationType& rhs_evaluation, const SourceType& source)
     : rhs_evaluation_(rhs_evaluation)
     , source_(source)
-  {
-  }
+  {}
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {
@@ -237,7 +235,7 @@ private:
  */
 template <class RhsEvaluationImp, class SourceType>
 class LocalFvRhsNewtonIntegrand
-    : public LocalVolumeIntegrandInterface<internal::LocalFvRhsNewtonIntegrandTraits<RhsEvaluationImp, SourceType>, 2>
+  : public LocalVolumeIntegrandInterface<internal::LocalFvRhsNewtonIntegrandTraits<RhsEvaluationImp, SourceType>, 2>
 {
   typedef LocalVolumeIntegrandInterface<internal::LocalFvRhsNewtonIntegrandTraits<RhsEvaluationImp, SourceType>, 2>
       BaseType;
@@ -259,8 +257,7 @@ public:
     : rhs_evaluation_(rhs_evaluation)
     , source_(source)
     , factor_(param.get("factor")[0])
-  {
-  }
+  {}
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {

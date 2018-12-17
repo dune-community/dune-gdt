@@ -28,8 +28,7 @@ namespace GDT {
 template <class GridLayerType, class SourceType, class SpaceType, class VectorType>
 typename std::enable_if<XT::Grid::is_layer<GridLayerType>::value
                             && XT::Functions::is_localizable_function<SourceType>::value
-                            && is_cg_space<SpaceType>::value
-                            && XT::LA::is_vector<VectorType>::value,
+                            && is_cg_space<SpaceType>::value && XT::LA::is_vector<VectorType>::value,
                         void>::type
 project(const GridLayerType& grid_layer,
         const SourceType& source,
@@ -42,8 +41,7 @@ project(const GridLayerType& grid_layer,
 template <class GridLayerType, class SourceType, class SpaceType, class VectorType>
 typename std::enable_if<XT::Grid::is_layer<GridLayerType>::value
                             && XT::Functions::is_localizable_function<SourceType>::value
-                            && !is_cg_space<SpaceType>::value
-                            && XT::LA::is_vector<VectorType>::value,
+                            && !is_cg_space<SpaceType>::value && XT::LA::is_vector<VectorType>::value,
                         void>::type
 project(const GridLayerType& grid_layer,
         const SourceType& source,

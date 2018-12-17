@@ -40,7 +40,7 @@ template <class DiffusionFactorType,
           class SourceSpace = RangeSpace,
           class Field = typename Matrix::ScalarType>
 class EllipticIpdgMatrixOperator
-    : public MatrixOperatorBase<Matrix, RangeSpace, GridLayer, SourceSpace, Field, ChoosePattern::face_and_volume>
+  : public MatrixOperatorBase<Matrix, RangeSpace, GridLayer, SourceSpace, Field, ChoosePattern::face_and_volume>
 {
 public:
   typedef MatrixOperatorBase<Matrix, RangeSpace, GridLayer, SourceSpace, Field, ChoosePattern::face_and_volume>
@@ -73,9 +73,7 @@ public:
   /// \sa The Ctors of EllipticLocalizableProduct.
   /// \{
 
-  virtual ~EllipticIpdgMatrixOperator()
-  {
-  }
+  virtual ~EllipticIpdgMatrixOperator() {}
 
   template <typename DiffusionImp,
             typename = typename std::enable_if<(std::is_same<DiffusionTensorType, void>::value)
@@ -169,21 +167,21 @@ private:
                                     SourceBaseType,
                                     Field>
       local_volume_operator_;
-  const LocalCouplingIntegralOperator<LocalEllipticIpdgIntegrands::
-                                          Inner<DiffusionFactorType, DiffusionTensorType, method>,
-                                      RangeBaseType,
-                                      IntersectionType,
-                                      SourceBaseType,
-                                      RangeBaseType,
-                                      SourceBaseType,
-                                      Field>
+  const LocalCouplingIntegralOperator<
+      LocalEllipticIpdgIntegrands::Inner<DiffusionFactorType, DiffusionTensorType, method>,
+      RangeBaseType,
+      IntersectionType,
+      SourceBaseType,
+      RangeBaseType,
+      SourceBaseType,
+      Field>
       local_coupling_operator_;
-  const LocalBoundaryIntegralOperator<LocalEllipticIpdgIntegrands::
-                                          BoundaryLHS<DiffusionFactorType, DiffusionTensorType, method>,
-                                      RangeBaseType,
-                                      IntersectionType,
-                                      SourceBaseType,
-                                      Field>
+  const LocalBoundaryIntegralOperator<
+      LocalEllipticIpdgIntegrands::BoundaryLHS<DiffusionFactorType, DiffusionTensorType, method>,
+      RangeBaseType,
+      IntersectionType,
+      SourceBaseType,
+      Field>
       local_boundary_operator_;
 }; // class EllipticIpdgMatrixOperator
 
@@ -203,15 +201,14 @@ auto op = make_elliptic_ipdg_matrix_operator<MatrixType>(factor, tensor, boundar
 \endcode
  */
 template <class MatrixType, class DiffusionFactorType, class DiffusionTensorType, class SpaceType>
-typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
-                            && XT::Functions::is_localizable_function<DiffusionFactorType>::value
-                            && XT::Functions::is_localizable_function<DiffusionTensorType>::value
-                            && is_space<SpaceType>::value,
-                        std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType,
-                                                                   DiffusionTensorType,
-                                                                   SpaceType,
-                                                                   LocalEllipticIpdgIntegrands::default_method,
-                                                                   MatrixType>>>::type
+typename std::enable_if<
+    XT::LA::is_matrix<MatrixType>::value && XT::Functions::is_localizable_function<DiffusionFactorType>::value
+        && XT::Functions::is_localizable_function<DiffusionTensorType>::value && is_space<SpaceType>::value,
+    std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType,
+                                               DiffusionTensorType,
+                                               SpaceType,
+                                               LocalEllipticIpdgIntegrands::default_method,
+                                               MatrixType>>>::type
 make_elliptic_ipdg_matrix_operator(
     const DiffusionFactorType& diffusion_factor,
     const DiffusionTensorType& diffusion_tensor,
@@ -243,15 +240,11 @@ template <class MatrixType,
           class DiffusionFactorType,
           class DiffusionTensorType,
           class SpaceType>
-typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
-                            && XT::Functions::is_localizable_function<DiffusionFactorType>::value
-                            && XT::Functions::is_localizable_function<DiffusionTensorType>::value
-                            && is_space<SpaceType>::value,
-                        std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType,
-                                                                   DiffusionTensorType,
-                                                                   SpaceType,
-                                                                   method,
-                                                                   MatrixType>>>::type
+typename std::enable_if<
+    XT::LA::is_matrix<MatrixType>::value && XT::Functions::is_localizable_function<DiffusionFactorType>::value
+        && XT::Functions::is_localizable_function<DiffusionTensorType>::value && is_space<SpaceType>::value,
+    std::unique_ptr<
+        EllipticIpdgMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType, method, MatrixType>>>::type
 make_elliptic_ipdg_matrix_operator(
     const DiffusionFactorType& diffusion_factor,
     const DiffusionTensorType& diffusion_tensor,
@@ -259,9 +252,9 @@ make_elliptic_ipdg_matrix_operator(
     const SpaceType& space,
     const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::
-      make_unique<EllipticIpdgMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType, method, MatrixType>>(
-          over_integrate, boundary_info, diffusion_factor, diffusion_tensor, space);
+  return Dune::XT::Common::make_unique<
+      EllipticIpdgMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType, method, MatrixType>>(
+      over_integrate, boundary_info, diffusion_factor, diffusion_tensor, space);
 }
 
 /**
@@ -276,8 +269,7 @@ template <class MatrixType, class DiffusionFactorType, class DiffusionTensorType
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
                             && XT::Functions::is_localizable_function<DiffusionFactorType>::value
                             && XT::Functions::is_localizable_function<DiffusionTensorType>::value
-                            && is_space<SpaceType>::value
-                            && XT::Grid::is_layer<GridLayerType>::value,
+                            && is_space<SpaceType>::value && XT::Grid::is_layer<GridLayerType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType,
                                                                    DiffusionTensorType,
                                                                    SpaceType,
@@ -322,8 +314,7 @@ template <class MatrixType,
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
                             && XT::Functions::is_localizable_function<DiffusionFactorType>::value
                             && XT::Functions::is_localizable_function<DiffusionTensorType>::value
-                            && is_space<SpaceType>::value
-                            && XT::Grid::is_layer<GridLayerType>::value,
+                            && is_space<SpaceType>::value && XT::Grid::is_layer<GridLayerType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType,
                                                                    DiffusionTensorType,
                                                                    SpaceType,
@@ -366,19 +357,17 @@ template <class MatrixType,
           class RangeSpaceType,
           class SourceSpaceType,
           class GridLayerType>
-typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
-                            && XT::Functions::is_localizable_function<DiffusionFactorType>::value
-                            && XT::Functions::is_localizable_function<DiffusionTensorType>::value
-                            && is_space<RangeSpaceType>::value
-                            && is_space<SourceSpaceType>::value
-                            && XT::Grid::is_layer<GridLayerType>::value,
-                        std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType,
-                                                                   DiffusionTensorType,
-                                                                   RangeSpaceType,
-                                                                   LocalEllipticIpdgIntegrands::default_method,
-                                                                   MatrixType,
-                                                                   GridLayerType,
-                                                                   SourceSpaceType>>>::type
+typename std::enable_if<
+    XT::LA::is_matrix<MatrixType>::value && XT::Functions::is_localizable_function<DiffusionFactorType>::value
+        && XT::Functions::is_localizable_function<DiffusionTensorType>::value && is_space<RangeSpaceType>::value
+        && is_space<SourceSpaceType>::value && XT::Grid::is_layer<GridLayerType>::value,
+    std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType,
+                                               DiffusionTensorType,
+                                               RangeSpaceType,
+                                               LocalEllipticIpdgIntegrands::default_method,
+                                               MatrixType,
+                                               GridLayerType,
+                                               SourceSpaceType>>>::type
 make_elliptic_ipdg_matrix_operator(
     const DiffusionFactorType& diffusion_factor,
     const DiffusionTensorType& diffusion_tensor,
@@ -418,19 +407,17 @@ template <class MatrixType,
           class RangeSpaceType,
           class SourceSpaceType,
           class GridLayerType>
-typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
-                            && XT::Functions::is_localizable_function<DiffusionFactorType>::value
-                            && XT::Functions::is_localizable_function<DiffusionTensorType>::value
-                            && is_space<RangeSpaceType>::value
-                            && is_space<SourceSpaceType>::value
-                            && XT::Grid::is_layer<GridLayerType>::value,
-                        std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType,
-                                                                   DiffusionTensorType,
-                                                                   RangeSpaceType,
-                                                                   method,
-                                                                   MatrixType,
-                                                                   GridLayerType,
-                                                                   SourceSpaceType>>>::type
+typename std::enable_if<
+    XT::LA::is_matrix<MatrixType>::value && XT::Functions::is_localizable_function<DiffusionFactorType>::value
+        && XT::Functions::is_localizable_function<DiffusionTensorType>::value && is_space<RangeSpaceType>::value
+        && is_space<SourceSpaceType>::value && XT::Grid::is_layer<GridLayerType>::value,
+    std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType,
+                                               DiffusionTensorType,
+                                               RangeSpaceType,
+                                               method,
+                                               MatrixType,
+                                               GridLayerType,
+                                               SourceSpaceType>>>::type
 make_elliptic_ipdg_matrix_operator(
     const DiffusionFactorType& diffusion_factor,
     const DiffusionTensorType& diffusion_tensor,
@@ -459,8 +446,7 @@ make_elliptic_ipdg_matrix_operator(
 template <class DiffusionFactorType, class DiffusionTensorType, class MatrixType, class SpaceType>
 typename std::enable_if<XT::Functions::is_localizable_function<DiffusionFactorType>::value
                             && XT::Functions::is_localizable_function<DiffusionTensorType>::value
-                            && XT::LA::is_matrix<MatrixType>::value
-                            && is_space<SpaceType>::value,
+                            && XT::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType,
                                                                    DiffusionTensorType,
                                                                    SpaceType,
@@ -499,15 +485,12 @@ template <LocalEllipticIpdgIntegrands::Method method,
           class DiffusionTensorType,
           class MatrixType,
           class SpaceType>
-typename std::enable_if<XT::Functions::is_localizable_function<DiffusionFactorType>::value
-                            && XT::Functions::is_localizable_function<DiffusionTensorType>::value
-                            && XT::LA::is_matrix<MatrixType>::value
-                            && is_space<SpaceType>::value,
-                        std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType,
-                                                                   DiffusionTensorType,
-                                                                   SpaceType,
-                                                                   method,
-                                                                   MatrixType>>>::type
+typename std::enable_if<
+    XT::Functions::is_localizable_function<DiffusionFactorType>::value
+        && XT::Functions::is_localizable_function<DiffusionTensorType>::value && XT::LA::is_matrix<MatrixType>::value
+        && is_space<SpaceType>::value,
+    std::unique_ptr<
+        EllipticIpdgMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType, method, MatrixType>>>::type
 make_elliptic_ipdg_matrix_operator(
     const DiffusionFactorType& diffusion_factor,
     const DiffusionTensorType& diffusion_tensor,
@@ -516,9 +499,9 @@ make_elliptic_ipdg_matrix_operator(
     const SpaceType& space,
     const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::
-      make_unique<EllipticIpdgMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType, method, MatrixType>>(
-          over_integrate, boundary_info, diffusion_factor, diffusion_tensor, matrix, space);
+  return Dune::XT::Common::make_unique<
+      EllipticIpdgMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType, method, MatrixType>>(
+      over_integrate, boundary_info, diffusion_factor, diffusion_tensor, matrix, space);
 }
 
 /**
@@ -528,8 +511,7 @@ make_elliptic_ipdg_matrix_operator(
 template <class DiffusionFactorType, class DiffusionTensorType, class MatrixType, class SpaceType, class GridLayerType>
 typename std::enable_if<XT::Functions::is_localizable_function<DiffusionFactorType>::value
                             && XT::Functions::is_localizable_function<DiffusionTensorType>::value
-                            && XT::LA::is_matrix<MatrixType>::value
-                            && is_space<SpaceType>::value
+                            && XT::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value
                             && XT::Grid::is_layer<GridLayerType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType,
                                                                    DiffusionTensorType,
@@ -576,8 +558,7 @@ template <LocalEllipticIpdgIntegrands::Method method,
           class GridLayerType>
 typename std::enable_if<XT::Functions::is_localizable_function<DiffusionFactorType>::value
                             && XT::Functions::is_localizable_function<DiffusionTensorType>::value
-                            && XT::LA::is_matrix<MatrixType>::value
-                            && is_space<SpaceType>::value
+                            && XT::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value
                             && XT::Grid::is_layer<GridLayerType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType,
                                                                    DiffusionTensorType,
@@ -614,10 +595,8 @@ template <class DiffusionFactorType,
           class GridLayerType>
 typename std::enable_if<XT::Functions::is_localizable_function<DiffusionFactorType>::value
                             && XT::Functions::is_localizable_function<DiffusionTensorType>::value
-                            && XT::LA::is_matrix<MatrixType>::value
-                            && is_space<RangeSpaceType>::value
-                            && is_space<SourceSpaceType>::value
-                            && XT::Grid::is_layer<GridLayerType>::value,
+                            && XT::LA::is_matrix<MatrixType>::value && is_space<RangeSpaceType>::value
+                            && is_space<SourceSpaceType>::value && XT::Grid::is_layer<GridLayerType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType,
                                                                    DiffusionTensorType,
                                                                    RangeSpaceType,
@@ -667,10 +646,8 @@ template <LocalEllipticIpdgIntegrands::Method method,
           class GridLayerType>
 typename std::enable_if<XT::Functions::is_localizable_function<DiffusionFactorType>::value
                             && XT::Functions::is_localizable_function<DiffusionTensorType>::value
-                            && XT::LA::is_matrix<MatrixType>::value
-                            && is_space<RangeSpaceType>::value
-                            && is_space<SourceSpaceType>::value
-                            && XT::Grid::is_layer<GridLayerType>::value,
+                            && XT::LA::is_matrix<MatrixType>::value && is_space<RangeSpaceType>::value
+                            && is_space<SourceSpaceType>::value && XT::Grid::is_layer<GridLayerType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType,
                                                                    DiffusionTensorType,
                                                                    RangeSpaceType,
@@ -742,16 +719,15 @@ auto op = make_elliptic_ipdg_matrix_operator<MatrixType, LocalEllipticIpdgIntegr
 \endcode
  */
 template <class MatrixType, LocalEllipticIpdgIntegrands::Method method, class DiffusionType, class SpaceType>
-typename std::
-    enable_if<XT::LA::is_matrix<MatrixType>::value && XT::Functions::is_localizable_function<DiffusionType>::value
-                  && is_space<SpaceType>::value,
-              std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionType, void, SpaceType, method, MatrixType>>>::type
-    make_elliptic_ipdg_matrix_operator(
-        const DiffusionType& diffusion,
-        const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<typename SpaceType::GridLayerType>>&
-            boundary_info,
-        const SpaceType& space,
-        const size_t over_integrate = 0)
+typename std::enable_if<
+    XT::LA::is_matrix<MatrixType>::value && XT::Functions::is_localizable_function<DiffusionType>::value
+        && is_space<SpaceType>::value,
+    std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionType, void, SpaceType, method, MatrixType>>>::type
+make_elliptic_ipdg_matrix_operator(
+    const DiffusionType& diffusion,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<typename SpaceType::GridLayerType>>& boundary_info,
+    const SpaceType& space,
+    const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticIpdgMatrixOperator<DiffusionType, void, SpaceType, method, MatrixType>>(
       over_integrate, boundary_info, diffusion, space);
@@ -768,8 +744,7 @@ auto op = make_elliptic_ipdg_matrix_operator<MatrixType>(diffusion, boundary_inf
 template <class MatrixType, class DiffusionType, class SpaceType, class GridLayerType>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
                             && XT::Functions::is_localizable_function<DiffusionType>::value
-                            && is_space<SpaceType>::value
-                            && XT::Grid::is_layer<GridLayerType>::value,
+                            && is_space<SpaceType>::value && XT::Grid::is_layer<GridLayerType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionType,
                                                                    void,
                                                                    SpaceType,
@@ -808,26 +783,21 @@ template <class MatrixType,
           class DiffusionType,
           class SpaceType,
           class GridLayerType>
-typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
-                            && XT::Functions::is_localizable_function<DiffusionType>::value
-                            && is_space<SpaceType>::value
-                            && XT::Grid::is_layer<GridLayerType>::value,
-                        std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionType,
-                                                                   void,
-                                                                   SpaceType,
-                                                                   method,
-                                                                   MatrixType,
-                                                                   GridLayerType>>>::type
-make_elliptic_ipdg_matrix_operator(
-    const DiffusionType& diffusion,
-    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridLayerType>>& boundary_info,
-    const SpaceType& space,
-    const GridLayerType& grid_layer,
-    const size_t over_integrate = 0)
+typename std::enable_if<
+    XT::LA::is_matrix<MatrixType>::value && XT::Functions::is_localizable_function<DiffusionType>::value
+        && is_space<SpaceType>::value && XT::Grid::is_layer<GridLayerType>::value,
+    std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionType, void, SpaceType, method, MatrixType, GridLayerType>>>::
+    type
+    make_elliptic_ipdg_matrix_operator(
+        const DiffusionType& diffusion,
+        const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridLayerType>>& boundary_info,
+        const SpaceType& space,
+        const GridLayerType& grid_layer,
+        const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::
-      make_unique<EllipticIpdgMatrixOperator<DiffusionType, void, SpaceType, method, MatrixType, GridLayerType>>(
-          over_integrate, boundary_info, diffusion, space, grid_layer);
+  return Dune::XT::Common::make_unique<
+      EllipticIpdgMatrixOperator<DiffusionType, void, SpaceType, method, MatrixType, GridLayerType>>(
+      over_integrate, boundary_info, diffusion, space, grid_layer);
 }
 
 /**
@@ -845,8 +815,7 @@ auto op = make_elliptic_ipdg_matrix_operator<MatrixType>(diffusion,
 template <class MatrixType, class DiffusionType, class RangeSpaceType, class SourceSpaceType, class GridLayerType>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
                             && XT::Functions::is_localizable_function<DiffusionType>::value
-                            && is_space<RangeSpaceType>::value
-                            && is_space<SourceSpaceType>::value
+                            && is_space<RangeSpaceType>::value && is_space<SourceSpaceType>::value
                             && XT::Grid::is_layer<GridLayerType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionType,
                                                                    void,
@@ -893,8 +862,7 @@ template <class MatrixType,
           class GridLayerType>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
                             && XT::Functions::is_localizable_function<DiffusionType>::value
-                            && is_space<RangeSpaceType>::value
-                            && is_space<SourceSpaceType>::value
+                            && is_space<RangeSpaceType>::value && is_space<SourceSpaceType>::value
                             && XT::Grid::is_layer<GridLayerType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionType,
                                                                    void,
@@ -929,8 +897,7 @@ make_elliptic_ipdg_matrix_operator(
  */
 template <class DiffusionType, class MatrixType, class SpaceType>
 typename std::enable_if<XT::Functions::is_localizable_function<DiffusionType>::value
-                            && XT::LA::is_matrix<MatrixType>::value
-                            && is_space<SpaceType>::value,
+                            && XT::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionType,
                                                                    void,
                                                                    SpaceType,
@@ -963,17 +930,16 @@ auto op = make_elliptic_ipdg_matrix_operator<LocalEllipticIpdgIntegrands::swipdg
 \endcode
  */
 template <LocalEllipticIpdgIntegrands::Method method, class DiffusionType, class MatrixType, class SpaceType>
-typename std::
-    enable_if<XT::Functions::is_localizable_function<DiffusionType>::value && XT::LA::is_matrix<MatrixType>::value
-                  && is_space<SpaceType>::value,
-              std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionType, void, SpaceType, method, MatrixType>>>::type
-    make_elliptic_ipdg_matrix_operator(
-        const DiffusionType& diffusion,
-        const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<typename SpaceType::GridLayerType>>&
-            boundary_info,
-        MatrixType& matrix,
-        const SpaceType& space,
-        const size_t over_integrate = 0)
+typename std::enable_if<
+    XT::Functions::is_localizable_function<DiffusionType>::value && XT::LA::is_matrix<MatrixType>::value
+        && is_space<SpaceType>::value,
+    std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionType, void, SpaceType, method, MatrixType>>>::type
+make_elliptic_ipdg_matrix_operator(
+    const DiffusionType& diffusion,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<typename SpaceType::GridLayerType>>& boundary_info,
+    MatrixType& matrix,
+    const SpaceType& space,
+    const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticIpdgMatrixOperator<DiffusionType, void, SpaceType, method, MatrixType>>(
       over_integrate, boundary_info, diffusion, matrix, space);
@@ -985,8 +951,7 @@ typename std::
  */
 template <class DiffusionType, class MatrixType, class SpaceType, class GridLayerType>
 typename std::enable_if<XT::Functions::is_localizable_function<DiffusionType>::value
-                            && XT::LA::is_matrix<MatrixType>::value
-                            && is_space<SpaceType>::value
+                            && XT::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value
                             && XT::Grid::is_layer<GridLayerType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionType,
                                                                    void,
@@ -1028,27 +993,22 @@ template <LocalEllipticIpdgIntegrands::Method method,
           class MatrixType,
           class SpaceType,
           class GridLayerType>
-typename std::enable_if<XT::Functions::is_localizable_function<DiffusionType>::value
-                            && XT::LA::is_matrix<MatrixType>::value
-                            && is_space<SpaceType>::value
-                            && XT::Grid::is_layer<GridLayerType>::value,
-                        std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionType,
-                                                                   void,
-                                                                   SpaceType,
-                                                                   method,
-                                                                   MatrixType,
-                                                                   GridLayerType>>>::type
-make_elliptic_ipdg_matrix_operator(
-    const DiffusionType& diffusion,
-    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridLayerType>>& boundary_info,
-    MatrixType& matrix,
-    const SpaceType& space,
-    const GridLayerType& grid_layer,
-    const size_t over_integrate = 0)
+typename std::enable_if<
+    XT::Functions::is_localizable_function<DiffusionType>::value && XT::LA::is_matrix<MatrixType>::value
+        && is_space<SpaceType>::value && XT::Grid::is_layer<GridLayerType>::value,
+    std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionType, void, SpaceType, method, MatrixType, GridLayerType>>>::
+    type
+    make_elliptic_ipdg_matrix_operator(
+        const DiffusionType& diffusion,
+        const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridLayerType>>& boundary_info,
+        MatrixType& matrix,
+        const SpaceType& space,
+        const GridLayerType& grid_layer,
+        const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::
-      make_unique<EllipticIpdgMatrixOperator<DiffusionType, void, SpaceType, method, MatrixType, GridLayerType>>(
-          over_integrate, boundary_info, diffusion, matrix, space, grid_layer);
+  return Dune::XT::Common::make_unique<
+      EllipticIpdgMatrixOperator<DiffusionType, void, SpaceType, method, MatrixType, GridLayerType>>(
+      over_integrate, boundary_info, diffusion, matrix, space, grid_layer);
 }
 
 /**
@@ -1056,10 +1016,8 @@ make_elliptic_ipdg_matrix_operator(
  */
 template <class DiffusionType, class MatrixType, class RangeSpaceType, class SourceSpaceType, class GridLayerType>
 typename std::enable_if<XT::Functions::is_localizable_function<DiffusionType>::value
-                            && XT::LA::is_matrix<MatrixType>::value
-                            && is_space<RangeSpaceType>::value
-                            && is_space<SourceSpaceType>::value
-                            && XT::Grid::is_layer<GridLayerType>::value,
+                            && XT::LA::is_matrix<MatrixType>::value && is_space<RangeSpaceType>::value
+                            && is_space<SourceSpaceType>::value && XT::Grid::is_layer<GridLayerType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionType,
                                                                    void,
                                                                    RangeSpaceType,
@@ -1105,10 +1063,8 @@ template <LocalEllipticIpdgIntegrands::Method method,
           class SourceSpaceType,
           class GridLayerType>
 typename std::enable_if<XT::Functions::is_localizable_function<DiffusionType>::value
-                            && XT::LA::is_matrix<MatrixType>::value
-                            && is_space<RangeSpaceType>::value
-                            && is_space<SourceSpaceType>::value
-                            && XT::Grid::is_layer<GridLayerType>::value,
+                            && XT::LA::is_matrix<MatrixType>::value && is_space<RangeSpaceType>::value
+                            && is_space<SourceSpaceType>::value && XT::Grid::is_layer<GridLayerType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionType,
                                                                    void,
                                                                    RangeSpaceType,

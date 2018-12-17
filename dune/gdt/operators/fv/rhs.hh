@@ -63,8 +63,7 @@ public:
     : matrices_(matrices)
     , rhs_(rhs)
     , solution_(solution)
-  {
-  }
+  {}
 
   virtual void apply_local(const EntityType& entity)
   {
@@ -106,8 +105,7 @@ public:
     : matrices_(matrices)
     , vector_(vector)
     , result_(result)
-  {
-  }
+  {}
 
   virtual void apply_local(const EntityType& entity)
   {
@@ -148,8 +146,7 @@ public:
 
   AdvectionRhsOperator(const RhsEvaluationType& rhs_evaluation)
     : rhs_evaluation_(rhs_evaluation)
-  {
-  }
+  {}
 
   template <class SourceType, class RangeType>
   void apply(const SourceType& source, RangeType& range, const XT::Common::Parameter& param) const

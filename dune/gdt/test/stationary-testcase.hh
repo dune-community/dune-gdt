@@ -51,8 +51,7 @@ public:
   StationaryTestCase(Args&&... args)
     : EocBaseType(std::forward<Args>(args)...)
     , zero_(0.0)
-  {
-  }
+  {}
 
   virtual ~StationaryTestCase() = default;
 

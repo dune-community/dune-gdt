@@ -81,15 +81,13 @@ struct is_dg_space_helper
 
 template <class S, bool candidate = internal::is_dg_space_helper<S>::is_candidate>
 struct is_dg_space
-    : public std::is_base_of<DgSpaceInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
-{
-};
+  : public std::is_base_of<DgSpaceInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
+{};
 
 
 template <class S>
 struct is_dg_space<S, false> : public std::false_type
-{
-};
+{};
 
 
 } // namespace GDT

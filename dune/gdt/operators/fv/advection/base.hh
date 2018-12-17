@@ -62,7 +62,7 @@ template <class AnalyticalFluxImp,
           class SourceImp,
           class RangeImp>
 class AdvectionLocalizableDefault
-    : public Dune::GDT::LocalizableOperatorBase<typename RangeImp::SpaceType::GridLayerType, SourceImp, RangeImp>
+  : public Dune::GDT::LocalizableOperatorBase<typename RangeImp::SpaceType::GridLayerType, SourceImp, RangeImp>
 {
   typedef Dune::GDT::LocalizableOperatorBase<typename RangeImp::SpaceType::GridLayerType, SourceImp, RangeImp> BaseType;
 
@@ -150,8 +150,7 @@ public:
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
     , intersection_quadrature_(intersection_quadrature)
-  {
-  }
+  {}
 
   template <class SourceType, class RangeType, class... LocalOperatorArgs>
   void apply(SourceType& source,

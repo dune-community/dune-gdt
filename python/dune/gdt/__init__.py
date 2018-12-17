@@ -81,6 +81,7 @@ def test_logger(info=True, debug=True, warning=True):
     for test_logger_method in test_logger_methods:
         test_logger_method(info, debug, warning)
 
+
 def init_mpi(args=list()):
     if DEBUG:
         init_mpi_methods = [_init_mpi_methods[0],]

@@ -37,7 +37,7 @@ class HatFunctionMomentBasis
 
 template <class DomainFieldType, class RangeFieldType, size_t rangeDim, size_t rangeDimCols, size_t fluxDim>
 class HatFunctionMomentBasis<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, fluxDim>
-    : public BasisfunctionsInterface<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, fluxDim>
+  : public BasisfunctionsInterface<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, fluxDim>
 {
 public:
   static const size_t dimDomain = 1;
@@ -49,10 +49,10 @@ private:
 
 public:
   using typename BaseType::DomainType;
-  using typename BaseType::RangeType;
   using typename BaseType::MatrixType;
-  using typename BaseType::StringifierType;
   using typename BaseType::QuadraturesType;
+  using typename BaseType::RangeType;
+  using typename BaseType::StringifierType;
   using TriangulationType = typename BaseType::Triangulation1dType;
   template <class DiscreteFunctionType>
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
@@ -143,10 +143,10 @@ public:
                 / 12.;
     for (size_t rr = 0; rr < dimRange; ++rr) {
       if (rr > 0 && rr < dimRange - 1)
-        ret[rr][rr] = (triangulation_[rr + 1] * triangulation_[rr + 1] + 2 * triangulation_[rr + 1] * triangulation_[rr]
-                       - 2 * triangulation_[rr] * triangulation_[rr - 1]
-                       - triangulation_[rr - 1] * triangulation_[rr - 1])
-                      / 12.;
+        ret[rr][rr] =
+            (triangulation_[rr + 1] * triangulation_[rr + 1] + 2 * triangulation_[rr + 1] * triangulation_[rr]
+             - 2 * triangulation_[rr] * triangulation_[rr - 1] - triangulation_[rr - 1] * triangulation_[rr - 1])
+            / 12.;
       if (rr > 0)
         ret[rr][rr - 1] =
             (triangulation_[rr] * triangulation_[rr] - triangulation_[rr - 1] * triangulation_[rr - 1]) / 12.;
@@ -300,12 +300,12 @@ private:
 
 template <class DomainFieldType, class RangeFieldType, size_t refinements, size_t fluxDim>
 class HatFunctionMomentBasis<DomainFieldType, 3, RangeFieldType, refinements, 1, fluxDim>
-    : public BasisfunctionsInterface<DomainFieldType,
-                                     3,
-                                     RangeFieldType,
-                                     OctaederStatistics<refinements>::num_vertices(),
-                                     1,
-                                     fluxDim>
+  : public BasisfunctionsInterface<DomainFieldType,
+                                   3,
+                                   RangeFieldType,
+                                   OctaederStatistics<refinements>::num_vertices(),
+                                   1,
+                                   fluxDim>
 {
 public:
   static constexpr size_t dimDomain = 3;
@@ -536,8 +536,8 @@ protected:
     return true;
   } // bool calculate_barycentric_coordinates(...)
 
-  using BaseType::quadratures_;
   using BaseType::fine_quadratures_;
+  using BaseType::quadratures_;
   using BaseType::triangulation_;
 }; // class HatFunctionMomentBasis<DomainFieldType, 3, ...>
 

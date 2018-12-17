@@ -32,7 +32,7 @@ template <class ViewImp,
 struct DofCommunicationChooser
 {
   typedef Dune::XT::SequentialCommunication Type;
-  static_assert(Dune::AlwaysFalse<ViewImp>::value, "");
+  //  static_assert(Dune::AlwaysFalse<ViewImp>::value, "");
 
   static Type* create(const ViewImp& /*gridView*/)
   {

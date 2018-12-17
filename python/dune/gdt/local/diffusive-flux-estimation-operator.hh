@@ -43,10 +43,9 @@ class LocalDiffusiveFluxEstimationOperator
   typedef GDT::LocalVolumeTwoFormInterface<ScalarLocalFunctionType> InterfaceType;
 
 public:
-  typedef LocalVolumeIntegralOperator<LocalDiffusiveFluxEstimateESV2007Integrand<ScalarFunction,
-                                                                                 VectorFunction,
-                                                                                 TensorFunction>,
-                                      ScalarLocalFunctionType>
+  typedef LocalVolumeIntegralOperator<
+      LocalDiffusiveFluxEstimateESV2007Integrand<ScalarFunction, VectorFunction, TensorFunction>,
+      ScalarLocalFunctionType>
       type;
   typedef pybind11::class_<type, InterfaceType> bound_type;
 
@@ -57,8 +56,8 @@ public:
     using XT::Common::to_string;
 
     XT::Common::bindings::try_register(m, [&](pybind11::module& mod) {
-      const auto InterfaceName = XT::Common::to_camel_case(
-          "local_volume_two_form_interface_" + XT::Grid::bindings::grid_name<G>::value() + "_to_1x1");
+      const auto InterfaceName = XT::Common::to_camel_case("local_volume_two_form_interface_"
+                                                           + XT::Grid::bindings::grid_name<G>::value() + "_to_1x1");
       py::class_<InterfaceType>(mod, InterfaceName.c_str(), "LocalVolumeTwoFormInterface");
     });
 

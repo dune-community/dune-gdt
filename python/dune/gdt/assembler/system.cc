@@ -23,47 +23,32 @@
 #include <python/dune/gdt/spaces/constraints.hh>
 
 
-template <class _GRID, Dune::XT::Grid::Layers _layer,
+template <class _GRID, Dune::XT::Grid::Layers _layer, Dune::XT::Grid::Backends _backend, Dune::XT::LA::Backends _la>
 void bind_constraints(pybind11::module& _m, std::string _layer_name)
-void DUNE_GDT_SPACES_CONSTRAINTS_BIND(pybind11::module& _m, std::string _layer_name) {
+{
   using Intersection = Dune::XT::Grid::extract_intersection_t<
       typename Dune::XT::Grid::Layer<_GRID, _layer, _backend, Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>;
-  using DC = Dune::GDT::bindings::DirichletConstraints<Intersection
-      ,
-                                                              _layer,
-                                                              _backend,
-                                                              Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,
-                           _GRID>;
+  using DC = Dune::GDT::bindings::DirichletConstraints<Intersection, _GRID>;
   auto dc = DC::bind(_m, _layer_name);
   DC::template addbind<_la>(dc);
 }
 
-template<class _G, Dune::XT::Grid::Layers _gl, Dune::XT::Grid::Backends _gl_backend, Dune::GDT::Backends _t_backend,
-    Dune::GDT::SpaceType _t_type, Dune::XT::Grid::Layers _t_gl, size_t _t_p, size_t _t_r, Dune::GDT::Backends _a_backend,
-    Dune::GDT::SpaceType _a_type, Dune::XT::Grid::Layers _a_gl, size_t _a_p, size_t _a_r >
-void DUNE_GDT_ASSEMBLER_SYSTEM_BIND(pybind11::module& _m) {
-  Dune::GDT::bindings::SystemAssembler<Dune::GDT::SpaceProvider<_G,
-      _t_gl,
-      _t_type,
-      _t_backend,
-      _t_p,
-      double,
-      _t_r,
-      1>,
-void bind_system(pybind11::module& _m)
-  using TestSpc = Dune::GDT::SpaceProvider<_G, _t_gl, _t_type, _t_backend, _t_p, double, _t_r, 1>;
-  using AnsatzSpc = Dune::GDT::SpaceProvider<_G, _a_gl, _a_type, _a_backend, _a_p, double, _a_r, 1>;
-      TestSpc,
-      _gl,
-      _gl_backend,
-      AnsatzSpc>::bind(_m);
-          _a_gl,
-          _a_type,
-          _a_backend,
-          _a_p,
-          double,
-          _a_r,
-          1>>::bind(_m);
+template <class _G,
+          Dune::XT::Grid::Layers _gl,
+          Dune::XT::Grid::Backends _gl_backend,
+          Dune::GDT::Backends _t_backend,
+          Dune::GDT::SpaceType _t_type,
+          Dune::XT::Grid::Layers _t_gl,
+          size_t _t_p,
+          size_t _t_r,
+          Dune::GDT::Backends _a_backend,
+          Dune::GDT::SpaceType _a_type,
+          Dune::XT::Grid::Layers _a_gl,
+          size_t _a_p,
+          void bind_system(pybind11::module& _m) using TestSpc =
+              Dune::GDT::SpaceProvider<_G, _t_gl, _t_type, _t_backend, _t_p, double, _t_r, 1>;
+using AnsatzSpc = Dune::GDT::SpaceProvider<_G, _a_gl, _a_type, _a_backend, _a_p, double, _a_r, 1>;
+Dune::GDT::SpaceProvider<_G, _t_gl, _t_type, _t_backend, _t_p, double, _t_r, 1>,
 }
 
 template <class Tuple>
@@ -98,8 +83,7 @@ void addbind_for_Grid(pybind11::module& m)
 
 template <>
 void addbind_for_Grid<boost::tuples::null_type>(pybind11::module&)
-{
-}
+{}
 
 PYBIND11_MODULE(__assembler, m)
 {

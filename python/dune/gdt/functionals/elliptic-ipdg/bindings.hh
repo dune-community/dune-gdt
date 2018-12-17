@@ -88,32 +88,32 @@ private:
           py::keep_alive<0, 4>(),
           py::keep_alive<0, 5>());
 
-      m.def(
-          method_name.c_str(),
-          [](const DI& dirichlet,
-             const DF& diffusion_factor,
-             const DT& diffusion_tensor,
-             const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<typename S::GridLayerType>>& boundary_info,
-             V& vector,
-             const S& space,
-             const size_t over_integrate) {
-            return make_elliptic_ipdg_dirichlet_vector_functional<method>(
-                       dirichlet, diffusion_factor, diffusion_tensor, boundary_info, vector, space, over_integrate)
-                .release(); //                                                                     <- s.a. for release()
-          },
-          "dirichlet"_a,
-          "diffusion_factor"_a,
-          "diffusion_tensor"_a,
-          "boundary_info"_a,
-          "vector"_a,
-          "space"_a,
-          "over_integrate"_a = 0,
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>(),
-          py::keep_alive<0, 3>(),
-          py::keep_alive<0, 4>(),
-          py::keep_alive<0, 5>(),
-          py::keep_alive<0, 6>());
+      m.def(method_name.c_str(),
+            [](const DI& dirichlet,
+               const DF& diffusion_factor,
+               const DT& diffusion_tensor,
+               const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<typename S::GridLayerType>>& boundary_info,
+               V& vector,
+               const S& space,
+               const size_t over_integrate) {
+              return make_elliptic_ipdg_dirichlet_vector_functional<method>(
+                         dirichlet, diffusion_factor, diffusion_tensor, boundary_info, vector, space, over_integrate)
+                  .release(); //                                                                     <- s.a. for
+                              //                                                                     release()
+            },
+            "dirichlet"_a,
+            "diffusion_factor"_a,
+            "diffusion_tensor"_a,
+            "boundary_info"_a,
+            "vector"_a,
+            "space"_a,
+            "over_integrate"_a = 0,
+            py::keep_alive<0, 1>(),
+            py::keep_alive<0, 2>(),
+            py::keep_alive<0, 3>(),
+            py::keep_alive<0, 4>(),
+            py::keep_alive<0, 5>(),
+            py::keep_alive<0, 6>());
     } // ... addbind_factory_methods(...)
   }; // struct diffusion_switch
 
@@ -149,29 +149,29 @@ private:
           py::keep_alive<0, 3>(),
           py::keep_alive<0, 4>());
 
-      m.def(
-          method_name.c_str(),
-          [](const DI& dirichlet,
-             const DF& diffusion,
-             const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<typename S::GridLayerType>>& boundary_info,
-             V& vector,
-             const S& space,
-             const size_t over_integrate) {
-            return make_elliptic_ipdg_dirichlet_vector_functional<method>(
-                       dirichlet, diffusion, boundary_info, vector, space, over_integrate)
-                .release(); //                                                                     <- s.a. for release()
-          },
-          "dirichlet"_a,
-          "diffusion"_a,
-          "boundary_info"_a,
-          "vector"_a,
-          "space"_a,
-          "over_integrate"_a = 0,
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>(),
-          py::keep_alive<0, 3>(),
-          py::keep_alive<0, 4>(),
-          py::keep_alive<0, 5>());
+      m.def(method_name.c_str(),
+            [](const DI& dirichlet,
+               const DF& diffusion,
+               const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<typename S::GridLayerType>>& boundary_info,
+               V& vector,
+               const S& space,
+               const size_t over_integrate) {
+              return make_elliptic_ipdg_dirichlet_vector_functional<method>(
+                         dirichlet, diffusion, boundary_info, vector, space, over_integrate)
+                  .release(); //                                                                     <- s.a. for
+                              //                                                                     release()
+            },
+            "dirichlet"_a,
+            "diffusion"_a,
+            "boundary_info"_a,
+            "vector"_a,
+            "space"_a,
+            "over_integrate"_a = 0,
+            py::keep_alive<0, 1>(),
+            py::keep_alive<0, 2>(),
+            py::keep_alive<0, 3>(),
+            py::keep_alive<0, 4>(),
+            py::keep_alive<0, 5>());
     } // ... addbind_factory_methods(...)
   }; // struct diffusion_switch_scalar_base
 
@@ -199,13 +199,10 @@ public:
     namespace py = pybind11;
     using namespace pybind11::literals;
 
-    const auto ClassName = XT::Common::to_camel_case(
-        "elliptic_" + LocalEllipticIpdgIntegrands::method_name<method>::value() + "_dirichlet_vector_functional_"
-        + space_name<SP>::value()
-        + "_"
-        + XT::LA::bindings::container_name<V>::value()
-        + "_"
-        + diffusion_switch<>::suffix());
+    const auto ClassName =
+        XT::Common::to_camel_case("elliptic_" + LocalEllipticIpdgIntegrands::method_name<method>::value()
+                                  + "_dirichlet_vector_functional_" + space_name<SP>::value() + "_"
+                                  + XT::LA::bindings::container_name<V>::value() + "_" + diffusion_switch<>::suffix());
 
     bound_type c = VectorFunctionalBase<type>::bind(m, ClassName.c_str());
 
@@ -225,264 +222,199 @@ public:
 
 #define _DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_1D(                                                               \
     _prefix, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la, _method)                                         \
-  _prefix class Dune::GDT::bindings::                                                                                  \
-      EllipticIpdgDirichletVectorFunctional<Dune::XT::Functions::                                                      \
-                                                LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
-                                                                                 typename Dune::XT::Grid::             \
-                                                                                     Layer<_GRID,                      \
-                                                                                           Dune::XT::Grid::Layers::    \
-                                                                                               _layer,                 \
-                                                                                           Dune::XT::Grid::Backends::  \
-                                                                                               _g_backend,             \
-                                                                                           Dune::XT::Grid::DD::        \
-                                                                                               SubdomainGrid<_GRID>>:: \
-                                                                                         type>,                        \
-                                                                             double,                                   \
-                                                                             1,                                        \
-                                                                             double,                                   \
-                                                                             1,                                        \
-                                                                             1>,                                       \
-                                            Dune::XT::Functions::                                                      \
-                                                LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
-                                                                                 typename Dune::XT::Grid::             \
-                                                                                     Layer<_GRID,                      \
-                                                                                           Dune::XT::Grid::Layers::    \
-                                                                                               _layer,                 \
-                                                                                           Dune::XT::Grid::Backends::  \
-                                                                                               _g_backend,             \
-                                                                                           Dune::XT::Grid::DD::        \
-                                                                                               SubdomainGrid<_GRID>>:: \
-                                                                                         type>,                        \
-                                                                             double,                                   \
-                                                                             1,                                        \
-                                                                             double,                                   \
-                                                                             1,                                        \
-                                                                             1>,                                       \
-                                            Dune::XT::Functions::                                                      \
-                                                LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
-                                                                                 typename Dune::XT::Grid::             \
-                                                                                     Layer<_GRID,                      \
-                                                                                           Dune::XT::Grid::Layers::    \
-                                                                                               _layer,                 \
-                                                                                           Dune::XT::Grid::Backends::  \
-                                                                                               _g_backend,             \
-                                                                                           Dune::XT::Grid::DD::        \
-                                                                                               SubdomainGrid<_GRID>>:: \
-                                                                                         type>,                        \
-                                                                             double,                                   \
-                                                                             1,                                        \
-                                                                             double,                                   \
-                                                                             1,                                        \
-                                                                             1>,                                       \
-                                            Dune::GDT::SpaceProvider<_GRID,                                            \
-                                                                     Dune::XT::Grid::Layers::_layer,                   \
-                                                                     Dune::GDT::SpaceType::_s_type,                    \
-                                                                     Dune::GDT::Backends::_s_backend,                  \
-                                                                     _p,                                               \
-                                                                     double,                                           \
-                                                                     1,                                                \
-                                                                     1>,                                               \
-                                            Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method,                   \
-                                            typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::    \
-                                                VectorType>;                                                           \
-  _prefix class Dune::GDT::bindings::                                                                                  \
-      EllipticIpdgDirichletVectorFunctional<Dune::XT::Functions::                                                      \
-                                                LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
-                                                                                 typename Dune::XT::Grid::             \
-                                                                                     Layer<_GRID,                      \
-                                                                                           Dune::XT::Grid::Layers::    \
-                                                                                               _layer,                 \
-                                                                                           Dune::XT::Grid::Backends::  \
-                                                                                               _g_backend,             \
-                                                                                           Dune::XT::Grid::DD::        \
-                                                                                               SubdomainGrid<_GRID>>:: \
-                                                                                         type>,                        \
-                                                                             double,                                   \
-                                                                             1,                                        \
-                                                                             double,                                   \
-                                                                             1,                                        \
-                                                                             1>,                                       \
-                                            Dune::XT::Functions::                                                      \
-                                                LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
-                                                                                 typename Dune::XT::Grid::             \
-                                                                                     Layer<_GRID,                      \
-                                                                                           Dune::XT::Grid::Layers::    \
-                                                                                               _layer,                 \
-                                                                                           Dune::XT::Grid::Backends::  \
-                                                                                               _g_backend,             \
-                                                                                           Dune::XT::Grid::DD::        \
-                                                                                               SubdomainGrid<_GRID>>:: \
-                                                                                         type>,                        \
-                                                                             double,                                   \
-                                                                             1,                                        \
-                                                                             double,                                   \
-                                                                             1,                                        \
-                                                                             1>,                                       \
-                                            void,                                                                      \
-                                            Dune::GDT::SpaceProvider<_GRID,                                            \
-                                                                     Dune::XT::Grid::Layers::_layer,                   \
-                                                                     Dune::GDT::SpaceType::_s_type,                    \
-                                                                     Dune::GDT::Backends::_s_backend,                  \
-                                                                     _p,                                               \
-                                                                     double,                                           \
-                                                                     1,                                                \
-                                                                     1>,                                               \
-                                            Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method,                   \
-                                            typename Dune::XT::LA::Container<double,                                   \
-                                                                             Dune::XT::LA::Backends::_la>::VectorType>
+  _prefix class Dune::GDT::bindings::EllipticIpdgDirichletVectorFunctional<                                            \
+      Dune::XT::Functions::LocalizableFunctionInterface<                                                               \
+          Dune::XT::Grid::extract_entity_t<                                                                            \
+              typename Dune::XT::Grid::Layer<_GRID,                                                                    \
+                                             Dune::XT::Grid::Layers::_layer,                                           \
+                                             Dune::XT::Grid::Backends::_g_backend,                                     \
+                                             Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,                         \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          1>,                                                                                                          \
+      Dune::XT::Functions::LocalizableFunctionInterface<                                                               \
+          Dune::XT::Grid::extract_entity_t<                                                                            \
+              typename Dune::XT::Grid::Layer<_GRID,                                                                    \
+                                             Dune::XT::Grid::Layers::_layer,                                           \
+                                             Dune::XT::Grid::Backends::_g_backend,                                     \
+                                             Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,                         \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          1>,                                                                                                          \
+      Dune::XT::Functions::LocalizableFunctionInterface<                                                               \
+          Dune::XT::Grid::extract_entity_t<                                                                            \
+              typename Dune::XT::Grid::Layer<_GRID,                                                                    \
+                                             Dune::XT::Grid::Layers::_layer,                                           \
+                                             Dune::XT::Grid::Backends::_g_backend,                                     \
+                                             Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,                         \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          1>,                                                                                                          \
+      Dune::GDT::SpaceProvider<_GRID,                                                                                  \
+                               Dune::XT::Grid::Layers::_layer,                                                         \
+                               Dune::GDT::SpaceType::_s_type,                                                          \
+                               Dune::GDT::Backends::_s_backend,                                                        \
+                               _p,                                                                                     \
+                               double,                                                                                 \
+                               1,                                                                                      \
+                               1>,                                                                                     \
+      Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method,                                                         \
+      typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType>;                              \
+  _prefix class Dune::GDT::bindings::EllipticIpdgDirichletVectorFunctional<                                            \
+      Dune::XT::Functions::LocalizableFunctionInterface<                                                               \
+          Dune::XT::Grid::extract_entity_t<                                                                            \
+              typename Dune::XT::Grid::Layer<_GRID,                                                                    \
+                                             Dune::XT::Grid::Layers::_layer,                                           \
+                                             Dune::XT::Grid::Backends::_g_backend,                                     \
+                                             Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,                         \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          1>,                                                                                                          \
+      Dune::XT::Functions::LocalizableFunctionInterface<                                                               \
+          Dune::XT::Grid::extract_entity_t<                                                                            \
+              typename Dune::XT::Grid::Layer<_GRID,                                                                    \
+                                             Dune::XT::Grid::Layers::_layer,                                           \
+                                             Dune::XT::Grid::Backends::_g_backend,                                     \
+                                             Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,                         \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          1>,                                                                                                          \
+      void,                                                                                                            \
+      Dune::GDT::SpaceProvider<_GRID,                                                                                  \
+                               Dune::XT::Grid::Layers::_layer,                                                         \
+                               Dune::GDT::SpaceType::_s_type,                                                          \
+                               Dune::GDT::Backends::_s_backend,                                                        \
+                               _p,                                                                                     \
+                               double,                                                                                 \
+                               1,                                                                                      \
+                               1>,                                                                                     \
+      Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method,                                                         \
+      typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType>
 
 #define _DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_D(                                                                \
     _prefix, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la, _method)                                     \
-  _prefix class Dune::GDT::bindings::                                                                                  \
-      EllipticIpdgDirichletVectorFunctional<Dune::XT::Functions::                                                      \
-                                                LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
-                                                                                 typename Dune::XT::Grid::             \
-                                                                                     Layer<_GRID,                      \
-                                                                                           Dune::XT::Grid::Layers::    \
-                                                                                               _layer,                 \
-                                                                                           Dune::XT::Grid::Backends::  \
-                                                                                               _g_backend,             \
-                                                                                           Dune::XT::Grid::DD::        \
-                                                                                               SubdomainGrid<_GRID>>:: \
-                                                                                         type>,                        \
-                                                                             double,                                   \
-                                                                             _d,                                       \
-                                                                             double,                                   \
-                                                                             1,                                        \
-                                                                             1>,                                       \
-                                            Dune::XT::Functions::                                                      \
-                                                LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
-                                                                                 typename Dune::XT::Grid::             \
-                                                                                     Layer<_GRID,                      \
-                                                                                           Dune::XT::Grid::Layers::    \
-                                                                                               _layer,                 \
-                                                                                           Dune::XT::Grid::Backends::  \
-                                                                                               _g_backend,             \
-                                                                                           Dune::XT::Grid::DD::        \
-                                                                                               SubdomainGrid<_GRID>>:: \
-                                                                                         type>,                        \
-                                                                             double,                                   \
-                                                                             _d,                                       \
-                                                                             double,                                   \
-                                                                             1,                                        \
-                                                                             1>,                                       \
-                                            Dune::XT::Functions::                                                      \
-                                                LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
-                                                                                 typename Dune::XT::Grid::             \
-                                                                                     Layer<_GRID,                      \
-                                                                                           Dune::XT::Grid::Layers::    \
-                                                                                               _layer,                 \
-                                                                                           Dune::XT::Grid::Backends::  \
-                                                                                               _g_backend,             \
-                                                                                           Dune::XT::Grid::DD::        \
-                                                                                               SubdomainGrid<_GRID>>:: \
-                                                                                         type>,                        \
-                                                                             double,                                   \
-                                                                             _d,                                       \
-                                                                             double,                                   \
-                                                                             _d,                                       \
-                                                                             _d>,                                      \
-                                            Dune::GDT::SpaceProvider<_GRID,                                            \
-                                                                     Dune::XT::Grid::Layers::_layer,                   \
-                                                                     Dune::GDT::SpaceType::_s_type,                    \
-                                                                     Dune::GDT::Backends::_s_backend,                  \
-                                                                     _p,                                               \
-                                                                     double,                                           \
-                                                                     1,                                                \
-                                                                     1>,                                               \
-                                            Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method,                   \
-                                            typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::    \
-                                                VectorType>;                                                           \
-  _prefix class Dune::GDT::bindings::                                                                                  \
-      EllipticIpdgDirichletVectorFunctional<Dune::XT::Functions::                                                      \
-                                                LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
-                                                                                 typename Dune::XT::Grid::             \
-                                                                                     Layer<_GRID,                      \
-                                                                                           Dune::XT::Grid::Layers::    \
-                                                                                               _layer,                 \
-                                                                                           Dune::XT::Grid::Backends::  \
-                                                                                               _g_backend,             \
-                                                                                           Dune::XT::Grid::DD::        \
-                                                                                               SubdomainGrid<_GRID>>:: \
-                                                                                         type>,                        \
-                                                                             double,                                   \
-                                                                             _d,                                       \
-                                                                             double,                                   \
-                                                                             1,                                        \
-                                                                             1>,                                       \
-                                            Dune::XT::Functions::                                                      \
-                                                LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
-                                                                                 typename Dune::XT::Grid::             \
-                                                                                     Layer<_GRID,                      \
-                                                                                           Dune::XT::Grid::Layers::    \
-                                                                                               _layer,                 \
-                                                                                           Dune::XT::Grid::Backends::  \
-                                                                                               _g_backend,             \
-                                                                                           Dune::XT::Grid::DD::        \
-                                                                                               SubdomainGrid<_GRID>>:: \
-                                                                                         type>,                        \
-                                                                             double,                                   \
-                                                                             _d,                                       \
-                                                                             double,                                   \
-                                                                             1,                                        \
-                                                                             1>,                                       \
-                                            void,                                                                      \
-                                            Dune::GDT::SpaceProvider<_GRID,                                            \
-                                                                     Dune::XT::Grid::Layers::_layer,                   \
-                                                                     Dune::GDT::SpaceType::_s_type,                    \
-                                                                     Dune::GDT::Backends::_s_backend,                  \
-                                                                     _p,                                               \
-                                                                     double,                                           \
-                                                                     1,                                                \
-                                                                     1>,                                               \
-                                            Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method,                   \
-                                            typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::    \
-                                                VectorType>;                                                           \
-  _prefix class Dune::GDT::bindings::                                                                                  \
-      EllipticIpdgDirichletVectorFunctional<Dune::XT::Functions::                                                      \
-                                                LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
-                                                                                 typename Dune::XT::Grid::             \
-                                                                                     Layer<_GRID,                      \
-                                                                                           Dune::XT::Grid::Layers::    \
-                                                                                               _layer,                 \
-                                                                                           Dune::XT::Grid::Backends::  \
-                                                                                               _g_backend,             \
-                                                                                           Dune::XT::Grid::DD::        \
-                                                                                               SubdomainGrid<_GRID>>:: \
-                                                                                         type>,                        \
-                                                                             double,                                   \
-                                                                             _d,                                       \
-                                                                             double,                                   \
-                                                                             1,                                        \
-                                                                             1>,                                       \
-                                            Dune::XT::Functions::                                                      \
-                                                LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
-                                                                                 typename Dune::XT::Grid::             \
-                                                                                     Layer<_GRID,                      \
-                                                                                           Dune::XT::Grid::Layers::    \
-                                                                                               _layer,                 \
-                                                                                           Dune::XT::Grid::Backends::  \
-                                                                                               _g_backend,             \
-                                                                                           Dune::XT::Grid::DD::        \
-                                                                                               SubdomainGrid<_GRID>>:: \
-                                                                                         type>,                        \
-                                                                             double,                                   \
-                                                                             _d,                                       \
-                                                                             double,                                   \
-                                                                             _d,                                       \
-                                                                             _d>,                                      \
-                                            void,                                                                      \
-                                            Dune::GDT::SpaceProvider<_GRID,                                            \
-                                                                     Dune::XT::Grid::Layers::_layer,                   \
-                                                                     Dune::GDT::SpaceType::_s_type,                    \
-                                                                     Dune::GDT::Backends::_s_backend,                  \
-                                                                     _p,                                               \
-                                                                     double,                                           \
-                                                                     1,                                                \
-                                                                     1>,                                               \
-                                            Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method,                   \
-                                            typename Dune::XT::LA::Container<double,                                   \
-                                                                             Dune::XT::LA::Backends::_la>::VectorType>
+  _prefix class Dune::GDT::bindings::EllipticIpdgDirichletVectorFunctional<                                            \
+      Dune::XT::Functions::LocalizableFunctionInterface<                                                               \
+          Dune::XT::Grid::extract_entity_t<                                                                            \
+              typename Dune::XT::Grid::Layer<_GRID,                                                                    \
+                                             Dune::XT::Grid::Layers::_layer,                                           \
+                                             Dune::XT::Grid::Backends::_g_backend,                                     \
+                                             Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,                         \
+          double,                                                                                                      \
+          _d,                                                                                                          \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          1>,                                                                                                          \
+      Dune::XT::Functions::LocalizableFunctionInterface<                                                               \
+          Dune::XT::Grid::extract_entity_t<                                                                            \
+              typename Dune::XT::Grid::Layer<_GRID,                                                                    \
+                                             Dune::XT::Grid::Layers::_layer,                                           \
+                                             Dune::XT::Grid::Backends::_g_backend,                                     \
+                                             Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,                         \
+          double,                                                                                                      \
+          _d,                                                                                                          \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          1>,                                                                                                          \
+      Dune::XT::Functions::LocalizableFunctionInterface<                                                               \
+          Dune::XT::Grid::extract_entity_t<                                                                            \
+              typename Dune::XT::Grid::Layer<_GRID,                                                                    \
+                                             Dune::XT::Grid::Layers::_layer,                                           \
+                                             Dune::XT::Grid::Backends::_g_backend,                                     \
+                                             Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,                         \
+          double,                                                                                                      \
+          _d,                                                                                                          \
+          double,                                                                                                      \
+          _d,                                                                                                          \
+          _d>,                                                                                                         \
+      Dune::GDT::SpaceProvider<_GRID,                                                                                  \
+                               Dune::XT::Grid::Layers::_layer,                                                         \
+                               Dune::GDT::SpaceType::_s_type,                                                          \
+                               Dune::GDT::Backends::_s_backend,                                                        \
+                               _p,                                                                                     \
+                               double,                                                                                 \
+                               1,                                                                                      \
+                               1>,                                                                                     \
+      Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method,                                                         \
+      typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType>;                              \
+  _prefix class Dune::GDT::bindings::EllipticIpdgDirichletVectorFunctional<                                            \
+      Dune::XT::Functions::LocalizableFunctionInterface<                                                               \
+          Dune::XT::Grid::extract_entity_t<                                                                            \
+              typename Dune::XT::Grid::Layer<_GRID,                                                                    \
+                                             Dune::XT::Grid::Layers::_layer,                                           \
+                                             Dune::XT::Grid::Backends::_g_backend,                                     \
+                                             Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,                         \
+          double,                                                                                                      \
+          _d,                                                                                                          \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          1>,                                                                                                          \
+      Dune::XT::Functions::LocalizableFunctionInterface<                                                               \
+          Dune::XT::Grid::extract_entity_t<                                                                            \
+              typename Dune::XT::Grid::Layer<_GRID,                                                                    \
+                                             Dune::XT::Grid::Layers::_layer,                                           \
+                                             Dune::XT::Grid::Backends::_g_backend,                                     \
+                                             Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,                         \
+          double,                                                                                                      \
+          _d,                                                                                                          \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          1>,                                                                                                          \
+      void,                                                                                                            \
+      Dune::GDT::SpaceProvider<_GRID,                                                                                  \
+                               Dune::XT::Grid::Layers::_layer,                                                         \
+                               Dune::GDT::SpaceType::_s_type,                                                          \
+                               Dune::GDT::Backends::_s_backend,                                                        \
+                               _p,                                                                                     \
+                               double,                                                                                 \
+                               1,                                                                                      \
+                               1>,                                                                                     \
+      Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method,                                                         \
+      typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType>;                              \
+  _prefix class Dune::GDT::bindings::EllipticIpdgDirichletVectorFunctional<                                            \
+      Dune::XT::Functions::LocalizableFunctionInterface<                                                               \
+          Dune::XT::Grid::extract_entity_t<                                                                            \
+              typename Dune::XT::Grid::Layer<_GRID,                                                                    \
+                                             Dune::XT::Grid::Layers::_layer,                                           \
+                                             Dune::XT::Grid::Backends::_g_backend,                                     \
+                                             Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,                         \
+          double,                                                                                                      \
+          _d,                                                                                                          \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          1>,                                                                                                          \
+      Dune::XT::Functions::LocalizableFunctionInterface<                                                               \
+          Dune::XT::Grid::extract_entity_t<                                                                            \
+              typename Dune::XT::Grid::Layer<_GRID,                                                                    \
+                                             Dune::XT::Grid::Layers::_layer,                                           \
+                                             Dune::XT::Grid::Backends::_g_backend,                                     \
+                                             Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,                         \
+          double,                                                                                                      \
+          _d,                                                                                                          \
+          double,                                                                                                      \
+          _d,                                                                                                          \
+          _d>,                                                                                                         \
+      void,                                                                                                            \
+      Dune::GDT::SpaceProvider<_GRID,                                                                                  \
+                               Dune::XT::Grid::Layers::_layer,                                                         \
+                               Dune::GDT::SpaceType::_s_type,                                                          \
+                               Dune::GDT::Backends::_s_backend,                                                        \
+                               _p,                                                                                     \
+                               double,                                                                                 \
+                               1,                                                                                      \
+                               1>,                                                                                     \
+      Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method,                                                         \
+      typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType>
 
 #define _DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_METHODS_1D(                                                       \
     _prefix, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la)                                                  \
@@ -518,264 +450,199 @@ public:
 
 #define _DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_1D(                                                                   \
     _m, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la, _method)                                              \
-  Dune::GDT::bindings::                                                                                                \
-      EllipticIpdgDirichletVectorFunctional<Dune::XT::Functions::                                                      \
-                                                LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
-                                                                                 typename Dune::XT::Grid::             \
-                                                                                     Layer<_GRID,                      \
-                                                                                           Dune::XT::Grid::Layers::    \
-                                                                                               _layer,                 \
-                                                                                           Dune::XT::Grid::Backends::  \
-                                                                                               _g_backend,             \
-                                                                                           Dune::XT::Grid::DD::        \
-                                                                                               SubdomainGrid<_GRID>>:: \
-                                                                                         type>,                        \
-                                                                             double,                                   \
-                                                                             1,                                        \
-                                                                             double,                                   \
-                                                                             1,                                        \
-                                                                             1>,                                       \
-                                            Dune::XT::Functions::                                                      \
-                                                LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
-                                                                                 typename Dune::XT::Grid::             \
-                                                                                     Layer<_GRID,                      \
-                                                                                           Dune::XT::Grid::Layers::    \
-                                                                                               _layer,                 \
-                                                                                           Dune::XT::Grid::Backends::  \
-                                                                                               _g_backend,             \
-                                                                                           Dune::XT::Grid::DD::        \
-                                                                                               SubdomainGrid<_GRID>>:: \
-                                                                                         type>,                        \
-                                                                             double,                                   \
-                                                                             1,                                        \
-                                                                             double,                                   \
-                                                                             1,                                        \
-                                                                             1>,                                       \
-                                            Dune::XT::Functions::                                                      \
-                                                LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
-                                                                                 typename Dune::XT::Grid::             \
-                                                                                     Layer<_GRID,                      \
-                                                                                           Dune::XT::Grid::Layers::    \
-                                                                                               _layer,                 \
-                                                                                           Dune::XT::Grid::Backends::  \
-                                                                                               _g_backend,             \
-                                                                                           Dune::XT::Grid::DD::        \
-                                                                                               SubdomainGrid<_GRID>>:: \
-                                                                                         type>,                        \
-                                                                             double,                                   \
-                                                                             1,                                        \
-                                                                             double,                                   \
-                                                                             1,                                        \
-                                                                             1>,                                       \
-                                            Dune::GDT::SpaceProvider<_GRID,                                            \
-                                                                     Dune::XT::Grid::Layers::_layer,                   \
-                                                                     Dune::GDT::SpaceType::_s_type,                    \
-                                                                     Dune::GDT::Backends::_s_backend,                  \
-                                                                     _p,                                               \
-                                                                     double,                                           \
-                                                                     1,                                                \
-                                                                     1>,                                               \
-                                            Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method,                   \
-                                            typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::    \
-                                                VectorType>::bind(_m);                                                 \
-  Dune::GDT::bindings::                                                                                                \
-      EllipticIpdgDirichletVectorFunctional<Dune::XT::Functions::                                                      \
-                                                LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
-                                                                                 typename Dune::XT::Grid::             \
-                                                                                     Layer<_GRID,                      \
-                                                                                           Dune::XT::Grid::Layers::    \
-                                                                                               _layer,                 \
-                                                                                           Dune::XT::Grid::Backends::  \
-                                                                                               _g_backend,             \
-                                                                                           Dune::XT::Grid::DD::        \
-                                                                                               SubdomainGrid<_GRID>>:: \
-                                                                                         type>,                        \
-                                                                             double,                                   \
-                                                                             1,                                        \
-                                                                             double,                                   \
-                                                                             1,                                        \
-                                                                             1>,                                       \
-                                            Dune::XT::Functions::                                                      \
-                                                LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
-                                                                                 typename Dune::XT::Grid::             \
-                                                                                     Layer<_GRID,                      \
-                                                                                           Dune::XT::Grid::Layers::    \
-                                                                                               _layer,                 \
-                                                                                           Dune::XT::Grid::Backends::  \
-                                                                                               _g_backend,             \
-                                                                                           Dune::XT::Grid::DD::        \
-                                                                                               SubdomainGrid<_GRID>>:: \
-                                                                                         type>,                        \
-                                                                             double,                                   \
-                                                                             1,                                        \
-                                                                             double,                                   \
-                                                                             1,                                        \
-                                                                             1>,                                       \
-                                            void,                                                                      \
-                                            Dune::GDT::SpaceProvider<_GRID,                                            \
-                                                                     Dune::XT::Grid::Layers::_layer,                   \
-                                                                     Dune::GDT::SpaceType::_s_type,                    \
-                                                                     Dune::GDT::Backends::_s_backend,                  \
-                                                                     _p,                                               \
-                                                                     double,                                           \
-                                                                     1,                                                \
-                                                                     1>,                                               \
-                                            Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method,                   \
-                                            typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::    \
-                                                VectorType>::bind(_m)
+  Dune::GDT::bindings::EllipticIpdgDirichletVectorFunctional<                                                          \
+      Dune::XT::Functions::LocalizableFunctionInterface<                                                               \
+          Dune::XT::Grid::extract_entity_t<                                                                            \
+              typename Dune::XT::Grid::Layer<_GRID,                                                                    \
+                                             Dune::XT::Grid::Layers::_layer,                                           \
+                                             Dune::XT::Grid::Backends::_g_backend,                                     \
+                                             Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,                         \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          1>,                                                                                                          \
+      Dune::XT::Functions::LocalizableFunctionInterface<                                                               \
+          Dune::XT::Grid::extract_entity_t<                                                                            \
+              typename Dune::XT::Grid::Layer<_GRID,                                                                    \
+                                             Dune::XT::Grid::Layers::_layer,                                           \
+                                             Dune::XT::Grid::Backends::_g_backend,                                     \
+                                             Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,                         \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          1>,                                                                                                          \
+      Dune::XT::Functions::LocalizableFunctionInterface<                                                               \
+          Dune::XT::Grid::extract_entity_t<                                                                            \
+              typename Dune::XT::Grid::Layer<_GRID,                                                                    \
+                                             Dune::XT::Grid::Layers::_layer,                                           \
+                                             Dune::XT::Grid::Backends::_g_backend,                                     \
+                                             Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,                         \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          1>,                                                                                                          \
+      Dune::GDT::SpaceProvider<_GRID,                                                                                  \
+                               Dune::XT::Grid::Layers::_layer,                                                         \
+                               Dune::GDT::SpaceType::_s_type,                                                          \
+                               Dune::GDT::Backends::_s_backend,                                                        \
+                               _p,                                                                                     \
+                               double,                                                                                 \
+                               1,                                                                                      \
+                               1>,                                                                                     \
+      Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method,                                                         \
+      typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType>::bind(_m);                    \
+  Dune::GDT::bindings::EllipticIpdgDirichletVectorFunctional<                                                          \
+      Dune::XT::Functions::LocalizableFunctionInterface<                                                               \
+          Dune::XT::Grid::extract_entity_t<                                                                            \
+              typename Dune::XT::Grid::Layer<_GRID,                                                                    \
+                                             Dune::XT::Grid::Layers::_layer,                                           \
+                                             Dune::XT::Grid::Backends::_g_backend,                                     \
+                                             Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,                         \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          1>,                                                                                                          \
+      Dune::XT::Functions::LocalizableFunctionInterface<                                                               \
+          Dune::XT::Grid::extract_entity_t<                                                                            \
+              typename Dune::XT::Grid::Layer<_GRID,                                                                    \
+                                             Dune::XT::Grid::Layers::_layer,                                           \
+                                             Dune::XT::Grid::Backends::_g_backend,                                     \
+                                             Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,                         \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          1>,                                                                                                          \
+      void,                                                                                                            \
+      Dune::GDT::SpaceProvider<_GRID,                                                                                  \
+                               Dune::XT::Grid::Layers::_layer,                                                         \
+                               Dune::GDT::SpaceType::_s_type,                                                          \
+                               Dune::GDT::Backends::_s_backend,                                                        \
+                               _p,                                                                                     \
+                               double,                                                                                 \
+                               1,                                                                                      \
+                               1>,                                                                                     \
+      Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method,                                                         \
+      typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType>::bind(_m)
 
 #define _DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_D(                                                                    \
     _m, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la, _method)                                          \
-  Dune::GDT::bindings::                                                                                                \
-      EllipticIpdgDirichletVectorFunctional<Dune::XT::Functions::                                                      \
-                                                LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
-                                                                                 typename Dune::XT::Grid::             \
-                                                                                     Layer<_GRID,                      \
-                                                                                           Dune::XT::Grid::Layers::    \
-                                                                                               _layer,                 \
-                                                                                           Dune::XT::Grid::Backends::  \
-                                                                                               _g_backend,             \
-                                                                                           Dune::XT::Grid::DD::        \
-                                                                                               SubdomainGrid<_GRID>>:: \
-                                                                                         type>,                        \
-                                                                             double,                                   \
-                                                                             _d,                                       \
-                                                                             double,                                   \
-                                                                             1,                                        \
-                                                                             1>,                                       \
-                                            Dune::XT::Functions::                                                      \
-                                                LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
-                                                                                 typename Dune::XT::Grid::             \
-                                                                                     Layer<_GRID,                      \
-                                                                                           Dune::XT::Grid::Layers::    \
-                                                                                               _layer,                 \
-                                                                                           Dune::XT::Grid::Backends::  \
-                                                                                               _g_backend,             \
-                                                                                           Dune::XT::Grid::DD::        \
-                                                                                               SubdomainGrid<_GRID>>:: \
-                                                                                         type>,                        \
-                                                                             double,                                   \
-                                                                             _d,                                       \
-                                                                             double,                                   \
-                                                                             1,                                        \
-                                                                             1>,                                       \
-                                            Dune::XT::Functions::                                                      \
-                                                LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
-                                                                                 typename Dune::XT::Grid::             \
-                                                                                     Layer<_GRID,                      \
-                                                                                           Dune::XT::Grid::Layers::    \
-                                                                                               _layer,                 \
-                                                                                           Dune::XT::Grid::Backends::  \
-                                                                                               _g_backend,             \
-                                                                                           Dune::XT::Grid::DD::        \
-                                                                                               SubdomainGrid<_GRID>>:: \
-                                                                                         type>,                        \
-                                                                             double,                                   \
-                                                                             _d,                                       \
-                                                                             double,                                   \
-                                                                             _d,                                       \
-                                                                             _d>,                                      \
-                                            Dune::GDT::SpaceProvider<_GRID,                                            \
-                                                                     Dune::XT::Grid::Layers::_layer,                   \
-                                                                     Dune::GDT::SpaceType::_s_type,                    \
-                                                                     Dune::GDT::Backends::_s_backend,                  \
-                                                                     _p,                                               \
-                                                                     double,                                           \
-                                                                     1,                                                \
-                                                                     1>,                                               \
-                                            Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method,                   \
-                                            typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::    \
-                                                VectorType>::bind(_m);                                                 \
-  Dune::GDT::bindings::                                                                                                \
-      EllipticIpdgDirichletVectorFunctional<Dune::XT::Functions::                                                      \
-                                                LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
-                                                                                 typename Dune::XT::Grid::             \
-                                                                                     Layer<_GRID,                      \
-                                                                                           Dune::XT::Grid::Layers::    \
-                                                                                               _layer,                 \
-                                                                                           Dune::XT::Grid::Backends::  \
-                                                                                               _g_backend,             \
-                                                                                           Dune::XT::Grid::DD::        \
-                                                                                               SubdomainGrid<_GRID>>:: \
-                                                                                         type>,                        \
-                                                                             double,                                   \
-                                                                             _d,                                       \
-                                                                             double,                                   \
-                                                                             1,                                        \
-                                                                             1>,                                       \
-                                            Dune::XT::Functions::                                                      \
-                                                LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
-                                                                                 typename Dune::XT::Grid::             \
-                                                                                     Layer<_GRID,                      \
-                                                                                           Dune::XT::Grid::Layers::    \
-                                                                                               _layer,                 \
-                                                                                           Dune::XT::Grid::Backends::  \
-                                                                                               _g_backend,             \
-                                                                                           Dune::XT::Grid::DD::        \
-                                                                                               SubdomainGrid<_GRID>>:: \
-                                                                                         type>,                        \
-                                                                             double,                                   \
-                                                                             _d,                                       \
-                                                                             double,                                   \
-                                                                             1,                                        \
-                                                                             1>,                                       \
-                                            void,                                                                      \
-                                            Dune::GDT::SpaceProvider<_GRID,                                            \
-                                                                     Dune::XT::Grid::Layers::_layer,                   \
-                                                                     Dune::GDT::SpaceType::_s_type,                    \
-                                                                     Dune::GDT::Backends::_s_backend,                  \
-                                                                     _p,                                               \
-                                                                     double,                                           \
-                                                                     1,                                                \
-                                                                     1>,                                               \
-                                            Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method,                   \
-                                            typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::    \
-                                                VectorType>::bind(_m);                                                 \
-  Dune::GDT::bindings::                                                                                                \
-      EllipticIpdgDirichletVectorFunctional<Dune::XT::Functions::                                                      \
-                                                LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
-                                                                                 typename Dune::XT::Grid::             \
-                                                                                     Layer<_GRID,                      \
-                                                                                           Dune::XT::Grid::Layers::    \
-                                                                                               _layer,                 \
-                                                                                           Dune::XT::Grid::Backends::  \
-                                                                                               _g_backend,             \
-                                                                                           Dune::XT::Grid::DD::        \
-                                                                                               SubdomainGrid<_GRID>>:: \
-                                                                                         type>,                        \
-                                                                             double,                                   \
-                                                                             _d,                                       \
-                                                                             double,                                   \
-                                                                             1,                                        \
-                                                                             1>,                                       \
-                                            Dune::XT::Functions::                                                      \
-                                                LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
-                                                                                 typename Dune::XT::Grid::             \
-                                                                                     Layer<_GRID,                      \
-                                                                                           Dune::XT::Grid::Layers::    \
-                                                                                               _layer,                 \
-                                                                                           Dune::XT::Grid::Backends::  \
-                                                                                               _g_backend,             \
-                                                                                           Dune::XT::Grid::DD::        \
-                                                                                               SubdomainGrid<_GRID>>:: \
-                                                                                         type>,                        \
-                                                                             double,                                   \
-                                                                             _d,                                       \
-                                                                             double,                                   \
-                                                                             _d,                                       \
-                                                                             _d>,                                      \
-                                            void,                                                                      \
-                                            Dune::GDT::SpaceProvider<_GRID,                                            \
-                                                                     Dune::XT::Grid::Layers::_layer,                   \
-                                                                     Dune::GDT::SpaceType::_s_type,                    \
-                                                                     Dune::GDT::Backends::_s_backend,                  \
-                                                                     _p,                                               \
-                                                                     double,                                           \
-                                                                     1,                                                \
-                                                                     1>,                                               \
-                                            Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method,                   \
-                                            typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::    \
-                                                VectorType>::bind(_m)
+  Dune::GDT::bindings::EllipticIpdgDirichletVectorFunctional<                                                          \
+      Dune::XT::Functions::LocalizableFunctionInterface<                                                               \
+          Dune::XT::Grid::extract_entity_t<                                                                            \
+              typename Dune::XT::Grid::Layer<_GRID,                                                                    \
+                                             Dune::XT::Grid::Layers::_layer,                                           \
+                                             Dune::XT::Grid::Backends::_g_backend,                                     \
+                                             Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,                         \
+          double,                                                                                                      \
+          _d,                                                                                                          \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          1>,                                                                                                          \
+      Dune::XT::Functions::LocalizableFunctionInterface<                                                               \
+          Dune::XT::Grid::extract_entity_t<                                                                            \
+              typename Dune::XT::Grid::Layer<_GRID,                                                                    \
+                                             Dune::XT::Grid::Layers::_layer,                                           \
+                                             Dune::XT::Grid::Backends::_g_backend,                                     \
+                                             Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,                         \
+          double,                                                                                                      \
+          _d,                                                                                                          \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          1>,                                                                                                          \
+      Dune::XT::Functions::LocalizableFunctionInterface<                                                               \
+          Dune::XT::Grid::extract_entity_t<                                                                            \
+              typename Dune::XT::Grid::Layer<_GRID,                                                                    \
+                                             Dune::XT::Grid::Layers::_layer,                                           \
+                                             Dune::XT::Grid::Backends::_g_backend,                                     \
+                                             Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,                         \
+          double,                                                                                                      \
+          _d,                                                                                                          \
+          double,                                                                                                      \
+          _d,                                                                                                          \
+          _d>,                                                                                                         \
+      Dune::GDT::SpaceProvider<_GRID,                                                                                  \
+                               Dune::XT::Grid::Layers::_layer,                                                         \
+                               Dune::GDT::SpaceType::_s_type,                                                          \
+                               Dune::GDT::Backends::_s_backend,                                                        \
+                               _p,                                                                                     \
+                               double,                                                                                 \
+                               1,                                                                                      \
+                               1>,                                                                                     \
+      Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method,                                                         \
+      typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType>::bind(_m);                    \
+  Dune::GDT::bindings::EllipticIpdgDirichletVectorFunctional<                                                          \
+      Dune::XT::Functions::LocalizableFunctionInterface<                                                               \
+          Dune::XT::Grid::extract_entity_t<                                                                            \
+              typename Dune::XT::Grid::Layer<_GRID,                                                                    \
+                                             Dune::XT::Grid::Layers::_layer,                                           \
+                                             Dune::XT::Grid::Backends::_g_backend,                                     \
+                                             Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,                         \
+          double,                                                                                                      \
+          _d,                                                                                                          \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          1>,                                                                                                          \
+      Dune::XT::Functions::LocalizableFunctionInterface<                                                               \
+          Dune::XT::Grid::extract_entity_t<                                                                            \
+              typename Dune::XT::Grid::Layer<_GRID,                                                                    \
+                                             Dune::XT::Grid::Layers::_layer,                                           \
+                                             Dune::XT::Grid::Backends::_g_backend,                                     \
+                                             Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,                         \
+          double,                                                                                                      \
+          _d,                                                                                                          \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          1>,                                                                                                          \
+      void,                                                                                                            \
+      Dune::GDT::SpaceProvider<_GRID,                                                                                  \
+                               Dune::XT::Grid::Layers::_layer,                                                         \
+                               Dune::GDT::SpaceType::_s_type,                                                          \
+                               Dune::GDT::Backends::_s_backend,                                                        \
+                               _p,                                                                                     \
+                               double,                                                                                 \
+                               1,                                                                                      \
+                               1>,                                                                                     \
+      Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method,                                                         \
+      typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType>::bind(_m);                    \
+  Dune::GDT::bindings::EllipticIpdgDirichletVectorFunctional<                                                          \
+      Dune::XT::Functions::LocalizableFunctionInterface<                                                               \
+          Dune::XT::Grid::extract_entity_t<                                                                            \
+              typename Dune::XT::Grid::Layer<_GRID,                                                                    \
+                                             Dune::XT::Grid::Layers::_layer,                                           \
+                                             Dune::XT::Grid::Backends::_g_backend,                                     \
+                                             Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,                         \
+          double,                                                                                                      \
+          _d,                                                                                                          \
+          double,                                                                                                      \
+          1,                                                                                                           \
+          1>,                                                                                                          \
+      Dune::XT::Functions::LocalizableFunctionInterface<                                                               \
+          Dune::XT::Grid::extract_entity_t<                                                                            \
+              typename Dune::XT::Grid::Layer<_GRID,                                                                    \
+                                             Dune::XT::Grid::Layers::_layer,                                           \
+                                             Dune::XT::Grid::Backends::_g_backend,                                     \
+                                             Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,                         \
+          double,                                                                                                      \
+          _d,                                                                                                          \
+          double,                                                                                                      \
+          _d,                                                                                                          \
+          _d>,                                                                                                         \
+      void,                                                                                                            \
+      Dune::GDT::SpaceProvider<_GRID,                                                                                  \
+                               Dune::XT::Grid::Layers::_layer,                                                         \
+                               Dune::GDT::SpaceType::_s_type,                                                          \
+                               Dune::GDT::Backends::_s_backend,                                                        \
+                               _p,                                                                                     \
+                               double,                                                                                 \
+                               1,                                                                                      \
+                               1>,                                                                                     \
+      Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method,                                                         \
+      typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType>::bind(_m)
 
 #define _DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_METHODS_1D(                                                           \
     _m, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la)                                                       \

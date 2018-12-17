@@ -134,8 +134,7 @@ public:
     : analytical_flux_(analytical_flux)
     , min_acceptable_density_(min_acceptable_density)
     , filename_(filename)
-  {
-  }
+  {}
 
   template <class SourceType, class RangeType>
   void apply(const SourceType& source, RangeType& range, const XT::Common::Parameter& param) const

@@ -10,7 +10,7 @@
 //   Tobias Leibner  (2016)
 
 #ifndef DUNE_XT_COMMON_TEST_MAIN_ENABLE_INFO_LOGGING
-#define DUNE_XT_COMMON_TEST_MAIN_ENABLE_INFO_LOGGING 1
+#  define DUNE_XT_COMMON_TEST_MAIN_ENABLE_INFO_LOGGING 1
 #endif
 
 // This one has to come first (includes the config.h)!
@@ -31,8 +31,6 @@ TYPED_TEST(hyperbolic_FV_discretization_godunov_order1_euler, eoc_study_using_ya
 
 #else
 
-GTEST_TEST(DISABLED_hyperbolic_FV_discretization_godunov_order1_euler, eoc_study_using_yaspgrid)
-{
-}
+GTEST_TEST(DISABLED_hyperbolic_FV_discretization_godunov_order1_euler, eoc_study_using_yaspgrid) {}
 
 #endif

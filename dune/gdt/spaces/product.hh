@@ -98,14 +98,14 @@ public:
 
 template <class... SpaceImps>
 class DefaultProductSpace
-    : public Dune::GDT::SpaceInterface<internal::DefaultProductSpaceTraits<SpaceImps...>,
-                                       XT::Common::tuple_element<0, std::tuple<SpaceImps...>>::type::dimDomain,
-                                       GDT::BaseFunctionSet::internal::SumDimRange<SpaceImps...>::dimRange,
-                                       1>,
-      public Dune::GDT::ProductSpaceInterface<internal::DefaultProductSpaceTraits<SpaceImps...>,
-                                              XT::Common::tuple_element<0, std::tuple<SpaceImps...>>::type::dimDomain,
-                                              GDT::BaseFunctionSet::internal::SumDimRange<SpaceImps...>::dimRange,
-                                              1>
+  : public Dune::GDT::SpaceInterface<internal::DefaultProductSpaceTraits<SpaceImps...>,
+                                     XT::Common::tuple_element<0, std::tuple<SpaceImps...>>::type::dimDomain,
+                                     GDT::BaseFunctionSet::internal::SumDimRange<SpaceImps...>::dimRange,
+                                     1>
+  , public Dune::GDT::ProductSpaceInterface<internal::DefaultProductSpaceTraits<SpaceImps...>,
+                                            XT::Common::tuple_element<0, std::tuple<SpaceImps...>>::type::dimDomain,
+                                            GDT::BaseFunctionSet::internal::SumDimRange<SpaceImps...>::dimRange,
+                                            1>
 {
   typedef DefaultProductSpace<SpaceImps...> ThisType;
   typedef Dune::GDT::SpaceInterface<internal::DefaultProductSpaceTraits<SpaceImps...>,
@@ -116,11 +116,11 @@ class DefaultProductSpace
 
 public:
   typedef typename internal::DefaultProductSpaceTraits<SpaceImps...> Traits;
-  using typename BaseType::GridLayerType;
   using typename BaseType::BackendType;
-  using typename BaseType::MapperType;
-  using typename BaseType::EntityType;
   using typename BaseType::BaseFunctionSetType;
+  using typename BaseType::EntityType;
+  using typename BaseType::GridLayerType;
+  using typename BaseType::MapperType;
 
 private:
   typedef typename Traits::DofCommunicationChooserType DofCommunicationChooserType;
@@ -133,15 +133,13 @@ public:
     : spaces_(std::make_tuple(spaces...))
     , product_mapper_(spaces_)
     , communicator_(DofCommunicationChooserType::create(std::get<0>(spaces_).grid_layer()))
-  {
-  }
+  {}
 
   DefaultProductSpace(const ThisType& other)
     : spaces_(other.spaces_)
     , product_mapper_(other.product_mapper_)
     , communicator_(DofCommunicationChooserType::create(std::get<0>(spaces_).grid_layer()))
-  {
-  }
+  {}
 
   DefaultProductSpace(ThisType&& source) = default;
 

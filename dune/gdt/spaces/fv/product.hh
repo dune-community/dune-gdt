@@ -55,14 +55,14 @@ public:
 
 template <class GridLayerImp, class RangeFieldImp, size_t rangeDim>
 class FvProductSpace<GridLayerImp, RangeFieldImp, rangeDim, 1>
-    : public Dune::GDT::FvSpaceInterface<internal::FvProductSpaceTraits<GridLayerImp, RangeFieldImp, rangeDim, 1>,
-                                         GridLayerImp::dimension,
-                                         rangeDim,
-                                         1>,
-      public Dune::GDT::ProductSpaceInterface<internal::FvProductSpaceTraits<GridLayerImp, RangeFieldImp, rangeDim, 1>,
-                                              GridLayerImp::dimension,
-                                              rangeDim,
-                                              1>
+  : public Dune::GDT::FvSpaceInterface<internal::FvProductSpaceTraits<GridLayerImp, RangeFieldImp, rangeDim, 1>,
+                                       GridLayerImp::dimension,
+                                       rangeDim,
+                                       1>
+  , public Dune::GDT::ProductSpaceInterface<internal::FvProductSpaceTraits<GridLayerImp, RangeFieldImp, rangeDim, 1>,
+                                            GridLayerImp::dimension,
+                                            rangeDim,
+                                            1>
 {
   typedef FvProductSpace<GridLayerImp, RangeFieldImp, rangeDim, 1> ThisType;
   typedef Dune::GDT::FvSpaceInterface<internal::FvProductSpaceTraits<GridLayerImp, RangeFieldImp, rangeDim, 1>,
@@ -74,20 +74,19 @@ class FvProductSpace<GridLayerImp, RangeFieldImp, rangeDim, 1>
 
 public:
   typedef typename internal::FvProductSpaceTraits<GridLayerImp, RangeFieldImp, rangeDim, 1> Traits;
-  using typename BaseType::GridLayerType;
   using typename BaseType::BackendType;
-  using typename BaseType::MapperType;
-  using typename BaseType::EntityType;
   using typename BaseType::BaseFunctionSetType;
   using typename BaseType::DofCommunicatorType;
+  using typename BaseType::EntityType;
+  using typename BaseType::GridLayerType;
+  using typename BaseType::MapperType;
   typedef typename Traits::FactorSpaceType FactorSpaceType;
 
   FvProductSpace(GridLayerType grd_layr)
     : default_fv_space_(grd_layr)
     , product_fv_mapper_(default_fv_space_.grid_layer())
     , factor_space_(grd_layr)
-  {
-  }
+  {}
 
   FvProductSpace(const ThisType& other) = default;
   FvProductSpace(ThisType&& source) = default;

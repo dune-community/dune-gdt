@@ -34,15 +34,12 @@ public:
 
   MergedQuadrature(const QuadraturesWrapperType& quadratures)
     : quadratures_(quadratures)
-  {
-  }
+  {}
 
   class MergedQuadratureIterator
   {
   public:
-    MergedQuadratureIterator()
-    {
-    }
+    MergedQuadratureIterator() {}
 
     MergedQuadratureIterator(const QuadraturesWrapperType& quadratures,
                              const size_t first_index,
@@ -171,8 +168,7 @@ public:
 
   QuadraturesWrapper(const size_t num_quadratures = 0, const QuadratureType& quadrature = QuadratureType())
     : quadratures_(num_quadratures, quadrature)
-  {
-  }
+  {}
 
   QuadratureType& operator[](const size_t ii)
   {

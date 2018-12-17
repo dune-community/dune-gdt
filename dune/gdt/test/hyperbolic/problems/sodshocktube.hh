@@ -41,21 +41,21 @@ namespace Hyperbolic {
 // Solution here is not in primitive variables, i.e. u = (rho, rho v, E).
 template <class EntityImp, class DomainFieldImp, class RangeFieldImp>
 class ShocktubeSolution
-    : public XT::Functions::GlobalFunctionInterface<EntityImp, DomainFieldImp, 1, RangeFieldImp, 3, 1>
+  : public XT::Functions::GlobalFunctionInterface<EntityImp, DomainFieldImp, 1, RangeFieldImp, 3, 1>
 {
   using BaseType = XT::Functions::GlobalFunctionInterface<EntityImp, DomainFieldImp, 1, RangeFieldImp, 3, 1>;
 
 public:
   static const bool is_linear = false;
-  using typename BaseType::DomainType;
   using typename BaseType::DomainFieldType;
+  using typename BaseType::DomainType;
+  using typename BaseType::JacobianRangeType;
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeType;
-  using typename BaseType::JacobianRangeType;
 
-  using typename BaseType::LocalfunctionType;
   using BaseType::dimDomain;
   using BaseType::dimRange;
+  using typename BaseType::LocalfunctionType;
 
   static const bool available = true;
 
@@ -80,8 +80,7 @@ public:
     , V_tail_(v_ast_ - std::sqrt(p_ast_ / rho_3_ * 1.4))
     , V_contact_(v_ast_)
     , V_shock_(std::sqrt(1.12 * (2.4 / 0.28 * p_ast_ + 1.0 / 7.0)))
-  {
-  }
+  {}
 
   ShocktubeSolution(const ShocktubeSolution& other) = default;
 
@@ -194,24 +193,24 @@ class ShockTube : public ProblemBase<E, D, 1, U, typename U::RangeFieldType, 3>
 
 public:
   static const bool linear = false;
-  using typename BaseType::DomainType;
+  using BaseType::dimDomain;
+  using BaseType::dimRange;
+  using typename BaseType::ActualBoundaryValueType;
+  using typename BaseType::ActualDirichletBoundaryValueType;
+  using typename BaseType::ActualFluxType;
+  using typename BaseType::ActualRhsType;
   using typename BaseType::DomainFieldType;
+  using typename BaseType::DomainType;
+  using typename BaseType::IntersectionType;
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeType;
   using typename BaseType::StateRangeType;
-  using typename BaseType::IntersectionType;
-  using BaseType::dimDomain;
-  using BaseType::dimRange;
-  using typename BaseType::ActualFluxType;
-  using typename BaseType::ActualRhsType;
-  using typename BaseType::ActualDirichletBoundaryValueType;
-  using typename BaseType::ActualBoundaryValueType;
   using ActualInitialValueType = XT::Functions::CheckerboardFunction<E, D, dimDomain, RangeFieldType, dimRange, 1>;
   using MatrixType = FieldMatrix<RangeFieldType, dimRange, dimRange>;
-  using typename BaseType::FluxType;
-  using typename BaseType::RhsType;
-  using typename BaseType::InitialValueType;
   using typename BaseType::BoundaryValueType;
+  using typename BaseType::FluxType;
+  using typename BaseType::InitialValueType;
+  using typename BaseType::RhsType;
 
   static XT::Common::Configuration default_grid_cfg()
   {
@@ -242,8 +241,7 @@ public:
                0.4,
                0.25,
                false)
-  {
-  }
+  {}
 
   static std::string static_id()
   {
@@ -310,21 +308,20 @@ public:
 
 template <class G, class R = double>
 class ShockTubeTestCase
-    : public Dune::GDT::Test::
-          InstationaryTestCase<G,
-                               Problems::ShockTube<
-                                   typename G::template Codim<0>::Entity,
-                                   typename G::ctype,
-                                   typename internal::DiscreteFunctionProvider<G,
-                                                                               GDT::SpaceType::product_fv,
-                                                                               0,
-                                                                               R,
-                                                                               3,
-                                                                               1,
-                                                                               GDT::Backends::gdt,
-                                                                               XT::LA::default_backend,
-                                                                               XT::Grid::Layers::leaf,
-                                                                               true>::type>>
+  : public Dune::GDT::Test::InstationaryTestCase<
+        G,
+        Problems::ShockTube<typename G::template Codim<0>::Entity,
+                            typename G::ctype,
+                            typename internal::DiscreteFunctionProvider<G,
+                                                                        GDT::SpaceType::product_fv,
+                                                                        0,
+                                                                        R,
+                                                                        3,
+                                                                        1,
+                                                                        GDT::Backends::gdt,
+                                                                        XT::LA::default_backend,
+                                                                        XT::Grid::Layers::leaf,
+                                                                        true>::type>>
 {
   using E = typename G::template Codim<0>::Entity;
   using D = typename G::ctype;
@@ -355,8 +352,7 @@ public:
     : BaseType(divide_t_end_by, ProblemType::default_grid_cfg(), num_refs)
     , exact_solution_(std::make_shared<ShocktubeSolution<E, D, R>>(typename Dune::XT::Common::FieldVector<D, d>(0),
                                                                    typename Dune::XT::Common::FieldVector<D, d>(1)))
-  {
-  }
+  {}
 
   virtual const ProblemType& problem() const override final
   {

@@ -82,11 +82,12 @@ public:
 
 
 class IsProductMapper
-{
-};
+{};
 
 template <class Traits>
-class ProductMapperInterface : public MapperInterface<Traits>, IsProductMapper
+class ProductMapperInterface
+  : public MapperInterface<Traits>
+  , IsProductMapper
 {
   typedef MapperInterface<Traits> BaseType;
 

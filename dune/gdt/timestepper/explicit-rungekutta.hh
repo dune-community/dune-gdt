@@ -111,8 +111,7 @@ struct ButcherArrayProvider<RangeFieldType, TimeStepperMethods::explicit_rungeku
   {
     return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>(
         "[" + Dune::XT::Common::to_string(1.0 / 6.0, 15) + " " + Dune::XT::Common::to_string(1.0 / 6.0, 15) + " "
-        + Dune::XT::Common::to_string(2.0 / 3.0, 15)
-        + "]");
+        + Dune::XT::Common::to_string(2.0 / 3.0, 15) + "]");
   }
 
   static Dune::DynamicVector<RangeFieldType> c()
@@ -135,10 +134,7 @@ struct ButcherArrayProvider<RangeFieldType, TimeStepperMethods::explicit_rungeku
   {
     return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>(
         "[" + Dune::XT::Common::to_string(1.0 / 6.0, 15) + " " + Dune::XT::Common::to_string(1.0 / 3.0, 15) + " "
-        + Dune::XT::Common::to_string(1.0 / 3.0, 15)
-        + " "
-        + Dune::XT::Common::to_string(1.0 / 6.0, 15)
-        + "]");
+        + Dune::XT::Common::to_string(1.0 / 3.0, 15) + " " + Dune::XT::Common::to_string(1.0 / 6.0, 15) + "]");
   }
 
   static Dune::DynamicVector<RangeFieldType> c()
@@ -176,11 +172,11 @@ class ExplicitRungeKuttaTimeStepper : public TimeStepperInterface<DiscreteFuncti
   using ButcherArrayProviderType = typename internal::ButcherArrayProvider<typename BaseType::RangeFieldType, method>;
 
 public:
+  using typename BaseType::DataHandleType;
   using typename BaseType::DiscreteFunctionType;
+  using typename BaseType::DiscreteSolutionType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::RangeFieldType;
-  using typename BaseType::DiscreteSolutionType;
-  using typename BaseType::DataHandleType;
 
   using OperatorType = OperatorImp;
   using MatrixType = Dune::DynamicMatrix<RangeFieldType>;
@@ -241,8 +237,7 @@ public:
                                 const double t_0,
                                 const RangeFieldType /*tol*/)
     : ExplicitRungeKuttaTimeStepper(op, initial_values, r, t_0)
-  {
-  }
+  {}
 
   virtual RangeFieldType step(const RangeFieldType dt, const RangeFieldType max_dt) override final
   {

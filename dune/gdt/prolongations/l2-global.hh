@@ -48,8 +48,8 @@ public:
 
 template <class GridLayerImp, class SourceImp, class RangeImp>
 class L2GlobalProlongationLocalizableOperator
-    : XT::Common::ConstStorageProvider<ReinterpretDiscreteFunction<SourceImp>>,
-      public L2GlobalProjectionLocalizableOperator<GridLayerImp, ReinterpretDiscreteFunction<SourceImp>, RangeImp>
+  : XT::Common::ConstStorageProvider<ReinterpretDiscreteFunction<SourceImp>>
+  , public L2GlobalProjectionLocalizableOperator<GridLayerImp, ReinterpretDiscreteFunction<SourceImp>, RangeImp>
 {
   static_assert(is_const_discrete_function<SourceImp>::value, "");
   static_assert(is_discrete_function<RangeImp>::value, "");
@@ -69,16 +69,14 @@ public:
                                           const XT::Common::Parameter& param = {})
     : SourceStorage(new ReinterpretDiscreteFunction<SourceImp>(src))
     , BaseOperatorType(over_integrate, grd_vw, SourceStorage::access(), rng, param)
-  {
-  }
+  {}
 
   L2GlobalProlongationLocalizableOperator(GridLayerType grd_vw,
                                           const SourceType& src,
                                           RangeType& rng,
                                           const XT::Common::Parameter& param = {})
     : L2GlobalProlongationLocalizableOperator(0, grd_vw, src, rng, param)
-  {
-  }
+  {}
 
   ///! Calls L2GlobalProjectionLocalizableOperator::apply and gives a meaningful error message.
   void apply()
@@ -101,54 +99,49 @@ template <class GridLayerType,
           class SourceVectorType,
           class RangeSpaceType,
           class RangeVectorType>
-typename std::enable_if<XT::Grid::is_layer<GridLayerType>::value && is_space<SourceSpaceType>::value
-                            && XT::LA::is_vector<SourceVectorType>::value
-                            && is_space<RangeSpaceType>::value
-                            && XT::LA::is_vector<RangeVectorType>::value,
-                        std::unique_ptr<L2GlobalProlongationLocalizableOperator<GridLayerType,
-                                                                                ConstDiscreteFunction<SourceSpaceType,
-                                                                                                      SourceVectorType>,
-                                                                                DiscreteFunction<RangeSpaceType,
-                                                                                                 RangeVectorType>>>>::
-    type
-    make_global_l2_prolongation_localizable_operator(
-        const GridLayerType& grid_layer,
-        const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
-        DiscreteFunction<RangeSpaceType, RangeVectorType>& range,
-        const size_t over_integrate = 0,
-        const XT::Common::Parameter& param = {})
+typename std::enable_if<
+    XT::Grid::is_layer<GridLayerType>::value && is_space<SourceSpaceType>::value
+        && XT::LA::is_vector<SourceVectorType>::value && is_space<RangeSpaceType>::value
+        && XT::LA::is_vector<RangeVectorType>::value,
+    std::unique_ptr<L2GlobalProlongationLocalizableOperator<GridLayerType,
+                                                            ConstDiscreteFunction<SourceSpaceType, SourceVectorType>,
+                                                            DiscreteFunction<RangeSpaceType, RangeVectorType>>>>::type
+make_global_l2_prolongation_localizable_operator(const GridLayerType& grid_layer,
+                                                 const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
+                                                 DiscreteFunction<RangeSpaceType, RangeVectorType>& range,
+                                                 const size_t over_integrate = 0,
+                                                 const XT::Common::Parameter& param = {})
 {
-  return Dune::XT::Common::
-      make_unique<L2GlobalProlongationLocalizableOperator<GridLayerType,
-                                                          ConstDiscreteFunction<SourceSpaceType, SourceVectorType>,
-                                                          DiscreteFunction<RangeSpaceType, RangeVectorType>>>(
-          over_integrate, grid_layer, source, range, param);
+  return Dune::XT::Common::make_unique<
+      L2GlobalProlongationLocalizableOperator<GridLayerType,
+                                              ConstDiscreteFunction<SourceSpaceType, SourceVectorType>,
+                                              DiscreteFunction<RangeSpaceType, RangeVectorType>>>(
+      over_integrate, grid_layer, source, range, param);
 } // ... make_global_l2_prolongation_localizable_operator(...)
 
 template <class SourceSpaceType, class SourceVectorType, class RangeSpaceType, class RangeVectorType>
-typename std::enable_if<is_space<SourceSpaceType>::value && XT::LA::is_vector<SourceVectorType>::value
-                            && is_space<RangeSpaceType>::value
-                            && XT::LA::is_vector<RangeVectorType>::value,
-                        std::unique_ptr<L2GlobalProlongationLocalizableOperator<
-                            typename RangeSpaceType::GridLayerType,
-                            ConstDiscreteFunction<SourceSpaceType, SourceVectorType>,
-                            DiscreteFunction<RangeSpaceType, RangeVectorType>>>>::type
+typename std::enable_if<
+    is_space<SourceSpaceType>::value && XT::LA::is_vector<SourceVectorType>::value && is_space<RangeSpaceType>::value
+        && XT::LA::is_vector<RangeVectorType>::value,
+    std::unique_ptr<L2GlobalProlongationLocalizableOperator<typename RangeSpaceType::GridLayerType,
+                                                            ConstDiscreteFunction<SourceSpaceType, SourceVectorType>,
+                                                            DiscreteFunction<RangeSpaceType, RangeVectorType>>>>::type
 make_global_l2_prolongation_localizable_operator(const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
                                                  DiscreteFunction<RangeSpaceType, RangeVectorType>& range,
                                                  const size_t over_integrate = 0,
                                                  const XT::Common::Parameter& param = {})
 {
-  return Dune::XT::Common::
-      make_unique<L2GlobalProlongationLocalizableOperator<typename RangeSpaceType::GridLayerType,
-                                                          ConstDiscreteFunction<SourceSpaceType, SourceVectorType>,
-                                                          DiscreteFunction<RangeSpaceType, RangeVectorType>>>(
-          over_integrate, range.space().grid_layer(), source, range, param);
+  return Dune::XT::Common::make_unique<
+      L2GlobalProlongationLocalizableOperator<typename RangeSpaceType::GridLayerType,
+                                              ConstDiscreteFunction<SourceSpaceType, SourceVectorType>,
+                                              DiscreteFunction<RangeSpaceType, RangeVectorType>>>(
+      over_integrate, range.space().grid_layer(), source, range, param);
 } // ... make_global_l2_prolongation_localizable_operator(...)
 
 
 template <class GridLayerImp, class FieldImp>
 class L2GlobalProlongationOperator
-    : public OperatorInterface<internal::L2GlobalProlongationOperatorTraits<GridLayerImp, FieldImp>>
+  : public OperatorInterface<internal::L2GlobalProlongationOperatorTraits<GridLayerImp, FieldImp>>
 {
   typedef OperatorInterface<internal::L2GlobalProlongationOperatorTraits<GridLayerImp, FieldImp>> BaseType;
 
@@ -166,14 +159,12 @@ public:
   L2GlobalProlongationOperator(const size_t over_integrate, GridLayerType grid_layer)
     : grid_layer_(grid_layer)
     , over_integrate_(over_integrate)
-  {
-  }
+  {}
 
   L2GlobalProlongationOperator(GridLayerType grid_layer)
     : grid_layer_(grid_layer)
     , over_integrate_(0)
-  {
-  }
+  {}
 
   template <class SS, class SV, class RS, class RV>
   void apply(const ConstDiscreteFunction<SS, SV>& source,

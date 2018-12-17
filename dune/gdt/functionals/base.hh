@@ -61,8 +61,8 @@ public:
  */
 template <class VectorImp, class SpaceImp, class GridLayerImp, class FieldImp>
 class VectorFunctionalBase
-    : public FunctionalInterface<internal::VectorFunctionalBaseTraits<VectorImp, SpaceImp, GridLayerImp, FieldImp>>,
-      public SystemAssembler<SpaceImp, GridLayerImp>
+  : public FunctionalInterface<internal::VectorFunctionalBaseTraits<VectorImp, SpaceImp, GridLayerImp, FieldImp>>
+  , public SystemAssembler<SpaceImp, GridLayerImp>
 {
   typedef FunctionalInterface<internal::VectorFunctionalBaseTraits<VectorImp, SpaceImp, GridLayerImp, FieldImp>>
       BaseFunctionalType;
@@ -76,8 +76,8 @@ public:
   using typename BaseAssemblerType::GridLayerType;
   typedef VectorImp VectorType;
   using typename BaseAssemblerType::IntersectionType;
-  using typename BaseFunctionalType::FieldType;
   using typename BaseFunctionalType::derived_type;
+  using typename BaseFunctionalType::FieldType;
 
   template <class... Args>
   explicit VectorFunctionalBase(VectorType& vec, Args&&... args)
@@ -87,8 +87,7 @@ public:
     if (vector_.access().size() != this->test_space().mapper().size())
       DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
                  "vector.size(): " << vector_.access().size() << "\n"
-                                   << "space().mapper().size(): "
-                                   << this->space().mapper().size());
+                                   << "space().mapper().size(): " << this->space().mapper().size());
   } // VectorFunctionalBase(...)
 
   /// \todo Guard against copy and move ctor (Args = ThisType)!
@@ -96,8 +95,7 @@ public:
   explicit VectorFunctionalBase(Args&&... args)
     : BaseAssemblerType(std::forward<Args>(args)...)
     , vector_(new VectorType(this->test_space().mapper().size(), 0.0))
-  {
-  }
+  {}
 
   /// \sa SystemAssembler
   VectorFunctionalBase(const ThisType& other) = delete;

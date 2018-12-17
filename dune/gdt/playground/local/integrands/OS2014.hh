@@ -85,19 +85,19 @@ public:
 
 template <class DiffusionFactorType, class DiffusionFactorHatType, class DiffusionTensorType, class DiffusiveFluxType>
 class LocalDiffusiveFluxEstimateStarOS2014Integrand
-    : public LocalVolumeIntegrandInterface<internal::
-                                               LocalDiffusiveFluxEstimateStarOS2014IntegrandTraits<DiffusionFactorType,
-                                                                                                   DiffusionFactorHatType,
-                                                                                                   DiffusionTensorType,
-                                                                                                   DiffusiveFluxType>,
-                                           2>
+  : public LocalVolumeIntegrandInterface<
+        internal::LocalDiffusiveFluxEstimateStarOS2014IntegrandTraits<DiffusionFactorType,
+                                                                      DiffusionFactorHatType,
+                                                                      DiffusionTensorType,
+                                                                      DiffusiveFluxType>,
+        2>
 {
-  typedef LocalVolumeIntegrandInterface<internal::
-                                            LocalDiffusiveFluxEstimateStarOS2014IntegrandTraits<DiffusionFactorType,
-                                                                                                DiffusionFactorHatType,
-                                                                                                DiffusionTensorType,
-                                                                                                DiffusiveFluxType>,
-                                        2>
+  typedef LocalVolumeIntegrandInterface<
+      internal::LocalDiffusiveFluxEstimateStarOS2014IntegrandTraits<DiffusionFactorType,
+                                                                    DiffusionFactorHatType,
+                                                                    DiffusionTensorType,
+                                                                    DiffusiveFluxType>,
+      2>
       BaseType;
 
 public:
@@ -106,10 +106,10 @@ public:
                                                                         DiffusionTensorType,
                                                                         DiffusiveFluxType>
       Traits;
-  using typename BaseType::LocalfunctionTupleType;
-  using typename BaseType::EntityType;
-  using typename BaseType::DomainFieldType;
   using BaseType::dimDomain;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::EntityType;
+  using typename BaseType::LocalfunctionTupleType;
 
   LocalDiffusiveFluxEstimateStarOS2014Integrand(const DiffusionFactorType& diffusion_factor,
                                                 const DiffusionFactorHatType& diffusion_factor_hat,
@@ -119,8 +119,7 @@ public:
     , diffusion_factor_hat_(diffusion_factor_hat)
     , diffusion_tensor_(diffusion_tensor)
     , diffusive_flux_(diffusive_flux)
-  {
-  }
+  {}
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {

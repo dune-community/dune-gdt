@@ -56,8 +56,7 @@ public:
 
   explicit LocalVolumeTwoFormAssembler(const LocalVolumeTwoFormType& local_twoform)
     : local_volume_twoform_(local_twoform)
-  {
-  }
+  {}
 
   void assemble(const TestSpaceType& test_space,
                 const AnsatzSpaceType& ansatz_space,
@@ -92,16 +91,16 @@ public:
   } // ... assemble(...)
 
   /**
- *  \tparam T           Traits of the SpaceInterface implementation, representing the type of test_space
- *  \tparam A           Traits of the SpaceInterface implementation, representing the type of ansatz_space
- *  \tparam *d          dimDomain of test_space (* == T) or ansatz_space (* == A)
- *  \tparam *r          dimRange of test_space (* == T) or ansatz_space (* == A)
- *  \tparam *rC         dimRangeCols of test_space (* == T) or ansatz_space (* == A)
- *  \tparam EntityType  A model of Dune::Entity< 0 >
- *  \tparam M           Traits of the Dune::XT::LA::Container::MatrixInterface implementation, representing the
- * type of global_matrix
- *  \tparam R           RangeFieldType, i.e. double
- */
+   *  \tparam T           Traits of the SpaceInterface implementation, representing the type of test_space
+   *  \tparam A           Traits of the SpaceInterface implementation, representing the type of ansatz_space
+   *  \tparam *d          dimDomain of test_space (* == T) or ansatz_space (* == A)
+   *  \tparam *r          dimRange of test_space (* == T) or ansatz_space (* == A)
+   *  \tparam *rC         dimRangeCols of test_space (* == T) or ansatz_space (* == A)
+   *  \tparam EntityType  A model of Dune::Entity< 0 >
+   *  \tparam M           Traits of the Dune::XT::LA::Container::MatrixInterface implementation, representing the
+   * type of global_matrix
+   *  \tparam R           RangeFieldType, i.e. double
+   */
   template <class T,
             size_t Td,
             size_t Tr,
@@ -177,8 +176,7 @@ public:
     , result_(0)
     , finalized_(false)
     , where_(where)
-  {
-  }
+  {}
 
 // disable deprecation warning that occurs even if this class is not used
 #include <dune/xt/common/disable_warnings.hh>
@@ -256,8 +254,7 @@ public:
     , source_(source)
     , range_(range)
     , where_(where)
-  {
-  }
+  {}
 
   virtual bool apply_on(const GridLayerType& grid_layer, const EntityType& entity) const
   {
@@ -303,8 +300,7 @@ public:
     , source_(source)
     , range_(range)
     , where_(where)
-  {
-  }
+  {}
 
   virtual bool apply_on(const GridViewType& grid_view, const EntityType& entity) const
   {
@@ -364,8 +360,7 @@ public:
 
   explicit LocalCouplingTwoFormAssembler(const LocalCouplingTwoFormType& local_twoform)
     : local_coupling_twoform_(local_twoform)
-  {
-  }
+  {}
 
   void assemble(const TestSpaceType& inner_test_space,
                 const AnsatzSpaceType& inner_ansatz_space,
@@ -498,8 +493,7 @@ public:
     , range_(range)
     , where_(where)
     , mu_(mu)
-  {
-  }
+  {}
 
   virtual bool apply_on(const GridLayerType& grid_layer, const IntersectionType& intersection) const
   {
@@ -554,8 +548,7 @@ public:
 public:
   explicit LocalBoundaryTwoFormAssembler(const LocalBoundaryTwoFormType& local_twoform)
     : local_twoform_(local_twoform)
-  {
-  }
+  {}
 
   void assemble(const TestSpaceType& test_space,
                 const AnsatzSpaceType& ansatz_space,
@@ -618,8 +611,7 @@ public:
     , source_(source)
     , range_(range)
     , where_(where)
-  {
-  }
+  {}
 
   virtual bool apply_on(const GridLayerType& grid_layer, const IntersectionType& intersection) const
   {
@@ -662,8 +654,7 @@ public:
 
   explicit LocalVolumeFunctionalAssembler(const LocalVolumeFunctionalType& local_volume_functional)
     : local_volume_functional_(local_volume_functional)
-  {
-  }
+  {}
 
   void assemble(const TestSpaceType& test_space, const EntityType& entity, VectorType& global_vector) const
   {
@@ -707,8 +698,7 @@ public:
 
   explicit LocalFaceFunctionalAssembler(const LocalFaceFunctionalType& local_face_functional)
     : local_face_functional_(local_face_functional)
-  {
-  }
+  {}
 
   void assemble(const TestSpaceType& test_space, const IntersectionType& intersection, VectorType& global_vector) const
   {

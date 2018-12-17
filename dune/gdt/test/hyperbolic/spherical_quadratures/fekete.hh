@@ -19,7 +19,7 @@
 #include <dune/xt/common/math.hh>
 
 #if HAVE_FEKETE
-#include "fekete.hpp"
+#  include "fekete.hpp"
 #endif
 
 namespace Dune {

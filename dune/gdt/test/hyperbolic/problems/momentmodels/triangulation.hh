@@ -47,8 +47,7 @@ public:
   Vertex(const DomainType& pos, const size_t index)
     : position_(pos)
     , index_(index)
-  {
-  }
+  {}
 
   const DomainType& position() const
   {
@@ -114,8 +113,7 @@ public:
     , vertices_(vertices)
     , current_vertex_index_(current_vertex_index)
     , triangulation_vertices_mutex_(triangulation_vertices_mutex)
-  {
-  }
+  {}
 
   SphericalTriangle(TriangulationVerticesVectorType& triangulation_vertices,
                     const std::shared_ptr<VertexType> vertex_1,
@@ -127,8 +125,7 @@ public:
     , vertices_{vertex_1, vertex_2, vertex_3}
     , current_vertex_index_(current_vertex_index)
     , triangulation_vertices_mutex_(triangulation_vertices_mutex)
-  {
-  }
+  {}
 
   const SubtrianglesVectorType& subtriangles() const
   {
@@ -247,9 +244,7 @@ public:
     return ret;
   }
 
-  SphericalTriangulation()
-  {
-  }
+  SphericalTriangulation() {}
 
   SphericalTriangulation(size_t num_refinements,
                          const std::vector<DomainType>& initial_points =

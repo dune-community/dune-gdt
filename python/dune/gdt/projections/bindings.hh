@@ -61,16 +61,16 @@ public:
 // begin: this is what we need for the .so
 
 #define _DUNE_GDT_PROJECTIONS_BIND(_m, _GRID, _g_layer, _s_backend, _s_type, _p, _la)                                  \
-  Dune::GDT::bindings::project<Dune::GDT::SpaceProvider<_GRID,                                                         \
-                                                        Dune::XT::Grid::Layers::_g_layer,                              \
-                                                        Dune::GDT::SpaceType::_s_type,                                 \
-                                                        Dune::GDT::Backends::_s_backend,                               \
-                                                        _p,                                                            \
-                                                        double,                                                        \
-                                                        1,                                                             \
-                                                        1>,                                                            \
-                               typename Dune::XT::LA::Container<double,                                                \
-                                                                Dune::XT::LA::Backends::_la>::VectorType>::bind(_m)
+  Dune::GDT::bindings::project<                                                                                        \
+      Dune::GDT::SpaceProvider<_GRID,                                                                                  \
+                               Dune::XT::Grid::Layers::_g_layer,                                                       \
+                               Dune::GDT::SpaceType::_s_type,                                                          \
+                               Dune::GDT::Backends::_s_backend,                                                        \
+                               _p,                                                                                     \
+                               double,                                                                                 \
+                               1,                                                                                      \
+                               1>,                                                                                     \
+      typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType>::bind(_m)
 
 // for each space backend
 
@@ -88,9 +88,9 @@ public:
 #define _DUNE_GDT_PROJECTIONS_BIND_COMMON(_m) _DUNE_GDT_PROJECTIONS_BIND_ALL_SPACES(_m, common_dense)
 
 #if HAVE_EIGEN
-#define _DUNE_GDT_PROJECTIONS_BIND_EIGEN(_m) _DUNE_GDT_PROJECTIONS_BIND_ALL_SPACES(_m, eigen_dense)
+#  define _DUNE_GDT_PROJECTIONS_BIND_EIGEN(_m) _DUNE_GDT_PROJECTIONS_BIND_ALL_SPACES(_m, eigen_dense)
 #else
-#define _DUNE_GDT_PROJECTIONS_BIND_EIGEN(_m)
+#  define _DUNE_GDT_PROJECTIONS_BIND_EIGEN(_m)
 #endif
 
 #define _DUNE_GDT_PROJECTIONS_BIND_ISTL(_m) _DUNE_GDT_PROJECTIONS_BIND_ALL_SPACES(_m, istl_dense)

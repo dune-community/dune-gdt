@@ -27,21 +27,21 @@
 
 #if HAVE_DUNE_ALUGRID
 
-#define SPACE_FV_ALUCONFORMGRID(dd, rr) Dune::GDT::FvSpace<AluConform##dd##dLeafGridViewType, double, rr>
+#  define SPACE_FV_ALUCONFORMGRID(dd, rr) Dune::GDT::FvSpace<AluConform##dd##dLeafGridViewType, double, rr>
 
-#define SPACE_FV_ALUCUBEGRID(dd, rr) Dune::GDT::FvSpace<AluCube##dd##dLeafGridViewType, double, rr>
+#  define SPACE_FV_ALUCUBEGRID(dd, rr) Dune::GDT::FvSpace<AluCube##dd##dLeafGridViewType, double, rr>
 
-#define SPACES_FV_ALUGRID                                                                                              \
-  SPACE_FV_ALUCONFORMGRID(2, 1)                                                                                        \
-  , SPACE_FV_ALUCONFORMGRID(2, 2), SPACE_FV_ALUCONFORMGRID(2, 3), SPACE_FV_ALUCONFORMGRID(3, 1),                       \
-      SPACE_FV_ALUCONFORMGRID(3, 2), SPACE_FV_ALUCONFORMGRID(3, 3), SPACE_FV_ALUCUBEGRID(2, 1),                        \
-      SPACE_FV_ALUCUBEGRID(2, 2), SPACE_FV_ALUCUBEGRID(2, 3), SPACE_FV_ALUCUBEGRID(3, 1), SPACE_FV_ALUCUBEGRID(3, 2),  \
-      SPACE_FV_ALUCUBEGRID(3, 3)
+#  define SPACES_FV_ALUGRID                                                                                            \
+    SPACE_FV_ALUCONFORMGRID(2, 1)                                                                                      \
+    , SPACE_FV_ALUCONFORMGRID(2, 2), SPACE_FV_ALUCONFORMGRID(2, 3), SPACE_FV_ALUCONFORMGRID(3, 1),                     \
+        SPACE_FV_ALUCONFORMGRID(3, 2), SPACE_FV_ALUCONFORMGRID(3, 3), SPACE_FV_ALUCUBEGRID(2, 1),                      \
+        SPACE_FV_ALUCUBEGRID(2, 2), SPACE_FV_ALUCUBEGRID(2, 3), SPACE_FV_ALUCUBEGRID(3, 1),                            \
+        SPACE_FV_ALUCUBEGRID(3, 2), SPACE_FV_ALUCUBEGRID(3, 3)
 
 
-#define SPACE_FV_ALUCONFORMGRID_LEVEL(dd, rr) Dune::GDT::FvSpace<AluConform##dd##dLevelGridViewType, double, rr>
+#  define SPACE_FV_ALUCONFORMGRID_LEVEL(dd, rr) Dune::GDT::FvSpace<AluConform##dd##dLevelGridViewType, double, rr>
 
-#define SPACE_FV_ALUCUBEGRID_LEVEL(dd, rr) Dune::GDT::FvSpace<AluCube##dd##dLevelGridViewType, double, rr>
+#  define SPACE_FV_ALUCUBEGRID_LEVEL(dd, rr) Dune::GDT::FvSpace<AluCube##dd##dLevelGridViewType, double, rr>
 
 #endif // HAVE_DUNE_ALUGRID
 

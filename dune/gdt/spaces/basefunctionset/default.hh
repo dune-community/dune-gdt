@@ -41,11 +41,12 @@ public:
 
 
 template <class Fe, class E, class R>
-class ScalarBasefunctionSet : public BaseFunctionSetInterface<internal::ScalarBasefunctionSetTraits<Fe, E, R>,
-                                                              typename E::Geometry::ctype,
-                                                              E::dimension,
-                                                              R,
-                                                              1>
+class ScalarBasefunctionSet
+  : public BaseFunctionSetInterface<internal::ScalarBasefunctionSetTraits<Fe, E, R>,
+                                    typename E::Geometry::ctype,
+                                    E::dimension,
+                                    R,
+                                    1>
 {
 public:
   using Traits = internal::ScalarBasefunctionSetTraits<Fe, E, R>;
@@ -56,16 +57,15 @@ private:
 
 public:
   using typename BaseType::BackendType;
-  using typename BaseType::EntityType;
   using typename BaseType::DomainType;
-  using typename BaseType::RangeType;
+  using typename BaseType::EntityType;
   using typename BaseType::JacobianRangeType;
+  using typename BaseType::RangeType;
 
   ScalarBasefunctionSet(const EntityType& en, const BackendType& finite_element)
     : BaseType(en)
     , finite_element_(finite_element)
-  {
-  }
+  {}
 
   ScalarBasefunctionSet(const ThisType&) = default;
   ScalarBasefunctionSet(ThisType&&) = default;

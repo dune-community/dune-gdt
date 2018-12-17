@@ -44,21 +44,21 @@ class ShallowWater : public ProblemBase<E, D, d, U, typename U::RangeFieldType, 
 
 public:
   static const bool linear = false;
-  using typename BaseType::DomainType;
-  using typename BaseType::DomainFieldType;
-  using typename BaseType::RangeFieldType;
-  using typename BaseType::RangeType;
-  using typename BaseType::StateRangeType;
-  using typename BaseType::FluxType;
-  using typename BaseType::RhsType;
-  using typename BaseType::InitialValueType;
-  using typename BaseType::BoundaryValueType;
-  using typename BaseType::ActualFluxType;
-  using typename BaseType::ActualInitialValueType;
-  using typename BaseType::ActualDirichletBoundaryValueType;
-  using typename BaseType::ActualBoundaryValueType;
   using BaseType::dimDomain;
   using BaseType::dimRange;
+  using typename BaseType::ActualBoundaryValueType;
+  using typename BaseType::ActualDirichletBoundaryValueType;
+  using typename BaseType::ActualFluxType;
+  using typename BaseType::ActualInitialValueType;
+  using typename BaseType::BoundaryValueType;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::DomainType;
+  using typename BaseType::FluxType;
+  using typename BaseType::InitialValueType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::RangeType;
+  using typename BaseType::RhsType;
+  using typename BaseType::StateRangeType;
   using ActualRhsType = typename XT::Functions::GlobalLambdaFluxFunction<U, 0, RangeFieldType, dimRange, 1>;
 
   static XT::Common::Configuration default_grid_cfg()
@@ -85,8 +85,7 @@ public:
                0.4,
                0.3,
                false)
-  {
-  }
+  {}
 
   static std::string static_id()
   {
@@ -167,27 +166,27 @@ class ShallowWater<E, D, U, 1> : public ProblemBase<E, D, 1, U, typename U::Rang
 
 public:
   static const bool linear = false;
-  using typename BaseType::DomainType;
+  using BaseType::dimDomain;
+  using BaseType::dimRange;
+  using typename BaseType::ActualBoundaryValueType;
+  using typename BaseType::ActualDirichletBoundaryValueType;
+  using typename BaseType::ActualFluxType;
+  using typename BaseType::ActualRhsType;
   using typename BaseType::DomainFieldType;
+  using typename BaseType::DomainType;
+  using typename BaseType::IntersectionType;
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeType;
   using typename BaseType::StateRangeType;
-  using typename BaseType::IntersectionType;
-  using BaseType::dimDomain;
-  using BaseType::dimRange;
-  using typename BaseType::ActualFluxType;
-  using typename BaseType::ActualRhsType;
-  using typename BaseType::ActualDirichletBoundaryValueType;
-  using typename BaseType::ActualBoundaryValueType;
   using ActualInitialValueType = XT::Functions::
       CheckerboardFunction<E, D, dimDomain, RangeFieldType, dimRange, 1, ActualDirichletBoundaryValueType>;
 
   using MatrixType = FieldMatrix<RangeFieldType, dimRange, dimRange>;
 
-  using typename BaseType::FluxType;
-  using typename BaseType::RhsType;
-  using typename BaseType::InitialValueType;
   using typename BaseType::BoundaryValueType;
+  using typename BaseType::FluxType;
+  using typename BaseType::InitialValueType;
+  using typename BaseType::RhsType;
 
   static XT::Common::Configuration default_grid_cfg()
   {
@@ -213,8 +212,7 @@ public:
                0.4,
                3.,
                false)
-  {
-  }
+  {}
 
   static std::string static_id()
   {
@@ -295,23 +293,22 @@ public:
 // Test case for shallow water equations, see LeVeque, Finite Volume Methods for Hyperbolic Problems, 2002, Example 13.1
 template <class G, class R = double>
 class ShallowWaterTestCase
-    : public Dune::GDT::Test::
-          InstationaryTestCase<G,
-                               Problems::ShallowWater<
-                                   typename G::template Codim<0>::Entity,
-                                   typename G::ctype,
-                                   typename internal::DiscreteFunctionProvider<G,
-                                                                               GDT::SpaceType::product_fv,
-                                                                               0,
-                                                                               R,
-                                                                               2,
-                                                                               1,
-                                                                               GDT::Backends::gdt,
-                                                                               XT::LA::default_backend,
-                                                                               XT::Grid::Layers::leaf,
-                                                                               true
+  : public Dune::GDT::Test::InstationaryTestCase<
+        G,
+        Problems::ShallowWater<typename G::template Codim<0>::Entity,
+                               typename G::ctype,
+                               typename internal::DiscreteFunctionProvider<G,
+                                                                           GDT::SpaceType::product_fv,
+                                                                           0,
+                                                                           R,
+                                                                           2,
+                                                                           1,
+                                                                           GDT::Backends::gdt,
+                                                                           XT::LA::default_backend,
+                                                                           XT::Grid::Layers::leaf,
+                                                                           true
 
-                                                                               >::type>>
+                                                                           >::type>>
 {
   using E = typename G::template Codim<0>::Entity;
   using D = typename G::ctype;
@@ -340,8 +337,7 @@ public:
 
   ShallowWaterTestCase(const size_t num_refs = 2, const double divide_t_end_by = 1.0)
     : BaseType(divide_t_end_by, ProblemType::default_grid_cfg(), num_refs)
-  {
-  }
+  {}
 
   virtual const ProblemType& problem() const override final
   {

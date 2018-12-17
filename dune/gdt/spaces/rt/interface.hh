@@ -31,12 +31,12 @@ class RtSpaceInterface : public SpaceInterface<ImpTraits, domainDim, rangeDim, r
 public:
   typedef ImpTraits Traits;
 
-  using BaseType::polOrder;
   using BaseType::dimDomain;
+  using BaseType::polOrder;
+  using typename BaseType::BaseFunctionSetType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
   using typename BaseType::EntityType;
-  using typename BaseType::BaseFunctionSetType;
   using typename BaseType::PatternType;
 
   /**
@@ -103,11 +103,8 @@ public:
       if (zeros != 1 || nonzeros != (num_intersections - 1))
         DUNE_THROW(XT::Common::Exceptions::internal_error,
                    "This must not happen for RTN0 in 2d!\n"
-                       << "  zeros    = "
-                       << zeros
-                       << "\n"
-                       << "  nonzeros = "
-                       << nonzeros);
+                       << "  zeros    = " << zeros << "\n"
+                       << "  nonzeros = " << nonzeros);
     } // walk the vertices
     // so from here on we have the local DoF index that corresponds to each vertex vv in local_DoF_index_of_vertex[vv]
     // now we need to find the intersection opposite to this vertex
@@ -147,11 +144,8 @@ public:
       if (found != 1 || missed != (num_intersections - 1))
         DUNE_THROW(XT::Common::Exceptions::internal_error,
                    "This must not happen for RTN0 in 2d!\n"
-                       << "  found  = "
-                       << found
-                       << "\n"
-                       << "  missed = "
-                       << missed);
+                       << "  found  = " << found << "\n"
+                       << "  missed = " << missed);
       ++intersection_counter;
     } // walk the intersection
     assert(intersection_counter == num_intersections);
@@ -164,8 +158,8 @@ public:
   typename std::enable_if<XT::Grid::is_layer<GL>::value, PatternType>::type
   compute_pattern(const GL& grd_layr, const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
-    Dune::XT::Common::TimedLogger().get("gdt.spaces.rt.compute_pattern").warn() << "Returning largest possible pattern!"
-                                                                                << std::endl;
+    Dune::XT::Common::TimedLogger().get("gdt.spaces.rt.compute_pattern").warn()
+        << "Returning largest possible pattern!" << std::endl;
     return BaseType::compute_face_and_volume_pattern(grd_layr, ansatz_space);
   }
 

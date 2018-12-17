@@ -32,8 +32,8 @@ template <class SpaceType>
 struct ProjectionOperatorBase : public OperatorBase<SpaceType>
 {
   typedef OperatorBase<SpaceType> BaseType;
-  using typename BaseType::RangeFieldType;
   using typename BaseType::GridLayerType;
+  using typename BaseType::RangeFieldType;
 
   void measure_error(const RangeFieldType& expected_error) const
   {
@@ -47,8 +47,7 @@ struct ProjectionOperatorBase : public OperatorBase<SpaceType>
     , relax_factor(this->space_.grid_layer().grid().comm().size() > 1 ? 1.15 : 1)
     , default_tolerance(1.35e-10 * relax_factor)
     , alugrid_tolerance(1.35e-10 * relax_factor)
-  {
-  }
+  {}
 
   const double relax_factor;
   const double default_tolerance;

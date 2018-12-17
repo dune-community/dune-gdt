@@ -58,8 +58,8 @@ public:
  */
 template <class GridLayerImp, class SourceImp, class RangeImp>
 class LagrangeProlongationLocalizableOperator
-    : XT::Common::ConstStorageProvider<ReinterpretDiscreteFunction<SourceImp>>,
-      public LagrangeProjectionLocalizableOperator<GridLayerImp, ReinterpretDiscreteFunction<SourceImp>, RangeImp>
+  : XT::Common::ConstStorageProvider<ReinterpretDiscreteFunction<SourceImp>>
+  , public LagrangeProjectionLocalizableOperator<GridLayerImp, ReinterpretDiscreteFunction<SourceImp>, RangeImp>
 {
   static_assert(is_const_discrete_function<SourceImp>::value, "");
   static_assert(is_discrete_function<RangeImp>::value, "");
@@ -78,8 +78,7 @@ public:
                                           const XT::Common::Parameter& param = {})
     : SourceStorage(new ReinterpretDiscreteFunction<SourceImp>(src))
     , BaseOperatorType(grd_vw, SourceStorage::access(), rng, param)
-  {
-  }
+  {}
 
   ///! Calls LagrangeProjectionLocalizableOperator::apply and gives a meaningful error message.
   void apply()
@@ -102,24 +101,21 @@ template <class GridLayerType,
           class SourceVectorType,
           class RangeSpaceType,
           class RangeVectorType>
-typename std::enable_if<XT::Grid::is_layer<GridLayerType>::value,
-                        std::unique_ptr<LagrangeProlongationLocalizableOperator<GridLayerType,
-                                                                                ConstDiscreteFunction<SourceSpaceType,
-                                                                                                      SourceVectorType>,
-                                                                                DiscreteFunction<RangeSpaceType,
-                                                                                                 RangeVectorType>>>>::
-    type
-    make_lagrange_prolongation_localizable_operator(
-        const GridLayerType& grid_layer,
-        const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
-        DiscreteFunction<RangeSpaceType, RangeVectorType>& range,
-        const XT::Common::Parameter& param = {})
+typename std::enable_if<
+    XT::Grid::is_layer<GridLayerType>::value,
+    std::unique_ptr<LagrangeProlongationLocalizableOperator<GridLayerType,
+                                                            ConstDiscreteFunction<SourceSpaceType, SourceVectorType>,
+                                                            DiscreteFunction<RangeSpaceType, RangeVectorType>>>>::type
+make_lagrange_prolongation_localizable_operator(const GridLayerType& grid_layer,
+                                                const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
+                                                DiscreteFunction<RangeSpaceType, RangeVectorType>& range,
+                                                const XT::Common::Parameter& param = {})
 {
-  return Dune::XT::Common::
-      make_unique<LagrangeProlongationLocalizableOperator<GridLayerType,
-                                                          ConstDiscreteFunction<SourceSpaceType, SourceVectorType>,
-                                                          DiscreteFunction<RangeSpaceType, RangeVectorType>>>(
-          grid_layer, source, range, param);
+  return Dune::XT::Common::make_unique<
+      LagrangeProlongationLocalizableOperator<GridLayerType,
+                                              ConstDiscreteFunction<SourceSpaceType, SourceVectorType>,
+                                              DiscreteFunction<RangeSpaceType, RangeVectorType>>>(
+      grid_layer, source, range, param);
 } // ... make_lagrange_prolongation_localizable_operator(...)
 
 template <class SourceSpaceType, class SourceVectorType, class RangeSpaceType, class RangeVectorType>
@@ -130,17 +126,17 @@ make_lagrange_prolongation_localizable_operator(const ConstDiscreteFunction<Sour
                                                 DiscreteFunction<RangeSpaceType, RangeVectorType>& range,
                                                 const XT::Common::Parameter& param = {})
 {
-  return Dune::XT::Common::
-      make_unique<LagrangeProlongationLocalizableOperator<typename RangeSpaceType::GridLayerType,
-                                                          ConstDiscreteFunction<SourceSpaceType, SourceVectorType>,
-                                                          DiscreteFunction<RangeSpaceType, RangeVectorType>>>(
-          range.space().grid_layer(), source, range, param);
+  return Dune::XT::Common::make_unique<
+      LagrangeProlongationLocalizableOperator<typename RangeSpaceType::GridLayerType,
+                                              ConstDiscreteFunction<SourceSpaceType, SourceVectorType>,
+                                              DiscreteFunction<RangeSpaceType, RangeVectorType>>>(
+      range.space().grid_layer(), source, range, param);
 } // ... make_lagrange_prolongation_localizable_operator(...)
 
 
 template <class GridLayerImp, class FieldImp>
 class LagrangeProlongationOperator
-    : public OperatorInterface<internal::LagrangeProlongationOperatorTraits<GridLayerImp, FieldImp>>
+  : public OperatorInterface<internal::LagrangeProlongationOperatorTraits<GridLayerImp, FieldImp>>
 {
   typedef OperatorInterface<internal::LagrangeProlongationOperatorTraits<GridLayerImp, FieldImp>> BaseType;
 
@@ -157,8 +153,7 @@ private:
 public:
   LagrangeProlongationOperator(GridLayerType grid_layer)
     : grid_layer_(grid_layer)
-  {
-  }
+  {}
 
   template <class SS, class SV, class RS, class RV>
   void apply(const ConstDiscreteFunction<SS, SV>& source,

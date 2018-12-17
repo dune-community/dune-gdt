@@ -29,22 +29,23 @@
 #if HAVE_DUNE_ALUGRID
 
 
-#define SPACE_CG_ALUCONFORMGRID(dd, rr, pp)                                                                            \
-  Dune::GDT::ContinuousLagrangeSpace<AluConform##dd##dLeafGridViewType, pp, double>
+#  define SPACE_CG_ALUCONFORMGRID(dd, rr, pp)                                                                          \
+    Dune::GDT::ContinuousLagrangeSpace<AluConform##dd##dLeafGridViewType, pp, double>
 
-#define SPACE_CG_ALUCUBEGRID(dd, rr, pp) Dune::GDT::ContinuousLagrangeSpace<AluCube##dd##dLeafGridViewType, pp, double>
+#  define SPACE_CG_ALUCUBEGRID(dd, rr, pp)                                                                             \
+    Dune::GDT::ContinuousLagrangeSpace<AluCube##dd##dLeafGridViewType, pp, double>
 
-#define SPACES_CG_ALUGRID(pp)                                                                                          \
-  SPACE_CG_ALUCONFORMGRID(2, 1, pp)                                                                                    \
-  , SPACE_CG_ALUCONFORMGRID(3, 1, pp), SPACE_CG_ALUCUBEGRID(2, 1, pp), SPACE_CG_ALUCUBEGRID(3, 1, pp)
+#  define SPACES_CG_ALUGRID(pp)                                                                                        \
+    SPACE_CG_ALUCONFORMGRID(2, 1, pp)                                                                                  \
+    , SPACE_CG_ALUCONFORMGRID(3, 1, pp), SPACE_CG_ALUCUBEGRID(2, 1, pp), SPACE_CG_ALUCUBEGRID(3, 1, pp)
 
 
-#define SPACE_CG_ALUCUBEGRID_LEVEL(dd, rr, pp)                                                                         \
-  Dune::GDT::ContinuousLagrangeSpace<AluCube##dd##dLevelGridViewType, pp, double>
+#  define SPACE_CG_ALUCUBEGRID_LEVEL(dd, rr, pp)                                                                       \
+    Dune::GDT::ContinuousLagrangeSpace<AluCube##dd##dLevelGridViewType, pp, double>
 
-#define SPACES_CG_ALUGRID_LEVEL(pp)                                                                                    \
-  SPACE_CG_ALUCUBEGRID_LEVEL(2, 1, pp)                                                                                 \
-  , SPACE_CG_ALUCUBEGRID_LEVEL(3, 1, pp)
+#  define SPACES_CG_ALUGRID_LEVEL(pp)                                                                                  \
+    SPACE_CG_ALUCUBEGRID_LEVEL(2, 1, pp)                                                                               \
+    , SPACE_CG_ALUCUBEGRID_LEVEL(3, 1, pp)
 
 
 #endif // HAVE_DUNE_ALUGRID

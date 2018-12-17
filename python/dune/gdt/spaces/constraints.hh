@@ -57,11 +57,7 @@ public:
             } catch (boost::bad_numeric_cast& ee) {
               DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
                          "Given size has to be positive!\n\n The error in boost while converting '"
-                             << size
-                             << "' to '"
-                             << XT::Common::Typename<size_t>::value()
-                             << "' was: "
-                             << ee.what());
+                             << size << "' to '" << XT::Common::Typename<size_t>::value() << "' was: " << ee.what());
             }
             return new type(boundary_info, ss, set);
           }),
@@ -80,11 +76,7 @@ public:
             } catch (boost::bad_numeric_cast& ee) {
               DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
                          "Given size has to be positive!\n\n The error in boost while converting '"
-                             << size
-                             << "' to '"
-                             << XT::Common::Typename<size_t>::value()
-                             << "' was: "
-                             << ee.what());
+                             << size << "' to '" << XT::Common::Typename<size_t>::value() << "' was: " << ee.what());
             }
             return type(boundary_info, size__as_size_t, set);
           },
@@ -133,8 +125,7 @@ private:
   {
     template <class GL, class A>
     void operator()(pybind11::class_<GDT::SystemAssembler<T, GL, A>, XT::Grid::Walker<GL>>& /*bound_system_assembler*/)
-    {
-    }
+    {}
   };
 
 public:

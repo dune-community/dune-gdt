@@ -54,35 +54,33 @@ private:
 
 
 template <class GridLayerType, class SourceType, class SpaceType, class VectorType>
-typename std::
-    enable_if<XT::Grid::is_layer<GridLayerType>::value && XT::Functions::is_localizable_function<SourceType>::value
-                  && is_space<SpaceType>::value
-                  && XT::LA::is_vector<VectorType>::value,
-              std::unique_ptr<LagrangeProjectionLocalizableOperator<GridLayerType,
-                                                                    SourceType,
-                                                                    DiscreteFunction<SpaceType, VectorType>>>>::type
+typename std::enable_if<
+    XT::Grid::is_layer<GridLayerType>::value && XT::Functions::is_localizable_function<SourceType>::value
+        && is_space<SpaceType>::value && XT::LA::is_vector<VectorType>::value,
+    std::unique_ptr<
+        LagrangeProjectionLocalizableOperator<GridLayerType, SourceType, DiscreteFunction<SpaceType, VectorType>>>>::
+    type
     make_lagrange_projection_localizable_operator(const GridLayerType& grid_layer,
                                                   const SourceType& source,
                                                   DiscreteFunction<SpaceType, VectorType>& range,
                                                   const XT::Common::Parameter& param = {})
 {
-  return Dune::XT::Common::make_unique<LagrangeProjectionLocalizableOperator<GridLayerType,
-                                                                             SourceType,
-                                                                             DiscreteFunction<SpaceType, VectorType>>>(
+  return Dune::XT::Common::make_unique<
+      LagrangeProjectionLocalizableOperator<GridLayerType, SourceType, DiscreteFunction<SpaceType, VectorType>>>(
       grid_layer, source, range, param);
 }
 
 
 template <class SourceType, class SpaceType, class VectorType>
-typename std::
-    enable_if<XT::Functions::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
-                  && XT::LA::is_vector<VectorType>::value,
-              std::unique_ptr<LagrangeProjectionLocalizableOperator<typename SpaceType::GridLayerType,
-                                                                    SourceType,
-                                                                    DiscreteFunction<SpaceType, VectorType>>>>::type
-    make_lagrange_projection_localizable_operator(const SourceType& source,
-                                                  DiscreteFunction<SpaceType, VectorType>& range,
-                                                  const XT::Common::Parameter& param = {})
+typename std::enable_if<
+    XT::Functions::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
+        && XT::LA::is_vector<VectorType>::value,
+    std::unique_ptr<LagrangeProjectionLocalizableOperator<typename SpaceType::GridLayerType,
+                                                          SourceType,
+                                                          DiscreteFunction<SpaceType, VectorType>>>>::type
+make_lagrange_projection_localizable_operator(const SourceType& source,
+                                              DiscreteFunction<SpaceType, VectorType>& range,
+                                              const XT::Common::Parameter& param = {})
 {
   return Dune::XT::Common::make_unique<LagrangeProjectionLocalizableOperator<typename SpaceType::GridLayerType,
                                                                              SourceType,
@@ -114,7 +112,7 @@ public:
 
 template <class GridLayerImp, class FieldImp>
 class LagrangeProjectionOperator
-    : public OperatorInterface<internal::LagrangeProjectionOperatorTraits<GridLayerImp, FieldImp>>
+  : public OperatorInterface<internal::LagrangeProjectionOperatorTraits<GridLayerImp, FieldImp>>
 {
   typedef OperatorInterface<internal::LagrangeProjectionOperatorTraits<GridLayerImp, FieldImp>> BaseType;
 
@@ -131,8 +129,7 @@ private:
 public:
   LagrangeProjectionOperator(GridLayerType grid_layer)
     : grid_layer_(grid_layer)
-  {
-  }
+  {}
 
   template <class R, size_t r, size_t rC, class S, class V>
   void apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source,
@@ -182,8 +179,7 @@ make_lagrange_projection_operator(const GridLayerType& grid_layer)
 
 template <class GridLayerType, class SourceType, class SpaceType, class VectorType>
 typename std::enable_if<XT::Grid::is_layer<GridLayerType>::value
-                            && XT::Functions::is_localizable_function<SourceType>::value
-                            && is_space<SpaceType>::value
+                            && XT::Functions::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
                             && XT::LA::is_vector<VectorType>::value,
                         void>::type
 project_lagrange(const GridLayerType& grid_layer,

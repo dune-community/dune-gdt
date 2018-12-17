@@ -21,8 +21,10 @@ using namespace Dune::GDT::Test;
 #if HAVE_DUNE_ALUGRID
 
 typedef testing::Types<
-    /*std::pair< SPACE_CG_ALUCONFORMGRID(2, 1, 1), SPACE_CG_ALUCONFORMGRID(2, 2, 1) > // <- TODO: enable once #40 is resolved
-                      ,*/ std::pair<SPACE_CG_ALUCONFORMGRID(2, 1, 1), SPACE_RT_ALUCONFORMGRID(2)>,
+    /*std::pair< SPACE_CG_ALUCONFORMGRID(2, 1, 1), SPACE_CG_ALUCONFORMGRID(2, 2, 1) > // <- TODO: enable once #40 is
+       resolved
+                      ,*/
+    std::pair<SPACE_CG_ALUCONFORMGRID(2, 1, 1), SPACE_RT_ALUCONFORMGRID(2)>,
     std::pair<SPACE_CG_ALUCUBEGRID(2, 1, 1), SPACE_RT_ALUCUBEGRID(2)>,
     std::pair<SPACE_CG_YASPGRID(2, 1, 1), SPACE_RT_YASPGRID(2)>>
     SpaceTypes;
@@ -37,9 +39,7 @@ TYPED_TEST(DarcyOperatorTest, produces_correct_results)
 #else // HAVE_DUNE_ALUGRID
 
 
-TEST(DISABLED_DarcyOperatorTest, produces_correct_results)
-{
-}
+TEST(DISABLED_DarcyOperatorTest, produces_correct_results) {}
 
 
 #endif // HAVE_DUNE_ALUGRID

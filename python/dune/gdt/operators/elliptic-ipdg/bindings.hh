@@ -121,42 +121,42 @@ public:
       const auto method_name =
           "make_elliptic_" + LocalEllipticIpdgIntegrands::method_name<method>::value() + "_matrix_operator";
 
-      m.def(
-          std::string(method_name + "_" + XT::LA::bindings::container_name<M>::value()).c_str(),
-          [](const DF& diffusion,
-             const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GL>>& boundary_info,
-             const R& space,
-             const size_t over_integrate) {
-            return make_elliptic_ipdg_matrix_operator<M, method>(diffusion, boundary_info, space, over_integrate)
-                .release(); //                                                                     <- s.a. for release()
-          },
-          "diffusion"_a,
-          "boundary_info"_a,
-          "space"_a,
-          "over_integrate"_a = 0,
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>(),
-          py::keep_alive<0, 3>());
+      m.def(std::string(method_name + "_" + XT::LA::bindings::container_name<M>::value()).c_str(),
+            [](const DF& diffusion,
+               const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GL>>& boundary_info,
+               const R& space,
+               const size_t over_integrate) {
+              return make_elliptic_ipdg_matrix_operator<M, method>(diffusion, boundary_info, space, over_integrate)
+                  .release(); //                                                                     <- s.a. for
+                              //                                                                     release()
+            },
+            "diffusion"_a,
+            "boundary_info"_a,
+            "space"_a,
+            "over_integrate"_a = 0,
+            py::keep_alive<0, 1>(),
+            py::keep_alive<0, 2>(),
+            py::keep_alive<0, 3>());
 
-      m.def(
-          method_name.c_str(),
-          [](const DF& diffusion,
-             const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GL>>& boundary_info,
-             M& matrix,
-             const R& space,
-             const size_t over_integrate) {
-            return make_elliptic_ipdg_matrix_operator<method>(diffusion, boundary_info, matrix, space, over_integrate)
-                .release(); //                                                                     <- s.a. for release()
-          },
-          "diffusion"_a,
-          "boundary_info"_a,
-          "matrix"_a,
-          "space"_a,
-          "over_integrate"_a = 0,
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>(),
-          py::keep_alive<0, 3>(),
-          py::keep_alive<0, 4>());
+      m.def(method_name.c_str(),
+            [](const DF& diffusion,
+               const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GL>>& boundary_info,
+               M& matrix,
+               const R& space,
+               const size_t over_integrate) {
+              return make_elliptic_ipdg_matrix_operator<method>(diffusion, boundary_info, matrix, space, over_integrate)
+                  .release(); //                                                                     <- s.a. for
+                              //                                                                     release()
+            },
+            "diffusion"_a,
+            "boundary_info"_a,
+            "matrix"_a,
+            "space"_a,
+            "over_integrate"_a = 0,
+            py::keep_alive<0, 1>(),
+            py::keep_alive<0, 2>(),
+            py::keep_alive<0, 3>(),
+            py::keep_alive<0, 4>());
     } // ... addbind_factory_methods(...)
   }; // struct diffusion_switch<..., void>
 
@@ -246,11 +246,7 @@ public:
         template diffusion_switch<std::is_same<DT, void>::value, (DF::dimRange == 1 && DF::dimRangeCols == 1), false>;
     const std::string class_name = XT::Common::to_camel_case(
         "elliptic_" + LocalEllipticIpdgIntegrands::method_name<method>::value() + "_matrix_operator_"
-        + space_name<SP>::value()
-        + "_"
-        + XT::LA::bindings::container_name<M>::value()
-        + "_"
-        + df::suffix());
+        + space_name<SP>::value() + "_" + XT::LA::bindings::container_name<M>::value() + "_" + df::suffix());
 
     return bind(m, class_name);
   }
@@ -262,7 +258,7 @@ public:
 }; // class EllipticIpdgMatrixOperator
 
 
-} // naemspace bindings
+} // namespace bindings
 } // namespace GDT
 } // namespace Dune
 

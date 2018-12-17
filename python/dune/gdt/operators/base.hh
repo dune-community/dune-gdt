@@ -49,13 +49,9 @@ private:
             bool anything = true>
   struct addbind_switch
   {
-    static void induced_norm(bound_type& /*c*/)
-    {
-    }
+    static void induced_norm(bound_type& /*c*/) {}
 
-    static void pattern(bound_type& /*c*/)
-    {
-    }
+    static void pattern(bound_type& /*c*/) {}
   };
 
   template <bool anything>
@@ -90,9 +86,7 @@ private:
   template <bool anything>
   struct addbind_switch<false, true, anything>
   {
-    static void induced_norm(bound_type& /*c*/)
-    {
-    }
+    static void induced_norm(bound_type& /*c*/) {}
 
     static void pattern(bound_type& c)
     {

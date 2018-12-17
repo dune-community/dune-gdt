@@ -58,7 +58,9 @@ template <class AnalyticalFluxImp,
           class LocalizableFunctionImp,
           class Traits =
               internal::AdvectionForceOperatorTraits<AnalyticalFluxImp, BoundaryValueImp, LocalizableFunctionImp>>
-class AdvectionForceOperator : public Dune::GDT::OperatorInterface<Traits>, public AdvectionOperatorBase<Traits>
+class AdvectionForceOperator
+  : public Dune::GDT::OperatorInterface<Traits>
+  , public AdvectionOperatorBase<Traits>
 {
   typedef AdvectionOperatorBase<Traits> BaseType;
 
@@ -75,8 +77,7 @@ public:
                          const LocalizableFunctionType& dx)
     : BaseType(analytical_flux, boundary_values)
     , dx_(dx)
-  {
-  }
+  {}
 
   AdvectionForceOperator(const AnalyticalFluxType& analytical_flux,
                          const BoundaryValueType& boundary_values,
@@ -86,8 +87,7 @@ public:
     : BaseType(analytical_flux, boundary_values, quadrature_1d)
     , dx_(dx)
     , alpha_(alpha)
-  {
-  }
+  {}
 
 
   template <class SourceType, class RangeType>

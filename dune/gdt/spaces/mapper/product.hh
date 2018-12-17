@@ -159,7 +159,7 @@ struct DefaultProductMapperFromTuple<GridLayerImp, std::tuple<MapperTypes...>>
 
 template <class GridLayerImp, class... MapperTypes>
 class DefaultProductMapper
-    : public ProductMapperInterface<internal::DefaultProductMapperTraits<GridLayerImp, MapperTypes...>>
+  : public ProductMapperInterface<internal::DefaultProductMapperTraits<GridLayerImp, MapperTypes...>>
 {
   typedef ProductMapperInterface<internal::DefaultProductMapperTraits<GridLayerImp, MapperTypes...>> BaseType;
 
@@ -167,27 +167,24 @@ public:
   typedef internal::DefaultProductMapperTraits<GridLayerImp, MapperTypes...> Traits;
   typedef typename Traits::GridLayerType GridLayerType;
   static const size_t dimRange = Traits::dimRange;
-  using typename BaseType::EntityType;
   using typename BaseType::BackendType;
+  using typename BaseType::EntityType;
 
   DefaultProductMapper(const GridLayerType& grd_layr, const MapperTypes&... mappers)
     : mappers_(std::make_tuple(mappers...))
     , grid_layer_(grd_layr)
-  {
-  }
+  {}
 
   DefaultProductMapper(const GridLayerType& grd_layr, const std::tuple<MapperTypes...>& mappers)
     : mappers_(mappers)
     , grid_layer_(grd_layr)
-  {
-  }
+  {}
 
   template <class... SpaceTypes>
   DefaultProductMapper(const std::tuple<SpaceTypes...>& spaces)
     : DefaultProductMapper(std::get<0>(spaces).grid_layer(),
                            internal::MapperTuplefromSpaceTupleCreator<0, SpaceTypes...>::create(spaces, std::tuple<>()))
-  {
-  }
+  {}
 
   // These methods are required by the ProductMapperInterface
   size_t numDofs(const size_t factor_index, const EntityType& entity) const

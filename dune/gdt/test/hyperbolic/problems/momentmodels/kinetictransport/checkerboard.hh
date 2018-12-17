@@ -42,13 +42,13 @@ class CheckerboardPn : public KineticTransportEquation<BasisfunctionImp, GridLay
   using BaseType = KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>;
 
 public:
-  using typename BaseType::BasisfunctionType;
-  using typename BaseType::GridLayerType;
-  using typename BaseType::BoundaryValueType;
-  using typename BaseType::ActualDirichletBoundaryValueType;
-  using typename BaseType::DomainType;
-  using typename BaseType::RangeType;
   using BaseType::dimDomain;
+  using typename BaseType::ActualDirichletBoundaryValueType;
+  using typename BaseType::BasisfunctionType;
+  using typename BaseType::BoundaryValueType;
+  using typename BaseType::DomainType;
+  using typename BaseType::GridLayerType;
+  using typename BaseType::RangeType;
 
   static XT::Common::Configuration default_boundary_cfg()
   {
@@ -62,8 +62,7 @@ public:
                  const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                  const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
     : BaseType(basis_functions, grid_layer, {7, 7, 7}, grid_cfg, boundary_cfg, 1e-8 / (4 * M_PI))
-  {
-  }
+  {}
 
   static std::string static_id()
   {
@@ -168,16 +167,15 @@ public:
   using typename BaseType::RangeType;
   using ActualFluxType = GDT::EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_>;
 
-  using BaseType::default_grid_cfg;
   using BaseType::default_boundary_cfg;
+  using BaseType::default_grid_cfg;
 
   CheckerboardMn(const BasisfunctionType& basis_functions,
                  const GridLayerType& grid_layer,
                  const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                  const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
     : BaseType(basis_functions, grid_layer, grid_cfg, boundary_cfg)
-  {
-  }
+  {}
 
   static std::string static_id()
   {
@@ -201,61 +199,42 @@ protected:
 
 template <class G, class R = double, size_t momentOrder = 1>
 class CheckerboardTestCase
-    : public Dune::GDT::Test::
-          InstationaryTestCase<G,
-                               Problems::
-                                   KineticEquation<Problems::KineticTransport::
-                                                       CheckerboardPn<SphericalHarmonicsMomentBasis<double,
-                                                                                                    double,
-                                                                                                    momentOrder,
-                                                                                                    G::dimension,
-                                                                                                    true>,
-                                                                      XT::Grid::PeriodicGridLayer<
-                                                                          typename G::LevelGridView>,
-                                                                      typename internal::
-                                                                          DiscreteFunctionProvider<G,
-                                                                                                   GDT::SpaceType::
-                                                                                                       product_fv,
-                                                                                                   0,
-                                                                                                   R,
-                                                                                                   SphericalHarmonicsMomentBasis<double,
-                                                                                                                                 double,
-                                                                                                                                 momentOrder,
-                                                                                                                                 G::dimension,
-                                                                                                                                 true>::
-                                                                                                       dimRange,
-                                                                                                   1,
-                                                                                                   GDT::Backends::gdt,
-                                                                                                   XT::LA::
-                                                                                                       default_backend,
-                                                                                                   XT::Grid::Layers::
-                                                                                                       leaf,
-                                                                                                   true>::type>>>
+  : public Dune::GDT::Test::InstationaryTestCase<
+        G,
+        Problems::KineticEquation<Problems::KineticTransport::CheckerboardPn<
+            SphericalHarmonicsMomentBasis<double, double, momentOrder, G::dimension, true>,
+            XT::Grid::PeriodicGridLayer<typename G::LevelGridView>,
+            typename internal::DiscreteFunctionProvider<
+                G,
+                GDT::SpaceType::product_fv,
+                0,
+                R,
+                SphericalHarmonicsMomentBasis<double, double, momentOrder, G::dimension, true>::dimRange,
+                1,
+                GDT::Backends::gdt,
+                XT::LA::default_backend,
+                XT::Grid::Layers::leaf,
+                true>::type>>>
 {
   using D = typename G::ctype;
   static const size_t d = G::dimension;
   using BasisfunctionType = SphericalHarmonicsMomentBasis<double, double, momentOrder, G::dimension, true>;
 
 public:
-  using ProblemType = Problems::
-      KineticEquation<Problems::KineticTransport::
-                          CheckerboardPn<BasisfunctionType,
-                                         XT::Grid::PeriodicGridLayer<typename G::LevelGridView>,
-                                         typename internal::
-                                             DiscreteFunctionProvider<G,
-                                                                      GDT::SpaceType::product_fv,
-                                                                      0,
-                                                                      R,
-                                                                      SphericalHarmonicsMomentBasis<double,
-                                                                                                    double,
-                                                                                                    momentOrder,
-                                                                                                    G::dimension,
-                                                                                                    true>::dimRange,
-                                                                      1,
-                                                                      GDT::Backends::gdt,
-                                                                      XT::LA::default_backend,
-                                                                      XT::Grid::Layers::leaf,
-                                                                      true>::type>>;
+  using ProblemType = Problems::KineticEquation<Problems::KineticTransport::CheckerboardPn<
+      BasisfunctionType,
+      XT::Grid::PeriodicGridLayer<typename G::LevelGridView>,
+      typename internal::DiscreteFunctionProvider<
+          G,
+          GDT::SpaceType::product_fv,
+          0,
+          R,
+          SphericalHarmonicsMomentBasis<double, double, momentOrder, G::dimension, true>::dimRange,
+          1,
+          GDT::Backends::gdt,
+          XT::LA::default_backend,
+          XT::Grid::Layers::leaf,
+          true>::type>>;
   static const size_t dimRange = ProblemType::dimRange;
   static const size_t dimRangeCols = 1;
 
@@ -269,8 +248,7 @@ public:
   CheckerboardTestCase(const size_t num_refs = 1, const double divide_t_end_by = 1.0)
     : BaseType(divide_t_end_by, ProblemType::default_grid_cfg(), num_refs)
     , problem_(BasisfunctionType(), BaseType::level_view(0))
-  {
-  }
+  {}
 
   virtual const ProblemType& problem() const override final
   {

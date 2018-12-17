@@ -51,7 +51,7 @@ struct LocalBoundaryFvOperatorTraits
 
 template <class NumericalFluxType>
 class LocalCouplingFvOperator
-    : public LocalCouplingOperatorInterface<internal::LocalCouplingFvOperatorTraits<NumericalFluxType>>
+  : public LocalCouplingOperatorInterface<internal::LocalCouplingFvOperatorTraits<NumericalFluxType>>
 {
 public:
   typedef typename NumericalFluxType::RangeFieldType RangeFieldType;
@@ -65,8 +65,7 @@ public:
   explicit LocalCouplingFvOperator(const QuadratureType& quadrature, Args&&... args)
     : quadrature_(quadrature)
     , numerical_flux_(std::forward<Args>(args)...)
-  {
-  }
+  {}
 
   template <class SourceType, class IntersectionType, class SpaceType, class VectorType>
   void apply(const SourceType& source,
@@ -103,7 +102,7 @@ private:
 
 template <class NumericalFluxType>
 class LocalBoundaryFvOperator
-    : public LocalBoundaryOperatorInterface<internal::LocalBoundaryFvOperatorTraits<NumericalFluxType>>
+  : public LocalBoundaryOperatorInterface<internal::LocalBoundaryFvOperatorTraits<NumericalFluxType>>
 {
 public:
   typedef typename NumericalFluxType::RangeFieldType RangeFieldType;
@@ -116,8 +115,7 @@ public:
   explicit LocalBoundaryFvOperator(const QuadratureType& quadrature, Args&&... args)
     : quadrature_(quadrature)
     , numerical_flux_(std::forward<Args>(args)...)
-  {
-  }
+  {}
 
   template <class SourceType, class IntersectionType, class SpaceType, class VectorType>
   void apply(const SourceType& source,

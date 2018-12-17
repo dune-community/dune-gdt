@@ -59,7 +59,9 @@ template <class AnalyticalFluxImp,
           class LocalizableFunctionImp,
           class Traits =
               internal::AdvectionMustaOperatorTraits<AnalyticalFluxImp, BoundaryValueImp, LocalizableFunctionImp>>
-class AdvectionMustaOperator : public Dune::GDT::OperatorInterface<Traits>, public AdvectionOperatorBase<Traits>
+class AdvectionMustaOperator
+  : public Dune::GDT::OperatorInterface<Traits>
+  , public AdvectionOperatorBase<Traits>
 {
   typedef AdvectionOperatorBase<Traits> BaseType;
 
@@ -77,8 +79,7 @@ public:
     : BaseType(analytical_flux, boundary_values)
     , dx_(dx)
     , num_stages_(num_stages)
-  {
-  }
+  {}
 
   AdvectionMustaOperator(const AnalyticalFluxType& analytical_flux,
                          const BoundaryValueType& boundary_values,
@@ -88,8 +89,7 @@ public:
     : BaseType(analytical_flux, boundary_values, quadrature_1d)
     , dx_(dx)
     , num_stages_(num_stages)
-  {
-  }
+  {}
 
   template <class SourceType, class RangeType>
   void apply(const SourceType& source, RangeType& range, const XT::Common::Parameter& param) const

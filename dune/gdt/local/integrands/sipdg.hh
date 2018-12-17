@@ -23,9 +23,9 @@
 
 #include <dune/xt/common/color.hh>
 #ifndef NDEBUG
-#ifndef DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS
-#include <dune/xt/common/timedlogging.hh>
-#endif
+#  ifndef DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS
+#    include <dune/xt/common/timedlogging.hh>
+#  endif
 #endif
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/functions/interfaces.hh>
@@ -146,12 +146,12 @@ static inline double inner_sigma(const size_t pol_order)
     sigma *= 38.0;
   else {
 #ifndef NDEBUG
-#ifndef DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS
+#  ifndef DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS
     Dune::XT::Common::TimedLogger().get("gdt.localintegrands.sipdg.inner").warn()
         << "a polynomial order of " << pol_order << " is untested!\n"
         << "  #define DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS to statically disable this warning\n"
         << "  or dynamically disable warnings of the TimedLogger() instance!" << std::endl;
-#endif
+#  endif
 #endif
     sigma *= 50.0;
   }
@@ -173,12 +173,12 @@ static inline double boundary_sigma(const size_t pol_order)
     sigma *= 74.0;
   else {
 #ifndef NDEBUG
-#ifndef DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS
+#  ifndef DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS
     Dune::XT::Common::TimedLogger().get("gdt.localintegrands.sipdg.inner").warn()
         << "a polynomial order of " << pol_order << " is untested!\n"
         << "  #define DUNE_GDT_LOCALEVALUATION_SIPDG_DISABLE_WARNINGS to statically disable this warning\n"
         << "  or dynamically disable warnings of the TimedLogger() instance!" << std::endl;
-#endif
+#  endif
 #endif
     sigma *= 100.0;
   }
@@ -193,7 +193,7 @@ static inline double boundary_sigma(const size_t pol_order)
  */
 template <class LocalizableFunctionImp>
 class DUNE_DEPRECATED_MSG("Use LocalEllipticIpdgIntegrands::Inner<sipdg> instead (08.02.2017)!") Inner
-    : public LocalFaceIntegrandInterface<internal::InnerTraits<LocalizableFunctionImp>, 4>
+  : public LocalFaceIntegrandInterface<internal::InnerTraits<LocalizableFunctionImp>, 4>
 {
 public:
   typedef internal::InnerTraits<LocalizableFunctionImp> Traits;
@@ -206,8 +206,7 @@ public:
   Inner(const LocalizableFunctionType& inducingFunction, const double beta = internal::default_beta(dimDomain))
     : inducingFunction_(inducingFunction)
     , beta_(beta)
-  {
-  }
+  {}
 
   /// \name Required by LocalFaceIntegrandInterface< ..., 4 >
   /// \{
@@ -441,7 +440,7 @@ private:
  */
 template <class LocalizableFunctionImp>
 class DUNE_DEPRECATED_MSG("Use LocalEllipticIpdgIntegrands::Inner<sipdg> instead (08.02.2017)!") BoundaryLHS
-    : public LocalFaceIntegrandInterface<internal::BoundaryLHSTraits<LocalizableFunctionImp>, 2>
+  : public LocalFaceIntegrandInterface<internal::BoundaryLHSTraits<LocalizableFunctionImp>, 2>
 {
 public:
   typedef internal::BoundaryLHSTraits<LocalizableFunctionImp> Traits;
@@ -454,8 +453,7 @@ public:
   BoundaryLHS(const LocalizableFunctionType& inducingFunction, const double beta = internal::default_beta(dimDomain))
     : inducingFunction_(inducingFunction)
     , beta_(beta)
-  {
-  }
+  {}
 
   /// \name Required by LocalFaceIntegrandInterface< ..., 2>
   /// \{
@@ -573,9 +571,10 @@ private:
 template <class LocalizableDiffusionFunctionImp, class LocalizableDirichletFunctionImp>
 class DUNE_DEPRECATED_MSG("Use LocalEllipticIpdgIntegrands::Inner<sipdg> instead (08.02.2017)!")
 
-    BoundaryRHS : public LocalFaceIntegrandInterface<internal::BoundaryRHSTraits<LocalizableDiffusionFunctionImp,
-                                                                                 LocalizableDirichletFunctionImp>,
-                                                     1>
+    BoundaryRHS
+  : public LocalFaceIntegrandInterface<
+        internal::BoundaryRHSTraits<LocalizableDiffusionFunctionImp, LocalizableDirichletFunctionImp>,
+        1>
 {
 public:
   typedef internal::BoundaryRHSTraits<LocalizableDiffusionFunctionImp, LocalizableDirichletFunctionImp> Traits;
@@ -592,8 +591,7 @@ public:
     : diffusion_(diffusion)
     , dirichlet_(dirichlet)
     , beta_(beta)
-  {
-  }
+  {}
 
   /// \name Required by LocalFaceIntegrandInterface< ...., 1 >
   /// \{

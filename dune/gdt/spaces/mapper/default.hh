@@ -24,7 +24,7 @@
 #include <dune/gdt/spaces/mapper/interfaces.hh>
 
 #ifndef DUNE_GDT_SPACES_MAPPER_DEFAULT_HH
-#define DUNE_GDT_SPACES_MAPPER_DEFAULT_HH
+#  define DUNE_GDT_SPACES_MAPPER_DEFAULT_HH
 
 namespace Dune {
 namespace GDT {
@@ -54,8 +54,7 @@ class FixedOrderMultipleCodimMultipleGeomTypeMapperTraits
   {
     GeometryTypeLayout(std::set<GeometryType>&& types)
       : types_(std::move(types))
-    {
-    }
+    {}
 
     GeometryTypeLayout(const GeometryTypeLayout<dim_>&) = default;
     GeometryTypeLayout(GeometryTypeLayout<dim_>&&) = default;
@@ -125,7 +124,7 @@ public:
 
 template <class GL, class FiniteElementType>
 class FixedOrderMultipleCodimMultipleGeomTypeMapper
-    : public MapperInterface<internal::FixedOrderMultipleCodimMultipleGeomTypeMapperTraits<GL, FiniteElementType>>
+  : public MapperInterface<internal::FixedOrderMultipleCodimMultipleGeomTypeMapperTraits<GL, FiniteElementType>>
 {
 public:
   using Traits = internal::FixedOrderMultipleCodimMultipleGeomTypeMapperTraits<GL, FiniteElementType>;
@@ -137,8 +136,8 @@ private:
   static const constexpr size_t d = GL::dimension;
 
 public:
-  using typename BaseType::EntityType;
   using typename BaseType::BackendType;
+  using typename BaseType::EntityType;
 
   FixedOrderMultipleCodimMultipleGeomTypeMapper(
       const GL& grid_layer,
@@ -254,8 +253,8 @@ public:
     const auto& local_coefficients = finite_element.localCoefficients();
     if (local_index >= local_coefficients.size())
       DUNE_THROW(Exception,
-                 "finite_element.localCoefficients().size() = " << local_coefficients.size() << "\n   local_index = "
-                                                                << local_index);
+                 "finite_element.localCoefficients().size() = " << local_coefficients.size()
+                                                                << "\n   local_index = " << local_index);
     assert(local_index <= std::numeric_limits<unsigned int>::max());
     const auto& local_key = local_coefficients.localKey(static_cast<unsigned int>(local_index));
     // No need to assert local_key.index() == 0, has been checked in the ctor!
@@ -270,7 +269,7 @@ private:
 
 template <class GL>
 class ZeroOrderScalarDiscontinuousMapper
-    : public MapperInterface<internal::ZeroOrderScalarDiscontinuousMapperTraits<GL>>
+  : public MapperInterface<internal::ZeroOrderScalarDiscontinuousMapperTraits<GL>>
 {
 public:
   using Traits = internal::ZeroOrderScalarDiscontinuousMapperTraits<GL>;
@@ -282,13 +281,12 @@ private:
   static const constexpr size_t d = GL::dimension;
 
 public:
-  using typename BaseType::EntityType;
   using typename BaseType::BackendType;
+  using typename BaseType::EntityType;
 
   ZeroOrderScalarDiscontinuousMapper(const GL& grid_layer)
     : mapper_(new BackendType(grid_layer))
-  {
-  }
+  {}
 
   ZeroOrderScalarDiscontinuousMapper(const ThisType&) = default;
   ZeroOrderScalarDiscontinuousMapper(ThisType&&) = default;
@@ -343,7 +341,7 @@ private:
 
 template <class GL, class FiniteElementType>
 class FixedOrderScalarDiscontinuousMapper
-    : public MapperInterface<internal::FixedOrderScalarDiscontinuousMapperTraits<GL, FiniteElementType>>
+  : public MapperInterface<internal::FixedOrderScalarDiscontinuousMapperTraits<GL, FiniteElementType>>
 {
 public:
   using Traits = internal::FixedOrderScalarDiscontinuousMapperTraits<GL, FiniteElementType>;
@@ -355,8 +353,8 @@ private:
   static const constexpr size_t d = GL::dimension;
 
 public:
-  using typename BaseType::EntityType;
   using typename BaseType::BackendType;
+  using typename BaseType::EntityType;
 
   FixedOrderScalarDiscontinuousMapper(
       const GL& grid_layer,
@@ -405,8 +403,7 @@ public:
     if (finite_element_search_result == finite_elements_->end())
       DUNE_THROW(XT::Common::Exceptions::internal_error,
                  "This must not happen after the checks in the ctor, the grid layer did not report all geometry types!"
-                     << "\n   entity.geometry().type() = "
-                     << entity.geometry().type());
+                     << "\n   entity.geometry().type() = " << entity.geometry().type());
     const auto& finite_element = *finite_element_search_result->second;
     return finite_element.size();
   } // ... numDofs(...)

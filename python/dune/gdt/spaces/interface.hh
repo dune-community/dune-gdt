@@ -94,9 +94,8 @@ struct space_name<CgSpaceProvider<G, layer, backend, p, double, r, rC, g>>
 {
   static std::string value()
   {
-    return spacetype_names[SpaceType::cg] + "_"
-           + internal::space_name_base<G, layer, backend, r, rC, g>::value() + "_p" + XT::Common::to_string(p)
-           + "_space";
+    return spacetype_names[SpaceType::cg] + "_" + internal::space_name_base<G, layer, backend, r, rC, g>::value() + "_p"
+           + XT::Common::to_string(p) + "_space";
   }
 
   static std::string value_wo_grid()
@@ -112,9 +111,8 @@ struct space_name<BlockCgSpaceProvider<G, layer, backend, p, double, r, rC, g>>
 {
   static std::string value()
   {
-    return spacetype_names[SpaceType::block_cg] + "_"
-           + internal::space_name_base<G, layer, backend, r, rC, g>::value() + "_p" + XT::Common::to_string(p)
-           + "_space";
+    return spacetype_names[SpaceType::block_cg] + "_" + internal::space_name_base<G, layer, backend, r, rC, g>::value()
+           + "_p" + XT::Common::to_string(p) + "_space";
   }
 
   static std::string value_wo_grid()
@@ -130,9 +128,8 @@ struct space_name<DgSpaceProvider<G, layer, backend, p, double, r, rC, g>>
 {
   static std::string value()
   {
-    return spacetype_names[SpaceType::dg] + "_"
-           + internal::space_name_base<G, layer, backend, r, rC, g>::value() + "_p" + XT::Common::to_string(p)
-           + "_space";
+    return spacetype_names[SpaceType::dg] + "_" + internal::space_name_base<G, layer, backend, r, rC, g>::value() + "_p"
+           + XT::Common::to_string(p) + "_space";
   }
 
   static std::string value_wo_grid()
@@ -148,9 +145,8 @@ struct space_name<BlockDgSpaceProvider<G, layer, backend, p, double, r, rC, g>>
 {
   static std::string value()
   {
-    return spacetype_names[SpaceType::block_dg] + "_"
-           + internal::space_name_base<G, layer, backend, r, rC, g>::value() + "_p" + XT::Common::to_string(p)
-           + "_space";
+    return spacetype_names[SpaceType::block_dg] + "_" + internal::space_name_base<G, layer, backend, r, rC, g>::value()
+           + "_p" + XT::Common::to_string(p) + "_space";
   }
 
   static std::string value_wo_grid()
@@ -166,8 +162,8 @@ struct space_name<FvSpaceProvider<G, layer, backend, double, r, rC, g>>
 {
   static std::string value()
   {
-    return spacetype_names[SpaceType::fv] + "_"
-           + internal::space_name_base<G, layer, backend, r, rC, g>::value() + "_space";
+    return spacetype_names[SpaceType::fv] + "_" + internal::space_name_base<G, layer, backend, r, rC, g>::value()
+           + "_space";
   }
 
   static std::string value_wo_grid()
@@ -182,8 +178,8 @@ struct space_name<BlockFvSpaceProvider<G, layer, backend, double, r, rC, g>>
 {
   static std::string value()
   {
-    return spacetype_names[SpaceType::block_fv] + "_"
-           + internal::space_name_base<G, layer, backend, r, rC, g>::value() + "_space";
+    return spacetype_names[SpaceType::block_fv] + "_" + internal::space_name_base<G, layer, backend, r, rC, g>::value()
+           + "_space";
   }
 
   static std::string value_wo_grid()
@@ -198,9 +194,8 @@ struct space_name<RtSpaceProvider<G, layer, backend, p, double, r, rC, g>>
 {
   static std::string value()
   {
-    return spacetype_names[SpaceType::rt] + "_"
-           + internal::space_name_base<G, layer, backend, r, rC, g>::value() + "_p" + XT::Common::to_string(p)
-           + "_space";
+    return spacetype_names[SpaceType::rt] + "_" + internal::space_name_base<G, layer, backend, r, rC, g>::value() + "_p"
+           + XT::Common::to_string(p) + "_space";
   }
 
   static std::string value_wo_grid()
@@ -216,9 +211,8 @@ struct space_name<BlockRtSpaceProvider<G, layer, backend, p, double, r, rC, g>>
 {
   static std::string value()
   {
-    return spacetype_names[SpaceType::block_rt] + "_"
-           + internal::space_name_base<G, layer, backend, r, rC, g>::value() + "_p" + XT::Common::to_string(p)
-           + "_space";
+    return spacetype_names[SpaceType::block_rt] + "_" + internal::space_name_base<G, layer, backend, r, rC, g>::value()
+           + "_p" + XT::Common::to_string(p) + "_space";
   }
 
   static std::string value_wo_grid()

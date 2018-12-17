@@ -54,36 +54,29 @@
 #include <dune/gdt/spaces/rt.hh>
 
 using namespace Dune;
-using XT::Grid::Layers;
 using XT::Grid::Backends;
+using XT::Grid::Layers;
 namespace py = pybind11;
 
 
 template <class G>
 class DiffusiveFluxAaProduct
-    : public GDT::
-          MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
-                             typename GDT::SpaceProvider<G,
-                                                         Layers::dd_subdomain,
-                                                         GDT::SpaceType::dg,
-                                                         GDT::Backends::gdt,
-                                                         1,
-                                                         double,
-                                                         1>::type,
-                             typename XT::Grid::
-                                 Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>
+  : public GDT::MatrixOperatorBase<
+        XT::LA::IstlRowMajorSparseMatrix<double>,
+        typename GDT::SpaceProvider<G, Layers::dd_subdomain, GDT::SpaceType::dg, GDT::Backends::gdt, 1, double, 1>::
+            type,
+        typename XT::Grid::Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>
 {
   static_assert(XT::Grid::is_grid<G>::value, "");
   typedef typename GDT::SpaceProvider<G, Layers::dd_subdomain, GDT::SpaceType::dg, GDT::Backends::gdt, 1, double, 1> SP;
   typedef DiffusiveFluxAaProduct<G> ThisType;
 
 public:
-  typedef GDT::
-      MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
-                         typename SP::type,
-                         typename XT::Grid::
-                             Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>
-          BaseType;
+  typedef GDT::MatrixOperatorBase<
+      XT::LA::IstlRowMajorSparseMatrix<double>,
+      typename SP::type,
+      typename XT::Grid::Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>
+      BaseType;
   using typename BaseType::GridLayerType;
   using typename BaseType::RangeSpaceType;
 
@@ -176,14 +169,9 @@ public:
             if (XT::Common::FloatCmp::ne(diffusion_hat_inverse * diffusion_hat, unit_matrix_))
               DUNE_THROW(XT::Common::Exceptions::internal_error,
                          "Local inversion of lambda_hat*kappa failed!\n\nx = "
-                             << local_point
-                             << "\nlocal_lambda_hat(x) = "
-                             << local_lambda_hat->evaluate(local_point)
-                             << "\nlocal_kappa(x) = "
-                             << local_kappa->evaluate(local_point)
-                             << "\ninverse = "
-                             << diffusion_hat_inverse
-                             << "\ninverse * (local_lambda_hat(x)*local_kappa(x))) = "
+                             << local_point << "\nlocal_lambda_hat(x) = " << local_lambda_hat->evaluate(local_point)
+                             << "\nlocal_kappa(x) = " << local_kappa->evaluate(local_point) << "\ninverse = "
+                             << diffusion_hat_inverse << "\ninverse * (local_lambda_hat(x)*local_kappa(x))) = "
                              << diffusion_hat_inverse * diffusion_hat);
 #endif
             diffusion_u *= local_lambda_u->evaluate(local_point);
@@ -212,60 +200,34 @@ private:
 
 template <class G>
 class DiffusiveFluxAbProduct
-    : public GDT::
-          MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
-                             typename GDT::SpaceProvider<G,
-                                                         Layers::dd_subdomain,
-                                                         GDT::SpaceType::dg,
-                                                         GDT::Backends::gdt,
-                                                         1,
-                                                         double,
-                                                         1>::type,
-                             typename XT::Grid::
-                                 Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type,
-                             GDT::RestrictedSpace<typename GDT::SpaceProvider<G,
-                                                                              Layers::leaf,
-                                                                              GDT::SpaceType::rt,
-                                                                              GDT::Backends::gdt,
-                                                                              0,
-                                                                              double,
-                                                                              G::dimension>::type,
-                                                  typename XT::Grid::Layer<G,
-                                                                           Layers::dd_subdomain,
-                                                                           Backends::view,
-                                                                           XT::Grid::DD::SubdomainGrid<G>>::type>>
+  : public GDT::MatrixOperatorBase<
+        XT::LA::IstlRowMajorSparseMatrix<double>,
+        typename GDT::SpaceProvider<G, Layers::dd_subdomain, GDT::SpaceType::dg, GDT::Backends::gdt, 1, double, 1>::
+            type,
+        typename XT::Grid::Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type,
+        GDT::RestrictedSpace<
+            typename GDT::
+                SpaceProvider<G, Layers::leaf, GDT::SpaceType::rt, GDT::Backends::gdt, 0, double, G::dimension>::type,
+            typename XT::Grid::Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>>
 {
   static_assert(XT::Grid::is_grid<G>::value, "");
-  typedef GDT::
-      MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
-                         typename GDT::SpaceProvider<G,
-                                                     Layers::dd_subdomain,
-                                                     GDT::SpaceType::dg,
-                                                     GDT::Backends::gdt,
-                                                     1,
-                                                     double,
-                                                     1>::type,
-                         typename XT::Grid::
-                             Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type,
-                         GDT::RestrictedSpace<
-                             typename GDT::SpaceProvider<G,
-                                                         Layers::leaf,
-                                                         GDT::SpaceType::rt,
-                                                         GDT::Backends::gdt,
-                                                         0,
-                                                         double,
-                                                         G::dimension>::type,
-                             typename XT::Grid::
-                                 Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>>
-          BaseType;
+  typedef GDT::MatrixOperatorBase<
+      XT::LA::IstlRowMajorSparseMatrix<double>,
+      typename GDT::SpaceProvider<G, Layers::dd_subdomain, GDT::SpaceType::dg, GDT::Backends::gdt, 1, double, 1>::type,
+      typename XT::Grid::Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type,
+      GDT::RestrictedSpace<
+          typename GDT::
+              SpaceProvider<G, Layers::leaf, GDT::SpaceType::rt, GDT::Backends::gdt, 0, double, G::dimension>::type,
+          typename XT::Grid::Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>>
+      BaseType;
   typedef DiffusiveFluxAbProduct<G> ThisType;
 
 public:
   using typename BaseType::GridLayerType;
-  using typename BaseType::RangeSpaceType;
   using typename BaseType::RangeBaseType;
-  using typename BaseType::SourceSpaceType;
+  using typename BaseType::RangeSpaceType;
   using typename BaseType::SourceBaseType;
+  using typename BaseType::SourceSpaceType;
 
   typedef XT::Grid::extract_entity_t<GridLayerType> E;
   typedef XT::Grid::extract_intersection_t<GridLayerType> I;
@@ -356,14 +318,9 @@ public:
             if (XT::Common::FloatCmp::ne(diffusion_hat_inverse * diffusion_hat, unit_matrix_))
               DUNE_THROW(XT::Common::Exceptions::internal_error,
                          "Local inversion of lambda_hat*kappa failed!\n\nx = "
-                             << local_point
-                             << "\nlocal_lambda_hat(x) = "
-                             << local_lambda_hat->evaluate(local_point)
-                             << "\nlocal_kappa(x) = "
-                             << local_kappa->evaluate(local_point)
-                             << "\ninverse = "
-                             << diffusion_hat_inverse
-                             << "\ninverse * (local_lambda_hat(x)*local_kappa(x))) = "
+                             << local_point << "\nlocal_lambda_hat(x) = " << local_lambda_hat->evaluate(local_point)
+                             << "\nlocal_kappa(x) = " << local_kappa->evaluate(local_point) << "\ninverse = "
+                             << diffusion_hat_inverse << "\ninverse * (local_lambda_hat(x)*local_kappa(x))) = "
                              << diffusion_hat_inverse * diffusion_hat);
 #endif
             diffusion_range *= local_lambda_range->evaluate(local_point);
@@ -395,44 +352,29 @@ private:
 
 template <class G>
 class DiffusiveFluxBbProduct
-    : public GDT::
-          MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
-                             GDT::RestrictedSpace<typename GDT::SpaceProvider<G,
-                                                                              Layers::leaf,
-                                                                              GDT::SpaceType::rt,
-                                                                              GDT::Backends::gdt,
-                                                                              0,
-                                                                              double,
-                                                                              G::dimension>::type,
-                                                  typename XT::Grid::Layer<G,
-                                                                           Layers::dd_subdomain,
-                                                                           Backends::view,
-                                                                           XT::Grid::DD::SubdomainGrid<G>>::type>,
-                             typename XT::Grid::
-                                 Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>
+  : public GDT::MatrixOperatorBase<
+        XT::LA::IstlRowMajorSparseMatrix<double>,
+        GDT::RestrictedSpace<
+            typename GDT::
+                SpaceProvider<G, Layers::leaf, GDT::SpaceType::rt, GDT::Backends::gdt, 0, double, G::dimension>::type,
+            typename XT::Grid::Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>,
+        typename XT::Grid::Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>
 {
   static_assert(XT::Grid::is_grid<G>::value, "");
-  typedef GDT::
-      MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
-                         GDT::RestrictedSpace<
-                             typename GDT::SpaceProvider<G,
-                                                         Layers::leaf,
-                                                         GDT::SpaceType::rt,
-                                                         GDT::Backends::gdt,
-                                                         0,
-                                                         double,
-                                                         G::dimension>::type,
-                             typename XT::Grid::
-                                 Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>,
-                         typename XT::Grid::
-                             Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>
-          BaseType;
+  typedef GDT::MatrixOperatorBase<
+      XT::LA::IstlRowMajorSparseMatrix<double>,
+      GDT::RestrictedSpace<
+          typename GDT::
+              SpaceProvider<G, Layers::leaf, GDT::SpaceType::rt, GDT::Backends::gdt, 0, double, G::dimension>::type,
+          typename XT::Grid::Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>,
+      typename XT::Grid::Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>
+      BaseType;
   typedef DiffusiveFluxBbProduct<G> ThisType;
 
 public:
   using typename BaseType::GridLayerType;
-  using typename BaseType::RangeSpaceType;
   using typename BaseType::RangeBaseType;
+  using typename BaseType::RangeSpaceType;
 
   typedef XT::Grid::extract_entity_t<GridLayerType> E;
   typedef XT::Grid::extract_intersection_t<GridLayerType> I;
@@ -509,14 +451,9 @@ public:
             if (XT::Common::FloatCmp::ne(diffusion_hat_inverse * diffusion_hat, unit_matrix_))
               DUNE_THROW(XT::Common::Exceptions::internal_error,
                          "Local inversion of lambda_hat*kappa failed!\n\nx = "
-                             << local_point
-                             << "\nlocal_lambda_hat(x) = "
-                             << local_lambda_hat->evaluate(local_point)
-                             << "\nlocal_kappa(x) = "
-                             << local_kappa->evaluate(local_point)
-                             << "\ninverse = "
-                             << diffusion_hat_inverse
-                             << "\ninverse * (local_lambda_hat(x)*local_kappa(x))) = "
+                             << local_point << "\nlocal_lambda_hat(x) = " << local_lambda_hat->evaluate(local_point)
+                             << "\nlocal_kappa(x) = " << local_kappa->evaluate(local_point) << "\ninverse = "
+                             << diffusion_hat_inverse << "\ninverse * (local_lambda_hat(x)*local_kappa(x))) = "
                              << diffusion_hat_inverse * diffusion_hat);
 #endif
             const auto test_values = test_base.evaluate(local_point);
@@ -543,38 +480,23 @@ private:
 
 template <class G>
 class HdivSemiProduct
-    : public GDT::
-          MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
-                             GDT::RestrictedSpace<typename GDT::SpaceProvider<G,
-                                                                              Layers::leaf,
-                                                                              GDT::SpaceType::rt,
-                                                                              GDT::Backends::gdt,
-                                                                              0,
-                                                                              double,
-                                                                              G::dimension>::type,
-                                                  typename XT::Grid::Layer<G,
-                                                                           Layers::dd_subdomain,
-                                                                           Backends::view,
-                                                                           XT::Grid::DD::SubdomainGrid<G>>::type>,
-                             typename XT::Grid::
-                                 Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>
+  : public GDT::MatrixOperatorBase<
+        XT::LA::IstlRowMajorSparseMatrix<double>,
+        GDT::RestrictedSpace<
+            typename GDT::
+                SpaceProvider<G, Layers::leaf, GDT::SpaceType::rt, GDT::Backends::gdt, 0, double, G::dimension>::type,
+            typename XT::Grid::Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>,
+        typename XT::Grid::Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>
 {
   static_assert(XT::Grid::is_grid<G>::value, "");
-  typedef GDT::
-      MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
-                         GDT::RestrictedSpace<
-                             typename GDT::SpaceProvider<G,
-                                                         Layers::leaf,
-                                                         GDT::SpaceType::rt,
-                                                         GDT::Backends::gdt,
-                                                         0,
-                                                         double,
-                                                         G::dimension>::type,
-                             typename XT::Grid::
-                                 Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>,
-                         typename XT::Grid::
-                             Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>
-          BaseType;
+  typedef GDT::MatrixOperatorBase<
+      XT::LA::IstlRowMajorSparseMatrix<double>,
+      GDT::RestrictedSpace<
+          typename GDT::
+              SpaceProvider<G, Layers::leaf, GDT::SpaceType::rt, GDT::Backends::gdt, 0, double, G::dimension>::type,
+          typename XT::Grid::Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>,
+      typename XT::Grid::Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>
+      BaseType;
   typedef HdivSemiProduct<G> ThisType;
 
 public:
@@ -655,56 +577,30 @@ private:
 
 template <class G>
 class SubdomainDivergenceMatrixOperator
-    : public GDT::
-          MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
-                             typename GDT::SpaceProvider<G,
-                                                         Layers::dd_subdomain,
-                                                         GDT::SpaceType::dg,
-                                                         GDT::Backends::gdt,
-                                                         1,
-                                                         double,
-                                                         1>::type,
-                             typename XT::Grid::
-                                 Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type,
-                             GDT::RestrictedSpace<typename GDT::SpaceProvider<G,
-                                                                              Layers::leaf,
-                                                                              GDT::SpaceType::rt,
-                                                                              GDT::Backends::gdt,
-                                                                              0,
-                                                                              double,
-                                                                              G::dimension>::type,
-                                                  typename XT::Grid::Layer<G,
-                                                                           Layers::dd_subdomain,
-                                                                           Backends::view,
-                                                                           XT::Grid::DD::SubdomainGrid<G>>::type>,
-                             double,
-                             GDT::ChoosePattern::volume>
+  : public GDT::MatrixOperatorBase<
+        XT::LA::IstlRowMajorSparseMatrix<double>,
+        typename GDT::SpaceProvider<G, Layers::dd_subdomain, GDT::SpaceType::dg, GDT::Backends::gdt, 1, double, 1>::
+            type,
+        typename XT::Grid::Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type,
+        GDT::RestrictedSpace<
+            typename GDT::
+                SpaceProvider<G, Layers::leaf, GDT::SpaceType::rt, GDT::Backends::gdt, 0, double, G::dimension>::type,
+            typename XT::Grid::Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>,
+        double,
+        GDT::ChoosePattern::volume>
 {
   static_assert(XT::Grid::is_grid<G>::value, "");
-  typedef GDT::
-      MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
-                         typename GDT::SpaceProvider<G,
-                                                     Layers::dd_subdomain,
-                                                     GDT::SpaceType::dg,
-                                                     GDT::Backends::gdt,
-                                                     1,
-                                                     double,
-                                                     1>::type,
-                         typename XT::Grid::
-                             Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type,
-                         GDT::RestrictedSpace<
-                             typename GDT::SpaceProvider<G,
-                                                         Layers::leaf,
-                                                         GDT::SpaceType::rt,
-                                                         GDT::Backends::gdt,
-                                                         0,
-                                                         double,
-                                                         G::dimension>::type,
-                             typename XT::Grid::
-                                 Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>,
-                         double,
-                         GDT::ChoosePattern::volume>
-          BaseType;
+  typedef GDT::MatrixOperatorBase<
+      XT::LA::IstlRowMajorSparseMatrix<double>,
+      typename GDT::SpaceProvider<G, Layers::dd_subdomain, GDT::SpaceType::dg, GDT::Backends::gdt, 1, double, 1>::type,
+      typename XT::Grid::Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type,
+      GDT::RestrictedSpace<
+          typename GDT::
+              SpaceProvider<G, Layers::leaf, GDT::SpaceType::rt, GDT::Backends::gdt, 0, double, G::dimension>::type,
+          typename XT::Grid::Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>,
+      double,
+      GDT::ChoosePattern::volume>
+      BaseType;
   typedef SubdomainDivergenceMatrixOperator<G> ThisType;
 
 public:
@@ -773,16 +669,16 @@ public:
             local_l2_operator(one);
 
         const GDT::LocalVolumeIntegralFunctional<GDT::LocalLambdaUnaryVolumeIntegrand<E, R, 1, 1>, RangeBasisType, R>
-        local_l2_functional([&](const auto& test_base) { return test_base.order(); },
-                            [&](const auto& test_base, const auto& xx, auto& local_vec) {
-                              const auto rt_jacs = rt_source_basis.jacobian(xx);
-                              R div = 0;
-                              for (size_t ss = 0; ss < d; ++ss)
-                                div += rt_jacs[jj][ss][ss];
-                              const auto test_vals = test_base.evaluate(xx);
-                              for (size_t ii = 0; ii < test_base.size(); ++ii)
-                                local_vec[ii] = div * test_vals[ii];
-                            });
+            local_l2_functional([&](const auto& test_base) { return test_base.order(); },
+                                [&](const auto& test_base, const auto& xx, auto& local_vec) {
+                                  const auto rt_jacs = rt_source_basis.jacobian(xx);
+                                  R div = 0;
+                                  for (size_t ss = 0; ss < d; ++ss)
+                                    div += rt_jacs[jj][ss][ss];
+                                  const auto test_vals = test_base.evaluate(xx);
+                                  for (size_t ii = 0; ii < test_base.size(); ++ii)
+                                    local_vec[ii] = div * test_vals[ii];
+                                });
 
         local_l2_operator.apply2(dg_range_basis, dg_range_basis, local_matrix);
         local_l2_functional.apply(dg_range_basis, local_vector.backend());
@@ -794,8 +690,7 @@ public:
         } catch (XT::LA::Exceptions::linear_solver_failed& ee) {
           DUNE_THROW(GDT::projection_error,
                      "Divergence projection failed because a local matrix could not be inverted!\n\n"
-                         << "This was the original error: "
-                         << ee.what());
+                         << "This was the original error: " << ee.what());
         }
         for (size_t ii = 0; ii < dg_range_basis.size(); ++ii) {
           const auto II = this->range_space().mapper().mapToGlobal(entity, ii);
@@ -815,21 +710,13 @@ private:
 
 template <class G>
 class ResidualPartFunctional
-    : public GDT::
-          VectorFunctionalBase<XT::LA::IstlDenseVector<double>,
-                               GDT::RestrictedSpace<typename GDT::SpaceProvider<G,
-                                                                                Layers::leaf,
-                                                                                GDT::SpaceType::rt,
-                                                                                GDT::Backends::gdt,
-                                                                                0,
-                                                                                double,
-                                                                                G::dimension>::type,
-                                                    typename XT::Grid::Layer<G,
-                                                                             Layers::dd_subdomain,
-                                                                             Backends::view,
-                                                                             XT::Grid::DD::SubdomainGrid<G>>::type>,
-                               typename XT::Grid::
-                                   Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>
+  : public GDT::VectorFunctionalBase<
+        XT::LA::IstlDenseVector<double>,
+        GDT::RestrictedSpace<
+            typename GDT::
+                SpaceProvider<G, Layers::leaf, GDT::SpaceType::rt, GDT::Backends::gdt, 0, double, G::dimension>::type,
+            typename XT::Grid::Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>,
+        typename XT::Grid::Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>
 {
   static_assert(XT::Grid::is_grid<G>::value, "");
   typedef GDT::RestrictedSpace<
@@ -837,12 +724,11 @@ class ResidualPartFunctional
           type,
       typename XT::Grid::Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>
       RtSpaceType;
-  typedef GDT::
-      VectorFunctionalBase<XT::LA::IstlDenseVector<double>,
-                           RtSpaceType,
-                           typename XT::Grid::
-                               Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>
-          BaseType;
+  typedef GDT::VectorFunctionalBase<
+      XT::LA::IstlDenseVector<double>,
+      RtSpaceType,
+      typename XT::Grid::Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>
+      BaseType;
   typedef ResidualPartFunctional<G> ThisType;
 
 public:
@@ -929,28 +815,21 @@ private:
 
 template <class G>
 class SwipdgPenaltySubdomainProduct
-    : public GDT::
-          MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
-                             typename GDT::SpaceProvider<G,
-                                                         Layers::dd_subdomain,
-                                                         GDT::SpaceType::dg,
-                                                         GDT::Backends::gdt,
-                                                         1,
-                                                         double,
-                                                         1>::type,
-                             typename XT::Grid::
-                                 Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>
+  : public GDT::MatrixOperatorBase<
+        XT::LA::IstlRowMajorSparseMatrix<double>,
+        typename GDT::SpaceProvider<G, Layers::dd_subdomain, GDT::SpaceType::dg, GDT::Backends::gdt, 1, double, 1>::
+            type,
+        typename XT::Grid::Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>
 {
   static_assert(XT::Grid::is_grid<G>::value, "");
   typedef GDT::SpaceProvider<G, Layers::dd_subdomain, GDT::SpaceType::dg, GDT::Backends::gdt, 1, double, 1> SP;
 
 public:
-  typedef GDT::
-      MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
-                         typename SP::type,
-                         typename XT::Grid::
-                             Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>
-          BaseType;
+  typedef GDT::MatrixOperatorBase<
+      XT::LA::IstlRowMajorSparseMatrix<double>,
+      typename SP::type,
+      typename XT::Grid::Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>
+      BaseType;
 
 private:
   typedef SwipdgPenaltySubdomainProduct<G> ThisType;
@@ -1164,29 +1043,22 @@ private:
 
 template <class G>
 class SwipdgPenaltyNeighborhoodProduct
-    : public GDT::
-          MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
-                             typename GDT::SpaceProvider<G,
-                                                         Layers::dd_subdomain,
-                                                         GDT::SpaceType::block_dg,
-                                                         GDT::Backends::gdt,
-                                                         1,
-                                                         double,
-                                                         1>::type,
-                             typename XT::Grid::
-                                 Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>
+  : public GDT::MatrixOperatorBase<
+        XT::LA::IstlRowMajorSparseMatrix<double>,
+        typename GDT::
+            SpaceProvider<G, Layers::dd_subdomain, GDT::SpaceType::block_dg, GDT::Backends::gdt, 1, double, 1>::type,
+        typename XT::Grid::Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>
 {
   static_assert(XT::Grid::is_grid<G>::value, "");
   typedef GDT::SpaceProvider<G, Layers::dd_subdomain, GDT::SpaceType::block_dg, GDT::Backends::gdt, 1, double, 1> SP;
   typedef SwipdgPenaltyNeighborhoodProduct<G> ThisType;
 
 public:
-  typedef GDT::
-      MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
-                         typename SP::type,
-                         typename XT::Grid::
-                             Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>
-          BaseType;
+  typedef GDT::MatrixOperatorBase<
+      XT::LA::IstlRowMajorSparseMatrix<double>,
+      typename SP::type,
+      typename XT::Grid::Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>
+      BaseType;
   using typename BaseType::GridLayerType;
   using typename BaseType::RangeSpaceType;
 
@@ -1412,12 +1284,12 @@ void bind_neighborhood_reconstruction(py::module& m)
           type NeighborHoodGridLayer;
   typedef GDT::RestrictedSpace<RtSpaceType, NeighborHoodGridLayer> NeighborhoodRtSpaceType;
   typedef XT::LA::IstlDenseVector<R> VectorType;
-  typedef GDT::
-      LocalizableDiffusiveFluxReconstructionOperator<NeighborHoodGridLayer,
-                                                     XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>,
-                                                     GDT::DiscreteFunction<NeighborhoodRtSpaceType, VectorType>,
-                                                     GDT::LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor>
-          LocalizableDiffusiveFluxReconstructionOperatorForRestrictedSpaceType;
+  typedef GDT::LocalizableDiffusiveFluxReconstructionOperator<
+      NeighborHoodGridLayer,
+      XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>,
+      GDT::DiscreteFunction<NeighborhoodRtSpaceType, VectorType>,
+      GDT::LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor>
+      LocalizableDiffusiveFluxReconstructionOperatorForRestrictedSpaceType;
   // for u in restricted space
   m.def("RS2017_apply_diffusive_flux_reconstruction_in_neighborhood",
         [](XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
@@ -1446,12 +1318,12 @@ void bind_neighborhood_reconstruction(py::module& m)
         "reconstructed_u"_a,
         "over_integrate"_a = 2);
 
-  typedef GDT::
-      LocalizableDiffusiveFluxReconstructionOperator<NeighborHoodGridLayer,
-                                                     XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>,
-                                                     GDT::DiscreteFunction<RtSpaceType, VectorType>,
-                                                     GDT::LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor>
-          LocalizableDiffusiveFluxReconstructionOperatorForLeafSpaceType;
+  typedef GDT::LocalizableDiffusiveFluxReconstructionOperator<
+      NeighborHoodGridLayer,
+      XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>,
+      GDT::DiscreteFunction<RtSpaceType, VectorType>,
+      GDT::LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor>
+      LocalizableDiffusiveFluxReconstructionOperatorForLeafSpaceType;
   // for u in leaf space
   m.def("RS2017_apply_diffusive_flux_reconstruction_in_neighborhood",
         [](XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
@@ -1869,19 +1741,15 @@ PYBIND11_MODULE(__operators_RS2017, m)
         "reconstructed_v"_a,
         "over_integrate"_a = 2);
 
-  typedef GDT::
-      EllipticMatrixOperator<XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>,
-                             XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d>,
-                             typename GDT::SpaceProvider<GDT_BINDINGS_GRID,
-                                                         Layers::dd_subdomain,
-                                                         GDT::SpaceType::dg,
-                                                         GDT::Backends::gdt,
-                                                         1,
-                                                         double,
-                                                         1>::type,
-                             XT::LA::IstlRowMajorSparseMatrix<double>,
-                             typename XT::Grid::Layer<GDT_BINDINGS_GRID, Layers::dd_subdomain, Backends::view>::type>
-          EllipticMatrixOperatorType;
+  typedef GDT::EllipticMatrixOperator<
+      XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>,
+      XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d>,
+      typename GDT::
+          SpaceProvider<GDT_BINDINGS_GRID, Layers::dd_subdomain, GDT::SpaceType::dg, GDT::Backends::gdt, 1, double, 1>::
+              type,
+      XT::LA::IstlRowMajorSparseMatrix<double>,
+      typename XT::Grid::Layer<GDT_BINDINGS_GRID, Layers::dd_subdomain, Backends::view>::type>
+      EllipticMatrixOperatorType;
   XT::Common::bindings::try_register(m, [&](pybind11::module& mod) {
     py::class_<EllipticMatrixOperatorType,
                GDT::SystemAssembler<typename EllipticMatrixOperatorType::SourceSpaceType,

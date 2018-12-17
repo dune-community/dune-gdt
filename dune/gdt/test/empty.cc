@@ -9,26 +9,24 @@
 //   Rene Milk       (2016, 2018)
 
 /**
-  * This file is intended as a starting point for quick testing.
-  */
+ * This file is intended as a starting point for quick testing.
+ */
 
 #ifndef DUNE_XT_COMMON_TEST_MAIN_CATCH_EXCEPTIONS
-#define DUNE_XT_COMMON_TEST_MAIN_CATCH_EXCEPTIONS 1
+#  define DUNE_XT_COMMON_TEST_MAIN_CATCH_EXCEPTIONS 1
 #endif
 #ifndef DUNE_XT_COMMON_TEST_MAIN_ENABLE_TIMED_LOGGING
-#define DUNE_XT_COMMON_TEST_MAIN_ENABLE_TIMED_LOGGING 1
+#  define DUNE_XT_COMMON_TEST_MAIN_ENABLE_TIMED_LOGGING 1
 #endif
 #ifndef DUNE_XT_COMMON_TEST_MAIN_ENABLE_INFO_LOGGING
-#define DUNE_XT_COMMON_TEST_MAIN_ENABLE_INFO_LOGGING 1
+#  define DUNE_XT_COMMON_TEST_MAIN_ENABLE_INFO_LOGGING 1
 #endif
 #ifndef DUNE_XT_COMMON_TEST_MAIN_ENABLE_DEBUG_LOGGING
-#define DUNE_XT_COMMON_TEST_MAIN_ENABLE_DEBUG_LOGGING 1
+#  define DUNE_XT_COMMON_TEST_MAIN_ENABLE_DEBUG_LOGGING 1
 #endif
 
 #include <dune/xt/common/test/main.hxx> // <- this one has to come first (includes the config.h)!
 
 using namespace Dune;
 
-GTEST_TEST(empty, main)
-{
-}
+GTEST_TEST(empty, main) {}

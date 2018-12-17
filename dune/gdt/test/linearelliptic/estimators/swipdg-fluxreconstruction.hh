@@ -77,7 +77,7 @@ template <class SpaceType,
           class DiffusionTensorType,
           class GridLayerType = typename SpaceType::GridLayerType>
 class LocalNonconformityESV2007
-    : public XT::Grid::Functor::Codim0Return<GridLayerType, typename SpaceType::RangeFieldType>
+  : public XT::Grid::Functor::Codim0Return<GridLayerType, typename SpaceType::RangeFieldType>
 {
   typedef XT::Grid::Functor::Codim0Return<GridLayerType, typename SpaceType::RangeFieldType> BaseType;
   typedef LocalNonconformityESV2007<SpaceType, VectorType, DiffusionFactorType, DiffusionTensorType, GridLayerType>
@@ -140,8 +140,7 @@ public:
     , local_operator_(over_int, diffusion_factor, diffusion_tensor)
     , prepared_(false)
     , result_(0.0)
-  {
-  }
+  {}
 
   virtual void prepare() override final
   {
@@ -275,8 +274,7 @@ public:
     , local_operator_(over_integrate_, cutoff_function_)
     , prepared_(false)
     , result_(0.0)
-  {
-  }
+  {}
 
   virtual void prepare() override final
   {
@@ -335,7 +333,7 @@ template <class SpaceType,
           class DiffusionTensorType,
           class GridLayerType = typename SpaceType::GridLayerType>
 class LocalDiffusiveFluxESV2007
-    : public XT::Grid::Functor::Codim0Return<GridLayerType, typename SpaceType::RangeFieldType>
+  : public XT::Grid::Functor::Codim0Return<GridLayerType, typename SpaceType::RangeFieldType>
 {
   typedef LocalDiffusiveFluxESV2007<SpaceType, VectorType, DiffusionFactorType, DiffusionTensorType, GridLayerType>
       ThisType;
@@ -350,12 +348,11 @@ public:
   using typename BaseType::ReturnType;
 
 private:
-  typedef LocalVolumeIntegralOperator<LocalDiffusiveFluxEstimateESV2007Integrand<DiffusionFactorType,
-                                                                                 RTN0DiscreteFunctionType,
-                                                                                 DiffusionTensorType>,
-                                      typename ConstDiscreteFunctionType::LocalfunctionType,
-                                      typename ConstDiscreteFunctionType::LocalfunctionType,
-                                      ReturnType>
+  typedef LocalVolumeIntegralOperator<
+      LocalDiffusiveFluxEstimateESV2007Integrand<DiffusionFactorType, RTN0DiscreteFunctionType, DiffusionTensorType>,
+      typename ConstDiscreteFunctionType::LocalfunctionType,
+      typename ConstDiscreteFunctionType::LocalfunctionType,
+      ReturnType>
       LocalOperatorType;
 
 public:
@@ -433,8 +430,7 @@ public:
     , local_operator_(over_int_, diffusion_factor_norm, diffusion_tensor_, diffusive_flux_)
     , prepared_(false)
     , result_(0.0)
-  {
-  }
+  {}
 
   virtual void prepare() override final
   {
@@ -624,8 +620,7 @@ public:
           grid_layer, space, vector, diffusion_factor_norm, diffusion_factor_reconstruction, diffusion_tensor, over_int)
     , result_(0.0)
     , grid_layer_(grid_layer)
-  {
-  }
+  {}
 
   virtual void prepare() override final
   {
@@ -667,7 +662,7 @@ template <class SpaceType,
           class DiffusionTensorType,
           class GridLayerType = typename SpaceType::GridLayerType>
 class ESV2007AlternativeSummation
-    : public ESV2007<SpaceType, VectorType, ForceType, DiffusionFactorType, DiffusionTensorType, GridLayerType>
+  : public ESV2007<SpaceType, VectorType, ForceType, DiffusionFactorType, DiffusionTensorType, GridLayerType>
 {
   typedef ESV2007AlternativeSummation<SpaceType,
                                       VectorType,
@@ -679,8 +674,8 @@ class ESV2007AlternativeSummation
   typedef ESV2007<SpaceType, VectorType, ForceType, DiffusionFactorType, DiffusionTensorType, GridLayerType> BaseType;
 
 public:
-  using typename BaseType::ReturnType;
   using typename BaseType::EntityType;
+  using typename BaseType::ReturnType;
 
   static std::string id()
   {
@@ -787,8 +782,7 @@ public:
     , eta_nc_squared_(0.0)
     , eta_r_squared_(0.0)
     , eta_df_squared_(0.0)
-  {
-  }
+  {}
 
   virtual ReturnType compute_locally(const EntityType& entity) override final
   {
@@ -811,9 +805,9 @@ public:
   }
 
 private:
+  using BaseType::eta_df_;
   using BaseType::eta_nc_;
   using BaseType::eta_r_;
-  using BaseType::eta_df_;
   ReturnType eta_nc_squared_;
   ReturnType eta_r_squared_;
   ReturnType eta_df_squared_;

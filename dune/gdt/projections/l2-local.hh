@@ -55,8 +55,8 @@ class L2LocalProjectionLocalizableOperator : public LocalizableOperatorBase<Grid
 
 public:
   using typename BaseType::GridLayerType;
-  using typename BaseType::SourceType;
   using typename BaseType::RangeType;
+  using typename BaseType::SourceType;
 
   explicit L2LocalProjectionLocalizableOperator(const size_t over_integrate,
                                                 GridLayerType grd_layr,
@@ -83,9 +83,7 @@ private:
   template <class S, bool warn>
   struct Warning
   {
-    static inline void issue()
-    {
-    }
+    static inline void issue() {}
   };
 
   template <class S>
@@ -116,36 +114,33 @@ private:
 
 
 template <class GridLayerType, class SourceType, class SpaceType, class VectorType>
-typename std::
-    enable_if<XT::Grid::is_layer<GridLayerType>::value && XT::Functions::is_localizable_function<SourceType>::value
-                  && is_space<SpaceType>::value
-                  && XT::LA::is_vector<VectorType>::value,
-              std::unique_ptr<L2LocalProjectionLocalizableOperator<GridLayerType,
-                                                                   SourceType,
-                                                                   DiscreteFunction<SpaceType, VectorType>>>>::type
-    make_local_l2_projection_localizable_operator(const GridLayerType& grid_layer,
-                                                  const SourceType& source,
-                                                  DiscreteFunction<SpaceType, VectorType>& range,
-                                                  const size_t over_integrate = 0,
-                                                  const XT::Common::Parameter& param = {})
+typename std::enable_if<
+    XT::Grid::is_layer<GridLayerType>::value && XT::Functions::is_localizable_function<SourceType>::value
+        && is_space<SpaceType>::value && XT::LA::is_vector<VectorType>::value,
+    std::unique_ptr<
+        L2LocalProjectionLocalizableOperator<GridLayerType, SourceType, DiscreteFunction<SpaceType, VectorType>>>>::type
+make_local_l2_projection_localizable_operator(const GridLayerType& grid_layer,
+                                              const SourceType& source,
+                                              DiscreteFunction<SpaceType, VectorType>& range,
+                                              const size_t over_integrate = 0,
+                                              const XT::Common::Parameter& param = {})
 {
-  return Dune::XT::Common::make_unique<L2LocalProjectionLocalizableOperator<GridLayerType,
-                                                                            SourceType,
-                                                                            DiscreteFunction<SpaceType, VectorType>>>(
+  return Dune::XT::Common::make_unique<
+      L2LocalProjectionLocalizableOperator<GridLayerType, SourceType, DiscreteFunction<SpaceType, VectorType>>>(
       over_integrate, grid_layer, source, range, param);
 } // ... make_local_l2_projection_localizable_operator(...)
 
 template <class SourceType, class SpaceType, class VectorType>
-typename std::
-    enable_if<XT::Functions::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
-                  && XT::LA::is_vector<VectorType>::value,
-              std::unique_ptr<L2LocalProjectionLocalizableOperator<typename SpaceType::GridLayerType,
-                                                                   SourceType,
-                                                                   DiscreteFunction<SpaceType, VectorType>>>>::type
-    make_local_l2_projection_localizable_operator(const SourceType& source,
-                                                  DiscreteFunction<SpaceType, VectorType>& range,
-                                                  const size_t over_integrate = 0,
-                                                  const XT::Common::Parameter& param = {})
+typename std::enable_if<
+    XT::Functions::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
+        && XT::LA::is_vector<VectorType>::value,
+    std::unique_ptr<L2LocalProjectionLocalizableOperator<typename SpaceType::GridLayerType,
+                                                         SourceType,
+                                                         DiscreteFunction<SpaceType, VectorType>>>>::type
+make_local_l2_projection_localizable_operator(const SourceType& source,
+                                              DiscreteFunction<SpaceType, VectorType>& range,
+                                              const size_t over_integrate = 0,
+                                              const XT::Common::Parameter& param = {})
 {
   return Dune::XT::Common::make_unique<L2LocalProjectionLocalizableOperator<typename SpaceType::GridLayerType,
                                                                             SourceType,
@@ -156,7 +151,7 @@ typename std::
 
 template <class GridLayerImp, class FieldImp>
 class L2LocalProjectionOperator
-    : public OperatorInterface<internal::L2LocalProjectionOperatorTraits<GridLayerImp, FieldImp>>
+  : public OperatorInterface<internal::L2LocalProjectionOperatorTraits<GridLayerImp, FieldImp>>
 {
   typedef OperatorInterface<internal::L2LocalProjectionOperatorTraits<GridLayerImp, FieldImp>> BaseType;
 
@@ -175,15 +170,13 @@ public:
     : grid_layer_(grid_layer)
     , over_integrate_(over_integrate)
     , use_tbb_(use_tbb)
-  {
-  }
+  {}
 
   L2LocalProjectionOperator(GridLayerType grid_layer, const bool use_tbb = false)
     : grid_layer_(grid_layer)
     , over_integrate_(0)
     , use_tbb_(use_tbb)
-  {
-  }
+  {}
 
   template <class R, size_t r, size_t rC, class S, class V>
   void apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source,

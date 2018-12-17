@@ -50,8 +50,7 @@ class IpdgDiscretizer
 {
   template <LocalEllipticIpdgIntegrands::Method in, class Anything = void>
   struct translate
-  {
-  };
+  {};
 
   template <class Anything>
   struct translate<LocalEllipticIpdgIntegrands::Method::sipdg, Anything>

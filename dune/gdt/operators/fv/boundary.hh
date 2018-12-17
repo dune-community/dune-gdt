@@ -37,8 +37,7 @@ public:
 
   LocalBoundaryValueInterface(const BoundaryInfoType& boundary_info)
     : boundary_info_(boundary_info)
-  {
-  }
+  {}
 
   virtual ~LocalBoundaryValueInterface() = default;
 
@@ -69,8 +68,7 @@ public:
 
   LocalizableBoundaryValueInterface(std::unique_ptr<const BoundaryInfoType>&& boundary_info)
     : boundary_info_(std::move(boundary_info))
-  {
-  }
+  {}
 
   virtual ~LocalizableBoundaryValueInterface() = default;
 
@@ -83,9 +81,9 @@ protected:
 
 template <class IntersectionImp, class LocalizableFunctionType>
 class LocalizableFunctionBasedLocalDirichletBoundaryValue
-    : public LocalBoundaryValueInterface<typename LocalizableFunctionType::EntityType,
-                                         IntersectionImp,
-                                         typename LocalizableFunctionType::RangeType>
+  : public LocalBoundaryValueInterface<typename LocalizableFunctionType::EntityType,
+                                       IntersectionImp,
+                                       typename LocalizableFunctionType::RangeType>
 {
   using BaseType = LocalBoundaryValueInterface<typename LocalizableFunctionType::EntityType,
                                                IntersectionImp,
@@ -102,8 +100,7 @@ public:
                                                       std::unique_ptr<const LocalfunctionType>&& local_boundary_values)
     : BaseType(boundary_info)
     , local_boundary_values_(std::move(local_boundary_values))
-  {
-  }
+  {}
 
   virtual RangeType evaluate(const IntersectionType& intersection,
                              const DomainType& x,
@@ -123,9 +120,9 @@ private:
 
 template <class IntersectionImp, class LocalizableFunctionType>
 class LocalizableFunctionBasedLocalizableDirichletBoundaryValue
-    : public LocalizableBoundaryValueInterface<typename LocalizableFunctionType::EntityType,
-                                               IntersectionImp,
-                                               typename LocalizableFunctionType::RangeType>
+  : public LocalizableBoundaryValueInterface<typename LocalizableFunctionType::EntityType,
+                                             IntersectionImp,
+                                             typename LocalizableFunctionType::RangeType>
 {
   using BaseType = LocalizableBoundaryValueInterface<typename LocalizableFunctionType::EntityType,
                                                      IntersectionImp,
@@ -143,8 +140,7 @@ public:
       std::unique_ptr<const LocalizableFunctionType>&& boundary_values)
     : BaseType(std::move(boundary_info))
     , boundary_values_(std::move(boundary_values))
-  {
-  }
+  {}
 
   virtual std::unique_ptr<LocalBoundaryValueInterfaceType> local_function(const EntityType& entity) const override
   {
@@ -158,9 +154,10 @@ private:
 
 
 template <class IntersectionImp, class LocalizableFunctionType>
-class LocalMomentModelBoundaryValue : public LocalBoundaryValueInterface<typename LocalizableFunctionType::EntityType,
-                                                                         IntersectionImp,
-                                                                         typename LocalizableFunctionType::RangeType>
+class LocalMomentModelBoundaryValue
+  : public LocalBoundaryValueInterface<typename LocalizableFunctionType::EntityType,
+                                       IntersectionImp,
+                                       typename LocalizableFunctionType::RangeType>
 {
   using BaseType = LocalBoundaryValueInterface<typename LocalizableFunctionType::EntityType,
                                                IntersectionImp,
@@ -169,11 +166,11 @@ class LocalMomentModelBoundaryValue : public LocalBoundaryValueInterface<typenam
 
 public:
   using MatrixType = typename Dune::XT::LA::CommonSparseOrDenseMatrixCsr<RangeFieldType>;
+  using BaseType::dimDomain;
   using typename BaseType::BoundaryInfoType;
   using typename BaseType::DomainType;
   using typename BaseType::IntersectionType;
   using typename BaseType::RangeType;
-  using BaseType::dimDomain;
 
   LocalMomentModelBoundaryValue(
       const BoundaryInfoType& boundary_info,
@@ -182,8 +179,7 @@ public:
     : BaseType(boundary_info)
     , reflection_matrices_(reflection_matrices)
     , local_dirichlet_boundary_values_(std::move(local_dirichlet_boundary_values))
-  {
-  }
+  {}
 
   virtual RangeType evaluate(const IntersectionType& intersection,
                              const DomainType& x,
@@ -214,9 +210,10 @@ private:
 
 
 template <class IntersectionType, class BasisfunctionType, class LocalizableFunctionType>
-class MomentModelBoundaryValue : public LocalizableBoundaryValueInterface<typename LocalizableFunctionType::EntityType,
-                                                                          IntersectionType,
-                                                                          typename BasisfunctionType::RangeType>
+class MomentModelBoundaryValue
+  : public LocalizableBoundaryValueInterface<typename LocalizableFunctionType::EntityType,
+                                             IntersectionType,
+                                             typename BasisfunctionType::RangeType>
 {
   static_assert(std::is_same<typename BasisfunctionType::RangeType, typename LocalizableFunctionType::RangeType>::value,
                 "RangeTypes have to match!");

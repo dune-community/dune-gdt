@@ -53,7 +53,7 @@ public:
 
 template <class AnalyticalFluxImp, class BoundaryValueImp, class BasisfunctionImp, class GridLayerImp>
 class KineticLocalNumericalBoundaryFluxTraits
-    : public NumericalBoundaryFluxTraitsBase<AnalyticalFluxImp, BoundaryValueImp>
+  : public NumericalBoundaryFluxTraitsBase<AnalyticalFluxImp, BoundaryValueImp>
 {
   typedef NumericalBoundaryFluxTraitsBase<AnalyticalFluxImp, BoundaryValueImp> BaseType;
 
@@ -198,8 +198,7 @@ public:
                                              const XT::Common::Parameter& param,
                                              const BasisfunctionType& basis_functions)
     : implementation_(&analytical_flux, param, basis_functions, false)
-  {
-  }
+  {}
 
   LocalfunctionTupleType local_functions(const EntityType& /*entity*/) const
   {
@@ -237,16 +236,15 @@ private:
 }; // class KineticLocalNumericalCouplingFlux
 
 /**
-*  \brief  Kinetic flux evaluation for boundary intersections.
-*/
-template <class AnalyticalFluxImp,
-          class BoundaryValueImp,
-          class BasisfunctionImp,
-          class GridLayerImp,
-          class Traits = internal::KineticLocalNumericalBoundaryFluxTraits<AnalyticalFluxImp,
-                                                                           BoundaryValueImp,
-                                                                           BasisfunctionImp,
-                                                                           GridLayerImp>>
+ *  \brief  Kinetic flux evaluation for boundary intersections.
+ */
+template <
+    class AnalyticalFluxImp,
+    class BoundaryValueImp,
+    class BasisfunctionImp,
+    class GridLayerImp,
+    class Traits = internal::
+        KineticLocalNumericalBoundaryFluxTraits<AnalyticalFluxImp, BoundaryValueImp, BasisfunctionImp, GridLayerImp>>
 class KineticLocalNumericalBoundaryFlux : public LocalNumericalBoundaryFluxInterface<Traits>
 {
   typedef LocalNumericalBoundaryFluxInterface<Traits> InterfaceType;
@@ -270,8 +268,7 @@ public:
                                              const BasisfunctionType& basis_functions)
     : InterfaceType(boundary_values)
     , implementation_(&analytical_flux, param, basis_functions, true)
-  {
-  }
+  {}
 
   LocalfunctionTupleType local_functions(const EntityType& entity) const
   {

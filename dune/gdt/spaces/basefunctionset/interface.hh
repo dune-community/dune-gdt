@@ -28,8 +28,8 @@ namespace GDT {
  */
 template <class Traits, class D, size_t d, class R, size_t r, size_t rC = 1>
 class BaseFunctionSetInterface
-    : public XT::Functions::LocalfunctionSetInterface<typename Traits::EntityType, D, d, R, r, rC>,
-      public XT::Common::CRTPInterface<BaseFunctionSetInterface<Traits, D, d, R, r, rC>, Traits>
+  : public XT::Functions::LocalfunctionSetInterface<typename Traits::EntityType, D, d, R, r, rC>
+  , public XT::Common::CRTPInterface<BaseFunctionSetInterface<Traits, D, d, R, r, rC>, Traits>
 {
   typedef XT::Functions::LocalfunctionSetInterface<typename Traits::EntityType, D, d, R, r, rC> BaseType;
 
@@ -40,8 +40,7 @@ public:
 
   explicit BaseFunctionSetInterface(const EntityType& ent)
     : BaseType(ent)
-  {
-  }
+  {}
 
   const BackendType& backend() const
   {

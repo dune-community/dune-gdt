@@ -125,12 +125,9 @@ private:
 #ifndef NDEBUG
       if (subdomain >= self.num_blocks_)
         DUNE_THROW(XT::Common::Exceptions::internal_error,
-                   "The DD subdomains grid is corrupted!\nIt reports Entity " << global_entity_index
-                                                                              << " to be in subdomain "
-                                                                              << subdomain
-                                                                              << " while only having "
-                                                                              << self.num_blocks_
-                                                                              << " subdomains!");
+                   "The DD subdomains grid is corrupted!\nIt reports Entity "
+                       << global_entity_index << " to be in subdomain " << subdomain << " while only having "
+                       << self.num_blocks_ << " subdomains!");
 #endif // NDEBUG
       return subdomain;
     } // ... find_block_of(...)
@@ -150,11 +147,8 @@ public:
     if (local_spaces_->size() != dd_grid.size())
       DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
                  "You have to provide a local space for each subdomain of the DD subdomains grid!\n"
-                     << "  Number of subdomains: "
-                     << dd_grid.size()
-                     << "\n"
-                     << "  Number of local spaces given: "
-                     << local_spaces_->size());
+                     << "  Number of subdomains: " << dd_grid.size() << "\n"
+                     << "  Number of local spaces given: " << local_spaces_->size());
     for (size_t bb = 0; bb < num_blocks_; ++bb) {
       if (backend()[bb] != nullptr) {
         max_num_dofs_ = std::max(max_num_dofs_, backend()[bb]->mapper().maxNumDofs());

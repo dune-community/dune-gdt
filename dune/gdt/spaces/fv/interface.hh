@@ -77,14 +77,12 @@ struct is_fv_space_helper
 
 template <class S, bool candidate = internal::is_fv_space_helper<S>::is_candidate>
 struct is_fv_space
-    : public std::is_base_of<FvSpaceInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
-{
-};
+  : public std::is_base_of<FvSpaceInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
+{};
 
 template <class S>
 struct is_fv_space<S, false> : public std::false_type
-{
-};
+{};
 
 
 } // namespace GDT

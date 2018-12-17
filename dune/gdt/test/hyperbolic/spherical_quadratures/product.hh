@@ -56,9 +56,7 @@ Dune::QuadratureRule<FieldType, 3> product_quadrature(const size_t theta_grid_si
               {theta_entity.geometry().global(theta_quad_point.position()),
                phi_entity.geometry().global(phi_quad_point.position())},
               std::sin(theta_entity.geometry().global(theta_quad_point.position())[0]) * phi_quad_point.weight()
-                  * theta_quad_point.weight()
-                  * phi_entity.geometry().volume()
-                  * theta_entity.geometry().volume()));
+                  * theta_quad_point.weight() * phi_entity.geometry().volume() * theta_entity.geometry().volume()));
     }
   }
   Dune::QuadratureRule<FieldType, 3> product_quad_cartesian;

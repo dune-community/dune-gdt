@@ -55,8 +55,7 @@ public:
   GodunovJacobianWrapper()
     : eigvals_neg_(V::create(dimRange))
     , eigvals_pos_(V::create(dimRange))
-  {
-  }
+  {}
 
   virtual void compute(const size_t dd) override
   {
@@ -78,8 +77,8 @@ public:
   }
 
 protected:
-  using BaseType::eigenvalues_;
   using BaseType::computed_;
+  using BaseType::eigenvalues_;
   FieldVector<VectorType, dimDomain> eigvals_neg_;
   FieldVector<VectorType, dimDomain> eigvals_pos_;
 };
@@ -98,7 +97,7 @@ public:
 
 template <class AnalyticalFluxImp, class BoundaryValueImp>
 class GodunovLocalDirichletNumericalBoundaryFluxTraits
-    : public NumericalBoundaryFluxTraitsBase<AnalyticalFluxImp, BoundaryValueImp>
+  : public NumericalBoundaryFluxTraitsBase<AnalyticalFluxImp, BoundaryValueImp>
 {
   typedef NumericalBoundaryFluxTraitsBase<AnalyticalFluxImp, BoundaryValueImp> BaseType;
 
@@ -238,8 +237,7 @@ public:
                                     const XT::Common::Parameter& param,
                                     JacobianWrapperType&& jacobian_wrapper)
     : implementation_(analytical_flux, param, std::forward<JacobianWrapperType>(jacobian_wrapper), false)
-  {
-  }
+  {}
 
   LocalfunctionTupleType local_functions(const EntityType& entity) const
   {
@@ -281,9 +279,9 @@ private:
 }; // class GodunovLocalNumericalCouplingFlux
 
 /**
-*  \brief  Godunov flux evaluation for Dirichlet boundary intersections.
-*  \see    GodunovLocalNumericalCouplingFlux
-*/
+ *  \brief  Godunov flux evaluation for Dirichlet boundary intersections.
+ *  \see    GodunovLocalNumericalCouplingFlux
+ */
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
           class Traits =
@@ -311,8 +309,7 @@ public:
                                              JacobianWrapperType&& jacobian_wrapper)
     : InterfaceType(boundary_values)
     , implementation_(analytical_flux, param, std::forward<JacobianWrapperType>(jacobian_wrapper), true)
-  {
-  }
+  {}
 
   LocalfunctionTupleType local_functions(const EntityType& entity) const
   {

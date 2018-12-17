@@ -62,8 +62,7 @@ public:
     , visualize_prefix_(visualize_prefix)
     , current_num_DoFs_(0)
     , solver_options_(solver_options)
-  {
-  }
+  {}
 
   virtual ~StationaryEocStudy() = default;
 
@@ -89,9 +88,7 @@ public:
     if (!is_norm(type))
       DUNE_THROW(XT::Common::Exceptions::you_are_using_this_wrong,
                  "Do not call norm_reference_solution() for an estimator!\n"
-                     << "type: "
-                     << type
-                     << "\n");
+                     << "type: " << type << "\n");
     if (test_case_.provides_exact_solution()) {
       // visualize
       if (!visualize_prefix_.empty()) {

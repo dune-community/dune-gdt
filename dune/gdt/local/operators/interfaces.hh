@@ -31,26 +31,24 @@ namespace internal {
 
 /// \todo drop and implement the is_... properly
 class IsLocalOperator
-{
-};
+{};
 
 /// \todo drop and implement the is_... properly
 class IsLocalCouplingOperator
-{
-};
+{};
 
 /// \todo drop and implement the is_... properly
 class IsLocalBoundaryOperator
-{
-};
+{};
 
 
 } // namespace internal
 
 
 template <class Traits>
-class LocalOperatorInterface : public XT::Common::CRTPInterface<LocalOperatorInterface<Traits>, Traits>,
-                               internal::IsLocalOperator
+class LocalOperatorInterface
+  : public XT::Common::CRTPInterface<LocalOperatorInterface<Traits>, Traits>
+  , internal::IsLocalOperator
 {
 public:
   typedef typename Traits::derived_type derived_type;
@@ -68,9 +66,10 @@ public:
 
 
 template <class Traits>
-class LocalCouplingOperatorInterface : public XT::Common::CRTPInterface<LocalCouplingOperatorInterface<Traits>, Traits>,
-                                       public XT::Common::ParametricInterface,
-                                       internal::IsLocalCouplingOperator
+class LocalCouplingOperatorInterface
+  : public XT::Common::CRTPInterface<LocalCouplingOperatorInterface<Traits>, Traits>
+  , public XT::Common::ParametricInterface
+  , internal::IsLocalCouplingOperator
 {
 public:
   template <class SourceType, class IntersectionType, class SpaceType, class VectorType>
@@ -86,8 +85,9 @@ public:
 
 
 template <class Traits>
-class LocalBoundaryOperatorInterface : public XT::Common::CRTPInterface<LocalBoundaryOperatorInterface<Traits>, Traits>,
-                                       internal::IsLocalBoundaryOperator
+class LocalBoundaryOperatorInterface
+  : public XT::Common::CRTPInterface<LocalBoundaryOperatorInterface<Traits>, Traits>
+  , internal::IsLocalBoundaryOperator
 {
 public:
   template <class SourceType, class IntersectionType, class SpaceType, class VectorType>
@@ -198,20 +198,17 @@ public:
 /// \todo move to type_traits.hh
 template <class T>
 struct is_local_operator : public std::is_base_of<internal::IsLocalOperator, T>
-{
-};
+{};
 
 /// \todo move to type_traits.hh
 template <class T>
 struct is_local_coupling_operator : public std::is_base_of<internal::IsLocalCouplingOperator, T>
-{
-};
+{};
 
 /// \todo move to type_traits.hh
 template <class T>
 struct is_local_boundary_operator : public std::is_base_of<internal::IsLocalBoundaryOperator, T>
-{
-};
+{};
 
 
 } // namespace GDT

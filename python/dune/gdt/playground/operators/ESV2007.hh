@@ -37,13 +37,13 @@ namespace ESV2007 {
 
 template <class ProductGridLayer, class InterpolationGridLayerType>
 class NonconformityProduct
-    : public LocalizableProductBase<ProductGridLayer,
-                                    XT::Functions::
-                                        LocalizableFunctionInterface<XT::Grid::extract_entity_t<ProductGridLayer>,
-                                                                     typename ProductGridLayer::ctype,
-                                                                     ProductGridLayer::dimension,
-                                                                     double,
-                                                                     1>>
+  : public LocalizableProductBase<
+        ProductGridLayer,
+        XT::Functions::LocalizableFunctionInterface<XT::Grid::extract_entity_t<ProductGridLayer>,
+                                                    typename ProductGridLayer::ctype,
+                                                    ProductGridLayer::dimension,
+                                                    double,
+                                                    1>>
 {
   static_assert(XT::Grid::is_layer<ProductGridLayer>::value, "");
   static_assert(XT::Grid::is_layer<InterpolationGridLayerType>::value, "");
@@ -202,23 +202,23 @@ protected:
 
 template <class ProductGridLayer, class ReconstructionGridLayer>
 class ResidualProduct
-    : internal::ResidualProductBase<ProductGridLayer, ReconstructionGridLayer>,
-      public LocalizableProductBase<ProductGridLayer,
-                                    XT::Functions::
-                                        LocalizableFunctionInterface<XT::Grid::extract_entity_t<ProductGridLayer>,
-                                                                     typename ProductGridLayer::ctype,
-                                                                     ProductGridLayer::dimension,
-                                                                     double,
-                                                                     1>>
+  : internal::ResidualProductBase<ProductGridLayer, ReconstructionGridLayer>
+  , public LocalizableProductBase<
+        ProductGridLayer,
+        XT::Functions::LocalizableFunctionInterface<XT::Grid::extract_entity_t<ProductGridLayer>,
+                                                    typename ProductGridLayer::ctype,
+                                                    ProductGridLayer::dimension,
+                                                    double,
+                                                    1>>
 {
   typedef internal::ResidualProductBase<ProductGridLayer, ReconstructionGridLayer> ResidualProductBaseType;
-  typedef LocalizableProductBase<ProductGridLayer,
-                                 XT::Functions::
-                                     LocalizableFunctionInterface<XT::Grid::extract_entity_t<ProductGridLayer>,
-                                                                  typename ProductGridLayer::ctype,
-                                                                  ProductGridLayer::dimension,
-                                                                  double,
-                                                                  1>>
+  typedef LocalizableProductBase<
+      ProductGridLayer,
+      XT::Functions::LocalizableFunctionInterface<XT::Grid::extract_entity_t<ProductGridLayer>,
+                                                  typename ProductGridLayer::ctype,
+                                                  ProductGridLayer::dimension,
+                                                  double,
+                                                  1>>
       LocalizableProductBaseType;
 
 public:
@@ -291,13 +291,13 @@ private:
 
 template <class ProductGridLayer, class ReconstructionGridLayer>
 class DiffusiveFluxProduct
-    : public LocalizableProductBase<ProductGridLayer,
-                                    XT::Functions::
-                                        LocalizableFunctionInterface<XT::Grid::extract_entity_t<ProductGridLayer>,
-                                                                     typename ProductGridLayer::ctype,
-                                                                     ProductGridLayer::dimension,
-                                                                     double,
-                                                                     1>>
+  : public LocalizableProductBase<
+        ProductGridLayer,
+        XT::Functions::LocalizableFunctionInterface<XT::Grid::extract_entity_t<ProductGridLayer>,
+                                                    typename ProductGridLayer::ctype,
+                                                    ProductGridLayer::dimension,
+                                                    double,
+                                                    1>>
 {
   static_assert(XT::Grid::is_layer<ProductGridLayer>::value, "");
   static_assert(XT::Grid::is_layer<ReconstructionGridLayer>::value, "");

@@ -226,7 +226,7 @@ struct RtSpace : public ::testing::Test
 
 template <class G, int p>
 struct RtSpaceOnSimplicialLeafView
-    : public RtSpace<typename Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>::LeafGridViewType, p>
+  : public RtSpace<typename Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>::LeafGridViewType, p>
 {
   using GridProviderType = Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;
@@ -235,7 +235,7 @@ struct RtSpaceOnSimplicialLeafView
   std::shared_ptr<LeafGridViewType> leaf_view;
 
   RtSpaceOnSimplicialLeafView() //        (i) negative coordinates and not the same as the reference
-      : grid_provider(Dune::XT::Grid::make_cube_grid<G>(-1.5, -1, 3).grid_ptr()) //                          element,
+    : grid_provider(Dune::XT::Grid::make_cube_grid<G>(-1.5, -1, 3).grid_ptr()) //                          element,
   { //                                                   (ii) at least 3 elements to have fully inner ones,
     grid_provider.global_refine(1); //                  (iii) refine at least once to obtain all kinds of orientations
     leaf_view = std::make_shared<LeafGridViewType>(grid_provider.leaf_view());
@@ -313,7 +313,7 @@ TYPED_TEST(Order0SimplicialRtSpace, basis_is_rt_basis)
 
 template <class G, int p>
 struct RtSpaceOnCubicLeafView
-    : public RtSpace<typename Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>::LeafGridViewType, p>
+  : public RtSpace<typename Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>::LeafGridViewType, p>
 {
   using GridProviderType = Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;

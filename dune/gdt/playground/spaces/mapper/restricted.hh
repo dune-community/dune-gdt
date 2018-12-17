@@ -51,7 +51,7 @@ public:
 
 template <class UnrestrictedSpace, class RestrictionGridLayer>
 class RestrictedMapper
-    : public MapperInterface<internal::RestrictedMapperTraits<UnrestrictedSpace, RestrictionGridLayer>>
+  : public MapperInterface<internal::RestrictedMapperTraits<UnrestrictedSpace, RestrictionGridLayer>>
 {
   typedef MapperInterface<internal::RestrictedMapperTraits<UnrestrictedSpace, RestrictionGridLayer>> BaseType;
   typedef RestrictedMapper<UnrestrictedSpace, RestrictionGridLayer> ThisType;
@@ -99,8 +99,7 @@ public:
     DUNE_THROW_IF(unrestricted_vector.size() != backend().size(),
                   XT::Common::Exceptions::shapes_do_not_match,
                   "unrestricted_vector.size() = " << unrestricted_vector.size()
-                                                  << "\n   unrestricted_space.mapper().size() = "
-                                                  << backend().size());
+                                                  << "\n   unrestricted_space.mapper().size() = " << backend().size());
     DUNE_THROW_IF(restricted_vector.size() != size(),
                   XT::Common::Exceptions::shapes_do_not_match,
                   "restricted_vector.size() = " << restricted_vector.size() << "\n   size() = " << size());
@@ -127,8 +126,7 @@ public:
     DUNE_THROW_IF(unrestricted_vector.size() != backend().size(),
                   XT::Common::Exceptions::shapes_do_not_match,
                   "unrestricted_vector.size() = " << unrestricted_vector.size()
-                                                  << "\n   unrestricted_space.mapper().size() = "
-                                                  << backend().size());
+                                                  << "\n   unrestricted_space.mapper().size() = " << backend().size());
     // the actual work
     unrestricted_vector *= 0.;
     for (size_t restricted_DoF = 0; restricted_DoF < map_to_unrestricted_.size(); ++restricted_DoF)
@@ -188,9 +186,7 @@ private:
     if (unrestricted_space_.grid_layer().indexSet().contains(entity))
       DUNE_THROW(restricted_space_error,
                  "Entity not contained in restriction grid layer, but contained in the unrestricted grid layer "
-                     << "with index "
-                     << unrestricted_space_.grid_layer().indexSet().index(entity)
-                     << "!");
+                     << "with index " << unrestricted_space_.grid_layer().indexSet().index(entity) << "!");
     else
       DUNE_THROW(restricted_space_error,
                  "Entity neither contained in restriction grid layer nor in the unrestricted grid layer!");

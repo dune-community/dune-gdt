@@ -82,23 +82,21 @@ private:
  * \sa WeightedL2LocalizableProduct
  */
 template <class WeightFunctionType, class GridLayerType, class RangeType, class SourceType>
-typename std::
-    enable_if<XT::Functions::is_localizable_function<WeightFunctionType>::value
-                  && XT::Grid::is_layer<GridLayerType>::value
-                  && XT::Functions::is_localizable_function<RangeType>::value
-                  && XT::Functions::is_localizable_function<SourceType>::value,
-              std::unique_ptr<WeightedL2LocalizableProduct<WeightFunctionType, GridLayerType, RangeType, SourceType>>>::
-        type
-        make_weighted_l2_localizable_product(const WeightFunctionType& weight,
-                                             const GridLayerType& grid_layer,
-                                             const RangeType& range,
-                                             const SourceType& source,
-                                             const size_t over_integrate = 0,
-                                             const XT::Common::Parameter& param = {})
+typename std::enable_if<
+    XT::Functions::is_localizable_function<WeightFunctionType>::value && XT::Grid::is_layer<GridLayerType>::value
+        && XT::Functions::is_localizable_function<RangeType>::value
+        && XT::Functions::is_localizable_function<SourceType>::value,
+    std::unique_ptr<WeightedL2LocalizableProduct<WeightFunctionType, GridLayerType, RangeType, SourceType>>>::type
+make_weighted_l2_localizable_product(const WeightFunctionType& weight,
+                                     const GridLayerType& grid_layer,
+                                     const RangeType& range,
+                                     const SourceType& source,
+                                     const size_t over_integrate = 0,
+                                     const XT::Common::Parameter& param = {})
 {
-  return Dune::XT::Common::
-      make_unique<WeightedL2LocalizableProduct<WeightFunctionType, GridLayerType, RangeType, SourceType>>(
-          over_integrate, weight, grid_layer, range, source, param);
+  return Dune::XT::Common::make_unique<
+      WeightedL2LocalizableProduct<WeightFunctionType, GridLayerType, RangeType, SourceType>>(
+      over_integrate, weight, grid_layer, range, source, param);
 }
 
 
@@ -113,7 +111,7 @@ template <class WeightFunctionType,
           class SourceSpace = RangeSpace,
           class Field = typename Matrix::ScalarType>
 class WeightedL2MatrixOperator
-    : public MatrixOperatorBase<Matrix, RangeSpace, GridLayer, SourceSpace, Field, ChoosePattern::volume>
+  : public MatrixOperatorBase<Matrix, RangeSpace, GridLayer, SourceSpace, Field, ChoosePattern::volume>
 {
   typedef MatrixOperatorBase<Matrix, RangeSpace, GridLayer, SourceSpace, Field, ChoosePattern::volume> BaseType;
 
@@ -179,19 +177,18 @@ auto op = make_weighted_l2_matrix_operator< MatrixType >(weight, space, grid_lay
 \endcode
  */
 template <class MatrixType, class WeightFunctionType, class SpaceType, class GridLayerType>
-typename std::
-    enable_if<XT::LA::is_matrix<MatrixType>::value && XT::Functions::is_localizable_function<WeightFunctionType>::value
-                  && is_space<SpaceType>::value
-                  && XT::Grid::is_layer<GridLayerType>::value,
-              std::unique_ptr<WeightedL2MatrixOperator<WeightFunctionType, SpaceType, MatrixType, GridLayerType>>>::type
-    make_weighted_l2_matrix_operator(const WeightFunctionType& weight,
-                                     const SpaceType& space,
-                                     const GridLayerType& grid_layer,
-                                     const size_t over_integrate = 0)
+typename std::enable_if<
+    XT::LA::is_matrix<MatrixType>::value && XT::Functions::is_localizable_function<WeightFunctionType>::value
+        && is_space<SpaceType>::value && XT::Grid::is_layer<GridLayerType>::value,
+    std::unique_ptr<WeightedL2MatrixOperator<WeightFunctionType, SpaceType, MatrixType, GridLayerType>>>::type
+make_weighted_l2_matrix_operator(const WeightFunctionType& weight,
+                                 const SpaceType& space,
+                                 const GridLayerType& grid_layer,
+                                 const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::
-      make_unique<WeightedL2MatrixOperator<WeightFunctionType, SpaceType, MatrixType, GridLayerType>>(
-          over_integrate, weight, space, grid_layer);
+  return Dune::XT::Common::make_unique<
+      WeightedL2MatrixOperator<WeightFunctionType, SpaceType, MatrixType, GridLayerType>>(
+      over_integrate, weight, space, grid_layer);
 }
 
 /**
@@ -202,27 +199,20 @@ auto op = make_weighted_l2_matrix_operator< MatrixType >(weight, range_space, so
 \endcode
  */
 template <class MatrixType, class WeightFunctionType, class RangeSpaceType, class SourceSpaceType, class GridLayerType>
-typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
-                            && XT::Functions::is_localizable_function<WeightFunctionType>::value
-                            && is_space<RangeSpaceType>::value
-                            && is_space<SourceSpaceType>::value
-                            && XT::Grid::is_layer<GridLayerType>::value,
-                        std::unique_ptr<WeightedL2MatrixOperator<WeightFunctionType,
-                                                                 RangeSpaceType,
-                                                                 MatrixType,
-                                                                 GridLayerType,
-                                                                 SourceSpaceType>>>::type
+typename std::enable_if<
+    XT::LA::is_matrix<MatrixType>::value && XT::Functions::is_localizable_function<WeightFunctionType>::value
+        && is_space<RangeSpaceType>::value && is_space<SourceSpaceType>::value
+        && XT::Grid::is_layer<GridLayerType>::value,
+    std::unique_ptr<
+        WeightedL2MatrixOperator<WeightFunctionType, RangeSpaceType, MatrixType, GridLayerType, SourceSpaceType>>>::type
 make_weighted_l2_matrix_operator(const WeightFunctionType& weight,
                                  const RangeSpaceType& range_space,
                                  const SourceSpaceType& source_space,
                                  const GridLayerType& grid_layer,
                                  const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::make_unique<WeightedL2MatrixOperator<WeightFunctionType,
-                                                                RangeSpaceType,
-                                                                MatrixType,
-                                                                GridLayerType,
-                                                                SourceSpaceType>>(
+  return Dune::XT::Common::make_unique<
+      WeightedL2MatrixOperator<WeightFunctionType, RangeSpaceType, MatrixType, GridLayerType, SourceSpaceType>>(
       over_integrate, weight, range_space, source_space, grid_layer);
 }
 
@@ -234,8 +224,7 @@ make_weighted_l2_matrix_operator(const WeightFunctionType& weight,
  */
 template <class WeightFunctionType, class MatrixType, class SpaceType>
 typename std::enable_if<XT::Functions::is_localizable_function<WeightFunctionType>::value
-                            && XT::LA::is_matrix<MatrixType>::value
-                            && is_space<SpaceType>::value,
+                            && XT::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value,
                         std::unique_ptr<WeightedL2MatrixOperator<WeightFunctionType, SpaceType, MatrixType>>>::type
 make_weighted_l2_matrix_operator(const WeightFunctionType& weight,
                                  MatrixType& matrix,
@@ -250,36 +239,31 @@ make_weighted_l2_matrix_operator(const WeightFunctionType& weight,
  * \brief Creates a weighted L2 matrix operator (source and range space are given by space).
  */
 template <class WeightFunctionType, class MatrixType, class SpaceType, class GridLayerType>
-typename std::
-    enable_if<XT::Functions::is_localizable_function<WeightFunctionType>::value && XT::LA::is_matrix<MatrixType>::value
-                  && is_space<SpaceType>::value
-                  && XT::Grid::is_layer<GridLayerType>::value,
-              std::unique_ptr<WeightedL2MatrixOperator<WeightFunctionType, SpaceType, MatrixType, GridLayerType>>>::type
-    make_weighted_l2_matrix_operator(const WeightFunctionType& weight,
-                                     MatrixType& matrix,
-                                     const SpaceType& space,
-                                     const GridLayerType& grid_layer,
-                                     const size_t over_integrate = 0)
+typename std::enable_if<
+    XT::Functions::is_localizable_function<WeightFunctionType>::value && XT::LA::is_matrix<MatrixType>::value
+        && is_space<SpaceType>::value && XT::Grid::is_layer<GridLayerType>::value,
+    std::unique_ptr<WeightedL2MatrixOperator<WeightFunctionType, SpaceType, MatrixType, GridLayerType>>>::type
+make_weighted_l2_matrix_operator(const WeightFunctionType& weight,
+                                 MatrixType& matrix,
+                                 const SpaceType& space,
+                                 const GridLayerType& grid_layer,
+                                 const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::
-      make_unique<WeightedL2MatrixOperator<WeightFunctionType, SpaceType, MatrixType, GridLayerType>>(
-          over_integrate, weight, matrix, space, grid_layer);
+  return Dune::XT::Common::make_unique<
+      WeightedL2MatrixOperator<WeightFunctionType, SpaceType, MatrixType, GridLayerType>>(
+      over_integrate, weight, matrix, space, grid_layer);
 }
 
 /**
  * \brief Creates a weighted L2 matrix operator.
  */
 template <class WeightFunctionType, class MatrixType, class RangeSpaceType, class SourceSpaceType, class GridLayerType>
-typename std::enable_if<XT::Functions::is_localizable_function<WeightFunctionType>::value
-                            && XT::LA::is_matrix<MatrixType>::value
-                            && is_space<RangeSpaceType>::value
-                            && is_space<SourceSpaceType>::value
-                            && XT::Grid::is_layer<GridLayerType>::value,
-                        std::unique_ptr<WeightedL2MatrixOperator<WeightFunctionType,
-                                                                 RangeSpaceType,
-                                                                 MatrixType,
-                                                                 GridLayerType,
-                                                                 SourceSpaceType>>>::type
+typename std::enable_if<
+    XT::Functions::is_localizable_function<WeightFunctionType>::value && XT::LA::is_matrix<MatrixType>::value
+        && is_space<RangeSpaceType>::value && is_space<SourceSpaceType>::value
+        && XT::Grid::is_layer<GridLayerType>::value,
+    std::unique_ptr<
+        WeightedL2MatrixOperator<WeightFunctionType, RangeSpaceType, MatrixType, GridLayerType, SourceSpaceType>>>::type
 make_weighted_l2_matrix_operator(const WeightFunctionType& weight,
                                  MatrixType& matrix,
                                  const RangeSpaceType& range_space,
@@ -287,11 +271,8 @@ make_weighted_l2_matrix_operator(const WeightFunctionType& weight,
                                  const GridLayerType& grid_layer,
                                  const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::make_unique<WeightedL2MatrixOperator<WeightFunctionType,
-                                                                RangeSpaceType,
-                                                                MatrixType,
-                                                                GridLayerType,
-                                                                SourceSpaceType>>(
+  return Dune::XT::Common::make_unique<
+      WeightedL2MatrixOperator<WeightFunctionType, RangeSpaceType, MatrixType, GridLayerType, SourceSpaceType>>(
       over_integrate, weight, matrix, range_space, source_space, grid_layer);
 }
 
@@ -323,7 +304,7 @@ public:
 
 template <class WeightFunctionType, class GridLayerType, class Field>
 class WeightedL2Operator
-    : public OperatorInterface<internal::WeightedL2OperatorTraits<WeightFunctionType, GridLayerType, Field>>
+  : public OperatorInterface<internal::WeightedL2OperatorTraits<WeightFunctionType, GridLayerType, Field>>
 {
   typedef OperatorInterface<internal::WeightedL2OperatorTraits<WeightFunctionType, GridLayerType, Field>> BaseType;
 
@@ -334,8 +315,7 @@ public:
     : weight_(weight)
     , grid_layer_(grid_layer)
     , over_integrate_(over_integrate)
-  {
-  }
+  {}
 
   template <class SourceSpaceType, class VectorType, class RangeSpaceType>
   void apply(const DiscreteFunction<SourceSpaceType, VectorType>& source,
@@ -391,18 +371,17 @@ private:
 // ///////////////////////// //
 
 template <class GridLayerType, class WeightFunctionType>
-typename std::enable_if<XT::Functions::is_localizable_function<WeightFunctionType>::value
-                            && XT::Grid::is_layer<GridLayerType>::value,
-                        std::unique_ptr<WeightedL2Operator<WeightFunctionType,
-                                                           GridLayerType,
-                                                           typename WeightFunctionType::RangeFieldType>>>::type
+typename std::enable_if<
+    XT::Functions::is_localizable_function<WeightFunctionType>::value && XT::Grid::is_layer<GridLayerType>::value,
+    std::unique_ptr<
+        WeightedL2Operator<WeightFunctionType, GridLayerType, typename WeightFunctionType::RangeFieldType>>>::type
 make_weighted_l2_operator(const GridLayerType& grid_layer,
                           const WeightFunctionType& weight,
                           const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::
-      make_unique<WeightedL2Operator<WeightFunctionType, GridLayerType, typename WeightFunctionType::RangeFieldType>>(
-          weight, grid_layer, over_integrate);
+  return Dune::XT::Common::make_unique<
+      WeightedL2Operator<WeightFunctionType, GridLayerType, typename WeightFunctionType::RangeFieldType>>(
+      weight, grid_layer, over_integrate);
 }
 
 
