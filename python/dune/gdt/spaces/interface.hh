@@ -94,14 +94,14 @@ struct space_name<CgSpaceProvider<G, layer, backend, p, double, r, rC, g>>
 {
   static std::string value()
   {
-    return space_type_name<SpaceType::cg>::value() + "_"
+    return spacetype_names[SpaceType::cg] + "_"
            + internal::space_name_base<G, layer, backend, r, rC, g>::value() + "_p" + XT::Common::to_string(p)
            + "_space";
   }
 
   static std::string value_wo_grid()
   {
-    return space_type_name<SpaceType::cg>::value() + "_"
+    return spacetype_names[SpaceType::cg] + "_"
            + internal::space_name_base<G, layer, backend, r, rC, g>::value_wo_grid() + "_p" + XT::Common::to_string(p)
            + "_space";
   }
@@ -112,14 +112,14 @@ struct space_name<BlockCgSpaceProvider<G, layer, backend, p, double, r, rC, g>>
 {
   static std::string value()
   {
-    return space_type_name<SpaceType::block_cg>::value() + "_"
+    return spacetype_names[SpaceType::block_cg] + "_"
            + internal::space_name_base<G, layer, backend, r, rC, g>::value() + "_p" + XT::Common::to_string(p)
            + "_space";
   }
 
   static std::string value_wo_grid()
   {
-    return space_type_name<SpaceType::block_cg>::value() + "_"
+    return spacetype_names[SpaceType::block_cg] + "_"
            + internal::space_name_base<G, layer, backend, r, rC, g>::value_wo_grid() + "_p" + XT::Common::to_string(p)
            + "_space";
   }
@@ -130,14 +130,14 @@ struct space_name<DgSpaceProvider<G, layer, backend, p, double, r, rC, g>>
 {
   static std::string value()
   {
-    return space_type_name<SpaceType::dg>::value() + "_"
+    return spacetype_names[SpaceType::dg] + "_"
            + internal::space_name_base<G, layer, backend, r, rC, g>::value() + "_p" + XT::Common::to_string(p)
            + "_space";
   }
 
   static std::string value_wo_grid()
   {
-    return space_type_name<SpaceType::dg>::value() + "_"
+    return spacetype_names[SpaceType::dg] + "_"
            + internal::space_name_base<G, layer, backend, r, rC, g>::value_wo_grid() + "_p" + XT::Common::to_string(p)
            + "_space";
   }
@@ -148,14 +148,14 @@ struct space_name<BlockDgSpaceProvider<G, layer, backend, p, double, r, rC, g>>
 {
   static std::string value()
   {
-    return space_type_name<SpaceType::block_dg>::value() + "_"
+    return spacetype_names[SpaceType::block_dg] + "_"
            + internal::space_name_base<G, layer, backend, r, rC, g>::value() + "_p" + XT::Common::to_string(p)
            + "_space";
   }
 
   static std::string value_wo_grid()
   {
-    return space_type_name<SpaceType::block_dg>::value() + "_"
+    return spacetype_names[SpaceType::block_dg] + "_"
            + internal::space_name_base<G, layer, backend, r, rC, g>::value_wo_grid() + "_p" + XT::Common::to_string(p)
            + "_space";
   }
@@ -166,13 +166,13 @@ struct space_name<FvSpaceProvider<G, layer, backend, double, r, rC, g>>
 {
   static std::string value()
   {
-    return space_type_name<SpaceType::fv>::value() + "_"
+    return spacetype_names[SpaceType::fv] + "_"
            + internal::space_name_base<G, layer, backend, r, rC, g>::value() + "_space";
   }
 
   static std::string value_wo_grid()
   {
-    return space_type_name<SpaceType::fv>::value() + "_"
+    return spacetype_names[SpaceType::fv] + "_"
            + internal::space_name_base<G, layer, backend, r, rC, g>::value_wo_grid() + "_space";
   }
 };
@@ -182,13 +182,13 @@ struct space_name<BlockFvSpaceProvider<G, layer, backend, double, r, rC, g>>
 {
   static std::string value()
   {
-    return space_type_name<SpaceType::block_fv>::value() + "_"
+    return spacetype_names[SpaceType::block_fv] + "_"
            + internal::space_name_base<G, layer, backend, r, rC, g>::value() + "_space";
   }
 
   static std::string value_wo_grid()
   {
-    return space_type_name<SpaceType::block_fv>::value() + "_"
+    return spacetype_names[SpaceType::block_fv] + "_"
            + internal::space_name_base<G, layer, backend, r, rC, g>::value_wo_grid() + "_space";
   }
 };
@@ -198,14 +198,14 @@ struct space_name<RtSpaceProvider<G, layer, backend, p, double, r, rC, g>>
 {
   static std::string value()
   {
-    return space_type_name<SpaceType::rt>::value() + "_"
+    return spacetype_names[SpaceType::rt] + "_"
            + internal::space_name_base<G, layer, backend, r, rC, g>::value() + "_p" + XT::Common::to_string(p)
            + "_space";
   }
 
   static std::string value_wo_grid()
   {
-    return space_type_name<SpaceType::rt>::value() + "_"
+    return spacetype_names[SpaceType::rt] + "_"
            + internal::space_name_base<G, layer, backend, r, rC, g>::value_wo_grid() + "_p" + XT::Common::to_string(p)
            + "_space";
   }
@@ -216,14 +216,14 @@ struct space_name<BlockRtSpaceProvider<G, layer, backend, p, double, r, rC, g>>
 {
   static std::string value()
   {
-    return space_type_name<SpaceType::block_rt>::value() + "_"
+    return spacetype_names[SpaceType::block_rt] + "_"
            + internal::space_name_base<G, layer, backend, r, rC, g>::value() + "_p" + XT::Common::to_string(p)
            + "_space";
   }
 
   static std::string value_wo_grid()
   {
-    return space_type_name<SpaceType::block_rt>::value() + "_"
+    return spacetype_names[SpaceType::block_rt] + "_"
            + internal::space_name_base<G, layer, backend, r, rC, g>::value_wo_grid() + "_p" + XT::Common::to_string(p)
            + "_space";
   }
@@ -242,13 +242,13 @@ struct space_name<SpaceProvider<G, l, tp, b, p, R, r, rC, g>>
 {
   static std::string value()
   {
-    return space_type_name<tp>::value() + "_" + internal::space_name_base<G, l, b, r, rC, g>::value() + "_p"
+    return spacetype_names[tp] + "_" + internal::space_name_base<G, l, b, r, rC, g>::value() + "_p"
            + XT::Common::to_string(p) + "_space";
   }
 
   static std::string value_wo_grid()
   {
-    return space_type_name<tp>::value() + "_" + internal::space_name_base<G, l, b, r, rC, g>::value_wo_grid() + "_p"
+    return spacetype_names[tp] + "_" + internal::space_name_base<G, l, b, r, rC, g>::value_wo_grid() + "_p"
            + XT::Common::to_string(p) + "_space";
   }
 };
@@ -318,7 +318,7 @@ class SpaceInterface
     {
       namespace py = pybind11;
       using namespace pybind11::literals;
-      const std::string factory_method_name = "make_" + space_name<SP>::value_wo_grid();
+      const std::string factory_method_name = "make_" + space_name<SP>::value();
 
       m.def(factory_method_name.c_str(),
             [](XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& grid_provider, int level) {
@@ -337,7 +337,7 @@ class SpaceInterface
     {
       namespace py = pybind11;
       using namespace pybind11::literals;
-      const std::string factory_method_name = "make_" + space_name<SP>::value_wo_grid();
+      const std::string factory_method_name = "make_" + space_name<SP>::value();
 
       m.def(factory_method_name.c_str(),
             [](XT::Grid::GridProvider<G, XT::Grid::none_t>& grid_provider, int level) {

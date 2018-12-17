@@ -88,8 +88,8 @@ private:
       const std::string method_name =
           "make_local_elliptic_" + LocalEllipticIpdgIntegrands::method_name<method>::value()
           + "_inner_integral_operator_" + to_string(size_t(S::dimRange)) + "x" + to_string(size_t(S::dimRangeCols))
-          + "_p" + to_string(int(S::polOrder)) + "_" + space_type_name<SP::space_type>::value() + "_"
-          + backend_name<SP::space_backend>::value() + "_space" + intersection_postfix<>::value();
+          + "_p" + to_string(int(S::polOrder)) + "_" + spacetype_names[SP::space_type] + "_"
+          + backend_names[SP::space_backend] + "_space" + intersection_postfix<>::value();
 
       m.def(method_name.c_str(),
             [](const DF& diffusion_factor, const DT& diffusion_tensor, const size_t over_integrate) {
@@ -114,8 +114,8 @@ private:
       const std::string method_name =
           "make_local_elliptic_" + LocalEllipticIpdgIntegrands::method_name<method>::value()
           + "_inner_integral_operator_" + to_string(size_t(S::dimRange)) + "x" + to_string(size_t(S::dimRangeCols))
-          + "_p" + to_string(int(S::polOrder)) + "_" + space_type_name<SP::space_type>::value() + "_"
-          + backend_name<SP::space_backend>::value() + "_space" + intersection_postfix<>::value();
+          + "_p" + to_string(int(S::polOrder)) + "_" + spacetype_names[SP::space_type] + "_"
+          + backend_names[SP::space_backend] + "_space" + intersection_postfix<>::value();
 
       m.def(method_name.c_str(),
             [](const DF& diffusion, const size_t over_integrate) { return type(over_integrate, diffusion); },
@@ -161,9 +161,9 @@ public:
           + "_p"
           + to_string(int(S::polOrder))
           + "_"
-          + space_type_name<SP::space_type>::value()
+          + spacetype_names[SP::space_type]
           + "_"
-          + backend_name<SP::space_backend>::value()
+          + backend_names[SP::space_backend]
           + "_space"
           + intersection_postfix<>::value());
       py::class_<InterfaceType>(mod, InterfaceName.c_str(), InterfaceName.c_str());
@@ -182,9 +182,9 @@ public:
                                   + "_p"
                                   + to_string(int(S::polOrder))
                                   + "_"
-                                  + space_type_name<SP::space_type>::value()
+                                  + spacetype_names[SP::space_type]
                                   + "_"
-                                  + backend_name<SP::space_backend>::value()
+                                  + backend_names[SP::space_backend]
                                   + "_space"
                                   + intersection_postfix<>::value());
 
@@ -253,8 +253,8 @@ private:
       const std::string method_name =
           "make_local_elliptic_" + LocalEllipticIpdgIntegrands::method_name<method>::value()
           + "_boundary_integral_operator_" + to_string(size_t(S::dimRange)) + "x" + to_string(size_t(S::dimRangeCols))
-          + "_p" + to_string(int(S::polOrder)) + "_" + space_type_name<SP::space_type>::value() + "_"
-          + backend_name<SP::space_backend>::value() + "_space" + intersection_postfix<>::value();
+          + "_p" + to_string(int(S::polOrder)) + "_" + spacetype_names[SP::space_type] + "_"
+          + backend_names[SP::space_backend] + "_space" + intersection_postfix<>::value();
 
       m.def(method_name.c_str(),
             [](const DF& diffusion_factor, const DT& diffusion_tensor, const size_t over_integrate) {
@@ -279,8 +279,8 @@ private:
       const std::string method_name =
           "make_local_elliptic_" + LocalEllipticIpdgIntegrands::method_name<method>::value()
           + "_boundary_integral_operator_" + to_string(size_t(S::dimRange)) + "x" + to_string(size_t(S::dimRangeCols))
-          + "_p" + to_string(int(S::polOrder)) + "_" + space_type_name<SP::space_type>::value() + "_"
-          + backend_name<SP::space_backend>::value() + "_space" + intersection_postfix<>::value();
+          + "_p" + to_string(int(S::polOrder)) + "_" + spacetype_names[SP::space_type] + "_"
+          + backend_names[SP::space_backend] + "_space" + intersection_postfix<>::value();
 
       m.def(method_name.c_str(),
             [](const DF& diffusion, const size_t over_integrate) { return type(over_integrate, diffusion); },
@@ -326,9 +326,9 @@ public:
           + "_p"
           + to_string(int(S::polOrder))
           + "_"
-          + space_type_name<SP::space_type>::value()
+          + spacetype_names[SP::space_type]
           + "_"
-          + backend_name<SP::space_backend>::value()
+          + backend_names[SP::space_backend]
           + "_space"
           + intersection_postfix<>::value());
       py::class_<InterfaceType>(mod, InterfaceName.c_str(), InterfaceName.c_str());
@@ -347,9 +347,9 @@ public:
                                   + "_p"
                                   + to_string(int(S::polOrder))
                                   + "_"
-                                  + space_type_name<SP::space_type>::value()
+                                  + spacetype_names[SP::space_type]
                                   + "_"
-                                  + backend_name<SP::space_backend>::value()
+                                  + backend_names[SP::space_backend]
                                   + "_space"
                                   + intersection_postfix<>::value());
 
