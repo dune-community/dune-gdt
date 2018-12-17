@@ -28,7 +28,8 @@
                                                                  1>>::bind(_m)
 
 #if HAVE_DUNE_ALUGRID
-#define _DUNE_GDT_SPACES_RT_BIND_ALU_LAYER(_m, _layer) _DUNE_GDT_SPACES_RT_BIND(_m, ALU_2D_SIMPLEX_CONFORMING, _layer)
+#define _DUNE_GDT_SPACES_RT_BIND_ALU_LAYER(_m, _layer) _DUNE_GDT_SPACES_RT_BIND(_m, ALU_2D_SIMPLEX_CONFORMING, _layer); \
+_DUNE_GDT_SPACES_RT_BIND(_m, ALU_2D_SIMPLEX_NONCONFORMING, _layer)
 #define _DUNE_GDT_SPACES_RT_BIND_ALU(_m)                                                                               \
   _DUNE_GDT_SPACES_RT_BIND_ALU_LAYER(_m, leaf);                                                                        \
   _DUNE_GDT_SPACES_RT_BIND_ALU_LAYER(_m, level)

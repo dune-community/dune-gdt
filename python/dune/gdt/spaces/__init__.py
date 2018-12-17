@@ -16,3 +16,13 @@ def make_dg_space(grid_provider):
         except:
             continue
     raise TypeError('no matching dg space for {}'.format(grid_provider.__class__))
+
+
+def make_rt_space(grid_provider):
+    for factory in [globals()[s] for s in globals().keys() if s.startswith('make_rt')]:
+        try:
+            return factory(grid_provider)
+        except:
+            continue
+    raise TypeError('no matching dg space for {}'.format(grid_provider.__class__))
+

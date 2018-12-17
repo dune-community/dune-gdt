@@ -24,6 +24,7 @@
 
 #include <python/dune/gdt/spaces/interface.hh>
 #include <python/dune/gdt/shared.hh>
+#include <python/dune/gdt/spaces/rt.hh>
 #include <dune/gdt/spaces.hh>
 
 
@@ -49,5 +50,6 @@ PYBIND11_MODULE(__spaces, m)
   DUNE_GDT_SPACES_BIND(m, GDT_BINDINGS_GRID, leaf, dg, gdt, 3, 1, 1, view);
   DUNE_GDT_SPACES_BIND(m, GDT_BINDINGS_GRID, dd_subdomain, dg, gdt, 1, 1, 1, view);
   DUNE_GDT_SPACES_BIND(m, GDT_BINDINGS_GRID, leaf, rt, gdt, 0, 2, 1, view);
+//  DUNE_GDT_SPACES_RT_BIND(m);
   Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.spaces");
 }
