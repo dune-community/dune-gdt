@@ -382,7 +382,7 @@ public:
     addbind_vector<XT::LA::Backends::istl_dense>(c);
 #endif
 
-    const std::string factory_method_name = "make_block_" + space_name<SP>::value_wo_grid();
+    const std::string factory_method_name = "make_block_" + space_name<SP>::value();
     m.def(factory_method_name.c_str(),
           [](XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider) {
             const auto& dd_grid = dd_grid_provider.dd_grid();
