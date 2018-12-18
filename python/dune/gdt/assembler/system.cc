@@ -45,10 +45,12 @@ template <class _G,
           Dune::GDT::SpaceType _a_type,
           Dune::XT::Grid::Layers _a_gl,
           size_t _a_p,
-          void bind_system(pybind11::module& _m) using TestSpc =
-              Dune::GDT::SpaceProvider<_G, _t_gl, _t_type, _t_backend, _t_p, double, _t_r, 1>;
-using AnsatzSpc = Dune::GDT::SpaceProvider<_G, _a_gl, _a_type, _a_backend, _a_p, double, _a_r, 1>;
-Dune::GDT::SpaceProvider<_G, _t_gl, _t_type, _t_backend, _t_p, double, _t_r, 1>,
+          size_t _a_r>
+void bind_system(pybind11::module& _m)
+{
+  using TestSpc = Dune::GDT::SpaceProvider<_G, _t_gl, _t_type, _t_backend, _t_p, double, _t_r, 1>;
+  using AnsatzSpc = Dune::GDT::SpaceProvider<_G, _a_gl, _a_type, _a_backend, _a_p, double, _a_r, 1>;
+  Dune::GDT::bindings::SystemAssembler<TestSpc, _gl, _gl_backend, AnsatzSpc>::bind(_m);
 }
 
 template <class Tuple>
