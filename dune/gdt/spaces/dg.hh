@@ -38,10 +38,11 @@ template <class GridType,
           XT::Grid::Backends grid_backend_type = layer_from_backend<backend_type>::type>
 class DgSpaceProvider
 {
+  static_assert(backend_type == Backends::gdt, "there is no other backend");
 
 public:
   static const constexpr SpaceType space_type = SpaceType::dg;
-  static const constexpr Backends space_backend = backend_type;
+  static const constexpr Backends space_backend{Backends::gdt};
   static const constexpr XT::Grid::Layers grid_layer = layer_type;
   static const constexpr XT::Grid::Backends layer_backend = grid_backend_type;
 

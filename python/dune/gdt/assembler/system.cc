@@ -39,7 +39,7 @@ template <class _G,
           Dune::GDT::Backends _t_backend,
           Dune::GDT::SpaceType _t_type,
           Dune::XT::Grid::Layers _t_gl,
-          size_t _t_p,
+          int _t_p,
           size_t _t_r,
           Dune::GDT::Backends _a_backend,
           Dune::GDT::SpaceType _a_type,
@@ -48,8 +48,8 @@ template <class _G,
           size_t _a_r>
 void bind_system(pybind11::module& _m)
 {
-  using TestSpc = Dune::GDT::SpaceProvider<_G, _t_gl, _t_type, _t_backend, _t_p, double, _t_r, 1>;
-  using AnsatzSpc = Dune::GDT::SpaceProvider<_G, _a_gl, _a_type, _a_backend, _a_p, double, _a_r, 1>;
+  using TestSpc = Dune::GDT::SpaceProvider<_G, _t_gl, _t_type, _t_backend, _t_p, double, _t_r, 1, _gl_backend>;
+  using AnsatzSpc = Dune::GDT::SpaceProvider<_G, _a_gl, _a_type, _a_backend, _a_p, double, _a_r, 1, _gl_backend>;
   Dune::GDT::bindings::SystemAssembler<TestSpc, _gl, _gl_backend, AnsatzSpc>::bind(_m);
 }
 
@@ -72,13 +72,12 @@ void addbind_for_Grid(pybind11::module& m)
   bind_constraints<G, dd_subdomain, view, istl_sparse>(m, "dd_subdomain");
 
   bind_system<G, leaf, view, gdt, dg, leaf, 1, 1, gdt, dg, leaf, 1, 1>(m);
-  bind_system<G, leaf, view, gdt, dg, leaf, 1, 1, gdt, dg, leaf, 1, 1>(m);
   bind_system<G, leaf, view, gdt, dg, leaf, 2, 1, gdt, dg, leaf, 2, 1>(m);
   bind_system<G, leaf, view, gdt, dg, leaf, 3, 1, gdt, dg, leaf, 3, 1>(m);
   bind_system<G, dd_subdomain, view, gdt, dg, dd_subdomain, 1, 1, gdt, dg, dd_subdomain, 1, 1>(m);
   bind_system<G, dd_subdomain_boundary, view, gdt, dg, dd_subdomain, 1, 1, gdt, dg, dd_subdomain, 1, 1>(m);
   bind_system<G, dd_subdomain_coupling, view, gdt, dg, dd_subdomain, 1, 1, gdt, dg, dd_subdomain, 1, 1>(m);
-  bind_system<G, dd_subdomain_oversampled, view, gdt, dg, dd_subdomain, 1, 1, gdt, dg, dd_subdomain, 1, 1>(m);
+  //  bind_system<G, dd_subdomain_oversampled, view, gdt, dg, dd_subdomain, 1, 1, gdt, dg, dd_subdomain, 1, 1>(m);
 
   addbind_for_Grid<typename Tuple::tail_type>(m);
 } // ... addbind_for_Grid(...)
@@ -91,7 +90,6 @@ PYBIND11_MODULE(__assembler, m)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
-  Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.assembler");
 
   py::class_<Dune::GDT::bindings::ResultStorage> ResultStorage(m, "ResultStorage", "dune-gdt: ResultStorage");
   ResultStorage.def(pybind11::init<>());
@@ -100,7 +98,10 @@ PYBIND11_MODULE(__assembler, m)
       [](const Dune::GDT::bindings::ResultStorage& self) { return self.result(); },
       [](Dune::GDT::bindings::ResultStorage& self, const double& value) { self.result() = value; });
 
+  Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.assembler");
   py::module::import("dune.xt.grid.walker");
+  py::module::import("dune.gdt.__spaces");
+  py::module::import("dune.gdt.__spaces_block");
   using TP = boost::tuple<GDT_BINDINGS_GRID>;
   addbind_for_Grid<TP>(m);
 }

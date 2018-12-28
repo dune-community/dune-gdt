@@ -335,7 +335,8 @@ public:
                         space_name<TP>::value(),
                         space_name<AP>::value(),
                         XT::Grid::layer_names[grid_layer] + "_"
-                            + XT::Grid::bindings::backend_name<grid_backend>::value());
+                            + XT::Grid::bindings::backend_name<grid_backend>::value()
+                            + XT::Grid::bindings::grid_name<G>::value());
   }
 }; // class SystemAssembler
 } // namespace bindings
