@@ -12,7 +12,7 @@
 
 #if HAVE_DUNE_ALUGRID
 
-#include "block-swipdg-esv2007-2dyaspgrid.hh"
+#  include "block-swipdg-esv2007-2dyaspgrid.hh"
 
 namespace Dune {
 namespace GDT {
@@ -21,26 +21,26 @@ namespace Test {
 
 // polorder 1, conforming
 
-std::vector<double> LinearEllipticEocExpectations<LinearElliptic::ESV2007DdSubdomainsTestCase<Yasp2Grid, double, 1>,
-                                                  LinearElliptic::ChooseDiscretizer::block_ipdg,
-                                                  1>::
-    results(const LinearEllipticEocExpectations<LinearElliptic::ESV2007DdSubdomainsTestCase<Yasp2Grid, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::block_ipdg,
-                                                1>::TestCaseType&,
-            const std::string type)
+std::vector<double> LinearEllipticEocExpectations<
+    LinearElliptic::ESV2007DdSubdomainsTestCase<Yasp2Grid, double, 1>,
+    LinearElliptic::ChooseDiscretizer::block_ipdg,
+    1>::results(const LinearEllipticEocExpectations<LinearElliptic::ESV2007DdSubdomainsTestCase<Yasp2Grid, double, 1>,
+                                                    LinearElliptic::ChooseDiscretizer::block_ipdg,
+                                                    1>::TestCaseType&,
+                const std::string type)
 {
   if (type == "L2") {
-#if DXT_DISABLE_LARGE_TESTS
+#  if DXT_DISABLE_LARGE_TESTS
     return {4.62e-02, 1.13e-02};
-#else
+#  else
     return {1.13e-02, 2.90e-03, 7.41e-04, 1.88e-04};
-#endif
+#  endif
   } else if (type == "H1_semi" || type == "energy") {
-#if DXT_DISABLE_LARGE_TESTS
+#  if DXT_DISABLE_LARGE_TESTS
     return {2.56e-01, 1.25e-01};
-#else
+#  else
     return {1.25e-01, 6.25e-02, 3.14e-02, 1.58e-02};
-#endif
+#  endif
   } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;
   return {};
@@ -48,26 +48,26 @@ std::vector<double> LinearEllipticEocExpectations<LinearElliptic::ESV2007DdSubdo
 
 // polorder 2, conforming
 
-std::vector<double> LinearEllipticEocExpectations<LinearElliptic::ESV2007DdSubdomainsTestCase<Yasp2Grid, double, 1>,
-                                                  LinearElliptic::ChooseDiscretizer::block_ipdg,
-                                                  2>::
-    results(const LinearEllipticEocExpectations<LinearElliptic::ESV2007DdSubdomainsTestCase<Yasp2Grid, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::block_ipdg,
-                                                2>::TestCaseType&,
-            const std::string type)
+std::vector<double> LinearEllipticEocExpectations<
+    LinearElliptic::ESV2007DdSubdomainsTestCase<Yasp2Grid, double, 1>,
+    LinearElliptic::ChooseDiscretizer::block_ipdg,
+    2>::results(const LinearEllipticEocExpectations<LinearElliptic::ESV2007DdSubdomainsTestCase<Yasp2Grid, double, 1>,
+                                                    LinearElliptic::ChooseDiscretizer::block_ipdg,
+                                                    2>::TestCaseType&,
+                const std::string type)
 {
   if (type == "L2") {
-#if DXT_DISABLE_LARGE_TESTS
+#  if DXT_DISABLE_LARGE_TESTS
     return {5.77e-03, 8.55e-04};
-#else
+#  else
     return {8.55e-04, 1.06e-04, 1.31e-05, 1.63e-06};
-#endif
+#  endif
   } else if (type == "H1_semi" || type == "energy") {
-#if DXT_DISABLE_LARGE_TESTS
+#  if DXT_DISABLE_LARGE_TESTS
     return {5.20e-02, 1.41e-02};
-#else
+#  else
     return {1.41e-02, 3.56e-03, 8.91e-04, 2.23e-04};
-#endif
+#  endif
   } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;
   return {};

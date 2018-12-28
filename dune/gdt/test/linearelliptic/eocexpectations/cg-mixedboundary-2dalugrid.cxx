@@ -13,7 +13,7 @@
 
 #if HAVE_DUNE_ALUGRID
 
-#include "cg-mixedboundary-2dalugrid.hh"
+#  include "cg-mixedboundary-2dalugrid.hh"
 
 namespace Dune {
 namespace GDT {
@@ -30,17 +30,17 @@ LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<AluConform2d
             const std::string type)
 {
   if (type == "L2") {
-#if DXT_DISABLE_LARGE_TESTS
+#  if DXT_DISABLE_LARGE_TESTS
     return {3.83e-02, 9.80e-03};
-#else
+#  else
     return {8.31e-02, 2.22e-02, 5.52e-03, 1.19e-03};
-#endif
+#  endif
   } else if (type == "H1_semi" || type == "energy") {
-#if DXT_DISABLE_LARGE_TESTS
+#  if DXT_DISABLE_LARGE_TESTS
     return {2.00e-01, 1.08e-01};
-#else
+#  else
     return {3.11e-01, 1.64e-01, 8.23e-02, 3.75e-02};
-#endif
+#  endif
   } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;
   return {};
@@ -56,42 +56,42 @@ LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<AluSimplex2d
             const std::string type)
 {
   if (type == "L2") {
-#if DXT_DISABLE_LARGE_TESTS
+#  if DXT_DISABLE_LARGE_TESTS
     return {3.82e-02, 8.39e-03};
-#else
+#  else
     return {1.35e-01, 3.99e-02, 1.02e-02, 2.16e-03};
-#endif
+#  endif
   } else if (type == "H1_semi" || type == "energy") {
-#if DXT_DISABLE_LARGE_TESTS
+#  if DXT_DISABLE_LARGE_TESTS
     return {2.02e-01, 9.45e-02};
-#else
+#  else
     return {3.75e-01, 2.08e-01, 1.06e-01, 4.87e-02};
-#endif
+#  endif
   } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;
   return {};
 }
 
-std::vector<double> LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<AluCube2dGridType, double, 1>,
-                                                  LinearElliptic::ChooseDiscretizer::cg,
-                                                  1>::
-    results(const LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<AluCube2dGridType, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::cg,
-                                                1>::TestCaseType&,
-            const std::string type)
+std::vector<double> LinearEllipticEocExpectations<
+    LinearElliptic::MixedBoundaryTestCase<AluCube2dGridType, double, 1>,
+    LinearElliptic::ChooseDiscretizer::cg,
+    1>::results(const LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<AluCube2dGridType, double, 1>,
+                                                    LinearElliptic::ChooseDiscretizer::cg,
+                                                    1>::TestCaseType&,
+                const std::string type)
 {
   if (type == "L2") {
-#if DXT_DISABLE_LARGE_TESTS
+#  if DXT_DISABLE_LARGE_TESTS
     return {1.21e-02, 2.58e-03};
-#else
+#  else
     return {5.00e-02, 1.25e-02, 3.06e-03, 6.57e-04};
-#endif
+#  endif
   } else if (type == "H1_semi" || type == "energy") {
-#if DXT_DISABLE_LARGE_TESTS
+#  if DXT_DISABLE_LARGE_TESTS
     return {1.29e-01, 6.07e-02};
-#else
+#  else
     return {2.58e-01, 1.32e-01, 6.63e-02, 3.13e-02};
-#endif
+#  endif
   } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;
   return {};

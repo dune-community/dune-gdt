@@ -4,7 +4,7 @@ status = 1a3bcab04b011a5d6e44f9983cae6ff89fa695e8 bin (heads/master)
 	 81cfc08e7f7e78f7a7cd91ce22b88322fbb98c58 config.opts (remotes/origin/HEAD)
 	 8f2c5aba441417bf2c42f22272f538c68a89cc4a dune-alugrid (remotes/origin/releases/2.5)
 	 707acf201d5a754c80f87cc4d71aa36bf29a6e3f dune-common (v2.5.1-9-g707acf20)
-	+ff213efbfff37c9ec9ea2f6dade60569874483da dune-gdt (heads/rene/parabolic-lrbms-2017)
+	+1460e61b55df66c280c20b301637c451ead9270f dune-gdt (heads/rene/parabolic-lrbms-2017)
 	 6bd2463d53617b8c0c0f11a485277a32e9c8e98a dune-geometry (v2.5.2)
 	 d7b20bbc5f6fdcfc312beb0ea5d16d39ea26904e dune-grid (v2.5.1-2-gd7b20bbc5)
 	 e9d9a3336735090648637e044e279866bbea3597 dune-grid-glue (v2.4.0-60-ge9d9a33)
@@ -14,7 +14,7 @@ status = 1a3bcab04b011a5d6e44f9983cae6ff89fa695e8 bin (heads/master)
 	 741e4f8e53bdd3e1b6e19d84eb22b6e3dc48526c dune-python (remotes/origin/releases/2.5)
 	 26cc8cb4161a3a51002ab2a81b8c81d2c951ee79 dune-testtools (heads/dune_xt)
 	 8fe883e99c58c9f0c2f92457d546a0ac9f5a9bf9 dune-uggrid (v2.5.2-1-g8fe883e9)
-	+b51f64e58b994cb48928e4a535fd8fc30edc452d dune-xt-common (heads/rene/parabolic-lrbms-2017)
+	+d79600dbc25e5c7e3b5c0965efcddcda5472ad4a dune-xt-common (heads/rene/parabolic-lrbms-2017)
 	 e69fd76a2344e7ed99858ff9cb0988437c439b5a dune-xt-data (heads/rene/parabolic-lrbms-2017)
 	+69cb0d2f8807aa1c95aef918a15527d2f2e66de7 dune-xt-functions (heads/rene/parabolic-lrbms-2017)
 	+12bfae514cf00fbf89fae6a765c0fb09020c531c dune-xt-grid (heads/rene/parabolic-lrbms-2017)
@@ -48,7 +48,7 @@ commit = 707acf201d5a754c80f87cc4d71aa36bf29a6e3f
 [submodule.dune-gdt]
 remote = https://github.com/dune-community/dune-gdt.git
 status = c0b1735fab0ecbd4bb4f1eaa27cb65fe813e98f0 .vcsetup (heads/master)
-commit = ff213efbfff37c9ec9ea2f6dade60569874483da
+commit = 1460e61b55df66c280c20b301637c451ead9270f
 
 [submodule.dune-geometry]
 remote = https://github.com/dune-mirrors/dune-geometry.git
@@ -98,7 +98,7 @@ commit = 8fe883e99c58c9f0c2f92457d546a0ac9f5a9bf9
 [submodule.dune-xt-common]
 remote = https://github.com/dune-community/dune-xt-common.git
 status = 2424627f0ad5de7e4aaa5e7f48bc2a02414d95a1 .vcsetup (heads/master)
-commit = b51f64e58b994cb48928e4a535fd8fc30edc452d
+commit = d79600dbc25e5c7e3b5c0965efcddcda5472ad4a
 
 [submodule.dune-xt-data]
 remote = https://github.com/dune-community/dune-xt-data
