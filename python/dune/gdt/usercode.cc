@@ -9,8 +9,6 @@
 
 #include "config.h"
 
-#include <dune/xt/common/fix-ambiguous-std-math-overloads.hh>
-
 #include <dune/pybindxi/pybind11.h>
 #include <dune/pybindxi/stl.h>
 #include <python/dune/xt/common/bindings.hh>
@@ -27,6 +25,7 @@
 #include <dune/xt/functions/interfaces/function.hh>
 
 #include <dune/gdt/functionals/vector-based.hh>
+#include <dune/gdt/interpolations.hh>
 #include <dune/gdt/local/bilinear-forms/integrals.hh>
 #include <dune/gdt/local/functionals/integrals.hh>
 #include <dune/gdt/local/integrands/conversion.hh>
@@ -883,6 +882,40 @@ PYBIND11_PLUGIN(usercode)
         py::call_guard<py::gil_scoped_release>(),
         "matrix"_a,
         "prune"_a = 1e-15);
+
+  m.def("compute_partition_of_unity",
+        [](DomainDecomposition& domain_decomposition, const size_t ss, const std::string space_type) {
+          const auto& coarse_grid_view = domain_decomposition.dd_grid.macro_grid_view();
+          auto coarse_space = make_discontinuous_lagrange_space(coarse_grid_view, /*order=*/1);
+          auto coarse_basis = coarse_space.basis().localize();
+          std::vector<XT::LA::CommonDenseVector<double>> interpolated_basis;
+          for (auto&& macro_element : elements(coarse_grid_view)) {
+            if (domain_decomposition.dd_grid.subdomain(macro_element) == ss) {
+              // this is the subdomain we are interested in, create space
+              auto subdomain_grid_view = domain_decomposition.dd_grid.local_grid(macro_element).leaf_view();
+              auto subdomain_space = make_subdomain_space(subdomain_grid_view, space_type);
+              coarse_basis->bind(macro_element);
+              for (size_t ii = 0; ii < coarse_basis->size(); ++ii)
+                interpolated_basis.push_back(interpolate<XT::LA::CommonDenseVector<double>>(
+                                                 coarse_basis->order(),
+                                                 [&](const auto& point_in_physical_coordinates, const auto&) {
+                                                   const auto point_macro_reference_element =
+                                                       macro_element.geometry().local(point_in_physical_coordinates);
+                                                   return coarse_basis->evaluate_set(point_macro_reference_element)[ii];
+                                                 },
+                                                 *subdomain_space)
+                                                 .dofs()
+                                                 .vector());
+              break;
+            }
+          }
+          DUNE_THROW_IF(interpolated_basis.size() == 0, InvalidStateException, "This should not happen, ss = " << ss);
+          return interpolated_basis;
+        },
+        py::call_guard<py::gil_scoped_release>(),
+        "domain_decomposition"_a,
+        "ss"_a,
+        "space_type"_a = "discontinuous_lagrange");
 
   Dune::XT::Common::bindings::add_initialization(m, "dune.gdt");
   return m.ptr();
