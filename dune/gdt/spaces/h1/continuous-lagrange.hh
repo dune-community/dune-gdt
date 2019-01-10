@@ -11,6 +11,11 @@
 #ifndef DUNE_GDT_SPACES_H1_CONTINUOUS_LAGRANGE_HH
 #define DUNE_GDT_SPACES_H1_CONTINUOUS_LAGRANGE_HH
 
+// see https://github.com/dune-community/dune-gdt/issues/144
+#ifndef DUNE_GDT_SPACES_H1_CONTINUOUS_LAGRANGE_IGNORE_FAILING_ALUGRID
+#  define DUNE_GDT_SPACES_H1_CONTINUOUS_LAGRANGE_IGNORE_FAILING_ALUGRID 0
+#endif
+
 #include <memory>
 #include <vector>
 
@@ -21,6 +26,7 @@
 #include <dune/grid/common/gridview.hh>
 
 #include <dune/xt/common/exceptions.hh>
+#include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/local/finite-elements/lagrange.hh>
 #include <dune/gdt/spaces/basis/default.hh>
@@ -71,6 +77,13 @@ public:
     , mapper_(nullptr)
     , basis_(nullptr)
   {
+#if !DUNE_GDT_SPACES_H1_CONTINUOUS_LAGRANGE_IGNORE_FAILING_ALUGRID
+    // see https://github.com/dune-community/dune-gdt/issues/144
+    DUNE_THROW_IF(XT::Grid::is_alugrid<typename GridViewType::Grid>::value && order > 1,
+                  Exceptions::space_error,
+                  "Higher order CG spaces do not work with alugrid atm, see "
+                  "https://github.com/dune-community/dune-gdt/issues/144!");
+#endif
     // create finite elements
     for (auto&& geometry_type : grid_view_.indexSet().types(0))
       finite_elements_->insert(
