@@ -131,9 +131,10 @@ prolong(const DiscreteFunction<V, SGV, r, rC, SR>& source,
  *        suitable target_function with same VectorType as source, uses target.space().grid_view() as
  *        prolongation_grid_view].
  */
-template <class V, class SGV, size_t r, size_t rC, class SR, class TGV, class TR>
-DiscreteFunction<V, TGV, r, rC, TR> prolong(const DiscreteFunction<V, SGV, r, rC, SR>& source,
-                                            const SpaceInterface<TGV, r, rC, TR>& target_space)
+// we require the enable_if for disambigouation with a variant above
+template <class SGV, class V, size_t r, size_t rC, class SR, class TGV, class TR>
+std::enable_if_t<!XT::LA::is_vector<SGV>::value, DiscreteFunction<V, TGV, r, rC, TR>>
+prolong(const DiscreteFunction<V, SGV, r, rC, SR>& source, const SpaceInterface<TGV, r, rC, TR>& target_space)
 {
   auto target_function = make_discrete_function<V>(target_space);
   prolong(source, target_function);
