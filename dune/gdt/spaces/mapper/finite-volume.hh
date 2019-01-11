@@ -40,16 +40,7 @@ public:
   using typename BaseType::D;
 
 private:
-  template <int>
-  struct Codim0EntityFilter
-  {
-    bool contains(const GeometryType& gt) const
-    {
-      return gt.dim() == d;
-    }
-  };
-
-  using Implementation = MultipleCodimMultipleGeomTypeMapper<GV, Codim0EntityFilter>;
+  using Implementation = MultipleCodimMultipleGeomTypeMapper<GV>;
   using FiniteElement = LocalFiniteElementInterface<D, d, double, r, rC>;
 
 public:
