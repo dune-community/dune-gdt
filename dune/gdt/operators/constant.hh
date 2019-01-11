@@ -11,6 +11,7 @@
 #ifndef DUNE_GDT_OPERATORS_CONSTANT_HH
 #define DUNE_GDT_OPERATORS_CONSTANT_HH
 
+#include <dune/xt/common/memory.hh>
 #include <dune/xt/la/container.hh>
 #include <dune/xt/la/type_traits.hh>
 
@@ -46,6 +47,12 @@ public:
     , value_(val)
   {}
 
+  ConstantOperator(const SourceSpaceType& src_space, const RangeSpaceType& rng_space, VectorType*&& val)
+    : source_space_(src_space)
+    , range_space_(rng_space)
+    , value_(std::move(val))
+  {}
+
   const SourceSpaceType& source_space() const override final
   {
     return source_space_;
@@ -68,15 +75,15 @@ public:
   {
     DUNE_THROW_IF(!source_space_.contains(source), Exceptions::operator_error, "");
     DUNE_THROW_IF(!range_space_.contains(range), Exceptions::operator_error, "");
-    DUNE_THROW_IF(!range_space_.contains(value_), Exceptions::operator_error, "");
-    range = value_;
+    DUNE_THROW_IF(!range_space_.contains(value_.access()), Exceptions::operator_error, "");
+    range = value_.access();
   }
 
   VectorType apply(const VectorType& source, const XT::Common::Parameter& /*param*/ = {}) const override final
   {
     DUNE_THROW_IF(!source_space_.contains(source), Exceptions::operator_error, "");
-    DUNE_THROW_IF(!range_space_.contains(value_), Exceptions::operator_error, "");
-    return value_;
+    DUNE_THROW_IF(!range_space_.contains(value_.access()), Exceptions::operator_error, "");
+    return value_.access();
   }
 
   std::vector<std::string> jacobian_options() const override final
@@ -110,7 +117,7 @@ public:
 private:
   const SourceSpaceType& source_space_;
   const RangeSpaceType& range_space_;
-  const VectorType& value_;
+  const XT::Common::ConstStorageProvider<VectorType> value_;
 }; // class ConstantOperator
 
 
