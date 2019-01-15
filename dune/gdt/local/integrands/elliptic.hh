@@ -15,6 +15,9 @@
 #define DUNE_GDT_LOCAL_INTEGRANDS_ELLIPTIC_HH
 
 #include <dune/xt/common/memory.hh>
+#include <dune/xt/la/container/eye-matrix.hh>
+#include <dune/xt/functions/base/function-as-grid-function.hh>
+#include <dune/xt/functions/constant.hh>
 #include <dune/xt/functions/interfaces/grid-function.hh>
 
 #include "interfaces.hh"
@@ -43,20 +46,41 @@ public:
   using DiffusionFactorType = XT::Functions::GridFunctionInterface<E, 1, 1, F>;
   using DiffusionTensorType = XT::Functions::GridFunctionInterface<E, d, d, F>;
 
+  LocalEllipticIntegrand(
+      const F& diffusion_factor = F(1),
+      const XT::Common::FieldMatrix<F, d, d>& diffusion_tensor = XT::LA::eye_matrix<FieldMatrix<F, d, d>>(d, d))
+    : BaseType()
+    , diffusion_factor_(new XT::Functions::FunctionAsGridFunctionWrapper<E, 1, 1, F>(
+          new XT::Functions::ConstantFunction<d, 1, 1, F>(diffusion_factor)))
+    , diffusion_tensor_(new XT::Functions::FunctionAsGridFunctionWrapper<E, d, d, F>(
+          new XT::Functions::ConstantFunction<d, d, d, F>(diffusion_tensor)))
+    , local_diffusion_factor_(diffusion_factor_.access().local_function())
+    , local_diffusion_tensor_(diffusion_tensor_.access().local_function())
+  {}
+
+  LocalEllipticIntegrand(const XT::Functions::FunctionInterface<d, 1, 1, F>& diffusion_factor,
+                         const XT::Functions::FunctionInterface<d, d, d, F>& diffusion_tensor)
+    : BaseType(diffusion_factor.parameter_type() + diffusion_tensor.parameter_type())
+    , diffusion_factor_(new XT::Functions::FunctionAsGridFunctionWrapper<E, 1, 1, F>(diffusion_factor))
+    , diffusion_tensor_(new XT::Functions::FunctionAsGridFunctionWrapper<E, d, d, F>(diffusion_tensor))
+    , local_diffusion_factor_(diffusion_factor_.access().local_function())
+    , local_diffusion_tensor_(diffusion_tensor_.access().local_function())
+  {}
+
   LocalEllipticIntegrand(const DiffusionFactorType& diffusion_factor, const DiffusionTensorType& diffusion_tensor)
     : BaseType(diffusion_factor.parameter_type() + diffusion_tensor.parameter_type())
     , diffusion_factor_(diffusion_factor)
     , diffusion_tensor_(diffusion_tensor)
-    , local_diffusion_factor_(diffusion_factor_.local_function())
-    , local_diffusion_tensor_(diffusion_tensor_.local_function())
+    , local_diffusion_factor_(diffusion_factor_.access().local_function())
+    , local_diffusion_tensor_(diffusion_tensor_.access().local_function())
   {}
 
   LocalEllipticIntegrand(const ThisType& other)
     : BaseType(other.parameter_type())
     , diffusion_factor_(other.diffusion_factor_)
     , diffusion_tensor_(other.diffusion_tensor_)
-    , local_diffusion_factor_(diffusion_factor_.local_function())
-    , local_diffusion_tensor_(diffusion_tensor_.local_function())
+    , local_diffusion_factor_(diffusion_factor_.access().local_function())
+    , local_diffusion_tensor_(diffusion_tensor_.access().local_function())
   {}
 
   LocalEllipticIntegrand(ThisType&& source) = default;
@@ -107,8 +131,8 @@ public:
   } // ... evaluate(...)
 
 private:
-  const DiffusionFactorType& diffusion_factor_; // These are just required ...
-  const DiffusionTensorType& diffusion_tensor_; //                         ... for the copy ctor atm.
+  const XT::Common::ConstStorageProvider<DiffusionFactorType> diffusion_factor_;
+  const XT::Common::ConstStorageProvider<DiffusionTensorType> diffusion_tensor_;
   std::unique_ptr<typename DiffusionFactorType::LocalFunctionType> local_diffusion_factor_;
   std::unique_ptr<typename DiffusionTensorType::LocalFunctionType> local_diffusion_tensor_;
   mutable std::vector<typename LocalTestBasisType::DerivativeRangeType> test_basis_grads_;
