@@ -75,7 +75,10 @@ struct ContinuousLagrangeSpaceTest
     }
     if (this->space->max_polorder() > 1
         && std::string(::testing::UnitTest::GetInstance()->current_test_info()->type_param()).substr(0, 13)
-               == "Dune::ALUGrid") {
+               == "Dune::ALUGrid"
+        && std::string(::testing::UnitTest::GetInstance()->current_test_info()->type_param())
+                   .find("(Dune::ALUGridElementType)0")
+               != std::string::npos) {
       EXPECT_NE(global_lagrange_point_to_global_indices_map.size(), global_DoF_indices.size())
           << "This could be a good thing! If these are the same the following issue might be resolved: "
              "https://github.com/dune-community/dune-gdt/issues/144!";
