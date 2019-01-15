@@ -53,7 +53,7 @@ class LocalFiniteElementInterpolationLagrangepointsAccessor
     {
       const auto lps = imp.lagrangePoints();
       std::vector<DomainType> ret(lps.size());
-      for (size_t ii = 0; ii < lps.size(); ++ii)
+      for (unsigned int ii = 0; ii < lps.size(); ++ii)
         ret[ii] = lps[ii].point();
       return ret;
     }

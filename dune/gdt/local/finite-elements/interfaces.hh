@@ -207,7 +207,8 @@ for (size_t codim = 0; codim < codim_to_subentity_index_to_key_indices_map.size(
                         << "codim = " << codim);
     // pepare
     const auto& reference_element = ReferenceElements<D, d>::general(geometry_type());
-    std::vector<std::vector<size_t>> subentity_index_to_key_indices_map(reference_element.size(codim));
+    std::vector<std::vector<size_t>> subentity_index_to_key_indices_map(
+        reference_element.size(XT::Common::numeric_cast<int>(codim)));
     // fill
     for (size_t ii = 0; ii < size(); ++ii) {
       const auto& key = local_key(ii);

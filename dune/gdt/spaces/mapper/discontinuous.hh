@@ -58,7 +58,7 @@ public:
                       const std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElement>>>& finite_elements)
     : grid_view_(grd_vw)
     , finite_elements_(finite_elements)
-    , mapper_(new Implementation(grid_view_))
+    , mapper_(new Implementation(grid_view_, mcmgElementLayout()))
     , offset_(new std::vector<size_t>(mapper_->size()))
     , max_num_dofs_(0)
     , size_(0)

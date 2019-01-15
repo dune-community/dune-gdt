@@ -58,7 +58,7 @@ public:
 
   FiniteVolumeMapper(const GridViewType& grd_vw)
     : grid_view_(grd_vw)
-    , mapper_(new Implementation(grid_view_))
+    , mapper_(new Implementation(grid_view_, mcmgElementLayout()))
     , finite_elements_(new std::map<GeometryType, std::shared_ptr<FiniteElement>>())
   {
     // create finite elements (we only need the coefficients)

@@ -247,7 +247,9 @@ public:
         const auto codim = unpowered_local_key.codim();
         const auto num_unpowered_indices = unpowered_indices[codim][sub_entity].size();
         local_keys_[pp * unpowered_sz + ii] =
-            LocalKey(sub_entity, codim, (pp * num_unpowered_indices) + unpowered_local_key.index());
+            LocalKey(sub_entity,
+                     codim,
+                     XT::Common::numeric_cast<unsigned int>(pp * num_unpowered_indices + unpowered_local_key.index()));
       }
   } // LocalPowerFiniteElementCoefficients(...)
 
