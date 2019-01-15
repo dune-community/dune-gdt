@@ -141,44 +141,35 @@ public:
     }
   } // ... apply_inverse(...)
 
-  //  std::vector<std::string> jacobian_options() const override
-  //  {
-  //    return {"direct"};
-  //  }
+  std::vector<std::string> jacobian_options() const override
+  {
+    return {"self"};
+  }
 
-  //  XT::Common::Configuration jacobian_options(const std::string& type) const override
-  //  {
-  //    DUNE_THROW_IF(type != jacobian_options().at(0),
-  //                  Exceptions::operator_error,
-  //                  "requested jacobian type is not one of the available ones!\n\n"
-  //                      << "type = "
-  //                      << type
-  //                      << "\njacobian_options() = "
-  //                      << jacobian_options());
-  //    return {{"type", jacobian_options().at(0)}};
-  //  } // ... jacobian_options(...)
+  XT::Common::Configuration jacobian_options(const std::string& type) const override
+  {
+    DUNE_THROW_IF(type != jacobian_options().at(0),
+                  Exceptions::operator_error,
+                  "requested jacobian type is not one of the available ones!\n\n"
+                      << "type = " << type << "\njacobian_options() = " << jacobian_options());
+    return {{"type", jacobian_options().at(0)}};
+  } // ... jacobian_options(...)
 
   using BaseType::jacobian;
 
   void jacobian(const VectorType& /*source*/,
-                MatrixOperatorType& /*jacobian_op*/,
-                const XT::Common::Configuration& /*opts*/,
+                MatrixOperatorType& jacobian_op,
+                const XT::Common::Configuration& opts,
                 const XT::Common::Parameter& /*param*/ = {}) const override
   {
-    //    DUNE_THROW_IF(
-    //        !opts.has_key("type"), Exceptions::operator_error, "missing key 'type' in given opts!\n\nopts = " <<
-    //        opts);
-    //    const auto type = opts.get<std::string>("type");
-    //    DUNE_THROW_IF(type != jacobian_options().at(0),
-    //                  Exceptions::operator_error,
-    //                  "requested jacobian type is not one of the available ones!\n\n"
-    //                      << "type = "
-    //                      << type
-    //                      << "\njacobian_options() = "
-    //                      << jacobian_options());
-    DUNE_THROW(Exceptions::operator_error, "This operator does not provide a jacobian yet!");
-    // I am not sure yet how to implement this:
-    // if assembled, do jacobian_op.matrix() += matrix_?
+    DUNE_THROW_IF(
+        !opts.has_key("type"), Exceptions::operator_error, "missing key 'type' in given opts!\n\nopts = " << opts);
+    const auto type = opts.get<std::string>("type");
+    DUNE_THROW_IF(type != jacobian_options().at(0),
+                  Exceptions::operator_error,
+                  "requested jacobian type is not one of the available ones!\n\n"
+                      << "type = " << type << "\njacobian_options() = " << jacobian_options());
+    jacobian_op.matrix() += matrix_;
   } // ... jacobian(...)
 
 private:
@@ -382,17 +373,15 @@ public:
 
   using OperatorBaseType::jacobian;
 
-  void jacobian(const VectorType& /*source*/,
-                MatrixOperatorType& /*jacobian_op*/,
-                const XT::Common::Configuration& /*opts*/,
-                const XT::Common::Parameter& /*param*/ = {}) const override
+  /// \todo Store appended local bilinear forms and append them to jacobian_op?
+  void jacobian(const VectorType& source,
+                MatrixOperatorType& jacobian_op,
+                const XT::Common::Configuration& opts,
+                const XT::Common::Parameter& param = {}) const override
   {
-    DUNE_THROW(Exceptions::operator_error, "This operator does not provide a jacobian yet!");
-    // I am not sure yet how to implement this:
-    // if assembled, do jacobian_op.matrix() += matrix_?
-    // If not, append this to jacobian_op?
-    // Or keep a list of all appended local ops and append them to jacobian_op? <- This is probably best.
-  } // ... jacobian(...)
+    DUNE_THROW_IF(!assembled_, Exceptions::operator_error, "This operator has to be assembled to povide a jacobian!");
+    OperatorBaseType::jacobian(source, jacobian_op, opts, param);
+  }
 
 private:
   bool assembled_;
