@@ -14,4 +14,3 @@
 file(GLOB_RECURSE header "*.hh")
 
 dune_pybindxi_add_module(usercode EXCLUDE_FROM_ALL ${header} usercode.cc)
-
