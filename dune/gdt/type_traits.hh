@@ -30,7 +30,7 @@ enum class SpaceType
 };
 
 
-static std::ostream& operator<<(std::ostream& out, const SpaceType& space_type)
+std::ostream& operator<<(std::ostream& out, const SpaceType& space_type)
 {
   if (space_type == SpaceType::continuous_lagrange)
     out << "continuous_lagrange";
@@ -54,7 +54,7 @@ enum class Stencil
 };
 
 
-static inline std::ostream& operator<<(std::ostream& out, const Stencil& stencil)
+inline std::ostream& operator<<(std::ostream& out, const Stencil& stencil)
 {
   if (stencil == Stencil::element)
     out << "element";
