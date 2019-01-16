@@ -71,7 +71,6 @@ public:
     , source_(src)
     , range_(rng)
     , assembled_(false)
-    , result_(0.)
   {
     // to detect assembly
     this->append(
@@ -95,9 +94,9 @@ public:
          const XT::Common::Parameter& param = {},
          const ElementFilterType& filter = ApplyOnAllElements())
   {
-    this->append(make_local_element_bilinear_form_accumulator<GV>(local_bilinear_form, source_, range_, result_, param)
-                     .release(),
-                 filter);
+    this->append(
+        make_local_element_bilinear_form_accumulator<GV>(local_bilinear_form, source_, range_, param).release(),
+        filter);
     return *this;
   }
 
@@ -112,14 +111,18 @@ public:
 
   const ResultType& result() const
   {
-    return result_;
+    Field ret = 0;
+    for (const auto& local_accumulators : local_accumulators_)
+      ret += local_accumulators->result();
+    return ret;
   }
 
 protected:
   const SourceType& source_;
   const RangeType& range_;
   bool assembled_;
-  ResultType result_;
+  std::list < std::unique_ptr<LocalElementBilinearFormAccumulator<GridView, s_r, s_rC, SF, R, r_r, r_rC, RF>>
+                  local_accumulators_;
 }; // class LocalizableBilinearFormBase
 
 

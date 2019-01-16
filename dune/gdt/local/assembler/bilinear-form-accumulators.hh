@@ -66,14 +66,13 @@ public:
   LocalElementBilinearFormAccumulator(const LocalBilinearFormTypeType& local_bilinear_form,
                                       const SourceType& source,
                                       const RangeType& range,
-                                      ResultType& result,
                                       const XT::Common::Parameter& param = {})
     : BaseType()
     , Propagator(this)
     , local_bilinear_form_(local_bilinear_form.copy())
     , source_(source)
     , range_(range)
-    , result_(result)
+    , result_(0)
     , param_(param)
     , local_source_(source_.local_function())
     , local_range_(range_.local_function())
@@ -85,7 +84,7 @@ public:
     , local_bilinear_form_(other.local_bilinear_form_->copy())
     , source_(other.source_)
     , range_(other.range_)
-    , result_(other.result_)
+    , result_(0)
     , param_(other.param_)
     , local_source_(source_.local_function())
     , local_range_(range_.local_function())
@@ -128,7 +127,7 @@ private:
   const std::unique_ptr<LocalBilinearFormTypeType> local_bilinear_form_;
   const SourceType& source_;
   const RangeType& range_;
-  ResultType& result_;
+  ResultType result_;
   const XT::Common::Parameter param_;
   std::unique_ptr<typename SourceType::LocalFunctionType> local_source_;
   std::unique_ptr<typename RangeType::LocalFunctionType> local_range_;
@@ -146,11 +145,10 @@ make_local_element_bilinear_form_accumulator(
     const LocalElementBilinearFormInterface<E, s_r, s_rC, SF, R, r_r, r_rC, RF>& local_bilinear_form,
     const XT::Functions::GridFunctionInterface<E, s_r, s_rC, SF>& source,
     const XT::Functions::GridFunctionInterface<E, r_r, r_rC, RF>& range,
-    R& result,
     const XT::Common::Parameter& param = {})
 {
   return std::make_unique<LocalElementBilinearFormAccumulator<GridView, s_r, s_rC, SF, R, r_r, r_rC, RF>>(
-      local_bilinear_form, source, range, result, param);
+      local_bilinear_form, source, range, param);
 }
 
 
