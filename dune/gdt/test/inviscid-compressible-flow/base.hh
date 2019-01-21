@@ -103,7 +103,7 @@ protected:
   using RangeType = XT::Common::FieldVector<R, m>;
 
 public:
-  InviscidCompressibleFlowEulerTest(const std::string timestepping)
+  InviscidCompressibleFlowEulerTest(const std::string timestepping, const size_t num_refinements = 2)
     : Problem(new InviscidCompressibleFlowEulerProblem<G>())
     , BaseType(this->access().T_end,
                timestepping,
@@ -114,7 +114,8 @@ public:
                    this->access().euler_tools.visualize(
                        u_t, u_t.space().grid_view(), prefix, XT::Common::to_string(ii));
                  }
-               })
+               },
+               num_refinements)
     , visualization_steps_(0)
     , boundary_treatment("")
   {}
@@ -332,7 +333,7 @@ class InviscidCompressibleFlowEulerExplicitTest : public InviscidCompressibleFlo
 
 protected:
   InviscidCompressibleFlowEulerExplicitTest()
-    : BaseType("explicit/fixed")
+    : BaseType("explicit/fixed", 2)
   {}
 
   XT::LA::ListVectorArray<V> solve(const S& space, const double T_end) override final

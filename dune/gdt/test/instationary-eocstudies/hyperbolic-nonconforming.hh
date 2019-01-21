@@ -66,8 +66,11 @@ public:
       const double T_end,
       const std::string timestepping,
       std::function<void(const DiscreteBochnerFunction<V, GV, m>&, const std::string&)> visualizer =
-          [](const auto& /*solution*/, const auto& /*prefix*/) { /*no visualization by default*/ })
-    : BaseType(T_end, timestepping, visualizer)
+          [](const auto& /*solution*/, const auto& /*prefix*/) { /*no visualization by default*/ },
+      const size_t num_refinements = DXTC_CONFIG_GET("num_refinements", 3),
+      const size_t num_additional_refinements_for_reference =
+          DXTC_CONFIG_GET("num_additional_refinements_for_reference", 2))
+    : BaseType(T_end, timestepping, visualizer, num_refinements, num_additional_refinements_for_reference)
     , space_type_("")
     , numerical_flux_type_("")
   {}
