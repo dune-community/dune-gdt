@@ -159,7 +159,7 @@ struct OswaldInterpolationOperatorOnLeafViewTest : public ::testing::Test
           auto local_vertex_indicators_inside = vertex_indicators.local_discrete_function(inside_element);
           const auto& inside_reference_element = ReferenceElements<D, d>::general(inside_element.geometry().type());
           for (auto&& ii : XT::Common::value_range(inside_reference_element.size(intersection.indexInInside(), 1, d))) {
-            const auto vertex_index_inside = inside_reference_element.subEntity(intersection.indexInInside(), 1, d, ii);
+            const auto vertex_index_inside = inside_reference_element.subEntity(intersection.indexInInside(), 1, ii, d);
             local_vertex_indicators_inside->dofs()[vertex_index_inside] += intersection_diameter * l2_jump_norm2;
           }
           auto local_vertex_indicators_outside = vertex_indicators.local_discrete_function(outside_element);
@@ -167,7 +167,7 @@ struct OswaldInterpolationOperatorOnLeafViewTest : public ::testing::Test
           for (auto&& ii :
                XT::Common::value_range(outside_reference_element.size(intersection.indexInOutside(), 1, d))) {
             const auto vertex_index_outside =
-                outside_reference_element.subEntity(intersection.indexInOutside(), 1, d, ii);
+                outside_reference_element.subEntity(intersection.indexInOutside(), 1, ii, d);
             local_vertex_indicators_outside->dofs()[vertex_index_outside] += intersection_diameter * l2_jump_norm2;
           }
         },
@@ -204,7 +204,7 @@ struct OswaldInterpolationOperatorOnLeafViewTest : public ::testing::Test
           auto local_vertex_indicators_inside = vertex_indicators.local_discrete_function(inside_element);
           const auto& inside_reference_element = ReferenceElements<D, d>::general(inside_element.geometry().type());
           for (auto&& ii : XT::Common::value_range(inside_reference_element.size(intersection.indexInInside(), 1, d))) {
-            const auto vertex_index_inside = inside_reference_element.subEntity(intersection.indexInInside(), 1, d, ii);
+            const auto vertex_index_inside = inside_reference_element.subEntity(intersection.indexInInside(), 1, ii, d);
             local_vertex_indicators_inside->dofs()[vertex_index_inside] += intersection_diameter * l2_jump_norm2;
           }
         },
@@ -294,7 +294,7 @@ struct OswaldInterpolationOperatorOnLeafViewTest : public ::testing::Test
           auto local_vertex_indicators_inside = vertex_indicators.local_discrete_function(inside_element);
           const auto& inside_reference_element = ReferenceElements<D, d>::general(inside_element.geometry().type());
           for (auto&& ii : XT::Common::value_range(inside_reference_element.size(intersection.indexInInside(), 1, d))) {
-            const auto vertex_index_inside = inside_reference_element.subEntity(intersection.indexInInside(), 1, d, ii);
+            const auto vertex_index_inside = inside_reference_element.subEntity(intersection.indexInInside(), 1, ii, d);
             local_vertex_indicators_inside->dofs()[vertex_index_inside] += l2_jump_norm2 / intersection_diameter;
           }
           auto local_vertex_indicators_outside = vertex_indicators.local_discrete_function(outside_element);
@@ -302,7 +302,7 @@ struct OswaldInterpolationOperatorOnLeafViewTest : public ::testing::Test
           for (auto&& ii :
                XT::Common::value_range(outside_reference_element.size(intersection.indexInOutside(), 1, d))) {
             const auto vertex_index_outside =
-                outside_reference_element.subEntity(intersection.indexInOutside(), 1, d, ii);
+                outside_reference_element.subEntity(intersection.indexInOutside(), 1, ii, d);
             local_vertex_indicators_outside->dofs()[vertex_index_outside] += l2_jump_norm2 / intersection_diameter;
           }
         },
@@ -339,7 +339,7 @@ struct OswaldInterpolationOperatorOnLeafViewTest : public ::testing::Test
           auto local_vertex_indicators_inside = vertex_indicators.local_discrete_function(inside_element);
           const auto& inside_reference_element = ReferenceElements<D, d>::general(inside_element.geometry().type());
           for (auto&& ii : XT::Common::value_range(inside_reference_element.size(intersection.indexInInside(), 1, d))) {
-            const auto vertex_index_inside = inside_reference_element.subEntity(intersection.indexInInside(), 1, d, ii);
+            const auto vertex_index_inside = inside_reference_element.subEntity(intersection.indexInInside(), 1, ii, d);
             local_vertex_indicators_inside->dofs()[vertex_index_inside] += l2_jump_norm2 / intersection_diameter;
           }
         },
