@@ -29,10 +29,6 @@ using Simplicial3dGrids = ::testing::Types<
 template <class G>
 using OswaldInterpolationOperator = Dune::GDT::Test::OswaldInterpolationOperatorOnLeafViewTest<G>;
 TYPED_TEST_CASE(OswaldInterpolationOperator, Simplicial3dGrids);
-TYPED_TEST(OswaldInterpolationOperator, applies_correctly)
-{
-  this->applies_correctly();
-}
 TYPED_TEST(OswaldInterpolationOperator, fulfills_l2_interpolation_estimate)
 {
   this->fulfills_l2_interpolation_estimate();

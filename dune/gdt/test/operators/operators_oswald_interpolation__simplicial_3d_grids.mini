@@ -1,20 +1,20 @@
-[OswaldInterpolationOperator.0.fulfills_l2_interpolation_estimate.ALU_2D_SIMPLEX_CONFORMING.results]
-constant_from_L2_interpolation_estimate = 0.050925925925925944
+[OswaldInterpolationOperator.0.fulfills_l2_interpolation_estimate.ALU_3D_SIMPLEX_CONFORMING.results]
+constant_from_L2_interpolation_estimate = 0.013912980648346418
 
-[OswaldInterpolationOperator.0.fulfills_h1_interpolation_estimate.ALU_2D_SIMPLEX_CONFORMING.results]
-constant_from_H1_interpolation_estimate = 0.36111111111111105
-
-
-[OswaldInterpolationOperator.0.fulfills_l2_interpolation_estimate.ALU_2D_SIMPLEX_NONCONFORMING.results]
-constant_from_L2_interpolation_estimate = 0.050925925925925944
-
-[OswaldInterpolationOperator.0.fulfills_h1_interpolation_estimate.ALU_2D_SIMPLEX_NONCONFORMING.results]
-constant_from_H1_interpolation_estimate = 0.36111111111111105
+[OswaldInterpolationOperator.0.fulfills_h1_interpolation_estimate.ALU_3D_SIMPLEX_CONFORMING.results]
+constant_from_H1_interpolation_estimate = 0.12521682583511781
 
 
-[OswaldInterpolationOperator.0.fulfills_l2_interpolation_estimate.UG_2D.results]
-constant_from_L2_interpolation_estimate = 0.050925925925925944
+[OswaldInterpolationOperator.0.fulfills_l2_interpolation_estimate.ALU_3D_SIMPLEX_NONCONFORMING.results]
+constant_from_L2_interpolation_estimate = 0.013912980648346418
 
-[OswaldInterpolationOperator.0.fulfills_h1_interpolation_estimate.UG_2D.results]
-constant_from_H1_interpolation_estimate = 0.2407407407407407 # THIS IS FISHY!
+[OswaldInterpolationOperator.0.fulfills_h1_interpolation_estimate.ALU_3D_SIMPLEX_NONCONFORMING.results]
+constant_from_H1_interpolation_estimate = 0.12521682583511781
+
+
+[OswaldInterpolationOperator.0.fulfills_l2_interpolation_estimate.UG_3D.results]
+constant_from_L2_interpolation_estimate = 0.01391298064834642
+
+[OswaldInterpolationOperator.0.fulfills_h1_interpolation_estimate.UG_3D.results]
+constant_from_H1_interpolation_estimate = 0.12521682583511781
 

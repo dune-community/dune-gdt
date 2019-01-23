@@ -62,9 +62,9 @@ struct OswaldInterpolationOperatorOnLeafViewTest : public ::testing::Test
   virtual std::shared_ptr<XT::Grid::GridProvider<G>> make_grid()
   {
     return std::make_shared<XT::Grid::GridProvider<G>>(
-        XT::Grid::make_cube_grid<G>(XT::Common::from_string<FieldVector<double, d>>("[0 0 0]"),
-                                    XT::Common::from_string<FieldVector<double, d>>("[3 1 1]"),
-                                    XT::Common::from_string<std::array<unsigned int, d>>("[3 1 1]")));
+        XT::Grid::make_cube_grid<G>(XT::Common::from_string<FieldVector<double, d>>("[0 0 0 0]"),
+                                    XT::Common::from_string<FieldVector<double, d>>("[3 1 1 1]"),
+                                    XT::Common::from_string<std::array<unsigned int, d>>("[3 1 1 1]")));
   }
 
   void SetUp() override
@@ -92,7 +92,7 @@ struct OswaldInterpolationOperatorOnLeafViewTest : public ::testing::Test
                                                1));
     }
     boundary_info = std::make_shared<XT::Grid::NormalBasedBoundaryInfo<I>>();
-    boundary_info->register_new_normal(XT::Common::from_string<FieldVector<double, d>>("[-1 0 0]"),
+    boundary_info->register_new_normal(XT::Common::from_string<FieldVector<double, d>>("[-1 0 0 0]"),
                                        new XT::Grid::DirichletBoundary());
   } // ... SetUp(...)
 
@@ -383,7 +383,7 @@ struct OswaldInterpolationOperatorOnCubicLeafViewTest : public OswaldInterpolati
     using D = typename G::ctype;
     static const constexpr size_t d = G::dimension;
     FieldVector<D, d> lower_left(0.);
-    auto upper_right = XT::Common::from_string<FieldVector<double, d>>("[3 1 1]");
+    auto upper_right = XT::Common::from_string<FieldVector<double, d>>("[3 1 1 1]");
     std::array<unsigned int, d> num_elements;
     std::fill(num_elements.begin(), num_elements.end(), 1);
     num_elements[0] = 3;
