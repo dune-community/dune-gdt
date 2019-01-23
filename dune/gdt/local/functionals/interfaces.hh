@@ -18,6 +18,8 @@
 #include <dune/xt/common/parameter.hh>
 #include <dune/xt/functions/interfaces/grid-function.hh>
 
+#include <dune/gdt/exceptions.hh>
+
 
 namespace Dune {
 namespace GDT {
@@ -77,34 +79,74 @@ public:
     this->apply(basis, ret, param);
     return ret;
   }
-}; // class LocalFunctionalInterface
+}; // class LocalElementFunctionalInterface
 
 
-#if 0
-template <class TestBase, class Intersection, class Field = typename TestBase::RangeFieldType>
-class LocalFaceFunctionalInterface
+/**
+ * Interface for local functionals associated with grid intersections.
+ *
+ * \note Although the apply gets two arguments, this is a functional and not a bilinear form (the two arguments are not
+ *       ansatz and test basis on the intersection, but the test basis on the inside and on the outisde, respectively)!
+ * \note Regarding SMP: the functional is copied for each thread, so
+ *       - no shared mutable state between copies to be thread safe, but
+ *       - local mutable state is ok.
+ */
+template <class Intersection,
+          size_t range_dim = 1,
+          size_t range_dim_cols = 1,
+          class RangeField = double,
+          class Field = double>
+class LocalIntersectionFunctionalInterface : public XT::Common::ParametricInterface
 {
-  static_assert(XT::Functions::is_localfunction_set<TestBase>::value, "");
   static_assert(XT::Grid::is_intersection<Intersection>::value, "");
 
+  using ThisType = LocalIntersectionFunctionalInterface<Intersection, range_dim, range_dim_cols, RangeField>;
+
 public:
-  typedef TestBase TestBaseType;
-  typedef Intersection IntersectionType;
-  typedef Field FieldType;
+  using IntersectionType = Intersection;
+  using ElementType = typename Intersection::Entity;
+  using D = typename ElementType::Geometry::ctype;
+  static const constexpr size_t d = ElementType::dimension;
 
-  virtual ~LocalFaceFunctionalInterface() = default;
+  using I = IntersectionType;
+  using E = ElementType;
+  using F = Field;
+  using R = RangeField;
+  static const constexpr size_t r = range_dim;
+  static const constexpr size_t rC = range_dim_cols;
 
-  virtual void
-  apply(const TestBaseType& test_basis, const IntersectionType& intersection, DynamicVector<FieldType>& ret) const = 0;
+  using LocalBasisType = XT::Functions::ElementFunctionSetInterface<E, r, rC, R>;
 
-  DynamicVector<FieldType> apply(const TestBaseType& test_basis, const IntersectionType& intersection) const
+  LocalIntersectionFunctionalInterface(const XT::Common::ParameterType& param_type = {})
+    : XT::Common::ParametricInterface(param_type)
+  {}
+
+  virtual ~LocalIntersectionFunctionalInterface() = default;
+
+  virtual std::unique_ptr<ThisType> copy() const = 0;
+
+  /**
+   * Computes the application of this functional for each combination of basis functions.
+   */
+  virtual void apply(const IntersectionType& intersection,
+                     const LocalBasisType& inside_basis,
+                     const LocalBasisType& outside_basis,
+                     DynamicMatrix<F>& result,
+                     const XT::Common::Parameter& param = {}) const = 0;
+
+  /**
+   * This method is provided for convenience and should not be used within library code.
+   */
+  virtual DynamicMatrix<F> apply(const IntersectionType& intersection,
+                                 const LocalBasisType& inside_basis,
+                                 const LocalBasisType& outside_basis,
+                                 const XT::Common::Parameter& param = {}) const
   {
-    DynamicVector<FieldType> ret(test_basis.size(), 0.);
-    apply(test_basis, intersection, ret);
+    DynamicMatrix<F> ret(inside_basis.size(param), outside_basis.size(param), 0);
+    this->apply(intersection, inside_basis, outside_basis, ret, param);
     return ret;
   }
-}; // class LocalFaceFunctionalInterface
-#endif // 0
+}; // class LocalIntersectionFunctionalInterface
 
 
 } // namespace GDT
