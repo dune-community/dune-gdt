@@ -61,9 +61,9 @@ public:
 
   using SourceType = XT::Functions::GridFunctionInterface<E, s_r, s_rC, SF>;
   using RangeType = XT::Functions::GridFunctionInterface<E, r_r, r_rC, RF>;
-  using LocalBilinearFormTypeType = LocalElementBilinearFormInterface<E, s_r, s_rC, SF, R, r_r, r_rC, RF>;
+  using LocalBilinearFormType = LocalElementBilinearFormInterface<E, s_r, s_rC, SF, R, r_r, r_rC, RF>;
 
-  LocalElementBilinearFormAccumulator(const LocalBilinearFormTypeType& local_bilinear_form,
+  LocalElementBilinearFormAccumulator(const LocalBilinearFormType& local_bilinear_form,
                                       const SourceType& source,
                                       const RangeType& range,
                                       const XT::Common::Parameter& param = {})
@@ -124,7 +124,7 @@ protected:
   }
 
 private:
-  const std::unique_ptr<LocalBilinearFormTypeType> local_bilinear_form_;
+  const std::unique_ptr<LocalBilinearFormType> local_bilinear_form_;
   const SourceType& source_;
   const RangeType& range_;
   ResultType result_;
