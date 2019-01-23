@@ -570,15 +570,14 @@ public:
     const size_t rows_out = test_basis_outside.size(param);
     const size_t cols_in = ansatz_basis_inside.size(param);
     const size_t cols_out = ansatz_basis_outside.size(param);
-    const auto ensure_size_and_clear = [](auto& m, const auto& r, const auto& c) {
+    const auto ensure_size = [](auto& m, const auto& r, const auto& c) {
       if (m.rows() < r || m.cols() < c)
         m.resize(r, c);
-      m *= 0;
     };
-    ensure_size_and_clear(result_in_in, rows_in, cols_in);
-    ensure_size_and_clear(result_in_out, rows_in, cols_out);
-    ensure_size_and_clear(result_out_in, rows_out, cols_in);
-    ensure_size_and_clear(result_out_out, rows_out, cols_out);
+    ensure_size(result_in_in, rows_in, cols_in);
+    ensure_size(result_in_out, rows_in, cols_out);
+    ensure_size(result_out_in, rows_out, cols_in);
+    ensure_size(result_out_out, rows_out, cols_out);
     // evaluate ...
     const auto point_in_inside_reference_element =
         this->intersection().geometryInInside().global(point_in_reference_intersection);
@@ -626,45 +625,45 @@ public:
     for (size_t ii = 0; ii < rows_in; ++ii) {
       for (size_t jj = 0; jj < cols_in; ++jj) {
         // consistency term
-        result_in_in[ii][jj] +=
+        result_in_in[ii][jj] =
             -weight_minus * ((diffusion_in * ansatz_basis_in_grads_[jj][0]) * normal) * test_basis_in_values_[ii];
         // symmetry term
-        result_in_in[ii][jj] +=
+        result_in_in[ii][jj] =
             -weight_minus * ansatz_basis_in_values_[jj] * ((diffusion_in * test_basis_in_grads_[ii][0]) * normal);
         // penalty term
-        result_in_in[ii][jj] += penalty * ansatz_basis_in_values_[jj] * test_basis_in_values_[ii];
+        result_in_in[ii][jj] = penalty * ansatz_basis_in_values_[jj] * test_basis_in_values_[ii];
       }
       for (size_t jj = 0; jj < cols_out; ++jj) {
         // consistency term
-        result_in_out[ii][jj] +=
+        result_in_out[ii][jj] =
             -weight_plus * ((diffusion_out * ansatz_basis_out_grads_[jj][0]) * normal) * test_basis_in_values_[ii];
         // symmetry term
-        result_in_out[ii][jj] +=
+        result_in_out[ii][jj] =
             weight_minus * ansatz_basis_out_values_[jj] * ((diffusion_in * test_basis_in_grads_[ii][0]) * normal);
         // penalty term
-        result_in_out[ii][jj] += -1.0 * penalty * ansatz_basis_out_values_[jj] * test_basis_in_values_[ii];
+        result_in_out[ii][jj] = -1.0 * penalty * ansatz_basis_out_values_[jj] * test_basis_in_values_[ii];
       }
     }
     for (size_t ii = 0; ii < rows_out; ++ii) {
       for (size_t jj = 0; jj < cols_in; ++jj) {
         // consistency term
-        result_out_in[ii][jj] +=
+        result_out_in[ii][jj] =
             weight_minus * ((diffusion_in * ansatz_basis_in_grads_[jj][0]) * normal) * test_basis_out_values_[ii];
         // symmetry term
-        result_out_in[ii][jj] +=
+        result_out_in[ii][jj] =
             -weight_plus * ansatz_basis_in_values_[jj] * ((diffusion_out * test_basis_out_grads_[ii][0]) * normal);
         // penalty term
-        result_out_in[ii][jj] += -1.0 * penalty * ansatz_basis_in_values_[jj] * test_basis_out_values_[ii];
+        result_out_in[ii][jj] = -1.0 * penalty * ansatz_basis_in_values_[jj] * test_basis_out_values_[ii];
       }
       for (size_t jj = 0; jj < cols_out; ++jj) {
         // consistency term
-        result_out_out[ii][jj] +=
+        result_out_out[ii][jj] =
             weight_plus * ((diffusion_out * ansatz_basis_out_grads_[jj][0]) * normal) * test_basis_out_values_[ii];
         // symmetry term
-        result_out_out[ii][jj] +=
+        result_out_out[ii][jj] =
             weight_plus * ansatz_basis_out_values_[jj] * ((diffusion_out * test_basis_out_grads_[ii][0]) * normal);
         // penalty term
-        result_out_out[ii][jj] += penalty * ansatz_basis_out_values_[jj] * test_basis_out_values_[ii];
+        result_out_out[ii][jj] = penalty * ansatz_basis_out_values_[jj] * test_basis_out_values_[ii];
       }
     }
   } // ... evaluate(...)
@@ -832,15 +831,14 @@ public:
     const size_t rows_out = test_basis_outside.size(param);
     const size_t cols_in = ansatz_basis_inside.size(param);
     const size_t cols_out = ansatz_basis_outside.size(param);
-    const auto ensure_size_and_clear = [](auto& m, const auto& r, const auto& c) {
+    const auto ensure_size = [](auto& m, const auto& r, const auto& c) {
       if (m.rows() < r || m.cols() < c)
         m.resize(r, c);
-      m *= 0;
     };
-    ensure_size_and_clear(result_in_in, rows_in, cols_in);
-    ensure_size_and_clear(result_in_out, rows_in, cols_out); // This is on purpose ...
-    ensure_size_and_clear(result_out_in, rows_out, cols_in); // ... (including the resize), otherwise ...
-    ensure_size_and_clear(result_out_out, rows_out, cols_out); // ... we could not use this in the standard assembler.
+    ensure_size(result_in_in, rows_in, cols_in);
+    ensure_size(result_in_out, rows_in, cols_out); // This is on purpose ...
+    ensure_size(result_out_in, rows_out, cols_in); // ... (including the resize), otherwise ...
+    ensure_size(result_out_out, rows_out, cols_out); // ... we could not use this in the standard assembler.
     // evaluate ...
     const auto point_in_inside_reference_element =
         this->intersection().geometryInInside().global(point_in_reference_intersection);
@@ -864,11 +862,11 @@ public:
     for (size_t ii = 0; ii < rows_in; ++ii) {
       for (size_t jj = 0; jj < cols_in; ++jj) {
         // consistency term
-        result_in_in[ii][jj] += -1.0 * ((diffusion * ansatz_basis_grads_[jj][0]) * normal) * test_basis_values_[ii];
+        result_in_in[ii][jj] = -1.0 * ((diffusion * ansatz_basis_grads_[jj][0]) * normal) * test_basis_values_[ii];
         // symmetry term
-        result_in_in[ii][jj] += -1.0 * ansatz_basis_values_[jj] * ((diffusion * test_basis_grads_[ii][0]) * normal);
+        result_in_in[ii][jj] = -1.0 * ansatz_basis_values_[jj] * ((diffusion * test_basis_grads_[ii][0]) * normal);
         // penalty term
-        result_in_in[ii][jj] += penalty * ansatz_basis_values_[jj] * test_basis_values_[ii];
+        result_in_in[ii][jj] = penalty * ansatz_basis_values_[jj] * test_basis_values_[ii];
       }
     }
   } // ... evaluate(...)
@@ -1116,9 +1114,9 @@ public:
     // loop over all test basis functions
     for (size_t ii = 0; ii < size; ++ii) {
       // symmetry term
-      ret[ii] += -1.0 * dirichlet_value * ((diffusion_value * test_gradients[ii][0]) * normal);
+      ret[ii] = -1.0 * dirichlet_value * ((diffusion_value * test_gradients[ii][0]) * normal);
       // penalty term
-      ret[ii] += penalty * dirichlet_value * test_values[ii];
+      ret[ii] = penalty * dirichlet_value * test_values[ii];
     } // loop over all test basis functions
   } // ... evaluate(...)
 
@@ -1505,15 +1503,14 @@ public:
     const size_t rows_out = test_basis_outside.size(param);
     const size_t cols_in = ansatz_basis_inside.size(param);
     const size_t cols_out = ansatz_basis_outside.size(param);
-    const auto ensure_size_and_clear = [](auto& m, const auto& r, const auto& c) {
+    const auto ensure_size = [](auto& m, const auto& r, const auto& c) {
       if (m.rows() < r || m.cols() < c)
         m.resize(r, c);
-      m *= 0;
     };
-    ensure_size_and_clear(result_in_in, rows_in, cols_in);
-    ensure_size_and_clear(result_in_out, rows_in, cols_out);
-    ensure_size_and_clear(result_out_in, rows_out, cols_in);
-    ensure_size_and_clear(result_out_out, rows_out, cols_out);
+    ensure_size(result_in_in, rows_in, cols_in);
+    ensure_size(result_in_out, rows_in, cols_out);
+    ensure_size(result_out_in, rows_out, cols_in);
+    ensure_size(result_out_out, rows_out, cols_out);
     // evaluate ...
     const auto point_in_inside_reference_element =
         this->intersection().geometryInInside().global(point_in_reference_intersection);
@@ -1554,15 +1551,15 @@ public:
     // compute integrand
     for (size_t ii = 0; ii < rows_in; ++ii) {
       for (size_t jj = 0; jj < cols_in; ++jj)
-        result_in_in[ii][jj] += penalty * ansatz_basis_in_values_[jj] * test_basis_in_values_[ii];
+        result_in_in[ii][jj] = penalty * ansatz_basis_in_values_[jj] * test_basis_in_values_[ii];
       for (size_t jj = 0; jj < cols_out; ++jj)
-        result_in_out[ii][jj] += -1.0 * penalty * ansatz_basis_out_values_[jj] * test_basis_in_values_[ii];
+        result_in_out[ii][jj] = -1.0 * penalty * ansatz_basis_out_values_[jj] * test_basis_in_values_[ii];
     }
     for (size_t ii = 0; ii < rows_out; ++ii) {
       for (size_t jj = 0; jj < cols_in; ++jj)
-        result_out_in[ii][jj] += -1.0 * penalty * ansatz_basis_in_values_[jj] * test_basis_out_values_[ii];
+        result_out_in[ii][jj] = -1.0 * penalty * ansatz_basis_in_values_[jj] * test_basis_out_values_[ii];
       for (size_t jj = 0; jj < cols_out; ++jj)
-        result_out_out[ii][jj] += penalty * ansatz_basis_out_values_[jj] * test_basis_out_values_[ii];
+        result_out_out[ii][jj] = penalty * ansatz_basis_out_values_[jj] * test_basis_out_values_[ii];
     }
   } // ... evaluate(...)
 
@@ -1724,15 +1721,14 @@ public:
     const size_t rows_out = test_basis_outside.size(param);
     const size_t cols_in = ansatz_basis_inside.size(param);
     const size_t cols_out = ansatz_basis_outside.size(param);
-    const auto ensure_size_and_clear = [](auto& m, const auto& r, const auto& c) {
+    const auto ensure_size = [](auto& m, const auto& r, const auto& c) {
       if (m.rows() < r || m.cols() < c)
         m.resize(r, c);
-      m *= 0;
     };
-    ensure_size_and_clear(result_in_in, rows_in, cols_in);
-    ensure_size_and_clear(result_in_out, rows_in, cols_out); // This is on purpose ...
-    ensure_size_and_clear(result_out_in, rows_out, cols_in); // ... (including the resize), otherwise ...
-    ensure_size_and_clear(result_out_out, rows_out, cols_out); // ... we could not use this in the standard assembler.
+    ensure_size(result_in_in, rows_in, cols_in);
+    ensure_size(result_in_out, rows_in, cols_out); // This is on purpose ...
+    ensure_size(result_out_in, rows_out, cols_in); // ... (including the resize), otherwise ...
+    ensure_size(result_out_out, rows_out, cols_out); // ... we could not use this in the standard assembler.
     // evaluate ...
     const auto point_in_inside_reference_element =
         this->intersection().geometryInInside().global(point_in_reference_intersection);
@@ -1753,7 +1749,7 @@ public:
     // compute integrand
     for (size_t ii = 0; ii < rows_in; ++ii)
       for (size_t jj = 0; jj < cols_in; ++jj)
-        result_in_in[ii][jj] += penalty * ansatz_basis_values_[jj] * test_basis_values_[ii];
+        result_in_in[ii][jj] = penalty * ansatz_basis_values_[jj] * test_basis_values_[ii];
   } // ... evaluate(...)
 
 private:
