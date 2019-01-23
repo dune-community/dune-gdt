@@ -20,7 +20,7 @@
 #include <dune/xt/functions/ESV2007.hh>
 #include <dune/xt/functions/constant.hh>
 
-#include <dune/gdt/interpolations.hh>
+#include <dune/gdt/interpolations/default.hh>
 #include <dune/gdt/test/stationary-eocstudies/diffusion-ipdg.hh>
 
 namespace Dune {

@@ -33,7 +33,7 @@
 
 #include <dune/gdt/discretefunction/adaptation.hh>
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/interpolations.hh>
+#include <dune/gdt/interpolations/default.hh>
 #include <dune/gdt/local/bilinear-forms/integrals.hh>
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/spaces/l2/finite-volume.hh>

@@ -9,8 +9,8 @@
 //   René Fritze     (2018)
 //   Tobias Leibner  (2018)
 
-#ifndef DUNE_GDT_INTERPOLATIONS_HH
-#define DUNE_GDT_INTERPOLATIONS_HH
+#ifndef DUNE_GDT_INTERPOLATIONS_DEFAULT_HH
+#define DUNE_GDT_INTERPOLATIONS_DEFAULT_HH
 
 #include <vector>
 
@@ -256,4 +256,4 @@ interpolate(const int source_order,
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_INTERPOLATIONS_HH
+#endif // DUNE_GDT_INTERPOLATIONS_DEFAULT_HH
