@@ -21,7 +21,9 @@
 #include <dune/xt/common/fvector.hh>
 #include <dune/xt/common/string.hh>
 #include <dune/xt/common/timedlogging.hh>
+#include <dune/xt/common/test/common.hh>
 #include <dune/xt/common/test/gtest/gtest.h>
+
 #include <dune/xt/la/container.hh>
 #include <dune/xt/la/type_traits.hh>
 #include <dune/xt/grid/gridprovider/provider.hh>
