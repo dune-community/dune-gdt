@@ -22,7 +22,7 @@ using namespace Dune::GDT;
 
 
 template <class G>
-using Order2CubicContinuousLagrangeSpace = ContinuousLagrangeSpaceOnCubicLeafViewTest<G, double, 2>;
+using Order2CubicContinuousLagrangeSpace = ContinuousLagrangeSpaceOnCubicLeafViewTest<G, 1, double, 2>;
 TYPED_TEST_CASE(Order2CubicContinuousLagrangeSpace, CubicGrids);
 TYPED_TEST(Order2CubicContinuousLagrangeSpace, gives_correct_identification)
 {

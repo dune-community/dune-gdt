@@ -29,13 +29,12 @@ namespace Dune {
 namespace GDT {
 
 
-template <class GV, class FiniteElement>
+template <class GV, class FiniteElement, size_t basis_functions_per_subentity = 1>
 class ContinuousMapper : public MapperInterface<GV>
 {
   static_assert(is_local_finite_element<FiniteElement>::value, "");
-  using ThisType = ContinuousMapper<GV, FiniteElement>;
+  using ThisType = ContinuousMapper<GV, FiniteElement, basis_functions_per_subentity>;
   using BaseType = MapperInterface<GV>;
-  static const size_t r = FiniteElement::r;
 
   template <int d>
   struct GeometryTypeLayout
@@ -87,9 +86,9 @@ public:
       const auto& coeffs = finite_element.coefficients();
       for (size_t ii = 0; ii < coeffs.size(); ++ii) {
         const auto& local_key = coeffs.local_key(ii);
-        // Currently only works if each subEntity has exactly r DoFs, if there is a variable number of DoFs per element
-        // we would need to do more complicated things in the global index mapping.
-        DUNE_THROW_IF(!(local_key.index() < r),
+        // Currently only works if each subEntity has exactly basis_functions_per_subentity DoFs, if there is a variable
+        // number of DoFs per element we would need to do more complicated things in the global index mapping.
+        DUNE_THROW_IF(!(local_key.index() < basis_functions_per_subentity),
                       Exceptions::mapper_error,
                       "This case is not covered yet, when we have a variable number of DoFs per (sub)entity!");
         // find the (sub)entity for this key
@@ -152,7 +151,8 @@ public:
       DUNE_THROW(Exceptions::mapper_error,
                  "local_size(element) = " << coeffs.size() << "\n   local_index = " << local_index);
     const auto& local_key = coeffs.local_key(local_index);
-    return r * mapper_->subIndex(element, local_key.subEntity(), local_key.codim()) + local_key.index();
+    return basis_functions_per_subentity * mapper_->subIndex(element, local_key.subEntity(), local_key.codim())
+           + local_key.index();
   } // ... mapToGlobal(...)
 
   using BaseType::global_indices;
@@ -166,7 +166,8 @@ public:
     for (size_t ii = 0; ii < local_sz; ++ii) {
       const auto& local_key = coeffs.local_key(ii);
       // No need to assert local_key.index() == 0, has been checked in the ctor!
-      indices[ii] = r * mapper_->subIndex(element, local_key.subEntity(), local_key.codim()) + local_key.index();
+      indices[ii] = basis_functions_per_subentity * mapper_->subIndex(element, local_key.subEntity(), local_key.codim())
+                    + local_key.index();
     }
   } // ... globalIndices(...)
 

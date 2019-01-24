@@ -22,7 +22,7 @@ using namespace Dune::GDT;
 
 
 template <class G>
-using Order2PrismContinuousLagrangeSpace = ContinuousLagrangeSpaceOnPrismLeafViewTest<G, double, 2>;
+using Order2PrismContinuousLagrangeSpace = ContinuousLagrangeSpaceOnPrismLeafViewTest<G, 1, double, 2>;
 TYPED_TEST_CASE(Order2PrismContinuousLagrangeSpace, PrismGrids);
 TYPED_TEST(Order2PrismContinuousLagrangeSpace, gives_correct_identification)
 {

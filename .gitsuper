@@ -4,7 +4,7 @@ status = 1a3bcab04b011a5d6e44f9983cae6ff89fa695e8 bin (heads/master)
 	 28c9ce81c14c878a71e907ab05b9bb72df77883e config.opts (heads/master)
 	 f308c6637edd65dcb83c4c1a46feaf05b958130e dune-alugrid (v2.6.0-7-gf308c663)
 	 76d7f0c9886a061571cb8dc66dd45a4ef86e7a58 dune-common (v2.2.1-2269-g76d7f0c9)
-	+4b461b6c6e04d68f6b67677186ac9275a043a25f dune-gdt (heads/saddlepoint)
+	+72199ba9cca03ca60e913043be61511b88ed91bd dune-gdt (heads/saddlepoint)
 	 5235397bc16d24c759a1672fed7b8cfde4852e52 dune-geometry (v2.2.0-834-g5235397)
 	 af5766f0df47e3d0b62ea486efb9cdbf8e1cfc52 dune-grid (v2.2.0-2671-gaf5766f0d)
 	 1369ae9329d0928480d6b18ed772fc77e1abf752 dune-grid-glue (v2.4.0-161-g1369ae9)
@@ -13,7 +13,7 @@ status = 1a3bcab04b011a5d6e44f9983cae6ff89fa695e8 bin (heads/master)
 	 6d2a4680493a2483d53f9dd05a19dd6b5f436572 dune-pybindxi (v2.2.1-30-g6d2a468)
 	 58bd932e2311a288e0163d041f836b50f19111cb dune-testtools (remotes/origin/testname_listing_hack2.6)
 	 07f9700459c616186737a9a34277f2edee76f475 dune-uggrid (v2.6.0-1-g07f97004)
-	 76b36948d215533b21c6754a7ec228240657bea6 dune-xt-common (heads/master)
+	+ef03286d66302d2af5a38b8047da47ee16214006 dune-xt-common (heads/master)
 	 0307552d17c4d383d218b8e1a2d1064a2768ddd7 dune-xt-data (heads/master)
 	 a78d5c61c829457c2b7f6a51ea7f9dbd7ad44b10 dune-xt-functions (heads/master)
 	 b9a83ae22caa02389a2430cd61085c47d4153b33 dune-xt-grid (heads/master)
@@ -44,7 +44,7 @@ commit = 76d7f0c9886a061571cb8dc66dd45a4ef86e7a58
 [submodule.dune-gdt]
 remote = git@github.com:dune-community/dune-gdt.git
 status = c0b1735fab0ecbd4bb4f1eaa27cb65fe813e98f0 .vcsetup (heads/master)
-commit = 4b461b6c6e04d68f6b67677186ac9275a043a25f
+commit = 72199ba9cca03ca60e913043be61511b88ed91bd
 
 [submodule.dune-geometry]
 remote = git@github.com:dune-community/dune-geometry.git
@@ -88,8 +88,8 @@ commit = 07f9700459c616186737a9a34277f2edee76f475
 
 [submodule.dune-xt-common]
 remote = git@github.com:dune-community/dune-xt-common.git
-status = c0b1735fab0ecbd4bb4f1eaa27cb65fe813e98f0 .vcsetup (heads/master)
-commit = 76b36948d215533b21c6754a7ec228240657bea6
+status = +c0b1735fab0ecbd4bb4f1eaa27cb65fe813e98f0 .vcsetup (heads/master)
+commit = ef03286d66302d2af5a38b8047da47ee16214006
 
 [submodule.dune-xt-data]
 remote = git@github.com:dune-community/dune-xt-data

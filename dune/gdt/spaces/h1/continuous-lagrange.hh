@@ -66,7 +66,7 @@ public:
   using typename BaseType::MapperType;
 
 private:
-  using MapperImplementation = ContinuousMapper<GridViewType, FiniteElementType>;
+  using MapperImplementation = ContinuousMapper<GridViewType, FiniteElementType, r>;
   using GlobalBasisImplementation = DefaultGlobalBasis<GridViewType, r, 1, R>;
 
 public:
