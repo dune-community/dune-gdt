@@ -19,6 +19,52 @@
 
 namespace Dune {
 namespace GDT {
+namespace internal {
+
+
+class LocalElementDivProductIntegrandBase
+{
+protected:
+  template <class DivBasis,
+            class SecondBasis,
+            class Point,
+            class Result,
+            class LocalFunction,
+            class Jacobians,
+            class Values>
+  void evaluate(const DivBasis& div_basis,
+                const SecondBasis& second_basis,
+                const Point& reference_point,
+                Result& result,
+                const XT::Common::Parameter param,
+                const LocalFunction& local_function,
+                Jacobians& jacobians,
+                Values& values) const
+  {
+    static const size_t d = DivBasis::d;
+    // prepare storage
+    const size_t rows = div_basis.size(param);
+    const size_t cols = second_basis.size(param);
+    if (result.rows() < rows || result.cols() < cols)
+      result.resize(rows, cols);
+    // evaluate
+    div_basis.jacobians(reference_point, jacobians, param);
+    second_basis.evaluate(reference_point, values, param);
+    const auto function_value = local_function.evaluate(reference_point, param);
+    // compute product
+    for (size_t ii = 0; ii < rows; ++ii) {
+      // calculate div(psi_ii(x))
+      typename DivBasis::R div_ii = 0;
+      for (size_t dd = 0; dd < d; ++dd)
+        div_ii += jacobians[ii][dd][dd];
+      for (size_t jj = 0; jj < cols; ++jj)
+        result[ii][jj] = function_value * (div_ii * values[jj]);
+    }
+  }
+};
+
+
+} // namespace internal
 
 
 /**
@@ -29,19 +75,14 @@ namespace GDT {
  *
  * \sa local_binary_to_unary_element_integrand
  */
-template <class E,
-          size_t t_r = 1,
-          size_t t_rC = 1,
-          class TR = double,
-          class F = double,
-          size_t a_r = t_r,
-          size_t a_rC = t_rC,
-          class AR = TR>
+template <class E, class TR = double, class F = double, class AR = TR>
 class LocalElementProductTestDivIntegrand
-  : public LocalBinaryElementIntegrandInterface<E, t_r, t_rC, TR, F, a_r, a_rC, AR>
+  : public LocalBinaryElementIntegrandInterface<E, E::dimension, 1, TR, F, 1, 1, AR>
+  , public internal::LocalElementDivProductIntegrandBase
 {
-  using BaseType = LocalBinaryElementIntegrandInterface<E, t_r, t_rC, TR, F, a_r, a_rC, AR>;
+  using BaseType = LocalBinaryElementIntegrandInterface<E, E::dimension, 1, TR, F, 1, 1, AR>;
   using ThisType = LocalElementProductTestDivIntegrand;
+  using DivBaseType = internal::LocalElementDivProductIntegrandBase;
 
 public:
   using BaseType::d;
@@ -49,41 +90,36 @@ public:
   using typename BaseType::ElementType;
   using typename BaseType::LocalAnsatzBasisType;
   using typename BaseType::LocalTestBasisType;
-  using typename BaseType::RangeFieldType;
 
   using GridFunctionType = XT::Functions::GridFunctionInterface<E, 1, 1, F>;
 
   LocalElementProductTestDivIntegrand(const F& inducing_value = F(1))
     : BaseType()
+    , DivBaseType()
     , inducing_function_(new XT::Functions::FunctionAsGridFunctionWrapper<E, 1, 1, F>(
           new XT::Functions::ConstantFunction<d, 1, 1, F>(inducing_value)))
     , local_function_(inducing_function_.access().local_function())
-    , test_basis_jacobians_()
-    , ansatz_basis_values_()
   {}
 
   LocalElementProductTestDivIntegrand(const XT::Functions::FunctionInterface<d, 1, 1, F>& inducing_function)
     : BaseType()
+    , DivBaseType()
     , inducing_function_(new XT::Functions::FunctionAsGridFunctionWrapper<E, 1, 1, F>(inducing_function))
     , local_function_(inducing_function_.access().local_function())
-    , test_basis_jacobians_()
-    , ansatz_basis_values_()
   {}
 
   LocalElementProductTestDivIntegrand(const GridFunctionType& inducing_function)
     : BaseType(inducing_function.parameter_type())
+    , DivBaseType()
     , inducing_function_(inducing_function)
     , local_function_(inducing_function_.access().local_function())
-    , test_basis_jacobians_()
-    , ansatz_basis_values_()
   {}
 
   LocalElementProductTestDivIntegrand(const ThisType& other)
     : BaseType(other.parameter_type())
+    , DivBaseType()
     , inducing_function_(other.inducing_function_)
     , local_function_(inducing_function_.access().local_function())
-    , test_basis_jacobians_()
-    , ansatz_basis_values_()
   {}
 
   LocalElementProductTestDivIntegrand(ThisType&& source) = default;
@@ -115,24 +151,14 @@ public:
                 DynamicMatrix<F>& result,
                 const XT::Common::Parameter& param = {}) const override final
   {
-    // prepare storage
-    const size_t rows = test_basis.size(param);
-    const size_t cols = ansatz_basis.size(param);
-    if (result.rows() < rows || result.cols() < cols)
-      result.resize(rows, cols);
-    // evaluate
-    test_basis.jacobians(point_in_reference_element, test_basis_jacobians_, param);
-    ansatz_basis.evaluate(point_in_reference_element, ansatz_basis_values_, param);
-    const auto function_value = local_function_->evaluate(point_in_reference_element, param);
-    // compute product
-    for (size_t ii = 0; ii < rows; ++ii) {
-      // calculate div(psi_ii(x))
-      RangeFieldType div_ii = 0;
-      for (size_t dd = 0; dd < d; ++dd)
-        div_ii += test_basis_jacobians_[ii][dd][dd];
-      for (size_t jj = 0; jj < cols; ++jj)
-        result[ii][jj] = function_value * (div_ii * ansatz_basis_values_[jj]);
-    }
+    DivBaseType::evaluate(test_basis,
+                          ansatz_basis,
+                          point_in_reference_element,
+                          result,
+                          param,
+                          *local_function_,
+                          test_basis_jacobians_,
+                          ansatz_basis_values_);
   } // ... evaluate(...)
 
 private:
@@ -145,23 +171,17 @@ private:
 
 /**
  * Given an inducing function f, computes `f(x) * div phi(x) * psi(x)` for all combinations of phi and psi in the bases.
- * Just forwards all methods to LocalElementProductTestDivIntegrand with swapped ansatz and test space.
  *
  * \sa LocalElementProductTestDivIntegrand
  */
-template <class E,
-          size_t t_r = 1,
-          size_t t_rC = 1,
-          class TR = double,
-          class F = double,
-          size_t a_r = t_r,
-          size_t a_rC = t_rC,
-          class AR = TR>
+template <class E, class TR = double, class F = double, class AR = TR>
 class LocalElementProductAnsatzDivIntegrand
-  : public LocalElementProductTestDivIntegrand<E, t_r, t_rC, TR, F, a_r, a_rC, AR>
+  : public LocalBinaryElementIntegrandInterface<E, 1, 1, TR, F, E::dimension, 1, AR>
+  , public internal::LocalElementDivProductIntegrandBase
 {
-  using BaseType = LocalElementProductTestDivIntegrand<E, t_r, t_rC, TR, F, a_r, a_rC, AR>;
+  using BaseType = LocalBinaryElementIntegrandInterface<E, 1, 1, TR, F, E::dimension, 1, AR>;
   using ThisType = LocalElementProductAnsatzDivIntegrand;
+  using DivBaseType = internal::LocalElementDivProductIntegrandBase;
 
 public:
   using BaseType::d;
@@ -170,12 +190,32 @@ public:
   using typename BaseType::LocalAnsatzBasisType;
   using typename BaseType::LocalTestBasisType;
 
-  template <class... Args>
-  LocalElementProductAnsatzDivIntegrand(Args&&... args)
-    : BaseType(std::forward<Args>(args)...)
+  using GridFunctionType = XT::Functions::GridFunctionInterface<E, 1, 1, F>;
+
+  LocalElementProductAnsatzDivIntegrand(const F& inducing_value = F(1))
+    : BaseType()
+    , inducing_function_(new XT::Functions::FunctionAsGridFunctionWrapper<E, 1, 1, F>(
+          new XT::Functions::ConstantFunction<d, 1, 1, F>(inducing_value)))
+    , local_function_(inducing_function_.access().local_function())
   {}
 
-  LocalElementProductAnsatzDivIntegrand(const ThisType& other) = default;
+  LocalElementProductAnsatzDivIntegrand(const XT::Functions::FunctionInterface<d, 1, 1, F>& inducing_function)
+    : BaseType()
+    , inducing_function_(new XT::Functions::FunctionAsGridFunctionWrapper<E, 1, 1, F>(inducing_function))
+    , local_function_(inducing_function_.access().local_function())
+  {}
+
+  LocalElementProductAnsatzDivIntegrand(const GridFunctionType& inducing_function)
+    : BaseType(inducing_function.parameter_type())
+    , inducing_function_(inducing_function)
+    , local_function_(inducing_function_.access().local_function())
+  {}
+
+  LocalElementProductAnsatzDivIntegrand(const ThisType& other)
+    : BaseType(other.parameter_type())
+    , inducing_function_(other.inducing_function_)
+    , local_function_(inducing_function_.access().local_function())
+  {}
 
   LocalElementProductAnsatzDivIntegrand(ThisType&& source) = default;
 
@@ -187,7 +227,7 @@ public:
 protected:
   void post_bind(const ElementType& ele) override final
   {
-    BaseType::post_bind(ele);
+    local_function_->bind(ele);
   }
 
 public:
@@ -195,8 +235,10 @@ public:
             const LocalAnsatzBasisType& ansatz_basis,
             const XT::Common::Parameter& param = {}) const override final
   {
-    return BaseType::order(ansatz_basis, test_basis, param);
+    return std::max(local_function_->order(param) + test_basis.order(param) + ansatz_basis.order(param) - 1, 0);
   }
+
+  using BaseType::evaluate;
 
   void evaluate(const LocalTestBasisType& test_basis,
                 const LocalAnsatzBasisType& ansatz_basis,
@@ -204,9 +246,22 @@ public:
                 DynamicMatrix<F>& result,
                 const XT::Common::Parameter& param = {}) const override final
   {
-    BaseType::evaluate(ansatz_basis, test_basis, point_in_reference_element, result, param);
+    DivBaseType::evaluate(test_basis,
+                          ansatz_basis,
+                          point_in_reference_element,
+                          result,
+                          param,
+                          *local_function_,
+                          ansatz_basis_jacobians_,
+                          test_basis_values_);
   } // ... evaluate(...)
-}; // class LocalElementProductAnsatzDivIntegrand
+
+private:
+  const XT::Common::ConstStorageProvider<GridFunctionType> inducing_function_;
+  std::unique_ptr<typename GridFunctionType::LocalFunctionType> local_function_;
+  mutable std::vector<typename LocalTestBasisType::RangeType> test_basis_values_;
+  mutable std::vector<typename LocalAnsatzBasisType::DerivativeRangeType> ansatz_basis_jacobians_;
+}; // class LocalElementProductTestDivIntegrand
 
 
 } // namespace GDT
