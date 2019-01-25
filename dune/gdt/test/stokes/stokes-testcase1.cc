@@ -16,22 +16,13 @@
 
 #include <dune/xt/grid/grids.hh>
 
-#include "ESV2007.hh"
+#include <dune/gdt/test/stokes/stokes-taylorhood.hh>
 
 using namespace Dune;
 using namespace Dune::GDT::Test;
 
-
-/**
- * It is quite hard to reproduce the first column of Table 1, since their integration was not too good and ours is by
- * now. So by tweaking the various polynomial degrees and integration orders (need to be low enough), one could get the
- * exact numbers (as we used to some years ago)...
- */
-using ESV2007Table1Test = ESV2007DiffusionTest<ALU_2D_SIMPLEX_CONFORMING>;
-TEST_F(ESV2007Table1Test, column_1)
+using StokesTest = StokesTestcase1<YASP_2D_EQUIDISTANT_OFFSET>;
+TEST_F(StokesTest, run)
 {
-  this->space_type_ = "dg_p1";
-  const auto actual_results = this->run();
-  const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
-  XT::Test::check_eoc_study_for_success(expected_results, actual_results);
+  this->run();
 }

@@ -10,18 +10,28 @@
 #ifndef DUNE_GDT_TEST_STOKES_STOKES_TAYLORHOOD_HH
 #define DUNE_GDT_TEST_STOKES_STOKES_TAYLORHOOD_HH
 
+#include <dune/xt/common/test/common.hh>
 #include <dune/xt/common/test/gtest/gtest.h>
-#include <dune/xt/common/type_traits.hh>
-#include <dune/xt/la/container/eye-matrix.hh>
+
+#include <dune/xt/la/container/istl.hh>
+
 #include <dune/xt/grid/boundaryinfo/alldirichlet.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
-#include <dune/xt/grid/type_traits.hh>
-#include <dune/xt/grid/grids.hh>
+
 #include <dune/xt/functions/constant.hh>
 #include <dune/xt/functions/base/function-as-grid-function.hh>
 
-#include <dune/gdt/interpolations.hh>
-#include <dune/gdt/test/stationary-eocstudies/diffusion-ipdg.hh>
+#include <dune/gdt/spaces/h1/continuous-lagrange.hh>
+#include <dune/gdt/operators/matrix-based.hh>
+#include <dune/gdt/local/bilinear-forms/integrals.hh>
+#include <dune/gdt/local/integrands/conversion.hh>
+#include <dune/gdt/local/integrands/div.hh>
+#include <dune/gdt/local/integrands/elliptic.hh>
+#include <dune/gdt/local/integrands/product.hh>
+#include <dune/gdt/local/functionals/integrals.hh>
+#include <dune/gdt/functionals/vector-based.hh>
+#include <dune/gdt/tools/dirichlet-constraints.hh>
+#include <dune/gdt/tools/sparsity-pattern.hh>
 
 namespace Dune {
 namespace GDT {
@@ -41,121 +51,127 @@ struct StokesDirichletProblem
   using RangeField = double;
 
   StokesDirichletProblem(
-      XT::Functions::FunctionInterface<d, 1, 1> diffusion_factor,
-      XT::Functions::FunctionInterface<d, d, 1> rhs = XT::Functions::ConstantFunction<d, d, 1>(0., "zero rhs"),
-      XT::Functions::FunctionInterface<d, d, 1> dirichlet =
-          XT::Functions::ConstantFunction<d, d, 1>(0., "dirichlet zero boundary values"))
-    : diffusion_factor_(XT::Functions::FunctionAsGridFunctionWrapper<E, 1, 1, RangeField>(diffusion_factor))
-    , rhs_(XT::Functions::FunctionAsGridFunctionWrapper<E, d, 1, RangeField>(rhs))
-    , dirichlet_(XT::Functions::FunctionAsGridFunctionWrapper<E, d, 1, RangeField>(dirichlet))
+      std::shared_ptr<const XT::Functions::GridFunctionInterface<E, 1, 1>> diffusion_factor_in =
+          std::make_shared<const XT::Functions::ConstantGridFunction<E, 1, 1>>(1., "trivial diffusion factor"),
+      std::shared_ptr<const XT::Functions::GridFunctionInterface<E, d, 1>> rhs_in =
+          std::make_shared<const XT::Functions::ConstantGridFunction<E, d, 1>>(0., "zero rhs"),
+      std::shared_ptr<const XT::Functions::GridFunctionInterface<E, d, 1>> dirichlet_in =
+          std::make_shared<const XT::Functions::ConstantGridFunction<E, d, 1>>(0., "dirichlet zero boundary values"))
+    : diffusion_factor_(diffusion_factor_in)
+    , diffusion_tensor_(std::make_shared<const XT::Functions::ConstantGridFunction<E, d, d>>(
+          XT::LA::eye_matrix<FieldMatrix<double, d, d>>(d, d)))
+    , rhs_(rhs_in)
+    , dirichlet_(dirichlet_in)
     , boundary_info_()
+    , grid_(XT::Grid::make_cube_grid<G>(-1, 1, 10))
+    , grid_view_(grid_.leaf_view())
   {}
 
-  XT::Grid::GridProvider<G> make_initial_grid()
+  const GV& grid_view()
   {
-    if (std::is_same<G, YASP_2D_EQUIDISTANT_OFFSET>::value) {
-      return XT::Grid::make_cube_grid<G>(-1, 1, 8);
-#if HAVE_DUNE_ALUGRID
-    } else if (std::is_same<G, ALU_2D_SIMPLEX_CONFORMING>::value) {
-      auto grid = XT::Grid::make_cube_grid<G>(-1, 1, 4);
-      grid.global_refine(2);
-      return grid;
-    } else if (std::is_same<G, ALU_2D_SIMPLEX_NONCONFORMING>::value) {
-      return XT::Grid::make_cube_grid<G>(-1, 1, 8);
-    } else if (std::is_same<G, ALU_2D_CUBE>::value) {
-      auto grid = XT::Grid::make_cube_grid<G>(-1, 1, 8);
-      grid.global_refine(1);
-      return grid;
-#endif // HAVE_DUNE_ALUGRID
-    } else
-      EXPECT_TRUE(false) << "Please add a specialization for '" << XT::Common::Typename<G>::value << "'!";
+    return grid_view_;
   } // ... make_initial_grid(...)
 
-  const XT::Functions::FunctionAsGridFunctionWrapper<E, 1, 1, RangeField> diffusion_factor_;
-  const XT::Functions::FunctionAsGridFunctionWrapper<E, d, 1, RangeField> rhs_;
-  const XT::Functions::FunctionAsGridFunctionWrapper<E, d, 1, RangeField> dirichlet_;
+  const XT::Functions::GridFunctionInterface<E, 1, 1>& diffusion_factor()
+  {
+    return *diffusion_factor_;
+  } // ... make_initial_grid(...)
+
+  const XT::Functions::GridFunctionInterface<E, d, d>& diffusion_tensor()
+  {
+    return *diffusion_tensor_;
+  } // ... make_initial_grid(...)
+
+  const XT::Functions::GridFunctionInterface<E, d, 1>& rhs()
+  {
+    return *rhs_;
+  } // ... make_initial_grid(...)
+
+  const XT::Functions::GridFunctionInterface<E, d, 1>& dirichlet()
+  {
+    return *dirichlet_;
+  } // ... make_initial_grid(...)
+
+  const XT::Grid::BoundaryInfo<I>& boundary_info()
+  {
+    return boundary_info_;
+  } // ... make_initial_grid(...)
+
+  std::shared_ptr<const XT::Functions::GridFunctionInterface<E, 1, 1, RangeField>> diffusion_factor_;
+  std::shared_ptr<const XT::Functions::GridFunctionInterface<E, d, d, RangeField>> diffusion_tensor_;
+  std::shared_ptr<const XT::Functions::GridFunctionInterface<E, d, 1, RangeField>> rhs_;
+  std::shared_ptr<const XT::Functions::GridFunctionInterface<E, d, 1, RangeField>> dirichlet_;
   const XT::Grid::AllDirichletBoundaryInfo<I> boundary_info_;
-}; // class ESV2007DiffusionProblem
+  const XT::Grid::GridProvider<G> grid_;
+  const GV grid_view_;
+}; // class StokesDirichletProblem
 
 
 template <class G>
-class StokesDirichletTest : public StationaryEocStudy<G>
+class StokesDirichletTest : public ::testing::Test
 {
-  using BaseType = StationaryEocStudy<G>;
+  using GV = typename G::LeafGridView;
+  static const size_t d = GV::dimension;
 
-  using BaseType::d;
-  using typename BaseType::E;
-  using typename BaseType::FF;
-  using typename BaseType::FT;
-  using typename BaseType::GP;
-  using typename BaseType::GV;
-  using typename BaseType::I;
-  using typename BaseType::V;
+  using Matrix = XT::LA::IstlRowMajorSparseMatrix<double>;
+  using Vector = XT::LA::IstlDenseVector<double>;
+  using VelocitySpace = ContinuousLagrangeSpace<GV, d>;
+  using PressureSpace = ContinuousLagrangeSpace<GV, 1>;
+  using E = XT::Grid::extract_entity_t<GV>;
+  using I = XT::Grid::extract_intersection_t<GV>;
+  using RangeField = double;
 
 public:
-  ESV2007DiffusionTest()
-    : BaseType()
-    , problem()
+  StokesDirichletTest(StokesDirichletProblem<GV> problem)
+    : problem_(problem)
   {}
 
-protected:
-  std::vector<std::string> norms() const override final
+  void run()
   {
-    return {"H_1_semi"};
+    const auto& grid_view = problem_.grid_view();
+    const VelocitySpace velocity_space(grid_view, 2);
+    const PressureSpace pressure_space(grid_view, 1);
+    const size_t size_u = velocity_space.mapper().size();
+    const size_t size_p = pressure_space.mapper().size();
+    Matrix A(size_u, size_u, make_element_sparsity_pattern(velocity_space, velocity_space, grid_view));
+    Matrix B(size_u, size_p, make_element_sparsity_pattern(velocity_space, pressure_space, grid_view));
+    MatrixOperator<Matrix, GV, d> A_operator(grid_view, velocity_space, velocity_space, A);
+    MatrixOperator<Matrix, GV, 1, 1, d> B_operator(grid_view, pressure_space, velocity_space, B);
+    A_operator.append(LocalElementIntegralBilinearForm<E, d>(
+        LocalEllipticIntegrand<E, d>(problem_.diffusion_factor(), problem_.diffusion_tensor())));
+    B_operator.append(
+        LocalElementIntegralBilinearForm<E, d, 1, RangeField, RangeField, 1>(LocalElementProductTestDivIntegrand<E>()));
+    auto rhs_u = make_vector_functional<Vector>(velocity_space);
+    rhs_u.append(LocalElementIntegralFunctional<E, d>(
+        local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E, d>(), problem_.rhs())));
+    A_operator.append(rhs_u);
+    // Dirichlet constrainst for u
+    DirichletConstraints<I, VelocitySpace> dirichlet_constraints(problem_.boundary_info(), velocity_space);
+    A_operator.append(dirichlet_constraints);
+    // assemble everything in one grid walk
+    problem_.diffusion_factor().visualize(grid_view, "testvis");
+    A_operator.assemble(DXTC_TEST_CONFIG_GET("setup.use_tbb", true));
+    B_operator.assemble(DXTC_TEST_CONFIG_GET("setup.use_tbb", true));
+    dirichlet_constraints.apply(A, rhs_u.vector());
   }
 
-  void compute_reference_solution() override final
-  {
-    auto& self = *this;
-    if (self.reference_solution_on_reference_grid_)
-      return;
-    self.reference_grid_ = std::make_unique<GP>(make_initial_grid());
-    for (size_t ref = 0; ref < self.num_refinements_ + self.num_additional_refinements_for_reference_; ++ref)
-      self.reference_grid_->global_refine(DGFGridInfo<G>::refineStepsForHalf());
-    auto backup_space_type = self.space_type_;
-    self.space_type_ = "dg_p" + DXTC_TEST_CONFIG_GET("setup.reference_solution_order", "3");
-    self.reference_space_ = self.make_space(*self.reference_grid_);
-    self.space_type_ = backup_space_type;
-    self.reference_solution_on_reference_grid_ = std::make_unique<V>(
-        interpolate<V>(XT::Functions::ESV2007::Testcase1ExactSolution<d, 1>(), *self.reference_space_).dofs().vector());
-    // visualize
-    self.visualize_(
-        make_discrete_function(*self.reference_space_, *self.reference_solution_on_reference_grid_),
-        "reference_solution_on_refinement_"
-            + XT::Common::to_string(self.num_refinements_ + self.num_additional_refinements_for_reference_));
-  } // ... compute_reference_solution(...)
+  StokesDirichletProblem<GV> problem_;
+}; // class StrokesDirichletTest
 
-  const XT::Grid::BoundaryInfo<I>& boundary_info() const override final
-  {
-    return problem.boundary_info;
-  }
+template <class G>
+class StokesTestcase1 : public StokesDirichletTest<G>
+{
+  using BaseType = StokesDirichletTest<G>;
 
-  const FF& diffusion_factor() const override final
-  {
-    return problem.diffusion_factor.template as_grid_function<E>();
-  }
-
-  const FT& diffusion_tensor() const override final
-  {
-    return problem.diffusion_tensor.template as_grid_function<E>();
-  }
-
-  const FF& force() const override final
-  {
-    return problem.force.template as_grid_function<E>();
-  }
-
-  GP make_initial_grid() override final
-  {
-    return problem.make_initial_grid();
-  }
-
-  ESV2007DiffusionProblem<GV> problem;
-}; // struct ESV2007DiffusionTest
+public:
+  StokesTestcase1()
+    : BaseType(StokesDirichletProblem<typename G::LeafGridView>())
+  {}
+}; // struct StokesTestcase1
 
 
 } // namespace Test
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_TEST_STATIONARY_HEAT_EQUATION_ESV2007_HH
+#endif // DUNE_GDT_TEST_STOKES_STOKES_TAYLORHOOD_HH
