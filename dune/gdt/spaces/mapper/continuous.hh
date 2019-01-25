@@ -131,7 +131,7 @@ public:
 
   size_t size() const override final
   {
-    return mapper_->size();
+    return basis_functions_per_subentity * mapper_->size();
   }
 
   size_t max_local_size() const override final
@@ -161,11 +161,11 @@ public:
   {
     const auto& coeffs = local_coefficients(element.geometry().type());
     const auto local_sz = coeffs.size();
+    assert(local_sz <= max_local_size_);
     if (indices.size() < local_sz)
       indices.resize(local_sz, 0);
     for (size_t ii = 0; ii < local_sz; ++ii) {
       const auto& local_key = coeffs.local_key(ii);
-      // No need to assert local_key.index() == 0, has been checked in the ctor!
       indices[ii] = basis_functions_per_subentity * mapper_->subIndex(element, local_key.subEntity(), local_key.codim())
                     + local_key.index();
     }

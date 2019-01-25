@@ -4,7 +4,7 @@ status = 1a3bcab04b011a5d6e44f9983cae6ff89fa695e8 bin (heads/master)
 	 28c9ce81c14c878a71e907ab05b9bb72df77883e config.opts (heads/master)
 	 f308c6637edd65dcb83c4c1a46feaf05b958130e dune-alugrid (v2.6.0-7-gf308c663)
 	 76d7f0c9886a061571cb8dc66dd45a4ef86e7a58 dune-common (v2.2.1-2269-g76d7f0c9)
-	+5aac96eba13d62c82bbb441a3701717014f9352a dune-gdt (heads/saddlepoint)
+	+4bd4dfc36d231fdfb26be2d2a9cd4717920853c7 dune-gdt (heads/saddlepoint)
 	 5235397bc16d24c759a1672fed7b8cfde4852e52 dune-geometry (v2.2.0-834-g5235397)
 	 af5766f0df47e3d0b62ea486efb9cdbf8e1cfc52 dune-grid (v2.2.0-2671-gaf5766f0d)
 	 1369ae9329d0928480d6b18ed772fc77e1abf752 dune-grid-glue (v2.4.0-161-g1369ae9)
@@ -14,10 +14,10 @@ status = 1a3bcab04b011a5d6e44f9983cae6ff89fa695e8 bin (heads/master)
 	 58bd932e2311a288e0163d041f836b50f19111cb dune-testtools (remotes/origin/testname_listing_hack2.6)
 	 07f9700459c616186737a9a34277f2edee76f475 dune-uggrid (v2.6.0-1-g07f97004)
 	+ef03286d66302d2af5a38b8047da47ee16214006 dune-xt-common (heads/master)
-	 0307552d17c4d383d218b8e1a2d1064a2768ddd7 dune-xt-data (heads/master)
-	 a78d5c61c829457c2b7f6a51ea7f9dbd7ad44b10 dune-xt-functions (heads/master)
-	 b9a83ae22caa02389a2430cd61085c47d4153b33 dune-xt-grid (heads/master)
-	 82bef18a993f9a475b3b45d209def8e34e55e1fe dune-xt-la (heads/master)
+	+376e88d14fd23ea12c3e23befc3fc967d4833751 dune-xt-data (heads/master)
+	+8ea3c25f703d18d6b32c079b9188b45504505bd1 dune-xt-functions (heads/dailywork_tleibner)
+	+654c823f698418b67a696618342b54324f2cc151 dune-xt-grid (heads/master)
+	+a42e4d9449f4a20c692805fce018ec23a19680dc dune-xt-la (heads/master)
 	 09d0378f616b94d68bcdd9fc6114813181849ec0 scripts (heads/master)
 commit = fbf04258130187925b17e8c0482d280e9ae111e2
 
@@ -44,7 +44,7 @@ commit = 76d7f0c9886a061571cb8dc66dd45a4ef86e7a58
 [submodule.dune-gdt]
 remote = git@github.com:dune-community/dune-gdt.git
 status = c0b1735fab0ecbd4bb4f1eaa27cb65fe813e98f0 .vcsetup (heads/master)
-commit = 5aac96eba13d62c82bbb441a3701717014f9352a
+commit = 4bd4dfc36d231fdfb26be2d2a9cd4717920853c7
 
 [submodule.dune-geometry]
 remote = git@github.com:dune-community/dune-geometry.git
@@ -88,28 +88,28 @@ commit = 07f9700459c616186737a9a34277f2edee76f475
 
 [submodule.dune-xt-common]
 remote = git@github.com:dune-community/dune-xt-common.git
-status = +c0b1735fab0ecbd4bb4f1eaa27cb65fe813e98f0 .vcsetup (heads/master)
+status = cc1bbdac283f4b9323c64345030f1b8f634b88d5 .vcsetup (heads/master)
 commit = ef03286d66302d2af5a38b8047da47ee16214006
 
 [submodule.dune-xt-data]
 remote = git@github.com:dune-community/dune-xt-data
-status = c0b1735fab0ecbd4bb4f1eaa27cb65fe813e98f0 .vcsetup (heads/master)
-commit = 0307552d17c4d383d218b8e1a2d1064a2768ddd7
+status = cc1bbdac283f4b9323c64345030f1b8f634b88d5 .vcsetup (heads/master)
+commit = 376e88d14fd23ea12c3e23befc3fc967d4833751
 
 [submodule.dune-xt-functions]
 remote = git@github.com:dune-community/dune-xt-functions.git
-status = c0b1735fab0ecbd4bb4f1eaa27cb65fe813e98f0 .vcsetup (heads/master)
-commit = a78d5c61c829457c2b7f6a51ea7f9dbd7ad44b10
+status = cc1bbdac283f4b9323c64345030f1b8f634b88d5 .vcsetup (heads/master)
+commit = 8ea3c25f703d18d6b32c079b9188b45504505bd1
 
 [submodule.dune-xt-grid]
 remote = git@github.com:dune-community/dune-xt-grid.git
-status = c0b1735fab0ecbd4bb4f1eaa27cb65fe813e98f0 .vcsetup (heads/master)
-commit = b9a83ae22caa02389a2430cd61085c47d4153b33
+status = cc1bbdac283f4b9323c64345030f1b8f634b88d5 .vcsetup (heads/master)
+commit = 654c823f698418b67a696618342b54324f2cc151
 
 [submodule.dune-xt-la]
 remote = git@github.com:dune-community/dune-xt-la.git
-status = c0b1735fab0ecbd4bb4f1eaa27cb65fe813e98f0 .vcsetup (heads/master)
-commit = 82bef18a993f9a475b3b45d209def8e34e55e1fe
+status = cc1bbdac283f4b9323c64345030f1b8f634b88d5 .vcsetup (heads/master)
+commit = a42e4d9449f4a20c692805fce018ec23a19680dc
 
 [submodule.scripts]
 remote = https://github.com/wwu-numerik/scripts.git
