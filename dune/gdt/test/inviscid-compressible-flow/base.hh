@@ -111,8 +111,10 @@ public:
                  for (size_t ii = 0; ii < this->visualization_steps_; ++ii) {
                    const double time = ii * (this->T_end_ / this->visualization_steps_);
                    const auto u_t = solution.evaluate(time);
-                   this->access().euler_tools.visualize(
-                       u_t, u_t.space().grid_view(), prefix, XT::Common::to_string(ii));
+                   this->access().euler_tools.visualize(u_t,
+                                                        u_t.space().grid_view(),
+                                                        XT::Common::Test::get_unique_test_name() + "__" + prefix,
+                                                        XT::Common::to_string(ii));
                  }
                },
                num_refinements)
@@ -333,7 +335,7 @@ class InviscidCompressibleFlowEulerExplicitTest : public InviscidCompressibleFlo
 
 protected:
   InviscidCompressibleFlowEulerExplicitTest()
-    : BaseType("explicit/fixed", 2)
+    : BaseType("explicit/fixed")
   {}
 
   XT::LA::ListVectorArray<V> solve(const S& space, const double T_end) override final
