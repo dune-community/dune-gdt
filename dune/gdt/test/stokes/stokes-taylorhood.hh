@@ -63,7 +63,7 @@ struct StokesDirichletProblem
     , rhs_(rhs_in)
     , dirichlet_(dirichlet_in)
     , boundary_info_()
-    , grid_(XT::Grid::make_cube_grid<G>(-1, 1, 10))
+    , grid_(XT::Grid::make_cube_grid<G>(-1, 1, 30))
     , grid_view_(grid_.leaf_view())
   {}
 
@@ -126,6 +126,17 @@ public:
     : problem_(problem)
   {}
 
+  static bool is_symmetric(const Matrix& mat)
+  {
+    if (mat.rows() != mat.cols())
+      return false;
+    for (size_t ii = 0; ii < mat.rows(); ++ii)
+      for (size_t jj = ii; jj < mat.cols(); ++jj)
+        if (XT::Common::FloatCmp::ne(mat.get_entry(ii, jj), mat.get_entry(jj, ii)))
+          return false;
+    return true;
+  }
+
   void run()
   {
     const auto& grid_view = problem_.grid_view();
@@ -151,6 +162,7 @@ public:
     // assemble everything in one grid walk
     problem_.diffusion_factor().visualize(grid_view, "testvis");
     A_operator.assemble(DXTC_TEST_CONFIG_GET("setup.use_tbb", true));
+    EXPECT_TRUE(is_symmetric(A));
     B_operator.assemble(DXTC_TEST_CONFIG_GET("setup.use_tbb", true));
     dirichlet_constraints.apply(A, rhs_u.vector());
   }
