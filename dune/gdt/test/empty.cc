@@ -27,11 +27,7 @@
 
 #include <dune/xt/common/test/main.hxx> // <- this one has to come first (includes the config.h)!
 
-#include <dune/xt/common/float_cmp.hh>
-
 
 GTEST_TEST(empty, main)
 {
-  //    using F = typename Dune::XT::Common::FloatCmp::MT<double>::T;
-  Dune::XT::Common::FloatCmp::gt(1., 2.);
 }
