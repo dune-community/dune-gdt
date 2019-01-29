@@ -77,13 +77,6 @@ public:
     , mapper_(nullptr)
     , basis_(nullptr)
   {
-#if !DUNE_GDT_SPACES_H1_CONTINUOUS_LAGRANGE_IGNORE_FAILING_ALUGRID
-    // see https://github.com/dune-community/dune-gdt/issues/144
-    DUNE_THROW_IF(XT::Grid::is_alugrid<typename GridViewType::Grid>::value && order > 1,
-                  Exceptions::space_error,
-                  "Higher order CG spaces do not work with alugrid atm, see "
-                  "https://github.com/dune-community/dune-gdt/issues/144!");
-#endif
     // create finite elements
     for (auto&& geometry_type : grid_view_.indexSet().types(0))
       finite_elements_->insert(

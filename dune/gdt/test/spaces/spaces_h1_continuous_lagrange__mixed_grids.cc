@@ -9,10 +9,6 @@
 //   René Fritze     (2018)
 //   Tobias Leibner  (2018)
 
-// see https://github.com/dune-community/dune-gdt/issues/144, we want to allow construction of the broken space to test
-// other functionality
-#define DUNE_GDT_SPACES_H1_CONTINUOUS_LAGRANGE_IGNORE_FAILING_ALUGRID 1
-
 #include <dune/xt/common/test/main.hxx> // <- this one has to come first (includes the config.h)!
 
 #include "h1_continuous_lagrange.hh"
