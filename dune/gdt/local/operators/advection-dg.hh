@@ -15,6 +15,7 @@
 
 #include <dune/geometry/quadraturerules.hh>
 
+#include <dune/xt/common/memory.hh>
 #include <dune/xt/common/parameter.hh>
 
 #include <dune/gdt/exceptions.hh>
@@ -22,6 +23,7 @@
 #include <dune/gdt/type_traits.hh>
 
 #include <dune/gdt/local/numerical-fluxes/interface.hh>
+#include <dune/gdt/tools/local-mass-matrix.hh>
 
 #include "interfaces.hh"
 
@@ -47,15 +49,24 @@ public:
   using typename BaseType::SourceType;
 
   using FluxType = XT::Functions::FunctionInterface<m, d, m, RF>;
+  using LocalMassMatrixProviderType = LocalMassMatrixProvider<RGV, m, 1, RF>;
 
   LocalAdvectionDgVolumeOperator(const FluxType& flux)
     : BaseType(flux.parameter_type())
     , flux_(flux)
   {}
 
+  /// Applies the inverse of the local mass matrix.
+  LocalAdvectionDgVolumeOperator(const LocalMassMatrixProviderType& local_mass_matrices, const FluxType& flux)
+    : BaseType(flux.parameter_type())
+    , flux_(flux)
+    , local_mass_matrices_(local_mass_matrices)
+  {}
+
   LocalAdvectionDgVolumeOperator(const ThisType& other)
     : BaseType(other.parameter_type())
     , flux_(other.flux_)
+    , local_mass_matrices_(other.local_mass_matrices_)
   {}
 
   std::unique_ptr<BaseType> copy() const override final
@@ -69,6 +80,8 @@ public:
   {
     const auto& element = local_range.element();
     const auto& basis = local_range.basis();
+    local_dofs_.resize(basis.size(param));
+    local_dofs_ *= 0.;
     const auto local_source = source.local_discrete_function(element);
     const auto local_source_order = local_source->order(param);
     const auto local_basis_order = basis.order(param);
@@ -84,13 +97,21 @@ public:
       const auto flux_value = flux_.evaluate(source_value, param);
       // compute
       for (size_t ii = 0; ii < basis.size(param); ++ii)
-        local_range.dofs()[ii] += integration_factor * quadrature_weight * -1. * (flux_value * basis_jacobians_[ii]);
+        local_dofs_[ii] += integration_factor * quadrature_weight * -1. * (flux_value * basis_jacobians_[ii]);
     }
+    // apply local mass matrix, if required (not optimal, uses a temporary)
+    if (local_mass_matrices_.valid())
+      local_dofs_ = local_mass_matrices_.access().local_mass_matrix_inverse(element) * local_dofs_;
+    // add to local range
+    for (size_t ii = 0; ii < basis.size(param); ++ii)
+      local_range.dofs()[ii] += local_dofs_[ii];
   } // ... apply(...)
 
 private:
   const FluxType& flux_;
+  const XT::Common::ConstStorageProvider<LocalMassMatrixProviderType> local_mass_matrices_;
   mutable std::vector<typename LocalRangeType::LocalBasisType::DerivativeRangeType> basis_jacobians_;
+  mutable XT::LA::CommonDenseVector<RF> local_dofs_;
 }; // class LocalAdvectionDgVolumeOperator
 
 
@@ -104,17 +125,17 @@ template <class I,
           class SGV,
           size_t m = 1,
           class SR = double,
-          class RR = SR,
+          class IRR = SR,
           class IRGV = SGV,
           class IRV = SV,
-          class ORR = RR,
+          class ORR = IRR,
           class ORGV = IRGV,
           class ORV = IRV>
 class LocalAdvectionDgCouplingOperator
-  : public LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SR, m, 1, RR, IRGV, IRV, ORGV, ORV>
+  : public LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SR, m, 1, IRR, IRGV, IRV, ORGV, ORV>
 {
-  using ThisType = LocalAdvectionDgCouplingOperator<I, SV, SGV, m, SR, RR, IRGV, IRV, ORR, ORGV, ORV>;
-  using BaseType = LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SR, m, 1, RR, IRGV, IRV, ORGV, ORV>;
+  using ThisType = LocalAdvectionDgCouplingOperator<I, SV, SGV, m, SR, IRR, IRGV, IRV, ORR, ORGV, ORV>;
+  using BaseType = LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SR, m, 1, IRR, IRGV, IRV, ORGV, ORV>;
 
 public:
   using BaseType::d;
@@ -124,7 +145,8 @@ public:
   using typename BaseType::LocalOutsideRangeType;
   using typename BaseType::SourceType;
 
-  using NumericalFluxType = NumericalFluxInterface<d, m, RR>;
+  using NumericalFluxType = NumericalFluxInterface<d, m, IRR>;
+  using LocalMassMatrixProviderType = LocalMassMatrixProvider<IRGV, m, 1, IRR>;
 
   LocalAdvectionDgCouplingOperator(const NumericalFluxType& numerical_flux, bool compute_outside = true)
     : BaseType(numerical_flux.parameter_type())
@@ -132,10 +154,21 @@ public:
     , compute_outside_(compute_outside)
   {}
 
+  /// Applies the inverse of the local mass matrix.
+  LocalAdvectionDgCouplingOperator(const LocalMassMatrixProviderType& local_mass_matrices,
+                                   const NumericalFluxType& numerical_flux,
+                                   bool compute_outside = true)
+    : BaseType(numerical_flux.parameter_type())
+    , numerical_flux_(numerical_flux.copy())
+    , compute_outside_(compute_outside)
+    , local_mass_matrices_(local_mass_matrices)
+  {}
+
   LocalAdvectionDgCouplingOperator(const ThisType& other)
     : BaseType(other.parameter_type())
     , numerical_flux_(other.numerical_flux_->copy())
     , compute_outside_(other.compute_outside_)
+    , local_mass_matrices_(other.local_mass_matrices_)
   {}
 
   std::unique_ptr<BaseType> copy() const override final
@@ -153,6 +186,10 @@ public:
     const auto& outside_element = local_range_outside.element();
     const auto& inside_basis = local_range_inside.basis();
     const auto& outside_basis = local_range_outside.basis();
+    inside_local_dofs_.resize(inside_basis.size(param));
+    outside_local_dofs_.resize(outside_basis.size(param));
+    inside_local_dofs_ *= 0.;
+    outside_local_dofs_ *= 0.;
     const auto u = source.local_discrete_function(inside_element);
     const auto v = source.local_discrete_function(outside_element);
     const auto integrand_order = std::max(inside_basis.order(param), outside_basis.order(param))
@@ -178,18 +215,33 @@ public:
                                             param);
       // compute
       for (size_t ii = 0; ii < inside_basis.size(param); ++ii)
-        local_range_inside.dofs()[ii] += integration_factor * quadrature_weight * (g * inside_basis_values_[ii]);
+        inside_local_dofs_[ii] += integration_factor * quadrature_weight * (g * inside_basis_values_[ii]);
       if (compute_outside_)
         for (size_t ii = 0; ii < outside_basis.size(param); ++ii)
-          local_range_outside.dofs()[ii] -= integration_factor * quadrature_weight * (g * outside_basis_values_[ii]);
+          outside_local_dofs_[ii] -= integration_factor * quadrature_weight * (g * outside_basis_values_[ii]);
     }
+    // apply local mass matrix, if required (not optimal, uses a temporary)
+    if (local_mass_matrices_.valid())
+      inside_local_dofs_ = local_mass_matrices_.access().local_mass_matrix_inverse(inside_element) * inside_local_dofs_;
+    if (compute_outside_ && local_mass_matrices_.valid())
+      outside_local_dofs_ =
+          local_mass_matrices_.access().local_mass_matrix_inverse(outside_element) * outside_local_dofs_;
+    // add to local range
+    for (size_t ii = 0; ii < inside_basis.size(param); ++ii)
+      local_range_inside.dofs()[ii] += inside_local_dofs_[ii];
+    if (compute_outside_)
+      for (size_t ii = 0; ii < outside_basis.size(param); ++ii)
+        local_range_outside.dofs()[ii] += outside_local_dofs_[ii];
   } // ... apply(...)
 
 private:
   const std::unique_ptr<const NumericalFluxType> numerical_flux_;
   const bool compute_outside_;
+  const XT::Common::ConstStorageProvider<LocalMassMatrixProviderType> local_mass_matrices_;
   mutable std::vector<typename LocalInsideRangeType::LocalBasisType::RangeType> inside_basis_values_;
   mutable std::vector<typename LocalOutsideRangeType::LocalBasisType::RangeType> outside_basis_values_;
+  mutable XT::LA::CommonDenseVector<IRR> inside_local_dofs_;
+  mutable XT::LA::CommonDenseVector<ORR> outside_local_dofs_;
 }; // class LocalAdvectionDgCouplingOperator
 
 
@@ -217,6 +269,7 @@ public:
   using StateRangeType = typename XT::Functions::RangeTypeSelector<SF, m, 1>::type;
   using LambdaType = std::function<StateRangeType(
       const StateRangeType& /*u*/, const StateDomainType& /*n*/, const XT::Common::Parameter& /*param*/)>;
+  using LocalMassMatrixProviderType = LocalMassMatrixProvider<RGV, m, 1, RF>;
 
   LocalAdvectionDgBoundaryTreatmentByCustomNumericalFluxOperator(
       LambdaType numerical_boundary_flux,
@@ -227,10 +280,23 @@ public:
     , numerical_flux_order_(numerical_flux_order)
   {}
 
+  /// Applies the inverse of the local mass matrix.
+  LocalAdvectionDgBoundaryTreatmentByCustomNumericalFluxOperator(
+      const LocalMassMatrixProviderType& local_mass_matrices,
+      LambdaType numerical_boundary_flux,
+      const int numerical_flux_order,
+      const XT::Common::ParameterType& numerical_flux_param_type = {})
+    : BaseType(numerical_flux_param_type)
+    , numerical_boundary_flux_(numerical_boundary_flux)
+    , numerical_flux_order_(numerical_flux_order)
+    , local_mass_matrices_(local_mass_matrices)
+  {}
+
   LocalAdvectionDgBoundaryTreatmentByCustomNumericalFluxOperator(const ThisType& other)
     : BaseType(other.parameter_type())
     , numerical_boundary_flux_(other.numerical_boundary_flux_)
     , numerical_flux_order_(other.numerical_flux_order_)
+    , local_mass_matrices_(other.local_mass_matrices_)
   {}
 
   std::unique_ptr<BaseType> copy() const override final
@@ -246,6 +312,8 @@ public:
   {
     const auto& element = local_range_inside.element();
     const auto& inside_basis = local_range_inside.basis();
+    inside_local_dofs_.resize(inside_basis.size(param));
+    inside_local_dofs_ *= 0.;
     const auto u = source.local_discrete_function(element);
     const auto integrand_order = inside_basis.order(param) + numerical_flux_order_ * u->order(param);
     for (const auto& quadrature_point :
@@ -262,14 +330,22 @@ public:
       const auto g = numerical_boundary_flux_(u->evaluate(point_in_inside_reference_element), normal, param);
       // compute
       for (size_t ii = 0; ii < inside_basis.size(param); ++ii)
-        local_range_inside.dofs()[ii] += integration_factor * quadrature_weight * (g * inside_basis_values_[ii]);
+        inside_local_dofs_[ii] += integration_factor * quadrature_weight * (g * inside_basis_values_[ii]);
     }
+    // apply local mass matrix, if required (not optimal, uses a temporary)
+    if (local_mass_matrices_.valid())
+      inside_local_dofs_ = local_mass_matrices_.access().local_mass_matrix_inverse(element) * inside_local_dofs_;
+    // add to local range
+    for (size_t ii = 0; ii < inside_basis.size(param); ++ii)
+      local_range_inside.dofs()[ii] += inside_local_dofs_[ii];
   } // ... apply(...)
 
 private:
   const LambdaType numerical_boundary_flux_;
   const int numerical_flux_order_;
+  const XT::Common::ConstStorageProvider<LocalMassMatrixProviderType> local_mass_matrices_;
   mutable std::vector<typename LocalInsideRangeType::LocalBasisType::RangeType> inside_basis_values_;
+  mutable XT::LA::CommonDenseVector<RF> inside_local_dofs_;
 }; // class LocalAdvectionDgBoundaryTreatmentByCustomNumericalFluxOperator
 
 
@@ -302,6 +378,7 @@ public:
                                    const FluxType& /*flux*/,
                                    const StateRangeType& /*u*/,
                                    const XT::Common::Parameter& /*param*/)>;
+  using LocalMassMatrixProviderType = LocalMassMatrixProvider<RGV, m, 1, RF>;
 
   LocalAdvectionDgBoundaryTreatmentByCustomExtrapolationOperator(
       const NumericalFluxType& numerical_flux,
@@ -312,10 +389,23 @@ public:
     , extrapolate_(boundary_extrapolation_lambda)
   {}
 
+  /// Applies the inverse of the local mass matrix.
+  LocalAdvectionDgBoundaryTreatmentByCustomExtrapolationOperator(
+      const LocalMassMatrixProviderType& local_mass_matrices,
+      const NumericalFluxType& numerical_flux,
+      LambdaType boundary_extrapolation_lambda,
+      const XT::Common::ParameterType& boundary_treatment_param_type = {})
+    : BaseType(numerical_flux.parameter_type() + boundary_treatment_param_type)
+    , numerical_flux_(numerical_flux.copy())
+    , extrapolate_(boundary_extrapolation_lambda)
+    , local_mass_matrices_(local_mass_matrices)
+  {}
+
   LocalAdvectionDgBoundaryTreatmentByCustomExtrapolationOperator(const ThisType& other)
     : BaseType(other.parameter_type())
     , numerical_flux_(other.numerical_flux_->copy())
     , extrapolate_(other.extrapolate_)
+    , local_mass_matrices_(other.local_mass_matrices_)
   {}
 
   std::unique_ptr<BaseType> copy() const override final
@@ -331,6 +421,8 @@ public:
   {
     const auto& element = local_range_inside.element();
     const auto& inside_basis = local_range_inside.basis();
+    inside_local_dofs_.resize(inside_basis.size(param));
+    inside_local_dofs_ *= 0.;
     const auto local_source = source.local_discrete_function(element);
     const auto integrand_order =
         inside_basis.order(param) + numerical_flux_->flux().order(param) * local_source->order(param);
@@ -350,14 +442,22 @@ public:
       const auto g = numerical_flux_->apply(u, v, normal, param);
       // compute
       for (size_t ii = 0; ii < inside_basis.size(param); ++ii)
-        local_range_inside.dofs()[ii] += integration_factor * quadrature_weight * (g * inside_basis_values_[ii]);
+        inside_local_dofs_[ii] += integration_factor * quadrature_weight * (g * inside_basis_values_[ii]);
     }
+    // apply local mass matrix, if required (not optimal, uses a temporary)
+    if (local_mass_matrices_.valid())
+      inside_local_dofs_ = local_mass_matrices_.access().local_mass_matrix_inverse(element) * inside_local_dofs_;
+    // add to local range
+    for (size_t ii = 0; ii < inside_basis.size(param); ++ii)
+      local_range_inside.dofs()[ii] += inside_local_dofs_[ii];
   } // ... apply(...)
 
 private:
   const std::unique_ptr<const NumericalFluxType> numerical_flux_;
   const LambdaType extrapolate_;
+  const XT::Common::ConstStorageProvider<LocalMassMatrixProviderType> local_mass_matrices_;
   mutable std::vector<typename LocalInsideRangeType::LocalBasisType::RangeType> inside_basis_values_;
+  mutable XT::LA::CommonDenseVector<RF> inside_local_dofs_;
 }; // class LocalAdvectionDgBoundaryTreatmentByCustomExtrapolationOperator
 
 

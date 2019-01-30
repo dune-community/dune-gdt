@@ -21,6 +21,7 @@
 #include <dune/xt/grid/intersection.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/grid/filters.hh>
+#include <dune/xt/grid/walker.hh>
 
 #include <dune/gdt/local/bilinear-forms/integrals.hh>
 #include <dune/gdt/local/functionals/integrals.hh>
@@ -28,6 +29,7 @@
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/local/operators/advection-dg.hh>
 #include <dune/gdt/spaces/l2/finite-volume.hh>
+#include <dune/gdt/tools/local-mass-matrix.hh>
 
 #include "interfaces.hh"
 #include "localizable-operator.hh"
@@ -80,7 +82,13 @@ public:
     , source_space_(source_space)
     , range_space_(range_space)
     , periodicity_exception_(periodicity_exception.copy())
-  {}
+    , local_mass_matrix_provider_(assembly_grid_view_, range_space_)
+  {
+    // we assemble these once, to be used in each apply later on
+    auto walker = XT::Grid::make_walker(assembly_grid_view_);
+    walker.append(local_mass_matrix_provider_);
+    walker.walk(/*use_tbb=*/true);
+  }
 
   AdvectionDgOperator(ThisType&& source) = default;
 
@@ -109,7 +117,8 @@ public:
          const XT::Grid::IntersectionFilter<SGV>& filter = XT::Grid::ApplyOn::BoundaryIntersections<SGV>())
   {
     boundary_treatments_by_custom_numerical_flux_.emplace_back(
-        new BoundaryTreatmentByCustomNumericalFluxOperatorType(numerical_boundary_treatment_flux,
+        new BoundaryTreatmentByCustomNumericalFluxOperatorType(local_mass_matrix_provider_,
+                                                               numerical_boundary_treatment_flux,
                                                                numerical_boundary_treatment_flux_order,
                                                                boundary_treatment_parameter_type),
         filter.copy());
@@ -122,65 +131,13 @@ public:
   {
     boundary_treatments_by_custom_extrapolation_.emplace_back(
         new BoundaryTreatmentByCustomExtrapolationOperatorType(
-            *numerical_flux_, extrapolation, extrapolation_parameter_type),
+            local_mass_matrix_provider_, *numerical_flux_, extrapolation, extrapolation_parameter_type),
         filter.copy());
     return *this;
   }
 
   /// \}
 
-protected:
-  void append_standard_contributions(LocalizableOperatorBase<SGV, V, m, 1, F, SGV, m, 1, F, RGV, V>& localizable_op,
-                                     const XT::Common::Parameter& param) const
-  {
-    // element contributions
-    localizable_op.append(LocalAdvectionDgVolumeOperator<V, SGV, m, F, F, RGV, V>(numerical_flux_->flux()), param);
-    // contributions from inner intersections
-    localizable_op.append(LocalAdvectionDgCouplingOperator<I, V, SGV, m, F, F, RGV, V>(*numerical_flux_),
-                          param,
-                          XT::Grid::ApplyOn::InnerIntersectionsOnce<SGV>());
-    // contributions from periodic boundaries
-    localizable_op.append(LocalAdvectionDgCouplingOperator<I, V, SGV, m, F, F, RGV, V>(*numerical_flux_),
-                          param,
-                          *(XT::Grid::ApplyOn::PeriodicBoundaryIntersectionsOnce<SGV>() && !(*periodicity_exception_)));
-    // contributions from other boundaries by custom numerical flux
-    for (const auto& boundary_treatment : boundary_treatments_by_custom_numerical_flux_) {
-      const auto& boundary_op = *boundary_treatment.first;
-      const auto& filter = *boundary_treatment.second;
-      localizable_op.append(boundary_op, param, filter);
-    }
-    // contributions from other boundaries by custom extrapolation
-    for (const auto& boundary_treatment : boundary_treatments_by_custom_extrapolation_) {
-      const auto& boundary_op = *boundary_treatment.first;
-      const auto& filter = *boundary_treatment.second;
-      localizable_op.append(boundary_op, param, filter);
-    }
-  } // ... append_standard_contributions(...)
-
-  void
-      append_local_mass_matrix_inversion(LocalizableOperatorBase<SGV, V, m, 1, F, SGV, m, 1, F, RGV, V>& localizable_op,
-                                         RangeFunctionType& range_function) const
-  {
-    localizable_op.append(
-        /*prepare=*/[]() {},
-        /*apply_local=*/
-        [&](const auto& element) {
-          // (creating these objects before the grid walk and reusing them would be more efficient, but not thread safe)
-          auto local_range = range_function.local_discrete_function(element);
-          const auto& range_basis = local_range->basis();
-          using E = XT::Grid::extract_entity_t<RGV>;
-          const LocalElementIntegralBilinearForm<E, m, 1, F, F> local_l2_bilinear_form(
-              LocalElementProductIntegrand<E, m, 1, F, F>(1.));
-          local_range->dofs().assign_from(XT::LA::solve(
-              XT::LA::convert_to<XT::LA::CommonDenseMatrix<F>>(local_l2_bilinear_form.apply2(range_basis, range_basis)),
-              XT::LA::convert_to<XT::LA::CommonDenseVector<F>>(local_range->dofs()),
-              {{"type", XT::LA::SolverOptions<XT::LA::CommonDenseMatrix<F>>::types().at(0)},
-               {"post_check_solves_system", "-1"}}));
-        },
-        /*finalize=*/[]() {});
-  } // ... append_local_mass_matrix_inversion(...)
-
-public:
   void apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& param = {}) const override
   {
     // some checks
@@ -193,14 +150,34 @@ public:
     auto range_function = make_discrete_function(this->range_space_, range);
     // set up the actual operator
     auto localizable_op = make_localizable_operator(this->assembly_grid_view_, source_function, range_function);
-    this->append_standard_contributions(localizable_op, param);
-    // and apply it in a first grid walk
+    // element contributions
+    localizable_op.append(
+        LocalAdvectionDgVolumeOperator<V, SGV, m, F, F, RGV, V>(local_mass_matrix_provider_, numerical_flux_->flux()),
+        param);
+    // contributions from inner intersections
+    localizable_op.append(LocalAdvectionDgCouplingOperator<I, V, SGV, m, F, F, RGV, V>(
+                              local_mass_matrix_provider_, *numerical_flux_, /*compute_outside=*/false),
+                          param,
+                          XT::Grid::ApplyOn::InnerIntersections<SGV>());
+    // contributions from periodic boundaries
+    localizable_op.append(LocalAdvectionDgCouplingOperator<I, V, SGV, m, F, F, RGV, V>(
+                              local_mass_matrix_provider_, *numerical_flux_, /*compute_outside=*/false),
+                          param,
+                          *(XT::Grid::ApplyOn::PeriodicBoundaryIntersections<SGV>() && !(*periodicity_exception_)));
+    // contributions from other boundaries by custom numerical flux
+    for (const auto& boundary_treatment : boundary_treatments_by_custom_numerical_flux_) {
+      const auto& boundary_op = *boundary_treatment.first;
+      const auto& filter = *boundary_treatment.second;
+      localizable_op.append(boundary_op, param, filter);
+    }
+    // contributions from other boundaries by custom extrapolation
+    for (const auto& boundary_treatment : boundary_treatments_by_custom_extrapolation_) {
+      const auto& boundary_op = *boundary_treatment.first;
+      const auto& filter = *boundary_treatment.second;
+      localizable_op.append(boundary_op, param, filter);
+    }
+    // and apply it in a grid walk
     localizable_op.assemble(/*use_tbb=*/true);
-    DUNE_THROW_IF(!range.valid(), Exceptions::operator_error, "range contains inf or nan!");
-    // prepare inversion of the mass matrix
-    this->append_local_mass_matrix_inversion(localizable_op, range_function);
-    // and actually do it in a second grid walk
-    localizable_op.walk(/*use_tbb=*/true); // Do not call assemble() more than once, will not do anything!
     DUNE_THROW_IF(!range.valid(), Exceptions::operator_error, "range contains inf or nan!");
   } // ... apply(...)
 
@@ -210,6 +187,7 @@ protected:
   const SourceSpaceType& source_space_;
   const RangeSpaceType& range_space_;
   std::unique_ptr<XT::Grid::IntersectionFilter<SGV>> periodicity_exception_;
+  LocalMassMatrixProvider<RGV, m, 1, F> local_mass_matrix_provider_;
   std::list<std::pair<std::unique_ptr<BoundaryTreatmentByCustomNumericalFluxOperatorType>,
                       std::unique_ptr<XT::Grid::IntersectionFilter<SGV>>>>
       boundary_treatments_by_custom_numerical_flux_;
