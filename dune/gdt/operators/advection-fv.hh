@@ -212,7 +212,7 @@ public:
 
 private:
   const SGV assembly_grid_view_;
-  const std::unique_ptr<const NumericalFluxType> numerical_flux_;
+  std::unique_ptr<const NumericalFluxType> numerical_flux_;
   const SourceSpaceType& source_space_;
   const RangeSpaceType& range_space_;
   std::unique_ptr<XT::Grid::IntersectionFilter<SGV>> periodicity_exception_;
