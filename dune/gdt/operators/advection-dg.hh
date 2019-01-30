@@ -233,6 +233,7 @@ make_advection_dg_operator(
 }
 
 
+#if 0
 /**
  * \note See AdvectionDgOperator for a description of the template arguments.
  *
@@ -281,7 +282,7 @@ public:
                   Exceptions::operator_error,
                   "this->parameter_type() = " << this->parameter_type() << "\n   param.type() = " << param.type());
     range.set_all(0);
-#if 0
+#  if 0
     auto src = source.copy();
     auto source_function = make_discrete_function(source_space_, src);
     // apply local P0 projection
@@ -296,7 +297,7 @@ public:
                                            .interpolate([&](const auto& /*xx*/) { return average; }, 0));
     });
     walker.walk(/*use_tbb=*/true);
-#endif
+#  endif
     auto source_function = make_discrete_function(this->source_space_, source);
     auto range_function = make_discrete_function(this->range_space_, range);
     // set up the actual operator
@@ -399,6 +400,7 @@ private:
   const double nu_1_;
   const double alpha_1_;
 }; // class AdvectionDgArtificialViscosityOperator
+#endif
 
 
 } // namespace GDT
