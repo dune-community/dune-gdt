@@ -57,7 +57,8 @@ public:
   using typename BaseType::ElementType;
 
   LocalMassMatrixProvider(const AssemblyGridView& grid_view, const SpaceType& space)
-    : Propagator(this)
+    : BaseType()
+    , Propagator(this)
     , grid_view_(grid_view)
     , space_(space)
     , element_mapper_(grid_view_)
@@ -66,7 +67,8 @@ public:
   {}
 
   LocalMassMatrixProvider(const ThisType& other)
-    : Propagator(this)
+    : BaseType(other)
+    , Propagator(this)
     , grid_view_(other.grid_view_)
     , space_(other.space_)
     , element_mapper_(grid_view_)
