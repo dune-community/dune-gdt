@@ -14,9 +14,11 @@
 #include <functional>
 
 #include <dune/geometry/quadraturerules.hh>
+#include <dune/grid/common/rangegenerators.hh>
 
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/common/parameter.hh>
+#include <dune/xt/grid/intersection.hh>
 
 #include <dune/gdt/exceptions.hh>
 #include <dune/gdt/local/dof-vector.hh>
@@ -459,6 +461,147 @@ private:
   mutable std::vector<typename LocalInsideRangeType::LocalBasisType::RangeType> inside_basis_values_;
   mutable XT::LA::CommonDenseVector<RF> inside_local_dofs_;
 }; // class LocalAdvectionDgBoundaryTreatmentByCustomExtrapolationOperator
+
+
+template <class SV, class SGV, size_t m = 1, class SF = double, class RF = SF, class RGV = SGV, class RV = SV>
+class LocalAdvectionDgArtificialViscosityShockCapturingOperator
+  : public LocalElementOperatorInterface<SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>
+{
+  using ThisType = LocalAdvectionDgArtificialViscosityShockCapturingOperator<SV, SGV, m, SF, RF, RGV, RV>;
+  using BaseType = LocalElementOperatorInterface<SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>;
+
+public:
+  using BaseType::d;
+  using typename BaseType::D;
+  using typename BaseType::LocalRangeType;
+  using typename BaseType::SourceType;
+
+  using FluxType = XT::Functions::FunctionInterface<m, d, m, RF>;
+  using LocalMassMatrixProviderType = LocalMassMatrixProvider<RGV, m, 1, RF>;
+
+  LocalAdvectionDgArtificialViscosityShockCapturingOperator(const SGV& assembly_grid_view,
+                                                            const double& nu_1 = 0.2,
+                                                            const double& alpha_1 = 1.0,
+                                                            const size_t index = 0)
+    : BaseType()
+    , assembly_grid_view_(assembly_grid_view)
+    , nu_1_(nu_1)
+    , alpha_1_(alpha_1)
+    , index_(index)
+  {}
+
+  /// Applies the inverse of the local mass matrix.
+  LocalAdvectionDgArtificialViscosityShockCapturingOperator(const LocalMassMatrixProviderType& local_mass_matrices,
+                                                            const SGV& assembly_grid_view,
+                                                            const double& nu_1 = 0.2,
+                                                            const double& alpha_1 = 1.0,
+                                                            const size_t index = 0)
+    : BaseType()
+    , assembly_grid_view_(assembly_grid_view)
+    , nu_1_(nu_1)
+    , alpha_1_(alpha_1)
+    , index_(index)
+    , local_mass_matrices_(local_mass_matrices)
+  {}
+
+  LocalAdvectionDgArtificialViscosityShockCapturingOperator(const ThisType& other)
+    : BaseType(other)
+    , assembly_grid_view_(other.assembly_grid_view_)
+    , nu_1_(other.nu_1_)
+    , alpha_1_(other.alpha_1_)
+    , index_(other.index_)
+    , local_mass_matrices_(other.local_mass_matrices_)
+  {}
+
+  std::unique_ptr<BaseType> copy() const override final
+  {
+    return std::make_unique<ThisType>(*this);
+  }
+
+  void apply(const SourceType& source,
+             LocalRangeType& local_range,
+             const XT::Common::Parameter& param = {}) const override final
+  {
+    const auto& element = local_range.element();
+    const auto& basis = local_range.basis();
+    local_dofs_.resize(basis.size(param));
+    local_dofs_ *= 0.;
+    const auto local_source_element = source.local_discrete_function(element);
+    if (local_source_element->order(param) <= 0 || basis.order(param) <= 0)
+      return;
+    // compute jump indicator (8.176)
+    double element_jump_indicator = 0;
+    double element_boundary_without_domain_boundary = (d == 1) ? 1. : 0.;
+    for (auto&& intersection : intersections(assembly_grid_view_, element)) {
+      if (intersection.neighbor() && !intersection.boundary()) {
+        if (d > 1)
+          element_boundary_without_domain_boundary += XT::Grid::diameter(intersection);
+        const auto neighbor = intersection.outside();
+        const auto local_source_neighbor = source.local_discrete_function(neighbor);
+        const auto integration_order =
+            std::pow(std::max(local_source_element->order(param), local_source_neighbor->order(param)), 2);
+        for (auto&& quadrature_point :
+             QuadratureRules<D, d - 1>::rule(intersection.geometry().type(), integration_order)) {
+          const auto point_in_reference_intersection = quadrature_point.position();
+          const auto point_in_reference_element =
+              intersection.geometryInInside().global(point_in_reference_intersection);
+          const auto point_in_reference_neighbor =
+              intersection.geometryInOutside().global(point_in_reference_intersection);
+          const auto integration_factor = intersection.geometry().integrationElement(point_in_reference_intersection);
+          const auto quadrature_weight = quadrature_point.weight();
+          const auto value_on_element = local_source_element->evaluate(point_in_reference_element, param)[index_];
+          const auto value_on_neighbor = local_source_neighbor->evaluate(point_in_reference_neighbor, param)[index_];
+          element_jump_indicator +=
+              integration_factor * quadrature_weight * std::pow(value_on_element - value_on_neighbor, 2);
+        }
+      }
+      element_jump_indicator /= element_boundary_without_domain_boundary * element.geometry().volume();
+    }
+    // compute smoothed discrete jump indicator (8.180)
+    double smoothed_discrete_jump_indicator = 0;
+    const double xi_min = 0.5;
+    const double xi_max = 1.5;
+    if (element_jump_indicator < xi_min)
+      smoothed_discrete_jump_indicator = 0;
+    else if (!(element_jump_indicator < xi_max))
+      smoothed_discrete_jump_indicator = 1;
+    else
+      smoothed_discrete_jump_indicator =
+          0.5 * std::sin(M_PI * (element_jump_indicator - (xi_max - xi_min)) / (2 * (xi_max - xi_min))) + 0.5;
+    // evaluate artificial viscosity form (8.183)
+    if (smoothed_discrete_jump_indicator > 0) {
+      const auto h = element.geometry().volume();
+      for (const auto& quadrature_point : QuadratureRules<D, d>::rule(
+               element.type(),
+               std::max(0, local_source_element->order(param) - 1) + std::max(0, basis.order(param) - 1))) {
+        const auto point_in_reference_element = quadrature_point.position();
+        const auto integration_factor = element.geometry().integrationElement(point_in_reference_element);
+        const auto quadrature_weight = quadrature_point.weight();
+        const auto source_jacobian = local_source_element->jacobian(point_in_reference_element, param);
+        basis.jacobians(point_in_reference_element, basis_jacobians_, param);
+        // compute beta_h
+        for (size_t ii = 0; ii < basis.size(param); ++ii)
+          local_dofs_[ii] += integration_factor * quadrature_weight * nu_1_ * std::pow(h, alpha_1_)
+                             * smoothed_discrete_jump_indicator * (source_jacobian[0] * basis_jacobians_[ii][0]);
+      }
+    }
+    // apply local mass matrix, if required (not optimal, uses a temporary)
+    if (local_mass_matrices_.valid())
+      local_dofs_ = local_mass_matrices_.access().local_mass_matrix_inverse(element) * local_dofs_;
+    // add to local range
+    for (size_t ii = 0; ii < basis.size(param); ++ii)
+      local_range.dofs()[ii] += local_dofs_[ii];
+  } // ... apply(...)
+
+private:
+  const SGV& assembly_grid_view_;
+  const double nu_1_;
+  const double alpha_1_;
+  const size_t index_;
+  const XT::Common::ConstStorageProvider<LocalMassMatrixProviderType> local_mass_matrices_;
+  mutable std::vector<typename LocalRangeType::LocalBasisType::DerivativeRangeType> basis_jacobians_;
+  mutable XT::LA::CommonDenseVector<RF> local_dofs_;
+}; // class LocalAdvectionDgArtificialViscosityShockCapturingOperator
 
 
 } // namespace GDT
