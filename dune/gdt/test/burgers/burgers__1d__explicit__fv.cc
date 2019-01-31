@@ -33,7 +33,7 @@ TEST_F(Burgers1dExplicitFvTest, periodic_boundaries__numerical_upwind_flux)
   //  const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
   //  XT::Test::check_eoc_study_for_success(expected_results, actual_results);
 }
-TEST_F(Burgers1dExplicitFvTest, periodic_boundaries__numerical_lax_riedrichs_flux)
+TEST_F(Burgers1dExplicitFvTest, periodic_boundaries__numerical_lax_friedrichs_flux)
 {
   this->visualization_steps_ = DXTC_TEST_CONFIG_GET("setup.visualization_steps", 0);
   this->space_type_ = "fv";
