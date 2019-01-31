@@ -142,7 +142,7 @@ public:
               result[ii][jj] += ansatz_rr_dd * test_basis_grads_[ii][rr][dd];
             } // dd
       result *= 0.5;
-    }
+    } // if (symmetrize)
   } // ... evaluate(...)
 
 private:

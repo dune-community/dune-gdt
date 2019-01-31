@@ -4,7 +4,7 @@ status = 1a3bcab04b011a5d6e44f9983cae6ff89fa695e8 bin (heads/master)
 	 28c9ce81c14c878a71e907ab05b9bb72df77883e config.opts (heads/master)
 	 f308c6637edd65dcb83c4c1a46feaf05b958130e dune-alugrid (v2.6.0-7-gf308c663)
 	 76d7f0c9886a061571cb8dc66dd45a4ef86e7a58 dune-common (v2.2.1-2269-g76d7f0c9)
-	+877121a5c92d8fe419cf23a2b0476a0278e2b93c dune-gdt (heads/saddlepoint)
+	+3ebcdac956fb6090189884cf1c55b3469b4c6236 dune-gdt (heads/saddlepoint)
 	 5235397bc16d24c759a1672fed7b8cfde4852e52 dune-geometry (v2.2.0-834-g5235397)
 	 af5766f0df47e3d0b62ea486efb9cdbf8e1cfc52 dune-grid (v2.2.0-2671-gaf5766f0d)
 	 1369ae9329d0928480d6b18ed772fc77e1abf752 dune-grid-glue (v2.4.0-161-g1369ae9)
@@ -17,7 +17,7 @@ status = 1a3bcab04b011a5d6e44f9983cae6ff89fa695e8 bin (heads/master)
 	 376e88d14fd23ea12c3e23befc3fc967d4833751 dune-xt-data (heads/master)
 	 2da2612032ce64337f5af5cfec68d3c6d639e178 dune-xt-functions (heads/master)
 	 654c823f698418b67a696618342b54324f2cc151 dune-xt-grid (heads/master)
-	 a42e4d9449f4a20c692805fce018ec23a19680dc dune-xt-la (heads/master)
+	+6dec6d2d81ad42533881f3e73a12757f087654d4 dune-xt-la (heads/dailywork_tleibner)
 	 09d0378f616b94d68bcdd9fc6114813181849ec0 scripts (heads/master)
 commit = 646c658f6c00ca5e906fcac60b96bbdbd14bda42
 
@@ -44,7 +44,7 @@ commit = 76d7f0c9886a061571cb8dc66dd45a4ef86e7a58
 [submodule.dune-gdt]
 remote = git@github.com:dune-community/dune-gdt.git
 status = c0b1735fab0ecbd4bb4f1eaa27cb65fe813e98f0 .vcsetup (heads/master)
-commit = 877121a5c92d8fe419cf23a2b0476a0278e2b93c
+commit = 3ebcdac956fb6090189884cf1c55b3469b4c6236
 
 [submodule.dune-geometry]
 remote = git@github.com:dune-community/dune-geometry.git
@@ -109,7 +109,7 @@ commit = 654c823f698418b67a696618342b54324f2cc151
 [submodule.dune-xt-la]
 remote = git@github.com:dune-community/dune-xt-la.git
 status = cc1bbdac283f4b9323c64345030f1b8f634b88d5 .vcsetup (heads/master)
-commit = a42e4d9449f4a20c692805fce018ec23a19680dc
+commit = 6dec6d2d81ad42533881f3e73a12757f087654d4
 
 [submodule.scripts]
 remote = https://github.com/wwu-numerik/scripts.git
