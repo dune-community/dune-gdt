@@ -12,6 +12,7 @@
 #define DUNE_GDT_DISCRETEFUNCTION_BOCHNER_HH
 
 #include <dune/xt/common/memory.hh>
+#include <dune/xt/common/math.hh>
 #include <dune/xt/la/container/vector-array/list.hh>
 #include <dune/xt/grid/search.hh>
 
@@ -78,14 +79,16 @@ public:
 
   DiscreteFunction<V, GV, r, rC, R> evaluate(const double& time) const
   {
-    const auto search_result = XT::Grid::make_entity_in_level_search(bochner_space_.temporal_space().grid_view())(
-        std::vector<double>(1, time));
+    const double t =
+        XT::Common::clamp(time, bochner_space_.time_interval().first, bochner_space_.time_interval().second);
+    const auto search_result =
+        XT::Grid::make_entity_in_level_search(bochner_space_.temporal_space().grid_view())(std::vector<double>(1, t));
     DUNE_THROW_IF(!search_result.at(0),
                   Exceptions::finite_element_error,
-                  "when evaluating timedependent function: could not find time_interval for time = " << time);
+                  "when evaluating timedependent function: could not find time_interval for time = " << t);
     const auto& time_interval = *search_result.at(0);
     const auto temporal_basis = bochner_space_.temporal_space().basis().localize(time_interval);
-    const auto time_in_reference_element = time_interval.geometry().local(time);
+    const auto time_in_reference_element = time_interval.geometry().local(t);
     const auto temporal_basis_values = temporal_basis->evaluate_set(time_in_reference_element);
     V result(bochner_space_.spatial_space().mapper().size(), 0.);
     const auto global_dof_indices = bochner_space_.temporal_space().mapper().global_indices(time_interval);
