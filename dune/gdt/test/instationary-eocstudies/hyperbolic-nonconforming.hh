@@ -167,6 +167,35 @@ protected:
         });
   } // ... estimate_fixed_explicit_dt(...)
 
+  virtual double estimate_fixed_explicit_dt_to_T_end(const S& space,
+                                                     const double& min_dt,
+                                                     const double& T_end,
+                                                     const double max_overshoot)
+  {
+    const auto u_0 = this->make_initial_values(space);
+    const auto op = this->make_lhs_operator(space);
+    const auto max_sup_norm = max_overshoot * u_0.dofs().vector().sup_norm();
+    return XT::Common::find_largest_by_bisection(
+        /*min_dt=*/min_dt,
+        /*max_dt=*/T_end,
+        /*success=*/[&](const auto& dt_to_test) {
+          try {
+            auto u = u_0.dofs().vector();
+            double time = 0.;
+            // explicit euler
+            while (time < T_end + dt_to_test) {
+              u -= op->apply(u, {{"_t", {time}}, {"_dt", {dt_to_test}}}) * dt_to_test;
+              time += dt_to_test;
+              if (u.sup_norm() > max_sup_norm)
+                return false;
+            }
+            return true;
+          } catch (...) {
+            return false;
+          }
+        });
+  } // ... estimate_fixed_explicit_dt(...)
+
   std::string space_type_;
   std::string numerical_flux_type_;
   double dg_artificial_viscosity_nu_1_;

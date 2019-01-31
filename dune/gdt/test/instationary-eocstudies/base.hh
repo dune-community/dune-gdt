@@ -229,7 +229,10 @@ public:
     const auto& current_space = *current_space_;
     Timer timer;
     auto solution_on_current_grid = solve(current_space, T_end_);
-    current_data_["quantity"]["time to solution (s)"] = timer.elapsed();
+    const double time_to_solution = timer.elapsed();
+    // only set time if this did not happen in solve()
+    if (current_data_["quantity"].count("time to solution (s)") == 0)
+      current_data_["quantity"]["time to solution (s)"] = time_to_solution;
     // visualize
     const BS current_bochner_space(current_space, time_points_from_vector_array(solution_on_current_grid));
     visualize_(make_discrete_bochner_function(current_bochner_space, solution_on_current_grid),

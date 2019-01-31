@@ -131,7 +131,7 @@ protected:
     : BaseType("explicit/fixed")
   {}
 
-  virtual void compute_reference_solution()
+  virtual void compute_reference_solution() override
   {
     auto& self = *this;
     auto st = self.space_type_;
@@ -144,21 +144,21 @@ protected:
   {
     auto& self = *this;
     const auto fv_dt = self.estimate_fixed_explicit_fv_dt(space);
-    auto dt = fv_dt;
-    if (self.space_type_ != "fv") { // Estimate dt from unstabilized DG variant
-      const auto dg_artificial_viscosity_nu_1_backup = self.dg_artificial_viscosity_nu_1_;
-      self.dg_artificial_viscosity_nu_1_ = 0.0;
-      dt = self.estimate_fixed_explicit_dt(
-          space,
-          DXTC_TEST_CONFIG_GET("setup.estimate_fixed_explicit_dt.max_overshoot", 1.25),
-          DXTC_TEST_CONFIG_GET("setup.estimate_fixed_explicit_dt.max_steps_to_try", 500));
-      self.dg_artificial_viscosity_nu_1_ = dg_artificial_viscosity_nu_1_backup;
-    }
-    const auto u_0 = self.make_initial_values(space);
-    const auto op = self.make_lhs_operator(space);
+    const auto dt = self.estimate_fixed_explicit_dt_to_T_end(
+        space,
+        DXTC_TEST_CONFIG_GET("setup.estimate_fixed_explicit_dt.min_dt", 1e-4),
+        T_end,
+        DXTC_TEST_CONFIG_GET("setup.estimate_fixed_explicit_dt.max_overshoot", 1.25));
     self.current_data_["quantity"]["dt"] = dt;
     self.current_data_["quantity"]["explicit_fv_dt"] = fv_dt;
-    return GDT::Test::solve_instationary_system_explicit_euler(u_0, *op, T_end, dt);
+    Timer timer;
+    const auto u_0 = self.make_initial_values(space);
+    const auto op = self.make_lhs_operator(space);
+    /// TODO: investigate why the tested dt from above does not work!
+    auto solution = GDT::Test::solve_instationary_system_explicit_euler(
+        u_0, *op, T_end, DXTC_TEST_CONFIG_GET("setup.dt_factor", 0.99) * dt);
+    self.current_data_["quantity"]["time to solution (s)"] = timer.elapsed();
+    return solution;
   } // ... solve(...)
 }; // class BurgersExplicitTest
 
