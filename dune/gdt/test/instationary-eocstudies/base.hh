@@ -469,7 +469,7 @@ XT::LA::ListVectorArray<V> solve_instationary_system_implicit_euler(const Discre
   // timestepping
   double time = 0.;
   while (time < T_end + dt) {
-    logger.debug() << "time = " << time << ": stepping with dt..." << std::endl;
+    logger.debug() << "time = " << time << ": stepping with dt=" << dt << "..." << std::endl;
     time += dt;
     const auto& u_n = solution.back().vector();
     auto residual_op = (id - u_n) / dt + spatial_op;

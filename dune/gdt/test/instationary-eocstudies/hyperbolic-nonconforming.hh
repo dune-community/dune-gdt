@@ -67,12 +67,18 @@ public:
       const std::string timestepping,
       std::function<void(const DiscreteBochnerFunction<V, GV, m>&, const std::string&)> visualizer =
           [](const auto& /*solution*/, const auto& /*prefix*/) { /*no visualization by default*/ },
-      const size_t num_refinements = DXTC_CONFIG_GET("num_refinements", 3),
+      const size_t num_refinements = DXTC_TEST_CONFIG_GET("setup.num_refinements", 3),
       const size_t num_additional_refinements_for_reference =
-          DXTC_CONFIG_GET("num_additional_refinements_for_reference", 2))
+          DXTC_TEST_CONFIG_GET("setup.num_additional_refinements_for_reference", 2))
     : BaseType(T_end, timestepping, visualizer, num_refinements, num_additional_refinements_for_reference)
     , space_type_("")
     , numerical_flux_type_("")
+    , dg_artificial_viscosity_nu_1_(
+          DXTC_TEST_CONFIG_GET("setup.dg_artificial_viscosity_nu_1", advection_dg_artificial_viscosity_default_nu_1()))
+    , dg_artificial_viscosity_alpha_1_(DXTC_TEST_CONFIG_GET("setup.dg_artificial_viscosity_alpha_1",
+                                                            advection_dg_artificial_viscosity_default_alpha_1()))
+    , dg_artificial_viscosity_component_(DXTC_TEST_CONFIG_GET("setup.dg_artificial_viscosity_component",
+                                                              advection_dg_artificial_viscosity_default_component()))
   {}
 
 protected:
@@ -117,9 +123,10 @@ protected:
           *numerical_flux,
           space,
           space,
-          /*periodicity_exception=*/XT::Grid::ApplyOn::NoIntersections<GV>()/*,
-          DXTC_CONFIG_GET("nu_1", 0.2),
-          DXTC_CONFIG_GET("alpha_1", 1.0)*/);
+          /*periodicity_exception=*/XT::Grid::ApplyOn::NoIntersections<GV>(),
+          dg_artificial_viscosity_nu_1_,
+          dg_artificial_viscosity_alpha_1_,
+          dg_artificial_viscosity_component_);
   } // ... make_lhs_operator(...)
 
   virtual double estimate_fixed_explicit_fv_dt(
@@ -162,6 +169,9 @@ protected:
 
   std::string space_type_;
   std::string numerical_flux_type_;
+  double dg_artificial_viscosity_nu_1_;
+  double dg_artificial_viscosity_alpha_1_;
+  size_t dg_artificial_viscosity_component_;
 }; // struct InstationaryNonconformingHyperbolicEocStudy
 
 
