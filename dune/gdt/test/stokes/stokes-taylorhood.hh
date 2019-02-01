@@ -16,7 +16,7 @@
 
 #include <dune/xt/la/algorithms/cholesky.hh>
 #include <dune/xt/la/container/istl.hh>
-#include <dune/xt/la/solver.hh>
+#include <dune/xt/la/solver/istl/saddlepoint.hh>
 
 #include <dune/xt/grid/boundaryinfo/alldirichlet.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
@@ -44,6 +44,7 @@ namespace Dune {
 namespace GDT {
 namespace Test {
 
+#if HAVE_DUNE_ISTL
 
 template <class GV>
 struct StokesDirichletProblem
@@ -202,6 +203,7 @@ public:
     const size_t size_p = pressure_space.mapper().size();
     auto pattern_u_u = make_element_sparsity_pattern(velocity_space, velocity_space, grid_view);
     auto pattern_u_p = make_element_sparsity_pattern(velocity_space, pressure_space, grid_view);
+    auto pattern_p_p = make_element_sparsity_pattern(pressure_space, pressure_space, grid_view);
     Matrix A(size_u, size_u, pattern_u_u);
     Matrix B(size_u, size_p, pattern_u_p);
     MatrixOperator<Matrix, GV, d> A_operator(grid_view, velocity_space, velocity_space, A);
@@ -252,94 +254,52 @@ public:
       B.clear_row(DoF);
     EXPECT_TRUE(is_positive_definite(A));
 
-    // copy matrices to saddle point system matrix
-    // create pattern first
-    XT::LA::SparsityPatternDefault system_matrix_pattern(size_u + size_p);
-    for (size_t ii = 0; ii < pattern_u_u.size(); ++ii)
-      for (const auto& jj : pattern_u_u.inner(ii))
-        system_matrix_pattern.insert(ii, jj);
-    for (size_t ii = 0; ii < pattern_u_p.size(); ++ii) {
-      for (const auto& jj : pattern_u_p.inner(ii)) {
-        system_matrix_pattern.insert(ii, size_u + jj);
-        system_matrix_pattern.insert(size_u + jj, ii);
-      }
-    }
-    // for solver, needs all entries on diagonal
-    for (size_t ii = 0; ii < size_p; ++ii)
-      system_matrix_pattern.insert(size_u + ii, size_u + ii);
-    // check that all diagonal values are in pattern
-    for (size_t ii = 0; ii < size_u + size_p; ++ii) {
-      const auto& vec = system_matrix_pattern.inner(ii);
-      EXPECT_TRUE(std::find(vec.begin(), vec.end(), ii) != vec.end());
-    }
-    // create_matrix
-    Matrix system_matrix(size_u + size_p, size_u + size_p, system_matrix_pattern);
     // Fix value of p at first DoF to 0 to ensure the uniqueness of the solution, i.e, we have set the size_u-th row of
     // [A B; B^T 0] to the unit vector.
+    Matrix C(size_p, size_p, pattern_p_p);
     size_t dof_index = 0;
     B.clear_col(dof_index);
     discrete_rhs_vector_p.set_entry(dof_index, 0.);
-    system_matrix.unit_row(size_u + dof_index);
-    system_matrix.unit_col(size_u + dof_index);
-    // now copy the matrices
-    for (size_t ii = 0; ii < size_u; ++ii) {
-      for (const auto& jj : pattern_u_u.inner(ii)) {
-        system_matrix.set_entry(ii, jj, A.get_entry(ii, jj));
-      }
-    }
-    for (size_t ii = 0; ii < size_u; ++ii) {
-      for (const auto& jj : pattern_u_p.inner(ii)) {
-        system_matrix.set_entry(ii, size_u + jj, B.get_entry(ii, jj));
-        system_matrix.set_entry(size_u + jj, ii, B.get_entry(ii, jj));
-      }
-    }
-    EXPECT_TRUE(is_symmetric(system_matrix));
+    C.set_entry(dof_index, dof_index, 1.);
 
-    // also copy the rhs
-    Vector system_vector(size_u + size_p, 0.), solution_vector(size_u + size_p, 0.);
-    for (size_t ii = 0; ii < size_u; ++ii)
-      system_vector[ii] = discrete_rhs_vector_u[ii];
-    for (size_t ii = 0; ii < size_p; ++ii)
-      system_vector[size_u + ii] = discrete_rhs_vector_p[ii];
-
-    // solve the system by a direct solver
-    XT::LA::solve(system_matrix, system_vector, solution_vector);
-    DXTC_EXPECT_FLOAT_EQ(system_vector, system_matrix * solution_vector, 1e-12, 1e-12);
+    // now solve the system
+    XT::LA::SaddlePointSolver<double> solver(A, B, B, C);
     Vector solution_u(size_u), solution_p(size_p);
-    for (size_t ii = 0; ii < size_u; ++ii)
-      solution_u[ii] = solution_vector[ii];
-    for (size_t ii = 0; ii < size_p; ++ii)
-      solution_p[ii] = solution_vector[size_u + ii];
+    // solve both by direct solver and by schurcomplement (where the schur complement is inverted by CG and the inner
+    // solves with A are using a direct method)
+    for (std::string type : {"direct", "cg_direct_schurcomplement"}) {
+      solver.apply(discrete_rhs_vector_u, discrete_rhs_vector_p, solution_u, solution_p, type);
 
-    // add dirichlet values to u
-    const auto actual_u_vector = solution_u + dirichlet_vector;
-    // ensure int_\Omega p = 0
-    auto p_integral = p_basis_integrated_vector * solution_p;
-    auto p_correction = p_basis_integrated_vector;
-    auto p_correction_func = make_discrete_function(pressure_space, p_correction);
-    auto vol_domain = 4.;
-    XT::Functions::ConstantGridFunction<E> const_p_integral_func(p_integral / vol_domain);
-    interpolate(const_p_integral_func, p_correction_func);
-    const auto actual_p_vector = solution_p - p_correction;
-    // calculate difference to reference solution
-    const auto u_diff_vector = actual_u_vector - reference_solution_u_vector;
-    const auto p_diff_vector = actual_p_vector - reference_solution_p_vector;
+      // add dirichlet values to u
+      const auto actual_u_vector = solution_u + dirichlet_vector;
+      // ensure int_\Omega p = 0
+      auto p_integral = p_basis_integrated_vector * solution_p;
+      auto p_correction = p_basis_integrated_vector;
+      auto p_correction_func = make_discrete_function(pressure_space, p_correction);
+      auto vol_domain = 4.;
+      XT::Functions::ConstantGridFunction<E> const_p_integral_func(p_integral / vol_domain);
+      interpolate(const_p_integral_func, p_correction_func);
+      const auto actual_p_vector = solution_p - p_correction;
+      // calculate difference to reference solution
+      const auto u_diff_vector = actual_u_vector - reference_solution_u_vector;
+      const auto p_diff_vector = actual_p_vector - reference_solution_p_vector;
 
-    auto sol_u_func = make_discrete_function(velocity_space, actual_u_vector);
-    auto sol_p_func = make_discrete_function(pressure_space, actual_p_vector);
-    auto p_diff = make_discrete_function(pressure_space, p_diff_vector);
-    auto u_diff = make_discrete_function(velocity_space, u_diff_vector);
-    bool visualize = false;
-    if (visualize) {
-      sol_u_func.visualize("solution_u");
-      sol_p_func.visualize("solution_p");
-      reference_solution_u.visualize("u_ref");
-      reference_solution_p.visualize("p_ref");
-      u_diff.visualize("u_error");
-      p_diff.visualize("p_error");
+      auto sol_u_func = make_discrete_function(velocity_space, actual_u_vector);
+      auto sol_p_func = make_discrete_function(pressure_space, actual_p_vector);
+      auto p_diff = make_discrete_function(pressure_space, p_diff_vector);
+      auto u_diff = make_discrete_function(velocity_space, u_diff_vector);
+      bool visualize = true;
+      if (visualize) {
+        sol_u_func.visualize("solution_u_" + type);
+        sol_p_func.visualize("solution_p_" + type);
+        reference_solution_u.visualize("u_ref");
+        reference_solution_p.visualize("p_ref");
+        u_diff.visualize("u_error_" + type);
+        p_diff.visualize("p_error_" + type);
+      }
+      DXTC_EXPECT_FLOAT_LE(compute_l2_norm(problem_.grid_view(), u_diff), 2.29e-06);
+      DXTC_EXPECT_FLOAT_LE(compute_l2_norm(problem_.grid_view(), p_diff), 2.22e-05);
     }
-    DXTC_EXPECT_FLOAT_LE(compute_l2_norm(problem_.grid_view(), u_diff), 2.29e-06);
-    DXTC_EXPECT_FLOAT_LE(compute_l2_norm(problem_.grid_view(), p_diff), 2.22e-05);
   } // run
 
   StokesDirichletProblem<GV> problem_;
@@ -398,6 +358,7 @@ public:
   }
 }; // struct StokesTestcase1
 
+#endif // HAVE_DUNE_ISTL
 
 } // namespace Test
 } // namespace GDT
