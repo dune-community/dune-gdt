@@ -62,14 +62,16 @@ struct StokesDirichletProblem
   using DomainType = typename ScalarGridFunction::LocalFunctionType::DomainType;
 
   StokesDirichletProblem(std::shared_ptr<const ScalarGridFunction> diffusion_factor_in = default_diffusion_factor(),
-                         std::shared_ptr<const VectorGridFunction> rhs_in = default_rhs(),
+                         std::shared_ptr<const VectorGridFunction> rhs_f_in = default_rhs_f(),
+                         std::shared_ptr<const VectorGridFunction> rhs_g_in = default_rhs_g(),
                          std::shared_ptr<const VectorGridFunction> dirichlet_in = default_dirichlet_values(),
                          std::shared_ptr<const VectorGridFunction> reference_sol_u = nullptr,
                          std::shared_ptr<const ScalarGridFunction> reference_sol_p = nullptr)
     : diffusion_factor_(diffusion_factor_in)
     , diffusion_tensor_(std::make_shared<const XT::Functions::ConstantGridFunction<E, d, d>>(
           XT::LA::eye_matrix<FieldMatrix<double, d, d>>(d, d)))
-    , rhs_(rhs_in)
+    , rhs_f_(rhs_f_in)
+    , rhs_g_(rhs_g_in)
     , dirichlet_(dirichlet_in)
     , reference_sol_u_(reference_sol_u)
     , reference_sol_p_(reference_sol_p)
@@ -83,7 +85,12 @@ struct StokesDirichletProblem
     return std::make_shared<const XT::Functions::ConstantGridFunction<E, 1, 1>>(1., "default diffusion factor");
   }
 
-  static std::shared_ptr<const VectorGridFunction> default_rhs()
+  static std::shared_ptr<const VectorGridFunction> default_rhs_f()
+  {
+    return std::make_shared<const XT::Functions::ConstantGridFunction<E, d, 1>>(0., "zero rhs");
+  }
+
+  static std::shared_ptr<const VectorGridFunction> default_rhs_g()
   {
     return std::make_shared<const XT::Functions::ConstantGridFunction<E, d, 1>>(0., "zero rhs");
   }
@@ -108,9 +115,14 @@ struct StokesDirichletProblem
     return *diffusion_tensor_;
   } // ... make_initial_grid(...)
 
-  const VectorGridFunction& rhs()
+  const VectorGridFunction& rhs_f()
   {
-    return *rhs_;
+    return *rhs_f_;
+  } // ... make_initial_grid(...)
+
+  const VectorGridFunction& rhs_g()
+  {
+    return *rhs_g_;
   } // ... make_initial_grid(...)
 
   const VectorGridFunction& dirichlet()
@@ -137,7 +149,8 @@ struct StokesDirichletProblem
 
   std::shared_ptr<const ScalarGridFunction> diffusion_factor_;
   std::shared_ptr<const XT::Functions::GridFunctionInterface<E, d, d, RangeField>> diffusion_tensor_;
-  std::shared_ptr<const VectorGridFunction> rhs_;
+  std::shared_ptr<const VectorGridFunction> rhs_f_;
+  std::shared_ptr<const VectorGridFunction> rhs_g_;
   std::shared_ptr<const VectorGridFunction> dirichlet_;
   std::shared_ptr<const VectorGridFunction> reference_sol_u_;
   std::shared_ptr<const ScalarGridFunction> reference_sol_p_;
@@ -196,27 +209,35 @@ public:
   void run()
   {
     const auto& grid_view = problem_.grid_view();
-    // setup spaces and matrices A and B (system matrix is [A B; B^T 0]
+    // Setup spaces and matrices and vectors
+    // Equations are
+    // \int \nabla u \nabla v - \int p div v = \int ff v
+    // \int (div u) q = \int gg q
+    // System is [A B; B^T C] [u; p] = [f; g]
+    // Dimensions are: A: n x n, B: n x m, C: m x m, u: n, f: n, p: m, g: m
     const VelocitySpace velocity_space(grid_view, 2);
     const PressureSpace pressure_space(grid_view, 1);
-    const size_t size_u = velocity_space.mapper().size();
-    const size_t size_p = pressure_space.mapper().size();
-    auto pattern_u_u = make_element_sparsity_pattern(velocity_space, velocity_space, grid_view);
-    auto pattern_u_p = make_element_sparsity_pattern(velocity_space, pressure_space, grid_view);
-    auto pattern_p_p = make_element_sparsity_pattern(pressure_space, pressure_space, grid_view);
-    Matrix A(size_u, size_u, pattern_u_u);
-    Matrix B(size_u, size_p, pattern_u_p);
+    const size_t m = velocity_space.mapper().size();
+    const size_t n = pressure_space.mapper().size();
+    auto pattern_A = make_element_sparsity_pattern(velocity_space, velocity_space, grid_view);
+    auto pattern_B = make_element_sparsity_pattern(velocity_space, pressure_space, grid_view);
+    auto pattern_C = make_element_sparsity_pattern(pressure_space, pressure_space, grid_view);
+    Matrix A(m, m, pattern_A);
+    Matrix B(m, n, pattern_B);
     MatrixOperator<Matrix, GV, d> A_operator(grid_view, velocity_space, velocity_space, A);
     MatrixOperator<Matrix, GV, 1, 1, d> B_operator(grid_view, pressure_space, velocity_space, B);
+    // calculate A_{ij} as \int \nabla v_i \nabla v_j
     A_operator.append(LocalElementIntegralBilinearForm<E, d>(
         LocalEllipticIntegrand<E, d>(problem_.diffusion_factor(), problem_.diffusion_tensor())));
+    // calculate B_{ij} as \int \nabla p_i div(v_j)
     B_operator.append(LocalElementIntegralBilinearForm<E, d, 1, RangeField, RangeField, 1>(
         LocalElementAnsatzValueTestDivProductIntegrand<E>(-1.)));
-    Vector f_vector(size_u), p_basis_integrated_vector(size_p);
-    auto rhs_functional = make_vector_functional(velocity_space, f_vector);
-    rhs_functional.append(LocalElementIntegralFunctional<E, d>(
-        local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E, d>(), problem_.rhs())));
-    A_operator.append(rhs_functional);
+    // calculate rhs f as \int ff v and the integrated pressure space basis \int q_i
+    Vector f_vector(m), p_basis_integrated_vector(n);
+    auto f_functional = make_vector_functional(velocity_space, f_vector);
+    f_functional.append(LocalElementIntegralFunctional<E, d>(
+        local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E, d>(), problem_.rhs_f())));
+    A_operator.append(f_functional);
     auto p_basis_integrated_functional = make_vector_functional(pressure_space, p_basis_integrated_vector);
     XT::Functions::ConstantGridFunction<E> one_function(1);
     p_basis_integrated_functional.append(LocalElementIntegralFunctional<E, 1>(
@@ -229,8 +250,7 @@ public:
     A_operator.assemble(DXTC_TEST_CONFIG_GET("setup.use_tbb", true));
     EXPECT_TRUE(is_symmetric(A));
     B_operator.assemble(DXTC_TEST_CONFIG_GET("setup.use_tbb", true));
-    Vector dirichlet_vector(size_u, 0.), reference_solution_u_vector(size_u, 0.),
-        reference_solution_p_vector(size_p, 0.);
+    Vector dirichlet_vector(m, 0.), reference_solution_u_vector(m, 0.), reference_solution_p_vector(n, 0.);
     auto discrete_dirichlet_values = make_discrete_function(velocity_space, dirichlet_vector);
     auto reference_solution_u = make_discrete_function(velocity_space, reference_solution_u_vector);
     auto reference_solution_p = make_discrete_function(pressure_space, reference_solution_p_vector);
@@ -238,37 +258,37 @@ public:
         problem_.dirichlet(), discrete_dirichlet_values, problem_.boundary_info(), XT::Grid::DirichletBoundary());
     interpolate(problem_.reference_solution_u(), reference_solution_u);
     interpolate(problem_.reference_solution_p(), reference_solution_p);
-    Vector discrete_rhs_vector_u(size_u), discrete_rhs_vector_p(size_p);
+    Vector rhs_vector_u(m), rhs_vector_p(n);
     // create rhs vector f - A g_D for u
-    A.mv(dirichlet_vector, discrete_rhs_vector_u);
-    discrete_rhs_vector_u *= -1.;
-    discrete_rhs_vector_u += f_vector;
+    A.mv(dirichlet_vector, rhs_vector_u);
+    rhs_vector_u *= -1.;
+    rhs_vector_u += f_vector;
     // create rhs vector -B^T g_D for p
-    B.mtv(dirichlet_vector, discrete_rhs_vector_p);
-    discrete_rhs_vector_p *= -1;
+    B.mtv(dirichlet_vector, rhs_vector_p);
+    rhs_vector_p *= -1;
     // apply dirichlet constraints for u. We need to set the whole row of (A B; B^T 0) to the unit row for each
     // Dirichlet DoF, so we also need to clear the row of B.
-    dirichlet_constraints.apply(A, discrete_rhs_vector_u);
+    dirichlet_constraints.apply(A, rhs_vector_u);
     EXPECT_TRUE(is_symmetric(A));
     for (const auto& DoF : dirichlet_constraints.dirichlet_DoFs())
       B.clear_row(DoF);
     EXPECT_TRUE(is_positive_definite(A));
 
-    // Fix value of p at first DoF to 0 to ensure the uniqueness of the solution, i.e, we have set the size_u-th row of
+    // Fix value of p at first DoF to 0 to ensure the uniqueness of the solution, i.e, we have set the m-th row of
     // [A B; B^T 0] to the unit vector.
-    Matrix C(size_p, size_p, pattern_p_p);
+    Matrix C(n, n, pattern_C);
     size_t dof_index = 0;
     B.clear_col(dof_index);
-    discrete_rhs_vector_p.set_entry(dof_index, 0.);
+    rhs_vector_p.set_entry(dof_index, 0.);
     C.set_entry(dof_index, dof_index, 1.);
 
     // now solve the system
     XT::LA::SaddlePointSolver<double> solver(A, B, B, C);
-    Vector solution_u(size_u), solution_p(size_p);
+    Vector solution_u(m), solution_p(n);
     // solve both by direct solver and by schurcomplement (where the schur complement is inverted by CG and the inner
     // solves with A are using a direct method)
     for (std::string type : {"direct", "cg_direct_schurcomplement"}) {
-      solver.apply(discrete_rhs_vector_u, discrete_rhs_vector_p, solution_u, solution_p, type);
+      solver.apply(rhs_vector_u, rhs_vector_p, solution_u, solution_p, type);
 
       // add dirichlet values to u
       const auto actual_u_vector = solution_u + dirichlet_vector;
@@ -288,7 +308,7 @@ public:
       auto sol_p_func = make_discrete_function(pressure_space, actual_p_vector);
       auto p_diff = make_discrete_function(pressure_space, p_diff_vector);
       auto u_diff = make_discrete_function(velocity_space, u_diff_vector);
-      bool visualize = true;
+      bool visualize = false;
       if (visualize) {
         sol_u_func.visualize("solution_u_" + type);
         sol_p_func.visualize("solution_p_" + type);
@@ -319,7 +339,8 @@ class StokesTestcase1 : public StokesDirichletTest<G>
 public:
   StokesTestcase1()
     : BaseType(ProblemType(ProblemType::default_diffusion_factor(),
-                           ProblemType::default_rhs(),
+                           ProblemType::default_rhs_f(),
+                           ProblemType::default_rhs_g(),
                            dirichlet(),
                            exact_sol_u(),
                            exact_sol_p()))
