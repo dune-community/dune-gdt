@@ -307,10 +307,19 @@ make_advection_dg_operator(
     const NumericalFluxInterface<SGV::dimension, m, F>& numerical_flux,
     const SpaceInterface<SGV, m, 1, F>& source_space,
     const SpaceInterface<RGV, m, 1, F>& range_space,
-    const XT::Grid::IntersectionFilter<SGV>& periodicity_exception = XT::Grid::ApplyOn::NoIntersections<SGV>())
+    const XT::Grid::IntersectionFilter<SGV>& periodicity_exception = XT::Grid::ApplyOn::NoIntersections<SGV>(),
+    const double& artificial_viscosity_nu_1 = advection_dg_artificial_viscosity_default_nu_1(),
+    const double& artificial_viscosity_alpha_1 = advection_dg_artificial_viscosity_default_alpha_1(),
+    const size_t artificial_viscosity_component = advection_dg_artificial_viscosity_default_component())
 {
-  return AdvectionDgOperator<MatrixType, SGV, m, RGV>(
-      assembly_grid_view, numerical_flux, source_space, range_space, periodicity_exception);
+  return AdvectionDgOperator<MatrixType, SGV, m, RGV>(assembly_grid_view,
+                                                      numerical_flux,
+                                                      source_space,
+                                                      range_space,
+                                                      periodicity_exception,
+                                                      artificial_viscosity_nu_1,
+                                                      artificial_viscosity_alpha_1,
+                                                      artificial_viscosity_component);
 }
 
 
