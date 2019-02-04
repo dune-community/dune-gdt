@@ -162,14 +162,15 @@ protected:
       if (self.space_type_ == "fv")
         return std::make_unique<AdvectionFvOperator<M, GV, m>>(space.grid_view(), numerical_flux, space, space);
       else
-        return std::make_unique<AdvectionDgArtificialViscosityOperator<M, GV, m>>(
+        return std::make_unique<AdvectionDgOperator<M, GV, m>>(
             space.grid_view(),
             numerical_flux,
             space,
             space,
             /*periodicity_exception=*/XT::Grid::ApplyOn::NoIntersections<GV>(),
-            DXTC_CONFIG_GET("nu_1", 0.2),
-            DXTC_CONFIG_GET("alpha_1", 1.0));
+            self.dg_artificial_viscosity_nu_1_,
+            self.dg_artificial_viscosity_alpha_1_,
+            self.dg_artificial_viscosity_component_);
     }
     // All other than periodic are only availabel for FV at the moment.
     DUNE_THROW_IF(self.space_type_ != "fv",
