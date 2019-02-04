@@ -341,16 +341,27 @@ protected:
   XT::LA::ListVectorArray<V> solve(const S& space, const double T_end) override final
   {
     const auto u_0 = this->make_initial_values(space);
-    const auto op = this->make_lhs_operator(space);
     const auto fv_dt =
         (this->boundary_treatment == "inflow_from_the_left_by_heuristic_euler_treatment_impermeable_wall_right")
             ? estimate_dt_for_hyperbolic_system(
                   space.grid_view(), u_0, this->flux(), /*boundary_data_range=*/{{0.5, 0., 0.4}, {1.5, 0.5, 0.4}})
             : estimate_dt_for_hyperbolic_system(space.grid_view(), u_0, this->flux());
-    const auto dt = (this->space_type_ == "fv") ? fv_dt : this->estimate_fixed_explicit_dt(space);
+    auto dt = fv_dt;
+    if (this->space_type_ != "fv") {
+      // find something that will get us a few steps ...
+      dt = this->estimate_fixed_explicit_dt(space);
+      // .. and then try to go all the way with it
+      dt = this->estimate_fixed_explicit_dt_to_T_end(
+          space, DXTC_TEST_CONFIG_GET("setup.estimate_fixed_explicit_dt.min_dt", 1e-2) * dt, T_end);
+    }
     this->current_data_["quantity"]["dt"] = dt;
     this->current_data_["quantity"]["explicit_fv_dt"] = fv_dt;
-    return solve_instationary_system_explicit_euler(u_0, *op, T_end, dt);
+    Timer timer;
+    const auto op = this->make_lhs_operator(space);
+    auto solution =
+        solve_instationary_system_explicit_euler(u_0, *op, T_end, DXTC_TEST_CONFIG_GET("setup.dt_factor", 0.99) * dt);
+    this->current_data_["quantity"]["time to solution (s)"] = timer.elapsed();
+    return solution;
   }
 }; // class InviscidCompressibleFlowEulerExplicitTest
 

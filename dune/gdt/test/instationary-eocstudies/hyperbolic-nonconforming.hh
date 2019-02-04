@@ -170,7 +170,7 @@ protected:
   virtual double estimate_fixed_explicit_dt_to_T_end(const S& space,
                                                      const double& min_dt,
                                                      const double& T_end,
-                                                     const double max_overshoot)
+                                                     const double max_overshoot = 1.25)
   {
     const auto u_0 = this->make_initial_values(space);
     const auto op = this->make_lhs_operator(space);
