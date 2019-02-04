@@ -7,10 +7,8 @@
 // Authors:
 //   Felix Schindler (2019)
 
-#define DUNE_XT_COMMON_TEST_MAIN_CATCH_EXCEPTIONS 1
 #define DUNE_XT_COMMON_TEST_MAIN_ENABLE_TIMED_LOGGING 1
 #define DUNE_XT_COMMON_TEST_MAIN_ENABLE_INFO_LOGGING 1
-#define DUNE_XT_COMMON_TEST_MAIN_ENABLE_DEBUG_LOGGING 1
 
 #include <dune/xt/common/test/main.hxx> // <- this one has to come first (includes the config.h)!
 
@@ -36,4 +34,3 @@ TEST_F(Burgers1dExplicitDgP1Test, periodic_boundaries__numerical_engquist_osher_
   //  const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
   //  XT::Test::check_eoc_study_for_success(expected_results, actual_results);
 }
-

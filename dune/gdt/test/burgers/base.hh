@@ -37,7 +37,7 @@ struct BurgersProblem
   const double T_end;
 
   BurgersProblem()
-    : flux(1,
+    : flux(2,
            [&](const auto& u, const auto& /*param*/) { return 0.5 * u * u; },
            "burgers",
            {},
