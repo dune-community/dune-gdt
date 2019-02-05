@@ -585,9 +585,13 @@ protected:
     ret[0] = solution[0];
     ret[1] = solution[1];
     ret[2] = 1. - ret[0] - ret[1];
-    if (XT::Common::FloatCmp::lt(ret[0], 0.) || XT::Common::FloatCmp::lt(ret[1], 0.)
-        || XT::Common::FloatCmp::lt(ret[2], 0.))
+    if (XT::Common::FloatCmp::lt(ret[0], 0., 1e-14, 1e-14) || XT::Common::FloatCmp::lt(ret[1], 0., 1e-14, 1e-14)
+        || XT::Common::FloatCmp::lt(ret[2], 0., 1e-14, 1e-14))
       return false;
+    // we already checked the values are close to 0, now remove negative values stemming from numerical inaccuracies
+    for (size_t ii = 0; ii < 3; ++ii)
+      if (ret[ii] < 0.)
+        ret[ii] = 0.;
     return true;
   } // bool calculate_barycentric_coordinates(...)
 

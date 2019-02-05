@@ -113,9 +113,14 @@ public:
                                            dimRangeCols,
                                            dimFlux>&) const
   {
-    // copy to our FieldMatrix as the DenseMatrix in dune-common has a bug in its solve method (fixed in 2.6)
-    auto field_mat = std::make_unique<XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange>>(mat);
-    field_mat->solve(x, rhs);
+    // copy to CommonDenseMatrix as the FieldMatrix copies itself on the stack during solve which may case a
+    // stackoverflow for large matrices
+    XT::LA::CommonDenseMatrix<RangeFieldType> xt_la_mat(mat);
+    XT::LA::CommonDenseVector<RangeFieldType> xt_la_rhs(rhs);
+    XT::LA::CommonDenseVector<RangeFieldType> xt_la_x(rhs.size());
+    XT::LA::solve(xt_la_mat, xt_la_rhs, xt_la_x);
+    for (size_t ii = 0; ii < xt_la_x.size(); ++ii)
+      x[ii] = xt_la_x[ii];
   }
 
   template <class VectorType, size_t refinements>
