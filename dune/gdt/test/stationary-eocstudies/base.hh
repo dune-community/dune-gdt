@@ -214,7 +214,9 @@ public:
     const auto& current_space = *current_space_;
     Timer timer;
     auto solution_on_current_grid = solve(current_space);
-    current_data_["quantity"]["time to solution (s)"] = timer.elapsed();
+    // only set time if this did not happen in solve()
+    if (current_data_["quantity"].count("time to solution (s)") == 0)
+      current_data_["quantity"]["time to solution (s)"] = timer.elapsed();
     // visualize
     visualize_(make_discrete_function(current_space, solution_on_current_grid),
                "solution_on_refinement_" + XT::Common::to_string(refinement_level));

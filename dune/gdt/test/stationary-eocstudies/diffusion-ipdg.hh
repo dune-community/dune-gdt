@@ -16,16 +16,18 @@
 #include <dune/xt/grid/layers.hh>
 #include <dune/xt/functions/interfaces/grid-function.hh>
 
+#include <dune/gdt/functionals/vector-based.hh>
 #include <dune/gdt/local/functionals/integrals.hh>
 #include <dune/gdt/local/bilinear-forms/integrals.hh>
 #include <dune/gdt/local/integrands/elliptic-ipdg.hh>
 #include <dune/gdt/local/integrands/elliptic.hh>
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/local/integrands/conversion.hh>
-#include <dune/gdt/functionals/vector-based.hh>
-#include <dune/gdt/operators/matrix-based.hh>
-#include <dune/gdt/operators/lincomb.hh>
+#include <dune/gdt/norms.hh>
 #include <dune/gdt/operators/constant.hh>
+#include <dune/gdt/operators/lincomb.hh>
+#include <dune/gdt/operators/matrix-based.hh>
+#include <dune/gdt/operators/oswald-interpolation.hh>
 #include <dune/gdt/spaces/l2/discontinuous-lagrange.hh>
 #include <dune/gdt/spaces/l2/finite-volume.hh>
 #include <dune/gdt/spaces/h1/continuous-lagrange.hh>
@@ -82,6 +84,50 @@ protected:
 
   virtual const FF& force() const = 0;
 
+  virtual std::vector<std::string> norms() const override
+  {
+    auto nrms = BaseType::norms();
+    nrms.push_back("eta_NC");
+    return nrms;
+  }
+
+  virtual std::map<std::string, std::map<std::string, double>>
+  compute(const size_t refinement_level,
+          const std::vector<std::string>& actual_norms,
+          const std::vector<std::pair<std::string, std::string>>& actual_estimates,
+          const std::vector<std::string>& actual_quantities) override
+  {
+    auto& self = *this;
+    // compute the quantities/norms/estimates we known about and remove them from the todos
+    // store the data in current_data_, BaseType::compute will return that
+    auto remaining_norms = actual_norms;
+    auto remaining_estimates = actual_estimates;
+    auto remaining_quantities = actual_quantities;
+    for (auto norm_it = remaining_norms.begin(); norm_it != remaining_norms.end(); /*Do not increment here ...*/) {
+      const auto norm_id = *norm_it;
+      if (norm_id == "eta_NC") {
+        norm_it = remaining_norms.erase(norm_it); // ... but rather here ...
+        if (self.current_refinement_ != refinement_level)
+          self.discretization_info(refinement_level);
+        DUNE_THROW_IF(!self.current_space_, InvalidStateException, "");
+        // compute current solution
+        const auto& current_space = *self.current_space_;
+        Timer timer;
+        const auto solution = make_discrete_function(current_space, self.solve(current_space));
+        // only set time if this did not happen in solve()
+        if (self.current_data_["quantity"].count("time to solution (s)") == 0)
+          self.current_data_["quantity"]["time to solution (s)"] = timer.elapsed();
+        // compute estimate
+        const auto h1_interpolation = apply_oswald_interpolation(solution, current_space, boundary_info());
+        self.current_data_["norm"][norm_id] = elliptic_norm(
+            current_space.grid_view(), diffusion_factor(), diffusion_tensor(), solution - h1_interpolation);
+      } else
+        ++norm_it; // ... or finally here.
+    } // norms
+    // let the Base compute the rest
+    return BaseType::compute(refinement_level, remaining_norms, remaining_estimates, remaining_quantities);
+  } // ... compute(...)
+
   virtual std::unique_ptr<S> make_space(const GP& current_grid) override
   {
     if (space_type_ == "fv")
@@ -122,6 +168,7 @@ protected:
     rhs_func.append(LocalElementIntegralFunctional<E>(
         local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E>(), force())));
     // ... add Dirichlet here
+    // (if we add something here, the oswald interpolation in compute() needs to be adapted accordingly!)
     // ... add Neumann here
     // assemble everything in one grid walk
     lhs_op->append(rhs_func);
