@@ -20,7 +20,7 @@
 #include <dune/xt/functions/generic/function.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
 
-#include <dune/gdt/interpolations.hh>
+#include <dune/gdt/interpolations/default.hh>
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/test/instationary-eocstudies/hyperbolic-nonconforming.hh>
 
