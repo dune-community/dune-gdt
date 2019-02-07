@@ -117,6 +117,7 @@ public:
     const size_t cols = ansatz_basis.size(param);
     if (result.rows() < rows || result.cols() < cols)
       result.resize(rows, cols);
+    result *= 0;
     // evaluate
     test_basis.jacobians(point_in_reference_element, test_basis_grads_, param);
     ansatz_basis.jacobians(point_in_reference_element, ansatz_basis_grads_, param);
@@ -126,7 +127,7 @@ public:
     for (size_t ii = 0; ii < rows; ++ii)
       for (size_t jj = 0; jj < cols; ++jj)
         for (size_t rr = 0; rr < r; ++rr)
-          result[ii][jj] = (diffusion * ansatz_basis_grads_[jj][rr]) * test_basis_grads_[ii][rr];
+          result[ii][jj] += (diffusion * ansatz_basis_grads_[jj][rr]) * test_basis_grads_[ii][rr];
   } // ... evaluate(...)
 
 private:
