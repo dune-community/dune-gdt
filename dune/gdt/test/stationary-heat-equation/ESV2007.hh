@@ -28,6 +28,12 @@ namespace GDT {
 namespace Test {
 
 
+/**
+ * \brief Problem definition from [1], Section 8.1
+ *
+ * [1]: Ern, Stephansen, Vohralik, 2007, Improved energy norm a posteriori error estimation based on flux reconstruction
+ *      for discontinuous Galerkin methods, Preprint R07050, Laboratoire Jacques-Louis Lions & HAL Preprint
+ */
 template <class GV>
 struct ESV2007DiffusionProblem
 {
@@ -78,6 +84,12 @@ struct ESV2007DiffusionProblem
 }; // class ESV2007DiffusionProblem
 
 
+/**
+ * \brief To reproduce the results in [1], Section 8.1
+ *
+ * [1]: Ern, Stephansen, Vohralik, 2007, Improved energy norm a posteriori error estimation based on flux reconstruction
+ *      for discontinuous Galerkin methods, Preprint R07050, Laboratoire Jacques-Louis Lions & HAL Preprint
+ */
 template <class G>
 class ESV2007DiffusionTest : public StationaryDiffusionIpdgEocStudy<G>
 {
@@ -101,7 +113,7 @@ public:
 protected:
   std::vector<std::string> norms() const override final
   {
-    return {"H_1_semi"};
+    return {"H_1_semi", "eta_NC"};
   }
 
   void compute_reference_solution() override final
