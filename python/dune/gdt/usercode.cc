@@ -12,25 +12,22 @@
 #include <dune/pybindxi/pybind11.h>
 #include <dune/pybindxi/stl.h>
 #include <python/dune/xt/common/bindings.hh>
+#include <python/dune/xt/common/fvector.hh>
 #include <python/dune/xt/common/exceptions.bindings.hh>
 
 
-PYBIND11_PLUGIN(usercode)
+PYBIND11_MODULE(usercode, m)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
-
-  py::module m("usercode", "dune-gdt");
-
-  Dune::XT::Common::bindings::addbind_exceptions(m);
 
   py::module::import("dune.xt.common");
   py::module::import("dune.xt.la");
   py::module::import("dune.xt.grid");
   py::module::import("dune.xt.functions");
 
-  // put you bindings here
-
+  Dune::XT::Common::bindings::addbind_exceptions(m);
   Dune::XT::Common::bindings::add_initialization(m, "dune.gdt");
-  return m.ptr();
-} // PYBIND11_PLUGIN(...)
+
+  // put your bindings below
+} // PYBIND11_MODULE(usercode, ...)
