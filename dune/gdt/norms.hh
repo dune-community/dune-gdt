@@ -41,10 +41,10 @@ make_localizable_l2_product(
 
 
 template <class GridViewType, size_t s_r, size_t s_rC, class SF, size_t r_r, size_t r_rC, class RF, class F = double>
-std::enable_if_t<XT::Grid::is_view<GridViewType>::value, F> compute_l2_product(
-    const GridViewType& grid_view,
-    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GridViewType>, s_r, s_rC, SF>& left,
-    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GridViewType>, r_r, r_rC, RF>& right)
+std::enable_if_t<XT::Grid::is_view<GridViewType>::value, F>
+l2_product(const GridViewType& grid_view,
+           const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GridViewType>, s_r, s_rC, SF>& left,
+           const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GridViewType>, r_r, r_rC, RF>& right)
 {
   auto product = make_localizable_l2_product(grid_view, left, right);
   product.assemble();
@@ -54,10 +54,10 @@ std::enable_if_t<XT::Grid::is_view<GridViewType>::value, F> compute_l2_product(
 
 template <class GridViewType, size_t r, size_t rC, class R, class F = double>
 std::enable_if_t<XT::Grid::is_view<GridViewType>::value, F>
-compute_l2_norm(const GridViewType& grid_view,
-                const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GridViewType>, r, rC, R>& func)
+l2_norm(const GridViewType& grid_view,
+        const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GridViewType>, r, rC, R>& func)
 {
-  return std::sqrt(compute_l2_product(grid_view, func, func));
+  return std::sqrt(l2_product(grid_view, func, func));
 }
 
 
