@@ -205,6 +205,42 @@ private:
 }; // class OswaldInterpolationOperator
 
 
+template <class MatrixType, class AssemblyGridView, class SGV, size_t dim, size_t dim_cols, class RGV>
+OswaldInterpolationOperator<MatrixType, AssemblyGridView, dim, dim_cols, SGV, RGV> make_oswald_interpolation_operator(
+    const AssemblyGridView& assembly_grid_view,
+    const SpaceInterface<SGV, dim, dim_cols>& source_space,
+    const SpaceInterface<RGV, dim, dim_cols>& range_space,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<AssemblyGridView>>& boundary_info)
+{
+  return OswaldInterpolationOperator<MatrixType, AssemblyGridView, dim, dim_cols, SGV, RGV>(
+      assembly_grid_view, source_space, range_space, boundary_info);
+}
+
+
+template <class AssemblyGridView, class V, class SGV, size_t dim, size_t dim_cols, class RGV>
+DiscreteFunction<V, RGV, dim, dim_cols> apply_oswald_interpolation(
+    const AssemblyGridView& assembly_grid_view,
+    const DiscreteFunction<V, SGV, dim, dim_cols>& source,
+    const SpaceInterface<RGV, dim, dim_cols>& range_space,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<AssemblyGridView>>& boundary_info)
+{
+  using M = typename XT::LA::Container<typename V::ScalarType, V::sparse_matrix_type>::MatrixType;
+  auto op = make_oswald_interpolation_operator<M>(assembly_grid_view, source.space(), range_space, boundary_info);
+  op.assemble(/*parallel=*/true);
+  return op.apply(source);
+}
+
+
+template <class V, class GV, size_t dim, size_t dim_cols>
+DiscreteFunction<V, GV, dim, dim_cols>
+apply_oswald_interpolation(const DiscreteFunction<V, GV, dim, dim_cols>& source,
+                           const SpaceInterface<GV, dim, dim_cols>& range_space,
+                           const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GV>>& boundary_info)
+{
+  return apply_oswald_interpolation(source.space().grid_view(), source, range_space, boundary_info);
+}
+
+
 } // namespace GDT
 } // namespace Dune
 
