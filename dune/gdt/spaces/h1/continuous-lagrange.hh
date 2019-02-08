@@ -166,9 +166,9 @@ private:
  * \sa ContinuousLagrangeSpace
  */
 template <size_t r, class GV, class R = double>
-ContinuousLagrangeSpace<GridView<GV>, r, R> make_continuous_lagrange_space(GridView<GV> grid_view, const int order)
+ContinuousLagrangeSpace<GV, r, R> make_continuous_lagrange_space(GV grid_view, const int order)
 {
-  return ContinuousLagrangeSpace<GridView<GV>, r, R>(grid_view, order);
+  return ContinuousLagrangeSpace<GV, r, R>(grid_view, order);
 }
 
 
@@ -176,9 +176,9 @@ ContinuousLagrangeSpace<GridView<GV>, r, R> make_continuous_lagrange_space(GridV
  * \sa ContinuousLagrangeSpace
  */
 template <class GV, class R = double>
-ContinuousLagrangeSpace<GridView<GV>, 1, R> make_continuous_lagrange_space(GridView<GV> grid_view, const int order)
+ContinuousLagrangeSpace<GV, 1, R> make_continuous_lagrange_space(GV grid_view, const int order)
 {
-  return ContinuousLagrangeSpace<GridView<GV>, 1, R>(grid_view, order);
+  return ContinuousLagrangeSpace<GV, 1, R>(grid_view, order);
 }
 
 

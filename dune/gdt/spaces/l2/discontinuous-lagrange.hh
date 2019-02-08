@@ -166,10 +166,9 @@ private:
  * \sa DiscontinuousLagrangeSpace
  */
 template <size_t r, class GV, class R = double>
-DiscontinuousLagrangeSpace<GridView<GV>, r, R> make_discontinuous_lagrange_space(GridView<GV> grid_view,
-                                                                                 const int order)
+DiscontinuousLagrangeSpace<GV, r, R> make_discontinuous_lagrange_space(GV grid_view, const int order)
 {
-  return DiscontinuousLagrangeSpace<GridView<GV>, r, R>(grid_view, order);
+  return DiscontinuousLagrangeSpace<GV, r, R>(grid_view, order);
 }
 
 
@@ -177,10 +176,9 @@ DiscontinuousLagrangeSpace<GridView<GV>, r, R> make_discontinuous_lagrange_space
  * \sa DiscontinuousLagrangeSpace
  */
 template <class GV, class R = double>
-DiscontinuousLagrangeSpace<GridView<GV>, 1, R> make_discontinuous_lagrange_space(GridView<GV> grid_view,
-                                                                                 const int order)
+DiscontinuousLagrangeSpace<GV, 1, R> make_discontinuous_lagrange_space(GV grid_view, const int order)
 {
-  return DiscontinuousLagrangeSpace<GridView<GV>, 1, R>(grid_view, order);
+  return DiscontinuousLagrangeSpace<GV, 1, R>(grid_view, order);
 }
 
 
