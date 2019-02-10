@@ -1,0 +1,9 @@
+[OS015Table4Test.columns_1_3_and_5.setup]
+num_refinements = 0
+num_additional_refinements_for_reference = 0
+use_tbb = true
+visualize = true
+
+#[OS015Table4Test.columns_1_3_and_5.results]
+#target.h      = []
+#norm.H_1_semi = []
