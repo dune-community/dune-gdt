@@ -273,7 +273,6 @@ public:
            + std::max(ansatz_basis_inside.order(param), ansatz_basis_outside.order(param));
   }
 
-private:
   template <Method m, class Anything = void>
   struct IPDG
   {
@@ -553,7 +552,6 @@ private:
     }
   }; // struct IPDG<Method::sipdg, ...>
 
-public:
   void evaluate(const LocalTestBasisType& test_basis_inside,
                 const LocalAnsatzBasisType& ansatz_basis_inside,
                 const LocalTestBasisType& test_basis_outside,
@@ -754,7 +752,6 @@ public:
            + test_basis_inside.order(param) + ansatz_basis_inside.order(param);
   }
 
-private:
   template <Method m, class Anything = void>
   struct IPDG
   {
@@ -815,7 +812,6 @@ private:
     }
   }; // struct IPDG<Method::sipdg, ...>
 
-public:
   void evaluate(const LocalTestBasisType& test_basis_inside,
                 const LocalAnsatzBasisType& ansatz_basis_inside,
                 const LocalTestBasisType& test_basis_outside,
