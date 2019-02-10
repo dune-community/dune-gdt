@@ -50,7 +50,7 @@ prolong(const DiscreteFunction<SV, SGV, r, rC, SR>& source,
         DiscreteFunction<TV, TGV, r, rC, TR>& target,
         const GridView<PGV>& prolongation_grid_view)
 {
-  interpolate(reinterpret(source, prolongation_grid_view), target, prolongation_grid_view);
+  default_interpolation(reinterpret(source, prolongation_grid_view), target, prolongation_grid_view);
 }
 
 
