@@ -59,7 +59,7 @@ public:
   /**
    * \param boundary_info To determine the Dirichlet boundary DoFs on which to set the range to zero.
    */
-  OswaldInterpolationOperator(AssemblyGridViewType assembly_grid_view,
+  OswaldInterpolationOperator(const AssemblyGridViewType& assembly_grid_view,
                               const SourceSpaceType& src_spc,
                               const RangeSpaceType& rng_spc,
                               const XT::Grid::BoundaryInfo<I>& boundary_info)
@@ -79,7 +79,7 @@ public:
   /**
    * Does not set any boundary DoFs to zero.
    */
-  OswaldInterpolationOperator(AssemblyGridViewType assembly_grid_view,
+  OswaldInterpolationOperator(const AssemblyGridViewType& assembly_grid_view,
                               const SourceSpaceType& src_spc,
                               const RangeSpaceType& rng_spc)
     : assembly_grid_view_(assembly_grid_view)
@@ -194,7 +194,7 @@ public:
   } // ... apply(...)
 
 private:
-  const AssemblyGridViewType assembly_grid_view_;
+  const AssemblyGridViewType& assembly_grid_view_;
   const SourceSpaceType& source_space_;
   const RangeSpaceType& range_space_;
   const XT::Common::ConstStorageProvider<XT::Grid::BoundaryInfo<I>> boundary_info_;
@@ -214,30 +214,6 @@ OswaldInterpolationOperator<MatrixType, AssemblyGridView, dim, dim_cols, SGV, RG
 {
   return OswaldInterpolationOperator<MatrixType, AssemblyGridView, dim, dim_cols, SGV, RGV>(
       assembly_grid_view, source_space, range_space, boundary_info);
-}
-
-
-template <class AssemblyGridView, class V, class SGV, size_t dim, size_t dim_cols, class RGV>
-DiscreteFunction<V, RGV, dim, dim_cols> apply_oswald_interpolation(
-    const AssemblyGridView& assembly_grid_view,
-    const DiscreteFunction<V, SGV, dim, dim_cols>& source,
-    const SpaceInterface<RGV, dim, dim_cols>& range_space,
-    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<AssemblyGridView>>& boundary_info)
-{
-  using M = typename XT::LA::Container<typename V::ScalarType, V::sparse_matrix_type>::MatrixType;
-  auto op = make_oswald_interpolation_operator<M>(assembly_grid_view, source.space(), range_space, boundary_info);
-  op.assemble(/*parallel=*/true);
-  return op.apply(source);
-}
-
-
-template <class V, class GV, size_t dim, size_t dim_cols>
-DiscreteFunction<V, GV, dim, dim_cols>
-apply_oswald_interpolation(const DiscreteFunction<V, GV, dim, dim_cols>& source,
-                           const SpaceInterface<GV, dim, dim_cols>& range_space,
-                           const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GV>>& boundary_info)
-{
-  return apply_oswald_interpolation(source.space().grid_view(), source, range_space, boundary_info);
 }
 
 
