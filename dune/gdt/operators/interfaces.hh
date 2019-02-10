@@ -684,8 +684,8 @@ invert_options(some_type).get<std::string>("type") == some_type
     return RangeFunctionType(this->range_space(), this->apply(source.dofs().vector(), param));
   }
 
-  virtual FieldType apply2(const SourceFunctionType& range,
-                           const RangeFunctionType& source,
+  virtual FieldType apply2(const RangeFunctionType& range,
+                           const SourceFunctionType& source,
                            const XT::Common::Parameter& param = {}) const
   {
     DUNE_THROW_IF(!this->source_space().contains(source),
