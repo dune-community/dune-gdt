@@ -113,7 +113,7 @@ public:
 protected:
   std::vector<std::string> norms() const override final
   {
-    return {"H_1_semi", "eta_NC"};
+    return {"H_1_semi", "eta_NC", "eta_DF"};
   }
 
   void compute_reference_solution() override final
@@ -129,7 +129,9 @@ protected:
     self.reference_space_ = self.make_space(*self.reference_grid_);
     self.space_type_ = backup_space_type;
     self.reference_solution_on_reference_grid_ = std::make_unique<V>(
-        interpolate<V>(XT::Functions::ESV2007::Testcase1ExactSolution<d, 1>(), *self.reference_space_).dofs().vector());
+        default_interpolation<V>(XT::Functions::ESV2007::Testcase1ExactSolution<d, 1>(), *self.reference_space_)
+            .dofs()
+            .vector());
     // visualize
     self.visualize_(
         make_discrete_function(*self.reference_space_, *self.reference_solution_on_reference_grid_),
