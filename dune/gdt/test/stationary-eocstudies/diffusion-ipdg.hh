@@ -10,7 +10,10 @@
 #ifndef DUNE_GDT_TEST_STATIONARY_EOCSTUDIES_DIFFUSION_IPDG_HH
 #define DUNE_GDT_TEST_STATIONARY_EOCSTUDIES_DIFFUSION_IPDG_HH
 
+#include <atomic>
+
 #include <dune/xt/la/container.hh>
+#include <dune/xt/la/matrix-inverter.hh>
 #include <dune/xt/grid/boundaryinfo/interfaces.hh>
 #include <dune/xt/grid/filters/intersection.hh>
 #include <dune/xt/grid/layers.hh>
@@ -25,12 +28,14 @@
 #include <dune/gdt/local/integrands/conversion.hh>
 #include <dune/gdt/norms.hh>
 #include <dune/gdt/operators/constant.hh>
+#include <dune/gdt/operators/ipdg-flux-reconstruction.hh>
 #include <dune/gdt/operators/lincomb.hh>
 #include <dune/gdt/operators/matrix-based.hh>
 #include <dune/gdt/operators/oswald-interpolation.hh>
 #include <dune/gdt/spaces/l2/discontinuous-lagrange.hh>
 #include <dune/gdt/spaces/l2/finite-volume.hh>
 #include <dune/gdt/spaces/h1/continuous-lagrange.hh>
+#include <dune/gdt/spaces/hdiv/raviart-thomas.hh>
 
 #include "base.hh"
 
@@ -88,6 +93,7 @@ protected:
   {
     auto nrms = BaseType::norms();
     nrms.push_back("eta_NC");
+    nrms.push_back("eta_DF");
     return nrms;
   }
 
@@ -103,24 +109,83 @@ protected:
     auto remaining_norms = actual_norms;
     auto remaining_estimates = actual_estimates;
     auto remaining_quantities = actual_quantities;
+    if (self.current_refinement_ != refinement_level)
+      self.discretization_info(refinement_level);
+    DUNE_THROW_IF(!self.current_space_, InvalidStateException, "");
+    // compute current solution
+    const auto& current_space = *self.current_space_;
+    // visualize
+    if (DXTC_TEST_CONFIG_GET("setup.visualize", false)) {
+      const std::string prefix = XT::Common::Test::get_unique_test_name() + "_problem_";
+      const std::string postfix = "_ref_" + XT::Common::to_string(refinement_level);
+      self.diffusion_factor().visualize(current_space.grid_view(), prefix + "diffusion_factor" + postfix);
+      self.diffusion_tensor().visualize(current_space.grid_view(), prefix + "diffusion_tensor" + postfix);
+      self.force().visualize(current_space.grid_view(), prefix + "force" + postfix);
+      //      self.dirichlet().visualize(current_space.grid_view(), prefix + "dirichlet" + postfix);
+      //      self.neumann().visualize(current_space.grid_view(), prefix + "neumann" + postfix);
+    }
+    Timer timer;
+    const auto solution = make_discrete_function(current_space, self.solve(current_space));
+    // only set time if this did not happen in solve()
+    if (self.current_data_["quantity"].count("time to solution (s)") == 0)
+      self.current_data_["quantity"]["time to solution (s)"] = timer.elapsed();
     for (auto norm_it = remaining_norms.begin(); norm_it != remaining_norms.end(); /*Do not increment here ...*/) {
       const auto norm_id = *norm_it;
       if (norm_id == "eta_NC") {
         norm_it = remaining_norms.erase(norm_it); // ... but rather here ...
-        if (self.current_refinement_ != refinement_level)
-          self.discretization_info(refinement_level);
-        DUNE_THROW_IF(!self.current_space_, InvalidStateException, "");
-        // compute current solution
-        const auto& current_space = *self.current_space_;
-        Timer timer;
-        const auto solution = make_discrete_function(current_space, self.solve(current_space));
-        // only set time if this did not happen in solve()
-        if (self.current_data_["quantity"].count("time to solution (s)") == 0)
-          self.current_data_["quantity"]["time to solution (s)"] = timer.elapsed();
         // compute estimate
-        const auto h1_interpolation = apply_oswald_interpolation(solution, current_space, boundary_info());
+        auto oswald_interpolation_operator = make_oswald_interpolation_operator<M>(
+            current_space.grid_view(), current_space, current_space, boundary_info());
+        oswald_interpolation_operator.assemble(/*parallel=*/true);
+        const auto h1_interpolation = oswald_interpolation_operator.apply(solution);
         self.current_data_["norm"][norm_id] = elliptic_norm(
             current_space.grid_view(), diffusion_factor(), diffusion_tensor(), solution - h1_interpolation);
+      } else if (norm_id == "eta_DF") {
+        norm_it = remaining_norms.erase(norm_it); // ... or here ...
+        // compute estimate
+        auto rt_space = make_raviart_thomas_space(current_space.grid_view(), current_space.max_polorder() - 1);
+        auto reconstruction_op = make_ipdg_flux_reconstruction_operator<M, ipdg_method>(
+            current_space.grid_view(), current_space, rt_space, diffusion_factor(), diffusion_tensor());
+        auto flux_reconstruction = reconstruction_op.apply(solution);
+        flux_reconstruction.visualize("flux_" + XT::Common::to_string(refinement_level));
+        double eta_DF_2 = 0.;
+        std::mutex eta_DF_2_mutex;
+        auto walker = XT::Grid::make_walker(current_space.grid_view());
+        walker.append([]() {},
+                      [&](const auto& element) {
+                        auto local_df = diffusion_factor().local_function();
+                        local_df->bind(element);
+                        auto local_dt = diffusion_tensor().local_function();
+                        local_dt->bind(element);
+                        auto local_solution = solution.local_function();
+                        local_solution->bind(element);
+                        auto local_reconstruction = flux_reconstruction.local_function();
+                        local_reconstruction->bind(element);
+                        auto result = LocalElementIntegralFunctional<E, d>(
+                                          [&](const auto& basis, const auto& /*param*/) {
+                                            return std::max(local_df->order() + local_dt->order()
+                                                                + std::max(local_solution->order() - 1, 0),
+                                                            basis.order());
+                                          },
+                                          [&](const auto& basis, const auto& xx, auto& result, const auto& /*param*/) {
+                                            const auto df = local_df->evaluate(xx);
+                                            const auto dt = local_dt->evaluate(xx);
+                                            const auto diff = dt * df;
+                                            const auto diff_inv = XT::LA::invert_matrix(diff);
+                                            const auto solution_grad = local_solution->jacobian(xx)[0];
+                                            const auto flux_rec = basis.evaluate_set(xx)[0];
+                                            auto difference = diff * solution_grad + flux_rec;
+                                            result[0] = (diff_inv * difference) * difference;
+                                          },
+                                          {},
+                                          /*over_integrate=*/3)
+                                          .apply(*local_reconstruction)[0];
+                        std::lock_guard<std::mutex> lock(eta_DF_2_mutex);
+                        eta_DF_2 += result;
+                      },
+                      []() {});
+        walker.walk(/*parallel=*/true);
+        self.current_data_["norm"][norm_id] = std::sqrt(eta_DF_2);
       } else
         ++norm_it; // ... or finally here.
     } // norms
