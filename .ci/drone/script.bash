@@ -34,6 +34,10 @@ if [[ ${CC} == *"clang"* ]] ; then
     exit 0
 fi
 
+if [[ ${DRONE_BUILD_EVENT} != "push" ]] ; then
+    exit 0
+fi
+
 pushd ${MY_BUILD_DIR}
 COVERAGE_INFO=${PWD}/coverage.info
 lcov --directory . --output-file ${COVERAGE_INFO} -c
