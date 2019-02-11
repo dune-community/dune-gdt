@@ -22,6 +22,10 @@ ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD}
 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD} bindings
 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ${BUILD_CMD} test_python
 
+if [[ ${DRONE_BUILD_EVENT} != "push" ]] ; then
+    exit 0
+fi
+
 cd ${SUPERDIR}/${MY_MODULE}
 ${DUNE_BUILD_DIR}/${MY_MODULE}/run-in-dune-env pip install codecov
 ${DUNE_BUILD_DIR}/${MY_MODULE}/run-in-dune-env codecov -X gcov -F pytest -t ${CODECOV_TOKEN}
