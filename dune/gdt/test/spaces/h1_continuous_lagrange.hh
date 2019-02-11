@@ -20,9 +20,9 @@ namespace Dune {
 namespace GDT {
 
 
-template <class G, class R, int p>
+template <class G, size_t r, class R, int p>
 struct ContinuousLagrangeSpaceTest
-  : public SpaceTestBase<ContinuousLagrangeSpace<typename XT::Grid::GridProvider<G>::LeafGridViewType, R>, p>
+  : public SpaceTestBase<ContinuousLagrangeSpace<typename XT::Grid::GridProvider<G>::LeafGridViewType, r, R>, p>
 {
   using D = typename G::ctype;
   static const constexpr size_t d = G::dimension;
@@ -52,7 +52,7 @@ struct ContinuousLagrangeSpaceTest
   {
     ASSERT_NE(this->space, nullptr);
     // collect all global ids that are associated with a global lagrange point
-    std::map<FieldVector<D, d>, std::set<size_t>, XT::Common::FieldVectorLess>
+    std::map<FieldVector<D, d>, std::set<size_t>, XT::Common::FieldVectorFloatLess>
         global_lagrange_point_to_global_indices_map;
     for (auto&& element : elements(*this->grid_view)) {
       const auto global_indices = this->space->mapper().global_indices(element);
@@ -73,17 +73,7 @@ struct ContinuousLagrangeSpaceTest
       EXPECT_EQ(global_DoF_indices_per_point.size(), 1);
       global_DoF_indices.insert(*(global_DoF_indices_per_point.begin()));
     }
-    if (this->space->max_polorder() > 1
-        && std::string(::testing::UnitTest::GetInstance()->current_test_info()->type_param()).substr(0, 13)
-               == "Dune::ALUGrid"
-        && std::string(::testing::UnitTest::GetInstance()->current_test_info()->type_param())
-                   .find("(Dune::ALUGridElementType)0")
-               != std::string::npos) {
-      EXPECT_NE(global_lagrange_point_to_global_indices_map.size(), global_DoF_indices.size())
-          << "This could be a good thing! If these are the same the following issue might be resolved: "
-             "https://github.com/dune-community/dune-gdt/issues/144!";
-    } else
-      EXPECT_EQ(global_lagrange_point_to_global_indices_map.size(), global_DoF_indices.size());
+    EXPECT_EQ(global_lagrange_point_to_global_indices_map.size(), global_DoF_indices.size());
     // ... and that the numbering is consecutive
     size_t count = 0;
     for (const auto& global_DoF_id : global_DoF_indices) {
@@ -95,38 +85,38 @@ struct ContinuousLagrangeSpaceTest
 }; // struct ContinuousLagrangeSpace
 
 
-template <class G, class R, int p>
-struct ContinuousLagrangeSpaceOnSimplicialLeafViewTest : public ContinuousLagrangeSpaceTest<G, R, p>
+template <class G, size_t r, class R, int p>
+struct ContinuousLagrangeSpaceOnSimplicialLeafViewTest : public ContinuousLagrangeSpaceTest<G, r, R, p>
 {
   ContinuousLagrangeSpaceOnSimplicialLeafViewTest()
-    : ContinuousLagrangeSpaceTest<G, R, p>(make_simplicial_grid<G>())
+    : ContinuousLagrangeSpaceTest<G, r, R, p>(make_simplicial_grid<G>())
   {}
 };
 
 
-template <class G, class R, int p>
-struct ContinuousLagrangeSpaceOnCubicLeafViewTest : public ContinuousLagrangeSpaceTest<G, R, p>
+template <class G, size_t r, class R, int p>
+struct ContinuousLagrangeSpaceOnCubicLeafViewTest : public ContinuousLagrangeSpaceTest<G, r, R, p>
 {
   ContinuousLagrangeSpaceOnCubicLeafViewTest()
-    : ContinuousLagrangeSpaceTest<G, R, p>(make_cubic_grid<G>())
+    : ContinuousLagrangeSpaceTest<G, r, R, p>(make_cubic_grid<G>())
   {}
 };
 
 
-template <class G, class R, int p>
-struct ContinuousLagrangeSpaceOnPrismLeafViewTest : public ContinuousLagrangeSpaceTest<G, R, p>
+template <class G, size_t r, class R, int p>
+struct ContinuousLagrangeSpaceOnPrismLeafViewTest : public ContinuousLagrangeSpaceTest<G, r, R, p>
 {
   ContinuousLagrangeSpaceOnPrismLeafViewTest()
-    : ContinuousLagrangeSpaceTest<G, R, p>(make_prism_grid<G>())
+    : ContinuousLagrangeSpaceTest<G, r, R, p>(make_prism_grid<G>())
   {}
 };
 
 
-template <class G, class R, int p>
-struct ContinuousLagrangeSpaceOnMixedLeafViewTest : public ContinuousLagrangeSpaceTest<G, R, p>
+template <class G, size_t r, class R, int p>
+struct ContinuousLagrangeSpaceOnMixedLeafViewTest : public ContinuousLagrangeSpaceTest<G, r, R, p>
 {
   ContinuousLagrangeSpaceOnMixedLeafViewTest()
-    : ContinuousLagrangeSpaceTest<G, R, p>(make_mixed_grid<G>())
+    : ContinuousLagrangeSpaceTest<G, r, R, p>(make_mixed_grid<G>())
   {}
 };
 

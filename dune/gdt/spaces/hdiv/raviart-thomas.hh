@@ -203,9 +203,9 @@ private:
  * \sa RaviartThomasSpace
  */
 template <class GV, class R = double>
-RaviartThomasSpace<GridView<GV>, R> make_raviart_thomas_space(GridView<GV> grid_view, const int order)
+RaviartThomasSpace<GV, R> make_raviart_thomas_space(GV grid_view, const int order)
 {
-  return RaviartThomasSpace<GridView<GV>, R>(grid_view, order);
+  return RaviartThomasSpace<GV, R>(grid_view, order);
 }
 
 

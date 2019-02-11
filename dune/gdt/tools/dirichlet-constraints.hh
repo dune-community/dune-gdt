@@ -13,10 +13,15 @@
 #ifndef DUNE_GDT_SPACES_TOOLS_DIRICHLET_CONSTRAINTS_HH
 #define DUNE_GDT_SPACES_TOOLS_DIRICHLET_CONSTRAINTS_HH
 
+#include <set>
+
+#include <dune/xt/common/numeric_cast.hh>
 #include <dune/xt/common/parallel/threadstorage.hh>
 #include <dune/xt/grid/boundaryinfo.hh>
 #include <dune/xt/grid/functors/interfaces.hh>
 #include <dune/xt/la/container/interfaces.hh>
+
+#include <dune/gdt/local/finite-elements/interfaces.hh>
 #include <dune/gdt/spaces/interface.hh>
 
 namespace Dune {
@@ -82,7 +87,7 @@ public:
         const auto intersection_index = intersection.indexInInside();
         for (const auto& local_DoF : local_key_indices[1][intersection_index])
           local_DoFs.insert(local_DoF);
-        for (int cc = 2; cc <= static_cast<int>(d); ++cc) {
+        for (int cc = 2; cc <= XT::Common::numeric_cast<int>(d); ++cc) {
           for (int ii = 0; ii < reference_element.size(intersection_index, 1, cc); ++ii) {
             const auto subentity_id = reference_element.subEntity(intersection_index, 1, ii, cc);
             for (const auto& local_DoF : local_key_indices[cc][subentity_id])
@@ -91,10 +96,8 @@ public:
         }
       }
     }
-    if (local_DoFs.size() > 0) {
-      for (const auto& local_DoF : local_DoFs) {
-        dirichlet_DoFs_.insert(space_.mapper().global_index(element, local_DoF));
-      }
+    for (const auto& local_DoF : local_DoFs) {
+      dirichlet_DoFs_.insert(space_.mapper().global_index(element, local_DoF));
     }
   } // ... apply_local(...)
 

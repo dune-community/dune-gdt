@@ -24,7 +24,7 @@
 #include <dune/xt/functions/base/sliced.hh>
 #include <dune/xt/functions/interfaces/element-functions.hh>
 
-#include <dune/gdt/interpolations.hh>
+#include <dune/gdt/interpolations/default.hh>
 #include <dune/gdt/local/integrands/identity.hh>
 #include <dune/gdt/test/instationary-eocstudies/hyperbolic-nonconforming.hh>
 #include <dune/gdt/tools/euler.hh>

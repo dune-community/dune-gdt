@@ -36,15 +36,15 @@ template <class GV,
           int m_as_int = m_as_size_t,
           typename = std::enable_if_t<ssize_t(m_as_size_t) == ssize_t(m_as_int), void>>
 double estimate_dt_for_hyperbolic_system(
-    const GridView<GV>& grid_view,
-    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GridView<GV>>, m_as_size_t, 1, R>& state,
-    const XT::Functions::FunctionInterface<m_as_size_t, GridView<GV>::dimension, m_as_size_t, R>& flux,
+    const GV& grid_view,
+    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, m_as_size_t, 1, R>& state,
+    const XT::Functions::FunctionInterface<m_as_size_t, GV::dimension, m_as_size_t, R>& flux,
     const std::pair<XT::Common::FieldVector<R, m_as_int>, XT::Common::FieldVector<R, m_as_int>>& boundary_data_range = {
         XT::Common::FieldVector<R, m_as_int>(std::numeric_limits<R>::max()),
         XT::Common::FieldVector<R, m_as_int>(std::numeric_limits<R>::min())})
 {
-  using D = typename GridView<GV>::ctype;
-  static const constexpr size_t d = GridView<GV>::dimension;
+  using D = typename GV::ctype;
+  static const constexpr size_t d = GV::dimension;
   static const constexpr size_t m = m_as_size_t;
   // estimate data range
   auto data_minimum = boundary_data_range.first;

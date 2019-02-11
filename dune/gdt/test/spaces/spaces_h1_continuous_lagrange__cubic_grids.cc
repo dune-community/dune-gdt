@@ -9,10 +9,6 @@
 //   René Fritze     (2018)
 //   Tobias Leibner  (2018)
 
-// see https://github.com/dune-community/dune-gdt/issues/144, we want to allow construction of the broken space to test
-// other functionality
-#define DUNE_GDT_SPACES_H1_CONTINUOUS_LAGRANGE_IGNORE_FAILING_ALUGRID 1
-
 #include <dune/xt/common/test/main.hxx> // <- this one has to come first (includes the config.h)!
 
 #include "h1_continuous_lagrange.hh"
@@ -22,7 +18,7 @@ using namespace Dune::GDT;
 
 
 template <class G>
-using Order2CubicContinuousLagrangeSpace = ContinuousLagrangeSpaceOnCubicLeafViewTest<G, double, 2>;
+using Order2CubicContinuousLagrangeSpace = ContinuousLagrangeSpaceOnCubicLeafViewTest<G, 1, double, 2>;
 TYPED_TEST_CASE(Order2CubicContinuousLagrangeSpace, CubicGrids);
 TYPED_TEST(Order2CubicContinuousLagrangeSpace, gives_correct_identification)
 {

@@ -22,7 +22,7 @@
 #include <dune/gdt/discretefunction/bochner.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/discretefunction/reinterpret.hh>
-#include <dune/gdt/interpolations.hh>
+#include <dune/gdt/interpolations/default.hh>
 #include <dune/gdt/spaces/bochner.hh>
 #include <dune/gdt/spaces/interface.hh>
 

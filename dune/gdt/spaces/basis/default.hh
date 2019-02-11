@@ -92,6 +92,9 @@ private:
   {
     using ThisType = LocalizedDefaultGlobalBasis;
     using BaseType = XT::Functions::ElementFunctionSetInterface<E, r, rC, R>;
+    static_assert(rC == 1,
+                  "Not implemented for rC > 1, check that all functions (especially jacobians(...)) work properly "
+                  "before removing this assert!");
 
   public:
     using typename BaseType::DerivativeRangeType;
@@ -153,13 +156,21 @@ private:
       this->assert_inside_reference_element(point_in_reference_element);
       // evaluate jacobian of shape functions
       shape_functions_->access().jacobian(point_in_reference_element, result);
-      // apply transformation
+      // Apply transformation:
+      // Let f: E -> R^r be a basis function, and g: E' -> E be the mapping from reference to actual element, then f
+      // \circ g is a shape function. We have the chain rule J_f = J(f \circ g \circ g^{-1}) = J(f \circ g) J_g^{-1}.
+      // Applying the transpose to that equation gives
+      // J_f^T = J_g^{-T} J(f \circ g)^T,
+      // so we have to multiply J_inv_T from the left to the transposed shape function jacobians (i.e. the shape
+      // function gradients) to get the transposed jacobian of the basis function (basis function gradient).
       const auto J_inv_T = this->element().geometry().jacobianInverseTransposed(point_in_reference_element);
       auto tmp_value = result[0][0];
       for (size_t ii = 0; ii < shape_functions_->access().size(); ++ii) {
-        J_inv_T.mv(result[ii][0], tmp_value);
-        result[ii][0] = tmp_value;
-      }
+        for (size_t rr = 0; rr < r; ++rr) {
+          J_inv_T.mv(result[ii][rr], tmp_value);
+          result[ii][rr] = tmp_value;
+        } // rr
+      } // ii
     } // ... jacobian(...)
 
   private:
