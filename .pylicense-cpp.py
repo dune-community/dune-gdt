@@ -17,5 +17,6 @@ license = '''Dual licensed as BSD 2-Clause License (http://opensource.org/licens
           with "runtime exception" (http://www.dune-project.org/license.html)'''
 prefix = '//'
 
-include_patterns = ('*.cc', '*.cxx', '*.hh', '*.hxx', '*cmake_config.h.in', '*headercheck.cpp.in', '*config.h.cmake', '*version.hh.in', '*.pbh', '*.tpl')
+include_patterns = ('*.cc', '*.cxx', '*.hh', '*.hxx', '*cmake_config.h.in', '*headercheck.cpp.in', '*config.h.cmake',
+                    '*version.hh.in', '*.pbh', '*.tpl')
 exclude_patterns = ('*mathexpr.*', '*gtest-all.cc', '*.vcsetup*')
