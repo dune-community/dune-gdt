@@ -175,8 +175,7 @@ protected:
                 auto eigen_solver =
                     XT::LA::make_eigen_solver(diff,
                                               {{"type", XT::LA::EigenSolverOptions<decltype(diff)>::types().at(0)},
-                                               {"assert_real_eigenvalues", "1"},
-                                               {"assert_positive_eigenvalues", "1"}});
+                                               {"assert_positive_eigenvalues", "1e-15"}});
                 min_EV = std::min(min_EV, eigen_solver.min_eigenvalues(1).at(0));
               }
               DUNE_THROW_IF(!(min_EV > 0.),
