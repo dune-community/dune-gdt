@@ -16,6 +16,7 @@
 #include <dune/xt/common/math.hh>
 
 #include <dune/xt/la/container/istl.hh>
+#include <dune/xt/la/container/matrix-view.hh>
 #include <dune/xt/la/solver.hh>
 #include <dune/xt/la/solver/istl/saddlepoint.hh>
 
@@ -27,6 +28,7 @@
 
 #include <dune/xt/functions/constant.hh>
 #include <dune/xt/functions/generic/function.hh>
+#include <dune/xt/functions/generic/grid-function.hh>
 
 #include <dune/gdt/functionals/vector-based.hh>
 #include <dune/gdt/local/bilinear-forms/integrals.hh>
@@ -35,6 +37,7 @@
 #include <dune/gdt/local/integrands/div.hh>
 #include <dune/gdt/local/integrands/elliptic.hh>
 #include <dune/gdt/local/integrands/product.hh>
+#include <dune/gdt/local/integrands/quadratic.hh>
 #include <dune/gdt/operators/localizable-bilinear-form.hh>
 #include <dune/gdt/operators/matrix-based.hh>
 #include <dune/gdt/spaces/h1/continuous-lagrange.hh>
@@ -61,14 +64,15 @@ using VectorType = XT::LA::IstlDenseVector<double>;
 template <class DiscreteFunc>
 static std::string get_filename(const std::string& prefix, const DiscreteFunc& func, const size_t step)
 {
-  return prefix + "_" + func.name() + XT::Common::to_string(step) + ".txt";
+  return prefix + "_" + func.name() + "_" + XT::Common::to_string(step) + ".txt";
 }
 
 template <class DiscreteFunc>
 static std::string
 get_rankfilename(const std::string& prefix, const DiscreteFunc& func, const size_t step, const int rank)
 {
-  return prefix + "_rank_" + XT::Common::to_string(rank) + "_" + func.name() + XT::Common::to_string(step) + ".txt";
+  return prefix + "_rank_" + XT::Common::to_string(rank) + "_" + func.name() + "_" + XT::Common::to_string(step)
+         + ".txt";
 }
 
 template <class DiscreteFunc>
@@ -146,12 +150,14 @@ void solve_navier_stokes(VecDiscreteFunc& u,
                          const VecDiscreteFunc& Pnat,
                          const DiscreteFunc& phi,
                          const DiscreteFunc& phinat,
-                         const DiscreteFunc& mu,
+                         const DiscreteFunc& /*mu*/,
                          const double Re,
                          const double Fa,
                          const double xi,
                          const XT::Grid::BoundaryInfo<PI>& boundary_info)
 {
+  if (Re > 1e-10)
+    DUNE_THROW(Dune::NotImplemented, "No Navier-Stokes solver implemented yet!");
   const auto& u_space = u.space();
   const auto& p_space = p.space();
 
@@ -179,8 +185,65 @@ void solve_navier_stokes(VecDiscreteFunc& u,
   // calculate rhs f as \int ff v and the integrated pressure space basis \int q_i
   VectorType f_vector(m), g_vector(n, 0.), p_basis_integrated_vector(n);
   auto f_functional = make_vector_functional(u_space, f_vector);
-  // TODO: implement rhs
-  XT::Functions::ConstantGridFunction<E, d> f(0.);
+  auto P_local = P.local_function();
+  auto Pnat_local = Pnat.local_function();
+  auto phi_local = phi.local_function();
+  auto phinat_local = phinat.local_function();
+  const auto Fa_inv = 1. / Fa;
+  using DomainType = typename XT::Functions::GenericGridFunction<E, d>::DomainType;
+  using RangeFieldType = typename XT::Functions::GenericGridFunction<E, d>::RangeFieldType;
+  XT::Functions::GenericGridFunction<E, d> f(
+      /*order = */ 3 * u_space.max_polorder(),
+      /*post_bind_func*/
+      [&P_local, &Pnat_local, &phi_local, &phinat_local](const E& element) {
+        P_local->bind(element);
+        Pnat_local->bind(element);
+        phi_local->bind(element);
+        phinat_local->bind(element);
+      },
+      /*evaluate_func*/
+      [&P_local, &Pnat_local, &phi_local, &phinat_local, Fa_inv, xi](const DomainType& x_local,
+                                                                     const XT::Common::Parameter& param) {
+        // evaluate P, Pnat, phi, phinat, \nabla P, \nabla Pnat, \nabla phi, div P, div Pnat and phi_tilde = (phi + 1)/2
+        // return type of the jacobians is a FieldMatrix<r, d>
+        const auto P = P_local->evaluate(x_local, param);
+        const auto Pnat = Pnat_local->evaluate(x_local, param);
+        const auto phi = phi_local->evaluate(x_local, param)[0];
+        const auto phinat = phinat_local->evaluate(x_local, param)[0];
+        const auto grad_P = P_local->jacobian(x_local, param);
+        const auto grad_Pnat = Pnat_local->jacobian(x_local, param);
+        RangeFieldType div_P(0.), div_Pnat(0.);
+        for (size_t ii = 0; ii < d; ++ii) {
+          div_P += grad_P[ii][ii];
+          div_Pnat += grad_Pnat[ii][ii];
+        }
+        const auto grad_phi = phi_local->jacobian(x_local, param)[0];
+        const auto phi_tilde = (phi + 1) / 2;
+
+        // evaluate rhs terms
+        const auto Fa_inv_times_P_otimes_P_times_grad_phi_tilde = P * ((P * grad_phi) * Fa_inv * 0.5);
+        auto grad_P_times_P = P;
+        grad_P.mv(P, grad_P_times_P);
+        const auto Fa_inv_times_phi_tilde_times_grad_P_times_P = grad_P_times_P * (phi_tilde * Fa_inv);
+        const auto Fa_inv_times_phi_tilde_times_P_times_div_P = P * (div_P * phi_tilde * Fa_inv);
+        const auto xi_plus = (xi + 1.) / 2.;
+        const auto xi_minus = (xi - 1.) / 2.;
+        auto grad_Pnat_times_P = P;
+        grad_Pnat.mv(P, grad_Pnat_times_P);
+        const auto xi_plus_times_grad_Pnat_times_P = grad_Pnat_times_P * xi_plus;
+        const auto xi_plus_times_Pnat_times_div_P = Pnat * (div_P * xi_plus);
+        auto grad_P_times_Pnat = P;
+        grad_P.mv(Pnat, grad_P_times_Pnat);
+        const auto xi_minus_times_grad_P_times_Pnat = grad_P_times_Pnat * xi_minus;
+        const auto xi_minus_times_P_times_div_Pnat = P * (div_Pnat * xi_minus);
+        const auto phinat_grad_phi = grad_phi * phinat;
+        auto grad_P_T_times_Pnat = P;
+        grad_P.mtv(Pnat, grad_P_T_times_Pnat);
+        return Fa_inv_times_P_otimes_P_times_grad_phi_tilde + Fa_inv_times_phi_tilde_times_grad_P_times_P
+               + Fa_inv_times_phi_tilde_times_P_times_div_P + xi_plus_times_grad_Pnat_times_P
+               + xi_plus_times_Pnat_times_div_P + xi_minus_times_grad_P_times_Pnat + xi_minus_times_P_times_div_Pnat
+               + phinat_grad_phi + grad_P_T_times_Pnat;
+      });
   f_functional.append(LocalElementIntegralFunctional<E, d>(
       local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E, d>(), f)));
   A_operator.append(f_functional);
@@ -227,18 +290,171 @@ void solve_navier_stokes(VecDiscreteFunc& u,
 
 template <class DiscreteFunc, class VecDiscreteFunc>
 void solve_ofield(const VecDiscreteFunc& u,
-                  const DiscreteFunc& p,
                   VecDiscreteFunc& P,
                   VecDiscreteFunc& Pnat,
                   const DiscreteFunc& phi,
-                  const DiscreteFunc& phinat,
-                  const DiscreteFunc& mu,
                   const double xi,
                   const double kappa,
                   const double c_1,
                   const double Pa,
-                  const double beta)
-{}
+                  const double beta,
+                  const double dt)
+{
+  const auto& P_space = P.space();
+  const auto& Pnat_space = Pnat.space();
+
+  const auto& grid_view = P_space.grid_view();
+  // Setup spaces and matrices and vectors
+  // System is [S_{00} S_{01}; S_{10} S_{11}] [P; Pnat] = [f_{of}; g_{of}]
+  // All matrices have dimension n x n, all vectors have dimension n
+  const size_t n = P_space.mapper().size();
+  assert(Pnat_space.mapper().size() == n);
+  // Use same pattern for all submatrices
+  auto submatrix_pattern = make_element_sparsity_pattern(P_space, P_space, grid_view);
+  XT::LA::SparsityPatternDefault pattern(2 * n);
+  for (size_t ii = 0; ii < n; ++ii)
+    for (const auto& jj : submatrix_pattern.inner(ii)) {
+      pattern.insert(ii, jj);
+      pattern.insert(ii, n + jj);
+      pattern.insert(n + ii, jj);
+      pattern.insert(n + ii, n + jj);
+    }
+  pattern.sort();
+  // create system matrix and matrix views for the submatrices
+  MatrixType S(2 * n, 2 * n, pattern);
+  using MatrixViewType = XT::LA::MatrixView<MatrixType>;
+  MatrixViewType S_00(S, 0, n, 0, n);
+  MatrixViewType S_01(S, 0, n, n, 2 * n);
+  MatrixViewType S_10(S, n, 2 * n, 0, n);
+  MatrixViewType S_11(S, n, 2 * n, n, 2 * n);
+  // assemble matrix S_{00} = M + dt A
+  MatrixOperator<MatrixViewType, PGV, d> S_00_operator(grid_view, P_space, Pnat_space, S_00);
+  // calculate M_{ij} as \int \nabla \psi_i \nabla phi_j
+  S_00_operator.append(LocalElementIntegralBilinearForm<E, d>(LocalEllipticIntegrand<E, d>(1.)));
+  // calculate dt A
+  auto u_local = u.local_function();
+  using DomainType = typename XT::Functions::GenericGridFunction<E, d, d>::DomainType;
+  using RangeFieldType = typename XT::Functions::GenericGridFunction<E, d, d>::RangeFieldType;
+  // Omega - xi D = (1-xi)/2 \nabla u^T - (1+xi)/2 \nabla u
+  XT::Functions::GenericGridFunction<E, d, d> dt_Omega_minus_xi_D(
+      /*order = */ std::max(u.space().max_polorder() - 1, 0),
+      /*post_bind_func*/
+      [&u_local](const E& element) { u_local->bind(element); },
+      /*evaluate_func*/
+      [&u_local, xi, dt](const DomainType& x_local, const XT::Common::Parameter& param) {
+        // evaluate \nabla u
+        auto grad_u = u_local->jacobian(x_local, param);
+        auto grad_u_T = grad_u;
+        grad_u_T.transpose();
+        auto& ret = grad_u_T;
+        ret *= dt * (1. - xi) / 2.;
+        grad_u *= dt * (1 + xi) / 2.;
+        ret -= grad_u;
+        return ret;
+      });
+  S_00_operator.append(LocalElementIntegralBilinearForm<E, d>(LocalElementQuadraticIntegrand<E>(dt_Omega_minus_xi_D)));
+  XT::Functions::GenericGridFunction<E, d, 1> dt_u(
+      /*order = */ u.space().max_polorder(),
+      /*post_bind_func*/
+      [&u_local](const E& element) { u_local->bind(element); },
+      /*evaluate_func*/
+      [&u_local, dt](const DomainType& x_local, const XT::Common::Parameter& param) {
+        auto ret = u_local->evaluate(x_local, param);
+        ret *= dt;
+        return ret;
+      });
+  S_00_operator.append(LocalElementIntegralBilinearForm<E, d>(LocalElementGradientValueIntegrand<E>(dt_u)));
+
+  // calculate S_01 = dt B
+  MatrixOperator<MatrixViewType, PGV, d> S_01_operator(grid_view, Pnat_space, Pnat_space, S_01);
+  S_01_operator.append(LocalElementIntegralBilinearForm<E, d>(LocalElementProductIntegrand<E, d>(dt / kappa)));
+
+  // calculate S_10 = C
+  MatrixOperator<MatrixViewType, PGV, d> S_10_operator(grid_view, P_space, P_space, S_10);
+  S_10_operator.append(LocalElementIntegralBilinearForm<E, d>(LocalEllipticIntegrand<E, d>(-1. / Pa)));
+  auto P_local = P.local_function();
+  auto phi_local = phi.local_function();
+  XT::Functions::GenericGridFunction<E, 1, 1> frac_c1_Pa_times_phi_minus_Pn_times_Pn(
+      /*order = */ 2 * P.space().max_polorder(),
+      /*post_bind_func*/
+      [&P_local, &phi_local](const E& element) {
+        P_local->bind(element);
+        phi_local->bind(element);
+      },
+      /*evaluate_func*/
+      [&P_local, &phi_local, c_1, Pa](const DomainType& x_local, const XT::Common::Parameter& param) {
+        const auto P_n = P_local->evaluate(x_local, param);
+        const auto phi = phi_local->evaluate(x_local, param);
+        return c_1 / Pa * (phi - P_n * P_n);
+      });
+  S_10_operator.append(LocalElementIntegralBilinearForm<E, d>(
+      LocalElementProductIntegrand<E, d>(frac_c1_Pa_times_phi_minus_Pn_times_Pn)));
+  XT::Functions::GenericGridFunction<E, d, d> minus_two_frac_c1_Pa_Pn_otimes_Pn(
+      /*order = */ 2 * P.space().max_polorder(),
+      /*post_bind_func*/
+      [&P_local](const E& element) { P_local->bind(element); },
+      /*evaluate_func*/
+      [&P_local, c_1, Pa](const DomainType& x_local, const XT::Common::Parameter& param) {
+        const auto P_n = P_local->evaluate(x_local, param);
+        FieldMatrix<RangeFieldType, d, d> ret;
+        for (size_t ii = 0; ii < d; ++ii)
+          for (size_t jj = 0; jj < d; ++jj)
+            ret[ii][jj] = P_n[ii] * P_n[jj];
+        ret *= -2. * c_1 / Pa;
+        return ret;
+      });
+  S_10_operator.append(
+      LocalElementIntegralBilinearForm<E, d>(LocalElementQuadraticIntegrand<E>(minus_two_frac_c1_Pa_Pn_otimes_Pn)));
+
+  // calculate S_11 = D
+  MatrixOperator<MatrixViewType, PGV, d> S_11_operator(grid_view, Pnat_space, P_space, S_11);
+  S_11_operator.append(LocalElementIntegralBilinearForm<E, d>(LocalEllipticIntegrand<E, d>(1.)));
+
+  // create rhs = (f_{of}, g_{of}) = (0, g_{of})
+  VectorType rhs_vector(2 * n, 0.);
+  XT::LA::VectorView<VectorType> g_vector(rhs_vector, n, 2 * n);
+  auto g_functional = make_vector_functional(P_space, g_vector);
+
+  using DomainType = typename XT::Functions::GenericGridFunction<E, d>::DomainType;
+  using RangeFieldType = typename XT::Functions::GenericGridFunction<E, d>::RangeFieldType;
+  XT::Functions::GenericGridFunction<E, d> g(
+      /*order = */ 3 * P_space.max_polorder(),
+      /*post_bind_func*/
+      [&P_local, &phi_local](const E& element) {
+        P_local->bind(element);
+        phi_local->bind(element);
+      },
+      /*evaluate_func*/
+      [&P_local, &phi_local, beta, Pa, c_1](const DomainType& x_local, const XT::Common::Parameter& param) {
+        // evaluate P, phi, \nabla phi
+        const auto P_n = P_local->evaluate(x_local, param);
+        const auto grad_phi = phi_local->jacobian(x_local, param)[0];
+
+        // evaluate rhs terms
+        auto frac_beta_Pa_grad_phi = grad_phi;
+        frac_beta_Pa_grad_phi *= beta / Pa;
+        auto minus_two_frac_c1_Pa_Pn_times_Pn_Pn = P_n;
+        minus_two_frac_c1_Pa_Pn_times_Pn_Pn *= -2. * c_1 / Pa * (P_n * P_n);
+        return frac_beta_Pa_grad_phi + minus_two_frac_c1_Pa_Pn_times_Pn_Pn;
+      });
+  g_functional.append(LocalElementIntegralFunctional<E, d>(
+      local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E, d>(), g)));
+  S_00_operator.append(g_functional);
+  // assemble everything
+  S_00_operator.assemble(true);
+  S_01_operator.assemble(true);
+  S_10_operator.assemble(true);
+  S_11_operator.assemble(true);
+
+  // solve system
+  auto ret = XT::LA::solve(S, rhs_vector);
+
+  // copy to vectors
+  for (size_t ii = 0; ii < n; ++ii)
+    P.dofs().vector()[ii] = ret[ii];
+  for (size_t ii = 0; ii < n; ++ii)
+    Pnat.dofs().vector()[ii] = ret[n + ii];
+}
 
 template <class DiscreteFunc, class VecDiscreteFunc>
 void solve_pfield(const VecDiscreteFunc& u,
@@ -252,7 +468,8 @@ void solve_pfield(const VecDiscreteFunc& u,
                   const double c_1,
                   const double Pa,
                   const double beta,
-                  const double epsilon)
+                  const double epsilon,
+                  const double dt)
 {}
 
 int main(int argc, char* argv[])
@@ -391,9 +608,13 @@ int main(int argc, char* argv[])
       double actual_dt = std::min(dt, max_dt);
 
       // do a timestep
+      std::cout << "Current time: " << t << std::endl;
       solve_navier_stokes(u, p, P, Pnat, phi, phinat, mu, Re, Fa, xi, dirichlet_boundary_info);
-      solve_ofield(u, p, P, Pnat, phi, phinat, mu, xi, kappa, c_1, Pa, beta);
-      solve_pfield(u, p, P, Pnat, phi, phinat, mu, gamma, c_1, Pa, beta, epsilon);
+      std::cout << "Stokes done" << std::endl;
+      solve_ofield(u, P, Pnat, phi, xi, kappa, c_1, Pa, beta, dt);
+      std::cout << "Ofield done" << std::endl;
+      solve_pfield(u, p, P, Pnat, phi, phinat, mu, gamma, c_1, Pa, beta, epsilon, dt);
+      std::cout << "Pfield done" << std::endl;
 
       t += actual_dt;
 
