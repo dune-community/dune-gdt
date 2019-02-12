@@ -22,8 +22,8 @@ using namespace Dune;
 using namespace Dune::GDT::Test;
 
 
-using OS015Table4Test = OS2015MultiscaleTest<YASP_2D_EQUIDISTANT_OFFSET>;
-TEST_F(OS015Table4Test, columns_1_3_and_5)
+using OS015Table4Test = OS2015MultiscaleTest<ALU_2D_SIMPLEX_CONFORMING>;
+TEST_F(OS015Table4Test, columns_1_and_3_to_5)
 {
   this->space_type_ = "dg_p1";
   const auto actual_results = this->run();

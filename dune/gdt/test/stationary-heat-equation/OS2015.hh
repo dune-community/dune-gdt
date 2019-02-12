@@ -108,7 +108,7 @@ public:
 protected:
   std::vector<std::string> norms() const override final
   {
-    return {"eta_NC", "eta_DF"};
+    return {"eta_NC", "eta_R", "eta_DF"};
   }
 
   const XT::Grid::BoundaryInfo<I>& boundary_info() const override final
