@@ -59,7 +59,7 @@ public:
   /**
    * \param boundary_info To determine the Dirichlet boundary DoFs on which to set the range to zero.
    */
-  OswaldInterpolationOperator(const AssemblyGridViewType& assembly_grid_view,
+  OswaldInterpolationOperator(AssemblyGridViewType assembly_grid_view,
                               const SourceSpaceType& src_spc,
                               const RangeSpaceType& rng_spc,
                               const XT::Grid::BoundaryInfo<I>& boundary_info)
@@ -194,7 +194,7 @@ public:
   } // ... apply(...)
 
 private:
-  const AssemblyGridViewType& assembly_grid_view_;
+  const AssemblyGridViewType assembly_grid_view_;
   const SourceSpaceType& source_space_;
   const RangeSpaceType& range_space_;
   const XT::Common::ConstStorageProvider<XT::Grid::BoundaryInfo<I>> boundary_info_;
