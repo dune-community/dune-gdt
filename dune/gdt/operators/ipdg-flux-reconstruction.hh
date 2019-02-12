@@ -54,7 +54,7 @@ public:
   using E = XT::Grid::extract_entity_t<AssemblyGridViewType>;
   static const constexpr size_t d = RGV::dimension;
 
-  IpdgFluxReconstructionOperator(const AssemblyGridViewType& assembly_grid_view,
+  IpdgFluxReconstructionOperator(AssemblyGridViewType assembly_grid_view,
                                  const SourceSpaceType& src_spc,
                                  const RangeSpaceType& rng_spc,
                                  const XT::Functions::GridFunctionInterface<E>& diffusion_factor,
@@ -297,7 +297,7 @@ public:
   } // ... apply(...)
 
 private:
-  const AssemblyGridViewType& assembly_grid_view_;
+  const AssemblyGridViewType assembly_grid_view_;
   const SourceSpaceType& source_space_;
   const RangeSpaceType& range_space_;
   const XT::Functions::GridFunctionInterface<E>& diffusion_factor_;
