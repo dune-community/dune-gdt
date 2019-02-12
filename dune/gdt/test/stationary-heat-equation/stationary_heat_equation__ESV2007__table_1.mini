@@ -1,4 +1,4 @@
-[ESV2007Table1Test.columns_1_to_3_and_5.setup]
+[ESV2007Table1Test.columns_1_to_5.setup]
 force_order = 4
 over_integrate = 0
 num_refinements = 3
@@ -6,9 +6,10 @@ num_additional_refinements_for_reference = 0
 reference_solution_order = 4
 use_tbb = false
 
-[ESV2007Table1Test.columns_1_to_3_and_5.results]
+[ESV2007Table1Test.columns_1_to_5.results]
 target.h      = [3.54e-01 1.77e-01 8.84e-02 4.42e-02]
 norm.H_1_semi = [3.28e-01 1.62e-01 8.04e-02 4.01e-02]
 # these are the ones from the paper
 # norm.eta_NC   = [1.89e-01 9.72e-02 4.89e-02 2.45e-02]
+# norm.eta_R    = [7.23e-02 1.82e-02 4.54e-03 1.14e-03]
 # norm.eta_DF   = [3.38e-01 1.69e-01 8.39e-02 4.18e-02]

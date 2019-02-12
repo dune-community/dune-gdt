@@ -113,7 +113,7 @@ public:
 protected:
   std::vector<std::string> norms() const override final
   {
-    return {"H_1_semi", "eta_NC", "eta_DF"};
+    return {"H_1_semi", "eta_NC", "eta_R", "eta_DF"};
   }
 
   void compute_reference_solution() override final
