@@ -20,7 +20,7 @@ prefixes = os.environ.get('ENV_PREFIXES', 'TRAVIS DRONE GITLAB CODECOV CI encryp
 blacklist = ['TRAVIS_COMMIT_MESSAGE']
 env_file = os.environ.get('ENV_FILE', os.path.join(home, 'env'))
 with open(env_file, 'wt') as env:
-    for k,v in os.environ.items():
+    for k, v in os.environ.items():
         for pref in prefixes:
             if k.startswith(pref) and k not in blacklist:
-                env.write('{}={}\n'.format(k,quote(v)))
+                env.write('{}={}\n'.format(k, quote(v)))
