@@ -14,7 +14,10 @@
 #define DUNE_GDT_LOCAL_INTEGRANDS_PRODUCTS_HH
 
 #include <dune/xt/common/memory.hh>
+#include <dune/xt/la/container/eye-matrix.hh>
 #include <dune/xt/functions/constant.hh>
+#include <dune/xt/functions/base/combined-functions.hh>
+#include <dune/xt/functions/base/combined-grid-functions.hh>
 #include <dune/xt/functions/base/function-as-grid-function.hh>
 #include <dune/xt/functions/interfaces/grid-function.hh>
 
@@ -31,18 +34,11 @@ namespace GDT {
  *
  * \sa local_binary_to_unary_element_integrand
  */
-template <class E,
-          size_t t_r = 1,
-          size_t t_rC = 1,
-          class TR = double,
-          class F = double,
-          size_t a_r = t_r,
-          size_t a_rC = t_rC,
-          class AR = TR>
-class LocalElementProductIntegrand : public LocalBinaryElementIntegrandInterface<E, t_r, t_rC, TR, F, a_r, a_rC, AR>
+template <class E, size_t r = 1, class TR = double, class F = double, class AR = TR>
+class LocalElementProductIntegrand : public LocalBinaryElementIntegrandInterface<E, r, 1, TR, F, r, 1, AR>
 {
-  using ThisType = LocalElementProductIntegrand<E, t_r, t_rC, TR, F, a_r, a_rC, AR>;
-  using BaseType = LocalBinaryElementIntegrandInterface<E, t_r, t_rC, TR, F, a_r, a_rC, AR>;
+  using ThisType = LocalElementProductIntegrand<E, r, TR, F, AR>;
+  using BaseType = LocalBinaryElementIntegrandInterface<E, r, 1, TR, F, r, 1, AR>;
 
 public:
   using BaseType::d;
@@ -51,12 +47,15 @@ public:
   using typename BaseType::LocalAnsatzBasisType;
   using typename BaseType::LocalTestBasisType;
 
-  using GridFunctionType = XT::Functions::GridFunctionInterface<E, 1, 1, F>;
+  using GridFunctionType = XT::Functions::GridFunctionInterface<E, r, r, F>;
 
   LocalElementProductIntegrand(const F& inducing_value = F(1))
     : BaseType()
-    , inducing_function_(new XT::Functions::FunctionAsGridFunctionWrapper<E, 1, 1, F>(
-          new XT::Functions::ConstantFunction<d, 1, 1, F>(inducing_value)))
+    , inducing_function_(new XT::Functions::FunctionAsGridFunctionWrapper<E, r, r, F>(
+          new XT::Functions::ProductFunction<XT::Functions::ConstantFunction<d, 1, 1, F>,
+                                             XT::Functions::ConstantFunction<d, r, r, F>>(
+              new XT::Functions::ConstantFunction<d, 1, 1, F>(inducing_value),
+              new XT::Functions::ConstantFunction<d, r, r, F>(XT::LA::eye_matrix<FieldMatrix<F, r, r>>(r)))))
     , local_function_(inducing_function_.access().local_function())
     , test_basis_values_()
     , ansatz_basis_values_()
@@ -64,14 +63,32 @@ public:
 
   LocalElementProductIntegrand(const XT::Functions::FunctionInterface<d, 1, 1, F>& inducing_function)
     : BaseType()
-    , inducing_function_(new XT::Functions::FunctionAsGridFunctionWrapper<E, 1, 1, F>(inducing_function))
+    , inducing_function_(new XT::Functions::FunctionAsGridFunctionWrapper<E, r, r, F>(
+          new XT::Functions::ProductFunction<XT::Functions::FunctionInterface<d, 1, 1, F>,
+                                             XT::Functions::ConstantFunction<d, r, r, F>>(
+              inducing_function,
+              new XT::Functions::ConstantFunction<d, r, r, F>(XT::LA::eye_matrix<FieldMatrix<F, r, r>>(r)))))
     , local_function_(inducing_function_.access().local_function())
     , test_basis_values_()
     , ansatz_basis_values_()
   {}
 
-  LocalElementProductIntegrand(const GridFunctionType& inducing_function)
-    : BaseType(inducing_function.parameter_type())
+  LocalElementProductIntegrand(const XT::Functions::GridFunctionInterface<E, 1, 1, F>& inducing_function)
+    : BaseType()
+    , inducing_function_(new XT::Functions::FunctionAsGridFunctionWrapper<E, r, r, F>(
+          new XT::Functions::ProductGridFunction<XT::Functions::GridFunctionInterface<E, 1, 1, F>,
+                                                 XT::Functions::GridFunctionInterface<E, r, r, F>>(
+              inducing_function,
+              new XT::Functions::FunctionAsGridFunctionWrapper<E, r, r, F>(
+                  new XT::Functions::ConstantFunction<d, r, r, F>(XT::LA::eye_matrix<FieldMatrix<F, r, r>>(r))))))
+    , local_function_(inducing_function_.access().local_function())
+    , test_basis_values_()
+    , ansatz_basis_values_()
+  {}
+
+  template <class E_, typename = std::enable_if_t<std::is_same<E_, E>::value && r != 1, void>>
+  LocalElementProductIntegrand(const XT::Functions::GridFunctionInterface<E_, r, r, F>& inducing_function)
+    : BaseType()
     , inducing_function_(inducing_function)
     , local_function_(inducing_function_.access().local_function())
     , test_basis_values_()
@@ -127,7 +144,7 @@ public:
     // compute product
     for (size_t ii = 0; ii < rows; ++ii)
       for (size_t jj = 0; jj < cols; ++jj)
-        result[ii][jj] = function_value * (test_basis_values_[ii] * ansatz_basis_values_[jj]);
+        result[ii][jj] = (function_value * test_basis_values_[ii]) * ansatz_basis_values_[jj];
   } // ... evaluate(...)
 
 private:

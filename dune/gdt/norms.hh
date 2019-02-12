@@ -25,27 +25,27 @@ namespace Dune {
 namespace GDT {
 
 
-template <class GridViewType, size_t s_r, size_t s_rC, class SF, size_t r_r, size_t r_rC, class RF, class F = double>
+template <class GridViewType, size_t r, class SF, class RF, class F = double>
 std::enable_if_t<XT::Grid::is_view<GridViewType>::value,
-                 LocalizableBilinearFormBase<GridViewType, s_r, s_rC, SF, F, r_r, r_rC, RF>>
+                 LocalizableBilinearFormBase<GridViewType, r, 1, SF, F, r, 1, RF>>
 make_localizable_l2_product(
     const GridViewType& grid_view,
-    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GridViewType>, s_r, s_rC, SF>& left,
-    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GridViewType>, r_r, r_rC, RF>& right)
+    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GridViewType>, r, 1, SF>& left,
+    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GridViewType>, r, 1, RF>& right)
 {
   using E = XT::Grid::extract_entity_t<GridViewType>;
   auto localizable_product = make_localizable_bilinear_form(grid_view, left, right);
-  localizable_product.append(LocalElementIntegralBilinearForm<E, r_r, r_rC, RF, F, s_r, s_rC, SF>(
-      LocalElementProductIntegrand<E, r_r, r_rC, RF, F, s_r, s_rC, SF>()));
+  localizable_product.append(
+      LocalElementIntegralBilinearForm<E, r, 1, RF, F, r, 1, SF>(LocalElementProductIntegrand<E, r, RF, F, SF>()));
   return localizable_product;
 }
 
 
-template <class GridViewType, size_t s_r, size_t s_rC, class SF, size_t r_r, size_t r_rC, class RF, class F = double>
+template <class GridViewType, size_t r, class SF, class RF, class F = double>
 std::enable_if_t<XT::Grid::is_view<GridViewType>::value, F>
 l2_product(const GridViewType& grid_view,
-           const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GridViewType>, s_r, s_rC, SF>& left,
-           const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GridViewType>, r_r, r_rC, RF>& right)
+           const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GridViewType>, r, 1, SF>& left,
+           const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GridViewType>, r, 1, RF>& right)
 {
   auto product = make_localizable_l2_product(grid_view, left, right);
   product.assemble();
@@ -53,10 +53,10 @@ l2_product(const GridViewType& grid_view,
 }
 
 
-template <class GridViewType, size_t r, size_t rC, class R, class F = double>
+template <class GridViewType, size_t r, class R, class F = double>
 std::enable_if_t<XT::Grid::is_view<GridViewType>::value, F>
 l2_norm(const GridViewType& grid_view,
-        const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GridViewType>, r, rC, R>& func)
+        const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GridViewType>, r, 1, R>& func)
 {
   return std::sqrt(l2_product(grid_view, func, func));
 }
