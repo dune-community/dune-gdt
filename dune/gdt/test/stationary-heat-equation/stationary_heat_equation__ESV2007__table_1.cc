@@ -23,7 +23,7 @@ using namespace Dune::GDT::Test;
 
 
 using ESV2007Table1Test = ESV2007DiffusionTest<ALU_2D_SIMPLEX_CONFORMING>;
-TEST_F(ESV2007Table1Test, columns_1_to_3_and_5)
+TEST_F(ESV2007Table1Test, columns_1_to_5)
 {
   this->space_type_ = "dg_p1";
   const auto actual_results = this->run();
