@@ -19,6 +19,7 @@
 #include <dune/xt/grid/boundaryinfo/interfaces.hh>
 #include <dune/xt/grid/entity.hh>
 #include <dune/xt/grid/filters/intersection.hh>
+#include <dune/xt/grid/integrals.hh>
 #include <dune/xt/grid/layers.hh>
 #include <dune/xt/functions/derivatives.hh>
 #include <dune/xt/functions/interfaces/grid-function.hh>
@@ -214,25 +215,21 @@ protected:
                         local_solution->bind(element);
                         auto local_reconstruction = flux_reconstruction.local_function();
                         local_reconstruction->bind(element);
-                        auto result = LocalElementIntegralFunctional<E, d>(
-                                          [&](const auto& basis, const auto& /*param*/) {
-                                            return std::max(local_df->order() + local_dt->order()
-                                                                + std::max(local_solution->order() - 1, 0),
-                                                            basis.order());
-                                          },
-                                          [&](const auto& basis, const auto& xx, auto& result, const auto& /*param*/) {
-                                            const auto df = local_df->evaluate(xx);
-                                            const auto dt = local_dt->evaluate(xx);
-                                            const auto diff = dt * df;
-                                            const auto diff_inv = XT::LA::invert_matrix(diff);
-                                            const auto solution_grad = local_solution->jacobian(xx)[0];
-                                            const auto flux_rec = basis.evaluate_set(xx)[0];
-                                            auto difference = diff * solution_grad + flux_rec;
-                                            result[0] = (diff_inv * difference) * difference;
-                                          },
-                                          {},
-                                          /*over_integrate=*/3)
-                                          .apply(*local_reconstruction)[0];
+                        auto result = XT::Grid::element_integral(
+                            element,
+                            [&](const auto& xx) {
+                              const auto df = local_df->evaluate(xx);
+                              const auto dt = local_dt->evaluate(xx);
+                              const auto diff = dt * df;
+                              const auto diff_inv = XT::LA::invert_matrix(diff);
+                              const auto solution_grad = local_solution->jacobian(xx)[0];
+                              const auto flux_rec = local_reconstruction->evaluate(xx);
+                              auto difference = diff * solution_grad + flux_rec;
+                              return (diff_inv * difference) * difference;
+                            },
+                            std::max(local_df->order() + local_dt->order() + std::max(local_solution->order() - 1, 0),
+                                     local_reconstruction->order())
+                                + /*over_integrate=*/3);
                         std::lock_guard<std::mutex> lock(eta_DF_2_mutex);
                         eta_DF_2 += result;
                       },
