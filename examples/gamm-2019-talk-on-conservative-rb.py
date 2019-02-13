@@ -22,7 +22,7 @@ mu_bar = {'switch': 0.1}
 mu_hat = {'switch': 0.1}
 diffusion_bar = ExpressionFunction('x', [diffusion_expression.format(mu_bar['switch'])], 3, 'diffusion_mu_bar')
 diffusion_hat = ExpressionFunction('x', [diffusion_expression.format(mu_hat['switch'])], 3, 'diffusion_mu_hat')
-f = ExpressionFunction('x', ['0.5*pi*pi*cos(0.5*pi*x[0])*cos(0.5*pi*x[1])'], 3, 'lambda_2')
+f = ExpressionFunction('x', ['0.5*pi*pi*cos(0.5*pi*x[0])*cos(0.5*pi*x[1])'], 3, 'f')
 zero = ConstantFunction(0.)
 
 def alpha(mu, mu_bar):
@@ -201,6 +201,6 @@ for mu in fom.parameter_space.sample_uniformly(3):
     u_RB_on_ref = prolong(dg_space, u_RB._list[0].impl, reference_dg_space)
     u_h_ref = reference_fom.solve(mu)
     error = reference_dg_norm(u_h_ref._list[0].impl - u_RB_on_ref)
-    logger.info('      error = {}'.format(error))
+    logger.info('      error  = {}'.format(error))
     logger.info('   => efficiency = {}'.format(eta/error))
 
