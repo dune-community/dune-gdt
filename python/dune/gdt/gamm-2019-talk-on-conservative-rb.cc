@@ -10,6 +10,7 @@
 #include "config.h"
 
 #include <mutex>
+#include <tuple>
 
 #include <dune/pybindxi/pybind11.h>
 #include <dune/pybindxi/stl.h>
@@ -18,10 +19,14 @@
 #include <python/dune/xt/common/exceptions.bindings.hh>
 
 #include <dune/xt/la/container/istl.hh>
+#include <dune/xt/la/eigen-solver.hh>
+#include <dune/xt/grid/boundaryinfo/alldirichlet.hh>
 #include <dune/xt/grid/grids.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
+#include <dune/xt/grid/integrals.hh>
 #include <dune/xt/functions/constant.hh>
 #include <dune/xt/functions/interfaces/function.hh>
+#include <dune/xt/functions/derivatives.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/functionals/vector-based.hh>
@@ -33,6 +38,7 @@
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/operators/matrix-based.hh>
 #include <dune/gdt/operators/ipdg-flux-reconstruction.hh>
+#include <dune/gdt/operators/oswald-interpolation.hh>
 #include <dune/gdt/spaces/l2/discontinuous-lagrange.hh>
 #include <dune/gdt/spaces/hdiv/raviart-thomas.hh>
 
@@ -297,5 +303,123 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
         "grid"_a,
         "flux"_a,
         "rhs"_a,
+        "parallel"_a = true);
+
+  m.def("compute_estimate",
+        [](GP& grid,
+           ScalarDF& pressure,
+           VectorDF& flux,
+           XT::Functions::FunctionInterface<d>& rhs,
+           XT::Functions::FunctionInterface<d>& diffusion_factor,
+           XT::Functions::FunctionInterface<d>& diffusion_factor_bar,
+           XT::Functions::FunctionInterface<d>& diffusion_factor_hat,
+           const double& alpha_bar,
+           const double& alpha_hat,
+           const double& gamma_bar,
+           const int over_integrate,
+           const bool& parallel) {
+          const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor(
+              XT::Common::FieldMatrix<double, 2, d>({{1., 0.}, {0., 1.}}));
+          const auto& grid_rhs = rhs.template as_grid_function<E>();
+          const auto& grid_diffusion_factor = diffusion_factor.template as_grid_function<E>();
+          const auto& grid_diffusion_factor_bar = diffusion_factor_bar.template as_grid_function<E>();
+          const auto& grid_diffusion_factor_hat = diffusion_factor_hat.template as_grid_function<E>();
+          const auto& grid_diffusion_tensor = diffusion_tensor.template as_grid_function<E>();
+          auto diffusion = grid_diffusion_factor * grid_diffusion_tensor;
+          auto diffusion_hat = grid_diffusion_factor_hat * grid_diffusion_tensor;
+          double eta_2 = 0.;
+          double eta_NC_2 = 0.;
+          double eta_R_2 = 0.;
+          double eta_DF_2 = 0.;
+          std::mutex mutex;
+          auto grid_view = grid.leaf_view();
+          const XT::Grid::AllDirichletBoundaryInfo<I> boundary_info;
+          const auto& dg_space = pressure.space();
+          auto oswald_interpolation_operator =
+              make_oswald_interpolation_operator<M>(grid_view, dg_space, dg_space, boundary_info);
+          oswald_interpolation_operator.assemble(parallel);
+          const auto conforming_pressure = oswald_interpolation_operator.apply(pressure);
+          auto walker = XT::Grid::make_walker(grid.leaf_view());
+          walker.append(
+              [](/*prepare nothing*/) {},
+              [&](const auto& element) {
+                // prepare data functions
+                auto p = pressure.local_function();
+                auto cp = conforming_pressure.local_function();
+                auto t = flux.local_function();
+                auto div_t = XT::Functions::divergence(*t);
+                auto f = grid_rhs.local_function();
+                auto df = diffusion.local_function();
+                auto dfh = diffusion_hat.local_function();
+                p->bind(element);
+                cp->bind(element);
+                t->bind(element);
+                div_t.bind(element);
+                f->bind(element);
+                df->bind(element);
+                dfh->bind(element);
+                // eta_NC
+                const double eta_NC_element_2 =
+                    LocalElementIntegralBilinearForm<E>(
+                        LocalEllipticIntegrand<E>(grid_diffusion_factor_bar, grid_diffusion_tensor), over_integrate)
+                        .apply2(*p - *cp, *p - *cp)[0][0];
+                // eta_R
+                // - approximate minimum eigenvalue of the diffusion over the element (evaluate at some points)
+                double min_EV = std::numeric_limits<double>::max();
+                for (auto&& quadrature_point :
+                     QuadratureRules<double, d>::rule(element.geometry().type(), dfh->order() + over_integrate)) {
+                  auto diff = dfh->evaluate(quadrature_point.position());
+                  auto eigen_solver =
+                      XT::LA::make_eigen_solver(diff,
+                                                {{"type", XT::LA::EigenSolverOptions<decltype(diff)>::types().at(0)},
+                                                 {"assert_positive_eigenvalues", "1e-15"}});
+                  min_EV = std::min(min_EV, eigen_solver.min_eigenvalues(1).at(0));
+                }
+                DUNE_THROW_IF(!(min_EV > 0.),
+                              Exceptions::integrand_error,
+                              "The minimum eigenvalue of a positiv definite matrix must not be negative!"
+                                  << "\n\nmin_EV = " << min_EV);
+                const auto C_P = 1. / (M_PIl * M_PIl); // Poincare constant (known for simplices/cubes)
+                const auto h = XT::Grid::diameter(element);
+                auto L2_norm_2 = LocalElementIntegralBilinearForm<E>(LocalElementProductIntegrand<E>(), over_integrate)
+                                     .apply2(*f - div_t, *f - div_t)[0][0];
+                const double eta_R_element_2 = (C_P * h * h * L2_norm_2) / min_EV;
+                // eta_DF
+                const double eta_DF_element_2 = XT::Grid::element_integral(
+                    element,
+                    [&](const auto& xx) {
+                      const auto diff = df->evaluate(xx);
+                      const auto diff_inv = XT::LA::invert_matrix(dfh->evaluate(xx));
+                      const auto pressure_grad = p->jacobian(xx)[0];
+                      const auto t_val = t->evaluate(xx);
+                      auto difference = diff * pressure_grad + t_val;
+                      return (diff_inv * difference) * difference;
+                    },
+                    std::max(df->order() + std::max(p->order() - 1, 0), t->order()) + over_integrate);
+                // compute indicators and estimator
+                std::lock_guard<std::mutex> lock(mutex);
+                eta_NC_2 += eta_NC_element_2;
+                eta_R_2 += eta_R_element_2;
+                eta_DF_2 += eta_DF_element_2;
+                eta_2 += gamma_bar * eta_NC_element_2
+                         + std::pow(std::sqrt(eta_R_element_2) + std::sqrt(eta_DF_element_2) / std::sqrt(alpha_hat), 2);
+              },
+              [](/*prepare nothing*/) {});
+          walker.walk(parallel);
+          eta_2 /= alpha_bar;
+          return std::make_tuple(std::sqrt(eta_2), std::sqrt(eta_NC_2), std::sqrt(eta_R_2), std::sqrt(eta_DF_2));
+        },
+        py::call_guard<py::gil_scoped_release>(),
+        "grid"_a,
+        "pressure"_a,
+        "flux"_a,
+        "rhs"_a,
+        "diffusion_factor"_a,
+        "diffusion_factor_bar"_a,
+        "diffusion_factor_hat"_a,
+        "alpha_bar"_a,
+        "alpha_hat"_a,
+        "gamma_bar"_a,
+        "over_integrate"_a = 3,
         "parallel"_a = true);
 } // PYBIND11_PLUGIN(...)
