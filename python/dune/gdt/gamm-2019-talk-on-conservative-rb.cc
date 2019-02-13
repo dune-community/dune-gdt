@@ -39,6 +39,7 @@
 #include <dune/gdt/operators/matrix-based.hh>
 #include <dune/gdt/operators/ipdg-flux-reconstruction.hh>
 #include <dune/gdt/operators/oswald-interpolation.hh>
+#include <dune/gdt/prolongations.hh>
 #include <dune/gdt/spaces/l2/discontinuous-lagrange.hh>
 #include <dune/gdt/spaces/hdiv/raviart-thomas.hh>
 
@@ -129,6 +130,25 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
         "DoF_vector"_a,
         "name"_a);
 
+  m.def("prolong",
+        [](DG& coarse_dg_space, V& coarse_pressure, DG& fine_dg_space) {
+          auto fine_pressure = prolong<V>(make_discrete_function(coarse_dg_space, coarse_pressure), fine_dg_space);
+          return std::move(std::make_unique<V>(std::move(fine_pressure.dofs().vector())));
+        },
+        py::call_guard<py::gil_scoped_release>(),
+        "coarse_dg_space"_a,
+        "coarse_pressure"_a,
+        "fine_dg_space"_a);
+  m.def("prolong",
+        [](RTN& coarse_rtn_space, V& coarse_flux, RTN& fine_rtn_space) {
+          auto fine_flux = prolong<V>(make_discrete_function(coarse_rtn_space, coarse_flux), fine_rtn_space);
+          return std::move(std::make_unique<V>(std::move(fine_flux.dofs().vector())));
+        },
+        py::call_guard<py::gil_scoped_release>(),
+        "coarse_rtn_space"_a,
+        "coarse_flux"_a,
+        "fine_rtn_space"_a);
+
   m.def("assemble_SWIPDG_matrix",
         [](DG& space, XT::Functions::FunctionInterface<d>& diffusion_factor, const bool parallel) {
           const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor(
@@ -167,6 +187,21 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
         py::call_guard<py::gil_scoped_release>(),
         "dg_space"_a,
         "force"_a,
+        "parallel"_a = true);
+
+  m.def("assemble_energy_semi_product_matrix",
+        [](DG& space, XT::Functions::FunctionInterface<d>& diffusion_factor, const bool parallel) {
+          const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor(
+              XT::Common::FieldMatrix<double, 2, d>({{1., 0.}, {0., 1.}}));
+          auto op = make_matrix_operator<M>(space, Stencil::element_and_intersection);
+          op.append(LocalElementIntegralBilinearForm<E>(LocalEllipticIntegrand<E>(
+              diffusion_factor.as_grid_function<E>(), diffusion_tensor.as_grid_function<E>())));
+          op.assemble(parallel);
+          return std::move(std::make_unique<M>(std::move(op.matrix())));
+        },
+        py::call_guard<py::gil_scoped_release>(),
+        "dg_space"_a,
+        "diffusion_factor"_a,
         "parallel"_a = true);
 
   m.def(
