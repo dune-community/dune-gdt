@@ -1,9 +1,11 @@
 [OS015Table4Test.columns_1_and_3_to_5.setup]
-num_refinements = 0
+num_refinements = 3
 num_additional_refinements_for_reference = 0
 use_tbb = true
 visualize = true
 
-#[OS015Table4Test.columns_1_and_3_to_5.results]
-#target.h      = []
-#norm.H_1_semi = []
+[OS015Table4Test.columns_1_and_3_to_5.results]
+target.h    = [3.54e-02 0 0 0]
+norm.eta_NC = [2.13e+00 1.46e+00 1.02e+00 7.20e-01]
+norm.eta_R  = [5.32e-13 0 0 0]
+norm.eta_DF = [9.66e-01 6.05e-01 3.85e-01 2.49e-01]
