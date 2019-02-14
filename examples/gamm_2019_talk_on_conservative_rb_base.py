@@ -14,8 +14,7 @@ def simulate_single_greedy_step(
         max_extensions,
         num_samples):
 
-    logger.info('building pressure RB (simulating intermediate greedy step by max_extensions={}) ...'.format(
-        max_extensions))
+    logger.info('building pressure RB ...')
     logger.info('')
 
     reductor = CoerciveRBReductor(fom,
@@ -76,5 +75,5 @@ def simulate_single_greedy_step(
         errors.append(error)
         efficiencies.append(eta/error)
 
-    return etas, eta_NCs, eta_Rs, eta_DFs, errors, efficiencies
+    return mus, etas, eta_NCs, eta_Rs, eta_DFs, errors, efficiencies
 

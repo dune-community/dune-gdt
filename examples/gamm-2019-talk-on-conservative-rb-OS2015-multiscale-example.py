@@ -249,30 +249,38 @@ del u_h
 del t_h
 
 logger.info('    are {}, {}, {}'.format(eta_NC, eta_R, eta_DF))
-logger.info('simulating greedy step 1 ...')
 
 from gamm_2019_talk_on_conservative_rb_base import simulate_single_greedy_step
 
-etas, eta_NCs, eta_Rs, eta_DFs, errors, efficiencies = simulate_single_greedy_step(
-        fom,
-        dg_product=fom.energy_penalty_product,
-        FluxVectorSpace=FluxVectorSpace,
-        rtn_product=rtn_product,
-        t_h_f=t_h_f,
-        compute_flux_reconstruction=lambda mu, u_RB: compute_flux_reconstruction(
-            grid, dg_space, rtn_space, make_diffusion_factor_mu(mu), diffusion_tensor, u_RB),
-        compute_estimate=lambda mu, u_RB, t_RB_f: compute_estimate(
-            grid,
-            make_discrete_function(dg_space, u_RB, 'u_RB'),
-            make_discrete_function(rtn_space, t_RB_f, 't_RB_f'),
-            f, make_diffusion_factor_mu(mu), diffusion_factor_bar, diffusion_factor_hat, diffusion_tensor,
-            alpha(mu, mu_bar), alpha(mu, mu_hat), gamma(mu, mu_bar)),
-        compute_reference_error=lambda mu, u_RB: reference_dg_norm(
-                reference_fom.solve(mu)._list[0].impl
-                - prolong(dg_space, u_RB, reference_dg_space)),
-        max_extensions=1,
-        num_samples=2
-        )
+for nn in range(20):
 
-logger.info('  worst efficiency: {}'.format(np.max(efficiencies)))
+    logger.info('simulating greedy step {} ...'.format(nn))
+
+    mus, etas, eta_NCs, eta_Rs, eta_DFs, errors, efficiencies = simulate_single_greedy_step(
+            fom,
+            dg_product=fom.energy_penalty_product,
+            FluxVectorSpace=FluxVectorSpace,
+            rtn_product=rtn_product,
+            t_h_f=t_h_f,
+            compute_flux_reconstruction=lambda mu, u_RB: compute_flux_reconstruction(
+                grid, dg_space, rtn_space, make_diffusion_factor_mu(mu), diffusion_tensor, u_RB),
+            compute_estimate=lambda mu, u_RB, t_RB_f: compute_estimate(
+                grid,
+                make_discrete_function(dg_space, u_RB, 'u_RB'),
+                make_discrete_function(rtn_space, t_RB_f, 't_RB_f'),
+                f, make_diffusion_factor_mu(mu), diffusion_factor_bar, diffusion_factor_hat, diffusion_tensor,
+                alpha(mu, mu_bar), alpha(mu, mu_hat), gamma(mu, mu_bar)),
+            compute_reference_error=lambda mu, u_RB: reference_dg_norm(
+                    reference_fom.solve(mu)._list[0].impl
+                    - prolong(dg_space, u_RB, reference_dg_space)),
+            max_extensions=nn,
+            num_samples=2
+            )
+
+    max_err_ind = np.argmax(errors)
+    max_est_ind = np.argmax(etas)
+    max_eff_ind = np.argmax(efficiencies)
+    logger.info('  worst error: {} (mu={})'.format(errors[max_err_ind], mus[max_err_ind]))
+    logger.info('  worst estimate: {} (mu={})'.format(etas[max_est_ind], mus[max_est_ind]))
+    logger.info('  worst efficiency: {} (mu={})'.format(efficiencies[max_eff_ind], mus[max_eff_ind]))
 
