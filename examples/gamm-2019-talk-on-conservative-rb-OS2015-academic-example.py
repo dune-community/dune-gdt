@@ -11,7 +11,8 @@ from dune.xt.functions import ExpressionFunction__2d_to_1x1 as ExpressionFunctio
 
 logger = getLogger('main.main');
 set_log_levels({'main': 'INFO',
-                'pymor.discretizations': 'WARN'})
+                'main.simulate_single_greedy_step': 'WARN',
+                'pymor': 'WARN'})
 
 diffusion = {'functions': (ExpressionFunction('x', ['1+cos(0.5*pi*x[0])*cos(0.5*pi*x[1])'], 3, 'lambda_1'),
                            ExpressionFunction('x', [ '-cos(0.5*pi*x[0])*cos(0.5*pi*x[1])'], 3, 'lambda_2')),
@@ -64,7 +65,7 @@ def discretize(num_refinements):
     rhs_func = VectorFunctional(lhs_op.range.make_array((assemble_L2_vector(dg_space, f),)))
     dg_product = make_marix_operator(assemble_DG_product_matrix(dg_space), 'PRESSURE')
 
-    fom = StationaryDiscretization(lhs_op, rhs_func, products={'h1_penalty': dg_product},
+    fom = StationaryDiscretization(lhs_op, rhs_func, products={'energy_penalty': dg_product},
                                    visualizer=DuneGDTVisualizer(dg_space))
     fom = fom.with_(parameter_space=CubicParameterSpace(fom.parameter_type, 0.1, 1.))
     return grid, dg_space, dg_product, fom
@@ -74,7 +75,6 @@ PressureVectorSpace = DuneXTVectorSpace(IstlDenseVectorDouble, dg_space.num_DoFs
 
 logger.info('grid has {} elements'.format(grid.num_elements))
 logger.info('space has {} DoFs'.format(dg_space.num_DoFs))
-logger.info('')
 logger.info('computing reference discretization ...')
 
 reference_grid, reference_dg_space, _, reference_fom = discretize(2 + 3*2)
@@ -87,7 +87,6 @@ def reference_dg_norm(u):
         u = ReferencePressureVectorSpace.from_data([u,])
     return np.sqrt(reference_energy_semi_product.apply2(u, u)[0][0])
 
-logger.info('')
 logger.info('assembling Hdiv product ...')
 
 rtn_space = RaviartThomasSpace(grid, 0)
@@ -99,7 +98,6 @@ def rtn_norm(t):
         t = FluxVectorSpace.from_data([t,])
     return np.sqrt(rtn_product.apply2(t, t)[0][0])
 
-logger.info('')
 logger.info('computing ESV2007 pressure and flux ...')
 
 u_h_f = make_marix_operator(assemble_SWIPDG_matrix(dg_space, ConstantFunction(1.)),
@@ -107,7 +105,6 @@ u_h_f = make_marix_operator(assemble_SWIPDG_matrix(dg_space, ConstantFunction(1.
 t_h_f = FluxVectorSpace.from_data([
     compute_flux_reconstruction(grid, dg_space, rtn_space, ConstantFunction(1.), u_h_f._list[0].impl),])
 
-logger.info('')
 logger.info('computing [OS2015, table 1] estimates (should be 0.166, 0.723, 0.355) ...')
 
 _, eta_NC, eta_R, eta_DF = compute_estimate(
@@ -118,7 +115,6 @@ _, eta_NC, eta_R, eta_DF = compute_estimate(
         1, 1, 1)
 
 logger.info('    are {}, {}, {}'.format(eta_NC, eta_R, eta_DF))
-logger.info('')
 logger.info('computing other OS2015 estimates (should be '
             '[table 3, eta_NC] 0.182, <= [table 1, eta_R] 0.166, [table 2, eta_DF] 0.316) ...')
 
@@ -135,72 +131,32 @@ _, eta_NC, eta_R, eta_DF = compute_estimate(
         alpha(mu, mu_bar), alpha(mu, mu_hat), gamma(mu, mu_bar))
 
 logger.info('    are {}, {}, {}'.format(eta_NC, eta_R, eta_DF))
-logger.info('')
-max_extensions=1
-logger.info('building pressure RB (simulating intermediate greedy step by max_extensions={}) ...'.format(
-    max_extensions))
-logger.info('')
+logger.info('simulating greedy step 1 ...')
 
-reductor = CoerciveRBReductor(fom,
-        product=fom.h1_penalty_product,
-        coercivity_estimator=ExpressionParameterFunctional('switch', fom.parameter_type))
-training_set = fom.parameter_space.sample_uniformly(100)
-greedy_data = greedy(fom, reductor, training_set,
-        extension_params={'method': 'gram_schmidt'}, max_extensions=max_extensions)
-rom = greedy_data['rd']
-greedy_mus = greedy_data['max_err_mus']
+from gamm_2019_talk_on_conservative_rb_base import simulate_single_greedy_step
 
-logger.info('')
-logger.info('building Hdiv_0 RB ...')
-
-Hdiv_0_RB = FluxVectorSpace.empty()
-for ii in range(len(greedy_data['max_err_mus'])):
-    mu = greedy_data['max_err_mus'][ii]
-    u_h = fom.solve(mu)
-    diffusion_mu = ExpressionFunction('x', [diffusion_expression.format(mu['switch'])], 3, 'diffusion_mu')
-    t_h = FluxVectorSpace.from_data([
-        compute_flux_reconstruction(grid, dg_space, rtn_space, diffusion_mu, u_h._list[0].impl),])
-    Hdiv_0_RB.append(t_h - t_h_f)
-Hdiv_0_RB = gram_schmidt(Hdiv_0_RB, product=rtn_product, copy=False)
-
-logger.info('')
-logger.info('testing for some parameters ...')
-
-for mu in fom.parameter_space.sample_uniformly(3):
-    logger.info('  mu = {}'.format(mu))
-    u_RB = rom.solve(mu)
-    u_RB = reductor.reconstruct(u_RB)
-    diffusion_mu = ExpressionFunction('x', [diffusion_expression.format(mu['switch'])], 3, 'diffusion_mu')
-    t_RB = FluxVectorSpace.from_data([
-        compute_flux_reconstruction(grid, dg_space, rtn_space, diffusion_mu, u_RB._list[0].impl),])
-    # logger.info('    conservation_error(t_RB): {}'.format(compute_local_conservation_error(
-        # grid, make_discrete_function(rtn_space, t_RB._list[0].impl, 't_RB'), f)))
-    # project onto Hdiv_0_RB (we know that Hdiv_0_R is orthonormalized wrt rtn_product)
-    t_RB_0 = rtn_product.apply2(Hdiv_0_RB, FluxVectorSpace.from_data([t_RB._list[0].impl - t_h_f._list[0].impl,]))
-    t_RB_0 = Hdiv_0_RB.lincomb(t_RB_0[:,0])
-    t_RB_f = t_RB_0._list[0].impl + t_h_f._list[0].impl
-    # logger.info('    conservation_error(t_RB_f): {}'.format(compute_local_conservation_error(
-        # grid, make_discrete_function(rtn_space, t_RB_f, 't_RB_f'), f)))
-    # compare to correct flux
-    # u_h = fom.solve(mu)._list[0].impl
-    # t_h = compute_flux_reconstruction(grid, dg_space, rtn_space, diffusion_mu, u_h)
-    # logger.info('    relative flux reconstruction error: {}'.format(rtn_norm(t_h - t_RB_f) / rtn_norm(t_h)))
-    # compute estimate
-    logger.info('    estimating error ...')
-    eta, eta_NC, eta_R, eta_DF = compute_estimate(
+etas, eta_NCs, eta_Rs, eta_DFs, errors, efficiencies = simulate_single_greedy_step(
+        fom,
+        dg_product=fom.energy_penalty_product,
+        FluxVectorSpace=FluxVectorSpace,
+        rtn_product=rtn_product,
+        t_h_f=t_h_f,
+        compute_flux_reconstruction=lambda mu, u_RB: compute_flux_reconstruction(
+            grid, dg_space, rtn_space, ExpressionFunction('x', [diffusion_expression.format(mu['switch'])], 3, 'diffusion_mu'), u_RB),
+        compute_estimate=lambda mu, u_RB, t_RB_f: compute_estimate(
             grid,
-            make_discrete_function(dg_space, u_RB._list[0].impl, 'u_RB'),
+            make_discrete_function(dg_space, u_RB, 'u_RB'),
             make_discrete_function(rtn_space, t_RB_f, 't_RB_f'),
-            f, diffusion_mu, diffusion_bar, diffusion_hat,
-            alpha(mu, mu_bar), alpha(mu, mu_hat), gamma(mu, mu_bar))
-    logger.info('      eta_NC = {}'.format(eta_NC))
-    logger.info('      eta_R  = {}'.format(eta_R))
-    logger.info('      eta_DF = {}'.format(eta_DF))
-    logger.info('      eta    = {}'.format(eta))
-    logger.info('    computing error by reference solution ...')
-    u_RB_on_ref = prolong(dg_space, u_RB._list[0].impl, reference_dg_space)
-    u_h_ref = reference_fom.solve(mu)
-    error = reference_dg_norm(u_h_ref._list[0].impl - u_RB_on_ref)
-    logger.info('      error  = {}'.format(error))
-    logger.info('   => efficiency = {}'.format(eta/error))
+            f,
+            ExpressionFunction('x', [diffusion_expression.format(mu['switch'])], 3, 'diffusion_mu'),
+            diffusion_bar, diffusion_hat,
+            alpha(mu, mu_bar), alpha(mu, mu_hat), gamma(mu, mu_bar)),
+        compute_reference_error=lambda mu, u_RB: reference_dg_norm(
+                reference_fom.solve(mu)._list[0].impl
+                - prolong(dg_space, u_RB, reference_dg_space)),
+        max_extensions=1,
+        num_samples=3
+        )
+
+logger.info('  worst efficiency: {}'.format(np.max(efficiencies)))
 
