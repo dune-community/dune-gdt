@@ -68,6 +68,7 @@ def discretize(num_refinements):
     fom = StationaryDiscretization(lhs_op, rhs_func, products={'energy_penalty': dg_product},
                                    visualizer=DuneGDTVisualizer(dg_space))
     fom = fom.with_(parameter_space=CubicParameterSpace(fom.parameter_type, 0.1, 1.))
+    fom.enable_caching('disk')
     return grid, dg_space, dg_product, fom
 
 grid, dg_space, dg_product, fom = discretize(2) # ... and 2 refinements with ALU_2D_SIMPLEX_CONFORMING
@@ -87,6 +88,8 @@ def reference_dg_norm(u):
         u = ReferencePressureVectorSpace.from_data([u,])
     return np.sqrt(reference_energy_semi_product.apply2(u, u)[0][0])
 
+logger.info('reference grid has {} elements'.format(reference_grid.num_elements))
+logger.info('reference space has {} DoFs'.format(reference_dg_space.num_DoFs))
 logger.info('assembling Hdiv product ...')
 
 rtn_space = RaviartThomasSpace(grid, 0)
@@ -134,11 +137,12 @@ logger.info('    are {}, {}, {}'.format(eta_NC, eta_R, eta_DF))
 
 from gamm_2019_talk_on_conservative_rb_base import simulate_single_greedy_step
 
-for nn in range(11):
+RB_size = 0
+for nn in range(1, 100):
 
     logger.info('simulating greedy step {} ...'.format(nn))
 
-    mus, etas, eta_NCs, eta_Rs, eta_DFs, errors, efficiencies = simulate_single_greedy_step(
+    greedy_data, estimate_data = simulate_single_greedy_step(
             fom,
             dg_product=fom.energy_penalty_product,
             FluxVectorSpace=FluxVectorSpace,
@@ -161,10 +165,14 @@ for nn in range(11):
             num_samples=10
             )
 
-    max_err_ind = np.argmax(errors)
-    max_est_ind = np.argmax(etas)
-    max_eff_ind = np.argmax(efficiencies)
-    logger.info('  worst error: {} (mu={})'.format(errors[max_err_ind], mus[max_err_ind]))
-    logger.info('  worst estimate: {} (mu={})'.format(etas[max_est_ind], mus[max_est_ind]))
-    logger.info('  worst efficiency: {} (mu={})'.format(efficiencies[max_eff_ind], mus[max_eff_ind]))
+    if greedy_data['extensions'] > RB_size:
+        RB_size = greedy_data['extensions']
+    else:
+        logger.info('  finished')
+        break
+
+    logger.info('  max greedy error: {}'.format(greedy_data['max_errs'][-1]))
+    logger.info('  worst error:      {}'.format(np.max(estimate_data['errors'])))
+    logger.info('  worst estimate:   {}'.format(np.max(estimate_data['etas'])))
+    logger.info('  worst efficiency: {}'.format(np.max(estimate_data['efficiencies'])))
 

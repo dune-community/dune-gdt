@@ -75,5 +75,6 @@ def simulate_single_greedy_step(
         errors.append(error)
         efficiencies.append(eta/error)
 
-    return mus, etas, eta_NCs, eta_Rs, eta_DFs, errors, efficiencies
+    return greedy_data, {'mus': mus, 'etas': etas, 'eta_NCs': eta_NCs, 'eta_Rs': eta_Rs,
+                         'eta_DFs': eta_DFs, 'errors': errors, 'efficiencies': efficiencies}
 
