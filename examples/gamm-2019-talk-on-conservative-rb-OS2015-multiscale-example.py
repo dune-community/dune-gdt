@@ -177,10 +177,10 @@ def make_marix_operator(mat, ID):
 
 logger.info('discretizing ...')
 
-def discretize(num_refinements):
+def discretize(num_refinements, polorder=1):
     grid = GridProvider([0, 0], [5, 1], [100, 20]) # The OS2015 test is [0, 5]x[0, 1], 100x20 elements, ...
     grid.refine(num_refinements)
-    dg_space = DiscontinuousLagrangeSpace(grid, 1)
+    dg_space = DiscontinuousLagrangeSpace(grid, polorder)
 
     lhs_op = LincombOperator([make_marix_operator(assemble_SWIPDG_matrix(dg_space, diff, diffusion_tensor), 'PRESSURE')
                               for diff in diffusion_factor['functions']],
@@ -191,6 +191,7 @@ def discretize(num_refinements):
     fom = StationaryDiscretization(lhs_op, rhs_func, products={'energy_penalty': dg_product},
                                    visualizer=DuneGDTVisualizer(dg_space))
     fom = fom.with_(parameter_space=CubicParameterSpace(fom.parameter_type, 0.1, 1.))
+    fom.enable_caching('disk')
     return grid, dg_space, dg_product, fom
 
 grid, dg_space, dg_product, fom = discretize(2) # ... and 2 refinements with ALU_2D_SIMPLEX_CONFORMING
@@ -215,6 +216,8 @@ def reference_dg_norm(u):
         u = ReferencePressureVectorSpace.from_data([u,])
     return np.sqrt(reference_energy_semi_product.apply2(u, u)[0][0])
 
+logger.info('reference grid has {} elements'.format(reference_grid.num_elements))
+logger.info('reference space has {} DoFs'.format(reference_dg_space.num_DoFs))
 logger.info('assembling Hdiv product ...')
 
 rtn_space = RaviartThomasSpace(grid, 0)
@@ -233,30 +236,32 @@ u_h_f = make_marix_operator(assemble_SWIPDG_matrix(dg_space, diffusion_factor_ba
 t_h_f = FluxVectorSpace.from_data([
     compute_flux_reconstruction(grid, dg_space, rtn_space, diffusion_factor_bar, diffusion_tensor, u_h_f._list[0].impl),])
 
-logger.info('computing [OS2015, table 4] estimates (should be 2.13, 1.88e-09, 0.966) ...')
+if grid.num_elements == 16000:
+    logger.info('computing [OS2015, table 4] estimates (should be 2.13, 1.88e-09, 0.966) ...')
 
-u_h = make_marix_operator(assemble_SWIPDG_matrix(dg_space, diffusion_factor_max, diffusion_tensor),
-                            'PRESSURE').apply_inverse(fom.rhs.as_source_array())
-t_h = FluxVectorSpace.from_data([
-    compute_flux_reconstruction(grid, dg_space, rtn_space, diffusion_factor_max, diffusion_tensor, u_h._list[0].impl),])
-_, eta_NC, eta_R, eta_DF = compute_estimate(
-        grid,
-        make_discrete_function(dg_space, u_h._list[0].impl, 'u_h'),
-        make_discrete_function(rtn_space, t_h._list[0].impl, 't_h'),
-        f, diffusion_factor_max, diffusion_factor_max, diffusion_factor_max, diffusion_tensor,
-        1, 1, 1)
-del u_h
-del t_h
+    u_h = make_marix_operator(assemble_SWIPDG_matrix(dg_space, diffusion_factor_max, diffusion_tensor),
+                                'PRESSURE').apply_inverse(fom.rhs.as_source_array())
+    t_h = FluxVectorSpace.from_data([
+        compute_flux_reconstruction(grid, dg_space, rtn_space, diffusion_factor_max, diffusion_tensor, u_h._list[0].impl),])
+    _, eta_NC, eta_R, eta_DF = compute_estimate(
+            grid,
+            make_discrete_function(dg_space, u_h._list[0].impl, 'u_h'),
+            make_discrete_function(rtn_space, t_h._list[0].impl, 't_h'),
+            f, diffusion_factor_max, diffusion_factor_max, diffusion_factor_max, diffusion_tensor,
+            1, 1, 1)
+    del u_h
+    del t_h
 
-logger.info('    are {}, {}, {}'.format(eta_NC, eta_R, eta_DF))
+    logger.info('    are {}, {}, {}'.format(eta_NC, eta_R, eta_DF))
 
 from gamm_2019_talk_on_conservative_rb_base import simulate_single_greedy_step
 
-for nn in range(20):
+RB_size = 0
+for nn in range(1, 100):
 
     logger.info('simulating greedy step {} ...'.format(nn))
 
-    mus, etas, eta_NCs, eta_Rs, eta_DFs, errors, efficiencies = simulate_single_greedy_step(
+    greedy_data, estimate_data = simulate_single_greedy_step(
             fom,
             dg_product=fom.energy_penalty_product,
             FluxVectorSpace=FluxVectorSpace,
@@ -274,13 +279,17 @@ for nn in range(20):
                     reference_fom.solve(mu)._list[0].impl
                     - prolong(dg_space, u_RB, reference_dg_space)),
             max_extensions=nn,
-            num_samples=2
+            num_samples=3
             )
 
-    max_err_ind = np.argmax(errors)
-    max_est_ind = np.argmax(etas)
-    max_eff_ind = np.argmax(efficiencies)
-    logger.info('  worst error: {} (mu={})'.format(errors[max_err_ind], mus[max_err_ind]))
-    logger.info('  worst estimate: {} (mu={})'.format(etas[max_est_ind], mus[max_est_ind]))
-    logger.info('  worst efficiency: {} (mu={})'.format(efficiencies[max_eff_ind], mus[max_eff_ind]))
+    if greedy_data['extensions'] > RB_size:
+        RB_size = greedy_data['extensions']
+    else:
+        logger.info('  finished')
+        break
+
+    logger.info('  max greedy error: {}'.format(greedy_data['max_errs'][-1]))
+    logger.info('  worst error:      {}'.format(np.max(estimate_data['errors'])))
+    logger.info('  worst estimate:   {}'.format(np.max(estimate_data['etas'])))
+    logger.info('  worst efficiency: {}'.format(np.max(estimate_data['efficiencies'])))
 
