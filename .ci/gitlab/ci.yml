@@ -1,0 +1,94 @@
+
+stages:
+  - prepare
+  - test
+  - cleanup
+
+variables:
+    GCC_IMAGE: ${CI_REGISTRY_IMAGE}/dune-gdt-testing_gcc:${CI_COMMIT_SHA}
+    GCC_IMAGE_HUB: dunecommunity/dune-gdt-testing_gcc:${CI_COMMIT_SHA}
+    CLANG_IMAGE: ${CI_REGISTRY_IMAGE}/dune-gdt-testing_clang:${CI_COMMIT_SHA}
+    CLANG_IMAGE_HUB: dunecommunity/dune-gdt-testing_clang:${CI_COMMIT_SHA}
+
+.docker-in-docker:
+    image: docker:stable
+    variables:
+        DOCKER_HOST: tcp://docker:2375/
+        DOCKER_DRIVER: overlay2
+    before_script:
+        - apk --update add openssh-client rsync git file bash python3 curl
+        - pip3 install jinja2
+        - 'export SHARED_PATH="${CI_PROJECT_DIR}/shared"'
+        - mkdir -p ${SHARED_PATH}
+        - docker login -u "gitlab-ci-token" -p "$CI_BUILD_TOKEN" "$CI_REGISTRY"
+    services:
+        - docker:dind
+
+# ************ IMAGE BUILDING ************
+.image:
+    extends: .docker-in-docker
+    stage: prepare
+    script:
+      - docker build --build-arg BASE=${BASE} -t ${IMAGE} -f .ci/docker/Dockerfile .
+      - docker push ${IMAGE}
+
+gcc_image:
+    extends: .image
+    variables:
+      BASE: dune-gdt-testing_base_gcc:master
+      IMAGE: ${GCC_IMAGE}
+
+clang_image:
+    extends: .image
+    variables:
+        BASE: dune-gdt-testing_base_clang:master
+        IMAGE: ${CLANG_IMAGE}
+
+# ************ TEST EXECUTION ************
+.cpp:
+    stage: test
+    before_script:
+      - docker login -u "gitlab-ci-token" -p "$CI_BUILD_TOKEN" "$CI_REGISTRY"
+    script: /home/dune-ci/src/dune-gdt/.ci/drone/script.bash
+    variables:
+      MY_MODULE: dune-gdt
+
+gcc:
+    extends: .cpp
+    image: dunecommunity/dune-gdt-testing_gcc:${CI_COMMIT_SHA}
+
+clang:
+    extends: .cpp
+    image: dunecommunity/dune-gdt-testing_clang:${CI_COMMIT_SHA}
+
+# ************ CLEANUP ************
+.cleanup:
+    extends: .docker-in-docker
+    stage: cleanup
+    variables:
+        REPO_ID: 1
+        API: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/registry/repositories/${REPO_ID}"
+    before_script:
+      - echo $DOCKER_PW | docker login --username="$DOCKER_USER" --password-stdin
+
+success:
+    extends: .cleanup
+    script: |
+      echo curl --request DELETE --header "PRIVATE-TOKEN: <your_access_token>" ${API}
+    when: on_success
+
+gcc_failure:
+    extends: .cleanup
+    script:
+      - docker pull ${GCC_IMAGE}
+      - docker tag ${GCC_IMAGE} ${GCC_IMAGE_HUB}
+      - docker push ${GCC_IMAGE_HUB}
+    when: on_failure
+
+clang_failure:
+    extends: .cleanup
+    script:
+      - docker pull ${CLANG_IMAGE}
+      - docker tag ${CLANG_IMAGE} ${CLANG_IMAGE_HUB}
+      - docker push ${CLANG_IMAGE_HUB}
+    when: on_failure
