@@ -48,7 +48,7 @@ raviart_thomas_interpolation(
     local_target->bind(element);
     local_source_element->bind(element);
     rt_basis->bind(element);
-    const auto& rt_fe = target_space.finite_element(element.geometry().type());
+    const auto& rt_fe = rt_basis->finite_element();
     // prepare
     const size_t sz = rt_basis->size();
     std::vector<bool> local_key_was_handled(sz, false);
