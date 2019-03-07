@@ -16,7 +16,7 @@
 #include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/exceptions.hh>
-#include <dune/gdt/local/finite-elements/interfaces.hh>
+#include <dune/gdt/local/finite-elements/raviart-thomas.hh>
 #include <dune/gdt/spaces/mapper/finite-volume.hh>
 
 #include "interface.hh"
@@ -46,9 +46,7 @@ public:
   using typename BaseType::E;
   using typename BaseType::ElementType;
   using typename BaseType::GridViewType;
-  using typename BaseType::LocalizedBasisType;
-  using typename BaseType::ShapeFunctionsType;
-  using FiniteElementType = LocalFiniteElementInterface<D, d, R, r, rC>;
+  using typename BaseType::LocalizedType;
 
   RaviartThomasGlobalBasis(const ThisType&) = default;
   RaviartThomasGlobalBasis(ThisType&&) = default;
@@ -56,34 +54,19 @@ public:
   ThisType& operator=(const ThisType&) = delete;
   ThisType& operator=(ThisType&&) = delete;
 
-  RaviartThomasGlobalBasis(
-      const GridViewType& grd_vw,
-      const std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements,
-      const std::shared_ptr<FiniteVolumeMapper<GL>> entity_indices,
-      const std::shared_ptr<std::vector<std::vector<R>>> switches)
-    : grid_view_(grd_vw)
-    , finite_elements_(finite_elements)
-    , element_indices_(entity_indices)
-    , switches_(switches)
+  RaviartThomasGlobalBasis(const GridViewType& grid_view,
+                           const int order,
+                           const LocalRaviartThomasFiniteElementFamily<D, d, R>& local_finite_elements,
+                           const FiniteVolumeMapper<GL>& element_indices,
+                           const std::vector<DynamicVector<R>>& fe_data)
+    : grid_view_(grid_view)
+    , order_(order)
+    , local_finite_elements_(local_finite_elements)
+    , element_indices_(element_indices)
+    , fe_data_(fe_data)
     , max_size_(0)
   {
-    for (const auto& geometry_and_fe_pair : *finite_elements_)
-      max_size_ = std::max(max_size_, geometry_and_fe_pair.second->basis().size());
-  }
-
-  virtual const GridViewType& grid_view() const override final
-  {
-    return grid_view_;
-  }
-
-  const ShapeFunctionsType& shape_functions(const GeometryType& geometry_type) const override final
-  {
-    const auto finite_element_search_result = finite_elements_->find(geometry_type);
-    if (finite_element_search_result == finite_elements_->end())
-      DUNE_THROW(XT::Common::Exceptions::internal_error,
-                 "This must not happen, the grid layer did not report all geometry types!"
-                     << "\n   geometry_type = " << geometry_type);
-    return finite_element_search_result->second->basis();
+    this->update_after_adapt();
   }
 
   size_t max_size() const override final
@@ -93,28 +76,35 @@ public:
 
   using BaseType::localize;
 
-  std::unique_ptr<LocalizedBasisType> localize() const override final
+  std::unique_ptr<LocalizedType> localize() const override final
   {
     return std::make_unique<LocalizedRaviartThomasGlobalBasis>(*this);
   }
 
+  void update_after_adapt() override final
+  {
+    max_size_ = 0;
+    for (const auto& gt : grid_view_.indexSet().types(0))
+      max_size_ = std::max(max_size_, local_finite_elements_.get(gt, order_).size());
+  }
+
 private:
-  class LocalizedRaviartThomasGlobalBasis : public XT::Functions::ElementFunctionSetInterface<E, r, rC, R>
+  class LocalizedRaviartThomasGlobalBasis : public LocalizedGlobalFiniteElementInterface<E, r, rC, R>
   {
     using ThisType = LocalizedRaviartThomasGlobalBasis;
-    using BaseType = XT::Functions::ElementFunctionSetInterface<E, r, rC, R>;
+    using BaseType = LocalizedGlobalFiniteElementInterface<E, r, rC, R>;
 
   public:
     using typename BaseType::DerivativeRangeType;
     using typename BaseType::DomainType;
     using typename BaseType::ElementType;
+    using typename BaseType::LocalFiniteElementType;
     using typename BaseType::RangeType;
 
     LocalizedRaviartThomasGlobalBasis(const RaviartThomasGlobalBasis<GL, R>& self)
       : BaseType()
       , self_(self)
-      , shape_functions_(nullptr)
-      , element_index_(0)
+      , set_data_in_post_bind_(true)
     {}
 
     LocalizedRaviartThomasGlobalBasis(const ThisType&) = default;
@@ -122,6 +112,8 @@ private:
 
     ThisType& operator=(const ThisType&) = delete;
     ThisType& operator=(ThisType&&) = delete;
+
+    // required by XT::Functions::ElementFunctionSet
 
     size_t max_size(const XT::Common::Parameter& /*param*/ = {}) const override final
     {
@@ -131,27 +123,23 @@ private:
   protected:
     void post_bind(const ElementType& elemnt) override final
     {
-      shape_functions_ = std::make_unique<XT::Common::ConstStorageProvider<ShapeFunctionsType>>(
-          self_.shape_functions(elemnt.geometry().type()));
-      element_index_ = self_.element_indices_->global_index(elemnt, 0);
-      if ((*self_.switches_)[element_index_].size() != shape_functions_->access().size())
-        DUNE_THROW(Exceptions::basis_error,
-                   "shape_functions_->access().size() = " << shape_functions_->access().size()
-                                                          << "\n   switches.size() = "
-                                                          << (*self_.switches_)[element_index_].size());
+      current_local_fe_ = XT::Common::ConstStorageProvider<LocalFiniteElementInterface<D, d, R, d>>(
+          self_.local_finite_elements_.get(elemnt.geometry().type(), self_.order_));
+      if (set_data_in_post_bind_)
+        current_fe_data_ = self_.fe_data_.at(self_.element_indices_.global_index(elemnt, 0));
     }
 
   public:
     size_t size(const XT::Common::Parameter& /*param*/ = {}) const override final
     {
-      DUNE_THROW_IF(!shape_functions_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
-      return shape_functions_->access().size();
+      DUNE_THROW_IF(!current_local_fe_.valid(), Exceptions::not_bound_to_an_element_yet, "");
+      return current_local_fe_.access().size();
     }
 
     int order(const XT::Common::Parameter& /*param*/ = {}) const override final
     {
-      DUNE_THROW_IF(!shape_functions_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
-      return shape_functions_->access().order();
+      DUNE_THROW_IF(!current_local_fe_.valid(), Exceptions::not_bound_to_an_element_yet, "");
+      return current_local_fe_.access().basis().order();
     }
 
     using BaseType::evaluate;
@@ -161,20 +149,20 @@ private:
                   std::vector<RangeType>& result,
                   const XT::Common::Parameter& /*param*/ = {}) const override final
     {
-      DUNE_THROW_IF(!shape_functions_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+      DUNE_THROW_IF(!current_local_fe_.valid(), Exceptions::not_bound_to_an_element_yet, "");
       this->assert_inside_reference_element(point_in_reference_element);
       // evaluate shape functions
-      shape_functions_->access().evaluate(point_in_reference_element, result);
+      current_local_fe_.access().basis().evaluate(point_in_reference_element, result);
       // flip and scale shape functions to ensure
       // - continuity of normal component and
       // - basis*integrationElementNormal = 1
-      for (size_t ii = 0; ii < shape_functions_->access().size(); ++ii)
-        result[ii] *= (*self_.switches_)[element_index_][ii];
+      for (size_t ii = 0; ii < current_local_fe_.access().size(); ++ii)
+        result[ii] *= current_fe_data_[ii];
       // apply piola transformation
       const auto J_T = this->element().geometry().jacobianTransposed(point_in_reference_element);
       const auto det_J_T = std::abs(J_T.determinant());
       RangeType tmp_value;
-      for (size_t ii = 0; ii < shape_functions_->access().size(); ++ii) {
+      for (size_t ii = 0; ii < current_local_fe_.access().size(); ++ii) {
         J_T.mtv(result[ii], tmp_value);
         tmp_value /= det_J_T;
         result[ii] = tmp_value;
@@ -185,21 +173,21 @@ private:
                    std::vector<DerivativeRangeType>& result,
                    const XT::Common::Parameter& /*param*/ = {}) const override final
     {
-      DUNE_THROW_IF(!shape_functions_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+      DUNE_THROW_IF(!current_local_fe_.valid(), Exceptions::not_bound_to_an_element_yet, "");
       this->assert_inside_reference_element(point_in_reference_element);
       // evaluate jacobian of shape functions
-      shape_functions_->access().jacobian(point_in_reference_element, result);
+      current_local_fe_.access().basis().jacobian(point_in_reference_element, result);
       // flip and scale shape functions to ensure
       // - continuity of normal component and
       // - basis*integrationElementNormal = 1
-      for (size_t ii = 0; ii < shape_functions_->access().size(); ++ii)
-        result[ii] *= (*self_.switches_)[element_index_][ii];
+      for (size_t ii = 0; ii < current_local_fe_.access().size(); ++ii)
+        result[ii] *= current_fe_data_[ii];
       // apply piola transformation
       const auto J_T = this->element().geometry().jacobianTransposed(point_in_reference_element);
       const auto det_J_T = std::abs(J_T.determinant());
       const auto J_inv_T = this->element().geometry().jacobianInverseTransposed(point_in_reference_element);
       auto tmp_jacobian_row = result[0][0];
-      for (size_t ii = 0; ii < shape_functions_->access().size(); ++ii) {
+      for (size_t ii = 0; ii < current_local_fe_.access().size(); ++ii) {
         for (size_t jj = 0; jj < d; ++jj) {
           J_inv_T.mtv(result[ii][jj], tmp_jacobian_row);
           J_T.mtv(tmp_jacobian_row, result[ii][jj]);
@@ -208,18 +196,59 @@ private:
       }
     } // ... jacobian(...)
 
+    // required by LocalizedGlobalFiniteElementInterface
+
+    const LocalFiniteElementType& finite_element() const override final
+    {
+      return current_local_fe_.access();
+    }
+
+    DynamicVector<R> default_data(const GeometryType& geometry_type) const override final
+    {
+      return DynamicVector<R>(self_.local_finite_elements_.get(geometry_type, self_.order_).size(), 1.);
+    }
+
+    DynamicVector<R> backup() const override final
+    {
+      return current_fe_data_;
+    }
+
+    void restore(const ElementType& elemnt, const DynamicVector<R>& data) override final
+    {
+      set_data_in_post_bind_ = false;
+      this->bind(elemnt);
+      set_data_in_post_bind_ = true;
+      DUNE_THROW_IF(data.size() != current_local_fe_.access().size(),
+                    Exceptions::finite_element_error,
+                    "data.size() = " << data.size()
+                                     << "\ncurrent_local_fe_.access().size() = " << current_local_fe_.access().size());
+      current_fe_data_ = data;
+    } // ... restore(...)
+
+    using BaseType::interpolate;
+
+    void interpolate(const std::function<RangeType(DomainType)>& /*element_function*/,
+                     const int /*order*/,
+                     DynamicVector<R>& /*dofs*/) const override final
+    {
+      DUNE_THROW(NotImplemented, "");
+    }
+
   private:
     const RaviartThomasGlobalBasis<GL, R>& self_;
-    std::unique_ptr<XT::Common::ConstStorageProvider<ShapeFunctionsType>> shape_functions_;
-    size_t element_index_;
+    bool set_data_in_post_bind_;
+    XT::Common::ConstStorageProvider<LocalFiniteElementInterface<D, d, R, d>> current_local_fe_;
+    DynamicVector<R> current_fe_data_;
   }; // class LocalizedRaviartThomasGlobalBasis
 
   const GridViewType& grid_view_;
-  const std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements_;
-  const std::shared_ptr<FiniteVolumeMapper<GL>> element_indices_;
-  const std::shared_ptr<std::vector<std::vector<R>>> switches_;
+  const int order_;
+  const LocalRaviartThomasFiniteElementFamily<D, d, R>& local_finite_elements_;
+  const FiniteVolumeMapper<GL>& element_indices_;
+  const std::vector<DynamicVector<R>>& fe_data_;
   size_t max_size_;
 }; // class RaviartThomasGlobalBasis
+
 
 } // namespace GDT
 } // namespace Dune
