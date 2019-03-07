@@ -66,17 +66,27 @@ public:
   using R = typename SpaceType::R;
 
   DirichletConstraints(const BoundaryInfoType& bnd_info, const SpaceType& space)
-    : Propagator(this)
+    : BaseType()
+    , Propagator(this)
     , boundary_info_(bnd_info)
     , space_(space)
+    , basis_(space_.basis().localize())
+  {}
+
+  DirichletConstraints(const ThisType& other)
+    : BaseType(other)
+    , Propagator(this)
+    , boundary_info_(other.boundary_info_)
+    , space_(other.space_)
+    , basis_(space_.basis().localize())
   {}
 
   void apply_local(const ElementType& element) override final
   {
     std::set<size_t> local_DoFs;
-    const auto& fe = space_.finite_element(element.type());
+    basis_->bind(element);
     const auto& reference_element = ReferenceElements<double, d>::general(element.geometry().type());
-    const auto local_key_indices = fe.coefficients().local_key_indices();
+    const auto local_key_indices = basis_->finite_element().coefficients().local_key_indices();
     const auto intersection_it_end = space_.grid_view().iend(element);
     for (auto intersection_it = space_.grid_view().ibegin(element); intersection_it != intersection_it_end;
          ++intersection_it) {
@@ -198,6 +208,7 @@ public:
 private:
   const BoundaryInfoType& boundary_info_;
   const SpaceType& space_;
+  mutable std::unique_ptr<typename SpaceType::GlobalBasisType::LocalizedType> basis_;
   std::set<size_t> dirichlet_DoFs_;
 }; // class DirichletConstraints
 
