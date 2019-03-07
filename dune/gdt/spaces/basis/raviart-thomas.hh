@@ -31,6 +31,8 @@ namespace GDT {
  * - flipping of shape functions to ensure continuity of normal component
  * - Piola transformation
  * - left-multiplication by the geometry transformations jacobian inverse transpose in jacobian
+ *
+ * \todo Somehow make use of the LocalRaviartThomasInterpolation and get rid of the duplicate code.
  */
 template <class GL, class R = double>
 class RaviartThomasGlobalBasis : public GlobalBasisInterface<GL, GL::dimension, 1, R>
@@ -227,12 +229,136 @@ private:
 
     using BaseType::interpolate;
 
-    void interpolate(const std::function<RangeType(DomainType)>& /*element_function*/,
-                     const int /*order*/,
-                     DynamicVector<R>& /*dofs*/) const override final
+    void interpolate(const std::function<RangeType(DomainType)>& element_function,
+                     const int element_function_order,
+                     DynamicVector<R>& dofs) const override final
     {
-      DUNE_THROW(NotImplemented, "");
-    }
+      // prepare
+      const size_t sz = this->size();
+      if (dofs.size() != sz)
+        dofs.resize(sz);
+      std::vector<bool> local_key_was_handled(sz, false);
+      // determine the face dofs, therefore walk the intersections
+      for (auto&& intersection : intersections(self_.grid_view_, this->element())) {
+        const auto intersection_to_local_key_map = finite_element().coefficients().local_key_indices(1);
+        const auto intersection_index = intersection.indexInInside();
+        const auto& local_keys_assosiated_with_intersection = intersection_to_local_key_map[intersection_index];
+        if (local_keys_assosiated_with_intersection.size() > 0) {
+          const auto intersection_fe = make_local_orthonormal_finite_element<D, d - 1, R>(
+              intersection.geometry().type(), finite_element().order());
+          const auto& intersection_Pk_basis = intersection_fe->basis();
+          DUNE_THROW_IF(intersection_Pk_basis.size() != local_keys_assosiated_with_intersection.size(),
+                        Exceptions::interpolation_error,
+                        "intersection_Pk_basis.size() = " << intersection_Pk_basis.size()
+                                                          << "\n   local_keys_assosiated_with_intersection.size() = "
+                                                          << local_keys_assosiated_with_intersection.size());
+          XT::LA::CommonDenseMatrix<R> lhs(
+              local_keys_assosiated_with_intersection.size(), intersection_Pk_basis.size(), 0);
+          XT::LA::CommonDenseVector<R> rhs(intersection_Pk_basis.size(), 0);
+          // do a face quadrature
+          for (auto&& quadrature_point :
+               QuadratureRules<D, d - 1>::rule(intersection.geometry().type(),
+                                               std::max(this->order() + intersection_Pk_basis.order(),
+                                                        element_function_order + intersection_Pk_basis.order()))) {
+            const auto point_on_reference_intersection = quadrature_point.position();
+            const auto point_in_reference_element =
+                intersection.geometryInInside().global(point_on_reference_intersection);
+            const auto quadrature_weight = quadrature_point.weight();
+            const auto normal = intersection.unitOuterNormal(point_on_reference_intersection);
+            const auto integration_factor = intersection.geometry().integrationElement(point_on_reference_intersection);
+            const auto rt_basis_values = this->evaluate_set(point_in_reference_element);
+            const auto intersection_Pk_basis_values = intersection_Pk_basis.evaluate(point_on_reference_intersection);
+            const auto element_function_values = element_function(point_in_reference_element);
+            for (size_t ii = 0; ii < local_keys_assosiated_with_intersection.size(); ++ii) {
+              const size_t local_key_index = local_keys_assosiated_with_intersection[ii];
+              for (size_t jj = 0; jj < intersection_Pk_basis.size(); ++jj)
+                lhs.add_to_entry(ii,
+                                 jj,
+                                 quadrature_weight * integration_factor * (rt_basis_values[local_key_index] * normal)
+                                     * intersection_Pk_basis_values[jj]);
+            }
+            for (size_t jj = 0; jj < intersection_Pk_basis.size(); ++jj)
+              rhs[jj] += quadrature_weight * integration_factor * (element_function_values * normal)
+                         * intersection_Pk_basis_values[jj];
+          }
+          XT::LA::CommonDenseVector<R> intersection_dofs(local_keys_assosiated_with_intersection.size(), 0);
+          try {
+            intersection_dofs = XT::LA::solve(lhs, rhs);
+          } catch (const XT::LA::Exceptions::linear_solver_failed& ee) {
+            DUNE_THROW(Exceptions::interpolation_error,
+                       "Failed to solve for DoFs associated with intersection "
+                           << intersection_index << ", this was the original error:\n   " << ee.what());
+          }
+          for (size_t ii = 0; ii < local_keys_assosiated_with_intersection.size(); ++ii) {
+            const size_t local_key_index = local_keys_assosiated_with_intersection[ii];
+            assert(!local_key_was_handled[local_key_index]);
+            dofs[local_key_index] = intersection_dofs[ii];
+            local_key_was_handled[local_key_index] = true;
+          }
+        }
+      }
+      // determine the volume dofs
+      const auto element_to_local_key_map = finite_element().coefficients().local_key_indices(0);
+      const auto& local_keys_assosiated_with_element = element_to_local_key_map[0];
+      if (local_keys_assosiated_with_element.size() > 0) {
+        DUNE_THROW_IF(this->order() < 1,
+                      Exceptions::interpolation_error,
+                      "DoFs associated with the element only make sense for orders >= 1!");
+        const auto element_fe = make_local_orthonormal_finite_element<D, d, R, d>(this->element().geometry().type(),
+                                                                                  finite_element().order() - 1);
+        const auto& element_Pkminus1_basis = element_fe->basis();
+        DUNE_THROW_IF(element_Pkminus1_basis.size() != local_keys_assosiated_with_element.size(),
+                      Exceptions::interpolation_error,
+                      "element_Pkminus1_basis.size() = " << element_Pkminus1_basis.size()
+                                                         << "\n   local_keys_assosiated_with_element.size() = "
+                                                         << local_keys_assosiated_with_element.size());
+        XT::LA::CommonDenseMatrix<R> lhs(local_keys_assosiated_with_element.size(), element_Pkminus1_basis.size(), 0);
+        XT::LA::CommonDenseVector<R> rhs(element_Pkminus1_basis.size(), 0);
+        // do a volume quadrature
+        for (auto&& quadrature_point :
+             QuadratureRules<D, d>::rule(this->element().geometry().type(),
+                                         std::max(this->order() + element_Pkminus1_basis.order(),
+                                                  element_function_order + element_Pkminus1_basis.order()))) {
+          const auto point_in_reference_element = quadrature_point.position();
+          const auto quadrature_weight = quadrature_point.weight();
+          const auto integration_factor = this->element().geometry().integrationElement(point_in_reference_element);
+          const auto rt_basis_values = this->evaluate_set(point_in_reference_element);
+          const auto element_Pkminus1_basis_values = element_Pkminus1_basis.evaluate(point_in_reference_element);
+          const auto element_function_values = element_function(point_in_reference_element);
+          for (size_t ii = 0; ii < local_keys_assosiated_with_element.size(); ++ii) {
+            const size_t local_key_index = local_keys_assosiated_with_element[ii];
+            for (size_t jj = 0; jj < element_Pkminus1_basis.size(); ++jj)
+              lhs.add_to_entry(ii,
+                               jj,
+                               quadrature_weight * integration_factor
+                                   * (rt_basis_values[local_key_index] * element_Pkminus1_basis_values[jj]));
+          }
+          for (size_t jj = 0; jj < element_Pkminus1_basis.size(); ++jj)
+            rhs[jj] +=
+                quadrature_weight * integration_factor * (element_function_values * element_Pkminus1_basis_values[jj]);
+        }
+        XT::LA::CommonDenseVector<R> element_dofs(local_keys_assosiated_with_element.size(), 0);
+        try {
+          element_dofs = XT::LA::solve(lhs, rhs);
+        } catch (const XT::LA::Exceptions::linear_solver_failed& ee) {
+          DUNE_THROW(Exceptions::interpolation_error,
+                     "Failed to solve for volume DoFs, this was the original error:\n   " << ee.what());
+        }
+        for (size_t ii = 0; ii < local_keys_assosiated_with_element.size(); ++ii) {
+          const size_t local_key_index = local_keys_assosiated_with_element[ii];
+          assert(!local_key_was_handled[local_key_index]);
+          dofs[local_key_index] = element_dofs[ii];
+          local_key_was_handled[local_key_index] = true;
+        }
+      }
+      // final checks that there are no other dofs left
+      for (size_t ii = 0; ii < sz; ++ii)
+        DUNE_THROW_IF(!local_key_was_handled[ii],
+                      Exceptions::interpolation_error,
+                      "The following DoF is neither associated with an intersection, nor with the element!"
+                          << "\n   local DoF index: " << ii
+                          << "\n   associated local_key: " << finite_element().coefficients().local_key(ii));
+    } // ... interpolate(...)
 
   private:
     const RaviartThomasGlobalBasis<GL, R>& self_;
