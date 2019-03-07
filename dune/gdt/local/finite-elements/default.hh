@@ -144,6 +144,54 @@ private:
 }; // class LocalFiniteElementDefault
 
 
+template <class D, size_t d, class R = double, size_t r = 1, size_t rC = 1>
+class ThreadSafeDefaultLocalLagrangeFiniteElementFamily : public LocalFiniteElementFamilyInterface<D, d, R, r, rC>
+{
+  using ThisType = ThreadSafeDefaultLocalLagrangeFiniteElementFamily<D, d, R, r, rC>;
+  using BaseType = LocalFiniteElementFamilyInterface<D, d, R, r, rC>;
+
+public:
+  using typename BaseType::LocalFiniteElementType;
+
+  ThreadSafeDefaultLocalLagrangeFiniteElementFamily(
+      std::function<std::unique_ptr<LocalFiniteElementType>(const GeometryType&, const int&)> factory)
+    : factory_(factory)
+  {}
+
+  ThreadSafeDefaultLocalLagrangeFiniteElementFamily(const ThisType& other)
+    : factory_(other.factory_)
+  {
+    // we do not even try to create the FEs in a thread safe way, they will just be recreated when required
+  }
+
+  ThreadSafeDefaultLocalLagrangeFiniteElementFamily(ThisType&& source)
+    : factory_(std::move(source.factory_))
+    , fes_(std::move(source.fes_))
+  {}
+
+  const LocalFiniteElementType& get(const GeometryType& geometry_type, const int order) const override final
+  {
+    if (fes_.count({geometry_type, order}) == 1) {
+      // the FE already exists, no need to lock since at() is thread safe and we are returning the object reference, not
+      // a map iterator which might get invalidated
+      return *fes_.at({geometry_type, order});
+    } else {
+      // the FE needs to be created, we need to lock
+      std::lock_guard<std::mutex> DXTC_UNUSED(guard)(mutex_);
+      // and to check again if someone else created the FE while we were waiting to acquire the lock
+      if (fes_.count({geometry_type, order}) == 0)
+        fes_.insert(std::make_pair(std::make_pair(geometry_type, order), factory_(geometry_type, order)));
+      return *fes_.at({geometry_type, order});
+    }
+  } // ... get(...)
+
+private:
+  const std::function<std::unique_ptr<LocalFiniteElementType>(const GeometryType&, const int&)> factory_;
+  mutable std::map<std::pair<GeometryType, int>, std::shared_ptr<LocalFiniteElementType>> fes_;
+  mutable std::mutex mutex_;
+}; // class ThreadSafeDefaultLocalLagrangeFiniteElementFamily
+
+
 } // namespace GDT
 } // namespace Dune
 

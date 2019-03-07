@@ -87,7 +87,7 @@ public:
 
   void interpolate(const std::function<RangeType(DomainType)>& local_function,
                    const int order,
-                   std::vector<R>& dofs) const override final
+                   DynamicVector<R>& dofs) const override final
   {
     // prepare
     const size_t sz = this->size();
@@ -234,8 +234,10 @@ class LocalRaviartThomasFiniteElementFactory
 {
   static_assert(0 <= d && d <= 3, "There is no local Raviart-Thomas finite element available for other dimension!");
 
+public:
   using LocalFiniteElementType = LocalFiniteElementInterface<D, d, R, d, 1>;
 
+private:
   template <size_t d_ = d, bool anything = true>
   struct helper;
 
@@ -328,8 +330,7 @@ class LocalRaviartThomasFiniteElementFactory
   }; // helper<3, ...>
 
 public:
-  static std::unique_ptr<LocalFiniteElementInterface<D, d, R, d, 1>> create(const GeometryType& geometry_type,
-                                                                            const int& order)
+  static std::unique_ptr<LocalFiniteElementType> create(const GeometryType& geometry_type, const int& order)
   {
     // create the finite element
     auto fe = helper<>::create(geometry_type, order);
@@ -349,6 +350,20 @@ make_local_raviart_thomas_finite_element(const GeometryType& geometry_type, cons
 {
   return LocalRaviartThomasFiniteElementFactory<D, d, R>::create(geometry_type, order);
 }
+
+
+template <class D, size_t d, class R>
+class LocalRaviartThomasFiniteElementFamily : public ThreadSafeDefaultLocalLagrangeFiniteElementFamily<D, d, R, d, 1>
+{
+  using BaseType = ThreadSafeDefaultLocalLagrangeFiniteElementFamily<D, d, R, d, 1>;
+
+public:
+  LocalRaviartThomasFiniteElementFamily()
+    : BaseType([](const auto& geometry_type, const auto& order) {
+      return LocalRaviartThomasFiniteElementFactory<D, d, R>::create(geometry_type, order);
+    })
+  {}
+}; // ... LocalRaviartThomasFiniteElementFamily(...)
 
 
 } // namespace GDT
