@@ -122,7 +122,6 @@ public:
     auto grid_view = grid_.leafGridView();
     if (adapt_grid)
       grid_.adapt();
-    XT::Functions::ConstantFunction<GV::dimension>(1.).visualize(grid_view, "adapted_view", /*subsampling=*/false);
     // * clean up data structures
     for (auto& data : *data_) {
       auto& persistent_data = std::get<2>(data);
