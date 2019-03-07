@@ -20,6 +20,7 @@
 
 #include <dune/xt/la/container/vector-interface.hh>
 #include <dune/xt/la/solver.hh>
+#include <dune/xt/grid/entity.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/functions/generic/element-function.hh>
 
@@ -227,22 +228,38 @@ public:
                DynamicVector<R>& element_dof_data) const
   {
     if (element.isNew()) {
-      // ... by prolongation from the father element:
-      //     - restore the global basis from the fe data
-      const auto father = element.father();
-      const auto& father_data = persistent_data[father];
+      // This is a new element where we do not have any data, so we interpolate from a father element.
+      // - first find a father element with data (does not have to be the direct father, since a conforming grid may
+      //   create several levels of refinement) ...
+      auto father = std::make_unique<ElementType>(element.father());
+      auto father_data = persistent_data[*father];
+      //   ... which we do by looking a the DoF data (must not be empty)
+      while (father_data.second.size() == 0) {
+        DUNE_THROW_IF(father->isLeaf(), Exceptions::space_error, "Cound not find a suitable father with data!");
+        father = std::make_unique<ElementType>(father->father());
+        father_data = persistent_data[*father];
+      }
       const auto& father_fe_data = father_data.first;
       const auto& father_dof_data = father_data.second;
+      // - restore the global basis from the fe data
       auto father_basis = this->basis().localize();
-      father_basis->restore(father, father_fe_data);
-      //     - the basis for the current element should be prepared after update_after_adapt()
+      father_basis->restore(*father, father_fe_data);
+      // - get the basis for the current element (has to be available after update_after_adapt())
       const auto element_basis = this->basis().localize(element);
-      // ... which we do by interpolation:
+      // - interpolate the data from the father to the element
       std::vector<typename GlobalBasisType::LocalizedType::RangeType> father_basis_values(father_basis->size());
-      DUNE_THROW_IF(father_dof_data.size() != father_basis->size(), Exceptions::space_error, "");
+      DUNE_THROW_IF(father_dof_data.size() != father_basis->size(),
+                    Exceptions::space_error,
+                    "element: " << element << "\nelement.level() = " << element.level() << "\nfather: " << *father
+                                << "\nfather.level() = " << father->level() << "\nfather_dof_data.size() = "
+                                << father_dof_data.size() << "\nfather_basis->size() = " << father_basis->size());
       element_basis->interpolate(
-          [&](const auto& xx) {
-            father_basis->evaluate(xx, father_basis_values);
+          [&](const auto& point_in_element_reference_element_coordinates) {
+            const auto point_in_physical_coordinates =
+                element.geometry().global(point_in_element_reference_element_coordinates);
+            const auto point_in_father_reference_element_coordinates =
+                father->geometry().local(point_in_physical_coordinates);
+            father_basis->evaluate(point_in_father_reference_element_coordinates, father_basis_values);
             std::remove_reference_t<decltype(father_basis_values[0])> result(0.);
             for (size_t ii = 0; ii < father_basis->size(); ++ii)
               result += father_basis_values[ii] * father_dof_data[ii];
@@ -251,16 +268,23 @@ public:
           father_basis->order(),
           element_dof_data);
     } else {
-      // ... or by copying the data from this unchanged element. However, the FE may have changed (due to changed global
-      // dependencies), so we cannot simply use the same data, but rather interpolate it anew:
+      // This grid element is unchanged, but the FE may have changed (if the FE depends on global information), so we
+      // cannot simply copy the old data, but rather interpolate it anew.
+      // - restore the original FE
       const auto& original_element_data = persistent_data[element];
       const auto& original_element_FE_data = original_element_data.first;
+      const auto& original_element_DoF_data = original_element_data.second;
       auto original_basis = this->basis().localize();
       original_basis->restore(element, original_element_FE_data);
-      const auto& original_element_DoF_data = original_element_data.second;
-      DUNE_THROW_IF(original_element_DoF_data.size() != original_basis->size(), Exceptions::space_error, "");
+      // - get the basis for the current element (has to be available after update_after_adapt())
       const auto new_basis = this->basis().localize(element);
-      std::vector<typename GlobalBasisType::LocalizedType::RangeType> original_basis_values(new_basis->size());
+      std::vector<typename GlobalBasisType::LocalizedType::RangeType> original_basis_values(original_basis->size());
+      DUNE_THROW_IF(original_element_DoF_data.size() != original_basis->size(),
+                    Exceptions::space_error,
+                    "element: " << element << "\nelement.level() = " << element.level()
+                                << "\noriginal_element_DoF_data.size() = " << original_element_DoF_data.size()
+                                << "\noriginal_basis->size() = " << original_basis->size());
+      // - interpolate the data from the father to the element (no need to map the coordinate, same geometry)
       new_basis->interpolate(
           [&](const auto& xx) {
             original_basis->evaluate(xx, original_basis_values);
