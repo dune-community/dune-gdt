@@ -31,12 +31,12 @@
 #include <dune/xt/grid/walker.hh>
 #include <dune/xt/functions/generic/function.hh>
 
-#include <dune/gdt/discretefunction/adaptation.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/interpolations/default.hh>
 #include <dune/gdt/local/bilinear-forms/integrals.hh>
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/spaces/l2/finite-volume.hh>
+#include <dune/gdt/tools/adaptation-helper.hh>
 #include <dune/gdt/tools/dorfler-marking.hh>
 
 using namespace Dune;

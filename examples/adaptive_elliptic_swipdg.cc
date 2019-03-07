@@ -32,7 +32,6 @@
 #include <dune/xt/grid/walker.hh>
 #include <dune/xt/functions/generic/function.hh>
 
-#include <dune/gdt/discretefunction/adaptation.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/interpolations/default.hh>
 #include <dune/gdt/functionals/vector-based.hh>
@@ -48,6 +47,7 @@
 #include <dune/gdt/spaces/l2/discontinuous-lagrange.hh>
 #include <dune/gdt/spaces/l2/finite-volume.hh>
 #include <dune/gdt/test/stationary-heat-equation/ESV2007.hh>
+#include <dune/gdt/tools/adaptation-helper.hh>
 #include <dune/gdt/tools/dorfler-marking.hh>
 
 using namespace Dune;
