@@ -13,6 +13,9 @@
 #ifndef DUNE_GDT_SPACES_BASIS_FINITE_VOLUME_HH
 #define DUNE_GDT_SPACES_BASIS_FINITE_VOLUME_HH
 
+#include <dune/xt/common/memory.hh>
+#include <dune/xt/grid/integrals.hh>
+
 #include <dune/gdt/local/finite-elements/lagrange.hh>
 
 #include "interface.hh"
@@ -34,8 +37,7 @@ public:
   using typename BaseType::E;
   using typename BaseType::ElementType;
   using typename BaseType::GridViewType;
-  using typename BaseType::LocalizedBasisType;
-  using typename BaseType::ShapeFunctionsType;
+  using typename BaseType::LocalizedType;
 
 private:
   using FiniteElementType = LocalFiniteElementInterface<D, d, R, r>;
@@ -49,26 +51,9 @@ public:
 
   FiniteVolumeGlobalBasis(const GridViewType& grd_vw)
     : grid_view_(grd_vw)
-    , finite_elements_(new std::map<GeometryType, std::shared_ptr<FiniteElementType>>())
+    , local_finite_elements_()
   {
-    for (auto&& geometry_type : grid_view_.indexSet().types(0))
-      finite_elements_->insert(
-          std::make_pair(geometry_type, make_local_lagrange_finite_element<D, d, R, r>(geometry_type, 0)));
-  }
-
-  const GridViewType& grid_view() const override
-  {
-    return grid_view_;
-  }
-
-  const ShapeFunctionsType& shape_functions(const GeometryType& geometry_type) const override final
-  {
-    const auto search_result = finite_elements_->find(geometry_type);
-    if (search_result == finite_elements_->end())
-      DUNE_THROW(XT::Common::Exceptions::internal_error,
-                 "This must not happen, the grid layer did not report all geometry types!"
-                     << "\n   geometry_type = " << geometry_type);
-    return search_result->second->basis();
+    this->update_after_adapt();
   }
 
   size_t max_size() const override final
@@ -78,25 +63,21 @@ public:
 
   using BaseType::localize;
 
-  std::unique_ptr<LocalizedBasisType> localize() const override final
+  std::unique_ptr<LocalizedType> localize() const override final
   {
-    return std::make_unique<LocalizedFiniteVolumeGlobalBasis>();
+    return std::make_unique<LocalizedFiniteVolumeGlobalBasis>(*this);
   }
 
-  /**
-   * \note In general, we would have to check for newly created GeometryTypes and to recreate the local FEs accordingly.
-   *       This is postponed until we have the LocalFiniteElementFamily.
-   */
   void update_after_adapt() override final
   {
-    // there is nothing to do
+    // nothing to do
   }
 
 private:
-  class LocalizedFiniteVolumeGlobalBasis : public XT::Functions::ElementFunctionSetInterface<E, r, 1, R>
+  class LocalizedFiniteVolumeGlobalBasis : public LocalizedGlobalFiniteElementInterface<E, r, 1, R>
   {
     using ThisType = LocalizedFiniteVolumeGlobalBasis;
-    using BaseType = XT::Functions::ElementFunctionSetInterface<E, r, 1, R>;
+    using BaseType = LocalizedGlobalFiniteElementInterface<E, r, 1, R>;
 
   public:
     using typename BaseType::DerivativeRangeSelector;
@@ -105,12 +86,14 @@ private:
     using typename BaseType::DynamicDerivativeRangeType;
     using typename BaseType::DynamicRangeType;
     using typename BaseType::ElementType;
+    using typename BaseType::LocalFiniteElementType;
     using typename BaseType::RangeSelector;
     using typename BaseType::RangeType;
     using typename BaseType::SingleDerivativeRangeType;
 
-    LocalizedFiniteVolumeGlobalBasis()
+    LocalizedFiniteVolumeGlobalBasis(const FiniteVolumeGlobalBasis<GV, r, R>& self)
       : BaseType()
+      , self_(self)
     {}
 
     LocalizedFiniteVolumeGlobalBasis(const ThisType&) = default;
@@ -119,11 +102,21 @@ private:
     ThisType& operator=(const ThisType&) = delete;
     ThisType& operator=(ThisType&&) = delete;
 
+    // required by XT::Functions::ElementFunctionSet
+
     size_t max_size(const XT::Common::Parameter& /*param*/ = {}) const override final
     {
       return r;
     }
 
+  protected:
+    void post_bind(const ElementType& elemnt) override final
+    {
+      current_local_fe_ = XT::Common::ConstStorageProvider<LocalFiniteElementInterface<D, d, R, r, 1>>(
+          self_.local_finite_elements_.get(elemnt.geometry().type(), 0));
+    }
+
+  public:
     size_t size(const XT::Common::Parameter& /*param*/ = {}) const override final
     {
       return r;
@@ -137,11 +130,6 @@ private:
     using BaseType::derivatives;
     using BaseType::evaluate;
     using BaseType::jacobians;
-
-    /**
-     * \name ``These methods are required by XT::Functions::LocalizableFunctionSetInterface.''
-     * \{
-     **/
 
     void evaluate(const DomainType& /*point_in_reference_element*/,
                   std::vector<RangeType>& result,
@@ -180,12 +168,8 @@ private:
         }
     } // ... derivatives(...)
 
-    /**
-     * \}
-     * \name ``These methods are default implemented in XT::Functions::LocalizableFunctionSetInterface and are
-     *         overridden for improved performance.''
-     * \{
-     **/
+    // These methods are default implemented in XT::Functions::ElementFunctionSetInterface and are provided here for
+    // improved performance.
 
     void evaluate(const DomainType& /*point_in_reference_element*/,
                   std::vector<DynamicRangeType>& result,
@@ -207,13 +191,6 @@ private:
       DerivativeRangeSelector::ensure_size(result[0]);
       result[0] *= 0;
     }
-
-    /**
-     * \}
-     * \name ``These methods (used to access an individual range dimension) are default implemented in
-     *         XT::Functions::LocalizableFunctionSetInterface and are implemented for improved performance.''
-     * \{
-     **/
 
     void evaluate(const DomainType& /*point_in_reference_element*/,
                   std::vector<R>& result,
@@ -239,13 +216,53 @@ private:
       result[0] *= 0;
     }
 
-    /// \}
+    // required by LocalizedGlobalFiniteElementInterface
 
+    const LocalFiniteElementType& finite_element() const override final
+    {
+      return current_local_fe_.access();
+    }
+
+    DynamicVector<R> default_data(const GeometryType& /*geometry_type*/) const override final
+    {
+      return DynamicVector<R>();
+    }
+
+    DynamicVector<R> backup() const override final
+    {
+      return DynamicVector<R>();
+    }
+
+    void restore(const ElementType& elemnt, const DynamicVector<R>& data) override final
+    {
+      this->bind(elemnt);
+      DUNE_THROW_IF(data.size() != 0, Exceptions::finite_element_error, "data.size() = " << data.size());
+    }
+
+    using BaseType::interpolate;
+
+    void interpolate(const std::function<RangeType(DomainType)>& element_function,
+                     const int order,
+                     DynamicVector<R>& dofs) const override final
+    {
+      if (dofs.size() != r)
+        dofs.resize(r);
+      for (unsigned int comp = 0; comp < r; ++comp) {
+        dofs[comp] = XT::Grid::element_integral<R>(
+                         this->element(), [&](const auto& x) { return element_function(x)[comp]; }, order)
+                     / this->element().geometry().volume();
+      }
+    } // ... interpolate(...)
+
+  private:
+    const FiniteVolumeGlobalBasis<GV, r, R>& self_;
+    XT::Common::ConstStorageProvider<LocalFiniteElementInterface<D, d, R, r, 1>> current_local_fe_;
   }; // class LocalizedFiniteVolumeGlobalBasis
 
   const GridViewType& grid_view_;
-  std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements_;
-}; // class class FiniteVolumeGlobalBasis
+  LocalLagrangeFiniteElementFamily<D, d, R, r> local_finite_elements_;
+}; // class FiniteVolumeGlobalBasis
+
 
 } // namespace GDT
 } // namespace Dune
