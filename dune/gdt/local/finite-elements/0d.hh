@@ -128,7 +128,7 @@ public:
 
   void interpolate(const std::function<RangeType(DomainType)>& local_function,
                    const int /*order*/,
-                   std::vector<R>& dofs) const override final
+                   DynamicVector<R>& dofs) const override final
   {
     if (dofs.size() < 1)
       dofs.resize(1);

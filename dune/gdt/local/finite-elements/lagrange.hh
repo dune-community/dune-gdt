@@ -49,7 +49,7 @@ class LocalZeroOrderLagrangeFiniteElement
 
 public:
   LocalZeroOrderLagrangeFiniteElement(const GeometryType& geometry_type)
-    : XT::Common::ConstStorageProvider<Wrapper>(new Wrapper(0, geometry_type))
+    : Storage(new Wrapper(0, geometry_type))
     , BaseType(0,
                Storage::access().basis().copy(),
                Storage::access().coefficients().copy(),
@@ -66,8 +66,11 @@ template <class D, size_t d, class R, size_t r = 1>
 class LocalLagrangeFiniteElementFactory
 {
   using ScalarLocalFiniteElementType = LocalFiniteElementInterface<D, d, R, 1>;
+
+public:
   using LocalFiniteElementType = LocalFiniteElementInterface<D, d, R, r>;
 
+private:
   static std::string order_error(const GeometryType& geometry_type, const int order)
   {
     std::stringstream ss;
@@ -189,6 +192,20 @@ make_local_lagrange_finite_element(const GeometryType& geometry_type, const int 
 {
   return LocalLagrangeFiniteElementFactory<D, d, R, r>::create(geometry_type, order);
 }
+
+
+template <class D, size_t d, class R, size_t r = 1>
+class LocalLagrangeFiniteElementFamily : public ThreadSafeDefaultLocalLagrangeFiniteElementFamily<D, d, R, r>
+{
+  using BaseType = ThreadSafeDefaultLocalLagrangeFiniteElementFamily<D, d, R, r>;
+
+public:
+  LocalLagrangeFiniteElementFamily()
+    : BaseType([](const auto& geometry_type, const auto& order) {
+      return LocalLagrangeFiniteElementFactory<D, d, R, r>::create(geometry_type, order);
+    })
+  {}
+}; // ... LocalLagrangeFiniteElementFamily(...)
 
 
 } // namespace GDT
