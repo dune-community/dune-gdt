@@ -42,7 +42,7 @@ public:
   using SpaceType = SpaceInterface<GridView, range_dim, range_dim_cols, RangeField>;
   using ConstDofVectorType = ConstDofVector<Vector, GridView>;
   using ConstLocalDofVectorType = typename ConstDofVectorType::ConstLocalDofVectorType;
-  using LocalBasisType = typename SpaceType::GlobalBasisType::LocalizedBasisType;
+  using LocalBasisType = typename SpaceType::GlobalBasisType::LocalizedType;
 
   using BaseType::d;
   using BaseType::r;
