@@ -52,7 +52,7 @@ struct SpaceTestBase : public ::testing::Test
 
   using GlobalBasisType = typename SpaceType::GlobalBasisType;
   using MapperType = typename SpaceType::MapperType;
-  using FiniteElementType = typename SpaceType::FiniteElementType;
+  using LocalFiniteElementFamilyType = typename SpaceType::LocalFiniteElementFamilyType;
 
   std::shared_ptr<GridViewType> grid_view;
   std::shared_ptr<SpaceType> space;
@@ -95,7 +95,7 @@ struct SpaceTestBase : public ::testing::Test
     ASSERT_TRUE(space->is_lagrangian()) << "Do not call this test otherwise!";
     for (auto&& geometry_type : grid_view->indexSet().types(0))
       EXPECT_EQ(numLagrangePoints(geometry_type.id(), d, p),
-                space->finite_element(geometry_type).lagrange_points().size());
+                space->finite_elements().get(geometry_type, p).lagrange_points().size());
   }
 
   void basis_is_lagrange_basis(const double& tolerance = 1e-15)
@@ -105,7 +105,7 @@ struct SpaceTestBase : public ::testing::Test
     ASSERT_TRUE(space->is_lagrangian()) << "Do not call this test otherwise!";
     for (auto&& element : elements(*grid_view)) {
       const auto basis = space->basis().localize(element);
-      const auto lagrange_points = space->finite_element(element.geometry().type()).lagrange_points();
+      const auto lagrange_points = space->finite_elements().get(element.geometry().type(), p).lagrange_points();
       EXPECT_EQ(lagrange_points.size(), basis->size() / r);
       for (size_t ii = 0; ii < lagrange_points.size(); ++ii) {
         const auto values = basis->evaluate_set(lagrange_points[ii]);
@@ -231,7 +231,7 @@ struct SpaceTestBase : public ::testing::Test
     ASSERT_NE(grid_view, nullptr);
     ASSERT_NE(space, nullptr);
     for (const auto& geometry_type : grid_view->indexSet().types(0)) {
-      const auto& finite_element = space->finite_element(geometry_type);
+      const auto& finite_element = space->finite_elements().get(geometry_type, p);
       const auto& shape_functions = finite_element.basis();
       ASSERT_EQ(finite_element.size(), shape_functions.size());
       ASSERT_EQ(finite_element.size(), finite_element.interpolation().size());

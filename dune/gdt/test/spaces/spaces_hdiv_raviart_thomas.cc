@@ -143,7 +143,7 @@ struct RtSpace : public ::testing::Test
       const auto global_DoF_indices = space->mapper().global_indices(element);
       EXPECT_LE(space->mapper().local_size(element), global_DoF_indices.size());
       const auto intersection_to_local_DoF_indices_map =
-          space->finite_element(element.geometry().type()).coefficients().local_key_indices(1);
+          space->finite_elements().get(element.geometry().type(), p).coefficients().local_key_indices(1);
       EXPECT_EQ(intersection_to_local_DoF_indices_map.size(), space->mapper().local_size(element));
       for (auto&& intersection : intersections(*grid_view(), element)) {
         const auto local_intersection_index = intersection.indexInInside();
@@ -182,7 +182,7 @@ struct RtSpace : public ::testing::Test
     for (auto&& element : elements(*grid_view())) {
       const auto& reference_element = Dune::ReferenceElements<D, d>::general(element.geometry().type());
       const auto intersection_to_local_DoF_indices_map =
-          space->finite_element(element.geometry().type()).coefficients().local_key_indices(1);
+          space->finite_elements().get(element.geometry().type(), p).coefficients().local_key_indices(1);
       EXPECT_EQ(reference_element.size(1), intersection_to_local_DoF_indices_map.size());
       for (const auto& DoF_indices_per_intersection : intersection_to_local_DoF_indices_map)
         EXPECT_EQ(1, DoF_indices_per_intersection.size());
@@ -197,7 +197,7 @@ struct RtSpace : public ::testing::Test
     for (auto&& element : elements(*grid_view())) {
       const auto basis = space->basis().localize(element);
       const auto intersection_to_local_DoF_indices_map =
-          space->finite_element(element.geometry().type()).coefficients().local_key_indices(1);
+          space->finite_elements().get(element.geometry().type(), p).coefficients().local_key_indices(1);
       for (auto&& intersection : intersections(*grid_view(), element)) {
         const auto xx_in_element_coordinates = intersection.geometry().center();
         const auto xx_in_reference_element_coordinates = element.geometry().local(xx_in_element_coordinates);
@@ -283,7 +283,7 @@ struct RtSpace : public ::testing::Test
     ASSERT_NE(grid_view(), nullptr);
     ASSERT_NE(space, nullptr);
     for (const auto& geometry_type : grid_view()->indexSet().types(0)) {
-      const auto& finite_element = space->finite_element(geometry_type);
+      const auto& finite_element = space->finite_elements().get(geometry_type, p);
       const auto& shape_functions = finite_element.basis();
       ASSERT_EQ(finite_element.size(), shape_functions.size());
       ASSERT_EQ(finite_element.size(), finite_element.interpolation().size());
