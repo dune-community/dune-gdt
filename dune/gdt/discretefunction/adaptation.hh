@@ -41,18 +41,20 @@ public:
   using DiscreteFunctionType = DiscreteFunction<V, GV, r, rC, RF>;
   using SpaceType = SpaceInterface<GV, r, rC, RF>;
   using G = typename GV::Grid;
+  static_assert(!XT::Grid::is_yaspgrid<G>::value, "The PersistentContainer is known to segfault for YaspGrid!");
 
   AdaptationHelper(G& grd)
     : grid_(grd)
-    , data_()
+    , data_(new std::remove_reference_t<decltype(*data_)>)
   {}
 
   ThisType& append(SpaceType& space, DiscreteFunctionType& discrete_function)
   {
-    data_.emplace_back(space,
-                       discrete_function,
-                       PersistentContainer<G, DynamicVector<RF>>(grid_, 0),
-                       discrete_function.local_discrete_function());
+    data_->emplace_back(space,
+                        discrete_function,
+                        PersistentContainer<G, std::pair<DynamicVector<RF>, DynamicVector<RF>>>(
+                            grid_, 0, std::make_pair(DynamicVector<RF>(), DynamicVector<RF>())),
+                        discrete_function.local_discrete_function());
     return *this;
   }
 
@@ -63,28 +65,34 @@ public:
     bool elements_may_be_coarsened = true;
     if (pre_adapt_grid)
       elements_may_be_coarsened = grid_.preAdapt();
-    for (auto& data : data_) {
+    for (auto& data : *data_) {
       auto& space = std::get<0>(data).access();
       space.pre_adapt();
     }
-    // * each discrete function is associated with persistent storage (keeps local DoF vectors, which can be converted
-    //   to DynamicVector<RF>) to keep our data:
+    // * each discrete function is associated with persistent storage (see data_, keeps local DoF vectors, which can be
+    //   converted to DynamicVector<RF>) to keep our data:
     //   - all kept leaf elements might change their indices and
     //   - all coarsened elements might vanish
     // * we also need a container to recall those elements where we need to restrict to
-    PersistentContainer<G, bool> restriction_required(grid_, 0, false);
+    //   [note: we would like to use `PersistentContainer<G, bool> restriction_required(grid_, 0, false);` here, but
+    //    then `restriction_required[element.father()] = true` does not compile for some grids]
+    PersistentContainer<G, int> restriction_required(grid_, 0, 0);
     // * walk the current leaf of the grid ...
     for (auto&& element : elements(grid_view)) {
-      for (auto& data : data_) {
+      for (auto& data : *data_) {
+        //   ... to get the local FE data ...
+        auto local_FE_data = std::get<0>(data).access().basis().localize(element)->backup();
+        //   ... and the local DoF data ...
         auto& local_function = std::get<3>(data);
         local_function->bind(element);
-        //   ... to store the local DoFs ...
+        auto local_DoF_data = XT::LA::convert_to<DynamicVector<RF>>(local_function->dofs());
+        //   ... and to store them ...
         auto& persistent_data = std::get<2>(data);
-        persistent_data[element] = XT::LA::convert_to<DynamicVector<RF>>(local_function->dofs());
+        persistent_data[element] = std::make_pair(std::move(local_FE_data), std::move(local_DoF_data));
       }
       //   ... and to mark father elements
       if (element.mightVanish())
-        restriction_required[element.father()] = true;
+        restriction_required[element.father()] = 1;
     }
     // * now walk the grid up all coarser levels ...
     if (elements_may_be_coarsened) {
@@ -92,15 +100,18 @@ public:
         auto level_view = grid_.levelGridView(level);
         for (auto&& element : elements(level_view)) {
           // ... to compute restrictions ...
-          for (auto& data : data_) {
+          for (auto& data : *data_) {
             const auto& space = std::get<0>(data).access();
             auto& persistent_data = std::get<2>(data);
             if (restriction_required[element])
               space.restrict_to(element, persistent_data);
           }
           // ... and to mark father elements
-          if (element.mightVanish())
+          if (element.mightVanish()) {
+            DUNE_THROW_IF(
+                level == 0, Exceptions::space_error, "It does not make sense that a level 0 element might vanish!!");
             restriction_required[element.father()] = true;
+          }
         }
       }
     }
@@ -112,13 +123,13 @@ public:
     if (adapt_grid)
       grid_.adapt();
     // * clean up data structures
-    for (auto& data : data_) {
+    for (auto& data : *data_) {
       auto& persistent_data = std::get<2>(data);
       persistent_data.resize();
       persistent_data.shrinkToFit();
     }
     // * update spaces and resize vectors
-    for (auto& data : data_) {
+    for (auto& data : *data_) {
       auto& space = std::get<0>(data).access();
       auto& discrete_function = std::get<1>(data).access();
       space.adapt();
@@ -126,7 +137,7 @@ public:
     }
     // * get the data back to the discrete function
     for (auto&& element : elements(grid_view)) {
-      for (auto& data : data_) {
+      for (auto& data : *data_) {
         auto& space = std::get<0>(data).access();
         const auto& persistent_data = std::get<2>(data);
         auto& local_function = std::get<3>(data);
@@ -140,26 +151,27 @@ public:
   {
     if (post_adapt_grid)
       grid_.postAdapt();
-    for (auto& data : data_) {
+    for (auto& data : *data_) {
       auto& space = std::get<0>(data).access();
       space.post_adapt();
     }
-    if (clear)
-      data_.clear();
-    else {
-      auto old_data = std::move(data_);
-      data_ = decltype(data_)();
-      for (auto& data : old_data)
+    if (clear) {
+      data_->clear();
+    } else {
+      auto old_data = data_;
+      data_ = std::make_shared<std::remove_reference_t<decltype(*data_)>>();
+      for (auto& data : *old_data) {
         this->append(std::get<0>(data).access(), std::get<1>(data).access());
+      }
     }
   } // ... post_adapt(...)
 
 private:
   G& grid_;
-  std::list<std::tuple<XT::Common::StorageProvider<SpaceType>,
-                       XT::Common::StorageProvider<DiscreteFunctionType>,
-                       PersistentContainer<G, DynamicVector<RF>>,
-                       std::unique_ptr<typename DiscreteFunctionType::LocalDiscreteFunctionType>>>
+  std::shared_ptr<std::list<std::tuple<XT::Common::StorageProvider<SpaceType>,
+                                       XT::Common::StorageProvider<DiscreteFunctionType>,
+                                       PersistentContainer<G, std::pair<DynamicVector<RF>, DynamicVector<RF>>>,
+                                       std::unique_ptr<typename DiscreteFunctionType::LocalDiscreteFunctionType>>>>
       data_;
 }; // class AdaptationHelper
 
