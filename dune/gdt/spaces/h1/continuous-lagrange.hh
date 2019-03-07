@@ -60,20 +60,20 @@ class ContinuousLagrangeSpace : public SpaceInterface<GV, 1, 1, R>
 public:
   using BaseType::d;
   using typename BaseType::D;
-  using typename BaseType::FiniteElementType;
   using typename BaseType::GlobalBasisType;
   using typename BaseType::GridViewType;
+  using typename BaseType::LocalFiniteElementFamilyType;
   using typename BaseType::MapperType;
 
 private:
-  using MapperImplementation = ContinuousMapper<GridViewType, FiniteElementType>;
+  using MapperImplementation = ContinuousMapper<GridViewType, LocalFiniteElementFamilyType>;
   using GlobalBasisImplementation = DefaultGlobalBasis<GridViewType, 1, 1, R>;
 
 public:
   ContinuousLagrangeSpace(GridViewType grd_vw, const int order)
     : grid_view_(grd_vw)
     , order_(order)
-    , finite_elements_(new std::map<GeometryType, std::shared_ptr<FiniteElementType>>())
+    , local_finite_elements_()
     , mapper_(nullptr)
     , basis_(nullptr)
   {
@@ -84,20 +84,8 @@ public:
                   "Higher order CG spaces do not work with alugrid atm, see "
                   "https://github.com/dune-community/dune-gdt/issues/144!");
 #endif
-    // create finite elements
-    for (auto&& geometry_type : grid_view_.indexSet().types(0))
-      finite_elements_->insert(
-          std::make_pair(geometry_type, make_local_lagrange_finite_element<D, d, R>(geometry_type, order)));
-    // check
-    if (d == 3 && finite_elements_->size() != 1)
-      DUNE_THROW(Exceptions::space_error,
-                 "when creating a ContinuousLagrangeSpace: non-conforming intersections are not (yet) "
-                 "supported, and more than one element type in 3d leads to non-conforming intersections!");
-    // create mapper, basis and communicator
-    mapper_ = std::make_shared<MapperImplementation>(grid_view_, finite_elements_);
-    basis_ = std::make_shared<GlobalBasisImplementation>(grid_view_, finite_elements_);
-    this->create_communicator();
-  } // ContinuousLagrangeSpace(...)
+    this->update_after_adapt();
+  }
 
   ContinuousLagrangeSpace(const ThisType&) = default;
   ContinuousLagrangeSpace(ThisType&&) = default;
@@ -112,22 +100,19 @@ public:
 
   const MapperType& mapper() const override final
   {
+    assert(mapper_ && "This must not happen!");
     return *mapper_;
   }
 
   const GlobalBasisType& basis() const override final
   {
+    assert(basis_ && "This must not happen!");
     return *basis_;
   }
 
-  const FiniteElementType& finite_element(const GeometryType& geometry_type) const override final
+  const LocalFiniteElementFamilyType& finite_elements() const override final
   {
-    const auto finite_element_search_result = finite_elements_->find(geometry_type);
-    if (finite_element_search_result == finite_elements_->end())
-      DUNE_THROW(XT::Common::Exceptions::internal_error,
-                 "This must not happen, the grid layer did not report all geometry types!"
-                     << "\n   entity.geometry().type() = " << geometry_type);
-    return *finite_element_search_result->second;
+    return local_finite_elements_;
   }
 
   SpaceType type() const override final
@@ -160,12 +145,32 @@ public:
     return true;
   }
 
+  void update_after_adapt() override final
+  {
+    // check: the mapper does not work for non-conforming intersections
+    if (d == 3 && grid_view_.indexSet().types(0).size() != 1)
+      DUNE_THROW(Exceptions::space_error,
+                 "in ContinuousLagrangeSpace: non-conforming intersections are not (yet) "
+                 "supported, and more than one element type in 3d leads to non-conforming intersections!");
+    // create/update mapper ...
+    if (mapper_)
+      mapper_->update_after_adapt();
+    else
+      mapper_ = std::make_unique<MapperImplementation>(grid_view_, local_finite_elements_, order_);
+    // ... and basis
+    if (basis_)
+      basis_->update_after_adapt();
+    else
+      basis_ = std::make_unique<GlobalBasisImplementation>(grid_view_, local_finite_elements_, order_);
+    this->create_communicator();
+  } // ... update_after_adapt(...)
+
 private:
   const GridViewType grid_view_;
   const int order_;
-  std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements_;
-  std::shared_ptr<MapperImplementation> mapper_;
-  std::shared_ptr<GlobalBasisImplementation> basis_;
+  const LocalLagrangeFiniteElementFamily<D, d, R, 1> local_finite_elements_;
+  std::unique_ptr<MapperImplementation> mapper_;
+  std::unique_ptr<GlobalBasisImplementation> basis_;
 }; // class ContinuousLagrangeSpace
 
 

@@ -29,11 +29,11 @@ namespace Dune {
 namespace GDT {
 
 
-template <class GV, class FiniteElement>
+template <class GV, class LocalFiniteElementFamily>
 class ContinuousMapper : public MapperInterface<GV>
 {
-  static_assert(is_local_finite_element<FiniteElement>::value, "");
-  using ThisType = ContinuousMapper<GV, FiniteElement>;
+  static_assert(is_local_finite_element_family<LocalFiniteElementFamily>::value, "");
+  using ThisType = ContinuousMapper<GV, LocalFiniteElementFamily>;
   using BaseType = MapperInterface<GV>;
 
   template <int d>
@@ -62,48 +62,17 @@ public:
   using typename BaseType::ElementType;
   using typename BaseType::GridViewType;
 
-  ContinuousMapper(const GridViewType& grd_vw,
-                   const std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElement>>>& finite_elements)
+  ContinuousMapper(const GridViewType& grd_vw, const LocalFiniteElementFamily& local_finite_elements, const int order)
     : grid_view_(grd_vw)
-    , finite_elements_(finite_elements)
+    , local_finite_elements_(local_finite_elements)
+    , order_(order)
     , max_local_size_(0)
-    , mapper_(nullptr)
-  {
-    DUNE_THROW_IF(d == 3 && finite_elements_->size() != 1, // Probably due to non-conforming intersections.
-                  Exceptions::mapper_error,
-                  "The mapper does not seem to work with multiple finite elements in 3d!");
-    // collect all entities (for all codims) which are used to attach DoFs to
-    for (auto&& geometry_type : grid_view_.indexSet().types(0)) {
-      // get the finite element for this geometry type
-      const auto finite_element_search_result = finite_elements_->find(geometry_type);
-      DUNE_THROW_IF(finite_element_search_result == finite_elements_->end(),
-                    Exceptions::mapper_error,
-                    "Missing finite element for the required geometry type " << geometry_type << "!");
-      const auto& finite_element = *finite_element_search_result->second;
-      max_local_size_ = std::max(max_local_size_, finite_element.size());
-      // loop over all keys of this finite element
-      const auto& reference_element = ReferenceElements<D, d>::general(geometry_type);
-      const auto& coeffs = finite_element.coefficients();
-      for (size_t ii = 0; ii < coeffs.size(); ++ii) {
-        const auto& local_key = coeffs.local_key(ii);
-        DUNE_THROW_IF(local_key.index() != 0, // Would require twisting of DoFs and possibly more knowledge from the FE
-                      Exceptions::mapper_error,
-                      "This case is not covered yet, when we have more than one DoF per (sub)entity!");
-        // find the (sub)entity for this key
-        const auto sub_entity = local_key.subEntity();
-        const auto codim = local_key.codim();
-        const auto& subentity_geometry_type = reference_element.type(sub_entity, codim);
-        // and add the respective geometry type
-        all_DoF_attached_geometry_types_.insert(subentity_geometry_type);
-      }
-    }
-    DUNE_THROW_IF(all_DoF_attached_geometry_types_.size() == 0,
-                  Exceptions::mapper_error,
-                  "This must not happen, the finite elements report no DoFs attached to (sub)entities!");
-    mapper_ = std::make_shared<Implementation>(grid_view_, [&](const auto& geometry_type, const auto /*grid_dim*/) {
+    , mapper_(grid_view_, [&](const auto& geometry_type, const auto /*grid_dim*/) {
       return all_DoF_attached_geometry_types_.count(geometry_type) > 0;
-    });
-  } // ... ContinuousMapper(...)
+    })
+  {
+    this->update_after_adapt();
+  }
 
   ContinuousMapper(const ThisType&) = default;
   ContinuousMapper(ThisType&&) = default;
@@ -119,17 +88,12 @@ public:
   const LocalFiniteElementCoefficientsInterface<D, d>&
   local_coefficients(const GeometryType& geometry_type) const override final
   {
-    const auto finite_element_search_result = finite_elements_->find(geometry_type);
-    if (finite_element_search_result == finite_elements_->end())
-      DUNE_THROW(XT::Common::Exceptions::internal_error,
-                 "This must not happen, the grid view did not report all geometry types!"
-                     << "\n   geometry_type = " << geometry_type);
-    return finite_element_search_result->second->coefficients();
+    return local_finite_elements_.get(geometry_type, order_).coefficients();
   }
 
   size_t size() const override final
   {
-    return mapper_->size();
+    return mapper_.size();
   }
 
   size_t max_local_size() const override final
@@ -150,7 +114,7 @@ public:
                  "local_size(element) = " << coeffs.size() << "\n   local_index = " << local_index);
     const auto& local_key = coeffs.local_key(local_index);
     // No need to assert local_key.index() == 0, has been checked in the ctor!
-    return mapper_->subIndex(element, local_key.subEntity(), local_key.codim());
+    return mapper_.subIndex(element, local_key.subEntity(), local_key.codim());
   } // ... mapToGlobal(...)
 
   using BaseType::global_indices;
@@ -164,16 +128,50 @@ public:
     for (size_t ii = 0; ii < local_sz; ++ii) {
       const auto& local_key = coeffs.local_key(ii);
       // No need to assert local_key.index() == 0, has been checked in the ctor!
-      indices[ii] = mapper_->subIndex(element, local_key.subEntity(), local_key.codim());
+      indices[ii] = mapper_.subIndex(element, local_key.subEntity(), local_key.codim());
     }
   } // ... globalIndices(...)
 
+  void update_after_adapt() override final
+  {
+    // Probably due to non-conforming intersections.
+    DUNE_THROW_IF(d == 3 && grid_view_.indexSet().types(0).size() != 1,
+                  Exceptions::mapper_error,
+                  "The mapper does not seem to work with multiple finite elements in 3d!");
+    // collect all entities (for all codims) which are used to attach DoFs to
+    all_DoF_attached_geometry_types_.clear();
+    for (auto&& geometry_type : grid_view_.indexSet().types(0)) {
+      const auto& finite_element = local_finite_elements_.get(geometry_type, order_);
+      max_local_size_ = std::max(max_local_size_, finite_element.size());
+      // loop over all keys of this finite element
+      const auto& reference_element = ReferenceElements<D, d>::general(geometry_type);
+      const auto& coeffs = finite_element.coefficients();
+      for (size_t ii = 0; ii < coeffs.size(); ++ii) {
+        const auto& local_key = coeffs.local_key(ii);
+        DUNE_THROW_IF(local_key.index() != 0, // Would require twisting of DoFs and possibly more knowledge from the FE
+                      Exceptions::mapper_error,
+                      "This case is not covered yet, when we have more than one DoF per (sub)entity!");
+        // find the (sub)entity for this key
+        const auto sub_entity = local_key.subEntity();
+        const auto codim = local_key.codim();
+        const auto& subentity_geometry_type = reference_element.type(sub_entity, codim);
+        // and add the respective geometry type
+        all_DoF_attached_geometry_types_.insert(subentity_geometry_type);
+      }
+    }
+    DUNE_THROW_IF(all_DoF_attached_geometry_types_.size() == 0,
+                  Exceptions::mapper_error,
+                  "This must not happen, the finite elements report no DoFs attached to (sub)entities!");
+    mapper_.update();
+  } // ... update_after_adapt(...)
+
 private:
   const GridViewType& grid_view_;
-  const std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElement>>> finite_elements_;
+  const LocalFiniteElementFamily& local_finite_elements_;
+  const int order_;
   size_t max_local_size_;
   std::set<GeometryType> all_DoF_attached_geometry_types_;
-  std::shared_ptr<Implementation> mapper_;
+  Implementation mapper_;
 }; // class ContinuousMapper
 
 

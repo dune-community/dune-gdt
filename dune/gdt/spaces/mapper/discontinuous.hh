@@ -27,11 +27,11 @@ namespace Dune {
 namespace GDT {
 
 
-template <class GV, class FiniteElement>
+template <class GV, class LocalFiniteElementFamily>
 class DiscontinuousMapper : public MapperInterface<GV>
 {
-  static_assert(is_local_finite_element<FiniteElement>::value, "");
-  using ThisType = DiscontinuousMapper<GV, FiniteElement>;
+  static_assert(is_local_finite_element_family<LocalFiniteElementFamily>::value, "");
+  using ThisType = DiscontinuousMapper<GV, LocalFiniteElementFamily>;
   using BaseType = MapperInterface<GV>;
 
 public:
@@ -46,21 +46,16 @@ public:
   using typename BaseType::GridViewType;
 
   DiscontinuousMapper(const GridViewType& grd_vw,
-                      const std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElement>>>& finite_elements)
+                      const LocalFiniteElementFamily& local_finite_elements,
+                      const int order)
     : grid_view_(grd_vw)
-    , finite_elements_(finite_elements)
-    , mapper_(new Implementation(grid_view_, mcmgElementLayout()))
-    , offset_(new std::vector<size_t>(mapper_->size()))
-    , max_num_dofs_(0)
-    , size_(0)
+    , local_finite_elements_(local_finite_elements)
+    , order_(order)
+    , mapper_(grid_view_, mcmgElementLayout())
+    , offset_(mapper_.size())
   {
-    for (auto&& element : elements(grid_view_)) {
-      (*offset_)[mapper_->index(element)] = size_;
-      const auto& finite_element = get_finite_element(element.geometry().type());
-      size_ += finite_element.size();
-      max_num_dofs_ = std::max(max_num_dofs_, finite_element.size());
-    }
-  } // ... DiscontinuousMapper(...)
+    this->update_after_adapt();
+  }
 
   DiscontinuousMapper(const ThisType&) = default;
   DiscontinuousMapper(ThisType&&) = default;
@@ -76,7 +71,7 @@ public:
   const LocalFiniteElementCoefficientsInterface<D, d>&
   local_coefficients(const GeometryType& geometry_type) const override final
   {
-    return get_finite_element(geometry_type).coefficients();
+    return local_finite_elements_.get(geometry_type, order_).coefficients();
   }
 
   size_t size() const override final
@@ -91,7 +86,7 @@ public:
 
   size_t local_size(const ElementType& element) const override final
   {
-    return get_finite_element(element.geometry().type()).size();
+    return local_coefficients(element.geometry().type()).size();
   }
 
   size_t global_index(const ElementType& element, const size_t local_index) const override final
@@ -99,14 +94,14 @@ public:
     if (local_index >= local_size(element))
       DUNE_THROW(Exceptions::mapper_error,
                  "local_size(element) = " << local_size(element) << "\n   local_index = " << local_index);
-    return (*offset_)[mapper_->index(element)] + local_index;
+    return offset_[mapper_.index(element)] + local_index;
   }
 
   using BaseType::global_indices;
 
   void global_indices(const ElementType& element, DynamicVector<size_t>& indices) const override final
   {
-    const size_t offset = (*offset_)[mapper_->index(element)];
+    const size_t offset = offset_[mapper_.index(element)];
     const auto local_sz = local_size(element);
     if (indices.size() < local_sz)
       indices.resize(local_sz, 0);
@@ -114,21 +109,27 @@ public:
       indices[ii] = offset + ii;
   } // ... global_indices(...)
 
-private:
-  const FiniteElement& get_finite_element(const GeometryType& geometry_type) const
+  void update_after_adapt() override final
   {
-    const auto finite_element_search_result = finite_elements_->find(geometry_type);
-    if (finite_element_search_result == finite_elements_->end())
-      DUNE_THROW(XT::Common::Exceptions::internal_error,
-                 "This must not happen, the grid layer did not report all geometry types!"
-                     << "\n   geometry_type = " << geometry_type);
-    return *finite_element_search_result->second;
-  } // ... get_finite_element(...)
+    mapper_.update();
+    size_ = 0;
+    max_num_dofs_ = 0;
+    if (offset_.size() != mapper_.size())
+      offset_.resize(mapper_.size());
+    for (auto&& element : elements(grid_view_)) {
+      offset_[mapper_.index(element)] = size_;
+      const auto local_sz = this->local_size(element);
+      size_ += local_sz;
+      max_num_dofs_ = std::max(max_num_dofs_, local_sz);
+    }
+  }
 
+private:
   const GridViewType& grid_view_;
-  const std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElement>>> finite_elements_;
-  const std::shared_ptr<Implementation> mapper_;
-  std::shared_ptr<std::vector<size_t>> offset_;
+  const LocalFiniteElementFamily& local_finite_elements_;
+  const int order_;
+  Implementation mapper_;
+  std::vector<size_t> offset_;
   size_t max_num_dofs_;
   size_t size_;
 }; // class DiscontinuousMapper
