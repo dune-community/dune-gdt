@@ -56,7 +56,7 @@ struct OS2015MultiscaleProblem
              /*second_domain_with_negative_value=*/{{{4.25, 4.4}, {0.25, 0.4}}, -1e3}})
   {}
 
-  XT::Grid::GridProvider<G> make_initial_grid()
+  XT::Grid::GridProvider<G> make_initial_grid() const
   {
     if (std::is_same<G, YASP_2D_EQUIDISTANT_OFFSET>::value) {
       return XT::Grid::make_cube_grid<G>({0., 0.}, {5., 1.}, {100u, 20u});

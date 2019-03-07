@@ -18,6 +18,7 @@
 #include <dune/grid/io/file/dgfparser/dgfparser.hh>
 
 #include <dune/xt/common/convergence-study.hh>
+#include <dune/xt/common/test/common.hh>
 #include <dune/xt/common/fvector.hh>
 #include <dune/xt/common/string.hh>
 #include <dune/xt/common/timedlogging.hh>
