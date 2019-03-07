@@ -34,7 +34,7 @@ namespace GDT {
 /**
  * \brief Interpolates a localizable function within a given space [most general variant].
  *
- * Simply uses the interpolation() of the target spaces finite_element().
+ * Simply uses interpolate() of the target spaces global basis().
  *
  *
  * \note This does not clear target.dofs().vector(). Thus, if interpolation_grid_view only covers a part of the domain
@@ -43,6 +43,8 @@ namespace GDT {
  * \note This might not be optimal for all spaces. For instance, the polynomial order of source is not taken into
  *       account for local L^2-projection based interpolation. This is a limitation in dune-localfunctions and we need
  *       to completely replace the interpolation of the respective local finite element.
+ *
+ * \note This might not be correct for all spaces, in particular if source is not continuous.
  */
 template <class GV, size_t r, size_t rC, class R, class V, class IGV>
 std::enable_if_t<std::is_same<XT::Grid::extract_entity_t<GV>, typename IGV::Grid::template Codim<0>::Entity>::value,
@@ -56,15 +58,13 @@ default_interpolation(const XT::Functions::GridFunctionInterface<XT::Grid::extra
                 "Use the correct one from interpolations/raviart-thomas.hh instead!");
   auto local_dof_vector = target.dofs().localize();
   auto local_source = source.local_function();
-  std::vector<R> local_dofs(target.space().mapper().max_local_size());
+  auto target_basis = target.space().basis().localize();
   for (auto&& element : elements(interpolation_grid_view)) {
     local_source->bind(element);
     local_dof_vector.bind(element);
-    const auto& fe = target.space().finite_element(element.geometry().type());
-    fe.interpolation().interpolate(
-        [&](const auto& xx) { return local_source->evaluate(xx); }, local_source->order(), local_dofs);
-    for (size_t ii = 0; ii < local_dof_vector.size(); ++ii)
-      local_dof_vector[ii] = local_dofs[ii];
+    target_basis->bind(element);
+    target_basis->interpolate(
+        [&](const auto& xx) { return local_source->evaluate(xx); }, local_source->order(), local_dof_vector);
   }
 } // ... default_interpolation(...)
 
