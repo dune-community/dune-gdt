@@ -112,7 +112,7 @@ public:
       local_df_element->bind(element);
       local_dt_element->bind(element);
       rt_basis->bind(element);
-      const auto& rt_fe = range_space_.finite_element(element.geometry().type());
+      const auto& rt_fe = rt_basis->finite_element();
       // prepare
       const size_t sz = rt_basis->size();
       std::vector<bool> local_key_was_handled(sz, false);

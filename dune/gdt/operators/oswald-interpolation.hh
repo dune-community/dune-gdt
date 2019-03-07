@@ -114,7 +114,10 @@ public:
     if (assembled_)
       return *this;
     // create conforming space of same order to be used as mapper for the global Lagrange points
-    auto cg_space = make_continuous_lagrange_space(assembly_grid_view_, range_space_.min_polorder());
+    const auto order = range_space_.min_polorder();
+    DUNE_THROW_IF(
+        range_space_.max_polorder() != order, Exceptions::operator_error, "Not implemented yet for variable orders!");
+    auto cg_space = make_continuous_lagrange_space(assembly_grid_view_, order);
     // determine Dirichlet DoFs
     DirichletConstraints<I, decltype(cg_space)> dirichlet_constraints(boundary_info_.access(), cg_space);
     auto walker = XT::Grid::make_walker(assembly_grid_view_);
@@ -127,14 +130,14 @@ public:
     DynamicVector<size_t> global_DoF_indices(range_space_.mapper().max_local_size());
     // walk the grid
     for (auto&& element : elements(assembly_grid_view_)) {
-      const auto& lagrange_points = cg_space.finite_element(element.geometry().type()).lagrange_points();
-      DUNE_THROW_IF(range_space_.finite_element(element.geometry().type()).lagrange_points().size()
+      const auto& lagrange_points = cg_space.finite_elements().get(element.geometry().type(), order).lagrange_points();
+      DUNE_THROW_IF(range_space_.finite_elements().get(element.geometry().type(), order).lagrange_points().size()
                         != lagrange_points.size(),
                     Exceptions::operator_error,
                     "This should not happen, the Lagrange points should coincide for Lagrange spaces of same order!\n"
-                        << "range_space_.finite_element(element.geometry().type()).lagrange_points().size() = "
-                        << range_space_.finite_element(element.geometry().type()).lagrange_points().size() << "\n"
-                        << "lagrange_points.size() = " << lagrange_points.size());
+                        << "range_space_.finite_element(element.geometry().type(), order).lagrange_points().size() = "
+                        << range_space_.finite_elements().get(element.geometry().type(), order).lagrange_points().size()
+                        << "\nlagrange_points.size() = " << lagrange_points.size());
       cg_space.mapper().global_indices(element, global_lagrange_point_indices);
       range_space_.mapper().global_indices(element, global_DoF_indices);
       for (size_t ii = 0; ii < lagrange_points.size(); ++ii) {
@@ -167,9 +170,11 @@ public:
       if (DoF_id != std::numeric_limits<size_t>::max())
         range[DoF_id] = 0;
     // walk the grid to average on all inner Lagrange points
+    auto range_basis = range_space_.basis().localize();
     for (auto&& element : elements(assembly_grid_view_)) {
       local_source->bind(element);
-      const auto& lagrange_points = range_space_.finite_element(element.geometry().type()).lagrange_points();
+      range_basis->bind(element);
+      const auto& lagrange_points = range_basis->finite_element().lagrange_points();
       range_space_.mapper().global_indices(element, global_DoF_indices);
       DUNE_THROW_IF(global_DoF_indices.size() < lagrange_points.size(),
                     Exceptions::operator_error,
