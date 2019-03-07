@@ -135,7 +135,7 @@ int main(int argc, char* argv[])
     // fake solution to demonstrate restriction/prolongation
     auto fv_space = GDT::make_finite_volume_space<1>(grid_view);
     auto current_solution = GDT::make_discrete_function<V>(fv_space);
-    GDT::interpolate(cosh, current_solution);
+    GDT::default_interpolation(cosh, current_solution);
 
     // the main adaptation loop
     auto helper = make_adaptation_helper(grid, fv_space, current_solution);
@@ -143,7 +143,6 @@ int main(int argc, char* argv[])
     size_t counter = 0;
     while (true) {
       logger.info() << "step " << counter << ", space has " << fv_space.mapper().size() << " DoFs" << std::endl;
-      current_solution.visualize("interpolated_function_" + XT::Common::to_string(counter));
 
       // compute local L^2 errors
       const auto local_errors = compute_local_l2_norms(current_solution - cosh.as_grid_function(grid_view), grid_view);
@@ -166,7 +165,7 @@ int main(int argc, char* argv[])
       helper.post_adapt();
 
       // now that the grid is adapted, interpolate the function on the new grid
-      GDT::interpolate(cosh, current_solution);
+      GDT::default_interpolation(cosh, current_solution);
 
       ++counter;
     }
@@ -175,7 +174,7 @@ int main(int argc, char* argv[])
     for (auto&& element : elements(grid_view))
       min_h = std::min(min_h, XT::Grid::diameter(element));
 
-    logger.info() << "\nA uniformly refinement grid of similar accuracy would have roughly required "
+    logger.info() << "\nA uniformly refined grid of similar accuracy would have roughly required "
                   << int(domain_length / min_h) << " DoFs" << std::endl;
 
   } catch (Exception& e) {
