@@ -41,8 +41,6 @@ clang_image:
 # ************ TEST EXECUTION ************
 .cpp:
     stage: test
-    before_script:
-      - echo "$CI_BUILD_TOKEN" | docker login -u "gitlab-ci-token" --password-stdin  "$CI_REGISTRY"
     script: /home/dune-ci/src/dune-gdt/.ci/drone/script.bash
     variables:
       MY_MODULE: dune-gdt
