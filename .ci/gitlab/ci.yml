@@ -13,7 +13,8 @@ stages:
         - pip3 install jinja2
         - 'export SHARED_PATH="${CI_PROJECT_DIR}/shared"'
         - mkdir -p ${SHARED_PATH}
-        - echo "$CI_BUILD_TOKEN" | docker login -u "gitlab-ci-token" --password-stdin  "$CI_REGISTRY"
+        #- echo "$CI_BUILD_TOKEN" | docker login -u "gitlab-ci-token" --password-stdin  "$CI_REGISTRY"
+        - echo $DOCKER_PW | docker login --username="$DOCKER_USER" --password-stdin
     services:
         - docker:dind
 
@@ -29,13 +30,13 @@ gcc_image:
     extends: .image
     variables:
       BASE: dune-gdt-testing_base_gcc:master
-      IMAGE: ${CI_REGISTRY_IMAGE}/dune-gdt-testing_gcc:${CI_COMMIT_SHORT_SHA}
+      IMAGE: dunecommunity/dune-gdt-testing_gcc:${CI_COMMIT_SHORT_SHA}
 
 clang_image:
     extends: .image
     variables:
       BASE: dune-gdt-testing_base_clang:master
-      IMAGE: ${CI_REGISTRY_IMAGE}/dune-gdt-testing_clang:${CI_COMMIT_SHORT_SHA}
+      IMAGE: dunecommunity/dune-gdt-testing_clang:${CI_COMMIT_SHORT_SHA}
 
 # ************ TEST EXECUTION ************
 .cpp:
@@ -48,11 +49,11 @@ clang_image:
 
 gcc:
     extends: .cpp
-    image: ${CI_REGISTRY_IMAGE}/dune-gdt-testing_gcc:${CI_COMMIT_SHORT_SHA}
+    image: dunecommunity/dune-gdt-testing_gcc:${CI_COMMIT_SHORT_SHA}
 
 clang:
     extends: .cpp
-    image: ${CI_REGISTRY_IMAGE}/dune-gdt-testing_clang:${CI_COMMIT_SHORT_SHA}
+    image: dunecommunity/dune-gdt-testing_clang:${CI_COMMIT_SHORT_SHA}
 
 # ************ CLEANUP ************
 .cleanup:
@@ -74,15 +75,15 @@ success:
 gcc_failure:
     extends: .cleanup
     script:
-      - docker pull ${CI_REGISTRY_IMAGE}/dune-gdt-testing_gcc:${CI_COMMIT_SHORT_SHA}
-      - docker tag ${CI_REGISTRY_IMAGE}/dune-gdt-testing_gcc:${CI_COMMIT_SHORT_SHA} ${GCC_IMAGE_HUB}
+      - docker pull dunecommunity/dune-gdt-testing_gcc:${CI_COMMIT_SHORT_SHA}
+      #- docker tag dunecommunity/dune-gdt-testing_gcc:${CI_COMMIT_SHORT_SHA} ${GCC_IMAGE_HUB}
       - docker push ${GCC_IMAGE_HUB}
     when: on_failure
 
 clang_failure:
     extends: .cleanup
     script:
-      - docker pull ${CI_REGISTRY_IMAGE}/dune-gdt-testing_clang:${CI_COMMIT_SHORT_SHA}
-      - docker tag ${CI_REGISTRY_IMAGE}/dune-gdt-testing_clang:${CI_COMMIT_SHORT_SHA} ${CLANG_IMAGE_HUB}
+      - docker pull dunecommunity/dune-gdt-testing_clang:${CI_COMMIT_SHORT_SHA}
+      #- docker tag dunecommunity/dune-gdt-testing_clang:${CI_COMMIT_SHORT_SHA} ${CLANG_IMAGE_HUB}
       - docker push ${CLANG_IMAGE_HUB}
     when: on_failure
