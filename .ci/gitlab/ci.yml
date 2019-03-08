@@ -29,13 +29,13 @@ gcc_image:
     extends: .image
     variables:
       BASE: dune-gdt-testing_base_gcc:master
-      IMAGE: ${CI_REGISTRY_IMAGE}/dune-gdt-testing_gcc:${CI_COMMIT_SHA}
+      IMAGE: ${CI_REGISTRY_IMAGE}/dune-gdt-testing_gcc:${CI_COMMIT_SHORT_SHA}
 
 clang_image:
     extends: .image
     variables:
       BASE: dune-gdt-testing_base_clang:master
-      IMAGE: ${CI_REGISTRY_IMAGE}/dune-gdt-testing_clang:${CI_COMMIT_SHA}
+      IMAGE: ${CI_REGISTRY_IMAGE}/dune-gdt-testing_clang:${CI_COMMIT_SHORT_SHA}
 
 # ************ TEST EXECUTION ************
 .cpp:
@@ -48,11 +48,11 @@ clang_image:
 
 gcc:
     extends: .cpp
-    image: ${CI_REGISTRY_IMAGE}/dune-gdt-testing_gcc:${CI_COMMIT_SHA}
+    image: ${CI_REGISTRY_IMAGE}/dune-gdt-testing_gcc:${CI_COMMIT_SHORT_SHA}
 
 clang:
     extends: .cpp
-    image: ${CI_REGISTRY_IMAGE}/dune-gdt-testing_clang:${CI_COMMIT_SHA}
+    image: ${CI_REGISTRY_IMAGE}/dune-gdt-testing_clang:${CI_COMMIT_SHORT_SHA}
 
 # ************ CLEANUP ************
 .cleanup:
@@ -60,8 +60,8 @@ clang:
     stage: cleanup
     variables:
       APIBASE: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/registry/repositories/"
-      GCC_IMAGE_HUB: dunecommunity/dune-gdt-testing_gcc:${CI_COMMIT_SHA}
-      CLANG_IMAGE_HUB: dunecommunity/dune-gdt-testing_clang:${CI_COMMIT_SHA}
+      GCC_IMAGE_HUB: dunecommunity/dune-gdt-testing_gcc:${CI_COMMIT_SHORT_SHA}
+      CLANG_IMAGE_HUB: dunecommunity/dune-gdt-testing_clang:${CI_COMMIT_SHORT_SHA}
     before_script:
       - echo $DOCKER_PW | docker login --username="$DOCKER_USER" --password-stdin
 
@@ -74,15 +74,15 @@ success:
 gcc_failure:
     extends: .cleanup
     script:
-      - docker pull ${CI_REGISTRY_IMAGE}/dune-gdt-testing_gcc:${CI_COMMIT_SHA}
-      - docker tag ${CI_REGISTRY_IMAGE}/dune-gdt-testing_gcc:${CI_COMMIT_SHA} ${GCC_IMAGE_HUB}
+      - docker pull ${CI_REGISTRY_IMAGE}/dune-gdt-testing_gcc:${CI_COMMIT_SHORT_SHA}
+      - docker tag ${CI_REGISTRY_IMAGE}/dune-gdt-testing_gcc:${CI_COMMIT_SHORT_SHA} ${GCC_IMAGE_HUB}
       - docker push ${GCC_IMAGE_HUB}
     when: on_failure
 
 clang_failure:
     extends: .cleanup
     script:
-      - docker pull ${CI_REGISTRY_IMAGE}/dune-gdt-testing_clang:${CI_COMMIT_SHA}
-      - docker tag ${CI_REGISTRY_IMAGE}/dune-gdt-testing_clang:${CI_COMMIT_SHA} ${CLANG_IMAGE_HUB}
+      - docker pull ${CI_REGISTRY_IMAGE}/dune-gdt-testing_clang:${CI_COMMIT_SHORT_SHA}
+      - docker tag ${CI_REGISTRY_IMAGE}/dune-gdt-testing_clang:${CI_COMMIT_SHORT_SHA} ${CLANG_IMAGE_HUB}
       - docker push ${CLANG_IMAGE_HUB}
     when: on_failure
