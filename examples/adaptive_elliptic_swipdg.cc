@@ -48,7 +48,7 @@
 #include <dune/gdt/spaces/l2/finite-volume.hh>
 #include <dune/gdt/test/stationary-heat-equation/ESV2007.hh>
 #include <dune/gdt/tools/adaptation-helper.hh>
-#include <dune/gdt/tools/dorfler-marking.hh>
+#include <dune/gdt/tools/doerfler-marking.hh>
 
 using namespace Dune;
 using namespace Dune::GDT;
