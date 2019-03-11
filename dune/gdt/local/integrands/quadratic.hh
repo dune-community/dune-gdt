@@ -154,17 +154,23 @@ private:
 
 
 /**
- * Given an inducing vector-valued function u, computes `u(x)^T \nabla phi(x) * psi(x)` for all combinations of phi in
+ * Given an inducing vector-valued function u, computes `(\nabla phi(x) * u(x)) * psi(x)` for all combinations of phi in
  * the ansatz basis and psi in the test basis. If use_test_gradient is set to true, ansatz and test basis are swapped.
  *
  * \sa local_binary_to_unary_element_integrand
  */
-template <class E, class TR = double, class F = double, class AR = TR, bool use_test_gradient = false>
-class LocalElementGradientValueIntegrand
-  : public LocalBinaryElementIntegrandInterface<E, E::dimension, 1, TR, F, E::dimension, 1, AR>
+template <class E,
+          size_t r = 1,
+          size_t rC = 1,
+          class TR = double,
+          class F = double,
+          class AR = TR,
+          bool use_test_gradient = false>
+class LocalElementGradientValueIntegrand : public LocalBinaryElementIntegrandInterface<E, r, rC, TR, F, r, rC, AR>
 {
-  using BaseType = LocalBinaryElementIntegrandInterface<E, E::dimension, 1, TR, F, E::dimension, 1, AR>;
+  using BaseType = LocalBinaryElementIntegrandInterface<E, r, rC, TR, F, r, rC, AR>;
   using ThisType = LocalElementGradientValueIntegrand;
+  static_assert(rC == 1, "Not tested for rC > 1!");
 
 public:
   using BaseType::d;
@@ -176,7 +182,7 @@ public:
       std::vector<typename std::conditional_t<use_test_gradient, LocalAnsatzBasisType, LocalTestBasisType>::RangeType>;
   using BasisJacobians = std::vector<
       typename std::conditional_t<use_test_gradient, LocalTestBasisType, LocalAnsatzBasisType>::DerivativeRangeType>;
-  static const size_t vector_size = use_test_gradient ? LocalTestBasisType::r : LocalAnsatzBasisType::r;
+  static const size_t vector_size = d;
 
   using VectorGridFunctionType = XT::Functions::GridFunctionInterface<E, vector_size, 1, F>;
   using VectorValues = typename VectorGridFunctionType::LocalFunctionType::RangeReturnType;
@@ -254,11 +260,11 @@ private:
       test_basis.evaluate(point_in_reference_element, values, param);
       ansatz_basis.jacobians(point_in_reference_element, jacobians, param);
 
-      auto nabla_phi_T_times_u = values[0];
+      auto nabla_phi_times_u = values[0];
       for (size_t ii = 0; ii < ansatz_basis.size(); ++ii) {
-        jacobians[ii].mtv(vector_values, nabla_phi_T_times_u);
+        jacobians[ii].mv(vector_values, nabla_phi_times_u);
         for (size_t jj = 0; jj < test_basis.size(); ++jj)
-          result[ii][jj] = nabla_phi_T_times_u * values[jj];
+          result[jj][ii] = nabla_phi_times_u * values[jj];
       }
     }
   };
@@ -282,7 +288,7 @@ private:
       for (size_t jj = 0; jj < test_basis.size(); ++jj) {
         jacobians[jj].mtv(vector_values, nabla_psi_T_times_u);
         for (size_t ii = 0; ii < ansatz_basis.size(); ++ii)
-          result[ii][jj] = nabla_psi_T_times_u * values[ii];
+          result[jj][ii] = nabla_psi_T_times_u * values[ii];
       }
     }
   };
