@@ -5,7 +5,7 @@
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Felix Schindler (2018)
+//   Felix Schindler (2019)
 
 #include "config.h"
 
@@ -476,7 +476,6 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
         "diffusion_tensor"_a,
         "parallel"_a = true);
 
-
   m.def("assemble_L2_vector",
         [](DG& space, XT::Functions::FunctionInterface<d>& force, const bool parallel) {
           return std::move(assemble_L2_vector(space, force.as_grid_function<E>(), parallel));
@@ -713,4 +712,4 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
         "gamma_bar"_a,
         "over_integrate"_a = 3,
         "parallel"_a = true);
-} // PYBIND11_PLUGIN(...)
+} // PYBIND11_MODULE(...)
