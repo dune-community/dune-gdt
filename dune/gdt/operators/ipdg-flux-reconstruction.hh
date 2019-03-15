@@ -93,8 +93,14 @@ public:
     using I = XT::Grid::extract_intersection_t<AssemblyGridViewType>;
     // some checks
     DUNE_THROW_IF(!source.valid(), Exceptions::operator_error, "source contains inf or nan!");
-    DUNE_THROW_IF(!source_space_.contains(source), Exceptions::operator_error, "");
-    DUNE_THROW_IF(!range_space_.contains(range), Exceptions::operator_error, "");
+    DUNE_THROW_IF(!source_space_.contains(source),
+                  Exceptions::operator_error,
+                  "source is not contained in source_space()!\n   source.size() = "
+                      << source.size() << "\n   source_space().mappe().size() = " << source_space_.mapper().size());
+    DUNE_THROW_IF(!range_space_.contains(range),
+                  Exceptions::operator_error,
+                  "range is not contained in range_space()!\n   range.size() = "
+                      << range.size() << "\n   range_space().mappe().size() = " << range_space_.mapper().size());
     const auto source_function = make_discrete_function(source_space_, source);
     auto range_function = make_discrete_function(range_space_, range);
     // some preparations
