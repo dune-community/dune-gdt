@@ -36,7 +36,7 @@ class LocalMassMatrixProvider
   , public XT::Common::ThreadResultPropagator<
         LocalMassMatrixProvider<GV, r, rC, F>,
         std::map<size_t, std::pair<XT::LA::CommonDenseMatrix<F>, XT::LA::CommonDenseMatrix<F>>>,
-        XT::Common::merge_container<
+        XT::Common::concatenate_container<
             std::map<size_t, std::pair<XT::LA::CommonDenseMatrix<F>, XT::LA::CommonDenseMatrix<F>>>>>
 {
   static_assert(XT::Grid::is_view<AGV>::value, "");
@@ -46,7 +46,7 @@ class LocalMassMatrixProvider
   using Propagator = XT::Common::ThreadResultPropagator<
       LocalMassMatrixProvider<GV, r, rC, F>,
       std::map<size_t, std::pair<XT::LA::CommonDenseMatrix<F>, XT::LA::CommonDenseMatrix<F>>>,
-      XT::Common::merge_container<
+      XT::Common::concatenate_container<
           std::map<size_t, std::pair<XT::LA::CommonDenseMatrix<F>, XT::LA::CommonDenseMatrix<F>>>>>;
   friend Propagator;
 
