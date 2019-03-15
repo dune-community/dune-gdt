@@ -91,16 +91,15 @@ void mark_elements(
   for (auto&& element : elements(grid_view)) {
     const size_t index = fv_space.mapper().global_indices(element)[0];
     bool coarsened = false;
-    if (std::find(elements_to_be_coarsened.begin(), elements_to_be_coarsened.end(), index)
-        != elements_to_be_coarsened.end()) {
-      grid.mark(/*coarsen*/ -1, element);
-      coarsened = true;
-    }
     if (std::find(elements_to_be_refined.begin(), elements_to_be_refined.end(), index)
         != elements_to_be_refined.end()) {
-      grid.mark(/*refine and overwrite coarsening if present*/ 2, element);
+      grid.mark(/*refine*/ 1, element);
       refined_elements += 1;
       coarsened = false;
+    } else if (std::find(elements_to_be_coarsened.begin(), elements_to_be_coarsened.end(), index)
+               != elements_to_be_coarsened.end()) {
+      grid.mark(/*coarsen*/ -1, element);
+      coarsened = true;
     }
     if (coarsened)
       ++corsend_elements;

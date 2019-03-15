@@ -94,13 +94,13 @@ std::pair<V, F> compute_local_indicators(const DiscreteFunction<V, GV>& u_h,
                 [&](const auto& element) {
                   // prepare data functions
                   auto u_h_el = u_h.local_function();
-                  auto e_el = u.local_function();
+                  auto u_el = u.local_function();
                   auto t_h_el = t_h.local_function();
                   auto div_t_h_el = XT::Functions::divergence(*t_h_el);
                   auto f_el = f.local_function();
                   auto d_el = diffusion.local_function();
                   u_h_el->bind(element);
-                  e_el->bind(element);
+                  u_el->bind(element);
                   t_h_el->bind(element);
                   div_t_h_el.bind(element);
                   f_el->bind(element);
@@ -108,7 +108,7 @@ std::pair<V, F> compute_local_indicators(const DiscreteFunction<V, GV>& u_h,
                   // eta_NC
                   const double eta_NC_element_2 =
                       LocalElementIntegralBilinearForm<E>(LocalEllipticIntegrand<E>(df, dt), over_integrate)
-                          .apply2(*u_h_el - *e_el, *u_h_el - *e_el)[0][0];
+                          .apply2(*u_h_el - *u_el, *u_h_el - *u_el)[0][0];
                   // eta_R
                   // - approximate minimum eigenvalue of the diffusion over the element (evaluate at some points)
                   double min_EV = std::numeric_limits<double>::max();
@@ -168,16 +168,15 @@ void mark_elements(
   for (auto&& element : elements(grid_view)) {
     const size_t index = fv_space.mapper().global_indices(element)[0];
     bool coarsened = false;
-    if (std::find(elements_to_be_coarsened.begin(), elements_to_be_coarsened.end(), index)
-        != elements_to_be_coarsened.end()) {
-      grid.mark(/*coarsen*/ -1, element);
-      coarsened = true;
-    }
     if (std::find(elements_to_be_refined.begin(), elements_to_be_refined.end(), index)
         != elements_to_be_refined.end()) {
-      grid.mark(/*refine and overwrite coarsening if present*/ 2, element);
+      grid.mark(/*refine*/ 2, element);
       refined_elements += 1;
       coarsened = false;
+    } else if (std::find(elements_to_be_coarsened.begin(), elements_to_be_coarsened.end(), index)
+               != elements_to_be_coarsened.end()) {
+      grid.mark(/*coarsen*/ -1, element);
+      coarsened = true;
     }
     if (coarsened)
       ++corsend_elements;
