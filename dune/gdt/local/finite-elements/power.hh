@@ -289,7 +289,7 @@ private:
 
 
 /**
- * \brief Models the poduct of a given local finite element with itself, power times.
+ * \brief Models the product of a given local finite element with itself, power times.
  *
  * \note Only implemented for scalar and vector valued local finite elements.
  *

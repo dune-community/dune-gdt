@@ -11,11 +11,6 @@
 #ifndef DUNE_GDT_SPACES_H1_CONTINUOUS_LAGRANGE_HH
 #define DUNE_GDT_SPACES_H1_CONTINUOUS_LAGRANGE_HH
 
-// see https://github.com/dune-community/dune-gdt/issues/144
-#ifndef DUNE_GDT_SPACES_H1_CONTINUOUS_LAGRANGE_IGNORE_FAILING_ALUGRID
-#  define DUNE_GDT_SPACES_H1_CONTINUOUS_LAGRANGE_IGNORE_FAILING_ALUGRID 0
-#endif
-
 #include <memory>
 #include <vector>
 
@@ -51,11 +46,11 @@ namespace GDT {
  *
  * \sa make_local_lagrange_finite_element
  */
-template <class GV, class R = double>
-class ContinuousLagrangeSpace : public SpaceInterface<GV, 1, 1, R>
+template <class GV, size_t r = 1, class R = double>
+class ContinuousLagrangeSpace : public SpaceInterface<GV, r, 1, R>
 {
-  using ThisType = ContinuousLagrangeSpace<GV, R>;
-  using BaseType = SpaceInterface<GV, 1, 1, R>;
+  using ThisType = ContinuousLagrangeSpace;
+  using BaseType = SpaceInterface<GV, r, 1, R>;
 
 public:
   using BaseType::d;
@@ -66,8 +61,8 @@ public:
   using typename BaseType::MapperType;
 
 private:
-  using MapperImplementation = ContinuousMapper<GridViewType, LocalFiniteElementFamilyType>;
-  using GlobalBasisImplementation = DefaultGlobalBasis<GridViewType, 1, 1, R>;
+  using MapperImplementation = ContinuousMapper<GridViewType, LocalFiniteElementFamilyType, r>;
+  using GlobalBasisImplementation = DefaultGlobalBasis<GridViewType, r, 1, R>;
 
 public:
   ContinuousLagrangeSpace(GridViewType grd_vw, const int order)
@@ -77,13 +72,6 @@ public:
     , mapper_(nullptr)
     , basis_(nullptr)
   {
-#if !DUNE_GDT_SPACES_H1_CONTINUOUS_LAGRANGE_IGNORE_FAILING_ALUGRID
-    // see https://github.com/dune-community/dune-gdt/issues/144
-    DUNE_THROW_IF(XT::Grid::is_alugrid<typename GridViewType::Grid>::value && order > 1,
-                  Exceptions::space_error,
-                  "Higher order CG spaces do not work with alugrid atm, see "
-                  "https://github.com/dune-community/dune-gdt/issues/144!");
-#endif
     this->update_after_adapt();
   }
 
@@ -177,10 +165,20 @@ private:
 /**
  * \sa ContinuousLagrangeSpace
  */
-template <class GV, class R = double>
-ContinuousLagrangeSpace<GridView<GV>, R> make_continuous_lagrange_space(GridView<GV> grid_view, const int order)
+template <size_t r, class GV, class R = double>
+ContinuousLagrangeSpace<GV, r, R> make_continuous_lagrange_space(GV grid_view, const int order)
 {
-  return ContinuousLagrangeSpace<GridView<GV>, R>(grid_view, order);
+  return ContinuousLagrangeSpace<GV, r, R>(grid_view, order);
+}
+
+
+/**
+ * \sa ContinuousLagrangeSpace
+ */
+template <class GV, class R = double>
+ContinuousLagrangeSpace<GV, 1, R> make_continuous_lagrange_space(GV grid_view, const int order)
+{
+  return ContinuousLagrangeSpace<GV, 1, R>(grid_view, order);
 }
 
 

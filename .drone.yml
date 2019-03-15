@@ -26,7 +26,7 @@ pipeline:
     environment:
       - MY_MODULE=dune-gdt
     commands:
-      - /home/dune-ci/src/dune-gdt/.ci/travis/test_python.bash
+      - /home/dune-ci/src/dune-gdt/.ci/drone/test_python.bash
     secrets: [ codecov_token ]
 
   cleanup_fail:
