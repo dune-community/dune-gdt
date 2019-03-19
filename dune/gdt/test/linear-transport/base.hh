@@ -65,7 +65,7 @@ struct LinearTransportProblem
       else
         return 0.;
     };
-    return interpolate<Vector>(
+    return default_interpolation<Vector>(
         0, [&](const auto& xx, const auto& /*mu*/) { return indicator(std::fmod(xx[0] - time + 10., 1.)); }, space);
   } // ... make_exact_solution__periodic_boundaries(...)
 }; // struct LinearTransportProblem
