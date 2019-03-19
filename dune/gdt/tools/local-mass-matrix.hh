@@ -81,7 +81,7 @@ public:
     local_basis_->bind(element);
     const size_t id = element_mapper_.global_index(element, 0);
     const LocalElementIntegralBilinearForm<E, r, rC, F, F> local_l2_bilinear_form(
-        LocalElementProductIntegrand<E, r, rC, F, F>(1.));
+        LocalElementProductIntegrand<E, r, F, F>(1.));
     auto matrix =
         XT::LA::convert_to<XT::LA::CommonDenseMatrix<F>>(local_l2_bilinear_form.apply2(*local_basis_, *local_basis_));
     auto inverse = XT::LA::invert_matrix(matrix);
@@ -135,7 +135,7 @@ private:
   const SpaceType& space_;
   const FiniteVolumeMapper<GV> element_mapper_;
   size_t instance_counter_;
-  std::unique_ptr<typename SpaceType::GlobalBasisType::LocalizedBasisType> local_basis_;
+  std::unique_ptr<typename SpaceType::GlobalBasisType::LocalizedType> local_basis_;
   std::map<size_t, std::pair<XT::LA::CommonDenseMatrix<F>, XT::LA::CommonDenseMatrix<F>>> local_mass_matrices_;
 }; // class LocalMassMatrixProvider
 
