@@ -18,7 +18,6 @@
 #include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/exceptions.hh>
-#include <dune/gdt/spaces/mapper/interfaces.hh>
 
 namespace Dune {
 namespace GDT {
@@ -39,6 +38,10 @@ class ConstLocalDofVector;
 
 template <class Vector, class GridView>
 class LocalDofVector;
+
+// required to avoid cyclic inclusion
+template <class GV>
+class MapperInterface;
 
 
 namespace internal {

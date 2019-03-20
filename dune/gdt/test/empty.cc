@@ -28,6 +28,4 @@
 #include <dune/xt/common/test/main.hxx> // <- this one has to come first (includes the config.h)!
 
 
-GTEST_TEST(empty, main)
-{
-}
+GTEST_TEST(empty, main) {}

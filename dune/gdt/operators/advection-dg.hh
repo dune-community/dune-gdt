@@ -38,17 +38,17 @@ namespace Dune {
 namespace GDT {
 
 
-static double advection_dg_artificial_viscosity_default_nu_1()
+static inline double advection_dg_artificial_viscosity_default_nu_1()
 {
   return 0.2;
 }
 
-static double advection_dg_artificial_viscosity_default_alpha_1()
+static inline double advection_dg_artificial_viscosity_default_alpha_1()
 {
   return 1.0;
 }
 
-static size_t advection_dg_artificial_viscosity_default_component()
+static inline size_t advection_dg_artificial_viscosity_default_component()
 {
   return 0;
 }
