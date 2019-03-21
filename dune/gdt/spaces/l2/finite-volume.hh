@@ -58,7 +58,7 @@ private:
 public:
   FiniteVolumeSpace(GridViewType grd_vw)
     : grid_view_(grd_vw)
-    , local_finite_elements_()
+    , local_finite_elements_(std::make_unique<const LocalLagrangeFiniteElementFamily<D, d, R, r>>())
     , mapper_(grid_view_)
     , basis_(grid_view_)
   {
@@ -88,7 +88,7 @@ public:
 
   const LocalFiniteElementFamilyType& finite_elements() const override final
   {
-    return local_finite_elements_;
+    return *local_finite_elements_;
   }
 
   SpaceType type() const override final
@@ -183,7 +183,7 @@ public:
 
 private:
   const GridViewType grid_view_;
-  const LocalLagrangeFiniteElementFamily<D, d, R, r> local_finite_elements_;
+  std::unique_ptr<const LocalLagrangeFiniteElementFamily<D, d, R, r>> local_finite_elements_;
   MapperImplementation mapper_;
   GlobalBasisImplementation basis_;
 }; // class FiniteVolumeSpace< ..., r, 1 >
