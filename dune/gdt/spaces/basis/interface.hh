@@ -72,6 +72,7 @@ public:
     if (dofs_.size() < sz)
       dofs_.resize(sz);
     this->interpolate(element_function, order, dofs_);
+    assert(dofs.size() >= sz);
     for (size_t ii = 0; ii < sz; ++ii)
       dofs[ii] = dofs_[ii];
   } // ... interpolate(...)
@@ -84,6 +85,7 @@ public:
     if (dofs_.size() < sz)
       dofs_.resize(sz);
     this->interpolate(element_function, dofs_);
+    assert(dofs.size() >= sz);
     for (size_t ii = 0; ii < sz; ++ii)
       dofs[ii] = dofs_[ii];
   } // ... interpolate(...)

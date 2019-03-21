@@ -36,7 +36,7 @@ make_localizable_l2_product(
 {
   using E = XT::Grid::extract_entity_t<GridViewType>;
   auto localizable_product = make_localizable_bilinear_form(grid_view, left, right);
-  localizable_product.append(LocalElementIntegralBilinearForm<E, r, 1, RF, F, r, 1, SF>(
+  localizable_product.append(std::make_unique<LocalElementIntegralBilinearForm<E, r, 1, RF, F, r, 1, SF>>(
       LocalElementProductIntegrand<E, r, RF, F, SF>(), over_integrate));
   return localizable_product;
 }

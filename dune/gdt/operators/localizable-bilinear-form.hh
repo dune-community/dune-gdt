@@ -100,6 +100,18 @@ public:
     return *this;
   }
 
+  ThisType& append(
+      std::unique_ptr<LocalElementBilinearFormInterface<E, s_r, s_rC, SR, Result, r_r, r_rC, RR>>&& local_bilinear_form,
+      const XT::Common::Parameter& param = {},
+      const ElementFilterType& filter = ApplyOnAllElements())
+  {
+    local_forms_.emplace_back(std::move(local_bilinear_form));
+    local_accumulators_.emplace_back(
+        make_local_element_bilinear_form_accumulator<GV>(*local_forms_.back(), source_, range_, param));
+    this->append(*local_accumulators_.back(), filter);
+    return *this;
+  }
+
   void assemble(const bool use_tbb = false)
   {
     if (assembled_)
@@ -121,6 +133,7 @@ protected:
   const SourceType& source_;
   const RangeType& range_;
   bool assembled_;
+  std::list<std::unique_ptr<LocalElementBilinearFormInterface<E, s_r, s_rC, SR, Result, r_r, r_rC, RR>>> local_forms_;
   std::list<std::unique_ptr<LocalElementBilinearFormAccumulator<GridView, s_r, s_rC, SR, ResultType, r_r, r_rC, RR>>>
       local_accumulators_;
 }; // class LocalizableBilinearFormBase

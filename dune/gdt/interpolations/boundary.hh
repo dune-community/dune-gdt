@@ -69,8 +69,7 @@ boundary_interpolation(const XT::Functions::GridFunctionInterface<XT::Grid::extr
       fe.interpolation().interpolate(
           [&](const auto& xx) { return local_source->evaluate(xx); }, local_source->order(), local_dofs);
       const auto& reference_element = ReferenceElements<D, d>::general(element.geometry().type());
-      // but keep only those DoFs associated with the intersection, therefore
-      // * determine these DoFs
+      // but keep only those DoFs associated with the intersection, therefore determine these DoFs
       std::set<size_t> local_target_boundary_DoFs;
       const auto local_key_indices = fe.coefficients().local_key_indices();
       for (auto&& intersection : intersections(interpolation_grid_view, element)) {

@@ -68,7 +68,7 @@ public:
   ContinuousLagrangeSpace(GridViewType grd_vw, const int order)
     : grid_view_(grd_vw)
     , order_(order)
-    , local_finite_elements_()
+    , local_finite_elements_(std::make_unique<LocalLagrangeFiniteElementFamily<D, d, R, r>>())
     , mapper_(nullptr)
     , basis_(nullptr)
   {
@@ -100,7 +100,7 @@ public:
 
   const LocalFiniteElementFamilyType& finite_elements() const override final
   {
-    return local_finite_elements_;
+    return *local_finite_elements_;
   }
 
   SpaceType type() const override final
@@ -144,19 +144,19 @@ public:
     if (mapper_)
       mapper_->update_after_adapt();
     else
-      mapper_ = std::make_unique<MapperImplementation>(grid_view_, local_finite_elements_, order_);
+      mapper_ = std::make_unique<MapperImplementation>(grid_view_, *local_finite_elements_, order_);
     // ... and basis
     if (basis_)
       basis_->update_after_adapt();
     else
-      basis_ = std::make_unique<GlobalBasisImplementation>(grid_view_, local_finite_elements_, order_);
+      basis_ = std::make_unique<GlobalBasisImplementation>(grid_view_, *local_finite_elements_, order_);
     this->create_communicator();
   } // ... update_after_adapt(...)
 
 private:
   const GridViewType grid_view_;
   const int order_;
-  const LocalLagrangeFiniteElementFamily<D, d, R, r> local_finite_elements_;
+  std::unique_ptr<const LocalLagrangeFiniteElementFamily<D, d, R, r>> local_finite_elements_;
   std::unique_ptr<MapperImplementation> mapper_;
   std::unique_ptr<GlobalBasisImplementation> basis_;
 }; // class ContinuousLagrangeSpace

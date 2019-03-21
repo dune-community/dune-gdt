@@ -171,18 +171,20 @@ public:
 
   const LocalFiniteElementType& get(const GeometryType& geometry_type, const int order) const override final
   {
-    if (fes_.count({geometry_type, order}) == 1) {
-      // the FE already exists, no need to lock since at() is thread safe and we are returning the object reference, not
-      // a map iterator which might get invalidated
-      return *fes_.at({geometry_type, order});
-    } else {
+    const auto key = std::make_pair(geometry_type, order);
+    // if the FE already exists, no need to lock since at() is thread safe and we are returning the object reference,
+    // not a map iterator which might get invalidated
+    // TODO: Double checked locking pattern is not thread-safe without memory barriers.
+    if (fes_.count(key) == 0) {
       // the FE needs to be created, we need to lock
       std::lock_guard<std::mutex> DXTC_UNUSED(guard)(mutex_);
       // and to check again if someone else created the FE while we were waiting to acquire the lock
-      if (fes_.count({geometry_type, order}) == 0)
-        fes_.insert(std::make_pair(std::make_pair(geometry_type, order), factory_(geometry_type, order)));
-      return *fes_.at({geometry_type, order});
+      if (fes_.count(key) == 0) {
+        auto dings = factory_(geometry_type, order);
+        fes_.insert(std::make_pair(key, std::shared_ptr<LocalFiniteElementType>(dings.release())));
+      }
     }
+    return *fes_.at(key);
   } // ... get(...)
 
 private:
