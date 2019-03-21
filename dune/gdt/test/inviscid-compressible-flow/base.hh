@@ -65,15 +65,16 @@ struct InviscidCompressibleFlowEulerProblem
   template <class Vector, class GV>
   DiscreteFunction<Vector, GV, m> make_initial_values(const SpaceInterface<GV, m>& space) const
   {
-    return interpolate<Vector>(0,
-                               [&](const auto& xx, const auto& /*mu*/) {
-                                 if (XT::Common::FloatCmp::ge(xx, DomainType(-0.5))
-                                     && XT::Common::FloatCmp::le(xx, DomainType(0)))
-                                   return euler_tools.conservative(/*density=*/4., /*velocity=*/0., /*pressure=*/1.6);
-                                 else
-                                   return euler_tools.conservative(/*density=*/1., /*velocity=*/0., /*pressure=*/0.4);
-                               },
-                               space);
+    // TODO: Use generic interpolate once implemented?
+    return default_interpolation<Vector>(
+        0,
+        [&](const auto& xx, const auto& /*mu*/) {
+          if (XT::Common::FloatCmp::ge(xx, DomainType(-0.5)) && XT::Common::FloatCmp::le(xx, DomainType(0)))
+            return euler_tools.conservative(/*density=*/4., /*velocity=*/0., /*pressure=*/1.6);
+          else
+            return euler_tools.conservative(/*density=*/1., /*velocity=*/0., /*pressure=*/0.4);
+        },
+        space);
   } // ... make_initial_values(...)
 }; // struct InviscidCompressibleFlowEulerProblem
 
@@ -132,11 +133,13 @@ protected:
   {
     if (boundary_treatment == "inflow_from_the_left_by_heuristic_euler_treatment_impermeable_wall_right") {
       const auto& euler_tools = this->access().euler_tools;
-      return interpolate<V>(0,
-                            [&](const auto& /*xx*/, const auto& /*param*/) {
-                              return euler_tools.conservative(/*density=*/0.5, /*velocity=*/0., /*pressure=*/0.4);
-                            },
-                            space);
+      // TODO: Use generic interpolate once implemented?
+      return default_interpolation<V>(0,
+                                      [&](const auto& /*xx*/, const auto& /*param*/) {
+                                        return euler_tools.conservative(
+                                            /*density=*/0.5, /*velocity=*/0., /*pressure=*/0.4);
+                                      },
+                                      space);
     } else
       return this->access().template make_initial_values<V>(space);
   } // ... make_initial_values(...)

@@ -76,7 +76,7 @@ public:
     , local_basis_(space_.basis().localize())
   {}
 
-  void apply_local(const ElementType& element)
+  void apply_local(const ElementType& element) override
   {
     local_basis_->bind(element);
     const size_t id = element_mapper_.global_index(element, 0);

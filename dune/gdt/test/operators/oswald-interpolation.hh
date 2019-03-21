@@ -13,7 +13,10 @@
 #include <dune/xt/common/fvector.hh>
 #include <dune/xt/common/string.hh>
 #include <dune/xt/common/test/gtest/gtest.h>
+#include <dune/xt/common/test/common.hh>
+
 #include <dune/xt/la/container/istl.hh>
+
 #include <dune/xt/grid/entity.hh>
 #include <dune/xt/grid/intersection.hh>
 #include <dune/xt/grid/boundaryinfo/normalbased.hh>
@@ -21,6 +24,7 @@
 #include <dune/xt/grid/structuredgridfactory.hh>
 #include <dune/xt/grid/walker.hh>
 #include <dune/xt/grid/type_traits.hh>
+
 #include <dune/xt/functions/generic/function.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
@@ -76,7 +80,8 @@ struct OswaldInterpolationOperatorOnLeafViewTest : public ::testing::Test
     auto local_source = source->local_discrete_function();
     for (auto&& element : elements(space->grid_view())) {
       local_source->bind(element);
-      local_source->dofs().assign_from(space->finite_element(element.geometry().type())
+      local_source->dofs().assign_from(space->finite_elements()
+                                           .get(element.geometry().type(), 1)
                                            .interpolation()
                                            .interpolate(
                                                [&](const auto& x_local) {
@@ -400,7 +405,8 @@ struct OswaldInterpolationOperatorOnCubicLeafViewTest : public OswaldInterpolati
     for (auto&& element : elements(self.space->grid_view())) {
       local_expected_range_for_cubic_grids->bind(element);
       local_expected_range_for_cubic_grids->dofs().assign_from(
-          self.space->finite_element(element.geometry().type())
+          self.space->finite_elements()
+              .get(element.geometry().type(), 1)
               .interpolation()
               .interpolate(
                   [&](const auto& x_local) {

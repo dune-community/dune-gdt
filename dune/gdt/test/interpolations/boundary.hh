@@ -82,13 +82,13 @@ struct BoundaryInterpolationOnLeafViewTest : public ::testing::Test
 
   void interpolates_correctly()
   {
-    interpolate(source->template as_grid_function<E>(),
-                *range,
-                space->grid_view(),
-                *boundary_info,
-                XT::Grid::DirichletBoundary());
+    boundary_interpolation(source->template as_grid_function<E>(),
+                           *range,
+                           space->grid_view(),
+                           *boundary_info,
+                           XT::Grid::DirichletBoundary());
     const auto expected_L2_error = 1e-15;
-    const auto l2_error = compute_l2_norm(space->grid_view(), expected_range->template as_grid_function<E>() - *range);
+    const auto l2_error = l2_norm(space->grid_view(), expected_range->template as_grid_function<E>() - *range);
     EXPECT_LT(l2_error, expected_L2_error)
         << "XT::Common::Test::get_unique_test_name() = '" << XT::Common::Test::get_unique_test_name() << "'";
 

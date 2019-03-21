@@ -53,11 +53,12 @@ struct BurgersProblem
   template <class Vector, class GV>
   DiscreteFunction<Vector, GV> make_initial_values(const SpaceInterface<GV, 1>& space) const
   {
-    return interpolate<Vector>(3,
-                               [&](const auto& xx, const auto& /*mu*/) {
-                                 return std::exp(-std::pow(xx[0] - 0.33, 2) / (2 * std::pow(0.075, 2)));
-                               },
-                               space);
+    // TODO: Use generic interpolate once implemented?
+    return default_interpolation<Vector>(3,
+                                         [&](const auto& xx, const auto& /*mu*/) {
+                                           return std::exp(-std::pow(xx[0] - 0.33, 2) / (2 * std::pow(0.075, 2)));
+                                         },
+                                         space);
   }
 }; // struct BurgersProblem
 

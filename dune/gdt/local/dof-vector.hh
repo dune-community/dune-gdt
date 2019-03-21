@@ -18,7 +18,6 @@
 #include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/exceptions.hh>
-#include <dune/gdt/spaces/mapper/interfaces.hh>
 
 namespace Dune {
 namespace GDT {
@@ -40,6 +39,10 @@ class ConstLocalDofVector;
 template <class Vector, class GridView>
 class LocalDofVector;
 
+// required to avoid cyclic inclusion
+template <class GV>
+class MapperInterface;
+
 
 namespace internal {
 
@@ -50,6 +53,8 @@ class ConstLocalDofVectorTraits
   static_assert(XT::LA::is_vector<Vector>::value, "");
 
 public:
+  static constexpr XT::LA::Backends dense_matrix_type = XT::LA::Backends::common_dense;
+  static constexpr XT::LA::Backends sparse_matrix_type = XT::LA::Backends::common_sparse;
   using derived_type = ConstLocalDofVector<Vector, GridView>;
   using ScalarType = typename Vector::ScalarType;
   using RealType = typename Vector::RealType;
@@ -62,6 +67,8 @@ class LocalDofVectorTraits
   static_assert(XT::LA::is_vector<Vector>::value, "");
 
 public:
+  static constexpr XT::LA::Backends dense_matrix_type = XT::LA::Backends::common_dense;
+  static constexpr XT::LA::Backends sparse_matrix_type = XT::LA::Backends::common_sparse;
   using derived_type = LocalDofVector<Vector, GridView>;
   using ScalarType = typename Vector::ScalarType;
   using RealType = typename Vector::RealType;

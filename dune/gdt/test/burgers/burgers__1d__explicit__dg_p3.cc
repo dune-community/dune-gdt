@@ -36,4 +36,3 @@ TEST_F(Burgers1dExplicitDgP3Test, periodic_boundaries__numerical_engquist_osher_
   //  const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
   //  XT::Test::check_eoc_study_for_success(expected_results, actual_results);
 }
-

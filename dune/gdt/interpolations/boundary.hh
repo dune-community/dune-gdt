@@ -51,7 +51,8 @@ boundary_interpolation(const XT::Functions::GridFunctionInterface<XT::Grid::extr
   static const constexpr int d = GridView<IGV>::dimension;
   auto local_dof_vector = target.dofs().localize();
   auto local_source = source.local_function();
-  std::vector<R> local_dofs(target.space().mapper().max_local_size());
+  DynamicVector<R> local_dofs(target.space().mapper().max_local_size());
+  const auto target_basis = target.space().basis().localize();
   for (auto&& element : elements(interpolation_grid_view)) {
     // first check if we should do something at all on this element
     size_t matching_boundary_intersections = 0;
@@ -59,10 +60,11 @@ boundary_interpolation(const XT::Functions::GridFunctionInterface<XT::Grid::extr
       if (boundary_info.type(intersection) == target_boundary_type)
         ++matching_boundary_intersections;
     if (matching_boundary_intersections) {
+      target_basis->bind(element);
       // some preparations
       local_source->bind(element);
       local_dof_vector.bind(element);
-      const auto& fe = target.space().finite_element(element.geometry().type());
+      const auto& fe = target_basis->finite_element();
       // interpolate
       fe.interpolation().interpolate(
           [&](const auto& xx) { return local_source->evaluate(xx); }, local_source->order(), local_dofs);

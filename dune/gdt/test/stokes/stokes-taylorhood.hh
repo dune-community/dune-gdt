@@ -254,10 +254,10 @@ public:
     auto discrete_dirichlet_values = make_discrete_function(velocity_space, dirichlet_vector);
     auto reference_solution_u = make_discrete_function(velocity_space, reference_solution_u_vector);
     auto reference_solution_p = make_discrete_function(pressure_space, reference_solution_p_vector);
-    interpolate(
+    boundary_interpolation(
         problem_.dirichlet(), discrete_dirichlet_values, problem_.boundary_info(), XT::Grid::DirichletBoundary());
-    interpolate(problem_.reference_solution_u(), reference_solution_u);
-    interpolate(problem_.reference_solution_p(), reference_solution_p);
+    default_interpolation(problem_.reference_solution_u(), reference_solution_u);
+    default_interpolation(problem_.reference_solution_p(), reference_solution_p);
     Vector rhs_vector_u(m), rhs_vector_p(n);
     // create rhs vector f - A g_D for u
     A.mv(dirichlet_vector, rhs_vector_u);
@@ -298,7 +298,7 @@ public:
       auto p_correction_func = make_discrete_function(pressure_space, p_correction);
       auto vol_domain = 4.;
       XT::Functions::ConstantGridFunction<E> const_p_integral_func(p_integral / vol_domain);
-      interpolate(const_p_integral_func, p_correction_func);
+      default_interpolation(const_p_integral_func, p_correction_func);
       const auto actual_p_vector = solution_p - p_correction;
       // calculate difference to reference solution
       const auto u_diff_vector = actual_u_vector - reference_solution_u_vector;
@@ -317,8 +317,8 @@ public:
         u_diff.visualize("u_error_" + type);
         p_diff.visualize("p_error_" + type);
       }
-      DXTC_EXPECT_FLOAT_LE(compute_l2_norm(problem_.grid_view(), u_diff), 2.29e-06);
-      DXTC_EXPECT_FLOAT_LE(compute_l2_norm(problem_.grid_view(), p_diff), 2.22e-05);
+      DXTC_EXPECT_FLOAT_LE(l2_norm(problem_.grid_view(), u_diff), 2.29e-06);
+      DXTC_EXPECT_FLOAT_LE(l2_norm(problem_.grid_view(), p_diff), 2.22e-05);
     }
   } // run
 

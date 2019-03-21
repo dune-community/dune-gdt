@@ -156,7 +156,7 @@ public:
 private:
   const GridViewType grid_view_;
   const int order_;
-  const LocalLagrangeFiniteElementFamily<D, d, R, 1> local_finite_elements_;
+  const LocalLagrangeFiniteElementFamily<D, d, R, r> local_finite_elements_;
   std::unique_ptr<MapperImplementation> mapper_;
   std::unique_ptr<GlobalBasisImplementation> basis_;
 }; // class ContinuousLagrangeSpace
