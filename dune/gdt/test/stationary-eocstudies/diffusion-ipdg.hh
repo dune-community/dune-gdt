@@ -157,42 +157,42 @@ protected:
         double eta_R_2 = 0.;
         std::mutex eta_R_2_mutex;
         auto walker = XT::Grid::make_walker(current_space.grid_view());
-        walker.append([]() {},
-                      [&](const auto& element) {
-                        auto local_df = diffusion.local_function();
-                        local_df->bind(element);
-                        auto local_force = force().local_function();
-                        local_force->bind(element);
-                        auto local_flux = flux_reconstruction.local_function();
-                        local_flux->bind(element);
-                        auto flux_divergence = XT::Functions::divergence(*local_flux);
-                        flux_divergence.bind(element);
-                        // approximate minimum eigenvalue of the diffusion over the element ...
-                        double min_EV = std::numeric_limits<double>::max();
-                        // ... which we do by evaluating at some quadrature points
-                        for (auto&& quadrature_point :
-                             QuadratureRules<double, d>::rule(element.geometry().type(), local_df->order() + 3)) {
-                          auto diff = local_df->evaluate(quadrature_point.position());
-                          auto eigen_solver = XT::LA::make_eigen_solver(
-                              diff,
-                              {{"type", XT::LA::EigenSolverOptions<decltype(diff)>::types().at(0)},
-                               {"assert_positive_eigenvalues", "1e-15"}});
-                          min_EV = std::min(min_EV, eigen_solver.min_eigenvalues(1).at(0));
-                        }
-                        DUNE_THROW_IF(!(min_EV > 0.),
-                                      Exceptions::integrand_error,
-                                      "The minimum eigenvalue of a positiv definite matrix must not be negative!"
-                                          << "\n\nmin_EV = " << min_EV);
-                        auto L2_norm_2 =
-                            LocalElementIntegralBilinearForm<E>(LocalElementProductIntegrand<E>(),
-                                                                /*over_integrate=*/3)
-                                .apply2(*local_force - flux_divergence, *local_force - flux_divergence)[0][0];
-                        const auto h = XT::Grid::diameter(element);
-                        const auto C_P = 1. / (M_PIl * M_PIl); // Poincare constant (known for simplices/cubes)
-                        std::lock_guard<std::mutex> lock(eta_R_2_mutex);
-                        eta_R_2 += (C_P * h * h * L2_norm_2) / min_EV;
-                      },
-                      []() {});
+        walker.append(
+            []() {},
+            [&](const auto& element) {
+              auto local_df = diffusion.local_function();
+              local_df->bind(element);
+              auto local_force = this->force().local_function();
+              local_force->bind(element);
+              auto local_flux = flux_reconstruction.local_function();
+              local_flux->bind(element);
+              auto flux_divergence = XT::Functions::divergence(*local_flux);
+              flux_divergence.bind(element);
+              // approximate minimum eigenvalue of the diffusion over the element ...
+              double min_EV = std::numeric_limits<double>::max();
+              // ... which we do by evaluating at some quadrature points
+              for (auto&& quadrature_point :
+                   QuadratureRules<double, BaseType::d>::rule(element.geometry().type(), local_df->order() + 3)) {
+                auto diff = local_df->evaluate(quadrature_point.position());
+                auto eigen_solver =
+                    XT::LA::make_eigen_solver(diff,
+                                              {{"type", XT::LA::EigenSolverOptions<decltype(diff)>::types().at(0)},
+                                               {"assert_positive_eigenvalues", "1e-15"}});
+                min_EV = std::min(min_EV, eigen_solver.min_eigenvalues(1).at(0));
+              }
+              DUNE_THROW_IF(!(min_EV > 0.),
+                            Exceptions::integrand_error,
+                            "The minimum eigenvalue of a positiv definite matrix must not be negative!"
+                                << "\n\nmin_EV = " << min_EV);
+              auto L2_norm_2 = LocalElementIntegralBilinearForm<E>(LocalElementProductIntegrand<E>(),
+                                                                   /*over_integrate=*/3)
+                                   .apply2(*local_force - flux_divergence, *local_force - flux_divergence)[0][0];
+              const auto h = XT::Grid::diameter(element);
+              const auto C_P = 1. / (M_PIl * M_PIl); // Poincare constant (known for simplices/cubes)
+              std::lock_guard<std::mutex> lock(eta_R_2_mutex);
+              eta_R_2 += (C_P * h * h * L2_norm_2) / min_EV;
+            },
+            []() {});
         walker.walk(/*parallel=*/true);
         self.current_data_["norm"][norm_id] = std::sqrt(eta_R_2);
       } else if (norm_id == "eta_DF") {
@@ -207,9 +207,9 @@ protected:
         auto walker = XT::Grid::make_walker(current_space.grid_view());
         walker.append([]() {},
                       [&](const auto& element) {
-                        auto local_df = diffusion_factor().local_function();
+                        auto local_df = this->diffusion_factor().local_function();
                         local_df->bind(element);
-                        auto local_dt = diffusion_tensor().local_function();
+                        auto local_dt = this->diffusion_tensor().local_function();
                         local_dt->bind(element);
                         auto local_solution = solution.local_function();
                         local_solution->bind(element);
