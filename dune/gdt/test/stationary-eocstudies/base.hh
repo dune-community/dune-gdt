@@ -67,7 +67,6 @@ protected:
   using D = double;
   static const constexpr size_t d = G::dimension;
   using R = double;
-  using E = XT::Grid::extract_entity_t<GV>;
   using I = XT::Grid::extract_intersection_t<GV>;
   using DomainType = XT::Common::FieldVector<D, d>;
   using RangeType = XT::Common::FieldVector<D, m>;
@@ -79,6 +78,8 @@ protected:
   using O = OperatorInterface<M, GV, m>;
 
 public:
+  using E = XT::Grid::extract_entity_t<GV>;
+
   StationaryEocStudy(std::function<void(const DF&, const std::string&)> visualizer =
                          [](const auto& solution, const auto& prefix) {
                            if (DXTC_TEST_CONFIG_GET("setup.visualize", false))

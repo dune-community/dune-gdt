@@ -98,10 +98,12 @@ public:
          const XT::Common::ParameterType& boundary_treatment_parameter_type = {},
          const XT::Grid::IntersectionFilter<SGV>& filter = XT::Grid::ApplyOn::BoundaryIntersections<SGV>())
   {
-    boundary_treatments_by_custom_numerical_flux_.emplace_back(
-        new BoundaryTreatmentByCustomNumericalFluxOperatorType(numerical_boundary_treatment_flux,
-                                                               boundary_treatment_parameter_type),
-        filter.copy());
+    boundary_treatments_by_custom_numerical_flux_.emplace_back();
+    boundary_treatments_by_custom_numerical_flux_.back().first =
+        std::make_unique<BoundaryTreatmentByCustomNumericalFluxOperatorType>(numerical_boundary_treatment_flux,
+                                                                             boundary_treatment_parameter_type);
+    boundary_treatments_by_custom_numerical_flux_.back().second =
+        std::unique_ptr<XT::Grid::IntersectionFilter<SGV>>(filter.copy());
     return *this;
   }
 
@@ -109,10 +111,12 @@ public:
                    const XT::Common::ParameterType& extrapolation_parameter_type = {},
                    const XT::Grid::IntersectionFilter<SGV>& filter = XT::Grid::ApplyOn::BoundaryIntersections<SGV>())
   {
-    boundary_treatments_by_custom_extrapolation_.emplace_back(
-        new BoundaryTreatmentByCustomExtrapolationOperatorType(
+    boundary_treatments_by_custom_extrapolation_.emplace_back();
+    boundary_treatments_by_custom_extrapolation_.back().first =
+        std::make_unique<BoundaryTreatmentByCustomExtrapolationOperatorType>(
             *numerical_flux_, extrapolation, extrapolation_parameter_type),
-        filter.copy());
+    boundary_treatments_by_custom_extrapolation_.back().second =
+        std::unique_ptr<XT::Grid::IntersectionFilter<SGV>>(filter.copy());
     return *this;
   }
 
