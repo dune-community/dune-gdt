@@ -48,25 +48,21 @@ public:
   NumericalFluxInterface(const FluxType& flx, const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type + flx.parameter_type())
     , flux_(flx)
-    , x_dependent_(true)
   {}
 
   NumericalFluxInterface(FluxType*&& flx_ptr, const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type + flx_ptr->parameter_type())
     , flux_(flx_ptr)
-    , x_dependent_(true)
   {}
 
   NumericalFluxInterface(const FunctionType& func, const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type + func.parameter_type())
     , flux_(new FunctionWrapperType(func))
-    , x_dependent_(false)
   {}
 
   NumericalFluxInterface(FunctionType*&& func_ptr, const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type + func_ptr->parameter_type())
     , flux_(new FunctionWrapperType(func_ptr))
-    , x_dependent_(false)
   {}
 
 
@@ -79,7 +75,7 @@ public:
 
   virtual bool x_dependent() const
   {
-    return x_dependent_;
+    return flux_..access().x_dependent();
   }
 
   const FluxType& flux() const
