@@ -1,9 +1,9 @@
 __name = operators_oswald_interpolation__simplicial_2d_grids
 
-[OswaldInterpolationOperator.1.fulfills_l2_interpolation_estimate.ALU_2D_SIMPLEX_CONFORMING.results]
+[OswaldInterpolationOperator.0.fulfills_l2_interpolation_estimate.ALU_2D_SIMPLEX_CONFORMING.results]
 constant_from_L2_interpolation_estimate = 0.050925925925925944
 
-[OswaldInterpolationOperator.1.fulfills_h1_interpolation_estimate.ALU_2D_SIMPLEX_CONFORMING.results]
+[OswaldInterpolationOperator.0.fulfills_h1_interpolation_estimate.ALU_2D_SIMPLEX_CONFORMING.results]
 constant_from_H1_interpolation_estimate = 0.28888888888888886
 
 
@@ -14,9 +14,9 @@ constant_from_L2_interpolation_estimate = 0.050925925925925944
 constant_from_H1_interpolation_estimate = 0.28888888888888886
 
 
-[OswaldInterpolationOperator.1.fulfills_l2_interpolation_estimate.UG_2D.results]
+[OswaldInterpolationOperator.2.fulfills_l2_interpolation_estimate.UG_2D.results]
 constant_from_L2_interpolation_estimate = 0.050925925925925944
 
-[OswaldInterpolationOperator.1.fulfills_h1_interpolation_estimate.UG_2D.results]
+[OswaldInterpolationOperator.2.fulfills_h1_interpolation_estimate.UG_2D.results]
 constant_from_H1_interpolation_estimate = 0.28888888888888886
 

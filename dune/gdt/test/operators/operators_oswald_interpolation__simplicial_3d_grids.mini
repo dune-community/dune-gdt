@@ -1,9 +1,9 @@
-__name = operators_oswald_interpolation__cubic_3d_grids
+__name = operators_oswald_interpolation__simplicial_3d_grids
 
-[OswaldInterpolationOperator.1.fulfills_l2_interpolation_estimate.ALU_3D_SIMPLEX_CONFORMING.results]
+[OswaldInterpolationOperator.0.fulfills_l2_interpolation_estimate.ALU_3D_SIMPLEX_CONFORMING.results]
 constant_from_L2_interpolation_estimate = 0.013912980648346418
 
-[OswaldInterpolationOperator.1.fulfills_h1_interpolation_estimate.ALU_3D_SIMPLEX_CONFORMING.results]
+[OswaldInterpolationOperator.0.fulfills_h1_interpolation_estimate.ALU_3D_SIMPLEX_CONFORMING.results]
 constant_from_H1_interpolation_estimate = 0.12521682583511781
 
 
@@ -14,9 +14,9 @@ constant_from_L2_interpolation_estimate = 0.013912980648346418
 constant_from_H1_interpolation_estimate = 0.12521682583511781
 
 
-[OswaldInterpolationOperator.1.fulfills_l2_interpolation_estimate.UG_3D.results]
+[OswaldInterpolationOperator.2.fulfills_l2_interpolation_estimate.UG_3D.results]
 constant_from_L2_interpolation_estimate = 0.01391298064834642
 
-[OswaldInterpolationOperator.1.fulfills_h1_interpolation_estimate.UG_3D.results]
+[OswaldInterpolationOperator.2.fulfills_h1_interpolation_estimate.UG_3D.results]
 constant_from_H1_interpolation_estimate = 0.12521682583511781
 
