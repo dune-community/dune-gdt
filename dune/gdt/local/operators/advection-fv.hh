@@ -57,8 +57,8 @@ public:
   using typename BaseType::LocalInsideRangeType;
   using typename BaseType::LocalOutsideRangeType;
   using typename BaseType::SourceType;
-
-  using NumericalFluxType = NumericalFluxInterface<d, m, RR>;
+  using NumericalFluxType = NumericalFluxInterface<I, d, m, RR>;
+  using LocalIntersectionCoords = typename NumericalFluxType::LocalIntersectionCoords;
 
   LocalAdvectionFvCouplingOperator(const NumericalFluxType& numerical_flux)
     : BaseType(numerical_flux.parameter_type())
@@ -91,7 +91,9 @@ public:
     const auto u = source.local_discrete_function(inside_element);
     const auto v = source.local_discrete_function(outside_element);
     const auto normal = intersection.centerUnitOuterNormal();
-    const auto g = numerical_flux_->apply(u->dofs(), v->dofs(), normal, param);
+    if (numerical_flux_->x_dependent())
+      x_in_intersection_coords_ = intersection.geometry().local(intersection.geometry().center());
+    const auto g = numerical_flux_->apply(intersection, x_in_intersection_coords_, u->dofs(), v->dofs(), normal, param);
     const auto h_intersection = intersection.geometry().volume();
     const auto h_inside_element = inside_element.geometry().volume();
     const auto h_outside_element = outside_element.geometry().volume();
@@ -103,6 +105,7 @@ public:
 
 private:
   std::unique_ptr<NumericalFluxType> numerical_flux_;
+  mutable LocalIntersectionCoords x_in_intersection_coords_;
 }; // class LocalAdvectionFvCouplingOperator
 
 
@@ -122,8 +125,8 @@ public:
 
   using StateDomainType = FieldVector<typename SGV::ctype, SGV::dimension>;
   using StateDofsType = ConstLocalDofVector<SV, SGV>;
-  using StateRangeType = typename XT::Functions::RangeTypeSelector<SF, m, 1>::type;
-  using LambdaType = std::function<StateRangeType(
+  using StateType = typename XT::Functions::RangeTypeSelector<SF, m, 1>::type;
+  using LambdaType = std::function<StateType(
       const StateDofsType& /*u*/, const StateDomainType& /*n*/, const XT::Common::Parameter& /*param*/)>;
 
   LocalAdvectionFvBoundaryTreatmentByCustomNumericalFluxOperator(
@@ -182,16 +185,16 @@ public:
   using typename BaseType::SourceType;
 
   using D = typename IntersectionType::ctype;
-  using NumericalFluxType = NumericalFluxInterface<d, m, RF>;
+  using NumericalFluxType = NumericalFluxInterface<I, d, m, RF>;
+  using LocalIntersectionCoords = typename NumericalFluxType::LocalIntersectionCoords;
   using FluxType = typename NumericalFluxType::FluxType;
   using StateDofsType = ConstLocalDofVector<SV, SGV>;
-  using StateRangeType = typename XT::Functions::RangeTypeSelector<RF, m, 1>::type;
-  using LambdaType =
-      std::function<StateRangeType(const IntersectionType& /*intersection*/,
-                                   const FieldVector<D, d - 1>& /*xx_in_reference_intersection_coordinates*/,
-                                   const FluxType& /*flux*/,
-                                   const StateDofsType& /*u*/,
-                                   const XT::Common::Parameter& /*param*/)>;
+  using StateType = typename XT::Functions::RangeTypeSelector<RF, m, 1>::type;
+  using LambdaType = std::function<StateType(const IntersectionType& /*intersection*/,
+                                             const FieldVector<D, d - 1>& /*xx_in_reference_intersection_coordinates*/,
+                                             const FluxType& /*flux*/,
+                                             const StateDofsType& /*u*/,
+                                             const XT::Common::Parameter& /*param*/)>;
 
   LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator(
       const NumericalFluxType& numerical_flux,
@@ -231,7 +234,9 @@ public:
                                 u->dofs(),
                                 param);
     const auto normal = intersection.centerUnitOuterNormal();
-    const auto g = numerical_flux_->apply(u->dofs(), v, normal, param);
+    if (numerical_flux_->x_dependent())
+      x_in_intersection_coords_ = intersection.geometry().local(intersection.geometry().center());
+    const auto g = numerical_flux_->apply(intersection, x_in_intersection_coords_, u->dofs(), v, normal, param);
     const auto h_intersection = intersection.geometry().volume();
     const auto h_element = element.geometry().volume();
     for (size_t ii = 0; ii < m; ++ii)
@@ -241,6 +246,7 @@ public:
 private:
   std::unique_ptr<NumericalFluxType> numerical_flux_;
   const LambdaType extrapolate_;
+  mutable LocalIntersectionCoords x_in_intersection_coords_;
 }; // class LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator
 
 

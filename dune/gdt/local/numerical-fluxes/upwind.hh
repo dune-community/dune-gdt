@@ -17,30 +17,36 @@ namespace Dune {
 namespace GDT {
 
 
-template <size_t d, size_t m = 1, class R = double>
-class NumericalUpwindFlux : public internal::ThisNumericalFluxIsNotAvailableForTheseDimensions<d, m, R>
+template <class I, size_t d, size_t m = 1, class R = double>
+class NumericalUpwindFlux : public internal::ThisNumericalFluxIsNotAvailableForTheseDimensions<I, d, m, R>
 {
 public:
   template <class... Args>
   explicit NumericalUpwindFlux(Args&&... /*args*/)
-    : internal::ThisNumericalFluxIsNotAvailableForTheseDimensions<d, m, R>()
+    : internal::ThisNumericalFluxIsNotAvailableForTheseDimensions<I, d, m, R>()
   {}
 };
 
-template <size_t d, class R>
-class NumericalUpwindFlux<d, 1, R> : public NumericalFluxInterface<d, 1, R>
+template <class I, size_t d, class R>
+class NumericalUpwindFlux<I, d, 1, R> : public NumericalFluxInterface<I, d, 1, R>
 {
   static const constexpr size_t m = 1;
-  using ThisType = NumericalUpwindFlux<d, m, R>;
-  using BaseType = NumericalFluxInterface<d, m, R>;
+  using ThisType = NumericalUpwindFlux;
+  using BaseType = NumericalFluxInterface<I, d, m, R>;
 
 public:
   using typename BaseType::FluxType;
+  using typename BaseType::FunctionType;
+  using typename BaseType::LocalIntersectionCoords;
   using typename BaseType::PhysicalDomainType;
-  using typename BaseType::StateRangeType;
+  using typename BaseType::StateType;
 
   NumericalUpwindFlux(const FluxType& flx)
     : BaseType(flx)
+  {}
+
+  NumericalUpwindFlux(const FunctionType& func)
+    : BaseType(func)
   {}
 
   NumericalUpwindFlux(const ThisType& other) = default;
@@ -52,24 +58,40 @@ public:
 
   using BaseType::apply;
 
-  StateRangeType apply(const StateRangeType& u,
-                       const StateRangeType& v,
-                       const PhysicalDomainType& n,
-                       const XT::Common::Parameter& param = {}) const override final
+  StateType apply(const I& intersection,
+                  const LocalIntersectionCoords& x,
+                  const StateType& u,
+                  const StateType& v,
+                  const PhysicalDomainType& n,
+                  const XT::Common::Parameter& param = {}) const override final
   {
-    const auto df = this->flux().jacobian((u + v) / 2., param);
+    const auto local_flux = this->flux().local_function();
+    local_flux->bind(intersection.inside());
+    this->compute_entity_coords(intersection, x);
+    const auto df = local_flux->jacobian(x_in_inside_coords_, (u + v) / 2., param);
     if ((n * df) > 0)
-      return this->flux().evaluate(u, param) * n;
+      return local_flux->evaluate(x_in_inside_coords_, u, param) * n;
     else
-      return this->flux().evaluate(v, param) * n;
+      return local_flux->evaluate(x_in_outside_coords_, v, param) * n;
   }
+
+private:
+  using BaseType::x_in_inside_coords_;
+  using BaseType::x_in_outside_coords_;
 }; // class NumericalUpwindFlux
 
 
-template <size_t d, size_t m, class R>
-NumericalUpwindFlux<d, m, R> make_numerical_upwind_flux(const XT::Functions::FunctionInterface<m, d, m, R>& flux)
+template <class I, size_t d, size_t m, class R>
+NumericalUpwindFlux<I, d, m, R>
+make_numerical_upwind_flux(const XT::Functions::FluxFunctionInterface<I, m, d, m, R>& flux)
 {
-  return NumericalUpwindFlux<d, m, R>(flux);
+  return NumericalUpwindFlux<I, d, m, R>(flux);
+}
+
+template <class I, size_t d, size_t m, class R>
+NumericalUpwindFlux<I, d, m, R> make_numerical_upwind_flux(const XT::Functions::FunctionInterface<m, d, m, R>& flux)
+{
+  return NumericalUpwindFlux<I, d, m, R>(flux);
 }
 
 

@@ -24,37 +24,73 @@ namespace Dune {
 namespace GDT {
 
 
-template <size_t d, size_t m = 1, class R = double>
-class NumericalVijayasundaramFlux : public NumericalFluxInterface<d, m, R>
+template <class I, size_t d, size_t m = 1, class R = double>
+class NumericalVijayasundaramFlux : public NumericalFluxInterface<I, d, m, R>
 {
-  using ThisType = NumericalVijayasundaramFlux<d, m, R>;
-  using BaseType = NumericalFluxInterface<d, m, R>;
+  using ThisType = NumericalVijayasundaramFlux;
+  using BaseType = NumericalFluxInterface<I, d, m, R>;
 
 public:
+  using typename BaseType::E;
   using typename BaseType::FluxType;
+  using typename BaseType::FunctionType;
+  using typename BaseType::LocalIntersectionCoords;
   using typename BaseType::PhysicalDomainType;
-  using typename BaseType::StateRangeType;
+  using typename BaseType::StateType;
 
-  using FluxEigenDecompositionLambdaType = std::function<std::tuple<
+  using FluxEigenDecompositionLambdaType =
+      std::function<std::tuple<std::vector<XT::Common::real_t<R>>,
+                               XT::Common::FieldMatrix<XT::Common::real_t<R>, m, m>,
+                               XT::Common::FieldMatrix<XT::Common::real_t<R>, m, m>>(
+          const FluxType&,
+          const E&,
+          const PhysicalDomainType&,
+          const FieldVector<R, m>&,
+          const FieldVector<double, d>&,
+          const XT::Common::Parameter& param)>;
+
+  using GlobalFluxEigenDecompositionLambdaType = std::function<std::tuple<
       std::vector<XT::Common::real_t<R>>,
       XT::Common::FieldMatrix<XT::Common::real_t<R>, m, m>,
       XT::Common::FieldMatrix<XT::Common::real_t<R>, m, m>>(
       const FluxType&, const FieldVector<R, m>&, const FieldVector<double, d>&, const XT::Common::Parameter& param)>;
 
-  NumericalVijayasundaramFlux(const FluxType& flx)
-    : BaseType(flx)
-    , flux_eigen_decomposition_([](const auto& f, const auto& w, const auto& n, const auto& param) {
+  static FluxEigenDecompositionLambdaType default_flux_eigen_decomposition()
+  {
+    return [](const FluxType& f,
+              const E& e,
+              const PhysicalDomainType& x,
+              const StateType& w,
+              const PhysicalDomainType& n,
+              const XT::Common::Parameter& param) {
       // evaluate flux jacobian, compute P matrix [DF2016, p. 404, (8.17)]
-      const auto df = f.jacobian(w, param);
+      const auto local_flux = f.local_function();
+      local_flux->bind(e);
+      const auto df = local_flux->jacobian(x, w, param);
       const auto P = df * n;
       auto eigensolver = XT::LA::make_eigen_solver(
           P, {{"type", XT::LA::eigen_solver_types(P)[0]}, {"assert_real_eigendecomposition", "1e-10"}});
       return std::make_tuple(
           eigensolver.real_eigenvalues(), eigensolver.real_eigenvectors(), eigensolver.real_eigenvectors_inverse());
-    })
+    };
+  }
+
+  NumericalVijayasundaramFlux(const FluxType& flx)
+    : BaseType(flx)
+    , flux_eigen_decomposition_(default_flux_eigen_decomposition())
+  {}
+
+  NumericalVijayasundaramFlux(const FunctionType& flx)
+    : BaseType(flx)
+    , flux_eigen_decomposition_(default_flux_eigen_decomposition())
   {}
 
   NumericalVijayasundaramFlux(const FluxType& flx, FluxEigenDecompositionLambdaType flux_eigen_decomposition)
+    : BaseType(flx)
+    , flux_eigen_decomposition_(flux_eigen_decomposition)
+  {}
+
+  NumericalVijayasundaramFlux(const FunctionType& flx, FluxEigenDecompositionLambdaType flux_eigen_decomposition)
     : BaseType(flx)
     , flux_eigen_decomposition_(flux_eigen_decomposition)
   {}
@@ -66,13 +102,17 @@ public:
 
   using BaseType::apply;
 
-  StateRangeType apply(const StateRangeType& u,
-                       const StateRangeType& v,
-                       const PhysicalDomainType& n,
-                       const XT::Common::Parameter& param = {}) const override final
+  StateType apply(const I& intersection,
+                  const LocalIntersectionCoords& x,
+                  const StateType& u,
+                  const StateType& v,
+                  const PhysicalDomainType& n,
+                  const XT::Common::Parameter& param = {}) const override final
   {
     // compute decomposition
-    const auto eigendecomposition = flux_eigen_decomposition_(this->flux(), 0.5 * (u + v), n, param);
+    this->compute_entity_coords(intersection, x);
+    const auto eigendecomposition =
+        flux_eigen_decomposition_(this->flux(), intersection.inside(), x_in_inside_coords_, 0.5 * (u + v), n, param);
     const auto& evs = std::get<0>(eigendecomposition);
     const auto& T = std::get<1>(eigendecomposition);
     const auto& T_inv = std::get<2>(eigendecomposition);
@@ -91,14 +131,22 @@ public:
 
 private:
   const FluxEigenDecompositionLambdaType flux_eigen_decomposition_;
+  using BaseType::x_in_inside_coords_;
 }; // class NumericalVijayasundaramFlux
 
 
-template <size_t d, size_t m, class R, class... Args>
-NumericalVijayasundaramFlux<d, m, R>
+template <class I, size_t d, size_t m, class R, class... Args>
+NumericalVijayasundaramFlux<I, d, m, R>
+make_numerical_vijayasundaram_flux(const XT::Functions::FluxFunctionInterface<I, m, d, m, R>& flux, Args&&... args)
+{
+  return NumericalVijayasundaramFlux<I, d, m, R>(flux, std::forward<Args>(args)...);
+}
+
+template <class I, size_t d, size_t m, class R, class... Args>
+NumericalVijayasundaramFlux<I, d, m, R>
 make_numerical_vijayasundaram_flux(const XT::Functions::FunctionInterface<m, d, m, R>& flux, Args&&... args)
 {
-  return NumericalVijayasundaramFlux<d, m, R>(flux, std::forward<Args>(args)...);
+  return NumericalVijayasundaramFlux<I, d, m, R>(flux, std::forward<Args>(args)...);
 }
 
 
