@@ -75,7 +75,7 @@ public:
 
   virtual bool x_dependent() const
   {
-    return flux_..access().x_dependent();
+    return flux_.access().x_dependent();
   }
 
   const FluxType& flux() const
@@ -150,7 +150,6 @@ public:
 
 private:
   const XT::Common::ConstStorageProvider<FluxType> flux_;
-  const bool x_dependent_;
   mutable StateType u_;
   mutable StateType v_;
 
@@ -171,6 +170,7 @@ class ThisNumericalFluxIsNotAvailableForTheseDimensions : public NumericalFluxIn
 
 public:
   using typename BaseType::I;
+  using typename BaseType::LocalIntersectionCoords;
   using typename BaseType::PhysicalDomainType;
   using typename BaseType::StateType;
 
@@ -196,7 +196,7 @@ public:
   using BaseType::apply;
 
   StateType apply(const I& /*intersection*/,
-                  const PhysicalDomainType /*x_in_local_intersection_coords*/,
+                  const LocalIntersectionCoords& /*x_in_local_intersection_coords*/,
                   const StateType& /*u*/,
                   const StateType& /*v*/,
                   const PhysicalDomainType& /*n*/,

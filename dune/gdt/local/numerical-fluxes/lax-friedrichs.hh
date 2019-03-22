@@ -72,7 +72,7 @@ public:
     this->compute_entity_coords(intersection, x);
     const auto lambda = 1.
                         / std::max(local_flux->jacobian(x_in_inside_coords_, u, param).infinity_norm(),
-                                   local_flux->jacobian(x_in_outside_coords_, u, param).infinity_norm());
+                                   local_flux->jacobian(x_in_outside_coords_, v, param).infinity_norm());
     return 0.5
                * ((local_flux->evaluate(x_in_inside_coords_, u, param)
                    + local_flux->evaluate(x_in_outside_coords_, v, param))
