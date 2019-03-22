@@ -3,7 +3,7 @@ __name = ESV2007Table1Test_columns_1_to_5
 [ESV2007Table1Test.columns_1_to_5.setup]
 force_order = 4
 over_integrate = 0
-num_refinements = 2
+num_refinements = 1
 num_additional_refinements_for_reference = 0
 reference_solution_order = 4
 use_tbb = false
