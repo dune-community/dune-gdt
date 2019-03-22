@@ -1,16 +1,16 @@
 __name = operators_oswald_interpolation__cubic_1d_grids
 
-[OswaldInterpolationOperator.0.fulfills_l2_interpolation_estimate.ONED_1D.results]
+[OswaldInterpolationOperator.1.fulfills_l2_interpolation_estimate.ONED_1D.results]
 constant_from_L2_interpolation_estimate = 0.08333333333333337
 
-[OswaldInterpolationOperator.0.fulfills_h1_interpolation_estimate.ONED_1D.results]
+[OswaldInterpolationOperator.1.fulfills_h1_interpolation_estimate.ONED_1D.results]
 constant_from_H1_interpolation_estimate = 0.75
 
 
-[OswaldInterpolationOperator.0.fulfills_l2_interpolation_estimate.YASP_1D_EQUIDISTANT_OFFSET.results]
+[OswaldInterpolationOperator.1.fulfills_l2_interpolation_estimate.YASP_1D_EQUIDISTANT_OFFSET.results]
 constant_from_L2_interpolation_estimate = 0.08333333333333337
 
-[OswaldInterpolationOperator.0.fulfills_h1_interpolation_estimate.YASP_1D_EQUIDISTANT_OFFSET.results]
+[OswaldInterpolationOperator.1.fulfills_h1_interpolation_estimate.YASP_1D_EQUIDISTANT_OFFSET.results]
 constant_from_H1_interpolation_estimate = 0.75
 
 

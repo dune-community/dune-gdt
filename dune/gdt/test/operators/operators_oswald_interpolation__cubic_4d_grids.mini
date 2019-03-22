@@ -1,8 +1,8 @@
 __name = operators_oswald_interpolation__cubic_4d_grids
 
-[OswaldInterpolationOperator.0.fulfills_l2_interpolation_estimate.YASP_4D_EQUIDISTANT_OFFSET.results]
+[OswaldInterpolationOperator.1.fulfills_l2_interpolation_estimate.YASP_4D_EQUIDISTANT_OFFSET.results]
 constant_from_L2_interpolation_estimate = 0.0060140653040585967
 
-[OswaldInterpolationOperator.0.fulfills_h1_interpolation_estimate.YASP_4D_EQUIDISTANT_OFFSET.results]
+[OswaldInterpolationOperator.1.fulfills_h1_interpolation_estimate.YASP_4D_EQUIDISTANT_OFFSET.results]
 constant_from_H1_interpolation_estimate = 0.16237976320958217
 
