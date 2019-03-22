@@ -65,14 +65,14 @@ public:
   using BaseType::apply;
 
   StateType apply(const I& intersection,
-                  const LocalIntersectionCoords& x,
+                  const LocalIntersectionCoords& x_in_intersection_coords,
                   const StateType& u,
                   const StateType& v,
                   const PhysicalDomainType& n,
                   const XT::Common::Parameter& param = {}) const override final
   {
     const auto local_flux = this->flux().local_function();
-    this->compute_entity_coords(intersection, x);
+    this->compute_entity_coords(intersection, x_in_intersection_coords);
     auto integrate_f =
         [&](const auto& e, const auto& x, const auto& s, const std::function<double(const R&, const R&)>& min_max) {
           local_flux->bind(e);
