@@ -22,21 +22,34 @@ namespace GDT {
 /**
  * \brief Implementation of NumericalFluxInterface for a given lambda expression.
  */
-template <size_t d, size_t m = 1, class R = double>
-class GenericNumericalFlux : public NumericalFluxInterface<d, m, R>
+template <class I, size_t d, size_t m = 1, class R = double>
+class GenericNumericalFlux : public NumericalFluxInterface<I, d, m, R>
 {
-  using ThisType = GenericNumericalFlux<d, m, R>;
-  using BaseType = NumericalFluxInterface<d, m, R>;
+  using ThisType = GenericNumericalFlux;
+  using BaseType = NumericalFluxInterface<I, d, m, R>;
 
 public:
   using typename BaseType::FluxType;
+  using typename BaseType::FunctionType;
+  using typename BaseType::LocalIntersectionCoords;
   using typename BaseType::PhysicalDomainType;
-  using typename BaseType::StateRangeType;
+  using typename BaseType::StateType;
 
-  using GenericFunctionType = std::function<StateRangeType(
-      const StateRangeType&, const StateRangeType&, const PhysicalDomainType&, const XT::Common::Parameter&)>;
+  using GenericFunctionType = std::function<StateType(const Intersection&,
+                                                      const LocalIntersectionCoords&,
+                                                      const StateType&,
+                                                      const StateType&,
+                                                      const PhysicalDomainType&,
+                                                      const XT::Common::Parameter&)>;
 
   GenericNumericalFlux(const FluxType& flx, GenericFunctionType func, const XT::Common::ParameterType& param_type = {})
+    : BaseType(flx, param_type)
+    , numerical_flux_(func)
+  {}
+
+  GenericNumericalFlux(const FunctionType& flx,
+                       GenericFunctionType func,
+                       const XT::Common::ParameterType& param_type = {})
     : BaseType(flx, param_type)
     , numerical_flux_(func)
   {}
@@ -48,12 +61,14 @@ public:
 
   using BaseType::apply;
 
-  StateRangeType apply(const StateRangeType& u,
-                       const StateRangeType& v,
-                       const PhysicalDomainType& n,
-                       const XT::Common::Parameter& param = {}) const override final
+  StateType apply(const I& intersection,
+                  const LocalIntersectionCoords& x,
+                  const StateType& u,
+                  const StateType& v,
+                  const PhysicalDomainType& n,
+                  const XT::Common::Parameter& param = {}) const override final
   {
-    return numerical_flux_(u, v, n, this->parse_parameter(param));
+    return numerical_flux_(intersection, x, u, v, n, this->parse_parameter(param));
   }
 
 private:
@@ -61,13 +76,22 @@ private:
 }; // class GenericNumericalFlux
 
 
-template <size_t d, size_t m, class R>
-GenericNumericalFlux<d, m, R>
-make_generic_numerical_flux(const XT::Functions::FunctionInterface<m, d, m, R>& flux,
-                            typename GenericNumericalFlux<d, m, R>::GenericFunctionType func,
+template <class I, size_t d, size_t m, class R>
+GenericNumericalFlux<I, d, m, R>
+make_generic_numerical_flux(const XT::Functions::FluxFunctionInterface<I, m, d, m, R>& flux,
+                            typename GenericNumericalFlux<I, d, m, R>::GenericFunctionType func,
                             const XT::Common::ParameterType& param_type = {})
 {
-  return GenericNumericalFlux<d, m, R>(flux, func, param_type);
+  return GenericNumericalFlux<I, d, m, R>(flux, func, param_type);
+}
+
+template <class I, size_t d, size_t m, class R>
+GenericNumericalFlux<I, d, m, R>
+make_generic_numerical_flux(const XT::Functions::FunctionInterface<m, d, m, R>& flux,
+                            typename GenericNumericalFlux<I, d, m, R>::GenericFunctionType func,
+                            const XT::Common::ParameterType& param_type = {})
+{
+  return GenericNumericalFlux<I, d, m, R>(flux, func, param_type);
 }
 
 
