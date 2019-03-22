@@ -1,3 +1,5 @@
+__name = InviscidCompressibleFlow1dEulerExplicitFvTest
+
 [InviscidCompressibleFlow1dEulerExplicitFvTest.periodic_boundaries.results]
 target.h                        = [1.25e-01 6.25e-02 3.12e-02]
 norm.L_infty_L_2                = [7.74e-01 4.93e-01 3.01e-01]

@@ -1,3 +1,5 @@
+__name = operators_oswald_interpolation__cubic_1d_grids
+
 [OswaldInterpolationOperator.0.fulfills_l2_interpolation_estimate.ONED_1D.results]
 constant_from_L2_interpolation_estimate = 0.08333333333333337
 

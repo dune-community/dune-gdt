@@ -1,3 +1,5 @@
+__name = operators_oswald_interpolation__cubic_3d_grids
+
 [OswaldInterpolationOperator.0.fulfills_l2_interpolation_estimate.ALU_3D_SIMPLEX_CONFORMING.results]
 constant_from_L2_interpolation_estimate = 0.013912980648346418
 

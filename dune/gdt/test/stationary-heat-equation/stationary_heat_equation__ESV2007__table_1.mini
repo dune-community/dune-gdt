@@ -1,3 +1,5 @@
+__name = ESV2007Table1Test_columns_1_to_5
+
 [ESV2007Table1Test.columns_1_to_5.setup]
 force_order = 4
 over_integrate = 0
