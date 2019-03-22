@@ -151,7 +151,8 @@ protected:
     return XT::Common::find_largest_by_bisection(
         /*min_dt=*/10 * std::numeric_limits<double>::epsilon(),
         /*max_dt=*/this->T_end_,
-        /*success=*/[&](const auto& dt_to_test) {
+        /*success=*/
+        [&](const auto& dt_to_test) {
           try {
             auto u = u_0.dofs().vector();
             const double T_end = max_steps_to_try * dt_to_test;
@@ -167,7 +168,8 @@ protected:
           } catch (...) {
             return false;
           }
-        });
+        },
+        1e-2);
   } // ... estimate_fixed_explicit_dt(...)
 
   virtual double estimate_fixed_explicit_dt_to_T_end(const S& space,
@@ -181,7 +183,8 @@ protected:
     return XT::Common::find_largest_by_bisection(
         /*min_dt=*/min_dt,
         /*max_dt=*/T_end,
-        /*success=*/[&](const auto& dt_to_test) {
+        /*success=*/
+        [&](const auto& dt_to_test) {
           try {
             auto u = u_0.dofs().vector();
             double time = 0.;
@@ -196,7 +199,8 @@ protected:
           } catch (...) {
             return false;
           }
-        });
+        },
+        1e-2);
   } // ... estimate_fixed_explicit_dt(...)
 
   std::string space_type_;
