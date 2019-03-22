@@ -1,0 +1,27 @@
+# kate: indent-width 2;
+
+resources:
+  repositories:
+    - repository: templates
+      type: github
+      name: dune-community/dune-xt-ci
+      endpoint: dune-xt-ci
+
+jobs:
+- template: azure-job-template.yml@templates
+  parameters:
+    dockerimage: debian-unstable_gcc_full
+    jobname: 'unstable_gcc'
+    module: 'dune-gdt'
+
+- template: azure-job-template.yml@templates
+  parameters:
+    dockerimage: debian_gcc_full
+    jobname: 'gcc'
+    module: 'dune-gdt'
+
+- template: azure-job-template.yml@templates
+  parameters:
+    dockerimage: debian_clang_full
+    jobname: 'clang'
+    module: 'dune-gdt'
