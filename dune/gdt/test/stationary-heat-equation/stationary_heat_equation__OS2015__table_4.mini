@@ -1,5 +1,5 @@
 [OS015Table4Test.columns_1_and_3_to_5.setup]
-num_refinements = 3
+num_refinements = 2
 num_additional_refinements_for_reference = 0
 use_tbb = true
 visualize = true

@@ -130,7 +130,10 @@ protected:
 
   BurgersExplicitTest()
     : BaseType("explicit/fixed")
-  {}
+  {
+    this->num_refinements_ = 1;
+    this->num_additional_refinements_for_reference_ = 2;
+  }
 
   virtual void compute_reference_solution() override
   {
