@@ -193,7 +193,12 @@ public:
     , dofs_(space_.mapper(), VectorStorage::access())
   {}
 
-  DiscreteFunction(const ThisType&) = default;
+  DiscreteFunction(const ThisType& other)
+    : VectorStorage(new VectorType(other.access()))
+    , BaseType(other.space(), VectorStorage::access(), other.name())
+    , dofs_(other.space().mapper(), VectorStorage::access())
+  {}
+
   DiscreteFunction(ThisType&&) = default;
 
   ThisType& operator=(const ThisType&) = delete;

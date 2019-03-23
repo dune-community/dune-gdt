@@ -57,6 +57,7 @@ public:
   using typename BaseType::LocalInsideRangeType;
   using typename BaseType::LocalOutsideRangeType;
   using typename BaseType::SourceType;
+  using StateType = typename XT::Functions::RangeTypeSelector<SR, m, 1>::type;
   using NumericalFluxType = NumericalFluxInterface<I, d, m, RR>;
   using LocalIntersectionCoords = typename NumericalFluxType::LocalIntersectionCoords;
 
@@ -81,33 +82,72 @@ public:
              LocalOutsideRangeType& local_range_outside,
              const XT::Common::Parameter& param = {}) const override final
   {
-    DUNE_THROW_IF((source.space().type() != SpaceType::finite_volume)
-                      || (local_range_inside.space().type() != SpaceType::finite_volume)
+    DUNE_THROW_IF((local_range_inside.space().type() != SpaceType::finite_volume)
                       || (local_range_outside.space().type() != SpaceType::finite_volume),
                   Exceptions::operator_error,
                   "Use LocalAdvectionDgCouplingOperator instead!");
-    const auto& inside_element = local_range_inside.element();
-    const auto& outside_element = local_range_outside.element();
-    const auto u = source.local_discrete_function(inside_element);
-    const auto v = source.local_discrete_function(outside_element);
+    evaluate_inside_state(source, intersection, u_);
+    evaluate_outside_state(source, intersection, v_);
     const auto normal = intersection.centerUnitOuterNormal();
     numerical_flux_->bind(intersection);
     if (numerical_flux_->x_dependent())
       x_in_intersection_coords_ = intersection.geometry().local(intersection.geometry().center());
-    const auto g = numerical_flux_->apply(x_in_intersection_coords_, u->dofs(), v->dofs(), normal, param);
+    const auto g = numerical_flux_->apply(x_in_intersection_coords_, u_, v_, normal, param);
     const auto h_intersection = intersection.geometry().volume();
-    const auto h_inside_element = inside_element.geometry().volume();
-    const auto h_outside_element = outside_element.geometry().volume();
+    const auto h_inside_element = intersection.inside().geometry().volume();
+    const auto h_outside_element = intersection.outside().geometry().volume();
     for (size_t ii = 0; ii < m; ++ii) {
       local_range_inside.dofs()[ii] += (g[ii] * h_intersection) / h_inside_element;
       local_range_outside.dofs()[ii] -= (g[ii] * h_intersection) / h_outside_element;
     }
   } // ... apply(...)
 
+  static void evaluate_inside_state(const SourceType& source, const IntersectionType& intersection, StateType& u)
+  {
+    const auto local_source = source.local_discrete_function(intersection.inside());
+    if (source.space().type() != SpaceType::finite_volume) {
+      mutex_.lock();
+      u = local_source->evaluate(intersection.geometryInInside().center());
+      mutex_.unlock();
+    } else {
+      for (size_t ii = 0; ii < m; ++ii)
+        u[ii] = local_source->dofs()[ii];
+    }
+  }
+
+  static void evaluate_outside_state(const SourceType& source, const IntersectionType& intersection, StateType& v)
+  {
+    const auto local_source = source.local_discrete_function(intersection.outside());
+    if (source.space().type() != SpaceType::finite_volume) {
+      mutex_.lock();
+      v = local_source->evaluate(intersection.geometryInOutside().center());
+      mutex_.unlock();
+    } else {
+      for (size_t ii = 0; ii < m; ++ii)
+        v[ii] = local_source->dofs()[ii];
+    }
+  }
+
 private:
   std::unique_ptr<NumericalFluxType> numerical_flux_;
   mutable LocalIntersectionCoords x_in_intersection_coords_;
+  mutable StateType u_;
+  mutable StateType v_;
+  static std::mutex mutex_;
 }; // class LocalAdvectionFvCouplingOperator
+
+template <class I,
+          class SV,
+          class SGV,
+          size_t m,
+          class SR,
+          class RR,
+          class IRGV,
+          class IRV,
+          class ORR,
+          class ORGV,
+          class ORV>
+std::mutex LocalAdvectionFvCouplingOperator<I, SV, SGV, m, SR, RR, IRGV, IRV, ORR, ORGV, ORV>::mutex_;
 
 
 template <class I, class SV, class SGV, size_t m = 1, class SF = double, class RF = SF, class RGV = SGV, class RV = SV>
@@ -116,6 +156,7 @@ class LocalAdvectionFvBoundaryTreatmentByCustomNumericalFluxOperator
 {
   using ThisType = LocalAdvectionFvBoundaryTreatmentByCustomNumericalFluxOperator<I, SV, SGV, m, SF, RF, RGV, RV>;
   using BaseType = LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>;
+  using CouplingOperatorType = LocalAdvectionFvCouplingOperator<I, SV, SGV, m, SF, RF, RGV, RV>;
 
 public:
   using BaseType::d;
@@ -125,10 +166,9 @@ public:
   using typename BaseType::SourceType;
 
   using StateDomainType = FieldVector<typename SGV::ctype, SGV::dimension>;
-  using StateDofsType = ConstLocalDofVector<SV, SGV>;
-  using StateType = typename XT::Functions::RangeTypeSelector<SF, m, 1>::type;
+  using StateType = typename CouplingOperatorType::StateType;
   using LambdaType = std::function<StateType(
-      const StateDofsType& /*u*/, const StateDomainType& /*n*/, const XT::Common::Parameter& /*param*/)>;
+      const StateType& /*u*/, const StateDomainType& /*n*/, const XT::Common::Parameter& /*param*/)>;
 
   LocalAdvectionFvBoundaryTreatmentByCustomNumericalFluxOperator(
       LambdaType numerical_boundary_flux_lambda, const XT::Common::ParameterType& boundary_treatment_param_type = {})
@@ -157,9 +197,9 @@ public:
                   Exceptions::operator_error,
                   "Use LocalAdvectionDgBoundaryTreatmentByCustomNumericalFluxOperator instead!");
     const auto& element = local_range_inside.element();
-    const auto u = source.local_discrete_function(element);
+    CouplingOperatorType::evaluate_inside_state(source, intersection, u_);
     const auto normal = intersection.centerUnitOuterNormal();
-    const auto g = numerical_boundary_flux_(u->dofs(), normal, param);
+    const auto g = numerical_boundary_flux_(u_, normal, param);
     const auto h_intersection = intersection.geometry().volume();
     const auto h_element = element.geometry().volume();
     for (size_t ii = 0; ii < m; ++ii)
@@ -168,6 +208,7 @@ public:
 
 private:
   const LambdaType numerical_boundary_flux_;
+  mutable StateType u_;
 }; // class LocalAdvectionFvBoundaryTreatmentByCustomNumericalFluxOperator
 
 
@@ -177,6 +218,7 @@ class LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator
 {
   using ThisType = LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator<I, SV, SGV, m, SF, RF, RGV, RV>;
   using BaseType = LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>;
+  using CouplingOperatorType = LocalAdvectionFvCouplingOperator<I, SV, SGV, m, SF, RF, RGV, RV>;
 
 public:
   using BaseType::d;
@@ -189,12 +231,11 @@ public:
   using NumericalFluxType = NumericalFluxInterface<I, d, m, RF>;
   using LocalIntersectionCoords = typename NumericalFluxType::LocalIntersectionCoords;
   using FluxType = typename NumericalFluxType::FluxType;
-  using StateDofsType = ConstLocalDofVector<SV, SGV>;
-  using StateType = typename XT::Functions::RangeTypeSelector<RF, m, 1>::type;
+  using StateType = typename CouplingOperatorType::StateType;
   using LambdaType = std::function<StateType(const IntersectionType& /*intersection*/,
                                              const FieldVector<D, d - 1>& /*xx_in_reference_intersection_coordinates*/,
                                              const FluxType& /*flux*/,
-                                             const StateDofsType& /*u*/,
+                                             const StateType& /*u*/,
                                              const XT::Common::Parameter& /*param*/)>;
 
   LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator(
@@ -223,24 +264,22 @@ public:
              LocalOutsideRangeType& /*local_range_outside*/,
              const XT::Common::Parameter& param = {}) const override final
   {
-    DUNE_THROW_IF((source.space().type() != SpaceType::finite_volume)
-                      || (local_range_inside.space().type() != SpaceType::finite_volume),
+    DUNE_THROW_IF(local_range_inside.space().type() != SpaceType::finite_volume,
                   Exceptions::operator_error,
                   "Use LocalAdvectionDgBoundaryTreatmentByCustomExtrapolationOperator instead!");
-    const auto& element = local_range_inside.element();
     numerical_flux_->bind(intersection);
-    const auto u = source.local_discrete_function(element);
-    const auto v = extrapolate_(intersection,
-                                ReferenceElements<D, d - 1>::general(intersection.type()).position(0, 0),
-                                numerical_flux_->flux(),
-                                u->dofs(),
-                                param);
-    const auto normal = intersection.centerUnitOuterNormal();
     if (numerical_flux_->x_dependent())
       x_in_intersection_coords_ = intersection.geometry().local(intersection.geometry().center());
-    const auto g = numerical_flux_->apply(x_in_intersection_coords_, u->dofs(), v, normal, param);
+    CouplingOperatorType::evaluate_inside_state(source, intersection, u_);
+    v_ = extrapolate_(intersection,
+                      ReferenceElements<D, d - 1>::general(intersection.type()).position(0, 0),
+                      numerical_flux_->flux(),
+                      u_,
+                      param);
+    const auto normal = intersection.centerUnitOuterNormal();
+    const auto g = numerical_flux_->apply(x_in_intersection_coords_, u_, v_, normal, param);
     const auto h_intersection = intersection.geometry().volume();
-    const auto h_element = element.geometry().volume();
+    const auto h_element = intersection.inside().geometry().volume();
     for (size_t ii = 0; ii < m; ++ii)
       local_range_inside.dofs()[ii] += (g[ii] * h_intersection) / h_element;
   } // ... apply(...)
@@ -249,6 +288,8 @@ private:
   std::unique_ptr<NumericalFluxType> numerical_flux_;
   const LambdaType extrapolate_;
   mutable LocalIntersectionCoords x_in_intersection_coords_;
+  mutable StateType u_;
+  mutable StateType v_;
 }; // class LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator
 
 
