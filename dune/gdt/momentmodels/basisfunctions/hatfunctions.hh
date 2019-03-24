@@ -262,7 +262,7 @@ public:
     return triangulation_;
   }
 
-  virtual DynamicRangeType alpha_iso() const override final
+  virtual DynamicRangeType alpha_iso_prime() const override final
   {
     return DynamicRangeType(dimRange, 1.);
   }
@@ -431,13 +431,13 @@ public:
     return BaseType::unit_ball_volume_quad();
   }
 
-  virtual DynamicRangeType alpha_iso() const override final
+  virtual DynamicRangeType alpha_iso_prime() const override final
   {
     return DynamicRangeType(dimRange, 1.);
   }
 
   template <class Vec>
-  std::enable_if_t<XT::Common::is_vector<Vec>::value, void> alpha_iso(Vec& ret) const
+  std::enable_if_t<XT::Common::is_vector<Vec>::value, void> alpha_iso_prime(Vec& ret) const
   {
     for (size_t ii = 0; ii < ret.size(); ++ii)
       XT::Common::VectorAbstraction<Vec>::set_entry(ret, ii, 1.);

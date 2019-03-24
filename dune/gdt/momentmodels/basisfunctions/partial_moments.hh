@@ -264,7 +264,7 @@ public:
     return triangulation_;
   }
 
-  virtual DynamicRangeType alpha_iso() const override final
+  virtual DynamicRangeType alpha_iso_prime() const override final
   {
     DynamicRangeType ret(dimRange, 0);
     for (size_t ii = 0; ii < dimRange; ii += 2)
@@ -470,7 +470,7 @@ public:
     return BaseType::unit_ball_volume_quad();
   }
 
-  virtual DynamicRangeType alpha_iso() const override final
+  virtual DynamicRangeType alpha_iso_prime() const override final
   {
     DynamicRangeType ret(dimRange, 0.);
     for (size_t ii = 0; ii < dimRange; ii += 4)

@@ -22,9 +22,9 @@ namespace Dune {
 namespace GDT {
 
 
-template <class I, class MomentBasis>
+template <class GV, class MomentBasis>
 class NumericalKineticFlux
-  : public NumericalFluxInterface<I,
+  : public NumericalFluxInterface<XT::Grid::extract_intersection_t<GV>,
                                   MomentBasis::dimDomain,
                                   MomentBasis::dimRange,
                                   typename MomentBasis::RangeFieldType>
@@ -40,9 +40,10 @@ class NumericalKineticFlux
   static const size_t d = MomentBasis::d;
   static const size_t m = MomentBasis::r;
   using R = typename MomentBasis::R;
+  using I = XT::Grid::extract_intersection_t<GV>;
   using ThisType = NumericalKineticFlux;
   using BaseType = NumericalFluxInterface<I, d, m, R>;
-  using EntropyFluxType = EntropyBasedLocalFlux<MomentBasis>;
+  using EntropyFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
   using SparseMatrixType = typename XT::LA::CommonSparseMatrix<R>;
 
 public:
@@ -77,13 +78,18 @@ public:
                   const StateType& u,
                   const StateType& v,
                   const PhysicalDomainType& n,
-                  const XT::Common::Parameter& param = {}) const override final
+                  const XT::Common::Parameter& /*param*/ = {}) const override final
   {
     // find direction of unit outer normal (we assume an axis-aligned cube grid)
     size_t direction = intersection.indexInInside() / 2;
     if (dynamic_cast<const EntropyFluxType*>(&flux()) != nullptr) {
       return dynamic_cast<const EntropyFluxType*>(&flux())->evaluate_kinetic_flux(
-          /*intersection, x,*/ u, v, n, direction, param);
+          intersection.inside(),
+          intersection.neighbor() ? intersection.outside() : intersection.inside(),
+          u,
+          v,
+          n,
+          direction);
     } else {
       static const auto flux_matrices = initialize_flux_matrices(basis_);
       StateType ret(0);

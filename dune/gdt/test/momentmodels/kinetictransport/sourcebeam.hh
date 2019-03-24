@@ -254,24 +254,26 @@ protected:
   const bool is_mn_model_;
 }; // class SourceBeamPn<...>
 
-template <class E, class BasisfunctionType>
-class SourceBeamMn : public SourceBeamPn<E, BasisfunctionType>
+template <class GV, class BasisfunctionType>
+class SourceBeamMn : public SourceBeamPn<XT::Grid::extract_entity_t<GV>, BasisfunctionType>
 {
-  using BaseType = SourceBeamPn<E, BasisfunctionType>;
+  using BaseType = SourceBeamPn<XT::Grid::extract_entity_t<GV>, BasisfunctionType>;
   using ThisType = SourceBeamMn;
 
 public:
   using typename BaseType::FluxType;
   using typename BaseType::RangeReturnType;
-  using ActualFluxType = EntropyBasedLocalFlux<BasisfunctionType>;
+  using ActualFluxType = EntropyBasedFluxFunction<GV, BasisfunctionType>;
 
   using BaseType::default_boundary_cfg;
   using BaseType::default_grid_cfg;
 
   SourceBeamMn(const BasisfunctionType& basis_functions,
+               const GV& grid_view,
                const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
     : BaseType(basis_functions, grid_cfg, boundary_cfg, true)
+    , grid_view_(grid_view)
   {}
 
   static std::string static_id()
@@ -281,11 +283,12 @@ public:
 
   virtual std::unique_ptr<FluxType> flux() const override
   {
-    return std::make_unique<ActualFluxType>(basis_functions_);
+    return std::make_unique<ActualFluxType>(grid_view_, basis_functions_);
   }
 
 protected:
   using BaseType::basis_functions_;
+  const GV& grid_view_;
 }; // class SourceBeamMn<...>
 
 

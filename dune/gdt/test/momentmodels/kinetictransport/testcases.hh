@@ -259,7 +259,8 @@ struct SourceBeamMnTestCase : public SourceBeamPnTestCase<GridImp, Basisfunction
 {
   using BaseType = SourceBeamPnTestCase<GridImp, BasisfunctionImp, reconstruct>;
   using typename BaseType::DiscreteFunctionType;
-  using ProblemType = SourceBeamMn<typename BaseType::E, BasisfunctionImp>;
+  using typename BaseType::GridViewType;
+  using ProblemType = SourceBeamMn<GridViewType, BasisfunctionImp>;
   using ExpectedResultsType = SourceBeamMnExpectedResults<BasisfunctionImp, reconstruct>;
   using RealizabilityLimiterChooserType =
       RealizabilityLimiterChooser<BasisfunctionImp, typename ProblemType::FluxType, DiscreteFunctionType>;
@@ -346,8 +347,8 @@ struct PlaneSourceMnTestCase : SourceBeamMnTestCase<GridImp, BasisfunctionImp, r
   using BaseType = SourceBeamMnTestCase<GridImp, BasisfunctionImp, reconstruct>;
   using typename BaseType::DiscreteFunctionType;
   using RangeFieldType = typename BaseType::RangeFieldType;
-  using typename BaseType::E;
-  using ProblemType = PlaneSourceMn<E, BasisfunctionImp>;
+  using typename BaseType::GridViewType;
+  using ProblemType = PlaneSourceMn<GridViewType, BasisfunctionImp>;
   static constexpr RangeFieldType t_end = 0.25;
   static constexpr bool reconstruction = reconstruct;
   using ExpectedResultsType = PlaneSourceMnExpectedResults<BasisfunctionImp, reconstruction>;
@@ -539,8 +540,8 @@ template <class GridImp, class BasisfunctionImp, bool reconstruct>
 struct PointSourceMnTestCase : SourceBeamMnTestCase<GridImp, BasisfunctionImp, reconstruct>
 {
   using BaseType = SourceBeamMnTestCase<GridImp, BasisfunctionImp, reconstruct>;
-  using typename BaseType::E;
-  using ProblemType = PointSourceMn<E, BasisfunctionImp>;
+  using typename BaseType::GridViewType;
+  using ProblemType = PointSourceMn<GridViewType, BasisfunctionImp>;
   using typename BaseType::RangeFieldType;
   static constexpr RangeFieldType t_end = 0.1;
   static constexpr bool reconstruction = reconstruct;
@@ -554,8 +555,8 @@ template <class GridImp, class BasisfunctionImp, bool reconstruct>
 struct CheckerboardMnTestCase : SourceBeamMnTestCase<GridImp, BasisfunctionImp, reconstruct>
 {
   using BaseType = SourceBeamMnTestCase<GridImp, BasisfunctionImp, reconstruct>;
-  using typename BaseType::E;
-  using ProblemType = CheckerboardMn<E, BasisfunctionImp>;
+  using typename BaseType::GridViewType;
+  using ProblemType = CheckerboardMn<GridViewType, BasisfunctionImp>;
   using typename BaseType::RangeFieldType;
   static constexpr RangeFieldType t_end = 0.1;
   static constexpr bool reconstruction = reconstruct;
@@ -569,8 +570,8 @@ template <class GridImp, class BasisfunctionImp, bool reconstruct>
 struct ShadowMnTestCase : SourceBeamMnTestCase<GridImp, BasisfunctionImp, reconstruct>
 {
   using BaseType = SourceBeamMnTestCase<GridImp, BasisfunctionImp, reconstruct>;
-  using typename BaseType::E;
-  using ProblemType = ShadowMn<E, BasisfunctionImp>;
+  using typename BaseType::GridViewType;
+  using ProblemType = ShadowMn<GridViewType, BasisfunctionImp>;
   using typename BaseType::RangeFieldType;
   static constexpr RangeFieldType t_end = 0.1;
   static constexpr bool reconstruction = reconstruct;

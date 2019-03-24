@@ -30,7 +30,7 @@ class LocalEntropySolver : public XT::Grid::ElementFunctor<typename SpaceType::G
   using GridViewType = typename SpaceType::GridViewType;
   using EntityType = typename GridViewType::template Codim<0>::Entity;
   using IndexSetType = typename GridViewType::IndexSet;
-  using EntropyFluxType = EntropyBasedLocalFlux<BasisfunctionType>;
+  using EntropyFluxType = EntropyBasedFluxFunction<GridViewType, BasisfunctionType>;
   using RangeFieldType = typename EntropyFluxType::RangeFieldType;
   using LocalVectorType = typename EntropyFluxType::VectorType;
   static const size_t dimDomain = EntropyFluxType::basis_dimDomain;
@@ -51,6 +51,7 @@ public:
     , source_(space_, source_dofs, "source")
     , range_(space_, range_dofs, "range")
     , analytical_flux_(analytical_flux)
+    , local_flux_(analytical_flux_.derived_local_function())
     , alphas_(alphas)
     , min_acceptable_density_(min_acceptable_density)
     , param_(param)
@@ -81,7 +82,8 @@ public:
     thread_local auto vector_indices = source_.space().mapper().global_indices(entity);
     source_.space().mapper().global_indices(entity, vector_indices);
     basis_functions.ensure_min_density(u, min_acceptable_density_);
-    const auto alpha_ret = analytical_flux_.get_alpha(u, param_, true);
+    local_flux_->bind(entity);
+    const auto alpha_ret = local_flux_->get_alpha(u, true);
     alphas_[index_set_.index(entity)] = alpha_ret->first;
     const auto regularization_params = alpha_ret->second;
     for (size_t ii = 0; ii < dimRange; ++ii)
@@ -107,6 +109,7 @@ private:
   const ConstDiscreteFunctionType source_;
   DiscreteFunctionType range_;
   const EntropyFluxType& analytical_flux_;
+  std::unique_ptr<typename EntropyFluxType::Localfunction> local_flux_;
   std::vector<LocalVectorType>& alphas_;
   const RangeFieldType min_acceptable_density_;
   const XT::Common::Parameter& param_;
@@ -129,7 +132,7 @@ public:
   using SpaceType = SpaceImp;
   using SourceSpaceType = SpaceImp;
   using RangeSpaceType = SpaceImp;
-  using EntropyFluxType = EntropyBasedLocalFlux<BasisfunctionType>;
+  using EntropyFluxType = EntropyBasedFluxFunction<typename SpaceType::GridViewType, BasisfunctionType>;
   using RangeFieldType = typename BasisfunctionType::RangeFieldType;
   using LocalVectorType = typename EntropyFluxType::VectorType;
 

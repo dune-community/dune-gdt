@@ -84,7 +84,7 @@ struct HyperbolicMnDiscretization
     std::shared_ptr<const BasisfunctionType> basis_functions =
         std::make_shared<const BasisfunctionType>(quad_order, num_quad_refinements);
     const std::unique_ptr<ProblemType> problem_ptr =
-        XT::Common::make_unique<ProblemType>(*basis_functions, grid_config);
+        XT::Common::make_unique<ProblemType>(*basis_functions, grid_view, grid_config);
     const auto& problem = *problem_ptr;
     const auto initial_values = problem.initial_values();
     const auto boundary_values = problem.boundary_values();
@@ -102,17 +102,18 @@ struct HyperbolicMnDiscretization
     // ******************** choose flux and rhs operator and timestepper ******************************************
 
     using AdvectionOperatorType = AdvectionFvOperator<MatrixType, GridViewType, dimRange>;
-    using EigenvectorWrapperType = typename JacobianChooser<BasisfunctionType, AnalyticalFluxType>::type;
+    using EigenvectorWrapperType = typename EigenvectorWrapperChooser<BasisfunctionType, AnalyticalFluxType>::type;
     using EntropySolverType = EntropySolver<BasisfunctionType, SpaceType>;
     using ReconstructionOperatorType = LinearReconstructionOperator<AnalyticalFluxType,
                                                                     BoundaryValueType,
                                                                     GridViewType,
                                                                     MatrixType,
                                                                     EigenvectorWrapperType>;
-    using ReconstructionFvOperatorType = EntropyBasedMomentFvOperator<AdvectionOperatorType,
-                                                                      ReconstructionOperatorType,
-                                                                      RealizabilityLimiterType,
-                                                                      RegularizationOperatorType>;
+    //    using ReconstructionFvOperatorType = EntropyBasedMomentFvOperator<AdvectionOperatorType,
+    //                                                                      ReconstructionOperatorType,
+    //                                                                      RealizabilityLimiterType,
+    //                                                                      RegularizationOperatorType>;
+    using ReconstructionFvOperatorType = void;
     using NoReconstructionFvOperatorType = EntropyBasedMomentFvOperator<AdvectionOperatorType, EntropySolverType>;
     using FvOperatorType =
         std::conditional_t<TestCaseType::reconstruction, ReconstructionFvOperatorType, NoReconstructionFvOperatorType>;
@@ -133,18 +134,18 @@ struct HyperbolicMnDiscretization
     RangeFieldType dt = CFL * dx;
 
     // *********************** create operators and timesteppers ************************************
-    NumericalKineticFlux<BasisfunctionType> numerical_flux(*analytical_flux, *basis_functions);
-    AdvectionOperatorType advection_operator(grid_view, numerical_flux, fv_space, fv_space);
+    NumericalKineticFlux<GridViewType, BasisfunctionType> numerical_flux(*analytical_flux, *basis_functions);
+    AdvectionOperatorType advection_operator(grid_view, numerical_flux, advection_source_space, fv_space);
     // boundary treatment
     using BoundaryOperator =
         LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator<I, VectorType, GridViewType, dimRange>;
     using LambdaType = typename BoundaryOperator::LambdaType;
-    using StateDofsType = typename BoundaryOperator::StateDofsType;
+    using StateType = typename BoundaryOperator::StateType;
     LambdaType boundary_lambda =
         [&boundary_values](const I& intersection,
                            const FieldVector<RangeFieldType, dimDomain - 1>& xx_in_reference_intersection_coordinates,
                            const AnalyticalFluxType& /*flux*/,
-                           const StateDofsType& /*u*/,
+                           const StateType& /*u*/,
                            const XT::Common::Parameter& /*param*/) {
           return boundary_values->evaluate(intersection.geometry().global(xx_in_reference_intersection_coordinates));
         };
