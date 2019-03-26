@@ -69,7 +69,7 @@ public:
       static const auto second_factor = 1. / (M_PI * std::pow(sigma, 2));
       return basis_integrated * std::max(first_factor * std::exp(-x.two_norm2() * second_factor), psi_vac);
     };
-    return std::make_unique<GenericFunctionType>(10, eval_func);
+    return std::make_unique<GenericFunctionType>(21, eval_func);
   } // ... initial_values()
 
   virtual RangeFieldType t_end() const override
@@ -99,23 +99,25 @@ protected:
   using BaseType::psi_vac_;
 }; // class PointSourcePn<...>
 
-template <class E, class BasisfunctionType>
-class PointSourceMn : public PointSourcePn<E, BasisfunctionType>
+template <class GV, class BasisfunctionType>
+class PointSourceMn : public PointSourcePn<XT::Grid::extract_entity_t<GV>, BasisfunctionType>
 {
-  using BaseType = PointSourcePn<E, BasisfunctionType>;
+  using BaseType = PointSourcePn<XT::Grid::extract_entity_t<GV>, BasisfunctionType>;
   using ThisType = PointSourceMn;
 
 public:
   using typename BaseType::FluxType;
-  using ActualFluxType = GDT::EntropyBasedLocalFlux<BasisfunctionType>;
+  using ActualFluxType = EntropyBasedFluxFunction<GV, BasisfunctionType>;
 
   using BaseType::default_boundary_cfg;
   using BaseType::default_grid_cfg;
 
   PointSourceMn(const BasisfunctionType& basis_functions,
+                const GV& grid_view,
                 const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                 const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
     : BaseType(basis_functions, grid_cfg, boundary_cfg)
+    , grid_view_(grid_view)
   {}
 
   static std::string static_id()
@@ -125,11 +127,12 @@ public:
 
   virtual std::unique_ptr<FluxType> flux() const override final
   {
-    return std::make_unique<ActualFluxType>(basis_functions_);
+    return std::make_unique<ActualFluxType>(grid_view_, basis_functions_);
   }
 
 protected:
   using BaseType::basis_functions_;
+  const GV& grid_view_;
 }; // class PointSourceMn<...>
 
 

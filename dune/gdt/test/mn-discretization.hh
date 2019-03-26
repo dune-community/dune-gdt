@@ -58,8 +58,8 @@ struct HyperbolicMnDiscretization
     using GridType = typename TestCaseType::GridType;
     using SpaceType = typename TestCaseType::SpaceType;
     using AdvectionSourceSpaceType = typename TestCaseType::AdvectionSourceSpaceType;
-    using GridViewType = typename TestCaseType::GridViewType;
-    using I = typename GridViewType::Intersection;
+    using GV = typename TestCaseType::GridViewType;
+    using I = XT::Grid::extract_intersection_t<GV>;
     using ProblemType = typename TestCaseType::ProblemType;
     using RangeFieldType = typename BasisfunctionType::RangeFieldType;
     using BoundaryValueType = typename ProblemType::BoundaryValueType;
@@ -76,7 +76,7 @@ struct HyperbolicMnDiscretization
     const auto grid_ptr =
         Dune::XT::Grid::CubeGridProviderFactory<GridType>::create(grid_config, MPIHelper::getCommunicator()).grid_ptr();
     assert(grid_ptr->comm().size() == 1 || grid_ptr->overlapSize(0) > 0);
-    const GridViewType grid_view(grid_ptr->leafGridView());
+    const GV grid_view(grid_ptr->leafGridView());
     const SpaceType fv_space(grid_view);
     const AdvectionSourceSpaceType advection_source_space(grid_view, 1);
 
@@ -101,22 +101,16 @@ struct HyperbolicMnDiscretization
 
     // ******************** choose flux and rhs operator and timestepper ******************************************
 
-    using AdvectionOperatorType = AdvectionFvOperator<MatrixType, GridViewType, dimRange>;
+    using AdvectionOperatorType = AdvectionFvOperator<MatrixType, GV, dimRange>;
     using EigenvectorWrapperType = typename EigenvectorWrapperChooser<BasisfunctionType, AnalyticalFluxType>::type;
     using EntropySolverType = EntropySolver<BasisfunctionType, SpaceType>;
-    using ReconstructionOperatorType = LinearReconstructionOperator<AnalyticalFluxType,
-                                                                    BoundaryValueType,
-                                                                    GridViewType,
-                                                                    MatrixType,
-                                                                    EigenvectorWrapperType>;
-    //    using ReconstructionFvOperatorType = EntropyBasedMomentFvOperator<AdvectionOperatorType,
-    //                                                                      ReconstructionOperatorType,
-    //                                                                      RealizabilityLimiterType,
-    //                                                                      RegularizationOperatorType>;
-    using ReconstructionFvOperatorType = void;
-    using NoReconstructionFvOperatorType = EntropyBasedMomentFvOperator<AdvectionOperatorType, EntropySolverType>;
-    using FvOperatorType =
-        std::conditional_t<TestCaseType::reconstruction, ReconstructionFvOperatorType, NoReconstructionFvOperatorType>;
+    using ReconstructionOperatorType =
+        LinearReconstructionOperator<AnalyticalFluxType, BoundaryValueType, GV, MatrixType, EigenvectorWrapperType>;
+    using ReconstructionAdvectionOperatorType =
+        AdvectionWithReconstructionOperator<AdvectionOperatorType, ReconstructionOperatorType>;
+    using FvOperatorType = EntropyBasedMomentFvOperator<
+        std::conditional_t<TestCaseType::reconstruction, ReconstructionAdvectionOperatorType, AdvectionOperatorType>,
+        EntropySolverType>;
     using OperatorTimeStepperType =
         ExplicitRungeKuttaTimeStepper<FvOperatorType,
                                       DiscreteFunctionType,
@@ -125,7 +119,7 @@ struct HyperbolicMnDiscretization
     using TimeStepperType = StrangSplittingTimeStepper<RhsTimeStepperType, OperatorTimeStepperType>;
 
     // *************** Calculate dx and initial dt **************************************
-    Dune::XT::Grid::Dimensions<GridViewType> dimensions(grid_view);
+    Dune::XT::Grid::Dimensions<GV> dimensions(grid_view);
     RangeFieldType dx = dimensions.entity_width.max();
     if (dimDomain == 2)
       dx /= std::sqrt(2);
@@ -134,11 +128,12 @@ struct HyperbolicMnDiscretization
     RangeFieldType dt = CFL * dx;
 
     // *********************** create operators and timesteppers ************************************
-    NumericalKineticFlux<GridViewType, BasisfunctionType> numerical_flux(*analytical_flux, *basis_functions);
+    NumericalKineticFlux<GV, BasisfunctionType> numerical_flux(*analytical_flux, *basis_functions);
     AdvectionOperatorType advection_operator(grid_view, numerical_flux, advection_source_space, fv_space);
+
     // boundary treatment
     using BoundaryOperator =
-        LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator<I, VectorType, GridViewType, dimRange>;
+        LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator<I, VectorType, GV, dimRange>;
     using LambdaType = typename BoundaryOperator::LambdaType;
     using StateType = typename BoundaryOperator::StateType;
     LambdaType boundary_lambda =
@@ -149,38 +144,30 @@ struct HyperbolicMnDiscretization
                            const XT::Common::Parameter& /*param*/) {
           return boundary_values->evaluate(intersection.geometry().global(xx_in_reference_intersection_coordinates));
         };
-    XT::Grid::ApplyOn::NonPeriodicBoundaryIntersections<GridViewType> filter;
+    XT::Grid::ApplyOn::NonPeriodicBoundaryIntersections<GV> filter;
     advection_operator.append(boundary_lambda, {}, filter);
 
-    // constexpr double epsilon = 1e-11;
-    // auto slope = TestCaseType::RealizabilityLimiterChooserType::template make_slope<
-    //     typename ReconstructionOperatorType::MatrixType>(*basis_functions, epsilon);
-    // ReconstructionOperatorType reconstruction_operator(
-    //     *analytical_flux, boundary_values, *slope, Dune::GDT::default_1d_quadrature<double>(1));
+    constexpr double epsilon = 1e-11;
+    auto slope = TestCaseType::RealizabilityLimiterChooserType::template make_slope<EigenvectorWrapperType>(
+        *dynamic_cast<const EntropyFluxType*>(analytical_flux.get()), *basis_functions, epsilon);
+    ReconstructionOperatorType reconstruction_operator(*analytical_flux, *boundary_values, fv_space, *slope, false);
+    ReconstructionAdvectionOperatorType reconstruction_advection_operator(advection_operator, reconstruction_operator);
 
     filename += "_" + ProblemType::static_id();
     filename += "_grid_" + grid_size;
     filename += "_tend_" + XT::Common::to_string(t_end);
     filename += "_quad" + XT::Common::to_string(num_quad_refinements) + "x" + XT::Common::to_string(quad_order);
-    //    filename += std::is_same<FvOperatorType, ReconstructionFvOperatorType>::value ? "_ord2" : "_ord1";
+    filename += TestCaseType::reconstruction ? "_ord2" : "_ord1";
     filename += "_" + basis_functions->short_id();
     filename += "_m" + Dune::XT::Common::to_string(dimRange);
 
-    std::vector<typename EntropySolverType::LocalVectorType> alpha_vector(grid_view.size(0));
     EntropySolverType entropy_solver(*(dynamic_cast<const EntropyFluxType*>(analytical_flux.get())),
                                      fv_space,
-                                     alpha_vector,
                                      problem.psi_vac() * basis_functions->unit_ball_volume() / 10,
                                      filename);
-
-    // RealizabilityLimiterType realizability_limiter(*analytical_flux, *basis_functions, epsilon);
-    // ReconstructionFvOperatorType reconstruction_fv_operator(
-    //     advection_operator, reconstruction_operator, regularization_operator, realizability_limiter);
-    NoReconstructionFvOperatorType no_reconstruction_fv_operator(advection_operator, entropy_solver);
-    FvOperatorType& fv_operator = no_reconstruction_fv_operator;
-    //    FvOperatorType& fv_operator =
-    //    FvOperatorChooser<TestCaseType::reconstruction>::choose(no_reconstruction_fv_operator,
-    //                                                                                          reconstruction_fv_operator);
+    FvOperatorType fv_operator(
+        FvOperatorChooser<TestCaseType::reconstruction>::choose(advection_operator, reconstruction_advection_operator),
+        entropy_solver);
 
     // ******************************** do the time steps ***********************************************************
     const auto sigma_a = problem.sigma_a();

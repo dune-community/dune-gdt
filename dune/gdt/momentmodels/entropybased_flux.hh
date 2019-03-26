@@ -394,6 +394,8 @@ public:
         if (first_error_cond < tau_prime && 1 - epsilon_gamma_ < second_error_cond
             && realizability_helper_.is_realizable(u_eps_diff, kk == static_cast<size_t>(0.8 * k_0_))) {
           ret->first = alpha_prime + alpha_iso_prime * std::log(density);
+          VectorType u_ret;
+          calculate_vector_integral(ret->first, M_, M_, u_ret);
           ret->second = std::make_pair(v * density, r);
           return ret;
         } else {
@@ -822,7 +824,7 @@ private:
 #endif
 
 
-#if 0
+#if 1
 /**
  * Specialization for DG basis
  */
@@ -888,7 +890,6 @@ public:
     , k_max_(k_max)
     , epsilon_(epsilon)
     , name_(name)
-    , cache_(cache_size)
   {
     XT::LA::eye_matrix(T_minus_one_);
     helper<basis_dimDomain>::calculate_plane_coefficients(basis_functions_);
@@ -919,10 +920,23 @@ public:
     return 1;
   }
 
-  virtual RangeReturnType evaluate(const DomainType& u, const XT::Common::Parameter& param = {}) const override final
+  std::unique_ptr<BlockVectorType> get_initial_alpha(const DomainType& u) const
+  {
+    static const auto alpha_iso = basis_functions_.alpha_iso();
+    static const auto alpha_iso_prime = basis_functions_.alpha_iso_prime();
+    return std::make_unique<BlockVectorType>(alpha_iso + alpha_iso_prime * std::log(basis_functions_.density(u)));
+  }
+
+  virtual RangeReturnType evaluate(const DomainType& u,
+                                   const XT::Common::Parameter& /*param*/ = {}) const override final
+  {
+    const auto alpha = std::make_unique<BlockVectorType>(get_alpha(u, *get_initial_alpha(u), true)->first);
+    return evaluate_with_alpha(*alpha);
+  }
+
+  virtual RangeReturnType evaluate_with_alpha(const BlockVectorType& alpha) const
   {
     RangeReturnType ret(0.);
-    const auto alpha = get_alpha(u, param, true)->first;
     auto& work_vecs = working_storage();
     calculate_scalar_products(alpha, M_, work_vecs);
     apply_exponential(work_vecs);
@@ -941,10 +955,15 @@ public:
   } // void evaluate(...)
 
   virtual DerivativeRangeReturnType jacobian(const DomainType& u,
-                                             const XT::Common::Parameter& param = {}) const override final
+                                             const XT::Common::Parameter& /*param*/ = {}) const override final
+  {
+    const auto alpha = std::make_unique<BlockVectorType>(get_alpha(u, *get_initial_alpha(u), true)->first);
+    return jacobian_with_alpha(*alpha);
+  }
+
+  virtual DerivativeRangeReturnType jacobian_with_alpha(const BlockVectorType& alpha) const
   {
     DerivativeRangeReturnType ret;
-    const auto alpha = get_alpha(u, param, true)->first;
     thread_local auto H = XT::Common::make_unique<BlockMatrixType>();
     calculate_hessian(alpha, M_, *H);
     helper<basis_dimDomain>::jacobian(M_, *H, ret, this);
@@ -963,12 +982,20 @@ public:
   DomainType evaluate_kinetic_flux(const DomainType& u_i,
                                    const DomainType& u_j,
                                    const BasisDomainType& n_ij,
-                                   const size_t dd,
-                                   const XT::Common::Parameter& param) const
+                                   const size_t dd) const
   {
     // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
-    const auto alpha_i = get_alpha(u_i, param, true)->first;
-    const auto alpha_j = get_alpha(u_j, param, true)->first;
+    const auto alpha_i = std::make_unique<BlockVectorType>(get_alpha(u_i, *get_initial_alpha(u_i), true)->first);
+    const auto alpha_j = std::make_unique<BlockVectorType>(get_alpha(u_j, *get_initial_alpha(u_j), true)->first);
+    evaluate_kinetic_flux_with_alphas(*alpha_i, *alpha_j, n_ij, dd);
+  } // DomainType evaluate_kinetic_flux(...)
+
+  DomainType evaluate_kinetic_flux_with_alphas(const BlockVectorType& alpha_i,
+                                               const BlockVectorType& alpha_j,
+                                               const BasisDomainType& n_ij,
+                                               const size_t dd) const
+  {
+    // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
     thread_local FieldVector<TemporaryVectorsType, 2> work_vecs;
     for (size_t jj = 0; jj < num_blocks; ++jj) {
       work_vecs[0][jj].resize(quad_points_[jj].size());
@@ -997,157 +1024,141 @@ public:
     return basis_functions_;
   }
 
-  // returns (alpha, (actual_u, r)), where r is the regularization parameter and
   std::unique_ptr<AlphaReturnType>
-  get_alpha(const DomainType& u_in, const XT::Common::Parameter& /*param*/, const bool regularize) const
+  get_alpha(const DomainType& u, const DomainType& alpha_in, const bool regularize) const
   {
     auto ret = std::make_unique<AlphaReturnType>();
-    auto v_in = std::make_unique<DomainType>();
 
     // rescale u such that the density <psi> is 1
-    RangeFieldType density = basis_functions_.density(u_in);
-    if (!(density > 0. || !(basis_functions_.min_density(u_in) > 0.)) || std::isinf(density))
+    RangeFieldType density = basis_functions_.density(u);
+    static const auto alpha_iso_prime = std::make_unique<BlockVectorType>(basis_functions_.alpha_iso_prime());
+    auto alpha_initial = std::make_unique<BlockVectorType>(*alpha_iso_prime);
+    *alpha_initial *= -std::log(density);
+    *alpha_initial += alpha_in;
+    if (!(density > 0. || !(basis_functions_.min_density(u) > 0.)) || std::isinf(density))
       DUNE_THROW(Dune::MathError, "Negative, inf or NaN density!");
-    auto u_prime_in = std::make_unique<DomainType>(u_in / density);
-    auto alpha_iso_in = std::make_unique<DomainType>(basis_functions_.alpha_iso());
-    auto alpha_iso = std::make_unique<BlockVectorType>(*alpha_iso_in);
+    auto u_prime = std::make_unique<const BlockVectorType>(u / density);
 
     // if value has already been calculated for these values, skip computation
-    const auto cache_iterator = cache_->find_closest(*u_prime_in);
-    if (cache_iterator != cache_->end() && XT::Common::FloatCmp::eq(cache_iterator->first, *u_prime_in, 1e-14, 1e-14)) {
-      const auto& alpha_prime = cache_iterator->second;
-      ret->first = *alpha_iso;
-      ret->first *= std::log(density);
-      ret->first += alpha_prime;
-      ret->second = std::make_pair(u_in, 0.);
-      return ret;
-    } else {
-      RangeFieldType tau_prime = std::min(
-          tau_
-              / ((1 + std::sqrt(basis_dimRange) * u_prime_in->two_norm()) * density + std::sqrt(basis_dimRange) * tau_),
-          tau_);
+    RangeFieldType tau_prime = std::min(
+        tau_ / ((1 + std::sqrt(basis_dimRange) * u_prime->two_norm()) * density + std::sqrt(basis_dimRange) * tau_),
+        tau_);
 
-      // calculate moment vector for isotropic distribution
-      auto u_iso_dyn = basis_functions_.u_iso();
-      auto u_iso_in = std::make_unique<DomainType>();
-      for (size_t ii = 0; ii < basis_dimRange; ++ii)
-        (*u_iso_in)[ii] = u_iso_dyn[ii];
+    // calculate moment vector for isotropic distribution
+    auto u_iso = std::make_unique<const BlockVectorType>(basis_functions_.u_iso());
 
-      // define further variables
-      auto g_k = std::make_unique<BlockVectorType>();
-      auto beta_out = std::make_unique<BlockVectorType>();
-      auto v = std::make_unique<BlockVectorType>();
-      thread_local auto T_k = XT::Common::make_unique<BlockMatrixType>();
-      auto beta_in =
-          std::make_unique<BlockVectorType>(cache_iterator != cache_->end() ? cache_iterator->second : *alpha_iso);
+    // define further variables
+    auto g_k = std::make_unique<BlockVectorType>();
+    auto beta_out = std::make_unique<BlockVectorType>();
+    auto v = std::make_unique<BlockVectorType>();
+    thread_local auto T_k = XT::Common::make_unique<BlockMatrixType>();
+    auto beta_in = std::make_unique<BlockVectorType>(*alpha_initial);
 
-      const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
-      const auto r_max = r_sequence.back();
-      for (const auto& r : r_sequence) {
-        // regularize u
-        *v_in = *u_prime_in;
-        if (r > 0.) {
-          *beta_in = *alpha_iso;
-          // calculate v = (1-r) u + r u_iso
-          // use alpha_iso_in as storage for u_iso_in * r
-          *v_in *= (1 - r);
-          *alpha_iso_in = *u_iso_in;
-          *alpha_iso_in *= r;
-          *v_in += *alpha_iso_in;
+    const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
+    const auto r_max = r_sequence.back();
+    for (const auto& r : r_sequence) {
+      // regularize u
+      *v = *u_prime;
+      if (r > 0.) {
+        *beta_in = *alpha_initial;
+        // calculate v = (1-r) u + r u_iso
+        // use beta_out as storage for u_iso_in * r
+        *v *= (1 - r);
+        *beta_out = *u_iso;
+        *beta_out *= r;
+        *v += *beta_out;
+      }
+      for (size_t jj = 0; jj < num_blocks; ++jj)
+        T_k->block(jj) = T_minus_one_;
+      // calculate T_k u
+      auto v_k = std::make_unique<BlockVectorType>(*v);
+      // calculate values of basis p = S_k m
+      thread_local BasisValuesMatrixType P_k(XT::LA::CommonDenseMatrix<RangeFieldType>(0, 0, 0., 0));
+      copy_basis_matrix(M_, P_k);
+      // calculate f_0
+      RangeFieldType f_k = calculate_scalar_integral(*beta_in, P_k) - *beta_in * *v_k;
+
+      thread_local auto H = XT::Common::make_unique<BlockMatrixType>(0.);
+
+      int pure_newton = 0;
+      for (size_t kk = 0; kk < k_max_; ++kk) {
+        // exit inner for loop to increase r if too many iterations are used or cholesky decomposition fails
+        if (kk > k_0_ && r < r_max)
+          break;
+        try {
+          change_basis(*beta_in, *v_k, P_k, *T_k, *g_k, *beta_out, *H);
+        } catch (const Dune::MathError&) {
+          if (r < r_max)
+            break;
+          DUNE_THROW(Dune::MathError, "Failure to converge!");
         }
-        *v = *v_in;
-        for (size_t jj = 0; jj < num_blocks; ++jj)
-          T_k->block(jj) = T_minus_one_;
-        // calculate T_k u
-        auto v_k = std::make_unique<BlockVectorType>(*v);
-        // calculate values of basis p = S_k m
-        thread_local BasisValuesMatrixType P_k(XT::LA::CommonDenseMatrix<RangeFieldType>(0, 0, 0., 0));
-        copy_basis_matrix(M_, P_k);
-        // calculate f_0
-        RangeFieldType f_k = calculate_scalar_integral(*beta_in, P_k) - *beta_in * *v_k;
 
-        thread_local auto H = XT::Common::make_unique<BlockMatrixType>(0.);
+        // calculate descent direction d_k;
+        thread_local auto d_k = std::make_unique<BlockVectorType>();
+        *d_k = *g_k;
+        *d_k *= -1;
 
-        int pure_newton = 0;
-        for (size_t kk = 0; kk < k_max_; ++kk) {
-          // exit inner for loop to increase r if too many iterations are used or cholesky decomposition fails
-          if (kk > k_0_ && r < r_max)
-            break;
-          try {
-            change_basis(*beta_in, *v_k, P_k, *T_k, *g_k, *beta_out, *H);
-          } catch (const Dune::MathError&) {
-            if (r < r_max)
+        // Calculate stopping criteria (in original basis). Variables with _k are in current basis, without k in
+        // original basis.
+        thread_local auto alpha_tilde = std::make_unique<BlockVectorType>();
+        thread_local auto alpha_prime = std::make_unique<BlockVectorType>();
+        thread_local auto u_alpha_tilde = std::make_unique<BlockVectorType>();
+        thread_local auto u_alpha_prime = std::make_unique<BlockVectorType>();
+        thread_local auto d_alpha_tilde = std::make_unique<BlockVectorType>();
+        thread_local auto g_alpha_tilde = std::make_unique<BlockVectorType>();
+        thread_local auto u_eps_diff = std::make_unique<BlockVectorType>();
+        // convert everything to original basis
+        for (size_t jj = 0; jj < num_blocks; ++jj) {
+          XT::LA::solve_lower_triangular_transposed(T_k->block(jj), alpha_tilde->block(jj), beta_out->block(jj));
+          XT::LA::solve_lower_triangular_transposed(T_k->block(jj), d_alpha_tilde->block(jj), d_k->block(jj));
+        } // jj
+        calculate_vector_integral(*alpha_tilde, M_, M_, *u_alpha_tilde);
+        *g_alpha_tilde = *u_alpha_tilde;
+        *g_alpha_tilde -= *v;
+        auto density_tilde = basis_functions_.density(*u_alpha_tilde);
+        if (!(density_tilde > 0.) || !(basis_functions_.min_density(*u_alpha_tilde) > 0.) || std::isinf(density_tilde))
+          break;
+        *alpha_prime = *alpha_iso_prime;
+        *alpha_prime *= -std::log(density_tilde);
+        *alpha_prime += *alpha_tilde;
+        calculate_vector_integral(*alpha_prime, M_, M_, *u_alpha_prime);
+        *u_eps_diff = *u_alpha_prime;
+        *u_eps_diff *= -(1 - epsilon_gamma_);
+        *u_eps_diff += *v;
+        if (g_alpha_tilde->two_norm() < tau_prime
+            && 1 - epsilon_gamma_ < std::exp(d_alpha_tilde->one_norm() + std::abs(std::log(density_tilde)))
+            && helper<basis_dimDomain>::is_realizable(*u_eps_diff, basis_functions_)) {
+          ret->first = *alpha_iso_prime;
+          ret->first *= std::log(density);
+          ret->first += *alpha_prime;
+          ret->second.first = *v;
+          ret->second.first *= density;
+          ret->second.second = r;
+          return ret;
+        } else {
+          RangeFieldType zeta_k = 1;
+          *beta_in = *beta_out;
+          // backtracking line search
+          while (pure_newton >= 2 || zeta_k > epsilon_ * beta_out->two_norm() / d_k->two_norm()) {
+            thread_local auto beta_new = std::make_unique<BlockVectorType>();
+            *beta_new = *d_k;
+            *beta_new *= zeta_k;
+            *beta_new += *beta_out;
+            RangeFieldType f = calculate_scalar_integral(*beta_new, P_k) - *beta_new * *v_k;
+            if (pure_newton >= 2 || f <= f_k + xi_ * zeta_k * (*g_k * *d_k)) {
+              *beta_in = *beta_new;
+              f_k = f;
+              pure_newton = 0;
               break;
-            DUNE_THROW(Dune::MathError, "Failure to converge!");
-          }
-
-          // calculate descent direction d_k;
-          thread_local auto d_k = std::make_unique<BlockVectorType>();
-          *d_k = *g_k;
-          *d_k *= -1;
-
-          // Calculate stopping criteria (in original basis). Variables with _k are in current basis, without k in
-          // original basis.
-          thread_local auto alpha_tilde = std::make_unique<BlockVectorType>();
-          thread_local auto alpha_prime = std::make_unique<BlockVectorType>();
-          thread_local auto u_alpha_tilde = std::make_unique<BlockVectorType>();
-          thread_local auto u_alpha_prime = std::make_unique<BlockVectorType>();
-          thread_local auto d_alpha_tilde = std::make_unique<BlockVectorType>();
-          thread_local auto g_alpha_tilde = std::make_unique<BlockVectorType>();
-          thread_local auto u_eps_diff = std::make_unique<BlockVectorType>();
-          // convert everything to original basis
-          for (size_t jj = 0; jj < num_blocks; ++jj) {
-            XT::LA::solve_lower_triangular_transposed(T_k->block(jj), alpha_tilde->block(jj), beta_out->block(jj));
-            XT::LA::solve_lower_triangular_transposed(T_k->block(jj), d_alpha_tilde->block(jj), d_k->block(jj));
-          } // jj
-          calculate_vector_integral(*alpha_tilde, M_, M_, *u_alpha_tilde);
-          *g_alpha_tilde = *u_alpha_tilde;
-          *g_alpha_tilde -= *v;
-          auto density_tilde = basis_functions_.density(*u_alpha_tilde);
-          if (!(density_tilde > 0.) || !(basis_functions_.min_density(*u_alpha_tilde) > 0.)
-              || std::isinf(density_tilde))
-            break;
-          *alpha_prime = *alpha_iso;
-          *alpha_prime *= -std::log(density_tilde);
-          *alpha_prime += *alpha_tilde;
-          calculate_vector_integral(*alpha_prime, M_, M_, *u_alpha_prime);
-          *u_eps_diff = *u_alpha_prime;
-          *u_eps_diff *= -(1 - epsilon_gamma_);
-          *u_eps_diff += *v;
-          if (g_alpha_tilde->two_norm() < tau_prime
-              && 1 - epsilon_gamma_ < std::exp(d_alpha_tilde->one_norm() + std::abs(std::log(density_tilde)))
-              && helper<basis_dimDomain>::is_realizable(*u_eps_diff, basis_functions_)) {
-            ret->first = *alpha_iso;
-            ret->first *= std::log(density);
-            ret->first += *alpha_prime;
-            ret->second = std::make_pair(*v_in * density, r);
-            cache_->insert(*v_in, *alpha_prime);
-            return ret;
-          } else {
-            RangeFieldType zeta_k = 1;
-            *beta_in = *beta_out;
-            // backtracking line search
-            while (pure_newton >= 2 || zeta_k > epsilon_ * beta_out->two_norm() / d_k->two_norm()) {
-              thread_local auto beta_new = std::make_unique<BlockVectorType>();
-              *beta_new = *d_k;
-              *beta_new *= zeta_k;
-              *beta_new += *beta_out;
-              RangeFieldType f = calculate_scalar_integral(*beta_new, P_k) - *beta_new * *v_k;
-              if (pure_newton >= 2 || f <= f_k + xi_ * zeta_k * (*g_k * *d_k)) {
-                *beta_in = *beta_new;
-                f_k = f;
-                pure_newton = 0;
-                break;
-              }
-              zeta_k = chi_ * zeta_k;
-            } // backtracking linesearch while
-            if (zeta_k <= epsilon_ * beta_out->two_norm() / d_k->two_norm())
-              ++pure_newton;
-          } // else (stopping conditions)
-        } // k loop (Newton iterations)
-      } // r loop (Regularization parameter)
-      DUNE_THROW(MathError, "Failed to converge");
-    } // else ( value has not been calculated before )
+            }
+            zeta_k = chi_ * zeta_k;
+          } // backtracking linesearch while
+          if (zeta_k <= epsilon_ * beta_out->two_norm() / d_k->two_norm())
+            ++pure_newton;
+        } // else (stopping conditions)
+      } // k loop (Newton iterations)
+    } // r loop (Regularization parameter)
+    DUNE_THROW(MathError, "Failed to converge");
 
     return ret;
   }
@@ -2073,7 +2084,7 @@ public:
   {
     ConstIteratorType ret = cache_.begin();
     if (ret == end())
-      return std::make_pair(std::numeric_limits<RangeFieldType>::infinity(), ret);
+      return std::make_pair(std::numeric_limits<RangeFieldType>::max(), ret);
     auto diff = u - ret->first;
     // use infinity_norm as distance
     RangeFieldType distance = infinity_norm(diff);
@@ -2111,15 +2122,15 @@ public:
     return cache_.end();
   }
 
+private:
   static RangeFieldType infinity_norm(const KeyVectorType& vec)
   {
     RangeFieldType ret = std::abs(vec[0]);
     for (size_t ii = 1; ii < vec.size(); ++ii)
-      ret = std::max(ret, vec[ii]);
+      ret = std::max(ret, std::abs(vec[ii]));
     return ret;
   }
 
-private:
   size_t capacity_;
   MapType cache_;
   std::list<KeyVectorType> keys_;
@@ -2171,7 +2182,6 @@ public:
       const RangeFieldType epsilon = std::pow(2, -52),
       const std::string name = static_id())
     : index_set_(grid_view.indexSet())
-    , thread_cache_(cache_size)
     , entity_caches_(index_set_.size(0), LocalCacheType(cache_size))
     , mutexes_(index_set_.size(0))
     , implementation_(basis_functions, tau, epsilon_gamma, chi, xi, r_sequence, k_0, k_max, epsilon, name)
@@ -2189,12 +2199,11 @@ public:
     using typename BaseType::RangeReturnType;
 
     Localfunction(const IndexSetType& index_set,
-                  XT::Common::PerThreadValue<LocalCacheType>& thread_cache,
                   std::vector<LocalCacheType>& entity_caches,
                   std::vector<std::mutex>& mutexes,
                   const ImplementationType& implementation)
       : index_set_(index_set)
-      , thread_cache_(thread_cache)
+      , thread_cache_(cache_size)
       , entity_caches_(entity_caches)
       , mutexes_(mutexes)
       , implementation_(implementation)
@@ -2215,36 +2224,41 @@ public:
     std::unique_ptr<AlphaReturnType> get_alpha(const StateType& u, const bool regularize) const
     {
       // find starting point. Candidates: alpha_iso and the entries in the two caches
-      mutex_->lock();
-      StateType alpha_start;
-      RangeFieldType distance;
+      std::lock_guard<std::mutex> DUNE_UNUSED(guard)(*mutex_);
       const auto& basis_functions = implementation_.basis_functions();
-      static StateType u_iso = basis_functions.u_iso();
-      static StateType alpha_iso = basis_functions.alpha_iso();
-      static StateType alpha_iso_prime = basis_functions.alpha_iso_prime();
-      const auto entity_cache_result = entity_cache_->find_closest(u);
-      const auto thread_cache_result = thread_cache_->find_closest(u);
-      const auto& closest_result =
-          entity_cache_result.first < thread_cache_result.first ? entity_cache_result : thread_cache_result;
+      static const StateType u_iso = basis_functions.u_iso();
+      static const StateType alpha_iso = basis_functions.alpha_iso();
+      static const StateType alpha_iso_prime = basis_functions.alpha_iso_prime();
       const auto density = basis_functions.density(u);
       const auto u_iso_scaled = u_iso * density;
-      const auto u_iso_dist = (u - u_iso_scaled).infinity_norm();
-      if (u_iso_dist < closest_result.first) {
-        alpha_start = alpha_iso + alpha_iso_prime * std::log(density);
-        distance = u_iso_dist;
-      } else {
-        alpha_start = closest_result.second->second;
-        distance = closest_result.first;
+      // calculate (inf-norm) distance to isotropic moment with same density
+      RangeFieldType distance = (u - u_iso_scaled).infinity_norm();
+      StateType alpha_start = alpha_iso + alpha_iso_prime * std::log(density);
+      if (!XT::Common::FloatCmp::eq(distance, 0.)) {
+        // calculate distance to closest moment in entity_cache
+        const auto entity_cache_dist_and_it = entity_cache_->find_closest(u);
+        const auto& entity_cache_dist = entity_cache_dist_and_it.first;
+        if (entity_cache_dist < distance) {
+          distance = entity_cache_dist;
+          alpha_start = entity_cache_dist_and_it.second->second;
+        }
+        if (!XT::Common::FloatCmp::eq(distance, 0.)) {
+          // calculate distance to closest moment in thread_cache
+          const auto thread_cache_dist_and_it = thread_cache_.find_closest(u);
+          const auto& thread_cache_dist = thread_cache_dist_and_it.first;
+          if (thread_cache_dist < distance) {
+            distance = thread_cache_dist;
+            alpha_start = thread_cache_dist_and_it.second->second;
+          }
+        }
       }
       // If alpha_start is already the solution, we are finished. Else start optimization.
       if (XT::Common::FloatCmp::eq(distance, 0.)) {
-        mutex_->unlock();
         return std::make_unique<AlphaReturnType>(std::make_pair(alpha_start, std::make_pair(u, 0.)));
       } else {
         auto ret = implementation_.get_alpha(u, alpha_start, regularize);
         entity_cache_->insert(ret->second.first, ret->first);
-        thread_cache_->insert(ret->second.first, ret->first);
-        mutex_->unlock();
+        thread_cache_.insert(ret->second.first, ret->first);
         return std::move(ret);
       }
     }
@@ -2267,7 +2281,7 @@ public:
 
   private:
     const IndexSetType& index_set_;
-    XT::Common::PerThreadValue<LocalCacheType>& thread_cache_;
+    mutable LocalCacheType thread_cache_;
     std::vector<LocalCacheType>& entity_caches_;
     std::vector<std::mutex>& mutexes_;
     const ImplementationType& implementation_;
@@ -2287,12 +2301,12 @@ public:
 
   virtual std::unique_ptr<LocalFunctionType> local_function() const override final
   {
-    return std::make_unique<Localfunction>(index_set_, thread_cache_, entity_caches_, mutexes_, implementation_);
+    return std::make_unique<Localfunction>(index_set_, entity_caches_, mutexes_, implementation_);
   }
 
   virtual std::unique_ptr<Localfunction> derived_local_function() const
   {
-    return std::make_unique<Localfunction>(index_set_, thread_cache_, entity_caches_, mutexes_, implementation_);
+    return std::make_unique<Localfunction>(index_set_, entity_caches_, mutexes_, implementation_);
   }
 
   StateType evaluate_kinetic_flux(const E& inside_entity,
@@ -2323,7 +2337,6 @@ public:
 
 private:
   const IndexSetType& index_set_;
-  mutable XT::Common::PerThreadValue<LocalCacheType> thread_cache_;
   mutable std::vector<LocalCacheType> entity_caches_;
   mutable std::vector<std::mutex> mutexes_;
   ImplementationType implementation_;

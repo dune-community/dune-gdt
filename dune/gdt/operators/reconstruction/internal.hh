@@ -101,6 +101,11 @@ public:
 
   virtual const MatrixType& eigenvectors(const size_t dd) const = 0;
 
+  bool affine() const
+  {
+    return flux_is_affine_;
+  }
+
 protected:
   const AnalyticalFluxType& analytical_flux_;
   const std::unique_ptr<LocalFluxType> local_flux_;

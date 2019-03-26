@@ -11,6 +11,8 @@
 #ifndef DUNE_GDT_OPERATORS_FV_SLOPES_HH
 #define DUNE_GDT_OPERATORS_FV_SLOPES_HH
 
+#include "config.h"
+
 #if HAVE_CLP
 #  include <coin/ClpSimplex.hpp>
 #endif // HAVE_CLP
@@ -29,6 +31,7 @@
 #include <dune/xt/common/parallel/threadstorage.hh>
 
 #include <dune/gdt/momentmodels/basisfunctions/partial_moments.hh>
+#include <dune/gdt/momentmodels/entropybased_flux.hh>
 
 #include "internal.hh"
 
@@ -36,113 +39,180 @@ namespace Dune {
 namespace GDT {
 
 
-template <class VectorType, class MatrixType, size_t stencil_size = 3>
+template <class E, class EigenVectorWrapperType, size_t stencil_size = 3>
 class SlopeBase
 {
 public:
   virtual ~SlopeBase() = default;
 
+  using VectorType = typename EigenVectorWrapperType::VectorType;
+  using MatrixType = typename EigenVectorWrapperType::MatrixType;
   using StencilType = FieldVector<VectorType, stencil_size>;
 
-  // returns (limited) calculated slope in characteristic coordinates
+  virtual SlopeBase* copy() const = 0;
+
+  // at least one of the following two methods has to be implemented
+  // returns (limited) slope in ordinary coordinates
   virtual VectorType
-  get(const StencilType& stencil, const StencilType& stencil_char, const MatrixType& eigenvectors) const = 0;
+  get(const E& entity, const StencilType& stencil, const EigenVectorWrapperType& eigenvectors, const size_t dd) const
+  {
+    VectorType slope_char = get_char(entity, stencil, eigenvectors, dd);
+    VectorType slope;
+    eigenvectors.apply_eigenvectors(dd, slope_char, slope);
+    return slope;
+  }
+
+  // returns (limited) slope in characteristic coordinates
+  virtual VectorType get_char(const E& entity,
+                              const StencilType& stencil,
+                              const EigenVectorWrapperType& eigenvectors,
+                              const size_t dd) const
+  {
+    VectorType slope = get(entity, stencil, eigenvectors, dd);
+    // convert to characteristic coordinates
+    VectorType slope_char;
+    eigenvectors.apply_inverse_eigenvectors(dd, slope, slope_char);
+    return slope_char;
+  }
 };
 
 
 // Central slope without any limiting
-template <class VectorType, class MatrixType, size_t stencil_size>
-class CentralSlope : public SlopeBase<VectorType, MatrixType, stencil_size>
+template <class E, class EigenVectorWrapperType, size_t stencil_size>
+class CentralSlope : public SlopeBase<E, EigenVectorWrapperType, stencil_size>
 {
-  using BaseType = SlopeBase<VectorType, MatrixType, stencil_size>;
+  using BaseType = SlopeBase<E, EigenVectorWrapperType, stencil_size>;
+  using ThisType = CentralSlope;
 
 public:
   using typename BaseType::StencilType;
+  using typename BaseType::VectorType;
 
-  virtual VectorType get(const StencilType& /*stencil*/,
-                         const StencilType& stencil_char,
-                         const MatrixType& /*eigenvectors*/) const override final
+  virtual BaseType* copy() const override final
   {
-    const VectorType& u_left = stencil_char[0];
-    const VectorType& u_right = stencil_char[2];
+    return new ThisType(*this);
+  }
+
+  virtual VectorType get(const E& /*entity*/,
+                         const StencilType& stencil,
+                         const EigenVectorWrapperType& /*eigenvectors*/,
+                         const size_t /*dd*/) const override final
+  {
+    const VectorType& u_left = stencil[0];
+    const VectorType& u_right = stencil[2];
     return (u_right - u_left) / 2.;
   }
 };
 
 
 // Left slope without any limiting
-template <class VectorType, class MatrixType, size_t stencil_size>
-class LeftSlope : public SlopeBase<VectorType, MatrixType, stencil_size>
+template <class E, class EigenVectorWrapperType, size_t stencil_size>
+class LeftSlope : public SlopeBase<E, EigenVectorWrapperType, stencil_size>
 {
-  using BaseType = SlopeBase<VectorType, MatrixType, stencil_size>;
+  using BaseType = SlopeBase<E, EigenVectorWrapperType, stencil_size>;
+  using ThisType = LeftSlope;
 
 public:
   using typename BaseType::StencilType;
+  using typename BaseType::VectorType;
 
-  virtual VectorType get(const StencilType& /*stencil*/,
-                         const StencilType& stencil_char,
-                         const MatrixType& /*eigenvectors*/) const override final
+  virtual BaseType* copy() const override final
   {
-    const VectorType& u_left = stencil_char[0];
-    const VectorType& u = stencil_char[1];
+    return new ThisType();
+  }
+
+  virtual VectorType get(const E& /*entity*/,
+                         const StencilType& stencil,
+                         const EigenVectorWrapperType& /*eigenvectors*/,
+                         const size_t /*dd*/) const override final
+  {
+    const VectorType& u_left = stencil[0];
+    const VectorType& u = stencil[1];
     return u - u_left;
   }
 };
 
 
 // Right slope without any limiting
-template <class VectorType, class MatrixType, size_t stencil_size>
-class RightSlope : public SlopeBase<VectorType, MatrixType, stencil_size>
+template <class E, class EigenVectorWrapperType, size_t stencil_size>
+class RightSlope : public SlopeBase<E, EigenVectorWrapperType, stencil_size>
 {
-  using BaseType = SlopeBase<VectorType, MatrixType, stencil_size>;
+  using BaseType = SlopeBase<E, EigenVectorWrapperType, stencil_size>;
+  using ThisType = RightSlope;
 
 public:
   using typename BaseType::StencilType;
+  using typename BaseType::VectorType;
 
-  virtual VectorType get(const StencilType& /*stencil*/,
-                         const StencilType& stencil_char,
-                         const MatrixType& /*eigenvectors*/) const override final
+  virtual BaseType* copy() const override final
   {
-    const VectorType& u = stencil_char[1];
-    const VectorType& u_right = stencil_char[2];
+    return new ThisType(*this);
+  }
+
+  virtual VectorType get(const E& /*entity*/,
+                         const StencilType& stencil,
+                         const EigenVectorWrapperType& /*eigenvectors*/,
+                         const size_t /*dd*/) const override final
+  {
+    const VectorType& u = stencil[1];
+    const VectorType& u_right = stencil[2];
     return u_right - u;
   }
 };
 
 
 // Zero slope
-template <class VectorType, class MatrixType, size_t stencil_size>
-class NoSlope : public SlopeBase<VectorType, MatrixType, stencil_size>
+template <class E, class EigenVectorWrapperType, size_t stencil_size>
+class NoSlope : public SlopeBase<E, EigenVectorWrapperType, stencil_size>
 {
-  using BaseType = SlopeBase<VectorType, MatrixType, stencil_size>;
+  using BaseType = SlopeBase<E, EigenVectorWrapperType, stencil_size>;
+  using ThisType = NoSlope;
+  using typename BaseType::VectorType;
 
 public:
   using typename BaseType::StencilType;
 
-  virtual VectorType get(const StencilType& /*stencil*/,
-                         const StencilType& /*stencil_char*/,
-                         const MatrixType& /*eigenvectors*/) const override final
+  virtual BaseType* copy() const override final
+  {
+    return new ThisType(*this);
+  }
+
+  virtual VectorType get(const E& /*entity*/,
+                         const StencilType& /*stencil*/,
+                         const EigenVectorWrapperType& /*eigenvectors*/,
+                         const size_t /*dd*/) const override final
   {
     return VectorType(0.);
   }
 };
 
 
-template <class VectorType, class MatrixType>
-class MinmodSlope : public SlopeBase<VectorType, MatrixType, 3>
+template <class E, class EigenVectorWrapperType>
+class MinmodSlope : public SlopeBase<E, EigenVectorWrapperType, 3>
 {
-  using BaseType = SlopeBase<VectorType, MatrixType, 3>;
+  using BaseType = SlopeBase<E, EigenVectorWrapperType, 3>;
+  using ThisType = MinmodSlope;
+  using typename BaseType::VectorType;
 
 public:
   using typename BaseType::StencilType;
 
-  virtual VectorType get(const StencilType& /*stencil*/,
-                         const StencilType& stencil_char,
-                         const MatrixType& /*eigenvectors*/) const override final
+  virtual BaseType* copy() const override final
   {
-    const VectorType slope_left = stencil_char[1] - stencil_char[0];
-    const VectorType slope_right = stencil_char[2] - stencil_char[1];
-    return minmod(slope_left, slope_right);
+    return new ThisType(*this);
+  }
+
+  virtual VectorType get_char(const E& /*entity*/,
+                              const StencilType& stencil,
+                              const EigenVectorWrapperType& eigenvectors,
+                              const size_t dd) const override final
+  {
+    const VectorType slope_left = stencil[1] - stencil[0];
+    const VectorType slope_right = stencil[2] - stencil[1];
+    VectorType slope_left_char, slope_right_char;
+    eigenvectors.apply_inverse_eigenvectors(dd, slope_left, slope_left_char);
+    eigenvectors.apply_inverse_eigenvectors(dd, slope_right, slope_right_char);
+    return minmod(slope_left_char, slope_right_char);
   }
 
   static VectorType minmod(const VectorType& first_slope, const VectorType& second_slope)
@@ -156,48 +226,71 @@ public:
 };
 
 
-template <class VectorType, class MatrixType>
-class McSlope : public SlopeBase<VectorType, MatrixType, 3>
+template <class E, class EigenVectorWrapperType>
+class McSlope : public SlopeBase<E, EigenVectorWrapperType, 3>
 {
-  using BaseType = SlopeBase<VectorType, MatrixType, 3>;
-  using MinmodType = MinmodSlope<VectorType, MatrixType>;
+  using BaseType = SlopeBase<E, EigenVectorWrapperType, 3>;
+  using ThisType = McSlope;
+  using MinmodType = MinmodSlope<E, EigenVectorWrapperType>;
 
 public:
   using typename BaseType::StencilType;
+  using typename BaseType::VectorType;
 
-  virtual VectorType get(const StencilType& /*stencil*/,
-                         const StencilType& stencil_char,
-                         const MatrixType& /*eigenvectors*/) const override final
+  virtual BaseType* copy() const override final
   {
-    const VectorType& u_left = stencil_char[0];
-    const VectorType& u = stencil_char[1];
-    const VectorType& u_right = stencil_char[2];
-    const VectorType slope_left_twice = (u - u_left) * 2.;
-    const VectorType slope_right_twice = (u_right - u) * 2.;
+    return new ThisType(*this);
+  }
+
+  virtual VectorType get_char(const E& /*entity*/,
+                              const StencilType& stencil,
+                              const EigenVectorWrapperType& eigenvectors,
+                              const size_t dd) const override final
+  {
+    const VectorType& u_left = stencil[0];
+    const VectorType& u = stencil[1];
+    const VectorType& u_right = stencil[2];
+    const VectorType slope_left = (u - u_left) * 2.;
+    const VectorType slope_right = (u_right - u) * 2.;
     const VectorType slope_center = (u_right - u_left) / 2.;
-    const VectorType first_slope = MinmodType::minmod(slope_left_twice, slope_right_twice);
-    return MinmodType::minmod(first_slope, slope_center);
+    VectorType slope_left_char, slope_right_char, slope_center_char;
+    eigenvectors.apply_inverse_eigenvectors(dd, slope_left, slope_left_char);
+    eigenvectors.apply_inverse_eigenvectors(dd, slope_right, slope_right_char);
+    eigenvectors.apply_inverse_eigenvectors(dd, slope_center, slope_center_char);
+    const VectorType first_slope = MinmodType::minmod(slope_left_char, slope_right_char);
+    return MinmodType::minmod(first_slope, slope_center_char);
   }
 };
 
 
-template <class VectorType, class MatrixType>
-class SuperbeeSlope : public SlopeBase<VectorType, MatrixType, 3>
+template <class E, class EigenVectorWrapperType>
+class SuperbeeSlope : public SlopeBase<E, EigenVectorWrapperType, 3>
 {
-  using BaseType = SlopeBase<VectorType, MatrixType, 3>;
-  using MinmodType = MinmodSlope<VectorType, MatrixType>;
+  using BaseType = SlopeBase<E, EigenVectorWrapperType, 3>;
+  using ThisType = SuperbeeSlope;
+  using MinmodType = MinmodSlope<E, EigenVectorWrapperType>;
 
 public:
   using typename BaseType::StencilType;
+  using typename BaseType::VectorType;
 
-  virtual VectorType get(const StencilType& /*stencil*/,
-                         const StencilType& stencil_char,
-                         const MatrixType& /*eigenvectors*/) const override final
+  virtual BaseType* copy() const override final
   {
-    const VectorType slope_left = stencil_char[1] - stencil_char[0];
-    const VectorType slope_right = stencil_char[2] - stencil_char[1];
-    const VectorType first_slope = MinmodType::minmod(slope_left, slope_right * 2.);
-    const VectorType second_slope = MinmodType::minmod(slope_left * 2., slope_right);
+    return new ThisType(*this);
+  }
+
+  virtual VectorType get_char(const E& /*entity*/,
+                              const StencilType& stencil,
+                              const EigenVectorWrapperType& eigenvectors,
+                              const size_t dd) const override final
+  {
+    const VectorType slope_left = stencil[1] - stencil[0];
+    const VectorType slope_right = stencil[2] - stencil[1];
+    VectorType slope_left_char, slope_right_char;
+    eigenvectors.apply_inverse_eigenvectors(dd, slope_left, slope_left_char);
+    eigenvectors.apply_inverse_eigenvectors(dd, slope_right, slope_right_char);
+    const VectorType first_slope = MinmodType::minmod(slope_left_char, slope_right_char * 2.);
+    const VectorType second_slope = MinmodType::minmod(slope_left_char * 2., slope_right_char);
     return maxmod(first_slope, second_slope);
   }
 
@@ -212,44 +305,94 @@ public:
 }; // class SuperbeeSlope
 
 
+template <class GV, class BasisfunctionType>
+class RealizabilityLimiterBase
+{
+public:
+  using E = XT::Grid::extract_entity_t<GV>;
+  using EntropyFluxType = EntropyBasedFluxFunction<GV, BasisfunctionType>;
+  using StateType = typename EntropyFluxType::StateType;
+
+  RealizabilityLimiterBase(const EntropyFluxType& entropy_flux)
+    : entropy_flux_(entropy_flux)
+    , local_flux_(entropy_flux_.derived_local_function())
+  {}
+
+  RealizabilityLimiterBase(const RealizabilityLimiterBase& other)
+    : entropy_flux_(other.entropy_flux_)
+    , local_flux_(entropy_flux_.derived_local_function())
+  {}
+
+  // Ensures we are able to solve the optimization problems for the reconstructed values without regularization. If
+  // optimization fails, we just set the slope to 0.
+  template <class VectorType>
+  void ensure_solvability(const E& entity, const VectorType& u, VectorType& slope) const
+  {
+    local_flux_->bind(entity);
+    try {
+      const auto u_left = u - slope * 0.5;
+      const auto u_right = u + slope * 0.5;
+      local_flux_->get_alpha(u_left, false);
+      local_flux_->get_alpha(u_right, false);
+    } catch (const Dune::MathError&) {
+      std::fill(slope.begin(), slope.end(), 0.);
+    }
+  }
+
+private:
+  const EntropyFluxType& entropy_flux_;
+  std::unique_ptr<typename EntropyFluxType::Localfunction> local_flux_;
+};
+
+
 // Realizability limiter that ensures positivity of the components of u in noncharacteristic variables. Uses single
 // limiter variable for all components.
-// TODO: Make usable with interface quadratures different from the midpoint quadrature
-// See dune/gdt/operators/fv/entropybased/realizability.hh
-template <class RangeFieldType,
-          size_t dimRange,
-          class MatrixType,
-          class SlopeType = MinmodSlope<FieldVector<RangeFieldType, dimRange>, MatrixType>>
-class PositivityLimitedSlope : public SlopeBase<FieldVector<RangeFieldType, dimRange>, MatrixType, 3>
+template <class GV,
+          class BasisfunctionType,
+          class EigenVectorWrapperType,
+          class SlopeType = MinmodSlope<XT::Grid::extract_entity_t<GV>, EigenVectorWrapperType>>
+class PositivityLimitedSlope
+  : public SlopeBase<XT::Grid::extract_entity_t<GV>, EigenVectorWrapperType, 3>
+  , public RealizabilityLimiterBase<GV, BasisfunctionType>
 {
-  using VectorType = FieldVector<RangeFieldType, dimRange>;
-  using BaseType = SlopeBase<VectorType, MatrixType, 3>;
+  using ThisType = PositivityLimitedSlope;
+  using RangeFieldType = typename BasisfunctionType::RangeFieldType;
+  static const size_t dimRange = BasisfunctionType::dimRange;
+  using RealizabilityBaseType = RealizabilityLimiterBase<GV, BasisfunctionType>;
+  using typename RealizabilityBaseType::E;
+  using typename RealizabilityBaseType::EntropyFluxType;
+  using BaseType = SlopeBase<E, EigenVectorWrapperType, 3>;
+  using typename BaseType::VectorType;
 
 public:
   using typename BaseType::StencilType;
 
   // This limiter ensures u_i >= epsilon for all components u_i of u.
-  PositivityLimitedSlope(const RangeFieldType epsilon = 0.)
-    : epsilon_(epsilon)
+  PositivityLimitedSlope(const EntropyFluxType& entropy_flux, const RangeFieldType epsilon = 0.)
+    : RealizabilityBaseType(entropy_flux)
+    , epsilon_(epsilon)
   {}
 
-  virtual VectorType
-  get(const StencilType& stencil, const StencilType& stencil_char, const MatrixType& A) const override final
+  virtual BaseType* copy() const override final
+  {
+    return new ThisType(*this);
+  }
+
+  virtual VectorType get(const E& entity,
+                         const StencilType& stencil,
+                         const EigenVectorWrapperType& eigenvectors,
+                         const size_t dd) const override final
   {
     static const VectorType zero_vector(0.);
     const VectorType& u_bar = stencil[1];
     if (!is_epsilon_realizable(u_bar, epsilon_))
       return zero_vector;
-    const VectorType slope = slope_limiter_.get(stencil, stencil_char, A);
+    const VectorType slope = slope_limiter_.get(entity, stencil, eigenvectors, dd);
     // this needs to be changed for other interface quadratures (see above)
-    const VectorType& u_bar_char = stencil_char[1];
-    const FieldVector<VectorType, 2> reconstructed_values{u_bar_char - 0.5 * slope, u_bar_char + 0.5 * slope};
+    const FieldVector<VectorType, 2> reconstructed_values{u_bar - 0.5 * slope, u_bar + 0.5 * slope};
     VectorType thetas(0.);
-    VectorType u;
     for (size_t kk = 0; kk < reconstructed_values.size(); ++kk) {
-      const VectorType& u_char = reconstructed_values[kk];
-      // convert back to ordinary coordinates
-      A.mv(u_char, u);
+      const VectorType& u = reconstructed_values[kk];
       for (size_t ii = 0; ii < u.size(); ++ii) {
         if (u[ii] >= u_bar[ii])
           continue;
@@ -261,6 +404,7 @@ public:
     const auto theta_max = *std::max_element(thetas.begin(), thetas.end());
     assert(XT::Common::FloatCmp::le(theta_max, 1.) && XT::Common::FloatCmp::ge(theta_max, 0.));
     VectorType ret = slope * (1 - theta_max);
+    this->ensure_solvability(entity, u_bar, ret);
     return ret;
   }
 
@@ -280,44 +424,52 @@ private:
 
 // Realizability limiter that ensures positivity of the components of u in noncharacteristic variables. Uses single
 // limiter variable for all components.
-// TODO: Make usable with interface quadratures different from the midpoint quadrature
-// See dune/gdt/operators/fv/entropybased/realizability.hh
-template <class RangeFieldType,
+template <class GV,
+          class RangeFieldType,
           size_t dimRange,
-          class MatrixType,
-          class SlopeType = MinmodSlope<XT::Common::BlockedFieldVector<RangeFieldType, dimRange / 2, 2>, MatrixType>>
+          class EigenVectorWrapperType,
+          class SlopeType = MinmodSlope<XT::Grid::extract_entity_t<GV>, EigenVectorWrapperType>>
 class Dg1dRealizabilityLimitedSlope
-  : public SlopeBase<XT::Common::BlockedFieldVector<RangeFieldType, dimRange / 2, 2>, MatrixType, 3>
+  : public SlopeBase<XT::Grid::extract_entity_t<GV>, EigenVectorWrapperType, 3>
+  , public RealizabilityLimiterBase<GV, PartialMomentBasis<typename GV::ctype, 1, RangeFieldType, dimRange, 1, 1>>
 {
-  using VectorType = XT::Common::BlockedFieldVector<RangeFieldType, dimRange / 2, 2>;
-  using BaseType = SlopeBase<VectorType, MatrixType, 3>;
+  using ThisType = Dg1dRealizabilityLimitedSlope;
   using BasisfunctionType = Dune::GDT::PartialMomentBasis<RangeFieldType, 1, RangeFieldType, dimRange, 1, 1, 1>;
+  using RealizabilityBaseType = RealizabilityLimiterBase<GV, BasisfunctionType>;
+  using typename RealizabilityBaseType::E;
+  using typename RealizabilityBaseType::EntropyFluxType;
+  using BaseType = SlopeBase<E, EigenVectorWrapperType, 3>;
+  using typename BaseType::VectorType;
 
 public:
   using typename BaseType::StencilType;
 
   // This limiter ensures u_i >= epsilon for all components u_i of u.
-  Dg1dRealizabilityLimitedSlope(const BasisfunctionType& basis_functions, const RangeFieldType epsilon = 0.)
-    : basis_functions_(basis_functions)
+  Dg1dRealizabilityLimitedSlope(const EntropyFluxType& entropy_flux,
+                                const BasisfunctionType& basis_functions,
+                                const RangeFieldType epsilon = 0.)
+    : RealizabilityBaseType(entropy_flux)
+    , basis_functions_(basis_functions)
     , epsilon_(epsilon)
   {}
 
-  virtual VectorType
-  get(const StencilType& stencil, const StencilType& stencil_char, const MatrixType& A) const override final
+  virtual BaseType* copy() const override final
   {
-    static const VectorType zero_vector(0.);
-    const VectorType slope = slope_limiter_.get(stencil, stencil_char, A);
-    // this needs to be changed for other interface quadratures (see above)
-    const VectorType& u_bar_char = stencil_char[1];
-    const FieldVector<VectorType, 2> reconstructed_values{u_bar_char - slope * 0.5, u_bar_char + slope * 0.5};
+    return new ThisType(*this);
+  }
+
+  virtual VectorType get(const E& entity,
+                         const StencilType& stencil,
+                         const EigenVectorWrapperType& eigenvectors,
+                         const size_t dd) const override final
+  {
+    const VectorType slope = slope_limiter_.get(entity, stencil, eigenvectors, dd);
     const VectorType& u_bar = stencil[1];
+    const FieldVector<VectorType, 2> reconstructed_values{u_bar - slope * 0.5, u_bar + slope * 0.5};
 
     VectorType thetas(0.);
-    VectorType u;
     for (size_t kk = 0; kk < reconstructed_values.size(); ++kk) {
-      const VectorType& u_char = reconstructed_values[kk];
-      // convert back to ordinary coordinates
-      A.mv(u_char, u);
+      const VectorType& u = reconstructed_values[kk];
       for (size_t ii = 0; ii < dimRange / 2; ++ii) {
         const auto& u0 = u[2 * ii];
         const auto& u1 = u[2 * ii + 1];
@@ -347,6 +499,7 @@ public:
       assert(XT::Common::FloatCmp::le(thetas[ii], 1.) && XT::Common::FloatCmp::ge(thetas[ii], 0.));
       ret[ii] = slope[ii] * (1 - thetas[ii]);
     }
+    this->ensure_solvability(entity, u_bar, ret);
     return ret;
   }
 
@@ -371,53 +524,58 @@ private:
 #if HAVE_QHULL
 // Realizability limiter that ensures that the limited values are within the convex hull of the quadrature points. Uses
 // single limiter variable for all components.
-// TODO: Make usable with interface quadratures different from the midpoint quadrature
-// See dune/gdt/operators/fv/entropybased/realizability.hh
-template <
-    class BasisfunctionType,
-    class MatrixType,
-    class SlopeType =
-        MinmodSlope<FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>, MatrixType>>
+template <class GV,
+          class BasisfunctionType,
+          class EigenVectorWrapperType,
+          class SlopeType = MinmodSlope<XT::Grid::extract_entity_t<GV>, EigenVectorWrapperType>>
 class ConvexHullRealizabilityLimitedSlope
-  : public SlopeBase<FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>,
-                     MatrixType,
-                     3>
+  : public SlopeBase<XT::Grid::extract_entity_t<GV>, EigenVectorWrapperType, 3>
+  , public RealizabilityLimiterBase<GV, BasisfunctionType>
 {
+  using ThisType = ConvexHullRealizabilityLimitedSlope;
   using RangeFieldType = typename BasisfunctionType::RangeFieldType;
   static const size_t dimRange = BasisfunctionType::dimRange;
-  using VectorType = FieldVector<RangeFieldType, dimRange>;
-  using BaseType = SlopeBase<VectorType, MatrixType, 3>;
+  using RealizabilityBaseType = RealizabilityLimiterBase<GV, BasisfunctionType>;
+  using typename RealizabilityBaseType::E;
+  using typename RealizabilityBaseType::EntropyFluxType;
+  using BaseType = SlopeBase<E, EigenVectorWrapperType, 3>;
+  using typename BaseType::VectorType;
   using PlaneCoefficientsType = typename std::vector<std::pair<VectorType, RangeFieldType>>;
 
 public:
   using typename BaseType::StencilType;
 
-  ConvexHullRealizabilityLimitedSlope(const BasisfunctionType& basis_functions, const RangeFieldType epsilon = 0.)
-    : basis_functions_(basis_functions)
+  ConvexHullRealizabilityLimitedSlope(const EntropyFluxType& entropy_flux,
+                                      const BasisfunctionType& basis_functions,
+                                      const RangeFieldType epsilon = 0.)
+    : RealizabilityBaseType(entropy_flux)
+    , basis_functions_(basis_functions)
     , epsilon_(epsilon)
   {
     calculate_plane_coefficients();
   }
 
-  virtual VectorType
-  get(const StencilType& stencil, const StencilType& stencil_char, const MatrixType& A) const override final
+  virtual BaseType* copy() const override final
+  {
+    return new ThisType(*this);
+  }
+
+  virtual VectorType get(const E& entity,
+                         const StencilType& stencil,
+                         const EigenVectorWrapperType& eigenvectors,
+                         const size_t dd) const override final
   {
     static const VectorType zero_vector(0.);
     const VectorType& u_bar = stencil[1];
     if (!is_epsilon_realizable(u_bar, epsilon_))
       return zero_vector;
-    const VectorType slope = slope_limiter_.get(stencil, stencil_char, A);
+    const VectorType slope = slope_limiter_.get(entity, stencil, eigenvectors, dd);
 
-    // this needs to be changed for other interface quadratures (see above)
-    const VectorType& u_bar_char = stencil_char[1];
-    const FieldVector<VectorType, 2> reconstructed_values{u_bar_char - 0.5 * slope, u_bar_char + 0.5 * slope};
+    const FieldVector<VectorType, 2> reconstructed_values{u_bar - 0.5 * slope, u_bar + 0.5 * slope};
 
     RangeFieldType theta(-epsilon_);
-    VectorType u;
     for (size_t kk = 0; kk < reconstructed_values.size(); ++kk) {
-      const VectorType& u_char = reconstructed_values[kk];
-      // convert back to ordinary coordinates
-      A.mv(u_char, u);
+      const VectorType& u = reconstructed_values[kk];
       // rescale u_l, u_bar
       auto u_bar_minus_u = u_bar - u;
       const auto factor = std::max(basis_functions_.density(u), basis_functions_.density(u_bar)) / 2.;
@@ -436,6 +594,7 @@ public:
 
     assert(XT::Common::FloatCmp::le(theta, 1.) && XT::Common::FloatCmp::ge(theta, 0.));
     VectorType ret = slope * (1 - theta);
+    this->ensure_solvability(entity, u_bar, ret);
     return ret;
   }
 
@@ -474,28 +633,25 @@ private:
 
 // Realizability limiter that ensures that the limited values are within the convex hull of the quadrature points. Uses
 // single limiter variable for all components.
-// TODO: Make usable with interface quadratures different from the midpoint quadrature
-// See dune/gdt/operators/fv/entropybased/realizability.hh
-template <
-    class BasisfunctionType,
-    class MatrixType,
-    class SlopeType =
-        MinmodSlope<FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>, MatrixType>>
+template <class GV,
+          class BasisfunctionType,
+          class EigenVectorWrapperType,
+
+          class SlopeType = MinmodSlope<XT::Grid::extract_entity_t<GV>, EigenVectorWrapperType>>
 class DgConvexHullRealizabilityLimitedSlope
-  : public SlopeBase<
-        XT::Common::BlockedFieldVector<typename BasisfunctionType::RangeFieldType,
-                                       BasisfunctionType::dimRange / ((BasisfunctionType::dimDomain == 1) ? 2 : 4),
-                                       (BasisfunctionType::dimDomain == 1) ? 2 : 4>,
-        MatrixType,
-        3>
+  : public SlopeBase<XT::Grid::extract_entity_t<GV>, EigenVectorWrapperType, 3>
+  , public RealizabilityLimiterBase<GV, BasisfunctionType>
 {
   using ThisType = DgConvexHullRealizabilityLimitedSlope;
   using RangeFieldType = typename BasisfunctionType::RangeFieldType;
   static const size_t dimRange = BasisfunctionType::dimRange;
   static const size_t block_size = (BasisfunctionType::dimDomain == 1) ? 2 : 4;
   static const size_t num_blocks = dimRange / block_size;
-  using VectorType = XT::Common::BlockedFieldVector<RangeFieldType, num_blocks, block_size>;
-  using BaseType = SlopeBase<VectorType, MatrixType, 3>;
+  using RealizabilityBaseType = RealizabilityLimiterBase<GV, BasisfunctionType>;
+  using typename RealizabilityBaseType::E;
+  using typename RealizabilityBaseType::EntropyFluxType;
+  using BaseType = SlopeBase<E, EigenVectorWrapperType, 3>;
+  using typename BaseType::VectorType;
   using BlockRangeType = typename VectorType::BlockType;
   using BlockPlaneCoefficientsType = typename std::vector<std::pair<BlockRangeType, RangeFieldType>>;
   using PlaneCoefficientsType = FieldVector<BlockPlaneCoefficientsType, num_blocks>;
@@ -503,8 +659,11 @@ class DgConvexHullRealizabilityLimitedSlope
 public:
   using typename BaseType::StencilType;
 
-  DgConvexHullRealizabilityLimitedSlope(const BasisfunctionType& basis_functions, const RangeFieldType epsilon = 0.)
-    : basis_functions_(basis_functions)
+  DgConvexHullRealizabilityLimitedSlope(const EntropyFluxType& entropy_flux,
+                                        const BasisfunctionType& basis_functions,
+                                        const RangeFieldType epsilon = 0.)
+    : RealizabilityBaseType(entropy_flux)
+    , basis_functions_(basis_functions)
     , epsilon_(epsilon)
   {
     if (!basis_functions_.plane_coefficients()[0].size())
@@ -516,23 +675,24 @@ public:
         coeff.second -= epsilon_ * coeff.first.two_norm();
   }
 
-  virtual VectorType
-  get(const StencilType& stencil, const StencilType& stencil_char, const MatrixType& A) const override final
+  virtual BaseType* copy() const override final
+  {
+    return new ThisType(*this);
+  }
+
+  virtual VectorType get(const E& entity,
+                         const StencilType& stencil,
+                         const EigenVectorWrapperType& eigenvectors,
+                         const size_t dd) const override final
   {
     const VectorType& u_bar = stencil[1];
-    const VectorType slope = slope_limiter_.get(stencil, stencil_char, A);
-
-    // this needs to be changed for other interface quadratures (see above)
-    const VectorType& u_bar_char = stencil_char[1];
-    const FieldVector<VectorType, 2> reconstructed_values{u_bar_char - slope * 0.5, u_bar_char + slope * 0.5};
+    const VectorType slope = slope_limiter_.get(entity, stencil, eigenvectors, dd);
+    const FieldVector<VectorType, 2> reconstructed_values{u_bar - slope * 0.5, u_bar + slope * 0.5};
 
     // vector to store thetas for each local reconstructed value
     FieldVector<RangeFieldType, num_blocks> thetas(0.);
-    VectorType u;
     for (size_t kk = 0; kk < reconstructed_values.size(); ++kk) {
-      const VectorType& u_char = reconstructed_values[kk];
-      // convert back to ordinary coordinates
-      A.mv(u_char, u);
+      const VectorType& u = reconstructed_values[kk];
       for (size_t jj = 0; jj < num_blocks; ++jj) {
         // Check realizability of u_bar in this block. The first condition avoids unnecessary repeated checking.
         if (thetas[jj] == 1. || !is_epsilon_realizable(u_bar.block(jj), jj)) {
@@ -549,6 +709,7 @@ public:
       for (size_t ii = 0; ii < block_size; ++ii)
         ret.block(jj)[ii] = slope.block(jj)[ii] * (1 - thetas[jj]);
     }
+    this->ensure_solvability(entity, u_bar, ret);
     return ret;
   } // ... get(...)
 
@@ -583,21 +744,25 @@ private:
 
 #else // HAVE_QHULL
 
-template <
-    class BasisfunctionType,
-    class MatrixType,
-    class SlopeType =
-        MinmodSlope<FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>, MatrixType>>
+template <class GV,
+          class BasisfunctionType,
+
+          class SlopeType =
+              MinmodSlope<XT::Grid::extract_entity_t<GV>,
+                          FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>,
+                          EigenVectorWrapperType>>
 class ConvexHullRealizabilityLimitedSlope
 {
   static_assert(Dune::AlwaysFalse<BasisfunctionType>::value, "You are missing Qhull!");
 };
 
-template <
-    class BasisfunctionType,
-    class MatrixType,
-    class SlopeType =
-        MinmodSlope<FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>, MatrixType>>
+template <class GV,
+          class BasisfunctionType,
+
+          class SlopeType =
+              MinmodSlope<XT::Grid::extract_entity_t<GV>,
+                          FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>,
+                          EigenVectorWrapperType>>
 class DgConvexHullRealizabilityLimitedSlopeSlope
 {
   static_assert(Dune::AlwaysFalse<BasisfunctionType>::value, "You are missing Qhull!");
@@ -607,50 +772,75 @@ class DgConvexHullRealizabilityLimitedSlopeSlope
 #if HAVE_CLP
 // Characteristic component-wise realizability limiter that ensures positivity of the components of u in
 // noncharacteristic variables by solving a linear program.
-// TODO: Make usable with interface quadratures different from the midpoint quadrature
-// See dune/gdt/operators/fv/entropybased/realizability.hh
-template <class RangeFieldType,
-          size_t dimRange,
-          class MatrixType,
-          class SlopeType = MinmodSlope<FieldVector<RangeFieldType, dimRange>, MatrixType>>
-class LpPositivityLimitedSlope : public SlopeBase<FieldVector<RangeFieldType, dimRange>, MatrixType, 3>
+template <class GV,
+          class BasisfunctionType,
+          class EigenVectorWrapperType,
+          class SlopeType = MinmodSlope<XT::Grid::extract_entity_t<GV>, EigenVectorWrapperType>>
+class LpPositivityLimitedSlope
+  : public SlopeBase<XT::Grid::extract_entity_t<GV>, EigenVectorWrapperType, 3>
+  , public RealizabilityLimiterBase<GV, BasisfunctionType>
 {
-  using VectorType = FieldVector<RangeFieldType, dimRange>;
-  using BaseType = SlopeBase<VectorType, MatrixType, 3>;
+  using ThisType = LpPositivityLimitedSlope;
+  using RangeFieldType = typename BasisfunctionType::RangeFieldType;
+  static const size_t dimRange = BasisfunctionType::dimRange;
+  using RealizabilityBaseType = RealizabilityLimiterBase<GV, BasisfunctionType>;
+  using typename RealizabilityBaseType::E;
+  using typename RealizabilityBaseType::EntropyFluxType;
+  using BaseType = SlopeBase<E, EigenVectorWrapperType, 3>;
+  using typename BaseType::MatrixType;
+  using typename BaseType::VectorType;
 
 public:
   using typename BaseType::StencilType;
 
-  LpPositivityLimitedSlope(const RangeFieldType epsilon)
-    : epsilon_(epsilon)
+  LpPositivityLimitedSlope(const EntropyFluxType& entropy_flux, const RangeFieldType epsilon)
+    : RealizabilityBaseType(entropy_flux)
+    , epsilon_(epsilon)
   {}
 
-  virtual VectorType
-  get(const StencilType& stencil, const StencilType& stencil_char, const MatrixType& A) const override final
+  LpPositivityLimitedSlope(const ThisType& other)
+    : BaseType(other)
+    , RealizabilityBaseType(other)
+    , epsilon_(other.epsilon_)
+    , A_tilde_transposed_(std::make_unique<MatrixType>())
+    , slope_limiter_(other.slope_limiter_)
+  {}
+
+  virtual BaseType* copy() const override final
+  {
+    return new ThisType(*this);
+  }
+
+  virtual VectorType get(const E& entity,
+                         const StencilType& stencil,
+                         const EigenVectorWrapperType& eigenvectors,
+                         const size_t dd) const override final
   {
     static const VectorType zero_vector(0.);
     const VectorType& u_bar = stencil[1];
     if (!is_epsilon_realizable(u_bar, epsilon_))
       return zero_vector;
-    const VectorType slope = slope_limiter_.get(stencil, stencil_char, A);
-    if (XT::Common::FloatCmp::eq(slope, zero_vector))
+    const VectorType slope_char = slope_limiter_.get_char(entity, stencil, eigenvectors, dd);
+    if (XT::Common::FloatCmp::eq(slope_char, zero_vector))
       return zero_vector;
     FieldVector<VectorType, 2> thetas;
-    // this needs to be changed for other interface quadratures (see above)
-    const VectorType& u_bar_char = stencil_char[1];
-    const FieldVector<VectorType, 2> reconstructed_values{u_bar_char - 0.5 * slope, u_bar_char + 0.5 * slope};
+    VectorType u_bar_char;
+    eigenvectors.apply_inverse_eigenvectors(dd, u_bar, u_bar_char);
+    const FieldVector<VectorType, 2> reconstructed_values{u_bar_char - 0.5 * slope_char, u_bar_char + 0.5 * slope_char};
     auto& A_tilde_transposed = *A_tilde_transposed_;
     for (size_t kk = 0; kk < reconstructed_values.size(); ++kk) {
       const VectorType& u_char = reconstructed_values[kk];
-      thetas[kk] = solve_linear_program(u_char, u_bar_char, A, A_tilde_transposed);
+      thetas[kk] = solve_linear_program(u_char, u_bar_char, eigenvectors.eigenvectors(dd), A_tilde_transposed);
     } // kk
 
-    VectorType ret;
+    VectorType slope;
+    eigenvectors.apply_eigenvectors(dd, slope_char, slope);
     for (size_t ii = 0; ii < dimRange; ++ii) {
       const auto theta_max_ii = std::max(thetas[0][ii], thetas[1][ii]);
-      ret[ii] = slope[ii] * (1 - theta_max_ii);
+      slope[ii] = slope[ii] * (1 - theta_max_ii);
     }
-    return ret;
+    this->ensure_solvability(entity, u_bar, slope);
+    return slope;
   }
 
 private:
@@ -714,70 +904,94 @@ private:
   } // void solve_linear_program(...)
 
   const RangeFieldType epsilon_;
-  mutable XT::Common::PerThreadValue<MatrixType> A_tilde_transposed_;
+  mutable std::unique_ptr<MatrixType> A_tilde_transposed_;
   const SlopeType slope_limiter_;
 }; // class LpPositivityLimitedSlope<...>
 
 
 // Realizability limiter that solves a linear program to ensure the reconstructed values are still in the numerically
 // realizable set, i.e. in the convex hull of basis evaluations.
-// TODO: Make usable with interface quadratures different from the midpoint quadrature
-// See dune/gdt/operators/fv/entropybased/realizability.hh
-template <
-    class BasisfunctionType,
-    class MatrixType,
-    class SlopeType =
-        MinmodSlope<FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>, MatrixType>>
+template <class GV,
+          class BasisfunctionType,
+          class EigenVectorWrapperType,
+          class SlopeType = MinmodSlope<XT::Grid::extract_entity_t<GV>, EigenVectorWrapperType>>
 class LpConvexhullRealizabilityLimitedSlope
-  : public SlopeBase<FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>, MatrixType>
+  : public SlopeBase<XT::Grid::extract_entity_t<GV>, EigenVectorWrapperType>
+  , public RealizabilityLimiterBase<GV, BasisfunctionType>
 {
+  using ThisType = LpConvexhullRealizabilityLimitedSlope;
   using RangeFieldType = typename BasisfunctionType::RangeFieldType;
   static constexpr size_t dimRange = BasisfunctionType::dimRange;
   static_assert(dimRange < std::numeric_limits<int>::max(), "");
   static constexpr size_t num_rows = dimRange;
-  using VectorType = FieldVector<RangeFieldType, dimRange>;
-  using BaseType = SlopeBase<VectorType, MatrixType, 3>;
+  using RealizabilityBaseType = RealizabilityLimiterBase<GV, BasisfunctionType>;
+  using typename RealizabilityBaseType::E;
+  using typename RealizabilityBaseType::EntropyFluxType;
+  using BaseType = SlopeBase<E, EigenVectorWrapperType, 3>;
+  using typename BaseType::MatrixType;
+  using typename BaseType::VectorType;
 
 public:
   using typename BaseType::StencilType;
 
-  LpConvexhullRealizabilityLimitedSlope(const BasisfunctionType& basis_functions, const RangeFieldType epsilon)
-    : epsilon_(epsilon)
+  LpConvexhullRealizabilityLimitedSlope(const EntropyFluxType& entropy_flux,
+                                        const BasisfunctionType& basis_functions,
+                                        const RangeFieldType epsilon)
+    : RealizabilityBaseType(entropy_flux)
+    , epsilon_(epsilon)
     , basis_functions_(basis_functions)
-    , basis_values_(basis_functions_.quadratures().merged().size())
+    , basis_values_(XT::Data::merged_quadrature(basis_functions_.quadratures()).size())
   {
-    const auto& quadrature = basis_functions.quadratures().merged();
+    const auto& quadrature = XT::Data::merged_quadrature(basis_functions_.quadratures());
     for (size_t ii = 0; ii < quadrature.size(); ++ii)
       basis_values_[ii] = basis_functions.evaluate(quadrature[ii].position());
   }
 
-  virtual VectorType
-  get(const StencilType& stencil, const StencilType& stencil_char, const MatrixType& A) const override final
+  LpConvexhullRealizabilityLimitedSlope(const LpConvexhullRealizabilityLimitedSlope& other)
+    : BaseType(other)
+    , RealizabilityBaseType(other)
+    , epsilon_(other.epsilon_)
+    , basis_functions_(other.basis_functions_)
+    , basis_values_(other.basis_values_)
+    , lp_(nullptr)
+    , A_tilde_transposed_(std::make_unique<MatrixType>())
+    , slope_limiter_(other.slope_limiter_)
+  {}
+
+  virtual BaseType* copy() const override final
   {
-    const VectorType slope_char = slope_limiter_.get(stencil, stencil_char, A);
+    return new ThisType(*this);
+  }
+
+  virtual VectorType get(const E& entity,
+                         const StencilType& stencil,
+                         const EigenVectorWrapperType& eigenvectors,
+                         const size_t dd) const override final
+  {
+    VectorType slope_char = slope_limiter_.get_char(entity, stencil, eigenvectors, dd);
     static const VectorType zero_vector(0.);
     if (XT::Common::FloatCmp::eq(slope_char, zero_vector))
       return zero_vector;
     FieldVector<VectorType, 2> thetas;
-    // this needs to be changed for other interface quadratures (see above)
-    const auto& u_bar_char = stencil_char[1];
+    const VectorType& u_bar = stencil[1];
+    VectorType u_bar_char;
+    eigenvectors.apply_inverse_eigenvectors(dd, u_bar, u_bar_char);
     const FieldVector<VectorType, 2> reconstructed_values_char{u_bar_char - 0.5 * slope_char,
                                                                u_bar_char + 0.5 * slope_char};
     auto& A_tilde_transposed = *A_tilde_transposed_;
     for (size_t kk = 0; kk < reconstructed_values_char.size(); ++kk)
-      thetas[kk] = solve_linear_program(reconstructed_values_char[kk], u_bar_char, A, A_tilde_transposed);
-    VectorType ret;
+      thetas[kk] = solve_linear_program(
+          reconstructed_values_char[kk], u_bar_char, eigenvectors.eigenvectors(dd), A_tilde_transposed);
     for (size_t ii = 0; ii < dimRange; ++ii) {
       auto theta_max_ii = std::max(thetas[0][ii], thetas[1][ii]);
       if (theta_max_ii > 0.)
         theta_max_ii = std::min(1., theta_max_ii + epsilon_);
-      ret[ii] = slope_char[ii] * (1 - theta_max_ii);
+      slope_char[ii] = slope_char[ii] * (1 - theta_max_ii);
     }
     // Ensure positive density
     // For that purpose, get slope in ordinary coordinates
     VectorType slope;
-    A.mv(ret, slope);
-    const auto& u_bar = stencil[1];
+    eigenvectors.apply_eigenvectors(dd, slope_char, slope);
     const FieldVector<VectorType, 2> reconstructed_values{u_bar - 0.5 * slope, u_bar + 0.5 * slope};
     RangeFieldType theta_pos(0);
     for (size_t kk = 0; kk < reconstructed_values.size(); ++kk) {
@@ -789,8 +1003,9 @@ public:
       else if (density_u < epsilon_)
         theta_pos = std::max(theta_pos, (epsilon_ - density_u) / (density_u_bar - density_u));
     } // kk
-    ret *= 1 - theta_pos;
-    return ret;
+    slope *= 1 - theta_pos;
+    this->ensure_solvability(entity, u_bar, slope);
+    return slope;
   }
 
 private:
@@ -801,14 +1016,14 @@ private:
     // Creating a new LP from time to time seems to fix this problem.
     thread_local int counter;
     ++counter;
-    if (!*lp_ || !(counter % 100)) {
+    if (!lp_ || !(counter % 100)) {
       counter = 0;
       // We start with creating a model with dimRange rows and num_quad_points+1 columns */
       assert(basis_values_.size() + dimRange < std::numeric_limits<int>::max());
       size_t num_cols = basis_values_.size() + dimRange; /* variables are x_1, ..., x_{num_quad_points}, theta_1,
                                                                               ..., theta_{dimRange} */
-      *lp_ = std::make_unique<ClpSimplex>(false);
-      auto& lp = **lp_;
+      lp_ = std::make_unique<ClpSimplex>(false);
+      auto& lp = *lp_;
       // set number of rows
       lp.resize(num_rows, 0);
 
@@ -847,7 +1062,7 @@ private:
 
     // setup linear program
     setup_linear_program();
-    auto& lp = **lp_;
+    auto& lp = *lp_;
     size_t num_cols = basis_values_.size() + dimRange; // see above
 
     // set rhs (equality constraints, so set both bounds equal)
@@ -892,8 +1107,8 @@ private:
   const RangeFieldType epsilon_;
   const BasisfunctionType& basis_functions_;
   std::vector<VectorType> basis_values_;
-  mutable XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>> lp_;
-  mutable XT::Common::PerThreadValue<MatrixType> A_tilde_transposed_;
+  mutable std::unique_ptr<ClpSimplex> lp_;
+  mutable std::unique_ptr<MatrixType> A_tilde_transposed_;
   const SlopeType slope_limiter_;
 };
 #endif // HAVE_CLP

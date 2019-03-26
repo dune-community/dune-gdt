@@ -43,7 +43,6 @@ public:
                               const VectorType& source_dofs,
                               VectorType& range_dofs,
                               const EntropyFluxType& analytical_flux,
-                              std::vector<LocalVectorType>& alphas,
                               const RangeFieldType min_acceptable_density,
                               const XT::Common::Parameter& param,
                               const std::string filename = "")
@@ -52,10 +51,9 @@ public:
     , range_(space_, range_dofs, "range")
     , analytical_flux_(analytical_flux)
     , local_flux_(analytical_flux_.derived_local_function())
-    , alphas_(alphas)
     , min_acceptable_density_(min_acceptable_density)
     , param_(param)
-    , filename_(filename.empty() ? "" : filename + "_regularization.txt")
+    , filename_(filename.empty() ? "" : (filename + "_regularization.txt"))
     , index_set_(space_.grid_view().indexSet())
   {}
 
@@ -65,7 +63,6 @@ public:
                                   source_.dofs().vector(),
                                   range_.dofs().vector(),
                                   analytical_flux_,
-                                  alphas_,
                                   min_acceptable_density_,
                                   param_,
                                   filename_);
@@ -84,7 +81,6 @@ public:
     basis_functions.ensure_min_density(u, min_acceptable_density_);
     local_flux_->bind(entity);
     const auto alpha_ret = local_flux_->get_alpha(u, true);
-    alphas_[index_set_.index(entity)] = alpha_ret->first;
     const auto regularization_params = alpha_ret->second;
     for (size_t ii = 0; ii < dimRange; ++ii)
       local_range->dofs().set_entry(ii, regularization_params.first[ii]);
@@ -110,7 +106,6 @@ private:
   DiscreteFunctionType range_;
   const EntropyFluxType& analytical_flux_;
   std::unique_ptr<typename EntropyFluxType::Localfunction> local_flux_;
-  std::vector<LocalVectorType>& alphas_;
   const RangeFieldType min_acceptable_density_;
   const XT::Common::Parameter& param_;
   const std::string filename_;
@@ -138,12 +133,10 @@ public:
 
   EntropySolver(const EntropyFluxType& analytical_flux,
                 const SpaceType& space,
-                std::vector<LocalVectorType>& alphas,
                 const RangeFieldType min_acceptable_density,
                 const std::string filename = "")
     : analytical_flux_(analytical_flux)
     , space_(space)
-    , alphas_(alphas)
     , min_acceptable_density_(min_acceptable_density)
     , filename_(filename)
   {}
@@ -166,7 +159,7 @@ public:
   void apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& param) const override final
   {
     LocalEntropySolver<SpaceType, VectorType, BasisfunctionType> local_entropy_solver(
-        space_, source, range, analytical_flux_, alphas_, min_acceptable_density_, param, filename_);
+        space_, source, range, analytical_flux_, min_acceptable_density_, param, filename_);
     auto walker = XT::Grid::Walker<typename SpaceType::GridViewType>(space_.grid_view());
     walker.append(local_entropy_solver);
     walker.walk(true);
@@ -175,7 +168,6 @@ public:
 private:
   const EntropyFluxType& analytical_flux_;
   const SpaceType& space_;
-  std::vector<LocalVectorType>& alphas_;
   const RangeFieldType min_acceptable_density_;
   const std::string filename_;
 }; // class EntropySolver<...>

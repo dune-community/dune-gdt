@@ -49,7 +49,7 @@ class LocalLinearReconstructionOperator : public XT::Grid::ElementFunctor<GridVi
   using MatrixType = typename EigenvectorWrapperType::MatrixType;
   using StencilType = DynamicVector<LocalVectorType>;
   using StencilsType = std::vector<DynamicVector<LocalVectorType>>;
-  using SlopeType = SlopeBase<LocalVectorType, MatrixType>;
+  using SlopeType = SlopeBase<EntityType, EigenvectorWrapperType>;
   using TargetType = DiscreteFunction<TargetVectorType, GridViewType, dimRange, 1, RangeFieldType>;
   using TargetBasisType = typename TargetType::SpaceType::GlobalBasisType::LocalizedType;
   using LocalDofVectorType = typename TargetType::DofVectorType::LocalDofVectorType;
@@ -62,7 +62,7 @@ public:
                                              const BoundaryValueType& boundary_values,
                                              const SlopeType& slope,
                                              const XT::Common::Parameter& param,
-                                             XT::Common::PerThreadValue<EigenvectorWrapperType>& eigenvector_wrapper)
+                                             const bool flux_is_affine = false)
     : source_values_(source_values)
     , target_space_(target_space)
     , target_vector_(target_vector)
@@ -72,9 +72,9 @@ public:
     , grid_view_(target_.space().grid_view())
     , analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
-    , slope_(slope)
+    , slope_(slope.copy())
     , param_(param)
-    , eigenvector_wrapper_(eigenvector_wrapper)
+    , eigenvector_wrapper_(analytical_flux_, flux_is_affine)
   {}
 
   LocalLinearReconstructionOperator(const LocalLinearReconstructionOperator& other)
@@ -87,9 +87,9 @@ public:
     , grid_view_(target_.space().grid_view())
     , analytical_flux_(other.analytical_flux_)
     , boundary_values_(other.boundary_values_)
-    , slope_(other.slope_)
+    , slope_(other.slope_->copy())
     , param_(other.param_)
-    , eigenvector_wrapper_(other.eigenvector_wrapper_)
+    , eigenvector_wrapper_(analytical_flux_, other.eigenvector_wrapper_.affine())
   {}
 
   virtual XT::Grid::ElementFunctor<GridViewType>* copy() override final
@@ -109,22 +109,16 @@ public:
     // get eigenvectors of flux
     const auto entity_index = grid_view_.indexSet().index(entity);
     const auto& u_entity = source_values_[entity_index];
-    auto& eigvecs = *eigenvector_wrapper_;
     if (analytical_flux_.x_dependent())
       x_local_ = entity.geometry().local(entity.geometry().center());
-    eigvecs.compute_eigenvectors(entity, x_local_, u_entity, param_);
+    eigenvector_wrapper_.compute_eigenvectors(entity, x_local_, u_entity, param_);
 
-    thread_local StencilType stencil_char(stencil_size);
     // reconstructed function is f(x) = u_entity + slope_matrix * (x - (0.5, 0.5, 0.5, ...))
     thread_local std::vector<LocalVectorType> slopes(dimDomain);
     for (size_t dd = 0; dd < dimDomain; ++dd) {
       // no need to reconstruct in all directions, as we are only regarding the center of the face, which will
       // always have the same value assigned, independent of the slope in the other directions
-      for (size_t ii = 0; ii < stencil_size; ++ii) // transform to characteristic variables
-        eigvecs.apply_inverse_eigenvectors(dd, stencils[dd][ii], stencil_char[ii]);
-      // get the slope in characteristic coordinates
-      const auto slope_char = slope_.get(stencils[dd], stencil_char, eigvecs.eigenvectors(dd));
-      eigvecs.apply_eigenvectors(dd, slope_char, slopes[dd]);
+      slopes[dd] = slope_->get(entity, stencils[dd], eigenvector_wrapper_, dd);
     } // dd
 
     local_dof_vector_.bind(entity);
@@ -171,10 +165,10 @@ private:
   const GridViewType& grid_view_;
   const AnalyticalFluxType& analytical_flux_;
   const BoundaryValueType& boundary_values_;
-  const SlopeType& slope_;
+  std::unique_ptr<SlopeType> slope_;
   const XT::Common::Parameter& param_;
   DomainType x_local_;
-  XT::Common::PerThreadValue<EigenvectorWrapperType>& eigenvector_wrapper_;
+  EigenvectorWrapperType eigenvector_wrapper_;
 }; // class LocalLinearReconstructionOperator
 
 template <class AnalyticalFluxImp,
@@ -200,7 +194,8 @@ public:
   using EigenvectorWrapperType = EigenvectorWrapperImp;
   using LocalVectorType = typename EigenvectorWrapperType::VectorType;
   using MatrixType = typename EigenvectorWrapperType::MatrixType;
-  using SlopeType = SlopeBase<LocalVectorType, MatrixType>;
+  using E = XT::Grid::extract_entity_t<GV>;
+  using SlopeType = SlopeBase<E, EigenvectorWrapperType>;
   static constexpr size_t dimDomain = BoundaryValueType::d;
   static constexpr size_t dimRange = BoundaryValueType::r;
   using ReconstructionSpaceType = DiscontinuousLagrangeSpace<GridViewType, dimRange, typename AnalyticalFluxType::R>;
@@ -215,7 +210,7 @@ public:
     , source_space_(source_space)
     , range_space_(source_space_.grid_view(), 1)
     , slope_(slope)
-    , eigenvector_wrapper_(std::reference_wrapper<const AnalyticalFluxType>(analytical_flux_), flux_is_affine)
+    , flux_is_affine_(flux_is_affine)
   {}
 
   virtual bool linear() const override final
@@ -254,7 +249,7 @@ public:
                                                                            ReconstructionSpaceType,
                                                                            VectorType,
                                                                            EigenvectorWrapperType>(
-        source_values, range_space_, range, analytical_flux_, boundary_values_, slope_, param, eigenvector_wrapper_);
+        source_values, range_space_, range, analytical_flux_, boundary_values_, slope_, param, flux_is_affine_);
     auto walker = XT::Grid::Walker<GridViewType>(grid_view);
     walker.append(local_reconstruction_operator);
     walker.walk(true);
@@ -263,7 +258,7 @@ public:
 private:
   static SlopeType& default_minmod_slope()
   {
-    static MinmodSlope<VectorType, MatrixType> minmod_slope_;
+    static MinmodSlope<E, EigenvectorWrapperType> minmod_slope_;
     return minmod_slope_;
   }
 
@@ -272,7 +267,7 @@ private:
   const SourceSpaceType& source_space_;
   ReconstructionSpaceType range_space_;
   const SlopeType& slope_;
-  mutable XT::Common::PerThreadValue<EigenvectorWrapperType> eigenvector_wrapper_;
+  const bool flux_is_affine_;
 }; // class LinearReconstructionOperator<...>
 
 

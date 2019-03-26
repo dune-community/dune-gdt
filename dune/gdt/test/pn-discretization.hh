@@ -197,8 +197,9 @@ struct HyperbolicPnDiscretization
     using GridType = typename TestCaseType::GridType;
     using SpaceType = typename TestCaseType::SpaceType;
     using AdvectionSourceSpaceType = typename TestCaseType::AdvectionSourceSpaceType;
-    using GridViewType = typename TestCaseType::GridViewType;
-    using I = typename GridViewType::Intersection;
+    using GV = typename TestCaseType::GridViewType;
+    using I = XT::Grid::extract_intersection_t<GV>;
+    using E = XT::Grid::extract_entity_t<GV>;
     using ProblemType = typename TestCaseType::ProblemType;
     using RangeFieldType = typename ProblemType::RangeFieldType;
     using BoundaryValueType = typename ProblemType::BoundaryValueType;
@@ -215,7 +216,7 @@ struct HyperbolicPnDiscretization
     const auto grid_ptr =
         Dune::XT::Grid::CubeGridProviderFactory<GridType>::create(grid_config, MPIHelper::getCommunicator()).grid_ptr();
     assert(grid_ptr->comm().size() == 1 || grid_ptr->overlapSize(0) > 0);
-    const GridViewType grid_view(grid_ptr->leafGridView());
+    const GV grid_view(grid_ptr->leafGridView());
     const SpaceType fv_space(grid_view);
     const AdvectionSourceSpaceType advection_source_space(grid_view, 1);
 
@@ -250,13 +251,10 @@ struct HyperbolicPnDiscretization
     const auto analytical_flux = problem.flux();
 
     // ******************** choose flux and rhs operator and timestepper ******************************************
-    using AdvectionOperatorType = AdvectionFvOperator<MatrixType, GridViewType, dimRange>;
+    using AdvectionOperatorType = AdvectionFvOperator<MatrixType, GV, dimRange>;
     using EigenvectorWrapperType = typename EigenvectorWrapperChooser<BasisfunctionType, AnalyticalFluxType>::type;
-    using ReconstructionOperatorType = LinearReconstructionOperator<AnalyticalFluxType,
-                                                                    BoundaryValueType,
-                                                                    GridViewType,
-                                                                    MatrixType,
-                                                                    EigenvectorWrapperType>;
+    using ReconstructionOperatorType =
+        LinearReconstructionOperator<AnalyticalFluxType, BoundaryValueType, GV, MatrixType, EigenvectorWrapperType>;
     using ReconstructionFvOperatorType =
         AdvectionWithReconstructionOperator<AdvectionOperatorType, ReconstructionOperatorType>;
     using FvOperatorType =
@@ -270,7 +268,7 @@ struct HyperbolicPnDiscretization
 
     // *************** choose t_end and initial dt **************************************
     // calculate dx and choose initial dt
-    Dune::XT::Grid::Dimensions<GridViewType> dimensions(grid_view);
+    Dune::XT::Grid::Dimensions<GV> dimensions(grid_view);
     RangeFieldType dx = dimensions.entity_width.max();
     if (dimDomain == 2)
       dx /= std::sqrt(2);
@@ -284,7 +282,7 @@ struct HyperbolicPnDiscretization
     AdvectionOperatorType advection_operator(grid_view, numerical_flux, advection_source_space, fv_space);
     // boundary treatment
     using BoundaryOperator =
-        LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator<I, VectorType, GridViewType, dimRange>;
+        LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator<I, VectorType, GV, dimRange>;
     using LambdaType = typename BoundaryOperator::LambdaType;
     using StateType = typename BoundaryOperator::StateType;
     LambdaType boundary_lambda =
@@ -295,11 +293,10 @@ struct HyperbolicPnDiscretization
                            const XT::Common::Parameter& /*param*/) {
           return boundary_values->evaluate(intersection.geometry().global(xx_in_reference_intersection_coordinates));
         };
-    XT::Grid::ApplyOn::NonPeriodicBoundaryIntersections<GridViewType> filter;
+    XT::Grid::ApplyOn::NonPeriodicBoundaryIntersections<GV> filter;
     advection_operator.append(boundary_lambda, {}, filter);
 
-    MinmodSlope<typename ReconstructionOperatorType::LocalVectorType, typename ReconstructionOperatorType::MatrixType>
-        slope;
+    MinmodSlope<E, EigenvectorWrapperType> slope;
     ReconstructionOperatorType reconstruction_operator(*analytical_flux, *boundary_values, fv_space, slope, true);
     //    NoSlope<typename ReconstructionOperatorType::LocalVectorType, typename ReconstructionOperatorType::MatrixType,
     //    3> slope; ReconstructionOperatorType reconstruction_operator(*analytical_flux, *boundary_values, fv_space,
@@ -312,7 +309,7 @@ struct HyperbolicPnDiscretization
     filename += "_" + ProblemType::static_id();
     filename += "_grid_" + grid_size;
     filename += "_tend_" + XT::Common::to_string(t_end);
-    filename += std::is_same<FvOperatorType, ReconstructionFvOperatorType>::value ? "_ord2" : "_ord1";
+    filename += TestCaseType::reconstruction ? "_ord2" : "_ord1";
     filename += "_" + basis_functions->short_id();
     filename += "_p" + Dune::XT::Common::to_string(dimRange);
 
