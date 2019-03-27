@@ -22,7 +22,7 @@ namespace Dune {
 namespace GDT {
 
 
-template <class DiscreteFunctionType, class BasisfunctionType>
+template <class DiscreteFunctionType, class MomentBasis>
 class KineticIsotropicLocalFunctor
   : public XT::Grid::ElementFunctor<typename DiscreteFunctionType::SpaceType::GridViewType>
 {
@@ -30,13 +30,13 @@ class KineticIsotropicLocalFunctor
   using BaseType = typename XT::Grid::ElementFunctor<GridViewType>;
   using RangeType = typename DiscreteFunctionType::LocalFunctionType::RangeReturnType;
   using ScalarFunctionType =
-      XT::Functions::FunctionInterface<BasisfunctionType::dimDomain, 1, 1, typename BasisfunctionType::RangeFieldType>;
+      XT::Functions::FunctionInterface<MomentBasis::dimDomain, 1, 1, typename MomentBasis::RangeFieldType>;
   static constexpr size_t dimRange = DiscreteFunctionType::r;
 
 public:
   using typename BaseType::E;
 
-  KineticIsotropicLocalFunctor(const BasisfunctionType& basis_functions,
+  KineticIsotropicLocalFunctor(const MomentBasis& basis_functions,
                                DiscreteFunctionType& solution,
                                const double dt,
                                const ScalarFunctionType& sigma_a,
@@ -86,7 +86,7 @@ public:
   }
 
 private:
-  const BasisfunctionType& basis_functions_;
+  const MomentBasis& basis_functions_;
   DiscreteFunctionType& solution_;
   const double dt_;
   const ScalarFunctionType& sigma_a_;
@@ -99,7 +99,7 @@ private:
 
 /** \brief Time stepper solving linear equation d_t u = Au + b by matrix exponential
  */
-template <class DiscreteFunctionImp, class BasisfunctionType>
+template <class DiscreteFunctionImp, class MomentBasis>
 class KineticIsotropicTimeStepper : public TimeStepperInterface<DiscreteFunctionImp>
 {
   typedef KineticIsotropicTimeStepper ThisType;
@@ -117,7 +117,7 @@ public:
   using BaseType::current_solution;
   using BaseType::current_time;
 
-  KineticIsotropicTimeStepper(const BasisfunctionType& basis_functions,
+  KineticIsotropicTimeStepper(const MomentBasis& basis_functions,
                               DiscreteFunctionType& initial_values,
                               const ScalarFunctionType& sigma_a,
                               const ScalarFunctionType& sigma_s,
@@ -135,7 +135,7 @@ public:
     const RangeFieldType actual_dt = std::min(dt, max_dt);
     auto& t = current_time();
     auto& u_n = current_solution();
-    KineticIsotropicLocalFunctor<DiscreteFunctionType, BasisfunctionType> functor(
+    KineticIsotropicLocalFunctor<DiscreteFunctionType, MomentBasis> functor(
         basis_functions_, u_n, actual_dt, sigma_a_, sigma_s_, Q_);
     auto walker = XT::Grid::Walker<typename DiscreteFunctionType::SpaceType::GridViewType>(u_n.space().grid_view());
     walker.append(functor);
@@ -145,7 +145,7 @@ public:
   } // ... step(...)
 
 private:
-  const BasisfunctionType& basis_functions_;
+  const MomentBasis& basis_functions_;
   const ScalarFunctionType& sigma_a_;
   const ScalarFunctionType& sigma_s_;
   const ScalarFunctionType& Q_;

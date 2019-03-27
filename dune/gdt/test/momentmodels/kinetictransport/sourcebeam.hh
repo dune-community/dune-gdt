@@ -28,15 +28,14 @@ namespace Dune {
 namespace GDT {
 
 
-template <class E, class BasisfunctionImp>
-class SourceBeamPn : public KineticTransportEquationBase<E, BasisfunctionImp>
+template <class E, class MomentBasisImp>
+class SourceBeamPn : public KineticTransportEquationBase<E, MomentBasisImp>
 {
-  using BaseType = KineticTransportEquationBase<E, BasisfunctionImp>;
+  using BaseType = KineticTransportEquationBase<E, MomentBasisImp>;
 
 public:
   using BaseType::dimDomain;
   using BaseType::dimRange;
-  using typename BaseType::BasisfunctionType;
   using typename BaseType::BoundaryValueType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
@@ -44,13 +43,14 @@ public:
   using typename BaseType::FluxType;
   using typename BaseType::GenericFunctionType;
   using typename BaseType::GenericScalarFunctionType;
+  using typename BaseType::MomentBasis;
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeReturnType;
   using typename BaseType::ScalarFunctionType;
 
   using BaseType::default_boundary_cfg;
 
-  SourceBeamPn(const BasisfunctionType& basis_functions,
+  SourceBeamPn(const MomentBasis& basis_functions,
                const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                const XT::Common::Configuration& boundary_cfg = default_boundary_cfg(),
                const bool is_mn_model = false)
@@ -82,7 +82,7 @@ public:
   {
     return std::make_unique<GenericFunctionType>(1, [&](const DomainType& x, const XT::Common::Parameter&) {
       if (x[0] < 1.5) {
-        static auto ret = helper<BasisfunctionType>::get_left_boundary_values(basis_functions_, psi_vac_, is_mn_model_);
+        static auto ret = helper<MomentBasis>::get_left_boundary_values(basis_functions_, psi_vac_, is_mn_model_);
         return ret;
       } else {
         auto ret = basis_functions_.integrated();
@@ -94,7 +94,7 @@ public:
 
   RangeReturnType left_boundary_value() const
   {
-    return helper<BasisfunctionType>::get_left_boundary_values(basis_functions_, psi_vac_, is_mn_model_);
+    return helper<MomentBasis>::get_left_boundary_values(basis_functions_, psi_vac_, is_mn_model_);
   }
 
   virtual RangeFieldType t_end() const override
@@ -166,7 +166,7 @@ protected:
     using helper_base::denominator;
     using helper_base::numerator;
 
-    static DynamicRangeType get_left_boundary_values(const BasisfunctionImp& basis_functions,
+    static DynamicRangeType get_left_boundary_values(const MomentBasisImp& basis_functions,
                                                      const RangeFieldType& psi_vac,
                                                      const bool is_mn_model)
     {
@@ -176,7 +176,7 @@ protected:
       // For the PN-Models, we do not have these issues and just use a very fine quadrature (which is not a performance
       // problem as the integration is only done once).
       const auto& quadratures =
-          is_mn_model ? basis_functions.quadratures() : BasisfunctionImp::gauss_lobatto_quadratures(100, 31);
+          is_mn_model ? basis_functions.quadratures() : MomentBasisImp::gauss_lobatto_quadratures(100, 31);
       for (size_t ii = 0; ii < quadratures.size(); ++ii) {
         const auto& quadrature = quadratures[ii];
         for (const auto& quad_point : quadrature) {
@@ -201,7 +201,7 @@ protected:
     using helper_base::integral_1;
     using helper_base::numerator;
 
-    static DynamicRangeType get_left_boundary_values(const BasisfunctionImp& basis_functions,
+    static DynamicRangeType get_left_boundary_values(const MomentBasisImp& basis_functions,
                                                      const RangeFieldType psi_vac,
                                                      const bool /*is_mn_model*/)
     {
@@ -233,7 +233,7 @@ protected:
     using helper_base::integral_1;
     using helper_base::integral_2;
 
-    static DynamicRangeType get_left_boundary_values(const BasisfunctionImp& basis_functions,
+    static DynamicRangeType get_left_boundary_values(const MomentBasisImp& basis_functions,
                                                      const RangeFieldType psi_vac,
                                                      const bool /*is_mn_model*/)
     {
@@ -254,21 +254,21 @@ protected:
   const bool is_mn_model_;
 }; // class SourceBeamPn<...>
 
-template <class GV, class BasisfunctionType>
-class SourceBeamMn : public SourceBeamPn<XT::Grid::extract_entity_t<GV>, BasisfunctionType>
+template <class GV, class MomentBasis>
+class SourceBeamMn : public SourceBeamPn<XT::Grid::extract_entity_t<GV>, MomentBasis>
 {
-  using BaseType = SourceBeamPn<XT::Grid::extract_entity_t<GV>, BasisfunctionType>;
+  using BaseType = SourceBeamPn<XT::Grid::extract_entity_t<GV>, MomentBasis>;
   using ThisType = SourceBeamMn;
 
 public:
   using typename BaseType::FluxType;
   using typename BaseType::RangeReturnType;
-  using ActualFluxType = EntropyBasedFluxFunction<GV, BasisfunctionType>;
+  using ActualFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
 
   using BaseType::default_boundary_cfg;
   using BaseType::default_grid_cfg;
 
-  SourceBeamMn(const BasisfunctionType& basis_functions,
+  SourceBeamMn(const MomentBasis& basis_functions,
                const GV& grid_view,
                const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())

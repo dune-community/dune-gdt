@@ -20,16 +20,16 @@
 #include <dune/xt/la/container.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/operators/entropybasedmoments_fv.hh>
+#include <dune/gdt/operators/advection-fv-entropybased.hh>
 #include <dune/gdt/operators/advection-fv.hh>
 #include <dune/gdt/interpolations/default.hh>
 #include <dune/gdt/momentmodels/entropysolver.hh>
 #include <dune/gdt/local/numerical-fluxes/kinetic.hh>
 #include <dune/gdt/local/operators/advection-fv.hh>
 #include <dune/gdt/spaces/l2/finite-volume.hh>
-#include <dune/gdt/timestepper/fractional-step.hh>
-#include <dune/gdt/timestepper/explicit-rungekutta.hh>
-#include <dune/gdt/timestepper/matrix-exponential-kinetic-isotropic.hh>
+#include <dune/gdt/tools/timestepper/fractional-step.hh>
+#include <dune/gdt/tools/timestepper/explicit-rungekutta.hh>
+#include <dune/gdt/tools/timestepper/matrix-exponential-kinetic-isotropic.hh>
 
 #include <dune/gdt/test/momentmodels/kineticequation.hh>
 
@@ -53,7 +53,7 @@ struct HyperbolicMnDiscretization
     using namespace Dune::GDT;
 
     //******************* get typedefs and constants from ProblemType **********************//
-    using BasisfunctionType = typename TestCaseType::BasisfunctionType;
+    using MomentBasis = typename TestCaseType::MomentBasis;
     using DiscreteFunctionType = typename TestCaseType::DiscreteFunctionType;
     using GridType = typename TestCaseType::GridType;
     using SpaceType = typename TestCaseType::SpaceType;
@@ -61,10 +61,10 @@ struct HyperbolicMnDiscretization
     using GV = typename TestCaseType::GridViewType;
     using I = XT::Grid::extract_intersection_t<GV>;
     using ProblemType = typename TestCaseType::ProblemType;
-    using RangeFieldType = typename BasisfunctionType::RangeFieldType;
+    using RangeFieldType = typename MomentBasis::RangeFieldType;
     using BoundaryValueType = typename ProblemType::BoundaryValueType;
-    static constexpr size_t dimDomain = BasisfunctionType::dimDomain;
-    static constexpr size_t dimRange = BasisfunctionType::dimRange;
+    static constexpr size_t dimDomain = MomentBasis::dimDomain;
+    static constexpr size_t dimRange = MomentBasis::dimRange;
     using MatrixType = typename XT::LA::Container<RangeFieldType>::MatrixType;
     using VectorType = typename XT::LA::Container<RangeFieldType>::VectorType;
 
@@ -81,8 +81,8 @@ struct HyperbolicMnDiscretization
     const AdvectionSourceSpaceType advection_source_space(grid_view, 1);
 
     //******************* create EquationType object ***************************************
-    std::shared_ptr<const BasisfunctionType> basis_functions =
-        std::make_shared<const BasisfunctionType>(quad_order, num_quad_refinements);
+    std::shared_ptr<const MomentBasis> basis_functions =
+        std::make_shared<const MomentBasis>(quad_order, num_quad_refinements);
     const std::unique_ptr<ProblemType> problem_ptr =
         XT::Common::make_unique<ProblemType>(*basis_functions, grid_view, grid_config);
     const auto& problem = *problem_ptr;
@@ -102,8 +102,8 @@ struct HyperbolicMnDiscretization
     // ******************** choose flux and rhs operator and timestepper ******************************************
 
     using AdvectionOperatorType = AdvectionFvOperator<MatrixType, GV, dimRange>;
-    using EigenvectorWrapperType = typename EigenvectorWrapperChooser<BasisfunctionType, AnalyticalFluxType>::type;
-    using EntropySolverType = EntropySolver<BasisfunctionType, SpaceType>;
+    using EigenvectorWrapperType = typename EigenvectorWrapperChooser<MomentBasis, AnalyticalFluxType>::type;
+    using EntropySolverType = EntropySolver<MomentBasis, SpaceType>;
     using ReconstructionOperatorType =
         LinearReconstructionOperator<AnalyticalFluxType, BoundaryValueType, GV, MatrixType, EigenvectorWrapperType>;
     using ReconstructionAdvectionOperatorType =
@@ -115,7 +115,7 @@ struct HyperbolicMnDiscretization
         ExplicitRungeKuttaTimeStepper<FvOperatorType,
                                       DiscreteFunctionType,
                                       TimeStepperMethods::explicit_rungekutta_second_order_ssp>;
-    using RhsTimeStepperType = KineticIsotropicTimeStepper<DiscreteFunctionType, BasisfunctionType>;
+    using RhsTimeStepperType = KineticIsotropicTimeStepper<DiscreteFunctionType, MomentBasis>;
     using TimeStepperType = StrangSplittingTimeStepper<RhsTimeStepperType, OperatorTimeStepperType>;
 
     // *************** Calculate dx and initial dt **************************************
@@ -128,7 +128,7 @@ struct HyperbolicMnDiscretization
     RangeFieldType dt = CFL * dx;
 
     // *********************** create operators and timesteppers ************************************
-    NumericalKineticFlux<GV, BasisfunctionType> numerical_flux(*analytical_flux, *basis_functions);
+    NumericalKineticFlux<GV, MomentBasis> numerical_flux(*analytical_flux, *basis_functions);
     AdvectionOperatorType advection_operator(grid_view, numerical_flux, advection_source_space, fv_space);
 
     // boundary treatment

@@ -15,24 +15,24 @@ namespace Dune {
 namespace GDT {
 
 
-template <class E, class BasisfunctionImp>
-class ShadowPn : public KineticTransportEquationBase<E, BasisfunctionImp>
+template <class E, class MomentBasisImp>
+class ShadowPn : public KineticTransportEquationBase<E, MomentBasisImp>
 {
-  using BaseType = KineticTransportEquationBase<E, BasisfunctionImp>;
+  using BaseType = KineticTransportEquationBase<E, MomentBasisImp>;
 
 public:
-  using typename BaseType::BasisfunctionType;
   using typename BaseType::BoundaryValueType;
   using typename BaseType::ConstantScalarFunctionType;
   using typename BaseType::DomainType;
   using typename BaseType::GenericFunctionType;
   using typename BaseType::GenericScalarFunctionType;
+  using typename BaseType::MomentBasis;
   using typename BaseType::RangeFieldType;
   using typename BaseType::ScalarFunctionType;
 
   using BaseType::default_boundary_cfg;
 
-  ShadowPn(const BasisfunctionType& basis_functions,
+  ShadowPn(const MomentBasis& basis_functions,
            const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
            const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
     : BaseType(basis_functions, grid_cfg, boundary_cfg, 1e-8 / (4 * M_PI))
@@ -107,20 +107,20 @@ protected:
   using BaseType::psi_vac_;
 }; // class ShadowPn<...>
 
-template <class GV, class BasisfunctionType>
-class ShadowMn : public ShadowPn<XT::Grid::extract_entity_t<GV>, BasisfunctionType>
+template <class GV, class MomentBasis>
+class ShadowMn : public ShadowPn<XT::Grid::extract_entity_t<GV>, MomentBasis>
 {
-  using BaseType = ShadowPn<XT::Grid::extract_entity_t<GV>, BasisfunctionType>;
+  using BaseType = ShadowPn<XT::Grid::extract_entity_t<GV>, MomentBasis>;
   using ThisType = ShadowMn;
 
 public:
   using typename BaseType::FluxType;
-  using ActualFluxType = EntropyBasedFluxFunction<GV, BasisfunctionType>;
+  using ActualFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
 
   using BaseType::default_boundary_cfg;
   using BaseType::default_grid_cfg;
 
-  ShadowMn(const BasisfunctionType& basis_functions,
+  ShadowMn(const MomentBasis& basis_functions,
            const GV& grid_view,
            const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
            const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())

@@ -303,12 +303,12 @@ public:
 }; // class SuperbeeSlope
 
 
-template <class GV, class BasisfunctionType>
+template <class GV, class MomentBasis>
 class RealizabilityLimiterBase
 {
 public:
   using E = XT::Grid::extract_entity_t<GV>;
-  using EntropyFluxType = EntropyBasedFluxFunction<GV, BasisfunctionType>;
+  using EntropyFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
   using StateType = typename EntropyFluxType::StateType;
 
   RealizabilityLimiterBase(const EntropyFluxType& entropy_flux)
@@ -346,17 +346,17 @@ private:
 // Realizability limiter that ensures positivity of the components of u in noncharacteristic variables. Uses single
 // limiter variable for all components.
 template <class GV,
-          class BasisfunctionType,
+          class MomentBasis,
           class EigenVectorWrapperType,
           class SlopeType = MinmodSlope<XT::Grid::extract_entity_t<GV>, EigenVectorWrapperType>>
 class PositivityLimitedSlope
   : public SlopeBase<XT::Grid::extract_entity_t<GV>, EigenVectorWrapperType, 3>
-  , public RealizabilityLimiterBase<GV, BasisfunctionType>
+  , public RealizabilityLimiterBase<GV, MomentBasis>
 {
   using ThisType = PositivityLimitedSlope;
-  using RangeFieldType = typename BasisfunctionType::RangeFieldType;
-  static const size_t dimRange = BasisfunctionType::dimRange;
-  using RealizabilityBaseType = RealizabilityLimiterBase<GV, BasisfunctionType>;
+  using RangeFieldType = typename MomentBasis::RangeFieldType;
+  static const size_t dimRange = MomentBasis::dimRange;
+  using RealizabilityBaseType = RealizabilityLimiterBase<GV, MomentBasis>;
   using typename RealizabilityBaseType::E;
   using typename RealizabilityBaseType::EntropyFluxType;
   using BaseType = SlopeBase<E, EigenVectorWrapperType, 3>;
@@ -432,8 +432,8 @@ class Dg1dRealizabilityLimitedSlope
   , public RealizabilityLimiterBase<GV, PartialMomentBasis<typename GV::ctype, 1, RangeFieldType, dimRange, 1, 1>>
 {
   using ThisType = Dg1dRealizabilityLimitedSlope;
-  using BasisfunctionType = Dune::GDT::PartialMomentBasis<RangeFieldType, 1, RangeFieldType, dimRange, 1, 1, 1>;
-  using RealizabilityBaseType = RealizabilityLimiterBase<GV, BasisfunctionType>;
+  using MomentBasis = Dune::GDT::PartialMomentBasis<RangeFieldType, 1, RangeFieldType, dimRange, 1, 1, 1>;
+  using RealizabilityBaseType = RealizabilityLimiterBase<GV, MomentBasis>;
   using typename RealizabilityBaseType::E;
   using typename RealizabilityBaseType::EntropyFluxType;
   using BaseType = SlopeBase<E, EigenVectorWrapperType, 3>;
@@ -444,7 +444,7 @@ public:
 
   // This limiter ensures u_i >= epsilon for all components u_i of u.
   Dg1dRealizabilityLimitedSlope(const EntropyFluxType& entropy_flux,
-                                const BasisfunctionType& basis_functions,
+                                const MomentBasis& basis_functions,
                                 const RangeFieldType epsilon = 0.)
     : RealizabilityBaseType(entropy_flux)
     , basis_functions_(basis_functions)
@@ -513,7 +513,7 @@ private:
     return ret;
   }
 
-  const BasisfunctionType& basis_functions_;
+  const MomentBasis& basis_functions_;
   const RangeFieldType epsilon_;
   const SlopeType slope_limiter_;
 }; // class Dg1dRealizabilityLimitedSlope<...>
@@ -523,17 +523,17 @@ private:
 // Realizability limiter that ensures that the limited values are within the convex hull of the quadrature points. Uses
 // single limiter variable for all components.
 template <class GV,
-          class BasisfunctionType,
+          class MomentBasis,
           class EigenVectorWrapperType,
           class SlopeType = MinmodSlope<XT::Grid::extract_entity_t<GV>, EigenVectorWrapperType>>
 class ConvexHullRealizabilityLimitedSlope
   : public SlopeBase<XT::Grid::extract_entity_t<GV>, EigenVectorWrapperType, 3>
-  , public RealizabilityLimiterBase<GV, BasisfunctionType>
+  , public RealizabilityLimiterBase<GV, MomentBasis>
 {
   using ThisType = ConvexHullRealizabilityLimitedSlope;
-  using RangeFieldType = typename BasisfunctionType::RangeFieldType;
-  static const size_t dimRange = BasisfunctionType::dimRange;
-  using RealizabilityBaseType = RealizabilityLimiterBase<GV, BasisfunctionType>;
+  using RangeFieldType = typename MomentBasis::RangeFieldType;
+  static const size_t dimRange = MomentBasis::dimRange;
+  using RealizabilityBaseType = RealizabilityLimiterBase<GV, MomentBasis>;
   using typename RealizabilityBaseType::E;
   using typename RealizabilityBaseType::EntropyFluxType;
   using BaseType = SlopeBase<E, EigenVectorWrapperType, 3>;
@@ -544,7 +544,7 @@ public:
   using typename BaseType::StencilType;
 
   ConvexHullRealizabilityLimitedSlope(const EntropyFluxType& entropy_flux,
-                                      const BasisfunctionType& basis_functions,
+                                      const MomentBasis& basis_functions,
                                       const RangeFieldType epsilon = 0.)
     : RealizabilityBaseType(entropy_flux)
     , basis_functions_(basis_functions)
@@ -622,7 +622,7 @@ private:
     }
   } // void calculate_plane_coefficients()
 
-  const BasisfunctionType& basis_functions_;
+  const MomentBasis& basis_functions_;
   const RangeFieldType epsilon_;
   const SlopeType slope_limiter_;
   PlaneCoefficientsType plane_coefficients_;
@@ -632,20 +632,20 @@ private:
 // Realizability limiter that ensures that the limited values are within the convex hull of the quadrature points. Uses
 // single limiter variable for all components.
 template <class GV,
-          class BasisfunctionType,
+          class MomentBasis,
           class EigenVectorWrapperType,
 
           class SlopeType = MinmodSlope<XT::Grid::extract_entity_t<GV>, EigenVectorWrapperType>>
 class DgConvexHullRealizabilityLimitedSlope
   : public SlopeBase<XT::Grid::extract_entity_t<GV>, EigenVectorWrapperType, 3>
-  , public RealizabilityLimiterBase<GV, BasisfunctionType>
+  , public RealizabilityLimiterBase<GV, MomentBasis>
 {
   using ThisType = DgConvexHullRealizabilityLimitedSlope;
-  using RangeFieldType = typename BasisfunctionType::RangeFieldType;
-  static const size_t dimRange = BasisfunctionType::dimRange;
-  static const size_t block_size = (BasisfunctionType::dimDomain == 1) ? 2 : 4;
+  using RangeFieldType = typename MomentBasis::RangeFieldType;
+  static const size_t dimRange = MomentBasis::dimRange;
+  static const size_t block_size = (MomentBasis::dimDomain == 1) ? 2 : 4;
   static const size_t num_blocks = dimRange / block_size;
-  using RealizabilityBaseType = RealizabilityLimiterBase<GV, BasisfunctionType>;
+  using RealizabilityBaseType = RealizabilityLimiterBase<GV, MomentBasis>;
   using typename RealizabilityBaseType::E;
   using typename RealizabilityBaseType::EntropyFluxType;
   using BaseType = SlopeBase<E, EigenVectorWrapperType, 3>;
@@ -658,7 +658,7 @@ public:
   using typename BaseType::StencilType;
 
   DgConvexHullRealizabilityLimitedSlope(const EntropyFluxType& entropy_flux,
-                                        const BasisfunctionType& basis_functions,
+                                        const MomentBasis& basis_functions,
                                         const RangeFieldType epsilon = 0.)
     : RealizabilityBaseType(entropy_flux)
     , basis_functions_(basis_functions)
@@ -734,7 +734,7 @@ private:
     return theta;
   } // ... get_block_theta(...)
 
-  const BasisfunctionType& basis_functions_;
+  const MomentBasis& basis_functions_;
   const RangeFieldType epsilon_;
   const SlopeType slope_limiter_;
   PlaneCoefficientsType plane_coefficients_;
@@ -743,27 +743,25 @@ private:
 #else // HAVE_QHULL
 
 template <class GV,
-          class BasisfunctionType,
+          class MomentBasis,
 
-          class SlopeType =
-              MinmodSlope<XT::Grid::extract_entity_t<GV>,
-                          FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>,
-                          EigenVectorWrapperType>>
+          class SlopeType = MinmodSlope<XT::Grid::extract_entity_t<GV>,
+                                        FieldVector<typename MomentBasis::RangeFieldType, MomentBasis::dimRange>,
+                                        EigenVectorWrapperType>>
 class ConvexHullRealizabilityLimitedSlope
 {
-  static_assert(Dune::AlwaysFalse<BasisfunctionType>::value, "You are missing Qhull!");
+  static_assert(Dune::AlwaysFalse<MomentBasis>::value, "You are missing Qhull!");
 };
 
 template <class GV,
-          class BasisfunctionType,
+          class MomentBasis,
 
-          class SlopeType =
-              MinmodSlope<XT::Grid::extract_entity_t<GV>,
-                          FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>,
-                          EigenVectorWrapperType>>
+          class SlopeType = MinmodSlope<XT::Grid::extract_entity_t<GV>,
+                                        FieldVector<typename MomentBasis::RangeFieldType, MomentBasis::dimRange>,
+                                        EigenVectorWrapperType>>
 class DgConvexHullRealizabilityLimitedSlopeSlope
 {
-  static_assert(Dune::AlwaysFalse<BasisfunctionType>::value, "You are missing Qhull!");
+  static_assert(Dune::AlwaysFalse<MomentBasis>::value, "You are missing Qhull!");
 };
 #endif // HAVE_QHULL
 
@@ -771,17 +769,17 @@ class DgConvexHullRealizabilityLimitedSlopeSlope
 // Characteristic component-wise realizability limiter that ensures positivity of the components of u in
 // noncharacteristic variables by solving a linear program.
 template <class GV,
-          class BasisfunctionType,
+          class MomentBasis,
           class EigenVectorWrapperType,
           class SlopeType = MinmodSlope<XT::Grid::extract_entity_t<GV>, EigenVectorWrapperType>>
 class LpPositivityLimitedSlope
   : public SlopeBase<XT::Grid::extract_entity_t<GV>, EigenVectorWrapperType, 3>
-  , public RealizabilityLimiterBase<GV, BasisfunctionType>
+  , public RealizabilityLimiterBase<GV, MomentBasis>
 {
   using ThisType = LpPositivityLimitedSlope;
-  using RangeFieldType = typename BasisfunctionType::RangeFieldType;
-  static const size_t dimRange = BasisfunctionType::dimRange;
-  using RealizabilityBaseType = RealizabilityLimiterBase<GV, BasisfunctionType>;
+  using RangeFieldType = typename MomentBasis::RangeFieldType;
+  static const size_t dimRange = MomentBasis::dimRange;
+  using RealizabilityBaseType = RealizabilityLimiterBase<GV, MomentBasis>;
   using typename RealizabilityBaseType::E;
   using typename RealizabilityBaseType::EntropyFluxType;
   using BaseType = SlopeBase<E, EigenVectorWrapperType, 3>;
@@ -910,19 +908,19 @@ private:
 // Realizability limiter that solves a linear program to ensure the reconstructed values are still in the numerically
 // realizable set, i.e. in the convex hull of basis evaluations.
 template <class GV,
-          class BasisfunctionType,
+          class MomentBasis,
           class EigenVectorWrapperType,
           class SlopeType = MinmodSlope<XT::Grid::extract_entity_t<GV>, EigenVectorWrapperType>>
 class LpConvexhullRealizabilityLimitedSlope
   : public SlopeBase<XT::Grid::extract_entity_t<GV>, EigenVectorWrapperType>
-  , public RealizabilityLimiterBase<GV, BasisfunctionType>
+  , public RealizabilityLimiterBase<GV, MomentBasis>
 {
   using ThisType = LpConvexhullRealizabilityLimitedSlope;
-  using RangeFieldType = typename BasisfunctionType::RangeFieldType;
-  static constexpr size_t dimRange = BasisfunctionType::dimRange;
+  using RangeFieldType = typename MomentBasis::RangeFieldType;
+  static constexpr size_t dimRange = MomentBasis::dimRange;
   static_assert(dimRange < std::numeric_limits<int>::max(), "");
   static constexpr size_t num_rows = dimRange;
-  using RealizabilityBaseType = RealizabilityLimiterBase<GV, BasisfunctionType>;
+  using RealizabilityBaseType = RealizabilityLimiterBase<GV, MomentBasis>;
   using typename RealizabilityBaseType::E;
   using typename RealizabilityBaseType::EntropyFluxType;
   using BaseType = SlopeBase<E, EigenVectorWrapperType, 3>;
@@ -933,7 +931,7 @@ public:
   using typename BaseType::StencilType;
 
   LpConvexhullRealizabilityLimitedSlope(const EntropyFluxType& entropy_flux,
-                                        const BasisfunctionType& basis_functions,
+                                        const MomentBasis& basis_functions,
                                         const RangeFieldType epsilon)
     : RealizabilityBaseType(entropy_flux)
     , epsilon_(epsilon)
@@ -1104,7 +1102,7 @@ private:
   }
 
   const RangeFieldType epsilon_;
-  const BasisfunctionType& basis_functions_;
+  const MomentBasis& basis_functions_;
   std::shared_ptr<std::vector<VectorType>> basis_values_;
   mutable std::unique_ptr<ClpSimplex> lp_;
   mutable std::unique_ptr<MatrixType> A_tilde_transposed_;

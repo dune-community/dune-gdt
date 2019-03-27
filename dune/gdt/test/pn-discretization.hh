@@ -27,9 +27,9 @@
 #include <dune/gdt/local/numerical-fluxes/kinetic.hh>
 #include <dune/gdt/local/numerical-fluxes/lax-friedrichs.hh>
 #include <dune/gdt/local/operators/advection-fv.hh>
-#include <dune/gdt/timestepper/fractional-step.hh>
-#include <dune/gdt/timestepper/explicit-rungekutta.hh>
-#include <dune/gdt/timestepper/matrix-exponential-kinetic-isotropic.hh>
+#include <dune/gdt/tools/timestepper/fractional-step.hh>
+#include <dune/gdt/tools/timestepper/explicit-rungekutta.hh>
+#include <dune/gdt/tools/timestepper/matrix-exponential-kinetic-isotropic.hh>
 
 #include <dune/gdt/test/momentmodels/kineticequation.hh>
 
@@ -133,7 +133,7 @@ int parse_momentmodel_arguments(int argc,
 }
 
 
-template <class BasisfunctionType, class AnalyticalFluxType>
+template <class MomentBasis, class AnalyticalFluxType>
 struct EigenvectorWrapperChooser
 {
   using type = Dune::GDT::internal::EigenvectorWrapper<AnalyticalFluxType>;
@@ -192,7 +192,7 @@ struct HyperbolicPnDiscretization
     const size_t num_threads = 4;
     XT::Common::threadManager().set_max_threads(num_threads);
     //******************* get typedefs and constants from ProblemType **********************//
-    using BasisfunctionType = typename TestCaseType::BasisfunctionType;
+    using MomentBasis = typename TestCaseType::MomentBasis;
     using DiscreteFunctionType = typename TestCaseType::DiscreteFunctionType;
     using GridType = typename TestCaseType::GridType;
     using SpaceType = typename TestCaseType::SpaceType;
@@ -203,8 +203,8 @@ struct HyperbolicPnDiscretization
     using ProblemType = typename TestCaseType::ProblemType;
     using RangeFieldType = typename ProblemType::RangeFieldType;
     using BoundaryValueType = typename ProblemType::BoundaryValueType;
-    static constexpr size_t dimDomain = BasisfunctionType::dimDomain;
-    static constexpr size_t dimRange = BasisfunctionType::dimRange;
+    static constexpr size_t dimDomain = MomentBasis::dimDomain;
+    static constexpr size_t dimRange = MomentBasis::dimRange;
     using MatrixType = typename XT::LA::Container<RangeFieldType>::MatrixType;
     using VectorType = typename XT::LA::Container<RangeFieldType>::VectorType;
 
@@ -224,10 +224,10 @@ struct HyperbolicPnDiscretization
     if ((num_quad_refinements == size_t(-1) || quad_order == size_t(-1)) && (num_quad_refinements != quad_order))
       std::cerr << "You specified either num_quad_refinements or quad_order, please also specify the other one!"
                 << std::endl;
-    std::shared_ptr<const BasisfunctionType> basis_functions =
+    std::shared_ptr<const MomentBasis> basis_functions =
         (num_quad_refinements == size_t(-1) || quad_order == size_t(-1))
-            ? std::make_shared<const BasisfunctionType>()
-            : std::make_shared<const BasisfunctionType>(quad_order, num_quad_refinements);
+            ? std::make_shared<const MomentBasis>()
+            : std::make_shared<const MomentBasis>(quad_order, num_quad_refinements);
     const std::unique_ptr<ProblemType> problem_ptr =
         XT::Common::make_unique<ProblemType>(*basis_functions, grid_config);
     const auto& problem = *problem_ptr;
@@ -252,7 +252,7 @@ struct HyperbolicPnDiscretization
 
     // ******************** choose flux and rhs operator and timestepper ******************************************
     using AdvectionOperatorType = AdvectionFvOperator<MatrixType, GV, dimRange>;
-    using EigenvectorWrapperType = typename EigenvectorWrapperChooser<BasisfunctionType, AnalyticalFluxType>::type;
+    using EigenvectorWrapperType = typename EigenvectorWrapperChooser<MomentBasis, AnalyticalFluxType>::type;
     using ReconstructionOperatorType =
         LinearReconstructionOperator<AnalyticalFluxType, BoundaryValueType, GV, MatrixType, EigenvectorWrapperType>;
     using ReconstructionFvOperatorType =
@@ -263,7 +263,7 @@ struct HyperbolicPnDiscretization
         ExplicitRungeKuttaTimeStepper<FvOperatorType,
                                       DiscreteFunctionType,
                                       TimeStepperMethods::explicit_rungekutta_second_order_ssp>;
-    using RhsTimeStepperType = KineticIsotropicTimeStepper<DiscreteFunctionType, BasisfunctionType>;
+    using RhsTimeStepperType = KineticIsotropicTimeStepper<DiscreteFunctionType, MomentBasis>;
     using TimeStepperType = StrangSplittingTimeStepper<RhsTimeStepperType, OperatorTimeStepperType>;
 
     // *************** choose t_end and initial dt **************************************
@@ -277,7 +277,7 @@ struct HyperbolicPnDiscretization
     RangeFieldType dt = CFL * dx;
 
     // *********************** create operators and timesteppers ************************************
-    NumericalKineticFlux<I, BasisfunctionType> numerical_flux(*analytical_flux, *basis_functions);
+    NumericalKineticFlux<I, MomentBasis> numerical_flux(*analytical_flux, *basis_functions);
     //    NumericalLaxFriedrichsFlux<I, dimDomain, dimRange, RangeFieldType> numerical_flux(*analytical_flux, 1.);
     AdvectionOperatorType advection_operator(grid_view, numerical_flux, advection_source_space, fv_space);
     // boundary treatment

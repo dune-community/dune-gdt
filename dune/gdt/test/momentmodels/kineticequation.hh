@@ -20,19 +20,19 @@ namespace Dune {
 namespace GDT {
 
 
-template <class E, class BasisfunctionImp>
+template <class E, class MomentBasisImp>
 class KineticEquationInterface
 {
   using ThisType = KineticEquationInterface;
 
 public:
-  using BasisfunctionType = BasisfunctionImp;
-  using DomainFieldType = typename BasisfunctionType::DomainFieldType;
-  using RangeFieldType = typename BasisfunctionType::RangeFieldType;
-  static const size_t dimDomain = BasisfunctionType::dimDomain;
-  static const size_t dimRange = BasisfunctionType::dimRange;
-  static const size_t dimRangeCols = BasisfunctionType::dimRangeCols;
-  static const size_t dimFlux = BasisfunctionType::dimFlux;
+  using MomentBasis = MomentBasisImp;
+  using DomainFieldType = typename MomentBasis::DomainFieldType;
+  using RangeFieldType = typename MomentBasis::RangeFieldType;
+  static const size_t dimDomain = MomentBasis::dimDomain;
+  static const size_t dimRange = MomentBasis::dimRange;
+  static const size_t dimRangeCols = MomentBasis::dimRangeCols;
+  static const size_t dimFlux = MomentBasis::dimFlux;
   using FluxType = XT::Functions::FluxFunctionInterface<E, dimRange, dimDomain, dimRange, RangeFieldType>;
   using GenericFluxFunctionType = XT::Functions::GenericFluxFunction<E, dimRange, dimDomain, dimRange, RangeFieldType>;
   using InitialValueType = XT::Functions::FunctionInterface<dimDomain, dimRange, 1, RangeFieldType>;
@@ -45,7 +45,7 @@ public:
   using RangeReturnType = typename InitialValueType::RangeReturnType;
   using DynamicRangeType = Dune::DynamicVector<RangeFieldType>;
 
-  KineticEquationInterface(const BasisfunctionType& basis_functions)
+  KineticEquationInterface(const MomentBasis& basis_functions)
     : basis_functions_(basis_functions)
   {}
 
@@ -95,7 +95,7 @@ public:
   }
 
 protected:
-  const BasisfunctionType& basis_functions_;
+  const MomentBasis& basis_functions_;
 }; // class KineticEquationInterface<E, ...>
 
 

@@ -16,7 +16,7 @@
 #include <dune/gdt/momentmodels/basisfunctions.hh>
 #include <dune/gdt/spaces/l2/finite-volume.hh>
 #include <dune/gdt/spaces/l2/discontinuous-lagrange.hh>
-#include <dune/gdt/timestepper/interface.hh>
+#include <dune/gdt/tools/timestepper/interface.hh>
 #include <dune/gdt/operators/reconstruction/slopes.hh>
 
 #include "checkerboard.hh"
@@ -29,8 +29,8 @@ namespace Dune {
 namespace GDT {
 
 
-// choose RealizabilityLimiter suitable for BasisfunctionImp
-template <class GV, class BasisfunctionImp, class AnalyticalFluxType, class DiscreteFunctionType>
+// choose RealizabilityLimiter suitable for MomentBasisImp
+template <class GV, class MomentBasisImp, class AnalyticalFluxType, class DiscreteFunctionType>
 struct RealizabilityLimiterChooser;
 
 #if HAVE_CLP
@@ -40,16 +40,16 @@ struct RealizabilityLimiterChooser<GV,
                                    AnalyticalFluxType,
                                    DiscreteFunctionType>
 {
-  using BasisfunctionType = LegendreMomentBasis<double, double, order>;
-  using EntropyFluxType = EntropyBasedFluxFunction<GV, BasisfunctionType>;
+  using MomentBasis = LegendreMomentBasis<double, double, order>;
+  using EntropyFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
   static constexpr size_t quad_order = 31;
   static constexpr size_t num_quad_refinements = 6;
 
   template <class EigenVectorWrapperType>
-  static std::unique_ptr<LpConvexhullRealizabilityLimitedSlope<GV, BasisfunctionType, EigenVectorWrapperType>>
-  make_slope(const EntropyFluxType& entropy_flux, const BasisfunctionType& basis_functions, const double epsilon)
+  static std::unique_ptr<LpConvexhullRealizabilityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType>>
+  make_slope(const EntropyFluxType& entropy_flux, const MomentBasis& basis_functions, const double epsilon)
   {
-    using SlopeType = LpConvexhullRealizabilityLimitedSlope<GV, BasisfunctionType, EigenVectorWrapperType>;
+    using SlopeType = LpConvexhullRealizabilityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType>;
     return std::make_unique<SlopeType>(entropy_flux, basis_functions, epsilon);
   }
 };
@@ -64,23 +64,23 @@ struct RealizabilityLimiterChooser<GV,
                                    AnalyticalFluxType,
                                    DiscreteFunctionType>
 {
-  using BasisfunctionType = HatFunctionMomentBasis<double, 1, double, dimRange, 1, 1>;
-  using EntropyFluxType = EntropyBasedFluxFunction<GV, BasisfunctionType>;
+  using MomentBasis = HatFunctionMomentBasis<double, 1, double, dimRange, 1, 1>;
+  using EntropyFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
   static constexpr size_t quad_order = 15;
   static constexpr size_t num_quad_refinements = 0;
 
 #if HAVE_CLP && USE_LP_POSITIVITY_LIMITER
   template <class EigenVectorWrapperType>
-  static std::unique_ptr<LpPositivityLimitedSlope<GV, BasisfunctionType, EigenVectorWrapperType>>
-  make_slope(const EntropyFluxType& entropy_flux, const BasisfunctionType& /*basis_functions*/, const double epsilon)
+  static std::unique_ptr<LpPositivityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType>>
+  make_slope(const EntropyFluxType& entropy_flux, const MomentBasis& /*basis_functions*/, const double epsilon)
   {
-    using SlopeType = LpPositivityLimitedSlope<GV, BasisfunctionType, EigenVectorWrapperType>;
+    using SlopeType = LpPositivityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType>;
     return std::make_unique<SlopeType>(entropy_flux, epsilon);
   }
 #else // HAVE_CLP
   template <class EigenVectorWrapperType>
   static std::unique_ptr<PositivityLimitedSlope<GV, double, dimRange, EigenVectorWrapperType>>
-  make_slope(const EntropyFluxType& entropy_flux, const BasisfunctionType& /*basis_functions*/, const double epsilon)
+  make_slope(const EntropyFluxType& entropy_flux, const MomentBasis& /*basis_functions*/, const double epsilon)
   {
     using SlopeType = PositivityLimitedSlope<GV, double, dimRange, EigenVectorWrapperType>;
     return std::make_unique<SlopeType>(entropy_flux, epsilon);
@@ -94,14 +94,14 @@ struct RealizabilityLimiterChooser<GV,
                                    AnalyticalFluxType,
                                    DiscreteFunctionType>
 {
-  using BasisfunctionType = PartialMomentBasis<double, 1, double, dimRange, 1, 1>;
-  using EntropyFluxType = EntropyBasedFluxFunction<GV, BasisfunctionType>;
+  using MomentBasis = PartialMomentBasis<double, 1, double, dimRange, 1, 1>;
+  using EntropyFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
   static constexpr size_t quad_order = 15;
   static constexpr size_t num_quad_refinements = 0;
 
   template <class EigenVectorWrapperType>
   static std::unique_ptr<Dg1dRealizabilityLimitedSlope<GV, double, dimRange, EigenVectorWrapperType>>
-  make_slope(const EntropyFluxType& entropy_flux, const BasisfunctionType& basis_functions, const double epsilon)
+  make_slope(const EntropyFluxType& entropy_flux, const MomentBasis& basis_functions, const double epsilon)
   {
     using SlopeType = Dg1dRealizabilityLimitedSlope<GV, double, dimRange, EigenVectorWrapperType>;
     return std::make_unique<SlopeType>(entropy_flux, basis_functions, epsilon);
@@ -115,16 +115,16 @@ struct RealizabilityLimiterChooser<GV,
                                    AnalyticalFluxType,
                                    DiscreteFunctionType>
 {
-  using BasisfunctionType = RealSphericalHarmonicsMomentBasis<double, double, order, 3>;
-  using EntropyFluxType = EntropyBasedFluxFunction<GV, BasisfunctionType>;
+  using MomentBasis = RealSphericalHarmonicsMomentBasis<double, double, order, 3>;
+  using EntropyFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
   static constexpr size_t quad_order = 2 * order + 6;
   static constexpr size_t num_quad_refinements = 0;
 
   template <class EigenVectorWrapperType>
-  static std::unique_ptr<LpConvexhullRealizabilityLimitedSlope<GV, BasisfunctionType, EigenVectorWrapperType>>
-  make_slope(const EntropyFluxType& entropy_flux, const BasisfunctionType& basis_functions, const double epsilon)
+  static std::unique_ptr<LpConvexhullRealizabilityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType>>
+  make_slope(const EntropyFluxType& entropy_flux, const MomentBasis& basis_functions, const double epsilon)
   {
-    using SlopeType = LpConvexhullRealizabilityLimitedSlope<GV, BasisfunctionType, EigenVectorWrapperType>;
+    using SlopeType = LpConvexhullRealizabilityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType>;
     return std::make_unique<SlopeType>(entropy_flux, basis_functions, epsilon);
   }
 };
@@ -136,26 +136,26 @@ struct RealizabilityLimiterChooser<GV,
                                    AnalyticalFluxType,
                                    DiscreteFunctionType>
 {
-  using BasisfunctionType = HatFunctionMomentBasis<double, 3, double, refinements, 1, 3>;
-  using EntropyFluxType = EntropyBasedFluxFunction<GV, BasisfunctionType>;
-  static constexpr size_t dimRange = BasisfunctionType::dimRange;
+  using MomentBasis = HatFunctionMomentBasis<double, 3, double, refinements, 1, 3>;
+  using EntropyFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
+  static constexpr size_t dimRange = MomentBasis::dimRange;
   static constexpr size_t quad_order = 7; // fekete rule number 7
   static constexpr size_t num_quad_refinements = 0;
 
 #if HAVE_CLP && USE_LP_POSITIVITY_LIMITER
   template <class EigenVectorWrapperType>
-  static std::unique_ptr<LpPositivityLimitedSlope<GV, BasisfunctionType, EigenVectorWrapperType>>
-  make_slope(const EntropyFluxType& entropy_flux, const BasisfunctionType& /*basis_functions*/, const double epsilon)
+  static std::unique_ptr<LpPositivityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType>>
+  make_slope(const EntropyFluxType& entropy_flux, const MomentBasis& /*basis_functions*/, const double epsilon)
   {
-    using SlopeType = LpPositivityLimitedSlope<GV, BasisfunctionType, EigenVectorWrapperType>;
+    using SlopeType = LpPositivityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType>;
     return std::make_unique<SlopeType>(entropy_flux, epsilon);
   }
 #else // HAVE_CLP
   template <class EigenVectorWrapperType>
   static std::unique_ptr<PositivityLimitedSlope<GV, double, dimRange, EigenVectorWrapperType>>
-  make_slope(const EntropyFluxType& entropy_flux, const BasisfunctionType& /*basis_functions*/, const double epsilon)
+  make_slope(const EntropyFluxType& entropy_flux, const MomentBasis& /*basis_functions*/, const double epsilon)
   {
-    using SlopeType = PositivityLimitedSlope<GV, BasisfunctionType, EigenVectorWrapperType>;
+    using SlopeType = PositivityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType>;
     return std::make_unique<SlopeType>(entropy_flux, epsilon);
   }
 #endif // HAVE_CLP
@@ -168,23 +168,23 @@ struct RealizabilityLimiterChooser<GV,
                                    AnalyticalFluxType,
                                    DiscreteFunctionType>
 {
-  using BasisfunctionType = PartialMomentBasis<double, 3, double, refinements, 1, 3>;
-  using EntropyFluxType = EntropyBasedFluxFunction<GV, BasisfunctionType>;
+  using MomentBasis = PartialMomentBasis<double, 3, double, refinements, 1, 3>;
+  using EntropyFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
   static constexpr size_t quad_order = 3; // fekete rule number 3
   static constexpr size_t num_quad_refinements = 0;
 
   template <class EigenVectorWrapperType>
-  static std::unique_ptr<DgConvexHullRealizabilityLimitedSlope<GV, BasisfunctionType, EigenVectorWrapperType>>
-  make_slope(const EntropyFluxType& entropy_flux, const BasisfunctionType& basis_functions, const double epsilon)
+  static std::unique_ptr<DgConvexHullRealizabilityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType>>
+  make_slope(const EntropyFluxType& entropy_flux, const MomentBasis& basis_functions, const double epsilon)
   {
-    using SlopeType = DgConvexHullRealizabilityLimitedSlope<GV, BasisfunctionType, EigenVectorWrapperType>;
+    using SlopeType = DgConvexHullRealizabilityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType>;
     return std::make_unique<SlopeType>(entropy_flux, basis_functions, epsilon);
   }
 };
 #endif // HAVE_QHULL
 
 // SourceBeam Pn
-template <class BasisfunctionImp, bool reconstruct>
+template <class MomentBasisImp, bool reconstruct>
 struct SourceBeamPnExpectedResults;
 
 template <bool reconstruct>
@@ -214,14 +214,14 @@ struct SourceBeamPnExpectedResults<PartialMomentBasis<double, 1, double, 8, 1, 1
   static constexpr double tol = 1e-9;
 };
 
-template <class GridImp, class BasisfunctionImp, bool reconstruct>
+template <class GridImp, class MomentBasisImp, bool reconstruct>
 struct SourceBeamPnTestCase
 {
-  using BasisfunctionType = BasisfunctionImp;
-  static constexpr size_t dimDomain = BasisfunctionType::dimDomain;
-  static constexpr size_t dimRange = BasisfunctionType::dimRange;
-  using DomainFieldType = typename BasisfunctionType::DomainFieldType;
-  using RangeFieldType = typename BasisfunctionType::RangeFieldType;
+  using MomentBasis = MomentBasisImp;
+  static constexpr size_t dimDomain = MomentBasis::dimDomain;
+  static constexpr size_t dimRange = MomentBasis::dimRange;
+  using DomainFieldType = typename MomentBasis::DomainFieldType;
+  using RangeFieldType = typename MomentBasis::RangeFieldType;
   using GridType = GridImp;
   using GridViewType = typename GridType::LeafGridView;
   using E = XT::Grid::extract_entity_t<GridViewType>;
@@ -230,15 +230,15 @@ struct SourceBeamPnTestCase
       std::conditional_t<reconstruct, DiscontinuousLagrangeSpace<GridViewType, dimRange, RangeFieldType>, SpaceType>;
   using VectorType = typename Dune::XT::LA::Container<RangeFieldType, Dune::XT::LA::default_backend>::VectorType;
   using DiscreteFunctionType = DiscreteFunction<VectorType, GridViewType, dimRange, 1, RangeFieldType>;
-  using ProblemType = SourceBeamPn<E, BasisfunctionType>;
+  using ProblemType = SourceBeamPn<E, MomentBasis>;
   static constexpr RangeFieldType t_end = 0.25;
   static constexpr bool reconstruction = reconstruct;
-  using ExpectedResultsType = SourceBeamPnExpectedResults<BasisfunctionImp, reconstruction>;
+  using ExpectedResultsType = SourceBeamPnExpectedResults<MomentBasisImp, reconstruction>;
 };
 
 
 // SourceBeam Mn
-template <class BasisfunctionImp, bool reconstruct>
+template <class MomentBasisImp, bool reconstruct>
 struct SourceBeamMnExpectedResults;
 
 template <bool reconstruct>
@@ -268,20 +268,20 @@ struct SourceBeamMnExpectedResults<PartialMomentBasis<double, 1, double, 8, 1, 1
   static constexpr double tol = 1e-9;
 };
 
-template <class GridImp, class BasisfunctionImp, bool reconstruct>
-struct SourceBeamMnTestCase : public SourceBeamPnTestCase<GridImp, BasisfunctionImp, reconstruct>
+template <class GridImp, class MomentBasisImp, bool reconstruct>
+struct SourceBeamMnTestCase : public SourceBeamPnTestCase<GridImp, MomentBasisImp, reconstruct>
 {
-  using BaseType = SourceBeamPnTestCase<GridImp, BasisfunctionImp, reconstruct>;
+  using BaseType = SourceBeamPnTestCase<GridImp, MomentBasisImp, reconstruct>;
   using typename BaseType::DiscreteFunctionType;
   using typename BaseType::GridViewType;
-  using ProblemType = SourceBeamMn<GridViewType, BasisfunctionImp>;
-  using ExpectedResultsType = SourceBeamMnExpectedResults<BasisfunctionImp, reconstruct>;
+  using ProblemType = SourceBeamMn<GridViewType, MomentBasisImp>;
+  using ExpectedResultsType = SourceBeamMnExpectedResults<MomentBasisImp, reconstruct>;
   using RealizabilityLimiterChooserType =
-      RealizabilityLimiterChooser<GridViewType, BasisfunctionImp, typename ProblemType::FluxType, DiscreteFunctionType>;
+      RealizabilityLimiterChooser<GridViewType, MomentBasisImp, typename ProblemType::FluxType, DiscreteFunctionType>;
 };
 
 // PlaneSource Pn
-template <class BasisfunctionImp, bool reconstruct>
+template <class MomentBasisImp, bool reconstruct>
 struct PlaneSourcePnExpectedResults;
 
 template <bool reconstruct>
@@ -311,21 +311,21 @@ struct PlaneSourcePnExpectedResults<PartialMomentBasis<double, 1, double, 8, 1, 
   static constexpr double tol = 1e-9;
 };
 
-template <class GridImp, class BasisfunctionImp, bool reconstruct>
-struct PlaneSourcePnTestCase : SourceBeamPnTestCase<GridImp, BasisfunctionImp, reconstruct>
+template <class GridImp, class MomentBasisImp, bool reconstruct>
+struct PlaneSourcePnTestCase : SourceBeamPnTestCase<GridImp, MomentBasisImp, reconstruct>
 {
-  using BaseType = SourceBeamPnTestCase<GridImp, BasisfunctionImp, reconstruct>;
+  using BaseType = SourceBeamPnTestCase<GridImp, MomentBasisImp, reconstruct>;
   using RangeFieldType = typename BaseType::RangeFieldType;
   using typename BaseType::E;
-  using ProblemType = PlaneSourcePn<E, BasisfunctionImp>;
+  using ProblemType = PlaneSourcePn<E, MomentBasisImp>;
   static constexpr RangeFieldType t_end = 0.25;
   static constexpr bool reconstruction = reconstruct;
-  using ExpectedResultsType = PlaneSourcePnExpectedResults<BasisfunctionImp, reconstruction>;
+  using ExpectedResultsType = PlaneSourcePnExpectedResults<MomentBasisImp, reconstruction>;
 };
 
 
 // PlaneSource Mn
-template <class BasisfunctionImp, bool reconstruct>
+template <class MomentBasisImp, bool reconstruct>
 struct PlaneSourceMnExpectedResults;
 
 template <bool reconstruct>
@@ -355,24 +355,24 @@ struct PlaneSourceMnExpectedResults<PartialMomentBasis<double, 1, double, 8, 1, 
   static constexpr double tol = 1e-9;
 };
 
-template <class GridImp, class BasisfunctionImp, bool reconstruct>
-struct PlaneSourceMnTestCase : SourceBeamMnTestCase<GridImp, BasisfunctionImp, reconstruct>
+template <class GridImp, class MomentBasisImp, bool reconstruct>
+struct PlaneSourceMnTestCase : SourceBeamMnTestCase<GridImp, MomentBasisImp, reconstruct>
 {
-  using BaseType = SourceBeamMnTestCase<GridImp, BasisfunctionImp, reconstruct>;
+  using BaseType = SourceBeamMnTestCase<GridImp, MomentBasisImp, reconstruct>;
   using typename BaseType::DiscreteFunctionType;
   using RangeFieldType = typename BaseType::RangeFieldType;
   using typename BaseType::GridViewType;
-  using ProblemType = PlaneSourceMn<GridViewType, BasisfunctionImp>;
+  using ProblemType = PlaneSourceMn<GridViewType, MomentBasisImp>;
   static constexpr RangeFieldType t_end = 0.25;
   static constexpr bool reconstruction = reconstruct;
-  using ExpectedResultsType = PlaneSourceMnExpectedResults<BasisfunctionImp, reconstruction>;
+  using ExpectedResultsType = PlaneSourceMnExpectedResults<MomentBasisImp, reconstruction>;
   using RealizabilityLimiterChooserType =
-      RealizabilityLimiterChooser<GridViewType, BasisfunctionImp, typename ProblemType::FluxType, DiscreteFunctionType>;
+      RealizabilityLimiterChooser<GridViewType, MomentBasisImp, typename ProblemType::FluxType, DiscreteFunctionType>;
 };
 
 
 // PointSourcePn
-template <class BasisfunctionImp, bool reconstruct>
+template <class MomentBasisImp, bool reconstruct>
 struct PointSourcePnExpectedResults
 {
   static constexpr double l1norm = 0.;
@@ -437,20 +437,20 @@ struct PointSourcePnExpectedResults<PartialMomentBasis<double, 3, double, 1, 1, 
 };
 
 
-template <class GridImp, class BasisfunctionImp, bool reconstruct>
-struct PointSourcePnTestCase : SourceBeamPnTestCase<GridImp, BasisfunctionImp, reconstruct>
+template <class GridImp, class MomentBasisImp, bool reconstruct>
+struct PointSourcePnTestCase : SourceBeamPnTestCase<GridImp, MomentBasisImp, reconstruct>
 {
-  using BaseType = SourceBeamPnTestCase<GridImp, BasisfunctionImp, reconstruct>;
+  using BaseType = SourceBeamPnTestCase<GridImp, MomentBasisImp, reconstruct>;
   using RangeFieldType = typename BaseType::RangeFieldType;
   using typename BaseType::E;
-  using ProblemType = PointSourcePn<E, BasisfunctionImp>;
+  using ProblemType = PointSourcePn<E, MomentBasisImp>;
   static constexpr RangeFieldType t_end = 0.1;
   static constexpr bool reconstruction = reconstruct;
-  using ExpectedResultsType = PointSourcePnExpectedResults<BasisfunctionImp, reconstruction>;
+  using ExpectedResultsType = PointSourcePnExpectedResults<MomentBasisImp, reconstruction>;
 };
 
 // CheckerboardPn
-template <class BasisfunctionImp, bool reconstruct>
+template <class MomentBasisImp, bool reconstruct>
 struct CheckerboardPnExpectedResults
 {
   static constexpr double l1norm = 0.;
@@ -468,20 +468,20 @@ struct CheckerboardPnExpectedResults<RealSphericalHarmonicsMomentBasis<double, d
   static constexpr double tol = 1e-9;
 };
 
-template <class GridImp, class BasisfunctionImp, bool reconstruct>
-struct CheckerboardPnTestCase : SourceBeamPnTestCase<GridImp, BasisfunctionImp, reconstruct>
+template <class GridImp, class MomentBasisImp, bool reconstruct>
+struct CheckerboardPnTestCase : SourceBeamPnTestCase<GridImp, MomentBasisImp, reconstruct>
 {
-  using BaseType = SourceBeamPnTestCase<GridImp, BasisfunctionImp, reconstruct>;
+  using BaseType = SourceBeamPnTestCase<GridImp, MomentBasisImp, reconstruct>;
   using RangeFieldType = typename BaseType::RangeFieldType;
   using typename BaseType::E;
-  using ProblemType = CheckerboardPn<E, BasisfunctionImp>;
+  using ProblemType = CheckerboardPn<E, MomentBasisImp>;
   static constexpr RangeFieldType t_end = 0.1;
   static constexpr bool reconstruction = reconstruct;
-  using ExpectedResultsType = CheckerboardPnExpectedResults<BasisfunctionImp, reconstruction>;
+  using ExpectedResultsType = CheckerboardPnExpectedResults<MomentBasisImp, reconstruction>;
 };
 
 // ShadowPn
-template <class BasisfunctionImp, bool reconstruct>
+template <class MomentBasisImp, bool reconstruct>
 struct ShadowPnExpectedResults
 {
   static constexpr double l1norm = 0.;
@@ -499,21 +499,21 @@ struct ShadowPnExpectedResults<RealSphericalHarmonicsMomentBasis<double, double,
   static constexpr double tol = 1e-9;
 };
 
-template <class GridImp, class BasisfunctionImp, bool reconstruct>
-struct ShadowPnTestCase : SourceBeamPnTestCase<GridImp, BasisfunctionImp, reconstruct>
+template <class GridImp, class MomentBasisImp, bool reconstruct>
+struct ShadowPnTestCase : SourceBeamPnTestCase<GridImp, MomentBasisImp, reconstruct>
 {
-  using BaseType = SourceBeamPnTestCase<GridImp, BasisfunctionImp, reconstruct>;
+  using BaseType = SourceBeamPnTestCase<GridImp, MomentBasisImp, reconstruct>;
   using RangeFieldType = typename BaseType::RangeFieldType;
   using typename BaseType::E;
-  using ProblemType = ShadowPn<E, BasisfunctionImp>;
+  using ProblemType = ShadowPn<E, MomentBasisImp>;
   static constexpr RangeFieldType t_end = 0.1;
   static constexpr bool reconstruction = reconstruct;
-  using ExpectedResultsType = ShadowPnExpectedResults<BasisfunctionImp, reconstruction>;
+  using ExpectedResultsType = ShadowPnExpectedResults<MomentBasisImp, reconstruction>;
 };
 
 
 // PointSourceMn
-template <class BasisfunctionImp, bool reconstruct>
+template <class MomentBasisImp, bool reconstruct>
 struct PointSourceMnExpectedResults;
 
 template <bool reconstruct>
@@ -550,25 +550,25 @@ struct PointSourceMnExpectedResults<PartialMomentBasis<double, 3, double, 0, 1, 
   static constexpr double tol = 1e-9;
 };
 
-template <class GridImp, class BasisfunctionImp, bool reconstruct>
-struct PointSourceMnTestCase : SourceBeamMnTestCase<GridImp, BasisfunctionImp, reconstruct>
+template <class GridImp, class MomentBasisImp, bool reconstruct>
+struct PointSourceMnTestCase : SourceBeamMnTestCase<GridImp, MomentBasisImp, reconstruct>
 {
-  using BaseType = SourceBeamMnTestCase<GridImp, BasisfunctionImp, reconstruct>;
+  using BaseType = SourceBeamMnTestCase<GridImp, MomentBasisImp, reconstruct>;
   using typename BaseType::GridViewType;
-  using ProblemType = PointSourceMn<GridViewType, BasisfunctionImp>;
+  using ProblemType = PointSourceMn<GridViewType, MomentBasisImp>;
   using typename BaseType::RangeFieldType;
   static constexpr RangeFieldType t_end = 0.1;
   static constexpr bool reconstruction = reconstruct;
-  using ExpectedResultsType = PointSourceMnExpectedResults<BasisfunctionImp, reconstruction>;
+  using ExpectedResultsType = PointSourceMnExpectedResults<MomentBasisImp, reconstruction>;
   using RealizabilityLimiterChooserType = RealizabilityLimiterChooser<GridViewType,
-                                                                      BasisfunctionImp,
+                                                                      MomentBasisImp,
                                                                       typename ProblemType::FluxType,
                                                                       typename BaseType::DiscreteFunctionType>;
 };
 
 
 // CheckerboardMn
-template <class BasisfunctionImp, bool reconstruct>
+template <class MomentBasisImp, bool reconstruct>
 struct CheckerboardMnExpectedResults;
 
 template <bool reconstruct>
@@ -580,25 +580,25 @@ struct CheckerboardMnExpectedResults<RealSphericalHarmonicsMomentBasis<double, d
   static constexpr double tol = 1e-9;
 };
 
-template <class GridImp, class BasisfunctionImp, bool reconstruct>
-struct CheckerboardMnTestCase : SourceBeamMnTestCase<GridImp, BasisfunctionImp, reconstruct>
+template <class GridImp, class MomentBasisImp, bool reconstruct>
+struct CheckerboardMnTestCase : SourceBeamMnTestCase<GridImp, MomentBasisImp, reconstruct>
 {
-  using BaseType = SourceBeamMnTestCase<GridImp, BasisfunctionImp, reconstruct>;
+  using BaseType = SourceBeamMnTestCase<GridImp, MomentBasisImp, reconstruct>;
   using typename BaseType::GridViewType;
-  using ProblemType = CheckerboardMn<GridViewType, BasisfunctionImp>;
+  using ProblemType = CheckerboardMn<GridViewType, MomentBasisImp>;
   using typename BaseType::RangeFieldType;
   static constexpr RangeFieldType t_end = 0.1;
   static constexpr bool reconstruction = reconstruct;
-  using ExpectedResultsType = CheckerboardMnExpectedResults<BasisfunctionImp, reconstruction>;
+  using ExpectedResultsType = CheckerboardMnExpectedResults<MomentBasisImp, reconstruction>;
   using RealizabilityLimiterChooserType = RealizabilityLimiterChooser<GridViewType,
-                                                                      BasisfunctionImp,
+                                                                      MomentBasisImp,
                                                                       typename ProblemType::FluxType,
                                                                       typename BaseType::DiscreteFunctionType>;
 };
 
 
 // ShadowMn
-template <class BasisfunctionImp, bool reconstruct>
+template <class MomentBasisImp, bool reconstruct>
 struct ShadowMnExpectedResults;
 
 template <bool reconstruct>
@@ -611,18 +611,18 @@ struct ShadowMnExpectedResults<RealSphericalHarmonicsMomentBasis<double, double,
 };
 
 
-template <class GridImp, class BasisfunctionImp, bool reconstruct>
-struct ShadowMnTestCase : SourceBeamMnTestCase<GridImp, BasisfunctionImp, reconstruct>
+template <class GridImp, class MomentBasisImp, bool reconstruct>
+struct ShadowMnTestCase : SourceBeamMnTestCase<GridImp, MomentBasisImp, reconstruct>
 {
-  using BaseType = SourceBeamMnTestCase<GridImp, BasisfunctionImp, reconstruct>;
+  using BaseType = SourceBeamMnTestCase<GridImp, MomentBasisImp, reconstruct>;
   using typename BaseType::GridViewType;
-  using ProblemType = ShadowMn<GridViewType, BasisfunctionImp>;
+  using ProblemType = ShadowMn<GridViewType, MomentBasisImp>;
   using typename BaseType::RangeFieldType;
   static constexpr RangeFieldType t_end = 0.1;
   static constexpr bool reconstruction = reconstruct;
-  using ExpectedResultsType = ShadowMnExpectedResults<BasisfunctionImp, reconstruction>;
+  using ExpectedResultsType = ShadowMnExpectedResults<MomentBasisImp, reconstruction>;
   using RealizabilityLimiterChooserType = RealizabilityLimiterChooser<GridViewType,
-                                                                      BasisfunctionImp,
+                                                                      MomentBasisImp,
                                                                       typename ProblemType::FluxType,
                                                                       typename BaseType::DiscreteFunctionType>;
 };

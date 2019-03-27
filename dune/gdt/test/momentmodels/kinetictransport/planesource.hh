@@ -17,25 +17,25 @@ namespace Dune {
 namespace GDT {
 
 
-template <class E, class BasisfunctionImp>
-class PlaneSourcePn : public KineticTransportEquationBase<E, BasisfunctionImp>
+template <class E, class MomentBasisImp>
+class PlaneSourcePn : public KineticTransportEquationBase<E, MomentBasisImp>
 {
-  using BaseType = KineticTransportEquationBase<E, BasisfunctionImp>;
+  using BaseType = KineticTransportEquationBase<E, MomentBasisImp>;
 
 public:
   using BaseType::default_boundary_cfg;
   using BaseType::dimDomain;
   using BaseType::dimRange;
-  using typename BaseType::BasisfunctionType;
   using typename BaseType::ConstantScalarFunctionType;
   using typename BaseType::DomainType;
   using typename BaseType::GenericFunctionType;
   using typename BaseType::InitialValueType;
+  using typename BaseType::MomentBasis;
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeReturnType;
   using typename BaseType::ScalarFunctionType;
 
-  PlaneSourcePn(const BasisfunctionType& basis_functions,
+  PlaneSourcePn(const MomentBasis& basis_functions,
                 const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                 const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
     : BaseType(basis_functions, grid_cfg, boundary_cfg)
@@ -109,21 +109,21 @@ protected:
 }; // class PlaneSourcePn<...>
 
 
-template <class GV, class BasisfunctionType>
-class PlaneSourceMn : public PlaneSourcePn<XT::Grid::extract_entity_t<GV>, BasisfunctionType>
+template <class GV, class MomentBasis>
+class PlaneSourceMn : public PlaneSourcePn<XT::Grid::extract_entity_t<GV>, MomentBasis>
 {
-  using BaseType = PlaneSourcePn<XT::Grid::extract_entity_t<GV>, BasisfunctionType>;
+  using BaseType = PlaneSourcePn<XT::Grid::extract_entity_t<GV>, MomentBasis>;
   using ThisType = PlaneSourceMn;
 
 public:
   using typename BaseType::FluxType;
   using typename BaseType::RangeReturnType;
-  using ActualFluxType = EntropyBasedFluxFunction<GV, BasisfunctionType>;
+  using ActualFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
 
   using BaseType::default_boundary_cfg;
   using BaseType::default_grid_cfg;
 
-  PlaneSourceMn(const BasisfunctionType& basis_functions,
+  PlaneSourceMn(const MomentBasis& basis_functions,
                 const GV& grid_view,
                 const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                 const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())

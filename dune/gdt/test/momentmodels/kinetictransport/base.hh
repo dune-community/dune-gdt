@@ -27,23 +27,23 @@ namespace Dune {
 namespace GDT {
 
 
-template <class E, class BasisfunctionImp>
-class KineticTransportEquationBase : public KineticEquationInterface<E, BasisfunctionImp>
+template <class E, class MomentBasisImp>
+class KineticTransportEquationBase : public KineticEquationInterface<E, MomentBasisImp>
 {
   using ThisType = KineticTransportEquationBase;
-  using BaseType = KineticEquationInterface<E, BasisfunctionImp>;
+  using BaseType = KineticEquationInterface<E, MomentBasisImp>;
 
 public:
   using BaseType::dimDomain;
   using BaseType::dimFlux;
   using BaseType::dimRange;
   using BaseType::dimRangeCols;
-  using typename BaseType::BasisfunctionType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
   using typename BaseType::GenericFluxFunctionType;
   using typename BaseType::GenericFunctionType;
   using typename BaseType::MatrixType;
+  using typename BaseType::MomentBasis;
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeReturnType;
   using typename BaseType::StateType;
@@ -59,7 +59,7 @@ public:
   using BaseType::default_boundary_cfg;
   using BaseType::default_grid_cfg;
 
-  KineticTransportEquationBase(const BasisfunctionType& basis_functions,
+  KineticTransportEquationBase(const MomentBasis& basis_functions,
                                const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                                const XT::Common::Configuration& boundary_cfg = default_boundary_cfg(),
                                const RangeFieldType psi_vac = 5e-9)
@@ -74,7 +74,7 @@ public:
              VectorType& x,
              const VectorType& rhs,
              const MomentBasisInterface<DomainFieldType,
-                                        BasisfunctionType::dimDomain,
+                                        MomentBasis::dimDomain,
                                         RangeFieldType,
                                         dimRange,
                                         dimRangeCols,

@@ -18,25 +18,25 @@ namespace Dune {
 namespace GDT {
 
 
-template <class E, class BasisfunctionImp>
-class PointSourcePn : public KineticTransportEquationBase<E, BasisfunctionImp>
+template <class E, class MomentBasisImp>
+class PointSourcePn : public KineticTransportEquationBase<E, MomentBasisImp>
 {
-  using BaseType = KineticTransportEquationBase<E, BasisfunctionImp>;
+  using BaseType = KineticTransportEquationBase<E, MomentBasisImp>;
 
 public:
   using BaseType::dimDomain;
-  using typename BaseType::BasisfunctionType;
   using typename BaseType::ConstantScalarFunctionType;
   using typename BaseType::DomainType;
   using typename BaseType::GenericFunctionType;
   using typename BaseType::InitialValueType;
+  using typename BaseType::MomentBasis;
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeReturnType;
   using typename BaseType::ScalarFunctionType;
 
   using BaseType::default_boundary_cfg;
 
-  PointSourcePn(const BasisfunctionType& basis_functions,
+  PointSourcePn(const MomentBasis& basis_functions,
                 const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                 const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
     : BaseType(basis_functions, grid_cfg, boundary_cfg, 1e-8 / (4 * M_PI))
@@ -99,20 +99,20 @@ protected:
   using BaseType::psi_vac_;
 }; // class PointSourcePn<...>
 
-template <class GV, class BasisfunctionType>
-class PointSourceMn : public PointSourcePn<XT::Grid::extract_entity_t<GV>, BasisfunctionType>
+template <class GV, class MomentBasis>
+class PointSourceMn : public PointSourcePn<XT::Grid::extract_entity_t<GV>, MomentBasis>
 {
-  using BaseType = PointSourcePn<XT::Grid::extract_entity_t<GV>, BasisfunctionType>;
+  using BaseType = PointSourcePn<XT::Grid::extract_entity_t<GV>, MomentBasis>;
   using ThisType = PointSourceMn;
 
 public:
   using typename BaseType::FluxType;
-  using ActualFluxType = EntropyBasedFluxFunction<GV, BasisfunctionType>;
+  using ActualFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
 
   using BaseType::default_boundary_cfg;
   using BaseType::default_grid_cfg;
 
-  PointSourceMn(const BasisfunctionType& basis_functions,
+  PointSourceMn(const MomentBasis& basis_functions,
                 const GV& grid_view,
                 const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                 const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())

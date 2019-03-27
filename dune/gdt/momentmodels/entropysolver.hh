@@ -24,13 +24,13 @@ namespace Dune {
 namespace GDT {
 
 
-template <class SpaceType, class VectorType, class BasisfunctionType>
+template <class SpaceType, class VectorType, class MomentBasis>
 class LocalEntropySolver : public XT::Grid::ElementFunctor<typename SpaceType::GridViewType>
 {
   using GridViewType = typename SpaceType::GridViewType;
   using EntityType = typename GridViewType::template Codim<0>::Entity;
   using IndexSetType = typename GridViewType::IndexSet;
-  using EntropyFluxType = EntropyBasedFluxFunction<GridViewType, BasisfunctionType>;
+  using EntropyFluxType = EntropyBasedFluxFunction<GridViewType, MomentBasis>;
   using RangeFieldType = typename EntropyFluxType::RangeFieldType;
   using LocalVectorType = typename EntropyFluxType::VectorType;
   static const size_t dimDomain = EntropyFluxType::basis_dimDomain;
@@ -113,22 +113,21 @@ private:
 }; // class LocalEntropySolver<...>
 
 
-template <class BasisfunctionImp,
+template <class MomentBasisImp,
           class SpaceImp,
-          class MatrixType = typename XT::LA::Container<typename BasisfunctionImp::RangeFieldType>::MatrixType>
-class EntropySolver
-  : public OperatorInterface<MatrixType, typename SpaceImp::GridViewType, BasisfunctionImp::dimRange, 1>
+          class MatrixType = typename XT::LA::Container<typename MomentBasisImp::RangeFieldType>::MatrixType>
+class EntropySolver : public OperatorInterface<MatrixType, typename SpaceImp::GridViewType, MomentBasisImp::dimRange, 1>
 {
-  using BaseType = OperatorInterface<MatrixType, typename SpaceImp::GridViewType, BasisfunctionImp::dimRange, 1>;
+  using BaseType = OperatorInterface<MatrixType, typename SpaceImp::GridViewType, MomentBasisImp::dimRange, 1>;
 
 public:
   using typename BaseType::VectorType;
-  using BasisfunctionType = BasisfunctionImp;
+  using MomentBasis = MomentBasisImp;
   using SpaceType = SpaceImp;
   using SourceSpaceType = SpaceImp;
   using RangeSpaceType = SpaceImp;
-  using EntropyFluxType = EntropyBasedFluxFunction<typename SpaceType::GridViewType, BasisfunctionType>;
-  using RangeFieldType = typename BasisfunctionType::RangeFieldType;
+  using EntropyFluxType = EntropyBasedFluxFunction<typename SpaceType::GridViewType, MomentBasis>;
+  using RangeFieldType = typename MomentBasis::RangeFieldType;
   using LocalVectorType = typename EntropyFluxType::VectorType;
 
   EntropySolver(const EntropyFluxType& analytical_flux,
@@ -158,7 +157,7 @@ public:
 
   void apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& param) const override final
   {
-    LocalEntropySolver<SpaceType, VectorType, BasisfunctionType> local_entropy_solver(
+    LocalEntropySolver<SpaceType, VectorType, MomentBasis> local_entropy_solver(
         space_, source, range, analytical_flux_, min_acceptable_density_, param, filename_);
     auto walker = XT::Grid::Walker<typename SpaceType::GridViewType>(space_.grid_view());
     walker.append(local_entropy_solver);

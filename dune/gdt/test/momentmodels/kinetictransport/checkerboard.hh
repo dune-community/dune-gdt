@@ -25,23 +25,23 @@ namespace GDT {
  * http://dx.doi.org/10.1016/j.jcp.2005.04.011
  * The 3D version is a straightforward generalization of the setup to 3 dimensions.
  * */
-template <class E, class BasisfunctionImp>
-class CheckerboardPn : public KineticTransportEquationBase<E, BasisfunctionImp>
+template <class E, class MomentBasisImp>
+class CheckerboardPn : public KineticTransportEquationBase<E, MomentBasisImp>
 {
-  using BaseType = KineticTransportEquationBase<E, BasisfunctionImp>;
+  using BaseType = KineticTransportEquationBase<E, MomentBasisImp>;
 
 public:
   using BaseType::dimDomain;
-  using typename BaseType::BasisfunctionType;
   using typename BaseType::BoundaryValueType;
   using typename BaseType::DomainType;
   using typename BaseType::GenericScalarFunctionType;
+  using typename BaseType::MomentBasis;
   using typename BaseType::RangeFieldType;
   using typename BaseType::ScalarFunctionType;
 
   using BaseType::default_boundary_cfg;
 
-  CheckerboardPn(const BasisfunctionType& basis_functions,
+  CheckerboardPn(const MomentBasis& basis_functions,
                  const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                  const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
     : BaseType(basis_functions, grid_cfg, boundary_cfg, 1e-8 / (4 * M_PI))
@@ -138,19 +138,19 @@ protected:
   }
 }; // class CheckerboardPn<...>
 
-template <class GV, class BasisfunctionType>
-class CheckerboardMn : public CheckerboardPn<XT::Grid::extract_entity_t<GV>, BasisfunctionType>
+template <class GV, class MomentBasis>
+class CheckerboardMn : public CheckerboardPn<XT::Grid::extract_entity_t<GV>, MomentBasis>
 {
-  using BaseType = CheckerboardPn<XT::Grid::extract_entity_t<GV>, BasisfunctionType>;
+  using BaseType = CheckerboardPn<XT::Grid::extract_entity_t<GV>, MomentBasis>;
 
 public:
   using typename BaseType::FluxType;
-  using ActualFluxType = EntropyBasedFluxFunction<GV, BasisfunctionType>;
+  using ActualFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
 
   using BaseType::default_boundary_cfg;
   using BaseType::default_grid_cfg;
 
-  CheckerboardMn(const BasisfunctionType& basis_functions,
+  CheckerboardMn(const MomentBasis& basis_functions,
                  const GV& grid_view,
                  const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                  const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
