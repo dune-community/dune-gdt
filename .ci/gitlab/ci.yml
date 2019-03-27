@@ -9,7 +9,7 @@ variables:
 unstable_gcc:
   extends: .jobtpl
   variables:
-    DOCKER_TAG: debian_unstable_gcc_full
+    DOCKER_TAG: debian-unstable_gcc_full
 
 gcc:
   extends: .jobtpl
