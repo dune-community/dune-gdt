@@ -11,8 +11,6 @@
 #ifndef DUNE_GDT_OPERATORS_FV_SLOPES_HH
 #define DUNE_GDT_OPERATORS_FV_SLOPES_HH
 
-#include "config.h"
-
 #if HAVE_CLP
 #  include <coin/ClpSimplex.hpp>
 #endif // HAVE_CLP
@@ -940,11 +938,12 @@ public:
     : RealizabilityBaseType(entropy_flux)
     , epsilon_(epsilon)
     , basis_functions_(basis_functions)
-    , basis_values_(XT::Data::merged_quadrature(basis_functions_.quadratures()).size())
+    , basis_values_(
+          std::make_shared<std::vector<VectorType>>(XT::Data::merged_quadrature(basis_functions_.quadratures()).size()))
   {
     const auto& quadrature = XT::Data::merged_quadrature(basis_functions_.quadratures());
     for (size_t ii = 0; ii < quadrature.size(); ++ii)
-      basis_values_[ii] = basis_functions.evaluate(quadrature[ii].position());
+      (*basis_values_)[ii] = basis_functions.evaluate(quadrature[ii].position());
   }
 
   LpConvexhullRealizabilityLimitedSlope(const LpConvexhullRealizabilityLimitedSlope& other)
@@ -1019,8 +1018,8 @@ private:
     if (!lp_ || !(counter % 100)) {
       counter = 0;
       // We start with creating a model with dimRange rows and num_quad_points+1 columns */
-      assert(basis_values_.size() + dimRange < std::numeric_limits<int>::max());
-      size_t num_cols = basis_values_.size() + dimRange; /* variables are x_1, ..., x_{num_quad_points}, theta_1,
+      assert(basis_values_->size() + dimRange < std::numeric_limits<int>::max());
+      size_t num_cols = basis_values_->size() + dimRange; /* variables are x_1, ..., x_{num_quad_points}, theta_1,
                                                                               ..., theta_{dimRange} */
       lp_ = std::make_unique<ClpSimplex>(false);
       auto& lp = *lp_;
@@ -1028,7 +1027,7 @@ private:
       lp.resize(num_rows, 0);
 
       // set columns for quadrature points
-      assert(basis_values_.size() == num_cols - dimRange);
+      assert(basis_values_->size() == num_cols - dimRange);
       static auto row_indices = create_row_indices();
       for (size_t ii = 0; ii < num_cols - dimRange; ++ii) {
         // First argument: number of elements in column
@@ -1036,13 +1035,13 @@ private:
         // Fourth/Fifth argument: lower/upper column bound, i.e. lower/upper bound for x_i. As all x_i should be
         // positive, set to 0/inf, which is the default.
         // Sixth argument: Prefactor in objective for x_i, this is 0 for all x_i, which is also the default;
-        lp.addColumn(static_cast<int>(num_rows), row_indices.data(), &(basis_values_[ii][0]));
+        lp.addColumn(static_cast<int>(num_rows), row_indices.data(), &((*basis_values_)[ii][0]));
       }
 
       // add theta columns (set to random values, will be set correctly in solve_linear_program)
       // The bounds for theta should be [0,1]. Also sets the prefactor in the objective to 1 for the thetas.
       for (size_t ii = 0; ii < dimRange; ++ii)
-        lp.addColumn(static_cast<int>(num_rows), row_indices.data(), &(basis_values_[0][0]), 0., 1., 1.);
+        lp.addColumn(static_cast<int>(num_rows), row_indices.data(), &((*basis_values_)[0][0]), 0., 1., 1.);
       lp.setLogLevel(0);
     } // if (!lp_)
   } // void setup_linear_program()
@@ -1063,7 +1062,7 @@ private:
     // setup linear program
     setup_linear_program();
     auto& lp = *lp_;
-    size_t num_cols = basis_values_.size() + dimRange; // see above
+    size_t num_cols = basis_values_->size() + dimRange; // see above
 
     // set rhs (equality constraints, so set both bounds equal)
     for (size_t ii = 0; ii < num_rows; ++ii) {
@@ -1106,7 +1105,7 @@ private:
 
   const RangeFieldType epsilon_;
   const BasisfunctionType& basis_functions_;
-  std::vector<VectorType> basis_values_;
+  std::shared_ptr<std::vector<VectorType>> basis_values_;
   mutable std::unique_ptr<ClpSimplex> lp_;
   mutable std::unique_ptr<MatrixType> A_tilde_transposed_;
   const SlopeType slope_limiter_;

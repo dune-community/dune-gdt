@@ -245,7 +245,7 @@ template <bool reconstruct>
 struct SourceBeamMnExpectedResults<LegendreMomentBasis<double, double, 7>, reconstruct>
 {
   static constexpr double l1norm = reconstruct ? 0.33140386483109008 : 0.33140386481818457;
-  static constexpr double l2norm = reconstruct ? 0.45584433028861349 : 0.44485813650515416;
+  static constexpr double l2norm = reconstruct ? 0.45584415358140384 : 0.44485813650515416;
   static constexpr double linfnorm = reconstruct ? 0.99172157113852111 : 0.98930892893952782;
   static constexpr double tol = 1e-9;
 };
@@ -332,8 +332,8 @@ template <bool reconstruct>
 struct PlaneSourceMnExpectedResults<LegendreMomentBasis<double, double, 7>, reconstruct>
 {
   static constexpr double l1norm = reconstruct ? 2.0000000240000007 : 2.0000000240000029;
-  static constexpr double l2norm = reconstruct ? 2.794037780929425 : 2.746101358507282;
-  static constexpr double linfnorm = reconstruct ? 4.9060479898903484 : 5.327698357914608;
+  static constexpr double l2norm = reconstruct ? 2.793246778535933 : 2.746101358507282;
+  static constexpr double linfnorm = reconstruct ? 4.9009379502773465 : 5.327698357914608;
   static constexpr double tol = 1e-9;
 };
 
@@ -519,18 +519,18 @@ struct PointSourceMnExpectedResults;
 template <bool reconstruct>
 struct PointSourceMnExpectedResults<RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, reconstruct>
 {
-  static constexpr double l1norm = reconstruct ? 1.0007970270638251 : 1.0000016440583621;
-  static constexpr double l2norm = reconstruct ? 2.7010459548794796 : 2.6837985426830504;
-  static constexpr double linfnorm = reconstruct ? 10.43356133531293 : 10.375079241728713;
+  static constexpr double l1norm = reconstruct ? 1.0000016440585395 : 1.0000016440583621;
+  static constexpr double l2norm = reconstruct ? 2.6896356393271734 : 2.6837985426830504;
+  static constexpr double linfnorm = reconstruct ? 10.368884563879304 : 10.375079241728713;
   static constexpr double tol = 1e-9;
 };
 
 template <bool reconstruct>
 struct PointSourceMnExpectedResults<HatFunctionMomentBasis<double, 3, double, 0, 1, 3>, reconstruct>
 {
-  static constexpr double l1norm = reconstruct ? 1.0007954632958449 : 1.0000000829622864;
-  static constexpr double l2norm = reconstruct ? 2.7073123070405787 : 2.6892684619955305;
-  static constexpr double linfnorm = reconstruct ? 10.420529174853563 : 10.395305896397684;
+  static constexpr double l1norm = reconstruct ? 1.0000000829624791 : 1.0000000829622864;
+  static constexpr double l2norm = reconstruct ? 2.694751941188763 : 2.6892684619955305;
+  static constexpr double linfnorm = reconstruct ? 10.379060444346454 : 10.395305896397684;
   // The matrices in this test case all have eigenvalues [+-0.808311035811965, 0, 0, 0, 0].
   // Thus, the eigenvectors are not unique, and the eigensolvers are extremely sensitive
   // to numerical errors. A difference of 1e-16 in the jacobians entries suffices to
@@ -544,9 +544,9 @@ struct PointSourceMnExpectedResults<HatFunctionMomentBasis<double, 3, double, 0,
 template <bool reconstruct>
 struct PointSourceMnExpectedResults<PartialMomentBasis<double, 3, double, 0, 1, 3, 1>, reconstruct>
 {
-  static constexpr double l1norm = reconstruct ? 1.0008081477041464 : 1.0000127558027134;
-  static constexpr double l2norm = reconstruct ? 2.710098974197642 : 2.6882147627660715;
-  static constexpr double linfnorm = reconstruct ? 10.428410325039531 : 10.394186618150204;
+  static constexpr double l1norm = reconstruct ? 1.0000127558028837 : 1.0000127558027134;
+  static constexpr double l2norm = reconstruct ? 2.6983746461758269 : 2.6882147627660715;
+  static constexpr double linfnorm = reconstruct ? 10.391230462003152 : 10.394186618150204;
   static constexpr double tol = 1e-9;
 };
 
