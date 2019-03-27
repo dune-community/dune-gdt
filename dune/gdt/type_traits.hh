@@ -133,18 +133,6 @@ struct is_space<S, true> : public std::is_base_of<SpaceInterface<typename S::GV,
 
 
 #if 0
-template <class S, bool candidate = internal::is_space_helper<S>::is_candidate>
-struct is_product_space
-    : public std::is_base_of<ProductSpaceInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
-{
-};
-
-template <class S>
-struct is_product_space<S, false> : public std::false_type
-{
-};
-
-
 // from #include <dune/gdt/playground/spaces/restricted.hh>
 template <class S, bool candidate = internal::is_restricted_space_helper<S>::is_candidate>
 struct is_restricted_space
