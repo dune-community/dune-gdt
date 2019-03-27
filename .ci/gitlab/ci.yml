@@ -1,0 +1,22 @@
+# kate: indent-width 2;
+
+include:
+  - remote: 'https://raw.githubusercontent.com/dune-community/dune-xt-ci/master/gitlab-job-template.yml'
+
+variables:
+  MY_MODULE: 'dune-gdt'
+
+unstable_gcc:
+  extends: .jobtpl
+  variables:
+    DOCKER_TAG: debian_unstable_gcc_full
+
+gcc:
+  extends: .jobtpl
+  variables:
+    DOCKER_TAG: debian_gcc_full
+
+clang:
+  extends: .jobtpl
+  variables:
+    DOCKER_TAG: debian_clang_full
