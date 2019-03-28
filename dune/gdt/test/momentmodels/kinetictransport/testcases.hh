@@ -79,10 +79,10 @@ struct RealizabilityLimiterChooser<GV,
   }
 #else // HAVE_CLP
   template <class EigenVectorWrapperType>
-  static std::unique_ptr<PositivityLimitedSlope<GV, double, dimRange, EigenVectorWrapperType>>
+  static std::unique_ptr<PositivityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType>>
   make_slope(const EntropyFluxType& entropy_flux, const MomentBasis& /*basis_functions*/, const double epsilon)
   {
-    using SlopeType = PositivityLimitedSlope<GV, double, dimRange, EigenVectorWrapperType>;
+    using SlopeType = PositivityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType>;
     return std::make_unique<SlopeType>(entropy_flux, epsilon);
   }
 #endif // HAVE_CLP
@@ -152,7 +152,7 @@ struct RealizabilityLimiterChooser<GV,
   }
 #else // HAVE_CLP
   template <class EigenVectorWrapperType>
-  static std::unique_ptr<PositivityLimitedSlope<GV, double, dimRange, EigenVectorWrapperType>>
+  static std::unique_ptr<PositivityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType>>
   make_slope(const EntropyFluxType& entropy_flux, const MomentBasis& /*basis_functions*/, const double epsilon)
   {
     using SlopeType = PositivityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType>;

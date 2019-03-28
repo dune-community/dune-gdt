@@ -14,7 +14,7 @@
 #include <dune/xt/la/container.hh>
 
 #include <dune/gdt/momentmodels/basisfunctions.hh>
-#include <dune/gdt/momentmodels/entropybased_flux.hh>
+#include <dune/gdt/momentmodels/entropyflux.hh>
 
 #include "interface.hh"
 

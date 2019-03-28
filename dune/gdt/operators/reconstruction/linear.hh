@@ -37,7 +37,7 @@ template <class AnalyticalFluxType,
           class EigenvectorWrapperType = internal::EigenvectorWrapper<AnalyticalFluxType>>
 class LocalLinearReconstructionOperator : public XT::Grid::ElementFunctor<GridViewType>
 {
-  // stencil is (i-r, i+r) in all dimensions, where r = polOrder + 1
+  using BaseType = XT::Grid::ElementFunctor<GridViewType>;
   static constexpr size_t dimDomain = BoundaryValueType::d;
   static constexpr size_t dimRange = BoundaryValueType::r;
   using EntityType = typename GridViewType::template Codim<0>::Entity;
@@ -78,7 +78,8 @@ public:
   {}
 
   LocalLinearReconstructionOperator(const LocalLinearReconstructionOperator& other)
-    : source_values_(other.source_values_)
+    : BaseType(other)
+    , source_values_(other.source_values_)
     , target_space_(other.target_space_)
     , target_vector_(other.target_vector_)
     , target_(target_space_, target_vector_, "range")

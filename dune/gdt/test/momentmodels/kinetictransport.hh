@@ -13,11 +13,9 @@
 
 #include "kinetictransport/base.hh"
 #include "kinetictransport/checkerboard.hh"
-#include "kinetictransport/linesource.hh"
 #include "kinetictransport/planesource.hh"
 #include "kinetictransport/pointsource.hh"
 #include "kinetictransport/shadow.hh"
 #include "kinetictransport/sourcebeam.hh"
-#include "kinetictransport/twobeams.hh"
 
 #endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_KINETICTRANSPORT_HH

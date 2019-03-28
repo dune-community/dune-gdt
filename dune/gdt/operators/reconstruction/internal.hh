@@ -113,10 +113,14 @@ protected:
   bool computed_;
 }; // class EigenvectorWrapperBase<...>
 
+template <class AnalyticalFluxType, class MatrixImp, class VectorImp>
+constexpr size_t EigenvectorWrapperBase<AnalyticalFluxType, MatrixImp, VectorImp>::dimDomain;
+
+template <class AnalyticalFluxType, class MatrixImp, class VectorImp>
+constexpr size_t EigenvectorWrapperBase<AnalyticalFluxType, MatrixImp, VectorImp>::dimRange;
 
 template <class AnalyticalFluxType,
-          class MatrixType =
-              FieldMatrix<typename AnalyticalFluxType::R, AnalyticalFluxType::rC, AnalyticalFluxType::rC>,
+          class MatrixType = XT::LA::CommonDenseMatrix<typename AnalyticalFluxType::R>,
           class VectorType = FieldVector<typename AnalyticalFluxType::RangeFieldType, AnalyticalFluxType::rC>>
 class EigenvectorWrapper : public EigenvectorWrapperBase<AnalyticalFluxType, MatrixType, VectorType>
 {
@@ -133,7 +137,7 @@ public:
   using typename BaseType::DomainType;
   using typename BaseType::E;
   using typename BaseType::RangeFieldType;
-  using JacobianType = XT::Common::FieldVector<MatrixType, dimDomain>;
+  using JacobianType = DynamicVector<MatrixType>;
 
   EigenvectorWrapper(const AnalyticalFluxType& analytical_flux, const bool flux_is_affine)
     : BaseType(analytical_flux, flux_is_affine)
@@ -142,11 +146,11 @@ public:
     , rconde_(dimRange)
     , rcondv_(dimRange)
     , iwork_(2 * dimRange - 2)
-    , jacobian_(std::make_unique<JacobianType>())
-    , eigenvectors_(std::make_unique<JacobianType>())
+    , jacobian_(std::make_unique<JacobianType>(dimDomain, MatrixType(dimRange, dimRange, 0., 0)))
+    , eigenvectors_(std::make_unique<JacobianType>(dimDomain, MatrixType(dimRange, dimRange, 0., 0)))
     , eigenvectors_rcond_(1.)
     , eigenvalues_(std::vector<RangeFieldType>(dimRange))
-    , QR_(std::make_unique<JacobianType>())
+    , QR_(std::make_unique<JacobianType>(dimDomain, MatrixType(dimRange, dimRange, 0., 0)))
     , tau_(V::create(dimRange))
   {
 #if HAVE_MKL || HAVE_LAPACKE
@@ -190,7 +194,7 @@ public:
                                          const XT::Common::Parameter& param) override final
   {
     local_flux_->bind(entity);
-    *jacobian_ = local_flux_->jacobian(x_local, u, param);
+    local_flux_->jacobian(x_local, u, *jacobian_, param);
     for (size_t dd = 0; dd < dimDomain; ++dd) {
       try {
         if (false) {
@@ -321,13 +325,13 @@ public:
   using EigenSolverType = typename XT::LA::EigenSolver<LocalMatrixType>;
   using LocalM = typename XT::Common::MatrixAbstraction<LocalMatrixType>;
   using LocalV = typename XT::Common::VectorAbstraction<LocalVectorType>;
-  using NonblockedJacobianType =
-      XT::Common::FieldVector<XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange>, dimDomain>;
+  using NonblockedJacobianType = DynamicVector<XT::LA::CommonDenseMatrix<RangeFieldType>>;
 
   BlockedEigenvectorWrapper(const AnalyticalFluxType& analytical_flux, const bool flux_is_affine)
     : BaseType(analytical_flux, flux_is_affine)
     , jacobian_(std::make_unique<JacobianType>())
-    , nonblocked_jacobian_(std::make_unique<NonblockedJacobianType>())
+    , nonblocked_jacobian_(std::make_unique<NonblockedJacobianType>(
+          dimDomain, XT::LA::CommonDenseMatrix<RangeFieldType>(dimRange, dimRange, 0., 0)))
   {
     std::fill_n(&(eigenvalues_[0][0]), dimDomain * num_blocks, std::vector<double>(block_size, 0.));
   }
@@ -339,7 +343,8 @@ public:
   {
     local_flux_->bind(entity);
     const FluxDomainType nonblocked_u = u.operator FluxDomainType();
-    *jacobian_ = local_flux_->jacobian(x_local, nonblocked_u, param);
+    local_flux_->jacobian(x_local, nonblocked_u, *nonblocked_jacobian_, param);
+    *jacobian_ = *nonblocked_jacobian_;
     for (size_t dd = 0; dd < dimDomain; ++dd) {
       for (size_t jj = 0; jj < num_blocks; ++jj) {
         try {

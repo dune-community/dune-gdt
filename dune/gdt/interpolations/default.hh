@@ -57,7 +57,8 @@ public:
   }
 
   DefaultInterpolationElementFunctor(const DefaultInterpolationElementFunctor& other)
-    : source_(other.source_)
+    : BaseType(other)
+    , source_(other.source_)
     , target_(other.target_)
     , local_dof_vector_(target_.dofs().localize())
     , local_source_(source_.local_function())

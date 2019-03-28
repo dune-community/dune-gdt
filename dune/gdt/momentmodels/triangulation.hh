@@ -15,8 +15,11 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <mutex>
 
 #include <dune/common/typetraits.hh>
+
+#include <dune/geometry/quadraturerules.hh>
 
 #include <dune/xt/common/fvector.hh>
 

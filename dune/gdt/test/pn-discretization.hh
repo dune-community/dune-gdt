@@ -277,7 +277,7 @@ struct HyperbolicPnDiscretization
     RangeFieldType dt = CFL * dx;
 
     // *********************** create operators and timesteppers ************************************
-    NumericalKineticFlux<I, MomentBasis> numerical_flux(*analytical_flux, *basis_functions);
+    NumericalKineticFlux<GV, MomentBasis> numerical_flux(*analytical_flux, *basis_functions);
     //    NumericalLaxFriedrichsFlux<I, dimDomain, dimRange, RangeFieldType> numerical_flux(*analytical_flux, 1.);
     AdvectionOperatorType advection_operator(grid_view, numerical_flux, advection_source_space, fv_space);
     // boundary treatment

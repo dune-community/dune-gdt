@@ -10,8 +10,8 @@
 //
 // Contributors: Tobias Leibner
 
-#ifndef DUNE_GDT_LOCAL_FLUXES_ENTROPYBASED_HH
-#define DUNE_GDT_LOCAL_FLUXES_ENTROPYBASED_HH
+#ifndef DUNE_GDT_MOMENTMODELS_ENTROPYFLUX_IMPLEMENTATIONS_HH
+#define DUNE_GDT_MOMENTMODELS_ENTROPYFLUX_IMPLEMENTATIONS_HH
 
 #include <algorithm>
 #include <cmath>
@@ -50,6 +50,28 @@ namespace Dune {
 namespace GDT {
 
 
+// choose specializations
+#ifndef ENTROPY_FLUX_UNSPECIALIZED_USE_ADAPTIVE_CHANGE_OF_BASIS
+#  define ENTROPY_FLUX_UNSPECIALIZED_USE_ADAPTIVE_CHANGE_OF_BASIS 1
+#endif
+
+#ifndef ENTROPY_FLUX_USE_PARTIAL_MOMENTS_SPECIALIZATION
+#  define ENTROPY_FLUX_USE_PARTIAL_MOMENTS_SPECIALIZATION 1
+#endif
+
+#ifndef ENTROPY_FLUX_USE_3D_HATFUNCTIONS_SPECIALIZATION
+#  define ENTROPY_FLUX_USE_3D_HATFUNCTIONS_SPECIALIZATION 1
+#endif
+
+#ifndef ENTROPY_FLUX_USE_1D_HATFUNCTIONS_SPECIALIZATION
+#  define ENTROPY_FLUX_USE_1D_HATFUNCTIONS_SPECIALIZATION 1
+#endif
+
+#ifndef ENTROPY_FLUX_1D_HATFUNCTIONS_USE_ANALYTICAL_INTEGRALS
+#  define ENTROPY_FLUX_1D_HATFUNCTIONS_USE_ANALYTICAL_INTEGRALS 0
+#endif
+
+
 template <class MomentBasisImp>
 class EntropyBasedFluxImplementationUnspecializedBase
   : public XT::Functions::FunctionInterface<MomentBasisImp::dimRange,
@@ -69,13 +91,13 @@ public:
   using BaseType::r;
   static const size_t basis_dimDomain = MomentBasis::dimDomain;
   static const size_t basis_dimRange = MomentBasis::dimRange;
-  using typename BaseType::DerivativeRangeReturnType;
   using typename BaseType::DomainFieldType;
   using BasisDomainType = typename MomentBasis::DomainType;
   using typename BaseType::DomainType;
+  using typename BaseType::DynamicDerivativeRangeType;
+  using typename BaseType::DynamicRowDerivativeRangeType;
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeReturnType;
-  using typename BaseType::RowDerivativeRangeReturnType;
   // make matrices a little larger to align to 64 byte boundary
   static constexpr size_t matrix_num_cols =
       basis_dimRange % 8 ? basis_dimRange : basis_dimRange + (8 - basis_dimRange % 8);
@@ -173,20 +195,20 @@ public:
     return ret;
   } // void evaluate(...)
 
-  virtual DerivativeRangeReturnType jacobian(const DomainType& u,
-                                             const XT::Common::Parameter& /*param*/ = {}) const override final
+  virtual void jacobian(const DomainType& u,
+                        DynamicDerivativeRangeType& result,
+                        const XT::Common::Parameter& /*param*/ = {}) const override final
   {
     const auto alpha = get_alpha(u, get_isotropic_alpha(u), true)->first;
-    return jacobian_with_alpha(alpha);
+    jacobian_with_alpha(alpha, result);
   }
 
-  virtual DerivativeRangeReturnType jacobian_with_alpha(const VectorType& alpha) const
+  virtual void jacobian_with_alpha(const VectorType& alpha, DynamicDerivativeRangeType& result) const
   {
-    DerivativeRangeReturnType ret;
     thread_local auto H = XT::Common::make_unique<MatrixType>();
     calculate_hessian(alpha, M_, *H);
-    helper<basis_dimDomain>::jacobian(M_, *H, ret, this);
-    return ret;
+    for (size_t dd = 0; dd < basis_dimDomain; ++dd)
+      row_jacobian(dd, M_, *H, result[dd], dd > 0);
   }
 
   // calculate \sum_{i=1}^d < v_i m \psi > n_i, where n is the unit outer normal,
@@ -528,35 +550,10 @@ protected:
 #endif
   }
 
-  template <size_t domainDim = basis_dimDomain, class anything = void>
-  struct helper
-  {
-    static void jacobian(const BasisValuesMatrixType& M,
-                         MatrixType& H,
-                         DerivativeRangeReturnType& ret,
-                         const ThisType* entropy_flux)
-    {
-      for (size_t dd = 0; dd < domainDim; ++dd)
-        entropy_flux->row_jacobian(dd, M, H, ret[dd], dd > 0);
-    } // void jacobian(...)
-  }; // class helper<...>
-
-  template <class anything>
-  struct helper<1, anything>
-  {
-    static void jacobian(const BasisValuesMatrixType& M,
-                         MatrixType& H,
-                         DerivativeRangeReturnType& ret,
-                         const ThisType* entropy_flux)
-    {
-      entropy_flux->row_jacobian(0, M, H, ret, false);
-    } // void jacobian(...)
-  }; // class helper<1, ...>
-
   void row_jacobian(const size_t row,
                     const BasisValuesMatrixType& M,
                     MatrixType& H,
-                    RowDerivativeRangeReturnType& ret,
+                    DynamicRowDerivativeRangeType& ret,
                     bool L_calculated = false) const
   {
     assert(row < basis_dimDomain);
@@ -565,7 +562,7 @@ protected:
   } // void partial_u_col(...)
 
   // calculates A = A B^{-1}. B is assumed to be symmetric positive definite.
-  static void calculate_A_Binv(RowDerivativeRangeReturnType& A, MatrixType& B, bool L_calculated = false)
+  static void calculate_A_Binv(DynamicRowDerivativeRangeType& A, MatrixType& B, bool L_calculated = false)
   {
     // if B = LL^T, then we have to calculate ret = A (L^T)^{-1} L^{-1} = C L^{-1}
     // calculate B = LL^T first
@@ -574,9 +571,10 @@ protected:
     VectorType tmp_vec;
     for (size_t ii = 0; ii < basis_dimRange; ++ii) {
       // calculate C = A (L^T)^{-1} and store in B
-      XT::LA::solve_lower_triangular(B, tmp_vec, A[ii]);
+      auto&& row_view = A[ii];
+      XT::LA::solve_lower_triangular(B, tmp_vec, row_view);
       // calculate ret = C L^{-1}
-      XT::LA::solve_lower_triangular_transposed(B, A[ii], tmp_vec);
+      XT::LA::solve_lower_triangular_transposed(B, row_view, tmp_vec);
     } // ii
   } // void calculate_A_Binv(...)
 
@@ -615,13 +613,11 @@ protected:
   // the derivative is the vector of matrices (df_1/dalpha, df_2/dalpha, ...)
   // this function returns the dd-th matrix df_dd/dalpha of J
   // assumes work_vecs already contains the needed exp(alpha * m) values
-  void calculate_J(const BasisValuesMatrixType& M,
-                   Dune::FieldMatrix<RangeFieldType, basis_dimRange, basis_dimRange>& J_dd,
-                   const size_t dd) const
+  void calculate_J(const BasisValuesMatrixType& M, DynamicRowDerivativeRangeType& J_dd, const size_t dd) const
   {
     assert(dd < basis_dimDomain);
     const auto& work_vecs = working_storage();
-    std::fill(J_dd.begin(), J_dd.end(), 0);
+    J_dd.set_all_entries(0.);
     const size_t num_quad_points = quad_points_.size();
     for (size_t ll = 0; ll < num_quad_points; ++ll) {
       const auto factor_ll = work_vecs[ll] * quad_points_[ll][dd] * quad_weights_[ll];
@@ -630,14 +626,14 @@ protected:
         const auto factor_ll_ii = factor_ll * basis_ll[ii];
         if (!XT::Common::is_zero(factor_ll_ii)) {
           for (size_t kk = 0; kk <= ii; ++kk)
-            J_dd[ii][kk] += basis_ll[kk] * factor_ll_ii;
+            J_dd.add_to_entry(ii, kk, basis_ll[kk] * factor_ll_ii);
         }
       } // ii
     } // ll
     // symmetric update for upper triangular part of J
     for (size_t mm = 0; mm < basis_dimRange; ++mm)
       for (size_t nn = mm + 1; nn < basis_dimRange; ++nn)
-        J_dd[mm][nn] = J_dd[nn][mm];
+        J_dd.set_entry(mm, nn, J_dd.get_entry(nn, mm));
   } // void calculate_J(...)
 
   void change_basis(const VectorType& beta_in,
@@ -681,8 +677,7 @@ protected:
 #endif
 };
 
-
-#if 1
+#if ENTROPY_FLUX_UNSPECIALIZED_USE_ADAPTIVE_CHANGE_OF_BASIS
 /** Analytical flux \mathbf{f}(\mathbf{u}) = < \mu \mathbf{m} G_{\hat{\alpha}(\mathbf{u})} >,
  * for the notation see
  * Alldredge, Hauck, O'Leary, Tits, "Adaptive change of basis in entropy-based moment closures for linear kinetic
@@ -891,29 +886,27 @@ private:
   using BaseType::xi_;
   const std::unique_ptr<MatrixType> T_minus_one_;
 };
-#endif
 
+#else // ENTROPY_FLUX_UNSPECIALIZED_USE_ADAPTIVE_CHANGE_OF_BASIS
 
-#if 0
 /** Analytical flux \mathbf{f}(\mathbf{u}) = < \mu \mathbf{m} G_{\hat{\alpha}(\mathbf{u})} >,
  * Simple backtracking Newton without change of basis
  */
 template <class MomentBasisImp>
-class EntropyBasedFluxImplementation
-  : public EntropyBasedFluxImplementationUnspecializedBase<MomentBasisImp>
+class EntropyBasedFluxImplementation : public EntropyBasedFluxImplementationUnspecializedBase<MomentBasisImp>
 {
   using BaseType = EntropyBasedFluxImplementationUnspecializedBase<MomentBasisImp>;
   using ThisType = EntropyBasedFluxImplementation;
 
 public:
   using BaseType::basis_dimDomain;
+  using typename BaseType::AlphaReturnType;
+  using typename BaseType::BasisValuesMatrixType;
   using typename BaseType::DomainType;
+  using typename BaseType::MatrixType;
   using typename BaseType::MomentBasis;
   using typename BaseType::RangeFieldType;
-  using typename BaseType::AlphaReturnType;
   using typename BaseType::VectorType;
-  using typename BaseType::MatrixType;
-  using typename BaseType::BasisValuesMatrixType;
 
   explicit EntropyBasedFluxImplementation(const MomentBasis& basis_functions,
                                           const RangeFieldType tau,
@@ -925,8 +918,7 @@ public:
                                           const size_t k_max,
                                           const RangeFieldType epsilon)
     : BaseType(basis_functions, tau, epsilon_gamma, chi, xi, r_sequence, k_0, k_max, epsilon)
-  {
-  }
+  {}
 
   // returns (alpha, (actual_u, r)), where r is the regularization parameter and actual_u the regularized u
   virtual std::unique_ptr<AlphaReturnType>
@@ -944,131 +936,130 @@ public:
     auto u_iso = basis_functions_.u_iso();
     const RangeFieldType dim_factor = is_full_moment_basis<MomentBasis>::value ? 1. : std::sqrt(basis_dimDomain);
     tau_prime = std::min(tau_ / ((1 + dim_factor * u_prime.two_norm()) * density + dim_factor * tau_), tau_);
-        VectorType alpha_k = alpha_initial;
-        const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
-        const auto r_max = r_sequence.back();
-        for (const auto& r : r_sequence) {
-          // regularize u
-          v = u_prime;
-          if (r > 0) {
-            alpha_k = get_isotropic_alpha(u);
-            VectorType r_times_u_iso = u_iso;
-            r_times_u_iso *= r;
-            v *= 1 - r;
-            v += r_times_u_iso;
-          }
-          // calculate T_k u
-          VectorType v_k = v;
-          // calculate f_0
-          RangeFieldType f_k = calculate_scalar_integral(alpha_k, M_);
-          f_k -= alpha_k * v_k;
+    VectorType alpha_k = alpha_initial;
+    const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
+    const auto r_max = r_sequence.back();
+    for (const auto& r : r_sequence) {
+      // regularize u
+      v = u_prime;
+      if (r > 0) {
+        alpha_k = get_isotropic_alpha(u);
+        VectorType r_times_u_iso = u_iso;
+        r_times_u_iso *= r;
+        v *= 1 - r;
+        v += r_times_u_iso;
+      }
+      // calculate T_k u
+      VectorType v_k = v;
+      // calculate f_0
+      RangeFieldType f_k = calculate_scalar_integral(alpha_k, M_);
+      f_k -= alpha_k * v_k;
 
-          thread_local auto H = XT::Common::make_unique<MatrixType>(0.);
+      thread_local auto H = XT::Common::make_unique<MatrixType>(0.);
 
-          int pure_newton = 0;
-          for (size_t kk = 0; kk < k_max_; ++kk) {
-            // exit inner for loop to increase r if too many iterations are used
-            if (kk > k_0_ && r < r_max)
+      int pure_newton = 0;
+      for (size_t kk = 0; kk < k_max_; ++kk) {
+        // exit inner for loop to increase r if too many iterations are used
+        if (kk > k_0_ && r < r_max)
+          break;
+        // calculate gradient g
+        calculate_vector_integral(alpha_k, M_, M_, g_k);
+        g_k -= v_k;
+        // calculate Hessian H
+        calculate_hessian(alpha_k, M_, *H, true);
+        // calculate descent direction d_k;
+        d_k = g_k;
+        d_k *= -1;
+        try {
+          // if H = LL^T, then we have to calculate d_k = - L^{-T} L^{-1} g_k
+          // calculate H = LL^T first
+          XT::LA::cholesky(*H);
+          // calculate d_tmp = -L^{-1} g_k and store in B
+          XT::LA::solve_lower_triangular(*H, tmp_vec, d_k);
+          // calculate d_k = L^{-T} d_tmp
+          XT::LA::solve_lower_triangular_transposed(*H, d_k, tmp_vec);
+        } catch (const Dune::MathError&) {
+          if (r < r_max)
+            break;
+          const std::string err_msg =
+              "Failed to converge for " + XT::Common::to_string(u) + " with density " + XT::Common::to_string(density);
+          DUNE_THROW(MathError, err_msg);
+        }
+
+        const auto& alpha_tilde = alpha_k;
+        auto& u_alpha_tilde = tmp_vec;
+        u_alpha_tilde = g_k + v;
+        auto density_tilde = basis_functions_.density(u_alpha_tilde);
+        if (!(density_tilde > 0.) || std::isinf(density_tilde))
+          break;
+        alpha_prime = alpha_tilde - alpha_iso_prime * std::log(density_tilde);
+        auto& u_eps_diff = tmp_vec;
+        calculate_vector_integral(alpha_prime, M_, M_, u_eps_diff);
+        u_eps_diff *= -(1 - epsilon_gamma_);
+        u_eps_diff += v;
+
+        first_error_cond = g_k.two_norm();
+        second_error_cond = std::exp(d_k.one_norm() + std::abs(std::log(density_tilde)));
+        if (first_error_cond < tau_prime && 1 - epsilon_gamma_ < second_error_cond
+            && realizability_helper_.is_realizable(u_eps_diff, kk == static_cast<size_t>(0.8 * k_0_))) {
+          ret->first = alpha_prime + alpha_iso_prime * std::log(density);
+          ret->second = std::make_pair(v * density, r);
+          return ret;
+        } else {
+          RangeFieldType zeta_k = 1;
+          // backtracking line search
+          auto& alpha_new = tmp_vec;
+          while (pure_newton >= 2 || zeta_k > epsilon_ * alpha_k.two_norm() / d_k.two_norm()) {
+            // calculate alpha_new = alpha_k + zeta_k d_k
+            alpha_new = d_k;
+            alpha_new *= zeta_k;
+            alpha_new += alpha_k;
+            // calculate f(alpha_new)
+            RangeFieldType f_new = calculate_scalar_integral(alpha_new, M_);
+            f_new -= alpha_new * v_k;
+            if (pure_newton >= 2 || XT::Common::FloatCmp::le(f_new, f_k + xi_ * zeta_k * (g_k * d_k))) {
+              alpha_k = alpha_new;
+              f_k = f_new;
+              pure_newton = 0;
               break;
-            // calculate gradient g
-            calculate_vector_integral(alpha_k, M_, M_, g_k);
-            g_k -= v_k;
-            // calculate Hessian H
-            calculate_hessian(alpha_k, M_, *H, true);
-            // calculate descent direction d_k;
-            d_k = g_k;
-            d_k *= -1;
-            try {
-              // if H = LL^T, then we have to calculate d_k = - L^{-T} L^{-1} g_k
-              // calculate H = LL^T first
-              XT::LA::cholesky(*H);
-              // calculate d_tmp = -L^{-1} g_k and store in B
-              XT::LA::solve_lower_triangular(*H, tmp_vec, d_k);
-              // calculate d_k = L^{-T} d_tmp
-              XT::LA::solve_lower_triangular_transposed(*H, d_k, tmp_vec);
-            } catch (const Dune::MathError&) {
-              if (r < r_max)
-                break;
-              const std::string err_msg =
-            "Failed to converge for " + XT::Common::to_string(u) + " with density " + XT::Common::to_string(density);
-              DUNE_THROW(MathError, err_msg);
             }
+            zeta_k = chi_ * zeta_k;
+          } // backtracking linesearch while
+          // if (zeta_k <= epsilon_ * alpha_k.two_norm() / d_k.two_norm() * 100.)
+          if (zeta_k <= epsilon_ * alpha_k.two_norm() / d_k.two_norm())
+            ++pure_newton;
+        } // else (stopping conditions)
+      } // k loop (Newton iterations)
+    } // r loop (Regularization parameter)
+    const std::string err_msg =
+        "Failed to converge for " + XT::Common::to_string(u) + " with density " + XT::Common::to_string(density);
+    DUNE_THROW(MathError, err_msg);
+    return ret;
+  }
 
-            const auto& alpha_tilde = alpha_k;
-            auto& u_alpha_tilde = tmp_vec;
-            u_alpha_tilde = g_k + v;
-            auto density_tilde = basis_functions_.density(u_alpha_tilde);
-            if (!(density_tilde > 0.) || std::isinf(density_tilde))
-              break;
-            alpha_prime = alpha_tilde - alpha_iso_prime * std::log(density_tilde);
-            auto& u_eps_diff = tmp_vec;
-            calculate_vector_integral(alpha_prime, M_, M_, u_eps_diff);
-            u_eps_diff *= -(1 - epsilon_gamma_);
-            u_eps_diff += v;
-
-            first_error_cond = g_k.two_norm();
-            second_error_cond = std::exp(d_k.one_norm() + std::abs(std::log(density_tilde)));
-            if (first_error_cond < tau_prime && 1 - epsilon_gamma_ < second_error_cond
-                && realizability_helper_.is_realizable(u_eps_diff, kk == static_cast<size_t>(0.8 * k_0_))) {
-              ret->first = alpha_prime + alpha_iso_prime * std::log(density);
-              ret->second = std::make_pair(v * density, r);
-              return ret;
-            } else {
-              RangeFieldType zeta_k = 1;
-              // backtracking line search
-              auto& alpha_new = tmp_vec;
-              while (pure_newton >= 2 || zeta_k > epsilon_ * alpha_k.two_norm() / d_k.two_norm()) {
-                // calculate alpha_new = alpha_k + zeta_k d_k
-                alpha_new = d_k;
-                alpha_new *= zeta_k;
-                alpha_new += alpha_k;
-                // calculate f(alpha_new)
-                RangeFieldType f_new = calculate_scalar_integral(alpha_new, M_);
-                f_new -= alpha_new * v_k;
-                if (pure_newton >= 2 || XT::Common::FloatCmp::le(f_new, f_k + xi_ * zeta_k * (g_k * d_k))) {
-                  alpha_k = alpha_new;
-                  f_k = f_new;
-                  pure_newton = 0;
-                  break;
-                }
-                zeta_k = chi_ * zeta_k;
-              } // backtracking linesearch while
-              // if (zeta_k <= epsilon_ * alpha_k.two_norm() / d_k.two_norm() * 100.)
-              if (zeta_k <= epsilon_ * alpha_k.two_norm() / d_k.two_norm())
-                ++pure_newton;
-            } // else (stopping conditions)
-          } // k loop (Newton iterations)
-        } // r loop (Regularization parameter)
-        const std::string err_msg =
-            "Failed to converge for " + XT::Common::to_string(u) + " with density " + XT::Common::to_string(density);
-        DUNE_THROW(MathError, err_msg);
-        return ret;
-    }
-
-  private:
-  using BaseType::get_isotropic_alpha;
+private:
+  using BaseType::calculate_hessian;
   using BaseType::calculate_scalar_integral;
   using BaseType::calculate_vector_integral;
-  using BaseType::calculate_hessian;
+  using BaseType::get_isotropic_alpha;
 
   using BaseType::basis_functions_;
-  using BaseType::quad_points_;
-  using BaseType::quad_weights_;
-  using BaseType::M_;
-  using BaseType::tau_;
-  using BaseType::epsilon_gamma_;
   using BaseType::chi_;
-  using BaseType::xi_;
-  using BaseType::r_sequence_;
+  using BaseType::epsilon_;
+  using BaseType::epsilon_gamma_;
   using BaseType::k_0_;
   using BaseType::k_max_;
-  using BaseType::epsilon_;
+  using BaseType::M_;
+  using BaseType::quad_points_;
+  using BaseType::quad_weights_;
+  using BaseType::r_sequence_;
   using BaseType::realizability_helper_;
+  using BaseType::tau_;
+  using BaseType::xi_;
 };
 #endif
 
-
-#if 1
+#if ENTROPY_FLUX_USE_PARTIAL_MOMENTS_SPECIALIZATION
 /**
  * Specialization for DG basis
  */
@@ -1088,12 +1079,12 @@ public:
   using BaseType::r;
   static const size_t basis_dimDomain = MomentBasis::dimDomain;
   static const size_t basis_dimRange = MomentBasis::dimRange;
-  using typename BaseType::DerivativeRangeReturnType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
+  using typename BaseType::DynamicDerivativeRangeType;
+  using typename BaseType::DynamicRowDerivativeRangeType;
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeReturnType;
-  using typename BaseType::RowDerivativeRangeReturnType;
   using BasisDomainType = typename MomentBasis::DomainType;
   static const size_t block_size = (basis_dimDomain == 1) ? 2 : 4;
   static const size_t num_blocks = basis_dimRange / block_size;
@@ -1187,20 +1178,20 @@ public:
     return ret;
   } // void evaluate(...)
 
-  virtual DerivativeRangeReturnType jacobian(const DomainType& u,
-                                             const XT::Common::Parameter& /*param*/ = {}) const override final
+  virtual void jacobian(const DomainType& u,
+                        DynamicDerivativeRangeType& result,
+                        const XT::Common::Parameter& /*param*/ = {}) const override final
   {
     const auto alpha = std::make_unique<BlockVectorType>(get_alpha(u, *get_isotropic_alpha(u), true)->first);
-    return jacobian_with_alpha(*alpha);
+    jacobian_with_alpha(*alpha, result);
   }
 
-  virtual DerivativeRangeReturnType jacobian_with_alpha(const BlockVectorType& alpha) const
+  virtual void jacobian_with_alpha(const BlockVectorType& alpha, DynamicDerivativeRangeType& result) const
   {
-    DerivativeRangeReturnType ret;
     thread_local auto H = XT::Common::make_unique<BlockMatrixType>();
     calculate_hessian(alpha, M_, *H);
-    helper<basis_dimDomain>::jacobian(M_, *H, ret, this);
-    return ret;
+    for (size_t dd = 0; dd < basis_dimDomain; ++dd)
+      row_jacobian(dd, M_, *H, result[dd], dd > 0);
   }
 
   // calculate \sum_{i=1}^d < v_i m \psi > n_i, where n is the unit outer normal,
@@ -1560,15 +1551,6 @@ private:
   template <size_t domainDim = basis_dimDomain, class anything = void>
   struct helper
   {
-    static void jacobian(const BasisValuesMatrixType& M,
-                         BlockMatrixType& H,
-                         DerivativeRangeReturnType& ret,
-                         const ThisType* entropy_flux)
-    {
-      for (size_t dd = 0; dd < domainDim; ++dd)
-        entropy_flux->row_jacobian(dd, M, H, ret[dd], dd > 0);
-    } // void jacobian(...)
-
 #  if HAVE_QHULL
     static void calculate_plane_coefficients(const MomentBasis& basis_functions)
     {
@@ -1601,14 +1583,6 @@ private:
   template <class anything>
   struct helper<1, anything>
   {
-    static void jacobian(const BasisValuesMatrixType& M,
-                         BlockMatrixType& H,
-                         DerivativeRangeReturnType& ret,
-                         const ThisType* entropy_flux)
-    {
-      entropy_flux->row_jacobian(0, M, H, ret, false);
-    } // void jacobian(...)
-
     static void calculate_plane_coefficients(const MomentBasis& /*basis_functions*/) {}
 
     static bool is_realizable(const BlockVectorType& u, const MomentBasis& basis_functions)
@@ -1629,7 +1603,7 @@ private:
   void row_jacobian(const size_t row,
                     const BasisValuesMatrixType& M,
                     BlockMatrixType& H,
-                    RowDerivativeRangeReturnType& ret,
+                    DynamicRowDerivativeRangeType& ret,
                     bool L_calculated = false) const
   {
     assert(row < basis_dimDomain);
@@ -1638,9 +1612,7 @@ private:
   } // void partial_u_col(...)
 
   // calculates A = A B^{-1}. B is assumed to be symmetric positive definite.
-  static void calculate_A_Binv(FieldMatrix<RangeFieldType, basis_dimRange, basis_dimRange>& A,
-                               BlockMatrixType& B,
-                               bool L_calculated = false)
+  static void calculate_A_Binv(DynamicRowDerivativeRangeType& A, BlockMatrixType& B, bool L_calculated = false)
   {
     // if B = LL^T, then we have to calculate ret = A (L^T)^{-1} L^{-1} = C L^{-1}
     // calculate B = LL^T first
@@ -1694,12 +1666,10 @@ private:
   // the derivative is the vector of matrices (df_1/dalpha, df_2/dalpha, ...)
   // this function returns the dd-th matrix df_dd/dalpha of J
   // assumes work_vecs already contains the needed exp(alpha * m) values
-  void calculate_J(const BasisValuesMatrixType& M,
-                   Dune::FieldMatrix<RangeFieldType, basis_dimRange, basis_dimRange>& J_dd,
-                   const size_t dd) const
+  void calculate_J(const BasisValuesMatrixType& M, DynamicRowDerivativeRangeType& J_dd, const size_t dd) const
   {
     assert(dd < basis_dimDomain);
-    std::fill(J_dd.begin(), J_dd.end(), 0.);
+    J_dd.set_all_entries(0.);
     const auto& work_vec = working_storage();
     // matrix is symmetric, we only use lower triangular part
     for (size_t jj = 0; jj < num_blocks; ++jj) {
@@ -1721,7 +1691,7 @@ private:
       const auto offset = block_size * jj;
       for (size_t mm = 0; mm < block_size; ++mm)
         for (size_t nn = mm + 1; nn < block_size; ++nn)
-          J_dd[offset + mm][offset + nn] = J_dd[offset + nn][offset + mm];
+          J_dd.set_entry(offset + mm, offset + nn, J_dd.get_entry(offset + nn, offset + mm));
     }
   } // void calculate_J(...)
 
@@ -1763,10 +1733,9 @@ private:
   const RangeFieldType epsilon_;
   LocalMatrixType T_minus_one_;
 };
-#endif
+#endif // ENTROPY_FLUX_USE_PARTIAL_MOMENTS_SPECIALIZATION
 
-
-#if 1
+#if ENTROPY_FLUX_USE_3D_HATFUNCTIONS_SPECIALIZATION
 /**
  * Specialization of EntropyBasedFluxImplementation for 3D Hatfunctions
  */
@@ -1786,14 +1755,13 @@ public:
   using BaseType::r;
   static const size_t basis_dimDomain = MomentBasis::dimDomain;
   static const size_t basis_dimRange = MomentBasis::dimRange;
-  using typename BaseType::DerivativeRangeReturnType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
+  using typename BaseType::DynamicDerivativeRangeType;
+  using typename BaseType::DynamicRowDerivativeRangeType;
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeReturnType;
-  using typename BaseType::RowDerivativeRangeReturnType;
   using BasisDomainType = typename MomentBasis::DomainType;
-  using MatrixType = XT::Common::FieldMatrix<RangeFieldType, basis_dimRange, basis_dimRange>;
   using DynamicRangeType = DynamicVector<RangeFieldType>;
   using LocalVectorType = XT::Common::FieldVector<RangeFieldType, 3>;
   using LocalMatrixType = XT::Common::FieldMatrix<RangeFieldType, 3, 3>;
@@ -1915,24 +1883,23 @@ public:
     return ret;
   } // void evaluate(...)
 
-  virtual DerivativeRangeReturnType jacobian(const DomainType& u,
-                                             const XT::Common::Parameter& /*param*/ = {}) const override final
+  virtual void jacobian(const DomainType& u,
+                        DynamicDerivativeRangeType& result,
+                        const XT::Common::Parameter& /*param*/ = {}) const override final
   {
     const auto alpha = get_alpha(u, get_isotropic_alpha(u), true)->first;
-    return jacobian_with_alpha(alpha);
+    jacobian_with_alpha(alpha, result);
   }
 
-  virtual DerivativeRangeReturnType jacobian_with_alpha(const VectorType& alpha) const
+  virtual void jacobian_with_alpha(const VectorType& alpha, DynamicDerivativeRangeType& result) const
   {
-    DerivativeRangeReturnType ret;
     thread_local SparseMatrixType H(basis_dimRange, basis_dimRange, pattern_, 0);
     thread_local SparseMatrixType J(basis_dimRange, basis_dimRange, pattern_, 0);
     calculate_hessian(alpha, M_, H);
     for (size_t dd = 0; dd < basis_dimDomain; ++dd) {
       calculate_J(M_, J, dd);
-      calculate_J_Hinv(J, H, ret[dd]);
+      calculate_J_Hinv(J, H, result[dd]);
     }
-    return ret;
   } // ... jacobian(...)
 
   DomainType evaluate_kinetic_flux(const DomainType& u_i,
@@ -2130,7 +2097,7 @@ private:
 private:
   // calculates ret = J H^{-1}. H is assumed to be symmetric positive definite, which gives ret^T = H^{-T} J^T =
   // H^{-1} J^T, so we just have to solve y = H^{-1} x for each row x of J
-  void calculate_J_Hinv(SparseMatrixType& J, const SparseMatrixType& H, RowDerivativeRangeReturnType& ret) const
+  void calculate_J_Hinv(SparseMatrixType& J, const SparseMatrixType& H, DynamicRowDerivativeRangeType& ret) const
   {
     thread_local VectorType solution(basis_dimRange, 0., 0), tmp_rhs(basis_dimRange, 0., 0);
 #  if HAVE_EIGEN
@@ -2156,8 +2123,8 @@ private:
 #  endif
       // copy result to C
       for (size_t kk = 0; kk < basis_dimRange; ++kk)
-        ret[ii][kk] = solution.get_entry(kk);
-    }
+        ret.set_entry(ii, kk, solution.get_entry(kk));
+    } // ii
   } // void calculate_J_Hinv(...)
 
   RangeFieldType calculate_f(const VectorType& alpha, const VectorType& v) const
@@ -2284,9 +2251,10 @@ private:
   const RangeFieldType epsilon_;
   XT::LA::SparsityPatternDefault pattern_;
 };
-#endif
+#endif // ENTROPY_FLUX_USE_3D_HATFUNCTIONS_SPECIALIZATION
 
-#if 0
+#if ENTROPY_FLUX_USE_1D_HATFUNCTIONS_SPECIALIZATION
+#  if ENTROPY_FLUX_1D_HATFUNCTIONS_USE_ANALYTICAL_INTEGRALS
 /**
  * Specialization of EntropyBasedFluxImplementation for 1D Hatfunctions (no change of basis, analytic integrals +
  * Taylor)
@@ -2304,14 +2272,13 @@ public:
   using BaseType::r;
   static const size_t basis_dimDomain = MomentBasis::dimDomain;
   static const size_t basis_dimRange = dimRange;
-  using typename BaseType::DerivativeRangeReturnType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
+  using typename BaseType::DynamicDerivativeRangeType;
+  using typename BaseType::DynamicRowDerivativeRangeType;
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeReturnType;
-  using typename BaseType::RowDerivativeRangeReturnType;
   using BasisDomainType = typename MomentBasis::DomainType;
-  using MatrixType = XT::Common::FieldMatrix<RangeFieldType, basis_dimRange, basis_dimRange>;
   using VectorType = XT::Common::FieldVector<RangeFieldType, basis_dimRange>;
   using AlphaReturnType = std::pair<VectorType, std::pair<DomainType, RangeFieldType>>;
 
@@ -2426,22 +2393,21 @@ public:
     return ret;
   } // void evaluate_with_alpha(...)
 
-  virtual DerivativeRangeReturnType jacobian(const DomainType& u,
-                                             const XT::Common::Parameter& /*param*/ = {}) const override final
+  virtual void jacobian(const DomainType& u,
+                        DynamicDerivativeRangeType& result,
+                        const XT::Common::Parameter& /*param*/ = {}) const override final
   {
     const auto alpha = get_alpha(u, get_isotropic_alpha(u), true)->first;
-    return jacobian_with_alpha(alpha);
+    jacobian_with_alpha(alpha, result);
   }
 
-  virtual DerivativeRangeReturnType jacobian_with_alpha(const VectorType& alpha) const
+  virtual void jacobian_with_alpha(const VectorType& alpha, DynamicDerivativeRangeType& result) const
   {
-    DerivativeRangeReturnType ret;
     VectorType H_diag, J_diag;
     XT::Common::FieldVector<RangeFieldType, dimRange - 1> H_subdiag, J_subdiag;
     calculate_hessian(alpha, H_diag, H_subdiag);
     calculate_J(alpha, J_diag, J_subdiag);
-    calculate_J_Hinv(ret[0], J_diag, J_subdiag, H_diag, H_subdiag);
-    return ret;
+    calculate_J_Hinv(result[0], J_diag, J_subdiag, H_diag, H_subdiag);
   }
 
   // calculate \sum_{i=1}^d < v_i m \psi > n_i, where n is the unit outer normal,
@@ -2985,7 +2951,7 @@ private:
   } // void calculate_J(...)
 
   // calculates ret = J H^{-1}. Both J and H are symmetric tridiagonal, H is positive definite.
-  static void calculate_J_Hinv(MatrixType& ret,
+  static void calculate_J_Hinv(DynamicRowDerivativeRangeType& ret,
                                const VectorType& J_diag,
                                const FieldVector<RangeFieldType, dimRange - 1>& J_subdiag,
                                VectorType& H_diag,
@@ -2997,7 +2963,7 @@ private:
     XT::LA::tridiagonal_ldlt(H_diag, H_subdiag);
 
     // copy J to dense matrix
-    std::fill(ret.begin(), ret.end(), 0.);
+    ret.set_all_entries(0.);
     for (size_t ii = 0; ii < dimRange - 1; ++ii) {
       ret[ii][ii] = J_diag[ii];
       ret[ii + 1][ii] = J_subdiag[ii];
@@ -3008,9 +2974,10 @@ private:
     // Solve ret H = J which is equivalent to (as H and J are symmetric) to H ret^T = J;
     XT::LA::solve_tridiagonal_ldlt_factorized(H_diag, H_subdiag, ret);
     // transpose ret
+    RangeFieldType* ret_ptr = &(ret[0][0]);
     for (size_t ii = 0; ii < dimRange; ++ii)
       for (size_t jj = 0; jj < ii; ++jj)
-        std::swap(ret[jj][ii], ret[ii][jj]);
+        std::swap(ret_ptr[jj * dimRange + ii], ret_ptr[ii * dimRange + jj]);
   } // void calculate_J_Hinv(...)
 
   const MomentBasis& basis_functions_;
@@ -3026,9 +2993,9 @@ private:
   const RangeFieldType taylor_tol_;
   const size_t max_taylor_order_;
 };
-#endif
 
-#if 1
+#  else // ENTROPY_FLUX_1D_HATFUNCTIONS_USE_ANALYTICAL_INTEGRALS
+
 /**
  * Specialization of EntropyBasedFluxImplementation for 1D Hatfunctions (no change of basis, use structure)
  */
@@ -3045,14 +3012,13 @@ public:
   using BaseType::r;
   static const size_t basis_dimDomain = MomentBasis::dimDomain;
   static const size_t basis_dimRange = dimRange;
-  using typename BaseType::DerivativeRangeReturnType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
+  using typename BaseType::DynamicDerivativeRangeType;
+  using typename BaseType::DynamicRowDerivativeRangeType;
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeReturnType;
-  using typename BaseType::RowDerivativeRangeReturnType;
   using BasisDomainType = typename MomentBasis::DomainType;
-  using MatrixType = XT::Common::FieldMatrix<RangeFieldType, basis_dimRange, basis_dimRange>;
   using VectorType = XT::Common::FieldVector<RangeFieldType, basis_dimRange>;
   using AlphaReturnType = std::pair<VectorType, std::pair<DomainType, RangeFieldType>>;
   static const size_t num_intervals = dimRange - 1;
@@ -3135,22 +3101,21 @@ public:
     return ret;
   } // void evaluate(...)
 
-  virtual DerivativeRangeReturnType jacobian(const DomainType& u,
-                                             const XT::Common::Parameter& /*param*/ = {}) const override final
+  virtual void jacobian(const DomainType& u,
+                        DynamicDerivativeRangeType& result,
+                        const XT::Common::Parameter& /*param*/ = {}) const override final
   {
     const auto alpha = get_alpha(u, get_isotropic_alpha(u), true)->first;
-    return jacobian_with_alpha(alpha);
+    jacobian_with_alpha(alpha, result);
   }
 
-  virtual DerivativeRangeReturnType jacobian_with_alpha(const VectorType& alpha) const
+  virtual void jacobian_with_alpha(const VectorType& alpha, DynamicDerivativeRangeType& result) const
   {
-    DerivativeRangeReturnType ret;
     VectorType H_diag, J_diag;
     FieldVector<RangeFieldType, dimRange - 1> H_subdiag, J_subdiag;
     calculate_hessian(alpha, M_, H_diag, H_subdiag);
     calculate_J(M_, J_diag, J_subdiag);
-    calculate_J_Hinv(ret[0], J_diag, J_subdiag, H_diag, H_subdiag);
-    return ret;
+    calculate_J_Hinv(result[0], J_diag, J_subdiag, H_diag, H_subdiag);
   }
 
   // calculate \sum_{i=1}^d < v_i m \psi > n_i, where n is the unit outer normal,
@@ -3407,7 +3372,7 @@ private:
   } // void calculate_J(...)
 
   // calculates ret = J H^{-1}. Both J and H are symmetric tridiagonal, H is positive definite.
-  static void calculate_J_Hinv(MatrixType& ret,
+  static void calculate_J_Hinv(DynamicRowDerivativeRangeType& ret,
                                const VectorType& J_diag,
                                const FieldVector<RangeFieldType, dimRange - 1>& J_subdiag,
                                VectorType& H_diag,
@@ -3419,20 +3384,21 @@ private:
     XT::LA::tridiagonal_ldlt(H_diag, H_subdiag);
 
     // copy J to dense matrix
-    std::fill(ret.begin(), ret.end(), 0.);
+    ret.set_all_entries(0.);
     for (size_t ii = 0; ii < dimRange - 1; ++ii) {
-      ret[ii][ii] = J_diag[ii];
-      ret[ii + 1][ii] = J_subdiag[ii];
-      ret[ii][ii + 1] = J_subdiag[ii];
+      ret.set_entry(ii, ii, J_diag[ii]);
+      ret.set_entry(ii + 1, ii, J_subdiag[ii]);
+      ret.set_entry(ii, ii + 1, J_subdiag[ii]);
     }
-    ret[dimRange - 1][dimRange - 1] = J_diag[dimRange - 1];
+    ret.set_entry(dimRange - 1, dimRange - 1, J_diag[dimRange - 1]);
 
     // Solve ret H = J which is equivalent to (as H and J are symmetric) to H ret^T = J;
     XT::LA::solve_tridiagonal_ldlt_factorized(H_diag, H_subdiag, ret);
     // transpose ret
+    RangeFieldType* ret_ptr = &(ret[0][0]);
     for (size_t ii = 0; ii < dimRange; ++ii)
       for (size_t jj = 0; jj < ii; ++jj)
-        std::swap(ret[jj][ii], ret[ii][jj]);
+        std::swap(ret_ptr[jj * dimRange + ii], ret_ptr[ii * dimRange + jj]);
   } // void calculate_J_Hinv(...)
 
 private:
@@ -3450,288 +3416,11 @@ private:
   const size_t k_max_;
   const RangeFieldType epsilon_;
 };
-#endif
-
-
-template <class KeyVectorType, class ValueVectorType>
-class EntropyLocalCache
-{
-public:
-  using MapType = typename std::map<KeyVectorType, ValueVectorType, XT::Common::VectorLess>;
-  using IteratorType = typename MapType::iterator;
-  using ConstIteratorType = typename MapType::const_iterator;
-  using RangeFieldType = typename XT::Common::VectorAbstraction<KeyVectorType>::ScalarType;
-
-  EntropyLocalCache(const size_t capacity = 0)
-    : capacity_(capacity)
-  {}
-
-  void insert(const KeyVectorType& u, const ValueVectorType& alpha)
-  {
-    cache_.insert(std::make_pair(u, alpha));
-    keys_.push_back(u);
-    if (cache_.size() > capacity_) {
-      cache_.erase(keys_.front());
-      keys_.pop_front();
-    }
-  }
-
-  std::pair<RangeFieldType, ConstIteratorType> find_closest(const KeyVectorType& u) const
-  {
-    ConstIteratorType ret = cache_.begin();
-    if (ret == end())
-      return std::make_pair(std::numeric_limits<RangeFieldType>::max(), ret);
-    auto diff = u - ret->first;
-    // use infinity_norm as distance
-    RangeFieldType distance = infinity_norm(diff);
-    auto it = ret;
-    while (++it != end()) {
-      if (XT::Common::FloatCmp::eq(distance, 0.))
-        break;
-      diff = u - it->first;
-      RangeFieldType new_distance = infinity_norm(diff);
-      if (new_distance < distance) {
-        distance = new_distance;
-        ret = it;
-      }
-    }
-    return std::make_pair(distance, ret);
-  }
-
-  IteratorType begin()
-  {
-    return cache_.begin();
-  }
-
-  ConstIteratorType begin() const
-  {
-    return cache_.begin();
-  }
-
-  IteratorType end()
-  {
-    return cache_.end();
-  }
-
-  ConstIteratorType end() const
-  {
-    return cache_.end();
-  }
-
-private:
-  static RangeFieldType infinity_norm(const KeyVectorType& vec)
-  {
-    RangeFieldType ret = std::abs(vec[0]);
-    for (size_t ii = 1; ii < vec.size(); ++ii)
-      ret = std::max(ret, std::abs(vec[ii]));
-    return ret;
-  }
-
-  size_t capacity_;
-  MapType cache_;
-  std::list<KeyVectorType> keys_;
-};
-
-
-template <class GridViewImp, class MomentBasisImp>
-class EntropyBasedFluxFunction
-  : public XT::Functions::FluxFunctionInterface<XT::Grid::extract_entity_t<GridViewImp>,
-                                                MomentBasisImp::dimRange,
-                                                MomentBasisImp::dimDomain,
-                                                MomentBasisImp::dimRange,
-                                                typename MomentBasisImp::R>
-{
-  using BaseType = typename XT::Functions::FluxFunctionInterface<XT::Grid::extract_entity_t<GridViewImp>,
-                                                                 MomentBasisImp::dimRange,
-                                                                 MomentBasisImp::dimDomain,
-                                                                 MomentBasisImp::dimRange,
-                                                                 typename MomentBasisImp::R>;
-  using ThisType = EntropyBasedFluxFunction;
-
-public:
-  using GridViewType = GridViewImp;
-  using MomentBasis = MomentBasisImp;
-  using IndexSetType = typename GridViewType::IndexSet;
-  static const size_t basis_dimDomain = MomentBasis::dimDomain;
-  static const size_t basis_dimRange = MomentBasis::dimRange;
-  using typename BaseType::DomainType;
-  using typename BaseType::E;
-  using typename BaseType::LocalFunctionType;
-  using typename BaseType::RangeFieldType;
-  using typename BaseType::StateType;
-  using ImplementationType = EntropyBasedFluxImplementation<MomentBasis>;
-  using AlphaReturnType = typename ImplementationType::AlphaReturnType;
-  using VectorType = typename ImplementationType::VectorType;
-  using LocalCacheType = EntropyLocalCache<StateType, VectorType>;
-  static const size_t cache_size = 4 * basis_dimDomain + 2;
-
-  explicit EntropyBasedFluxFunction(
-      const GridViewType& grid_view,
-      const MomentBasis& basis_functions,
-      const RangeFieldType tau = 1e-9,
-      const RangeFieldType epsilon_gamma = 0.01,
-      const RangeFieldType chi = 0.5,
-      const RangeFieldType xi = 1e-3,
-      const std::vector<RangeFieldType> r_sequence = {0, 1e-8, 1e-6, 1e-4, 1e-3, 1e-2, 5e-2, 0.1, 0.5, 1},
-      const size_t k_0 = 500,
-      const size_t k_max = 1000,
-      const RangeFieldType epsilon = std::pow(2, -52))
-    : index_set_(grid_view.indexSet())
-    , entity_caches_(index_set_.size(0), LocalCacheType(cache_size))
-    , mutexes_(index_set_.size(0))
-    , implementation_(basis_functions, tau, epsilon_gamma, chi, xi, r_sequence, k_0, k_max, epsilon)
-  {}
-
-  static const constexpr bool available = true;
-
-  class Localfunction : public LocalFunctionType
-  {
-    using BaseType = LocalFunctionType;
-
-  public:
-    using typename BaseType::E;
-    using typename BaseType::JacobianRangeReturnType;
-    using typename BaseType::RangeReturnType;
-
-    Localfunction(const IndexSetType& index_set,
-                  std::vector<LocalCacheType>& entity_caches,
-                  std::vector<std::mutex>& mutexes,
-                  const ImplementationType& implementation)
-      : index_set_(index_set)
-      , thread_cache_(cache_size)
-      , entity_caches_(entity_caches)
-      , mutexes_(mutexes)
-      , implementation_(implementation)
-    {}
-
-    virtual void post_bind(const E& element) override final
-    {
-      const auto index = index_set_.index(element);
-      entity_cache_ = &(entity_caches_[index]);
-      mutex_ = &(mutexes_[index]);
-    }
-
-    virtual int order(const XT::Common::Parameter&) const override final
-    {
-      return 1.;
-    }
-
-    std::unique_ptr<AlphaReturnType> get_alpha(const StateType& u, const bool regularize) const
-    {
-      // find starting point. Candidates: alpha_iso and the entries in the two caches
-      std::lock_guard<std::mutex> DUNE_UNUSED(guard)(*mutex_);
-      const auto& basis_functions = implementation_.basis_functions();
-      static const auto u_iso = basis_functions.u_iso();
-      static const auto alpha_iso = basis_functions.alpha_iso();
-      static const auto alpha_iso_prime = basis_functions.alpha_iso_prime();
-      const auto density = basis_functions.density(u);
-      const auto u_iso_scaled = u_iso * density;
-      // calculate (inf-norm) distance to isotropic moment with same density
-      RangeFieldType distance = (u - u_iso_scaled).infinity_norm();
-      VectorType alpha_start = XT::Common::convert_to<VectorType>(alpha_iso + alpha_iso_prime * std::log(density));
-      if (!XT::Common::FloatCmp::eq(distance, 0.)) {
-        // calculate distance to closest moment in entity_cache
-        const auto entity_cache_dist_and_it = entity_cache_->find_closest(u);
-        const auto& entity_cache_dist = entity_cache_dist_and_it.first;
-        if (entity_cache_dist < distance) {
-          distance = entity_cache_dist;
-          alpha_start = entity_cache_dist_and_it.second->second;
-        }
-        if (!XT::Common::FloatCmp::eq(distance, 0.)) {
-          // calculate distance to closest moment in thread_cache
-          const auto thread_cache_dist_and_it = thread_cache_.find_closest(u);
-          const auto& thread_cache_dist = thread_cache_dist_and_it.first;
-          if (thread_cache_dist < distance) {
-            distance = thread_cache_dist;
-            alpha_start = thread_cache_dist_and_it.second->second;
-          }
-        }
-      }
-      // If alpha_start is already the solution, we are finished. Else start optimization.
-      if (XT::Common::FloatCmp::eq(distance, 0.)) {
-        return std::make_unique<AlphaReturnType>(std::make_pair(alpha_start, std::make_pair(u, 0.)));
-      } else {
-        auto ret = implementation_.get_alpha(u, alpha_start, regularize);
-        entity_cache_->insert(ret->second.first, ret->first);
-        thread_cache_.insert(ret->second.first, ret->first);
-        return std::move(ret);
-      }
-    }
-
-    virtual RangeReturnType evaluate(const DomainType& /*point_in_reference_element*/,
-                                     const StateType& u,
-                                     const XT::Common::Parameter& /*param*/ = {}) const override final
-    {
-      const auto alpha = get_alpha(u, true)->first;
-      return implementation_.evaluate_with_alpha(alpha);
-    }
-
-    virtual JacobianRangeReturnType jacobian(const DomainType& /*point_in_reference_element*/,
-                                             const StateType& u,
-                                             const XT::Common::Parameter& /*param*/ = {}) const override final
-    {
-      const auto alpha = get_alpha(u, true)->first;
-      return implementation_.jacobian_with_alpha(alpha);
-    }
-
-  private:
-    const IndexSetType& index_set_;
-    mutable LocalCacheType thread_cache_;
-    std::vector<LocalCacheType>& entity_caches_;
-    std::vector<std::mutex>& mutexes_;
-    const ImplementationType& implementation_;
-    LocalCacheType* entity_cache_;
-    std::mutex* mutex_;
-  }; // class Localfunction
-
-  virtual bool x_dependent() const override final
-  {
-    return false;
-  }
-
-  virtual std::unique_ptr<LocalFunctionType> local_function() const override final
-  {
-    return std::make_unique<Localfunction>(index_set_, entity_caches_, mutexes_, implementation_);
-  }
-
-  virtual std::unique_ptr<Localfunction> derived_local_function() const
-  {
-    return std::make_unique<Localfunction>(index_set_, entity_caches_, mutexes_, implementation_);
-  }
-
-  StateType evaluate_kinetic_flux(const E& inside_entity,
-                                  const E& outside_entity,
-                                  const StateType& u_i,
-                                  const StateType& u_j,
-                                  const DomainType& n_ij,
-                                  const size_t dd) const
-  {
-    // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
-    const auto local_func = derived_local_function();
-    local_func->bind(inside_entity);
-    const auto alpha_i = local_func->get_alpha(u_i, true)->first;
-    local_func->bind(outside_entity);
-    const auto alpha_j = local_func->get_alpha(u_j, true)->first;
-    return implementation_.evaluate_kinetic_flux_with_alphas(alpha_i, alpha_j, n_ij, dd);
-  } // StateType evaluate_kinetic_flux(...)
-
-  const MomentBasis& basis_functions() const
-  {
-    return implementation_.basis_functions();
-  }
-
-private:
-  const IndexSetType& index_set_;
-  mutable std::vector<LocalCacheType> entity_caches_;
-  mutable std::vector<std::mutex> mutexes_;
-  ImplementationType implementation_;
-};
-
-template <class GridViewImp, class MomentBasisImp>
-const size_t EntropyBasedFluxFunction<GridViewImp, MomentBasisImp>::cache_size;
+#  endif // ENTROPY_FLUX_1D_HATFUNCTIONS_USE_ANALYTICAL_INTEGRALS
+#endif // ENTROPY_FLUX_USE_1D_HATFUNCTIONS_SPECIALIZATION
 
 
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_LOCAL_FLUXES_ENTROPYBASED_HH
+#endif // DUNE_GDT_MOMENTMODELS_ENTROPYFLUX_IMPLEMENTATIONS_HH

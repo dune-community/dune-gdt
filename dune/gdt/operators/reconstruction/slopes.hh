@@ -29,7 +29,7 @@
 #include <dune/xt/common/parallel/threadstorage.hh>
 
 #include <dune/gdt/momentmodels/basisfunctions/partial_moments.hh>
-#include <dune/gdt/momentmodels/entropybased_flux.hh>
+#include <dune/gdt/momentmodels/entropyflux.hh>
 
 #include "internal.hh"
 
@@ -798,7 +798,7 @@ public:
     : BaseType(other)
     , RealizabilityBaseType(other)
     , epsilon_(other.epsilon_)
-    , A_tilde_transposed_(std::make_unique<MatrixType>())
+    , A_tilde_transposed_(std::make_unique<MatrixType>(dimRange, dimRange))
     , slope_limiter_(other.slope_limiter_)
   {}
 
@@ -859,7 +859,7 @@ private:
     VectorType u_minus_u_bar = u_char - u_bar_char;
     for (size_t ii = 0; ii < dimRange; ++ii)
       for (size_t jj = 0; jj < dimRange; ++jj)
-        A_tilde_transposed[jj][ii] = A[ii][jj] * u_minus_u_bar[jj];
+        A_tilde_transposed.set_entry(jj, ii, A.get_entry(ii, jj) * u_minus_u_bar[jj]);
 
     // Create LP with dimRange rows and columns */
     constexpr int num_rows = static_cast<int>(dimRange);
@@ -903,6 +903,9 @@ private:
   mutable std::unique_ptr<MatrixType> A_tilde_transposed_;
   const SlopeType slope_limiter_;
 }; // class LpPositivityLimitedSlope<...>
+
+template <class GV, class MomentBasis, class EigenVectorWrapperType, class SlopeType>
+constexpr size_t LpPositivityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType, SlopeType>::dimRange;
 
 
 // Realizability limiter that solves a linear program to ensure the reconstructed values are still in the numerically
@@ -951,7 +954,7 @@ public:
     , basis_functions_(other.basis_functions_)
     , basis_values_(other.basis_values_)
     , lp_(nullptr)
-    , A_tilde_transposed_(std::make_unique<MatrixType>())
+    , A_tilde_transposed_(std::make_unique<MatrixType>(dimRange, dimRange))
     , slope_limiter_(other.slope_limiter_)
   {}
 
@@ -1055,7 +1058,7 @@ private:
     A.mv(u_char, u);
     for (size_t ii = 0; ii < dimRange; ++ii)
       for (size_t jj = 0; jj < dimRange; ++jj)
-        A_tilde_transposed[jj][ii] = A[ii][jj] * u_minus_u_bar_char[jj];
+        A_tilde_transposed.set_entry(jj, ii, A.get_entry(ii, jj) * u_minus_u_bar_char[jj]);
 
     // setup linear program
     setup_linear_program();
@@ -1108,6 +1111,10 @@ private:
   mutable std::unique_ptr<MatrixType> A_tilde_transposed_;
   const SlopeType slope_limiter_;
 };
+
+template <class GV, class MomentBasis, class EigenVectorWrapperType, class SlopeType>
+constexpr size_t LpConvexhullRealizabilityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType, SlopeType>::dimRange;
+
 #endif // HAVE_CLP
 
 
