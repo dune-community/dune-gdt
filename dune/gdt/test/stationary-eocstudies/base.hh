@@ -18,6 +18,7 @@
 #include <dune/grid/io/file/dgfparser/dgfparser.hh>
 
 #include <dune/xt/common/convergence-study.hh>
+#include <dune/xt/common/test/common.hh>
 #include <dune/xt/common/fvector.hh>
 #include <dune/xt/common/string.hh>
 #include <dune/xt/common/timedlogging.hh>
@@ -66,7 +67,6 @@ protected:
   using D = double;
   static const constexpr size_t d = G::dimension;
   using R = double;
-  using E = XT::Grid::extract_entity_t<GV>;
   using I = XT::Grid::extract_intersection_t<GV>;
   using DomainType = XT::Common::FieldVector<D, d>;
   using RangeType = XT::Common::FieldVector<D, m>;
@@ -78,6 +78,8 @@ protected:
   using O = OperatorInterface<M, GV, m>;
 
 public:
+  using E = XT::Grid::extract_entity_t<GV>;
+
   StationaryEocStudy(std::function<void(const DF&, const std::string&)> visualizer =
                          [](const auto& solution, const auto& prefix) {
                            if (DXTC_TEST_CONFIG_GET("setup.visualize", false))
@@ -216,7 +218,9 @@ public:
     const auto& current_space = *current_space_;
     Timer timer;
     auto solution_on_current_grid = solve(current_space);
-    current_data_["quantity"]["time to solution (s)"] = timer.elapsed();
+    // only set time if this did not happen in solve()
+    if (current_data_["quantity"].count("time to solution (s)") == 0)
+      current_data_["quantity"]["time to solution (s)"] = timer.elapsed();
     // visualize
     visualize_(make_discrete_function(current_space, solution_on_current_grid),
                "solution_on_refinement_" + XT::Common::to_string(refinement_level));

@@ -28,6 +28,12 @@ namespace GDT {
 namespace Test {
 
 
+/**
+ * \brief Problem definition from [1], Section 8.1
+ *
+ * [1]: Ern, Stephansen, Vohralik, 2007, Improved energy norm a posteriori error estimation based on flux reconstruction
+ *      for discontinuous Galerkin methods, Preprint R07050, Laboratoire Jacques-Louis Lions & HAL Preprint
+ */
 template <class GV>
 struct ESV2007DiffusionProblem
 {
@@ -41,7 +47,7 @@ struct ESV2007DiffusionProblem
 
   // We can only reproduce the results from ESV2007 by using a quadrature of order 3, which we obtain with a p1 DG space
   // and a force of order 2.
-  ESV2007DiffusionProblem(int force_order = DXTC_TEST_CONFIG_GET("setup.force_order", 2))
+  ESV2007DiffusionProblem(int force_order = 2)
     : diffusion_factor(1)
     , diffusion_tensor(XT::LA::eye_matrix<XT::Common::FieldMatrix<double, d, d>>(d, d))
     , dirichlet(0)
@@ -49,7 +55,7 @@ struct ESV2007DiffusionProblem
     , force(force_order)
   {}
 
-  XT::Grid::GridProvider<G> make_initial_grid()
+  XT::Grid::GridProvider<G> make_initial_grid() const
   {
     if (std::is_same<G, YASP_2D_EQUIDISTANT_OFFSET>::value) {
       return XT::Grid::make_cube_grid<G>(-1, 1, 8);
@@ -78,6 +84,12 @@ struct ESV2007DiffusionProblem
 }; // class ESV2007DiffusionProblem
 
 
+/**
+ * \brief To reproduce the results in [1], Section 8.1
+ *
+ * [1]: Ern, Stephansen, Vohralik, 2007, Improved energy norm a posteriori error estimation based on flux reconstruction
+ *      for discontinuous Galerkin methods, Preprint R07050, Laboratoire Jacques-Louis Lions & HAL Preprint
+ */
 template <class G>
 class ESV2007DiffusionTest : public StationaryDiffusionIpdgEocStudy<G>
 {
@@ -95,13 +107,13 @@ class ESV2007DiffusionTest : public StationaryDiffusionIpdgEocStudy<G>
 public:
   ESV2007DiffusionTest()
     : BaseType()
-    , problem()
+    , problem(DXTC_TEST_CONFIG_GET("setup.force_order", 2))
   {}
 
 protected:
   std::vector<std::string> norms() const override final
   {
-    return {"H_1_semi"};
+    return {"H_1_semi", "eta_NC", "eta_R", "eta_DF"};
   }
 
   void compute_reference_solution() override final
@@ -117,7 +129,9 @@ protected:
     self.reference_space_ = self.make_space(*self.reference_grid_);
     self.space_type_ = backup_space_type;
     self.reference_solution_on_reference_grid_ = std::make_unique<V>(
-        interpolate<V>(XT::Functions::ESV2007::Testcase1ExactSolution<d, 1>(), *self.reference_space_).dofs().vector());
+        default_interpolation<V>(XT::Functions::ESV2007::Testcase1ExactSolution<d, 1>(), *self.reference_space_)
+            .dofs()
+            .vector());
     // visualize
     self.visualize_(
         make_discrete_function(*self.reference_space_, *self.reference_solution_on_reference_grid_),

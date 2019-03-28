@@ -50,7 +50,7 @@ prolong(const DiscreteFunction<SV, SGV, r, rC, SR>& source,
         DiscreteFunction<TV, TGV, r, rC, TR>& target,
         const GridView<PGV>& prolongation_grid_view)
 {
-  interpolate(reinterpret(source, prolongation_grid_view), target, prolongation_grid_view);
+  default_interpolation(reinterpret(source, prolongation_grid_view), target, prolongation_grid_view);
 }
 
 
@@ -165,10 +165,11 @@ void prolong(const DiscreteBochnerFunction<SV, SGV, r, rC, R>& source,
   DynamicVector<size_t> local_dof_indices(temporal_space.mapper().max_local_size());
   std::vector<bool> dof_has_been_handled(temporal_space.mapper().size(), false);
   // walk the time intervals
+  auto temporal_basis = temporal_space.basis().localize();
   for (auto&& time_interval : elements(temporal_space.grid_view())) {
+    temporal_basis->bind(time_interval);
     temporal_space.mapper().global_indices(time_interval, local_dof_indices);
-    const auto& lagrange_points_in_time =
-        temporal_space.finite_element(time_interval.geometry().type()).lagrange_points();
+    const auto& lagrange_points_in_time = temporal_basis->finite_element().lagrange_points();
     for (size_t ii = 0; ii < lagrange_points_in_time.size(); ++ii) {
       const size_t global_dof_index = local_dof_indices[ii];
       if (!dof_has_been_handled[global_dof_index]) {

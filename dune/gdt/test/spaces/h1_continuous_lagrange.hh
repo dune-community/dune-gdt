@@ -57,7 +57,7 @@ struct ContinuousLagrangeSpaceTest
     for (auto&& element : elements(*this->grid_view)) {
       const auto global_indices = this->space->mapper().global_indices(element);
       EXPECT_LE(this->space->mapper().local_size(element), global_indices.size());
-      const auto lagrange_points = this->space->finite_element(element.geometry().type()).lagrange_points();
+      const auto lagrange_points = this->space->finite_elements().get(element.geometry().type(), p).lagrange_points();
       EXPECT_EQ(lagrange_points.size(), this->space->mapper().local_size(element));
       for (size_t ii = 0; ii < lagrange_points.size(); ++ii) {
         const auto global_lagrange_point = element.geometry().global(lagrange_points[ii]);

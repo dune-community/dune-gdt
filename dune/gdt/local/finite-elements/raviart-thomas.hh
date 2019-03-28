@@ -87,7 +87,7 @@ public:
 
   void interpolate(const std::function<RangeType(DomainType)>& local_function,
                    const int order,
-                   std::vector<R>& dofs) const override final
+                   DynamicVector<R>& dofs) const override final
   {
     // prepare
     const size_t sz = this->size();
@@ -117,13 +117,13 @@ public:
                  intersection_geometry_type,
                  std::max(basis_->order() + intersection_Pk_basis.order(), order + intersection_Pk_basis.order()))) {
           const auto point_on_reference_intersection = quadrature_point.position();
-          const auto point_on_reference_element =
+          const auto point_in_reference_element =
               reference_element.template geometry<1>(intersection_index).global(point_on_reference_intersection);
           const auto quadrature_weight = quadrature_point.weight();
           const auto integration_outer_normal = reference_element.integrationOuterNormal(intersection_index);
-          const auto rt_basis_values = basis_->evaluate(point_on_reference_element);
+          const auto rt_basis_values = basis_->evaluate(point_in_reference_element);
           const auto intersection_Pk_basis_values = intersection_Pk_basis.evaluate(point_on_reference_intersection);
-          const auto local_function_values = local_function(point_on_reference_element);
+          const auto local_function_values = local_function(point_in_reference_element);
           for (size_t ii = 0; ii < local_keys_assosiated_with_intersection.size(); ++ii) {
             const size_t local_key_index = local_keys_assosiated_with_intersection[ii];
             for (size_t jj = 0; jj < intersection_Pk_basis.size(); ++jj)
@@ -172,11 +172,11 @@ public:
       for (auto&& quadrature_point : QuadratureRules<D, d>::rule(
                this->geometry_type(),
                std::max(basis_->order() + element_Pkminus1_basis.order(), order + element_Pkminus1_basis.order()))) {
-        const auto point_on_reference_element = quadrature_point.position();
+        const auto point_in_reference_element = quadrature_point.position();
         const auto quadrature_weight = quadrature_point.weight();
-        const auto rt_basis_values = basis_->evaluate(point_on_reference_element);
-        const auto element_Pkminus1_basis_values = element_Pkminus1_basis.evaluate(point_on_reference_element);
-        const auto local_function_values = local_function(point_on_reference_element);
+        const auto rt_basis_values = basis_->evaluate(point_in_reference_element);
+        const auto element_Pkminus1_basis_values = element_Pkminus1_basis.evaluate(point_in_reference_element);
+        const auto local_function_values = local_function(point_in_reference_element);
         for (size_t ii = 0; ii < local_keys_assosiated_with_element.size(); ++ii) {
           const size_t local_key_index = local_keys_assosiated_with_element[ii];
           for (size_t jj = 0; jj < element_Pkminus1_basis.size(); ++jj)
@@ -186,9 +186,9 @@ public:
         for (size_t jj = 0; jj < element_Pkminus1_basis.size(); ++jj)
           rhs[jj] += quadrature_weight * (local_function_values * element_Pkminus1_basis_values[jj]);
       }
-      XT::LA::CommonDenseVector<R> intersection_dofs(local_keys_assosiated_with_element.size(), 0);
+      XT::LA::CommonDenseVector<R> element_dofs(local_keys_assosiated_with_element.size(), 0);
       try {
-        intersection_dofs = XT::LA::solve(lhs, rhs);
+        element_dofs = XT::LA::solve(lhs, rhs);
       } catch (const XT::LA::Exceptions::linear_solver_failed& ee) {
         DUNE_THROW(Exceptions::finite_element_error,
                    error_msg_prefix() << "Failed to solve for volume DoFs, this was the original error:\n   "
@@ -197,7 +197,7 @@ public:
       for (size_t ii = 0; ii < local_keys_assosiated_with_element.size(); ++ii) {
         const size_t local_key_index = local_keys_assosiated_with_element[ii];
         assert(!local_key_was_handled[local_key_index]);
-        dofs[local_key_index] = intersection_dofs[ii];
+        dofs[local_key_index] = element_dofs[ii];
         local_key_was_handled[local_key_index] = true;
       }
     }
@@ -234,8 +234,10 @@ class LocalRaviartThomasFiniteElementFactory
 {
   static_assert(0 <= d && d <= 3, "There is no local Raviart-Thomas finite element available for other dimension!");
 
+public:
   using LocalFiniteElementType = LocalFiniteElementInterface<D, d, R, d, 1>;
 
+private:
   template <size_t d_ = d, bool anything = true>
   struct helper;
 
@@ -328,8 +330,7 @@ class LocalRaviartThomasFiniteElementFactory
   }; // helper<3, ...>
 
 public:
-  static std::unique_ptr<LocalFiniteElementInterface<D, d, R, d, 1>> create(const GeometryType& geometry_type,
-                                                                            const int& order)
+  static std::unique_ptr<LocalFiniteElementType> create(const GeometryType& geometry_type, const int& order)
   {
     // create the finite element
     auto fe = helper<>::create(geometry_type, order);
@@ -349,6 +350,20 @@ make_local_raviart_thomas_finite_element(const GeometryType& geometry_type, cons
 {
   return LocalRaviartThomasFiniteElementFactory<D, d, R>::create(geometry_type, order);
 }
+
+
+template <class D, size_t d, class R>
+class LocalRaviartThomasFiniteElementFamily : public ThreadSafeDefaultLocalLagrangeFiniteElementFamily<D, d, R, d, 1>
+{
+  using BaseType = ThreadSafeDefaultLocalLagrangeFiniteElementFamily<D, d, R, d, 1>;
+
+public:
+  LocalRaviartThomasFiniteElementFamily()
+    : BaseType([](const auto& geometry_type, const auto& order) {
+      return LocalRaviartThomasFiniteElementFactory<D, d, R>::create(geometry_type, order);
+    })
+  {}
+}; // ... LocalRaviartThomasFiniteElementFamily(...)
 
 
 } // namespace GDT

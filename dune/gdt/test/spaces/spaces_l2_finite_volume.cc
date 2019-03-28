@@ -145,7 +145,7 @@ struct FiniteVolumeSpace : public ::testing::Test
     ASSERT_NE(grid_view(), nullptr);
     ASSERT_NE(space, nullptr);
     for (const auto& geometry_type : grid_view()->indexSet().types(0)) {
-      const auto& finite_element = space->finite_element(geometry_type);
+      const auto& finite_element = space->finite_elements().get(geometry_type, 0);
       const auto& shape_functions = finite_element.basis();
       ASSERT_EQ(finite_element.size(), shape_functions.size());
       ASSERT_EQ(finite_element.size(), finite_element.interpolation().size());

@@ -13,7 +13,10 @@
 #define DUNE_GDT_TEST_INSTATIONARY_EOCSTUDIES_HYPERBOLIC_NONCONFORMING_HH
 
 #include <dune/xt/common/bisect.hh>
+#include <dune/xt/common/test/common.hh>
+
 #include <dune/xt/grid/view/periodic.hh>
+
 #include <dune/xt/functions/generic/function.hh>
 
 #include <dune/gdt/local/numerical-fluxes/engquist-osher.hh>
@@ -67,12 +70,18 @@ public:
       const std::string timestepping,
       std::function<void(const DiscreteBochnerFunction<V, GV, m>&, const std::string&)> visualizer =
           [](const auto& /*solution*/, const auto& /*prefix*/) { /*no visualization by default*/ },
-      const size_t num_refinements = DXTC_CONFIG_GET("num_refinements", 3),
+      const size_t num_refinements = DXTC_TEST_CONFIG_GET("setup.num_refinements", 3),
       const size_t num_additional_refinements_for_reference =
-          DXTC_CONFIG_GET("num_additional_refinements_for_reference", 2))
+          DXTC_TEST_CONFIG_GET("setup.num_additional_refinements_for_reference", 2))
     : BaseType(T_end, timestepping, visualizer, num_refinements, num_additional_refinements_for_reference)
     , space_type_("")
     , numerical_flux_type_("")
+    , dg_artificial_viscosity_nu_1_(
+          DXTC_TEST_CONFIG_GET("setup.dg_artificial_viscosity_nu_1", advection_dg_artificial_viscosity_default_nu_1()))
+    , dg_artificial_viscosity_alpha_1_(DXTC_TEST_CONFIG_GET("setup.dg_artificial_viscosity_alpha_1",
+                                                            advection_dg_artificial_viscosity_default_alpha_1()))
+    , dg_artificial_viscosity_component_(DXTC_TEST_CONFIG_GET("setup.dg_artificial_viscosity_component",
+                                                              advection_dg_artificial_viscosity_default_component()))
   {}
 
 protected:
@@ -112,14 +121,15 @@ protected:
     if (space_type_ == "fv")
       return std::make_unique<AdvectionFvOperator<M, GV, m>>(space.grid_view(), *numerical_flux, space, space);
     else
-      return std::make_unique<AdvectionDgArtificialViscosityOperator<M, GV, m>>(
+      return std::make_unique<AdvectionDgOperator<M, GV, m>>(
           space.grid_view(),
           *numerical_flux,
           space,
           space,
           /*periodicity_exception=*/XT::Grid::ApplyOn::NoIntersections<GV>(),
-          DXTC_CONFIG_GET("nu_1", 0.2),
-          DXTC_CONFIG_GET("alpha_1", 1.0));
+          dg_artificial_viscosity_nu_1_,
+          dg_artificial_viscosity_alpha_1_,
+          dg_artificial_viscosity_component_);
   } // ... make_lhs_operator(...)
 
   virtual double estimate_fixed_explicit_fv_dt(
@@ -141,7 +151,8 @@ protected:
     return XT::Common::find_largest_by_bisection(
         /*min_dt=*/10 * std::numeric_limits<double>::epsilon(),
         /*max_dt=*/this->T_end_,
-        /*success=*/[&](const auto& dt_to_test) {
+        /*success=*/
+        [&](const auto& dt_to_test) {
           try {
             auto u = u_0.dofs().vector();
             const double T_end = max_steps_to_try * dt_to_test;
@@ -157,11 +168,46 @@ protected:
           } catch (...) {
             return false;
           }
-        });
+        },
+        1e-2);
+  } // ... estimate_fixed_explicit_dt(...)
+
+  virtual double estimate_fixed_explicit_dt_to_T_end(const S& space,
+                                                     const double& min_dt,
+                                                     const double& T_end,
+                                                     const double max_overshoot = 1.25)
+  {
+    const auto u_0 = this->make_initial_values(space);
+    const auto op = this->make_lhs_operator(space);
+    const auto max_sup_norm = max_overshoot * u_0.dofs().vector().sup_norm();
+    return XT::Common::find_largest_by_bisection(
+        /*min_dt=*/min_dt,
+        /*max_dt=*/T_end,
+        /*success=*/
+        [&](const auto& dt_to_test) {
+          try {
+            auto u = u_0.dofs().vector();
+            double time = 0.;
+            // explicit euler
+            while (time < T_end + dt_to_test) {
+              u -= op->apply(u, {{"_t", {time}}, {"_dt", {dt_to_test}}}) * dt_to_test;
+              time += dt_to_test;
+              if (u.sup_norm() > max_sup_norm)
+                return false;
+            }
+            return true;
+          } catch (...) {
+            return false;
+          }
+        },
+        1e-2);
   } // ... estimate_fixed_explicit_dt(...)
 
   std::string space_type_;
   std::string numerical_flux_type_;
+  double dg_artificial_viscosity_nu_1_;
+  double dg_artificial_viscosity_alpha_1_;
+  size_t dg_artificial_viscosity_component_;
 }; // struct InstationaryNonconformingHyperbolicEocStudy
 
 

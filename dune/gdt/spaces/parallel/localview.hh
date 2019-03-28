@@ -55,8 +55,7 @@ public:
     for (auto i : XT::Common::value_range(size)) {
       assert(i < global_indices_.size());
       const auto global = global_indices_[i];
-      const auto vector_size = vector_.size();
-      assert(global < vector_size);
+      assert(global < vector_.size());
       value_cache_[i] = vector_[global];
     }
   }
@@ -68,7 +67,6 @@ public:
     DUNE_THROW(NotImplemented, "");
     resize(0);
   }
-
 
   void commit()
   {

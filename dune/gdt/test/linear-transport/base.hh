@@ -65,7 +65,7 @@ struct LinearTransportProblem
       else
         return 0.;
     };
-    return interpolate<Vector>(
+    return default_interpolation<Vector>(
         0, [&](const auto& xx, const auto& /*mu*/) { return indicator(std::fmod(xx[0] - time + 10., 1.)); }, space);
   } // ... make_exact_solution__periodic_boundaries(...)
 }; // struct LinearTransportProblem
@@ -98,7 +98,8 @@ public:
                      std::min(this->T_end_, this->time_points_from_vector_array(solution.dof_vectors()).back());
                  for (size_t ii = 0; ii < this->visualization_steps_; ++ii) {
                    const double time = ii * (end_time / this->visualization_steps_);
-                   solution.evaluate(time).visualize(prefix + "_solution_" + XT::Common::to_string(ii));
+                   solution.evaluate(time).visualize(XT::Common::Test::get_unique_test_name() + "__" + prefix
+                                                     + "_solution_" + XT::Common::to_string(ii));
                  }
                })
     , visualization_steps_(0)

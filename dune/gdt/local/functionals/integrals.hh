@@ -79,8 +79,8 @@ public:
       result.resize(size);
     result *= 0;
     // loop over all quadrature points
-    const auto integration_order = integrand_->order(basis, param) + over_integrate_;
-    for (auto&& quadrature_point : QuadratureRules<D, d>::rule(element.geometry().type(), integration_order)) {
+    const auto integrand_order = integrand_->order(basis, param) + over_integrate_;
+    for (auto&& quadrature_point : QuadratureRules<D, d>::rule(element.geometry().type(), integrand_order)) {
       const auto point_in_reference_element = quadrature_point.position();
       // integration factors
       const auto integration_factor = element.geometry().integrationElement(point_in_reference_element);
@@ -101,85 +101,88 @@ private:
 }; // class LocalElementIntegralFunctional
 
 
-#if 0
-template <class UnaryEvaluationType,
-          class TestBase,
-          class Intersection,
-          class Field = typename TestBase::RangeFieldType>
-class LocalFaceIntegralFunctional : public LocalFaceFunctionalInterface<TestBase, Intersection, Field>
+template <class I, size_t r = 1, size_t rC = 1, class R = double, class F = R>
+class LocalIntersectionIntegralFunctional : public LocalIntersectionFunctionalInterface<I, r, rC, R, F>
 {
-  static_assert(is_unary_face_integrand<UnaryEvaluationType>::value, "");
-  typedef LocalFaceIntegralFunctional<UnaryEvaluationType, TestBase, Intersection, Field> ThisType;
-  typedef LocalFaceFunctionalInterface<TestBase, Intersection, Field> BaseType;
-
-  typedef typename TestBase::DomainFieldType D;
-  static const size_t d = TestBase::dimDomain;
+  using ThisType = LocalIntersectionIntegralFunctional<I, r, rC, R, F>;
+  using BaseType = LocalIntersectionFunctionalInterface<I, r, rC, R, F>;
 
 public:
-  using typename BaseType::TestBaseType;
+  using BaseType::d;
+  using typename BaseType::D;
   using typename BaseType::IntersectionType;
-  using typename BaseType::FieldType;
+  using typename BaseType::LocalBasisType;
+  using IntegrandType = LocalBinaryIntersectionIntegrandInterface<I, r, rC, R>;
+  using GenericIntegrand = GenericLocalBinaryIntersectionIntegrand<I, r, rC, R>;
 
-  template <class... Args>
-  explicit LocalFaceIntegralFunctional(Args&&... args)
-    : integrand_(std::forward<Args>(args)...)
-    , over_integrate_(0)
-  {
-  }
-
-  template <class... Args>
-  explicit LocalFaceIntegralFunctional(const int over_integrate, Args&&... args)
-    : integrand_(std::forward<Args>(args)...)
-    , over_integrate_(boost::numeric_cast<size_t>(over_integrate))
-  {
-  }
-
-  template <class... Args>
-  explicit LocalFaceIntegralFunctional(const size_t over_integrate, Args&&... args)
-    : integrand_(std::forward<Args>(args)...)
+  LocalIntersectionIntegralFunctional(const IntegrandType& integrand, const int over_integrate = 0)
+    : BaseType(integrand.parameter_type())
+    , integrand_(integrand.copy())
     , over_integrate_(over_integrate)
-  {
-  }
+  {}
 
-  LocalFaceIntegralFunctional(const ThisType& other) = default;
-  LocalFaceIntegralFunctional(ThisType&& source) = default;
+  LocalIntersectionIntegralFunctional(typename GenericIntegrand::GenericOrderFunctionType order_function,
+                                      typename GenericIntegrand::GenericEvalauteFunctionType evaluate_function,
+                                      const XT::Common::ParameterType& param_type = {},
+                                      const int over_integrate = 0)
+    : BaseType(param_type)
+    , integrand_(GenericIntegrand(order_function, evaluate_function).copy())
+    , over_integrate_(over_integrate)
+  {}
+
+  LocalIntersectionIntegralFunctional(const ThisType& other)
+    : BaseType(other.parameter_type())
+    , integrand_(other.integrand_->copy())
+    , over_integrate_(other.over_integrate_)
+  {}
+
+  LocalIntersectionIntegralFunctional(ThisType&& source) = default;
+
+  std::unique_ptr<BaseType> copy() const override final
+  {
+    return std::make_unique<ThisType>(*this);
+  }
 
   using BaseType::apply;
 
-  void apply(const TestBaseType& test_base,
-             const IntersectionType& intersection,
-             DynamicVector<FieldType>& ret) const override final
+  void apply(const IntersectionType& intersection,
+             const LocalBasisType& inside_basis,
+             const LocalBasisType& outside_basis,
+             DynamicMatrix<F>& result,
+             const XT::Common::Parameter& param = {}) const override final
   {
-    const auto& entity = test_base.entity();
-    const auto local_functions = integrand_.localFunctions(entity);
-    // create quadrature
-    const size_t integrand_order = integrand_.order(local_functions, test_base) + over_integrate_;
-    const auto& quadrature =
-        QuadratureRules<D, d - 1>::rule(intersection.type(), boost::numeric_cast<int>(integrand_order));
+    // prepare integand
+    integrand_->bind(intersection);
     // prepare storage
-    const size_t size = test_base.size();
-    ret *= 0.0;
-    assert(ret.size() >= size);
-    DynamicVector<FieldType> evaluation_result(size, 0.); // \todo: make mutable member, after SMP refactor
+    const size_t rows = inside_basis.size(param);
+    const size_t cols = outside_basis.size(param);
+    if (result.rows() < rows || result.cols() < cols)
+      result.resize(rows, cols);
+    result *= 0;
     // loop over all quadrature points
-    for (const auto& quadrature_point : quadrature) {
-      const auto xx = quadrature_point.position();
+    const auto integrand_order = integrand_->order(inside_basis, outside_basis, param) + over_integrate_;
+    for (const auto& quadrature_point :
+         QuadratureRules<D, d - 1>::rule(intersection.geometry().type(), integrand_order)) {
+      const auto point_in_reference_intersection = quadrature_point.position();
       // integration factors
-      const auto integration_factor = intersection.geometry().integrationElement(xx);
+      const auto integration_factor = intersection.geometry().integrationElement(point_in_reference_intersection);
       const auto quadrature_weight = quadrature_point.weight();
       // evaluate the integrand
-      integrand_.evaluate(local_functions, test_base, intersection, xx, evaluation_result);
+      integrand_->evaluate(inside_basis, outside_basis, point_in_reference_intersection, integrand_values_, param);
+      assert(integrand_values_.rows() >= rows && "This must not happen!");
+      assert(integrand_values_.cols() >= cols && "This must not happen!");
       // compute integral
-      for (size_t ii = 0; ii < size; ++ii)
-        ret[ii] += evaluation_result[ii] * integration_factor * quadrature_weight;
+      for (size_t ii = 0; ii < rows; ++ii)
+        for (size_t jj = 0; jj < cols; ++jj)
+          result[ii][jj] += integrand_values_[ii][jj] * integration_factor * quadrature_weight;
     } // loop over all quadrature points
   } // ... apply(...)
 
 private:
-  const UnaryEvaluationType integrand_;
-  const size_t over_integrate_;
-}; // class LocalFaceIntegralFunctional
-#endif // 0
+  mutable std::unique_ptr<IntegrandType> integrand_;
+  const int over_integrate_;
+  mutable DynamicMatrix<F> integrand_values_;
+}; // class LocalIntersectionIntegralFunctional
 
 
 } // namespace GDT

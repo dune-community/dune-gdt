@@ -55,7 +55,7 @@ public:
 
 private:
   using LocalFunctionalType = LocalElementIntegralFunctional<ElementType, r, rC, F, DofFieldType>;
-  using LocalIntegrandType = LocalElementProductIntegrand<ElementType, r, rC, F, DofFieldType>;
+  using LocalIntegrandType = LocalElementProductIntegrand<ElementType, r, F, DofFieldType>;
 
 public:
   L2VolumeVectorFunctional(AssemblyGridView assembly_grid_view,

@@ -185,7 +185,7 @@ public:
 
   void interpolate(const std::function<RangeType(DomainType)>& local_function,
                    const int order,
-                   std::vector<R>& dofs) const override final
+                   DynamicVector<R>& dofs) const override final
   {
     const size_t unpowered_sz = unpowered_->size();
     if (unpowered_dofs_.size() < unpowered_sz)
@@ -212,7 +212,7 @@ public:
 
 private:
   const std::unique_ptr<const UnpoweredType> unpowered_;
-  mutable std::vector<R> unpowered_dofs_;
+  mutable DynamicVector<R> unpowered_dofs_;
 }; // class LocalPowerFiniteElementInterpolation
 
 

@@ -73,55 +73,19 @@ inline std::ostream& operator<<(std::ostream& out, const Stencil& stencil)
 template <class D, size_t d, class R, size_t r, size_t rC>
 class LocalFiniteElementInterface;
 
+template <class D, size_t d, class R, size_t r, size_t rC>
+class LocalFiniteElementFamilyInterface;
+
 // from #include <dune/gdt/spaces/interface.hh>
 template <class GV, size_t r, size_t rC, class R>
 class SpaceInterface;
 
-#if 0
-template <class Traits, size_t domainDim, size_t rangeDim, size_t rangeDimCols>
-class ProductSpaceInterface;
-
-// from #include <dune/gdt/playground/spaces/restricted.hh>
-template <class UnrestrictedSpace, class RestrictionGridLayer>
-class RestrictedSpace;
-
-// from #include <dune/gdt/spaces/cg/interface.hh>
-template <class ImpTraits, size_t domainDim, size_t rangeDim, size_t rangeDimCols>
-class CgSpaceInterface;
-
-// from #include <dune/gdt/spaces/rt/interface.hh>
-template <class ImpTraits, size_t domainDim, size_t rangeDim, size_t rangeDimCols>
-class RtSpaceInterface;
-
-// from #include <dune/gdt/local/integrands/interfaces.hh>
-template <class Traits, size_t numArguments>
-class LocalVolumeIntegrandInterface;
-
-template <class Traits, size_t numArguments>
-class LocalFaceIntegrandInterface;
-
-// from #include <dune/gdt/operators/interfaces.hh>
-template <class Traits>
-class OperatorInterface;
-
-// from #include <dune/gdt/operators/base.hh>
-template <class M, class RS, class GL, class SS, class F, ChoosePattern pt, class ORS, class OSS>
-class MatrixOperatorBase;
-
-template <class GridLayerImp, class RangeImp, class SourceImp, class FieldImp>
-class LocalizableProductBase;
-
-template <class GridLayerImp, class SourceImp, class RangeImp>
-class LocalizableOperatorBase;
-#endif // 0
 
 namespace internal {
 
 
 // helper structs
-
 // from #include <dune/gdt/spaces/interface.hh>
-
 template <class S>
 struct is_space_helper
 {
@@ -133,102 +97,6 @@ struct is_space_helper
   static const constexpr bool is_candidate = DXTC_has_typedef(GV)<S>::value && DXTC_has_static_member(r)<S>::value
                                              && DXTC_has_static_member(rC)<S>::value && DXTC_has_typedef(R)<S>::value;
 };
-
-
-#if 0
-// from #include <dune/gdt/playground/spaces/restricted.hh>
-template <class S>
-struct is_restricted_space_helper
-{
-  DXTC_has_typedef_initialize_once(UnrestrictedSpaceType);
-  DXTC_has_typedef_initialize_once(RestrictionGridLayerType);
-
-  static const bool is_candidate =
-      DXTC_has_typedef(UnrestrictedSpaceType)<S>::value && DXTC_has_typedef(RestrictionGridLayerType)<S>::value;
-}; // class is_restricted_space_helper
-
-
-// from #include <dune/gdt/local/integrands/interfaces.hh>
-template <class Tt>
-struct is_unary_volume_integrand_helper
-{
-  DXTC_has_typedef_initialize_once(Traits);
-  static const bool is_candidate = DXTC_has_typedef(Traits)<Tt>::value;
-};
-
-
-template <class Tt>
-struct is_binary_volume_integrand_helper
-{
-  DXTC_has_typedef_initialize_once(Traits);
-  static const bool is_candidate = DXTC_has_typedef(Traits)<Tt>::value;
-};
-
-
-template <class Tt>
-struct is_unary_face_integrand_helper
-{
-  DXTC_has_typedef_initialize_once(Traits);
-  static const bool is_candidate = DXTC_has_typedef(Traits)<Tt>::value;
-};
-
-
-template <class Tt>
-struct is_binary_face_integrand_helper
-{
-  DXTC_has_typedef_initialize_once(Traits);
-  static const bool is_candidate = DXTC_has_typedef(Traits)<Tt>::value;
-};
-
-
-template <class Tt>
-struct is_quaternary_face_integrand_helper
-{
-  DXTC_has_typedef_initialize_once(Traits);
-  static const bool is_candidate = DXTC_has_typedef(Traits)<Tt>::value;
-};
-
-
-// from #include <dune/gdt/operators/interfaces.hh>
-template <class Tt>
-struct is_operator_helper
-{
-  DXTC_has_typedef_initialize_once(Traits);
-  static const bool is_candidate = DXTC_has_typedef(Traits)<Tt>::value;
-};
-
-
-// from #include <dune/gdt/operators/base.hh>
-template <class Tt>
-struct is_localizable_product_helper
-{
-  DXTC_has_typedef_initialize_once(GridLayerType);
-  DXTC_has_typedef_initialize_once(RangeType);
-  DXTC_has_typedef_initialize_once(SourceType);
-  DXTC_has_typedef_initialize_once(FieldType);
-  static const bool is_candidate = DXTC_has_typedef(GridLayerType)<Tt>::value && DXTC_has_typedef(RangeType)<Tt>::value
-                                   && DXTC_has_typedef(SourceType)<Tt>::value && DXTC_has_typedef(FieldType)<Tt>::value;
-};
-
-
-template <class Tt>
-struct is_matrix_operator_helper
-{
-  DXTC_has_typedef_initialize_once(MatrixType);
-  DXTC_has_typedef_initialize_once(RangeSpaceType);
-  DXTC_has_typedef_initialize_once(GridLayerType);
-  DXTC_has_typedef_initialize_once(SourceSpaceType);
-  DXTC_has_typedef_initialize_once(FieldType);
-  DXTC_has_static_member_initialize_once(pattern_type);
-  DXTC_has_typedef_initialize_once(OuterRangeSpaceType);
-  DXTC_has_typedef_initialize_once(OuterSourceSpaceType);
-  static const bool is_candidate =
-      DXTC_has_typedef(MatrixType)<Tt>::value && DXTC_has_typedef(RangeSpaceType)<Tt>::value
-      && DXTC_has_typedef(GridLayerType)<Tt>::value && DXTC_has_typedef(SourceSpaceType)<Tt>::value
-      && DXTC_has_typedef(FieldType)<Tt>::value && DXTC_has_static_member(pattern_type)<Tt>::value
-      && DXTC_has_typedef(OuterRangeSpaceType)<Tt>::value && DXTC_has_typedef(OuterSourceSpaceType)<Tt>::value;
-};
-#endif // 0
 
 
 } // namespace internal
@@ -245,6 +113,15 @@ struct is_local_finite_element<LocalFiniteElementInterface<D, d, R, r, rC>> : pu
 {};
 
 
+template <class T>
+struct is_local_finite_element_family : public std::false_type
+{};
+
+template <class D, size_t d, class R, size_t r, size_t rC>
+struct is_local_finite_element_family<LocalFiniteElementFamilyInterface<D, d, R, r, rC>> : public std::true_type
+{};
+
+
 // from #include <dune/gdt/spaces/interface.hh>
 template <class S, bool is_candidate = internal::is_space_helper<S>::is_candidate>
 struct is_space : public std::false_type
@@ -256,18 +133,6 @@ struct is_space<S, true> : public std::is_base_of<SpaceInterface<typename S::GV,
 
 
 #if 0
-template <class S, bool candidate = internal::is_space_helper<S>::is_candidate>
-struct is_product_space
-    : public std::is_base_of<ProductSpaceInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
-{
-};
-
-template <class S>
-struct is_product_space<S, false> : public std::false_type
-{
-};
-
-
 // from #include <dune/gdt/playground/spaces/restricted.hh>
 template <class S, bool candidate = internal::is_restricted_space_helper<S>::is_candidate>
 struct is_restricted_space

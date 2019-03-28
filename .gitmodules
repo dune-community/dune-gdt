@@ -1,3 +1,6 @@
 [submodule ".vcsetup"]
 	path = .vcsetup
 	url = https://github.com/dune-community/vcsetup.git
+[submodule ".ci/shared"]
+	path = .ci/shared
+	url = https://github.com/dune-community/dune-xt-ci

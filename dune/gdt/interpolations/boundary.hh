@@ -41,17 +41,18 @@ namespace GDT {
 template <class GV, size_t r, size_t rC, class R, class V, class IGV>
 std::enable_if_t<std::is_same<XT::Grid::extract_entity_t<GV>, typename IGV::Grid::template Codim<0>::Entity>::value,
                  void>
-interpolate(const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, r, rC, R>& source,
-            DiscreteFunction<V, GV, r, rC, R>& target,
-            const GridView<IGV>& interpolation_grid_view,
-            const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridView<IGV>>>& boundary_info,
-            const XT::Grid::BoundaryType& target_boundary_type)
+boundary_interpolation(const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, r, rC, R>& source,
+                       DiscreteFunction<V, GV, r, rC, R>& target,
+                       const GridView<IGV>& interpolation_grid_view,
+                       const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridView<IGV>>>& boundary_info,
+                       const XT::Grid::BoundaryType& target_boundary_type)
 {
   using D = typename GridView<IGV>::ctype;
   static const constexpr int d = GridView<IGV>::dimension;
   auto local_dof_vector = target.dofs().localize();
   auto local_source = source.local_function();
-  std::vector<R> local_dofs(target.space().mapper().max_local_size());
+  DynamicVector<R> local_dofs(target.space().mapper().max_local_size());
+  const auto target_basis = target.space().basis().localize();
   for (auto&& element : elements(interpolation_grid_view)) {
     // first check if we should do something at all on this element
     size_t matching_boundary_intersections = 0;
@@ -59,16 +60,16 @@ interpolate(const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_
       if (boundary_info.type(intersection) == target_boundary_type)
         ++matching_boundary_intersections;
     if (matching_boundary_intersections) {
+      target_basis->bind(element);
       // some preparations
       local_source->bind(element);
       local_dof_vector.bind(element);
-      const auto& fe = target.space().finite_element(element.geometry().type());
+      const auto& fe = target_basis->finite_element();
       // interpolate
       fe.interpolation().interpolate(
           [&](const auto& xx) { return local_source->evaluate(xx); }, local_source->order(), local_dofs);
       const auto& reference_element = ReferenceElements<D, d>::general(element.geometry().type());
-      // but keep only those DoFs associated with the intersection, therefore
-      // * determine these DoFs
+      // but keep only those DoFs associated with the intersection, therefore determine these DoFs
       std::set<size_t> local_target_boundary_DoFs;
       const auto local_key_indices = fe.coefficients().local_key_indices();
       for (auto&& intersection : intersections(interpolation_grid_view, element)) {
@@ -94,7 +95,7 @@ interpolate(const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_
         local_dof_vector[local_DoF_id] = local_dofs[local_DoF_id];
     }
   }
-} // ... interpolate(...)
+} // ... boundary_interpolation(...)
 
 
 /**
@@ -102,12 +103,13 @@ interpolate(const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_
  *        target.space().grid_view() as interpolation_grid_view].
  **/
 template <class GV, size_t r, size_t rC, class R, class V>
-void interpolate(const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, r, rC, R>& source,
-                 DiscreteFunction<V, GV, r, rC, R>& target,
-                 const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GV>>& boundary_info,
-                 const XT::Grid::BoundaryType& target_boundary_type)
+void boundary_interpolation(
+    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, r, rC, R>& source,
+    DiscreteFunction<V, GV, r, rC, R>& target,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GV>>& boundary_info,
+    const XT::Grid::BoundaryType& target_boundary_type)
 {
-  interpolate(source, target, target.space().grid_view(), boundary_info, target_boundary_type);
+  boundary_interpolation(source, target, target.space().grid_view(), boundary_info, target_boundary_type);
 }
 
 
@@ -120,14 +122,14 @@ std::enable_if_t<
     XT::LA::is_vector<VectorType>::value
         && std::is_same<XT::Grid::extract_entity_t<GV>, typename IGV::Grid::template Codim<0>::Entity>::value,
     DiscreteFunction<VectorType, GV, r, rC, R>>
-interpolate(const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, r, rC, R>& source,
-            const SpaceInterface<GV, r, rC, R>& target_space,
-            const GridView<IGV>& interpolation_grid_view,
-            const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridView<IGV>>>& boundary_info,
-            const XT::Grid::BoundaryType& target_boundary_type)
+boundary_interpolation(const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, r, rC, R>& source,
+                       const SpaceInterface<GV, r, rC, R>& target_space,
+                       const GridView<IGV>& interpolation_grid_view,
+                       const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridView<IGV>>>& boundary_info,
+                       const XT::Grid::BoundaryType& target_boundary_type)
 {
   auto target_function = make_discrete_function<VectorType>(target_space);
-  interpolate(source, target_function, interpolation_grid_view, boundary_info, target_boundary_type);
+  boundary_interpolation(source, target_function, interpolation_grid_view, boundary_info, target_boundary_type);
   return target_function;
 }
 
@@ -138,13 +140,13 @@ interpolate(const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_
  **/
 template <class VectorType, class GV, size_t r, size_t rC, class R>
 std::enable_if_t<XT::LA::is_vector<VectorType>::value, DiscreteFunction<VectorType, GV, r, rC, R>>
-interpolate(const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, r, rC, R>& source,
-            const SpaceInterface<GV, r, rC, R>& target_space,
-            const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GV>>& boundary_info,
-            const XT::Grid::BoundaryType& target_boundary_type)
+boundary_interpolation(const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, r, rC, R>& source,
+                       const SpaceInterface<GV, r, rC, R>& target_space,
+                       const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GV>>& boundary_info,
+                       const XT::Grid::BoundaryType& target_boundary_type)
 {
   auto target_function = make_discrete_function<VectorType>(target_space);
-  interpolate(source, target_function, boundary_info, target_boundary_type);
+  boundary_interpolation(source, target_function, boundary_info, target_boundary_type);
   return target_function;
 }
 
@@ -156,22 +158,22 @@ interpolate(const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_
  * \brief Interpolates a function restricted to certain boundary intersections within a given space [most general
  *        variant].
  *
- * Simply calls as_grid_function<>() and redirects to the appropriate interpolate() function.
+ * Simply calls as_grid_function<>() and redirects to the appropriate boundary_interpolation() function.
  */
 template <class GV, size_t r, size_t rC, class R, class V, class IGV>
 std::enable_if_t<std::is_same<XT::Grid::extract_entity_t<GV>, typename IGV::Grid::template Codim<0>::Entity>::value,
                  void>
-interpolate(const XT::Functions::FunctionInterface<GridView<IGV>::dimension, r, rC, R>& source,
-            DiscreteFunction<V, GV, r, rC, R>& target,
-            const GridView<IGV>& interpolation_grid_view,
-            const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridView<IGV>>>& boundary_info,
-            const XT::Grid::BoundaryType& target_boundary_type)
+boundary_interpolation(const XT::Functions::FunctionInterface<GridView<IGV>::dimension, r, rC, R>& source,
+                       DiscreteFunction<V, GV, r, rC, R>& target,
+                       const GridView<IGV>& interpolation_grid_view,
+                       const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridView<IGV>>>& boundary_info,
+                       const XT::Grid::BoundaryType& target_boundary_type)
 {
-  interpolate(source.as_grid_function(interpolation_grid_view),
-              target,
-              interpolation_grid_view,
-              boundary_info,
-              target_boundary_type);
+  boundary_interpolation(source.as_grid_function(interpolation_grid_view),
+                         target,
+                         interpolation_grid_view,
+                         boundary_info,
+                         target_boundary_type);
 }
 
 
@@ -180,12 +182,12 @@ interpolate(const XT::Functions::FunctionInterface<GridView<IGV>::dimension, r, 
  *        target.space().grid_view() as interpolation_grid_view].
  **/
 template <class GV, size_t r, size_t rC, class R, class V>
-void interpolate(const XT::Functions::FunctionInterface<GV::dimension, r, rC, R>& source,
-                 DiscreteFunction<V, GV, r, rC, R>& target,
-                 const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GV>>& boundary_info,
-                 const XT::Grid::BoundaryType& target_boundary_type)
+void boundary_interpolation(const XT::Functions::FunctionInterface<GV::dimension, r, rC, R>& source,
+                            DiscreteFunction<V, GV, r, rC, R>& target,
+                            const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GV>>& boundary_info,
+                            const XT::Grid::BoundaryType& target_boundary_type)
 {
-  interpolate(source, target, target.space().grid_view(), boundary_info, target_boundary_type);
+  boundary_interpolation(source, target, target.space().grid_view(), boundary_info, target_boundary_type);
 }
 
 
@@ -198,17 +200,17 @@ std::enable_if_t<
     XT::LA::is_vector<VectorType>::value
         && std::is_same<XT::Grid::extract_entity_t<GV>, typename IGV::Grid::template Codim<0>::Entity>::value,
     DiscreteFunction<VectorType, GV, r, rC, R>>
-interpolate(const XT::Functions::FunctionInterface<GridView<IGV>::dimension, r, rC, R>& source,
-            const SpaceInterface<GV, r, rC, R>& target_space,
-            const GridView<IGV>& interpolation_grid_view,
-            const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridView<IGV>>>& boundary_info,
-            const XT::Grid::BoundaryType& target_boundary_type)
+boundary_interpolation(const XT::Functions::FunctionInterface<GridView<IGV>::dimension, r, rC, R>& source,
+                       const SpaceInterface<GV, r, rC, R>& target_space,
+                       const GridView<IGV>& interpolation_grid_view,
+                       const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridView<IGV>>>& boundary_info,
+                       const XT::Grid::BoundaryType& target_boundary_type)
 {
-  return interpolate<VectorType>(source.as_grid_function(interpolation_grid_view),
-                                 target_space,
-                                 interpolation_grid_view,
-                                 boundary_info,
-                                 target_boundary_type);
+  return boundary_interpolation<VectorType>(source.as_grid_function(interpolation_grid_view),
+                                            target_space,
+                                            interpolation_grid_view,
+                                            boundary_info,
+                                            target_boundary_type);
 }
 
 
@@ -218,12 +220,13 @@ interpolate(const XT::Functions::FunctionInterface<GridView<IGV>::dimension, r, 
  **/
 template <class VectorType, class GV, size_t r, size_t rC, class R>
 std::enable_if_t<XT::LA::is_vector<VectorType>::value, DiscreteFunction<VectorType, GV, r, rC, R>>
-interpolate(const XT::Functions::FunctionInterface<GV::dimension, r, rC, R>& source,
-            const SpaceInterface<GV, r, rC, R>& target_space,
-            const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GV>>& boundary_info,
-            const XT::Grid::BoundaryType& target_boundary_type)
+boundary_interpolation(const XT::Functions::FunctionInterface<GV::dimension, r, rC, R>& source,
+                       const SpaceInterface<GV, r, rC, R>& target_space,
+                       const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GV>>& boundary_info,
+                       const XT::Grid::BoundaryType& target_boundary_type)
 {
-  return interpolate<VectorType>(source, target_space, target_space.grid_view(), boundary_info, target_boundary_type);
+  return boundary_interpolation<VectorType>(
+      source, target_space, target_space.grid_view(), boundary_info, target_boundary_type);
 }
 
 
@@ -234,12 +237,12 @@ interpolate(const XT::Functions::FunctionInterface<GV::dimension, r, rC, R>& sou
  * \brief Interpolates a function given as a lambda expression restricted to certain boundary intersections within a
  *        given space [most general variant].
  *
- * Simply creates a XT::Functions::GenericFunction and redirects to the appropriate interpolate() function.
+ * Simply creates a XT::Functions::GenericFunction and redirects to the appropriate boundary_interpolation() function.
  */
 template <class GV, size_t r, size_t rC, class R, class V, class IGV>
 std::enable_if_t<std::is_same<XT::Grid::extract_entity_t<GV>, typename IGV::Grid::template Codim<0>::Entity>::value,
                  void>
-interpolate(
+boundary_interpolation(
     const int source_order,
     const std::function<typename XT::Functions::GenericFunction<GridView<IGV>::dimension, r, rC, R>::RangeReturnType(
         const typename XT::Functions::GenericFunction<GridView<IGV>::dimension, r, rC, R>::DomainType&,
@@ -249,11 +252,12 @@ interpolate(
     const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridView<IGV>>>& boundary_info,
     const XT::Grid::BoundaryType& target_boundary_type)
 {
-  interpolate(XT::Functions::GenericFunction<GridView<IGV>::dimension, r, rC, R>(source_order, source_evaluate_lambda),
-              target,
-              interpolation_grid_view,
-              boundary_info,
-              target_boundary_type);
+  boundary_interpolation(
+      XT::Functions::GenericFunction<GridView<IGV>::dimension, r, rC, R>(source_order, source_evaluate_lambda),
+      target,
+      interpolation_grid_view,
+      boundary_info,
+      target_boundary_type);
 }
 
 
@@ -262,18 +266,19 @@ interpolate(
  *        given space [uses target.space().grid_view() as interpolation_grid_view].
  **/
 template <class GV, size_t r, size_t rC, class R, class V>
-void interpolate(const int source_order,
-                 const std::function<typename XT::Functions::GenericFunction<GV::dimension, r, rC, R>::RangeReturnType(
-                     const typename XT::Functions::GenericFunction<GV::dimension, r, rC, R>::DomainType&,
-                     const XT::Common::Parameter&)> source_evaluate_lambda,
-                 DiscreteFunction<V, GV, r, rC, R>& target,
-                 const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GV>>& boundary_info,
-                 const XT::Grid::BoundaryType& target_boundary_type)
+void boundary_interpolation(
+    const int source_order,
+    const std::function<typename XT::Functions::GenericFunction<GV::dimension, r, rC, R>::RangeReturnType(
+        const typename XT::Functions::GenericFunction<GV::dimension, r, rC, R>::DomainType&,
+        const XT::Common::Parameter&)> source_evaluate_lambda,
+    DiscreteFunction<V, GV, r, rC, R>& target,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GV>>& boundary_info,
+    const XT::Grid::BoundaryType& target_boundary_type)
 {
-  interpolate(XT::Functions::GenericFunction<GV::dimension, r, rC, R>(source_order, source_evaluate_lambda),
-              target,
-              boundary_info,
-              target_boundary_type);
+  boundary_interpolation(XT::Functions::GenericFunction<GV::dimension, r, rC, R>(source_order, source_evaluate_lambda),
+                         target,
+                         boundary_info,
+                         target_boundary_type);
 }
 
 
@@ -286,7 +291,7 @@ std::enable_if_t<
     XT::LA::is_vector<VectorType>::value
         && std::is_same<XT::Grid::extract_entity_t<GV>, typename IGV::Grid::template Codim<0>::Entity>::value,
     DiscreteFunction<VectorType, GV, r, rC, R>>
-interpolate(
+boundary_interpolation(
     const int source_order,
     const std::function<typename XT::Functions::GenericFunction<GridView<IGV>::dimension, r, rC, R>::RangeReturnType(
         const typename XT::Functions::GenericFunction<GridView<IGV>::dimension, r, rC, R>::DomainType&,
@@ -296,7 +301,7 @@ interpolate(
     const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridView<IGV>>>& boundary_info,
     const XT::Grid::BoundaryType& target_boundary_type)
 {
-  return interpolate<VectorType>(
+  return boundary_interpolation<VectorType>(
       XT::Functions::GenericFunction<GridView<IGV>::dimension, r, rC, R>(source_order, source_evaluate_lambda),
       target_space,
       interpolation_grid_view,
@@ -311,15 +316,16 @@ interpolate(
  **/
 template <class VectorType, class GV, size_t r, size_t rC, class R>
 std::enable_if_t<XT::LA::is_vector<VectorType>::value, DiscreteFunction<VectorType, GV, r, rC, R>>
-interpolate(const int source_order,
-            const std::function<typename XT::Functions::GenericFunction<GV::dimension, r, rC, R>::RangeReturnType(
-                const typename XT::Functions::GenericFunction<GV::dimension, r, rC, R>::DomainType&,
-                const XT::Common::Parameter&)> source_evaluate_lambda,
-            const SpaceInterface<GV, r, rC, R>& target_space,
-            const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GV>>& boundary_info,
-            const XT::Grid::BoundaryType& target_boundary_type)
+boundary_interpolation(
+    const int source_order,
+    const std::function<typename XT::Functions::GenericFunction<GV::dimension, r, rC, R>::RangeReturnType(
+        const typename XT::Functions::GenericFunction<GV::dimension, r, rC, R>::DomainType&,
+        const XT::Common::Parameter&)> source_evaluate_lambda,
+    const SpaceInterface<GV, r, rC, R>& target_space,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GV>>& boundary_info,
+    const XT::Grid::BoundaryType& target_boundary_type)
 {
-  return interpolate<VectorType>(
+  return boundary_interpolation<VectorType>(
       XT::Functions::GenericFunction<GV::dimension, r, rC, R>(source_order, source_evaluate_lambda),
       target_space,
       boundary_info,

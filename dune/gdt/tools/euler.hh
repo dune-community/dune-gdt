@@ -153,7 +153,7 @@ public:
     auto v = velocity(w);
     // pressure
     XT::Common::FieldVector<R, 1> p = (gamma_ - 1.) * (energy(w) - 0.5 * rho * v.two_norm2());
-    return {std::move(rho), std::move(v), std::move(p)};
+    return std::make_tuple(std::move(rho), std::move(v), std::move(p));
   } // ... primitive(...)
 
   XT::Common::FieldVector<R, 1> pressure(const FieldVector<R, m>& w) const

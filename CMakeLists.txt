@@ -67,9 +67,8 @@ include(DunePybindxiInstallPythonPackage)
 dune_pybindxi_install_python_package(PATH python)
 include_dependent_binary_python_dirs()
 # do not change order here
-if(dune-pybindxi_FOUND)
-  add_subdirectory(python)
-endif()
+add_subdirectory(python)
+dxt_add_make_dependent_bindings(dune-xt-common dune-xt-la dune-xt-grid dune-xt-functions dune-xt-data)
 
 # enable headercheck
 add_definitions("-DENABLE_HEADERCHECK=1")

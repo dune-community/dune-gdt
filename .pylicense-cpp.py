@@ -6,7 +6,8 @@
 #      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 #          with "runtime exception" (http://www.dune-project.org/license.html)
 # Authors:
-#   René Fritze (2018)
+#   René Fritze    (2018)
+#   Tobias Leibner (2019)
 # ~~~
 
 name = 'This file is part of the dune-gdt project:'
@@ -19,4 +20,4 @@ prefix = '//'
 
 include_patterns = ('*.cc', '*.cxx', '*.hh', '*.hxx', '*cmake_config.h.in', '*headercheck.cpp.in', '*config.h.cmake',
                     '*version.hh.in', '*.pbh', '*.tpl')
-exclude_patterns = ('*mathexpr.*', '*gtest-all.cc', '*.vcsetup*')
+exclude_patterns = ('*mathexpr.*', '*gtest-all.cc', '*.vcsetup*', '*.ci/shared/*')

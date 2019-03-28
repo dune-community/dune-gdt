@@ -197,6 +197,90 @@ public:
 }; // class LocalBinaryElementIntegrandInterface
 
 
+/**
+ * Interface for integrands in integrals over grid intersections, which depend on two arguments (usually the bases on
+ * the inside and outside the in an integral-based functional).
+ *
+ * \note Regarding SMP: the integrand is copied for each thread, so
+ *       - no shared mutable state between copies to be thread safe, but
+ *       - local mutable state is ok.
+ */
+template <class Intersection,
+          size_t range_dim = 1,
+          size_t range_dim_cols = 1,
+          class RangeField = double,
+          class Field = double>
+class LocalBinaryIntersectionIntegrandInterface
+  : public XT::Common::ParametricInterface
+  , public XT::Grid::IntersectionBoundObject<Intersection>
+{
+  static_assert(XT::Grid::is_intersection<Intersection>::value, "");
+
+  using ThisType =
+      LocalBinaryIntersectionIntegrandInterface<Intersection, range_dim, range_dim_cols, RangeField, Field>;
+
+public:
+  using typename XT::Grid::IntersectionBoundObject<Intersection>::IntersectionType;
+  using ElementType = XT::Grid::extract_inside_element_t<Intersection>;
+
+  using I = Intersection;
+  using E = ElementType;
+  using D = typename ElementType::Geometry::ctype;
+  static const constexpr size_t d = E::dimension;
+  using F = Field;
+
+  using RF = RangeField;
+  static const constexpr size_t r = range_dim;
+  static const constexpr size_t rC = range_dim_cols;
+
+  using DomainType = FieldVector<D, d - 1>;
+  using LocalBasisType = XT::Functions::ElementFunctionSetInterface<E, r, rC, RF>;
+
+  LocalBinaryIntersectionIntegrandInterface(const XT::Common::ParameterType& param_type = {})
+    : XT::Common::ParametricInterface(param_type)
+  {}
+
+  virtual ~LocalBinaryIntersectionIntegrandInterface() = default;
+
+  virtual std::unique_ptr<ThisType> copy() const = 0;
+
+  /**
+   * Returns the polynomial order of the integrand, given the bases.
+   *
+   * \note Will throw Exceptions::not_bound_to_an_element_yet error if not bound yet!
+   **/
+  virtual int order(const LocalBasisType& inside_basis,
+                    const LocalBasisType& outside_basis,
+                    const XT::Common::Parameter& param = {}) const = 0;
+
+  /**
+   * Computes the evaluation of this integrand at the given point for each combination of functions from the two bases.
+   *
+   * \note Will throw Exceptions::not_bound_to_an_element_yet error if not bound yet!
+   **/
+  virtual void evaluate(const LocalBasisType& inside_basis,
+                        const LocalBasisType& outside_basis,
+                        const DomainType& point_in_reference_element,
+                        DynamicMatrix<F>& result,
+                        const XT::Common::Parameter& param = {}) const = 0;
+
+  /**
+   * This method is provided for convenience and should not be used within library code.
+   *
+   * \note Will throw Exceptions::not_bound_to_an_element_yet error if not bound yet!
+   **/
+  virtual DynamicMatrix<F> evaluate(const LocalBasisType& inside_basis,
+                                    const LocalBasisType& outside_basis,
+                                    const DomainType& point_in_reference_element,
+                                    const XT::Common::Parameter& param = {}) const
+  {
+    DynamicMatrix<F> result(inside_basis.size(param), outside_basis.size(param), 0);
+    evaluate(inside_basis, inside_basis, point_in_reference_element, result, param);
+    return result;
+  }
+}; // class LocalBinaryIntersectionIntegrandInterface
+
+
 template <class Intersection,
           size_t test_range_dim = 1,
           size_t test_range_dim_cols = 1,
