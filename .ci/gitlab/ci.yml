@@ -7,16 +7,7 @@ variables:
   MY_MODULE: 'dune-gdt'
 
 unstable_gcc:
-  extends: .jobtpl
+  script: echo 'nothing to do'
   variables:
     DOCKER_TAG: debian-unstable_gcc_full
 
-gcc:
-  extends: .jobtpl
-  variables:
-    DOCKER_TAG: debian_gcc_full
-
-clang:
-  extends: .jobtpl
-  variables:
-    DOCKER_TAG: debian_clang_full
