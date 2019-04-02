@@ -625,7 +625,7 @@ protected:
         const auto factor_ll_ii = factor_ll * basis_ll[ii];
         if (!XT::Common::is_zero(factor_ll_ii)) {
           for (size_t kk = 0; kk <= ii; ++kk)
-            J_dd.add_to_entry(ii, kk, basis_ll[kk] * factor_ll_ii);
+            J_dd.unsafe_add_to_entry(ii, kk, basis_ll[kk] * factor_ll_ii);
         }
       } // ii
     } // ll
