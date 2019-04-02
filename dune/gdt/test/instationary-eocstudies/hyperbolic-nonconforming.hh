@@ -60,9 +60,10 @@ protected:
   using typename BaseType::R;
   using typename BaseType::S;
   using typename BaseType::V;
+  using I = XT::Grid::extract_intersection_t<GV>;
 
   using F = XT::Functions::FunctionInterface<m, d, m>;
-  using NF = NumericalFluxInterface<d, m>;
+  using NF = NumericalFluxInterface<I, d, m>;
 
 public:
   InstationaryNonconformingHyperbolicEocStudy(
@@ -107,13 +108,13 @@ protected:
   {
     std::unique_ptr<NF> numerical_flux;
     if (numerical_flux_type_ == "upwind")
-      numerical_flux = std::make_unique<NumericalUpwindFlux<d, m>>(flux());
+      numerical_flux = std::make_unique<NumericalUpwindFlux<I, d, m>>(flux());
     else if (numerical_flux_type_ == "vijayasundaram")
-      numerical_flux = std::make_unique<NumericalVijayasundaramFlux<d, m>>(flux());
+      numerical_flux = std::make_unique<NumericalVijayasundaramFlux<I, d, m>>(flux());
     else if (numerical_flux_type_ == "lax_friedrichs")
-      numerical_flux = std::make_unique<NumericalLaxFriedrichsFlux<d, m>>(flux());
+      numerical_flux = std::make_unique<NumericalLaxFriedrichsFlux<I, d, m>>(flux());
     else if (numerical_flux_type_ == "engquist_osher")
-      numerical_flux = std::make_unique<NumericalEngquistOsherFlux<d, m>>(flux());
+      numerical_flux = std::make_unique<NumericalEngquistOsherFlux<I, d, m>>(flux());
     else {
       DUNE_THROW(XT::Common::Exceptions::wrong_input_given, "numerical_flux_type_ = " << numerical_flux_type_);
       return nullptr;
