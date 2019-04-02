@@ -47,10 +47,11 @@ class LocalAdvectionDgVolumeOperator : public LocalElementOperatorInterface<SV, 
 public:
   using BaseType::d;
   using typename BaseType::D;
+  using typename BaseType::E;
   using typename BaseType::LocalRangeType;
   using typename BaseType::SourceType;
 
-  using FluxType = XT::Functions::FunctionInterface<m, d, m, RF>;
+  using FluxType = XT::Functions::FluxFunctionInterface<E, m, d, m, RF>;
   using LocalMassMatrixProviderType = LocalMassMatrixProvider<RGV, m, 1, RF>;
 
   LocalAdvectionDgVolumeOperator(const FluxType& flux)
@@ -87,7 +88,9 @@ public:
     const auto local_source = source.local_discrete_function(element);
     const auto local_source_order = local_source->order(param);
     const auto local_basis_order = basis.order(param);
-    const auto integrand_order = flux_.order(param) * local_source_order + std::max(local_basis_order - 1, 0);
+    const auto local_flux = flux_.local_function();
+    local_flux->bind(element);
+    const auto integrand_order = local_flux->order(param) * local_source_order + std::max(local_basis_order - 1, 0);
     for (const auto& quadrature_point : QuadratureRules<D, d>::rule(element.geometry().type(), integrand_order)) {
       // prepare
       const auto point_in_reference_element = quadrature_point.position();
@@ -96,7 +99,7 @@ public:
       // evaluate
       basis.jacobians(point_in_reference_element, basis_jacobians_, param);
       const auto source_value = local_source->evaluate(point_in_reference_element, param);
-      const auto flux_value = flux_.evaluate(source_value, param);
+      const auto flux_value = local_flux->evaluate(point_in_reference_element, source_value, param);
       // compute
       for (size_t ii = 0; ii < basis.size(param); ++ii)
         local_dofs_[ii] += integration_factor * quadrature_weight * -1. * (flux_value * basis_jacobians_[ii]);
@@ -147,7 +150,7 @@ public:
   using typename BaseType::LocalOutsideRangeType;
   using typename BaseType::SourceType;
 
-  using NumericalFluxType = NumericalFluxInterface<d, m, IRR>;
+  using NumericalFluxType = NumericalFluxInterface<I, d, m, IRR>;
   using LocalMassMatrixProviderType = LocalMassMatrixProvider<IRGV, m, 1, IRR>;
 
   LocalAdvectionDgCouplingOperator(const NumericalFluxType& numerical_flux, bool compute_outside = true)
@@ -192,10 +195,16 @@ public:
     outside_local_dofs_.resize(outside_basis.size(param));
     inside_local_dofs_ *= 0.;
     outside_local_dofs_ *= 0.;
+    const auto local_flux = numerical_flux_->flux().local_function();
+    local_flux->bind(intersection.inside());
+    const auto inside_flux_order = local_flux->order(param);
+    local_flux->bind(intersection.outside());
+    numerical_flux_->bind(intersection);
+    const auto outside_flux_order = local_flux->order(param);
     const auto u = source.local_discrete_function(inside_element);
     const auto v = source.local_discrete_function(outside_element);
     const auto integrand_order = std::max(inside_basis.order(param), outside_basis.order(param))
-                                 + numerical_flux_->flux().order(param) * std::max(u->order(param), v->order(param));
+                                 + std::max(inside_flux_order * u->order(param), outside_flux_order * v->order(param));
     for (const auto& quadrature_point :
          QuadratureRules<D, d - 1>::rule(intersection.geometry().type(), integrand_order)) {
       // prepare
@@ -211,7 +220,8 @@ public:
       inside_basis.evaluate(point_in_inside_reference_element, inside_basis_values_);
       if (compute_outside_)
         outside_basis.evaluate(point_in_outside_reference_element, outside_basis_values_);
-      const auto g = numerical_flux_->apply(u->evaluate(point_in_inside_reference_element),
+      const auto g = numerical_flux_->apply(point_in_reference_intersection,
+                                            u->evaluate(point_in_inside_reference_element),
                                             v->evaluate(point_in_outside_reference_element),
                                             normal,
                                             param);
@@ -237,7 +247,7 @@ public:
   } // ... apply(...)
 
 private:
-  const std::unique_ptr<const NumericalFluxType> numerical_flux_;
+  const std::unique_ptr<NumericalFluxType> numerical_flux_;
   const bool compute_outside_;
   const XT::Common::ConstStorageProvider<LocalMassMatrixProviderType> local_mass_matrices_;
   mutable std::vector<typename LocalInsideRangeType::LocalBasisType::RangeType> inside_basis_values_;
@@ -371,7 +381,7 @@ public:
   using typename BaseType::SourceType;
 
   using D = typename IntersectionType::ctype;
-  using NumericalFluxType = NumericalFluxInterface<d, m, RF>;
+  using NumericalFluxType = NumericalFluxInterface<I, d, m, RF>;
   using FluxType = typename NumericalFluxType::FluxType;
   using StateRangeType = typename XT::Functions::RangeTypeSelector<RF, m, 1>::type;
   using LambdaType =
@@ -425,9 +435,11 @@ public:
     const auto& inside_basis = local_range_inside.basis();
     inside_local_dofs_.resize(inside_basis.size(param));
     inside_local_dofs_ *= 0.;
+    const auto local_flux = numerical_flux_->flux().local_function();
+    numerical_flux_->bind(intersection);
+    local_flux->bind(intersection.inside());
     const auto local_source = source.local_discrete_function(element);
-    const auto integrand_order =
-        inside_basis.order(param) + numerical_flux_->flux().order(param) * local_source->order(param);
+    const auto integrand_order = inside_basis.order(param) + local_flux->order(param) * local_source->order(param);
     for (const auto& quadrature_point :
          QuadratureRules<D, d - 1>::rule(intersection.geometry().type(), integrand_order)) {
       // prepare
@@ -441,7 +453,7 @@ public:
       inside_basis.evaluate(point_in_inside_reference_element, inside_basis_values_);
       const auto u = local_source->evaluate(point_in_inside_reference_element);
       const auto v = extrapolate_(intersection, point_in_reference_intersection, numerical_flux_->flux(), u, param);
-      const auto g = numerical_flux_->apply(u, v, normal, param);
+      const auto g = numerical_flux_->apply(point_in_reference_intersection, u, v, normal, param);
       // compute
       for (size_t ii = 0; ii < inside_basis.size(param); ++ii)
         inside_local_dofs_[ii] += integration_factor * quadrature_weight * (g * inside_basis_values_[ii]);
@@ -455,7 +467,7 @@ public:
   } // ... apply(...)
 
 private:
-  const std::unique_ptr<const NumericalFluxType> numerical_flux_;
+  const std::unique_ptr<NumericalFluxType> numerical_flux_;
   const LambdaType extrapolate_;
   const XT::Common::ConstStorageProvider<LocalMassMatrixProviderType> local_mass_matrices_;
   mutable std::vector<typename LocalInsideRangeType::LocalBasisType::RangeType> inside_basis_values_;
