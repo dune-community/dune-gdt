@@ -173,19 +173,21 @@ public:
     // set up the actual operator
     auto localizable_op = make_localizable_operator(this->assembly_grid_view_, source_function, range_function);
     // element contributions
-    localizable_op.append(
-        LocalAdvectionDgVolumeOperator<V, SGV, m, F, F, RGV, V>(local_mass_matrix_provider_, numerical_flux_->flux()),
-        param);
+    localizable_op.append(LocalAdvectionDgVolumeOperator<V, SGV, m, F, F, RGV, V>(
+                              source_function, local_mass_matrix_provider_, numerical_flux_->flux()),
+                          param);
     // contributions from inner intersections
-    localizable_op.append(LocalAdvectionDgCouplingOperator<I, V, SGV, m, F, F, RGV, V>(
-                              local_mass_matrix_provider_, *numerical_flux_, /*compute_outside=*/false),
-                          param,
-                          XT::Grid::ApplyOn::InnerIntersections<SGV>());
+    localizable_op.append(
+        LocalAdvectionDgCouplingOperator<I, V, SGV, m, F, F, RGV, V>(
+            source_function, local_mass_matrix_provider_, *numerical_flux_, /*compute_outside=*/false),
+        param,
+        XT::Grid::ApplyOn::InnerIntersections<SGV>());
     // contributions from periodic boundaries
-    localizable_op.append(LocalAdvectionDgCouplingOperator<I, V, SGV, m, F, F, RGV, V>(
-                              local_mass_matrix_provider_, *numerical_flux_, /*compute_outside=*/false),
-                          param,
-                          *(XT::Grid::ApplyOn::PeriodicBoundaryIntersections<SGV>() && !(*periodicity_exception_)));
+    localizable_op.append(
+        LocalAdvectionDgCouplingOperator<I, V, SGV, m, F, F, RGV, V>(
+            source_function, local_mass_matrix_provider_, *numerical_flux_, /*compute_outside=*/false),
+        param,
+        *(XT::Grid::ApplyOn::PeriodicBoundaryIntersections<SGV>() && !(*periodicity_exception_)));
     // contributions from other boundaries by custom numerical flux
     for (const auto& boundary_treatment : boundary_treatments_by_custom_numerical_flux_) {
       const auto& boundary_op = *boundary_treatment.first;
@@ -200,6 +202,7 @@ public:
     }
     // artificial viscosity by shock capturing [DF2015, Sec. 8.5]
     localizable_op.append(LocalAdvectionDgArtificialViscosityShockCapturingOperator<V, SGV, m, F, F, RGV, V>(
+                              source_function,
                               local_mass_matrix_provider_,
                               this->assembly_grid_view_,
                               artificial_viscosity_nu_1_,
@@ -241,19 +244,20 @@ public:
     const auto parameter = param + XT::Common::Parameter({"finite-difference-jacobians.eps", eps});
     // append the same local ops with the same filters as in apply() above
     // element contributions
-    jacobian_op.append(
-        LocalAdvectionDgVolumeOperator<V, SGV, m, F, F, RGV, V>(local_mass_matrix_provider_, numerical_flux_->flux()),
-        source,
-        parameter);
+    const auto source_function = make_discrete_function(source_space_, source);
+    jacobian_op.append(LocalAdvectionDgVolumeOperator<V, SGV, m, F, F, RGV, V>(
+                           source_function, local_mass_matrix_provider_, numerical_flux_->flux()),
+                       source,
+                       parameter);
     // contributions from inner intersections
     jacobian_op.append(LocalAdvectionDgCouplingOperator<I, V, SGV, m, F, F, RGV, V>(
-                           local_mass_matrix_provider_, *numerical_flux_, /*compute_outside=*/false),
+                           source_function, local_mass_matrix_provider_, *numerical_flux_, /*compute_outside=*/false),
                        source,
                        parameter,
                        XT::Grid::ApplyOn::InnerIntersections<SGV>());
     // contributions from periodic boundaries
     jacobian_op.append(LocalAdvectionDgCouplingOperator<I, V, SGV, m, F, F, RGV, V>(
-                           local_mass_matrix_provider_, *numerical_flux_, /*compute_outside=*/false),
+                           source_function, local_mass_matrix_provider_, *numerical_flux_, /*compute_outside=*/false),
                        source,
                        parameter,
                        *(XT::Grid::ApplyOn::PeriodicBoundaryIntersections<SGV>() && !(*periodicity_exception_)));
@@ -271,6 +275,7 @@ public:
     }
     // artificial viscosity by shock capturing [DF2015, Sec. 8.5]
     jacobian_op.append(LocalAdvectionDgArtificialViscosityShockCapturingOperator<V, SGV, m, F, F, RGV, V>(
+                           source_function,
                            local_mass_matrix_provider_,
                            this->assembly_grid_view_,
                            artificial_viscosity_nu_1_,

@@ -87,8 +87,6 @@ class EntropyBasedFluxImplementationUnspecializedBase
 
 public:
   using MomentBasis = MomentBasisImp;
-  using BaseType::d;
-  using BaseType::r;
   static const size_t basis_dimDomain = MomentBasis::dimDomain;
   static const size_t basis_dimRange = MomentBasis::dimRange;
   using typename BaseType::DomainFieldType;
@@ -242,7 +240,7 @@ public:
       const auto position = quad_points_[ll][dd];
       RangeFieldType factor = position * n_ij[dd] > 0. ? std::exp(work_vecs[0][ll]) : std::exp(work_vecs[1][ll]);
       factor *= quad_weights_[ll] * position;
-      const auto* basis_ll = M_.get_ptr(ll);
+      const auto* basis_ll = &(M_.get_entry_ref(ll, 0.));
       for (size_t ii = 0; ii < basis_dimRange; ++ii)
         ret[ii] += basis_ll[ii] * factor;
     } // ll
@@ -467,7 +465,7 @@ protected:
     const size_t num_quad_points = quad_points_.size();
     std::fill(scalar_products.begin(), scalar_products.end(), 0.);
     for (size_t ll = 0; ll < num_quad_points; ++ll) {
-      const auto* basis_ll = M.get_ptr(ll);
+      const auto* basis_ll = &(M.get_entry_ref(ll, 0.));
       scalar_products[ll] = std::inner_product(beta_in.begin(), beta_in.end(), basis_ll, 0.);
     }
 #endif
@@ -505,7 +503,7 @@ protected:
     const size_t num_quad_points = quad_weights_.size();
     for (size_t ll = 0; ll < num_quad_points; ++ll) {
       const auto factor_ll = work_vec[ll] * quad_weights_[ll];
-      const auto* basis_ll = M1.get_ptr(ll);
+      const auto* basis_ll = &(M1.get_entry_ref(ll, 0.));
       for (size_t ii = 0; ii < (only_first_component ? 1 : basis_dimRange); ++ii)
         ret[ii] += basis_ll[ii] * factor_ll;
     } // ll
@@ -543,9 +541,10 @@ protected:
     assert(quad_points_.size() == M.rows());
     VectorType tmp_vec, tmp_vec2;
     for (size_t ll = 0; ll < quad_points_.size(); ++ll) {
-      std::copy_n(M.get_ptr(ll), basis_dimRange, tmp_vec.begin());
+      auto* M_row = &(M.get_entry_ref(ll, 0.));
+      std::copy_n(M_row, basis_dimRange, tmp_vec.begin());
       XT::LA::solve_lower_triangular(T_k, tmp_vec2, tmp_vec);
-      std::copy_n(tmp_vec2.begin(), basis_dimRange, M.get_ptr(ll));
+      std::copy_n(tmp_vec2.begin(), basis_dimRange, M_row);
     }
 #endif
   }
@@ -593,7 +592,7 @@ protected:
     // matrix is symmetric, we only use lower triangular part
     for (size_t ll = 0; ll < num_quad_points; ++ll) {
       auto factor_ll = work_vec[ll] * quad_weights_[ll];
-      const auto* basis_ll = M.get_ptr(ll);
+      const auto* basis_ll = &(M.get_entry_ref(ll, 0.));
       for (size_t ii = 0; ii < basis_dimRange; ++ii) {
         auto* H_row = &(H[ii][0]);
         const auto factor_ll_ii = basis_ll[ii] * factor_ll;
@@ -621,7 +620,7 @@ protected:
     const size_t num_quad_points = quad_points_.size();
     for (size_t ll = 0; ll < num_quad_points; ++ll) {
       const auto factor_ll = work_vecs[ll] * quad_points_[ll][dd] * quad_weights_[ll];
-      const auto* basis_ll = M.get_ptr(ll);
+      const auto* basis_ll = &(M.get_entry_ref(ll, 0.));
       for (size_t ii = 0; ii < basis_dimRange; ++ii) {
         const auto factor_ll_ii = factor_ll * basis_ll[ii];
         if (!XT::Common::is_zero(factor_ll_ii)) {
@@ -1075,8 +1074,6 @@ public:
   using BaseType = typename XT::Functions::
       FunctionInterface<MomentBasis::dimRange, MomentBasis::dimDomain, MomentBasis::dimRange, R>;
   using ThisType = EntropyBasedFluxImplementation;
-  using BaseType::d;
-  using BaseType::r;
   static const size_t basis_dimDomain = MomentBasis::dimDomain;
   static const size_t basis_dimRange = MomentBasis::dimRange;
   using typename BaseType::DomainFieldType;
@@ -1412,7 +1409,7 @@ private:
   {
     const size_t num_quad_points = quad_points_[jj].size();
     for (size_t ll = 0; ll < num_quad_points; ++ll) {
-      const auto* basis_ll = M.get_ptr(ll);
+      const auto* basis_ll = &(M.get_entry_ref(ll, 0.));
       scalar_products[ll] = std::inner_product(beta_in.begin(), beta_in.end(), basis_ll, 0.);
     } // ll
   }
@@ -1464,7 +1461,7 @@ private:
     const size_t num_quad_points = quad_weights_[jj].size();
     for (size_t ll = 0; ll < num_quad_points; ++ll) {
       const auto factor = work_vec[ll] * quad_weights_[jj][ll];
-      const auto* basis_ll = M1.get_ptr(ll);
+      const auto* basis_ll = &(M1.get_entry_ref(ll, 0.));
       for (size_t ii = 0; ii < block_size; ++ii)
         ret[ii] += basis_ll[ii] * factor;
     } // ll
@@ -1496,7 +1493,7 @@ private:
       const auto T_00_inv = 1 / T_k[0][0];
       const auto T_11_inv = 1 / T_k[1][1];
       for (size_t ll = 0; ll < num_quad_points; ++ll) {
-        auto* basis_ll = M.get_ptr(ll);
+        auto* basis_ll = &(M.get_entry_ref(ll, 0.));
         basis_ll[0] *= T_00_inv;
         basis_ll[1] = (basis_ll[1] - T_k[1][0] * basis_ll[0]) * T_11_inv;
       }
@@ -1505,7 +1502,7 @@ private:
       for (size_t ii = 0; ii < 4; ++ii)
         diag_inv[ii] = 1. / T_k[ii][ii];
       for (size_t ll = 0; ll < num_quad_points; ++ll) {
-        auto* basis_ll = M.get_ptr(ll);
+        auto* basis_ll = &(M.get_entry_ref(ll, 0.));
         basis_ll[0] *= diag_inv[0];
         basis_ll[1] = (basis_ll[1] - T_k[1][0] * basis_ll[0]) * diag_inv[1];
         basis_ll[2] = (basis_ll[2] - T_k[2][0] * basis_ll[0] - T_k[2][1] * basis_ll[1]) * diag_inv[2];
@@ -1534,9 +1531,10 @@ private:
 #  else
       LocalVectorType tmp_vec, tmp_vec2;
       for (size_t ll = 0; ll < num_quad_points; ++ll) {
-        std::copy_n(M.get_ptr(ll), block_size, tmp_vec.begin());
+        auto* M_row = &(M.get_entry_ref(ll, 0.));
+        std::copy_n(M_row, block_size, tmp_vec.begin());
         XT::LA::solve_lower_triangular(T_k, tmp_vec2, tmp_vec);
-        std::copy_n(tmp_vec2.begin(), block_size, M.get_ptr(ll));
+        std::copy_n(tmp_vec2.begin(), block_size, M_row);
       }
 #  endif
     }
@@ -1648,7 +1646,7 @@ private:
       const size_t num_quad_points = quad_weights_[jj].size();
       for (size_t ll = 0; ll < num_quad_points; ++ll) {
         auto factor_ll = work_vec[jj][ll] * quad_weights_[jj][ll];
-        const auto* basis_ll = M[jj].get_ptr(ll);
+        const auto* basis_ll = &(M[jj].get_entry_ref(ll, 0.));
         for (size_t ii = 0; ii < block_size; ++ii) {
           auto* H_row = &(H.block(jj)[ii][0]);
           const auto factor_ll_ii = basis_ll[ii] * factor_ll;
@@ -1669,20 +1667,23 @@ private:
   void calculate_J(const BasisValuesMatrixType& M, DynamicRowDerivativeRangeType& J_dd, const size_t dd) const
   {
     assert(dd < basis_dimDomain);
-    J_dd.set_all_entries(0.);
     const auto& work_vec = working_storage();
     // matrix is symmetric, we only use lower triangular part
     for (size_t jj = 0; jj < num_blocks; ++jj) {
       const auto offset = jj * block_size;
+      // set entries in this block to zero
+      for (size_t ii = 0; ii < block_size; ++ii)
+        std::fill_n(&(J_dd.get_entry_ref(offset + ii, offset)), ii + 1, 0.);
+      // now calculate integral
       const size_t num_quad_points = quad_weights_[jj].size();
       for (size_t ll = 0; ll < num_quad_points; ++ll) {
         auto factor_ll = work_vec[jj][ll] * quad_weights_[jj][ll] * quad_points_[jj][ll][dd];
-        const auto* basis_ll = M[jj].get_ptr(ll);
+        const auto* basis_ll = &(M[jj].get_entry_ref(ll, 0.));
         for (size_t ii = 0; ii < block_size; ++ii) {
-          auto* J_row = &(J_dd[offset + ii][0]);
+          auto* J_row = &(J_dd[offset + ii][offset]);
           const auto factor_ll_ii = basis_ll[ii] * factor_ll;
           for (size_t kk = 0; kk <= ii; ++kk)
-            J_row[offset + kk] += basis_ll[kk] * factor_ll_ii;
+            J_row[kk] += basis_ll[kk] * factor_ll_ii;
         } // ii
       } // ll
     } // jj
@@ -1751,8 +1752,6 @@ public:
   using BaseType = typename XT::Functions::
       FunctionInterface<MomentBasis::dimRange, MomentBasis::dimDomain, MomentBasis::dimRange, R>;
   using ThisType = EntropyBasedFluxImplementation;
-  using BaseType::d;
-  using BaseType::r;
   static const size_t basis_dimDomain = MomentBasis::dimDomain;
   static const size_t basis_dimRange = MomentBasis::dimRange;
   using typename BaseType::DomainFieldType;
@@ -2040,7 +2039,7 @@ public:
           ret->first += alpha_prime;
           auto v_ret_eig = v * density;
           DomainType v_ret;
-          for (size_t ii = 0; ii < d; ++ii)
+          for (size_t ii = 0; ii < basis_dimRange; ++ii)
             v_ret[ii] = v_ret_eig[ii];
           ret->second = std::make_pair(v_ret, r);
           return ret;
@@ -2268,8 +2267,6 @@ class EntropyBasedFluxImplementation<HatFunctionMomentBasis<D, 1, R, dimRange, 1
 
 public:
   using MomentBasis = HatFunctionMomentBasis<D, 1, R, dimRange, 1>;
-  using BaseType::d;
-  using BaseType::r;
   static const size_t basis_dimDomain = MomentBasis::dimDomain;
   static const size_t basis_dimRange = dimRange;
   using typename BaseType::DomainFieldType;
@@ -3008,8 +3005,6 @@ class EntropyBasedFluxImplementation<HatFunctionMomentBasis<D, 1, R, dimRange, 1
 
 public:
   using MomentBasis = HatFunctionMomentBasis<D, 1, R, dimRange, 1>;
-  using BaseType::d;
-  using BaseType::r;
   static const size_t basis_dimDomain = MomentBasis::dimDomain;
   static const size_t basis_dimRange = dimRange;
   using typename BaseType::DomainFieldType;

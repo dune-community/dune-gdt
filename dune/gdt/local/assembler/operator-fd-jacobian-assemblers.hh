@@ -69,7 +69,7 @@ public:
   using V = VectorType;
 
   using LocalElementOperatorType = LocalElementOperatorInterface<V, SGV, s_r, s_rC, F, r_r, r_rC, F, RGV>;
-  using SourceSpaceType = typename LocalElementOperatorType::SourceType::SpaceType;
+  using SourceSpaceType = typename LocalElementOperatorType::DiscreteSourceType::SpaceType;
   using RangeSpaceType = typename LocalElementOperatorType::LocalRangeType::SpaceType;
 
   LocalElementOperatorFiniteDifferenceJacobianAssembler(const SourceSpaceType& source_space,
@@ -132,7 +132,7 @@ public:
       range_DoFs_.resize(local_range_size, 0);
     local_range_->dofs().set_all(0);
     // apply op as is, keep the result, clear local range
-    local_op_->apply(source_, *local_range_, param_);
+    local_op_->apply(*local_range_, param_);
     for (size_t ii = 0; ii < local_range_size; ++ii)
       range_DoFs_[ii] = local_range_->dofs()[ii];
     local_range_->dofs().set_all(0);
@@ -143,7 +143,7 @@ public:
       const auto eps = eps_ * (1. + std::abs(jjth_source_DoF));
       local_source_->dofs()[jj] += eps;
       // apply op with perturbed source DoF
-      local_op_->apply(source_, *local_range_, param_);
+      local_op_->apply(*local_range_, param_);
       // observe perturbation in range DoFs
       for (size_t ii = 0; ii < local_range_size; ++ii) {
         auto derivative = (local_range_->dofs()[ii] - range_DoFs_[ii]) / eps;
@@ -217,7 +217,7 @@ public:
   using V = VectorType;
 
   using LocalIntersectionOperatorType = LocalIntersectionOperatorInterface<I, V, SGV, s_r, s_rC, F, r_r, r_rC, F, RGV>;
-  using SourceSpaceType = typename LocalIntersectionOperatorType::SourceType::SpaceType;
+  using SourceSpaceType = typename LocalIntersectionOperatorType::DiscreteSourceType::SpaceType;
   using RangeSpaceType = typename LocalIntersectionOperatorType::LocalInsideRangeType::SpaceType;
 
   LocalIntersectionOperatorFiniteDifferenceJacobianAssembler(const SourceSpaceType& source_space,
@@ -297,7 +297,7 @@ public:
       local_range_outside_->dofs().set_all(0);
     }
     // apply op as is, keep the result, clear local range
-    local_op_->apply(source_, intersection, *local_range_inside_, *local_range_outside_, param_);
+    local_op_->apply(intersection, *local_range_inside_, *local_range_outside_, param_);
     for (size_t ii = 0; ii < local_range_inside_size; ++ii)
       range_DoFs_inside_[ii] = local_range_inside_->dofs()[ii];
     local_range_inside_->dofs().set_all(0);
@@ -313,7 +313,7 @@ public:
       const auto eps = eps_ * (1. + std::abs(jjth_source_DoF));
       local_source_inside_->dofs()[jj] += eps;
       // apply op with perturbed source DoF
-      local_op_->apply(source_, intersection, *local_range_inside_, *local_range_outside_, param_);
+      local_op_->apply(intersection, *local_range_inside_, *local_range_outside_, param_);
       // observe perturbation in inside range DoFs
       for (size_t ii = 0; ii < local_range_inside_size; ++ii) {
         auto derivative = (local_range_inside_->dofs()[ii] - range_DoFs_inside_[ii]) / eps;
@@ -346,7 +346,7 @@ public:
         const auto eps = eps_ * (1. + std::abs(jjth_source_DoF));
         local_source_outside_->dofs()[jj] += eps;
         // apply op with perturbed source DoF
-        local_op_->apply(source_, intersection, *local_range_inside_, *local_range_outside_, param_);
+        local_op_->apply(intersection, *local_range_inside_, *local_range_outside_, param_);
         // observe perturbation in inside range DoFs
         for (size_t ii = 0; ii < local_range_inside_size; ++ii) {
           auto derivative = (local_range_inside_->dofs()[ii] - range_DoFs_inside_[ii]) / eps;

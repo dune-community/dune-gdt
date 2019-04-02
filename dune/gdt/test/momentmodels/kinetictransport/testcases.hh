@@ -384,9 +384,9 @@ struct PointSourcePnExpectedResults
 template <bool reconstruct>
 struct PointSourcePnExpectedResults<RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, reconstruct>
 {
-  static constexpr double l1norm = reconstruct ? 1.0002337655521842 : 1.0002337655520239;
-  static constexpr double l2norm = reconstruct ? 2.6915260598031385 : 2.6808230082176974;
-  static constexpr double linfnorm = reconstruct ? 10.353423139916222 : 10.360026140209081;
+  static constexpr double l1norm = reconstruct ? 1.0002337655521842 : 0.99999959414253881;
+  static constexpr double l2norm = reconstruct ? 2.6915260598031385 : 2.6801953678805281;
+  static constexpr double linfnorm = reconstruct ? 10.353423139916222 : 10.357600619356306;
   static constexpr double tol = 1e-9;
 };
 

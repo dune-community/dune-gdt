@@ -48,7 +48,9 @@ public:
                               const std::string filename = "")
     : space_(space)
     , source_(space_, source_dofs, "source")
+    , local_source_(source_.local_discrete_function())
     , range_(space_, range_dofs, "range")
+    , local_range_(range_.local_discrete_function())
     , analytical_flux_(analytical_flux)
     , local_flux_(analytical_flux_.derived_local_function())
     , min_acceptable_density_(min_acceptable_density)
@@ -70,11 +72,11 @@ public:
 
   void apply_local(const EntityType& entity) override final
   {
-    const auto local_source = source_.local_discrete_function(entity);
-    auto local_range = range_.local_discrete_function(entity);
+    local_source_->bind(entity);
+    local_range_->bind(entity);
     XT::Common::FieldVector<RangeFieldType, dimRange> u;
     for (size_t ii = 0; ii < dimRange; ++ii)
-      u[ii] = local_source->dofs().get_entry(ii);
+      u[ii] = local_source_->dofs().get_entry(ii);
     const auto& basis_functions = analytical_flux_.basis_functions();
     thread_local auto vector_indices = source_.space().mapper().global_indices(entity);
     source_.space().mapper().global_indices(entity, vector_indices);
@@ -83,7 +85,7 @@ public:
     const auto alpha_ret = local_flux_->get_alpha(u, true);
     const auto regularization_params = alpha_ret->second;
     for (size_t ii = 0; ii < dimRange; ++ii)
-      local_range->dofs().set_entry(ii, regularization_params.first[ii]);
+      local_range_->dofs().set_entry(ii, regularization_params.first[ii]);
     const auto s = regularization_params.second;
     if (s > 0.) {
       if (!filename_.empty()) {
@@ -103,7 +105,9 @@ public:
 private:
   const SpaceType& space_;
   const ConstDiscreteFunctionType source_;
+  std::unique_ptr<typename ConstDiscreteFunctionType::ConstLocalDiscreteFunctionType> local_source_;
   DiscreteFunctionType range_;
+  std::unique_ptr<typename DiscreteFunctionType::LocalDiscreteFunctionType> local_range_;
   const EntropyFluxType& analytical_flux_;
   std::unique_ptr<typename EntropyFluxType::Localfunction> local_flux_;
   const RangeFieldType min_acceptable_density_;

@@ -66,10 +66,12 @@ public:
 
   using SV = SourceVector;
   using SGV = SourceGridView;
+  using E = XT::Grid::extract_entity_t<SGV>;
   static const constexpr size_t s_r = source_range_dim;
   static const constexpr size_t s_rC = source_range_dim_cols;
   using SF = SourceField;
-  using SourceType = ConstDiscreteFunction<SV, SGV, s_r, s_rC, SF>;
+  using DiscreteSourceType = ConstDiscreteFunction<SV, SGV, s_r, s_rC, SF>;
+  using SourceType = XT::Functions::GridFunctionInterface<E, s_r, s_rC, SF>;
 
   using RV = RangeVector;
   using RGV = RangeGridView;
@@ -122,7 +124,7 @@ public:
                    const XT::Common::Parameter& param = {},
                    const ElementFilterType& filter = ApplyOnAllElements())
   {
-    this->append(make_local_element_operator_applicator(local_operator, source_, range_, param).release(), filter);
+    this->append(make_local_element_operator_applicator(local_operator, range_, param).release(), filter);
     return *this;
   }
 
@@ -139,7 +141,7 @@ public:
          const XT::Common::Parameter& param = {},
          const IntersectionFilterType& filter = ApplyOnAllIntersections())
   {
-    this->append(make_local_intersection_operator_applicator(local_operator, source_, range_, param).release(), filter);
+    this->append(make_local_intersection_operator_applicator(local_operator, range_, param).release(), filter);
     return *this;
   }
 
@@ -183,6 +185,28 @@ std::enable_if_t<XT::Grid::is_layer<AGV>::value,
 make_localizable_operator(AGV assembly_grid_view,
                           const ConstDiscreteFunction<SV, SGV, s_r, s_rC, SF>& source,
                           DiscreteFunction<RV, RGV, r_r, r_rC, RF>& range)
+{
+  return LocalizableOperatorBase<AGV, SV, s_r, s_rC, SF, SGV, r_r, r_rC, RF, RGV, RV>(
+      assembly_grid_view, source, range);
+}
+
+template <class AGV,
+          class SV,
+          size_t s_r,
+          size_t s_rC,
+          class SF,
+          class SGV,
+          size_t r_r,
+          size_t r_rC,
+          class RF,
+          class RGV,
+          class RV>
+std::enable_if_t<XT::Grid::is_layer<AGV>::value,
+                 LocalizableOperatorBase<AGV, SV, s_r, s_rC, SF, SGV, r_r, r_rC, RF, RGV, RV>>
+make_localizable_operator(
+    AGV assembly_grid_view,
+    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<SGV>, s_r, s_rC, SF>& source,
+    DiscreteFunction<RV, RGV, r_r, r_rC, RF>& range)
 {
   return LocalizableOperatorBase<AGV, SV, s_r, s_rC, SF, SGV, r_r, r_rC, RF, RGV, RV>(
       assembly_grid_view, source, range);

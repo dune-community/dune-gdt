@@ -247,11 +247,8 @@ private:
     {
       if (dofs.size() != r)
         dofs.resize(r);
-      for (unsigned int comp = 0; comp < r; ++comp) {
-        dofs[comp] = XT::Grid::element_integral<R>(
-                         this->element(), [&](const auto& x) { return element_function(x)[comp]; }, order)
-                     / this->element().geometry().volume();
-      }
+      dofs = DynamicVector<R>(XT::Grid::element_integral<RangeType>(this->element(), element_function, order));
+      dofs /= this->element().geometry().volume();
     } // ... interpolate(...)
 
   private:

@@ -45,12 +45,25 @@ public:
 
     : basis_functions_(basis_functions)
     , solution_(solution)
+    , local_solution_(solution_.local_discrete_function())
     , dt_(dt)
     , sigma_a_(sigma_a)
     , sigma_s_(sigma_s)
     , Q_(Q)
     , basis_integrated_(basis_functions_.integrated())
     , u_iso_(basis_functions_.u_iso())
+  {}
+
+  KineticIsotropicLocalFunctor(const KineticIsotropicLocalFunctor& other)
+    : basis_functions_(other.basis_functions_)
+    , solution_(other.solution_)
+    , local_solution_(solution_.local_discrete_function())
+    , dt_(other.dt_)
+    , sigma_a_(other.sigma_a_)
+    , sigma_s_(other.sigma_s_)
+    , Q_(other.Q_)
+    , basis_integrated_(other.basis_integrated_)
+    , u_iso_(other.u_iso_)
   {}
 
   virtual XT::Grid::ElementFunctor<GridViewType>* copy() override final
@@ -60,12 +73,12 @@ public:
 
   virtual void apply_local(const E& entity) override final
   {
-    auto solution_local = solution_.local_discrete_function(entity);
+    local_solution_->bind(entity);
 
     // get u
     const auto center = entity.geometry().center();
     const auto center_local = entity.geometry().local(center);
-    const auto u0 = solution_local->evaluate(center_local);
+    const auto u0 = local_solution_->evaluate(center_local);
     const auto sigma_a = sigma_a_.evaluate(center)[0];
     const auto sigma_s = sigma_s_.evaluate(center)[0];
     const auto Q = Q_.evaluate(center)[0];
@@ -80,7 +93,7 @@ public:
       u += basis_integrated_ * dt_ * Q;
 
     // write to return vector
-    auto& local_vector = solution_local->dofs();
+    auto& local_vector = local_solution_->dofs();
     for (size_t ii = 0; ii < dimRange; ++ii)
       local_vector.set_entry(ii, u[ii]);
   }
@@ -88,6 +101,7 @@ public:
 private:
   const MomentBasis& basis_functions_;
   DiscreteFunctionType& solution_;
+  std::unique_ptr<typename DiscreteFunctionType::LocalDiscreteFunctionType> local_solution_;
   const double dt_;
   const ScalarFunctionType& sigma_a_;
   const ScalarFunctionType& sigma_s_;

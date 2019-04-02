@@ -43,15 +43,19 @@ class AdvectionFvOperator : public OperatorInterface<M, SGV, m, 1, m, 1, RGV>
   using BaseType = OperatorInterface<M, SGV, m, 1, m, 1, RGV>;
 
 public:
+  using BaseType::s_r;
+  using BaseType::s_rC;
   using typename BaseType::F;
   using typename BaseType::V;
 
   using I = XT::Grid::extract_intersection_t<SGV>;
+  using E = XT::Grid::extract_entity_t<SGV>;
   using NumericalFluxType = NumericalFluxInterface<I, SGV::dimension, m, F>;
   using BoundaryTreatmentByCustomNumericalFluxOperatorType =
       LocalAdvectionFvBoundaryTreatmentByCustomNumericalFluxOperator<I, V, SGV, m, F, F, RGV, V>;
   using BoundaryTreatmentByCustomExtrapolationOperatorType =
       LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator<I, V, SGV, m, F, F, RGV, V>;
+  using SourceType = XT::Functions::GridFunctionInterface<E, s_r, s_rC, F>;
 
   using typename BaseType::MatrixOperatorType;
   using typename BaseType::RangeSpaceType;
@@ -98,10 +102,11 @@ public:
          const XT::Grid::IntersectionFilter<SGV>& filter = XT::Grid::ApplyOn::BoundaryIntersections<SGV>())
   {
     boundary_treatments_by_custom_numerical_flux_.emplace_back();
-    boundary_treatments_by_custom_numerical_flux_.back().first =
-        std::make_unique<BoundaryTreatmentByCustomNumericalFluxOperatorType>(numerical_boundary_treatment_flux,
-                                                                             boundary_treatment_parameter_type);
-    boundary_treatments_by_custom_numerical_flux_.back().second =
+    std::get<0>(boundary_treatments_by_custom_numerical_flux_.back()) =
+        std::make_unique<typename BoundaryTreatmentByCustomNumericalFluxOperatorType::LambdaType>(
+            numerical_boundary_treatment_flux);
+    std::get<1>(boundary_treatments_by_custom_numerical_flux_.back()) = boundary_treatment_parameter_type;
+    std::get<2>(boundary_treatments_by_custom_numerical_flux_.back()) =
         std::unique_ptr<XT::Grid::IntersectionFilter<SGV>>(filter.copy());
     return *this;
   }
@@ -111,10 +116,10 @@ public:
                    const XT::Grid::IntersectionFilter<SGV>& filter = XT::Grid::ApplyOn::BoundaryIntersections<SGV>())
   {
     boundary_treatments_by_custom_extrapolation_.emplace_back();
-    boundary_treatments_by_custom_extrapolation_.back().first =
-        std::make_unique<BoundaryTreatmentByCustomExtrapolationOperatorType>(
-            *numerical_flux_, extrapolation, extrapolation_parameter_type),
-    boundary_treatments_by_custom_extrapolation_.back().second =
+    std::get<0>(boundary_treatments_by_custom_extrapolation_.back()) =
+        std::make_unique<typename BoundaryTreatmentByCustomExtrapolationOperatorType::LambdaType>(extrapolation);
+    std::get<1>(boundary_treatments_by_custom_extrapolation_.back()) = extrapolation_parameter_type;
+    std::get<2>(boundary_treatments_by_custom_extrapolation_.back()) =
         std::unique_ptr<XT::Grid::IntersectionFilter<SGV>>(filter.copy());
     return *this;
   }
@@ -125,35 +130,48 @@ public:
 
   void apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& param = {}) const override final
   {
-    // some checks
     DUNE_THROW_IF(!source.valid(), Exceptions::operator_error, "source contains inf or nan!");
     DUNE_THROW_IF(!(this->parameter_type() <= param.type()),
                   Exceptions::operator_error,
                   "this->parameter_type() = " << this->parameter_type() << "\n   param.type() = " << param.type());
-    range.set_all(0);
     const auto source_function = make_discrete_function(source_space_, source);
+    apply(source_function, range, param);
+  }
+
+  void apply(const SourceType& source_function, VectorType& range, const XT::Common::Parameter& param = {}) const
+  {
+    // some checks
+    range.set_all(0);
     auto range_function = make_discrete_function(range_space_, range);
     // set up the actual operator
-    auto localizable_op = make_localizable_operator(assembly_grid_view_, source_function, range_function);
+    auto localizable_op =
+        make_localizable_operator<SGV, V, s_r, s_rC, F, SGV>(assembly_grid_view_, source_function, range_function);
     // contributions from inner intersections
-    localizable_op.append(LocalAdvectionFvCouplingOperator<I, V, SGV, m, F, F, RGV, V>(*numerical_flux_),
-                          param,
-                          XT::Grid::ApplyOn::InnerIntersectionsOnce<SGV>());
+    localizable_op.append(
+        LocalAdvectionFvCouplingOperator<I, V, SGV, m, F, F, RGV, V>(source_function, *numerical_flux_),
+        param,
+        XT::Grid::ApplyOn::InnerIntersectionsOnce<SGV>());
     // contributions from periodic boundaries
-    localizable_op.append(LocalAdvectionFvCouplingOperator<I, V, SGV, m, F, F, RGV, V>(*numerical_flux_),
-                          param,
-                          *(XT::Grid::ApplyOn::PeriodicBoundaryIntersectionsOnce<SGV>() && !(*periodicity_exception_)));
+    localizable_op.append(
+        LocalAdvectionFvCouplingOperator<I, V, SGV, m, F, F, RGV, V>(source_function, *numerical_flux_),
+        param,
+        *(XT::Grid::ApplyOn::PeriodicBoundaryIntersectionsOnce<SGV>() && !(*periodicity_exception_)));
     // contributions from other boundaries by custom numerical flux
     for (const auto& boundary_treatment : boundary_treatments_by_custom_numerical_flux_) {
-      const auto& boundary_op = *boundary_treatment.first;
-      const auto& filter = *boundary_treatment.second;
-      localizable_op.append(boundary_op, param, filter);
+      const auto& filter = *std::get<2>(boundary_treatment);
+      localizable_op.append(BoundaryTreatmentByCustomNumericalFluxOperatorType(
+                                source_function, *std::get<0>(boundary_treatment), std::get<1>(boundary_treatment)),
+                            param,
+                            filter);
     }
     // contributions from other boundaries by custom extrapolation
     for (const auto& boundary_treatment : boundary_treatments_by_custom_extrapolation_) {
-      const auto& boundary_op = *boundary_treatment.first;
-      const auto& filter = *boundary_treatment.second;
-      localizable_op.append(boundary_op, param, filter);
+      const auto& filter = *std::get<2>(boundary_treatment);
+      localizable_op.append(
+          BoundaryTreatmentByCustomExtrapolationOperatorType(
+              source_function, *numerical_flux_, *std::get<0>(boundary_treatment), std::get<1>(boundary_treatment)),
+          param,
+          filter);
     }
     // do the actual work
     localizable_op.assemble(/*use_tbb=*/true);
@@ -190,26 +208,34 @@ public:
     const auto parameter = param + XT::Common::Parameter({"finite-difference-jacobians.eps", eps});
     // append the same local ops with the same filters as in apply() above
     // contributions from inner intersections
-    jacobian_op.append(LocalAdvectionFvCouplingOperator<I, V, SGV, m, F, F, RGV, V>(*numerical_flux_),
+    const auto source_function = make_discrete_function(source_space_, source);
+    jacobian_op.append(LocalAdvectionFvCouplingOperator<I, V, SGV, m, F, F, RGV, V>(source_function, *numerical_flux_),
                        source,
                        parameter,
                        XT::Grid::ApplyOn::InnerIntersectionsOnce<SGV>());
     // contributions from periodic boundaries
-    jacobian_op.append(LocalAdvectionFvCouplingOperator<I, V, SGV, m, F, F, RGV, V>(*numerical_flux_),
+    jacobian_op.append(LocalAdvectionFvCouplingOperator<I, V, SGV, m, F, F, RGV, V>(source_function, *numerical_flux_),
                        source,
                        parameter,
                        *(XT::Grid::ApplyOn::PeriodicBoundaryIntersectionsOnce<SGV>() && !(*periodicity_exception_)));
     // contributions from other boundaries by custom numerical flux
     for (const auto& boundary_treatment : boundary_treatments_by_custom_numerical_flux_) {
-      const auto& boundary_op = *boundary_treatment.first;
-      const auto& filter = *boundary_treatment.second;
-      jacobian_op.append(boundary_op, source, parameter, filter);
+      const auto& filter = *std::get<2>(boundary_treatment);
+      jacobian_op.append(BoundaryTreatmentByCustomNumericalFluxOperatorType(
+                             source_function, *std::get<0>(boundary_treatment), std::get<1>(boundary_treatment)),
+                         source,
+                         param,
+                         filter);
     }
     // contributions from other boundaries by custom extrapolation
     for (const auto& boundary_treatment : boundary_treatments_by_custom_extrapolation_) {
-      const auto& boundary_op = *boundary_treatment.first;
-      const auto& filter = *boundary_treatment.second;
-      jacobian_op.append(boundary_op, source, parameter, filter);
+      const auto& filter = *std::get<2>(boundary_treatment);
+      jacobian_op.append(
+          BoundaryTreatmentByCustomExtrapolationOperatorType(
+              source_function, *numerical_flux_, *std::get<0>(boundary_treatment), std::get<1>(boundary_treatment)),
+          source,
+          param,
+          filter);
     }
   } // ... jacobian(...)
 
@@ -219,11 +245,13 @@ private:
   const SourceSpaceType& source_space_;
   const RangeSpaceType& range_space_;
   std::unique_ptr<XT::Grid::IntersectionFilter<SGV>> periodicity_exception_;
-  std::list<std::pair<std::unique_ptr<BoundaryTreatmentByCustomNumericalFluxOperatorType>,
-                      std::unique_ptr<XT::Grid::IntersectionFilter<SGV>>>>
+  std::list<std::tuple<std::unique_ptr<typename BoundaryTreatmentByCustomNumericalFluxOperatorType::LambdaType>,
+                       XT::Common::ParameterType,
+                       std::unique_ptr<XT::Grid::IntersectionFilter<SGV>>>>
       boundary_treatments_by_custom_numerical_flux_;
-  std::list<std::pair<std::unique_ptr<BoundaryTreatmentByCustomExtrapolationOperatorType>,
-                      std::unique_ptr<XT::Grid::IntersectionFilter<SGV>>>>
+  std::list<std::tuple<std::unique_ptr<typename BoundaryTreatmentByCustomExtrapolationOperatorType::LambdaType>,
+                       XT::Common::ParameterType,
+                       std::unique_ptr<XT::Grid::IntersectionFilter<SGV>>>>
       boundary_treatments_by_custom_extrapolation_;
 }; // class AdvectionFvOperator
 
