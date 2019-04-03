@@ -35,7 +35,7 @@ public:
   using typename BaseType::PhysicalDomainType;
   using typename BaseType::StateType;
 
-  using GenericFunctionType = std::function<StateType(const Intersection&,
+  using GenericFunctionType = std::function<StateType(const I&,
                                                       const LocalIntersectionCoords&,
                                                       const StateType&,
                                                       const StateType&,
