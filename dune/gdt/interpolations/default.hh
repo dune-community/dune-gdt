@@ -48,7 +48,7 @@ public:
     : source_(source)
     , target_(target)
     , local_dof_vector_(target.dofs().localize())
-    , local_source_(source.local_function())
+    , local_source_(source_.local_function())
     , target_basis_(target.space().basis().localize())
   {
     DUNE_THROW_IF(target_.space().type() == SpaceType::raviart_thomas,

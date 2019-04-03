@@ -338,6 +338,16 @@ public:
     return "1dpm";
   }
 
+  virtual std::string mn_name() const override final
+  {
+    return "pmm" + XT::Common::to_string(dimRange);
+  }
+
+  virtual std::string pn_name() const override final
+  {
+    return "pmp" + XT::Common::to_string(dimRange);
+  }
+
   // get indices of all faces that contain point
   std::vector<size_t> get_face_indices(const DomainType& v) const
   {
@@ -353,6 +363,9 @@ private:
   const TriangulationType triangulation_;
   using BaseType::quadratures_;
 }; // class PartialMomentBasis<DomainFieldType, 1, ...>
+
+template <class DomainFieldType, class RangeFieldType, size_t rangeDim, size_t rangeDimCols, size_t dimFlux>
+constexpr size_t PartialMomentBasis<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, dimFlux, 1>::dimRange;
 
 template <class DomainFieldType, class RangeFieldType, size_t refinements, size_t dimFlux>
 class PartialMomentBasis<DomainFieldType, 3, RangeFieldType, refinements, 1, dimFlux, 1>
@@ -408,12 +421,11 @@ public:
     BaseType::initialize_base_values();
   }
 
-  // This constructor is here for compatibility with the one-dimensional basis to simplify testing
-  PartialMomentBasis(const size_t fekete_rule_num = 3, const size_t quad_refinements = 0)
+  PartialMomentBasis(const size_t quad_order = (refinements == 0 ? 15 : 9), const size_t quad_refinements = 0)
     : BaseType(refinements)
   {
     const QuadratureRule<RangeFieldType, 2> reference_quadrature_rule =
-        XT::Data::FeketeQuadrature<DomainFieldType>::get(fekete_rule_num);
+        XT::Data::FeketeQuadrature<DomainFieldType>::get(quad_order);
     quadratures_ = triangulation_.quadrature_rules(quad_refinements, reference_quadrature_rule);
     assert(4 * triangulation_.faces().size() == dimRange);
     BaseType::initialize_base_values();
@@ -545,6 +557,16 @@ public:
   virtual std::string short_id() const override final
   {
     return "3dpm";
+  }
+
+  virtual std::string mn_name() const override final
+  {
+    return "pmm" + XT::Common::to_string(dimRange);
+  }
+
+  virtual std::string pn_name() const override final
+  {
+    return "pmp" + XT::Common::to_string(dimRange);
   }
 
   std::vector<size_t> get_face_indices(const DomainType& v) const
@@ -757,6 +779,9 @@ private:
   using BaseType::triangulation_;
   mutable PlaneCoefficientsType plane_coefficients_;
 }; // class PartialMomentBasis<DomainFieldType, 3, ...>
+
+template <class DomainFieldType, class RangeFieldType, size_t refinements, size_t dimFlux>
+constexpr size_t PartialMomentBasis<DomainFieldType, 3, RangeFieldType, refinements, 1, dimFlux, 1>::dimRange;
 
 template <class DomainFieldType, class RangeFieldType, size_t refinements, size_t dimFlux>
 constexpr size_t PartialMomentBasis<DomainFieldType, 3, RangeFieldType, refinements, 1, dimFlux, 1>::num_blocks;

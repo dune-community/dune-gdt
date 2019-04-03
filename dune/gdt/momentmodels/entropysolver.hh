@@ -28,6 +28,7 @@ template <class SpaceType, class VectorType, class MomentBasis>
 class LocalEntropySolver : public XT::Grid::ElementFunctor<typename SpaceType::GridViewType>
 {
   using GridViewType = typename SpaceType::GridViewType;
+  using BaseType = XT::Grid::ElementFunctor<GridViewType>;
   using EntityType = typename GridViewType::template Codim<0>::Entity;
   using IndexSetType = typename GridViewType::IndexSet;
   using EntropyFluxType = EntropyBasedFluxFunction<GridViewType, MomentBasis>;
@@ -59,15 +60,24 @@ public:
     , index_set_(space_.grid_view().indexSet())
   {}
 
+  explicit LocalEntropySolver(LocalEntropySolver& other)
+    : BaseType(other)
+    , space_(other.space_)
+    , source_(space_, other.source_.dofs().vector(), "source")
+    , local_source_(source_.local_discrete_function())
+    , range_(space_, other.range_.dofs().vector(), "range")
+    , local_range_(range_.local_discrete_function())
+    , analytical_flux_(other.analytical_flux_)
+    , local_flux_(analytical_flux_.derived_local_function())
+    , min_acceptable_density_(other.min_acceptable_density_)
+    , param_(other.param_)
+    , filename_(other.filename_)
+    , index_set_(space_.grid_view().indexSet())
+  {}
+
   virtual XT::Grid::ElementFunctor<GridViewType>* copy() override final
   {
-    return new LocalEntropySolver(space_,
-                                  source_.dofs().vector(),
-                                  range_.dofs().vector(),
-                                  analytical_flux_,
-                                  min_acceptable_density_,
-                                  param_,
-                                  filename_);
+    return new LocalEntropySolver(*this);
   }
 
   void apply_local(const EntityType& entity) override final

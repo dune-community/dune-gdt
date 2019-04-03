@@ -42,7 +42,7 @@ public:
     BaseType::initialize_base_values();
   }
 
-  LegendreMomentBasis(const size_t quad_order = 31, const size_t quad_refinements = 0)
+  LegendreMomentBasis(const size_t quad_order = 197, const size_t quad_refinements = 1)
     : BaseType(BaseType::gauss_lobatto_quadratures(std::pow(2, quad_refinements), quad_order))
   {
     BaseType::initialize_base_values();
@@ -182,6 +182,16 @@ public:
   virtual std::string short_id() const override final
   {
     return "leg";
+  }
+
+  virtual std::string mn_name() const override final
+  {
+    return "m" + XT::Common::to_string(order);
+  }
+
+  virtual std::string pn_name() const override final
+  {
+    return "p" + XT::Common::to_string(order);
   }
 
 private:

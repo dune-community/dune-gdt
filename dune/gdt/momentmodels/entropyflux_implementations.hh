@@ -3131,7 +3131,7 @@ public:
   DomainType evaluate_kinetic_flux_with_alphas(const VectorType& alpha_i,
                                                const VectorType& alpha_j,
                                                const BasisDomainType& n_ij,
-                                               const size_t dd) const
+                                               const size_t DXTC_DEBUG_ONLY(dd)) const
   {
     assert(dd == 0);
     // calculate < \mu m G_\alpha(u) > * n_ij

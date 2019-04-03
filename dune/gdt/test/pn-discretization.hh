@@ -39,7 +39,6 @@ int parse_momentmodel_arguments(int argc,
                                 size_t& threading_partition_factor,
                                 size_t& num_save_steps,
                                 size_t& num_output_steps,
-                                size_t& quad_refinements,
                                 size_t& quad_order,
                                 std::string& grid_size,
                                 std::string& overlap_size,
@@ -70,13 +69,6 @@ int parse_momentmodel_arguments(int argc,
         filename = std::string(argv[++i]);
       } else {
         std::cerr << "--filename option requires one argument." << std::endl;
-        return 1;
-      }
-    } else if (std::string(argv[i]) == "--quad_refinements") {
-      if (i + 1 < argc) {
-        quad_refinements = XT::Common::from_string<size_t>(argv[++i]);
-      } else {
-        std::cerr << "--quad_refinements option requires one argument." << std::endl;
         return 1;
       }
     } else if (std::string(argv[i]) == "--quad_order") {
@@ -179,7 +171,6 @@ struct HyperbolicPnDiscretization
 
   Dune::FieldVector<double, 3> run(size_t num_save_steps = 1,
                                    size_t num_output_steps = 0,
-                                   size_t num_quad_refinements = size_t(-1),
                                    size_t quad_order = size_t(-1),
                                    std::string grid_size = "",
                                    std::string overlap_size = "2",
@@ -221,13 +212,9 @@ struct HyperbolicPnDiscretization
     const AdvectionSourceSpaceType advection_source_space(grid_view, 1);
 
     //******************* create EquationType object ***************************************
-    if ((num_quad_refinements == size_t(-1) || quad_order == size_t(-1)) && (num_quad_refinements != quad_order))
-      std::cerr << "You specified either num_quad_refinements or quad_order, please also specify the other one!"
-                << std::endl;
-    std::shared_ptr<const MomentBasis> basis_functions =
-        (num_quad_refinements == size_t(-1) || quad_order == size_t(-1))
-            ? std::make_shared<const MomentBasis>()
-            : std::make_shared<const MomentBasis>(quad_order, num_quad_refinements);
+    std::shared_ptr<const MomentBasis> basis_functions = (quad_order == size_t(-1))
+                                                             ? std::make_shared<const MomentBasis>()
+                                                             : std::make_shared<const MomentBasis>(quad_order);
     const std::unique_ptr<ProblemType> problem_ptr =
         XT::Common::make_unique<ProblemType>(*basis_functions, grid_config);
     const auto& problem = *problem_ptr;
@@ -254,9 +241,16 @@ struct HyperbolicPnDiscretization
     using AdvectionOperatorType = AdvectionFvOperator<MatrixType, GV, dimRange>;
     using EigenvectorWrapperType = typename EigenvectorWrapperChooser<MomentBasis, AnalyticalFluxType>::type;
     using ReconstructionOperatorType =
-        LinearReconstructionOperator<AnalyticalFluxType, BoundaryValueType, GV, MatrixType, EigenvectorWrapperType>;
+        //        LinearReconstructionOperator<AnalyticalFluxType, BoundaryValueType, GV, MatrixType,
+        //        EigenvectorWrapperType>;
+        LinearDiscreteReconstructionOperator<AnalyticalFluxType,
+                                             BoundaryValueType,
+                                             GV,
+                                             VectorType,
+                                             EigenvectorWrapperType>;
+
     using ReconstructionFvOperatorType =
-        AdvectionWithReconstructionOperator<AdvectionOperatorType, ReconstructionOperatorType>;
+        AdvectionWithDiscreteReconstructionOperator<AdvectionOperatorType, ReconstructionOperatorType>;
     using FvOperatorType =
         std::conditional_t<TestCaseType::reconstruction, ReconstructionFvOperatorType, AdvectionOperatorType>;
     using OperatorTimeStepperType =
@@ -298,9 +292,6 @@ struct HyperbolicPnDiscretization
 
     MinmodSlope<E, EigenvectorWrapperType> slope;
     ReconstructionOperatorType reconstruction_operator(*analytical_flux, *boundary_values, fv_space, slope, true);
-    //    NoSlope<typename ReconstructionOperatorType::LocalVectorType, typename ReconstructionOperatorType::MatrixType,
-    //    3> slope; ReconstructionOperatorType reconstruction_operator(*analytical_flux, *boundary_values, fv_space,
-    //    slope, true);
 
     ReconstructionFvOperatorType reconstruction_fv_operator(advection_operator, reconstruction_operator);
     FvOperatorType& fv_operator =
@@ -310,8 +301,7 @@ struct HyperbolicPnDiscretization
     filename += "_grid_" + grid_size;
     filename += "_tend_" + XT::Common::to_string(t_end);
     filename += TestCaseType::reconstruction ? "_ord2" : "_ord1";
-    filename += "_" + basis_functions->short_id();
-    filename += "_p" + Dune::XT::Common::to_string(dimRange);
+    filename += "_" + basis_functions->pn_name();
 
     // ******************************** do the time steps ***********************************************************
     const auto sigma_a = problem.sigma_a();

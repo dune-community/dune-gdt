@@ -56,7 +56,7 @@ public:
     BaseType::initialize_base_values();
   }
 
-  SphericalHarmonicsMomentBasis(const size_t quad_order = 2 * order + 2,
+  SphericalHarmonicsMomentBasis(const size_t quad_order = 2 * order + 8,
                                 const size_t DXTC_DEBUG_ONLY(quad_refinements) = 0)
     : BaseType(XT::Data::OctantQuadratures<DomainFieldType>::get(quad_order))
   {
@@ -134,6 +134,16 @@ public:
   virtual std::string short_id() const override final
   {
     return "shm";
+  }
+
+  virtual std::string mn_name() const override final
+  {
+    return "m" + XT::Common::to_string(order);
+  }
+
+  virtual std::string pn_name() const override final
+  {
+    return "p" + XT::Common::to_string(order);
   }
 
 private:
@@ -285,7 +295,7 @@ public:
     BaseType::initialize_base_values();
   }
 
-  RealSphericalHarmonicsMomentBasis(const size_t quad_order = 2 * order + 2,
+  RealSphericalHarmonicsMomentBasis(const size_t quad_order = 2 * order + 8,
                                     const size_t DXTC_DEBUG_ONLY(quad_refinements) = 0)
     : BaseType(XT::Data::OctantQuadratures<DomainFieldType>::get(quad_order))
   {
@@ -363,6 +373,16 @@ public:
   virtual std::string short_id() const override final
   {
     return "rhm";
+  }
+
+  virtual std::string mn_name() const override final
+  {
+    return "m" + XT::Common::to_string(order);
+  }
+
+  virtual std::string pn_name() const override final
+  {
+    return "p" + XT::Common::to_string(order);
   }
 
   DynamicRangeType integrate_dirac_at(const DomainType& dirac_position) const

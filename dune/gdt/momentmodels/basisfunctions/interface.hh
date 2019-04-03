@@ -324,6 +324,10 @@ public:
 
   virtual std::string short_id() const = 0;
 
+  virtual std::string mn_name() const = 0;
+
+  virtual std::string pn_name() const = 0;
+
   static QuadratureRule<RangeFieldType, 2> barycentre_rule()
   {
     Dune::QuadratureRule<RangeFieldType, 2> ret;

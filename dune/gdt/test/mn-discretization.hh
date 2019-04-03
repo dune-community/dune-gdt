@@ -42,7 +42,6 @@ struct HyperbolicMnDiscretization
   static std::pair<Dune::FieldVector<double, 3>, int>
   run(size_t num_save_steps = 1,
       size_t num_output_steps = 0,
-      size_t num_quad_refinements = TestCaseType::RealizabilityLimiterChooserType::num_quad_refinements,
       size_t quad_order = TestCaseType::RealizabilityLimiterChooserType::quad_order,
       std::string grid_size = "",
       std::string overlap_size = "2",
@@ -81,8 +80,7 @@ struct HyperbolicMnDiscretization
     const AdvectionSourceSpaceType advection_source_space(grid_view, 1);
 
     //******************* create EquationType object ***************************************
-    std::shared_ptr<const MomentBasis> basis_functions =
-        std::make_shared<const MomentBasis>(quad_order, num_quad_refinements);
+    std::shared_ptr<const MomentBasis> basis_functions = std::make_shared<const MomentBasis>(quad_order);
     const std::unique_ptr<ProblemType> problem_ptr =
         XT::Common::make_unique<ProblemType>(*basis_functions, grid_view, grid_config);
     const auto& problem = *problem_ptr;
@@ -162,10 +160,9 @@ struct HyperbolicMnDiscretization
     filename += "_" + ProblemType::static_id();
     filename += "_grid_" + grid_size;
     filename += "_tend_" + XT::Common::to_string(t_end);
-    filename += "_quad" + XT::Common::to_string(num_quad_refinements) + "x" + XT::Common::to_string(quad_order);
+    filename += "_quad_" + XT::Common::to_string(quad_order);
     filename += TestCaseType::reconstruction ? "_ord2" : "_ord1";
-    filename += "_" + basis_functions->short_id();
-    filename += "_m" + Dune::XT::Common::to_string(dimRange);
+    filename += "_" + basis_functions->mn_name();
 
     EntropySolverType entropy_solver(*(dynamic_cast<const EntropyFluxType*>(analytical_flux.get())),
                                      fv_space,

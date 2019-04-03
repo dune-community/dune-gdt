@@ -52,7 +52,9 @@ public:
   using typename BaseType::FluxType;
   using typename BaseType::InitialValueType;
   using FluxRangeType = typename FluxType::LocalFunctionType::RangeReturnType;
+  using DynamicFluxRangeType = typename FluxType::LocalFunctionType::DynamicRangeType;
   using FluxJacobianRangeType = typename FluxType::LocalFunctionType::JacobianRangeReturnType;
+  using DynamicFluxJacobianRangeType = typename FluxType::LocalFunctionType::DynamicJacobianRangeType;
   using GenericScalarFunctionType = XT::Functions::GenericFunction<dimDomain, 1, 1, RangeFieldType>;
   using ConstantScalarFunctionType = XT::Functions::ConstantFunction<dimDomain, 1, 1, RangeFieldType>;
 
@@ -129,18 +131,21 @@ public:
       }
     }
     auto order_func = [](const XT::Common::Parameter&) -> int { return 1; };
-    auto eval_func = [A](const DomainType&, const StateType& u, const XT::Common::Parameter&) {
-      FluxRangeType ret;
-      for (size_t dd = 0; dd < dimDomain; ++dd)
-        A[dd].mv(u, ret[dd]);
-      return ret;
-    };
-    auto jacobian_func = [A](const DomainType&, const StateType&, const XT::Common::Parameter&) {
-      FluxJacobianRangeType ret;
-      for (size_t dd = 0; dd < dimDomain; ++dd)
-        ret[dd] = A[dd];
-      return ret;
-    };
+    DynamicVector<XT::LA::CommonDenseMatrix<RangeFieldType>> A_la(dimDomain);
+    for (size_t dd = 0; dd < dimDomain; ++dd)
+      A_la[dd] = A[dd];
+    auto eval_func =
+        [A_la](const DomainType&, const StateType& u, DynamicFluxRangeType& ret, const XT::Common::Parameter&) {
+          for (size_t dd = 0; dd < dimDomain; ++dd) {
+            auto row_view = ret[dd];
+            A_la[dd].mv(u, row_view);
+          }
+        };
+    auto jacobian_func =
+        [A_la](const DomainType&, const StateType&, DynamicFluxJacobianRangeType& ret, const XT::Common::Parameter&) {
+          for (size_t dd = 0; dd < dimDomain; ++dd)
+            ret[dd] = A_la[dd];
+        };
     return std::make_unique<GenericFluxFunctionType>(order_func,
                                                      GenericFluxFunctionType::default_post_bind_function(),
                                                      eval_func,

@@ -295,6 +295,16 @@ public:
     return "1dhf";
   }
 
+  virtual std::string mn_name() const override final
+  {
+    return "hfm" + XT::Common::to_string(dimRange);
+  }
+
+  virtual std::string pn_name() const override final
+  {
+    return "hfp" + XT::Common::to_string(dimRange);
+  }
+
   // get indices of all faces that contain point v
   std::vector<size_t> get_face_indices(const DomainType& v) const
   {
@@ -309,6 +319,9 @@ public:
 private:
   const TriangulationType triangulation_;
 }; // class HatFunctionMomentBasis<DomainFieldType, 1, ...>
+
+template <class DomainFieldType, class RangeFieldType, size_t rangeDim, size_t rangeDimCols, size_t fluxDim>
+constexpr size_t HatFunctionMomentBasis<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, fluxDim>::dimRange;
 
 template <class DomainFieldType, class RangeFieldType, size_t refinements, size_t fluxDim>
 class HatFunctionMomentBasis<DomainFieldType, 3, RangeFieldType, refinements, 1, fluxDim>
@@ -358,12 +371,11 @@ public:
     BaseType::initialize_base_values();
   }
 
-  // This constructor is here for compatibility with the one-dimensional basis to simplify testing
-  HatFunctionMomentBasis(const size_t fekete_rule_num = 3, const size_t quad_refinements = 0)
+  HatFunctionMomentBasis(const size_t quad_order = (refinements == 0 ? 15 : 9), const size_t quad_refinements = 0)
     : BaseType(refinements)
   {
     const QuadratureRule<RangeFieldType, 2> reference_quadrature_rule =
-        XT::Data::FeketeQuadrature<DomainFieldType>::get(fekete_rule_num);
+        XT::Data::FeketeQuadrature<DomainFieldType>::get(quad_order);
     quadratures_ = triangulation_.quadrature_rules(quad_refinements, reference_quadrature_rule);
     assert(triangulation_.vertices().size() == dimRange);
     BaseType::initialize_base_values();
@@ -461,6 +473,16 @@ public:
   virtual std::string short_id() const override final
   {
     return "3dhf";
+  }
+
+  virtual std::string mn_name() const override final
+  {
+    return "hfm" + XT::Common::to_string(dimRange);
+  }
+
+  virtual std::string pn_name() const override final
+  {
+    return "hfp" + XT::Common::to_string(dimRange);
   }
 
   // get indices of all faces that contain point v
@@ -643,6 +665,9 @@ protected:
   using BaseType::quadratures_;
   using BaseType::triangulation_;
 }; // class HatFunctionMomentBasis<DomainFieldType, 3, ...>
+
+template <class DomainFieldType, class RangeFieldType, size_t rangeDim, size_t fluxDim>
+constexpr size_t HatFunctionMomentBasis<DomainFieldType, 3, RangeFieldType, rangeDim, 1, fluxDim>::dimRange;
 
 
 } // namespace GDT
