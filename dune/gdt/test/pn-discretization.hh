@@ -165,6 +165,10 @@ struct FvOperatorChooser<false>
   }
 };
 
+#ifndef USE_FULL_LINEAR_RECONSTRUCTION_OPERATOR
+#  define USE_FULL_LINEAR_RECONSTRUCTION_OPERATOR 0
+#endif
+
 template <class TestCaseType>
 struct HyperbolicPnDiscretization
 {
@@ -241,16 +245,22 @@ struct HyperbolicPnDiscretization
     using AdvectionOperatorType = AdvectionFvOperator<MatrixType, GV, dimRange>;
     using EigenvectorWrapperType = typename EigenvectorWrapperChooser<MomentBasis, AnalyticalFluxType>::type;
     using ReconstructionOperatorType =
-        //        LinearReconstructionOperator<AnalyticalFluxType, BoundaryValueType, GV, MatrixType,
-        //        EigenvectorWrapperType>;
-        LinearDiscreteReconstructionOperator<AnalyticalFluxType,
-                                             BoundaryValueType,
-                                             GV,
-                                             VectorType,
-                                             EigenvectorWrapperType>;
+#if USE_FULL_LINEAR_RECONSTRUCTION_OPERATOR
+        LinearReconstructionOperator<AnalyticalFluxType, BoundaryValueType, GV, MatrixType, EigenvectorWrapperType>;
+#else
+        PointwiseLinearReconstructionOperator<AnalyticalFluxType,
+                                              BoundaryValueType,
+                                              GV,
+                                              VectorType,
+                                              EigenvectorWrapperType>;
+#endif
 
     using ReconstructionFvOperatorType =
-        AdvectionWithDiscreteReconstructionOperator<AdvectionOperatorType, ReconstructionOperatorType>;
+#if USE_FULL_LINEAR_RECONSTRUCTION_OPERATOR
+        AdvectionWithReconstructionOperator<AdvectionOperatorType, ReconstructionOperatorType>;
+#else
+        AdvectionWithPointwiseReconstructionOperator<AdvectionOperatorType, ReconstructionOperatorType>;
+#endif
     using FvOperatorType =
         std::conditional_t<TestCaseType::reconstruction, ReconstructionFvOperatorType, AdvectionOperatorType>;
     using OperatorTimeStepperType =

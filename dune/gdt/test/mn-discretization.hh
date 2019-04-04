@@ -105,13 +105,13 @@ struct HyperbolicMnDiscretization
     //    using ReconstructionOperatorType =
     //        LinearReconstructionOperator<AnalyticalFluxType, BoundaryValueType, GV, MatrixType,
     //        EigenvectorWrapperType>;
-    using ReconstructionOperatorType = LinearDiscreteReconstructionOperator<AnalyticalFluxType,
-                                                                            BoundaryValueType,
-                                                                            GV,
-                                                                            VectorType,
-                                                                            EigenvectorWrapperType>;
+    using ReconstructionOperatorType = PointwiseLinearReconstructionOperator<AnalyticalFluxType,
+                                                                             BoundaryValueType,
+                                                                             GV,
+                                                                             VectorType,
+                                                                             EigenvectorWrapperType>;
     using ReconstructionAdvectionOperatorType =
-        AdvectionWithDiscreteReconstructionOperator<AdvectionOperatorType, ReconstructionOperatorType>;
+        AdvectionWithPointwiseReconstructionOperator<AdvectionOperatorType, ReconstructionOperatorType>;
     using FvOperatorType = EntropyBasedMomentFvOperator<
         std::conditional_t<TestCaseType::reconstruction, ReconstructionAdvectionOperatorType, AdvectionOperatorType>,
         EntropySolverType>;

@@ -78,7 +78,7 @@ public:
 
 
 template <class AdvectionOperatorImp, class ReconstructionOperatorImp>
-class AdvectionWithDiscreteReconstructionOperator
+class AdvectionWithPointwiseReconstructionOperator
   : public OperatorInterface<typename AdvectionOperatorImp::MatrixType,
                              typename AdvectionOperatorImp::SourceSpaceType::GridViewType,
                              AdvectionOperatorImp::s_r>
@@ -96,8 +96,8 @@ public:
   static const size_t r = AdvectionOperatorType::s_r;
   using VectorType = typename AdvectionOperatorType::VectorType;
 
-  AdvectionWithDiscreteReconstructionOperator(const AdvectionOperatorType& advection_operator,
-                                              const ReconstructionOperatorType& reconstruction_operator)
+  AdvectionWithPointwiseReconstructionOperator(const AdvectionOperatorType& advection_operator,
+                                               const ReconstructionOperatorType& reconstruction_operator)
     : advection_operator_(advection_operator)
     , reconstruction_operator_(reconstruction_operator)
   {}

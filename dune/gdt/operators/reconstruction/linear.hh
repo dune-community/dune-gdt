@@ -155,9 +155,9 @@ template <class AnalyticalFluxType,
           class BoundaryValueType,
           class GV,
           class EigenvectorWrapperType = internal::EigenvectorWrapper<AnalyticalFluxType>>
-class LocalDiscreteValuedLinearReconstructionOperator : public XT::Grid::ElementFunctor<GV>
+class LocalPointwiseLinearReconstructionOperator : public XT::Grid::ElementFunctor<GV>
 {
-  using ThisType = LocalDiscreteValuedLinearReconstructionOperator;
+  using ThisType = LocalPointwiseLinearReconstructionOperator;
   using BaseType = XT::Grid::ElementFunctor<GV>;
   static constexpr size_t dimDomain = BoundaryValueType::d;
   static constexpr size_t dimRange = BoundaryValueType::r;
@@ -171,20 +171,20 @@ class LocalDiscreteValuedLinearReconstructionOperator : public XT::Grid::Element
   using ReconstructedFunctionType = DiscreteValuedGridFunction<GV, dimRange, 1, RangeFieldType>;
 
 public:
-  explicit LocalDiscreteValuedLinearReconstructionOperator(ReconstructedFunctionType& reconstructed_function,
-                                                           const GV& grid_view,
-                                                           const std::vector<LocalVectorType>& source_values,
-                                                           const BoundaryValueType& boundary_values,
-                                                           const AnalyticalFluxType& analytical_flux,
-                                                           const SlopeType& slope,
-                                                           const XT::Common::Parameter& param,
-                                                           const bool flux_is_affine = false)
+  explicit LocalPointwiseLinearReconstructionOperator(ReconstructedFunctionType& reconstructed_function,
+                                                      const GV& grid_view,
+                                                      const std::vector<LocalVectorType>& source_values,
+                                                      const BoundaryValueType& boundary_values,
+                                                      const AnalyticalFluxType& analytical_flux,
+                                                      const SlopeType& slope,
+                                                      const XT::Common::Parameter& param,
+                                                      const bool flux_is_affine = false)
     : slope_functor_(std::make_unique<SlopeFunctorType>(
           grid_view, source_values, boundary_values, analytical_flux, slope, param, flux_is_affine))
     , reconstructed_function_(reconstructed_function)
   {}
 
-  LocalDiscreteValuedLinearReconstructionOperator(const ThisType& other)
+  LocalPointwiseLinearReconstructionOperator(const ThisType& other)
     : BaseType(other)
     , slope_functor_(other.slope_functor_->copy_derived())
     , reconstructed_function_(other.reconstructed_function_)
@@ -213,7 +213,7 @@ public:
 private:
   std::unique_ptr<SlopeFunctorType> slope_functor_;
   ReconstructedFunctionType& reconstructed_function_;
-}; // class LocalDiscreteValuedLinearReconstructionOperator
+}; // class LocalPointwiseLinearReconstructionOperator
 
 
 template <class AnalyticalFluxType,
@@ -404,7 +404,7 @@ template <class AnalyticalFluxImp,
               AnalyticalFluxImp,
               FieldMatrix<typename BoundaryValueImp::R, BoundaryValueImp::r, BoundaryValueImp::r>,
               FieldVector<typename BoundaryValueImp::R, BoundaryValueImp::r>>>
-class LinearDiscreteReconstructionOperator
+class PointwiseLinearReconstructionOperator
 {
 public:
   using AnalyticalFluxType = AnalyticalFluxImp;
@@ -420,11 +420,11 @@ public:
   using ReconstructedFunctionType = DiscreteValuedGridFunction<GV, dimRange, 1, R>;
   using ReconstructedValuesType = std::vector<typename ReconstructedFunctionType::LocalFunctionValuesType>;
 
-  LinearDiscreteReconstructionOperator(const AnalyticalFluxType& analytical_flux,
-                                       const BoundaryValueType& boundary_values,
-                                       const SpaceType& space,
-                                       const SlopeType& slope = default_minmod_slope(),
-                                       const bool flux_is_affine = false)
+  PointwiseLinearReconstructionOperator(const AnalyticalFluxType& analytical_flux,
+                                        const BoundaryValueType& boundary_values,
+                                        const SpaceType& space,
+                                        const SlopeType& slope = default_minmod_slope(),
+                                        const bool flux_is_affine = false)
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
     , space_(space)
@@ -457,11 +457,9 @@ public:
     }
 
     // do reconstruction
-    auto local_reconstruction_operator = LocalDiscreteValuedLinearReconstructionOperator<AnalyticalFluxType,
-                                                                                         BoundaryValueType,
-                                                                                         GV,
-                                                                                         EigenvectorWrapperType>(
-        range, grid_view, source_values, boundary_values_, analytical_flux_, slope_, param, flux_is_affine_);
+    auto local_reconstruction_operator =
+        LocalPointwiseLinearReconstructionOperator<AnalyticalFluxType, BoundaryValueType, GV, EigenvectorWrapperType>(
+            range, grid_view, source_values, boundary_values_, analytical_flux_, slope_, param, flux_is_affine_);
     auto walker = XT::Grid::Walker<GV>(grid_view);
     walker.append(local_reconstruction_operator);
     walker.walk(true);
@@ -479,7 +477,7 @@ private:
   const SpaceType& space_;
   const SlopeType& slope_;
   const bool flux_is_affine_;
-}; // class LinearReconstructionOperator<...>
+}; // class PointwiseLinearReconstructionOperator<...>
 
 
 } // namespace GDT
