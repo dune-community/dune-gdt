@@ -60,16 +60,14 @@ public:
 
   using BaseType::apply;
 
-  StateType apply(const I& intersection,
-                  const LocalIntersectionCoords& x,
+  StateType apply(const LocalIntersectionCoords& x,
                   const StateType& u,
                   const StateType& v,
                   const PhysicalDomainType& n,
                   const XT::Common::Parameter& param = {}) const override final
   {
     // prepare
-    mutable_this->bind(intersection);
-    this->compute_entity_coords(intersection, x);
+    this->compute_entity_coords(x);
     // evaluate
     const auto df_u = local_flux_inside_->jacobian(x_in_inside_coords_, u, param);
     const auto df_v = local_flux_outside_->jacobian(x_in_outside_coords_, v, param);
@@ -83,7 +81,6 @@ public:
 private:
   using BaseType::local_flux_inside_;
   using BaseType::local_flux_outside_;
-  using BaseType::mutable_this;
   using BaseType::x_in_inside_coords_;
   using BaseType::x_in_outside_coords_;
 }; // class NumericalLaxFriedrichsFlux

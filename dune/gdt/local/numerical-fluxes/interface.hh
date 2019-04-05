@@ -53,7 +53,6 @@ public:
     , flux_(flx)
     , local_flux_inside_(flux_.access().local_function())
     , local_flux_outside_(flux_.access().local_function())
-    , mutable_this(this)
   {}
 
   NumericalFluxInterface(FluxType*&& flx_ptr, const XT::Common::ParameterType& param_type = {})
@@ -61,7 +60,6 @@ public:
     , flux_(flx_ptr)
     , local_flux_inside_(flux_.access().local_function())
     , local_flux_outside_(flux_.access().local_function())
-    , mutable_this(this)
   {}
 
   NumericalFluxInterface(const XIndependentFluxType& func, const XT::Common::ParameterType& param_type = {})
@@ -69,7 +67,6 @@ public:
     , flux_(new FluxWrapperType(func))
     , local_flux_inside_(flux_.access().local_function())
     , local_flux_outside_(flux_.access().local_function())
-    , mutable_this(this)
   {}
 
   NumericalFluxInterface(XIndependentFluxType*&& func_ptr, const XT::Common::ParameterType& param_type = {})
@@ -77,7 +74,6 @@ public:
     , flux_(new FluxWrapperType(func_ptr))
     , local_flux_inside_(flux_.access().local_function())
     , local_flux_outside_(flux_.access().local_function())
-    , mutable_this(this)
   {}
 
   NumericalFluxInterface(const ThisType& other)
@@ -86,7 +82,6 @@ public:
     , flux_(other.flux_)
     , local_flux_inside_(flux_.access().local_function())
     , local_flux_outside_(flux_.access().local_function())
-    , mutable_this(this)
   {}
 
   virtual std::unique_ptr<ThisType> copy() const = 0;
@@ -106,16 +101,14 @@ public:
     return flux_.access();
   }
 
-  virtual StateType apply(const I& intersection,
-                          const LocalIntersectionCoords& x_in_local_intersection_coords,
+  virtual StateType apply(const LocalIntersectionCoords& x_in_local_intersection_coords,
                           const StateType& u,
                           const StateType& v,
                           const PhysicalDomainType& n,
                           const XT::Common::Parameter& param = {}) const = 0;
 
   template <class V>
-  StateType apply(const I& intersection,
-                  const LocalIntersectionCoords x_in_local_intersection_coords,
+  StateType apply(const LocalIntersectionCoords x_in_local_intersection_coords,
                   const StateType& u,
                   const XT::LA::VectorInterface<V>& v,
                   const PhysicalDomainType& n,
@@ -124,12 +117,11 @@ public:
     DUNE_THROW_IF(v.size() != m, Exceptions::numerical_flux_error, "v.size() = " << v.size() << "\n   m = " << m);
     for (size_t ii = 0; ii < m; ++ii)
       v_[ii] = v[ii];
-    return this->apply(intersection, x_in_local_intersection_coords, u, v_, n, param);
+    return this->apply(x_in_local_intersection_coords, u, v_, n, param);
   }
 
   template <class U>
-  StateType apply(const I& intersection,
-                  const LocalIntersectionCoords x_in_local_intersection_coords,
+  StateType apply(const LocalIntersectionCoords x_in_local_intersection_coords,
                   const XT::LA::VectorInterface<U>& u,
                   const StateType& v,
                   const PhysicalDomainType& n,
@@ -138,12 +130,11 @@ public:
     DUNE_THROW_IF(u.size() != m, Exceptions::numerical_flux_error, "u.size() = " << u.size() << "\n   m = " << m);
     for (size_t ii = 0; ii < m; ++ii)
       u_[ii] = u[ii];
-    return this->apply(intersection, x_in_local_intersection_coords, u_, v, n, param);
+    return this->apply(x_in_local_intersection_coords, u_, v, n, param);
   }
 
   template <class U, class V>
-  StateType apply(const I& intersection,
-                  const LocalIntersectionCoords x_in_local_intersection_coords,
+  StateType apply(const LocalIntersectionCoords x_in_local_intersection_coords,
                   const XT::LA::VectorInterface<U>& u,
                   const XT::LA::VectorInterface<V>& v,
                   const PhysicalDomainType& n,
@@ -155,8 +146,10 @@ public:
       u_[ii] = u[ii];
       v_[ii] = v[ii];
     }
-    return this->apply(intersection, x_in_local_intersection_coords, u_, v_, n, param);
+    return this->apply(x_in_local_intersection_coords, u_, v_, n, param);
   } // ... apply(...)
+
+  using XT::Grid::IntersectionBoundObject<I>::intersection;
 
 private:
   const XT::Common::ConstStorageProvider<FluxType> flux_;
@@ -164,21 +157,23 @@ private:
   mutable StateType v_;
 
 protected:
-  virtual void post_bind(const I& intersection) override
+  virtual void post_bind(const I& inter) override
   {
-    local_flux_inside_->bind(intersection.inside());
-    if (intersection.neighbor())
-      local_flux_outside_->bind(intersection.outside());
+    local_flux_inside_->bind(inter.inside());
+    if (inter.neighbor())
+      local_flux_outside_->bind(inter.outside());
   }
 
-  void compute_entity_coords(const I& intersection, const LocalIntersectionCoords& x_in_local_intersection_coords) const
+  void compute_entity_coords(const LocalIntersectionCoords& x_in_local_intersection_coords) const
   {
     if (this->x_dependent()) {
+      if (!this->is_bound_)
+        DUNE_THROW(Dune::InvalidStateException, "You have to call bind(intersection) before calling this function!");
       x_in_inside_coords_ =
-          intersection.inside().geometry().local(intersection.geometry().global(x_in_local_intersection_coords));
-      if (intersection.neighbor())
+          intersection().inside().geometry().local(intersection().geometry().global(x_in_local_intersection_coords));
+      if (intersection().neighbor())
         x_in_outside_coords_ =
-            intersection.outside().geometry().local(intersection.geometry().global(x_in_local_intersection_coords));
+            intersection().outside().geometry().local(intersection().geometry().global(x_in_local_intersection_coords));
       else
         x_in_outside_coords_ = x_in_inside_coords_;
     }
@@ -188,7 +183,6 @@ protected:
   mutable std::unique_ptr<LocalFluxType> local_flux_outside_;
   mutable PhysicalDomainType x_in_inside_coords_;
   mutable PhysicalDomainType x_in_outside_coords_;
-  ThisType* mutable_this;
 }; // class NumericalFluxInterface
 
 
@@ -227,8 +221,7 @@ public:
 
   using BaseType::apply;
 
-  StateType apply(const I& /*intersection*/,
-                  const LocalIntersectionCoords& /*x_in_local_intersection_coords*/,
+  StateType apply(const LocalIntersectionCoords& /*x_in_local_intersection_coords*/,
                   const StateType& /*u*/,
                   const StateType& /*v*/,
                   const PhysicalDomainType& /*n*/,

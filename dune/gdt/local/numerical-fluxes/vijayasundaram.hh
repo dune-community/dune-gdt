@@ -99,16 +99,14 @@ public:
 
   using BaseType::apply;
 
-  StateType apply(const I& intersection,
-                  const LocalIntersectionCoords& x,
+  StateType apply(const LocalIntersectionCoords& x,
                   const StateType& u,
                   const StateType& v,
                   const PhysicalDomainType& n,
                   const XT::Common::Parameter& param = {}) const override final
   {
     // compute decomposition
-    mutable_this->bind(intersection);
-    this->compute_entity_coords(intersection, x);
+    this->compute_entity_coords(x);
     const auto eigendecomposition = flux_eigen_decomposition_(*local_flux_inside_, 0.5 * (u + v), n, param);
     const auto& evs = std::get<0>(eigendecomposition);
     const auto& T = std::get<1>(eigendecomposition);
@@ -128,7 +126,6 @@ public:
 
 private:
   using BaseType::local_flux_inside_;
-  using BaseType::mutable_this;
   const FluxEigenDecompositionLambdaType flux_eigen_decomposition_;
 }; // class NumericalVijayasundaramFlux
 

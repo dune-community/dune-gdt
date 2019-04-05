@@ -58,15 +58,13 @@ public:
 
   using BaseType::apply;
 
-  StateType apply(const I& intersection,
-                  const LocalIntersectionCoords& x,
+  StateType apply(const LocalIntersectionCoords& x,
                   const StateType& u,
                   const StateType& v,
                   const PhysicalDomainType& n,
                   const XT::Common::Parameter& param = {}) const override final
   {
-    mutable_this->bind(intersection);
-    this->compute_entity_coords(intersection, x);
+    this->compute_entity_coords(x);
     const auto df = local_flux_inside_->jacobian(x_in_inside_coords_, (u + v) / 2., param);
     if (n * df > 0)
       return local_flux_inside_->evaluate(x_in_inside_coords_, u, param) * n;
@@ -77,7 +75,6 @@ public:
 private:
   using BaseType::local_flux_inside_;
   using BaseType::local_flux_outside_;
-  using BaseType::mutable_this;
   using BaseType::x_in_inside_coords_;
   using BaseType::x_in_outside_coords_;
 }; // class NumericalUpwindFlux

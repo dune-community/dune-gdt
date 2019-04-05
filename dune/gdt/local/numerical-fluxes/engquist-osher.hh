@@ -65,15 +65,13 @@ public:
 
   using BaseType::apply;
 
-  StateType apply(const I& intersection,
-                  const LocalIntersectionCoords& x_in_intersection_coords,
+  StateType apply(const LocalIntersectionCoords& x_in_intersection_coords,
                   const StateType& u,
                   const StateType& v,
                   const PhysicalDomainType& n,
                   const XT::Common::Parameter& param = {}) const override final
   {
-    mutable_this->bind(intersection);
-    this->compute_entity_coords(intersection, x_in_intersection_coords);
+    this->compute_entity_coords(x_in_intersection_coords);
     auto integrate_f = [&](const LocalFluxType& local_flux,
                            const auto& x,
                            const auto& s,
@@ -96,7 +94,7 @@ public:
                          x_in_inside_coords_,
                          u,
                          [](const double& a, const double& b) { return std::max(a, b); })
-           + integrate_f(intersection.neighbor() ? *local_flux_outside_ : *local_flux_inside_,
+           + integrate_f(this->intersection().neighbor() ? *local_flux_outside_ : *local_flux_inside_,
                          x_in_outside_coords_,
                          v,
                          [](const double& a, const double& b) { return std::min(a, b); });
@@ -105,7 +103,6 @@ public:
 private:
   using BaseType::local_flux_inside_;
   using BaseType::local_flux_outside_;
-  using BaseType::mutable_this;
   using BaseType::x_in_inside_coords_;
   using BaseType::x_in_outside_coords_;
 }; // class NumericalEngquistOsherFlux
