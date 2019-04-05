@@ -31,7 +31,9 @@ namespace GDT {
  * g: R^m x R^m x R^d -> R^m is to approximate f(.) * n, e.g., g(x, u, u, n) = f(x, u) * n.
  */
 template <class Intersection, size_t d, size_t m = 1, class R = double>
-class NumericalFluxInterface : public XT::Common::ParametricInterface
+class NumericalFluxInterface
+  : public XT::Grid::IntersectionBoundObject<Intersection>
+  , public XT::Common::ParametricInterface
 {
   using ThisType = NumericalFluxInterface;
 
@@ -39,8 +41,9 @@ public:
   using I = Intersection;
   using E = typename I::Entity;
   using FluxType = XT::Functions::FluxFunctionInterface<E, m, d, m, R>;
-  using FunctionType = XT::Functions::FunctionInterface<m, d, m, R>;
-  using FunctionWrapperType = XT::Functions::StateFunctionAsFluxFunctionWrapper<E, m, d, m, R>;
+  using LocalFluxType = typename FluxType::LocalFunctionType;
+  using XIndependentFluxType = XT::Functions::FunctionInterface<m, d, m, R>;
+  using FluxWrapperType = XT::Functions::StateFunctionAsFluxFunctionWrapper<E, m, d, m, R>;
   using PhysicalDomainType = typename FluxType::DomainType;
   using LocalIntersectionCoords = FieldVector<typename I::ctype, d - 1>;
   using StateType = typename FluxType::StateType;
@@ -48,23 +51,43 @@ public:
   NumericalFluxInterface(const FluxType& flx, const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type + flx.parameter_type())
     , flux_(flx)
+    , local_flux_inside_(flux_.access().local_function())
+    , local_flux_outside_(flux_.access().local_function())
+    , mutable_this(this)
   {}
 
   NumericalFluxInterface(FluxType*&& flx_ptr, const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type + flx_ptr->parameter_type())
     , flux_(flx_ptr)
+    , local_flux_inside_(flux_.access().local_function())
+    , local_flux_outside_(flux_.access().local_function())
+    , mutable_this(this)
   {}
 
-  NumericalFluxInterface(const FunctionType& func, const XT::Common::ParameterType& param_type = {})
+  NumericalFluxInterface(const XIndependentFluxType& func, const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type + func.parameter_type())
-    , flux_(new FunctionWrapperType(func))
+    , flux_(new FluxWrapperType(func))
+    , local_flux_inside_(flux_.access().local_function())
+    , local_flux_outside_(flux_.access().local_function())
+    , mutable_this(this)
   {}
 
-  NumericalFluxInterface(FunctionType*&& func_ptr, const XT::Common::ParameterType& param_type = {})
+  NumericalFluxInterface(XIndependentFluxType*&& func_ptr, const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type + func_ptr->parameter_type())
-    , flux_(new FunctionWrapperType(func_ptr))
+    , flux_(new FluxWrapperType(func_ptr))
+    , local_flux_inside_(flux_.access().local_function())
+    , local_flux_outside_(flux_.access().local_function())
+    , mutable_this(this)
   {}
 
+  NumericalFluxInterface(const ThisType& other)
+    : XT::Grid::IntersectionBoundObject<Intersection>(other)
+    , XT::Common::ParametricInterface(other)
+    , flux_(other.flux_)
+    , local_flux_inside_(flux_.access().local_function())
+    , local_flux_outside_(flux_.access().local_function())
+    , mutable_this(this)
+  {}
 
   virtual std::unique_ptr<ThisType> copy() const = 0;
 
@@ -81,19 +104,6 @@ public:
   const FluxType& flux() const
   {
     return flux_.access();
-  }
-
-  void compute_entity_coords(const I& intersection, const LocalIntersectionCoords& x_in_local_intersection_coords) const
-  {
-    if (this->x_dependent()) {
-      x_in_inside_coords_ =
-          intersection.inside().geometry().local(intersection.geometry().global(x_in_local_intersection_coords));
-      if (intersection.neighbor())
-        x_in_outside_coords_ =
-            intersection.outside().geometry().local(intersection.geometry().global(x_in_local_intersection_coords));
-      else
-        x_in_outside_coords_ = x_in_inside_coords_;
-    }
   }
 
   virtual StateType apply(const I& intersection,
@@ -154,8 +164,31 @@ private:
   mutable StateType v_;
 
 protected:
+  virtual void post_bind(const I& intersection) override
+  {
+    local_flux_inside_->bind(intersection.inside());
+    if (intersection.neighbor())
+      local_flux_outside_->bind(intersection.outside());
+  }
+
+  void compute_entity_coords(const I& intersection, const LocalIntersectionCoords& x_in_local_intersection_coords) const
+  {
+    if (this->x_dependent()) {
+      x_in_inside_coords_ =
+          intersection.inside().geometry().local(intersection.geometry().global(x_in_local_intersection_coords));
+      if (intersection.neighbor())
+        x_in_outside_coords_ =
+            intersection.outside().geometry().local(intersection.geometry().global(x_in_local_intersection_coords));
+      else
+        x_in_outside_coords_ = x_in_inside_coords_;
+    }
+  }
+
+  mutable std::unique_ptr<LocalFluxType> local_flux_inside_;
+  mutable std::unique_ptr<LocalFluxType> local_flux_outside_;
   mutable PhysicalDomainType x_in_inside_coords_;
   mutable PhysicalDomainType x_in_outside_coords_;
+  ThisType* mutable_this;
 }; // class NumericalFluxInterface
 
 
@@ -165,7 +198,6 @@ namespace internal {
 template <class Intersection, size_t d, size_t m = 1, class R = double>
 class ThisNumericalFluxIsNotAvailableForTheseDimensions : public NumericalFluxInterface<Intersection, d, m, R>
 {
-  using ThisType = ThisNumericalFluxIsNotAvailableForTheseDimensions;
   using BaseType = NumericalFluxInterface<Intersection, d, m, R>;
 
 public:

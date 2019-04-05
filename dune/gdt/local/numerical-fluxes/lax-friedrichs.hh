@@ -38,16 +38,16 @@ class NumericalLaxFriedrichsFlux<I, d, 1, R> : public NumericalFluxInterface<I, 
 
 public:
   using typename BaseType::FluxType;
-  using typename BaseType::FunctionType;
   using typename BaseType::LocalIntersectionCoords;
   using typename BaseType::PhysicalDomainType;
   using typename BaseType::StateType;
+  using typename BaseType::XIndependentFluxType;
 
   NumericalLaxFriedrichsFlux(const FluxType& flx)
     : BaseType(flx)
   {}
 
-  NumericalLaxFriedrichsFlux(const FunctionType& func)
+  NumericalLaxFriedrichsFlux(const XIndependentFluxType& func)
     : BaseType(func)
   {}
 
@@ -67,20 +67,23 @@ public:
                   const PhysicalDomainType& n,
                   const XT::Common::Parameter& param = {}) const override final
   {
-    const auto local_flux = this->flux().local_function();
-    local_flux->bind(intersection.inside());
+    // prepare
+    mutable_this->bind(intersection);
     this->compute_entity_coords(intersection, x);
-    const auto lambda = 1.
-                        / std::max(local_flux->jacobian(x_in_inside_coords_, u, param).infinity_norm(),
-                                   local_flux->jacobian(x_in_outside_coords_, v, param).infinity_norm());
-    return 0.5
-               * ((local_flux->evaluate(x_in_inside_coords_, u, param)
-                   + local_flux->evaluate(x_in_outside_coords_, v, param))
-                  * n)
-           + 0.5 * ((u - v) / lambda);
+    // evaluate
+    const auto df_u = local_flux_inside_->jacobian(x_in_inside_coords_, u, param);
+    const auto df_v = local_flux_outside_->jacobian(x_in_outside_coords_, v, param);
+    const auto f_u = local_flux_inside_->evaluate(x_in_inside_coords_, u, param);
+    const auto f_v = local_flux_outside_->evaluate(x_in_outside_coords_, v, param);
+    // compute numerical flux
+    const auto lambda = 1. / std::max(df_u.infinity_norm(), df_v.infinity_norm());
+    return 0.5 * ((f_u + f_v) * n + (u - v) / lambda);
   }
 
 private:
+  using BaseType::local_flux_inside_;
+  using BaseType::local_flux_outside_;
+  using BaseType::mutable_this;
   using BaseType::x_in_inside_coords_;
   using BaseType::x_in_outside_coords_;
 }; // class NumericalLaxFriedrichsFlux
