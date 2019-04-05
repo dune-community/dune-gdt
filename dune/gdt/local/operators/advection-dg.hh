@@ -199,6 +199,7 @@ public:
     local_flux->bind(intersection.inside());
     const auto inside_flux_order = local_flux->order(param);
     local_flux->bind(intersection.outside());
+    numerical_flux_->bind(intersection);
     const auto outside_flux_order = local_flux->order(param);
     const auto u = source.local_discrete_function(inside_element);
     const auto v = source.local_discrete_function(outside_element);
@@ -219,8 +220,7 @@ public:
       inside_basis.evaluate(point_in_inside_reference_element, inside_basis_values_);
       if (compute_outside_)
         outside_basis.evaluate(point_in_outside_reference_element, outside_basis_values_);
-      const auto g = numerical_flux_->apply(intersection,
-                                            point_in_reference_intersection,
+      const auto g = numerical_flux_->apply(point_in_reference_intersection,
                                             u->evaluate(point_in_inside_reference_element),
                                             v->evaluate(point_in_outside_reference_element),
                                             normal,
@@ -247,7 +247,7 @@ public:
   } // ... apply(...)
 
 private:
-  const std::unique_ptr<const NumericalFluxType> numerical_flux_;
+  const std::unique_ptr<NumericalFluxType> numerical_flux_;
   const bool compute_outside_;
   const XT::Common::ConstStorageProvider<LocalMassMatrixProviderType> local_mass_matrices_;
   mutable std::vector<typename LocalInsideRangeType::LocalBasisType::RangeType> inside_basis_values_;
@@ -436,6 +436,7 @@ public:
     inside_local_dofs_.resize(inside_basis.size(param));
     inside_local_dofs_ *= 0.;
     const auto local_flux = numerical_flux_->flux().local_function();
+    numerical_flux_->bind(intersection);
     local_flux->bind(intersection.inside());
     const auto local_source = source.local_discrete_function(element);
     const auto integrand_order = inside_basis.order(param) + local_flux->order(param) * local_source->order(param);
@@ -452,7 +453,7 @@ public:
       inside_basis.evaluate(point_in_inside_reference_element, inside_basis_values_);
       const auto u = local_source->evaluate(point_in_inside_reference_element);
       const auto v = extrapolate_(intersection, point_in_reference_intersection, numerical_flux_->flux(), u, param);
-      const auto g = numerical_flux_->apply(intersection, point_in_reference_intersection, u, v, normal, param);
+      const auto g = numerical_flux_->apply(point_in_reference_intersection, u, v, normal, param);
       // compute
       for (size_t ii = 0; ii < inside_basis.size(param); ++ii)
         inside_local_dofs_[ii] += integration_factor * quadrature_weight * (g * inside_basis_values_[ii]);
@@ -466,7 +467,7 @@ public:
   } // ... apply(...)
 
 private:
-  const std::unique_ptr<const NumericalFluxType> numerical_flux_;
+  const std::unique_ptr<NumericalFluxType> numerical_flux_;
   const LambdaType extrapolate_;
   const XT::Common::ConstStorageProvider<LocalMassMatrixProviderType> local_mass_matrices_;
   mutable std::vector<typename LocalInsideRangeType::LocalBasisType::RangeType> inside_basis_values_;

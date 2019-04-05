@@ -61,14 +61,13 @@ public:
 
   using BaseType::apply;
 
-  StateType apply(const I& intersection,
-                  const LocalIntersectionCoords& x,
+  StateType apply(const LocalIntersectionCoords& x,
                   const StateType& u,
                   const StateType& v,
                   const PhysicalDomainType& n,
                   const XT::Common::Parameter& param = {}) const override final
   {
-    return numerical_flux_(intersection, x, u, v, n, this->parse_parameter(param));
+    return numerical_flux_(this->intersection(), x, u, v, n, this->parse_parameter(param));
   }
 
 private:

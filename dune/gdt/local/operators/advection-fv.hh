@@ -91,9 +91,10 @@ public:
     const auto u = source.local_discrete_function(inside_element);
     const auto v = source.local_discrete_function(outside_element);
     const auto normal = intersection.centerUnitOuterNormal();
+    numerical_flux_->bind(intersection);
     if (numerical_flux_->x_dependent())
       x_in_intersection_coords_ = intersection.geometry().local(intersection.geometry().center());
-    const auto g = numerical_flux_->apply(intersection, x_in_intersection_coords_, u->dofs(), v->dofs(), normal, param);
+    const auto g = numerical_flux_->apply(x_in_intersection_coords_, u->dofs(), v->dofs(), normal, param);
     const auto h_intersection = intersection.geometry().volume();
     const auto h_inside_element = inside_element.geometry().volume();
     const auto h_outside_element = outside_element.geometry().volume();
@@ -227,6 +228,7 @@ public:
                   Exceptions::operator_error,
                   "Use LocalAdvectionDgBoundaryTreatmentByCustomExtrapolationOperator instead!");
     const auto& element = local_range_inside.element();
+    numerical_flux_->bind(intersection);
     const auto u = source.local_discrete_function(element);
     const auto v = extrapolate_(intersection,
                                 ReferenceElements<D, d - 1>::general(intersection.type()).position(0, 0),
@@ -236,7 +238,7 @@ public:
     const auto normal = intersection.centerUnitOuterNormal();
     if (numerical_flux_->x_dependent())
       x_in_intersection_coords_ = intersection.geometry().local(intersection.geometry().center());
-    const auto g = numerical_flux_->apply(intersection, x_in_intersection_coords_, u->dofs(), v, normal, param);
+    const auto g = numerical_flux_->apply(x_in_intersection_coords_, u->dofs(), v, normal, param);
     const auto h_intersection = intersection.geometry().volume();
     const auto h_element = element.geometry().volume();
     for (size_t ii = 0; ii < m; ++ii)
