@@ -75,7 +75,7 @@ public:
         lambda = std::max(lambda, df_u[dd].infinity_norm());
         lambda = std::max(lambda, df_v[dd].infinity_norm());
       }
-      lambda = 1./lambda;
+      lambda = 1. / lambda;
     }
     const auto f_u = local_flux_inside_->evaluate(x_in_inside_coords_, u, param);
     const auto f_v = local_flux_outside_->evaluate(x_in_outside_coords_, v, param);
@@ -89,9 +89,9 @@ public:
 private:
   using BaseType::local_flux_inside_;
   using BaseType::local_flux_outside_;
+  using BaseType::mutable_this;
   using BaseType::x_in_inside_coords_;
   using BaseType::x_in_outside_coords_;
-  using BaseType::mutable_this;
   const double lambda_;
 }; // class NumericalLaxFriedrichsFlux
 

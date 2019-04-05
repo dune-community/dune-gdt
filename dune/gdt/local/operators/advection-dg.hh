@@ -163,7 +163,7 @@ public:
                                    const NumericalFluxType& numerical_flux,
                                    bool compute_outside = true)
     : BaseType(source, numerical_flux.parameter_type())
-    , second_local_source_(source_.local_function())
+    , local_source_outside__(source_.local_function())
     , numerical_flux_(numerical_flux.copy())
     , local_flux_(numerical_flux_->flux().local_function())
     , compute_outside_(compute_outside)
@@ -175,7 +175,7 @@ public:
                                    const NumericalFluxType& numerical_flux,
                                    bool compute_outside = true)
     : BaseType(source, numerical_flux.parameter_type())
-    , second_local_source_(source_.local_function())
+    , local_source_outside__(source_.local_function())
     , numerical_flux_(numerical_flux.copy())
     , local_flux_(numerical_flux_->flux().local_function())
     , compute_outside_(compute_outside)
@@ -184,7 +184,7 @@ public:
 
   LocalAdvectionDgCouplingOperator(const ThisType& other)
     : BaseType(other)
-    , second_local_source_(source_.local_function())
+    , local_source_outside__(source_.local_function())
     , numerical_flux_(other.numerical_flux_->copy())
     , local_flux_(numerical_flux_->flux().local_function())
     , compute_outside_(other.compute_outside_)
@@ -209,15 +209,15 @@ public:
     outside_local_dofs_.resize(outside_basis.size(param));
     inside_local_dofs_ *= 0.;
     outside_local_dofs_ *= 0.;
-    local_flux_->bind(intersection.inside());
-    const auto inside_flux_order = local_flux->order(param);
-    local_flux->bind(intersection.outside());
     numerical_flux_->bind(intersection);
-    const auto outside_flux_order = local_flux->order(param);
+    local_flux_->bind(intersection.inside());
+    const auto inside_flux_order = local_flux_->order(param);
+    local_flux_->bind(intersection.outside());
+    const auto outside_flux_order = local_flux_->order(param);
     local_source_->bind(inside_element);
-    second_local_source_->bind(outside_element);
+    local_source_outside__->bind(outside_element);
     const auto u_order = local_source_->order(param);
-    const auto v_order = second_local_source_->order(param);
+    const auto v_order = local_source_outside__->order(param);
     const auto integrand_order = std::max(inside_basis.order(param), outside_basis.order(param))
                                  + std::max(inside_flux_order * u_order, outside_flux_order * v_order);
     for (const auto& quadrature_point :
@@ -236,7 +236,7 @@ public:
       if (compute_outside_)
         outside_basis.evaluate(point_in_outside_reference_element, outside_basis_values_);
       const auto u_val = local_source_->evaluate(point_in_inside_reference_element);
-      const auto v_val = second_local_source_->evaluate(point_in_outside_reference_element);
+      const auto v_val = local_source_outside__->evaluate(point_in_outside_reference_element);
       const auto g = numerical_flux_->apply(point_in_reference_intersection, u_val, v_val, normal, param);
       // compute
       for (size_t ii = 0; ii < inside_basis.size(param); ++ii)
@@ -262,7 +262,7 @@ public:
 private:
   using BaseType::local_source_;
   using BaseType::source_;
-  std::unique_ptr<LocalSourceType> second_local_source_;
+  std::unique_ptr<LocalSourceType> local_source_outside__;
   const std::unique_ptr<NumericalFluxType> numerical_flux_;
   std::unique_ptr<typename NumericalFluxType::FluxType::LocalFunctionType> local_flux_;
   const bool compute_outside_;
@@ -523,7 +523,7 @@ public:
                                                             const double& alpha_1 = 1.0,
                                                             const size_t index = 0)
     : BaseType(source)
-    , second_local_source_(source_.local_function())
+    , local_source_outside__(source_.local_function())
     , assembly_grid_view_(assembly_grid_view)
     , nu_1_(nu_1)
     , alpha_1_(alpha_1)
@@ -538,7 +538,7 @@ public:
                                                             const double& alpha_1 = 1.0,
                                                             const size_t index = 0)
     : BaseType(source)
-    , second_local_source_(source_.local_function())
+    , local_source_outside__(source_.local_function())
     , assembly_grid_view_(assembly_grid_view)
     , nu_1_(nu_1)
     , alpha_1_(alpha_1)
@@ -548,7 +548,7 @@ public:
 
   LocalAdvectionDgArtificialViscosityShockCapturingOperator(const ThisType& other)
     : BaseType(other)
-    , second_local_source_(source_.local_function())
+    , local_source_outside__(source_.local_function())
     , assembly_grid_view_(other.assembly_grid_view_)
     , nu_1_(other.nu_1_)
     , alpha_1_(other.alpha_1_)
@@ -578,9 +578,9 @@ public:
         if (d > 1)
           element_boundary_without_domain_boundary += XT::Grid::diameter(intersection);
         const auto neighbor = intersection.outside();
-        second_local_source_->bind(neighbor);
+        local_source_outside__->bind(neighbor);
         const auto integration_order =
-            std::pow(std::max(local_source_->order(param), second_local_source_->order(param)), 2);
+            std::pow(std::max(local_source_->order(param), local_source_outside__->order(param)), 2);
         for (auto&& quadrature_point :
              QuadratureRules<D, d - 1>::rule(intersection.geometry().type(), integration_order)) {
           const auto point_in_reference_intersection = quadrature_point.position();
@@ -591,7 +591,7 @@ public:
           const auto integration_factor = intersection.geometry().integrationElement(point_in_reference_intersection);
           const auto quadrature_weight = quadrature_point.weight();
           const auto value_on_element = local_source_->evaluate(point_in_reference_element, param)[index_];
-          const auto value_on_neighbor = second_local_source_->evaluate(point_in_reference_neighbor, param)[index_];
+          const auto value_on_neighbor = local_source_outside__->evaluate(point_in_reference_neighbor, param)[index_];
           element_jump_indicator +=
               integration_factor * quadrature_weight * std::pow(value_on_element - value_on_neighbor, 2);
         }
@@ -636,7 +636,7 @@ public:
 private:
   using BaseType::local_source_;
   using BaseType::source_;
-  std::unique_ptr<LocalSourceType> second_local_source_;
+  std::unique_ptr<LocalSourceType> local_source_outside__;
   const SGV& assembly_grid_view_;
   const double nu_1_;
   const double alpha_1_;
