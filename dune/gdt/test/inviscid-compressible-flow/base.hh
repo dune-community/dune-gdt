@@ -156,12 +156,7 @@ protected:
     const auto& euler_tools = this->access().euler_tools;
     const NumericalVijayasundaramFlux<I, d, m> numerical_flux(
         self.flux(),
-        /*flux_eigen_decomposition=*/[&](const auto& /*intersection*/,
-                                         const auto& /*x*/,
-                                         const auto& /*f*/,
-                                         const auto& w,
-                                         const auto& n,
-                                         const auto&
+        /*flux_eigen_decomposition=*/[&](const auto& /*local_f*/, const auto& w, const auto& n, const auto&
                                          /*param*/) {
           return std::make_tuple(euler_tools.eigenvalues_flux_jacobian(w, n),
                                  euler_tools.eigenvectors_flux_jacobian(w, n),
