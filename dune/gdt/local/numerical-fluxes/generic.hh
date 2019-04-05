@@ -30,10 +30,10 @@ class GenericNumericalFlux : public NumericalFluxInterface<I, d, m, R>
 
 public:
   using typename BaseType::FluxType;
-  using typename BaseType::FunctionType;
   using typename BaseType::LocalIntersectionCoords;
   using typename BaseType::PhysicalDomainType;
   using typename BaseType::StateType;
+  using typename BaseType::XIndependentFluxType;
 
   using GenericFunctionType = std::function<StateType(const I&,
                                                       const LocalIntersectionCoords&,
@@ -47,7 +47,7 @@ public:
     , numerical_flux_(func)
   {}
 
-  GenericNumericalFlux(const FunctionType& flx,
+  GenericNumericalFlux(const XIndependentFluxType& flx,
                        GenericFunctionType func,
                        const XT::Common::ParameterType& param_type = {})
     : BaseType(flx, param_type)

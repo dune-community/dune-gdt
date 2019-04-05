@@ -42,16 +42,17 @@ class NumericalEngquistOsherFlux<I, d, 1, R> : public NumericalFluxInterface<I, 
 
 public:
   using typename BaseType::FluxType;
-  using typename BaseType::FunctionType;
+  using typename BaseType::LocalFluxType;
   using typename BaseType::LocalIntersectionCoords;
   using typename BaseType::PhysicalDomainType;
   using typename BaseType::StateType;
+  using typename BaseType::XIndependentFluxType;
 
   NumericalEngquistOsherFlux(const FluxType& flx)
     : BaseType(flx)
   {}
 
-  NumericalEngquistOsherFlux(const FunctionType& flx)
+  NumericalEngquistOsherFlux(const XIndependentFluxType& flx)
     : BaseType(flx)
   {}
 
@@ -71,38 +72,40 @@ public:
                   const PhysicalDomainType& n,
                   const XT::Common::Parameter& param = {}) const override final
   {
-    const auto local_flux = this->flux().local_function();
+    mutable_this->bind(intersection);
     this->compute_entity_coords(intersection, x_in_intersection_coords);
-    auto integrate_f =
-        [&](const auto& e, const auto& x, const auto& s, const std::function<double(const R&, const R&)>& min_max) {
-          local_flux->bind(e);
-          if (!(s[0] > 0.))
-            return 0.;
-          double ret = 0.;
-          const OneDGrid state_grid(1, 0., s[0]);
-          const auto state_interval = *state_grid.leafGridView().template begin<0>();
-          for (const auto& quadrature_point :
-               QuadratureRules<R, 1>::rule(state_interval.type(), local_flux->order(param))) {
-            const auto local_uu = quadrature_point.position();
-            const auto uu = state_interval.geometry().global(local_uu);
-            const auto df = local_flux->jacobian(x, uu, param);
-            ret += state_interval.geometry().integrationElement(local_uu) * quadrature_point.weight()
-                   * min_max(n * df, 0.);
-          }
-          return ret;
-        };
-    return (local_flux->evaluate(x_in_inside_coords_, 0., param) * n)
-           + integrate_f(intersection.inside(),
+    auto integrate_f = [&](const LocalFluxType& local_flux,
+                           const auto& x,
+                           const auto& s,
+                           const std::function<double(const R&, const R&)>& min_max) {
+      if (!(s[0] > 0.))
+        return 0.;
+      double ret = 0.;
+      const OneDGrid state_grid(1, 0., s[0]);
+      const auto state_interval = *state_grid.leafGridView().template begin<0>();
+      for (const auto& quadrature_point : QuadratureRules<R, 1>::rule(state_interval.type(), local_flux.order(param))) {
+        const auto local_uu = quadrature_point.position();
+        const auto uu = state_interval.geometry().global(local_uu);
+        const auto df = local_flux.jacobian(x, uu, param);
+        ret += state_interval.geometry().integrationElement(local_uu) * quadrature_point.weight() * min_max(n * df, 0.);
+      }
+      return ret;
+    };
+    return (local_flux_inside_->evaluate(x_in_inside_coords_, 0., param) * n)
+           + integrate_f(*local_flux_inside_,
                          x_in_inside_coords_,
                          u,
                          [](const double& a, const double& b) { return std::max(a, b); })
-           + integrate_f(intersection.neighbor() ? intersection.outside() : intersection.inside(),
+           + integrate_f(intersection.neighbor() ? *local_flux_outside_ : *local_flux_inside_,
                          x_in_outside_coords_,
                          v,
                          [](const double& a, const double& b) { return std::min(a, b); });
   }
 
 private:
+  using BaseType::local_flux_inside_;
+  using BaseType::local_flux_outside_;
+  using BaseType::mutable_this;
   using BaseType::x_in_inside_coords_;
   using BaseType::x_in_outside_coords_;
 }; // class NumericalEngquistOsherFlux

@@ -33,40 +33,30 @@ class NumericalVijayasundaramFlux : public NumericalFluxInterface<I, d, m, R>
 public:
   using typename BaseType::E;
   using typename BaseType::FluxType;
-  using typename BaseType::FunctionType;
+  using typename BaseType::LocalFluxType;
   using typename BaseType::LocalIntersectionCoords;
   using typename BaseType::PhysicalDomainType;
   using typename BaseType::StateType;
+  using typename BaseType::XIndependentFluxType;
 
   using FluxEigenDecompositionLambdaType =
       std::function<std::tuple<std::vector<XT::Common::real_t<R>>,
                                XT::Common::FieldMatrix<XT::Common::real_t<R>, m, m>,
                                XT::Common::FieldMatrix<XT::Common::real_t<R>, m, m>>(
-          const FluxType&,
-          const E&,
-          const PhysicalDomainType&,
+          const LocalFluxType&,
           const FieldVector<R, m>&,
           const FieldVector<double, d>&,
           const XT::Common::Parameter& param)>;
 
-  using GlobalFluxEigenDecompositionLambdaType = std::function<std::tuple<
-      std::vector<XT::Common::real_t<R>>,
-      XT::Common::FieldMatrix<XT::Common::real_t<R>, m, m>,
-      XT::Common::FieldMatrix<XT::Common::real_t<R>, m, m>>(
-      const FluxType&, const FieldVector<R, m>&, const FieldVector<double, d>&, const XT::Common::Parameter& param)>;
-
   static FluxEigenDecompositionLambdaType default_flux_eigen_decomposition()
   {
-    return [](const FluxType& f,
-              const E& e,
-              const PhysicalDomainType& x,
+    return [](const LocalFluxType& local_flux,
               const StateType& w,
               const PhysicalDomainType& n,
               const XT::Common::Parameter& param) {
       // evaluate flux jacobian, compute P matrix [DF2016, p. 404, (8.17)]
-      const auto local_flux = f.local_function();
-      local_flux->bind(e);
-      const auto df = local_flux->jacobian(x, w, param);
+      static PhysicalDomainType dummy_x;
+      const auto df = local_flux.jacobian(dummy_x, w, param);
       const auto P = df * n;
       auto eigensolver = XT::LA::make_eigen_solver(
           P, {{"type", XT::LA::eigen_solver_types(P)[0]}, {"assert_real_eigendecomposition", "1e-10"}});
@@ -78,9 +68,12 @@ public:
   NumericalVijayasundaramFlux(const FluxType& flx)
     : BaseType(flx)
     , flux_eigen_decomposition_(default_flux_eigen_decomposition())
-  {}
+  {
+    if (flx->x_dependent())
+      DUNE_THROW(Dune::NotImplemented, "This flux is not yet implemented for x-dependent fluxes!");
+  }
 
-  NumericalVijayasundaramFlux(const FunctionType& flx)
+  NumericalVijayasundaramFlux(const XIndependentFluxType& flx)
     : BaseType(flx)
     , flux_eigen_decomposition_(default_flux_eigen_decomposition())
   {}
@@ -88,9 +81,13 @@ public:
   NumericalVijayasundaramFlux(const FluxType& flx, FluxEigenDecompositionLambdaType flux_eigen_decomposition)
     : BaseType(flx)
     , flux_eigen_decomposition_(flux_eigen_decomposition)
-  {}
+  {
+    if (flx->x_dependent())
+      DUNE_THROW(Dune::NotImplemented, "This flux is not yet implemented for x-dependent fluxes!");
+  }
 
-  NumericalVijayasundaramFlux(const FunctionType& flx, FluxEigenDecompositionLambdaType flux_eigen_decomposition)
+  NumericalVijayasundaramFlux(const XIndependentFluxType& flx,
+                              FluxEigenDecompositionLambdaType flux_eigen_decomposition)
     : BaseType(flx)
     , flux_eigen_decomposition_(flux_eigen_decomposition)
   {}
@@ -110,9 +107,9 @@ public:
                   const XT::Common::Parameter& param = {}) const override final
   {
     // compute decomposition
+    mutable_this->bind(intersection);
     this->compute_entity_coords(intersection, x);
-    const auto eigendecomposition =
-        flux_eigen_decomposition_(this->flux(), intersection.inside(), x_in_inside_coords_, 0.5 * (u + v), n, param);
+    const auto eigendecomposition = flux_eigen_decomposition_(*local_flux_inside_, 0.5 * (u + v), n, param);
     const auto& evs = std::get<0>(eigendecomposition);
     const auto& T = std::get<1>(eigendecomposition);
     const auto& T_inv = std::get<2>(eigendecomposition);
@@ -130,8 +127,9 @@ public:
   } // ... apply(...)
 
 private:
+  using BaseType::local_flux_inside_;
+  using BaseType::mutable_this;
   const FluxEigenDecompositionLambdaType flux_eigen_decomposition_;
-  using BaseType::x_in_inside_coords_;
 }; // class NumericalVijayasundaramFlux
 
 

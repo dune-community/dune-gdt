@@ -36,16 +36,16 @@ class NumericalUpwindFlux<I, d, 1, R> : public NumericalFluxInterface<I, d, 1, R
 
 public:
   using typename BaseType::FluxType;
-  using typename BaseType::FunctionType;
   using typename BaseType::LocalIntersectionCoords;
   using typename BaseType::PhysicalDomainType;
   using typename BaseType::StateType;
+  using typename BaseType::XIndependentFluxType;
 
   NumericalUpwindFlux(const FluxType& flx)
     : BaseType(flx)
   {}
 
-  NumericalUpwindFlux(const FunctionType& func)
+  NumericalUpwindFlux(const XIndependentFluxType& func)
     : BaseType(func)
   {}
 
@@ -65,17 +65,19 @@ public:
                   const PhysicalDomainType& n,
                   const XT::Common::Parameter& param = {}) const override final
   {
-    const auto local_flux = this->flux().local_function();
-    local_flux->bind(intersection.inside());
+    mutable_this->bind(intersection);
     this->compute_entity_coords(intersection, x);
-    const auto df = local_flux->jacobian(x_in_inside_coords_, (u + v) / 2., param);
-    if ((n * df) > 0)
-      return local_flux->evaluate(x_in_inside_coords_, u, param) * n;
+    const auto df = local_flux_inside_->jacobian(x_in_inside_coords_, (u + v) / 2., param);
+    if (n * df > 0)
+      return local_flux_inside_->evaluate(x_in_inside_coords_, u, param) * n;
     else
-      return local_flux->evaluate(x_in_outside_coords_, v, param) * n;
+      return local_flux_outside_->evaluate(x_in_outside_coords_, v, param) * n;
   }
 
 private:
+  using BaseType::local_flux_inside_;
+  using BaseType::local_flux_outside_;
+  using BaseType::mutable_this;
   using BaseType::x_in_inside_coords_;
   using BaseType::x_in_outside_coords_;
 }; // class NumericalUpwindFlux

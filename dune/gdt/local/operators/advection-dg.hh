@@ -197,10 +197,13 @@ public:
     outside_local_dofs_ *= 0.;
     const auto local_flux = numerical_flux_->flux().local_function();
     local_flux->bind(intersection.inside());
+    const auto inside_flux_order = local_flux->order(param);
+    local_flux->bind(intersection.outside());
+    const auto outside_flux_order = local_flux->order(param);
     const auto u = source.local_discrete_function(inside_element);
     const auto v = source.local_discrete_function(outside_element);
     const auto integrand_order = std::max(inside_basis.order(param), outside_basis.order(param))
-                                 + local_flux->order(param) * std::max(u->order(param), v->order(param));
+                                 + std::max(inside_flux_order * u->order(param), outside_flux_order * v->order(param));
     for (const auto& quadrature_point :
          QuadratureRules<D, d - 1>::rule(intersection.geometry().type(), integrand_order)) {
       // prepare
