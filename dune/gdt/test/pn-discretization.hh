@@ -8,6 +8,8 @@
 #ifndef DUNE_GDT_TEST_HYPERBOLIC_PN_DISCRETIZATION_HH
 #define DUNE_GDT_TEST_HYPERBOLIC_PN_DISCRETIZATION_HH
 
+#include <dune/common/exceptions.hh>
+
 #include <dune/xt/common/parallel/threadmanager.hh>
 #include <dune/xt/common/string.hh>
 #include <dune/xt/common/test/gtest/gtest.h>
@@ -33,95 +35,92 @@
 
 #include <dune/gdt/test/momentmodels/kineticequation.hh>
 
-int parse_momentmodel_arguments(int argc,
-                                char** argv,
-                                size_t& num_threads,
-                                size_t& threading_partition_factor,
-                                size_t& num_save_steps,
-                                size_t& num_output_steps,
-                                size_t& quad_order,
-                                std::string& grid_size,
-                                std::string& overlap_size,
-                                double& t_end,
-                                std::string& filename)
+void parse_momentmodel_arguments(int argc,
+                                 char** argv,
+                                 size_t& num_threads,
+                                 size_t& threading_partition_factor,
+                                 size_t& num_save_steps,
+                                 size_t& num_output_steps,
+                                 size_t& quad_order,
+                                 size_t& quad_refinements,
+                                 size_t& grid_size,
+                                 size_t& overlap_size,
+                                 double& t_end,
+                                 std::string& filename)
 {
   using namespace Dune;
   using namespace Dune::GDT;
   MPIHelper::instance(argc, argv);
 
+  // default values
+  num_threads = 1;
+  threading_partition_factor = 1;
+  num_save_steps = 10;
+  num_output_steps = num_save_steps;
+  quad_order = -1;
+  quad_refinements = -1;
+  grid_size = -1, overlap_size = 2;
+  t_end = 0.;
+  filename = "";
+
   for (int i = 1; i < argc; ++i) {
     if (std::string(argv[i]) == "--num_threads") {
-      if (i + 1 < argc) {
+      if (i + 1 < argc)
         num_threads = XT::Common::from_string<size_t>(argv[++i]);
-      } else {
-        std::cerr << "--num_threads option requires one argument." << std::endl;
-        return 1;
-      }
+      else
+        DUNE_THROW(Dune::IOError, "--num_threads option requires one argument.");
     } else if (std::string(argv[i]) == "--threading_partition_factor") {
-      if (i + 1 < argc) {
+      if (i + 1 < argc)
         threading_partition_factor = XT::Common::from_string<size_t>(argv[++i]);
-      } else {
-        std::cerr << "--threading_partition_factor option requires one argument." << std::endl;
-        return 1;
-      }
+      else
+        DUNE_THROW(Dune::IOError, "--threading_partition_factor option requires one argument.");
     } else if (std::string(argv[i]) == "--filename") {
-      if (i + 1 < argc) {
+      if (i + 1 < argc)
         filename = std::string(argv[++i]);
-      } else {
-        std::cerr << "--filename option requires one argument." << std::endl;
-        return 1;
-      }
+      else
+        DUNE_THROW(Dune::IOError, "--filename option requires one argument.");
     } else if (std::string(argv[i]) == "--quad_order") {
-      if (i + 1 < argc) {
+      if (i + 1 < argc)
         quad_order = XT::Common::from_string<size_t>(argv[++i]);
-      } else {
-        std::cerr << "--quad_order option requires one argument." << std::endl;
-        return 1;
-      }
+      else
+        DUNE_THROW(Dune::IOError, "--quad_order option requires one argument.");
+    } else if (std::string(argv[i]) == "--quad_refinements") {
+      if (i + 1 < argc)
+        quad_refinements = XT::Common::from_string<size_t>(argv[++i]);
+      else
+        DUNE_THROW(Dune::IOError, "--quad_refinements option requires one argument.");
     } else if (std::string(argv[i]) == "--num_save_steps") {
-      if (i + 1 < argc) {
+      if (i + 1 < argc)
         num_save_steps = XT::Common::from_string<size_t>(argv[++i]);
-      } else {
-        std::cerr << "--num_save_steps option requires one argument." << std::endl;
-        return 1;
-      }
+      else
+        DUNE_THROW(Dune::IOError, "--num_save_steps option requires one argument.");
     } else if (std::string(argv[i]) == "--num_output_steps") {
-      if (i + 1 < argc) {
+      if (i + 1 < argc)
         num_output_steps = XT::Common::from_string<size_t>(argv[++i]);
-      } else {
-        std::cerr << "--num_output_steps option requires one argument." << std::endl;
-        return 1;
-      }
+      else
+        DUNE_THROW(Dune::IOError, "--num_output_steps option requires one argument.");
     } else if (std::string(argv[i]) == "--grid_size") {
-      if (i + 1 < argc) {
-        grid_size = argv[++i];
-      } else {
-        std::cerr << "--grid_size option requires one argument." << std::endl;
-        return 1;
-      }
+      if (i + 1 < argc)
+        grid_size = XT::Common::from_string<size_t>(argv[++i]);
+      else
+        DUNE_THROW(Dune::IOError, "--grid_size option requires one argument.");
     } else if (std::string(argv[i]) == "--overlap_size") {
-      if (i + 1 < argc) {
-        overlap_size = argv[++i];
-      } else {
-        std::cerr << "--overlap_size option requires one argument." << std::endl;
-        return 1;
-      }
+      if (i + 1 < argc)
+        overlap_size = XT::Common::from_string<size_t>(argv[++i]);
+      else
+        DUNE_THROW(Dune::IOError, "--overlap_size option requires one argument.");
     } else if (std::string(argv[i]) == "--t_end") {
-      if (i + 1 < argc) {
+      if (i + 1 < argc)
         t_end = XT::Common::from_string<double>(argv[++i]);
-      } else {
-        std::cerr << "--t_end option requires one argument." << std::endl;
-        return 1;
-      }
+      else
+        DUNE_THROW(Dune::IOError, "--t_end option requires one argument.");
     } else {
-      std::cerr << "Unknown option " << std::string(argv[i]) << std::endl;
-      return 1;
+      DUNE_THROW(Dune::IOError, "Unknown option " + std::string(argv[i]));
     }
   }
 
   DXTC_CONFIG.set("threading.partition_factor", threading_partition_factor, true);
   XT::Common::threadManager().set_max_threads(num_threads);
-  return 0;
 }
 
 
@@ -176,9 +175,10 @@ struct HyperbolicPnDiscretization
   Dune::FieldVector<double, 3> run(size_t num_save_steps = 1,
                                    size_t num_output_steps = 0,
                                    size_t quad_order = size_t(-1),
-                                   std::string grid_size = "",
-                                   std::string overlap_size = "2",
-                                   double t_end = TestCaseType::t_end,
+                                   size_t quad_refinements = size_t(-1),
+                                   size_t grid_size = size_t(-1),
+                                   size_t overlap_size = 2,
+                                   double t_end = 0.,
                                    std::string filename = "")
   {
     using namespace Dune;
@@ -205,9 +205,9 @@ struct HyperbolicPnDiscretization
 
     //******************* create grid and FV space ***************************************
     auto grid_config = ProblemType::default_grid_cfg();
-    if (!grid_size.empty())
-      grid_config["num_elements"] = grid_size;
-    grid_config["overlap_size"] = overlap_size;
+    if (grid_size != size_t(-1))
+      grid_config["num_elements"] = XT::Common::to_string(grid_size);
+    grid_config["overlap_size"] = XT::Common::to_string(overlap_size);
     const auto grid_ptr =
         Dune::XT::Grid::CubeGridProviderFactory<GridType>::create(grid_config, MPIHelper::getCommunicator()).grid_ptr();
     assert(grid_ptr->comm().size() == 1 || grid_ptr->overlapSize(0) > 0);
@@ -216,9 +216,9 @@ struct HyperbolicPnDiscretization
     const AdvectionSourceSpaceType advection_source_space(grid_view, 1);
 
     //******************* create EquationType object ***************************************
-    std::shared_ptr<const MomentBasis> basis_functions = (quad_order == size_t(-1))
-                                                             ? std::make_shared<const MomentBasis>()
-                                                             : std::make_shared<const MomentBasis>(quad_order);
+    std::shared_ptr<const MomentBasis> basis_functions = std::make_shared<const MomentBasis>(
+        quad_order == size_t(-1) ? MomentBasis::default_quad_order() : quad_order,
+        quad_refinements == size_t(-1) ? MomentBasis::default_quad_refinements() : quad_refinements);
     const std::unique_ptr<ProblemType> problem_ptr =
         XT::Common::make_unique<ProblemType>(*basis_functions, grid_config);
     const auto& problem = *problem_ptr;
@@ -307,8 +307,10 @@ struct HyperbolicPnDiscretization
     FvOperatorType& fv_operator =
         FvOperatorChooser<TestCaseType::reconstruction>::choose(advection_operator, reconstruction_fv_operator);
 
-    filename += "_" + ProblemType::static_id();
-    filename += "_grid_" + grid_size;
+    if (!filename.empty())
+      filename += "_";
+    filename += ProblemType::static_id();
+    filename += "_grid_" + grid_config["num_elements"];
     filename += "_tend_" + XT::Common::to_string(t_end);
     filename += TestCaseType::reconstruction ? "_ord2" : "_ord1";
     filename += "_" + basis_functions->pn_name();
@@ -366,7 +368,8 @@ struct HyperbolicPnTest
 {
   void run()
   {
-    auto norms = HyperbolicPnDiscretization<TestCaseType>::run();
+    auto norms = HyperbolicPnDiscretization<TestCaseType>::run(
+        1, 0, size_t(-1), size_t(-1), size_t(-1), 2, TestCaseType::t_end, "test");
     const double l1norm = norms[0];
     const double l2norm = norms[1];
     const double linfnorm = norms[2];

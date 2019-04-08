@@ -48,17 +48,17 @@ class NumericalKineticFlux
 
 public:
   using typename BaseType::FluxType;
-  using typename BaseType::FunctionType;
   using typename BaseType::LocalIntersectionCoords;
   using typename BaseType::PhysicalDomainType;
   using typename BaseType::StateType;
+  using typename BaseType::XIndependentFluxType;
 
   NumericalKineticFlux(const FluxType& flx, const MomentBasis& basis)
     : BaseType(flx)
     , basis_(basis)
   {}
 
-  NumericalKineticFlux(const FunctionType& flx, const MomentBasis& basis)
+  NumericalKineticFlux(const XIndependentFluxType& flx, const MomentBasis& basis)
     : BaseType(flx)
     , basis_(basis)
   {}
@@ -72,20 +72,20 @@ public:
 
   using BaseType::apply;
   using BaseType::flux;
+  using BaseType::intersection;
 
-  StateType apply(const I& intersection,
-                  const LocalIntersectionCoords& /*x*/,
+  StateType apply(const LocalIntersectionCoords& /*x*/,
                   const StateType& u,
                   const StateType& v,
                   const PhysicalDomainType& n,
                   const XT::Common::Parameter& /*param*/ = {}) const override final
   {
     // find direction of unit outer normal (we assume an axis-aligned cube grid)
-    size_t direction = intersection.indexInInside() / 2;
+    size_t direction = intersection().indexInInside() / 2;
     if (dynamic_cast<const EntropyFluxType*>(&flux()) != nullptr) {
       return dynamic_cast<const EntropyFluxType*>(&flux())->evaluate_kinetic_flux(
-          intersection.inside(),
-          intersection.neighbor() ? intersection.outside() : intersection.inside(),
+          intersection().inside(),
+          intersection().neighbor() ? intersection().outside() : intersection().inside(),
           u,
           v,
           n,

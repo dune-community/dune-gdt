@@ -63,6 +63,13 @@ public:
     return "hatfunctions";
   }
 
+  static size_t default_quad_order()
+  {
+    return 15;
+  }
+
+  using BaseType::default_quad_refinements;
+
   HatFunctionMomentBasis(const QuadraturesType& quadratures)
     : BaseType(quadratures)
     , triangulation_(BaseType::create_1d_triangulation(dimRange - 1))
@@ -70,7 +77,8 @@ public:
     BaseType::initialize_base_values();
   }
 
-  HatFunctionMomentBasis(const size_t quad_order = 15, const size_t DXTC_DEBUG_ONLY(quad_refinements) = 0)
+  HatFunctionMomentBasis(const size_t quad_order = default_quad_order(),
+                         const size_t DXTC_DEBUG_ONLY(quad_refinements) = default_quad_refinements())
     : BaseType(BaseType::gauss_lobatto_quadratures(dimRange - 1, quad_order))
     , triangulation_(BaseType::create_1d_triangulation(dimRange - 1))
   {
@@ -355,6 +363,13 @@ public:
 
   using BaseType::barycentre_rule;
 
+  static size_t default_quad_order()
+  {
+    return refinements == 0 ? 15 : 9;
+  }
+
+  using BaseType::default_quad_refinements;
+
   HatFunctionMomentBasis(const QuadraturesType& quadratures)
     : BaseType(refinements, quadratures)
   {
@@ -371,7 +386,8 @@ public:
     BaseType::initialize_base_values();
   }
 
-  HatFunctionMomentBasis(const size_t quad_order = (refinements == 0 ? 15 : 9), const size_t quad_refinements = 0)
+  HatFunctionMomentBasis(const size_t quad_order = default_quad_order(),
+                         const size_t quad_refinements = default_quad_refinements())
     : BaseType(refinements)
   {
     const QuadratureRule<RangeFieldType, 2> reference_quadrature_rule =

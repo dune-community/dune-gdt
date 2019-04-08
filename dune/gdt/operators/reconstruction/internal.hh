@@ -194,9 +194,9 @@ public:
                                          const XT::Common::Parameter& param) override final
   {
     local_flux_->bind(entity);
-    local_flux_->jacobian(x_local, u, *jacobian_, param);
-    for (size_t dd = 0; dd < dimDomain; ++dd) {
-      try {
+    try {
+      local_flux_->jacobian(x_local, u, *jacobian_, param);
+      for (size_t dd = 0; dd < dimDomain; ++dd) {
         if (false) {
           ;
 #if HAVE_MKL || HAVE_LAPACKE
@@ -249,14 +249,17 @@ public:
         if (info || eigenvectors_rcond_ < 1e-5)
           DUNE_THROW(Dune::MathError, "Eigenvector condition too high!");
 #endif
-      } catch (const Dune::MathError&) {
+      } // dd
+    } catch (const Dune::MathError&) {
+      for (size_t dd = 0; dd < dimDomain; ++dd) {
         // use scalar limiters, i.e. eigenvectors matrix is eye-matrix.
         XT::LA::eye_matrix((*eigenvectors_)[dd]);
         std::fill(eigenvalues_[dd].begin(), eigenvalues_[dd].end(), 1.);
         (*QR_)[dd] = (*eigenvectors_)[dd];
         XT::LA::qr((*QR_)[dd], tau_[dd], permutations_[dd]);
-      }
-    } // dd
+      } // dd
+    }
+
     // we do not need jacobian_ anymore if the flux is affine, so save memory
     if (flux_is_affine_)
       jacobian_ = nullptr;
@@ -343,11 +346,11 @@ public:
   {
     local_flux_->bind(entity);
     const FluxDomainType nonblocked_u = u.operator FluxDomainType();
-    local_flux_->jacobian(x_local, nonblocked_u, *nonblocked_jacobian_, param);
-    *jacobian_ = *nonblocked_jacobian_;
-    for (size_t dd = 0; dd < dimDomain; ++dd) {
-      for (size_t jj = 0; jj < num_blocks; ++jj) {
-        try {
+    try {
+      local_flux_->jacobian(x_local, nonblocked_u, *nonblocked_jacobian_, param);
+      *jacobian_ = *nonblocked_jacobian_;
+      for (size_t dd = 0; dd < dimDomain; ++dd) {
+        for (size_t jj = 0; jj < num_blocks; ++jj) {
           if (block_size == 2) {
             const auto& jac = (*jacobian_)[dd].block(jj);
             const auto trace = jac[0][0] + jac[1][1];
@@ -414,15 +417,20 @@ public:
           if (info || eigenvectors_rcond_ < 1e-5)
             DUNE_THROW(Dune::MathError, "Eigenvector condition too high!");
 #endif
-        } catch (const Dune::MathError&) {
+        } // jj
+      } // dd
+    } catch (const Dune::MathError&) {
+      for (size_t dd = 0; dd < dimDomain; ++dd) {
+        for (size_t jj = 0; jj < num_blocks; ++jj) {
           // use scalar limiters, i.e. eigenvectors matrix is eye-matrix.
           XT::LA::eye_matrix(eigenvectors_[dd].block(jj));
           std::fill(eigenvalues_[dd][jj].begin(), eigenvalues_[dd][jj].end(), 1.);
           QR_[dd].block(jj) = eigenvectors_[dd].block(jj);
           XT::LA::qr(QR_[dd].block(jj), tau_[dd].block(jj), permutations_[dd].block(jj));
-        }
-      } // jj
-    } // dd
+        } // jj
+      } // dd
+    }
+
     if (flux_is_affine_) {
       jacobian_ = nullptr;
       nonblocked_jacobian_ = nullptr;

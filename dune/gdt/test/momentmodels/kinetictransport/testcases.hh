@@ -43,6 +43,7 @@ struct RealizabilityLimiterChooser<GV,
   using MomentBasis = LegendreMomentBasis<double, double, order>;
   using EntropyFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
   static constexpr size_t quad_order = 54;
+  static constexpr size_t quad_refinements = 1;
 
   template <class EigenVectorWrapperType>
   static std::unique_ptr<LpConvexhullRealizabilityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType>>
@@ -66,6 +67,7 @@ struct RealizabilityLimiterChooser<GV,
   using MomentBasis = HatFunctionMomentBasis<double, 1, double, dimRange, 1, 1>;
   using EntropyFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
   static constexpr size_t quad_order = 15;
+  static constexpr size_t quad_refinements = 0;
 
 #if HAVE_CLP && USE_LP_POSITIVITY_LIMITER
   template <class EigenVectorWrapperType>
@@ -95,6 +97,7 @@ struct RealizabilityLimiterChooser<GV,
   using MomentBasis = PartialMomentBasis<double, 1, double, dimRange, 1, 1>;
   using EntropyFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
   static constexpr size_t quad_order = 15;
+  static constexpr size_t quad_refinements = 0;
 
   template <class EigenVectorWrapperType>
   static std::unique_ptr<Dg1dRealizabilityLimitedSlope<GV, double, dimRange, EigenVectorWrapperType>>
@@ -114,7 +117,8 @@ struct RealizabilityLimiterChooser<GV,
 {
   using MomentBasis = RealSphericalHarmonicsMomentBasis<double, double, order, 3>;
   using EntropyFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
-  static constexpr size_t quad_order = 2 * order + 6;
+  static constexpr size_t quad_order = 2 * order + 8;
+  static constexpr size_t quad_refinements = 0;
 
   template <class EigenVectorWrapperType>
   static std::unique_ptr<LpConvexhullRealizabilityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType>>
@@ -135,7 +139,8 @@ struct RealizabilityLimiterChooser<GV,
   using MomentBasis = HatFunctionMomentBasis<double, 3, double, refinements, 1, 3>;
   using EntropyFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
   static constexpr size_t dimRange = MomentBasis::dimRange;
-  static constexpr size_t quad_order = 18; // fekete rule number 7
+  static constexpr size_t quad_order = refinements == 0 ? 18 /*fekete rule number 7*/ : 9 /*fekete rule number 3*/;
+  static constexpr size_t quad_refinements = 0;
 
 #if HAVE_CLP && USE_LP_POSITIVITY_LIMITER
   template <class EigenVectorWrapperType>
@@ -165,7 +170,8 @@ struct RealizabilityLimiterChooser<GV,
 {
   using MomentBasis = PartialMomentBasis<double, 3, double, refinements, 1, 3>;
   using EntropyFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
-  static constexpr size_t quad_order = 9; // fekete rule number 3
+  static constexpr size_t quad_order = refinements == 0 ? 18 /*fekete rule number 7*/ : 9 /*fekete rule number 3*/;
+  static constexpr size_t quad_refinements = 0;
 
   template <class EigenVectorWrapperType>
   static std::unique_ptr<DgConvexHullRealizabilityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType>>
@@ -239,9 +245,9 @@ template <bool reconstruct>
 struct SourceBeamMnExpectedResults<LegendreMomentBasis<double, double, 7>, reconstruct>
 {
   static constexpr double l1norm = reconstruct ? 0.28535354296013105 : 0.28535354295945792;
-  static constexpr double l2norm = reconstruct ? 0.37115083996060916 : 0.36265752973701221;
+  static constexpr double l2norm = reconstruct ? 0.37115145999473981 : 0.36265752973701221;
   static constexpr double linfnorm = reconstruct ? 0.78506610334488358 : 0.78315544039143314;
-  static constexpr double tol = 1e-9;
+  static constexpr double tol = 1e-5;
 };
 
 template <bool reconstruct>
@@ -326,9 +332,9 @@ template <bool reconstruct>
 struct PlaneSourceMnExpectedResults<LegendreMomentBasis<double, double, 7>, reconstruct>
 {
   static constexpr double l1norm = reconstruct ? 2.0000000240000007 : 2.0000000240000029;
-  static constexpr double l2norm = reconstruct ? 2.7878232892168211 : 2.746101358507282;
-  static constexpr double linfnorm = reconstruct ? 4.9086815941726396 : 5.327698357914608;
-  static constexpr double tol = 1e-9;
+  static constexpr double l2norm = reconstruct ? 2.785411193059216 : 2.746101358507282;
+  static constexpr double linfnorm = reconstruct ? 4.9069101475812698 : 5.327698357914608;
+  static constexpr double tol = 1e-7;
 };
 
 template <bool reconstruct>
@@ -513,9 +519,9 @@ struct PointSourceMnExpectedResults;
 template <bool reconstruct>
 struct PointSourceMnExpectedResults<RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, reconstruct>
 {
-  static constexpr double l1norm = reconstruct ? 1.0000016440585395 : 1.0000016440583621;
-  static constexpr double l2norm = reconstruct ? 2.6896356393271734 : 2.6837985426830504;
-  static constexpr double linfnorm = reconstruct ? 10.368884563879304 : 10.375079241728713;
+  static constexpr double l1norm = reconstruct ? 1.0000013830443908 : 1.0000013830442143;
+  static constexpr double l2norm = reconstruct ? 2.6901467570598112 : 2.684314243798307;
+  static constexpr double linfnorm = reconstruct ? 10.371048798431969 : 10.377307670780343;
   static constexpr double tol = 1e-9;
 };
 
@@ -538,9 +544,9 @@ struct PointSourceMnExpectedResults<HatFunctionMomentBasis<double, 3, double, 0,
 template <bool reconstruct>
 struct PointSourceMnExpectedResults<PartialMomentBasis<double, 3, double, 0, 1, 3, 1>, reconstruct>
 {
-  static constexpr double l1norm = reconstruct ? 1.0000127558028837 : 1.0000127558027134;
-  static constexpr double l2norm = reconstruct ? 2.6983746461758269 : 2.6882147627660715;
-  static constexpr double linfnorm = reconstruct ? 10.391230462003152 : 10.394186618150204;
+  static constexpr double l1norm = reconstruct ? 1.0000000829624787 : 1.0000000829623072;
+  static constexpr double l2norm = reconstruct ? 2.6983516853120966 : 2.6881937835020211;
+  static constexpr double linfnorm = reconstruct ? 10.391142640527102 : 10.394108065213185;
   static constexpr double tol = 1e-9;
 };
 
@@ -568,9 +574,9 @@ struct CheckerboardMnExpectedResults;
 template <bool reconstruct>
 struct CheckerboardMnExpectedResults<RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, reconstruct>
 {
-  static constexpr double l1norm = reconstruct ? 0. : 0.35404367426148931;
-  static constexpr double l2norm = reconstruct ? 0. : 0.32921585327065972;
-  static constexpr double linfnorm = reconstruct ? 0. : 0.32895499053937993;
+  static constexpr double l1norm = reconstruct ? 0. : 0.35404440392013337;
+  static constexpr double l2norm = reconstruct ? 0. : 0.32922954029850499;
+  static constexpr double linfnorm = reconstruct ? 0. : 0.32896894056609421;
   static constexpr double tol = 1e-9;
 };
 
@@ -598,9 +604,9 @@ struct ShadowMnExpectedResults;
 template <bool reconstruct>
 struct ShadowMnExpectedResults<RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, reconstruct>
 {
-  static constexpr double l1norm = reconstruct ? 0. : 0.59247415692031025;
-  static constexpr double l2norm = reconstruct ? 0. : 0.097642936357459895;
-  static constexpr double linfnorm = reconstruct ? 0. : 0.016480937983211638;
+  static constexpr double l1norm = reconstruct ? 0. : 0.59248402251960053;
+  static constexpr double l2norm = reconstruct ? 0. : 0.097644561106262767;
+  static constexpr double linfnorm = reconstruct ? 0. : 0.016480889201743513;
   static constexpr double tol = 1e-9;
 };
 

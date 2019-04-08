@@ -39,14 +39,15 @@ template <class TestCaseType>
 struct HyperbolicMnDiscretization
 {
   // returns: (l1norm, l2norm, linfnorm, MPI rank)
-  static std::pair<Dune::FieldVector<double, 3>, int>
-  run(size_t num_save_steps = 1,
-      size_t num_output_steps = 0,
-      size_t quad_order = TestCaseType::RealizabilityLimiterChooserType::quad_order,
-      std::string grid_size = "",
-      std::string overlap_size = "2",
-      double t_end = TestCaseType::t_end,
-      std::string filename = "")
+  static std::pair<Dune::FieldVector<double, 3>, int> run(size_t num_save_steps = 1,
+                                                          size_t num_output_steps = 0,
+                                                          size_t quad_order = size_t(-1),
+                                                          size_t quad_refinements = size_t(-1),
+                                                          size_t grid_size = size_t(-1),
+                                                          size_t overlap_size = 2,
+                                                          double t_end = 0.,
+                                                          std::string filename = "",
+                                                          bool disable_thread_cache = false)
   {
     using namespace Dune;
     using namespace Dune::GDT;
@@ -69,9 +70,9 @@ struct HyperbolicMnDiscretization
 
     //******************* create grid and FV space ***************************************
     auto grid_config = ProblemType::default_grid_cfg();
-    if (!grid_size.empty())
-      grid_config["num_elements"] = grid_size;
-    grid_config["overlap_size"] = overlap_size;
+    if (grid_size != size_t(-1))
+      grid_config["num_elements"] = XT::Common::to_string(grid_size);
+    grid_config["overlap_size"] = XT::Common::to_string(overlap_size);
     const auto grid_ptr =
         Dune::XT::Grid::CubeGridProviderFactory<GridType>::create(grid_config, MPIHelper::getCommunicator()).grid_ptr();
     assert(grid_ptr->comm().size() == 1 || grid_ptr->overlapSize(0) > 0);
@@ -80,7 +81,9 @@ struct HyperbolicMnDiscretization
     const AdvectionSourceSpaceType advection_source_space(grid_view, 1);
 
     //******************* create EquationType object ***************************************
-    std::shared_ptr<const MomentBasis> basis_functions = std::make_shared<const MomentBasis>(quad_order);
+    std::shared_ptr<const MomentBasis> basis_functions = std::make_shared<const MomentBasis>(
+        quad_order == size_t(-1) ? MomentBasis::default_quad_order() : quad_order,
+        quad_refinements == size_t(-1) ? MomentBasis::default_quad_refinements() : quad_refinements);
     const std::unique_ptr<ProblemType> problem_ptr =
         XT::Common::make_unique<ProblemType>(*basis_functions, grid_view, grid_config);
     const auto& problem = *problem_ptr;
@@ -88,7 +91,12 @@ struct HyperbolicMnDiscretization
     const auto boundary_values = problem.boundary_values();
     using AnalyticalFluxType = typename ProblemType::FluxType;
     using EntropyFluxType = typename ProblemType::ActualFluxType;
-    const auto analytical_flux = problem.flux();
+    auto analytical_flux = problem.flux();
+    // for Legendre polynomials and real spherical harmonics, the results are sensitive to the initial guess in the
+    // Newton algorithm. If the thread cache is enabled, the guess is different dependent on how many threads we are
+    // using, so for the tests we disable this cache to get reproducible results.
+    if (disable_thread_cache)
+      dynamic_cast<EntropyFluxType*>(analytical_flux.get())->disable_thread_cache();
     const RangeFieldType CFL = problem.CFL();
 
     // ***************** project initial values to discrete function *********************
@@ -153,18 +161,23 @@ struct HyperbolicMnDiscretization
 
     constexpr double epsilon = 1e-11;
     auto slope = TestCaseType::RealizabilityLimiterChooserType::template make_slope<EigenvectorWrapperType>(
-        *dynamic_cast<const EntropyFluxType*>(analytical_flux.get()), *basis_functions, epsilon);
+        *dynamic_cast<EntropyFluxType*>(analytical_flux.get()), *basis_functions, epsilon);
     ReconstructionOperatorType reconstruction_operator(*analytical_flux, *boundary_values, fv_space, *slope, false);
     ReconstructionAdvectionOperatorType reconstruction_advection_operator(advection_operator, reconstruction_operator);
 
-    filename += "_" + ProblemType::static_id();
-    filename += "_grid_" + grid_size;
+    if (XT::Common::is_zero(t_end))
+      t_end = problem.t_end();
+
+    if (!filename.empty())
+      filename += "_";
+    filename += ProblemType::static_id();
+    filename += "_grid_" + grid_config["num_elements"];
     filename += "_tend_" + XT::Common::to_string(t_end);
     filename += "_quad_" + XT::Common::to_string(quad_order);
     filename += TestCaseType::reconstruction ? "_ord2" : "_ord1";
     filename += "_" + basis_functions->mn_name();
 
-    EntropySolverType entropy_solver(*(dynamic_cast<const EntropyFluxType*>(analytical_flux.get())),
+    EntropySolverType entropy_solver(*(dynamic_cast<EntropyFluxType*>(analytical_flux.get())),
                                      fv_space,
                                      problem.psi_vac() * basis_functions->unit_ball_volume() / 10,
                                      filename);
@@ -226,7 +239,17 @@ struct HyperbolicMnTest
 {
   void run()
   {
-    auto norms = HyperbolicMnDiscretization<TestCaseType>::run().first;
+    auto norms = HyperbolicMnDiscretization<TestCaseType>::run(
+                     1,
+                     0,
+                     TestCaseType::RealizabilityLimiterChooserType::quad_order,
+                     TestCaseType::RealizabilityLimiterChooserType::quad_refinements,
+                     size_t(-1),
+                     2,
+                     TestCaseType::t_end,
+                     "test",
+                     Dune::GDT::is_full_moment_basis<typename TestCaseType::MomentBasis>::value)
+                     .first;
     const double l1norm = norms[0];
     const double l2norm = norms[1];
     const double linfnorm = norms[2];

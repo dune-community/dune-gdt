@@ -88,8 +88,6 @@ public:
     for (size_t ii = 0; ii < dimRange; ++ii)
       u[ii] = local_source_->dofs().get_entry(ii);
     const auto& basis_functions = analytical_flux_.basis_functions();
-    thread_local auto vector_indices = source_.space().mapper().global_indices(entity);
-    source_.space().mapper().global_indices(entity, vector_indices);
     basis_functions.ensure_min_density(u, min_acceptable_density_);
     local_flux_->bind(entity);
     const auto alpha_ret = local_flux_->get_alpha(u, true);

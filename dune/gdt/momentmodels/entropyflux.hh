@@ -157,10 +157,32 @@ public:
       const size_t k_max = 1000,
       const RangeFieldType epsilon = std::pow(2, -52))
     : index_set_(grid_view.indexSet())
+    , use_thread_cache_(true)
+    , use_entity_cache_(true)
     , entity_caches_(index_set_.size(0), LocalCacheType(cache_size))
     , mutexes_(index_set_.size(0))
     , implementation_(basis_functions, tau, epsilon_gamma, chi, xi, r_sequence, k_0, k_max, epsilon)
   {}
+
+  void enable_thread_cache()
+  {
+    use_thread_cache_ = true;
+  }
+
+  void disable_thread_cache()
+  {
+    use_thread_cache_ = false;
+  }
+
+  void enable_entity_cache()
+  {
+    use_entity_cache_ = true;
+  }
+
+  void disable_entity_cache()
+  {
+    use_entity_cache_ = false;
+  }
 
   static const constexpr bool available = true;
 
@@ -175,11 +197,15 @@ public:
 
     Localfunction(const IndexSetType& index_set,
                   std::vector<LocalCacheType>& entity_caches,
+                  const bool use_thread_cache,
+                  const bool use_entity_cache,
                   std::vector<std::mutex>& mutexes,
                   const ImplementationType& implementation)
       : index_set_(index_set)
       , thread_cache_(cache_size)
       , entity_caches_(entity_caches)
+      , use_thread_cache_(use_thread_cache)
+      , use_entity_cache_(use_entity_cache)
       , mutexes_(mutexes)
       , implementation_(implementation)
     {}
@@ -209,7 +235,7 @@ public:
       // calculate (inf-norm) distance to isotropic moment with same density
       RangeFieldType distance = (u - u_iso_scaled).infinity_norm();
       VectorType alpha_start = XT::Common::convert_to<VectorType>(alpha_iso + alpha_iso_prime * std::log(density));
-      if (!XT::Common::FloatCmp::eq(distance, 0.)) {
+      if (!XT::Common::FloatCmp::eq(distance, 0.) && use_entity_cache_) {
         // calculate distance to closest moment in entity_cache
         const auto entity_cache_dist_and_it = entity_cache_->find_closest(u);
         const auto& entity_cache_dist = entity_cache_dist_and_it.first;
@@ -217,7 +243,7 @@ public:
           distance = entity_cache_dist;
           alpha_start = entity_cache_dist_and_it.second->second;
         }
-        if (!XT::Common::FloatCmp::eq(distance, 0.)) {
+        if (!XT::Common::FloatCmp::eq(distance, 0.) && use_thread_cache_) {
           // calculate distance to closest moment in thread_cache
           const auto thread_cache_dist_and_it = thread_cache_.find_closest(u);
           const auto& thread_cache_dist = thread_cache_dist_and_it.first;
@@ -232,8 +258,10 @@ public:
         return std::make_unique<AlphaReturnType>(std::make_pair(alpha_start, std::make_pair(u, 0.)));
       } else {
         auto ret = implementation_.get_alpha(u, alpha_start, regularize);
-        entity_cache_->insert(ret->second.first, ret->first);
-        thread_cache_.insert(ret->second.first, ret->first);
+        if (use_entity_cache_)
+          entity_cache_->insert(ret->second.first, ret->first);
+        if (use_thread_cache_)
+          thread_cache_.insert(ret->second.first, ret->first);
         return std::move(ret);
       }
     }
@@ -259,6 +287,8 @@ public:
     const IndexSetType& index_set_;
     mutable LocalCacheType thread_cache_;
     std::vector<LocalCacheType>& entity_caches_;
+    const bool use_thread_cache_;
+    const bool use_entity_cache_;
     std::vector<std::mutex>& mutexes_;
     const ImplementationType& implementation_;
     LocalCacheType* entity_cache_;
@@ -272,12 +302,14 @@ public:
 
   virtual std::unique_ptr<LocalFunctionType> local_function() const override final
   {
-    return std::make_unique<Localfunction>(index_set_, entity_caches_, mutexes_, implementation_);
+    return std::make_unique<Localfunction>(
+        index_set_, entity_caches_, use_thread_cache_, use_entity_cache_, mutexes_, implementation_);
   }
 
   virtual std::unique_ptr<Localfunction> derived_local_function() const
   {
-    return std::make_unique<Localfunction>(index_set_, entity_caches_, mutexes_, implementation_);
+    return std::make_unique<Localfunction>(
+        index_set_, entity_caches_, use_thread_cache_, use_entity_cache_, mutexes_, implementation_);
   }
 
   StateType evaluate_kinetic_flux(const E& inside_entity,
@@ -303,6 +335,8 @@ public:
 
 private:
   const IndexSetType& index_set_;
+  bool use_thread_cache_;
+  bool use_entity_cache_;
   mutable std::vector<LocalCacheType> entity_caches_;
   mutable std::vector<std::mutex> mutexes_;
   ImplementationType implementation_;

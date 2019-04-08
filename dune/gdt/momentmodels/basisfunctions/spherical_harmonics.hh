@@ -50,14 +50,21 @@ public:
   using typename BaseType::StringifierType;
   static_assert(order <= std::numeric_limits<int>::max(), "");
 
+  static size_t default_quad_order()
+  {
+    return 2 * order + 8;
+  }
+
+  using BaseType::default_quad_refinements;
+
   SphericalHarmonicsMomentBasis(const QuadraturesType& quadratures)
     : BaseType(quadratures)
   {
     BaseType::initialize_base_values();
   }
 
-  SphericalHarmonicsMomentBasis(const size_t quad_order = 2 * order + 8,
-                                const size_t DXTC_DEBUG_ONLY(quad_refinements) = 0)
+  SphericalHarmonicsMomentBasis(const size_t quad_order = default_quad_order(),
+                                const size_t DXTC_DEBUG_ONLY(quad_refinements) = default_quad_refinements())
     : BaseType(XT::Data::OctantQuadratures<DomainFieldType>::get(quad_order))
   {
     assert(quad_refinements == 0 && "Refinement of the quadrature intervals not implemented for this basis!");
@@ -289,14 +296,21 @@ public:
   using typename BaseType::RangeType;
   using typename BaseType::StringifierType;
 
+  static size_t default_quad_order()
+  {
+    return 2 * order + 8;
+  }
+
+  using BaseType::default_quad_refinements;
+
   RealSphericalHarmonicsMomentBasis(const QuadraturesType& quadratures)
     : BaseType(quadratures)
   {
     BaseType::initialize_base_values();
   }
 
-  RealSphericalHarmonicsMomentBasis(const size_t quad_order = 2 * order + 8,
-                                    const size_t DXTC_DEBUG_ONLY(quad_refinements) = 0)
+  RealSphericalHarmonicsMomentBasis(const size_t quad_order = default_quad_order(),
+                                    const size_t DXTC_DEBUG_ONLY(quad_refinements) = default_quad_refinements())
     : BaseType(XT::Data::OctantQuadratures<DomainFieldType>::get(quad_order))
   {
     assert(quad_refinements == 0 && "Refinement of the quadrature intervals not implemented for this basis!");

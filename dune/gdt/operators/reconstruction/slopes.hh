@@ -1011,40 +1011,32 @@ public:
 private:
   void setup_linear_program() const
   {
-    // It should be possible to reuse the same ClpSimplex class over and over again, only changing the relevant columns.
-    // However, in rare cases the class seems to get corrupted, always claiming the LP is infeasible, even if it is not.
-    // Creating a new LP from time to time seems to fix this problem.
-    thread_local int counter;
-    ++counter;
-    if (!lp_ || !(counter % 100)) {
-      counter = 0;
-      // We start with creating a model with dimRange rows and num_quad_points+1 columns */
-      assert(basis_values_->size() + dimRange < std::numeric_limits<int>::max());
-      size_t num_cols = basis_values_->size() + dimRange; /* variables are x_1, ..., x_{num_quad_points}, theta_1,
-                                                                              ..., theta_{dimRange} */
-      lp_ = std::make_unique<ClpSimplex>(false);
-      auto& lp = *lp_;
-      // set number of rows
-      lp.resize(num_rows, 0);
+    // We start with creating a model with dimRange rows and num_quad_points+1 columns */
+    assert(basis_values_->size() + dimRange < std::numeric_limits<int>::max());
+    size_t num_cols = basis_values_->size() + dimRange; /* variables are x_1, ..., x_{num_quad_points}, theta_1,
+                                                                            ..., theta_{dimRange} */
+    lp_ = std::make_unique<ClpSimplex>(false);
+    auto& lp = *lp_;
+    // set number of rows
+    lp.resize(num_rows, 0);
 
-      // set columns for quadrature points
-      assert(basis_values_->size() == num_cols - dimRange);
-      static auto row_indices = create_row_indices();
-      for (size_t ii = 0; ii < num_cols - dimRange; ++ii) {
-        // First argument: number of elements in column
-        // Second/Third argument: indices/values of column entries
-        // Fourth/Fifth argument: lower/upper column bound, i.e. lower/upper bound for x_i. As all x_i should be
-        // positive, set to 0/inf, which is the default.
-        // Sixth argument: Prefactor in objective for x_i, this is 0 for all x_i, which is also the default;
-        lp.addColumn(static_cast<int>(num_rows), row_indices.data(), &((*basis_values_)[ii][0]));
-      }
+    // set columns for quadrature points
+    assert(basis_values_->size() == num_cols - dimRange);
+    static auto row_indices = create_row_indices();
+    for (size_t ii = 0; ii < num_cols - dimRange; ++ii) {
+      // First argument: number of elements in column
+      // Second/Third argument: indices/values of column entries
+      // Fourth/Fifth argument: lower/upper column bound, i.e. lower/upper bound for x_i. As all x_i should be
+      // positive, set to 0/inf, which is the default.
+      // Sixth argument: Prefactor in objective for x_i, this is 0 for all x_i, which is also the default;
+      lp.addColumn(static_cast<int>(num_rows), row_indices.data(), &((*basis_values_)[ii][0]));
+    }
 
-      // add theta columns (set to random values, will be set correctly in solve_linear_program)
-      // The bounds for theta should be [0,1]. Also sets the prefactor in the objective to 1 for the thetas.
-      for (size_t ii = 0; ii < dimRange; ++ii)
-        lp.addColumn(static_cast<int>(num_rows), row_indices.data(), &((*basis_values_)[0][0]), 0., 1., 1.);
-      lp.setLogLevel(0);
-    } // if (!lp_)
+    // add theta columns (set to random values, will be set correctly in solve_linear_program)
+    // The bounds for theta should be [0,1]. Also sets the prefactor in the objective to 1 for the thetas.
+    for (size_t ii = 0; ii < dimRange; ++ii)
+      lp.addColumn(static_cast<int>(num_rows), row_indices.data(), &((*basis_values_)[0][0]), 0., 1., 1.);
+    lp.setLogLevel(0);
   } // void setup_linear_program()
 
   VectorType solve_linear_program(const VectorType& u_char,

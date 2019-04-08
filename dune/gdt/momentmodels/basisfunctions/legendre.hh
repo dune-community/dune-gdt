@@ -42,7 +42,18 @@ public:
     BaseType::initialize_base_values();
   }
 
-  LegendreMomentBasis(const size_t quad_order = 197, const size_t quad_refinements = 1)
+  static size_t default_quad_order()
+  {
+    return 2 * order + 40;
+  }
+
+  static size_t default_quad_refinements()
+  {
+    return 1;
+  }
+
+  LegendreMomentBasis(const size_t quad_order = default_quad_order(),
+                      const size_t quad_refinements = default_quad_refinements())
     : BaseType(BaseType::gauss_lobatto_quadratures(std::pow(2, quad_refinements), quad_order))
   {
     BaseType::initialize_base_values();

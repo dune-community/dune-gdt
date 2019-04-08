@@ -168,6 +168,17 @@ public:
   using MergedQuadratureIterator =
       typename XT::Data::MergedQuadrature<RangeFieldType, dimDomain>::MergedQuadratureIterator;
 
+  static size_t default_quad_order()
+  {
+    DUNE_THROW(Dune::NotImplemented, "Please overwrite this function in derived classes!");
+    return 0;
+  }
+
+  static size_t default_quad_refinements()
+  {
+    return 0;
+  }
+
   MomentBasisInterface(const QuadraturesType& quadratures = QuadraturesType())
     : quadratures_(quadratures)
   {}

@@ -14,7 +14,6 @@
 #include <dune/geometry/quadraturerules.hh>
 
 #include <dune/xt/common/fvector.hh>
-#include <dune/xt/common/parallel/threadstorage.hh>
 #include <dune/xt/common/parameter.hh>
 
 #include <dune/xt/grid/walker.hh>
@@ -396,6 +395,9 @@ private:
 }; // class LinearReconstructionOperator<...>
 
 
+// Does not reconstruct a full first-order DG function, but only stores the reconstructed values at the intersection
+// centers. This avoids the interpolation in this operator and the evaluation of the reconstructed function in the
+// finite volume operator which are both quite expensive for large dimRange.
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
           class GV,

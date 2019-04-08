@@ -463,7 +463,6 @@ protected:
                             1);
 #else
     const size_t num_quad_points = quad_points_.size();
-    std::fill(scalar_products.begin(), scalar_products.end(), 0.);
     for (size_t ll = 0; ll < num_quad_points; ++ll) {
       const auto* basis_ll = &(M.get_entry_ref(ll, 0.));
       scalar_products[ll] = std::inner_product(beta_in.begin(), beta_in.end(), basis_ll, 0.);
@@ -743,7 +742,7 @@ public:
       // regularize u
       v = u_prime;
       if (r > 0) {
-        beta_in = get_isotropic_alpha(u);
+        beta_in = get_isotropic_alpha(v);
         VectorType r_times_u_iso = u_iso;
         r_times_u_iso *= r;
         v *= 1 - r;
@@ -942,7 +941,7 @@ public:
       // regularize u
       v = u_prime;
       if (r > 0) {
-        alpha_k = get_isotropic_alpha(u);
+        alpha_k = get_isotropic_alpha(v);
         VectorType r_times_u_iso = u_iso;
         r_times_u_iso *= r;
         v *= 1 - r;
@@ -1276,7 +1275,7 @@ public:
       // regularize u
       *v = *u_prime;
       if (r > 0.) {
-        *beta_in = *get_isotropic_alpha(u);
+        *beta_in = *get_isotropic_alpha(*v);
         // calculate v = (1-r) u + r u_iso
         // use beta_out as storage for u_iso_in * r
         *v *= (1 - r);
@@ -1848,6 +1847,14 @@ public:
     return ret;
   }
 
+  VectorType get_isotropic_alpha(const VectorType& u) const
+  {
+    DomainType u_domain;
+    for (size_t ii = 0; ii < basis_dimDomain; ++ii)
+      u_domain[ii] = u.get_entry(ii);
+    return get_isotropic_alpha(u_domain);
+  }
+
   virtual RangeReturnType evaluate(const DomainType& u,
                                    const XT::Common::Parameter& /*param*/ = {}) const override final
   {
@@ -1985,7 +1992,7 @@ public:
       // regularize u
       v = u_prime;
       if (r > 0) {
-        alpha_k = get_isotropic_alpha(u);
+        alpha_k = get_isotropic_alpha(v);
         tmp_vec = u_iso;
         tmp_vec *= r;
         v *= 1 - r;
@@ -2615,7 +2622,7 @@ public:
       // regularize u
       v = u_prime;
       if (r > 0) {
-        alpha_k = get_isotropic_alpha(u);
+        alpha_k = get_isotropic_alpha(v);
         VectorType r_times_u_iso(u_iso);
         r_times_u_iso *= r;
         v *= 1 - r;
@@ -3023,16 +3030,15 @@ public:
   using QuadraturePointsType = FieldVector<std::vector<RangeFieldType>, num_intervals>;
   using QuadratureWeightsType = FieldVector<std::vector<RangeFieldType>, num_intervals>;
 
-  explicit EntropyBasedFluxImplementation(
-      const MomentBasis& basis_functions,
-      const RangeFieldType tau = 1e-9,
-      const RangeFieldType epsilon_gamma = 0.01,
-      const RangeFieldType chi = 0.5,
-      const RangeFieldType xi = 1e-3,
-      const std::vector<RangeFieldType> r_sequence = {0, 1e-8, 1e-6, 1e-4, 1e-3, 1e-2, 5e-2, 0.1, 0.5, 1},
-      const size_t k_0 = 500,
-      const size_t k_max = 1000,
-      const RangeFieldType epsilon = std::pow(2, -52))
+  explicit EntropyBasedFluxImplementation(const MomentBasis& basis_functions,
+                                          const RangeFieldType tau,
+                                          const RangeFieldType epsilon_gamma,
+                                          const RangeFieldType chi,
+                                          const RangeFieldType xi,
+                                          const std::vector<RangeFieldType> r_sequence,
+                                          const size_t k_0,
+                                          const size_t k_max,
+                                          const RangeFieldType epsilon)
     : basis_functions_(basis_functions)
     , grid_points_(basis_functions_.triangulation())
     , tau_(tau)
@@ -3186,7 +3192,7 @@ public:
       // regularize u
       v = u_prime;
       if (r > 0) {
-        alpha_k = get_isotropic_alpha(u);
+        alpha_k = get_isotropic_alpha(v);
         VectorType r_times_u_iso(u_iso);
         r_times_u_iso *= r;
         v *= 1 - r;
