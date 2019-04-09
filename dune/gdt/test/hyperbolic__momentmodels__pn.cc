@@ -5,8 +5,11 @@
 // Authors:
 //   Tobias Leibner  (2016)
 
+// This one has to come first (includes the config.h)!
+#include <dune/xt/common/test/main.hxx>
+
 #define USE_FULL_LINEAR_RECONSTRUCTION_OPERATOR 1
-#include <dune/gdt/test/hyperbolic_momentmodels_pn.hh>
+#include <dune/gdt/test/hyperbolic_momentmodels_pn_base.hh>
 #include <dune/gdt/test/pn-discretization.hh>
 
 TYPED_TEST_CASE(HyperbolicPnTest, YaspGridTestCasesWithoutReconstruction);

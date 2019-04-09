@@ -8,8 +8,7 @@
 #ifndef DUNE_GDT_TEST_HYPERBOLIC_MOMENTMODELS_PN_HH
 #define DUNE_GDT_TEST_HYPERBOLIC_MOMENTMODELS_PN_HH
 
-// This one has to come first (includes the config.h)!
-#include <dune/xt/common/test/main.hxx>
+#include <dune/xt/common/test/gtest/gtest.h>
 
 #include <dune/gdt/test/momentmodels/kinetictransport/testcases.hh>
 
