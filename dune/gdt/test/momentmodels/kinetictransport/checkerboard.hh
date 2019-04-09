@@ -113,11 +113,11 @@ protected:
     size_t col = XT::Common::numeric_cast<size_t>(std::floor(x[0]));
     size_t row = XT::Common::numeric_cast<size_t>(std::floor(x[1]));
     assert(plane <= 7 && row <= 7 && col <= 7);
-    if (plane == 0 && plane >= 6)
+    if (plane == 0 || plane >= 6)
       return false;
-    if (row == 0 && row >= 6)
+    if (row == 0 || row >= 6)
       return false;
-    if (col == 0 && col >= 6)
+    if (col == 0 || col >= 6)
       return false;
     return (plane + row + col) % 2 == 1 && !is_center(x) && !(plane == 3 && row == 5 && col == 3);
   }

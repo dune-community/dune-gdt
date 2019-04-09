@@ -462,7 +462,7 @@ struct CheckerboardPnExpectedResults
 template <bool reconstruct>
 struct CheckerboardPnExpectedResults<RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, reconstruct>
 {
-  static constexpr double l1norm = 0.35404937302246398;
+  static constexpr double l1norm = 0.35405006483527851;
   static constexpr double l2norm = 0.32921416691428851;
   static constexpr double linfnorm = 0.32895256210981677;
   static constexpr double tol = 1e-9;
@@ -574,7 +574,7 @@ struct CheckerboardMnExpectedResults;
 template <bool reconstruct>
 struct CheckerboardMnExpectedResults<RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, reconstruct>
 {
-  static constexpr double l1norm = reconstruct ? 0. : 0.35404440392013337;
+  static constexpr double l1norm = reconstruct ? 0. : 0.35404509573284748;
   static constexpr double l2norm = reconstruct ? 0. : 0.32922954029850499;
   static constexpr double linfnorm = reconstruct ? 0. : 0.32896894056609421;
   static constexpr double tol = 1e-9;
