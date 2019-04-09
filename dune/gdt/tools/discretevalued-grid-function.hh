@@ -68,9 +68,9 @@ private:
 
     using BaseType::element;
 
-    virtual void post_bind(const E& element) override final
+    virtual void post_bind(const E& elem) override final
     {
-      local_values_ = &(values_[index_set_.index(element)]);
+      local_values_ = &(values_[index_set_.index(elem)]);
     }
 
     virtual RangeReturnType evaluate(const DomainType& xx, const XT::Common::Parameter& /*param*/) const override
@@ -110,9 +110,9 @@ public:
     return std::make_unique<DiscreteValuedLocalFunction>(values_, index_set_);
   }
 
-  LocalFunctionValuesType& local_values(const E& element)
+  LocalFunctionValuesType& local_values(const E& elem)
   {
-    return values_[index_set_.index(element)];
+    return values_[index_set_.index(elem)];
   }
 
 private:

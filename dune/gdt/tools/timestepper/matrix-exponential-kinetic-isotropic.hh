@@ -55,7 +55,8 @@ public:
   {}
 
   KineticIsotropicLocalFunctor(const KineticIsotropicLocalFunctor& other)
-    : basis_functions_(other.basis_functions_)
+    : BaseType(other)
+    , basis_functions_(other.basis_functions_)
     , solution_(other.solution_)
     , local_solution_(solution_.local_discrete_function())
     , dt_(other.dt_)
