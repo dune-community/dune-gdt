@@ -208,21 +208,22 @@ public:
     const auto parameter = param + XT::Common::Parameter({"finite-difference-jacobians.eps", eps});
     // append the same local ops with the same filters as in apply() above
     // contributions from inner intersections
-    const auto source_function = make_discrete_function(source_space_, source);
-    jacobian_op.append(LocalAdvectionFvCouplingOperator<I, V, SGV, m, F, F, RGV, V>(source_function, *numerical_flux_),
-                       source,
-                       parameter,
-                       XT::Grid::ApplyOn::InnerIntersectionsOnce<SGV>());
+    jacobian_op.append(
+        LocalAdvectionFvCouplingOperator<I, V, SGV, m, F, F, RGV, V>(source_space_, source, *numerical_flux_),
+        source,
+        parameter,
+        XT::Grid::ApplyOn::InnerIntersectionsOnce<SGV>());
     // contributions from periodic boundaries
-    jacobian_op.append(LocalAdvectionFvCouplingOperator<I, V, SGV, m, F, F, RGV, V>(source_function, *numerical_flux_),
-                       source,
-                       parameter,
-                       *(XT::Grid::ApplyOn::PeriodicBoundaryIntersectionsOnce<SGV>() && !(*periodicity_exception_)));
+    jacobian_op.append(
+        LocalAdvectionFvCouplingOperator<I, V, SGV, m, F, F, RGV, V>(source_space_, source, *numerical_flux_),
+        source,
+        parameter,
+        *(XT::Grid::ApplyOn::PeriodicBoundaryIntersectionsOnce<SGV>() && !(*periodicity_exception_)));
     // contributions from other boundaries by custom numerical flux
     for (const auto& boundary_treatment : boundary_treatments_by_custom_numerical_flux_) {
       const auto& filter = *std::get<2>(boundary_treatment);
       jacobian_op.append(BoundaryTreatmentByCustomNumericalFluxOperatorType(
-                             source_function, *std::get<0>(boundary_treatment), std::get<1>(boundary_treatment)),
+                             source_space_, source, *std::get<0>(boundary_treatment), std::get<1>(boundary_treatment)),
                          source,
                          param,
                          filter);
@@ -230,12 +231,14 @@ public:
     // contributions from other boundaries by custom extrapolation
     for (const auto& boundary_treatment : boundary_treatments_by_custom_extrapolation_) {
       const auto& filter = *std::get<2>(boundary_treatment);
-      jacobian_op.append(
-          BoundaryTreatmentByCustomExtrapolationOperatorType(
-              source_function, *numerical_flux_, *std::get<0>(boundary_treatment), std::get<1>(boundary_treatment)),
-          source,
-          param,
-          filter);
+      jacobian_op.append(BoundaryTreatmentByCustomExtrapolationOperatorType(source_space_,
+                                                                            source,
+                                                                            *numerical_flux_,
+                                                                            *std::get<0>(boundary_treatment),
+                                                                            std::get<1>(boundary_treatment)),
+                         source,
+                         param,
+                         filter);
     }
   } // ... jacobian(...)
 

@@ -89,7 +89,6 @@ public:
 private:
   using BaseType::local_flux_inside_;
   using BaseType::local_flux_outside_;
-  using BaseType::mutable_this;
   using BaseType::x_in_inside_coords_;
   using BaseType::x_in_outside_coords_;
   const double lambda_;

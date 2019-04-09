@@ -20,6 +20,7 @@
 
 #include <dune/xt/common/parameter.hh>
 #include <dune/xt/common/type_traits.hh>
+#include <dune/xt/common/memory.hh>
 #include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/local/discretefunction.hh>
@@ -65,6 +66,7 @@ public:
   using SourceType = XT::Functions::GridFunctionInterface<E, s_r, s_rC, SR>;
   using LocalSourceType = typename SourceType::LocalFunctionType;
   using DiscreteSourceType = ConstDiscreteFunction<SV, SGV, s_r, s_rC, SR>;
+  using SourceSpaceType = typename DiscreteSourceType::SpaceType;
   using LocalDiscreteSourceType = typename DiscreteSourceType::ConstLocalDiscreteFunctionType;
 
   using ThisType = LocalElementOperatorInterface<SV, SGV, s_r, s_rC, SR, r_r, r_rC, RR, RGV, RV>;
@@ -72,13 +74,21 @@ public:
   LocalElementOperatorInterface(const SourceType& source, const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type)
     , source_(source)
-    , local_source_(source_.local_function())
+    , local_source_(source_.access().local_function())
+  {}
+
+  LocalElementOperatorInterface(const SourceSpaceType& source_space,
+                                const SV& source_vector,
+                                const XT::Common::ParameterType& param_type = {})
+    : XT::Common::ParametricInterface(param_type)
+    , source_(new DiscreteSourceType(source_space, source_vector))
+    , local_source_(source_.access().local_function())
   {}
 
   LocalElementOperatorInterface(const ThisType& other)
     : XT::Common::ParametricInterface(other)
     , source_(other.source_)
-    , local_source_(source_.local_function())
+    , local_source_(source_.access().local_function())
   {}
 
   virtual ~LocalElementOperatorInterface() = default;
@@ -88,7 +98,7 @@ public:
   virtual void apply(LocalRangeType& local_range, const XT::Common::Parameter& param = {}) const = 0;
 
 protected:
-  const SourceType& source_;
+  XT::Common::ConstStorageProvider<SourceType> source_;
   std::unique_ptr<LocalSourceType> local_source_;
 }; // class LocalElementOperatorInterface
 
@@ -131,6 +141,7 @@ public:
   using SourceType = XT::Functions::GridFunctionInterface<E, s_r, s_rC, SF>;
   using LocalSourceType = typename SourceType::LocalFunctionType;
   using DiscreteSourceType = ConstDiscreteFunction<SV, SGV, s_r, s_rC, SF>;
+  using SourceSpaceType = typename DiscreteSourceType::SpaceType;
   using LocalDiscreteSourceType = typename DiscreteSourceType::ConstLocalDiscreteFunctionType;
 
   using IRV = InsideRangeVector;
@@ -147,13 +158,21 @@ public:
   LocalIntersectionOperatorInterface(const SourceType& source, const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type)
     , source_(source)
-    , local_source_(source_.local_function())
+    , local_source_(source_.access().local_function())
+  {}
+
+  LocalIntersectionOperatorInterface(const SourceSpaceType& source_space,
+                                     const SV& source_vector,
+                                     const XT::Common::ParameterType& param_type = {})
+    : XT::Common::ParametricInterface(param_type)
+    , source_(new DiscreteSourceType(source_space, source_vector))
+    , local_source_(source_.access().local_function())
   {}
 
   LocalIntersectionOperatorInterface(const ThisType& other)
     : XT::Common::ParametricInterface(other)
     , source_(other.source_)
-    , local_source_(source_.local_function())
+    , local_source_(source_.access().local_function())
   {}
 
   virtual ~LocalIntersectionOperatorInterface() = default;
@@ -170,7 +189,7 @@ public:
                      const XT::Common::Parameter& param = {}) const = 0;
 
 protected:
-  const SourceType& source_;
+  XT::Common::ConstStorageProvider<SourceType> source_;
   std::unique_ptr<LocalSourceType> local_source_;
 }; // class LocalIntersectionOperatorInterface
 

@@ -50,6 +50,7 @@ public:
   using typename BaseType::E;
   using typename BaseType::LocalRangeType;
   using typename BaseType::LocalSourceType;
+  using typename BaseType::SourceSpaceType;
   using typename BaseType::SourceType;
 
   using FluxType = XT::Functions::FluxFunctionInterface<E, m, d, m, RF>;
@@ -66,6 +67,17 @@ public:
                                  const LocalMassMatrixProviderType& local_mass_matrices,
                                  const FluxType& flux)
     : BaseType(source, flux.parameter_type())
+    , flux_(flux)
+    , local_flux_(flux_.local_function())
+    , local_mass_matrices_(local_mass_matrices)
+  {}
+
+  /// Applies the inverse of the local mass matrix.
+  LocalAdvectionDgVolumeOperator(const SourceSpaceType& source_space,
+                                 const SV& source_vector,
+                                 const LocalMassMatrixProviderType& local_mass_matrices,
+                                 const FluxType& flux)
+    : BaseType(source_space, source_vector, flux.parameter_type())
     , flux_(flux)
     , local_flux_(flux_.local_function())
     , local_mass_matrices_(local_mass_matrices)
@@ -154,6 +166,7 @@ public:
   using typename BaseType::LocalInsideRangeType;
   using typename BaseType::LocalOutsideRangeType;
   using typename BaseType::LocalSourceType;
+  using typename BaseType::SourceSpaceType;
   using typename BaseType::SourceType;
 
   using NumericalFluxType = NumericalFluxInterface<I, d, m, IRR>;
@@ -163,7 +176,7 @@ public:
                                    const NumericalFluxType& numerical_flux,
                                    bool compute_outside = true)
     : BaseType(source, numerical_flux.parameter_type())
-    , local_source_outside__(source_.local_function())
+    , local_source_outside__(source_.access().local_function())
     , numerical_flux_(numerical_flux.copy())
     , local_flux_(numerical_flux_->flux().local_function())
     , compute_outside_(compute_outside)
@@ -175,7 +188,21 @@ public:
                                    const NumericalFluxType& numerical_flux,
                                    bool compute_outside = true)
     : BaseType(source, numerical_flux.parameter_type())
-    , local_source_outside__(source_.local_function())
+    , local_source_outside__(source_.access().local_function())
+    , numerical_flux_(numerical_flux.copy())
+    , local_flux_(numerical_flux_->flux().local_function())
+    , compute_outside_(compute_outside)
+    , local_mass_matrices_(local_mass_matrices)
+  {}
+
+  /// Applies the inverse of the local mass matrix.
+  LocalAdvectionDgCouplingOperator(const SourceSpaceType& source_space,
+                                   const SV& source_vector,
+                                   const LocalMassMatrixProviderType& local_mass_matrices,
+                                   const NumericalFluxType& numerical_flux,
+                                   bool compute_outside = true)
+    : BaseType(source_space, source_vector, numerical_flux.parameter_type())
+    , local_source_outside__(source_.access().local_function())
     , numerical_flux_(numerical_flux.copy())
     , local_flux_(numerical_flux_->flux().local_function())
     , compute_outside_(compute_outside)
@@ -184,7 +211,7 @@ public:
 
   LocalAdvectionDgCouplingOperator(const ThisType& other)
     : BaseType(other)
-    , local_source_outside__(source_.local_function())
+    , local_source_outside__(source_.access().local_function())
     , numerical_flux_(other.numerical_flux_->copy())
     , local_flux_(numerical_flux_->flux().local_function())
     , compute_outside_(other.compute_outside_)
@@ -292,6 +319,7 @@ public:
   using typename BaseType::IntersectionType;
   using typename BaseType::LocalInsideRangeType;
   using typename BaseType::LocalOutsideRangeType;
+  using typename BaseType::SourceSpaceType;
   using typename BaseType::SourceType;
 
   using StateDomainType = FieldVector<typename SGV::ctype, SGV::dimension>;
@@ -322,6 +350,21 @@ public:
     , numerical_flux_order_(numerical_flux_order)
     , local_mass_matrices_(local_mass_matrices)
   {}
+
+  /// Applies the inverse of the local mass matrix.
+  LocalAdvectionDgBoundaryTreatmentByCustomNumericalFluxOperator(
+      const SourceSpaceType& source_space,
+      const SV& source_vector,
+      const LocalMassMatrixProviderType& local_mass_matrices,
+      LambdaType numerical_boundary_flux,
+      const int numerical_flux_order,
+      const XT::Common::ParameterType& numerical_flux_param_type = {})
+    : BaseType(source_space, source_vector, numerical_flux_param_type)
+    , numerical_boundary_flux_(numerical_boundary_flux)
+    , numerical_flux_order_(numerical_flux_order)
+    , local_mass_matrices_(local_mass_matrices)
+  {}
+
 
   LocalAdvectionDgBoundaryTreatmentByCustomNumericalFluxOperator(const ThisType& other)
     : BaseType(other)
@@ -398,6 +441,7 @@ public:
   using typename BaseType::IntersectionType;
   using typename BaseType::LocalInsideRangeType;
   using typename BaseType::LocalOutsideRangeType;
+  using typename BaseType::SourceSpaceType;
   using typename BaseType::SourceType;
 
   using D = typename IntersectionType::ctype;
@@ -431,6 +475,21 @@ public:
       LambdaType boundary_extrapolation_lambda,
       const XT::Common::ParameterType& boundary_treatment_param_type = {})
     : BaseType(source, numerical_flux.parameter_type() + boundary_treatment_param_type)
+    , numerical_flux_(numerical_flux.copy())
+    , local_flux_(numerical_flux_->flux().local_function())
+    , extrapolate_(boundary_extrapolation_lambda)
+    , local_mass_matrices_(local_mass_matrices)
+  {}
+
+  /// Applies the inverse of the local mass matrix.
+  LocalAdvectionDgBoundaryTreatmentByCustomExtrapolationOperator(
+      const SourceSpaceType& source_space,
+      const SV& source_vector,
+      const LocalMassMatrixProviderType& local_mass_matrices,
+      const NumericalFluxType& numerical_flux,
+      LambdaType boundary_extrapolation_lambda,
+      const XT::Common::ParameterType& boundary_treatment_param_type = {})
+    : BaseType(source_space, source_vector, numerical_flux.parameter_type() + boundary_treatment_param_type)
     , numerical_flux_(numerical_flux.copy())
     , local_flux_(numerical_flux_->flux().local_function())
     , extrapolate_(boundary_extrapolation_lambda)
@@ -512,6 +571,7 @@ public:
   using typename BaseType::D;
   using typename BaseType::LocalRangeType;
   using typename BaseType::LocalSourceType;
+  using typename BaseType::SourceSpaceType;
   using typename BaseType::SourceType;
 
   using FluxType = XT::Functions::FunctionInterface<m, d, m, RF>;
@@ -523,7 +583,7 @@ public:
                                                             const double& alpha_1 = 1.0,
                                                             const size_t index = 0)
     : BaseType(source)
-    , local_source_outside__(source_.local_function())
+    , local_source_outside__(source_.access().local_function())
     , assembly_grid_view_(assembly_grid_view)
     , nu_1_(nu_1)
     , alpha_1_(alpha_1)
@@ -538,7 +598,28 @@ public:
                                                             const double& alpha_1 = 1.0,
                                                             const size_t index = 0)
     : BaseType(source)
-    , local_source_outside__(source_.local_function())
+    , local_source_outside__(source_.access().local_function())
+    , assembly_grid_view_(assembly_grid_view)
+    , nu_1_(nu_1)
+    , alpha_1_(alpha_1)
+    , index_(index)
+    , local_mass_matrices_(local_mass_matrices)
+  {}
+
+  /// Applies the inverse of the local mass matrix.
+  LocalAdvectionDgArtificialViscosityShockCapturingOperator(
+
+
+      const SourceSpaceType& source_space,
+      const SV& source_vector,
+
+      const LocalMassMatrixProviderType& local_mass_matrices,
+      const SGV& assembly_grid_view,
+      const double& nu_1 = 0.2,
+      const double& alpha_1 = 1.0,
+      const size_t index = 0)
+    : BaseType(source_space, source_vector)
+    , local_source_outside__(source_.access().local_function())
     , assembly_grid_view_(assembly_grid_view)
     , nu_1_(nu_1)
     , alpha_1_(alpha_1)
@@ -548,7 +629,7 @@ public:
 
   LocalAdvectionDgArtificialViscosityShockCapturingOperator(const ThisType& other)
     : BaseType(other)
-    , local_source_outside__(source_.local_function())
+    , local_source_outside__(source_.access().local_function())
     , assembly_grid_view_(other.assembly_grid_view_)
     , nu_1_(other.nu_1_)
     , alpha_1_(other.alpha_1_)

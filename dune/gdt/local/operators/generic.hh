@@ -67,7 +67,7 @@ public:
 
   void apply(LocalRangeType& local_range, const XT::Common::Parameter& param = {}) const override final
   {
-    func_(source_, local_range, this->parse_parameter(param));
+    func_(source_.access(), local_range, this->parse_parameter(param));
   }
 
 private:
@@ -135,7 +135,7 @@ public:
              LocalOutsideRangeType& local_range_outside,
              const XT::Common::Parameter& param = {}) const override final
   {
-    func_(source_, intersection, local_range_inside, local_range_outside, this->parse_parameter(param));
+    func_(source_.access(), intersection, local_range_inside, local_range_outside, this->parse_parameter(param));
   }
 
 private:

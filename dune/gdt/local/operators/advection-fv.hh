@@ -58,6 +58,7 @@ public:
   using typename BaseType::LocalInsideRangeType;
   using typename BaseType::LocalOutsideRangeType;
   using typename BaseType::LocalSourceType;
+  using typename BaseType::SourceSpaceType;
   using typename BaseType::SourceType;
   using StateType = typename XT::Functions::RangeTypeSelector<SR, m, 1>::type;
   using NumericalFluxType = NumericalFluxInterface<I, d, m, RR>;
@@ -67,6 +68,15 @@ public:
                                    const NumericalFluxType& numerical_flux,
                                    const bool source_x_independent = false)
     : BaseType(source, numerical_flux.parameter_type())
+    , numerical_flux_(numerical_flux.copy())
+    , source_is_x_independent_(source_x_independent)
+  {}
+
+  LocalAdvectionFvCouplingOperator(const SourceSpaceType& source_space,
+                                   const SV& source_vector,
+                                   const NumericalFluxType& numerical_flux,
+                                   const bool source_x_independent = false)
+    : BaseType(source_space, source_vector, numerical_flux.parameter_type())
     , numerical_flux_(numerical_flux.copy())
     , source_is_x_independent_(source_x_independent)
   {}
@@ -155,6 +165,7 @@ public:
   using typename BaseType::IntersectionType;
   using typename BaseType::LocalInsideRangeType;
   using typename BaseType::LocalOutsideRangeType;
+  using typename BaseType::SourceSpaceType;
   using typename BaseType::SourceType;
 
   using StateDomainType = FieldVector<typename SGV::ctype, SGV::dimension>;
@@ -168,6 +179,17 @@ public:
       const XT::Common::ParameterType& boundary_treatment_param_type = {},
       const bool source_is_x_independent = false)
     : BaseType(source, boundary_treatment_param_type)
+    , numerical_boundary_flux_(numerical_boundary_flux_lambda)
+    , source_is_x_independent_(source_is_x_independent)
+  {}
+
+  LocalAdvectionFvBoundaryTreatmentByCustomNumericalFluxOperator(
+      const SourceSpaceType& source_space,
+      const SV& source_vector,
+      LambdaType numerical_boundary_flux_lambda,
+      const XT::Common::ParameterType& boundary_treatment_param_type = {},
+      const bool source_is_x_independent = false)
+    : BaseType(source_space, source_vector, boundary_treatment_param_type)
     , numerical_boundary_flux_(numerical_boundary_flux_lambda)
     , source_is_x_independent_(source_is_x_independent)
   {}
@@ -233,6 +255,7 @@ public:
   using typename BaseType::IntersectionType;
   using typename BaseType::LocalInsideRangeType;
   using typename BaseType::LocalOutsideRangeType;
+  using typename BaseType::SourceSpaceType;
   using typename BaseType::SourceType;
 
   using D = typename IntersectionType::ctype;
@@ -253,6 +276,19 @@ public:
       const XT::Common::ParameterType& boundary_treatment_param_type = {},
       const bool source_is_x_independent = false)
     : BaseType(source, numerical_flux.parameter_type() + boundary_treatment_param_type)
+    , numerical_flux_(numerical_flux.copy())
+    , extrapolate_(boundary_extrapolation_lambda)
+    , source_is_x_independent_(source_is_x_independent)
+  {}
+
+  LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator(
+      const SourceSpaceType& source_space,
+      const SV& source_vector,
+      const NumericalFluxType& numerical_flux,
+      LambdaType boundary_extrapolation_lambda,
+      const XT::Common::ParameterType& boundary_treatment_param_type = {},
+      const bool source_is_x_independent = false)
+    : BaseType(source_space, source_vector, numerical_flux.parameter_type() + boundary_treatment_param_type)
     , numerical_flux_(numerical_flux.copy())
     , extrapolate_(boundary_extrapolation_lambda)
     , source_is_x_independent_(source_is_x_independent)
