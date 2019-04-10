@@ -634,7 +634,6 @@ private:
 template <class GV,
           class MomentBasis,
           class EigenVectorWrapperType,
-
           class SlopeType = MinmodSlope<XT::Grid::extract_entity_t<GV>, EigenVectorWrapperType>>
 class DgConvexHullRealizabilityLimitedSlope
   : public SlopeBase<XT::Grid::extract_entity_t<GV>, EigenVectorWrapperType, 3>
@@ -744,7 +743,7 @@ private:
 
 template <class GV,
           class MomentBasis,
-
+          class EigenVectorWrapperType,
           class SlopeType = MinmodSlope<XT::Grid::extract_entity_t<GV>,
                                         FieldVector<typename MomentBasis::RangeFieldType, MomentBasis::dimRange>,
                                         EigenVectorWrapperType>>
@@ -755,7 +754,7 @@ class ConvexHullRealizabilityLimitedSlope
 
 template <class GV,
           class MomentBasis,
-
+          class EigenVectorWrapperType,
           class SlopeType = MinmodSlope<XT::Grid::extract_entity_t<GV>,
                                         FieldVector<typename MomentBasis::RangeFieldType, MomentBasis::dimRange>,
                                         EigenVectorWrapperType>>
@@ -1106,6 +1105,26 @@ private:
 
 template <class GV, class MomentBasis, class EigenVectorWrapperType, class SlopeType>
 constexpr size_t LpConvexhullRealizabilityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType, SlopeType>::dimRange;
+
+#else // HAVE_CLP
+
+template <class GV,
+          class MomentBasis,
+          class EigenVectorWrapperType,
+          class SlopeType = MinmodSlope<XT::Grid::extract_entity_t<GV>, EigenVectorWrapperType>>
+class LpPositivityLimitedSlope
+{
+  static_assert(Dune::AlwaysFalse<MomentBasis>::value, "You are missing Clp!");
+};
+
+template <class GV,
+          class MomentBasis,
+          class EigenVectorWrapperType,
+          class SlopeType = MinmodSlope<XT::Grid::extract_entity_t<GV>, EigenVectorWrapperType>>
+class LpConvexhullRealizabilityLimitedSlope
+{
+  static_assert(Dune::AlwaysFalse<MomentBasis>::value, "You are missing Clp!");
+};
 
 #endif // HAVE_CLP
 
