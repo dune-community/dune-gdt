@@ -744,9 +744,7 @@ private:
 template <class GV,
           class MomentBasis,
           class EigenVectorWrapperType,
-          class SlopeType = MinmodSlope<XT::Grid::extract_entity_t<GV>,
-                                        FieldVector<typename MomentBasis::RangeFieldType, MomentBasis::dimRange>,
-                                        EigenVectorWrapperType>>
+          class SlopeType = MinmodSlope<XT::Grid::extract_entity_t<GV>, EigenVectorWrapperType>>
 class ConvexHullRealizabilityLimitedSlope
 {
   static_assert(Dune::AlwaysFalse<MomentBasis>::value, "You are missing Qhull!");
@@ -755,9 +753,7 @@ class ConvexHullRealizabilityLimitedSlope
 template <class GV,
           class MomentBasis,
           class EigenVectorWrapperType,
-          class SlopeType = MinmodSlope<XT::Grid::extract_entity_t<GV>,
-                                        FieldVector<typename MomentBasis::RangeFieldType, MomentBasis::dimRange>,
-                                        EigenVectorWrapperType>>
+          class SlopeType = MinmodSlope<XT::Grid::extract_entity_t<GV>, EigenVectorWrapperType>>
 class DgConvexHullRealizabilityLimitedSlopeSlope
 {
   static_assert(Dune::AlwaysFalse<MomentBasis>::value, "You are missing Qhull!");
