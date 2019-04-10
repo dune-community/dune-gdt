@@ -67,11 +67,10 @@ public:
 
   void apply(LocalRangeType& local_range, const XT::Common::Parameter& param = {}) const override final
   {
-    func_(source_.access(), local_range, this->parse_parameter(param));
+    func_(this->source(), local_range, this->parse_parameter(param));
   }
 
 private:
-  using BaseType::source_;
   const GenericFunctionType func_;
 }; // class GenericLocalElementOperator
 
@@ -135,11 +134,10 @@ public:
              LocalOutsideRangeType& local_range_outside,
              const XT::Common::Parameter& param = {}) const override final
   {
-    func_(source_.access(), intersection, local_range_inside, local_range_outside, this->parse_parameter(param));
+    func_(this->source(), intersection, local_range_inside, local_range_outside, this->parse_parameter(param));
   }
 
 private:
-  using BaseType::source_;
   const GenericFunctionType func_;
 }; // class GenericLocalIntersectionOperator
 

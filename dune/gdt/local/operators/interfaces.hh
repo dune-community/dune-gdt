@@ -97,6 +97,19 @@ public:
 
   virtual void apply(LocalRangeType& local_range, const XT::Common::Parameter& param = {}) const = 0;
 
+  virtual std::unique_ptr<ThisType> with_source(const SourceType& src) const
+  {
+    auto ret = copy();
+    ret->source_ = XT::Common::ConstStorageProvider<SourceType>(src);
+    ret->local_source_ = ret->source().local_function();
+    return std::move(ret);
+  }
+
+  const SourceType& source()
+  {
+    return source_.access();
+  }
+
 protected:
   XT::Common::ConstStorageProvider<SourceType> source_;
   std::unique_ptr<LocalSourceType> local_source_;
@@ -155,9 +168,9 @@ public:
   using ORGV = OutsideRangeGridView;
   using LocalOutsideRangeType = LocalDiscreteFunction<ORV, ORGV, r_r, r_rC, RF>;
 
-  LocalIntersectionOperatorInterface(const SourceType& source, const XT::Common::ParameterType& param_type = {})
+  LocalIntersectionOperatorInterface(const SourceType& src, const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type)
-    , source_(source)
+    , source_(src)
     , local_source_(source_.access().local_function())
   {}
 
@@ -187,6 +200,19 @@ public:
                      LocalInsideRangeType& local_range_inside,
                      LocalOutsideRangeType& local_range_outside,
                      const XT::Common::Parameter& param = {}) const = 0;
+
+  virtual std::unique_ptr<ThisType> with_source(const SourceType& src) const
+  {
+    auto ret = copy();
+    ret->source_ = XT::Common::ConstStorageProvider<SourceType>(src);
+    ret->local_source_ = ret->source().local_function();
+    return std::move(ret);
+  }
+
+  const SourceType& source()
+  {
+    return source_.access();
+  }
 
 protected:
   XT::Common::ConstStorageProvider<SourceType> source_;

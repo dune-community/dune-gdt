@@ -83,7 +83,6 @@ public:
     , range_space_(range_space)
     , matrix_(matrix)
     , source_vector_(source_vector)
-    , local_op_(local_operator.copy())
     , param_(param)
     , scaling_(param_.has_key("matrixoperator.scaling") ? param_.get("matrixoperator.scaling").at(0) : 1.)
     , eps_(param_.has_key("finite-difference-jacobians.eps") ? param_.get("finite-difference-jacobians.eps").at(0)
@@ -92,6 +91,7 @@ public:
     , range_(range_space_) // This is a full vector, and intended!
     , local_source_(source_.local_discrete_function())
     , local_range_(range_.local_discrete_function())
+    , local_op_(local_operator.with_source(source_))
   {
     source_.dofs().vector() = source_vector_;
   }
@@ -102,7 +102,6 @@ public:
     , range_space_(other.range_space_)
     , matrix_(other.matrix_)
     , source_vector_(other.source_vector_)
-    , local_op_(other.local_op_->copy())
     , param_(other.param_)
     , scaling_(other.scaling_)
     , eps_(other.eps_)
@@ -110,6 +109,7 @@ public:
     , range_(range_space_) // This is a full vector, and intended!
     , local_source_(source_.local_discrete_function())
     , local_range_(range_.local_discrete_function())
+    , local_op_(other.local_op_->with_source(source_))
   {
     source_.dofs().vector() = source_vector_;
   }
@@ -161,7 +161,6 @@ private:
   const RangeSpaceType& range_space_;
   MatrixType& matrix_;
   const VectorType& source_vector_;
-  const std::unique_ptr<LocalElementOperatorType> local_op_;
   const XT::Common::Parameter param_;
   const double scaling_;
   const real_t<F> eps_;
@@ -172,6 +171,7 @@ private:
   DynamicVector<size_t> global_source_indices_;
   DynamicVector<size_t> global_range_indices_;
   DynamicVector<F> range_DoFs_;
+  const std::unique_ptr<LocalElementOperatorType> local_op_;
 }; // class LocalElementOperatorFiniteDifferenceJacobianAssembler
 
 
@@ -231,7 +231,6 @@ public:
     , range_space_(range_space)
     , matrix_(matrix)
     , source_vector_(source_vector)
-    , local_op_(local_operator.copy())
     , param_(param)
     , scaling_(param_.has_key("matrixoperator.scaling") ? param_.get("matrixoperator.scaling").at(0) : 1.)
     , eps_(eps)
@@ -241,6 +240,7 @@ public:
     , local_source_outside_(source_.local_discrete_function())
     , local_range_inside_(range_.local_discrete_function())
     , local_range_outside_(range_.local_discrete_function())
+    , local_op_(local_operator.with_source(source_))
   {
     source_.dofs().vector() = source_vector_;
   }
@@ -251,7 +251,6 @@ public:
     , range_space_(other.range_space_)
     , matrix_(other.matrix_)
     , source_vector_(other.source_vector_)
-    , local_op_(other.local_op_->copy())
     , param_(other.param_)
     , scaling_(other.scaling_)
     , eps_(other.eps_)
@@ -261,6 +260,7 @@ public:
     , local_source_outside_(source_.local_discrete_function())
     , local_range_inside_(range_.local_discrete_function())
     , local_range_outside_(range_.local_discrete_function())
+    , local_op_(other.local_op_->with_source(source_))
   {
     source_.dofs().vector() = source_vector_;
   }
@@ -374,7 +374,6 @@ private:
   const RangeSpaceType& range_space_;
   MatrixType& matrix_;
   const VectorType& source_vector_;
-  const std::unique_ptr<LocalIntersectionOperatorType> local_op_;
   const XT::Common::Parameter param_;
   const double scaling_;
   const real_t<F> eps_;
@@ -390,6 +389,7 @@ private:
   DynamicVector<size_t> global_range_indices_outside_;
   DynamicVector<F> range_DoFs_inside_;
   DynamicVector<F> range_DoFs_outside_;
+  const std::unique_ptr<LocalIntersectionOperatorType> local_op_;
 }; // class LocalIntersectionOperatorFiniteDifferenceJacobianAssembler
 
 
