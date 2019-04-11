@@ -33,6 +33,7 @@
 #include <dune/gdt/local/integrands/elliptic.hh>
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/operators/matrix-based.hh>
+#include <dune/gdt/tools/dirichlet-constraints.hh>
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/h1/continuous-lagrange.hh>
 #include <dune/gdt/spaces/l2/discontinuous-lagrange.hh>
@@ -71,8 +72,11 @@ private:
   using GV = typename DdGridType::LocalViewType;
 
 public:
-  DomainDecomposition(const unsigned int num_macro_elements_per_dim, const size_t num_refinements_per_subdomain)
-    : macro_grid_(XT::Grid::make_cube_grid<G>(0., 1., num_macro_elements_per_dim))
+  DomainDecomposition(const unsigned int num_macro_elements_per_dim,
+                      const size_t num_refinements_per_subdomain,
+                      const double ll,
+                      const double ur)
+    : macro_grid_(XT::Grid::make_cube_grid<G>(ll, ur, num_macro_elements_per_dim))
     , dd_grid(macro_grid_, num_refinements_per_subdomain, false, true)
     , vtk_writer_(dd_grid)
     , local_spaces_(dd_grid.num_subdomains(), nullptr)
@@ -189,6 +193,15 @@ public:
     return no_boundary_;
   } // ... type(...)
 
+  //  const std::set<IntersectionType>& boundary_intersections()
+  //  {
+  //    std::set<size_t> boundary_intersections_;
+  //    for (auto&& macro_intersection : intersections(macro_grid_view_, macro_element_)) {
+  //      if self.type()
+  //    }
+  //    return boundary_intersections_;
+  //  }
+
   const MacroGV& macro_grid_view_;
   const MacroElementType& macro_element_;
   const MacroBoundaryInfoType& macro_boundary_info_;
@@ -211,12 +224,17 @@ PYBIND11_PLUGIN(usercode)
   py::module::import("dune.xt.functions");
 
   py::class_<DomainDecomposition> domain_decomposition(m, "DomainDecomposition", "DomainDecomposition");
-  domain_decomposition.def(
-      py::init([](const unsigned int num_macro_elements_per_dim, const size_t num_refinements_per_subdomain) {
-        return new DomainDecomposition(num_macro_elements_per_dim, num_refinements_per_subdomain);
-      }),
-      "num_macro_elements_per_dim"_a,
-      "num_refinements_per_subdomain"_a);
+  domain_decomposition.def(py::init([](const unsigned int num_macro_elements_per_dim,
+                                       const size_t num_refinements_per_subdomain,
+                                       const double ll,
+                                       const double rr) {
+                             return new DomainDecomposition(
+                                 num_macro_elements_per_dim, num_refinements_per_subdomain, ll, rr);
+                           }),
+                           "num_macro_elements_per_dim"_a,
+                           "num_refinements_per_subdomain"_a,
+                           "lower_left"_a = 0.,
+                           "upper_right"_a = 1.);
   domain_decomposition.def_property_readonly("num_sudomains",
                                              [](DomainDecomposition& self) { return self.dd_grid.num_subdomains(); });
   domain_decomposition.def_property_readonly("boundary_subdomains", [](DomainDecomposition& self) {
@@ -795,6 +813,67 @@ PYBIND11_PLUGIN(usercode)
       "nn"_a,
       "space_type"_a = "discontinuous_lagrange");
 
+  m.def("edge_DoFs",
+        [](DomainDecomposition& domain_decomposition, const size_t ss, const size_t nn, const std::string space_type) {
+          DUNE_THROW_IF(ss >= domain_decomposition.dd_grid.num_subdomains(),
+                        XT::Common::Exceptions::index_out_of_range,
+                        "ss = " << ss << "\n   domain_decomposition.dd_grid.num_subdomains() = "
+                                << domain_decomposition.dd_grid.num_subdomains());
+          std::set<size_t> edge_DoFs;
+          std::set<size_t> boundary_DoFs;
+          for (auto&& inside_macro_element : elements(domain_decomposition.dd_grid.macro_grid_view())) {
+            if (domain_decomposition.dd_grid.subdomain(inside_macro_element) == ss) {
+              // this is the subdomain we are interested in, create space
+              auto inner_subdomain_grid_view =
+                  domain_decomposition.dd_grid.local_grid(inside_macro_element).leaf_view();
+              auto inner_subdomain_space = make_subdomain_space(inner_subdomain_grid_view, space_type);
+              bool found_correct_macro_intersection = false;
+              for (auto&& macro_intersection :
+                   intersections(domain_decomposition.dd_grid.macro_grid_view(), inside_macro_element)) {
+                if (macro_intersection.neighbor()) {
+                  const auto outside_macro_element = macro_intersection.outside();
+                  if (domain_decomposition.dd_grid.subdomain(outside_macro_element) == nn) {
+                    found_correct_macro_intersection = true;
+                    // these are the subdomains we are interested in
+                    const auto outer_normal = macro_intersection.centerUnitOuterNormal();
+                    using GV = decltype(inner_subdomain_grid_view);
+                    using I = GV::Intersection;
+                    using SpaceType = GDT::SpaceInterface<GV>;
+                    XT::Grid::NormalBasedBoundaryInfo<XT::Grid::extract_intersection_t<GV>> macro_boundary_info;
+                    macro_boundary_info.register_new_normal(outer_normal, new XT::Grid::DirichletBoundary());
+                    DirichletConstraints<I, SpaceType> constraints(macro_boundary_info, *inner_subdomain_space);
+                    const auto& coupling = domain_decomposition.dd_grid.coupling(
+                        inside_macro_element, -1, outside_macro_element, -1, true);
+                    DynamicVector<size_t> global_indices_in(inner_subdomain_space->mapper().max_local_size());
+                    auto inside_basis = inner_subdomain_space->basis().localize();
+                    const auto coupling_intersection_it_end = coupling.template iend<0>();
+                    for (auto coupling_intersection_it = coupling.template ibegin<0>();
+                         coupling_intersection_it != coupling_intersection_it_end;
+                         ++coupling_intersection_it) {
+                      const auto& coupling_intersection = *coupling_intersection_it;
+                      const auto inside_element = coupling_intersection.inside();
+                      constraints.apply_local(inside_element);
+                    }
+                    edge_DoFs = std::move(constraints.dirichlet_DoFs());
+                    break;
+                  }
+                }
+              }
+
+              DUNE_THROW_IF(!found_correct_macro_intersection,
+                            XT::Common::Exceptions::index_out_of_range,
+                            "ss = " << ss << "\n   nn = " << nn);
+            }
+          }
+          return edge_DoFs;
+        },
+        py::call_guard<py::gil_scoped_release>(),
+        "domain_decomposition"_a,
+        "ss"_a,
+        "nn"_a,
+        "space_type"_a = "discontinuous_lagrange");
+
+
   m.def("assemble_boundary_product_contributions",
         [](DomainDecomposition& domain_decomposition, const size_t ss, const std::string space_type) {
           DUNE_THROW_IF(ss >= domain_decomposition.dd_grid.num_subdomains(),
@@ -833,6 +912,41 @@ PYBIND11_PLUGIN(usercode)
             }
           }
           return std::move(subdomain_matrix);
+        },
+        py::call_guard<py::gil_scoped_release>(),
+        "domain_decomposition"_a,
+        "ss"_a,
+        "space_type"_a = "discontinuous_lagrange");
+
+  m.def("boundary_DoFs",
+        [](DomainDecomposition& domain_decomposition, const size_t ss, const std::string space_type) {
+          DUNE_THROW_IF(ss >= domain_decomposition.dd_grid.num_subdomains(),
+                        XT::Common::Exceptions::index_out_of_range,
+                        "ss = " << ss << "\n   domain_decomposition.dd_grid.num_subdomains() = "
+                                << domain_decomposition.dd_grid.num_subdomains());
+          using MGV = typename DomainDecomposition::DdGridType::MacroGridViewType;
+          const XT::Grid::AllDirichletBoundaryInfo<XT::Grid::extract_intersection_t<MGV>> macro_boundary_info;
+          std::set<size_t> boundary_DoFs;
+          for (auto&& macro_element : elements(domain_decomposition.dd_grid.macro_grid_view())) {
+            if (domain_decomposition.dd_grid.subdomain(macro_element) == ss) {
+              // this is the subdomain we are interested in, create space
+              auto subdomain_grid_view = domain_decomposition.dd_grid.local_grid(macro_element).leaf_view();
+              using GV = decltype(subdomain_grid_view);
+              using E = typename GV::template Codim<0>::Entity;
+              using I = typename GV::Intersection;
+              auto subdomain_space = make_subdomain_space(subdomain_grid_view, space_type);
+              const MacroGridBasedBoundaryInfo<MGV, GV> subdomain_boundary_info(
+                  domain_decomposition.dd_grid.macro_grid_view(), macro_element, macro_boundary_info);
+              DirichletConstraints<I, std::decay_t<decltype(*subdomain_space)>> constraints(subdomain_boundary_info,
+                                                                                            *subdomain_space);
+              auto walker = XT::Grid::make_walker(subdomain_grid_view);
+              walker.append(constraints, XT::Grid::ApplyOn::BoundaryElements<GV>());
+              walker.walk(/*parallel=*/true);
+              boundary_DoFs = std::move(constraints.dirichlet_DoFs());
+              break;
+            }
+          }
+          return boundary_DoFs;
         },
         py::call_guard<py::gil_scoped_release>(),
         "domain_decomposition"_a,
