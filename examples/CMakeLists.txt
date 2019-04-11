@@ -37,6 +37,7 @@ foreach(source ${example_sources}) # do some name conversion
   set(targname ${source})
   cleanup_target_name(${targname})
   add_executable(${targname} ${source})
+  target_link_libraries(${targname} ${Clp_LIBRARIES} ${Qhull_LIBRARIES})
   list(APPEND examples_targets ${targname})
 endforeach(source ${example_sources})
 
