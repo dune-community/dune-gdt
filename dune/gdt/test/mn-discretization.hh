@@ -207,7 +207,8 @@ struct HyperbolicMnDiscretization
                       basis_functions->stringifier());
     auto end_time = std::chrono::steady_clock::now();
     std::chrono::duration<double> time_diff = end_time - begin_time;
-    std::cout << "Solving took: " << XT::Common::to_string(time_diff.count(), 15) << " s" << std::endl;
+    if (grid_view.comm().rank() == 0)
+      std::cout << "Solving took: " << XT::Common::to_string(time_diff.count(), 15) << " s" << std::endl;
 
     auto ret = std::make_pair(FieldVector<double, 3>(0.), int(0));
     double& l1norm = ret.first[0];

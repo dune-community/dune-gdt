@@ -12,6 +12,8 @@
 #ifndef DUNE_GDT_OPERATORS_ADVECTION_FV_HH
 #define DUNE_GDT_OPERATORS_ADVECTION_FV_HH
 
+#include <dune/grid/common/partitionset.hh>
+
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/grid/filters.hh>
@@ -150,7 +152,7 @@ public:
     localizable_op.append(
         LocalAdvectionFvCouplingOperator<I, V, SGV, m, F, F, RGV, V>(source_function, *numerical_flux_),
         param,
-        XT::Grid::ApplyOn::InnerIntersectionsOnce<SGV>());
+        XT::Grid::ApplyOn::PartitionSetInnerIntersectionsOnce<SGV, Dune::Partitions::InteriorBorder>());
     // contributions from periodic boundaries
     localizable_op.append(
         LocalAdvectionFvCouplingOperator<I, V, SGV, m, F, F, RGV, V>(source_function, *numerical_flux_),

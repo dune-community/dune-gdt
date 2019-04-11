@@ -184,8 +184,6 @@ struct HyperbolicPnDiscretization
     using namespace Dune;
     using namespace Dune::GDT;
 
-    const size_t num_threads = 4;
-    XT::Common::threadManager().set_max_threads(num_threads);
     //******************* get typedefs and constants from ProblemType **********************//
     using MomentBasis = typename TestCaseType::MomentBasis;
     using DiscreteFunctionType = typename TestCaseType::DiscreteFunctionType;
@@ -337,7 +335,8 @@ struct HyperbolicPnDiscretization
                       basis_functions->stringifier());
     auto end_time = std::chrono::steady_clock::now();
     std::chrono::duration<double> time_diff = end_time - begin_time;
-    std::cout << "Solving took: " << XT::Common::to_string(time_diff.count(), 15) << " s" << std::endl;
+    if (grid_view.comm().rank() == 0)
+      std::cout << "Solving took: " << XT::Common::to_string(time_diff.count(), 15) << " s" << std::endl;
 
     FieldVector<double, 3> ret(0);
     double& l1norm = ret[0];
