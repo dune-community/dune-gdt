@@ -43,7 +43,7 @@ void parse_momentmodel_arguments(int argc,
                                  size_t& num_output_steps,
                                  size_t& quad_order,
                                  size_t& quad_refinements,
-                                 size_t& grid_size,
+                                 std::string& grid_size,
                                  size_t& overlap_size,
                                  double& t_end,
                                  std::string& filename)
@@ -59,7 +59,8 @@ void parse_momentmodel_arguments(int argc,
   num_output_steps = num_save_steps;
   quad_order = -1;
   quad_refinements = -1;
-  grid_size = -1, overlap_size = 2;
+  grid_size = "";
+  overlap_size = 2;
   t_end = 0.;
   filename = "";
 
@@ -101,7 +102,7 @@ void parse_momentmodel_arguments(int argc,
         DUNE_THROW(Dune::IOError, "--num_output_steps option requires one argument.");
     } else if (std::string(argv[i]) == "--grid_size") {
       if (i + 1 < argc)
-        grid_size = XT::Common::from_string<size_t>(argv[++i]);
+        grid_size = argv[++i];
       else
         DUNE_THROW(Dune::IOError, "--grid_size option requires one argument.");
     } else if (std::string(argv[i]) == "--overlap_size") {
@@ -176,7 +177,7 @@ struct HyperbolicPnDiscretization
                                    size_t num_output_steps = 0,
                                    size_t quad_order = size_t(-1),
                                    size_t quad_refinements = size_t(-1),
-                                   size_t grid_size = size_t(-1),
+                                   std::string grid_size = "",
                                    size_t overlap_size = 2,
                                    double t_end = 0.,
                                    std::string filename = "")
@@ -203,8 +204,8 @@ struct HyperbolicPnDiscretization
 
     //******************* create grid and FV space ***************************************
     auto grid_config = ProblemType::default_grid_cfg();
-    if (grid_size != size_t(-1))
-      grid_config["num_elements"] = XT::Common::to_string(grid_size);
+    if (!grid_size.empty())
+      grid_config["num_elements"] = grid_size;
     grid_config["overlap_size"] = XT::Common::to_string(overlap_size);
     const auto grid_ptr =
         Dune::XT::Grid::CubeGridProviderFactory<GridType>::create(grid_config, MPIHelper::getCommunicator()).grid_ptr();
@@ -367,8 +368,8 @@ struct HyperbolicPnTest
 {
   void run()
   {
-    auto norms = HyperbolicPnDiscretization<TestCaseType>::run(
-        1, 0, size_t(-1), size_t(-1), size_t(-1), 2, TestCaseType::t_end, "test");
+    auto norms =
+        HyperbolicPnDiscretization<TestCaseType>::run(1, 0, size_t(-1), size_t(-1), "", 2, TestCaseType::t_end, "test");
     const double l1norm = norms[0];
     const double l2norm = norms[1];
     const double linfnorm = norms[2];
