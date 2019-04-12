@@ -32,9 +32,9 @@ int main(int argc, char** argv)
   /****************** parse arguments and set up MPI and TBB *************************/
 
   size_t num_threads, threading_partition_factor, num_save_steps, num_output_steps, quad_order, quad_refinements,
-      grid_size, overlap_size;
+      overlap_size;
   double t_end = 0;
-  std::string filename;
+  std::string filename, grid_size;
   parse_momentmodel_arguments(argc,
                               argv,
                               num_threads,
