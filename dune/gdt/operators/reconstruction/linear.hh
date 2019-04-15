@@ -402,10 +402,7 @@ template <class AnalyticalFluxImp,
           class BoundaryValueImp,
           class GV,
           class VectorType,
-          class EigenvectorWrapperImp = internal::EigenvectorWrapper<
-              AnalyticalFluxImp,
-              FieldMatrix<typename BoundaryValueImp::R, BoundaryValueImp::r, BoundaryValueImp::r>,
-              FieldVector<typename BoundaryValueImp::R, BoundaryValueImp::r>>>
+          class EigenvectorWrapperImp = internal::EigenvectorWrapper<AnalyticalFluxImp>>
 class PointwiseLinearReconstructionOperator
 {
 public:

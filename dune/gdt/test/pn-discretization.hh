@@ -32,6 +32,7 @@
 #include <dune/gdt/tools/timestepper/fractional-step.hh>
 #include <dune/gdt/tools/timestepper/explicit-rungekutta.hh>
 #include <dune/gdt/tools/timestepper/matrix-exponential-kinetic-isotropic.hh>
+#include <dune/gdt/spaces/l2/finite-volume.hh>
 
 #include <dune/gdt/test/momentmodels/kineticequation.hh>
 
