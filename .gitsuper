@@ -3,7 +3,7 @@ remote = https://zivgitlab.uni-muenster.de/falbr_01/parabolic-lrbms-2017-code.gi
 status = 1a3bcab04b011a5d6e44f9983cae6ff89fa695e8 bin (heads/master)
 	 9c6b620ce5cfd7b76aa325a58f68dd19b22b4486 config.opts (9c6b620)
 	 76d7f0c9886a061571cb8dc66dd45a4ef86e7a58 dune-common (v2.2.1-2269-g76d7f0c9)
-	 c19221dc61ebc9cfd864549c2ba919b69a5a3d6b dune-gdt (heads/parabolic-lrbms-2018)
+	+5e8749d64d14f6934f2cdc72bc4512f069ce4d86 dune-gdt (heads/parabolic-lrbms-2018)
 	 e54b8541ffde1392a734b54f6d3243d616cfd8b6 dune-geometry (v2.2.0-860-ge54b854)
 	 83a70bf70c3815e57e55b9b8eb99dd2522047385 dune-grid (v2.6.0-10-g83a70bf70)
 	 1369ae9329d0928480d6b18ed772fc77e1abf752 dune-grid-glue (v2.4.0-161-g1369ae9)
@@ -17,7 +17,7 @@ status = 1a3bcab04b011a5d6e44f9983cae6ff89fa695e8 bin (heads/master)
 	 80737ca141a731c0439693d503161e131cec2cbf dune-xt-grid (remotes/origin/new-master-29-g80737ca)
 	 8d555cb3a7760ba34c6b08aa9a204374e737d2af dune-xt-la (remotes/origin/python_infrastructure_update-204-g8d555cb)
 	 bf4b95c2861bb9ba9fbb8e957113020088ebae29 pymor (0.1.0-3309-gbf4b95c2)
-commit = 8d21f447ecc58d7900f8e4de74cc542ae7b1d717
+commit = 450917de62e98835c71ef425c37feb0fddb4a5ee
 
 [submodule.bin]
 remote = https://github.com/dune-community/local-bin.git
@@ -37,7 +37,7 @@ commit = 76d7f0c9886a061571cb8dc66dd45a4ef86e7a58
 [submodule.dune-gdt]
 remote = https://github.com/ftalbrecht/dune-gdt.git
 status = c0b1735fab0ecbd4bb4f1eaa27cb65fe813e98f0 .vcsetup (c0b1735)
-commit = c19221dc61ebc9cfd864549c2ba919b69a5a3d6b
+commit = 5e8749d64d14f6934f2cdc72bc4512f069ce4d86
 
 [submodule.dune-geometry]
 remote = https://github.com/dune-community/dune-geometry.git
