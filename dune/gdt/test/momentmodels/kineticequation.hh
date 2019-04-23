@@ -33,11 +33,11 @@ public:
   static const size_t dimRange = MomentBasis::dimRange;
   static const size_t dimRangeCols = MomentBasis::dimRangeCols;
   static const size_t dimFlux = MomentBasis::dimFlux;
-  using FluxType = XT::Functions::FluxFunctionInterface<E, dimRange, dimDomain, dimRange, RangeFieldType>;
-  using GenericFluxFunctionType = XT::Functions::GenericFluxFunction<E, dimRange, dimDomain, dimRange, RangeFieldType>;
-  using InitialValueType = XT::Functions::FunctionInterface<dimDomain, dimRange, 1, RangeFieldType>;
-  using GenericFunctionType = XT::Functions::GenericFunction<dimDomain, dimRange, 1, RangeFieldType>;
-  using ScalarFunctionType = XT::Functions::FunctionInterface<dimDomain, 1, 1, RangeFieldType>;
+  using FluxType = XT::Functions::FluxFunctionInterface<E, dimRange, dimFlux, dimRange, RangeFieldType>;
+  using GenericFluxFunctionType = XT::Functions::GenericFluxFunction<E, dimRange, dimFlux, dimRange, RangeFieldType>;
+  using InitialValueType = XT::Functions::FunctionInterface<dimFlux, dimRange, 1, RangeFieldType>;
+  using GenericFunctionType = XT::Functions::GenericFunction<dimFlux, dimRange, 1, RangeFieldType>;
+  using ScalarFunctionType = XT::Functions::FunctionInterface<dimFlux, 1, 1, RangeFieldType>;
   using BoundaryValueType = InitialValueType;
   using MatrixType = typename Dune::DynamicMatrix<RangeFieldType>;
   using DomainType = typename InitialValueType::DomainType;

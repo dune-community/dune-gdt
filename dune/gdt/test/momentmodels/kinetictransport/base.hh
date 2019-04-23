@@ -55,8 +55,8 @@ public:
   using DynamicFluxRangeType = typename FluxType::LocalFunctionType::DynamicRangeType;
   using FluxJacobianRangeType = typename FluxType::LocalFunctionType::JacobianRangeReturnType;
   using DynamicFluxJacobianRangeType = typename FluxType::LocalFunctionType::DynamicJacobianRangeType;
-  using GenericScalarFunctionType = XT::Functions::GenericFunction<dimDomain, 1, 1, RangeFieldType>;
-  using ConstantScalarFunctionType = XT::Functions::ConstantFunction<dimDomain, 1, 1, RangeFieldType>;
+  using GenericScalarFunctionType = XT::Functions::GenericFunction<dimFlux, 1, 1, RangeFieldType>;
+  using ConstantScalarFunctionType = XT::Functions::ConstantFunction<dimFlux, 1, 1, RangeFieldType>;
 
   using BaseType::default_boundary_cfg;
   using BaseType::default_grid_cfg;

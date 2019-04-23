@@ -34,7 +34,7 @@ class LocalEntropySolver : public XT::Grid::ElementFunctor<typename SpaceType::G
   using EntropyFluxType = EntropyBasedFluxFunction<GridViewType, MomentBasis>;
   using RangeFieldType = typename EntropyFluxType::RangeFieldType;
   using LocalVectorType = typename EntropyFluxType::VectorType;
-  static const size_t dimDomain = EntropyFluxType::basis_dimDomain;
+  static const size_t dimFlux = EntropyFluxType::dimFlux;
   static const size_t dimRange = EntropyFluxType::basis_dimRange;
   using DiscreteFunctionType = DiscreteFunction<VectorType, GridViewType, dimRange, 1, RangeFieldType>;
   using ConstDiscreteFunctionType = ConstDiscreteFunction<VectorType, GridViewType, dimRange, 1, RangeFieldType>;
@@ -101,7 +101,7 @@ public:
         outfile_lock.lock();
         std::ofstream outfile(filename_, std::ios_base::app);
         outfile << param_.get("t")[0];
-        for (size_t ii = 0; ii < dimDomain; ++ii)
+        for (size_t ii = 0; ii < dimFlux; ++ii)
           outfile << " " << entity.geometry().center()[ii];
         outfile << " " << s << " ";
         outfile << XT::Common::to_string(u, 15) << std::endl;

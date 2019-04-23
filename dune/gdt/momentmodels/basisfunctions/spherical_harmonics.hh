@@ -126,7 +126,7 @@ public:
     return [](const RangeType& val) { return XT::Common::to_string(val[0] * std::sqrt(4 * M_PI), 15); };
   } // ... stringifier()
 
-  virtual DynamicRangeType alpha_iso_prime() const override final
+  virtual DynamicRangeType alpha_one() const override final
   {
     DynamicRangeType ret(dimRange, 0.);
     ret[0] = std::sqrt(4. * M_PI);
@@ -372,7 +372,7 @@ public:
     return [](const RangeType& val) { return XT::Common::to_string(val[0] * std::sqrt(4 * M_PI), 15); };
   } // ... stringifier()
 
-  virtual DynamicRangeType alpha_iso_prime() const override final
+  virtual DynamicRangeType alpha_one() const override final
   {
     DynamicRangeType ret(dimRange, 0.);
     ret[0] = std::sqrt(4. * M_PI);

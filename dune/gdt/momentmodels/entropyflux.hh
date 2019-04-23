@@ -117,13 +117,13 @@ template <class GridViewImp, class MomentBasisImp>
 class EntropyBasedFluxFunction
   : public XT::Functions::FluxFunctionInterface<XT::Grid::extract_entity_t<GridViewImp>,
                                                 MomentBasisImp::dimRange,
-                                                MomentBasisImp::dimDomain,
+                                                MomentBasisImp::dimFlux,
                                                 MomentBasisImp::dimRange,
                                                 typename MomentBasisImp::R>
 {
   using BaseType = typename XT::Functions::FluxFunctionInterface<XT::Grid::extract_entity_t<GridViewImp>,
                                                                  MomentBasisImp::dimRange,
-                                                                 MomentBasisImp::dimDomain,
+                                                                 MomentBasisImp::dimFlux,
                                                                  MomentBasisImp::dimRange,
                                                                  typename MomentBasisImp::R>;
   using ThisType = EntropyBasedFluxFunction;
@@ -132,7 +132,7 @@ public:
   using GridViewType = GridViewImp;
   using MomentBasis = MomentBasisImp;
   using IndexSetType = typename GridViewType::IndexSet;
-  static const size_t basis_dimDomain = MomentBasis::dimDomain;
+  static const size_t dimFlux = MomentBasis::dimFlux;
   static const size_t basis_dimRange = MomentBasis::dimRange;
   using typename BaseType::DomainType;
   using typename BaseType::E;
@@ -143,7 +143,7 @@ public:
   using AlphaReturnType = typename ImplementationType::AlphaReturnType;
   using VectorType = typename ImplementationType::VectorType;
   using LocalCacheType = EntropyLocalCache<StateType, VectorType>;
-  static const size_t cache_size = 4 * basis_dimDomain + 2;
+  static const size_t cache_size = 4 * dimFlux + 2;
 
   explicit EntropyBasedFluxFunction(
       const GridViewType& grid_view,
@@ -229,12 +229,12 @@ public:
       const auto& basis_functions = implementation_.basis_functions();
       static const auto u_iso = basis_functions.u_iso();
       static const auto alpha_iso = basis_functions.alpha_iso();
-      static const auto alpha_iso_prime = basis_functions.alpha_iso_prime();
+      static const auto alpha_one = basis_functions.alpha_one();
       const auto density = basis_functions.density(u);
       const auto u_iso_scaled = u_iso * density;
       // calculate (inf-norm) distance to isotropic moment with same density
       RangeFieldType distance = (u - u_iso_scaled).infinity_norm();
-      VectorType alpha_start = XT::Common::convert_to<VectorType>(alpha_iso + alpha_iso_prime * std::log(density));
+      VectorType alpha_start = XT::Common::convert_to<VectorType>(alpha_iso + alpha_one * std::log(density));
       if (!XT::Common::FloatCmp::eq(distance, 0.) && use_entity_cache_) {
         // calculate distance to closest moment in entity_cache
         const auto entity_cache_dist_and_it = entity_cache_->find_closest(u);

@@ -25,7 +25,7 @@ namespace GDT {
 template <class GV, class MomentBasis>
 class NumericalKineticFlux
   : public NumericalFluxInterface<XT::Grid::extract_intersection_t<GV>,
-                                  MomentBasis::dimDomain,
+                                  MomentBasis::dimFlux,
                                   MomentBasis::dimRange,
                                   typename MomentBasis::RangeFieldType>
 {
@@ -37,7 +37,7 @@ class NumericalKineticFlux
                                                      MomentBasis::d_flux>,
                                 MomentBasis>::value,
                 "Basisfunctions have to be derived from MomentBasisInterface");
-  static const size_t d = MomentBasis::d;
+  static const size_t d = MomentBasis::dimFlux;
   static const size_t m = MomentBasis::r;
   using R = typename MomentBasis::R;
   using I = XT::Grid::extract_intersection_t<GV>;
@@ -124,7 +124,7 @@ private:
 template <class I, class MomentBasis>
 NumericalKineticFlux<I, MomentBasis> make_numerical_kinetic_flux(
     const XT::Functions::
-        FluxFunctionInterface<I, MomentBasis::r, MomentBasis::d, MomentBasis::r, typename MomentBasis::R>& flux,
+        FluxFunctionInterface<I, MomentBasis::r, MomentBasis::dimFlux, MomentBasis::r, typename MomentBasis::R>& flux,
     const MomentBasis& basis)
 {
   return NumericalKineticFlux<I, MomentBasis>(flux, basis);
@@ -132,8 +132,8 @@ NumericalKineticFlux<I, MomentBasis> make_numerical_kinetic_flux(
 
 template <class I, class MomentBasis>
 NumericalKineticFlux<I, MomentBasis> make_numerical_kinetic_flux(
-    const XT::Functions::FunctionInterface<MomentBasis::r, MomentBasis::d, MomentBasis::r, typename MomentBasis::R>&
-        flux,
+    const XT::Functions::
+        FunctionInterface<MomentBasis::r, MomentBasis::dimFlux, MomentBasis::r, typename MomentBasis::R>& flux,
     const MomentBasis& basis)
 {
   return NumericalKineticFlux<I, MomentBasis>(flux, basis);

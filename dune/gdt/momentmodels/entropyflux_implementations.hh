@@ -75,22 +75,23 @@ namespace GDT {
 template <class MomentBasisImp>
 class EntropyBasedFluxImplementationUnspecializedBase
   : public XT::Functions::FunctionInterface<MomentBasisImp::dimRange,
-                                            MomentBasisImp::dimDomain,
+                                            MomentBasisImp::dimFlux,
                                             MomentBasisImp::dimRange,
                                             typename MomentBasisImp::R>
 {
   using BaseType = typename XT::Functions::FunctionInterface<MomentBasisImp::dimRange,
-                                                             MomentBasisImp::dimDomain,
+                                                             MomentBasisImp::dimFlux,
                                                              MomentBasisImp::dimRange,
                                                              typename MomentBasisImp::R>;
   using ThisType = EntropyBasedFluxImplementationUnspecializedBase;
 
 public:
   using MomentBasis = MomentBasisImp;
-  static const size_t basis_dimDomain = MomentBasis::dimDomain;
+  static const size_t dimFlux = MomentBasis::dimFlux;
   static const size_t basis_dimRange = MomentBasis::dimRange;
   using typename BaseType::DomainFieldType;
   using BasisDomainType = typename MomentBasis::DomainType;
+  using FluxDomainType = FieldVector<DomainFieldType, dimFlux>;
   using typename BaseType::DomainType;
   using typename BaseType::DynamicDerivativeRangeType;
   using typename BaseType::DynamicRowDerivativeRangeType;
@@ -165,8 +166,8 @@ public:
   VectorType get_isotropic_alpha(const DomainType& u) const
   {
     static const auto alpha_iso = basis_functions_.alpha_iso();
-    static const auto alpha_iso_prime = basis_functions_.alpha_iso_prime();
-    return alpha_iso + alpha_iso_prime * std::log(basis_functions_.density(u));
+    static const auto alpha_one = basis_functions_.alpha_one();
+    return alpha_iso + alpha_one * std::log(basis_functions_.density(u));
   }
 
   virtual RangeReturnType evaluate(const DomainType& u,
@@ -182,7 +183,7 @@ public:
     auto& work_vecs = working_storage();
     calculate_scalar_products(alpha, M_, work_vecs);
     apply_exponential(work_vecs);
-    for (size_t dd = 0; dd < basis_dimDomain; ++dd) {
+    for (size_t dd = 0; dd < dimFlux; ++dd) {
       // calculate ret[dd] = < omega[dd] m G_\alpha(u) >
       for (size_t ll = 0; ll < quad_weights_.size(); ++ll) {
         const auto factor = work_vecs[ll] * quad_weights_[ll] * quad_points_[ll][dd];
@@ -205,7 +206,7 @@ public:
   {
     thread_local auto H = XT::Common::make_unique<MatrixType>();
     calculate_hessian(alpha, M_, *H);
-    for (size_t dd = 0; dd < basis_dimDomain; ++dd)
+    for (size_t dd = 0; dd < dimFlux; ++dd)
       row_jacobian(dd, M_, *H, result[dd], dd > 0);
   }
 
@@ -213,10 +214,8 @@ public:
   // m is the basis function vector, phi_u is the ansatz corresponding to u
   // and x, v, t are the space, velocity and time variable, respectively
   // As we are using cartesian grids, n_i == 0 in all but one dimension, so only evaluate for i == dd
-  DomainType evaluate_kinetic_flux(const DomainType& u_i,
-                                   const DomainType& u_j,
-                                   const BasisDomainType& n_ij,
-                                   const size_t dd) const
+  DomainType
+  evaluate_kinetic_flux(const DomainType& u_i, const DomainType& u_j, const FluxDomainType& n_ij, const size_t dd) const
   {
     // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
     const auto alpha_i = get_alpha(u_i, get_isotropic_alpha(u_i), true)->first;
@@ -226,7 +225,7 @@ public:
 
   DomainType evaluate_kinetic_flux_with_alphas(const VectorType& alpha_i,
                                                const VectorType& alpha_j,
-                                               const BasisDomainType& n_ij,
+                                               const FluxDomainType& n_ij,
                                                const size_t dd) const
 
   {
@@ -409,13 +408,9 @@ protected:
 
   // specialization for hatfunctions
   template <size_t dimRange_or_refinements, bool anything>
-  struct RealizabilityHelper<HatFunctionMomentBasis<DomainFieldType,
-                                                    basis_dimDomain,
-                                                    RangeFieldType,
-                                                    dimRange_or_refinements,
-                                                    1,
-                                                    basis_dimDomain>,
-                             anything>
+  struct RealizabilityHelper<
+      HatFunctionMomentBasis<DomainFieldType, dimFlux, RangeFieldType, dimRange_or_refinements, 1, dimFlux>,
+      anything>
   {
     RealizabilityHelper(const MomentBasis& /*basis_functions*/,
                         const std::vector<BasisDomainType>& /*quad_points*/
@@ -554,7 +549,7 @@ protected:
                     DynamicRowDerivativeRangeType& ret,
                     bool L_calculated = false) const
   {
-    assert(row < basis_dimDomain);
+    assert(row < dimFlux);
     calculate_J(M, ret, row);
     calculate_A_Binv(ret, H, L_calculated);
   } // void partial_u_col(...)
@@ -613,7 +608,7 @@ protected:
   // assumes work_vecs already contains the needed exp(alpha * m) values
   void calculate_J(const BasisValuesMatrixType& M, DynamicRowDerivativeRangeType& J_dd, const size_t dd) const
   {
-    assert(dd < basis_dimDomain);
+    assert(dd < dimFlux);
     const auto& work_vecs = working_storage();
     J_dd.set_all_entries(0.);
     const size_t num_quad_points = quad_points_.size();
@@ -688,7 +683,7 @@ class EntropyBasedFluxImplementation : public EntropyBasedFluxImplementationUnsp
   using ThisType = EntropyBasedFluxImplementation;
 
 public:
-  using BaseType::basis_dimDomain;
+  using BaseType::dimFlux;
   using typename BaseType::AlphaReturnType;
   using typename BaseType::BasisValuesMatrixType;
   using typename BaseType::DomainType;
@@ -720,18 +715,18 @@ public:
 
     // rescale u such that the density <psi> is 1
     RangeFieldType density = basis_functions_.density(u);
-    static const auto alpha_iso_prime = basis_functions_.alpha_iso_prime();
+    static const auto alpha_one = basis_functions_.alpha_one();
     if (!(density > 0.) || std::isinf(density))
       DUNE_THROW(Dune::MathError, "Negative, inf or NaN density!");
 
     VectorType u_prime = u / density;
-    VectorType alpha_initial = alpha_in - alpha_iso_prime * std::log(density);
+    VectorType alpha_initial = alpha_in - alpha_one * std::log(density);
     VectorType beta_in = alpha_initial;
     VectorType v, u_eps_diff, g_k, beta_out;
     RangeFieldType first_error_cond, second_error_cond, tau_prime;
 
     auto u_iso = basis_functions_.u_iso();
-    const RangeFieldType dim_factor = is_full_moment_basis<MomentBasis>::value ? 1. : std::sqrt(basis_dimDomain);
+    const RangeFieldType dim_factor = is_full_moment_basis<MomentBasis>::value ? 1. : std::sqrt(dimFlux);
     tau_prime = std::min(tau_ / ((1 + dim_factor * u_prime.two_norm()) * density + dim_factor * tau_), tau_);
 
     thread_local auto T_k = XT::Common::make_unique<MatrixType>();
@@ -791,7 +786,7 @@ public:
         auto density_tilde = basis_functions_.density(u_alpha_tilde);
         if (!(density_tilde > 0.) || std::isinf(density_tilde))
           break;
-        const auto alpha_prime = alpha_tilde - alpha_iso_prime * std::log(density_tilde);
+        const auto alpha_prime = alpha_tilde - alpha_one * std::log(density_tilde);
         VectorType u_alpha_prime;
         calculate_vector_integral(alpha_prime, M_, M_, u_alpha_prime);
         u_eps_diff = v - u_alpha_prime * (1 - epsilon_gamma_);
@@ -801,7 +796,7 @@ public:
         second_error_cond = std::exp(d_alpha_tilde.one_norm() + std::abs(std::log(density_tilde)));
         if (first_error_cond < tau_prime && 1 - epsilon_gamma_ < second_error_cond
             && realizability_helper_.is_realizable(u_eps_diff, kk == static_cast<size_t>(0.8 * k_0_))) {
-          ret->first = alpha_prime + alpha_iso_prime * std::log(density);
+          ret->first = alpha_prime + alpha_one * std::log(density);
           ret->second = std::make_pair(v * density, r);
           return ret;
         } else {
@@ -897,7 +892,7 @@ class EntropyBasedFluxImplementation : public EntropyBasedFluxImplementationUnsp
   using ThisType = EntropyBasedFluxImplementation;
 
 public:
-  using BaseType::basis_dimDomain;
+  using BaseType::dimFlux;
   using typename BaseType::AlphaReturnType;
   using typename BaseType::BasisValuesMatrixType;
   using typename BaseType::DomainType;
@@ -924,15 +919,15 @@ public:
   {
     auto ret = std::make_unique<AlphaReturnType>();
     RangeFieldType density = basis_functions_.density(u);
-    static const auto alpha_iso_prime = basis_functions_.alpha_iso_prime();
+    static const auto alpha_one = basis_functions_.alpha_one();
     if (!(density > 0.) || std::isinf(density))
       DUNE_THROW(Dune::MathError, "Negative, inf or NaN density!");
     VectorType u_prime = u / density;
-    VectorType alpha_initial = alpha_in - alpha_iso_prime * std::log(density);
+    VectorType alpha_initial = alpha_in - alpha_one * std::log(density);
     VectorType v, g_k, d_k, tmp_vec, alpha_prime;
     RangeFieldType first_error_cond, second_error_cond, tau_prime;
     auto u_iso = basis_functions_.u_iso();
-    const RangeFieldType dim_factor = is_full_moment_basis<MomentBasis>::value ? 1. : std::sqrt(basis_dimDomain);
+    const RangeFieldType dim_factor = is_full_moment_basis<MomentBasis>::value ? 1. : std::sqrt(dimFlux);
     tau_prime = std::min(tau_ / ((1 + dim_factor * u_prime.two_norm()) * density + dim_factor * tau_), tau_);
     VectorType alpha_k = alpha_initial;
     const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
@@ -990,7 +985,7 @@ public:
         auto density_tilde = basis_functions_.density(u_alpha_tilde);
         if (!(density_tilde > 0.) || std::isinf(density_tilde))
           break;
-        alpha_prime = alpha_tilde - alpha_iso_prime * std::log(density_tilde);
+        alpha_prime = alpha_tilde - alpha_one * std::log(density_tilde);
         auto& u_eps_diff = tmp_vec;
         calculate_vector_integral(alpha_prime, M_, M_, u_eps_diff);
         u_eps_diff *= -(1 - epsilon_gamma_);
@@ -1000,7 +995,7 @@ public:
         second_error_cond = std::exp(d_k.one_norm() + std::abs(std::log(density_tilde)));
         if (first_error_cond < tau_prime && 1 - epsilon_gamma_ < second_error_cond
             && realizability_helper_.is_realizable(u_eps_diff, kk == static_cast<size_t>(0.8 * k_0_))) {
-          ret->first = alpha_prime + alpha_iso_prime * std::log(density);
+          ret->first = alpha_prime + alpha_one * std::log(density);
           ret->second = std::make_pair(v * density, r);
           return ret;
         } else {
@@ -1061,19 +1056,19 @@ private:
 /**
  * Specialization for DG basis
  */
-template <class D, size_t d, class R, size_t dimRange_or_refinements>
-class EntropyBasedFluxImplementation<PartialMomentBasis<D, d, R, dimRange_or_refinements, 1>>
-  : public XT::Functions::FunctionInterface<PartialMomentBasis<D, d, R, dimRange_or_refinements, 1>::dimRange,
-                                            d,
-                                            PartialMomentBasis<D, d, R, dimRange_or_refinements, 1>::dimRange,
+template <class D, size_t d, class R, size_t dimRange_or_refinements, size_t fluxDim>
+class EntropyBasedFluxImplementation<PartialMomentBasis<D, d, R, dimRange_or_refinements, 1, fluxDim>>
+  : public XT::Functions::FunctionInterface<PartialMomentBasis<D, d, R, dimRange_or_refinements, 1, fluxDim>::dimRange,
+                                            fluxDim,
+                                            PartialMomentBasis<D, d, R, dimRange_or_refinements, 1, fluxDim>::dimRange,
                                             R>
 {
 public:
-  using MomentBasis = PartialMomentBasis<D, d, R, dimRange_or_refinements, 1>;
-  using BaseType = typename XT::Functions::
-      FunctionInterface<MomentBasis::dimRange, MomentBasis::dimDomain, MomentBasis::dimRange, R>;
+  using MomentBasis = PartialMomentBasis<D, d, R, dimRange_or_refinements, 1, fluxDim>;
+  using BaseType =
+      typename XT::Functions::FunctionInterface<MomentBasis::dimRange, MomentBasis::dimFlux, MomentBasis::dimRange, R>;
   using ThisType = EntropyBasedFluxImplementation;
-  static const size_t basis_dimDomain = MomentBasis::dimDomain;
+  static const size_t dimFlux = MomentBasis::dimFlux;
   static const size_t basis_dimRange = MomentBasis::dimRange;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
@@ -1082,7 +1077,8 @@ public:
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeReturnType;
   using BasisDomainType = typename MomentBasis::DomainType;
-  static const size_t block_size = (basis_dimDomain == 1) ? 2 : 4;
+  using FluxDomainType = FieldVector<DomainFieldType, dimFlux>;
+  static const size_t block_size = (dimFlux == 1) ? 2 : 4;
   static const size_t num_blocks = basis_dimRange / block_size;
   using BlockMatrixType = XT::Common::BlockedFieldMatrix<RangeFieldType, num_blocks, block_size>;
   using LocalMatrixType = typename BlockMatrixType::BlockType;
@@ -1119,7 +1115,7 @@ public:
     , epsilon_(epsilon)
   {
     XT::LA::eye_matrix(T_minus_one_);
-    helper<basis_dimDomain>::calculate_plane_coefficients(basis_functions_);
+    helper<dimFlux>::calculate_plane_coefficients(basis_functions_);
     const auto& quadratures = basis_functions_.quadratures();
     assert(quadratures.size() == num_blocks);
     for (size_t jj = 0; jj < num_blocks; ++jj) {
@@ -1160,7 +1156,7 @@ public:
     auto& work_vecs = working_storage();
     calculate_scalar_products(alpha, M_, work_vecs);
     apply_exponential(work_vecs);
-    for (size_t dd = 0; dd < basis_dimDomain; ++dd) {
+    for (size_t dd = 0; dd < dimFlux; ++dd) {
       // calculate ret[dd] = < omega[dd] m G_\alpha(u) >
       for (size_t jj = 0; jj < num_blocks; ++jj) {
         const auto offset = block_size * jj;
@@ -1186,7 +1182,7 @@ public:
   {
     thread_local auto H = XT::Common::make_unique<BlockMatrixType>();
     calculate_hessian(alpha, M_, *H);
-    for (size_t dd = 0; dd < basis_dimDomain; ++dd)
+    for (size_t dd = 0; dd < dimFlux; ++dd)
       row_jacobian(dd, M_, *H, result[dd], dd > 0);
   }
 
@@ -1194,10 +1190,8 @@ public:
   // m is the basis function vector, phi_u is the ansatz corresponding to u
   // and x, v, t are the space, velocity and time variable, respectively
   // As we are using cartesian grids, n_i == 0 in all but one dimension, so only evaluate for i == dd
-  DomainType evaluate_kinetic_flux(const DomainType& u_i,
-                                   const DomainType& u_j,
-                                   const BasisDomainType& n_ij,
-                                   const size_t dd) const
+  DomainType
+  evaluate_kinetic_flux(const DomainType& u_i, const DomainType& u_j, const FluxDomainType& n_ij, const size_t dd) const
   {
     // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
     const auto alpha_i = std::make_unique<BlockVectorType>(get_alpha(u_i, *get_isotropic_alpha(u_i), true)->first);
@@ -1207,7 +1201,7 @@ public:
 
   DomainType evaluate_kinetic_flux_with_alphas(const BlockVectorType& alpha_i,
                                                const BlockVectorType& alpha_j,
-                                               const BasisDomainType& n_ij,
+                                               const FluxDomainType& n_ij,
                                                const size_t dd) const
   {
     // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
@@ -1246,8 +1240,8 @@ public:
 
     // rescale u such that the density <psi> is 1
     RangeFieldType density = basis_functions_.density(u);
-    static const auto alpha_iso_prime = std::make_unique<BlockVectorType>(basis_functions_.alpha_iso_prime());
-    auto alpha_initial = std::make_unique<BlockVectorType>(*alpha_iso_prime);
+    static const auto alpha_one = std::make_unique<BlockVectorType>(basis_functions_.alpha_one());
+    auto alpha_initial = std::make_unique<BlockVectorType>(*alpha_one);
     *alpha_initial *= -std::log(density);
     *alpha_initial += alpha_in;
     if (!(density > 0. || !(basis_functions_.min_density(u) > 0.)) || std::isinf(density))
@@ -1333,7 +1327,7 @@ public:
         auto density_tilde = basis_functions_.density(*u_alpha_tilde);
         if (!(density_tilde > 0.) || !(basis_functions_.min_density(*u_alpha_tilde) > 0.) || std::isinf(density_tilde))
           break;
-        *alpha_prime = *alpha_iso_prime;
+        *alpha_prime = *alpha_one;
         *alpha_prime *= -std::log(density_tilde);
         *alpha_prime += *alpha_tilde;
         calculate_vector_integral(*alpha_prime, M_, M_, *u_alpha_prime);
@@ -1342,8 +1336,8 @@ public:
         *u_eps_diff += *v;
         if (g_alpha_tilde->two_norm() < tau_prime
             && 1 - epsilon_gamma_ < std::exp(d_alpha_tilde->one_norm() + std::abs(std::log(density_tilde)))
-            && helper<basis_dimDomain>::is_realizable(*u_eps_diff, basis_functions_)) {
-          ret->first = *alpha_iso_prime;
+            && helper<dimFlux>::is_realizable(*u_eps_diff, basis_functions_)) {
+          ret->first = *alpha_one;
           ret->first *= std::log(density);
           ret->first += *alpha_prime;
           ret->second.first = *v;
@@ -1391,8 +1385,8 @@ private:
   std::unique_ptr<BlockVectorType> get_isotropic_alpha(const DomainType& u) const
   {
     static const auto alpha_iso = basis_functions_.alpha_iso();
-    static const auto alpha_iso_prime = basis_functions_.alpha_iso_prime();
-    return std::make_unique<BlockVectorType>(alpha_iso + alpha_iso_prime * std::log(basis_functions_.density(u)));
+    static const auto alpha_one = basis_functions_.alpha_one();
+    return std::make_unique<BlockVectorType>(alpha_iso + alpha_one * std::log(basis_functions_.density(u)));
   }
 
   void copy_basis_matrix(const BasisValuesMatrixType& source_mat, BasisValuesMatrixType& range_mat) const
@@ -1545,7 +1539,7 @@ private:
       apply_inverse_matrix_block(jj, T_k.block(jj), M[jj]);
   }
 
-  template <size_t domainDim = basis_dimDomain, class anything = void>
+  template <size_t domainDim = dimFlux, class anything = void>
   struct helper
   {
 #  if HAVE_QHULL
@@ -1603,7 +1597,7 @@ private:
                     DynamicRowDerivativeRangeType& ret,
                     bool L_calculated = false) const
   {
-    assert(row < basis_dimDomain);
+    assert(row < dimFlux);
     calculate_J(M, ret, row);
     calculate_A_Binv(ret, H, L_calculated);
   } // void partial_u_col(...)
@@ -1665,7 +1659,7 @@ private:
   // assumes work_vecs already contains the needed exp(alpha * m) values
   void calculate_J(const BasisValuesMatrixType& M, DynamicRowDerivativeRangeType& J_dd, const size_t dd) const
   {
-    assert(dd < basis_dimDomain);
+    assert(dd < dimFlux);
     const auto& work_vec = working_storage();
     // matrix is symmetric, we only use lower triangular part
     for (size_t jj = 0; jj < num_blocks; ++jj) {
@@ -1739,19 +1733,20 @@ private:
 /**
  * Specialization of EntropyBasedFluxImplementation for 3D Hatfunctions
  */
-template <class D, class R, size_t dimRange_or_refinements>
-class EntropyBasedFluxImplementation<HatFunctionMomentBasis<D, 3, R, dimRange_or_refinements, 1>>
-  : public XT::Functions::FunctionInterface<HatFunctionMomentBasis<D, 3, R, dimRange_or_refinements, 1>::dimRange,
-                                            3,
-                                            HatFunctionMomentBasis<D, 3, R, dimRange_or_refinements, 1>::dimRange,
-                                            R>
+template <class D, class R, size_t dimRange_or_refinements, size_t fluxDim>
+class EntropyBasedFluxImplementation<HatFunctionMomentBasis<D, 3, R, dimRange_or_refinements, 1, fluxDim>>
+  : public XT::Functions::FunctionInterface<
+        HatFunctionMomentBasis<D, 3, R, dimRange_or_refinements, 1, fluxDim>::dimRange,
+        fluxDim,
+        HatFunctionMomentBasis<D, 3, R, dimRange_or_refinements, 1, fluxDim>::dimRange,
+        R>
 {
 public:
-  using MomentBasis = HatFunctionMomentBasis<D, 3, R, dimRange_or_refinements, 1>;
-  using BaseType = typename XT::Functions::
-      FunctionInterface<MomentBasis::dimRange, MomentBasis::dimDomain, MomentBasis::dimRange, R>;
+  using MomentBasis = HatFunctionMomentBasis<D, 3, R, dimRange_or_refinements, 1, fluxDim>;
+  using BaseType =
+      typename XT::Functions::FunctionInterface<MomentBasis::dimRange, MomentBasis::dimFlux, MomentBasis::dimRange, R>;
   using ThisType = EntropyBasedFluxImplementation;
-  static const size_t basis_dimDomain = MomentBasis::dimDomain;
+  static const size_t dimFlux = MomentBasis::dimFlux;
   static const size_t basis_dimRange = MomentBasis::dimRange;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
@@ -1760,6 +1755,7 @@ public:
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeReturnType;
   using BasisDomainType = typename MomentBasis::DomainType;
+  using FluxDomainType = FieldVector<DomainFieldType, dimFlux>;
   using DynamicRangeType = DynamicVector<RangeFieldType>;
   using LocalVectorType = XT::Common::FieldVector<RangeFieldType, 3>;
   using LocalMatrixType = XT::Common::FieldMatrix<RangeFieldType, 3, 3>;
@@ -1839,9 +1835,9 @@ public:
   VectorType get_isotropic_alpha(const DomainType& u) const
   {
     static const auto alpha_iso = basis_functions_.alpha_iso();
-    static const auto alpha_iso_prime = basis_functions_.alpha_iso_prime();
-    const auto ret_dynvector = alpha_iso + alpha_iso_prime * std::log(basis_functions_.density(u));
-    VectorType ret(ret_dynvector.size());
+    static const auto alpha_one = basis_functions_.alpha_one();
+    const auto ret_dynvector = alpha_iso + alpha_one * std::log(basis_functions_.density(u));
+    VectorType ret(ret_dynvector.size(), 0., 0);
     for (size_t ii = 0; ii < ret.size(); ++ii)
       ret[ii] = ret_dynvector[ii];
     return ret;
@@ -1850,7 +1846,7 @@ public:
   VectorType get_isotropic_alpha(const VectorType& u) const
   {
     DomainType u_domain;
-    for (size_t ii = 0; ii < basis_dimDomain; ++ii)
+    for (size_t ii = 0; ii < dimFlux; ++ii)
       u_domain[ii] = u.get_entry(ii);
     return get_isotropic_alpha(u_domain);
   }
@@ -1868,7 +1864,7 @@ public:
     LocalVectorType local_alpha, local_ret;
     const auto& triangulation = basis_functions_.triangulation();
     const auto& faces = triangulation.faces();
-    for (size_t dd = 0; dd < basis_dimDomain; ++dd) {
+    for (size_t dd = 0; dd < dimFlux; ++dd) {
       // calculate ret[dd] = < omega[dd] m G_\alpha(u) >
       for (size_t jj = 0; jj < faces.size(); ++jj) {
         local_ret *= 0.;
@@ -1902,16 +1898,14 @@ public:
     thread_local SparseMatrixType H(basis_dimRange, basis_dimRange, pattern_, 0);
     thread_local SparseMatrixType J(basis_dimRange, basis_dimRange, pattern_, 0);
     calculate_hessian(alpha, M_, H);
-    for (size_t dd = 0; dd < basis_dimDomain; ++dd) {
+    for (size_t dd = 0; dd < dimFlux; ++dd) {
       calculate_J(M_, J, dd);
       calculate_J_Hinv(J, H, result[dd]);
     }
   } // ... jacobian(...)
 
-  DomainType evaluate_kinetic_flux(const DomainType& u_i,
-                                   const DomainType& u_j,
-                                   const BasisDomainType& n_ij,
-                                   const size_t dd) const
+  DomainType
+  evaluate_kinetic_flux(const DomainType& u_i, const DomainType& u_j, const FluxDomainType& n_ij, const size_t dd) const
   {
     const auto alpha_i = get_alpha(u_i, get_isotropic_alpha(u_i), true)->first;
     const auto alpha_j = get_alpha(u_j, get_isotropic_alpha(u_j), true)->first;
@@ -1920,7 +1914,7 @@ public:
 
   DomainType evaluate_kinetic_flux_with_alphas(const VectorType& alpha_i,
                                                const VectorType& alpha_j,
-                                               const BasisDomainType& n_ij,
+                                               const FluxDomainType& n_ij,
                                                const size_t dd) const
   {
     // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
@@ -1970,20 +1964,27 @@ public:
     VectorType u_prime(basis_dimRange, 0., 0);
     for (size_t ii = 0; ii < basis_dimRange; ++ii)
       u_prime.set_entry(ii, u[ii] / density);
-    VectorType alpha_iso_prime(basis_dimRange, 0., 0);
-    basis_functions_.alpha_iso_prime(alpha_iso_prime);
+    VectorType alpha_one(basis_dimRange, 0., 0);
+    basis_functions_.alpha_one(alpha_one);
 
     // if value has already been calculated for these values, skip computation
     RangeFieldType tau_prime = std::min(
         tau_ / ((1 + std::sqrt(basis_dimRange) * u_prime.l2_norm()) * density + std::sqrt(basis_dimRange) * tau_),
         tau_);
     thread_local SparseMatrixType H(basis_dimRange, basis_dimRange, pattern_, 0);
+#  if HAVE_EIGEN
+    typedef ::Eigen::SparseMatrix<RangeFieldType, ::Eigen::ColMajor> ColMajorBackendType;
+    typedef ::Eigen::SimplicialLDLT<ColMajorBackendType> SolverType;
+    thread_local SolverType solver;
+    ColMajorBackendType colmajor_copy(H.backend());
+#  else // HAVE_EIGEN
     thread_local auto solver = XT::LA::make_solver(H);
+#  endif // HAVE_EIGEN
 
     // calculate moment vector for isotropic distribution
     VectorType u_iso(basis_dimRange, 0., 0);
     basis_functions_.u_iso(u_iso);
-    VectorType alpha_k = alpha_in - alpha_iso_prime * std::log(density);
+    VectorType alpha_k = alpha_in - alpha_one * std::log(density);
     VectorType v(basis_dimRange, 0., 0), g_k(basis_dimRange, 0., 0), d_k(basis_dimRange, 0., 0),
         tmp_vec(basis_dimRange, 0., 0), alpha_prime(basis_dimRange);
     const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
@@ -2015,7 +2016,14 @@ public:
         tmp_vec = g_k;
         tmp_vec *= -1;
         try {
+#  if HAVE_EIGEN
+          colmajor_copy = H.backend();
+          solver.analyzePattern(colmajor_copy);
+          solver.factorize(colmajor_copy);
+          d_k.backend() = solver.solve(tmp_vec.backend());
+#  else // HAVE_EIGEN
           solver.apply(tmp_vec, d_k);
+#  endif // HAVE_EIGEN
         } catch (const XT::LA::Exceptions::linear_solver_failed& error) {
           if (r < r_max) {
             break;
@@ -2032,7 +2040,7 @@ public:
         auto density_tilde = basis_functions_.density(u_alpha_tilde);
         if (!(density_tilde > 0.) || std::isinf(density_tilde))
           break;
-        alpha_prime = alpha_iso_prime;
+        alpha_prime = alpha_one;
         alpha_prime *= -std::log(density_tilde);
         alpha_prime += alpha_tilde;
         auto& u_eps_diff = tmp_vec;
@@ -2041,7 +2049,7 @@ public:
         u_eps_diff += v;
         // checking realizability is cheap so we do not need the second stopping criterion
         if (g_k.l2_norm() < tau_prime && is_realizable(u_eps_diff)) {
-          ret->first = alpha_iso_prime;
+          ret->first = alpha_one;
           ret->first *= std::log(density);
           ret->first += alpha_prime;
           auto v_ret_eig = v * density;
@@ -2109,7 +2117,6 @@ private:
 #  if HAVE_EIGEN
     typedef ::Eigen::SparseMatrix<RangeFieldType, ::Eigen::ColMajor> ColMajorBackendType;
     ColMajorBackendType colmajor_copy(H.backend());
-    colmajor_copy.makeCompressed();
     typedef ::Eigen::SimplicialLDLT<ColMajorBackendType> SolverType;
     SolverType solver;
     solver.analyzePattern(colmajor_copy);
@@ -2221,7 +2228,7 @@ private:
   // assumes work_vecs already contains the needed exp(alpha * m) values
   void calculate_J(const BasisValuesMatrixType& M, SparseMatrixType& J_dd, const size_t dd) const
   {
-    assert(dd < basis_dimDomain);
+    assert(dd < dimFlux);
     J_dd *= 0.;
     LocalMatrixType J_local(0.);
     auto& work_vecs = get_work_vecs();
@@ -2274,7 +2281,7 @@ class EntropyBasedFluxImplementation<HatFunctionMomentBasis<D, 1, R, dimRange, 1
 
 public:
   using MomentBasis = HatFunctionMomentBasis<D, 1, R, dimRange, 1>;
-  static const size_t basis_dimDomain = MomentBasis::dimDomain;
+  static const size_t dimFlux = MomentBasis::dimFlux;
   static const size_t basis_dimRange = dimRange;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
@@ -2283,6 +2290,7 @@ public:
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeReturnType;
   using BasisDomainType = typename MomentBasis::DomainType;
+  using FluxDomainType = FieldVector<DomainFieldType, dimFlux>;
   using VectorType = XT::Common::FieldVector<RangeFieldType, basis_dimRange>;
   using AlphaReturnType = std::pair<VectorType, std::pair<DomainType, RangeFieldType>>;
 
@@ -2327,8 +2335,8 @@ public:
   VectorType get_isotropic_alpha(const DomainType& u) const
   {
     static const auto alpha_iso = basis_functions_.alpha_iso();
-    static const auto alpha_iso_prime = basis_functions_.alpha_iso_prime();
-    return alpha_iso + alpha_iso_prime * std::log(basis_functions_.density(u));
+    static const auto alpha_one = basis_functions_.alpha_one();
+    return alpha_iso + alpha_one * std::log(basis_functions_.density(u));
   }
 
   virtual RangeReturnType evaluate(const DomainType& u,
@@ -2418,10 +2426,8 @@ public:
   // m is the basis function vector, phi_u is the ansatz corresponding to u
   // and x, v, t are the space, velocity and time variable, respectively
   // As we are using cartesian grids, n_i == 0 in all but one dimension, so only evaluate for i == dd
-  DomainType evaluate_kinetic_flux(const DomainType& u_i,
-                                   const DomainType& u_j,
-                                   const BasisDomainType& n_ij,
-                                   const size_t dd) const
+  DomainType
+  evaluate_kinetic_flux(const DomainType& u_i, const DomainType& u_j, const FluxDomainType& n_ij, const size_t dd) const
   {
     // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
     const auto alpha_i = get_alpha(u_i, get_isotropic_alpha(u_i), true)->first;
@@ -2431,7 +2437,7 @@ public:
 
   DomainType evaluate_kinetic_flux_with_alphas(const VectorType& alpha_i,
                                                const VectorType& alpha_j,
-                                               const BasisDomainType& n_ij,
+                                               const FluxDomainType& n_ij,
                                                const size_t dd) const
   {
     assert(dd == 0);
@@ -2602,9 +2608,9 @@ public:
     RangeFieldType density = basis_functions_.density(u);
     if (!(density > 0.) || std::isinf(density))
       DUNE_THROW(Dune::MathError, "Negative, inf or NaN density!");
-    static const auto alpha_iso_prime = basis_functions_.alpha_iso_prime();
+    static const auto alpha_one = basis_functions_.alpha_one();
     VectorType u_prime = u / density;
-    VectorType alpha_initial = alpha_in - alpha_iso_prime * std::log(density);
+    VectorType alpha_initial = alpha_in - alpha_one * std::log(density);
     RangeFieldType tau_prime =
         std::min(tau_ / ((1 + std::sqrt(dimRange) * u_prime.two_norm()) * density + std::sqrt(dimRange) * tau_), tau_);
     // The hessian H is always symmetric and tridiagonal, so we only need to store the diagonal and subdiagonal
@@ -2659,12 +2665,12 @@ public:
         auto density_tilde = basis_functions_.density(u_alpha_tilde);
         if (!(density_tilde > 0.) || std::isinf(density_tilde))
           break;
-        const auto alpha_prime = alpha_tilde - alpha_iso_prime * std::log(density_tilde);
+        const auto alpha_prime = alpha_tilde - alpha_one * std::log(density_tilde);
         const auto u_alpha_prime = calculate_u(alpha_prime);
         auto u_eps_diff = v - u_alpha_prime * (1 - epsilon_gamma_);
         // checking realizability is cheap so we do not need the second stopping criterion
         if (g_k.two_norm() < tau_prime && is_realizable(u_eps_diff)) {
-          ret->first = alpha_prime + alpha_iso_prime * std::log(density);
+          ret->first = alpha_prime + alpha_one * std::log(density);
           ret->second = std::make_pair(v * density, r);
           return ret;
         } else {
@@ -3004,7 +3010,7 @@ private:
  * Specialization of EntropyBasedFluxImplementation for 1D Hatfunctions (no change of basis, use structure)
  */
 template <class D, class R, size_t dimRange>
-class EntropyBasedFluxImplementation<HatFunctionMomentBasis<D, 1, R, dimRange, 1>>
+class EntropyBasedFluxImplementation<HatFunctionMomentBasis<D, 1, R, dimRange, 1, 1>>
   : public XT::Functions::FunctionInterface<dimRange, 1, dimRange, R>
 {
   using BaseType = typename XT::Functions::FunctionInterface<dimRange, 1, dimRange, R>;
@@ -3012,7 +3018,7 @@ class EntropyBasedFluxImplementation<HatFunctionMomentBasis<D, 1, R, dimRange, 1
 
 public:
   using MomentBasis = HatFunctionMomentBasis<D, 1, R, dimRange, 1>;
-  static const size_t basis_dimDomain = MomentBasis::dimDomain;
+  static const size_t dimFlux = MomentBasis::dimFlux;
   static const size_t basis_dimRange = dimRange;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
@@ -3021,6 +3027,7 @@ public:
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeReturnType;
   using BasisDomainType = typename MomentBasis::DomainType;
+  using FluxDomainType = FieldVector<DomainFieldType, dimFlux>;
   using VectorType = XT::Common::FieldVector<RangeFieldType, basis_dimRange>;
   using AlphaReturnType = std::pair<VectorType, std::pair<DomainType, RangeFieldType>>;
   static const size_t num_intervals = dimRange - 1;
@@ -3073,8 +3080,8 @@ public:
   VectorType get_isotropic_alpha(const DomainType& u) const
   {
     static const auto alpha_iso = basis_functions_.alpha_iso();
-    static const auto alpha_iso_prime = basis_functions_.alpha_iso_prime();
-    return alpha_iso + alpha_iso_prime * std::log(basis_functions_.density(u));
+    static const auto alpha_one = basis_functions_.alpha_one();
+    return alpha_iso + alpha_one * std::log(basis_functions_.density(u));
   }
 
   virtual RangeReturnType evaluate(const DomainType& u,
@@ -3123,10 +3130,8 @@ public:
   // m is the basis function vector, phi_u is the ansatz corresponding to u
   // and x, v, t are the space, velocity and time variable, respectively
   // As we are using cartesian grids, n_i == 0 in all but one dimension, so only evaluate for i == dd
-  DomainType evaluate_kinetic_flux(const DomainType& u_i,
-                                   const DomainType& u_j,
-                                   const BasisDomainType& n_ij,
-                                   const size_t dd) const
+  DomainType
+  evaluate_kinetic_flux(const DomainType& u_i, const DomainType& u_j, const FluxDomainType& n_ij, const size_t dd) const
   {
     // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
     const auto alpha_i = get_alpha(u_i, get_isotropic_alpha(u_i), true)->first;
@@ -3136,7 +3141,7 @@ public:
 
   DomainType evaluate_kinetic_flux_with_alphas(const VectorType& alpha_i,
                                                const VectorType& alpha_j,
-                                               const BasisDomainType& n_ij,
+                                               const FluxDomainType& n_ij,
                                                const size_t DXTC_DEBUG_ONLY(dd)) const
   {
     assert(dd == 0);
@@ -3171,9 +3176,9 @@ public:
     RangeFieldType density = basis_functions_.density(u);
     if (!(density > 0.) || std::isinf(density))
       DUNE_THROW(Dune::MathError, "Negative, inf or NaN density!");
-    static const auto alpha_iso_prime = basis_functions_.alpha_iso_prime();
+    static const auto alpha_one = basis_functions_.alpha_one();
     VectorType u_prime = u / density;
-    VectorType alpha_initial = alpha_in - alpha_iso_prime * std::log(density);
+    VectorType alpha_initial = alpha_in - alpha_one * std::log(density);
     RangeFieldType tau_prime =
         std::min(tau_ / ((1 + std::sqrt(dimRange) * u_prime.two_norm()) * density + std::sqrt(dimRange) * tau_), tau_);
     // The hessian H is always symmetric and tridiagonal, so we only need to store the diagonal and subdiagonal
@@ -3230,12 +3235,12 @@ public:
         auto density_tilde = basis_functions_.density(u_alpha_tilde);
         if (!(density_tilde > 0.) || std::isinf(density_tilde))
           break;
-        const auto alpha_prime = alpha_tilde - alpha_iso_prime * std::log(density_tilde);
+        const auto alpha_prime = alpha_tilde - alpha_one * std::log(density_tilde);
         calculate_u(alpha_prime, u_alpha_prime);
         auto u_eps_diff = v - u_alpha_prime * (1 - epsilon_gamma_);
         // checking realizability is cheap so we do not need the second stopping criterion
         if (g_k.two_norm() < tau_prime && is_realizable(u_eps_diff)) {
-          ret->first = alpha_prime + alpha_iso_prime * std::log(density);
+          ret->first = alpha_prime + alpha_one * std::log(density);
           ret->second = std::make_pair(v * density, r);
           return ret;
         } else {

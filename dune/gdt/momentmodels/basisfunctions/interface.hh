@@ -297,11 +297,11 @@ public:
     return ret;
   }
 
-  virtual DynamicRangeType alpha_iso_prime() const = 0;
+  virtual DynamicRangeType alpha_one() const = 0;
 
   virtual DynamicRangeType alpha_iso() const
   {
-    return alpha_iso_prime() * std::log(1. / density(integrated()));
+    return alpha_one() * std::log(1. / density(integrated()));
   }
 
   virtual RangeFieldType density(const DynamicRangeType& u) const = 0;

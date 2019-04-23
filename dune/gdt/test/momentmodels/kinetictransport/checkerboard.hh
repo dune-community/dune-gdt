@@ -73,23 +73,31 @@ public:
   // = 10 in absorbing regions. Center is also a scattering region.
   virtual std::unique_ptr<ScalarFunctionType> sigma_a() const override
   {
-    return std::make_unique<GenericScalarFunctionType>(
-        [](const XT::Common::Parameter&) { return 0; },
-        [=](const DomainType& x, const XT::Common::Parameter&) { return is_absorbing(x) ? 10. : 0.; });
+    return create_parameter_function(10., 0., 0.);
   }
 
   virtual std::unique_ptr<ScalarFunctionType> sigma_s() const override
   {
-    return std::make_unique<GenericScalarFunctionType>(
-        [](const XT::Common::Parameter&) { return 0; },
-        [=](const DomainType& x, const XT::Common::Parameter&) { return is_absorbing(x) ? 0. : 1.; });
+    return create_parameter_function(0., 1., 1.);
   }
 
   virtual std::unique_ptr<ScalarFunctionType> Q() const override
   {
+    return create_parameter_function(0., 0., 1. / std::sqrt(4. * M_PI));
+  }
+
+  std::unique_ptr<ScalarFunctionType> create_parameter_function(const RangeFieldType value_on_absorbing_parts,
+                                                                const RangeFieldType value_on_scattering_parts,
+                                                                const RangeFieldType value_on_center) const
+  {
     return std::make_unique<GenericScalarFunctionType>([](const XT::Common::Parameter&) { return 0; },
                                                        [=](const DomainType& x, const XT::Common::Parameter&) {
-                                                         return is_center(x) ? 1. / std::sqrt(4. * M_PI) : 0.;
+                                                         if (is_center(x))
+                                                           return value_on_center;
+                                                         else if (is_absorbing(x))
+                                                           return value_on_absorbing_parts;
+                                                         else
+                                                           return value_on_scattering_parts;
                                                        });
   }
 
