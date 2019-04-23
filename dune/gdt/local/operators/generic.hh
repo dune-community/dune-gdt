@@ -43,10 +43,13 @@ class GenericLocalElementOperator : public LocalElementOperatorInterface<SV, SGV
 
 public:
   using typename BaseType::LocalRangeType;
+  using typename BaseType::LocalSourceType;
   using typename BaseType::SourceType;
 
-  using GenericFunctionType = std::function<void(
-      const SourceType& /*source*/, LocalRangeType& /*local_range*/, const XT::Common::Parameter& /*param*/)>;
+  using GenericFunctionType = std::function<void(const SourceType& /*source*/,
+                                                 const std::unique_ptr<LocalSourceType>& /*local_source*/,
+                                                 LocalRangeType& /*local_range*/,
+                                                 const XT::Common::Parameter& /*param*/)>;
 
   GenericLocalElementOperator(const SourceType& source,
                               GenericFunctionType func,
@@ -67,7 +70,7 @@ public:
 
   void apply(LocalRangeType& local_range, const XT::Common::Parameter& param = {}) const override final
   {
-    func_(this->source(), local_range, this->parse_parameter(param));
+    func_(this->source(), this->local_source(), local_range, this->parse_parameter(param));
   }
 
 private:
@@ -104,9 +107,11 @@ public:
   using typename BaseType::IntersectionType;
   using typename BaseType::LocalInsideRangeType;
   using typename BaseType::LocalOutsideRangeType;
+  using typename BaseType::LocalSourceType;
   using typename BaseType::SourceType;
 
   using GenericFunctionType = std::function<void(const SourceType& /*source*/,
+                                                 const std::unique_ptr<LocalSourceType>& /*local_source*/,
                                                  const IntersectionType& /*intersection*/,
                                                  LocalInsideRangeType& /*local_range_inside*/,
                                                  LocalOutsideRangeType& /*local_range_outside*/,
@@ -134,7 +139,12 @@ public:
              LocalOutsideRangeType& local_range_outside,
              const XT::Common::Parameter& param = {}) const override final
   {
-    func_(this->source(), intersection, local_range_inside, local_range_outside, this->parse_parameter(param));
+    func_(this->source(),
+          this->local_source(),
+          intersection,
+          local_range_inside,
+          local_range_outside,
+          this->parse_parameter(param));
   }
 
 private:

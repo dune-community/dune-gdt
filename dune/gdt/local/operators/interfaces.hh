@@ -105,9 +105,14 @@ public:
     return std::move(ret);
   }
 
-  const SourceType& source()
+  const SourceType& source() const
   {
     return source_.access();
+  }
+
+  const std::unique_ptr<LocalSourceType>& local_source() const
+  {
+    return local_source_;
   }
 
 protected:
@@ -209,9 +214,14 @@ public:
     return std::move(ret);
   }
 
-  const SourceType& source()
+  const SourceType& source() const
   {
     return source_.access();
+  }
+
+  const std::unique_ptr<LocalSourceType>& local_source() const
+  {
+    return local_source_;
   }
 
 protected:

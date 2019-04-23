@@ -132,7 +132,7 @@ public:
                    const XT::Common::Parameter& param = {},
                    const ElementFilterType& filter = ApplyOnAllElements())
   {
-    this->append(GenericLocalElementOperatorType(generic_function, param.type()), param, filter);
+    this->append(GenericLocalElementOperatorType(source(), generic_function, param.type()), param, filter);
     return *this;
   }
 
@@ -149,7 +149,7 @@ public:
                    const XT::Common::Parameter& param = {},
                    const IntersectionFilterType& filter = ApplyOnAllIntersections())
   {
-    this->append(GenericLocalIntersectionFunctionType(generic_function, param.type()), param, filter);
+    this->append(GenericLocalIntersectionOperatorType(source(), generic_function, param.type()), param, filter);
     return *this;
   }
 
