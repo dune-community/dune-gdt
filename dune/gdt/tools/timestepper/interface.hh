@@ -339,22 +339,17 @@ public:
     return it->second;
   }
 
-  template <size_t factor = 0>
-  void visualize_factor_of_solution(const std::string prefix = "") const
+  virtual void visualize_solution(const std::string prefix = "",
+                                  const VisualizerType& visualizer = default_visualizer()) const
   {
     size_t counter = 0;
     for (const auto& pair : solution()) {
-      pair.second.template visualize_factor<factor>(
-          prefix + "factor_" + Dune::XT::Common::to_string(factor), Dune::XT::Common::to_string(counter), true);
-      ++counter;
-    }
-  }
-
-  virtual void visualize_solution(const std::string prefix = "") const
-  {
-    size_t counter = 0;
-    for (const auto& pair : solution()) {
-      pair.second.visualize(prefix + "_" + Dune::XT::Common::to_string(counter));
+      pair.second.visualize(pair.second.space().grid_view(),
+                            prefix + "_" + Dune::XT::Common::to_string(counter),
+                            false,
+                            VTK::appendedraw,
+                            {},
+                            visualizer);
       ++counter;
     }
   }
