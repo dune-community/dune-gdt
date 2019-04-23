@@ -31,19 +31,24 @@
 #include <dune/xt/common/timings.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
 #include <dune/xt/grid/information.hh>
+#include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/la/container/common.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/operators/fv.hh>
-#include <dune/gdt/projections.hh>
-#include <dune/gdt/spaces/fv/product.hh>
-#include <dune/gdt/timestepper/factory.hh>
-#include <dune/gdt/timestepper/matrix-exponential-kinetic-isotropic.hh>
+#include <dune/gdt/operators/advection-fv.hh>
+#include <dune/gdt/operators/generic.hh>
+#include <dune/gdt/operators/advection-fv-entropybased.hh>
+#include <dune/gdt/interpolations.hh>
+#include <dune/gdt/spaces/l2/finite-volume.hh>
+#include <dune/gdt/tools/timestepper/explicit-rungekutta.hh>
+#include <dune/gdt/tools/timestepper/fractional-step.hh>
+#include <dune/gdt/tools/timestepper/matrix-exponential-kinetic-isotropic.hh>
+#include <dune/gdt/momentmodels/basisfunctions.hh>
+#include <dune/gdt/momentmodels/entropyflux.hh>
+#include <dune/gdt/momentmodels/entropysolver.hh>
 
-#include <dune/gdt/test/hyperbolic/problems/momentmodels/kinetictransport/checkerboard.hh>
-#include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions/spherical_harmonics.hh>
-#include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions/partial_moments.hh>
-#include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions/hatfunctions.hh>
+#include <dune/gdt/test/momentmodels/kinetictransport/checkerboard.hh>
+#include <dune/gdt/test/pn-discretization.hh>
 
 using namespace Dune::GDT;
 using namespace Dune::XT;
@@ -70,95 +75,58 @@ create_random_sigma_s_or_a(const double lower_bound, const double upper_bound, c
   return ret;
 }
 
-#define MATEXP_ISO 0
-#define EXPLICIT_EULER 1
-
 template <size_t dimDomain>
 class BoltzmannSolver
 {
 public:
   // set dimensions
-  static const size_t momentOrder_or_refinements = (dimDomain == 2) ? 15 : 0;
+  static const size_t momentOrder_or_refinements = (dimDomain == 2) ? 15 : 1;
 
-  using BasisfunctionType = typename std::conditional_t<
+  using MomentBasis = typename std::conditional_t<
       dimDomain == 2,
       Dune::GDT::SphericalHarmonicsMomentBasis<double, double, momentOrder_or_refinements, 2, true>,
       //      Dune::GDT::PartialMomentBasis<double, 3, double, momentOrder_or_refinements, 1, 3, 1>>;
       Dune::GDT::HatFunctionMomentBasis<double, 3, double, momentOrder_or_refinements, 1, 3>>;
-  static constexpr size_t dimRange = BasisfunctionType::dimRange;
+  static constexpr size_t dimRange = MomentBasis::dimRange;
   static constexpr auto time_stepper_method = TimeStepperMethods::explicit_euler;
   static constexpr auto rhs_time_stepper_method = TimeStepperMethods::explicit_euler;
   static constexpr auto time_stepper_splitting_method = TimeStepperSplittingMethods::fractional_step;
-  using DomainFieldType = typename BasisfunctionType::DomainFieldType;
-  using RangeFieldType = typename BasisfunctionType::RangeFieldType;
-  using RangeType = typename BasisfunctionType::RangeType;
+  using DomainFieldType = typename MomentBasis::DomainFieldType;
+  using RangeFieldType = typename MomentBasis::RangeFieldType;
+  using RangeType = typename MomentBasis::RangeType;
   using GridType = Dune::YaspGrid<dimDomain, Dune::EquidistantOffsetCoordinates<DomainFieldType, dimDomain>>;
-  using GridLayerType = typename GridType::LeafGridView;
-  using SpaceType = FvSpace<GridLayerType, RangeFieldType, dimRange, 1>;
-  using VectorType = typename LA::Container<RangeFieldType, LA::Backends::common_dense>::VectorType;
-  using DiscreteFunctionType = DiscreteFunction<SpaceType, VectorType>;
-  //    using ProblemType = Dune::GDT::Hyperbolic::Problems::KineticTransport::
-  //        CheckerboardPn<BasisfunctionType, GridLayerType, DiscreteFunctionType>;
-  using ProblemType = Dune::GDT::Hyperbolic::Problems::KineticTransport::
-      CheckerboardMn<BasisfunctionType, GridLayerType, DiscreteFunctionType>;
-  using EquationType = Hyperbolic::Problems::KineticEquation<ProblemType>;
-  using EntityType = typename GridType::template Codim<0>::Entity;
-
+  using GridViewType = typename GridType::LeafGridView;
+  using E = Dune::XT::Grid::extract_entity_t<GridViewType>;
+  using SpaceType = FiniteVolumeSpace<GridViewType, dimRange, 1, RangeFieldType>;
+  using VectorType = typename Dune::XT::LA::Container<RangeFieldType, LA::Backends::common_dense>::VectorType;
+  using MatrixType = typename Dune::XT::LA::Container<RangeFieldType, LA::Backends::common_dense>::MatrixType;
+  using DiscreteFunctionType = DiscreteFunction<VectorType, GridViewType, dimRange, 1, RangeFieldType>;
+  // using ProblemType = Dune::GDT::CheckerboardPn<E, MomentBasis>;
+  using ProblemType = Dune::GDT::CheckerboardMn<GridViewType, MomentBasis>;
   using ConfigType = Common::Configuration;
   using AnalyticalFluxType = typename ProblemType::FluxType;
+  using EntropyFluxType = typename ProblemType::ActualFluxType;
   using ActualAnalyticalFluxType = typename ProblemType::ActualFluxType;
-  using RhsType = typename ProblemType::RhsType;
   using InitialValueType = typename ProblemType::InitialValueType;
   using BoundaryValueType = typename ProblemType::BoundaryValueType;
-  using ActualBoundaryValueType = typename ProblemType::ActualBoundaryValueType;
-  using GridProviderFactoryType = Grid::CubeGridProviderFactory<GridType>;
-  using GridProviderType = Grid::GridProvider<GridType>;
-  using MnFluxType = EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, DiscreteFunctionType>;
-
-  using ConstantFunctionType =
-      Functions::ConstantFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>;
-  using LfOperatorType =
-      typename Dune::GDT::AdvectionLaxFriedrichsOperator<AnalyticalFluxType, BoundaryValueType, ConstantFunctionType>;
-  using KineticOperatorType = typename Dune::GDT::
-      AdvectionKineticOperator<AnalyticalFluxType, BoundaryValueType, BasisfunctionType, GridLayerType>;
-  //  using FluxTimeStepperType =
-  //      typename TimeStepperFactory<LfOperatorType, DiscreteFunctionType, time_stepper_method>::TimeStepperType;
+  using GridProviderFactoryType = Dune::XT::Grid::CubeGridProviderFactory<GridType>;
+  using GridProviderType = Dune::XT::Grid::GridProvider<GridType>;
+  using MnFluxType = EntropyBasedFluxFunction<GridViewType, MomentBasis>;
+  using AdvectionOperatorType = Dune::GDT::AdvectionFvOperator<MatrixType, GridViewType, dimRange>;
+  using EigenvectorWrapperType = typename EigenvectorWrapperChooser<MomentBasis, AnalyticalFluxType>::type;
+  using EntropySolverType = Dune::GDT::EntropySolver<MomentBasis, SpaceType, MatrixType>;
+  using FvOperatorType = Dune::GDT::EntropyBasedMomentFvOperator<AdvectionOperatorType, EntropySolverType>;
+  using RhsOperatorType = GenericOperator<MatrixType, GridViewType, dimRange>;
   using FluxTimeStepperType =
-      typename TimeStepperFactory<KineticOperatorType, DiscreteFunctionType, time_stepper_method>::TimeStepperType;
-  using RhsOperatorType = typename Dune::GDT::AdvectionRhsOperator<RhsType>;
-#if EXPLICIT_EULER
+      ExplicitRungeKuttaTimeStepper<FvOperatorType, DiscreteFunctionType, TimeStepperMethods::explicit_euler>;
+  using KineticNumericalFluxType = NumericalKineticFlux<GridViewType, MomentBasis>;
+  //    using RhsTimeStepperType = KineticIsotropicTimeStepper<DiscreteFunctionType, MomentBasis>;
   using RhsTimeStepperType =
-      typename TimeStepperFactory<RhsOperatorType, DiscreteFunctionType, rhs_time_stepper_method>::TimeStepperType;
-#elif MATEXP_ISO
-  using RhsTimeStepperType = KineticIsotropicTimeStepper<DiscreteFunctionType, BasisfunctionType>;
-#endif
-  using TimeStepperType =
-      typename Dune::GDT::TimeStepperSplittingFactory<FluxTimeStepperType,
-                                                      RhsTimeStepperType,
-                                                      time_stepper_splitting_method>::TimeStepperType;
-
-
+      ExplicitRungeKuttaTimeStepper<RhsOperatorType, DiscreteFunctionType, TimeStepperMethods::explicit_euler>;
+  using TimeStepperType = FractionalTimeStepper<RhsTimeStepperType, FluxTimeStepperType>;
   using SolutionType = typename TimeStepperType::DiscreteSolutionType;
   using SolutionVectorsVectorType = std::vector<VectorType>;
-
-  BoltzmannSolver(const std::string output_dir,
-                  const size_t num_save_steps,
-                  const size_t grid_size,
-                  const bool visualize_solution,
-                  const bool silent,
-                  const std::string sigma_s_in,
-                  const std::string sigma_a_in)
-  {
-    auto num_save_steps_copy = num_save_steps;
-    if (num_save_steps > 1e6) // hack to allow for size_t(-1) when called from the python bindings
-      num_save_steps_copy = size_t(-1);
-    auto random_sigma_s = create_random_sigma_s_or_a(0.0, 10.0, dimDomain);
-    auto random_sigma_a = create_random_sigma_s_or_a(0.0, 10.0, dimDomain);
-    auto sigma_s = sigma_s_in.empty() ? random_sigma_s : Common::from_string<std::vector<double>>(sigma_s_in);
-    auto sigma_a = sigma_a_in.empty() ? random_sigma_a : Common::from_string<std::vector<double>>(sigma_a_in);
-    init(output_dir, num_save_steps_copy, grid_size, visualize_solution, true, sigma_s, sigma_a);
-    silent_ = silent;
-  }
+  using ParameterFunctionType = typename ProblemType::ScalarFunctionType;
 
   BoltzmannSolver(const std::string output_dir = "boltzmann",
                   const size_t num_save_steps = 10,
@@ -173,38 +141,16 @@ public:
     auto num_save_steps_copy = num_save_steps;
     if (num_save_steps > 1e6) // hack to allow for size_t(-1) when called from the python bindings
       num_save_steps_copy = size_t(-1);
-
-    std::vector<double> sigma_s(static_cast<size_t>(std::pow(7, dimDomain)));
-    std::vector<double> sigma_a(sigma_s);
-    create_sigma_s_and_a(
-        sigma_s, sigma_a, sigma_s_scattering, sigma_s_absorbing, sigma_a_scattering, sigma_a_absorbing);
-    init(output_dir, num_save_steps_copy, grid_size, visualize_solution, true, sigma_s, sigma_a);
+    init(output_dir,
+         num_save_steps_copy,
+         grid_size,
+         visualize_solution,
+         true,
+         sigma_s_scattering,
+         sigma_s_absorbing,
+         sigma_a_scattering,
+         sigma_a_absorbing);
     silent_ = silent;
-  }
-
-  static void create_sigma_s_and_a(std::vector<double>& sigma_s,
-                                   std::vector<double>& sigma_a,
-                                   const RangeFieldType sigma_s_scattering,
-                                   const RangeFieldType sigma_s_absorbing,
-                                   const RangeFieldType sigma_a_scattering,
-                                   const RangeFieldType sigma_a_absorbing)
-  {
-    if (dimDomain == 2) {
-      for (size_t row = 0; row < 7; ++row)
-        for (size_t col = 0; col < 7; ++col) {
-          sigma_s[7 * row + col] = ProblemType::is_absorbing(row, col) ? sigma_s_absorbing : sigma_s_scattering;
-          sigma_a[7 * row + col] = ProblemType::is_absorbing(row, col) ? sigma_a_absorbing : sigma_a_scattering;
-        } // cols
-    } else if (dimDomain == 3) {
-      for (size_t plane = 0; plane < 7; ++plane)
-        for (size_t row = 0; row < 7; ++row)
-          for (size_t col = 0; col < 7; ++col) {
-            sigma_s[49 * plane + 7 * row + col] =
-                ProblemType::is_absorbing(plane, row, col) ? sigma_s_absorbing : sigma_s_scattering;
-            sigma_a[49 * plane + 7 * row + col] =
-                ProblemType::is_absorbing(plane, row, col) ? sigma_a_absorbing : sigma_a_scattering;
-          } // cols
-    } // if (dimDomain == 2)
   }
 
   double current_time() const
@@ -224,9 +170,9 @@ public:
 
   void set_current_solution(const VectorType& vec)
   {
-    timestepper_->current_solution().vector() = vec;
-    rhs_timestepper_->current_solution().vector() = vec;
-    flux_timestepper_->current_solution().vector() = vec;
+    timestepper_->current_solution().dofs().vector() = vec;
+    rhs_timestepper_->current_solution().dofs().vector() = vec;
+    flux_timestepper_->current_solution().dofs().vector() = vec;
   }
 
   double time_step_length() const
@@ -239,7 +185,7 @@ public:
     if (!silent_)
       std::cout << "Solving... " << std::endl;
     DXTC_TIMINGS.start("fv.solve");
-    const auto visualizer = basis_functions_->template visualizer<DiscreteFunctionType>();
+    const auto visualizer = basis_functions_->visualizer();
     timestepper_->solve(t_end_,
                         dt_,
                         num_save_steps_,
@@ -250,20 +196,20 @@ public:
                         false,
                         false,
                         file_path_,
-                        visualizer);
+                        *visualizer);
     DXTC_TIMINGS.stop("fv.solve");
     if (!silent_)
       std::cout << "Solving took: " << DXTC_TIMINGS.walltime("fv.solve") / 1000.0 << "s" << std::endl;
     if (visualize_solution_) {
       if (!silent_)
         std::cout << "Visualizing... ";
-      timestepper_->visualize_solution(file_path_, visualizer);
+      timestepper_->visualize_solution(file_path_, *visualizer);
       if (!silent_)
         std::cout << " done" << std::endl;
     }
     std::vector<VectorType> ret;
     for (const auto& pair : timestepper_->solution())
-      ret.push_back(pair.second.vector());
+      ret.push_back(pair.second.dofs().vector());
     return ret;
   }
 
@@ -279,25 +225,14 @@ public:
       std::cout << "Solving took: " << DXTC_TIMINGS.walltime("fv.solve") / 1000.0 << "s" << std::endl;
     std::vector<VectorType> ret;
     for (const auto& pair : solution)
-      ret.push_back(pair.second.vector());
-    return ret;
-  }
-
-  VectorType apply_LF_operator(VectorType source, const double time, const double dt) const
-  {
-    const DiscreteFunctionType source_function(*fv_space_, source);
-    VectorType ret(source);
-    DiscreteFunctionType range_function(*fv_space_, ret);
-    lf_operator_->apply(source_function, range_function, {{"t", {time}}, {"dt", {dt}}});
+      ret.push_back(pair.second.dofs().vector());
     return ret;
   }
 
   VectorType apply_kinetic_operator(VectorType source, const double time, const double dt) const
   {
-    const DiscreteFunctionType source_function(*fv_space_, source);
     VectorType ret(source);
-    DiscreteFunctionType range_function(*fv_space_, ret);
-    kinetic_operator_->apply(source_function, range_function, {{"t", {time}}, {"dt", {dt}}});
+    kinetic_operator_->apply(source, ret, {{"t", {time}}, {"dt", {dt}}});
     return ret;
   }
 
@@ -316,33 +251,23 @@ public:
       ++jj;
       basis_functions_->ensure_min_density(u_entity, min_acceptable_density);
       for (auto&& intersection : Dune::intersections(*grid_view_, entity)) {
-        const auto x_local_entity = entity.geometry().local(intersection.geometry().center());
+        const auto intersection_center = intersection.geometry().center();
         if (intersection.neighbor()) {
           for (size_t kk = 0; kk < dimRange; ++kk)
             u_neighbor[kk] = source[jj * dimRange + kk];
           basis_functions_->ensure_min_density(u_neighbor, min_acceptable_density);
           ++jj;
         } else if (intersection.boundary()) {
-          const auto local_boundary_vals = boundary_values_->local_function(entity);
-          u_neighbor = local_boundary_vals->evaluate(intersection, x_local_entity, u_entity);
+          u_neighbor = boundary_values_->evaluate(intersection_center);
         } else {
           DUNE_THROW(Dune::MathError, "This should not happen!");
         }
         assert(intersection.indexInInside() >= 0);
         size_t direction = static_cast<size_t>(intersection.indexInInside()) / 2;
-        const auto local_intersection_center = intersection.geometry().local(intersection.geometry().center());
+        const auto local_intersection_center = intersection.geometry().local(intersection_center);
         auto n_ij = intersection.unitOuterNormal(local_intersection_center);
         const auto neighbor = intersection.neighbor() ? intersection.outside() : entity;
-        ret_entity += mn_flux_->evaluate_kinetic_flux(entity,
-                                                      x_local_entity,
-                                                      u_entity,
-                                                      neighbor,
-                                                      neighbor.geometry().local(intersection.geometry().center()),
-                                                      u_neighbor,
-                                                      n_ij,
-                                                      direction,
-                                                      {},
-                                                      {})
+        ret_entity += mn_flux_->evaluate_kinetic_flux(entity, neighbor, u_entity, u_neighbor, n_ij, direction)
                       * intersection.geometry().integrationElement(local_intersection_center);
       } // intersections
       ret_entity /= entity.geometry().volume();
@@ -354,50 +279,19 @@ public:
     return ret;
   }
 
-//  bool is_realizable(const VectorType& vector) const
-//  {
-//    const DiscreteFunctionType discrete_function(*fv_space_, vector);
-//    for (const auto& entity : Dune::elements(fv_space_->grid_layer())) {
-//      const auto local_vec =
-//      discrete_function.local_function(entity)->evaluate(entity.geometry.local(entity.geometry().center())); if
-//      (!basis_functions_.is_realizable(local_vec))
-//        return false;
-//    }
-//    return true;
-//  }
-
-// for kinetic isotropic matrix exponential timestepper
-#if MATEXP_ISO
-  void set_rhs_timestepper_parameters(const RangeFieldType sigma_s_scattering = 1,
-                                      const RangeFieldType sigma_s_absorbing = 0,
-                                      const RangeFieldType sigma_a_scattering = 0,
-                                      const RangeFieldType sigma_a_absorbing = 10)
-  {
-    std::vector<double> sigma_s(static_cast<size_t>(std::pow(7, dimDomain)));
-    std::vector<double> sigma_a(sigma_s);
-    create_sigma_s_and_a(
-        sigma_s, sigma_a, sigma_s_scattering, sigma_s_absorbing, sigma_a_scattering, sigma_a_absorbing);
-    auto param = ProblemType::default_param();
-    param.set("sigma_s", sigma_s, true);
-    param.set("sigma_a", sigma_a, true);
-    problem_ = std::make_shared<const ProblemType>(
-        *basis_functions_, *grid_view_, problem_->grid_config(), problem_->boundary_config(), param);
-    equation_ = std::make_shared<const EquationType>(*problem_);
-    rhs_timestepper_->set_params(problem_->get_sigma_a(), problem_->get_sigma_s(), problem_->get_Q());
-  }
-
-  VectorType apply_rhs_timestepper(VectorType source, const double time, const double dt) const
-  {
-    const DiscreteFunctionType source_function(*fv_space_, source);
-    VectorType ret(source);
-    DiscreteFunctionType range_function(*fv_space_, ret);
-    rhs_timestepper_->apply(source_function, range_function, time, dt);
-    return ret;
-  }
-#endif
+  //  bool is_realizable(const VectorType& vector) const
+  //  {
+  //    const DiscreteFunctionType discrete_function(*fv_space_, vector);
+  //    for (const auto& entity : Dune::elements(fv_space_->grid_view())) {
+  //      const auto local_vec =
+  //      discrete_function.local_function(entity)->evaluate(entity.geometry.local(entity.geometry().center())); if
+  //      (!basis_functions_.is_realizable(local_vec))
+  //        return false;
+  //    }
+  //    return true;
+  //  }
 
   // for explicit euler timestepping
-#if EXPLICIT_EULER
   VectorType apply_rhs_operator(VectorType source, const double time) const
   {
     const DiscreteFunctionType source_function(*fv_space_, source);
@@ -423,29 +317,46 @@ public:
                                    const RangeFieldType sigma_a_scattering = 0,
                                    const RangeFieldType sigma_a_absorbing = 10)
   {
-    std::vector<double> sigma_s(static_cast<size_t>(std::pow(7, dimDomain)));
-    std::vector<double> sigma_a(sigma_s);
-    create_sigma_s_and_a(
-        sigma_s, sigma_a, sigma_s_scattering, sigma_s_absorbing, sigma_a_scattering, sigma_a_absorbing);
-    auto param = ProblemType::default_param();
-    param.set("sigma_s", sigma_s, true);
-    param.set("sigma_a", sigma_a, true);
-    problem_ = std::make_shared<const ProblemType>(
-        *basis_functions_, *grid_view_, problem_->grid_config(), problem_->boundary_config(), param);
-    equation_ = std::make_shared<const EquationType>(*problem_);
-    rhs_operator_ = std::make_shared<const RhsOperatorType>(equation_->rhs());
+    const auto u_iso = basis_functions_->u_iso();
+    const auto alpha_one = basis_functions_->alpha_one();
+    const auto vol_domain = basis_functions_->unit_ball_volume();
+    const auto basis_integrated = basis_functions_->integrated();
+    std::shared_ptr<ParameterFunctionType> sigma_s(
+        problem_->create_parameter_function(sigma_s_absorbing, sigma_s_scattering, sigma_s_scattering));
+    std::shared_ptr<ParameterFunctionType> sigma_a(
+        problem_->create_parameter_function(sigma_a_absorbing, sigma_a_scattering, sigma_a_scattering));
+    std::shared_ptr<ParameterFunctionType> Q(problem_->Q());
+    auto rhs_func = [=](const auto& /*source*/,
+                        const auto& local_source,
+                        auto& local_range,
+                        const Dune::XT::Common::Parameter& /*param*/) {
+      const auto& element = local_range.element();
+      local_source->bind(element);
+      const auto center = element.geometry().center();
+      const auto u = local_source->evaluate(center);
+      const auto sigma_a_value = sigma_a->evaluate(center)[0];
+      const auto sigma_s_value = sigma_s->evaluate(center)[0];
+      const auto sigma_t_value = sigma_a_value + sigma_s_value;
+      const auto Q_value = Q->evaluate(center)[0];
+      auto ret = u * (-sigma_t_value);
+      ret += u_iso * (alpha_one * u) / vol_domain;
+      ret += basis_integrated * Q_value;
+      for (size_t ii = 0; ii < local_range.dofs().size(); ++ii)
+        local_range.dofs()[ii] = ret[ii];
+    };
+    rhs_operator_ = std::make_shared<const RhsOperatorType>(
+        *fv_space_, *fv_space_, std::vector<typename RhsOperatorType::GenericElementFunctionType>(1, rhs_func));
     rhs_timestepper_->set_operator(*rhs_operator_);
-    sigma_t_max_ = calculate_max_sigma_t(sigma_s, sigma_a);
-    dt_ = std::min(equation_->CFL() * dx_,
+    sigma_t_max_ = calculate_max_sigma_t(*sigma_s, *sigma_a);
+    dt_ = std::min(problem_->CFL() * dx_,
                    Dune::XT::Common::FloatCmp::ne(sigma_t_max_, 0.) ? 0.99 * 1. / sigma_t_max_ : 1e100);
   }
-#endif
 
   VectorType get_initial_values() const
   {
     DiscreteFunctionType ret(*fv_space_, "discrete_initial_values");
-    project(equation_->initial_values(), ret);
-    return ret.vector();
+    default_interpolation(*problem_->initial_values(), ret, *grid_view_);
+    return ret.dofs().vector();
   }
 
   bool finished() const
@@ -458,8 +369,10 @@ public:
             const size_t grid_size = 50,
             const bool visualize_solution = true,
             const bool silent = false,
-            const std::vector<double>& sigma_s = ProblemType::create_sigma_s(),
-            const std::vector<double>& sigma_a = ProblemType::create_sigma_a())
+            const double sigma_s_scattering = 1.,
+            const double sigma_s_absorbing = 0.,
+            const double sigma_a_scattering = 0.,
+            const double sigma_a_absorbing = 10.)
   {
 #if HAVE_MPI
     int initialized = 0;
@@ -483,24 +396,18 @@ public:
       grid_config["num_elements"] += " " + Common::to_string(grid_size);
     grid_config["num_elements"] += "]";
 
-    auto param = ProblemType::default_param();
-    param.set("sigma_s", sigma_s, true);
-    param.set("sigma_a", sigma_a, true);
-    basis_functions_ = std::make_shared<const BasisfunctionType>();
-
-    sigma_t_max_ = calculate_max_sigma_t(sigma_s, sigma_a);
+    basis_functions_ = std::make_shared<const MomentBasis>();
 
     // create grid
     auto grid_provider = GridProviderFactoryType::create(grid_config, Dune::MPIHelper::getCommunicator());
     grid_ = grid_provider.grid_ptr();
 
     // make a product finite volume space on the leaf grid
-    grid_view_ = std::make_shared<const GridLayerType>(grid_->leafGridView());
+    grid_view_ = std::make_shared<const GridViewType>(grid_->leafGridView());
     fv_space_ = std::make_shared<const SpaceType>(*grid_view_);
 
     problem_ = std::make_shared<const ProblemType>(
-        *basis_functions_, *grid_view_, grid_config, ProblemType::default_boundary_cfg(), param);
-    equation_ = std::make_shared<const EquationType>(*problem_);
+        *basis_functions_, *grid_view_, grid_config, ProblemType::default_boundary_cfg());
 
     // allocate a discrete function for the concentration
     u_ = std::make_shared<DiscreteFunctionType>(*fv_space_, "solution");
@@ -510,55 +417,51 @@ public:
       std::cout << " done " << std::endl;
       std::cout << "Projecting initial values...";
     }
-    project(equation_->initial_values(), *u_);
+    const auto initial_values = problem_->initial_values();
+    default_interpolation(*initial_values, *u_, *grid_view_);
     if (!silent_)
       std::cout << " done " << std::endl;
 
     // calculate dx and choose t_end and initial dt
-    Grid::Dimensions<GridLayerType> dimensions(*grid_view_);
+    Grid::Dimensions<GridViewType> dimensions(*grid_view_);
     if (dimDomain != 2 && dimDomain != 3)
       DUNE_THROW(Dune::NotImplemented, "Need to adjust dx calculation!");
     dx_ = dimensions.entity_width.max() / (dimDomain == 2 ? std::sqrt(2) : std::sqrt(3));
-    dt_ = std::min(equation_->CFL() * dx_,
+    dt_ = std::min(problem_->CFL() * dx_,
                    Dune::XT::Common::FloatCmp::ne(sigma_t_max_, 0.) ? 0.99 * 1. / sigma_t_max_ : 1e100);
-    t_end_ = equation_->t_end();
+    t_end_ = problem_->t_end();
 
     // create Operators
-    dx_function_ = std::make_shared<const ConstantFunctionType>(dx_);
-    flux_ = std::shared_ptr<const AnalyticalFluxType>(problem_->create_flux());
-    boundary_values_ = std::shared_ptr<const BoundaryValueType>(problem_->create_boundary_values());
-    lf_operator_ = std::make_shared<const LfOperatorType>(*flux_, *boundary_values_, *dx_function_);
-    kinetic_operator_ = std::make_shared<const KineticOperatorType>(*flux_, *boundary_values_, *basis_functions_);
-    rhs_operator_ = std::make_shared<const RhsOperatorType>(equation_->rhs());
+    flux_ = std::shared_ptr<const AnalyticalFluxType>(problem_->flux());
+    boundary_values_ = std::shared_ptr<const BoundaryValueType>(problem_->boundary_values());
+    numerical_flux_ = std::make_shared<KineticNumericalFluxType>(*flux_, *basis_functions_);
+    advection_operator_ =
+        std::make_shared<AdvectionOperatorType>(*grid_view_, *numerical_flux_, *fv_space_, *fv_space_);
+    entropy_solver_ =
+        std::make_shared<EntropySolverType>(*(dynamic_cast<const EntropyFluxType*>(flux_.get())),
+                                            *fv_space_,
+                                            problem_->psi_vac() * basis_functions_->unit_ball_volume() / 10,
+                                            file_path_);
+    kinetic_operator_ = std::make_shared<const FvOperatorType>(*advection_operator_, *entropy_solver_);
 
     // create timestepper
-    //    flux_timestepper_ = std::make_shared<FluxTimeStepperType>(*lf_operator_, *u_, -1.0);
     flux_timestepper_ = std::make_shared<FluxTimeStepperType>(*kinetic_operator_, *u_, -1.0);
-#if EXPLICIT_EULER
     rhs_timestepper_ = std::make_shared<RhsTimeStepperType>(*rhs_operator_, *u_);
-#elif MATEXP_ISO
-    rhs_timestepper_ = std::make_shared<RhsTimeStepperType>(
-        *basis_functions_, *u_, problem_->get_sigma_a(), problem_->get_sigma_s(), problem_->get_Q());
-#endif
-    timestepper_ = std::make_shared<TimeStepperType>(*flux_timestepper_, *rhs_timestepper_);
+    timestepper_ = std::make_shared<TimeStepperType>(*rhs_timestepper_, *flux_timestepper_);
+
+    set_rhs_operator_parameters(sigma_s_scattering, sigma_s_absorbing, sigma_a_scattering, sigma_a_absorbing);
   } // void init()
 
   void reset()
   {
     u_ = std::make_shared<DiscreteFunctionType>(u_->space(), "solution");
-    project(equation_->initial_values(), *u_);
-    //    flux_timestepper_ = std::make_shared<FluxTimeStepperType>(*lf_operator_, *u_, -1.0);
+    default_interpolation(*problem_->initial_values(), *u_, *grid_view_);
     flux_timestepper_ = std::make_shared<FluxTimeStepperType>(*kinetic_operator_, *u_, -1.0);
-#if EXPLICIT_EULER
     rhs_timestepper_ = std::make_shared<RhsTimeStepperType>(*rhs_operator_, *u_);
-#elif MATEXP_ISO
-    rhs_timestepper_ = std::make_shared<RhsTimeStepperType>(
-        *basis_functions_, *u_, problem_->get_sigma_a(), problem_->get_sigma_s(), problem_->get_Q());
-#endif
-    timestepper_ = std::make_shared<TimeStepperType>(*flux_timestepper_, *rhs_timestepper_);
+    timestepper_ = std::make_shared<TimeStepperType>(*rhs_timestepper_, *flux_timestepper_);
   }
 
-  double calculate_max_sigma_t(const std::vector<double>& /*sigma_s*/, const std::vector<double>& /*sigma_a*/) const
+  double calculate_max_sigma_t(const ParameterFunctionType& /*sigma_s*/, const ParameterFunctionType& /*sigma_a*/) const
   {
     // temporarily disable as python side can't handle different time step length yet.
 #if 0
@@ -572,7 +475,7 @@ public:
   void prepare_restricted_operator(const std::vector<size_t>& output_dofs)
   {
     if (!restricted_op_output_dofs_ || *restricted_op_output_dofs_ != output_dofs) {
-      mn_flux_ = std::make_shared<MnFluxType>(*basis_functions_, *grid_view_);
+      mn_flux_ = std::make_shared<MnFluxType>(*grid_view_, *basis_functions_);
       restricted_op_output_dofs_ = std::make_shared<std::vector<size_t>>(output_dofs);
       restricted_op_input_dofs_ = std::make_shared<std::vector<size_t>>();
       restricted_op_entity_dofs_to_output_dofs_ = std::make_shared<std::vector<std::map<size_t, size_t>>>();
@@ -580,11 +483,11 @@ public:
       Dune::DynamicVector<size_t> global_dofs_entity;
       Dune::DynamicVector<size_t> global_dofs_neighbor;
       // calculate entities corresponding to dofs in restricted operator
-      restricted_op_entities_ = std::make_shared<std::vector<EntityType>>();
+      restricted_op_entities_ = std::make_shared<std::vector<E>>();
       for (auto&& entity : Dune::elements(*grid_view_)) {
         // we only want to add each entity once, but there may be several output_dofs per entity
         bool entity_added = false;
-        mapper.globalIndices(entity, global_dofs_entity);
+        mapper.global_indices(entity, global_dofs_entity);
         // check if any output dof matches a dof on this entity
         for (size_t ll = 0; ll < output_dofs.size(); ++ll) {
           for (size_t kk = 0; kk < global_dofs_entity.size(); ++kk) {
@@ -595,7 +498,7 @@ public:
                   restricted_op_input_dofs_->push_back(global_dof);
                 for (auto&& intersection : Dune::intersections(*grid_view_, entity)) {
                   if (intersection.neighbor()) {
-                    mapper.globalIndices(intersection.outside(), global_dofs_neighbor);
+                    mapper.global_indices(intersection.outside(), global_dofs_neighbor);
                     for (auto&& global_dof : global_dofs_neighbor)
                       restricted_op_input_dofs_->push_back(global_dof);
                   }
@@ -623,16 +526,17 @@ public:
 
 private:
   std::shared_ptr<const GridType> grid_;
-  std::shared_ptr<const GridLayerType> grid_view_;
-  std::shared_ptr<const BasisfunctionType> basis_functions_;
+  std::shared_ptr<const GridViewType> grid_view_;
+  std::shared_ptr<const MomentBasis> basis_functions_;
   std::shared_ptr<const ProblemType> problem_;
-  std::shared_ptr<const EquationType> equation_;
   std::shared_ptr<const SpaceType> fv_space_;
   std::shared_ptr<DiscreteFunctionType> u_;
-  std::shared_ptr<const LfOperatorType> lf_operator_;
-  std::shared_ptr<const KineticOperatorType> kinetic_operator_;
+  std::shared_ptr<KineticNumericalFluxType> numerical_flux_;
+  std::shared_ptr<const AdvectionOperatorType> advection_operator_;
+  std::shared_ptr<const EntropySolverType> entropy_solver_;
+  std::shared_ptr<const FvOperatorType> kinetic_operator_;
   std::shared_ptr<MnFluxType> mn_flux_;
-  std::shared_ptr<std::vector<EntityType>> restricted_op_entities_;
+  std::shared_ptr<std::vector<E>> restricted_op_entities_;
   std::shared_ptr<std::vector<size_t>> restricted_op_input_dofs_;
   std::shared_ptr<std::vector<size_t>> restricted_op_output_dofs_;
   std::shared_ptr<std::vector<std::map<size_t, size_t>>> restricted_op_entity_dofs_to_output_dofs_;
@@ -642,7 +546,6 @@ private:
   std::shared_ptr<TimeStepperType> timestepper_;
   std::shared_ptr<const AnalyticalFluxType> flux_;
   std::shared_ptr<const BoundaryValueType> boundary_values_;
-  std::shared_ptr<const ConstantFunctionType> dx_function_;
   double t_end_;
   double dt_;
   double dx_;
@@ -847,17 +750,13 @@ struct VectorExporter
 
 
 #include <dune/xt/common/disable_warnings.hh>
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(init_overloads2d, BoltzmannSolver2d::init, 0, 6)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(init_overloads2d, BoltzmannSolver2d::init, 0, 9)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(next_n_time_steps_overloads2d, BoltzmannSolver2d::next_n_time_steps, 1, 2)
-#if EXPLICIT_EULER
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(apply_rhs_overloads2d, BoltzmannSolver2d::apply_rhs_operator, 3, 6)
-#endif
 
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(init_overloads3d, BoltzmannSolver3d::init, 0, 6)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(init_overloads3d, BoltzmannSolver3d::init, 0, 9)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(next_n_time_steps_overloads3d, BoltzmannSolver3d::next_n_time_steps, 1, 2)
-#if EXPLICIT_EULER
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(apply_rhs_overloads3d, BoltzmannSolver3d::apply_rhs_operator, 3, 6)
-#endif
 #include <dune/xt/common/reenable_warnings.hh>
 
 
@@ -866,7 +765,6 @@ BOOST_PYTHON_MODULE(libboltzmann)
   typedef typename BoltzmannSolver2d::VectorType VectorType;
   typedef typename BoltzmannSolver2d::RangeFieldType RangeFieldType;
   // 2d
-#if EXPLICIT_EULER
   VectorType (BoltzmannSolver2d::*apply_rhs_without_params2d)(VectorType, const double) const =
       &BoltzmannSolver2d::apply_rhs_operator;
   VectorType (BoltzmannSolver2d::*apply_rhs_with_params2d)(VectorType,
@@ -876,7 +774,6 @@ BOOST_PYTHON_MODULE(libboltzmann)
                                                            const RangeFieldType,
                                                            const RangeFieldType) =
       &BoltzmannSolver2d::apply_rhs_operator;
-#endif
 
   class_<BoltzmannSolver2d>("BoltzmannSolver2d",
                             init<optional<const std::string,
@@ -888,32 +785,19 @@ BOOST_PYTHON_MODULE(libboltzmann)
                                           const double,
                                           const double,
                                           const double>>())
-      .def(init<const std::string,
-                const size_t,
-                const size_t,
-                const bool,
-                const bool,
-                const std::string,
-                const std::string>())
       .def("init", &BoltzmannSolver2d::init, init_overloads2d())
       .def("solve", &BoltzmannSolver2d::solve)
       .def("next_n_time_steps", &BoltzmannSolver2d::next_n_time_steps, next_n_time_steps_overloads2d())
       .def("reset", &BoltzmannSolver2d::reset)
       .def("finished", &BoltzmannSolver2d::finished)
-      .def("apply_LF_operator", &BoltzmannSolver2d::apply_LF_operator)
       .def("apply_kinetic_operator", &BoltzmannSolver2d::apply_kinetic_operator)
       .def("apply_restricted_kinetic_operator", &BoltzmannSolver2d::apply_restricted_kinetic_operator)
       .def("prepare_restricted_operator", &BoltzmannSolver2d::prepare_restricted_operator)
       .def("source_dofs", &BoltzmannSolver2d::restricted_op_input_dofs)
       .def("len_source_dofs", &BoltzmannSolver2d::restricted_op_input_dofs_size)
-#if EXPLICIT_EULER
       .def("apply_rhs_operator", apply_rhs_without_params2d)
       .def("apply_rhs_operator", apply_rhs_with_params2d, apply_rhs_overloads2d())
       .def("set_rhs_operator_parameters", &BoltzmannSolver2d::set_rhs_operator_parameters)
-#elif MATEXP_ISO
-      .def("apply_rhs_timestepper", &BoltzmannSolver2d::apply_rhs_timestepper)
-      .def("set_rhs_timestepper_parameters", &BoltzmannSolver2d::set_rhs_timestepper_parameters)
-#endif
       .def("get_initial_values", &BoltzmannSolver2d::get_initial_values)
       .def("current_time", &BoltzmannSolver2d::current_time)
       .def("set_current_time", &BoltzmannSolver2d::set_current_time)
@@ -926,7 +810,6 @@ BOOST_PYTHON_MODULE(libboltzmann)
       .def("size", &BoltzmannSolver2d::SolutionVectorsVectorType::size);
 
   // 3d
-#if EXPLICIT_EULER
   VectorType (BoltzmannSolver3d::*apply_rhs_without_params3d)(VectorType, const double) const =
       &BoltzmannSolver3d::apply_rhs_operator;
   VectorType (BoltzmannSolver3d::*apply_rhs_with_params3d)(VectorType,
@@ -936,7 +819,6 @@ BOOST_PYTHON_MODULE(libboltzmann)
                                                            const RangeFieldType,
                                                            const RangeFieldType) =
       &BoltzmannSolver3d::apply_rhs_operator;
-#endif
 
   class_<BoltzmannSolver3d>("BoltzmannSolver3d",
                             init<optional<const std::string,
@@ -948,32 +830,19 @@ BOOST_PYTHON_MODULE(libboltzmann)
                                           const double,
                                           const double,
                                           const double>>())
-      .def(init<const std::string,
-                const size_t,
-                const size_t,
-                const bool,
-                const bool,
-                const std::string,
-                const std::string>())
       .def("init", &BoltzmannSolver3d::init, init_overloads3d())
       .def("solve", &BoltzmannSolver3d::solve)
       .def("next_n_time_steps", &BoltzmannSolver3d::next_n_time_steps, next_n_time_steps_overloads3d())
       .def("reset", &BoltzmannSolver3d::reset)
       .def("finished", &BoltzmannSolver3d::finished)
-      .def("apply_LF_operator", &BoltzmannSolver3d::apply_LF_operator)
       .def("apply_kinetic_operator", &BoltzmannSolver3d::apply_kinetic_operator)
       .def("apply_restricted_kinetic_operator", &BoltzmannSolver3d::apply_restricted_kinetic_operator)
       .def("prepare_restricted_operator", &BoltzmannSolver3d::prepare_restricted_operator)
       .def("source_dofs", &BoltzmannSolver3d::restricted_op_input_dofs)
       .def("len_source_dofs", &BoltzmannSolver3d::restricted_op_input_dofs_size)
-#if EXPLICIT_EULER
       .def("apply_rhs_operator", apply_rhs_without_params3d)
       .def("apply_rhs_operator", apply_rhs_with_params3d, apply_rhs_overloads3d())
       .def("set_rhs_operator_parameters", &BoltzmannSolver3d::set_rhs_operator_parameters)
-#elif MATEXP_ISO
-      .def("apply_rhs_timestepper", &BoltzmannSolver3d::apply_rhs_timestepper)
-      .def("set_rhs_timestepper_parameters", &BoltzmannSolver3d::set_rhs_timestepper_parameters)
-#endif
       .def("get_initial_values", &BoltzmannSolver3d::get_initial_values)
       .def("current_time", &BoltzmannSolver3d::current_time)
       .def("set_current_time", &BoltzmannSolver3d::set_current_time)
@@ -995,22 +864,19 @@ BOOST_PYTHON_MODULE(libboltzmann)
 
 int main(int argc, char* argv[])
 {
-  static const size_t dimDomain = 2;
-
   try {
     // parse options
     if (argc == 1)
       std::cout << "The following options are available: " << argv[0]
                 << " [-output_dir DIR -num_save_steps INT -gridsize INT "
                 << "  -sigma_s_1 FLOAT -sigma_s_2 FLOAT -sigma_a_1 FLOAT -sigma_a_2 FLOAT"
-                << " --no_visualization --silent --random_parameters --totally_random_parameters]" << std::endl;
+                << " --no_visualization --silent --random_parameters]" << std::endl;
 
     size_t num_save_steps = 10;
     size_t grid_size = 20;
     bool visualize = true;
     bool silent = false;
     bool random_parameters = false;
-    bool totally_random_parameters = false;
     bool parameters_given = false;
     std::string output_dir;
     double sigma_s_lower = 0, sigma_s_upper = 8, sigma_a_lower = 0, sigma_a_upper = 8;
@@ -1035,10 +901,6 @@ int main(int argc, char* argv[])
       } else if (std::string(argv[i]) == "--silent") {
         silent = true;
       } else if (std::string(argv[i]) == "--random_parameters") {
-        if (totally_random_parameters) {
-          std::cerr << "Options --random_parameters and --totally-random_parameters are not compatible!" << std::endl;
-          return 1;
-        }
         if (parameters_given) {
           std::cerr << "You specified a value for at least one parameter so you can't use --random_parameters!"
                     << std::endl;
@@ -1052,17 +914,6 @@ int main(int argc, char* argv[])
         sigma_s_2 = sigma_s_dist(rng);
         sigma_a_1 = sigma_a_dist(rng);
         sigma_a_2 = sigma_a_dist(rng);
-      } else if (std::string(argv[i]) == "--totally_random_parameters") {
-        if (random_parameters) {
-          std::cerr << "Options --random_parameters and --totally-random_parameters are not compatible!" << std::endl;
-          return 1;
-        }
-        if (parameters_given) {
-          std::cerr << "You specified a value for at least one parameter so you can't use --totally_random_parameters!"
-                    << std::endl;
-          return 1;
-        }
-        totally_random_parameters = true;
       } else if (std::string(argv[i]) == "-gridsize") {
         if (i + 1 < argc) {
           grid_size = Common::from_string<size_t>(argv[++i]);
@@ -1071,9 +922,9 @@ int main(int argc, char* argv[])
           return 1;
         }
       } else if (std::string(argv[i]) == "-sigma_s_1") {
-        if (random_parameters || totally_random_parameters) {
+        if (random_parameters) {
           std::cerr << "You specified a value for at least one parameter on the command line so you can't use "
-                    << "--random_parameters or --totally_random_parameters!" << std::endl;
+                    << "--random_parameters!" << std::endl;
           return 1;
         }
         if (i + 1 < argc) {
@@ -1084,9 +935,9 @@ int main(int argc, char* argv[])
           return 1;
         }
       } else if (std::string(argv[i]) == "-sigma_s_2") {
-        if (random_parameters || totally_random_parameters) {
+        if (random_parameters) {
           std::cerr << "You specified a value for at least one parameter on the command line so you can't use "
-                    << "--random_parameters or --totally_random_parameters!" << std::endl;
+                    << "--random_parameters!" << std::endl;
           return 1;
         }
         if (i + 1 < argc) {
@@ -1097,9 +948,9 @@ int main(int argc, char* argv[])
           return 1;
         }
       } else if (std::string(argv[i]) == "-sigma_a_1") {
-        if (random_parameters || totally_random_parameters) {
+        if (random_parameters) {
           std::cerr << "You specified a value for at least one parameter on the command line so you can't use "
-                    << "--random_parameters or --totally_random_parameters!" << std::endl;
+                    << "--random_parameters!" << std::endl;
           return 1;
         }
         if (i + 1 < argc) {
@@ -1110,9 +961,9 @@ int main(int argc, char* argv[])
           return 1;
         }
       } else if (std::string(argv[i]) == "-sigma_a_2") {
-        if (random_parameters || totally_random_parameters) {
+        if (random_parameters) {
           std::cerr << "You specified a value for at least one parameter on the command line so you can't use "
-                    << "--random_parameters or --totally_random_parameters!" << std::endl;
+                    << "--random_parameters!" << std::endl;
           return 1;
         }
         if (i + 1 < argc) {
@@ -1134,49 +985,66 @@ int main(int argc, char* argv[])
 
     // run solver
     std::shared_ptr<BoltzmannSolver3d> solver;
-    if (totally_random_parameters) {
-      const auto sigma_s_matrix = create_random_sigma_s_or_a(sigma_s_lower, sigma_s_upper, dimDomain);
-      const auto sigma_a_matrix = create_random_sigma_s_or_a(sigma_a_lower, sigma_a_upper, dimDomain);
-      parameterfile << "Random parameters chosen on each square of the 7x7 checkerboard domain were: " << std::endl
-                    << "sigma_s: " << Common::to_string(sigma_s_matrix) << std::endl
-                    << "sigma_a: " << Common::to_string(sigma_a_matrix) << std::endl;
-      solver = std::make_shared<BoltzmannSolver3d>(output_dir,
-                                                   num_save_steps,
-                                                   grid_size,
-                                                   visualize,
-                                                   silent,
-                                                   Common::to_string(sigma_s_matrix),
-                                                   Common::to_string(sigma_a_matrix));
-    } else {
-      parameterfile << "Domain was composed of two materials, parameters were: " << std::endl
-                    << "First material: sigma_s = " + Common::to_string(sigma_s_1)
-                           + ", sigma_a = " + Common::to_string(sigma_a_1)
-                    << std::endl
-                    << "Second material: sigma_s = " + Common::to_string(sigma_s_2)
-                           + ", sigma_a = " + Common::to_string(sigma_a_2)
-                    << std::endl;
+    parameterfile << "Domain was composed of two materials, parameters were: " << std::endl
+                  << "First material: sigma_s = " + Common::to_string(sigma_s_1)
+                         + ", sigma_a = " + Common::to_string(sigma_a_1)
+                  << std::endl
+                  << "Second material: sigma_s = " + Common::to_string(sigma_s_2)
+                         + ", sigma_a = " + Common::to_string(sigma_a_2)
+                  << std::endl;
 
-      solver = std::make_shared<BoltzmannSolver3d>(
-          output_dir, num_save_steps, grid_size, visualize, silent, sigma_s_1, sigma_s_2, sigma_a_1, sigma_a_2);
-    }
+    solver = std::make_shared<BoltzmannSolver3d>(
+        output_dir, num_save_steps, grid_size, visualize, silent, sigma_s_1, sigma_s_2, sigma_a_1, sigma_a_2);
 
     DXTC_TIMINGS.start("solve_all");
-    std::vector<size_t> output_dofs{15, 3, 27, 4, 200, 533};
+    std::vector<size_t> output_dofs{2728, 3868, 4468, 929};
     solver->prepare_restricted_operator(output_dofs);
     using VectorType = typename LA::Container<double, LA::Backends::common_dense>::VectorType;
     auto initial_vals = solver->get_initial_values();
     RandomNumberGeneratorType rng{std::random_device()()};
-    std::uniform_real_distribution<double> distribution(1, 100);
+    std::uniform_real_distribution<double> distribution(1, 1000);
     for (auto&& val : initial_vals)
-      val *= 1e2 * distribution(rng);
+      val *= 1e4 * distribution(rng);
     auto source_dofs = solver->restricted_op_input_dofs();
+    std::cout << source_dofs << std::endl;
+#if 0
+    VectorType initial_vals_restr{
+        3.00887845e-05, 7.40090567e-05, 7.40090567e-05, 3.00887845e-05, 1.00000000e-08, 3.39443780e-04, 1.00000000e-08,
+        3.79301179e-05, 1.42264780e-05, 1.51590332e-05, 1.00000000e-08, 6.04617301e-05, 7.40090567e-05, 3.00887845e-05,
+        7.40090567e-05, 3.00887845e-05, 1.00000000e-08, 3.39443780e-04, 3.00887845e-05, 7.40090567e-05, 3.00887845e-05,
+        7.40090567e-05, 1.00000000e-08, 3.39443780e-04, 1.51590332e-05, 1.42264780e-05, 3.79301179e-05, 1.00000000e-08,
+        1.00000000e-08, 6.04617301e-05, 1.47623908e-05, 9.55564780e-06, 9.55564780e-06, 1.47623908e-05, 1.00000000e-08,
+        3.30163508e-05, 1.00000000e-08, 1.00000000e-08, 1.00000000e-08, 1.00000000e-08, 1.00000000e-08, 1.00000000e-08,
+        3.62665787e-02, 3.68187108e-02, 3.68187108e-02, 3.62665787e-02, 3.62665787e-02, 3.68187108e-02, 1.00000000e-08,
+        1.00000000e-08, 1.00000000e-08, 1.20284294e-04, 1.20284294e-04, 1.00000000e-08, 3.68187108e-02, 3.62665787e-02,
+        3.68187108e-02, 3.62665787e-02, 3.62665787e-02, 3.68187108e-02, 3.62665787e-02, 3.68187108e-02, 3.62665787e-02,
+        3.68187108e-02, 3.62665787e-02, 3.68187108e-02, 1.20284294e-04, 1.00000000e-08, 1.00000000e-08, 1.00000000e-08,
+        1.20284294e-04, 1.00000000e-08, 1.20284294e-04, 1.00000000e-08, 1.00000000e-08, 1.20284294e-04, 1.00000000e-08,
+        1.00000000e-08, 3.62665787e-02, 3.68187108e-02, 3.68187108e-02, 3.62665787e-02, 3.68187108e-02, 3.62665787e-02,
+        1.20284294e-04, 1.00000000e-08, 1.20284294e-04, 1.00000000e-08, 1.00000000e-08, 1.00000000e-08, 1.00000000e-08,
+        1.00000000e-08, 1.00000000e-08, 1.00000000e-08, 1.00000000e-08, 1.00000000e-08, 1.00000000e-08, 1.20284294e-04,
+        1.20284294e-04, 1.00000000e-08, 1.00000000e-08, 1.00000000e-08, 1.00000000e-08, 1.00000000e-08, 1.00000000e-08,
+        1.00000000e-08, 1.00000000e-08, 1.00000000e-08, 1.20284294e-04, 1.00000000e-08, 1.00000000e-08, 1.20284294e-04,
+        1.00000000e-08, 1.00000000e-08, 3.62665787e-02, 3.68187108e-02, 3.62665787e-02, 3.68187108e-02, 3.68187108e-02,
+        3.62665787e-02, 1.00000000e-08, 1.00000000e-08, 1.00000000e-08, 1.00000000e-08, 1.00000000e-08, 1.00000000e-08,
+        1.00000000e-08, 1.00000000e-08, 1.00000000e-08, 1.00000000e-08, 1.00000000e-08, 1.00000000e-08, 1.00000000e-08,
+        1.50692562e-04, 2.63568632e-05, 6.74968960e-05, 2.21867566e-04, 1.00000000e-08, 1.00000000e-08, 1.00000000e-08,
+        1.00000000e-08, 1.00000000e-08, 1.00000000e-08, 1.00000000e-08, 2.63568632e-05, 6.74968960e-05, 1.00000000e-08,
+        1.50692562e-04, 2.21867566e-04, 1.00000000e-08, 1.00000000e-08, 1.00000000e-08, 1.00000000e-08, 1.00000000e-08,
+        1.00000000e-08, 1.00000000e-08, 1.20284294e-04, 1.00000000e-08, 1.20284294e-04, 1.00000000e-08, 1.00000000e-08,
+        1.00000000e-08, 3.00887845e-05, 7.40090567e-05, 3.00887845e-05, 7.40090567e-05, 3.39443780e-04, 1.00000000e-08};
+#endif
     VectorType initial_vals_restr(source_dofs.size());
     for (size_t kk = 0; kk < source_dofs.size(); ++kk)
       initial_vals_restr[kk] = initial_vals[source_dofs[kk]];
     auto output1 = solver->apply_restricted_kinetic_operator(initial_vals_restr);
+    for (size_t ii = 0; ii < 1000; ++ii) {
+      const auto actual_initial_vals = initial_vals_restr * ii / 1000.;
+      output1 = solver->apply_restricted_kinetic_operator(actual_initial_vals);
+    }
     auto output2 = solver->apply_kinetic_operator(initial_vals, 0, solver->time_step_length());
     for (size_t kk = 0; kk < output_dofs.size(); ++kk)
-      std::cout << output1[kk] - output2[output_dofs[kk]] << std::endl;
+      EXPECT_NEAR(output1[kk], output2[output_dofs[kk]], 1e-10);
     solver->solve();
     DXTC_TIMINGS.stop("solve_all");
     parameterfile << "Elapsed time: " << DXTC_TIMINGS.walltime("solve_all") / 1000.0 << " s" << std::endl;

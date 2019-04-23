@@ -108,6 +108,16 @@ public:
    */
   virtual RangeFieldType step(const RangeFieldType dt, const RangeFieldType max_dt) = 0;
 
+  virtual RangeFieldType step_first(const RangeFieldType /*dt*/, const RangeFieldType /*max_dt*/)
+  {
+    return 0;
+  }
+
+  virtual RangeFieldType step_second(const RangeFieldType /*dt1*/, const RangeFieldType /*actual_dt*/)
+  {
+    return 0;
+  }
+
   const RangeFieldType& current_time() const
   {
     return t_;
@@ -186,6 +196,7 @@ public:
                                const size_t num_output_steps,
                                const bool save_solution,
                                const bool visualize,
+                               const bool with_half_steps,
                                const bool write_discrete,
                                const bool write_exact,
                                const std::string prefix,
@@ -229,7 +240,14 @@ public:
         max_dt = std::min(next_save_time - t, max_dt);
 
       // do a timestep
-      dt = step(dt, max_dt);
+      if (with_half_steps) {
+        const auto dt1 = step_first(dt, max_dt);
+        if (save_solution && num_save_steps == size_t(-1))
+          sol.insert(sol.end(), std::make_pair(t + 0.5 * dt, current_solution()));
+        dt = step_second(dt1, std::min(dt, max_dt));
+      } else {
+        dt = step(dt, max_dt);
+      }
       t = current_time();
 
       // augment time step counter
@@ -262,6 +280,67 @@ public:
     return dt;
   } // ... solve(...)
 
+  virtual RangeFieldType next_n_steps(const size_t n,
+                                      const RangeFieldType t_end,
+                                      const RangeFieldType initial_dt,
+                                      const bool output_progress,
+                                      const bool with_half_steps,
+                                      DiscreteSolutionType& sol)
+  {
+    RangeFieldType dt = initial_dt;
+    RangeFieldType t = current_time();
+    assert(XT::Common::FloatCmp::ge(t_end - t, 0.0));
+    size_t time_step_counter = 0;
+
+    static bool initial_values_evaluated = false;
+
+    if (!initial_values_evaluated && XT::Common::FloatCmp::eq(t, 0.0)) {
+      sol.insert(sol.end(), std::make_pair(t, current_solution()));
+      ++time_step_counter;
+      initial_values_evaluated = true;
+    }
+
+    while (XT::Common::FloatCmp::lt(t, t_end) && time_step_counter < n) {
+      RangeFieldType max_dt = dt;
+      // match saving times and t_end exactly
+      if (XT::Common::FloatCmp::ge(t + dt, t_end))
+        max_dt = t_end - t;
+
+      static double dt1 = 0;
+      static double first_evaluated = false;
+
+      // do a timestep
+      if (with_half_steps) {
+        if (!first_evaluated) {
+          dt1 = step_first(dt, max_dt);
+          t = current_time();
+          sol.insert(sol.end(), std::make_pair(t + 0.5 * dt, current_solution()));
+          first_evaluated = true;
+          ++time_step_counter;
+        }
+        if (time_step_counter != n) {
+          dt = step_second(dt1, std::min(dt, max_dt));
+          ++time_step_counter;
+          first_evaluated = false;
+          t = current_time();
+          sol.insert(sol.end(), std::make_pair(t, current_solution()));
+        }
+      } else {
+        dt = step(dt, max_dt);
+        t = current_time();
+        sol.insert(sol.end(), std::make_pair(t, current_solution()));
+        ++time_step_counter;
+      }
+
+      // augment time step counter
+      t = current_time();
+
+      if (output_progress)
+        std::cout << "time step " << time_step_counter << " done, time =" << t << ", current dt= " << dt << std::endl;
+    } // while (t < t_end)
+    return dt;
+  } // ... next_n_steps(...)
+
   // default solve, use internal solution
   virtual RangeFieldType solve(const RangeFieldType t_end,
                                const RangeFieldType initial_dt,
@@ -269,6 +348,7 @@ public:
                                const size_t num_output_steps = size_t(-1),
                                const bool save_solution = false,
                                const bool visualize = false,
+                               const bool with_half_steps = false,
                                const bool write_discrete = false,
                                const bool write_exact = false,
                                const std::string prefix = "solution",
@@ -282,6 +362,7 @@ public:
                  num_output_steps,
                  save_solution,
                  visualize,
+                 with_half_steps,
                  write_discrete,
                  write_exact,
                  prefix,
@@ -295,7 +376,8 @@ public:
   virtual RangeFieldType solve(const RangeFieldType t_end,
                                const RangeFieldType initial_dt,
                                const size_t num_save_steps,
-                               DiscreteSolutionType& sol)
+                               DiscreteSolutionType& sol,
+                               const bool with_half_steps = false)
   {
     return solve(t_end,
                  initial_dt,
@@ -303,6 +385,7 @@ public:
                  0,
                  true,
                  false,
+                 with_half_steps,
                  false,
                  false,
                  "",
