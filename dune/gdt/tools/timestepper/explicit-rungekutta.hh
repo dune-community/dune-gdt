@@ -204,7 +204,7 @@ public:
                                 const VectorType& b = ButcherArrayProviderType::b(),
                                 const VectorType& c = ButcherArrayProviderType::c())
     : BaseType(t_0, initial_values)
-    , op_(op)
+    , op_(&op)
     , r_(r)
     , u_i_(BaseType::current_solution())
     , A_(A)
@@ -252,9 +252,9 @@ public:
         u_i_.dofs().vector() += stages_k_[jj].dofs().vector() * (actual_dt * r_ * (A_[ii][jj]));
       // TODO: provide actual_dt to op_. This leads to spurious oscillations in the Lax-Friedrichs flux
       // because actual_dt/dx may become very small.
-      op_.apply(u_i_.dofs().vector(),
-                stages_k_[ii].dofs().vector(),
-                XT::Common::Parameter({{"t", {t + actual_dt * c_[ii]}}, {"dt", {dt}}}));
+      op_->apply(u_i_.dofs().vector(),
+                 stages_k_[ii].dofs().vector(),
+                 XT::Common::Parameter({{"t", {t + actual_dt * c_[ii]}}, {"dt", {dt}}}));
       DataHandleType stages_k_ii_handle(stages_k_[ii]);
       stages_k_[ii].space().grid_view().template communicate<DataHandleType>(
           stages_k_ii_handle, Dune::InteriorBorder_All_Interface, Dune::ForwardCommunication);
@@ -269,6 +269,12 @@ public:
 
     return dt;
   } // ... step(...)
+
+
+  void set_operator(const OperatorType& op)
+  {
+    op_ = &op;
+  }
 
   const std::pair<bool, RangeFieldType>
   find_suitable_dt(const RangeFieldType initial_dt,
@@ -320,7 +326,7 @@ public:
   }
 
 private:
-  const OperatorType& op_;
+  const OperatorType* op_;
   const RangeFieldType r_;
   DiscreteFunctionType u_i_;
   const MatrixType A_;

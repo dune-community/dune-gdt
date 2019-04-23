@@ -71,6 +71,21 @@ public:
     return dt_2;
   } // ... step(...)
 
+  virtual RangeFieldType step_first(const RangeFieldType dt, const RangeFieldType max_dt) override
+  {
+    auto& t = current_time();
+    const RangeFieldType actual_dt = std::min(dt, max_dt);
+    return first_stepper_.solve(t + actual_dt, dt, -1, 0, false);
+  } // ... step(...)
+
+  virtual RangeFieldType step_second(const RangeFieldType dt, const RangeFieldType actual_dt) override
+  {
+    auto& t = current_time();
+    const auto dt2 = second_stepper_.solve(t + actual_dt, dt, -1, 0, false);
+    t += actual_dt;
+    return dt2;
+  } // ... step(...)
+
 private:
   FirstStepperType& first_stepper_;
   SecondStepperType& second_stepper_;
