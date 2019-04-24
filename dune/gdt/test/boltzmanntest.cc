@@ -80,7 +80,7 @@ class BoltzmannSolver
 {
 public:
   // set dimensions
-  static const size_t momentOrder_or_refinements = (dimDomain == 2) ? 15 : 1;
+  static const size_t momentOrder_or_refinements = (dimDomain == 2) ? 15 : 2;
 
   using MomentBasis = typename std::conditional_t<
       dimDomain == 2,
@@ -111,7 +111,6 @@ public:
   using BoundaryValueType = typename ProblemType::BoundaryValueType;
   using GridProviderFactoryType = Dune::XT::Grid::CubeGridProviderFactory<GridType>;
   using GridProviderType = Dune::XT::Grid::GridProvider<GridType>;
-  using MnFluxType = EntropyBasedFluxFunction<GridViewType, MomentBasis>;
   using AdvectionOperatorType = Dune::GDT::AdvectionFvOperator<MatrixType, GridViewType, dimRange>;
   using EigenvectorWrapperType = typename EigenvectorWrapperChooser<MomentBasis, AnalyticalFluxType>::type;
   using EntropySolverType = Dune::GDT::EntropySolver<MomentBasis, SpaceType, MatrixType>;
@@ -120,10 +119,9 @@ public:
   using FluxTimeStepperType =
       ExplicitRungeKuttaTimeStepper<FvOperatorType, DiscreteFunctionType, TimeStepperMethods::explicit_euler>;
   using KineticNumericalFluxType = NumericalKineticFlux<GridViewType, MomentBasis>;
-  //    using RhsTimeStepperType = KineticIsotropicTimeStepper<DiscreteFunctionType, MomentBasis>;
   using RhsTimeStepperType =
       ExplicitRungeKuttaTimeStepper<RhsOperatorType, DiscreteFunctionType, TimeStepperMethods::explicit_euler>;
-  using TimeStepperType = FractionalTimeStepper<RhsTimeStepperType, FluxTimeStepperType>;
+  using TimeStepperType = FractionalTimeStepper<FluxTimeStepperType, RhsTimeStepperType>;
   using SolutionType = typename TimeStepperType::DiscreteSolutionType;
   using SolutionVectorsVectorType = std::vector<VectorType>;
   using ParameterFunctionType = typename ProblemType::ScalarFunctionType;
@@ -241,6 +239,8 @@ public:
     VectorType ret(restricted_op_output_dofs_->size(), 0.);
     RangeType u_entity;
     RangeType u_neighbor;
+    const auto* mn_flux = dynamic_cast<const EntropyFluxType*>(flux_.get());
+
     double min_acceptable_density = 1e-9;
     size_t jj = 0;
     for (size_t ii = 0; ii < restricted_op_entities_->size(); ++ii) {
@@ -267,7 +267,7 @@ public:
         const auto local_intersection_center = intersection.geometry().local(intersection_center);
         auto n_ij = intersection.unitOuterNormal(local_intersection_center);
         const auto neighbor = intersection.neighbor() ? intersection.outside() : entity;
-        ret_entity += mn_flux_->evaluate_kinetic_flux(entity, neighbor, u_entity, u_neighbor, n_ij, direction)
+        ret_entity += mn_flux->evaluate_kinetic_flux(entity, neighbor, u_entity, u_neighbor, n_ij, direction)
                       * intersection.geometry().integrationElement(local_intersection_center);
       } // intersections
       ret_entity /= entity.geometry().volume();
@@ -318,8 +318,6 @@ public:
                                    const RangeFieldType sigma_a_absorbing = 10)
   {
     const auto u_iso = basis_functions_->u_iso();
-    const auto alpha_one = basis_functions_->alpha_one();
-    const auto vol_domain = basis_functions_->unit_ball_volume();
     const auto basis_integrated = basis_functions_->integrated();
     std::shared_ptr<ParameterFunctionType> sigma_s(
         problem_->create_parameter_function(sigma_s_absorbing, sigma_s_scattering, sigma_s_scattering));
@@ -339,7 +337,7 @@ public:
       const auto sigma_t_value = sigma_a_value + sigma_s_value;
       const auto Q_value = Q->evaluate(center)[0];
       auto ret = u * (-sigma_t_value);
-      ret += u_iso * (alpha_one * u) / vol_domain;
+      ret += u_iso * basis_functions_->density(u) * sigma_s_value;
       ret += basis_integrated * Q_value;
       for (size_t ii = 0; ii < local_range.dofs().size(); ++ii)
         local_range.dofs()[ii] = ret[ii];
@@ -447,7 +445,7 @@ public:
     // create timestepper
     flux_timestepper_ = std::make_shared<FluxTimeStepperType>(*kinetic_operator_, *u_, -1.0);
     rhs_timestepper_ = std::make_shared<RhsTimeStepperType>(*rhs_operator_, *u_);
-    timestepper_ = std::make_shared<TimeStepperType>(*rhs_timestepper_, *flux_timestepper_);
+    timestepper_ = std::make_shared<TimeStepperType>(*flux_timestepper_, *rhs_timestepper_);
 
     set_rhs_operator_parameters(sigma_s_scattering, sigma_s_absorbing, sigma_a_scattering, sigma_a_absorbing);
   } // void init()
@@ -458,7 +456,7 @@ public:
     default_interpolation(*problem_->initial_values(), *u_, *grid_view_);
     flux_timestepper_ = std::make_shared<FluxTimeStepperType>(*kinetic_operator_, *u_, -1.0);
     rhs_timestepper_ = std::make_shared<RhsTimeStepperType>(*rhs_operator_, *u_);
-    timestepper_ = std::make_shared<TimeStepperType>(*rhs_timestepper_, *flux_timestepper_);
+    timestepper_ = std::make_shared<TimeStepperType>(*flux_timestepper_, *rhs_timestepper_);
   }
 
   double calculate_max_sigma_t(const ParameterFunctionType& /*sigma_s*/, const ParameterFunctionType& /*sigma_a*/) const
@@ -475,7 +473,6 @@ public:
   void prepare_restricted_operator(const std::vector<size_t>& output_dofs)
   {
     if (!restricted_op_output_dofs_ || *restricted_op_output_dofs_ != output_dofs) {
-      mn_flux_ = std::make_shared<MnFluxType>(*grid_view_, *basis_functions_);
       restricted_op_output_dofs_ = std::make_shared<std::vector<size_t>>(output_dofs);
       restricted_op_input_dofs_ = std::make_shared<std::vector<size_t>>();
       restricted_op_entity_dofs_to_output_dofs_ = std::make_shared<std::vector<std::map<size_t, size_t>>>();
@@ -535,7 +532,6 @@ private:
   std::shared_ptr<const AdvectionOperatorType> advection_operator_;
   std::shared_ptr<const EntropySolverType> entropy_solver_;
   std::shared_ptr<const FvOperatorType> kinetic_operator_;
-  std::shared_ptr<MnFluxType> mn_flux_;
   std::shared_ptr<std::vector<E>> restricted_op_entities_;
   std::shared_ptr<std::vector<size_t>> restricted_op_input_dofs_;
   std::shared_ptr<std::vector<size_t>> restricted_op_output_dofs_;
@@ -1038,14 +1034,16 @@ int main(int argc, char* argv[])
     for (size_t kk = 0; kk < source_dofs.size(); ++kk)
       initial_vals_restr[kk] = initial_vals[source_dofs[kk]];
     auto output1 = solver->apply_restricted_kinetic_operator(initial_vals_restr);
-    for (size_t ii = 0; ii < 1000; ++ii) {
-      const auto actual_initial_vals = initial_vals_restr * ii / 1000.;
-      output1 = solver->apply_restricted_kinetic_operator(actual_initial_vals);
-    }
+    // for (size_t ii = 0; ii < 1000; ++ii) {
+    const size_t ii = 0;
+    const auto actual_initial_vals = initial_vals_restr * ii / 1000.;
+    output1 = solver->apply_restricted_kinetic_operator(actual_initial_vals);
+    // }
     auto output2 = solver->apply_kinetic_operator(initial_vals, 0, solver->time_step_length());
     for (size_t kk = 0; kk < output_dofs.size(); ++kk)
       EXPECT_NEAR(output1[kk], output2[output_dofs[kk]], 1e-10);
-    solver->solve();
+    const auto result = solver->solve();
+    std::cout << " Result = " << std::accumulate(result.back().begin(), result.back().end(), 0.) << std::endl;
     DXTC_TIMINGS.stop("solve_all");
     parameterfile << "Elapsed time: " << DXTC_TIMINGS.walltime("solve_all") / 1000.0 << " s" << std::endl;
     parameterfile.close();
