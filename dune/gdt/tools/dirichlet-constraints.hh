@@ -13,10 +13,15 @@
 #ifndef DUNE_GDT_SPACES_TOOLS_DIRICHLET_CONSTRAINTS_HH
 #define DUNE_GDT_SPACES_TOOLS_DIRICHLET_CONSTRAINTS_HH
 
+#include <set>
+
+#include <dune/xt/common/numeric_cast.hh>
 #include <dune/xt/common/parallel/threadstorage.hh>
 #include <dune/xt/grid/boundaryinfo.hh>
 #include <dune/xt/grid/functors/interfaces.hh>
 #include <dune/xt/la/container/interfaces.hh>
+
+#include <dune/gdt/local/finite-elements/interfaces.hh>
 #include <dune/gdt/spaces/interface.hh>
 
 namespace Dune {
@@ -61,17 +66,27 @@ public:
   using R = typename SpaceType::R;
 
   DirichletConstraints(const BoundaryInfoType& bnd_info, const SpaceType& space)
-    : Propagator(this)
+    : BaseType()
+    , Propagator(this)
     , boundary_info_(bnd_info)
     , space_(space)
+    , basis_(space_.basis().localize())
+  {}
+
+  DirichletConstraints(const ThisType& other)
+    : BaseType(other)
+    , Propagator(this)
+    , boundary_info_(other.boundary_info_)
+    , space_(other.space_)
+    , basis_(space_.basis().localize())
   {}
 
   void apply_local(const ElementType& element) override final
   {
     std::set<size_t> local_DoFs;
-    const auto& fe = space_.finite_element(element.type());
+    basis_->bind(element);
     const auto& reference_element = ReferenceElements<double, d>::general(element.geometry().type());
-    const auto local_key_indices = fe.coefficients().local_key_indices();
+    const auto local_key_indices = basis_->finite_element().coefficients().local_key_indices();
     const auto intersection_it_end = space_.grid_view().iend(element);
     for (auto intersection_it = space_.grid_view().ibegin(element); intersection_it != intersection_it_end;
          ++intersection_it) {
@@ -82,7 +97,7 @@ public:
         const auto intersection_index = intersection.indexInInside();
         for (const auto& local_DoF : local_key_indices[1][intersection_index])
           local_DoFs.insert(local_DoF);
-        for (int cc = 2; cc <= static_cast<int>(d); ++cc) {
+        for (int cc = 2; cc <= XT::Common::numeric_cast<int>(d); ++cc) {
           for (int ii = 0; ii < reference_element.size(intersection_index, 1, cc); ++ii) {
             const auto subentity_id = reference_element.subEntity(intersection_index, 1, ii, cc);
             for (const auto& local_DoF : local_key_indices[cc][subentity_id])
@@ -91,10 +106,8 @@ public:
         }
       }
     }
-    if (local_DoFs.size() > 0) {
-      for (const auto& local_DoF : local_DoFs) {
-        dirichlet_DoFs_.insert(space_.mapper().global_index(element, local_DoF));
-      }
+    for (const auto& local_DoF : local_DoFs) {
+      dirichlet_DoFs_.insert(space_.mapper().global_index(element, local_DoF));
     }
   } // ... apply_local(...)
 
@@ -195,6 +208,7 @@ public:
 private:
   const BoundaryInfoType& boundary_info_;
   const SpaceType& space_;
+  mutable std::unique_ptr<typename SpaceType::GlobalBasisType::LocalizedType> basis_;
   std::set<size_t> dirichlet_DoFs_;
 }; // class DirichletConstraints
 

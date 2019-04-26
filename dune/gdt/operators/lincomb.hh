@@ -357,8 +357,8 @@ public:
   LincombOperator(ThisType& other)
     : BaseType(other)
   {
-    for (auto& op : other.ops_)
-      this->ops_.emplace_back(op);
+    for (auto& oo : other.ops_)
+      this->ops_.emplace_back(oo);
   }
 
   LincombOperator(ThisType&& source)
@@ -368,28 +368,28 @@ public:
 
   using BaseType::add;
 
-  void add(OperatorType& op, const FieldType& coeff = 1.)
+  void add(OperatorType& oo, const FieldType& coeff = 1.)
   {
-    ops_.emplace_back(op);
+    ops_.emplace_back(oo);
     BaseType::add(ops_.back().access(), coeff);
   }
 
-  void add(OperatorType*&& op, const FieldType& coeff = 1.)
+  void add(OperatorType*&& oo, const FieldType& coeff = 1.)
   {
-    BaseType::add(std::move(op), coeff);
+    BaseType::add(std::move(oo), coeff);
     ops_.emplace_back(*this->keep_alive_.back());
   }
 
-  void add(ThisType& op, const FieldType& coeff = 1.)
+  void add(ThisType& oo, const FieldType& coeff = 1.)
   {
-    BaseType::add(op, coeff);
-    for (size_t ii = 0; ii < op.num_ops(); ++ii)
-      ops_.emplace_back(op.ops_[ii]);
+    BaseType::add(oo, coeff);
+    for (size_t ii = 0; ii < oo.num_ops(); ++ii)
+      ops_.emplace_back(oo.ops_[ii]);
   }
 
-  void add(ThisType*&& op, const FieldType& coeff = 1.)
+  void add(ThisType*&& oo, const FieldType& coeff = 1.)
   {
-    this->add(*op, coeff);
+    this->add(*oo, coeff);
   }
 
   using BaseType::op;
@@ -404,8 +404,8 @@ public:
 
   OperatorType& assemble(const bool use_tbb = false) override final
   {
-    for (auto& op : ops_)
-      op.access().assemble(use_tbb);
+    for (auto& oo : ops_)
+      oo.access().assemble(use_tbb);
     return *this;
   }
 

@@ -40,17 +40,8 @@ public:
   using typename BaseType::D;
 
 private:
-  template <int>
-  struct Codim0EntityFilter
-  {
-    bool contains(const GeometryType& gt) const
-    {
-      return gt.dim() == d;
-    }
-  };
-
-  using Implementation = MultipleCodimMultipleGeomTypeMapper<GV, Codim0EntityFilter>;
-  using FiniteElement = LocalFiniteElementInterface<D, d, double, r, rC>;
+  using Implementation = MultipleCodimMultipleGeomTypeMapper<GV>;
+  using LocalFiniteElementFamily = LocalLagrangeFiniteElementFamily<D, d, double, r>;
 
 public:
   using typename BaseType::ElementType;
@@ -58,13 +49,10 @@ public:
 
   FiniteVolumeMapper(const GridViewType& grd_vw)
     : grid_view_(grd_vw)
-    , mapper_(new Implementation(grid_view_))
-    , finite_elements_(new std::map<GeometryType, std::shared_ptr<FiniteElement>>())
+    , local_finite_elements_()
+    , mapper_(grid_view_, mcmgElementLayout())
   {
-    // create finite elements (we only need the coefficients)
-    for (auto&& geometry_type : grid_view_.indexSet().types(0))
-      finite_elements_->insert(
-          std::make_pair(geometry_type, make_local_lagrange_finite_element<D, d, double, r>(geometry_type, 0)));
+    this->update_after_adapt();
   }
 
   FiniteVolumeMapper(const ThisType&) = default;
@@ -81,17 +69,12 @@ public:
   const LocalFiniteElementCoefficientsInterface<D, d>&
   local_coefficients(const GeometryType& geometry_type) const override final
   {
-    const auto finite_element_search_result = finite_elements_->find(geometry_type);
-    if (finite_element_search_result == finite_elements_->end())
-      DUNE_THROW(XT::Common::Exceptions::internal_error,
-                 "This must not happen, the grid view did not report all geometry types!"
-                     << "\n   geometry_type = " << geometry_type);
-    return finite_element_search_result->second->coefficients();
-  } // ... local_coefficients(...)
+    return local_finite_elements_.get(geometry_type, 0).coefficients();
+  }
 
   size_t size() const override final
   {
-    return mapper_->size() * r * rC;
+    return mapper_.size() * r * rC;
   }
 
   size_t max_local_size() const override final
@@ -108,7 +91,7 @@ public:
   {
     if (local_index >= r * rC)
       DUNE_THROW(Exceptions::mapper_error, "local_size(element) = " << r * rC << "\n   local_index = " << local_index);
-    return mapper_->index(element) * r * rC + local_index;
+    return mapper_.index(element) * r * rC + local_index;
   }
 
   using BaseType::global_indices;
@@ -120,24 +103,20 @@ public:
     size_t local_index = 0;
     for (size_t ii = 0; ii < r; ++ii)
       for (size_t jj = 0; jj < rC; ++jj) {
-        indices[local_index] = mapper_->index(element) * r * rC + local_index;
+        indices[local_index] = mapper_.index(element) * r * rC + local_index;
         ++local_index;
       }
   } // ... global_indices(...)
 
-  /**
-   * \note In general, we would have to check for newly created GeometryTypes and to recreate the local FEs accordingly.
-   *       This is postponed until we have the LocalFiniteElementFamily.
-   */
   void update_after_adapt() override final
   {
-    mapper_->update();
+    mapper_.update();
   }
 
 private:
   const GridViewType& grid_view_;
-  std::shared_ptr<Implementation> mapper_;
-  std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElement>>> finite_elements_;
+  LocalFiniteElementFamily local_finite_elements_;
+  Implementation mapper_;
 }; // class FiniteVolumeMapper
 
 

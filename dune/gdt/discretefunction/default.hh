@@ -219,10 +219,21 @@ public:
     ldf->bind(grid_element);
     return ldf;
   }
-
   /**
    * \}
    */
+
+  ThisType& operator+=(const BaseType& other)
+  {
+    dofs().vector() += other.dofs().vector();
+    return *this;
+  }
+
+  ThisType& operator-=(const BaseType& other)
+  {
+    dofs().vector() -= other.dofs().vector();
+    return *this;
+  }
 
 private:
   using BaseType::space_;

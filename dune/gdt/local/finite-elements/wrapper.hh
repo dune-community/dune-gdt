@@ -53,7 +53,7 @@ class LocalFiniteElementInterpolationLagrangepointsAccessor
     {
       const auto lps = imp.lagrangePoints();
       std::vector<DomainType> ret(lps.size());
-      for (size_t ii = 0; ii < lps.size(); ++ii)
+      for (unsigned int ii = 0; ii < lps.size(); ++ii)
         ret[ii] = lps[ii].point();
       return ret;
     }
@@ -211,6 +211,7 @@ public:
   LocalFiniteElementInterpolationWrapper(std::shared_ptr<const Implementation> imp)
     : imp_(imp)
     , geometry_type_(imp_->type())
+    , dofs_(imp_->size())
   {}
 
   LocalFiniteElementInterpolationWrapper(Implementation*&& imp_ptr)
@@ -250,14 +251,20 @@ public:
 
   void interpolate(const std::function<RangeType(DomainType)>& local_function,
                    const int /*order*/,
-                   std::vector<R>& dofs) const override final
+                   DynamicVector<R>& dofs) const override final
   {
-    imp_->localInterpolation().interpolate(FunctionWrapper(local_function), dofs);
+    imp_->localInterpolation().interpolate(FunctionWrapper(local_function), dofs_);
+    const size_t sz = this->size();
+    if (dofs.size() != sz)
+      dofs.resize(sz);
+    for (size_t ii = 0; ii < sz; ++ii)
+      dofs[ii] = dofs_[ii];
   }
 
 private:
   const std::shared_ptr<const Implementation> imp_;
   const GeometryType geometry_type_;
+  mutable std::vector<R> dofs_;
 }; // class LocalFiniteElementInterpolationWrapper
 
 

@@ -22,7 +22,7 @@
 #include <dune/gdt/discretefunction/bochner.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/discretefunction/reinterpret.hh>
-#include <dune/gdt/interpolations.hh>
+#include <dune/gdt/interpolations/default.hh>
 #include <dune/gdt/spaces/bochner.hh>
 #include <dune/gdt/spaces/interface.hh>
 
@@ -50,7 +50,7 @@ prolong(const DiscreteFunction<SV, SGV, r, rC, SR>& source,
         DiscreteFunction<TV, TGV, r, rC, TR>& target,
         const GridView<PGV>& prolongation_grid_view)
 {
-  interpolate(reinterpret(source, prolongation_grid_view), target, prolongation_grid_view);
+  default_interpolation(reinterpret(source, prolongation_grid_view), target, prolongation_grid_view);
 }
 
 
@@ -131,9 +131,10 @@ prolong(const DiscreteFunction<V, SGV, r, rC, SR>& source,
  *        suitable target_function with same VectorType as source, uses target.space().grid_view() as
  *        prolongation_grid_view].
  */
-template <class V, class SGV, size_t r, size_t rC, class SR, class TGV, class TR>
-DiscreteFunction<V, TGV, r, rC, TR> prolong(const DiscreteFunction<V, SGV, r, rC, SR>& source,
-                                            const SpaceInterface<TGV, r, rC, TR>& target_space)
+// we require the enable_if for disambigouation with a variant above
+template <class SGV, class V, size_t r, size_t rC, class SR, class TGV, class TR>
+std::enable_if_t<!XT::LA::is_vector<SGV>::value, DiscreteFunction<V, TGV, r, rC, TR>>
+prolong(const DiscreteFunction<V, SGV, r, rC, SR>& source, const SpaceInterface<TGV, r, rC, TR>& target_space)
 {
   auto target_function = make_discrete_function<V>(target_space);
   prolong(source, target_function);
@@ -164,10 +165,11 @@ void prolong(const DiscreteBochnerFunction<SV, SGV, r, rC, R>& source,
   DynamicVector<size_t> local_dof_indices(temporal_space.mapper().max_local_size());
   std::vector<bool> dof_has_been_handled(temporal_space.mapper().size(), false);
   // walk the time intervals
+  auto temporal_basis = temporal_space.basis().localize();
   for (auto&& time_interval : elements(temporal_space.grid_view())) {
+    temporal_basis->bind(time_interval);
     temporal_space.mapper().global_indices(time_interval, local_dof_indices);
-    const auto& lagrange_points_in_time =
-        temporal_space.finite_element(time_interval.geometry().type()).lagrange_points();
+    const auto& lagrange_points_in_time = temporal_basis->finite_element().lagrange_points();
     for (size_t ii = 0; ii < lagrange_points_in_time.size(); ++ii) {
       const size_t global_dof_index = local_dof_indices[ii];
       if (!dof_has_been_handled[global_dof_index]) {

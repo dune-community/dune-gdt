@@ -1,0 +1,22 @@
+__name = operators_oswald_interpolation__cubic_3d_grids
+
+[OswaldInterpolationOperator.0.fulfills_l2_interpolation_estimate.YASP_3D_EQUIDISTANT_OFFSET.results]
+constant_from_L2_interpolation_estimate = 0.014731391274719733
+
+[OswaldInterpolationOperator.0.fulfills_h1_interpolation_estimate.YASP_3D_EQUIDISTANT_OFFSET.results]
+constant_from_H1_interpolation_estimate = 0.26516504294495541
+
+
+[OswaldInterpolationOperator.1.fulfills_l2_interpolation_estimate.ALU_3D_CUBE.results]
+constant_from_L2_interpolation_estimate = 0.014731391274719733
+
+[OswaldInterpolationOperator.1.fulfills_h1_interpolation_estimate.ALU_3D_CUBE.results]
+constant_from_H1_interpolation_estimate = 0.26516504294495541
+
+
+[OswaldInterpolationOperator.2.fulfills_l2_interpolation_estimate.UG_3D.results]
+constant_from_L2_interpolation_estimate = 0.01473139127471973
+
+[OswaldInterpolationOperator.2.fulfills_h1_interpolation_estimate.UG_3D.results]
+constant_from_H1_interpolation_estimate = 0.26516504294495541
+

@@ -24,7 +24,7 @@
 #  include <dune/xt/common/numeric_cast.hh>
 #  include <dune/xt/common/timedlogging.hh>
 
-static void add_initialization(pybind11::module& m, std::string logger_name)
+void add_initialization(pybind11::module& m, std::string logger_name)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;

@@ -100,7 +100,7 @@ class LocalIntersectionOperatorInterface : public XT::Common::ParametricInterfac
                 "");
 
 public:
-  static const constexpr size_t d = Intersection::dimension;
+  static const constexpr size_t d = Intersection::Entity::dimension;
   using D = typename Intersection::ctype;
   using I = Intersection;
   using IntersectionType = Intersection;

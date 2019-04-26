@@ -170,6 +170,79 @@ private:
 }; // class GenericLocalBinaryElementIntegrand
 
 
+template <class I, size_t r = 1, size_t rC = 1, class RF = double, class F = double>
+class GenericLocalBinaryIntersectionIntegrand : public LocalBinaryIntersectionIntegrandInterface<I, r, rC, RF, F>
+{
+  using BaseType = LocalBinaryIntersectionIntegrandInterface<I, r, rC, RF, F>;
+  using ThisType = GenericLocalBinaryIntersectionIntegrand<I, r, rC, RF, F>;
+
+public:
+  using typename BaseType::DomainType;
+  using typename BaseType::LocalBasisType;
+
+  using GenericOrderFunctionType = std::function<int(const LocalBasisType& /*inside_basis*/,
+                                                     const LocalBasisType& /*outside_basis*/,
+                                                     const XT::Common::Parameter& /*param*/)>;
+  using GenericEvalauteFunctionType = std::function<void(const LocalBasisType& /*inside_basis*/,
+                                                         const LocalBasisType& /*outside_basis*/,
+                                                         const DomainType& /*point_in_reference_intersection*/,
+                                                         DynamicMatrix<F>& /*result*/,
+                                                         const XT::Common::Parameter& /*param*/)>;
+
+  GenericLocalBinaryIntersectionIntegrand(GenericOrderFunctionType order_function,
+                                          GenericEvalauteFunctionType evaluate_function,
+                                          const XT::Common::ParameterType& param_type = {})
+    : BaseType(param_type)
+    , order_(order_function)
+    , evaluate_(evaluate_function)
+  {}
+
+  GenericLocalBinaryIntersectionIntegrand(const ThisType& other)
+    : BaseType(other.parameter_type())
+    , order_(other.order_)
+    , evaluate_(other.evaluate_)
+  {}
+
+  std::unique_ptr<BaseType> copy() const override final
+  {
+    return std::make_unique<ThisType>(*this);
+  }
+
+  int order(const LocalBasisType& inside_basis,
+            const LocalBasisType& outside_basis,
+            const XT::Common::Parameter& param = {}) const override final
+  {
+    return order_(inside_basis, outside_basis, this->parse_parameter(param));
+  }
+
+  using BaseType::evaluate;
+
+  void evaluate(const LocalBasisType& inside_basis,
+                const LocalBasisType& outside_basis,
+                const DomainType& point_in_reference_intersection,
+                DynamicMatrix<F>& result,
+                const XT::Common::Parameter& param = {}) const override final
+  { // prepare storage
+    const size_t rows = inside_basis.size(param);
+    const size_t cols = outside_basis.size(param);
+    if (result.rows() < rows || result.cols() < cols)
+      result.resize(rows, cols);
+    // evaluate
+    evaluate_(inside_basis, outside_basis, point_in_reference_intersection, result, this->parse_parameter(param));
+    // check
+    DUNE_THROW_IF(result.rows() < rows || result.cols() < cols,
+                  Exceptions::integrand_error,
+                  "inside_basis.size(param) = " << rows << "\n   result.rows() = " << result.rows()
+                                                << "outside_basis.size(param) = " << cols
+                                                << "\n   result.cols() = " << result.cols());
+  } // ... evaluate(...)
+
+private:
+  const GenericOrderFunctionType order_;
+  const GenericEvalauteFunctionType evaluate_;
+}; // class GenericLocalBinaryIntersectionIntegrand
+
+
 } // namespace GDT
 } // namespace Dune
 

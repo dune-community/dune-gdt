@@ -55,7 +55,6 @@ public:
     : BaseType(assembly_grid_view)
     , source_(src)
     , assembled_(false)
-    , result_(0.)
   {
     // to detect assembly
     this->append(
@@ -73,8 +72,8 @@ public:
                    const XT::Common::Parameter& param = {},
                    const ElementFilterType& filter = ApplyOnAllElements())
   {
-    this->append(make_local_element_functional_accumulator<GV>(local_functional, source_, result_, param).release(),
-                 filter);
+    local_accumulators_.emplace_back(make_local_element_functional_accumulator<GV>(local_functional, source_, param));
+    this->append(*local_accumulators_.back(), filter);
     return *this;
   }
 
@@ -89,13 +88,16 @@ public:
 
   Field result() const
   {
-    return result_;
+    Field ret = 0;
+    for (const auto& local_accumulators : local_accumulators_)
+      ret += local_accumulators->result();
+    return ret;
   }
 
 protected:
   const SourceType& source_;
   bool assembled_;
-  Field result_;
+  std::list<std::unique_ptr<LocalElementFunctionalAccumulator<GridView, r, rC, R, F>>> local_accumulators_;
 }; // class LocalizableFunctionalBase
 
 

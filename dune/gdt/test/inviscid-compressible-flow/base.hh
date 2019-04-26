@@ -24,7 +24,7 @@
 #include <dune/xt/functions/base/sliced.hh>
 #include <dune/xt/functions/interfaces/element-functions.hh>
 
-#include <dune/gdt/interpolations.hh>
+#include <dune/gdt/interpolations/default.hh>
 #include <dune/gdt/local/integrands/identity.hh>
 #include <dune/gdt/test/instationary-eocstudies/hyperbolic-nonconforming.hh>
 #include <dune/gdt/tools/euler.hh>
@@ -65,15 +65,16 @@ struct InviscidCompressibleFlowEulerProblem
   template <class Vector, class GV>
   DiscreteFunction<Vector, GV, m> make_initial_values(const SpaceInterface<GV, m>& space) const
   {
-    return interpolate<Vector>(0,
-                               [&](const auto& xx, const auto& /*mu*/) {
-                                 if (XT::Common::FloatCmp::ge(xx, DomainType(-0.5))
-                                     && XT::Common::FloatCmp::le(xx, DomainType(0)))
-                                   return euler_tools.conservative(/*density=*/4., /*velocity=*/0., /*pressure=*/1.6);
-                                 else
-                                   return euler_tools.conservative(/*density=*/1., /*velocity=*/0., /*pressure=*/0.4);
-                               },
-                               space);
+    // TODO: Use generic interpolate once implemented?
+    return default_interpolation<Vector>(
+        0,
+        [&](const auto& xx, const auto& /*mu*/) {
+          if (XT::Common::FloatCmp::ge(xx, DomainType(-0.5)) && XT::Common::FloatCmp::le(xx, DomainType(0)))
+            return euler_tools.conservative(/*density=*/4., /*velocity=*/0., /*pressure=*/1.6);
+          else
+            return euler_tools.conservative(/*density=*/1., /*velocity=*/0., /*pressure=*/0.4);
+        },
+        space);
   } // ... make_initial_values(...)
 }; // struct InviscidCompressibleFlowEulerProblem
 
@@ -95,6 +96,7 @@ protected:
   using typename BaseType::F;
   using typename BaseType::GP;
   using typename BaseType::GV;
+  using typename BaseType::I;
   using typename BaseType::M;
   using typename BaseType::O;
   using typename BaseType::R;
@@ -103,7 +105,7 @@ protected:
   using RangeType = XT::Common::FieldVector<R, m>;
 
 public:
-  InviscidCompressibleFlowEulerTest(const std::string timestepping)
+  InviscidCompressibleFlowEulerTest(const std::string timestepping, const size_t num_refinements = 2)
     : Problem(new InviscidCompressibleFlowEulerProblem<G>())
     , BaseType(this->access().T_end,
                timestepping,
@@ -111,10 +113,13 @@ public:
                  for (size_t ii = 0; ii < this->visualization_steps_; ++ii) {
                    const double time = ii * (this->T_end_ / this->visualization_steps_);
                    const auto u_t = solution.evaluate(time);
-                   this->access().euler_tools.visualize(
-                       u_t, u_t.space().grid_view(), prefix, XT::Common::to_string(ii));
+                   this->access().euler_tools.visualize(u_t,
+                                                        u_t.space().grid_view(),
+                                                        XT::Common::Test::get_unique_test_name() + "__" + prefix,
+                                                        XT::Common::to_string(ii));
                  }
-               })
+               },
+               num_refinements)
     , visualization_steps_(0)
     , boundary_treatment("")
   {}
@@ -129,11 +134,13 @@ protected:
   {
     if (boundary_treatment == "inflow_from_the_left_by_heuristic_euler_treatment_impermeable_wall_right") {
       const auto& euler_tools = this->access().euler_tools;
-      return interpolate<V>(0,
-                            [&](const auto& /*xx*/, const auto& /*param*/) {
-                              return euler_tools.conservative(/*density=*/0.5, /*velocity=*/0., /*pressure=*/0.4);
-                            },
-                            space);
+      // TODO: Use generic interpolate once implemented?
+      return default_interpolation<V>(0,
+                                      [&](const auto& /*xx*/, const auto& /*param*/) {
+                                        return euler_tools.conservative(
+                                            /*density=*/0.5, /*velocity=*/0., /*pressure=*/0.4);
+                                      },
+                                      space);
     } else
       return this->access().template make_initial_values<V>(space);
   } // ... make_initial_values(...)
@@ -147,9 +154,9 @@ protected:
   {
     auto& self = *this;
     const auto& euler_tools = this->access().euler_tools;
-    const NumericalVijayasundaramFlux<d, m> numerical_flux(
+    const NumericalVijayasundaramFlux<I, d, m> numerical_flux(
         self.flux(),
-        /*flux_eigen_decomposition=*/[&](const auto& /*f*/, const auto& w, const auto& n, const auto&
+        /*flux_eigen_decomposition=*/[&](const auto& /*local_f*/, const auto& w, const auto& n, const auto&
                                          /*param*/) {
           return std::make_tuple(euler_tools.eigenvalues_flux_jacobian(w, n),
                                  euler_tools.eigenvectors_flux_jacobian(w, n),
@@ -159,14 +166,15 @@ protected:
       if (self.space_type_ == "fv")
         return std::make_unique<AdvectionFvOperator<M, GV, m>>(space.grid_view(), numerical_flux, space, space);
       else
-        return std::make_unique<AdvectionDgArtificialViscosityOperator<M, GV, m>>(
+        return std::make_unique<AdvectionDgOperator<M, GV, m>>(
             space.grid_view(),
             numerical_flux,
             space,
             space,
             /*periodicity_exception=*/XT::Grid::ApplyOn::NoIntersections<GV>(),
-            DXTC_CONFIG_GET("nu_1", 0.2),
-            DXTC_CONFIG_GET("alpha_1", 1.0));
+            self.dg_artificial_viscosity_nu_1_,
+            self.dg_artificial_viscosity_alpha_1_,
+            self.dg_artificial_viscosity_component_);
     }
     // All other than periodic are only availabel for FV at the moment.
     DUNE_THROW_IF(self.space_type_ != "fv",
@@ -338,16 +346,27 @@ protected:
   XT::LA::ListVectorArray<V> solve(const S& space, const double T_end) override final
   {
     const auto u_0 = this->make_initial_values(space);
-    const auto op = this->make_lhs_operator(space);
     const auto fv_dt =
         (this->boundary_treatment == "inflow_from_the_left_by_heuristic_euler_treatment_impermeable_wall_right")
             ? estimate_dt_for_hyperbolic_system(
                   space.grid_view(), u_0, this->flux(), /*boundary_data_range=*/{{0.5, 0., 0.4}, {1.5, 0.5, 0.4}})
             : estimate_dt_for_hyperbolic_system(space.grid_view(), u_0, this->flux());
-    const auto dt = (this->space_type_ == "fv") ? fv_dt : this->estimate_fixed_explicit_dt(space);
+    auto dt = fv_dt;
+    if (this->space_type_ != "fv") {
+      // find something that will get us a few steps ...
+      dt = this->estimate_fixed_explicit_dt(space);
+      // .. and then try to go all the way with it
+      dt = this->estimate_fixed_explicit_dt_to_T_end(
+          space, DXTC_TEST_CONFIG_GET("setup.estimate_fixed_explicit_dt.min_dt", 1e-2) * dt, T_end);
+    }
     this->current_data_["quantity"]["dt"] = dt;
     this->current_data_["quantity"]["explicit_fv_dt"] = fv_dt;
-    return solve_instationary_system_explicit_euler(u_0, *op, T_end, dt);
+    Timer timer;
+    const auto op = this->make_lhs_operator(space);
+    auto solution =
+        solve_instationary_system_explicit_euler(u_0, *op, T_end, DXTC_TEST_CONFIG_GET("setup.dt_factor", 0.99) * dt);
+    this->current_data_["quantity"]["time to solution (s)"] = timer.elapsed();
+    return solution;
   }
 }; // class InviscidCompressibleFlowEulerExplicitTest
 

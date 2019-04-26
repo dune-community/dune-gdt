@@ -33,7 +33,7 @@ namespace GDT {
 template <class TGV, size_t t_r, size_t t_rC, class TR, class AGV, size_t a_r, size_t a_rC, class AR, class GV>
 XT::LA::SparsityPatternDefault make_element_sparsity_pattern(const SpaceInterface<TGV, t_r, t_rC, TR>& test_space,
                                                              const SpaceInterface<AGV, a_r, a_rC, AR>& ansatz_space,
-                                                             const GridView<GV>& grid_view)
+                                                             const GV& grid_view)
 {
   XT::LA::SparsityPatternDefault pattern(test_space.mapper().size());
   DynamicVector<size_t> row_indices(test_space.mapper().max_local_size(), 0);
@@ -52,7 +52,7 @@ XT::LA::SparsityPatternDefault make_element_sparsity_pattern(const SpaceInterfac
 
 template <class SGV, size_t r, size_t rC, class R, class GV>
 XT::LA::SparsityPatternDefault make_element_sparsity_pattern(const SpaceInterface<SGV, r, rC, R>& space,
-                                                             const GridView<GV>& grid_view)
+                                                             const GV& grid_view)
 {
   return make_element_sparsity_pattern(space, space, grid_view);
 }
@@ -73,7 +73,7 @@ template <class TGV, size_t t_r, size_t t_rC, class TR, class AGV, size_t a_r, s
 XT::LA::SparsityPatternDefault
 make_intersection_sparsity_pattern(const SpaceInterface<TGV, t_r, t_rC, TR>& test_space,
                                    const SpaceInterface<AGV, a_r, a_rC, AR>& ansatz_space,
-                                   const GridView<GV>& grid_view)
+                                   const GV& grid_view)
 {
   XT::LA::SparsityPatternDefault pattern(test_space.mapper().size());
   DynamicVector<size_t> row_indices(test_space.mapper().max_local_size(), 0);
@@ -97,7 +97,7 @@ make_intersection_sparsity_pattern(const SpaceInterface<TGV, t_r, t_rC, TR>& tes
 
 template <class SGV, size_t r, size_t rC, class R, class GV>
 XT::LA::SparsityPatternDefault make_intersection_sparsity_pattern(const SpaceInterface<SGV, r, rC, R>& space,
-                                                                  const GridView<GV>& grid_view)
+                                                                  const GV& grid_view)
 {
   return make_intersection_sparsity_pattern(space, space, grid_view);
 }
@@ -118,7 +118,7 @@ template <class TGV, size_t t_r, size_t t_rC, class TR, class AGV, size_t a_r, s
 XT::LA::SparsityPatternDefault
 make_element_and_intersection_sparsity_pattern(const SpaceInterface<TGV, t_r, t_rC, TR>& test_space,
                                                const SpaceInterface<AGV, a_r, a_rC, AR>& ansatz_space,
-                                               const GridView<GV>& grid_view)
+                                               const GV& grid_view)
 {
   XT::LA::SparsityPatternDefault pattern(test_space.mapper().size());
   DynamicVector<size_t> row_indices(test_space.mapper().max_local_size(), 0);
@@ -146,8 +146,7 @@ make_element_and_intersection_sparsity_pattern(const SpaceInterface<TGV, t_r, t_
 
 template <class SGV, size_t r, size_t rC, class R, class GV>
 XT::LA::SparsityPatternDefault
-make_element_and_intersection_sparsity_pattern(const SpaceInterface<SGV, r, rC, R>& space,
-                                               const GridView<GV>& grid_view)
+make_element_and_intersection_sparsity_pattern(const SpaceInterface<SGV, r, rC, R>& space, const GV& grid_view)
 {
   return make_element_and_intersection_sparsity_pattern(space, space, grid_view);
 }
@@ -163,7 +162,7 @@ XT::LA::SparsityPatternDefault make_element_and_intersection_sparsity_pattern(co
 template <class TGV, size_t t_r, size_t t_rC, class TR, class AGV, size_t a_r, size_t a_rC, class AR, class GV>
 XT::LA::SparsityPatternDefault make_sparsity_pattern(const SpaceInterface<TGV, t_r, t_rC, TR>& test_space,
                                                      const SpaceInterface<AGV, a_r, a_rC, AR>& ansatz_space,
-                                                     const GridView<GV>& grid_view,
+                                                     const GV& grid_view,
                                                      const Stencil stencil)
 {
   if (stencil == Stencil::element)
@@ -181,7 +180,7 @@ XT::LA::SparsityPatternDefault make_sparsity_pattern(const SpaceInterface<TGV, t
 
 template <class SGV, size_t r, size_t rC, class R, class GV>
 XT::LA::SparsityPatternDefault
-make_sparsity_pattern(const SpaceInterface<SGV, r, rC, R>& space, const GridView<GV>& grid_view, const Stencil stencil)
+make_sparsity_pattern(const SpaceInterface<SGV, r, rC, R>& space, const GV& grid_view, const Stencil stencil)
 {
   return make_sparsity_pattern(space, space, grid_view, stencil);
 }

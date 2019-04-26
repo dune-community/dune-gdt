@@ -209,7 +209,7 @@ public:
 }; // class MacroGridBasedBoundaryInfo
 
 
-PYBIND11_PLUGIN(usercode)
+PYBIND11_MODULE(usercode, m)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
@@ -1032,5 +1032,4 @@ PYBIND11_PLUGIN(usercode)
         "space_type"_a = "discontinuous_lagrange");
 
   Dune::XT::Common::bindings::add_initialization(m, "dune.gdt");
-  return m.ptr();
-} // PYBIND11_PLUGIN(...)
+} // PYBIND11_MODULE(usercode, ...)

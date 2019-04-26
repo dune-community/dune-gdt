@@ -92,7 +92,7 @@ private:
   XT::Common::Parameter param_;
   DynamicVector<FieldType> local_vector_;
   DynamicVector<size_t> global_indices_;
-  mutable std::unique_ptr<typename SpaceType::GlobalBasisType::LocalizedBasisType> basis_;
+  mutable std::unique_ptr<typename SpaceType::GlobalBasisType::LocalizedType> basis_;
 }; // class LocalElementFunctionalAssembler
 
 

@@ -45,10 +45,10 @@ public:
   using BaseType::d;
   using typename BaseType::D;
   using typename BaseType::ElementType;
-  using typename BaseType::FiniteElementType;
   using typename BaseType::G;
   using typename BaseType::GlobalBasisType;
   using typename BaseType::GridViewType;
+  using typename BaseType::LocalFiniteElementFamilyType;
   using typename BaseType::MapperType;
 
 private:
@@ -58,16 +58,11 @@ private:
 public:
   FiniteVolumeSpace(GridViewType grd_vw)
     : grid_view_(grd_vw)
-    , finite_elements_(new std::map<GeometryType, std::shared_ptr<FiniteElementType>>())
-    , mapper_(new MapperImplementation(grid_view_))
-    , basis_(new GlobalBasisImplementation(grid_view_))
+    , local_finite_elements_(std::make_unique<const LocalLagrangeFiniteElementFamily<D, d, R, r>>())
+    , mapper_(grid_view_)
+    , basis_(grid_view_)
   {
-    // create finite elements
-    for (auto&& geometry_type : grid_view_.indexSet().types(0))
-      finite_elements_->insert(
-          std::make_pair(geometry_type, make_local_lagrange_finite_element<D, d, R, r>(geometry_type, 0)));
-    // create communicator
-    this->create_communicator();
+    this->update_after_adapt();
   }
 
   FiniteVolumeSpace(const ThisType&) = default;
@@ -83,22 +78,17 @@ public:
 
   const MapperType& mapper() const override final
   {
-    return *mapper_;
+    return mapper_;
   }
 
   const GlobalBasisType& basis() const override final
   {
-    return *basis_;
+    return basis_;
   }
 
-  const FiniteElementType& finite_element(const GeometryType& geometry_type) const override final
+  const LocalFiniteElementFamilyType& finite_elements() const override final
   {
-    const auto finite_element_search_result = finite_elements_->find(geometry_type);
-    if (finite_element_search_result == finite_elements_->end())
-      DUNE_THROW(XT::Common::Exceptions::internal_error,
-                 "This must not happen, the grid layer did not report all geometry types!"
-                     << "\n   entity.geometry().type() = " << geometry_type);
-    return *finite_element_search_result->second;
+    return *local_finite_elements_;
   }
 
   SpaceType type() const override final
@@ -132,20 +122,20 @@ public:
   }
 
   /**
-   * On the domain covered by the coarser element, this computes an L^2 projection of the function defined on the finer
-   * elements (which corresponds to weighted averaging in the FV case).
+   * More efficient restriction than in SpaceInterface for FV.
    */
-  void restrict_to(const ElementType& element,
-                   PersistentContainer<G, DynamicVector<R>>& persistent_data) const override final
+  void restrict_to(
+      const ElementType& element,
+      PersistentContainer<G, std::pair<DynamicVector<R>, DynamicVector<R>>>& persistent_data) const override final
   {
-    auto& element_restriction_data = persistent_data[element];
+    auto& element_restriction_data = persistent_data[element].second;
     if (element_restriction_data.size() == 0) {
       DUNE_THROW_IF(element.isLeaf(), Exceptions::space_error, "");
       for (auto&& child_element : descendantElements(element, element.level() + 1)) {
         // ensure we have data on all descendant elements of the next level
         this->restrict_to(child_element, persistent_data);
         // compute restriction
-        auto child_restriction_data = persistent_data[child_element];
+        auto child_restriction_data = persistent_data[child_element].second;
         child_restriction_data *= child_element.geometry().volume();
         if (element_restriction_data.size() == 0)
           element_restriction_data = child_restriction_data; // initialize with child data
@@ -157,34 +147,33 @@ public:
     }
   } // ... restrict_to(...)
 
-protected:
-  /**
-   * \note In general, we would have to check for newly created GeometryTypes and to recreate the local FEs accordingly.
-   *       This is postponed until we have the LocalFiniteElementFamily.
-   */
   void update_after_adapt() override final
   {
-    basis_->update_after_adapt();
-    mapper_->update_after_adapt();
+    // update mapper and basis
+    mapper_.update_after_adapt();
+    basis_.update_after_adapt();
+    this->create_communicator();
   }
 
-public:
   using BaseType::prolong_onto;
 
+  /**
+   * More efficient prolongation than in SpaceInterface for FV.
+   */
   void prolong_onto(const ElementType& element,
-                    const PersistentContainer<G, DynamicVector<R>>& persistent_data,
+                    const PersistentContainer<G, std::pair<DynamicVector<R>, DynamicVector<R>>>& persistent_data,
                     DynamicVector<R>& element_data) const override final
   {
     if (element.isNew()) {
       // ... by prolongation from the father element ...
-      const auto& father_data = persistent_data[element.father()];
+      const auto& father_data = persistent_data[element.father()].second;
       DUNE_THROW_IF(father_data.size() == 0, Exceptions::space_error, "");
       if (element_data.size() != father_data.size())
         element_data.resize(father_data.size());
       element_data = father_data;
     } else {
       // ... or by copying the data from this unchanged element
-      const auto& original_element_data = persistent_data[element];
+      const auto& original_element_data = persistent_data[element].second;
       DUNE_THROW_IF(original_element_data.size() == 0, Exceptions::space_error, "");
       if (element_data.size() != original_element_data.size())
         element_data.resize(original_element_data.size());
@@ -194,9 +183,9 @@ public:
 
 private:
   const GridViewType grid_view_;
-  std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements_;
-  std::shared_ptr<MapperImplementation> mapper_;
-  const std::shared_ptr<GlobalBasisImplementation> basis_;
+  std::unique_ptr<const LocalLagrangeFiniteElementFamily<D, d, R, r>> local_finite_elements_;
+  MapperImplementation mapper_;
+  GlobalBasisImplementation basis_;
 }; // class FiniteVolumeSpace< ..., r, 1 >
 
 

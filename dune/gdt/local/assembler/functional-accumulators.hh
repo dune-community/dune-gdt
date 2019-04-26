@@ -55,13 +55,12 @@ public:
 
   LocalElementFunctionalAccumulator(const LocalFunctionalType& local_functional,
                                     const SourceType& source,
-                                    ResultType& result,
                                     const XT::Common::Parameter& param = {})
     : BaseType()
     , Propagator(this)
     , local_functional_(local_functional.copy())
     , source_(source)
-    , result_(result)
+    , result_(0)
     , param_(param)
     , local_source_(source_.local_function())
   {}
@@ -71,7 +70,7 @@ public:
     , Propagator(other)
     , local_functional_(other.local_functional_->copy())
     , source_(other.source_)
-    , result_(other.result_)
+    , result_(0)
     , param_(other.param_)
     , local_source_(source_.local_function())
   {}
@@ -109,7 +108,7 @@ protected:
 private:
   const std::unique_ptr<LocalFunctionalType> local_functional_;
   const SourceType& source_;
-  ResultType& result_;
+  ResultType result_;
   const XT::Common::Parameter param_;
   std::unique_ptr<typename SourceType::LocalFunctionType> local_source_;
   DynamicVector<F> functional_value_;
@@ -124,11 +123,9 @@ std::enable_if_t<XT::Grid::is_view<GridView>::value && std::is_same<E, XT::Grid:
                  std::unique_ptr<LocalElementFunctionalAccumulator<GridView, r, rC, R, F>>>
 make_local_element_functional_accumulator(const LocalElementFunctionalInterface<E, r, rC, R, F>& local_functional,
                                           const XT::Functions::GridFunctionInterface<E, r, rC, R>& source,
-                                          F& result,
                                           const XT::Common::Parameter& param = {})
 {
-  return std::make_unique<LocalElementFunctionalAccumulator<GridView, r, rC, R, F>>(
-      local_functional, source, result, param);
+  return std::make_unique<LocalElementFunctionalAccumulator<GridView, r, rC, R, F>>(local_functional, source, param);
 }
 
 

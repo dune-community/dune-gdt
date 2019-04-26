@@ -46,9 +46,8 @@ public:
   using typename BaseType::F;
   using typename BaseType::V;
 
-  using NumericalFluxType = NumericalFluxInterface<SGV::dimension, m, F>;
-
   using I = XT::Grid::extract_intersection_t<SGV>;
+  using NumericalFluxType = NumericalFluxInterface<I, SGV::dimension, m, F>;
   using BoundaryTreatmentByCustomNumericalFluxOperatorType =
       LocalAdvectionFvBoundaryTreatmentByCustomNumericalFluxOperator<I, V, SGV, m, F, F, RGV, V>;
   using BoundaryTreatmentByCustomExtrapolationOperatorType =
@@ -98,10 +97,12 @@ public:
          const XT::Common::ParameterType& boundary_treatment_parameter_type = {},
          const XT::Grid::IntersectionFilter<SGV>& filter = XT::Grid::ApplyOn::BoundaryIntersections<SGV>())
   {
-    boundary_treatments_by_custom_numerical_flux_.emplace_back(
-        new BoundaryTreatmentByCustomNumericalFluxOperatorType(numerical_boundary_treatment_flux,
-                                                               boundary_treatment_parameter_type),
-        filter.copy());
+    boundary_treatments_by_custom_numerical_flux_.emplace_back();
+    boundary_treatments_by_custom_numerical_flux_.back().first =
+        std::make_unique<BoundaryTreatmentByCustomNumericalFluxOperatorType>(numerical_boundary_treatment_flux,
+                                                                             boundary_treatment_parameter_type);
+    boundary_treatments_by_custom_numerical_flux_.back().second =
+        std::unique_ptr<XT::Grid::IntersectionFilter<SGV>>(filter.copy());
     return *this;
   }
 
@@ -109,10 +110,12 @@ public:
                    const XT::Common::ParameterType& extrapolation_parameter_type = {},
                    const XT::Grid::IntersectionFilter<SGV>& filter = XT::Grid::ApplyOn::BoundaryIntersections<SGV>())
   {
-    boundary_treatments_by_custom_extrapolation_.emplace_back(
-        new BoundaryTreatmentByCustomExtrapolationOperatorType(
+    boundary_treatments_by_custom_extrapolation_.emplace_back();
+    boundary_treatments_by_custom_extrapolation_.back().first =
+        std::make_unique<BoundaryTreatmentByCustomExtrapolationOperatorType>(
             *numerical_flux_, extrapolation, extrapolation_parameter_type),
-        filter.copy());
+    boundary_treatments_by_custom_extrapolation_.back().second =
+        std::unique_ptr<XT::Grid::IntersectionFilter<SGV>>(filter.copy());
     return *this;
   }
 
@@ -212,7 +215,7 @@ public:
 
 private:
   const SGV assembly_grid_view_;
-  const std::unique_ptr<const NumericalFluxType> numerical_flux_;
+  std::unique_ptr<const NumericalFluxType> numerical_flux_;
   const SourceSpaceType& source_space_;
   const RangeSpaceType& range_space_;
   std::unique_ptr<XT::Grid::IntersectionFilter<SGV>> periodicity_exception_;
@@ -229,7 +232,7 @@ template <class MatrixType, class SGV, size_t m, class F, class RGV>
 std::enable_if_t<XT::LA::is_matrix<MatrixType>::value, AdvectionFvOperator<MatrixType, SGV, m, RGV>>
 make_advection_fv_operator(
     const SGV& assembly_grid_view,
-    const NumericalFluxInterface<SGV::dimension, m, F>& numerical_flux,
+    const NumericalFluxInterface<XT::Grid::extract_intersection_t<SGV>, SGV::dimension, m, F>& numerical_flux,
     const SpaceInterface<SGV, m, 1, F>& source_space,
     const SpaceInterface<RGV, m, 1, F>& range_space,
     const XT::Grid::IntersectionFilter<SGV>& periodicity_exception = XT::Grid::ApplyOn::NoIntersections<SGV>())

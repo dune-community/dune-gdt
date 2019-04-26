@@ -17,6 +17,7 @@
 #include <set>
 #include <vector>
 
+#include <dune/common/dynvector.hh>
 #include <dune/common/fvector.hh>
 
 #include <dune/geometry/referenceelements.hh>
@@ -24,12 +25,18 @@
 
 #include <dune/localfunctions/common/localkey.hh>
 
+#include <dune/xt/common/unused.hh>
 #include <dune/xt/functions/type_traits.hh>
 
 #include <dune/gdt/exceptions.hh>
 
 namespace Dune {
 namespace GDT {
+
+
+// forward, include is below
+template <class Vector, class GridView>
+class LocalDofVector;
 
 
 template <class DomainField, size_t domain_dim, class RangeField, size_t range_dim, size_t range_dim_columns = 1>
@@ -100,6 +107,8 @@ public:
   using DomainType = FieldVector<D, d>;
   using RangeType = typename XT::Functions::RangeTypeSelector<R, r, rC>::type;
 
+  LocalFiniteElementInterpolationInterface() {}
+
   virtual ~LocalFiniteElementInterpolationInterface() = default;
 
   virtual ThisType* copy() const = 0;
@@ -110,19 +119,35 @@ public:
 
   virtual void interpolate(const std::function<RangeType(DomainType)>& local_function,
                            const int order,
-                           std::vector<R>& dofs) const = 0;
+                           DynamicVector<R>& dofs) const = 0;
+
+  template <class V, class GV>
+  void interpolate(const std::function<RangeType(DomainType)>& local_function,
+                   const int order,
+                   LocalDofVector<V, GV>& dofs) const
+  {
+    const size_t sz = this->size();
+    if (dofs_.size() < sz)
+      dofs_.resize(sz);
+    this->interpolate(local_function, order, dofs_);
+    for (size_t ii = 0; ii < sz; ++ii)
+      dofs[ii] = dofs_[ii];
+  } // ... interpolate(...)
 
   /// \name ``These methods are provided for convenience and should not be used within library code.''
   /// \{
 
-  virtual std::vector<R> interpolate(const std::function<RangeType(DomainType)>& local_function, const int order) const
+  virtual DynamicVector<R> interpolate(const std::function<RangeType(DomainType)>& local_function,
+                                       const int order) const
   {
-    std::vector<R> result(this->size());
+    DynamicVector<R> result(this->size());
     this->interpolate(local_function, order, result);
     return result;
   }
 
   /// \}
+private:
+  mutable DynamicVector<R> dofs_;
 }; // class LocalFiniteElementInterpolationInterface
 
 
@@ -173,7 +198,7 @@ for (size_t codim = 0; codim < codim_to_subentity_index_to_key_indices_map.size(
    */
   std::vector<std::vector<std::vector<size_t>>> local_key_indices() const
   {
-    // pepare
+    // prepare
     const auto& reference_element = ReferenceElements<D, d>::general(geometry_type());
     std::vector<std::vector<std::vector<size_t>>> codim_to_subentity_index_to_key_indices_map(d + 1);
     for (int codim = 0; codim <= static_cast<int>(d); ++codim)
@@ -207,7 +232,8 @@ for (size_t codim = 0; codim < codim_to_subentity_index_to_key_indices_map.size(
                         << "codim = " << codim);
     // pepare
     const auto& reference_element = ReferenceElements<D, d>::general(geometry_type());
-    std::vector<std::vector<size_t>> subentity_index_to_key_indices_map(reference_element.size(codim));
+    std::vector<std::vector<size_t>> subentity_index_to_key_indices_map(
+        reference_element.size(XT::Common::numeric_cast<int>(codim)));
     // fill
     for (size_t ii = 0; ii < size(); ++ii) {
       const auto& key = local_key(ii);
@@ -269,8 +295,8 @@ public:
   /**
    * \brief Lagrange points associated with this local finite element (in reference element coordinates).
    *
-   * Lagrange points are defined as usual, only depending on the domain_dim and order() of the local finite element, not
-   * on its range_dim or range_dim_cols.
+   * Lagrange points are defined as usual, depending on the domain_dim and order() of the local finite element, and on
+   * its range_dim or range_dim_cols.
    *
    * Thus it always holds that
    *
@@ -284,7 +310,7 @@ assert(lagrange_points.size() == size() * r * rC);
 \code
 for (size_t ii = 0; ii < lagrange_points.size(); ++ii)
   for (size_t jj = 0; jj < basis().size(); ++jj)
-    assert(basis().evaluate(lagrange_points()[ii])[jj] == (ii = jj ? 1 : 0));
+    assert(basis().evaluate(lagrange_points()[ii])[jj] == (ii == jj ? 1 : 0));
 \endcode
    *
    * while in the vector-valued case it holds that
@@ -293,7 +319,7 @@ for (size_t ii = 0; ii < lagrange_points.size(); ++ii)
 for (size_t ii = 0; ii < lagrange_points.size(); ++ii)
   for (size_t rr = 0; rr < range_dim; ++rr)
     for (size_t jj = 0; jj < basis().size(); ++jj)
-      assert(basis().evaluate(lagrange_points()[ii])[rr * lagrange_points.size() + jj][rr] == (ii = jj ? 1 : 0));
+      assert(basis().evaluate(lagrange_points()[ii])[rr * lagrange_points.size() + jj][rr] == (ii == jj ? 1 : 0));
 \endcode
    *
    * while the matrix-valued case is not implemented yet.
@@ -314,7 +340,28 @@ for (size_t ii = 0; ii < lagrange_points.size(); ++ii)
 }; // class LocalFiniteElementInterface
 
 
+/// \todo allow for variable orders
+template <class DomainField, size_t domain_dim, class RangeField, size_t range_dim, size_t range_dim_columns = 1>
+class LocalFiniteElementFamilyInterface
+{
+public:
+  using D = DomainField;
+  static const constexpr size_t d = domain_dim;
+  using R = RangeField;
+  static const constexpr size_t r = range_dim;
+  static const constexpr size_t rC = range_dim_columns;
+
+  using LocalFiniteElementType = LocalFiniteElementInterface<D, d, R, r, rC>;
+
+  virtual ~LocalFiniteElementFamilyInterface() = default;
+
+  virtual const LocalFiniteElementType& get(const GeometryType& geometry_type, const int order) const = 0;
+}; // class LocalFiniteElementFamilyInterface
+
+
 } // namespace GDT
 } // namespace Dune
+
+#include <dune/gdt/local/dof-vector.hh>
 
 #endif // DUNE_GDT_LOCAL_FINITE_ELEMENTS_INTERFACES_HH

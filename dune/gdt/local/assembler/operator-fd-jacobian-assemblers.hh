@@ -78,7 +78,8 @@ public:
                                                         const VectorType& source_vector,
                                                         const LocalElementOperatorType& local_operator,
                                                         const XT::Common::Parameter& param = {})
-    : source_space_(source_space)
+    : BaseType()
+    , source_space_(source_space)
     , range_space_(range_space)
     , matrix_(matrix)
     , source_vector_(source_vector)
@@ -96,7 +97,8 @@ public:
   }
 
   LocalElementOperatorFiniteDifferenceJacobianAssembler(const ThisType& other)
-    : source_space_(other.source_space_)
+    : BaseType(other)
+    , source_space_(other.source_space_)
     , range_space_(other.range_space_)
     , matrix_(other.matrix_)
     , source_vector_(other.source_vector_)

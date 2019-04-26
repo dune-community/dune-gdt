@@ -20,9 +20,9 @@ namespace Dune {
 namespace GDT {
 
 
-template <class G, class R, int p>
+template <class G, size_t r, class R, int p>
 struct ContinuousLagrangeSpaceTest
-  : public SpaceTestBase<ContinuousLagrangeSpace<typename XT::Grid::GridProvider<G>::LeafGridViewType, R>, p>
+  : public SpaceTestBase<ContinuousLagrangeSpace<typename XT::Grid::GridProvider<G>::LeafGridViewType, r, R>, p>
 {
   using D = typename G::ctype;
   static const constexpr size_t d = G::dimension;
@@ -52,12 +52,12 @@ struct ContinuousLagrangeSpaceTest
   {
     ASSERT_NE(this->space, nullptr);
     // collect all global ids that are associated with a global lagrange point
-    std::map<FieldVector<D, d>, std::set<size_t>, XT::Common::FieldVectorLess>
+    std::map<FieldVector<D, d>, std::set<size_t>, XT::Common::FieldVectorFloatLess>
         global_lagrange_point_to_global_indices_map;
     for (auto&& element : elements(*this->grid_view)) {
       const auto global_indices = this->space->mapper().global_indices(element);
       EXPECT_LE(this->space->mapper().local_size(element), global_indices.size());
-      const auto lagrange_points = this->space->finite_element(element.geometry().type()).lagrange_points();
+      const auto lagrange_points = this->space->finite_elements().get(element.geometry().type(), p).lagrange_points();
       EXPECT_EQ(lagrange_points.size(), this->space->mapper().local_size(element));
       for (size_t ii = 0; ii < lagrange_points.size(); ++ii) {
         const auto global_lagrange_point = element.geometry().global(lagrange_points[ii]);
@@ -85,38 +85,38 @@ struct ContinuousLagrangeSpaceTest
 }; // struct ContinuousLagrangeSpace
 
 
-template <class G, class R, int p>
-struct ContinuousLagrangeSpaceOnSimplicialLeafViewTest : public ContinuousLagrangeSpaceTest<G, R, p>
+template <class G, size_t r, class R, int p>
+struct ContinuousLagrangeSpaceOnSimplicialLeafViewTest : public ContinuousLagrangeSpaceTest<G, r, R, p>
 {
   ContinuousLagrangeSpaceOnSimplicialLeafViewTest()
-    : ContinuousLagrangeSpaceTest<G, R, p>(make_simplicial_grid<G>())
+    : ContinuousLagrangeSpaceTest<G, r, R, p>(make_simplicial_grid<G>())
   {}
 };
 
 
-template <class G, class R, int p>
-struct ContinuousLagrangeSpaceOnCubicLeafViewTest : public ContinuousLagrangeSpaceTest<G, R, p>
+template <class G, size_t r, class R, int p>
+struct ContinuousLagrangeSpaceOnCubicLeafViewTest : public ContinuousLagrangeSpaceTest<G, r, R, p>
 {
   ContinuousLagrangeSpaceOnCubicLeafViewTest()
-    : ContinuousLagrangeSpaceTest<G, R, p>(make_cubic_grid<G>())
+    : ContinuousLagrangeSpaceTest<G, r, R, p>(make_cubic_grid<G>())
   {}
 };
 
 
-template <class G, class R, int p>
-struct ContinuousLagrangeSpaceOnPrismLeafViewTest : public ContinuousLagrangeSpaceTest<G, R, p>
+template <class G, size_t r, class R, int p>
+struct ContinuousLagrangeSpaceOnPrismLeafViewTest : public ContinuousLagrangeSpaceTest<G, r, R, p>
 {
   ContinuousLagrangeSpaceOnPrismLeafViewTest()
-    : ContinuousLagrangeSpaceTest<G, R, p>(make_prism_grid<G>())
+    : ContinuousLagrangeSpaceTest<G, r, R, p>(make_prism_grid<G>())
   {}
 };
 
 
-template <class G, class R, int p>
-struct ContinuousLagrangeSpaceOnMixedLeafViewTest : public ContinuousLagrangeSpaceTest<G, R, p>
+template <class G, size_t r, class R, int p>
+struct ContinuousLagrangeSpaceOnMixedLeafViewTest : public ContinuousLagrangeSpaceTest<G, r, R, p>
 {
   ContinuousLagrangeSpaceOnMixedLeafViewTest()
-    : ContinuousLagrangeSpaceTest<G, R, p>(make_mixed_grid<G>())
+    : ContinuousLagrangeSpaceTest<G, r, R, p>(make_mixed_grid<G>())
   {}
 };
 

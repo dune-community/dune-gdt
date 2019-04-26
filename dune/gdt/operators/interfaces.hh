@@ -19,6 +19,7 @@
 #include <dune/xt/common/configuration.hh>
 #include <dune/xt/common/timedlogging.hh>
 #include <dune/xt/common/type_traits.hh>
+#include <dune/xt/la/exceptions.hh>
 #include <dune/xt/la/container/vector-interface.hh>
 #include <dune/xt/la/solver.hh>
 #include <dune/xt/la/type_traits.hh>
@@ -437,11 +438,28 @@ invert_options(some_type).get<std::string>("type") == some_type
         timer.reset();
         residual *= -1.;
         update = source; // <- initial guess for the linear solver
-        jacobian_solver.apply(
-            residual,
-            update,
-            {{"type", jacobian_solver.types().at(0)}, {"precision", XT::Common::to_string(0.1 * precision)}});
-        logger.debug() << "took " << timer.elapsed() << "s\n       computing update ... " << std::flush;
+        bool linear_solve_succeeded = false;
+        std::vector<std::string> tried_linear_solvers;
+        for (const auto& linear_solver_type : jacobian_solver.types()) {
+          try {
+            tried_linear_solvers.push_back(linear_solver_type);
+            jacobian_solver.apply(
+                residual,
+                update,
+                {{"type", linear_solver_type}, {"precision", XT::Common::to_string(0.1 * precision)}});
+            linear_solve_succeeded = true;
+          } catch (const XT::LA::Exceptions::linear_solver_failed&) {
+          }
+        }
+        DUNE_THROW_IF(!linear_solve_succeeded,
+                      Exceptions::operator_error,
+                      "could not solve linear system for defect!\nTried the following linear solvers: "
+                          << tried_linear_solvers << "\nopts:\n"
+                          << opts);
+        logger.debug() << "took " << timer.elapsed() << "s";
+        if (tried_linear_solvers.size() > 1)
+          logger.debug() << ", took " << tried_linear_solvers.size() << " attempts with different linear solvers";
+        logger.debug() << "\n       computing update ... " << std::flush;
         timer.reset();
         // try the automatic dampening strategy proposed in [DF2015, Sec. 8.4.4.1, p. 432]
         size_t k = 0;
@@ -666,8 +684,8 @@ invert_options(some_type).get<std::string>("type") == some_type
     return RangeFunctionType(this->range_space(), this->apply(source.dofs().vector(), param));
   }
 
-  virtual FieldType apply2(const SourceFunctionType& range,
-                           const RangeFunctionType& source,
+  virtual FieldType apply2(const RangeFunctionType& range,
+                           const SourceFunctionType& source,
                            const XT::Common::Parameter& param = {}) const
   {
     DUNE_THROW_IF(!this->source_space().contains(source),

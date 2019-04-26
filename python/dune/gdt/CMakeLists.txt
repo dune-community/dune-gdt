@@ -14,4 +14,7 @@
 file(GLOB_RECURSE header "*.hh")
 
 dune_pybindxi_add_module(usercode EXCLUDE_FROM_ALL ${header} usercode.cc)
-
+dune_pybindxi_add_module(gamm_2019_talk_on_conservative_rb
+                         EXCLUDE_FROM_ALL
+                         ${header}
+                         gamm-2019-talk-on-conservative-rb.cc)

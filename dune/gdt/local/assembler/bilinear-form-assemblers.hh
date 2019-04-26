@@ -122,8 +122,8 @@ private:
   DynamicMatrix<FieldType> local_matrix_;
   DynamicVector<size_t> global_test_indices_;
   DynamicVector<size_t> global_ansatz_indices_;
-  mutable std::unique_ptr<typename TestSpaceType::GlobalBasisType::LocalizedBasisType> test_basis_;
-  mutable std::unique_ptr<typename AnsatzSpaceType::GlobalBasisType::LocalizedBasisType> ansatz_basis_;
+  mutable std::unique_ptr<typename TestSpaceType::GlobalBasisType::LocalizedType> test_basis_;
+  mutable std::unique_ptr<typename AnsatzSpaceType::GlobalBasisType::LocalizedType> ansatz_basis_;
 }; // class LocalElementBilinearFormAssembler
 
 
@@ -276,10 +276,10 @@ private:
   DynamicVector<size_t> global_test_indices_out_;
   DynamicVector<size_t> global_ansatz_indices_in_;
   DynamicVector<size_t> global_ansatz_indices_out_;
-  mutable std::unique_ptr<typename TestSpaceType::GlobalBasisType::LocalizedBasisType> test_basis_inside_;
-  mutable std::unique_ptr<typename TestSpaceType::GlobalBasisType::LocalizedBasisType> test_basis_outside_;
-  mutable std::unique_ptr<typename AnsatzSpaceType::GlobalBasisType::LocalizedBasisType> ansatz_basis_inside_;
-  mutable std::unique_ptr<typename AnsatzSpaceType::GlobalBasisType::LocalizedBasisType> ansatz_basis_outside_;
+  mutable std::unique_ptr<typename TestSpaceType::GlobalBasisType::LocalizedType> test_basis_inside_;
+  mutable std::unique_ptr<typename TestSpaceType::GlobalBasisType::LocalizedType> test_basis_outside_;
+  mutable std::unique_ptr<typename AnsatzSpaceType::GlobalBasisType::LocalizedType> ansatz_basis_inside_;
+  mutable std::unique_ptr<typename AnsatzSpaceType::GlobalBasisType::LocalizedType> ansatz_basis_outside_;
 }; // class LocalIntersectionBilinearFormAssembler
 
 

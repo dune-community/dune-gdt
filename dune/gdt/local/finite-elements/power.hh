@@ -185,7 +185,7 @@ public:
 
   void interpolate(const std::function<RangeType(DomainType)>& local_function,
                    const int order,
-                   std::vector<R>& dofs) const override final
+                   DynamicVector<R>& dofs) const override final
   {
     const size_t unpowered_sz = unpowered_->size();
     if (unpowered_dofs_.size() < unpowered_sz)
@@ -212,7 +212,7 @@ public:
 
 private:
   const std::unique_ptr<const UnpoweredType> unpowered_;
-  mutable std::vector<R> unpowered_dofs_;
+  mutable DynamicVector<R> unpowered_dofs_;
 }; // class LocalPowerFiniteElementInterpolation
 
 
@@ -247,7 +247,9 @@ public:
         const auto codim = unpowered_local_key.codim();
         const auto num_unpowered_indices = unpowered_indices[codim][sub_entity].size();
         local_keys_[pp * unpowered_sz + ii] =
-            LocalKey(sub_entity, codim, (pp * num_unpowered_indices) + unpowered_local_key.index());
+            LocalKey(sub_entity,
+                     codim,
+                     XT::Common::numeric_cast<unsigned int>(pp * num_unpowered_indices + unpowered_local_key.index()));
       }
   } // LocalPowerFiniteElementCoefficients(...)
 
@@ -287,7 +289,7 @@ private:
 
 
 /**
- * \brief Models the poduct of a given local finite element with itself, power times.
+ * \brief Models the product of a given local finite element with itself, power times.
  *
  * \note Only implemented for scalar and vector valued local finite elements.
  *
