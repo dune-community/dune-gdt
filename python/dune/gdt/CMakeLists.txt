@@ -13,6 +13,7 @@
 
 file(GLOB_RECURSE header "*.hh")
 
+dune_pybindxi_add_module(discretefunction EXCLUDE_FROM_ALL ${header} discretefunction.cc)
 dune_pybindxi_add_module(usercode EXCLUDE_FROM_ALL ${header} usercode.cc)
 dune_pybindxi_add_module(gamm_2019_talk_on_conservative_rb
                          EXCLUDE_FROM_ALL

@@ -21,29 +21,12 @@ _test_logger_methods = list()
 _init_mpi_methods = list()
 _other_modules = ('xt.common', 'xt.grid', 'xt.functions', 'xt.la')
 
-_gdt_modules = ()
-#                'spaces_block',
-#                'local_diffusive_flux_estimation_operator',
-#                'local_elliptic_ipdg_operators',
-#                'assembler',
-#                'discretefunction',
-#                'projections',
-#                'functionals_elliptic_ipdg',
-#                'functionals_l2',
-#                'operators_elliptic',
-#                'operators_elliptic_ipdg',
-#                'operators_fluxreconstruction',
-#                'operators_oswaldinterpolation',
-#                'operators_ESV2007',
-#                'operators_OS2015',
-#                'operators_RS2017',
-#                'operators_l2',
-#                'operators_weighted_l2']
+_gdt_modules = (
+        'discretefunction',
+)
 
 for module_name in _gdt_modules:
-    mod = import_module('.__{}'.format(module_name), 'dune.gdt')
-    to_import = [name for name in mod.__dict__ if not name.startswith('_')]
-    globals().update({name: mod.__dict__[name] for name in to_import})
+    mod = import_module('.{}'.format(module_name), 'dune.gdt')
     _init_logger_methods.append(mod.__dict__['_init_logger'])
     _test_logger_methods.append(mod.__dict__['_test_logger'])
     _init_mpi_methods.append(mod.__dict__['_init_mpi'])
