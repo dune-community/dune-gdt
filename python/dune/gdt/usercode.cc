@@ -214,9 +214,8 @@ PYBIND11_MODULE(usercode, m)
   namespace py = pybind11;
   using namespace pybind11::literals;
 
-  py::module m("usercode", "dune-gdt");
-
   Dune::XT::Common::bindings::addbind_exceptions(m);
+  Dune::XT::Common::bindings::add_initialization(m, "dune.gdt");
 
   py::module::import("dune.xt.common");
   py::module::import("dune.xt.la");
@@ -1010,7 +1009,7 @@ PYBIND11_MODULE(usercode, m)
               auto subdomain_space = make_subdomain_space(subdomain_grid_view, space_type);
               coarse_basis->bind(macro_element);
               for (size_t ii = 0; ii < coarse_basis->size(); ++ii)
-                interpolated_basis.push_back(interpolate<XT::LA::CommonDenseVector<double>>(
+                interpolated_basis.push_back(default_interpolation<XT::LA::CommonDenseVector<double>>(
                                                  coarse_basis->order(),
                                                  [&](const auto& point_in_physical_coordinates, const auto&) {
                                                    const auto point_macro_reference_element =
@@ -1030,6 +1029,4 @@ PYBIND11_MODULE(usercode, m)
         "domain_decomposition"_a,
         "ss"_a,
         "space_type"_a = "discontinuous_lagrange");
-
-  Dune::XT::Common::bindings::add_initialization(m, "dune.gdt");
 } // PYBIND11_MODULE(usercode, ...)
