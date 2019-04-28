@@ -48,7 +48,15 @@
 using namespace Dune;
 using namespace Dune::GDT;
 
+#if HAVE_DUNE_ALUGRID
 using G = ALU_2D_SIMPLEX_CONFORMING;
+#elif HAVE_DUNE_UGGRID || HAVE_UG
+using G = UG_2D;
+#else
+#  warning Falling back to cubic grid, results will not be reproduced but similar!
+using G = YASP_2D_EQUIDISTANT_OFFSET;
+#endif
+
 using GP = XT::Grid::GridProvider<G>;
 using GV = typename G::LeafGridView;
 using E = XT::Grid::extract_entity_t<GV>;
@@ -403,24 +411,6 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
                 "order"_a = 1);
   rtn_space.def_property_readonly("dimDomain", [](RTN& /*self*/) { return d; });
   rtn_space.def_property_readonly("num_DoFs", [](RTN& self) { return self.mapper().size(); });
-
-  py::class_<ScalarDF> scalar_discrete_function(m, "ScalarDiscreteFunction", "ScalarDiscreteFunction");
-  scalar_discrete_function.def(
-      py::init([](DG& space, V& vec, const std::string& name) { return new ScalarDF(space, vec, name); }),
-      "dg_space"_a,
-      "DoF_vector"_a,
-      "name"_a);
-  scalar_discrete_function.def(
-      "visualize", [](ScalarDF& self, const std::string filename) { self.visualize(filename); }, "filename"_a);
-
-  py::class_<VectorDF> vector_discrete_function(m, "VectorDiscreteFunction", "VectorDiscreteFunction");
-  vector_discrete_function.def(
-      py::init([](RTN& space, V& vec, const std::string& name) { return new VectorDF(space, vec, name); }),
-      "rtn_space"_a,
-      "DoF_vector"_a,
-      "name"_a);
-  vector_discrete_function.def(
-      "visualize", [](VectorDF& self, const std::string filename) { self.visualize(filename); }, "filename"_a);
 
   m.def("make_discrete_function",
         [](DG& dg_space, V& vec, const std::string& name) { return ScalarDF(dg_space, vec, name); },
