@@ -292,8 +292,6 @@ public:
     assert(XT::Common::FloatCmp::ge(t_end - t, 0.0));
     size_t time_step_counter = 0;
 
-    static bool initial_values_evaluated = false;
-
     if (!initial_values_evaluated && XT::Common::FloatCmp::eq(t, 0.0)) {
       sol.insert(sol.end(), std::make_pair(t, current_solution()));
       ++time_step_counter;
@@ -306,20 +304,17 @@ public:
       if (XT::Common::FloatCmp::ge(t + dt, t_end))
         max_dt = t_end - t;
 
-      static double dt1 = 0;
-      static double first_evaluated = false;
-
       // do a timestep
       if (with_half_steps) {
         if (!first_evaluated) {
-          dt1 = step_first(dt, max_dt);
+          dt1_ = step_first(dt, max_dt);
           t = current_time();
           sol.insert(sol.end(), std::make_pair(t + 0.5 * dt, current_solution()));
           first_evaluated = true;
           ++time_step_counter;
         }
         if (time_step_counter != n) {
-          dt = step_second(dt1, std::min(dt, max_dt));
+          dt = step_second(dt1_, std::min(dt, max_dt));
           ++time_step_counter;
           first_evaluated = false;
           t = current_time();
@@ -540,12 +535,29 @@ public:
       write_to_textfile(exact_sol, grid_view, prefix + "_exact", step, t, stringifier);
   }
 
+  static void reset_static_variables()
+  {
+    initial_values_evaluated = false;
+    first_evaluated = false;
+  }
+
 private:
   RangeFieldType t_;
   DiscreteFunctionType* u_n_;
   DiscreteSolutionType* solution_;
+  static bool initial_values_evaluated;
+  static double dt1_;
+  static bool first_evaluated;
 }; // class TimeStepperInterface
 
+template <class DiscreteFunctionImp>
+bool TimeStepperInterface<DiscreteFunctionImp>::initial_values_evaluated = false;
+
+template <class DiscreteFunctionImp>
+double TimeStepperInterface<DiscreteFunctionImp>::dt1_ = 0.;
+
+template <class DiscreteFunctionImp>
+bool TimeStepperInterface<DiscreteFunctionImp>::first_evaluated = false;
 
 } // namespace GDT
 } // namespace Dune
