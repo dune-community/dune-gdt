@@ -62,33 +62,81 @@ std::unique_ptr<GDT::SpaceInterface<GV>> make_subdomain_space(GV subdomain_grid_
                "space_type = " << space_type << "\n   has to be 'continuous_lagrange' or 'discontinuous_lagrange'!");
 }
 
-template <class CouplingIntersectionType, class IntersectionType>
+
+/**
+ * Inherits all types and methods from the coupling intersection, but uses the macro intersection to provide a correctly
+ * oriented normal.
+ *
+ * \attention Presumes that the coupling intersection lies exactly within the macro intersection!
+ */
+template <class CouplingIntersectionType, class MacroIntersectionType>
 class CouplingIntersectionWithCorrectNormal : public CouplingIntersectionType
 {
   using BaseType = CouplingIntersectionType;
-  using NormalType = typename BaseType::GlobalCoordinate;
-  using LocalCoordinate = typename BaseType::LocalCoordinate;
 
-  CouplingIntersectionWithCorrectNormal(const CouplingIntersectionType& intersection,
-                                        const IntersectionType& correct_intersection)
-    : intersection_(new CouplingIntersectionType(intersection))
-    , correct_intersection_(new IntersectionType(correct_intersection))
+public:
+  using typename BaseType::GlobalCoordinate;
+  using typename BaseType::LocalCoordinate;
+
+  CouplingIntersectionWithCorrectNormal(const CouplingIntersectionType& coupling_intersection,
+                                        const MacroIntersectionType& macro_intersection)
+    : BaseType(coupling_intersection)
+    , macro_intersection_(macro_intersection)
   {}
 
-  NormalType UnitOuterNormal(const LocalCoordinate& point) const
+  GlobalCoordinate outerNormal(const LocalCoordinate& local) const
   {
-    return correct_intersection_->UnitOuterNormal(point);
+    global_ = this->geometry().global(local);
+    local_ = macro_intersection_.geometry().local(global_);
+    return macro_intersection_.outerNormal(local_);
   }
 
-  CouplingIntersectionType intersection()
+  GlobalCoordinate integrationOuterNormal(const LocalCoordinate& local) const
   {
-    return *intersection_;
+    auto normal = this->unitOuterNormal(local);
+    const auto integration_element = BaseType::integrationOuterNormal(local).two_norm();
+    normal *= integration_element;
+    return normal;
+  }
+
+  GlobalCoordinate unitOuterNormal(const LocalCoordinate& local) const
+  {
+    global_ = this->geometry().global(local);
+    local_ = macro_intersection_.geometry().local(global_);
+    return macro_intersection_.unitOuterNormal(local_);
+  }
+
+  GlobalCoordinate centerUnitOuterNormal() const
+  {
+    global_ = this->geometry().center();
+    local_ = macro_intersection_.geometry().local(global_);
+    return macro_intersection_.unitOuterNormal(local_);
   }
 
 private:
-  const std::shared_ptr<CouplingIntersectionType> intersection_;
-  const std::shared_ptr<IntersectionType> correct_intersection_;
+  const MacroIntersectionType& macro_intersection_;
+  mutable GlobalCoordinate global_;
+  mutable LocalCoordinate local_;
+}; // class CouplingIntersectionWithCorrectNormal
+
+
+namespace Dune {
+namespace XT {
+namespace Grid {
+
+
+template <class C, class I>
+struct is_intersection<CouplingIntersectionWithCorrectNormal<C, I>> : public Dune::XT::Grid::is_intersection<C>
+{
+  using GridType = typename Dune::XT::Grid::is_intersection<C>::GridType;
+  using InsideElementType = typename Dune::XT::Grid::is_intersection<C>::InsideElementType;
+  using OutsideElementType = typename Dune::XT::Grid::is_intersection<C>::OutsideElementType;
 };
+
+
+} // namespace Grid
+} // namespace XT
+} // namespace Dune
 
 
 class DomainDecomposition
@@ -532,7 +580,9 @@ PYBIND11_MODULE(usercode, m)
                                                             inner_subdomain_space->mapper().max_local_size());
                   DynamicMatrix<double> local_matrix_out_out(outer_subdomain_space->mapper().max_local_size(),
                                                              outer_subdomain_space->mapper().max_local_size());
-                  using I = typename DomainDecomposition::DdGridType::GlueType::Intersection;
+                  using MacroI = decltype(macro_intersection);
+                  using CouplingI = typename DomainDecomposition::DdGridType::GlueType::Intersection;
+                  using I = CouplingIntersectionWithCorrectNormal<CouplingI, MacroI>;
                   using E = typename I::InsideEntity;
                   const LocalIntersectionIntegralBilinearForm<I> intersection_bilinear_form(
                       LocalEllipticIpdgIntegrands::Inner<I, double, ipdg_variant>(
@@ -540,18 +590,14 @@ PYBIND11_MODULE(usercode, m)
                   for (auto coupling_intersection_it = coupling.template ibegin<0>();
                        coupling_intersection_it != coupling_intersection_it_end;
                        ++coupling_intersection_it) {
-                    const auto& coupling_intersection_uncorrected = *coupling_intersection_it;
-                    const auto inside_element = coupling_intersection_uncorrected.inside();
-                    const auto outside_element = coupling_intersection_uncorrected.outside();
+                    const I coupling_intersection(*coupling_intersection_it, macro_intersection);
+                    const auto inside_element = coupling_intersection.inside();
+                    const auto outside_element = coupling_intersection.outside();
                     inside_basis->bind(inside_element);
                     outside_basis->bind(outside_element);
                     inner_subdomain_space->mapper().global_indices(inside_element, global_indices_in);
                     outer_subdomain_space->mapper().global_indices(outside_element, global_indices_out);
-                    using IntersectionType = decltype(macro_intersection);
-                    CouplingIntersectionWithCorrectNormal<I, IntersectionType> coupling_intersection(
-                        coupling_intersection_uncorrected, macro_intersection);
-
-                    intersection_bilinear_form.apply2(coupling_intersection.intersection(),
+                    intersection_bilinear_form.apply2(coupling_intersection,
                                                       *inside_basis,
                                                       *inside_basis,
                                                       *outside_basis,
