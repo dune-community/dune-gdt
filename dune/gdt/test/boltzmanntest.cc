@@ -455,8 +455,11 @@ public:
     u_ = std::make_shared<DiscreteFunctionType>(u_->space(), "solution");
     default_interpolation(*problem_->initial_values(), *u_, *grid_view_);
     flux_timestepper_ = std::make_shared<FluxTimeStepperType>(*kinetic_operator_, *u_, -1.0);
+    FluxTimeStepperType::reset_static_variables();
     rhs_timestepper_ = std::make_shared<RhsTimeStepperType>(*rhs_operator_, *u_);
+    RhsTimeStepperType::reset_static_variables();
     timestepper_ = std::make_shared<TimeStepperType>(*flux_timestepper_, *rhs_timestepper_);
+    TimeStepperType::reset_static_variables();
   }
 
   double calculate_max_sigma_t(const ParameterFunctionType& /*sigma_s*/, const ParameterFunctionType& /*sigma_a*/) const
@@ -696,6 +699,13 @@ struct VectorExporter
     return retval;
   }
 
+  static std::shared_ptr<Vec> create_from_buffer(PyObject* memory_view, const size_t buffer_pos, const size_t vec_size)
+  {
+    Py_buffer* buffer = PyMemoryView_GET_BUFFER(memory_view);
+    ScalarType* cxx_buf = (ScalarType*)buffer->buf;
+    return std::make_shared<Vec>(vec_size, cxx_buf + buffer_pos, 0);
+  }
+
   static void export_(const std::string& classname)
   {
     boost::python::type_info info = boost::python::type_id<std::pair<size_t, double>>();
@@ -712,8 +722,10 @@ struct VectorExporter
     void (Vec::*add_void)(const derived_type&, derived_type&) const = &Vec::add;
     derived_type (Vec::*add_vec)(const derived_type&) const = &Vec::add;
 
-    class_<Vec>(classname.c_str())
+    class_<Vec, std::shared_ptr<Vec>>(classname.c_str())
         .def(init<const size_t, const ScalarType, optional<const size_t>>())
+        .def("create_from_buffer", &create_from_buffer)
+        .staticmethod("create_from_buffer")
         .def("size", &Vec::size)
         .def("add_to_entry", &Vec::add_to_entry)
         .def("__setitem__", &Vec::set_entry)
@@ -846,9 +858,7 @@ BOOST_PYTHON_MODULE(libboltzmann)
       .def("time_step_length", &BoltzmannSolver3d::time_step_length)
       .def("t_end", &BoltzmannSolver3d::t_end);
 
-
   VectorExporter<typename LA::CommonDenseVector<double>>::export_("CommonDenseVector");
-  VectorExporter<typename LA::IstlDenseVector<double>>::export_("IstlDenseVector");
 
   iterable_converter().from_python<std::vector<double>>();
   iterable_converter().from_python<std::vector<size_t>>();
