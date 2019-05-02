@@ -62,6 +62,34 @@ std::unique_ptr<GDT::SpaceInterface<GV>> make_subdomain_space(GV subdomain_grid_
                "space_type = " << space_type << "\n   has to be 'continuous_lagrange' or 'discontinuous_lagrange'!");
 }
 
+template <class CouplingIntersectionType, class IntersectionType>
+class CouplingIntersectionWithCorrectNormal : public CouplingIntersectionType
+{
+  using BaseType = CouplingIntersectionType;
+  using NormalType = typename BaseType::GlobalCoordinate;
+  using LocalCoordinate = typename BaseType::LocalCoordinate;
+
+  CouplingIntersectionWithCorrectNormal(const CouplingIntersectionType& intersection,
+                                        const IntersectionType& correct_intersection)
+    : intersection_(new CouplingIntersectionType(intersection))
+    , correct_intersection_(new IntersectionType(correct_intersection))
+  {}
+
+  NormalType UnitOuterNormal(const LocalCoordinate& point) const
+  {
+    return correct_intersection_->UnitOuterNormal(point);
+  }
+
+  CouplingIntersectionType intersection()
+  {
+    return *intersection_;
+  }
+
+private:
+  const std::shared_ptr<CouplingIntersectionType> intersection_;
+  const std::shared_ptr<IntersectionType> correct_intersection_;
+};
+
 
 class DomainDecomposition
 {
@@ -513,14 +541,18 @@ PYBIND11_PLUGIN(usercode)
                   for (auto coupling_intersection_it = coupling.template ibegin<0>();
                        coupling_intersection_it != coupling_intersection_it_end;
                        ++coupling_intersection_it) {
-                    const auto& coupling_intersection = *coupling_intersection_it;
-                    const auto inside_element = coupling_intersection.inside();
-                    const auto outside_element = coupling_intersection.outside();
+                    const auto& coupling_intersection_uncorrected = *coupling_intersection_it;
+                    const auto inside_element = coupling_intersection_uncorrected.inside();
+                    const auto outside_element = coupling_intersection_uncorrected.outside();
                     inside_basis->bind(inside_element);
                     outside_basis->bind(outside_element);
                     inner_subdomain_space->mapper().global_indices(inside_element, global_indices_in);
                     outer_subdomain_space->mapper().global_indices(outside_element, global_indices_out);
-                    intersection_bilinear_form.apply2(coupling_intersection,
+                    using IntersectionType = decltype(macro_intersection);
+                    CouplingIntersectionWithCorrectNormal<I, IntersectionType> coupling_intersection(
+                        coupling_intersection_uncorrected, macro_intersection);
+
+                    intersection_bilinear_form.apply2(coupling_intersection.intersection(),
                                                       *inside_basis,
                                                       *inside_basis,
                                                       *outside_basis,
