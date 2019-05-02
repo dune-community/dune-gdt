@@ -188,7 +188,7 @@ public:
   {}
 
   DiscreteFunction(const SpaceType& spc, const std::string nm = "dune.gdt.discretefunction")
-    : VectorStorage(new VectorType(spc.mapper().size(), 0))
+    : VectorStorage(new VectorType(spc.mapper().size(), 0.))
     , BaseType(spc, VectorStorage::access(), nm)
     , dofs_(space_.mapper(), VectorStorage::access())
   {}
