@@ -59,8 +59,8 @@ using namespace Dune;
 static_assert(DUNE_GRID_EXPERIMENTAL_GRID_EXTENSIONS, "grid extensions are mandatory");
 
 //  using GridType = Dune::ALUGrid<3, 3, simplex, nonconforming, ALUGridMPIComm>;
-// using GridType = Dune::ALUGrid<2, 2, simplex, nonconforming, ALUGridMPIComm>;
-using GridType = Dune::ALUGrid<2, 2, simplex, conforming, ALUGridMPIComm>;
+using GridType = Dune::ALUGrid<2, 2, simplex, nonconforming, ALUGridMPIComm>;
+// using GridType = Dune::ALUGrid<2, 2, simplex, conforming, ALUGridMPIComm>;
 // using GridType = Dune::ALUGrid<2, 2, cube, nonconforming, ALUGridMPIComm>;
 // using GridType = Yasp2Grid;
 using GridProvider = XT::Grid::GridProvider<GridType, XT::Grid::DD::SubdomainGrid<GridType>>;
