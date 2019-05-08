@@ -110,11 +110,10 @@ private:
     // * a set to hold the global id of all boundary vertices
     std::set<size_t> boundary_vertices;
 
-    const auto entity_it_end = grid_layer_.template end<0>();
     // walk the grid to create the maps explained above and to find the boundary vertices
-    for (auto entity_it = grid_layer_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
-      const auto& entity = *entity_it;
+    for (auto&& entity : elements(grid_layer_)) {
       const size_t num_vertices = entity.subEntities(dimDomain);
+      assert(entity.dimension == dimDomain);
       const auto basis = range.space().base_function_set(entity);
       if (basis.size() != num_vertices)
         DUNE_THROW(XT::Common::Exceptions::internal_error, "basis.size() = " << basis.size());
@@ -180,8 +179,7 @@ private:
     } // walk the grid for the first time
 
     // walk the grid for the second time
-    for (auto entity_it = grid_layer_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
-      const auto& entity = *entity_it;
+    for (auto&& entity : elements(grid_layer_)) {
       const auto num_vertices = entity.subEntities(dimDomain);
       // get the local functions
       const auto local_source = source.local_function(entity);

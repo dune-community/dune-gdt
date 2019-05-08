@@ -59,11 +59,11 @@ public:
              const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<InterpolationLayerType>>& boundary_info,
              const GDT::ConstDiscreteFunction<S, V>& source,
              GDT::DiscreteFunction<S, V>& range) {
-            GDT::OswaldInterpolationOperator<InterpolationLayerType, R>(
-                dd_grid_provider.template layer<interpolation_layer_type, interpolation_layer_backend>(
-                    layer_level_or_subdomain),
-                boundary_info)
-                .apply(source, range);
+            auto&& layer{dd_grid_provider.template layer<interpolation_layer_type, interpolation_layer_backend>(
+                layer_level_or_subdomain)};
+            auto ss = layer.size(0);
+            assert(ss);
+            GDT::OswaldInterpolationOperator<InterpolationLayerType, R>(layer, boundary_info).apply(source, range);
           },
           "dd_grid_provider"_a,
           "layer_level_or_subdomain"_a = -1,
