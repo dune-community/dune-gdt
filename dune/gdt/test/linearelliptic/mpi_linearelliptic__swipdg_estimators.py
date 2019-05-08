@@ -23,11 +23,13 @@ except KeyError:
 
 # Only dirichlet zero and no neumann test cases are allowed here, so neither ESV2007TestCase nor MixedBoundaryTestCase!
 casenames = ['AO2013TestCase', 'ESV2007TestCase']
-try:
-    cache['DXT_DISABLE_LARGE_TESTS']
-except KeyError:
-    casenames.append('Spe10Model1TestCase')
+# try:
+#     cache['DXT_DISABLE_LARGE_TESTS']
+# except KeyError:
+#     casenames.append('Spe10Model1TestCase')
 testcases = ['Dune::GDT::LinearElliptic::{}<{}>'.format(c, g) for c, g in itertools.product(casenames, grids)]
 
 permutations = itertools.product(testcases, ('gdt',), ('istl_sparse',))
 permutations = [(t, s, l, typeid_to_typedef_name('{}_{}_{}'.format(t, s, l))) for t, s, l in permutations]
+
+assert len(permutations) > 0

@@ -287,7 +287,6 @@ public:
     auto cfg = internal::ER2007GridConfig<typename std::decay<G>::type>::value(ProblemType::default_grid_cfg());
     cfg["type"] = XT::Grid::cube_dd_subdomains_gridprovider_id();
     cfg["num_partitions"] = "[1 1 1 1]";
-    cfg.set("num_refinements", default_refinements());
     return cfg;
   }
 
