@@ -139,6 +139,7 @@ public:
           "level_or_subdomain"_a = -1,
           "path"_a,
           "subsampling"_a = true);
+    c.def("__len__", [](const type& self) { return self.vector().size(); });
     return c;
   } // ... bind(...)
 }; // class ConstDiscreteFunction
@@ -175,7 +176,17 @@ public:
           py::keep_alive<1, 3>());
     c.def(
         py::init<const S&, const std::string>(), "space"_a, "name"_a = "gdt.discretefunction", py::keep_alive<1, 2>());
-
+    c.def("assign", [](type& self, const V& vector) { self.vector() = vector; }, "vector"_a);
+    //    c.def("__getitem__", [](const type& self, size_t ii) -> S {
+    //      if (ii >= self.vector().size())
+    //        throw pybind11::index_error();
+    //      return self.vector()[ii];
+    //    });
+    c.def("setitem", [](type& self, size_t ii, typename V::ScalarType value) {
+      if (ii >= self.vector().size())
+        throw pybind11::index_error();
+      self.vector()[ii] = value;
+    });
     m.def(
         std::string("make_discrete_function").c_str(),
         [](const S& space, V& vector, const std::string& name) { return make_discrete_function(space, vector, name); },
