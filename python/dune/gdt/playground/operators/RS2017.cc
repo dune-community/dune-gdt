@@ -1562,8 +1562,10 @@ PYBIND11_MODULE(__operators_RS2017, m)
           XT::Grid::Walker<GL> walker(subdomain_layer);
           std::vector<FieldVector<D, d>> subdomain_vertices;
           walker.append([&](const E& entity) {
-            for (size_t cc = 0; cc < entity.subEntities(d); ++cc)
-              subdomain_vertices.emplace_back(entity.template subEntity<d>(cc).geometry().center());
+            const auto& geo = entity.geometry();
+            for (auto i : XT::Common::value_range(geo.corners())) {
+              subdomain_vertices.emplace_back(geo.corner(i));
+            }
           });
           walker.walk();
           R subdomain_h = std::numeric_limits<R>::min();
