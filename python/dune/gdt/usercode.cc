@@ -23,6 +23,7 @@
 #include <dune/xt/functions/constant.hh>
 #include <dune/xt/functions/indicator.hh>
 #include <dune/xt/functions/interfaces/function.hh>
+#include <dune/xt/functions/spe10/model1.hh>
 
 #include <dune/gdt/functionals/vector-based.hh>
 #include <dune/gdt/interpolations.hh>
@@ -42,6 +43,11 @@ using namespace Dune;
 using namespace Dune::GDT;
 
 using G = YASP_2D_EQUIDISTANT_OFFSET;
+
+using Global_GP = XT::Grid::GridProvider<G>;
+using Global_GV = typename G::LeafGridView;
+using Global_E = XT::Grid::extract_entity_t<Global_GV>;
+
 static const constexpr size_t d = G::dimension;
 using M = XT::LA::IstlRowMajorSparseMatrix<double>;
 using V = XT::LA::IstlDenseVector<double>;
@@ -158,6 +164,18 @@ public:
     , local_spaces_(dd_grid.num_subdomains(), nullptr)
     , local_discrete_functions_(dd_grid.num_subdomains(), nullptr)
   {}
+
+  DomainDecomposition(const std::array<unsigned int, G::dimension> num_macro_elements_per_dim,
+                      const size_t num_refinements_per_subdomain,
+                      const FieldVector<typename G::ctype, G::dimension> ll,
+                      const FieldVector<typename G::ctype, G::dimension> ur)
+    : macro_grid_(XT::Grid::make_cube_grid<G>(ll, ur, num_macro_elements_per_dim))
+    , dd_grid(macro_grid_, num_refinements_per_subdomain, false, true)
+    , vtk_writer_(dd_grid)
+    , local_spaces_(dd_grid.num_subdomains(), nullptr)
+    , local_discrete_functions_(dd_grid.num_subdomains(), nullptr)
+  {}
+
 
   void visualize_local(const std::string& filename_prefix,
                        const size_t ss,
@@ -310,6 +328,39 @@ PYBIND11_MODULE(usercode, m)
                            "num_refinements_per_subdomain"_a,
                            "lower_left"_a = 0.,
                            "upper_right"_a = 1.);
+
+  domain_decomposition.def(py::init([](const std::array<unsigned int, G::dimension> num_macro_elements_per_dim,
+                                       const size_t num_refinements_per_subdomain,
+                                       const double lole,
+                                       const double upri) {
+                             // TODO: MAKE IT POSSIBLE TO USE AN std::array for NUM_MACRO_ELEMENTS_PER_DIM for every
+                             // mesh.
+
+                             // TODO: PUT THE FOLLOWING TWO LINES INTO THE CONSTRUCTER OF THE BINDINGS. check whether
+                             // there are bindings for fvector that are initialized with a initializer list. If not,
+                             // write them !!
+                             const FieldVector<typename G::ctype, G::dimension> ll({0., 0.});
+                             const FieldVector<typename G::ctype, G::dimension> rr({5., 1.});
+                             return new DomainDecomposition(
+                                 num_macro_elements_per_dim, num_refinements_per_subdomain, ll, rr);
+                           }),
+                           "num_macro_elements_per_dim"_a,
+                           "num_refinements_per_subdomain"_a,
+                           "lower_left"_a,
+                           "upper_right"_a);
+
+  domain_decomposition.def(py::init([](const std::array<unsigned int, G::dimension> num_macro_elements_per_dim,
+                                       const size_t num_refinements_per_subdomain,
+                                       const FieldVector<typename G::ctype, G::dimension> ll,
+                                       const FieldVector<typename G::ctype, G::dimension> rr) {
+                             return new DomainDecomposition(
+                                 num_macro_elements_per_dim, num_refinements_per_subdomain, ll, rr);
+                           }),
+                           "num_macro_elements_per_dim"_a,
+                           "num_refinements_per_subdomain"_a,
+                           "lower_left"_a,
+                           "upper_right"_a);
+
   domain_decomposition.def_property_readonly("num_sudomains",
                                              [](DomainDecomposition& self) { return self.dd_grid.num_subdomains(); });
   domain_decomposition.def_property_readonly("boundary_subdomains", [](DomainDecomposition& self) {
@@ -379,9 +430,14 @@ PYBIND11_MODULE(usercode, m)
                         XT::Common::Exceptions::index_out_of_range,
                         "ss = " << ss << "\n   domain_decomposition.dd_grid.num_subdomains() = "
                                 << domain_decomposition.dd_grid.num_subdomains());
-          const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor(
+          const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor_id(
               XT::Common::from_string<typename XT::Functions::ConstantFunction<d, d, d>::RangeReturnType>(
                   "[1 0 0; 0 1 0; 0 0 1]"));
+          const auto diffusion_tensor = diffusion_tensor_id.as_grid_function<Global_E>();
+          //          const XT::Common::FieldVector<double, d>& lower_left({0,0});
+          //          const XT::Common::FieldVector<double, d>& upper_right({5,1});
+          //          const XT::Functions::Spe10::Model1Function<Global_E, d, d, double> diffusion_tensor(
+          //                XT::Data::spe10_model1_filename(), lower_left, upper_right);
           std::unique_ptr<M> subdomain_matrix;
           for (auto&& macro_element : elements(domain_decomposition.dd_grid.macro_grid_view())) {
             if (domain_decomposition.dd_grid.subdomain(macro_element) == ss) {
@@ -393,13 +449,13 @@ PYBIND11_MODULE(usercode, m)
               auto subdomain_space = make_subdomain_space(subdomain_grid_view, space_type);
               // create operator
               auto subdomain_operator = make_matrix_operator<M>(*subdomain_space, Stencil::element_and_intersection);
-              const LocalElementIntegralBilinearForm<E> element_bilinear_form(LocalEllipticIntegrand<E>(
-                  diffusion_factor.as_grid_function<E>(), diffusion_tensor.as_grid_function<E>()));
+              const LocalElementIntegralBilinearForm<E> element_bilinear_form(
+                  LocalEllipticIntegrand<E>(diffusion_factor.as_grid_function<E>(), diffusion_tensor));
               subdomain_operator.append(element_bilinear_form);
               if (!subdomain_space->continuous(0)) {
                 const LocalIntersectionIntegralBilinearForm<I> coupling_bilinear_form(
-                    LocalEllipticIpdgIntegrands::Inner<I, double, ipdg_variant>(
-                        diffusion_factor.as_grid_function<E>(), diffusion_tensor.as_grid_function<E>()));
+                    LocalEllipticIpdgIntegrands::Inner<I, double, ipdg_variant>(diffusion_factor.as_grid_function<E>(),
+                                                                                diffusion_tensor));
                 subdomain_operator.append(coupling_bilinear_form, {}, XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
               }
               subdomain_operator.assemble();
@@ -492,9 +548,14 @@ PYBIND11_MODULE(usercode, m)
                       XT::Common::Exceptions::index_out_of_range,
                       "ss = " << ss << "\n   domain_decomposition.dd_grid.num_subdomains() = "
                               << domain_decomposition.dd_grid.num_subdomains());
-        const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor(
+        const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor_id(
             XT::Common::from_string<typename XT::Functions::ConstantFunction<d, d, d>::RangeReturnType>(
                 "[1 0 0; 0 1 0; 0 0 1]"));
+        const auto diffusion_tensor = diffusion_tensor_id.as_grid_function<Global_E>();
+        //          const XT::Common::FieldVector<double, d>& lower_left({0,0});
+        //          const XT::Common::FieldVector<double, d>& upper_right({5,1});
+        //          const XT::Functions::Spe10::Model1Function<Global_E, d, d, double> diffusion_tensor(
+        //                XT::Data::spe10_model1_filename(), lower_left, upper_right);
         std::unique_ptr<M> coupling_matrix_in_in;
         std::unique_ptr<M> coupling_matrix_in_out;
         std::unique_ptr<M> coupling_matrix_out_in;
@@ -586,7 +647,7 @@ PYBIND11_MODULE(usercode, m)
                   using E = typename I::InsideEntity;
                   const LocalIntersectionIntegralBilinearForm<I> intersection_bilinear_form(
                       LocalEllipticIpdgIntegrands::Inner<I, double, ipdg_variant>(
-                          diffusion_factor.as_grid_function<E>(), diffusion_tensor.as_grid_function<E>()));
+                          diffusion_factor.as_grid_function<E>(), diffusion_tensor));
                   for (auto coupling_intersection_it = coupling.template ibegin<0>();
                        coupling_intersection_it != coupling_intersection_it_end;
                        ++coupling_intersection_it) {
@@ -655,9 +716,14 @@ PYBIND11_MODULE(usercode, m)
                                 << domain_decomposition.dd_grid.num_subdomains());
           using MGV = typename DomainDecomposition::DdGridType::MacroGridViewType;
           const XT::Grid::AllDirichletBoundaryInfo<XT::Grid::extract_intersection_t<MGV>> macro_boundary_info;
-          const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor(
+          const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor_id(
               XT::Common::from_string<typename XT::Functions::ConstantFunction<d, d, d>::RangeReturnType>(
                   "[1 0 0; 0 1 0; 0 0 1]"));
+          const auto diffusion_tensor = diffusion_tensor_id.as_grid_function<Global_E>();
+          //          const XT::Common::FieldVector<double, d>& lower_left({0,0});
+          //          const XT::Common::FieldVector<double, d>& upper_right({5,1});
+          //          const XT::Functions::Spe10::Model1Function<Global_E, d, d, double> diffusion_tensor(
+          //                XT::Data::spe10_model1_filename(), lower_left, upper_right);
           std::unique_ptr<M> subdomain_matrix;
           for (auto&& macro_element : elements(domain_decomposition.dd_grid.macro_grid_view())) {
             if (domain_decomposition.dd_grid.subdomain(macro_element) == ss) {
@@ -673,7 +739,7 @@ PYBIND11_MODULE(usercode, m)
               auto subdomain_operator = make_matrix_operator<M>(*subdomain_space, Stencil::element);
               const LocalIntersectionIntegralBilinearForm<I> dirichlet_bilinear_form(
                   LocalEllipticIpdgIntegrands::DirichletBoundaryLhs<I, double, ipdg_variant>(
-                      diffusion_factor.as_grid_function<E>(), diffusion_tensor.as_grid_function<E>()));
+                      diffusion_factor.as_grid_function<E>(), diffusion_tensor));
               subdomain_operator.append(dirichlet_bilinear_form,
                                         {},
                                         XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(
@@ -698,9 +764,14 @@ PYBIND11_MODULE(usercode, m)
                         "ss = " << ss << "\n   domain_decomposition.dd_grid.num_subdomains() = "
                                 << domain_decomposition.dd_grid.num_subdomains());
           const XT::Functions::ConstantFunction<d> diffusion_factor(1.);
-          const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor(
+          const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor_id(
               XT::Common::from_string<typename XT::Functions::ConstantFunction<d, d, d>::RangeReturnType>(
                   "[1 0 0; 0 1 0; 0 0 1]"));
+          const auto diffusion_tensor = diffusion_tensor_id.as_grid_function<Global_E>();
+          //          const XT::Common::FieldVector<double, d>& lower_left({0,0});
+          //          const XT::Common::FieldVector<double, d>& upper_right({5,1});
+          //          const XT::Functions::Spe10::Model1Function<Global_E, d, d, double> diffusion_tensor(
+          //                XT::Data::spe10_model1_filename(), lower_left, upper_right);
           std::unique_ptr<M> subdomain_matrix;
           for (auto&& macro_element : elements(domain_decomposition.dd_grid.macro_grid_view())) {
             if (domain_decomposition.dd_grid.subdomain(macro_element) == ss) {
@@ -712,13 +783,13 @@ PYBIND11_MODULE(usercode, m)
               auto subdomain_space = make_subdomain_space(subdomain_grid_view, space_type);
               // create operator
               auto subdomain_operator = make_matrix_operator<M>(*subdomain_space, Stencil::element_and_intersection);
-              const LocalElementIntegralBilinearForm<E> element_bilinear_form(LocalEllipticIntegrand<E>(
-                  diffusion_factor.as_grid_function<E>(), diffusion_tensor.as_grid_function<E>()));
+              const LocalElementIntegralBilinearForm<E> element_bilinear_form(
+                  LocalEllipticIntegrand<E>(diffusion_factor.as_grid_function<E>(), diffusion_tensor));
               subdomain_operator.append(element_bilinear_form);
               if (!subdomain_space->continuous(0)) {
                 const LocalIntersectionIntegralBilinearForm<I> coupling_bilinear_form(
                     LocalEllipticIpdgIntegrands::InnerOnlyPenalty<I, double, ipdg_variant>(
-                        diffusion_factor.as_grid_function<E>(), diffusion_tensor.as_grid_function<E>()));
+                        diffusion_factor.as_grid_function<E>(), diffusion_tensor));
                 subdomain_operator.append(coupling_bilinear_form, {}, XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
               }
               subdomain_operator.assemble();
@@ -741,9 +812,14 @@ PYBIND11_MODULE(usercode, m)
                       "ss = " << ss << "\n   domain_decomposition.dd_grid.num_subdomains() = "
                               << domain_decomposition.dd_grid.num_subdomains());
         const XT::Functions::ConstantFunction<d> diffusion_factor(1.);
-        const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor(
+        const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor_id(
             XT::Common::from_string<typename XT::Functions::ConstantFunction<d, d, d>::RangeReturnType>(
                 "[1 0 0; 0 1 0; 0 0 1]"));
+        const auto diffusion_tensor = diffusion_tensor_id.as_grid_function<Global_E>();
+        //          const XT::Common::FieldVector<double, d>& lower_left({0,0});
+        //          const XT::Common::FieldVector<double, d>& upper_right({5,1});
+        //          const XT::Functions::Spe10::Model1Function<Global_E, d, d, double> diffusion_tensor(
+        //                XT::Data::spe10_model1_filename(), lower_left, upper_right);
         std::unique_ptr<M> coupling_matrix_in_in;
         std::unique_ptr<M> coupling_matrix_in_out;
         std::unique_ptr<M> coupling_matrix_out_in;
@@ -833,7 +909,7 @@ PYBIND11_MODULE(usercode, m)
                   using E = typename I::InsideEntity;
                   const LocalIntersectionIntegralBilinearForm<I> intersection_bilinear_form(
                       LocalEllipticIpdgIntegrands::InnerOnlyPenalty<I, double, ipdg_variant>(
-                          diffusion_factor.as_grid_function<E>(), diffusion_tensor.as_grid_function<E>()));
+                          diffusion_factor.as_grid_function<E>(), diffusion_tensor));
                   for (auto coupling_intersection_it = coupling.template ibegin<0>();
                        coupling_intersection_it != coupling_intersection_it_end;
                        ++coupling_intersection_it) {
@@ -897,7 +973,6 @@ PYBIND11_MODULE(usercode, m)
                         "ss = " << ss << "\n   domain_decomposition.dd_grid.num_subdomains() = "
                                 << domain_decomposition.dd_grid.num_subdomains());
           std::set<size_t> edge_DoFs;
-          std::set<size_t> boundary_DoFs;
           for (auto&& inside_macro_element : elements(domain_decomposition.dd_grid.macro_grid_view())) {
             if (domain_decomposition.dd_grid.subdomain(inside_macro_element) == ss) {
               // this is the subdomain we are interested in, create space
@@ -960,9 +1035,14 @@ PYBIND11_MODULE(usercode, m)
           using MGV = typename DomainDecomposition::DdGridType::MacroGridViewType;
           const XT::Grid::AllDirichletBoundaryInfo<XT::Grid::extract_intersection_t<MGV>> macro_boundary_info;
           const XT::Functions::ConstantFunction<d> diffusion_factor(1.);
-          const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor(
+          const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor_id(
               XT::Common::from_string<typename XT::Functions::ConstantFunction<d, d, d>::RangeReturnType>(
                   "[1 0 0; 0 1 0; 0 0 1]"));
+          const auto diffusion_tensor = diffusion_tensor_id.as_grid_function<Global_E>();
+          //          const XT::Common::FieldVector<double, d>& lower_left({0,0});
+          //          const XT::Common::FieldVector<double, d>& upper_right({5,1});
+          //          const XT::Functions::Spe10::Model1Function<Global_E, d, d, double> diffusion_tensor(
+          //                XT::Data::spe10_model1_filename(), lower_left, upper_right);
           std::unique_ptr<M> subdomain_matrix;
           for (auto&& macro_element : elements(domain_decomposition.dd_grid.macro_grid_view())) {
             if (domain_decomposition.dd_grid.subdomain(macro_element) == ss) {
@@ -978,7 +1058,7 @@ PYBIND11_MODULE(usercode, m)
               auto subdomain_operator = make_matrix_operator<M>(*subdomain_space, Stencil::element);
               const LocalIntersectionIntegralBilinearForm<I> dirichlet_bilinear_form(
                   LocalEllipticIpdgIntegrands::DirichletBoundaryLhsOnlyPenalty<I, double, ipdg_variant>(
-                      diffusion_factor.as_grid_function<E>(), diffusion_tensor.as_grid_function<E>()));
+                      diffusion_factor.as_grid_function<E>(), diffusion_tensor));
               subdomain_operator.append(dirichlet_bilinear_form,
                                         {},
                                         XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(
