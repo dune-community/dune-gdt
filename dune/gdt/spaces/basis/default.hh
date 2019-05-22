@@ -54,7 +54,7 @@ public:
                      const int order)
     : grid_view_(grid_view)
     , local_finite_elements_(local_finite_elements)
-    , order_(order)
+    , fe_order_(order)
     , max_size_(0)
   {}
 
@@ -74,7 +74,7 @@ public:
   {
     max_size_ = 0;
     for (const auto& gt : grid_view_.indexSet().types(0))
-      max_size_ = std::max(max_size_, local_finite_elements_.get(gt, order_).size());
+      max_size_ = std::max(max_size_, local_finite_elements_.get(gt, fe_order_).size());
   }
 
 private:
@@ -115,7 +115,7 @@ private:
     void post_bind(const ElementType& elemnt) override final
     {
       current_local_fe_ = XT::Common::ConstStorageProvider<LocalFiniteElementInterface<D, d, R, r, rC>>(
-          self_.local_finite_elements_.get(elemnt.geometry().type(), self_.order_));
+          self_.local_finite_elements_.get(elemnt.geometry().type(), self_.fe_order_));
     }
 
   public:
@@ -206,7 +206,7 @@ private:
 
   const GridViewType& grid_view_;
   const FiniteElementFamilyType& local_finite_elements_;
-  const int order_;
+  const int fe_order_;
   size_t max_size_;
 }; // class DefaultGlobalBasis
 

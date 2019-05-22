@@ -56,7 +56,7 @@ private:
   using GlobalBasisImplementation = FiniteVolumeGlobalBasis<GridViewType, r, R>;
 
 public:
-  FiniteVolumeSpace(GridViewType grd_vw)
+  FiniteVolumeSpace(GridViewType grd_vw, const int /*order*/ = 0)
     : grid_view_(grd_vw)
     , local_finite_elements_(std::make_unique<const LocalLagrangeFiniteElementFamily<D, d, R, r>>())
     , mapper_(grid_view_)
@@ -65,7 +65,20 @@ public:
     this->update_after_adapt();
   }
 
-  FiniteVolumeSpace(const ThisType&) = default;
+  FiniteVolumeSpace(const ThisType& other)
+    : grid_view_(other.grid_view_)
+    , local_finite_elements_(std::make_unique<const LocalLagrangeFiniteElementFamily<D, d, R, r>>())
+    , mapper_(grid_view_)
+    , basis_(grid_view_)
+  {
+    this->update_after_adapt();
+  }
+
+  virtual BaseType* copy() const override final
+  {
+    return new ThisType(*this);
+  }
+
   FiniteVolumeSpace(ThisType&&) = default;
 
   ThisType& operator=(const ThisType&) = delete;

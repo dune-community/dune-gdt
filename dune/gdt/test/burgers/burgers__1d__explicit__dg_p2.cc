@@ -29,7 +29,7 @@ TEST_F(Burgers1dExplicitDgP2Test, periodic_boundaries__numerical_engquist_osher_
 {
   this->visualization_steps_ = DXTC_TEST_CONFIG_GET("setup.visualization_steps", 0);
   this->num_refinements_ = 2;
-  this->num_additional_refinements_for_reference_ = 3;
+  this->num_additional_refinements_for_reference_ = 2;
   this->space_type_ = "dg_p2";
   this->numerical_flux_type_ = "engquist_osher";
   /*const auto actual_results =*/this->run();

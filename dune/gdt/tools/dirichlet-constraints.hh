@@ -64,21 +64,22 @@ public:
   static const constexpr size_t r = SpaceType::r;
   static const constexpr size_t rC = SpaceType::rC;
   using R = typename SpaceType::R;
+  using SpaceInterfaceType = SpaceInterface<GridView, r, rC, R>;
 
   DirichletConstraints(const BoundaryInfoType& bnd_info, const SpaceType& space)
     : BaseType()
     , Propagator(this)
     , boundary_info_(bnd_info)
-    , space_(space)
-    , basis_(space_.basis().localize())
+    , space_(space.copy())
+    , basis_(space_->basis().localize())
   {}
 
   DirichletConstraints(const ThisType& other)
     : BaseType(other)
     , Propagator(this)
     , boundary_info_(other.boundary_info_)
-    , space_(other.space_)
-    , basis_(space_.basis().localize())
+    , space_(other.space_->copy())
+    , basis_(space_->basis().localize())
   {}
 
   void apply_local(const ElementType& element) override final
@@ -87,8 +88,8 @@ public:
     basis_->bind(element);
     const auto& reference_element = ReferenceElements<double, d>::general(element.geometry().type());
     const auto local_key_indices = basis_->finite_element().coefficients().local_key_indices();
-    const auto intersection_it_end = space_.grid_view().iend(element);
-    for (auto intersection_it = space_.grid_view().ibegin(element); intersection_it != intersection_it_end;
+    const auto intersection_it_end = space_->grid_view().iend(element);
+    for (auto intersection_it = space_->grid_view().ibegin(element); intersection_it != intersection_it_end;
          ++intersection_it) {
       const auto& intersection = *intersection_it;
       // actual dirichlet intersections + process boundaries for parallel runs
@@ -107,7 +108,7 @@ public:
       }
     }
     for (const auto& local_DoF : local_DoFs) {
-      dirichlet_DoFs_.insert(space_.mapper().global_index(element, local_DoF));
+      dirichlet_DoFs_.insert(space_->mapper().global_index(element, local_DoF));
     }
   } // ... apply_local(...)
 
@@ -207,8 +208,8 @@ public:
 
 private:
   const BoundaryInfoType& boundary_info_;
-  const SpaceType& space_;
-  mutable std::unique_ptr<typename SpaceType::GlobalBasisType::LocalizedType> basis_;
+  std::unique_ptr<const SpaceInterfaceType> space_;
+  mutable std::unique_ptr<typename SpaceInterfaceType::GlobalBasisType::LocalizedType> basis_;
   std::set<size_t> dirichlet_DoFs_;
 }; // class DirichletConstraints
 

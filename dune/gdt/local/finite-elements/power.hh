@@ -193,10 +193,17 @@ public:
     const size_t sz = this->size();
     if (dofs.size() < sz)
       dofs.resize(sz);
+    eval_cache_.clear();
     for (size_t pp = 0; pp < power; ++pp) {
       unpowered_->interpolate(
           [&](const auto& point_in_reference_element) {
-            const auto tmp = local_function(point_in_reference_element);
+            auto cache_it = eval_cache_.find(point_in_reference_element);
+            if (cache_it == eval_cache_.end())
+              cache_it =
+                  eval_cache_
+                      .insert(std::make_pair(point_in_reference_element, local_function(point_in_reference_element)))
+                      .first;
+            const RangeType& tmp = cache_it->second;
             FieldVector<R, r> ret;
             for (size_t rr = 0; rr < r; ++rr)
               ret[rr] = tmp[pp * r + rr];
@@ -213,6 +220,7 @@ public:
 private:
   const std::unique_ptr<const UnpoweredType> unpowered_;
   mutable DynamicVector<R> unpowered_dofs_;
+  mutable std::map<DomainType, RangeType, XT::Common::FieldVectorLess> eval_cache_;
 }; // class LocalPowerFiniteElementInterpolation
 
 

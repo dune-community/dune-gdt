@@ -43,18 +43,23 @@ class GenericLocalElementOperator : public LocalElementOperatorInterface<SV, SGV
 
 public:
   using typename BaseType::LocalRangeType;
+  using typename BaseType::LocalSourceType;
   using typename BaseType::SourceType;
 
-  using GenericFunctionType = std::function<void(
-      const SourceType& /*source*/, LocalRangeType& /*local_range*/, const XT::Common::Parameter& /*param*/)>;
+  using GenericFunctionType = std::function<void(const SourceType& /*source*/,
+                                                 const std::unique_ptr<LocalSourceType>& /*local_source*/,
+                                                 LocalRangeType& /*local_range*/,
+                                                 const XT::Common::Parameter& /*param*/)>;
 
-  GenericLocalElementOperator(GenericFunctionType func, const XT::Common::ParameterType& param_type = {})
-    : BaseType(param_type)
+  GenericLocalElementOperator(const SourceType& source,
+                              GenericFunctionType func,
+                              const XT::Common::ParameterType& param_type = {})
+    : BaseType(source, param_type)
     , func_(func)
   {}
 
   GenericLocalElementOperator(const ThisType& other)
-    : BaseType(other.parameter_type())
+    : BaseType(other)
     , func_(other.func_)
   {}
 
@@ -63,11 +68,9 @@ public:
     return std::make_unique<ThisType>(*this);
   }
 
-  void apply(const SourceType& source,
-             LocalRangeType& local_range,
-             const XT::Common::Parameter& param = {}) const override final
+  void apply(LocalRangeType& local_range, const XT::Common::Parameter& param = {}) const override final
   {
-    func_(source, local_range, this->parse_parameter(param));
+    func_(this->source(), this->local_source(), local_range, this->parse_parameter(param));
   }
 
 private:
@@ -104,21 +107,25 @@ public:
   using typename BaseType::IntersectionType;
   using typename BaseType::LocalInsideRangeType;
   using typename BaseType::LocalOutsideRangeType;
+  using typename BaseType::LocalSourceType;
   using typename BaseType::SourceType;
 
   using GenericFunctionType = std::function<void(const SourceType& /*source*/,
+                                                 const std::unique_ptr<LocalSourceType>& /*local_source*/,
                                                  const IntersectionType& /*intersection*/,
                                                  LocalInsideRangeType& /*local_range_inside*/,
                                                  LocalOutsideRangeType& /*local_range_outside*/,
                                                  const XT::Common::Parameter& /*param*/)>;
 
-  GenericLocalIntersectionOperator(GenericFunctionType func, const XT::Common::ParameterType& param_type = {})
-    : BaseType(param_type)
+  GenericLocalIntersectionOperator(const SourceType& source,
+                                   GenericFunctionType func,
+                                   const XT::Common::ParameterType& param_type = {})
+    : BaseType(source, param_type)
     , func_(func)
   {}
 
   GenericLocalIntersectionOperator(const ThisType& other)
-    : BaseType(other.parameter_type())
+    : BaseType(other)
     , func_(other.func_)
   {}
 
@@ -127,13 +134,17 @@ public:
     return std::make_unique<ThisType>(*this);
   }
 
-  void apply(const SourceType& source,
-             const IntersectionType& intersection,
+  void apply(const IntersectionType& intersection,
              LocalInsideRangeType& local_range_inside,
              LocalOutsideRangeType& local_range_outside,
              const XT::Common::Parameter& param = {}) const override final
   {
-    func_(source, intersection, local_range_inside, local_range_outside, this->parse_parameter(param));
+    func_(this->source(),
+          this->local_source(),
+          intersection,
+          local_range_inside,
+          local_range_outside,
+          this->parse_parameter(param));
   }
 
 private:

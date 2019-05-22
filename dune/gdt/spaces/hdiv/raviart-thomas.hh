@@ -80,7 +80,23 @@ public:
     this->update_after_adapt();
   }
 
-  RaviartThomasSpace(const ThisType&) = default;
+  RaviartThomasSpace(const ThisType& other)
+    : grid_view_(other.grid_view_)
+    , order_(other.order_)
+    , local_finite_elements_(std::make_unique<const LocalRaviartThomasFiniteElementFamily<D, d, R>>())
+    , element_indices_(grid_view_)
+    , fe_data_()
+    , mapper_(nullptr)
+    , basis_(nullptr)
+  {
+    this->update_after_adapt();
+  }
+
+  virtual BaseType* copy() const override final
+  {
+    return new ThisType(*this);
+  }
+
   RaviartThomasSpace(ThisType&&) = default;
 
   ThisType& operator=(const ThisType&) = delete;

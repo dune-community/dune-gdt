@@ -49,6 +49,7 @@ struct SpaceTestBase : public ::testing::Test
   using R = typename SpaceType::R;
   static const constexpr size_t r = SpaceType::r;
   static const constexpr size_t rC = SpaceType::rC;
+  static constexpr double default_tolerance = p > 2 ? (d > 3 ? 1e-7 : (d == 3 ? 1e-10 : 1e-13)) : 1e-15;
 
   using GlobalBasisType = typename SpaceType::GlobalBasisType;
   using MapperType = typename SpaceType::MapperType;
@@ -98,7 +99,7 @@ struct SpaceTestBase : public ::testing::Test
                 space->finite_elements().get(geometry_type, p).lagrange_points().size());
   }
 
-  void basis_is_lagrange_basis(const double& tolerance = 1e-15)
+  void basis_is_lagrange_basis(const double tolerance = default_tolerance)
   {
     ASSERT_NE(grid_view, nullptr);
     ASSERT_NE(space, nullptr);
@@ -226,7 +227,7 @@ struct SpaceTestBase : public ::testing::Test
       EXPECT_EQ(1, map_to_global.count(global_index));
   } // ... mapper_of_discontinuous_space_maps_correctly(...)
 
-  void local_interpolation_seems_to_be_correct()
+  void local_interpolation_seems_to_be_correct(const double tolerance = default_tolerance)
   {
     ASSERT_NE(grid_view, nullptr);
     ASSERT_NE(space, nullptr);
@@ -240,7 +241,7 @@ struct SpaceTestBase : public ::testing::Test
             [&](const auto& x) { return shape_functions.evaluate(x)[ii]; }, shape_functions.order());
         ASSERT_GE(dofs.size(), shape_functions.size());
         for (size_t jj = 0; jj < shape_functions.size(); ++jj)
-          EXPECT_TRUE(XT::Common::FloatCmp::eq(ii == jj ? 1. : 0., dofs[jj]))
+          EXPECT_TRUE(XT::Common::FloatCmp::eq(ii == jj ? 1. : 0., dofs[jj], tolerance, tolerance))
               << "\nii == jj ? 1. : 0. = " << (ii == jj ? 1. : 0.) << "\ndofs[jj] = " << dofs[jj];
       }
     }

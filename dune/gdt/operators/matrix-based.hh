@@ -293,6 +293,12 @@ public:
 
   FieldType scaling;
 
+  void clear()
+  {
+    WalkerBaseType::clear();
+    assembled_ = false;
+  }
+
   using WalkerBaseType::append;
 
   ThisType& append(const LocalElementBilinearFormInterface<E, r_r, r_rC, F, F, s_r, s_rC, F>& local_bilinear_form,
@@ -379,7 +385,7 @@ public:
                 const XT::Common::Configuration& opts,
                 const XT::Common::Parameter& param = {}) const override
   {
-    DUNE_THROW_IF(!assembled_, Exceptions::operator_error, "This operator has to be assembled to povide a jacobian!");
+    DUNE_THROW_IF(!assembled_, Exceptions::operator_error, "This operator has to be assembled to provide a jacobian!");
     OperatorBaseType::jacobian(source, jacobian_op, opts, param);
   }
 

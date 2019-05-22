@@ -36,7 +36,7 @@
 #include <dune/gdt/local/bilinear-forms/integrals.hh>
 #include <dune/gdt/local/functionals/integrals.hh>
 #include <dune/gdt/local/integrands/abs.hh>
-#include <dune/gdt/local/integrands/elliptic.hh>
+#include <dune/gdt/local/integrands/laplace.hh>
 #include <dune/gdt/local/integrands/identity.hh>
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/operators/constant.hh>
@@ -266,7 +266,7 @@ public:
           spatial_norm = [&](const DF& func) {
             auto localizable_product = make_localizable_bilinear_form(reference_space.grid_view(), func, func);
             localizable_product.append(LocalElementIntegralBilinearForm<E, m>(
-                LocalEllipticIntegrand<E, m>(), DXTC_TEST_CONFIG_GET("setup.over_integrate", 3)));
+                LocalLaplaceIntegrand<E, m>(), DXTC_TEST_CONFIG_GET("setup.over_integrate", 3)));
             localizable_product.assemble(DXTC_TEST_CONFIG_GET("setup.use_tbb", true));
             return std::sqrt(localizable_product.result());
           };

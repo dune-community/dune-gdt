@@ -48,6 +48,7 @@ template <class GridView, size_t range_dim = 1, size_t range_dim_columns = 1, cl
 class SpaceInterface
 {
   static_assert(XT::Grid::is_view<GridView>::value, "");
+  using ThisType = SpaceInterface;
 
 public:
   using GridViewType = GridView;
@@ -72,6 +73,11 @@ public:
     : dof_communicator_(nullptr)
     , adapted_(false)
   {}
+
+  virtual ThisType* copy() const
+  {
+    return nullptr;
+  }
 
   virtual ~SpaceInterface() = default;
 

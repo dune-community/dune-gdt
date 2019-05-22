@@ -531,7 +531,7 @@ invert_options(some_type).get<std::string>("type") == some_type
 
   virtual VectorType apply(const VectorType& source, const XT::Common::Parameter& param = {}) const
   {
-    VectorType range(this->range_space().mapper().size(), 0);
+    VectorType range(this->range_space().mapper().size(), 0.);
     this->apply(source, range, param);
     return range;
   }

@@ -11,7 +11,10 @@
 #ifndef DUNE_GDT_LOCAL_FINITE_ELEMENTS_DEFAULT_HH
 #define DUNE_GDT_LOCAL_FINITE_ELEMENTS_DEFAULT_HH
 
+#include <dune/geometry/quadraturerules.hh>
+
 #include <dune/xt/common/memory.hh>
+#include <dune/xt/grid/integrals.hh>
 
 #include "interfaces.hh"
 
@@ -145,26 +148,26 @@ private:
 
 
 template <class D, size_t d, class R = double, size_t r = 1, size_t rC = 1>
-class ThreadSafeDefaultLocalLagrangeFiniteElementFamily : public LocalFiniteElementFamilyInterface<D, d, R, r, rC>
+class ThreadSafeDefaultLocalFiniteElementFamily : public LocalFiniteElementFamilyInterface<D, d, R, r, rC>
 {
-  using ThisType = ThreadSafeDefaultLocalLagrangeFiniteElementFamily<D, d, R, r, rC>;
+  using ThisType = ThreadSafeDefaultLocalFiniteElementFamily<D, d, R, r, rC>;
   using BaseType = LocalFiniteElementFamilyInterface<D, d, R, r, rC>;
 
 public:
   using typename BaseType::LocalFiniteElementType;
 
-  ThreadSafeDefaultLocalLagrangeFiniteElementFamily(
+  ThreadSafeDefaultLocalFiniteElementFamily(
       std::function<std::unique_ptr<LocalFiniteElementType>(const GeometryType&, const int&)> factory)
     : factory_(factory)
   {}
 
-  ThreadSafeDefaultLocalLagrangeFiniteElementFamily(const ThisType& other)
+  ThreadSafeDefaultLocalFiniteElementFamily(const ThisType& other)
     : factory_(other.factory_)
   {
     // we do not even try to create the FEs in a thread safe way, they will just be recreated when required
   }
 
-  ThreadSafeDefaultLocalLagrangeFiniteElementFamily(ThisType&& source)
+  ThreadSafeDefaultLocalFiniteElementFamily(ThisType&& source)
     : factory_(std::move(source.factory_))
     , fes_(std::move(source.fes_))
   {}
@@ -179,19 +182,80 @@ public:
       // the FE needs to be created, we need to lock
       std::lock_guard<std::mutex> DXTC_UNUSED(guard)(mutex_);
       // and to check again if someone else created the FE while we were waiting to acquire the lock
-      if (fes_.count(key) == 0) {
-        auto dings = factory_(geometry_type, order);
-        fes_.insert(std::make_pair(key, std::shared_ptr<LocalFiniteElementType>(dings.release())));
-      }
+      if (fes_.count(key) == 0)
+        fes_[key] = factory_(geometry_type, order);
     }
     return *fes_.at(key);
   } // ... get(...)
 
 private:
   const std::function<std::unique_ptr<LocalFiniteElementType>(const GeometryType&, const int&)> factory_;
-  mutable std::map<std::pair<GeometryType, int>, std::shared_ptr<LocalFiniteElementType>> fes_;
+  mutable std::map<std::pair<GeometryType, int>, std::unique_ptr<LocalFiniteElementType>> fes_;
   mutable std::mutex mutex_;
-}; // class ThreadSafeDefaultLocalLagrangeFiniteElementFamily
+}; // class ThreadSafeDefaultLocalFiniteElementFamily
+
+
+template <class D, size_t d, class R, size_t r = 1>
+class LocalL2FiniteElementInterpolation : public LocalFiniteElementInterpolationInterface<D, d, R, r, 1>
+{
+  using ThisType = LocalL2FiniteElementInterpolation<D, d, R, r>;
+  using BaseType = LocalFiniteElementInterpolationInterface<D, d, R, r, 1>;
+
+public:
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeType;
+
+  using LocalBasisType = LocalFiniteElementBasisInterface<D, d, R, r, 1>;
+
+  LocalL2FiniteElementInterpolation(const LocalBasisType& local_basis)
+    : local_basis_(local_basis.copy())
+  {}
+
+  LocalL2FiniteElementInterpolation(const ThisType& other)
+    : local_basis_(other.local_basis_->copy())
+  {}
+
+  LocalL2FiniteElementInterpolation(ThisType& source) = default;
+
+  ThisType* copy() const override final
+  {
+    return new ThisType(*this);
+  }
+
+  const GeometryType& geometry_type() const override final
+  {
+    return local_basis_->geometry_type();
+  }
+
+  size_t size() const override final
+  {
+    return local_basis_->size();
+  }
+
+  using BaseType::interpolate;
+
+  void interpolate(const std::function<RangeType(DomainType)>& local_function,
+                   const int order,
+                   DynamicVector<R>& dofs) const override final
+  {
+    if (dofs.size() < this->size())
+      dofs.resize(this->size());
+    dofs *= 0.;
+    std::vector<RangeType> basis_values(local_basis_->size());
+    RangeType function_value;
+    for (auto&& quadrature_point : QuadratureRules<D, d>::rule(this->geometry_type(), order + local_basis_->order())) {
+      const auto point_in_reference_element = quadrature_point.position();
+      const auto quadrature_weight = quadrature_point.weight();
+      local_basis_->evaluate(point_in_reference_element, basis_values);
+      function_value = local_function(point_in_reference_element);
+      for (size_t ii = 0; ii < local_basis_->size(); ++ii)
+        dofs[ii] = (basis_values[ii] * function_value) * quadrature_weight;
+    }
+  } // ... interpolate(...)
+
+private:
+  std::unique_ptr<LocalBasisType> local_basis_;
+}; // class LocalL2FiniteElementInterpolation
 
 
 } // namespace GDT

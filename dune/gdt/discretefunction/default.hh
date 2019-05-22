@@ -124,6 +124,7 @@ public:
    */
 
   using BaseType::visualize;
+  using BaseType::visualize_gradient;
 
   /**
    * \brief Visualizes the function using Dune::XT::Functions::GridFunctionInterface::visualize on the grid view
@@ -135,8 +136,26 @@ public:
                  const VTK::OutputType vtk_output_type = VTK::appendedraw,
                  const XT::Common::Parameter& param = {}) const
   {
-    this->visualize(space_.grid_view(), filename, space_.max_polorder() > 1, vtk_output_type, param);
+    const bool subsampling =
+        param.has_key("subsampling") ? static_cast<bool>(param.get("subsampling")[0]) : (space_.max_polorder() > 1);
+    this->visualize(space_.grid_view(), filename, subsampling, vtk_output_type, param);
   }
+
+  /**
+   * \brief Visualizes the function using Dune::XT::Functions::GridFunctionInterface::visualize on the grid view
+   *        associated with the space.
+   * \sa    Dune::XT::Functions::GridFunctionInterface::visualize
+   * \note  Subsampling is enabled by default for functions of order greater than one.
+   */
+  void visualize_gradient(const std::string filename,
+                          const VTK::OutputType vtk_output_type = VTK::appendedraw,
+                          const XT::Common::Parameter& param = {}) const
+  {
+    const bool subsampling =
+        param.has_key("subsampling") ? static_cast<bool>(param.get("subsampling")[0]) : (space_.max_polorder() > 1);
+    this->visualize_gradient(space_.grid_view(), filename, subsampling, vtk_output_type, param);
+  }
+
 
 protected:
   const SpaceType& space_;
@@ -188,12 +207,17 @@ public:
   {}
 
   DiscreteFunction(const SpaceType& spc, const std::string nm = "dune.gdt.discretefunction")
-    : VectorStorage(new VectorType(spc.mapper().size(), 0))
+    : VectorStorage(new VectorType(spc.mapper().size(), 0.))
     , BaseType(spc, VectorStorage::access(), nm)
     , dofs_(space_.mapper(), VectorStorage::access())
   {}
 
-  DiscreteFunction(const ThisType&) = default;
+  DiscreteFunction(const ThisType& other)
+    : VectorStorage(new VectorType(other.access()))
+    , BaseType(other.space(), VectorStorage::access(), other.name())
+    , dofs_(other.space().mapper(), VectorStorage::access())
+  {}
+
   DiscreteFunction(ThisType&&) = default;
 
   ThisType& operator=(const ThisType&) = delete;

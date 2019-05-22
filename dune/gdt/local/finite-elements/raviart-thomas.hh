@@ -353,13 +353,16 @@ make_local_raviart_thomas_finite_element(const GeometryType& geometry_type, cons
 
 
 template <class D, size_t d, class R>
-class LocalRaviartThomasFiniteElementFamily : public ThreadSafeDefaultLocalLagrangeFiniteElementFamily<D, d, R, d, 1>
+class LocalRaviartThomasFiniteElementFamily : public ThreadSafeDefaultLocalFiniteElementFamily<D, d, R, d, 1>
 {
-  using BaseType = ThreadSafeDefaultLocalLagrangeFiniteElementFamily<D, d, R, d, 1>;
+  using BaseType = ThreadSafeDefaultLocalFiniteElementFamily<D, d, R, d, 1>;
 
 public:
   LocalRaviartThomasFiniteElementFamily()
     : BaseType([](const auto& geometry_type, const auto& order) {
+      // Can't figure out why this lock is needed, but for some reasons without it we are not thread-safe
+      static std::mutex mutex;
+      std::lock_guard<std::mutex> DXTC_UNUSED(guard)(mutex);
       return LocalRaviartThomasFiniteElementFactory<D, d, R>::create(geometry_type, order);
     })
   {}

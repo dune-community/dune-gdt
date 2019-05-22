@@ -55,7 +55,7 @@ public:
   {}
 
   LocalElementIntegralBilinearForm(typename GenericIntegrand::GenericOrderFunctionType order_function,
-                                   typename GenericIntegrand::GenericEvalauteFunctionType evaluate_function,
+                                   typename GenericIntegrand::GenericEvaluateFunctionType evaluate_function,
                                    const XT::Common::ParameterType& param_type = {},
                                    const int over_integrate = 0)
     : BaseType(param_type)
