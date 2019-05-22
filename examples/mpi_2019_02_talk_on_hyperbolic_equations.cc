@@ -29,7 +29,7 @@
 #include <dune/gdt/local/numerical-fluxes/generic.hh>
 #include <dune/gdt/local/numerical-fluxes/upwind.hh>
 #include <dune/gdt/local/numerical-fluxes/vijayasundaram.hh>
-#include <dune/gdt/local/integrands/elliptic.hh>
+#include <dune/gdt/local/integrands/laplace.hh>
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/interpolations.hh>
 #include <dune/gdt/operators/advection-fv.hh>
@@ -188,7 +188,6 @@ XT::LA::ListVectorArray<V> implicit_euler(const DiscreteFunction<V, GV, m>& init
 GTEST_TEST(MPI201902TalkExamples, instationary_heat_equation)
 {
   using G = ONED_1D;
-  static const size_t d = G::dimension;
   auto grid = XT::Grid::make_cube_grid<G>(0., 1., 1024);
   auto grid_view = grid.leaf_view();
   using GV = decltype(grid_view);
@@ -199,7 +198,7 @@ GTEST_TEST(MPI201902TalkExamples, instationary_heat_equation)
   auto cg_space = make_continuous_lagrange_space(grid_view, 1);
   auto dirichlet_constraints = make_dirichlet_constraints(cg_space, boundary_info);
   auto spatial_op = make_matrix_operator<M>(cg_space, Stencil::element);
-  spatial_op.append(LocalElementIntegralBilinearForm<E>(LocalEllipticIntegrand<E>(1.)));
+  spatial_op.append(LocalElementIntegralBilinearForm<E>(LocalLaplaceIntegrand<E>(1.)));
   spatial_op.append(dirichlet_constraints);
   auto l2_op = make_matrix_operator<M>(cg_space, Stencil::element);
   l2_op.append(LocalElementIntegralBilinearForm<E>(LocalElementProductIntegrand<E>(1.)));
@@ -212,14 +211,14 @@ GTEST_TEST(MPI201902TalkExamples, instationary_heat_equation)
   auto time_loop = [&](const double& T_end, const double& dt) {
     XT::LA::ListVectorArray<V> solution(cg_space.mapper().size(), /*length=*/0, /*reserve=*/std::ceil(T_end / (dt)));
     // initial values
-    solution.append(interpolate<V>(0,
-                                   [](const auto& xx, const auto& /*param*/) {
-                                     if (0.25 <= xx[0] && xx[0] <= 0.5)
-                                       return 1.;
-                                     else
-                                       return 0.;
-                                   },
-                                   cg_space)
+    solution.append(default_interpolation<V>(0,
+                                             [](const auto& xx, const auto& /*param*/) {
+                                               if (0.25 <= xx[0] && xx[0] <= 0.5)
+                                                 return 1.;
+                                               else
+                                                 return 0.;
+                                             },
+                                             cg_space)
                         .dofs()
                         .vector(),
                     {"_t", 0.});
@@ -239,7 +238,7 @@ GTEST_TEST(MPI201902TalkExamples, instationary_heat_equation)
     const BochnerSpace<GV> bochner_space(cg_space, time_points_from_vector_array(solution));
     const auto timdomain_solution = make_discrete_bochner_function(bochner_space, solution);
     for (size_t ii = 0; ii < 100; ++ii) {
-      const double time = ii * (T_end / 100);
+      time = ii * (T_end / 100);
       timdomain_solution.evaluate(time).visualize(XT::Common::Test::get_unique_test_name() + "__dt"
                                                   + XT::Common::to_string(dt) + "_solution_"
                                                   + XT::Common::to_string(ii));
@@ -259,7 +258,6 @@ GTEST_TEST(MPI201902TalkExamples, linear_transport)
   auto grid = XT::Grid::make_cube_grid<G>(0., 1., 1024);
   auto grid_view = XT::Grid::make_periodic_grid_view(grid.leaf_view());
   using GV = decltype(grid_view);
-  using E = XT::Grid::extract_entity_t<GV>;
   using I = XT::Grid::extract_intersection_t<GV>;
 
   auto V_h_0 = make_finite_volume_space(grid_view);
@@ -269,17 +267,17 @@ GTEST_TEST(MPI201902TalkExamples, linear_transport)
                                                   "transport_to_the_right",
                                                   {},
                                                   [&](const auto& /*w*/, const auto& /*param*/) { return 1.; });
-  const NumericalUpwindFlux<d, 1> g(f);
+  const NumericalUpwindFlux<I, d, 1> g(f);
   auto L_h = make_advection_fv_operator<M>(grid_view, g, V_h_0, V_h_0);
 
-  auto w_0 = interpolate<V>(0,
-                            [](const auto& xx, const auto& /*param*/) {
-                              if (0.25 <= xx[0] && xx[0] <= 0.5)
-                                return 1.;
-                              else
-                                return 0.;
-                            },
-                            V_h_0);
+  auto w_0 = default_interpolation<V>(0,
+                                      [](const auto& xx, const auto& /*param*/) {
+                                        if (0.25 <= xx[0] && xx[0] <= 0.5)
+                                          return 1.;
+                                        else
+                                          return 0.;
+                                      },
+                                      V_h_0);
 
   // explicit, the right choice
   const double T_end = 1.;
@@ -304,7 +302,6 @@ GTEST_TEST(MPI201902TalkExamples, burgers)
   auto grid = XT::Grid::make_cube_grid<G>(0., 1., 1024);
   auto grid_view = XT::Grid::make_periodic_grid_view(grid.leaf_view());
   using GV = decltype(grid_view);
-  using E = XT::Grid::extract_entity_t<GV>;
   using I = XT::Grid::extract_intersection_t<GV>;
 
   auto V_h_0 = make_finite_volume_space(grid_view);
@@ -314,14 +311,14 @@ GTEST_TEST(MPI201902TalkExamples, burgers)
                                                   "burgers",
                                                   {},
                                                   [&](const auto& w, const auto& /*param*/) { return w; });
-  const NumericalUpwindFlux<d, 1> g(f);
+  const NumericalUpwindFlux<I, d, 1> g(f);
   auto L_h = make_advection_fv_operator<M>(grid_view, g, V_h_0, V_h_0);
 
-  auto w_0 = interpolate<V>(3,
-                            [&](const auto& xx, const auto& /*mu*/) {
-                              return std::exp(-std::pow(xx[0] - 0.33, 2) / (2 * std::pow(0.075, 2)));
-                            },
-                            V_h_0);
+  auto w_0 = default_interpolation<V>(3,
+                                      [&](const auto& xx, const auto& /*mu*/) {
+                                        return std::exp(-std::pow(xx[0] - 0.33, 2) / (2 * std::pow(0.075, 2)));
+                                      },
+                                      V_h_0);
 
   // explicit
   const double T_end = 1.;
@@ -342,7 +339,6 @@ GTEST_TEST(MPI201902TalkExamples, linear_transport__central_differences)
   auto grid = XT::Grid::make_cube_grid<G>(0., 1., 16);
   auto grid_view = XT::Grid::make_periodic_grid_view(grid.leaf_view());
   using GV = decltype(grid_view);
-  using E = XT::Grid::extract_entity_t<GV>;
   using I = XT::Grid::extract_intersection_t<GV>;
 
   auto V_h_0 = make_finite_volume_space(grid_view);
@@ -352,20 +348,20 @@ GTEST_TEST(MPI201902TalkExamples, linear_transport__central_differences)
                                                   "transport_to_the_right",
                                                   {},
                                                   [&](const auto& /*w*/, const auto& /*param*/) { return 1.; });
-  const GenericNumericalFlux<d, 1> g(
-      f, [&](const auto& w_minus, const auto& w_plus, const auto& n, const auto& /*param*/) {
+  const GenericNumericalFlux<I, d, 1> g(
+      f, [&](const auto&, const auto&, const auto& w_minus, const auto& w_plus, const auto& n, const auto& /*param*/) {
         return 0.5 * (f.evaluate(w_minus) + f.evaluate(w_plus)) * n;
       });
   auto L_h = make_advection_fv_operator<M>(grid_view, g, V_h_0, V_h_0);
 
-  auto w_0 = interpolate<V>(0,
-                            [](const auto& xx, const auto& /*param*/) {
-                              if (0.25 <= xx[0] && xx[0] <= 0.5)
-                                return 1.;
-                              else
-                                return 0.;
-                            },
-                            V_h_0);
+  auto w_0 = default_interpolation<V>(0,
+                                      [](const auto& xx, const auto& /*param*/) {
+                                        if (0.25 <= xx[0] && xx[0] <= 0.5)
+                                          return 1.;
+                                        else
+                                          return 0.;
+                                      },
+                                      V_h_0);
 
   // explicit, the right choice
   const double T_end = 1.;
@@ -392,10 +388,11 @@ GTEST_TEST(MPI201902TalkExamples, 2d_euler)
   auto grid = XT::Grid::make_cube_grid<G>(-1., 1., 128);
   auto grid_view = XT::Grid::make_periodic_grid_view(grid.leaf_view());
   using GV = decltype(grid_view);
+  using I = XT::Grid::extract_intersection_t<GV>;
 
   auto V_h_0 = make_finite_volume_space<m>(grid_view);
 
-  const NumericalVijayasundaramFlux<d, m> g(
+  const NumericalVijayasundaramFlux<I, d, m> g(
       f,
       /*flux_eigen_decomposition=*/[&](const auto& /*f*/, const auto& w, const auto& n, const auto&
                                        /*param*/) {
@@ -405,15 +402,15 @@ GTEST_TEST(MPI201902TalkExamples, 2d_euler)
       });
   auto L_h = make_advection_fv_operator<M>(grid_view, g, V_h_0, V_h_0);
 
-  auto w_0 = interpolate<V>(0,
-                            [&](const auto& xx, const auto& /*mu*/) {
-                              if (XT::Common::FloatCmp::ge(xx, DomainType(-0.5))
-                                  && XT::Common::FloatCmp::le(xx, DomainType(0)))
-                                return euler_tools.conservative(/*density=*/4., /*velocity=*/0., /*pressure=*/1.6);
-                              else
-                                return euler_tools.conservative(/*density=*/1., /*velocity=*/0., /*pressure=*/0.4);
-                            },
-                            V_h_0);
+  auto w_0 = default_interpolation<V>(
+      0,
+      [&](const auto& xx, const auto& /*mu*/) {
+        if (XT::Common::FloatCmp::ge(xx, DomainType(-0.5)) && XT::Common::FloatCmp::le(xx, DomainType(0)))
+          return euler_tools.conservative(/*density=*/4., /*velocity=*/0., /*pressure=*/1.6);
+        else
+          return euler_tools.conservative(/*density=*/1., /*velocity=*/0., /*pressure=*/0.4);
+      },
+      V_h_0);
 
   const double T_end = 1.;
   const double dt = estimate_dt_for_hyperbolic_system(grid_view, w_0, f);
@@ -437,6 +434,7 @@ GTEST_TEST(MPI201902TalkExamples, burgers_p1_unstable)
   auto grid = XT::Grid::make_cube_grid<G>(0., 1., 128);
   auto grid_view = XT::Grid::make_periodic_grid_view(grid.leaf_view());
   using GV = decltype(grid_view);
+  using I = XT::Grid::extract_intersection_t<GV>;
 
   const DiscontinuousLagrangeSpace<GV> V_h_1(grid_view, 1);
 
@@ -445,15 +443,15 @@ GTEST_TEST(MPI201902TalkExamples, burgers_p1_unstable)
                                                   "burgers",
                                                   {},
                                                   [&](const auto& w, const auto& /*param*/) { return w; });
-  const NumericalUpwindFlux<d, 1> g(f);
+  const NumericalUpwindFlux<I, d, 1> g(f);
   // unstable DG operator
   const AdvectionDgOperator<M, GV> L_h(grid_view, g, V_h_1, V_h_1, XT::Grid::ApplyOn::NoIntersections<GV>(), 0., 0.);
 
-  auto w_0 = interpolate<V>(3,
-                            [&](const auto& xx, const auto& /*mu*/) {
-                              return std::exp(-std::pow(xx[0] - 0.33, 2) / (2 * std::pow(0.075, 2)));
-                            },
-                            V_h_1);
+  auto w_0 = default_interpolation<V>(3,
+                                      [&](const auto& xx, const auto& /*mu*/) {
+                                        return std::exp(-std::pow(xx[0] - 0.33, 2) / (2 * std::pow(0.075, 2)));
+                                      },
+                                      V_h_1);
 
   const double T_end = 1.;
   const double fv_dt = estimate_dt_for_hyperbolic_system(grid_view, w_0, f);
@@ -469,13 +467,14 @@ GTEST_TEST(MPI201902TalkExamples, burgers_shock_capturing)
   auto grid = XT::Grid::make_cube_grid<G>(0., 1., 16u);
   auto grid_view = XT::Grid::make_periodic_grid_view(grid.leaf_view());
   using GV = decltype(grid_view);
+  using I = XT::Grid::extract_intersection_t<GV>;
 
   const XT::Functions::GenericFunction<1, d, 1> f(2,
                                                   [&](const auto& w, const auto& /*param*/) { return 0.5 * w * w; },
                                                   "burgers",
                                                   {},
                                                   [&](const auto& w, const auto& /*param*/) { return w; });
-  const NumericalEngquistOsherFlux<d, 1> g(f);
+  const NumericalEngquistOsherFlux<I, d, 1> g(f);
 
   auto perform_simulation = [&](const int p, const std::string& prefix, const double& CFL_factor = 0.99) {
     const DiscontinuousLagrangeSpace<GV> V_h_p(grid_view, p);
@@ -483,11 +482,11 @@ GTEST_TEST(MPI201902TalkExamples, burgers_shock_capturing)
     // stabilized DG operator
     const AdvectionDgOperator<M, GV> L_h(grid_view, g, V_h_p, V_h_p);
 
-    auto w_0 = interpolate<V>(3,
-                              [&](const auto& xx, const auto& /*mu*/) {
-                                return std::exp(-std::pow(xx[0] - 0.33, 2) / (2 * std::pow(0.075, 2)));
-                              },
-                              V_h_p);
+    auto w_0 = default_interpolation<V>(3,
+                                        [&](const auto& xx, const auto& /*mu*/) {
+                                          return std::exp(-std::pow(xx[0] - 0.33, 2) / (2 * std::pow(0.075, 2)));
+                                        },
+                                        V_h_p);
 
     const double T_end = 1.;
     const double fv_dt = estimate_dt_for_hyperbolic_system(grid_view, w_0, f);

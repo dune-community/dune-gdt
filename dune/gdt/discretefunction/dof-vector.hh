@@ -26,7 +26,7 @@ class ConstDofVector
 {
   static_assert(XT::LA::is_vector<Vector>::value, "");
 
-  using ThisType = ConstDofVector<Vector, GridView>;
+  using ThisType = ConstDofVector;
 
 public:
   using VectorType = Vector;
@@ -67,7 +67,7 @@ class DofVector : public ConstDofVector<Vector, GridView>
 {
   static_assert(XT::LA::is_vector<Vector>::value, "");
 
-  using ThisType = DofVector<Vector, GridView>;
+  using ThisType = DofVector;
   using BaseType = ConstDofVector<Vector, GridView>;
 
 public:

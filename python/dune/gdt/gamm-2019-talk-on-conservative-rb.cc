@@ -48,7 +48,15 @@
 using namespace Dune;
 using namespace Dune::GDT;
 
+#if HAVE_DUNE_ALUGRID
 using G = ALU_2D_SIMPLEX_CONFORMING;
+#elif HAVE_DUNE_UGGRID || HAVE_UG
+using G = UG_2D;
+#else
+#  warning Falling back to cubic grid, results will not be reproduced but similar!
+using G = YASP_2D_EQUIDISTANT_OFFSET;
+#endif
+
 using GP = XT::Grid::GridProvider<G>;
 using GV = typename G::LeafGridView;
 using E = XT::Grid::extract_entity_t<GV>;
@@ -301,49 +309,7 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
   py::module::import("dune.xt.la");
   py::module::import("dune.xt.grid");
   py::module::import("dune.xt.functions");
-
-  Dune::XT::Common::bindings::addbind_exceptions(m);
-  Dune::XT::Common::bindings::add_initialization(m, "dune.gdt");
-
-  py::class_<XT::Functions::Spe10::Model1Function<E, d, d, double>,
-             XT::Functions::GridFunctionInterface<E, d, d, double>>
-      spe10_function(m, "Spe10Model1Function", "Spe10Model1Function");
-  spe10_function.def(py::init([](const FieldVector<double, d>& lower_left, const FieldVector<double, d>& upper_right) {
-                       return new XT::Functions::Spe10::Model1Function<E, d, d, double>(
-                           XT::Data::spe10_model1_filename(), lower_left, upper_right);
-                     }),
-                     "lower_left"_a,
-                     "upper_right"_a);
-
-  py::class_<XT::Functions::FunctionAsGridFunctionWrapper<E, 1, 1, double>,
-             XT::Functions::GridFunctionInterface<E, 1, 1, double>>
-      scalar_wrapper(m, "ScalarFunctionAsGridFunctionWrapper", "ScalarFunctionAsGridFunctionWrapper");
-  scalar_wrapper.def(py::init([](const XT::Functions::FunctionInterface<d>& func) {
-                       return new XT::Functions::FunctionAsGridFunctionWrapper<E, 1, 1, double>(func);
-                     }),
-                     py::keep_alive<1, 2>(),
-                     "scalar_function"_a);
-  py::class_<XT::Functions::FunctionAsGridFunctionWrapper<E, d, d, double>,
-             XT::Functions::GridFunctionInterface<E, d, d, double>>
-      matrix_wrapper(m, "MatrixFunctionAsGridFunctionWrapper", "MatrixFunctionAsGridFunctionWrapper");
-  matrix_wrapper.def(py::init([](const XT::Functions::FunctionInterface<d, d, d>& func) {
-                       return new XT::Functions::FunctionAsGridFunctionWrapper<E, d, d, double>(func);
-                     }),
-                     py::keep_alive<1, 2>(),
-                     "matrix_function"_a);
-
-  m.def("function_to_grid_function",
-        [](XT::Functions::FunctionInterface<d>& func) {
-          return std::make_unique<XT::Functions::FunctionAsGridFunctionWrapper<E, 1, 1, double>>(func);
-        },
-        py::keep_alive<0, 1>(),
-        "scalar_function"_a);
-  m.def("function_to_grid_function",
-        [](XT::Functions::FunctionInterface<d, d, d>& func) {
-          return std::make_unique<XT::Functions::FunctionAsGridFunctionWrapper<E, d, d, double>>(func);
-        },
-        py::keep_alive<0, 1>(),
-        "matrix_function"_a);
+  py::module::import("dune.gdt.discretefunction");
 
   m.def("visualize",
         [](GP& grid, XT::Functions::FunctionInterface<d>& func, const std::string& filename) {
@@ -403,24 +369,6 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
                 "order"_a = 1);
   rtn_space.def_property_readonly("dimDomain", [](RTN& /*self*/) { return d; });
   rtn_space.def_property_readonly("num_DoFs", [](RTN& self) { return self.mapper().size(); });
-
-  py::class_<ScalarDF> scalar_discrete_function(m, "ScalarDiscreteFunction", "ScalarDiscreteFunction");
-  scalar_discrete_function.def(
-      py::init([](DG& space, V& vec, const std::string& name) { return new ScalarDF(space, vec, name); }),
-      "dg_space"_a,
-      "DoF_vector"_a,
-      "name"_a);
-  scalar_discrete_function.def(
-      "visualize", [](ScalarDF& self, const std::string filename) { self.visualize(filename); }, "filename"_a);
-
-  py::class_<VectorDF> vector_discrete_function(m, "VectorDiscreteFunction", "VectorDiscreteFunction");
-  vector_discrete_function.def(
-      py::init([](RTN& space, V& vec, const std::string& name) { return new VectorDF(space, vec, name); }),
-      "rtn_space"_a,
-      "DoF_vector"_a,
-      "name"_a);
-  vector_discrete_function.def(
-      "visualize", [](VectorDF& self, const std::string filename) { self.visualize(filename); }, "filename"_a);
 
   m.def("make_discrete_function",
         [](DG& dg_space, V& vec, const std::string& name) { return ScalarDF(dg_space, vec, name); },

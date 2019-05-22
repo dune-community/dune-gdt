@@ -59,7 +59,7 @@ namespace GDT {
 template <class GV, size_t r = 1, class R = double>
 class DiscontinuousLagrangeSpace : public SpaceInterface<GV, r, 1, R>
 {
-  using ThisType = DiscontinuousLagrangeSpace<GV, r, R>;
+  using ThisType = DiscontinuousLagrangeSpace;
   using BaseType = SpaceInterface<GV, r, 1, R>;
 
 public:
@@ -75,7 +75,7 @@ private:
   using GlobalBasisImplementation = DefaultGlobalBasis<GridViewType, r, 1, R>;
 
 public:
-  DiscontinuousLagrangeSpace(GridViewType grd_vw, const int order)
+  DiscontinuousLagrangeSpace(GridViewType grd_vw, const int order = 1)
     : grid_view_(grd_vw)
     , order_(order)
     , local_finite_elements_(std::make_unique<const LocalLagrangeFiniteElementFamily<D, d, R, r>>())
@@ -85,7 +85,21 @@ public:
     this->update_after_adapt();
   }
 
-  DiscontinuousLagrangeSpace(const ThisType&) = default;
+  DiscontinuousLagrangeSpace(const ThisType& other)
+    : grid_view_(other.grid_view_)
+    , order_(other.order_)
+    , local_finite_elements_(std::make_unique<const LocalLagrangeFiniteElementFamily<D, d, R, r>>())
+    , mapper_(nullptr)
+    , basis_(nullptr)
+  {
+    this->update_after_adapt();
+  }
+
+  BaseType* copy() const override final
+  {
+    return new ThisType(*this);
+  }
+
   DiscontinuousLagrangeSpace(ThisType&&) = default;
 
   ThisType& operator=(const ThisType&) = delete;

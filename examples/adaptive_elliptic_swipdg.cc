@@ -198,8 +198,9 @@ int main(int argc, char* argv[])
 
     // problem
     const Test::ESV2007DiffusionProblem<GV> problem;
-    const auto& df = problem.diffusion_factor.as_grid_function<E>();
-    const auto& dt = problem.diffusion_tensor.as_grid_function<E>();
+    const XT::Functions::ConstantFunction<d> diff_factor(1.);
+    const auto& df = diff_factor.as_grid_function<E>();
+    const auto& dt = problem.diffusion.as_grid_function<E>();
     const auto& f = problem.force.as_grid_function<E>();
     const auto& boundary_info = problem.boundary_info;
 

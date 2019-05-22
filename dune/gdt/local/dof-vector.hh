@@ -88,7 +88,7 @@ class ConstLocalDofVector
   , public XT::Grid::ElementBoundObject<XT::Grid::extract_entity_t<GridView>>
 {
 
-  using ThisType = ConstLocalDofVector<Vector, GridView, Traits>;
+  using ThisType = ConstLocalDofVector;
   using BaseType = XT::LA::VectorInterface<Traits>;
 
 public:
@@ -196,7 +196,7 @@ template <class Vector, class GridView>
 class LocalDofVector : public ConstLocalDofVector<Vector, GridView, internal::LocalDofVectorTraits<Vector, GridView>>
 {
 
-  using ThisType = LocalDofVector<Vector, GridView>;
+  using ThisType = LocalDofVector;
   using BaseType = ConstLocalDofVector<Vector, GridView, internal::LocalDofVectorTraits<Vector, GridView>>;
 
 public:

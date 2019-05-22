@@ -41,7 +41,7 @@ class LocalElementFunctionalInterface : public XT::Common::ParametricInterface
 {
   static_assert(XT::Grid::is_entity<Element>::value, "");
 
-  using ThisType = LocalElementFunctionalInterface<Element, range_dim, range_dim_cols, RangeField>;
+  using ThisType = LocalElementFunctionalInterface;
 
 public:
   using E = Element;
@@ -100,7 +100,7 @@ class LocalIntersectionFunctionalInterface : public XT::Common::ParametricInterf
 {
   static_assert(XT::Grid::is_intersection<Intersection>::value, "");
 
-  using ThisType = LocalIntersectionFunctionalInterface<Intersection, range_dim, range_dim_cols, RangeField>;
+  using ThisType = LocalIntersectionFunctionalInterface;
 
 public:
   using IntersectionType = Intersection;

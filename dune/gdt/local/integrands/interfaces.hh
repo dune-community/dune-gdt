@@ -26,6 +26,20 @@ namespace Dune {
 namespace GDT {
 
 
+// forwards (required for operator+, include are below)
+template <class E, size_t r, size_t rC, class R, class F>
+class LocalUnaryElementIntegrandSum;
+
+template <class E, size_t t_r, size_t t_RC, class TF, class F, size_t a_r, size_t a_rC, class AF>
+class LocalBinaryElementIntegrandSum;
+
+template <class I, size_t r, size_t rC, class R, class F>
+class LocalBinaryIntersectionIntegrandSum;
+
+template <class I, size_t t_r, size_t t_rC, class TF, class F, size_t a_r, size_t a_rC, class AF>
+class LocalQuaternaryIntersectionIntegrandSum;
+
+
 /**
  * Interface for integrands in integrals over grid elements, which depend on one argument only (usually the test basis
  * in an integral-based functional).
@@ -45,7 +59,7 @@ class LocalUnaryElementIntegrandInterface
 {
   static_assert(XT::Grid::is_entity<Element>::value, "");
 
-  using ThisType = LocalUnaryElementIntegrandInterface<Element, range_dim, range_dim_cols, RangeField, Field>;
+  using ThisType = LocalUnaryElementIntegrandInterface;
 
 public:
   using E = Element;
@@ -124,14 +138,7 @@ class LocalBinaryElementIntegrandInterface
 {
   static_assert(XT::Grid::is_entity<Element>::value, "");
 
-  using ThisType = LocalBinaryElementIntegrandInterface<Element,
-                                                        test_range_dim,
-                                                        test_range_dim_cols,
-                                                        TestRangeField,
-                                                        Field,
-                                                        ansatz_range_dim,
-                                                        ansatz_range_dim_cols,
-                                                        AnsatzRangeField>;
+  using ThisType = LocalBinaryElementIntegrandInterface;
 
 public:
   using E = Element;
@@ -216,8 +223,7 @@ class LocalBinaryIntersectionIntegrandInterface
 {
   static_assert(XT::Grid::is_intersection<Intersection>::value, "");
 
-  using ThisType =
-      LocalBinaryIntersectionIntegrandInterface<Intersection, range_dim, range_dim_cols, RangeField, Field>;
+  using ThisType = LocalBinaryIntersectionIntegrandInterface;
 
 public:
   using typename XT::Grid::IntersectionBoundObject<Intersection>::IntersectionType;
@@ -295,14 +301,7 @@ class LocalQuaternaryIntersectionIntegrandInterface
 {
   static_assert(XT::Grid::is_intersection<Intersection>::value, "");
 
-  using ThisType = LocalQuaternaryIntersectionIntegrandInterface<Intersection,
-                                                                 test_range_dim,
-                                                                 test_range_dim_cols,
-                                                                 TestRangeField,
-                                                                 Field,
-                                                                 ansatz_range_dim,
-                                                                 ansatz_range_dim_cols,
-                                                                 AnsatzRangeField>;
+  using ThisType = LocalQuaternaryIntersectionIntegrandInterface;
 
 public:
   using typename XT::Grid::IntersectionBoundObject<Intersection>::IntersectionType;
@@ -333,6 +332,11 @@ public:
   virtual ~LocalQuaternaryIntersectionIntegrandInterface() = default;
 
   virtual std::unique_ptr<ThisType> copy() const = 0;
+
+  LocalQuaternaryIntersectionIntegrandSum<I, t_r, t_rC, TR, F, a_r, a_rC, AR> operator+(const ThisType& other) const
+  {
+    return LocalQuaternaryIntersectionIntegrandSum<I, t_r, t_rC, TR, F, a_r, a_rC, AR>(*this, other);
+  }
 
   /**
    * Returns the polynomial order of the integrand, given the bases.
@@ -390,12 +394,37 @@ public:
     return {result_in_in, result_in_out, result_out_in, result_out_out};
   } // ... apply(...)
 
-private:
-  std::unique_ptr<IntersectionType> intersection_;
+protected:
+  void ensure_size_and_clear_results(const LocalTestBasisType& test_basis_inside,
+                                     const LocalAnsatzBasisType& ansatz_basis_inside,
+                                     const LocalTestBasisType& test_basis_outside,
+                                     const LocalAnsatzBasisType& ansatz_basis_outside,
+                                     DynamicMatrix<F>& result_in_in,
+                                     DynamicMatrix<F>& result_in_out,
+                                     DynamicMatrix<F>& result_out_in,
+                                     DynamicMatrix<F>& result_out_out,
+                                     const XT::Common::Parameter& param) const
+  {
+    const size_t rows_in = test_basis_inside.size(param);
+    const size_t rows_out = test_basis_outside.size(param);
+    const size_t cols_in = ansatz_basis_inside.size(param);
+    const size_t cols_out = ansatz_basis_outside.size(param);
+    const auto ensure_size_and_clear = [](auto& m, const auto& r, const auto& c) {
+      if (m.rows() < r || m.cols() < c)
+        m.resize(r, c);
+      m *= 0;
+    };
+    ensure_size_and_clear(result_in_in, rows_in, cols_in);
+    ensure_size_and_clear(result_in_out, rows_in, cols_out);
+    ensure_size_and_clear(result_out_in, rows_out, cols_in);
+    ensure_size_and_clear(result_out_out, rows_out, cols_out);
+  } // ... ensure_size_and_clear_results(...)
 }; // class LocalQuaternaryIntersectionIntegrandInterface
 
 
 } // namespace GDT
 } // namespace Dune
+
+#include "combined.hh"
 
 #endif // DUNE_GDT_LOCAL_INTEGRANDS_INTERFACES_HH

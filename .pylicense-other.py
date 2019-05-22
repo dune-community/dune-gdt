@@ -24,4 +24,4 @@ include_patterns = ('*.txt', '*.cmake', '*.py', '*.sh', '*.bash', '*.dgf', '*.ms
                     '*.gitignore', '*.mailmap', '*.gitattributes', '*gitignore-*', '*stamp-vc', '*dune.module',
                     '*Doxylocal', '*.clang-format', '*COPYING-CMAKE-SCRIPTS', '*README', '*LICENSE', '*mainpage',
                     '*switch-build_dir', '*dune-xt-common.pc.in', '*CMakeLists.txt')
-exclude_patterns = ('*config.h.cmake', '*.vcsetup*', '*builder_definitions.cmake', '*.ci/shared/*)
+exclude_patterns = ('*config.h.cmake', '*.vcsetup*', '*builder_definitions.cmake', '*.ci/shared/*')
