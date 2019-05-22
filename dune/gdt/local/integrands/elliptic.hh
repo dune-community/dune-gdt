@@ -11,16 +11,19 @@
 //   René Milk       (2017)
 //   Tobias Leibner  (2014, 2016 - 2018)
 
+#warning This header is deprecated, use and include <dune/gdt/local/integrands/laplace.hh> instead!
+
 #ifndef DUNE_GDT_LOCAL_INTEGRANDS_ELLIPTIC_HH
-#define DUNE_GDT_LOCAL_INTEGRANDS_ELLIPTIC_HH
+#  define DUNE_GDT_LOCAL_INTEGRANDS_ELLIPTIC_HH
 
-#include <dune/xt/common/memory.hh>
-#include <dune/xt/la/container/eye-matrix.hh>
-#include <dune/xt/functions/base/function-as-grid-function.hh>
-#include <dune/xt/functions/constant.hh>
-#include <dune/xt/functions/interfaces/grid-function.hh>
+#  include <dune/xt/common/deprecated.hh>
+#  include <dune/xt/common/memory.hh>
+#  include <dune/xt/la/container/eye-matrix.hh>
+#  include <dune/xt/functions/base/function-as-grid-function.hh>
+#  include <dune/xt/functions/constant.hh>
+#  include <dune/xt/functions/interfaces/grid-function.hh>
 
-#include "interfaces.hh"
+#  include "interfaces.hh"
 
 namespace Dune {
 namespace GDT {
@@ -31,7 +34,8 @@ namespace GDT {
  * `lambda(x) * {[kappa(x) \nabla phi(x)] * \nabla psi(x)}` for all combinations of phi and psi in the bases.
  */
 template <class E, size_t r = 1, class F = double>
-class LocalEllipticIntegrand : public LocalBinaryElementIntegrandInterface<E, r, 1, F, F, r, 1, F>
+class DXT_DEPRECATED_MSG("Use LocalLaplaceIntegrand instead (10.08.2019)!") LocalEllipticIntegrand
+  : public LocalBinaryElementIntegrandInterface<E, r, 1, F, F, r, 1, F>
 {
   using BaseType = LocalBinaryElementIntegrandInterface<E, r, 1, F, F, r, 1, F>;
   using ThisType = LocalEllipticIntegrand;

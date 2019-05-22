@@ -73,9 +73,8 @@ public:
   using typename BaseType::F;
   using typename BaseType::V;
 
-  using NumericalFluxType = NumericalFluxInterface<d, m, F>;
-
   using I = XT::Grid::extract_intersection_t<SGV>;
+  using NumericalFluxType = NumericalFluxInterface<I, d, m, F>;
   using BoundaryTreatmentByCustomNumericalFluxOperatorType =
       LocalAdvectionDgBoundaryTreatmentByCustomNumericalFluxOperator<I, V, SGV, m, F, F, RGV, V>;
   using BoundaryTreatmentByCustomExtrapolationOperatorType =
@@ -304,7 +303,7 @@ template <class MatrixType, class SGV, size_t m, class F, class RGV>
 std::enable_if_t<XT::LA::is_matrix<MatrixType>::value, AdvectionDgOperator<MatrixType, SGV, m, RGV>>
 make_advection_dg_operator(
     const SGV& assembly_grid_view,
-    const NumericalFluxInterface<SGV::dimension, m, F>& numerical_flux,
+    const NumericalFluxInterface<XT::Grid::extract_intersection_t<SGV>, SGV::dimension, m, F>& numerical_flux,
     const SpaceInterface<SGV, m, 1, F>& source_space,
     const SpaceInterface<RGV, m, 1, F>& range_space,
     const XT::Grid::IntersectionFilter<SGV>& periodicity_exception = XT::Grid::ApplyOn::NoIntersections<SGV>(),

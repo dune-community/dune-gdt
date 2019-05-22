@@ -22,8 +22,22 @@ using namespace Dune;
 using namespace Dune::GDT::Test;
 
 
-using ESV2007Table1Test = ESV2007DiffusionTest<ALU_2D_SIMPLEX_CONFORMING>;
+#if SIMPLEXGRID_2D_AVAILABLE
+
+using ESV2007Table1Test = ESV2007DiffusionTest<SIMPLEXGRID_2D>;
 TEST_F(ESV2007Table1Test, columns_1_to_5)
+{
+  this->space_type_ = "dg_p1";
+  const auto actual_results = this->run();
+  const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
+  XT::Test::check_eoc_study_for_success(expected_results, actual_results);
+}
+
+#endif // SIMPLEXGRID_2D_AVAILABLE
+
+
+using NearlyESV2007Table1ButWithCubicGridTest = ESV2007DiffusionTest<CUBEGRID_2D>;
+TEST_F(NearlyESV2007Table1ButWithCubicGridTest, columns_1_to_5)
 {
   this->space_type_ = "dg_p1";
   const auto actual_results = this->run();
