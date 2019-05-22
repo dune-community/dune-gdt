@@ -6,8 +6,11 @@
 #      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 #          with "runtime exception" (http://www.dune-project.org/license.html)
 # Authors:
-#   René Fritze (2018)
+#   Felix Schindler (2018)
+#   René Fritze     (2018)
+#   Tobias Leibner  (2018)
 # ~~~
 
-add_subdirectory(dune)
-dxt_add_python_tests()
+dune_pybindxi_add_module(_discretefunction_1d EXCLUDE_FROM_ALL ${header} discretefunction_1d.cc)
+dune_pybindxi_add_module(_discretefunction_2d EXCLUDE_FROM_ALL ${header} discretefunction_2d.cc)
+dune_pybindxi_add_module(_discretefunction_3d EXCLUDE_FROM_ALL ${header} discretefunction_3d.cc)

@@ -5,27 +5,30 @@
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Felix Schindler (2018)
+//   Felix Schindler (2019)
 
 #include "config.h"
 
-#include <dune/pybindxi/pybind11.h>
-#include <dune/pybindxi/stl.h>
-#include <python/dune/xt/common/bindings.hh>
-#include <python/dune/xt/common/fvector.hh>
-#include <python/dune/xt/common/exceptions.bindings.hh>
+#if HAVE_DUNE_PYBINDXI
+
+#  include "discretefunction.hh"
 
 
-PYBIND11_MODULE(usercode, m)
+PYBIND11_MODULE(_discretefunction_1d, m)
 {
   namespace py = pybind11;
-  using namespace pybind11::literals;
+  using namespace Dune;
+  using namespace Dune::XT;
+  using namespace Dune::GDT;
 
   py::module::import("dune.xt.common");
   py::module::import("dune.xt.la");
   py::module::import("dune.xt.grid");
   py::module::import("dune.xt.functions");
-  py::module::import("dune.gdt.discretefunction");
 
-  // put your bindings below
-} // PYBIND11_MODULE(usercode, ...)
+  bindings::DiscreteFunction_for_all_vectors_and_grids<LA::AvailableVectorTypes<double>,
+                                                       XT::Grid::Available1dGridTypes>::bind(m);
+}
+
+
+#endif // HAVE_DUNE_PYBINDXI

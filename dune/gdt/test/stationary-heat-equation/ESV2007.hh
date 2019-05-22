@@ -48,8 +48,7 @@ struct ESV2007DiffusionProblem
   // We can only reproduce the results from ESV2007 by using a quadrature of order 3, which we obtain with a p1 DG space
   // and a force of order 2.
   ESV2007DiffusionProblem(int force_order = 2)
-    : diffusion_factor(1)
-    , diffusion_tensor(XT::LA::eye_matrix<XT::Common::FieldMatrix<double, d, d>>(d, d))
+    : diffusion(XT::LA::eye_matrix<XT::Common::FieldMatrix<double, d, d>>(d, d))
     , dirichlet(0)
     , neumann(0)
     , force(force_order)
@@ -75,8 +74,7 @@ struct ESV2007DiffusionProblem
       EXPECT_TRUE(false) << "Please add a specialization for '" << XT::Common::Typename<G>::value << "'!";
   } // ... make_initial_grid(...)
 
-  const XT::Functions::ConstantFunction<d> diffusion_factor;
-  const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor;
+  const XT::Functions::ConstantFunction<d, d, d> diffusion;
   const XT::Functions::ConstantFunction<d> dirichlet;
   const XT::Functions::ConstantFunction<d> neumann;
   const XT::Functions::ESV2007::Testcase1Force<d, 1> force;
@@ -144,14 +142,9 @@ protected:
     return problem.boundary_info;
   }
 
-  const FF& diffusion_factor() const override final
+  const FT& diffusion() const override final
   {
-    return problem.diffusion_factor.template as_grid_function<E>();
-  }
-
-  const FT& diffusion_tensor() const override final
-  {
-    return problem.diffusion_tensor.template as_grid_function<E>();
+    return problem.diffusion.template as_grid_function<E>();
   }
 
   const FF& force() const override final
