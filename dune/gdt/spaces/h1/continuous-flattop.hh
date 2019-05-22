@@ -5,25 +5,24 @@
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Felix Schindler (2018)
-//   René Fritze     (2018)
+//   Felix Schindler (2019)
 
-#ifndef DUNE_GDT_SPACES_H1_CONTINUOUS_LAGRANGE_HH
-#define DUNE_GDT_SPACES_H1_CONTINUOUS_LAGRANGE_HH
+#ifndef DUNE_GDT_SPACES_H1_CONTINUOUS_FLATTOP_HH
+#define DUNE_GDT_SPACES_H1_CONTINUOUS_FLATTOP_HH
 
 #include <memory>
-#include <vector>
+//#include <vector>
 
-#include <dune/common/typetraits.hh>
+//#include <dune/common/typetraits.hh>
 
-#include <dune/geometry/type.hh>
+//#include <dune/geometry/type.hh>
 
 #include <dune/grid/common/gridview.hh>
 
-#include <dune/xt/common/exceptions.hh>
-#include <dune/xt/grid/type_traits.hh>
+//#include <dune/xt/common/exceptions.hh>
+//#include <dune/xt/grid/type_traits.hh>
 
-#include <dune/gdt/local/finite-elements/lagrange.hh>
+#include <dune/gdt/local/finite-elements/flattop.hh>
 #include <dune/gdt/spaces/basis/default.hh>
 #include <dune/gdt/spaces/mapper/continuous.hh>
 #include <dune/gdt/spaces/interface.hh>
@@ -33,23 +32,12 @@ namespace GDT {
 
 
 /**
- * The following dimensions/orders/elements are tested to work:
- *
- * - 1d: orders 1, 2 work
- * - 2d: orders 1, 2 work on simplices, cubes and mixed simplices and cubes
- * - 3d: orders 1, 2 work on simplices, cubes, prisms
- *
- * The following dimensions/orders/elements are tested to fail:
- *
- * - 3d: pyramids (jacobians seem to be incorrect)
- * - 3d: mixed simplices and cubes (intersections are non-conforming)
- *
  * \sa make_local_lagrange_finite_element
  */
 template <class GV, size_t r = 1, class R = double>
-class ContinuousLagrangeSpace : public SpaceInterface<GV, r, 1, R>
+class ContinuousFlatTopSpace : public SpaceInterface<GV, r, 1, R>
 {
-  using ThisType = ContinuousLagrangeSpace;
+  using ThisType = ContinuousFlatTopSpace;
   using BaseType = SpaceInterface<GV, r, 1, R>;
 
 public:
@@ -65,18 +53,18 @@ private:
   using GlobalBasisImplementation = DefaultGlobalBasis<GridViewType, r, 1, R>;
 
 public:
-  ContinuousLagrangeSpace(GridViewType grd_vw, const int order)
+  ContinuousFlatTopSpace(GridViewType grd_vw, const int fe_order, const D& overlap = 0.5)
     : grid_view_(grd_vw)
-    , fe_order_(order)
-    , local_finite_elements_(std::make_unique<LocalLagrangeFiniteElementFamily<D, d, R, r>>())
+    , fe_order_(fe_order)
+    , local_finite_elements_(std::make_unique<LocalFlatTopFiniteElementFamily<D, d, R, r>>(overlap))
     , mapper_(nullptr)
     , basis_(nullptr)
   {
     this->update_after_adapt();
   }
 
-  ContinuousLagrangeSpace(const ThisType&) = default;
-  ContinuousLagrangeSpace(ThisType&&) = default;
+  ContinuousFlatTopSpace(const ThisType&) = default;
+  ContinuousFlatTopSpace(ThisType&&) = default;
 
   ThisType& operator=(const ThisType&) = delete;
   ThisType& operator=(ThisType&&) = delete;
@@ -115,7 +103,7 @@ public:
 
   int max_polorder() const override final
   {
-    return fe_order_;
+    return fe_order_ + 1;
   }
 
   bool continuous(const int diff_order) const override final
@@ -138,7 +126,7 @@ public:
     // check: the mapper does not work for non-conforming intersections
     if (d == 3 && grid_view_.indexSet().types(0).size() != 1)
       DUNE_THROW(Exceptions::space_error,
-                 "in ContinuousLagrangeSpace: non-conforming intersections are not (yet) "
+                 "in ContinuousFlatTopSpace: non-conforming intersections are not (yet) "
                  "supported, and more than one element type in 3d leads to non-conforming intersections!");
     // create/update mapper ...
     if (mapper_)
@@ -156,35 +144,35 @@ public:
 private:
   const GridViewType grid_view_;
   const int fe_order_;
-  int min_polorder_;
-  int max_polorder_;
-  std::unique_ptr<const LocalLagrangeFiniteElementFamily<D, d, R, r>> local_finite_elements_;
+  std::unique_ptr<const LocalFlatTopFiniteElementFamily<D, d, R, r>> local_finite_elements_;
   std::unique_ptr<MapperImplementation> mapper_;
   std::unique_ptr<GlobalBasisImplementation> basis_;
-}; // class ContinuousLagrangeSpace
+}; // class ContinuousFlatTopSpace
 
 
 /**
- * \sa ContinuousLagrangeSpace
+ * \sa ContinuousFlatTopSpace
  */
 template <size_t r, class GV, class R = double>
-ContinuousLagrangeSpace<GV, r, R> make_continuous_lagrange_space(GV grid_view, const int order)
+ContinuousFlatTopSpace<GV, r, R>
+make_continuous_flattop_space(GV grid_view, const int order, const double& overlap = 0.5)
 {
-  return ContinuousLagrangeSpace<GV, r, R>(grid_view, order);
+  return ContinuousFlatTopSpace<GV, r, R>(grid_view, order, overlap);
 }
 
 
 /**
- * \sa ContinuousLagrangeSpace
+ * \sa ContinuousFlatTopSpace
  */
 template <class GV, class R = double>
-ContinuousLagrangeSpace<GV, 1, R> make_continuous_lagrange_space(GV grid_view, const int order)
+ContinuousFlatTopSpace<GV, 1, R>
+make_continuous_flattop_space(GV grid_view, const int order, const double& overlap = 0.5)
 {
-  return ContinuousLagrangeSpace<GV, 1, R>(grid_view, order);
+  return ContinuousFlatTopSpace<GV, 1, R>(grid_view, order, overlap);
 }
 
 
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_SPACES_H1_CONTINUOUS_LAGRANGE_HH
+#endif // DUNE_GDT_SPACES_H1_CONTINUOUS_FLATTOP_HH

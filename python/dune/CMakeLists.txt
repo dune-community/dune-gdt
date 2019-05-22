@@ -9,5 +9,4 @@
 #   René Fritze (2018)
 # ~~~
 
-add_subdirectory(dune)
-dxt_add_python_tests()
+add_subdirectory(gdt)
