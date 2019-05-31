@@ -167,8 +167,8 @@ public:
 
   DomainDecomposition(const std::array<unsigned int, G::dimension> num_macro_elements_per_dim,
                       const size_t num_refinements_per_subdomain,
-                      const FieldVector<typename G::ctype, G::dimension> ll,
-                      const FieldVector<typename G::ctype, G::dimension> ur)
+                      const XT::Common::FieldVector<typename G::ctype, G::dimension> ll,
+                      const XT::Common::FieldVector<typename G::ctype, G::dimension> ur)
     : macro_grid_(XT::Grid::make_cube_grid<G>(ll, ur, num_macro_elements_per_dim))
     , dd_grid(macro_grid_, num_refinements_per_subdomain, false, true)
     , vtk_writer_(dd_grid)
@@ -331,16 +331,8 @@ PYBIND11_MODULE(usercode, m)
 
   domain_decomposition.def(py::init([](const std::array<unsigned int, G::dimension> num_macro_elements_per_dim,
                                        const size_t num_refinements_per_subdomain,
-                                       const double lole,
-                                       const double upri) {
-                             // TODO: MAKE IT POSSIBLE TO USE AN std::array for NUM_MACRO_ELEMENTS_PER_DIM for every
-                             // mesh.
-
-                             // TODO: PUT THE FOLLOWING TWO LINES INTO THE CONSTRUCTER OF THE BINDINGS. check whether
-                             // there are bindings for fvector that are initialized with a initializer list. If not,
-                             // write them !!
-                             const FieldVector<typename G::ctype, G::dimension> ll({0., 0.});
-                             const FieldVector<typename G::ctype, G::dimension> rr({5., 1.});
+                                       const double ll,
+                                       const double rr) {
                              return new DomainDecomposition(
                                  num_macro_elements_per_dim, num_refinements_per_subdomain, ll, rr);
                            }),
@@ -351,8 +343,15 @@ PYBIND11_MODULE(usercode, m)
 
   domain_decomposition.def(py::init([](const std::array<unsigned int, G::dimension> num_macro_elements_per_dim,
                                        const size_t num_refinements_per_subdomain,
-                                       const FieldVector<typename G::ctype, G::dimension> ll,
-                                       const FieldVector<typename G::ctype, G::dimension> rr) {
+                                       const std::array<typename G::ctype, G::dimension> lole,
+                                       const std::array<typename G::ctype, G::dimension> upri) {
+                             // TODO: PUT THE FOLLOWING TWO LINES INTO THE CONSTRUCTER OF THE BINDINGS. check whether
+                             // there are bindings for fvector that are initialized with a initializer list. If not,
+                             // write them !!
+
+                             // TODO: so far this only works for d = 2
+                             const XT::Common::FieldVector<typename G::ctype, G::dimension> ll({lole[0], lole[1]});
+                             const XT::Common::FieldVector<typename G::ctype, G::dimension> rr({upri[0], upri[1]});
                              return new DomainDecomposition(
                                  num_macro_elements_per_dim, num_refinements_per_subdomain, ll, rr);
                            }),
@@ -425,11 +424,28 @@ PYBIND11_MODULE(usercode, m)
         [](XT::Functions::FunctionInterface<d>& diffusion_factor,
            DomainDecomposition& domain_decomposition,
            const size_t ss,
-           const std::string space_type) {
+           const std::string space_type,
+           const std::string diffusion_tensor_type) {
           DUNE_THROW_IF(ss >= domain_decomposition.dd_grid.num_subdomains(),
                         XT::Common::Exceptions::index_out_of_range,
                         "ss = " << ss << "\n   domain_decomposition.dd_grid.num_subdomains() = "
                                 << domain_decomposition.dd_grid.num_subdomains());
+
+          //          if (diffusion_tensor_type == "identity") {
+          //            const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor_id(
+          //                XT::Common::from_string<typename XT::Functions::ConstantFunction<d, d, d>::RangeReturnType>(
+          //                    "[1 0 0; 0 1 0; 0 0 1]"));
+          //            const auto diffusion_tensor = diffusion_tensor_id.as_grid_function<Global_E>();
+          //          } else if (diffusion_tensor_type == "spe10") {
+          //            const XT::Common::FieldVector<double, d>& lower_left({0, 0});
+          //            const XT::Common::FieldVector<double, d>& upper_right({5, 1});
+          //            const XT::Functions::Spe10::Model1Function<Global_E, d, d, double> diffusion_tensor(
+          //                XT::Data::spe10_model1_filename(), lower_left, upper_right);
+          //          } else
+          //            DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
+          //                       "diffusion_tensor_type = " << diffusion_tensor_type << "\n   has to be 'identity' or
+          //                       'spe10'!");
+
           const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor_id(
               XT::Common::from_string<typename XT::Functions::ConstantFunction<d, d, d>::RangeReturnType>(
                   "[1 0 0; 0 1 0; 0 0 1]"));
@@ -438,6 +454,7 @@ PYBIND11_MODULE(usercode, m)
           //          const XT::Common::FieldVector<double, d>& upper_right({5,1});
           //          const XT::Functions::Spe10::Model1Function<Global_E, d, d, double> diffusion_tensor(
           //                XT::Data::spe10_model1_filename(), lower_left, upper_right);
+
           std::unique_ptr<M> subdomain_matrix;
           for (auto&& macro_element : elements(domain_decomposition.dd_grid.macro_grid_view())) {
             if (domain_decomposition.dd_grid.subdomain(macro_element) == ss) {
@@ -469,7 +486,8 @@ PYBIND11_MODULE(usercode, m)
         "diffusion_factor"_a,
         "domain_decomposition"_a,
         "ss"_a,
-        "space_type"_a = "discontinuous_lagrange");
+        "space_type"_a = "discontinuous_lagrange",
+        "diffusion_tensor_type"_a = "identity");
 
   m.def("assemble_local_l2_matrix",
         [](DomainDecomposition& domain_decomposition, const size_t ss, const std::string space_type) {
@@ -993,7 +1011,7 @@ PYBIND11_MODULE(usercode, m)
                     using SpaceType = GDT::SpaceInterface<GV>;
                     XT::Grid::NormalBasedBoundaryInfo<XT::Grid::extract_intersection_t<GV>> macro_boundary_info;
                     macro_boundary_info.register_new_normal(outer_normal, new XT::Grid::DirichletBoundary());
-                    DirichletConstraints<I, SpaceType> constraints(macro_boundary_info, *inner_subdomain_space);
+                    ExtendedDirichletConstraints<I, SpaceType> constraints(macro_boundary_info, *inner_subdomain_space);
                     const auto& coupling = domain_decomposition.dd_grid.coupling(
                         inside_macro_element, -1, outside_macro_element, -1, true);
                     DynamicVector<size_t> global_indices_in(inner_subdomain_space->mapper().max_local_size());
