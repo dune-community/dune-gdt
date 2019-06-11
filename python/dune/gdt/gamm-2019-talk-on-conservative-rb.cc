@@ -323,22 +323,27 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
                      "lower_left"_a,
                      "upper_right"_a);
 
-  py::class_<XT::Functions::FunctionAsGridFunctionWrapper<E, 1, 1, double>,
-             XT::Functions::GridFunctionInterface<E, 1, 1, double>>
-      scalar_wrapper(m, "ScalarFunctionAsGridFunctionWrapper", "ScalarFunctionAsGridFunctionWrapper");
-  scalar_wrapper.def(py::init([](const XT::Functions::FunctionInterface<d>& func) {
-                       return new XT::Functions::FunctionAsGridFunctionWrapper<E, 1, 1, double>(func);
-                     }),
-                     py::keep_alive<1, 2>(),
-                     "scalar_function"_a);
-  py::class_<XT::Functions::FunctionAsGridFunctionWrapper<E, d, d, double>,
-             XT::Functions::GridFunctionInterface<E, d, d, double>>
-      matrix_wrapper(m, "MatrixFunctionAsGridFunctionWrapper", "MatrixFunctionAsGridFunctionWrapper");
-  matrix_wrapper.def(py::init([](const XT::Functions::FunctionInterface<d, d, d>& func) {
-                       return new XT::Functions::FunctionAsGridFunctionWrapper<E, d, d, double>(func);
-                     }),
-                     py::keep_alive<1, 2>(),
-                     "matrix_function"_a);
+  // these might already be defined
+  XT::Common::bindings::try_register(m, [](auto& m_) {
+    py::class_<XT::Functions::FunctionAsGridFunctionWrapper<E, 1, 1, double>,
+               XT::Functions::GridFunctionInterface<E, 1, 1, double>>
+        scalar_wrapper(m_, "ScalarFunctionAsGridFunctionWrapper", "ScalarFunctionAsGridFunctionWrapper");
+    scalar_wrapper.def(py::init([](const XT::Functions::FunctionInterface<d>& func) {
+                         return new XT::Functions::FunctionAsGridFunctionWrapper<E, 1, 1, double>(func);
+                       }),
+                       py::keep_alive<1, 2>(),
+                       "scalar_function"_a);
+  });
+  XT::Common::bindings::try_register(m, [](auto& m_) {
+    py::class_<XT::Functions::FunctionAsGridFunctionWrapper<E, d, d, double>,
+               XT::Functions::GridFunctionInterface<E, d, d, double>>
+        matrix_wrapper(m_, "MatrixFunctionAsGridFunctionWrapper", "MatrixFunctionAsGridFunctionWrapper");
+    matrix_wrapper.def(py::init([](const XT::Functions::FunctionInterface<d, d, d>& func) {
+                         return new XT::Functions::FunctionAsGridFunctionWrapper<E, d, d, double>(func);
+                       }),
+                       py::keep_alive<1, 2>(),
+                       "matrix_function"_a);
+  });
 
   m.def("function_to_grid_function",
         [](XT::Functions::FunctionInterface<d>& func) {
