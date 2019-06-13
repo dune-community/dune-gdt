@@ -24,14 +24,14 @@ namespace Dune {
 namespace GDT {
 
 
-template <class SpaceType, class VectorType, class MomentBasis>
+template <class SpaceType, class VectorType, class MomentBasis, bool reconstruction>
 class LocalEntropicHessianInverter : public XT::Grid::ElementFunctor<typename SpaceType::GridViewType>
 {
   using GridViewType = typename SpaceType::GridViewType;
   using BaseType = XT::Grid::ElementFunctor<GridViewType>;
   using EntityType = typename GridViewType::template Codim<0>::Entity;
   using IndexSetType = typename GridViewType::IndexSet;
-  using EntropyFluxType = EntropyBasedFluxEntropyCoordsFunction<GridViewType, MomentBasis>;
+  using EntropyFluxType = EntropyBasedFluxEntropyCoordsFunction<GridViewType, MomentBasis, reconstruction>;
   using RangeFieldType = typename EntropyFluxType::RangeFieldType;
   using LocalVectorType = typename EntropyFluxType::VectorType;
   static const size_t dimFlux = EntropyFluxType::dimFlux;
@@ -125,6 +125,7 @@ private:
 
 template <class MomentBasisImp,
           class SpaceImp,
+          bool reconstruction,
           class MatrixType = typename XT::LA::Container<typename MomentBasisImp::RangeFieldType>::MatrixType>
 class EntropicHessianInverter
   : public OperatorInterface<MatrixType, typename SpaceImp::GridViewType, MomentBasisImp::dimRange, 1>
@@ -137,7 +138,8 @@ public:
   using SpaceType = SpaceImp;
   using SourceSpaceType = SpaceImp;
   using RangeSpaceType = SpaceImp;
-  using EntropyFluxType = EntropyBasedFluxEntropyCoordsFunction<typename SpaceType::GridViewType, MomentBasis>;
+  using EntropyFluxType =
+      EntropyBasedFluxEntropyCoordsFunction<typename SpaceType::GridViewType, MomentBasis, reconstruction>;
   using RangeFieldType = typename MomentBasis::RangeFieldType;
   using LocalVectorType = typename EntropyFluxType::VectorType;
 
@@ -178,7 +180,7 @@ public:
                              VectorType& alpha_update,
                              const XT::Common::Parameter& param) const
   {
-    LocalEntropicHessianInverter<SpaceType, VectorType, MomentBasis> local_hessian_inverter(
+    LocalEntropicHessianInverter<SpaceType, VectorType, MomentBasis, reconstruction> local_hessian_inverter(
         space_, alpha, u_update, alpha_update, analytical_flux_, min_acceptable_density_, param, filename_);
     auto walker = XT::Grid::Walker<typename SpaceType::GridViewType>(space_.grid_view());
     walker.append(local_hessian_inverter);

@@ -263,7 +263,6 @@ public:
                                const size_t num_output_steps,
                                const bool save_solution,
                                const bool visualize,
-                               const bool with_half_steps,
                                const bool write_discrete,
                                const bool write_exact,
                                const std::string prefix,
@@ -278,7 +277,6 @@ public:
                                      num_output_steps,
                                      save_solution,
                                      visualize,
-                                     with_half_steps,
                                      write_discrete,
                                      write_exact,
                                      prefix,
@@ -317,7 +315,7 @@ public:
         try {
           op_.apply(u_tmp_.dofs().vector(), stages_k_[ii].dofs().vector(), t + actual_dt * c_[ii]);
         } catch (const Dune::MathError& e) {
-          std::cout << "Caught error " << e.what() << std::endl;
+          //          std::cout << "Caught error " << e.what() << std::endl;
           mixed_error = 1e10;
           skip_error_computation = true;
           time_step_scale_factor = 0.5;

@@ -101,7 +101,7 @@ struct HyperbolicEntropicCoordsMnDiscretization
     const auto boundary_values_u = problem.boundary_values();
 
     using AnalyticalFluxType = typename ProblemType::FluxType;
-    using EntropyFluxType = EntropyBasedFluxEntropyCoordsFunction<GV, MomentBasis>;
+    using EntropyFluxType = EntropyBasedFluxEntropyCoordsFunction<GV, MomentBasis, TestCaseType::reconstruction>;
     using OldEntropyFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
     auto flux = problem.flux();
     auto* entropy_flux = dynamic_cast<OldEntropyFluxType*>(flux.get());
@@ -166,7 +166,7 @@ struct HyperbolicEntropicCoordsMnDiscretization
     // ******************** choose flux and rhs operator and timestepper ******************************************
 
     using AdvectionOperatorType = AdvectionFvOperator<MatrixType, GV, dimRange>;
-    using HessianInverterType = EntropicHessianInverter<MomentBasis, SpaceType>;
+    using HessianInverterType = EntropicHessianInverter<MomentBasis, SpaceType, TestCaseType::reconstruction>;
 #if 0
     using ReconstructionOperatorType = PointwiseLinearReconstructionNoCharOperator<
                                                                              GV,
@@ -237,10 +237,11 @@ struct HyperbolicEntropicCoordsMnDiscretization
             const AnalyticalFluxType& /*flux*/,
             const StateType& /*u*/,
             const XT::Common::Parameter& /*param*/) {
-          //          return
-          //          boundary_values_alpha.evaluate(intersection.geometry().global(xx_in_reference_intersection_coordinates));
-          return boundary_kinetic_fluxes.evaluate(
-              intersection.geometry().global(xx_in_reference_intersection_coordinates));
+          return TestCaseType::reconstruction
+                     ? boundary_kinetic_fluxes.evaluate(
+                           intersection.geometry().global(xx_in_reference_intersection_coordinates))
+                     : boundary_values_alpha.evaluate(
+                           intersection.geometry().global(xx_in_reference_intersection_coordinates));
         };
     XT::Grid::ApplyOn::NonPeriodicBoundaryIntersections<GV> filter;
     advection_operator.append(boundary_lambda, {}, filter);
@@ -255,7 +256,8 @@ struct HyperbolicEntropicCoordsMnDiscretization
       t_end = problem.t_end();
 
     if (!filename.empty())
-      filename += "_minmod_";
+      filename += "_";
+    filename += "minmod_";
     filename += ProblemType::static_id();
     filename += "_grid_" + grid_config["num_elements"];
     filename += "_tend_" + XT::Common::to_string(t_end);
@@ -317,11 +319,9 @@ struct HyperbolicEntropicCoordsMnDiscretization
                       num_output_steps,
                       false,
                       true,
-                      false,
                       true,
                       false,
                       filename,
-                      //                      *basis_functions->visualizer(),
                       *visualizer,
                       basis_functions->stringifier());
     auto end_time = std::chrono::steady_clock::now();
@@ -360,14 +360,14 @@ struct HyperbolicEntropicCoordsMnTest
   void run()
   {
     auto norms = HyperbolicEntropicCoordsMnDiscretization<TestCaseType>::run(
-                     10,
-                     -1,
+                     1,
+                     0,
                      TestCaseType::RealizabilityLimiterChooserType::quad_order,
                      TestCaseType::RealizabilityLimiterChooserType::quad_refinements,
                      "",
                      2,
                      TestCaseType::t_end,
-                     "test_dormandprince",
+                     "test_kinetic",
                      Dune::GDT::is_full_moment_basis<typename TestCaseType::MomentBasis>::value)
                      .first;
     const double l1norm = norms[0];

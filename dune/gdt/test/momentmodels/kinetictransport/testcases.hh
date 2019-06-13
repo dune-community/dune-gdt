@@ -238,11 +238,11 @@ struct SourceBeamPnTestCase
 
 
 // SourceBeam Mn
-template <class MomentBasisImp, bool reconstruct>
+template <class MomentBasisImp, bool reconstruct, bool kinetic_scheme>
 struct SourceBeamMnExpectedResults;
 
-template <bool reconstruct>
-struct SourceBeamMnExpectedResults<LegendreMomentBasis<double, double, 7>, reconstruct>
+template <bool reconstruct, bool kinetic_scheme>
+struct SourceBeamMnExpectedResults<LegendreMomentBasis<double, double, 7>, reconstruct, kinetic_scheme>
 {
   static constexpr double l1norm = reconstruct ? 0.28535354296013105 : 0.28535354295945792;
   static constexpr double l2norm = reconstruct ? 0.37115145999473981 : 0.36265752973701221;
@@ -251,7 +251,7 @@ struct SourceBeamMnExpectedResults<LegendreMomentBasis<double, double, 7>, recon
 };
 
 template <bool reconstruct>
-struct SourceBeamMnExpectedResults<HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, reconstruct>
+struct SourceBeamMnExpectedResults<HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, reconstruct, false>
 {
   static constexpr double l1norm = reconstruct ? 0.33140398330545301 : 0.33140398330533227;
   static constexpr double l2norm = reconstruct ? 0.45584140597017353 : 0.44485191601010715;
@@ -260,7 +260,16 @@ struct SourceBeamMnExpectedResults<HatFunctionMomentBasis<double, 1, double, 8, 
 };
 
 template <bool reconstruct>
-struct SourceBeamMnExpectedResults<PartialMomentBasis<double, 1, double, 8, 1, 1>, reconstruct>
+struct SourceBeamMnExpectedResults<HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, reconstruct, true>
+{
+  static constexpr double l1norm = reconstruct ? 370.93823722076462 : 367.56820428572496;
+  static constexpr double l2norm = reconstruct ? 235.97872826934559 : 235.22990290508343;
+  static constexpr double linfnorm = reconstruct ? 210.82343000666447 : 209.02263326452186;
+  static constexpr double tol = 1e-9;
+};
+
+template <bool reconstruct, bool kinetic_scheme>
+struct SourceBeamMnExpectedResults<PartialMomentBasis<double, 1, double, 8, 1, 1>, reconstruct, kinetic_scheme>
 {
   static constexpr double l1norm = reconstruct ? 0.33140398337368543 : 0.3314039833756291;
   static constexpr double l2norm = reconstruct ? 0.45583354074069732 : 0.44484887610818585;
@@ -268,14 +277,14 @@ struct SourceBeamMnExpectedResults<PartialMomentBasis<double, 1, double, 8, 1, 1
   static constexpr double tol = 1e-9;
 };
 
-template <class GridImp, class MomentBasisImp, bool reconstruct>
+template <class GridImp, class MomentBasisImp, bool reconstruct, bool kinetic_scheme = false>
 struct SourceBeamMnTestCase : public SourceBeamPnTestCase<GridImp, MomentBasisImp, reconstruct>
 {
   using BaseType = SourceBeamPnTestCase<GridImp, MomentBasisImp, reconstruct>;
   using typename BaseType::DiscreteFunctionType;
   using typename BaseType::GridViewType;
   using ProblemType = SourceBeamMn<GridViewType, MomentBasisImp>;
-  using ExpectedResultsType = SourceBeamMnExpectedResults<MomentBasisImp, reconstruct>;
+  using ExpectedResultsType = SourceBeamMnExpectedResults<MomentBasisImp, reconstruct, kinetic_scheme>;
   using RealizabilityLimiterChooserType =
       RealizabilityLimiterChooser<GridViewType, MomentBasisImp, typename ProblemType::FluxType, DiscreteFunctionType>;
 };

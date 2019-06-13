@@ -26,7 +26,7 @@ namespace Dune {
 namespace GDT {
 
 
-template <class GridViewImp, class MomentBasisImp>
+template <class GridViewImp, class MomentBasisImp, bool fluxes_precomputed>
 class EntropyBasedFluxEntropyCoordsFunction
   : public XT::Functions::FluxFunctionInterface<XT::Grid::extract_entity_t<GridViewImp>,
                                                 MomentBasisImp::dimRange,
@@ -130,22 +130,19 @@ public:
     return std::make_unique<Localfunction>(*implementation_);
   }
 
-  StateType evaluate_kinetic_flux_precomputed(const StateType& flux_1,
-                                              const StateType& flux_2,
-                                              const DomainType& n_ij,
-                                              const size_t dd) const
-  {
-    return (flux_1 + flux_2) * n_ij[dd];
-  } // StateType evaluate_kinetic_flux(...)
-
   StateType evaluate_kinetic_flux(const E& /*inside_entity*/,
                                   const E& /*outside_entity*/,
-                                  const StateType& alpha_i,
-                                  const StateType& alpha_j,
+                                  //                                  const StateType& alpha_i,
+                                  //                                  const StateType& alpha_j,
+                                  const StateType& flux_or_alpha_i,
+                                  const StateType& flux_or_alpha_j,
                                   const DomainType& n_ij,
                                   const size_t dd) const
   {
-    return implementation_->evaluate_kinetic_flux_with_alphas(alpha_i, alpha_j, n_ij, dd);
+    if (fluxes_precomputed)
+      return (flux_or_alpha_i + flux_or_alpha_j) * n_ij[dd];
+    else
+      return implementation_->evaluate_kinetic_flux_with_alphas(flux_or_alpha_i, flux_or_alpha_j, n_ij, dd);
   } // StateType evaluate_kinetic_flux(...)
 
   const MomentBasis& basis_functions() const
