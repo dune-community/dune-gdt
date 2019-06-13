@@ -161,7 +161,8 @@ public:
     , use_entity_cache_(true)
     , entity_caches_(index_set_.size(0), LocalCacheType(cache_size))
     , mutexes_(index_set_.size(0))
-    , implementation_(basis_functions, tau, epsilon_gamma, chi, xi, r_sequence, k_0, k_max, epsilon)
+    , implementation_(std::make_shared<ImplementationType>(
+          basis_functions, tau, epsilon_gamma, chi, xi, r_sequence, k_0, k_max, epsilon))
   {}
 
   void enable_thread_cache()
@@ -303,13 +304,13 @@ public:
   virtual std::unique_ptr<LocalFunctionType> local_function() const override final
   {
     return std::make_unique<Localfunction>(
-        index_set_, entity_caches_, use_thread_cache_, use_entity_cache_, mutexes_, implementation_);
+        index_set_, entity_caches_, use_thread_cache_, use_entity_cache_, mutexes_, *implementation_);
   }
 
   virtual std::unique_ptr<Localfunction> derived_local_function() const
   {
     return std::make_unique<Localfunction>(
-        index_set_, entity_caches_, use_thread_cache_, use_entity_cache_, mutexes_, implementation_);
+        index_set_, entity_caches_, use_thread_cache_, use_entity_cache_, mutexes_, *implementation_);
   }
 
   StateType evaluate_kinetic_flux(const E& inside_entity,
@@ -325,21 +326,20 @@ public:
     const auto alpha_i = local_func->get_alpha(u_i, true)->first;
     local_func->bind(outside_entity);
     const auto alpha_j = local_func->get_alpha(u_j, true)->first;
-    return implementation_.evaluate_kinetic_flux_with_alphas(alpha_i, alpha_j, n_ij, dd);
+    return implementation_->evaluate_kinetic_flux_with_alphas(alpha_i, alpha_j, n_ij, dd);
   } // StateType evaluate_kinetic_flux(...)
 
   const MomentBasis& basis_functions() const
   {
-    return implementation_.basis_functions();
+    return implementation_->basis_functions();
   }
 
-private:
   const IndexSetType& index_set_;
   bool use_thread_cache_;
   bool use_entity_cache_;
   mutable std::vector<LocalCacheType> entity_caches_;
   mutable std::vector<std::mutex> mutexes_;
-  ImplementationType implementation_;
+  std::shared_ptr<ImplementationType> implementation_;
 };
 
 template <class GridViewImp, class MomentBasisImp>

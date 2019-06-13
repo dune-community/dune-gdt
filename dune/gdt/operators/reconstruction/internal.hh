@@ -117,6 +117,55 @@ constexpr size_t EigenvectorWrapperBase<AnalyticalFluxType, MatrixImp, VectorImp
 template <class AnalyticalFluxType, class MatrixImp, class VectorImp>
 constexpr size_t EigenvectorWrapperBase<AnalyticalFluxType, MatrixImp, VectorImp>::dimRange;
 
+// This class does not perform any computations, use this class if you want to reconstruct in ordinary coordinates
+// instead of characteristic coordinates
+template <class AnalyticalFluxType, class VectorImp>
+class DummyEigenVectorWrapper : public EigenvectorWrapperBase<AnalyticalFluxType, int, VectorImp>
+{
+  using BaseType = EigenvectorWrapperBase<AnalyticalFluxType, int, VectorImp>;
+
+public:
+  using typename BaseType::DomainType;
+  using typename BaseType::E;
+  using typename BaseType::MatrixType;
+  using typename BaseType::VectorType;
+
+  DummyEigenVectorWrapper(const AnalyticalFluxType& analytical_flux, const bool flux_is_affine)
+    : BaseType(analytical_flux, flux_is_affine)
+  {}
+
+  virtual void apply_eigenvectors(const size_t /*dd*/, const VectorType& u, VectorType& ret) const override final
+  {
+    ret = u;
+  }
+  virtual void
+  apply_inverse_eigenvectors(const size_t /*dd*/, const VectorType& u, VectorType& ret) const override final
+  {
+    ret = u;
+  }
+
+  virtual void compute_eigenvectors(const E& /*entity*/,
+                                    const DomainType& /*x_local*/,
+                                    const VectorType& /*u*/,
+                                    const XT::Common::Parameter& /*param*/) const override final
+  {}
+
+  virtual void compute_eigenvectors_impl(const E& /*entity*/,
+                                         const DomainType& /*x_local*/,
+                                         const VectorType& /*u*/,
+                                         const XT::Common::Parameter& /*param*/) const override final
+  {}
+
+  virtual const MatrixType& eigenvectors(const size_t /*dd*/) const override final
+  {
+    DUNE_THROW(Dune::NotImplemented, "This class does not provide eigenvectors!");
+    return zero_;
+  }
+
+private:
+  static const MatrixType zero_ = 0.;
+};
+
 template <class AnalyticalFluxType,
           class MatrixType = XT::LA::CommonDenseMatrix<typename AnalyticalFluxType::R>,
           class VectorType = FieldVector<typename AnalyticalFluxType::RangeFieldType, AnalyticalFluxType::rC>>

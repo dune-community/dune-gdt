@@ -105,6 +105,7 @@ public:
   using DynamicRangeType = DynamicVector<RangeFieldType>;
   using BasisValuesMatrixType = XT::LA::CommonDenseMatrix<RangeFieldType>;
   using AlphaReturnType = std::pair<VectorType, std::pair<DomainType, RangeFieldType>>;
+  using QuadraturePointsValuesType = std::vector<RangeFieldType>;
 
   explicit EntropyBasedFluxImplementationUnspecializedBase(const MomentBasis& basis_functions,
                                                            const RangeFieldType tau,
@@ -177,7 +178,7 @@ public:
     return evaluate_with_alpha(alpha);
   }
 
-  virtual RangeReturnType evaluate_with_alpha(const VectorType& alpha) const
+  virtual RangeReturnType evaluate_with_alpha(const DomainType& alpha) const
   {
     RangeReturnType ret(0.);
     auto& work_vecs = working_storage();
@@ -202,7 +203,7 @@ public:
     jacobian_with_alpha(alpha, result);
   }
 
-  virtual void jacobian_with_alpha(const VectorType& alpha, DynamicDerivativeRangeType& result) const
+  virtual void jacobian_with_alpha(const DomainType& alpha, DynamicDerivativeRangeType& result) const
   {
     thread_local auto H = XT::Common::make_unique<MatrixType>();
     calculate_hessian(alpha, M_, *H);
@@ -223,8 +224,8 @@ public:
     evaluate_kinetic_flux_with_alphas(alpha_i, alpha_j, n_ij, dd);
   } // DomainType evaluate_kinetic_flux(...)
 
-  DomainType evaluate_kinetic_flux_with_alphas(const VectorType& alpha_i,
-                                               const VectorType& alpha_j,
+  DomainType evaluate_kinetic_flux_with_alphas(const DomainType& alpha_i,
+                                               const DomainType& alpha_j,
                                                const FluxDomainType& n_ij,
                                                const size_t dd) const
 
@@ -254,9 +255,8 @@ public:
 
   // returns (alpha, (actual_u, r)), where r is the regularization parameter and actual_u the regularized u
   virtual std::unique_ptr<AlphaReturnType>
-  get_alpha(const DomainType& u, const VectorType& alpha_in, const bool regularize) const = 0;
+  get_alpha(const DomainType& u, const DomainType& alpha_in, const bool regularize) const = 0;
 
-protected:
   // get permutation instead of sorting directly to be able to sort two vectors the same way
   // see
   // https://stackoverflow.com/questions/17074324/how-can-i-sort-two-vectors-in-the-same-way-with-criteria-that-uses-only-one-of
@@ -439,7 +439,7 @@ protected:
     return work_vec;
   }
 
-  void calculate_scalar_products(const VectorType& beta_in,
+  void calculate_scalar_products(const DomainType& beta_in,
                                  const BasisValuesMatrixType& M,
                                  std::vector<RangeFieldType>& scalar_products) const
   {
@@ -472,7 +472,7 @@ protected:
   }
 
   // calculate ret = \int (exp(beta_in * m))
-  RangeFieldType calculate_scalar_integral(const VectorType& beta_in, const BasisValuesMatrixType& M) const
+  RangeFieldType calculate_scalar_integral(const DomainType& beta_in, const BasisValuesMatrixType& M) const
   {
     auto& work_vec = working_storage();
     calculate_scalar_products(beta_in, M, work_vec);
@@ -481,10 +481,10 @@ protected:
   }
 
   // calculate ret = \int (m1 exp(beta_in * m2))
-  void calculate_vector_integral(const VectorType& beta_in,
+  void calculate_vector_integral(const DomainType& beta_in,
                                  const BasisValuesMatrixType& M1,
                                  const BasisValuesMatrixType& M2,
-                                 VectorType& ret,
+                                 DomainType& ret,
                                  bool same_beta = false,
                                  bool only_first_component = false) const
   {
@@ -571,7 +571,17 @@ protected:
     } // ii
   } // void calculate_A_Binv(...)
 
-  void calculate_hessian(const VectorType& alpha,
+  void apply_inverse_hessian(const DomainType& alpha, const DomainType& u, DomainType& Hinv_u) const
+  {
+    thread_local auto H = XT::Common::make_unique<MatrixType>();
+    calculate_hessian(alpha, M_, *H);
+    XT::LA::cholesky(*H);
+    thread_local DomainType tmp_vec;
+    XT::LA::solve_lower_triangular(*H, tmp_vec, u);
+    XT::LA::solve_lower_triangular_transposed(*H, Hinv_u, tmp_vec);
+  }
+
+  void calculate_hessian(const DomainType& alpha,
                          const BasisValuesMatrixType& M,
                          MatrixType& H,
                          const bool use_work_vec_data = false) const
@@ -629,12 +639,12 @@ protected:
         J_dd.set_entry(mm, nn, J_dd.get_entry(nn, mm));
   } // void calculate_J(...)
 
-  void change_basis(const VectorType& beta_in,
-                    VectorType& v_k,
+  void change_basis(const DomainType& beta_in,
+                    DomainType& v_k,
                     BasisValuesMatrixType& P_k,
                     MatrixType& T_k,
-                    VectorType& g_k,
-                    VectorType& beta_out,
+                    DomainType& g_k,
+                    DomainType& beta_out,
                     MatrixType& H) const
   {
     calculate_hessian(beta_in, P_k, H);
@@ -683,12 +693,15 @@ class EntropyBasedFluxImplementation : public EntropyBasedFluxImplementationUnsp
   using ThisType = EntropyBasedFluxImplementation;
 
 public:
+  using BaseType::basis_dimRange;
   using BaseType::dimFlux;
   using typename BaseType::AlphaReturnType;
+  using typename BaseType::BasisDomainType;
   using typename BaseType::BasisValuesMatrixType;
   using typename BaseType::DomainType;
   using typename BaseType::MatrixType;
   using typename BaseType::MomentBasis;
+  using typename BaseType::QuadraturePointsValuesType;
   using typename BaseType::RangeFieldType;
   using typename BaseType::VectorType;
 
@@ -707,9 +720,119 @@ public:
     XT::LA::eye_matrix(*T_minus_one_);
   }
 
+  std::unique_ptr<AlphaReturnType> get_alpha(const DomainType& u) const
+  {
+    return get_alpha(u, get_isotropic_alpha(u), true);
+  }
+
+  DomainType get_u(const DomainType& alpha) const
+  {
+    DomainType ret;
+    calculate_vector_integral(alpha, M_, M_, ret);
+    return ret;
+  }
+
+  static RangeFieldType minmod(const RangeFieldType& first_slope, const RangeFieldType& second_slope)
+  {
+    RangeFieldType ret = 0.;
+    if (std::signbit(first_slope) == std::signbit(second_slope)) // check for equal sign
+      ret = std::abs(first_slope) < std::abs(second_slope) ? first_slope : second_slope;
+    return ret;
+  }
+
+  static RangeFieldType maxmod(const RangeFieldType first_slope, const RangeFieldType second_slope)
+  {
+    RangeFieldType ret(0.);
+    if (std::signbit(first_slope) == std::signbit(second_slope)) // check for equal sign
+      ret = (std::abs(first_slope) < std::abs(second_slope)) ? second_slope : first_slope;
+    return ret;
+  }
+
+  static RangeFieldType superbee(const RangeFieldType first_slope, const RangeFieldType second_slope)
+  {
+    const RangeFieldType first_minmod = minmod(first_slope, second_slope * 2.);
+    const RangeFieldType second_minmod = minmod(first_slope * 2., second_slope);
+    return maxmod(first_minmod, second_minmod);
+  }
+
+  template <class IntersectionType>
+  DomainType calculate_boundary_flux(const DomainType& alpha, const IntersectionType& intersection)
+  {
+    // evaluate exp(alpha^T b(v_i)) at all quadratures points v_i
+    auto& work_vecs = this->working_storage();
+    this->calculate_scalar_products(alpha, M_, work_vecs);
+    this->apply_exponential(work_vecs);
+    const auto dd = intersection.indexInInside() / 2;
+    const auto& n_ij = intersection.centerUnitOuterNormal();
+    DomainType ret(0.);
+    for (size_t ll = 0; ll < quad_points_.size(); ++ll) {
+      const auto position = quad_points_[ll][dd];
+      if (position * n_ij[dd] < 0.) {
+        RangeFieldType factor = work_vecs[ll] * quad_weights_[ll] * position;
+        const auto* basis_ll = &(M_.get_entry_ref(ll, 0.));
+        for (size_t ii = 0; ii < basis_dimRange; ++ii)
+          ret[ii] += basis_ll[ii] * factor;
+      }
+    } // ll
+    return ret;
+  }
+
+  // TODO: Calculates exp(alpha^T b) 2*dim times for each alpha (as it is contained in 2*dim stencils) at the moment.
+  template <class FluxesMapType>
+  void calculate_minmod_density_reconstruction(const FieldVector<DomainType, 3>& alphas,
+                                               FluxesMapType& flux_values,
+                                               const size_t dd) const
+  {
+    // evaluate exp(alpha^T b(v_i)) at all quadratures points v_i for all three alphas
+    thread_local XT::Common::FieldVector<QuadraturePointsValuesType, 3> density_evaluations(
+        QuadraturePointsValuesType(quad_points_.size()));
+    thread_local XT::Common::FieldVector<QuadraturePointsValuesType, 2> reconstructed_values(
+        QuadraturePointsValuesType(quad_points_.size()));
+    for (size_t ii = 0; ii < 3; ++ii) {
+      this->calculate_scalar_products(alphas[ii], M_, density_evaluations[ii]);
+      this->apply_exponential(density_evaluations[ii]);
+      for (size_t ll = 0; ll < quad_points_.size(); ++ll) {
+        if (std::isnan(density_evaluations[ii][ll]) || std::isnan(density_evaluations[ii][ll])) {
+          std::cout << "Wrong val: " << density_evaluations[ii][ll] << " for alpha " << alphas[ii] << std::endl;
+          DUNE_THROW(Dune::MathError, "");
+        }
+      }
+    }
+    // get left and right reconstructed values for each quadrature point v_i
+    auto& vals_left = reconstructed_values[0];
+    auto& vals_right = reconstructed_values[1];
+    for (size_t ll = 0; ll < quad_points_.size(); ++ll) {
+      const auto slope = minmod(density_evaluations[1][ll] - density_evaluations[0][ll],
+                                density_evaluations[2][ll] - density_evaluations[1][ll]);
+      //      const auto slope = superbee(density_evaluations[1][ll] - density_evaluations[0][ll],
+      //                                  density_evaluations[2][ll] - density_evaluations[1][ll]);
+      vals_left[ll] = density_evaluations[1][ll] - 0.5 * slope;
+      vals_right[ll] = density_evaluations[1][ll] + 0.5 * slope;
+    } // ll
+
+    BasisDomainType coord(0.5);
+    coord[dd] = 0;
+    auto& left_flux_value = flux_values[coord];
+    coord[dd] = 1;
+    auto& right_flux_value = flux_values[coord];
+    right_flux_value = left_flux_value = DomainType(0.);
+
+    for (size_t ll = 0; ll < quad_points_.size(); ++ll) {
+      const auto position = quad_points_[ll][dd];
+      RangeFieldType factor = position > 0. ? vals_right[ll] : vals_left[ll];
+      factor *= quad_weights_[ll] * position;
+      auto& val = position > 0. ? right_flux_value : left_flux_value;
+      const auto* basis_ll = &(M_.get_entry_ref(ll, 0.));
+      for (size_t ii = 0; ii < basis_dimRange; ++ii)
+        val[ii] += basis_ll[ii] * factor;
+    } // ll
+    //    std::cout << "right_flux_value, left_flux_value = " << right_flux_value << ", " << left_flux_value <<
+    //    std::endl;
+  } // void calculate_minmod_density_reconstruction(...)
+
   // returns (alpha, (actual_u, r)), where r is the regularization parameter and actual_u the regularized u
   virtual std::unique_ptr<AlphaReturnType>
-  get_alpha(const DomainType& u, const VectorType& alpha_in, const bool regularize) const override final
+  get_alpha(const DomainType& u, const DomainType& alpha_in, const bool regularize) const override final
   {
     auto ret = std::make_unique<AlphaReturnType>();
 
@@ -841,12 +964,12 @@ private:
   using BaseType::calculate_vector_integral;
   using BaseType::get_isotropic_alpha;
 
-  void change_basis(const VectorType& beta_in,
-                    VectorType& v_k,
+  void change_basis(const DomainType& beta_in,
+                    DomainType& v_k,
                     BasisValuesMatrixType& P_k,
                     MatrixType& T_k,
-                    VectorType& g_k,
-                    VectorType& beta_out,
+                    DomainType& g_k,
+                    DomainType& beta_out,
                     MatrixType& H) const
   {
     calculate_hessian(beta_in, P_k, H);
@@ -912,6 +1035,16 @@ public:
                                           const RangeFieldType epsilon)
     : BaseType(basis_functions, tau, epsilon_gamma, chi, xi, r_sequence, k_0, k_max, epsilon)
   {}
+
+  std::unique_ptr<AlphaReturnType> get_alpha(const DomainType& u) const
+  {
+    return get_alpha(u, get_isotropic_alpha(u), true);
+  }
+
+  DomainType get_u(const DomainType& alpha) const
+  {
+    return calculate_vector_integral(alpha, M_, M_);
+  }
 
   // returns (alpha, (actual_u, r)), where r is the regularization parameter and actual_u the regularized u
   virtual std::unique_ptr<AlphaReturnType>
@@ -1233,6 +1366,18 @@ public:
     return basis_functions_;
   }
 
+  std::unique_ptr<AlphaReturnType> get_alpha(const DomainType& u) const
+  {
+    return get_alpha(u, *get_isotropic_alpha(u), true);
+  }
+
+  DomainType get_u(const DomainType& alpha) const
+  {
+    BlockVectorType u_block;
+    calculate_vector_integral(alpha, M_, M_, u_block);
+    return u_block;
+  }
+
   std::unique_ptr<AlphaReturnType>
   get_alpha(const DomainType& u, const VectorType& alpha_in, const bool regularize) const
   {
@@ -1372,7 +1517,6 @@ public:
     return ret;
   }
 
-private:
   // temporary vectors to store inner products and exponentials
   TemporaryVectorsType& working_storage() const
   {
@@ -1628,6 +1772,26 @@ private:
     } // jj
   } // void calculate_A_Binv(...)
 
+  void apply_inverse_hessian(const DomainType& alpha, const DomainType& u, DomainType& Hinv_u) const
+  {
+    thread_local auto H = XT::Common::make_unique<BlockMatrixType>();
+    calculate_hessian(alpha, M_, *H);
+    for (size_t jj = 0; jj < num_blocks; ++jj)
+      XT::LA::cholesky(H->block(jj));
+    FieldVector<RangeFieldType, block_size> tmp_vec;
+    FieldVector<RangeFieldType, block_size> block_u;
+    for (size_t jj = 0; jj < num_blocks; ++jj) {
+      // calculate C = A (L^T)^{-1}
+      const auto offset = block_size * jj;
+      for (size_t ii = 0; ii < block_size; ++ii)
+        block_u[ii] = u[offset + ii];
+      XT::LA::solve_lower_triangular(H->block(jj), tmp_vec, block_u);
+      XT::LA::solve_lower_triangular_transposed(H->block(jj), block_u, tmp_vec);
+      for (size_t ii = 0; ii < block_size; ++ii)
+        Hinv_u[offset + ii] = block_u[ii];
+    } // jj
+  }
+
   void calculate_hessian(const BlockVectorType& alpha, const BasisValuesMatrixType& M, BlockMatrixType& H) const
   {
     auto& work_vec = working_storage();
@@ -1858,6 +2022,13 @@ public:
     return evaluate_with_alpha(alpha);
   }
 
+  RangeReturnType evaluate_with_alpha(const DomainType& alpha) const
+  {
+    VectorType alpha_vec(basis_dimRange, 0., 0);
+    std::copy(alpha.begin(), alpha.end(), alpha_vec.begin());
+    return evaluate_with_alpha(alpha_vec);
+  }
+
   virtual RangeReturnType evaluate_with_alpha(const VectorType& alpha) const
   {
     RangeReturnType ret(0.);
@@ -1893,7 +2064,14 @@ public:
     jacobian_with_alpha(alpha, result);
   }
 
-  virtual void jacobian_with_alpha(const VectorType& alpha, DynamicDerivativeRangeType& result) const
+  void jacobian_with_alpha(const DomainType& alpha, DynamicDerivativeRangeType& result) const
+  {
+    VectorType alpha_vec(basis_dimRange, 0., 0);
+    std::copy(alpha.begin(), alpha.end(), alpha_vec.begin());
+    jacobian_with_alpha(alpha_vec, result);
+  }
+
+  void jacobian_with_alpha(const VectorType& alpha, DynamicDerivativeRangeType& result) const
   {
     thread_local SparseMatrixType H(basis_dimRange, basis_dimRange, pattern_, 0);
     thread_local SparseMatrixType J(basis_dimRange, basis_dimRange, pattern_, 0);
@@ -1911,6 +2089,18 @@ public:
     const auto alpha_j = get_alpha(u_j, get_isotropic_alpha(u_j), true)->first;
     evaluate_kinetic_flux_with_alphas(alpha_i, alpha_j, n_ij, dd);
   } // DomainType evaluate_kinetic_flux(...)
+
+  DomainType evaluate_kinetic_flux_with_alphas(const DomainType& alpha_i,
+                                               const DomainType& alpha_j,
+                                               const FluxDomainType& n_ij,
+                                               const size_t dd) const
+  {
+    VectorType alpha_i_vec(basis_dimRange);
+    VectorType alpha_j_vec(basis_dimRange);
+    std::copy(alpha_i.begin(), alpha_i.end(), alpha_i_vec.begin());
+    std::copy(alpha_j.begin(), alpha_j.end(), alpha_j_vec.begin());
+    return evaluate_kinetic_flux_with_alphas(alpha_i_vec, alpha_j_vec, n_ij, dd);
+  }
 
   DomainType evaluate_kinetic_flux_with_alphas(const VectorType& alpha_i,
                                                const VectorType& alpha_j,
@@ -1949,6 +2139,21 @@ public:
   const MomentBasis& basis_functions() const
   {
     return basis_functions_;
+  }
+
+  std::unique_ptr<AlphaReturnType> get_alpha(const DomainType& u) const
+  {
+    return get_alpha(u, get_isotropic_alpha(u), true);
+  }
+
+  DomainType get_u(const DomainType& alpha) const
+  {
+    VectorType u_vec(basis_dimRange), alpha_vec(basis_dimRange);
+    std::copy(alpha.begin(), alpha.end(), alpha_vec.begin());
+    calculate_u(alpha_vec, u_vec);
+    DomainType u;
+    std::copy(u_vec.begin(), u_vec.end(), u.begin());
+    return u;
   }
 
   std::unique_ptr<AlphaReturnType>
@@ -2087,7 +2292,6 @@ public:
     return ret;
   } // ... get_alpha(...)
 
-private:
   static bool is_realizable(const VectorType& u)
   {
     for (const auto& u_i : u)
@@ -2108,7 +2312,6 @@ private:
     return work_vecs;
   }
 
-private:
   // calculates ret = J H^{-1}. H is assumed to be symmetric positive definite, which gives ret^T = H^{-T} J^T =
   // H^{-1} J^T, so we just have to solve y = H^{-1} x for each row x of J
   void calculate_J_Hinv(SparseMatrixType& J, const SparseMatrixType& H, DynamicRowDerivativeRangeType& ret) const
@@ -2139,6 +2342,29 @@ private:
         ret.set_entry(ii, kk, solution.get_entry(kk));
     } // ii
   } // void calculate_J_Hinv(...)
+
+  void apply_inverse_hessian(const DomainType& alpha, const DomainType& u, DomainType& Hinv_u) const
+  {
+    thread_local SparseMatrixType H(basis_dimRange, basis_dimRange, pattern_, 0);
+    thread_local VectorType alpha_vec(basis_dimRange, 0., 0), u_vec(basis_dimRange, 0., 0),
+        Hinv_u_vec(basis_dimRange, 0., 0);
+    std::copy(alpha.begin(), alpha.end(), alpha_vec.begin());
+    std::copy(u.begin(), u.end(), u_vec.begin());
+    calculate_hessian(alpha_vec, M_, H);
+#  if HAVE_EIGEN
+    typedef ::Eigen::SparseMatrix<RangeFieldType, ::Eigen::ColMajor> ColMajorBackendType;
+    ColMajorBackendType colmajor_copy(H.backend());
+    typedef ::Eigen::SimplicialLDLT<ColMajorBackendType> SolverType;
+    SolverType solver;
+    solver.analyzePattern(colmajor_copy);
+    solver.factorize(colmajor_copy);
+    Hinv_u_vec.backend() = solver.solve(u_vec.backend());
+    std::copy(Hinv_u_vec.begin(), Hinv_u_vec.end(), Hinv_u.begin());
+#  else // HAVE_EIGEN
+    auto solver = XT::LA::make_solver(H);
+    solver.apply(u, Hinv_u);
+#  endif
+  } // void apply_inverse_hessian(..)
 
   RangeFieldType calculate_f(const VectorType& alpha, const VectorType& v) const
   {
@@ -2598,6 +2824,15 @@ public:
     return ret;
   } // DomainType evaluate_kinetic_flux(...)
 
+  std::unique_ptr<AlphaReturnType> get_alpha(const DomainType& u) const
+  {
+    return get_alpha(u, get_isotropic_alpha(u), true);
+  }
+
+  DomainType get_u(const DomainType& alpha) const
+  {
+    return calculate_vector_integral(alpha, M_, M_);
+  }
 
   // returns (alpha, (actual_u, r)), where r is the regularization parameter and actual_u the regularized u
   std::unique_ptr<AlphaReturnType>
@@ -3167,6 +3402,120 @@ public:
     return ret;
   } // ... evaluate_kinetic_flux(...)
 
+  std::unique_ptr<AlphaReturnType> get_alpha(const DomainType& u) const
+  {
+    return get_alpha(u, get_isotropic_alpha(u), true);
+  }
+
+  DomainType get_u(const DomainType& alpha) const
+  {
+    DomainType ret;
+    calculate_u(alpha, ret);
+    return ret;
+  }
+
+  static RangeFieldType minmod(const RangeFieldType& first_slope, const RangeFieldType& second_slope)
+  {
+    RangeFieldType ret = 0.;
+    if (std::signbit(first_slope) == std::signbit(second_slope)) // check for equal sign
+      ret = std::abs(first_slope) < std::abs(second_slope) ? first_slope : second_slope;
+    return ret;
+  }
+
+  static RangeFieldType maxmod(const RangeFieldType first_slope, const RangeFieldType second_slope)
+  {
+    RangeFieldType ret(0.);
+    if (std::signbit(first_slope) == std::signbit(second_slope)) // check for equal sign
+      ret = (std::abs(first_slope) < std::abs(second_slope)) ? second_slope : first_slope;
+    return ret;
+  }
+
+  static RangeFieldType superbee(const RangeFieldType first_slope, const RangeFieldType second_slope)
+  {
+    const RangeFieldType first_minmod = minmod(first_slope, second_slope * 2.);
+    const RangeFieldType second_minmod = minmod(first_slope * 2., second_slope);
+    return maxmod(first_minmod, second_minmod);
+  }
+
+  template <class IntersectionType>
+  DomainType calculate_boundary_flux(const DomainType& alpha, const IntersectionType& intersection)
+  {
+    // evaluate exp(alpha^T b(v_i)) at all quadratures points v_i
+    const auto dd = intersection.indexInInside() / 2;
+    const auto& n_ij = intersection.centerUnitOuterNormal();
+    DomainType ret(0.);
+    for (size_t jj = 0; jj < num_intervals; ++jj) {
+      for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
+        const auto position = quad_points_[jj][ll];
+        if (position * n_ij[dd] < 0.) {
+          RangeFieldType factor =
+              std::exp(alpha[jj] * M_[jj][ll][0] + alpha[jj + 1] * M_[jj][ll][1]) * quad_weights_[jj][ll] * position;
+          const auto& basis_ll = M_[jj][ll];
+          for (size_t mm = 0; mm < 2; ++mm)
+            ret[jj + mm] += basis_ll[mm] * factor;
+        }
+      } // ll
+    } // jj
+    return ret;
+  }
+
+  // TODO: Calculates exp(alpha^T b) 2*dim times for each alpha (as it is contained in 2*dim stencils) at the moment.
+  template <class FluxesMapType>
+  void calculate_minmod_density_reconstruction(const FieldVector<DomainType, 3>& alphas,
+                                               FluxesMapType& flux_values,
+                                               const size_t dd) const
+  {
+    // evaluate exp(alpha^T b(v_i)) at all quadratures points v_i for all three alphas
+    thread_local XT::Common::FieldVector<std::vector<RangeFieldType>, 3> density_evaluations(
+        std::vector<RangeFieldType>(quad_points_[0].size()));
+    thread_local XT::Common::FieldVector<std::vector<RangeFieldType>, 2> reconstructed_values(
+        std::vector<RangeFieldType>(quad_points_[0].size()));
+    thread_local XT::Common::FieldVector<LocalVectorType, 3> local_alphas;
+
+    // get flux storage
+    BasisDomainType coord(0.5);
+    coord[dd] = 0;
+    auto& left_flux_value = flux_values[coord];
+    coord[dd] = 1;
+    auto& right_flux_value = flux_values[coord];
+    right_flux_value = left_flux_value = DomainType(0.);
+
+    for (size_t jj = 0; jj < num_intervals; ++jj) {
+      // get local alphas
+      for (size_t ii = 0; ii < 3; ++ii)
+        for (size_t mm = 0; mm < 2; ++mm)
+          local_alphas[ii][mm] = alphas[ii][jj + mm];
+
+      // evaluate densitys
+      for (size_t ii = 0; ii < 3; ++ii)
+        for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll)
+          density_evaluations[ii][ll] = std::exp(local_alphas[ii] * M_[jj][ll]);
+
+      // reconstruct densities
+      auto& vals_left = reconstructed_values[0];
+      auto& vals_right = reconstructed_values[1];
+      for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
+        const auto slope = minmod(density_evaluations[1][ll] - density_evaluations[0][ll],
+                                  density_evaluations[2][ll] - density_evaluations[1][ll]);
+        //              const auto slope = superbee(density_evaluations[1][ll] - density_evaluations[0][ll],
+        //                                          density_evaluations[2][ll] - density_evaluations[1][ll]);
+        vals_left[ll] = density_evaluations[1][ll] - 0.5 * slope;
+        vals_right[ll] = density_evaluations[1][ll] + 0.5 * slope;
+      } // ll (quad points)
+
+      // calculate fluxes
+      for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
+        const auto position = quad_points_[jj][ll];
+        RangeFieldType factor = position > 0. ? vals_right[ll] : vals_left[ll];
+        factor *= quad_weights_[jj][ll] * position;
+        auto& val = position > 0. ? right_flux_value : left_flux_value;
+        const auto& basis_ll = M_[jj][ll];
+        for (size_t mm = 0; mm < 2; ++mm)
+          val[jj + mm] += basis_ll[mm] * factor;
+      } // ll (quad points)
+    } // jj (intervals)
+  } // void calculate_minmod_density_reconstruction(...)
+
   // returns (alpha, (actual_u, r)), where r is the regularization parameter and actual_u the regularized u
   std::unique_ptr<AlphaReturnType>
   get_alpha(const DomainType& u, const VectorType& alpha_in, const bool regularize) const
@@ -3277,7 +3626,6 @@ public:
     return basis_functions_;
   }
 
-private:
   static bool is_realizable(const DomainType& u)
   {
     for (const auto& u_i : u)
@@ -3309,7 +3657,7 @@ private:
     return ret;
   } // void calculate_u(...)
 
-  void calculate_u(const VectorType& alpha, VectorType& u) const
+  void calculate_u(const DomainType& alpha, DomainType& u) const
   {
     std::fill(u.begin(), u.end(), 0.);
     LocalVectorType local_alpha;
@@ -3331,7 +3679,7 @@ private:
     g_k -= v;
   }
 
-  void calculate_hessian(const VectorType& alpha,
+  void calculate_hessian(const DomainType& alpha,
                          const BasisValuesMatrixType& M,
                          VectorType& H_diag,
                          FieldVector<RangeFieldType, dimRange - 1>& H_subdiag) const
@@ -3376,6 +3724,21 @@ private:
       } // ll (quad points)
     } // jj (intervals)
   } // void calculate_J(...)
+
+  void apply_inverse_hessian(const DomainType& alpha, const DomainType& u, DomainType& Hinv_u) const
+  {
+    thread_local VectorType H_diag;
+    thread_local FieldVector<RangeFieldType, dimRange - 1> H_subdiag;
+    calculate_hessian(alpha, M_, H_diag, H_subdiag);
+    //    std::cout << "H_diag: " << H_diag << ", H_subdiag: " << H_subdiag << std::endl;
+    // factorize H = LDL^T, where L is unit lower bidiagonal and D is diagonal
+    // H_diag is overwritten by the diagonal elements of D
+    // H_subdiag is overwritten by the subdiagonal elements of L
+    XT::LA::tridiagonal_ldlt(H_diag, H_subdiag);
+    // Solve H ret = u
+    Hinv_u = u;
+    XT::LA::solve_tridiagonal_ldlt_factorized(H_diag, H_subdiag, Hinv_u);
+  }
 
   // calculates ret = J H^{-1}. Both J and H are symmetric tridiagonal, H is positive definite.
   static void calculate_J_Hinv(DynamicRowDerivativeRangeType& ret,

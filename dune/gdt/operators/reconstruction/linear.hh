@@ -127,7 +127,7 @@ private:
       const size_t dd = intersection.indexInInside() / 2;
       const size_t index = (intersection.indexInInside() % 2) * 2;
       if (intersection.boundary() && !intersection.neighbor()) // boundary intersections
-        stencils_[dd][index] = boundary_values_.evaluate(entity.geometry().local(intersection.geometry().center()));
+        stencils_[dd][index] = boundary_values_.evaluate(intersection.geometry().center());
       else if (intersection.neighbor()) // inner and periodic intersections
         stencils_[dd][index] = source_values_[grid_view_.indexSet().index(intersection.outside())];
       else if (!intersection.neighbor() && !intersection.boundary()) // processor boundary

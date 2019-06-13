@@ -213,6 +213,16 @@ public:
     return minmod(slope_left_char, slope_right_char);
   }
 
+  virtual VectorType get(const E& /*entity*/,
+                         const StencilType& stencil,
+                         const EigenVectorWrapperType& /*eigenvectors*/,
+                         const size_t /*dd*/) const override final
+  {
+    const VectorType slope_left = stencil[1] - stencil[0];
+    const VectorType slope_right = stencil[2] - stencil[1];
+    return minmod(slope_left, slope_right);
+  }
+
   static VectorType minmod(const VectorType& first_slope, const VectorType& second_slope)
   {
     VectorType ret(0.);

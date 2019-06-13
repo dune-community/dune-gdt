@@ -22,7 +22,7 @@ namespace Dune {
 namespace GDT {
 
 
-template <class GV, class MomentBasis>
+template <class GV, class MomentBasis, class EntropyFluxImp = EntropyBasedFluxFunction<GV, MomentBasis>>
 class NumericalKineticFlux
   : public NumericalFluxInterface<XT::Grid::extract_intersection_t<GV>,
                                   MomentBasis::dimFlux,
@@ -43,7 +43,7 @@ class NumericalKineticFlux
   using I = XT::Grid::extract_intersection_t<GV>;
   using ThisType = NumericalKineticFlux;
   using BaseType = NumericalFluxInterface<I, d, m, R>;
-  using EntropyFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
+  using EntropyFluxType = EntropyFluxImp;
   using SparseMatrixType = typename XT::LA::CommonSparseMatrix<R>;
 
 public:
@@ -83,13 +83,22 @@ public:
     // find direction of unit outer normal (we assume an axis-aligned cube grid)
     size_t direction = intersection().indexInInside() / 2;
     if (dynamic_cast<const EntropyFluxType*>(&flux()) != nullptr) {
-      return dynamic_cast<const EntropyFluxType*>(&flux())->evaluate_kinetic_flux(
+      auto ret = dynamic_cast<const EntropyFluxType*>(&flux())->evaluate_kinetic_flux(
           intersection().inside(),
           intersection().neighbor() ? intersection().outside() : intersection().inside(),
           u,
           v,
           n,
           direction);
+      for (auto&& entry : ret)
+        if (std::isnan(entry) || std::isinf(entry)) {
+          //          std::cout << XT::Common::to_string(ret) << std::endl;
+          //          std::cout << XT::Common::to_string(u) << std::endl;
+          //          std::cout << XT::Common::to_string(v) << std::endl;
+          //          std::cout << this->intersection().geometry().center() << std::endl;
+          DUNE_THROW(Dune::MathError, "NaN or inf in kinetic flux");
+        }
+      return ret;
     } else {
       static const auto flux_matrices = initialize_flux_matrices(basis_);
       StateType ret(0);
