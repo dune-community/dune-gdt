@@ -11,8 +11,6 @@
 #ifndef DUNE_GDT_OPERATORS_FV_RECONSTRUCTION_INTERNAL_HH
 #define DUNE_GDT_OPERATORS_FV_RECONSTRUCTION_INTERNAL_HH
 
-#include <boost/multi_array.hpp>
-
 #include <dune/xt/common/debug.hh>
 #include <dune/xt/common/fvector.hh>
 #include <dune/xt/common/lapacke.hh>
