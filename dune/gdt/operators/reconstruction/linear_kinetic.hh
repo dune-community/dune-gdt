@@ -127,7 +127,7 @@ class PointwiseLinearKineticReconstructionOperator
 public:
   using BoundaryValueType = BoundaryValueImp;
   using E = XT::Grid::extract_entity_t<GV>;
-  using EigenVectorWrapperType = DummyEigenVectorWrapper<LocalVectorType>;
+  using EigenVectorWrapperType = internal::DummyEigenVectorWrapper<AnalyticalFluxType, LocalVectorType>;
   using R = typename BoundaryValueType::R;
   static constexpr size_t dimDomain = BoundaryValueType::d;
   static constexpr size_t dimRange = BoundaryValueType::r;
@@ -159,7 +159,6 @@ public:
     const auto& grid_view = space_.grid_view();
     const auto& index_set = grid_view.indexSet();
     std::vector<LocalVectorType> source_values(index_set.size(0));
-    // Contains the evaluations of exp(alpha^T b(v_i)) at each quadrature point v_i
     auto source_func = make_discrete_function(space_, source);
     const auto local_source = source_func.local_function();
     for (const auto& entity : Dune::elements(grid_view)) {

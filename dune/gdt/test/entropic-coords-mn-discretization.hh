@@ -23,7 +23,6 @@
 #include <dune/gdt/operators/advection-fv-entropybased.hh>
 #include <dune/gdt/operators/advection-fv.hh>
 #include <dune/gdt/operators/generic.hh>
-#include <dune/gdt/operators/reconstruction/linear_nocharacteristiccoords.hh>
 #include <dune/gdt/operators/reconstruction/linear_kinetic.hh>
 #include <dune/gdt/interpolations/default.hh>
 #include <dune/gdt/momentmodels/hessianinverter.hh>
