@@ -16,6 +16,7 @@
 
 #include <dune/xt/grid/information.hh>
 #include <dune/xt/grid/gridprovider.hh>
+#include <dune/xt/grid/view/periodic.hh>
 
 #include <dune/xt/la/container.hh>
 
@@ -45,9 +46,7 @@ struct HyperbolicFvDiscretization
 {
 
   void run(size_t num_save_steps = size_t(-1),
-           size_t num_output_steps = 0.,
-           size_t quad_order = size_t(-1),
-           size_t quad_refinements = size_t(-1),
+           size_t num_output_steps = size_t(-1),
            std::string grid_size = "",
            size_t overlap_size = 2,
            double t_end = 1.,
@@ -62,9 +61,10 @@ struct HyperbolicFvDiscretization
     using ProblemType = Problem;
     static constexpr size_t dimDomain = Grid::dimension;
     static constexpr size_t dimRange = ProblemType::dimRange;
-    using DomainFieldType = typename G::ctype;
+    // using DomainFieldType = typename G::ctype;
     using RangeFieldType = typename ProblemType::RangeFieldType;
-    using GV = typename G::LeafGridView;
+    using GV = XT::Grid::PeriodicGridView<typename G::LeafGridView>;
+    // using GV = typename G::LeafGridView;
     using I = XT::Grid::extract_intersection_t<GV>;
     using E = XT::Grid::extract_entity_t<GV>;
     using SpaceType = FiniteVolumeSpace<GV, dimRange, 1, RangeFieldType>;

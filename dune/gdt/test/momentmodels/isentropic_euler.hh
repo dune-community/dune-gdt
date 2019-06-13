@@ -70,19 +70,18 @@ public:
     return boundary_config;
   }
 
-  // flux matrix A = B M^{-1} with B_{ij} = <v h_i h_j>
   virtual std::unique_ptr<FluxType> flux() const
   {
     const double gamma = 1.;
     auto eval_func =
-        [gamma](const DomainType& x, const StateType& u, DynamicFluxRangeType& ret, const XT::Common::Parameter&) {
+        [gamma](const DomainType& /*x*/, const StateType& u, DynamicFluxRangeType& ret, const XT::Common::Parameter&) {
           const auto& rho = u[0];
           const auto& v = u[1];
           const auto kappa = std::pow(gamma - 1, 2) / (4. * gamma);
           ret[0][0] = v;
           ret[0][1] = v * v / rho + kappa * std::pow(rho, gamma);
         };
-    auto jacobian_func = [gamma](const DomainType& x,
+    auto jacobian_func = [gamma](const DomainType& /*x*/,
                                  const StateType& u,
                                  DynamicFluxJacobianRangeType& ret,
                                  const XT::Common::Parameter&) {
@@ -104,12 +103,14 @@ public:
 
   virtual std::unique_ptr<InitialValueType> initial_values() const
   {
-    return std::make_unique<ConstantFunctionType>(1.);
+    return std::make_unique<GenericFunctionType>(0, [](const DomainType& x, const XT::Common::Parameter&) {
+      return x[0] < 0.5 ? RangeReturnType{1., 1.} : RangeReturnType{2., -1.};
+    });
   }
 
   virtual std::unique_ptr<BoundaryValueType> boundary_values() const
   {
-    return std::make_unique<ConstantFunctionType>(0.);
+    return initial_values();
   }
 
   virtual RangeFieldType CFL() const
@@ -119,7 +120,7 @@ public:
 
   virtual RangeFieldType t_end() const
   {
-    return 1.0;
+    return 10.0;
   }
 
   virtual XT::Common::Configuration grid_config() const

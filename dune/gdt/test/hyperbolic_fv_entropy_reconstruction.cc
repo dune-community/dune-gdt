@@ -17,5 +17,5 @@ GTEST_TEST(FvEntropyTest, check)
 {
   using Problem = Dune::GDT::IsentropicEulerEquations<typename Yasp1::template Codim<0>::Entity>;
   HyperbolicFvDiscretization<Yasp1, Problem, true> test;
-  test.run();
+  test.run(1000, 1000, "1000", 2, 10.);
 }
