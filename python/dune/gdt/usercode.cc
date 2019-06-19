@@ -931,7 +931,7 @@ PYBIND11_MODULE(usercode, m)
                            "num_refinements_per_subdomain"_a,
                            "lower_left"_a,
                            "upper_right"_a);
-  domain_decomposition.def_property_readonly("num_sudomains",
+  domain_decomposition.def_property_readonly("num_subdomains",
                                              [](DomainDecomposition& self) { return self.dd_grid.num_subdomains(); });
   domain_decomposition.def_property_readonly("boundary_subdomains", [](DomainDecomposition& self) {
     std::vector<size_t> boundary_subdomains;
