@@ -67,7 +67,7 @@ private:
 public:
   ContinuousLagrangeSpace(GridViewType grd_vw, const int order)
     : grid_view_(grd_vw)
-    , order_(order)
+    , fe_order_(order)
     , local_finite_elements_(std::make_unique<LocalLagrangeFiniteElementFamily<D, d, R, r>>())
     , mapper_(nullptr)
     , basis_(nullptr)
@@ -110,12 +110,12 @@ public:
 
   int min_polorder() const override final
   {
-    return order_;
+    return fe_order_;
   }
 
   int max_polorder() const override final
   {
-    return order_;
+    return fe_order_;
   }
 
   bool continuous(const int diff_order) const override final
@@ -144,18 +144,20 @@ public:
     if (mapper_)
       mapper_->update_after_adapt();
     else
-      mapper_ = std::make_unique<MapperImplementation>(grid_view_, *local_finite_elements_, order_);
+      mapper_ = std::make_unique<MapperImplementation>(grid_view_, *local_finite_elements_, fe_order_);
     // ... and basis
     if (basis_)
       basis_->update_after_adapt();
     else
-      basis_ = std::make_unique<GlobalBasisImplementation>(grid_view_, *local_finite_elements_, order_);
+      basis_ = std::make_unique<GlobalBasisImplementation>(grid_view_, *local_finite_elements_, fe_order_);
     this->create_communicator();
   } // ... update_after_adapt(...)
 
 private:
   const GridViewType grid_view_;
-  const int order_;
+  const int fe_order_;
+  int min_polorder_;
+  int max_polorder_;
   std::unique_ptr<const LocalLagrangeFiniteElementFamily<D, d, R, r>> local_finite_elements_;
   std::unique_ptr<MapperImplementation> mapper_;
   std::unique_ptr<GlobalBasisImplementation> basis_;
