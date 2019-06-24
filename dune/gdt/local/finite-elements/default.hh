@@ -11,7 +11,10 @@
 #ifndef DUNE_GDT_LOCAL_FINITE_ELEMENTS_DEFAULT_HH
 #define DUNE_GDT_LOCAL_FINITE_ELEMENTS_DEFAULT_HH
 
+#include <dune/geometry/quadraturerules.hh>
+
 #include <dune/xt/common/memory.hh>
+#include <dune/xt/grid/integrals.hh>
 
 #include "interfaces.hh"
 
@@ -192,6 +195,69 @@ private:
   mutable std::map<std::pair<GeometryType, int>, std::shared_ptr<LocalFiniteElementType>> fes_;
   mutable std::mutex mutex_;
 }; // class ThreadSafeDefaultLocalFiniteElementFamily
+
+
+template <class D, size_t d, class R, size_t r = 1>
+class LocalL2FiniteElementInterpolation : public LocalFiniteElementInterpolationInterface<D, d, R, r, 1>
+{
+  using ThisType = LocalL2FiniteElementInterpolation<D, d, R, r>;
+  using BaseType = LocalFiniteElementInterpolationInterface<D, d, R, r, 1>;
+
+public:
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeType;
+
+  using LocalBasisType = LocalFiniteElementBasisInterface<D, d, R, r, 1>;
+
+  LocalL2FiniteElementInterpolation(const LocalBasisType& local_basis)
+    : local_basis_(local_basis.copy())
+  {}
+
+  LocalL2FiniteElementInterpolation(const ThisType& other)
+    : local_basis_(other.local_basis_->copy())
+  {}
+
+  LocalL2FiniteElementInterpolation(ThisType& source) = default;
+
+  ThisType* copy() const override final
+  {
+    return new ThisType(*this);
+  }
+
+  const GeometryType& geometry_type() const override final
+  {
+    return local_basis_->geometry_type();
+  }
+
+  size_t size() const override final
+  {
+    return local_basis_->size();
+  }
+
+  using BaseType::interpolate;
+
+  void interpolate(const std::function<RangeType(DomainType)>& local_function,
+                   const int order,
+                   DynamicVector<R>& dofs) const override final
+  {
+    if (dofs.size() < this->size())
+      dofs.resize(this->size());
+    dofs *= 0.;
+    std::vector<RangeType> basis_values(local_basis_->size());
+    RangeType function_value;
+    for (auto&& quadrature_point : QuadratureRules<D, d>::rule(this->geometry_type(), order + local_basis_->order())) {
+      const auto point_in_reference_element = quadrature_point.position();
+      const auto quadrature_weight = quadrature_point.weight();
+      local_basis_->evaluate(point_in_reference_element, basis_values);
+      function_value = local_function(point_in_reference_element);
+      for (size_t ii = 0; ii < local_basis_->size(); ++ii)
+        dofs[ii] = (basis_values[ii] * function_value) * quadrature_weight;
+    }
+  } // ... interpolate(...)
+
+private:
+  std::unique_ptr<LocalBasisType> local_basis_;
+}; // class LocalL2FiniteElementInterpolation
 
 
 } // namespace GDT
