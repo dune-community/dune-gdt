@@ -145,26 +145,26 @@ private:
 
 
 template <class D, size_t d, class R = double, size_t r = 1, size_t rC = 1>
-class ThreadSafeDefaultLocalLagrangeFiniteElementFamily : public LocalFiniteElementFamilyInterface<D, d, R, r, rC>
+class ThreadSafeDefaultLocalFiniteElementFamily : public LocalFiniteElementFamilyInterface<D, d, R, r, rC>
 {
-  using ThisType = ThreadSafeDefaultLocalLagrangeFiniteElementFamily<D, d, R, r, rC>;
+  using ThisType = ThreadSafeDefaultLocalFiniteElementFamily<D, d, R, r, rC>;
   using BaseType = LocalFiniteElementFamilyInterface<D, d, R, r, rC>;
 
 public:
   using typename BaseType::LocalFiniteElementType;
 
-  ThreadSafeDefaultLocalLagrangeFiniteElementFamily(
+  ThreadSafeDefaultLocalFiniteElementFamily(
       std::function<std::unique_ptr<LocalFiniteElementType>(const GeometryType&, const int&)> factory)
     : factory_(factory)
   {}
 
-  ThreadSafeDefaultLocalLagrangeFiniteElementFamily(const ThisType& other)
+  ThreadSafeDefaultLocalFiniteElementFamily(const ThisType& other)
     : factory_(other.factory_)
   {
     // we do not even try to create the FEs in a thread safe way, they will just be recreated when required
   }
 
-  ThreadSafeDefaultLocalLagrangeFiniteElementFamily(ThisType&& source)
+  ThreadSafeDefaultLocalFiniteElementFamily(ThisType&& source)
     : factory_(std::move(source.factory_))
     , fes_(std::move(source.fes_))
   {}
@@ -191,7 +191,7 @@ private:
   const std::function<std::unique_ptr<LocalFiniteElementType>(const GeometryType&, const int&)> factory_;
   mutable std::map<std::pair<GeometryType, int>, std::shared_ptr<LocalFiniteElementType>> fes_;
   mutable std::mutex mutex_;
-}; // class ThreadSafeDefaultLocalLagrangeFiniteElementFamily
+}; // class ThreadSafeDefaultLocalFiniteElementFamily
 
 
 } // namespace GDT
