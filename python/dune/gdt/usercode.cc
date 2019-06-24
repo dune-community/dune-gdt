@@ -37,6 +37,7 @@
 #include <dune/gdt/operators/matrix-based.hh>
 #include <dune/gdt/tools/dirichlet-constraints.hh>
 #include <dune/gdt/spaces/interface.hh>
+#include <dune/gdt/spaces/h1/continuous-flattop.hh>
 #include <dune/gdt/spaces/h1/continuous-lagrange.hh>
 #include <dune/gdt/spaces/l2/discontinuous-lagrange.hh>
 #include <dune/gdt/spaces/l2/finite-volume.hh>
@@ -255,28 +256,31 @@ private:
 }; // class DomainDecomposition
 
 
-class PartitionOfUnity
+class PartitionOfUnityBase
 {
 public:
-  PartitionOfUnity(const DomainDecomposition& dd)
+  PartitionOfUnityBase(const DomainDecomposition& dd, SpaceInterface<GV>*&& space)
     : dd_(dd)
-    , cg_space_(dd_.dd_grid.macro_grid_view(), /*polorder=*/1)
-    , patches_(cg_space_.mapper().size())
+    , space_(std::move(space))
+    , patches_(space_->mapper().size())
+    , local_indices_(dd_.dd_grid.num_subdomains())
   {
-    DynamicVector<size_t> global_indices(cg_space_.mapper().max_local_size());
-    for (auto&& subdomain : elements(cg_space_.grid_view())) {
-      cg_space_.mapper().global_indices(subdomain, global_indices);
+    DynamicVector<size_t> global_indices(space_->mapper().max_local_size());
+    for (auto&& subdomain : elements(space_->grid_view())) {
+      space_->mapper().global_indices(subdomain, global_indices);
       const auto ss = dd_.dd_grid.subdomain(subdomain);
-      for (size_t ii = 0; ii < cg_space_.mapper().local_size(subdomain); ++ii) {
+      for (size_t ii = 0; ii < space_->mapper().local_size(subdomain); ++ii) {
         const auto II = global_indices[ii];
         patches_[II].insert(ss);
+        local_indices_[ss][II] = ii;
       }
+      // build inverse index mapping
     }
-  } // ... PartitionOfUnity(...)
+  } // ... ContinuousLagrangePartitionOfUnity(...)
 
   size_t size() const
   {
-    return cg_space_.mapper().size();
+    return space_->mapper().size();
   }
 
   std::set<size_t> patch(const size_t ii) const
@@ -286,10 +290,10 @@ public:
     return patches_.at(ii);
   }
 
-  std::vector<XT::LA::CommonDenseVector<double>> on_subdomain(const size_t ss, const std::string space_type)
+  std::vector<V> on_subdomain(const size_t ss, const std::string space_type)
   {
-    auto coarse_basis = cg_space_.basis().localize();
-    std::vector<XT::LA::CommonDenseVector<double>> interpolated_basis;
+    auto coarse_basis = space_->basis().localize();
+    std::vector<V> interpolated_basis;
     for (auto&& macro_element : elements(dd_.dd_grid.macro_grid_view())) {
       if (dd_.dd_grid.subdomain(macro_element) == ss) {
         // this is the subdomain we are interested in, create space
@@ -297,16 +301,16 @@ public:
         auto subdomain_space = make_subdomain_space(subdomain_grid_view, space_type);
         coarse_basis->bind(macro_element);
         for (size_t ii = 0; ii < coarse_basis->size(); ++ii)
-          interpolated_basis.push_back(default_interpolation<XT::LA::CommonDenseVector<double>>(
-                                           coarse_basis->order(),
-                                           [&](const auto& point_in_physical_coordinates, const auto&) {
-                                             const auto point_macro_reference_element =
-                                                 macro_element.geometry().local(point_in_physical_coordinates);
-                                             return coarse_basis->evaluate_set(point_macro_reference_element)[ii];
-                                           },
-                                           *subdomain_space)
-                                           .dofs()
-                                           .vector());
+          interpolated_basis.push_back(
+              default_interpolation<V>(coarse_basis->order(),
+                                       [&](const auto& point_in_physical_coordinates, const auto&) {
+                                         const auto point_macro_reference_element =
+                                             macro_element.geometry().local(point_in_physical_coordinates);
+                                         return coarse_basis->evaluate_set(point_macro_reference_element)[ii];
+                                       },
+                                       *subdomain_space)
+                  .dofs()
+                  .vector());
         break;
       }
     }
@@ -314,11 +318,44 @@ public:
     return interpolated_basis;
   } // ... on_subdomain(...)
 
-private:
+  size_t local_index(const size_t ii, const size_t ss)
+  {
+    DUNE_THROW_IF(
+        ii >= size(), XT::Common::Exceptions::index_out_of_range, "ii = " << ii << "\n   size() = " << size());
+    DUNE_THROW_IF(ss >= local_indices_.size(),
+                  XT::Common::Exceptions::index_out_of_range,
+                  "ss = " << ss << "\n   local_indices_.size() = " << local_indices_.size());
+    auto search_result = local_indices_[ss].find(ii);
+    DUNE_THROW_IF(search_result == local_indices_[ss].end(),
+                  XT::Common::Exceptions::index_out_of_range,
+                  "Global index " << ii << " is not associated with subdomain " << ss << "!");
+    return search_result->second;
+  } // ... local_index(...)
+
+protected:
   const DomainDecomposition& dd_;
-  const ContinuousLagrangeSpace<GV> cg_space_;
+  const std::unique_ptr<SpaceInterface<GV>> space_;
   std::vector<std::set<size_t>> patches_;
-}; // class PartitionOfUnity
+  std::vector<std::map<size_t, size_t>> local_indices_;
+}; // class PartitionOfUnityBase
+
+
+class ContinuousLagrangePartitionOfUnity : public PartitionOfUnityBase
+{
+public:
+  ContinuousLagrangePartitionOfUnity(const DomainDecomposition& dd)
+    : PartitionOfUnityBase(dd, new ContinuousLagrangeSpace<GV>(dd.dd_grid.macro_grid_view(), /*polorder=*/1))
+  {}
+};
+
+
+class ContinuousFlatTopPartitionOfUnity : public PartitionOfUnityBase
+{
+public:
+  ContinuousFlatTopPartitionOfUnity(const DomainDecomposition& dd, const double overlap = 0.5)
+    : PartitionOfUnityBase(dd, new ContinuousFlatTopSpace<GV>(dd.dd_grid.macro_grid_view(), /*polorder=*/1, overlap))
+  {}
+};
 
 
 template <class MacroGV, class MicroGV>
@@ -1001,18 +1038,49 @@ PYBIND11_MODULE(usercode, m)
       [](DomainDecomposition& self, const std::string& filename_prefix) { self.write_visualization(filename_prefix); },
       "filename_prefix"_a);
 
-  py::class_<PartitionOfUnity> pou(m, "PartitionOfUnity", "PartitionOfUnity");
-  pou.def(py::init([](const DomainDecomposition& dd) { return new PartitionOfUnity(dd); }),
-          "domain_decomposition"_a,
-          py::keep_alive<1, 2>());
-  pou.def_property_readonly("size", [](PartitionOfUnity& self) { return self.size(); });
-  pou.def("patch", [](PartitionOfUnity& self, const size_t ii) { return self.patch(ii); }, "ii"_a);
-  pou.def("on_subdomain",
-          [](PartitionOfUnity& self, const size_t ss, const std::string space_type) {
-            return self.on_subdomain(ss, space_type);
-          },
-          "ss"_a,
-          "space_type"_a = default_space_type());
+  py::class_<ContinuousLagrangePartitionOfUnity> cg_pou(
+      m, "ContinuousLagrangePartitionOfUnity", "ContinuousLagrangePartitionOfUnity");
+  cg_pou.def(py::init([](const DomainDecomposition& dd) { return new ContinuousLagrangePartitionOfUnity(dd); }),
+             "domain_decomposition"_a,
+             py::keep_alive<1, 2>());
+  cg_pou.def_property_readonly("size", [](ContinuousLagrangePartitionOfUnity& self) { return self.size(); });
+  cg_pou.def("patch", [](ContinuousLagrangePartitionOfUnity& self, const size_t ii) { return self.patch(ii); }, "ii"_a);
+  cg_pou.def("local_index",
+             [](ContinuousLagrangePartitionOfUnity& self, const size_t ii, const size_t ss) {
+               return self.local_index(ii, ss);
+             },
+             "patch_index"_a,
+             "subdomain"_a);
+  cg_pou.def("on_subdomain",
+             [](ContinuousLagrangePartitionOfUnity& self, const size_t ss, const std::string space_type) {
+               return self.on_subdomain(ss, space_type);
+             },
+             "ss"_a,
+             "space_type"_a = default_space_type());
+
+  py::class_<ContinuousFlatTopPartitionOfUnity> flattop_pou(
+      m, "ContinuousFlatTopPartitionOfUnity", "ContinuousFlatTopPartitionOfUnity");
+  flattop_pou.def(py::init([](const DomainDecomposition& dd, const double& overlap) {
+                    return new ContinuousFlatTopPartitionOfUnity(dd, overlap);
+                  }),
+                  "domain_decomposition"_a,
+                  "overlap"_a = 0.5,
+                  py::keep_alive<1, 2>());
+  flattop_pou.def_property_readonly("size", [](ContinuousFlatTopPartitionOfUnity& self) { return self.size(); });
+  flattop_pou.def(
+      "patch", [](ContinuousFlatTopPartitionOfUnity& self, const size_t ii) { return self.patch(ii); }, "ii"_a);
+  flattop_pou.def("local_index",
+                  [](ContinuousFlatTopPartitionOfUnity& self, const size_t ii, const size_t ss) {
+                    return self.local_index(ii, ss);
+                  },
+                  "patch_index"_a,
+                  "subdomain"_a);
+  flattop_pou.def("on_subdomain",
+                  [](ContinuousFlatTopPartitionOfUnity& self, const size_t ss, const std::string space_type) {
+                    return self.on_subdomain(ss, space_type);
+                  },
+                  "ss"_a,
+                  "space_type"_a = default_space_type());
 
   m.def("assemble_local_system_matrix",
         [](XT::Functions::FunctionInterface<d>& diffusion_factor,
@@ -1410,7 +1478,7 @@ PYBIND11_MODULE(usercode, m)
             }
           }
           // ... and convert afterwards.
-          return std::make_tuple(std::make_unique<XT::LA::CommonDenseVector<double>>(data),
+          return std::make_tuple(std::make_unique<V>(data),
                                  std::make_unique<XT::LA::CommonDenseVector<size_t>>(rows),
                                  std::make_unique<XT::LA::CommonDenseVector<size_t>>(cols));
         },
