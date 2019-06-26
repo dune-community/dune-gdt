@@ -32,10 +32,12 @@ template <class E, class MomentBasisImp>
 class SourceBeamPn : public KineticTransportEquationBase<E, MomentBasisImp>
 {
   using BaseType = KineticTransportEquationBase<E, MomentBasisImp>;
+  using ThisType = SourceBeamPn;
 
 public:
   using BaseType::dimDomain;
   using BaseType::dimRange;
+  using typename BaseType::BoundaryDistributionType;
   using typename BaseType::BoundaryValueType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
@@ -92,6 +94,25 @@ public:
     });
   } // ... boundary_values()
 
+  virtual BoundaryDistributionType boundary_distribution() const override final
+  {
+    return [this](const DomainType& x) -> std::function<RangeFieldType(const DomainType&)> {
+      if (x[0] > 1.5)
+        return [this](const DomainType& /*v*/) { return this->psi_vac_; };
+      else
+        return [this](const DomainType& v) {
+          const RangeFieldType val = std::exp(-1e5 * std::pow(v[0] - 1., 2));
+          return (val > this->psi_vac_) ? val : this->psi_vac_;
+        };
+    };
+  }
+
+  virtual RangeReturnType
+  kinetic_boundary_flux(const DomainType& x, const RangeFieldType& n, const size_t dd) const override final
+  {
+    return helper<MomentBasis>::get_kinetic_boundary_flux(basis_functions_, psi_vac_, is_mn_model_, x, n, dd, *this);
+  }
+
   RangeReturnType left_boundary_value() const
   {
     return helper<MomentBasis>::get_left_boundary_values(basis_functions_, psi_vac_, is_mn_model_);
@@ -133,9 +154,14 @@ protected:
   struct helper_base
   {
     // returns the numerator g of the left boundary value (see create_boundary_values)
-    static RangeFieldType numerator(const RangeFieldType v)
+    static RangeFieldType g(const RangeFieldType v)
     {
       return std::exp(-1e5 * (v - 1) * (v - 1));
+    }
+
+    static RangeFieldType dg(const RangeFieldType v)
+    {
+      return -2e5 * (v - 1) * g(v);
     }
 
     // returns the denominator <g> of the left boundary value (see create_boundary_values)
@@ -155,7 +181,13 @@ protected:
     // calculates integral from v_l to v_u of v*g
     static RangeFieldType integral_2(RangeFieldType v_l, RangeFieldType v_u)
     {
-      return integral_1(v_l, v_u) - 1. / 2e5 * (numerator(v_u) - numerator(v_l));
+      return integral_1(v_l, v_u) - 1. / 2e5 * (g(v_u) - g(v_l));
+    }
+
+    // calculates integral from v_l to v_u of v^2*g
+    static RangeFieldType integral_3(RangeFieldType v_l, RangeFieldType v_u)
+    {
+      return 0.25e-10 * (dg(v_u) - dg(v_l)) + 2. * integral_2(v_l, v_u) + (0.5e-5 - 1.) * integral_1(v_l, v_u);
     }
   };
 
@@ -164,7 +196,7 @@ protected:
   struct helper : public helper_base
   {
     using helper_base::denominator;
-    using helper_base::numerator;
+    using helper_base::g;
 
     static DynamicRangeType get_left_boundary_values(const MomentBasisImp& basis_functions,
                                                      const RangeFieldType& psi_vac,
@@ -182,7 +214,7 @@ protected:
         for (const auto& quad_point : quadrature) {
           const auto& v = quad_point.position()[0];
           auto summand = basis_functions.evaluate(v, ii);
-          summand *= numerator(v) * quad_point.weight();
+          summand *= g(v) * quad_point.weight();
           ret += summand;
         }
       }
@@ -191,6 +223,17 @@ protected:
       ret += basis_functions.integrated() * psi_vac;
       return ret;
     }
+
+    static DynamicRangeType get_kinetic_boundary_flux(const MomentBasisImp& /*basis_functions*/,
+                                                      const RangeFieldType& /*psi_vac*/,
+                                                      const bool /*is_mn_model*/,
+                                                      const DomainType& x,
+                                                      const RangeFieldType& n,
+                                                      const size_t dd,
+                                                      const ThisType& problem)
+    {
+      return problem.kinetic_boundary_flux_from_quadrature(x, n, dd);
+    }
   };
 
   template <class anything>
@@ -198,8 +241,10 @@ protected:
     : public helper_base
   {
     using helper_base::denominator;
+    using helper_base::g;
     using helper_base::integral_1;
-    using helper_base::numerator;
+    using helper_base::integral_2;
+    using helper_base::integral_3;
 
     static DynamicRangeType get_left_boundary_values(const MomentBasisImp& basis_functions,
                                                      const RangeFieldType psi_vac,
@@ -211,19 +256,55 @@ protected:
         const auto vn = triangulation[nn];
         if (nn < dimRange - 1) {
           const auto vnp = triangulation[nn + 1];
-          ret[nn] += 1. / ((vn - vnp) * denominator())
-                     * ((1 - vnp) * integral_1(vn, vnp) - 1. / 2e5 * (numerator(vnp) - numerator(vn)));
+          ret[nn] += 1. / ((vn - vnp) * denominator()) * (integral_2(vn, vnp) - vnp * integral_1(vn, vnp));
         }
         if (nn > 0) {
           const auto vnm = triangulation[nn - 1];
-          ret[nn] += 1. / ((vn - vnm) * denominator())
-                     * ((1 - vnm) * integral_1(vnm, vn) - 1. / 2e5 * (numerator(vn) - numerator(vnm)));
+          ret[nn] += 1. / ((vn - vnm) * denominator()) * (integral_2(vnm, vn) - vnm * integral_1(vnm, vn));
         }
       }
       // add small vacuum concentration to move away from realizable boundary
       ret += basis_functions.integrated() * psi_vac;
       return ret;
-    }
+    } // ... get_left_boundary_values(...)
+
+    static DynamicRangeType get_kinetic_boundary_flux(const MomentBasisImp& basis_functions,
+                                                      const RangeFieldType& /*psi_vac*/,
+                                                      const bool is_mn_model,
+                                                      const DomainType& x,
+                                                      const RangeFieldType& n,
+                                                      const size_t dd,
+                                                      const ThisType& problem)
+    {
+      if (!is_mn_model)
+        DUNE_THROW(Dune::NotImplemented, "Only implemented for mn");
+      if (x < 1.5) {
+        DynamicRangeType ret(dimRange, 0.);
+        const auto& triangulation = basis_functions.triangulation();
+        for (size_t nn = 0; nn < dimRange; ++nn) {
+          const auto vn = triangulation[nn];
+          if (nn < dimRange - 1) {
+            const auto vnp = triangulation[nn + 1];
+            if (vnp > 0.) {
+              const auto left_limit = vn > 0. ? vn : 0.;
+              ret[nn] +=
+                  1. / ((vn - vnp) * denominator()) * (integral_3(left_limit, vnp) - vnp * integral_2(left_limit, vnp));
+            } // if (vnp > 0.)
+          } // if (nn < dimRange -1)
+          if (vn > 0.) {
+            if (nn > 0) {
+              const auto vnm = triangulation[nn - 1];
+              const auto left_limit = vnm > 0. ? vnm : 0.;
+              ret[nn] +=
+                  1. / ((vn - vnm) * denominator()) * (integral_2(left_limit, vn) - vnm * integral_1(left_limit, vn));
+            } // if (nn > 0)
+          } // if (vn > 0.)
+        } // nn
+        return ret;
+      } else {
+        return problem.kinetic_boundary_flux_from_quadrature(x, n, dd);
+      }
+    } // ... get_kinetic_boundary_flux(...)
   };
 
   template <class anything>
@@ -232,6 +313,7 @@ protected:
     using helper_base::denominator;
     using helper_base::integral_1;
     using helper_base::integral_2;
+    using helper_base::integral_3;
 
     static DynamicRangeType get_left_boundary_values(const MomentBasisImp& basis_functions,
                                                      const RangeFieldType psi_vac,
@@ -247,6 +329,32 @@ protected:
       ret += basis_functions.integrated() * psi_vac;
       return ret;
     }
+
+    static DynamicRangeType get_kinetic_boundary_flux(const MomentBasisImp& basis_functions,
+                                                      const RangeFieldType& /*psi_vac*/,
+                                                      const bool is_mn_model,
+                                                      const DomainType& x,
+                                                      const RangeFieldType& n,
+                                                      const size_t dd,
+                                                      const ThisType& problem)
+    {
+      if (!is_mn_model)
+        DUNE_THROW(Dune::NotImplemented, "Only implemented for mn");
+      if (x < 1.5) {
+        const auto& triangulation = basis_functions.triangulation();
+        DynamicRangeType ret(dimRange, 0.);
+        for (size_t ii = 0; ii < dimRange / 2; ++ii) {
+          if (triangulation[ii + 1] > 0.) {
+            const auto left_limit = triangulation[ii] > 0. ? triangulation[ii] : 0.;
+            ret[2 * ii] = integral_2(left_limit, triangulation[ii + 1]) / denominator();
+            ret[2 * ii + 1] = integral_3(left_limit, triangulation[ii + 1]) / denominator();
+          }
+        } // ii
+        return ret;
+      } else {
+        return problem.kinetic_boundary_flux_from_quadrature(x, n, dd);
+      }
+    } // ... get_kinetic_boundary_flux(...)
   };
 
   using BaseType::basis_functions_;

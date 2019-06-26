@@ -26,7 +26,7 @@ namespace Dune {
 namespace GDT {
 
 
-template <class GridViewImp, class MomentBasisImp, bool fluxes_precomputed>
+template <class GridViewImp, class MomentBasisImp, SlopeType slope>
 class EntropyBasedFluxEntropyCoordsFunction
   : public XT::Functions::FluxFunctionInterface<XT::Grid::extract_entity_t<GridViewImp>,
                                                 MomentBasisImp::dimRange,
@@ -56,6 +56,9 @@ public:
   using AlphaReturnType = typename ImplementationType::AlphaReturnType;
   using VectorType = typename ImplementationType::VectorType;
   using I = XT::Grid::extract_intersection_t<GridViewType>;
+  using QuadratureWeightsType = typename ImplementationType::QuadratureWeightsType;
+  using BoundaryQuadratureWeightsType =
+      std::vector<XT::Common::FieldVector<XT::Common::FieldVector<QuadratureWeightsType, 2>, dimFlux>>;
 
   explicit EntropyBasedFluxEntropyCoordsFunction(
       const MomentBasis& basis_functions,
@@ -74,7 +77,6 @@ public:
   explicit EntropyBasedFluxEntropyCoordsFunction(EntropyBasedFluxFunction<GridViewType, MomentBasis>& other)
     : implementation_(other.implementation_)
   {}
-
 
   static const constexpr bool available = true;
 
@@ -132,17 +134,12 @@ public:
 
   StateType evaluate_kinetic_flux(const E& /*inside_entity*/,
                                   const E& /*outside_entity*/,
-                                  //                                  const StateType& alpha_i,
-                                  //                                  const StateType& alpha_j,
-                                  const StateType& flux_or_alpha_i,
-                                  const StateType& flux_or_alpha_j,
+                                  const StateType& flux_i,
+                                  const StateType& flux_j,
                                   const DomainType& n_ij,
                                   const size_t dd) const
   {
-    if (fluxes_precomputed)
-      return (flux_or_alpha_i + flux_or_alpha_j) * n_ij[dd];
-    else
-      return implementation_->evaluate_kinetic_flux_with_alphas(flux_or_alpha_i, flux_or_alpha_j, n_ij, dd);
+    return (flux_i + flux_j) * n_ij[dd];
   } // StateType evaluate_kinetic_flux(...)
 
   const MomentBasis& basis_functions() const
@@ -155,6 +152,11 @@ public:
     return implementation_->get_u(alpha);
   }
 
+  StateType get_u(const size_t entity_index) const
+  {
+    return implementation_->get_u(density_evaluations_[entity_index]);
+  }
+
   StateType get_alpha(const StateType& u) const
   {
     const auto alpha = implementation_->get_alpha(u)->first;
@@ -164,25 +166,71 @@ public:
   }
 
   template <class FluxesMapType>
-  void calculate_minmod_density_reconstruction(const FieldVector<StateType, 3>& alphas,
-                                               FluxesMapType& precomputed_fluxes,
-                                               const size_t dd) const
+  void calculate_reconstructed_fluxes(const FieldVector<size_t, 3>& entity_indices,
+                                      const FieldVector<bool, 3>& boundary_direction,
+                                      FluxesMapType& precomputed_fluxes,
+                                      const size_t dd) const
   {
-    implementation_->calculate_minmod_density_reconstruction(alphas, precomputed_fluxes, dd);
+    FieldVector<const QuadratureWeightsType*, 3> densities_stencil;
+    for (size_t ii = 0; ii < 3; ++ii)
+      if (entity_indices[ii] == size_t(-1))
+        densities_stencil[ii] = &boundary_density_evaluations_[entity_indices[1]][dd][boundary_direction[ii]];
+      else
+        densities_stencil[ii] = &density_evaluations_[entity_indices[ii]];
+    implementation_->template calculate_reconstructed_fluxes<slope, FluxesMapType>(
+        densities_stencil, precomputed_fluxes, dd);
   }
 
-  StateType calculate_boundary_flux(const StateType& alpha, const I& intersection)
+  StateType calculate_boundary_flux(const size_t entity_index, const I& intersection)
   {
-    return implementation_->calculate_boundary_flux(alpha, intersection);
+    const size_t dd = intersection.indexInInside() / 2;
+    const size_t dir = intersection.indexInInside() % 2;
+    return implementation_->calculate_boundary_flux(boundary_density_evaluations_[entity_index][dd][dir], intersection);
   }
 
-  void apply_inverse_hessian(const StateType& alpha, const StateType& u, StateType& Hinv_u) const
+  void apply_inverse_hessian(const size_t entity_index, const StateType& u, StateType& Hinv_u) const
   {
-    implementation_->apply_inverse_hessian(alpha, u, Hinv_u);
+    implementation_->apply_inverse_hessian(density_evaluations_[entity_index], u, Hinv_u);
   }
+
+  void store_density_evaluations(const size_t entity_index, const StateType& alpha)
+  {
+    implementation_->store_density_evaluations(density_evaluations_[entity_index], alpha);
+  }
+
+  void store_boundary_evaluations(const std::function<RangeFieldType(const DomainType&)>& boundary_density,
+                                  const size_t entity_index,
+                                  const size_t intersection_index)
+  {
+    implementation_->store_evaluations(
+        boundary_density_evaluations_[entity_index][intersection_index / 2][intersection_index % 2], boundary_density);
+  }
+
+  std::vector<QuadratureWeightsType>& density_evaluations()
+  {
+    return density_evaluations_;
+  }
+
+  const std::vector<QuadratureWeightsType>& density_evaluations() const
+  {
+    return density_evaluations_;
+  }
+
+  BoundaryQuadratureWeightsType& boundary_density_evaluations()
+  {
+    return boundary_density_evaluations_;
+  }
+
+  const BoundaryQuadratureWeightsType& boundary_density_evaluations() const
+  {
+    return boundary_density_evaluations_;
+  }
+
 
 private:
   std::shared_ptr<ImplementationType> implementation_;
+  std::vector<QuadratureWeightsType> density_evaluations_;
+  BoundaryQuadratureWeightsType boundary_density_evaluations_;
 };
 
 

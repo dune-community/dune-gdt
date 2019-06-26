@@ -64,7 +64,7 @@ public:
   const InverseHessianOperatorType& inverse_hessian_operator_;
 }; // class EntropicCoordinatesOperator<...>
 
-template <class AdvectionOperatorImp, class RhsOperatorImp, class InverseHessianOperatorImp>
+template <class DensityOperatorImp, class AdvectionOperatorImp, class RhsOperatorImp, class InverseHessianOperatorImp>
 class EntropicCoordinatesCombinedOperator
   : public OperatorInterface<typename AdvectionOperatorImp::MatrixType,
                              typename AdvectionOperatorImp::SGV,
@@ -79,14 +79,17 @@ public:
   using typename BaseType::SourceSpaceType;
   using typename BaseType::VectorType;
 
+  using DensityOperatorType = DensityOperatorImp;
   using AdvectionOperatorType = AdvectionOperatorImp;
   using RhsOperatorType = RhsOperatorImp;
   using InverseHessianOperatorType = InverseHessianOperatorImp;
 
-  EntropicCoordinatesCombinedOperator(const AdvectionOperatorType& advection_op,
+  EntropicCoordinatesCombinedOperator(const DensityOperatorType& density_op,
+                                      const AdvectionOperatorType& advection_op,
                                       const RhsOperatorType& rhs_op,
                                       const InverseHessianOperatorType& inverse_hessian_operator)
-    : advection_op_(advection_op)
+    : density_op_(density_op)
+    , advection_op_(advection_op)
     , rhs_op_(rhs_op)
     , inverse_hessian_operator_(inverse_hessian_operator)
   {}
@@ -108,6 +111,7 @@ public:
 
   void apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& param) const override final
   {
+    density_op_.apply(source, range, param);
     VectorType u_update = range;
     std::fill(u_update.begin(), u_update.end(), 0.);
     advection_op_.apply(source, u_update, param);
@@ -116,6 +120,7 @@ public:
     inverse_hessian_operator_.apply_inverse_hessian(source, u_update, range, param);
   }
 
+  const DensityOperatorType& density_op_;
   const AdvectionOperatorType& advection_op_;
   const RhsOperatorType& rhs_op_;
   const InverseHessianOperatorType& inverse_hessian_operator_;

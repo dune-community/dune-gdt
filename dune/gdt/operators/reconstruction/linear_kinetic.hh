@@ -37,27 +37,22 @@ class LocalPointwiseLinearKineticReconstructionOperator : public XT::Grid::Eleme
   static constexpr size_t dimRange = BoundaryValueType::r;
   using EntityType = typename GV::template Codim<0>::Entity;
   using RangeFieldType = typename BoundaryValueType::RangeFieldType;
-  using StencilType = DynamicVector<LocalVectorType>;
-  using StencilsType = std::vector<StencilType>;
+  static constexpr size_t stencil_size = 3;
+  using StencilType = XT::Common::FieldVector<size_t, stencil_size>;
+  using StencilsType = FieldVector<StencilType, dimDomain>;
   using DomainType = typename BoundaryValueType::DomainType;
   using RangeType = typename BoundaryValueType::RangeReturnType;
-  static constexpr size_t stencil_size = 3;
   using ReconstructedFunctionType = DiscreteValuedGridFunction<GV, dimRange, 1, RangeFieldType>;
 
 public:
   explicit LocalPointwiseLinearKineticReconstructionOperator(ReconstructedFunctionType& reconstructed_function,
                                                              const GV& grid_view,
                                                              const AnalyticalFluxType& analytical_flux,
-                                                             const std::vector<LocalVectorType>& source_values,
-                                                             const BoundaryValueType& boundary_values,
                                                              const XT::Common::Parameter& param)
     : reconstructed_function_(reconstructed_function)
     , grid_view_(grid_view)
     , analytical_flux_(analytical_flux)
-    , source_values_(source_values)
-    , boundary_values_(boundary_values)
     , param_(param)
-    , stencils_(dimDomain, StencilType(stencil_size))
   {}
 
   LocalPointwiseLinearKineticReconstructionOperator(const ThisType& other)
@@ -65,10 +60,7 @@ public:
     , reconstructed_function_(other.reconstructed_function_)
     , grid_view_(other.grid_view_)
     , analytical_flux_(other.analytical_flux_)
-    , source_values_(other.source_values_)
-    , boundary_values_(other.boundary_values_)
     , param_(other.param_)
-    , stencils_(dimDomain, StencilType(stencil_size))
   {}
 
   virtual XT::Grid::ElementFunctor<GV>* copy() override final
@@ -84,22 +76,23 @@ public:
 
     auto& local_reconstructed_values = reconstructed_function_.local_values(entity);
     for (size_t dd = 0; dd < dimDomain; ++dd)
-      analytical_flux_.calculate_minmod_density_reconstruction(stencils_[dd], local_reconstructed_values, dd);
+      analytical_flux_.calculate_reconstructed_fluxes(
+          stencils_[dd], boundary_dirs_[dd], local_reconstructed_values, dd);
   } // void apply_local(...)
 
 private:
   bool fill_stencils(const EntityType& entity)
   {
-    const auto entity_index = grid_view_.indexSet().index(entity);
     for (size_t dd = 0; dd < dimDomain; ++dd)
-      stencils_[dd][1] = source_values_[entity_index];
+      stencils_[dd][1] = grid_view_.indexSet().index(entity);
     for (const auto& intersection : Dune::intersections(grid_view_, entity)) {
       const size_t dd = intersection.indexInInside() / 2;
       const size_t index = (intersection.indexInInside() % 2) * 2;
       if (intersection.boundary() && !intersection.neighbor()) { // boundary intersections
-        stencils_[dd][index] = boundary_values_.evaluate(intersection.geometry().center());
+        stencils_[dd][index] = size_t(-1);
+        boundary_dirs_[dd][index] = intersection.indexInInside() % 2;
       } else if (intersection.neighbor()) { // inner and periodic intersections {
-        stencils_[dd][index] = source_values_[grid_view_.indexSet().index(intersection.outside())];
+        stencils_[dd][index] = grid_view_.indexSet().index(intersection.outside());
       } else if (!intersection.neighbor() && !intersection.boundary()) { // processor boundary
         return false;
       } else {
@@ -112,10 +105,10 @@ private:
   ReconstructedFunctionType& reconstructed_function_;
   const GV& grid_view_;
   const AnalyticalFluxType& analytical_flux_;
-  const std::vector<LocalVectorType>& source_values_;
-  const BoundaryValueType& boundary_values_;
   const XT::Common::Parameter& param_;
   StencilsType stencils_;
+  XT::Common::FieldVector<XT::Common::FieldVector<size_t, stencil_size>, dimDomain> boundary_dirs_;
+
 }; // class LocalPointwiseLinearKineticReconstructionOperator
 
 // Does not reconstruct a full first-order DG function, but only stores the reconstructed values at the intersection
@@ -170,7 +163,7 @@ public:
     // do reconstruction
     auto local_reconstruction_operator =
         LocalPointwiseLinearKineticReconstructionOperator<GV, AnalyticalFluxType, BoundaryValueType, LocalVectorType>(
-            range, grid_view, analytical_flux_, source_values, boundary_values_, param);
+            range, grid_view, analytical_flux_, param);
     auto walker = XT::Grid::Walker<GV>(grid_view);
     walker.append(local_reconstruction_operator);
     walker.walk(true);

@@ -31,8 +31,6 @@
 #include <dune/gdt/momentmodels/basisfunctions/partial_moments.hh>
 #include <dune/gdt/momentmodels/entropyflux.hh>
 
-#include "internal.hh"
-
 namespace Dune {
 namespace GDT {
 
@@ -213,22 +211,11 @@ public:
     return minmod(slope_left_char, slope_right_char);
   }
 
-  virtual VectorType get(const E& /*entity*/,
-                         const StencilType& stencil,
-                         const EigenVectorWrapperType& /*eigenvectors*/,
-                         const size_t /*dd*/) const override final
-  {
-    const VectorType slope_left = stencil[1] - stencil[0];
-    const VectorType slope_right = stencil[2] - stencil[1];
-    return minmod(slope_left, slope_right);
-  }
-
   static VectorType minmod(const VectorType& first_slope, const VectorType& second_slope)
   {
-    VectorType ret(0.);
+    VectorType ret;
     for (size_t ii = 0; ii < first_slope.size(); ++ii)
-      if (std::signbit(first_slope[ii]) == std::signbit(second_slope[ii])) // check for equal sign
-        ret[ii] = (std::abs(first_slope[ii]) < std::abs(second_slope[ii])) ? first_slope[ii] : second_slope[ii];
+      ret[ii] = XT::Common::minmod(first_slope[ii], second_slope[ii]);
     return ret;
   }
 };
@@ -297,17 +284,14 @@ public:
     VectorType slope_left_char, slope_right_char;
     eigenvectors.apply_inverse_eigenvectors(dd, slope_left, slope_left_char);
     eigenvectors.apply_inverse_eigenvectors(dd, slope_right, slope_right_char);
-    const VectorType first_slope = MinmodType::minmod(slope_left_char, slope_right_char * 2.);
-    const VectorType second_slope = MinmodType::minmod(slope_left_char * 2., slope_right_char);
-    return maxmod(first_slope, second_slope);
+    return superbee(slope_left_char, slope_right_char);
   }
 
-  static VectorType maxmod(const VectorType& first_slope, const VectorType& second_slope)
+  static VectorType superbee(const VectorType& first_slope, const VectorType& second_slope)
   {
     VectorType ret(0.);
     for (size_t ii = 0; ii < first_slope.size(); ++ii)
-      if (std::signbit(first_slope[ii]) == std::signbit(second_slope[ii])) // check for equal sign
-        ret[ii] = (std::abs(first_slope[ii]) < std::abs(second_slope[ii])) ? second_slope[ii] : first_slope[ii];
+      ret[ii] = superbee(first_slope[ii], second_slope[ii]);
     return ret;
   }
 }; // class SuperbeeSlope

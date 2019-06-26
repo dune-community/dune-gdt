@@ -50,6 +50,14 @@ namespace Dune {
 namespace GDT {
 
 
+template <class T>
+std::enable_if_t<std::is_arithmetic<T>::value, T> superbee(const T first_slope, const T second_slope)
+{
+  return XT::Common::maxmod(XT::Common::minmod(first_slope, 2. * second_slope),
+                            XT::Common::minmod(2. * first_slope, second_slope));
+}
+
+
 // choose specializations
 #ifndef ENTROPY_FLUX_UNSPECIALIZED_USE_ADAPTIVE_CHANGE_OF_BASIS
 #  define ENTROPY_FLUX_UNSPECIALIZED_USE_ADAPTIVE_CHANGE_OF_BASIS 1
@@ -70,6 +78,15 @@ namespace GDT {
 #ifndef ENTROPY_FLUX_1D_HATFUNCTIONS_USE_ANALYTICAL_INTEGRALS
 #  define ENTROPY_FLUX_1D_HATFUNCTIONS_USE_ANALYTICAL_INTEGRALS 0
 #endif
+
+
+enum class SlopeType
+{
+  minmod,
+  superbee,
+  mc,
+  no_slope
+};
 
 
 template <class MomentBasisImp>
@@ -105,7 +122,8 @@ public:
   using DynamicRangeType = DynamicVector<RangeFieldType>;
   using BasisValuesMatrixType = XT::LA::CommonDenseMatrix<RangeFieldType>;
   using AlphaReturnType = std::pair<VectorType, std::pair<DomainType, RangeFieldType>>;
-  using QuadraturePointsValuesType = std::vector<RangeFieldType>;
+  using QuadraturePointsType = std::vector<BasisDomainType, boost::alignment::aligned_allocator<BasisDomainType, 64>>;
+  using QuadratureWeightsType = std::vector<RangeFieldType, boost::alignment::aligned_allocator<BasisDomainType, 64>>;
 
   explicit EntropyBasedFluxImplementationUnspecializedBase(const MomentBasis& basis_functions,
                                                            const RangeFieldType tau,
@@ -230,7 +248,7 @@ public:
                                                const size_t dd) const
 
   {
-    thread_local FieldVector<std::vector<RangeFieldType>, 2> work_vecs;
+    thread_local FieldVector<QuadratureWeightsType, 2> work_vecs;
     work_vecs[0].resize(quad_points_.size());
     work_vecs[1].resize(quad_points_.size());
     calculate_scalar_products(alpha_i, M_, work_vecs[0]);
@@ -260,8 +278,8 @@ public:
   // get permutation instead of sorting directly to be able to sort two vectors the same way
   // see
   // https://stackoverflow.com/questions/17074324/how-can-i-sort-two-vectors-in-the-same-way-with-criteria-that-uses-only-one-of
-  template <typename T, typename Compare>
-  static std::vector<std::size_t> get_sort_permutation(const std::vector<T>& vec, const Compare& compare)
+  template <class T, class Alloc, class Compare>
+  static std::vector<std::size_t> get_sort_permutation(const std::vector<T, Alloc>& vec, const Compare& compare)
   {
     std::vector<std::size_t> p(vec.size());
     std::iota(p.begin(), p.end(), 0);
@@ -269,8 +287,8 @@ public:
     return p;
   }
 
-  template <typename T>
-  static void apply_permutation_in_place(std::vector<T>& vec, const std::vector<std::size_t>& p)
+  template <class T, class Alloc>
+  static void apply_permutation_in_place(std::vector<T, Alloc>& vec, const std::vector<std::size_t>& p)
   {
     std::vector<bool> done(vec.size());
     for (std::size_t i = 0; i < vec.size(); ++i) {
@@ -290,8 +308,7 @@ public:
   }
 
   // Joins duplicate quadpoints, vectors have to be sorted!
-  static void join_duplicate_quadpoints(std::vector<BasisDomainType>& quad_points,
-                                        std::vector<RangeFieldType>& quad_weights)
+  static void join_duplicate_quadpoints(QuadraturePointsType& quad_points, QuadratureWeightsType& quad_weights)
   {
     // Index of first quad_point of several quad_points with the same position
     size_t curr_index = 0;
@@ -319,7 +336,7 @@ public:
     static_assert(std::is_same<BasisFuncImp, MomentBasis>::value, "BasisFuncImp has to be MomentBasis!");
 
     RealizabilityHelper(const MomentBasis& basis_functions,
-                        const std::vector<BasisDomainType>& quad_points,
+                        const QuadraturePointsType& quad_points,
                         XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>>& lp)
       : basis_functions_(basis_functions)
       , quad_points_(quad_points)
@@ -386,7 +403,7 @@ public:
 
   private:
     const MomentBasis& basis_functions_;
-    const std::vector<BasisDomainType>& quad_points_;
+    const QuadraturePointsType& quad_points_;
     XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>>& lp_;
   }; // struct RealizabilityHelper<...>
 #else // HAVE_CLP
@@ -432,16 +449,16 @@ public:
   }; // struct RealizabilityHelper<Hatfunctions, ...>
 
   // temporary vectors to store inner products and exponentials
-  std::vector<RangeFieldType>& working_storage() const
+  QuadratureWeightsType& working_storage() const
   {
-    thread_local std::vector<RangeFieldType> work_vec;
+    thread_local QuadratureWeightsType work_vec;
     work_vec.resize(quad_points_.size());
     return work_vec;
   }
 
   void calculate_scalar_products(const DomainType& beta_in,
                                  const BasisValuesMatrixType& M,
-                                 std::vector<RangeFieldType>& scalar_products) const
+                                 QuadratureWeightsType& scalar_products) const
   {
 #if HAVE_MKL || HAVE_CBLAS
     XT::Common::Blas::dgemv(XT::Common::Blas::row_major(),
@@ -465,7 +482,7 @@ public:
 #endif
   }
 
-  void apply_exponential(std::vector<RangeFieldType>& values) const
+  void apply_exponential(QuadratureWeightsType& values) const
   {
     assert(values.size() < std::numeric_limits<int>::max());
     XT::Common::Mkl::exp(static_cast<int>(values.size()), values.data(), values.data());
@@ -571,10 +588,11 @@ public:
     } // ii
   } // void calculate_A_Binv(...)
 
-  void apply_inverse_hessian(const DomainType& alpha, const DomainType& u, DomainType& Hinv_u) const
+  void
+  apply_inverse_hessian(const QuadratureWeightsType& density_evaluations, const DomainType& u, DomainType& Hinv_u) const
   {
     thread_local auto H = XT::Common::make_unique<MatrixType>();
-    calculate_hessian(alpha, M_, *H);
+    calculate_hessian(density_evaluations, M_, *H);
     XT::LA::cholesky(*H);
     thread_local DomainType tmp_vec;
     XT::LA::solve_lower_triangular(*H, tmp_vec, u);
@@ -600,11 +618,33 @@ public:
       for (size_t ii = 0; ii < basis_dimRange; ++ii) {
         auto* H_row = &(H[ii][0]);
         const auto factor_ll_ii = basis_ll[ii] * factor_ll;
-        if (!XT::Common::is_zero(factor_ll_ii)) {
-          for (size_t kk = 0; kk <= ii; ++kk) {
-            H_row[kk] += basis_ll[kk] * factor_ll_ii;
-          } // kk
-        }
+        //        if (!XT::Common::is_zero(factor_ll_ii)) {
+        for (size_t kk = 0; kk <= ii; ++kk) {
+          H_row[kk] += basis_ll[kk] * factor_ll_ii;
+        } // kk
+        //        }
+      } // ii
+    } // ll
+  } // void calculate_hessian(...)
+
+  void calculate_hessian(const QuadratureWeightsType& density_evaluations,
+                         const BasisValuesMatrixType& M,
+                         MatrixType& H) const
+  {
+    std::fill(H.begin(), H.end(), 0.);
+    const size_t num_quad_points = quad_weights_.size();
+    // matrix is symmetric, we only use lower triangular part
+    for (size_t ll = 0; ll < num_quad_points; ++ll) {
+      auto factor_ll = density_evaluations[ll] * quad_weights_[ll];
+      const auto* basis_ll = &(M.get_entry_ref(ll, 0.));
+      for (size_t ii = 0; ii < basis_dimRange; ++ii) {
+        auto* H_row = &(H[ii][0]);
+        const auto factor_ll_ii = basis_ll[ii] * factor_ll;
+        //        if (!XT::Common::is_zero(factor_ll_ii)) {
+        for (size_t kk = 0; kk <= ii; ++kk) {
+          H_row[kk] += basis_ll[kk] * factor_ll_ii;
+        } // kk
+        //        }
       } // ii
     } // ll
   } // void calculate_hessian(...)
@@ -663,8 +703,8 @@ public:
   } // void change_basis(...)
 
   const MomentBasis& basis_functions_;
-  std::vector<BasisDomainType> quad_points_;
-  std::vector<RangeFieldType> quad_weights_;
+  QuadraturePointsType quad_points_;
+  QuadratureWeightsType quad_weights_;
   BasisValuesMatrixType M_;
   const RangeFieldType tau_;
   const RangeFieldType epsilon_gamma_;
@@ -699,9 +739,10 @@ public:
   using typename BaseType::BasisDomainType;
   using typename BaseType::BasisValuesMatrixType;
   using typename BaseType::DomainType;
+  using typename BaseType::FluxDomainType;
   using typename BaseType::MatrixType;
   using typename BaseType::MomentBasis;
-  using typename BaseType::QuadraturePointsValuesType;
+  using typename BaseType::QuadratureWeightsType;
   using typename BaseType::RangeFieldType;
   using typename BaseType::VectorType;
 
@@ -732,43 +773,46 @@ public:
     return ret;
   }
 
-  static RangeFieldType minmod(const RangeFieldType& first_slope, const RangeFieldType& second_slope)
+  DomainType get_u(const QuadratureWeightsType& density_evaluations) const
   {
-    RangeFieldType ret = 0.;
-    if (std::signbit(first_slope) == std::signbit(second_slope)) // check for equal sign
-      ret = std::abs(first_slope) < std::abs(second_slope) ? first_slope : second_slope;
+    DomainType ret(0.);
+    const size_t num_quad_points = quad_weights_.size();
+    for (size_t ll = 0; ll < num_quad_points; ++ll) {
+      const auto factor_ll = density_evaluations[ll] * quad_weights_[ll];
+      const auto* basis_ll = &(M_.get_entry_ref(ll, 0.));
+      for (size_t ii = 0; ii < basis_dimRange; ++ii)
+        ret[ii] += basis_ll[ii] * factor_ll;
+    } // ll
     return ret;
   }
 
-  static RangeFieldType maxmod(const RangeFieldType first_slope, const RangeFieldType second_slope)
+  void store_density_evaluations(QuadratureWeightsType& density_evaluations, const DomainType& alpha) const
   {
-    RangeFieldType ret(0.);
-    if (std::signbit(first_slope) == std::signbit(second_slope)) // check for equal sign
-      ret = (std::abs(first_slope) < std::abs(second_slope)) ? second_slope : first_slope;
-    return ret;
+    density_evaluations.resize(quad_points_.size());
+    this->calculate_scalar_products(alpha, M_, density_evaluations);
+    this->apply_exponential(density_evaluations);
   }
 
-  static RangeFieldType superbee(const RangeFieldType first_slope, const RangeFieldType second_slope)
+  void store_evaluations(QuadratureWeightsType& density_evaluations,
+                         const std::function<RangeFieldType(const FluxDomainType&)>& boundary_density) const
   {
-    const RangeFieldType first_minmod = minmod(first_slope, second_slope * 2.);
-    const RangeFieldType second_minmod = minmod(first_slope * 2., second_slope);
-    return maxmod(first_minmod, second_minmod);
+    density_evaluations.resize(quad_points_.size());
+    for (size_t ll = 0; ll < quad_points_.size(); ++ll)
+      density_evaluations[ll] = boundary_density(quad_points_[ll]);
   }
 
   template <class IntersectionType>
-  DomainType calculate_boundary_flux(const DomainType& alpha, const IntersectionType& intersection)
+  DomainType calculate_boundary_flux(const QuadratureWeightsType& density_evaluations,
+                                     const IntersectionType& intersection)
   {
     // evaluate exp(alpha^T b(v_i)) at all quadratures points v_i
-    auto& work_vecs = this->working_storage();
-    this->calculate_scalar_products(alpha, M_, work_vecs);
-    this->apply_exponential(work_vecs);
     const auto dd = intersection.indexInInside() / 2;
     const auto& n_ij = intersection.centerUnitOuterNormal();
     DomainType ret(0.);
     for (size_t ll = 0; ll < quad_points_.size(); ++ll) {
       const auto position = quad_points_[ll][dd];
       if (position * n_ij[dd] < 0.) {
-        RangeFieldType factor = work_vecs[ll] * quad_weights_[ll] * position;
+        RangeFieldType factor = density_evaluations[ll] * quad_weights_[ll] * position;
         const auto* basis_ll = &(M_.get_entry_ref(ll, 0.));
         for (size_t ii = 0; ii < basis_dimRange; ++ii)
           ret[ii] += basis_ll[ii] * factor;
@@ -777,38 +821,29 @@ public:
     return ret;
   }
 
-  // TODO: Calculates exp(alpha^T b) 2*dim times for each alpha (as it is contained in 2*dim stencils) at the moment.
-  template <class FluxesMapType>
-  void calculate_minmod_density_reconstruction(const FieldVector<DomainType, 3>& alphas,
-                                               FluxesMapType& flux_values,
-                                               const size_t dd) const
+  template <SlopeType slope_type, class FluxesMapType>
+  void calculate_reconstructed_fluxes(const FieldVector<const QuadratureWeightsType*, 3>& density_evaluations,
+                                      FluxesMapType& flux_values,
+                                      const size_t dd) const
   {
-    // evaluate exp(alpha^T b(v_i)) at all quadratures points v_i for all three alphas
-    thread_local XT::Common::FieldVector<QuadraturePointsValuesType, 3> density_evaluations(
-        QuadraturePointsValuesType(quad_points_.size()));
-    thread_local XT::Common::FieldVector<QuadraturePointsValuesType, 2> reconstructed_values(
-        QuadraturePointsValuesType(quad_points_.size()));
-    for (size_t ii = 0; ii < 3; ++ii) {
-      this->calculate_scalar_products(alphas[ii], M_, density_evaluations[ii]);
-      this->apply_exponential(density_evaluations[ii]);
-      for (size_t ll = 0; ll < quad_points_.size(); ++ll) {
-        if (std::isnan(density_evaluations[ii][ll]) || std::isnan(density_evaluations[ii][ll])) {
-          std::cout << "Wrong val: " << density_evaluations[ii][ll] << " for alpha " << alphas[ii] << std::endl;
-          DUNE_THROW(Dune::MathError, "");
-        }
-      }
-    }
     // get left and right reconstructed values for each quadrature point v_i
+    thread_local XT::Common::FieldVector<QuadratureWeightsType, 2> reconstructed_values(
+        QuadratureWeightsType(quad_points_.size()));
     auto& vals_left = reconstructed_values[0];
     auto& vals_right = reconstructed_values[1];
-    for (size_t ll = 0; ll < quad_points_.size(); ++ll) {
-      const auto slope = minmod(density_evaluations[1][ll] - density_evaluations[0][ll],
-                                density_evaluations[2][ll] - density_evaluations[1][ll]);
-      //      const auto slope = superbee(density_evaluations[1][ll] - density_evaluations[0][ll],
-      //                                  density_evaluations[2][ll] - density_evaluations[1][ll]);
-      vals_left[ll] = density_evaluations[1][ll] - 0.5 * slope;
-      vals_right[ll] = density_evaluations[1][ll] + 0.5 * slope;
-    } // ll
+    if (slope_type == SlopeType::no_slope) {
+      for (size_t ll = 0; ll < quad_points_.size(); ++ll)
+        vals_left[ll] = vals_right[ll] = (*density_evaluations[1])[ll];
+    } else {
+      const auto slope_func =
+          (slope_type == SlopeType::minmod) ? XT::Common::minmod<RangeFieldType> : superbee<RangeFieldType>;
+      for (size_t ll = 0; ll < quad_points_.size(); ++ll) {
+        const auto slope = slope_func((*density_evaluations[1])[ll] - (*density_evaluations[0])[ll],
+                                      (*density_evaluations[2])[ll] - (*density_evaluations[1])[ll]);
+        vals_left[ll] = (*density_evaluations[1])[ll] - 0.5 * slope;
+        vals_right[ll] = (*density_evaluations[1])[ll] + 0.5 * slope;
+      } // ll
+    }
 
     BasisDomainType coord(0.5);
     coord[dd] = 0;
@@ -826,9 +861,7 @@ public:
       for (size_t ii = 0; ii < basis_dimRange; ++ii)
         val[ii] += basis_ll[ii] * factor;
     } // ll
-    //    std::cout << "right_flux_value, left_flux_value = " << right_flux_value << ", " << left_flux_value <<
-    //    std::endl;
-  } // void calculate_minmod_density_reconstruction(...)
+  } // void calculate_reconstructed_fluxes(...)
 
   // returns (alpha, (actual_u, r)), where r is the regularization parameter and actual_u the regularized u
   virtual std::unique_ptr<AlphaReturnType>
@@ -1221,10 +1254,9 @@ public:
   using BasisValuesMatrixType = FieldVector<XT::LA::CommonDenseMatrix<RangeFieldType>, num_blocks>;
   using QuadraturePointsType =
       FieldVector<std::vector<BasisDomainType, boost::alignment::aligned_allocator<BasisDomainType, 64>>, num_blocks>;
-  using QuadratureWeightsType =
-      FieldVector<std::vector<RangeFieldType, boost::alignment::aligned_allocator<RangeFieldType, 64>>, num_blocks>;
-  using TemporaryVectorType = std::vector<RangeFieldType, boost::alignment::aligned_allocator<RangeFieldType, 64>>;
-  using TemporaryVectorsType = FieldVector<TemporaryVectorType, num_blocks>;
+  using BlockQuadratureWeightsType =
+      std::vector<RangeFieldType, boost::alignment::aligned_allocator<RangeFieldType, 64>>;
+  using QuadratureWeightsType = FieldVector<BlockQuadratureWeightsType, num_blocks>;
   using AlphaReturnType = std::pair<BlockVectorType, std::pair<DomainType, RangeFieldType>>;
 
   explicit EntropyBasedFluxImplementation(const MomentBasis& basis_functions,
@@ -1258,10 +1290,6 @@ public:
       }
     } // jj
     for (size_t jj = 0; jj < num_blocks; ++jj) {
-      while (quad_weights_[jj].size() % 8) { // align to 64 byte boundary
-        quad_points_[jj].push_back(quad_points_[jj].back());
-        quad_weights_[jj].push_back(0.);
-      }
       M_[jj] = XT::LA::CommonDenseMatrix<RangeFieldType>(quad_points_[jj].size(), block_size, 0., 0);
       for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
         const auto val = basis_functions_.evaluate(quad_points_[jj][ll], jj);
@@ -1338,7 +1366,7 @@ public:
                                                const size_t dd) const
   {
     // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
-    thread_local FieldVector<TemporaryVectorsType, 2> work_vecs;
+    thread_local FieldVector<QuadratureWeightsType, 2> work_vecs;
     for (size_t jj = 0; jj < num_blocks; ++jj) {
       work_vecs[0][jj].resize(quad_points_[jj].size());
       work_vecs[1][jj].resize(quad_points_[jj].size());
@@ -1377,6 +1405,108 @@ public:
     calculate_vector_integral(alpha, M_, M_, u_block);
     return u_block;
   }
+
+  DomainType get_u(const QuadratureWeightsType& density_evaluations) const
+  {
+    DomainType ret;
+    for (size_t jj = 0; jj < num_blocks; ++jj) {
+      const auto offset = block_size * jj;
+      for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
+        const auto factor = density_evaluations[jj][ll] * quad_weights_[jj][ll];
+        const auto* basis_ll = &(M_[jj].get_entry_ref(ll, 0.));
+        for (size_t ii = 0; ii < block_size; ++ii)
+          ret[offset + ii] += basis_ll[ii] * factor;
+      } // ll
+    } // jj (intervals)
+    return ret;
+  }
+
+  void store_density_evaluations(QuadratureWeightsType& density_evaluations, const DomainType& alpha) const
+  {
+    this->calculate_scalar_products(alpha, M_, density_evaluations);
+    this->apply_exponential(density_evaluations);
+  }
+
+  void store_evaluations(QuadratureWeightsType& density_evaluations,
+                         const std::function<RangeFieldType(const FluxDomainType&)>& boundary_density) const
+  {
+    for (size_t jj = 0; jj < num_blocks; ++jj) {
+      density_evaluations[jj].resize(quad_points_[jj].size());
+      for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll)
+        density_evaluations[jj][ll] = boundary_density(quad_points_[jj][ll]);
+    } // jj
+  }
+
+  template <class IntersectionType>
+  DomainType calculate_boundary_flux(const QuadratureWeightsType& density_evaluations,
+                                     const IntersectionType& intersection)
+  {
+    // evaluate exp(alpha^T b(v_i)) at all quadratures points v_i
+    const auto dd = intersection.indexInInside() / 2;
+    const auto& n_ij = intersection.centerUnitOuterNormal();
+    DomainType ret(0);
+    for (size_t jj = 0; jj < num_blocks; ++jj) {
+      const auto offset = block_size * jj;
+      for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
+        const auto position = quad_points_[jj][ll][dd];
+        if (position * n_ij[dd] < 0.) {
+          RangeFieldType factor = density_evaluations[jj][ll] * quad_weights_[jj][ll] * position;
+          for (size_t ii = 0; ii < block_size; ++ii)
+            ret[offset + ii] += M_[jj].get_entry(ll, ii) * factor;
+        }
+      } // ll
+    } // jj
+    return ret;
+  }
+
+  template <SlopeType slope_type, class FluxesMapType>
+  void calculate_reconstructed_fluxes(const FieldVector<const QuadratureWeightsType*, 3>& density_evaluations,
+                                      FluxesMapType& flux_values,
+                                      const size_t dd) const
+  {
+    // get flux storage
+    BasisDomainType coord(0.5);
+    coord[dd] = 0;
+    auto& left_flux_value = flux_values[coord];
+    coord[dd] = 1;
+    auto& right_flux_value = flux_values[coord];
+    right_flux_value = left_flux_value = DomainType(0.);
+
+    // evaluate exp(alpha^T b(v_i)) at all quadratures points v_i for all three alphas
+    thread_local XT::Common::FieldVector<BlockQuadratureWeightsType, 2> reconstructed_values(
+        BlockQuadratureWeightsType(quad_points_[0].size()));
+
+    // get left and right reconstructed values for each quadrature point v_i
+    auto& vals_left = reconstructed_values[0];
+    auto& vals_right = reconstructed_values[1];
+
+    const auto slope_func =
+        (slope_type == SlopeType::minmod) ? XT::Common::minmod<RangeFieldType> : superbee<RangeFieldType>;
+    for (size_t jj = 0; jj < num_blocks; ++jj) {
+      // reconstruct densities
+      if (slope_type == SlopeType::no_slope) {
+        for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll)
+          vals_left[ll] = vals_right[ll] = (*density_evaluations[1])[jj][ll];
+      } else {
+        for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
+          const auto slope = slope_func((*density_evaluations[1])[jj][ll] - (*density_evaluations[0])[jj][ll],
+                                        (*density_evaluations[2])[jj][ll] - (*density_evaluations[1])[jj][ll]);
+          vals_left[ll] = (*density_evaluations[1])[jj][ll] - 0.5 * slope;
+          vals_right[ll] = (*density_evaluations[1])[jj][ll] + 0.5 * slope;
+        } // ll
+      }
+      // calculate fluxes
+      const auto offset = block_size * jj;
+      for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
+        const auto position = quad_points_[jj][ll][dd];
+        RangeFieldType factor = position > 0. ? vals_right[ll] : vals_left[ll];
+        factor *= quad_weights_[jj][ll] * position;
+        auto& val = position > 0. ? right_flux_value : left_flux_value;
+        for (size_t ii = 0; ii < block_size; ++ii)
+          val[offset + ii] += M_[jj].get_entry(ll, ii) * factor;
+      } // ll
+    } // jj
+  } // void calculate_reconstructed_fluxes(...)
 
   std::unique_ptr<AlphaReturnType>
   get_alpha(const DomainType& u, const VectorType& alpha_in, const bool regularize) const
@@ -1518,9 +1648,9 @@ public:
   }
 
   // temporary vectors to store inner products and exponentials
-  TemporaryVectorsType& working_storage() const
+  QuadratureWeightsType& working_storage() const
   {
-    thread_local TemporaryVectorsType work_vecs;
+    thread_local QuadratureWeightsType work_vecs;
     for (size_t jj = 0; jj < num_blocks; ++jj)
       work_vecs[jj].resize(quad_points_[jj].size());
     return work_vecs;
@@ -1542,7 +1672,7 @@ public:
   void calculate_scalar_products_block(const size_t jj,
                                        const LocalVectorType& beta_in,
                                        const XT::LA::CommonDenseMatrix<RangeFieldType>& M,
-                                       TemporaryVectorType& scalar_products) const
+                                       BlockQuadratureWeightsType& scalar_products) const
   {
     const size_t num_quad_points = quad_points_[jj].size();
     for (size_t ll = 0; ll < num_quad_points; ++ll) {
@@ -1553,19 +1683,21 @@ public:
 
   void calculate_scalar_products(const BlockVectorType& beta_in,
                                  const BasisValuesMatrixType& M,
-                                 TemporaryVectorsType& scalar_products) const
+                                 QuadratureWeightsType& scalar_products) const
   {
-    for (size_t jj = 0; jj < num_blocks; ++jj)
+    for (size_t jj = 0; jj < num_blocks; ++jj) {
+      scalar_products[jj].resize(quad_weights_[jj].size());
       calculate_scalar_products_block(jj, beta_in.block(jj), M[jj], scalar_products[jj]);
+    }
   }
 
-  void apply_exponential(TemporaryVectorType& values) const
+  void apply_exponential(BlockQuadratureWeightsType& values) const
   {
     assert(values.size() < std::numeric_limits<int>::max());
     XT::Common::Mkl::exp(static_cast<int>(values.size()), values.data(), values.data());
   }
 
-  void apply_exponential(TemporaryVectorsType& values) const
+  void apply_exponential(QuadratureWeightsType& values) const
   {
     for (size_t jj = 0; jj < num_blocks; ++jj)
       apply_exponential(values[jj]);
@@ -1772,10 +1904,11 @@ public:
     } // jj
   } // void calculate_A_Binv(...)
 
-  void apply_inverse_hessian(const DomainType& alpha, const DomainType& u, DomainType& Hinv_u) const
+  void
+  apply_inverse_hessian(const QuadratureWeightsType& density_evaluations, const DomainType& u, DomainType& Hinv_u) const
   {
     thread_local auto H = XT::Common::make_unique<BlockMatrixType>();
-    calculate_hessian(alpha, M_, *H);
+    calculate_hessian(density_evaluations, M_, *H);
     for (size_t jj = 0; jj < num_blocks; ++jj)
       XT::LA::cholesky(H->block(jj));
     FieldVector<RangeFieldType, block_size> tmp_vec;
@@ -1792,17 +1925,16 @@ public:
     } // jj
   }
 
-  void calculate_hessian(const BlockVectorType& alpha, const BasisValuesMatrixType& M, BlockMatrixType& H) const
+  void calculate_hessian(const QuadratureWeightsType& density_evaluations,
+                         const BasisValuesMatrixType& M,
+                         BlockMatrixType& H) const
   {
-    auto& work_vec = working_storage();
-    calculate_scalar_products(alpha, M, work_vec);
-    apply_exponential(work_vec);
     // matrix is symmetric, we only use lower triangular part
     for (size_t jj = 0; jj < num_blocks; ++jj) {
       std::fill(H.block(jj).begin(), H.block(jj).end(), 0.);
       const size_t num_quad_points = quad_weights_[jj].size();
       for (size_t ll = 0; ll < num_quad_points; ++ll) {
-        auto factor_ll = work_vec[jj][ll] * quad_weights_[jj][ll];
+        auto factor_ll = density_evaluations[jj][ll] * quad_weights_[jj][ll];
         const auto* basis_ll = &(M[jj].get_entry_ref(ll, 0.));
         for (size_t ii = 0; ii < block_size; ++ii) {
           auto* H_row = &(H.block(jj)[ii][0]);
@@ -1812,6 +1944,14 @@ public:
         } // ii
       } // ll
     } // jj
+  } // void calculate_hessian(...)
+
+  void calculate_hessian(const BlockVectorType& alpha, const BasisValuesMatrixType& M, BlockMatrixType& H) const
+  {
+    auto& work_vec = working_storage();
+    calculate_scalar_products(alpha, M, work_vec);
+    apply_exponential(work_vec);
+    calculate_hessian(work_vec, M, H);
   } // void calculate_hessian(...)
 
   // J = df/dalpha is the derivative of the flux with respect to alpha.
@@ -2156,6 +2296,135 @@ public:
     return u;
   }
 
+  DomainType get_u(const QuadratureWeightsType& density_evaluations) const
+  {
+    DomainType u(0.);
+    LocalVectorType local_u;
+    const auto& triangulation = basis_functions_.triangulation();
+    const auto& faces = triangulation.faces();
+    for (size_t jj = 0; jj < faces.size(); ++jj) {
+      const auto& face = faces[jj];
+      const auto& vertices = face->vertices();
+      local_u *= 0.;
+      for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
+        const auto& basis_ll = M_[jj][ll];
+        for (size_t ii = 0; ii < 3; ++ii)
+          local_u[ii] += basis_ll[ii] * density_evaluations[jj][ll];
+      } // ll (quad points)
+      for (size_t ii = 0; ii < 3; ++ii)
+        u[vertices[ii]->index()] = local_u[ii];
+    } // jj (faces)
+    return u;
+  }
+
+  void store_density_evaluations(QuadratureWeightsType& density_evaluations, const DomainType& alpha) const
+  {
+    const auto& triangulation = basis_functions_.triangulation();
+    const auto& faces = triangulation.faces();
+    density_evaluations.resize(faces.size());
+    XT::Common::FieldVector<RangeFieldType, 3> local_alpha;
+    for (size_t jj = 0; jj < faces.size(); ++jj) {
+      density_evaluations[jj].resize(quad_weights_[jj].size());
+      const auto& face = faces[jj];
+      const auto& vertices = face->vertices();
+      for (size_t ii = 0; ii < 3; ++ii)
+        local_alpha[ii] = alpha[vertices[ii]->index()];
+      for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll)
+        density_evaluations[jj][ll] = std::exp(local_alpha * M_[jj][ll]);
+    } // jj (faces)
+  }
+
+  void store_evaluations(QuadratureWeightsType& density_evaluations,
+                         const std::function<RangeFieldType(const FluxDomainType&)>& boundary_density) const
+  {
+    const auto& triangulation = basis_functions_.triangulation();
+    const auto& faces = triangulation.faces();
+    density_evaluations.resize(faces.size());
+    for (size_t jj = 0; jj < faces.size(); ++jj) {
+      density_evaluations[jj].resize(quad_points_[jj].size());
+      for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll)
+        density_evaluations[jj][ll] = boundary_density(quad_points_[jj][ll]);
+    } // jj
+  }
+
+  template <class IntersectionType>
+  DomainType calculate_boundary_flux(const QuadratureWeightsType& density_evaluations,
+                                     const IntersectionType& intersection)
+  {
+    // evaluate exp(alpha^T b(v_i)) at all quadratures points v_i
+    const auto dd = intersection.indexInInside() / 2;
+    const auto& n_ij = intersection.centerUnitOuterNormal();
+    const auto& triangulation = basis_functions_.triangulation();
+    const auto& faces = triangulation.faces();
+    DomainType ret(0.);
+    LocalVectorType local_ret;
+    for (size_t jj = 0; jj < faces.size(); ++jj) {
+      local_ret *= 0.;
+      const auto& face = faces[jj];
+      const auto& vertices = face->vertices();
+      for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
+        const auto position = quad_points_[jj][ll][dd];
+        if (position * n_ij[dd] < 0.) {
+          const auto& basis_ll = M_[jj][ll];
+          RangeFieldType factor = density_evaluations[jj][ll] * quad_weights_[jj][ll] * position;
+          for (size_t ii = 0; ii < 3; ++ii)
+            local_ret[ii] += basis_ll[ii] * factor;
+        }
+      } // ll (quad points)
+      for (size_t ii = 0; ii < 3; ++ii)
+        ret[vertices[ii]->index()] += local_ret[ii];
+    } // jj
+    return ret;
+  }
+
+  template <SlopeType slope_type, class FluxesMapType>
+  void calculate_reconstructed_fluxes(const FieldVector<const QuadratureWeightsType*, 3>& density_evaluations,
+                                      FluxesMapType& flux_values,
+                                      const size_t dd) const
+  {
+    // get flux storage
+    BasisDomainType coord(0.5);
+    coord[dd] = 0;
+    auto& left_flux_value = flux_values[coord];
+    coord[dd] = 1;
+    auto& right_flux_value = flux_values[coord];
+    right_flux_value = left_flux_value = DomainType(0.);
+    thread_local XT::Common::FieldVector<std::vector<RangeFieldType>, 2> reconstructed_values(
+        std::vector<RangeFieldType>(quad_points_[0].size()));
+    const auto& triangulation = basis_functions_.triangulation();
+    const auto& faces = triangulation.faces();
+    const auto slope_func =
+        (slope_type == SlopeType::minmod) ? XT::Common::minmod<RangeFieldType> : superbee<RangeFieldType>;
+    auto& vals_left = reconstructed_values[0];
+    auto& vals_right = reconstructed_values[1];
+    for (size_t jj = 0; jj < faces.size(); ++jj) {
+      const auto& face = faces[jj];
+      const auto& vertices = face->vertices();
+      // reconstruct densities
+      if (slope_type == SlopeType::no_slope) {
+        for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll)
+          vals_left[ll] = vals_right[ll] = (*density_evaluations[1])[jj][ll];
+      } else {
+        for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
+          const auto slope = slope_func((*density_evaluations[1])[jj][ll] - (*density_evaluations[0])[jj][ll],
+                                        (*density_evaluations[2])[jj][ll] - (*density_evaluations[1])[jj][ll]);
+          vals_left[ll] = (*density_evaluations[1])[jj][ll] - 0.5 * slope;
+          vals_right[ll] = (*density_evaluations[1])[jj][ll] + 0.5 * slope;
+        } // ll (quad points)
+      }
+      // calculate fluxes
+      for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
+        const auto& position = quad_points_[jj][ll][dd];
+        RangeFieldType factor = position > 0. ? vals_right[ll] : vals_left[ll];
+        factor *= quad_weights_[jj][ll] * position;
+        auto& val = position > 0. ? right_flux_value : left_flux_value;
+        const auto& basis_ll = M_[jj][ll];
+        for (size_t ii = 0; ii < 3; ++ii)
+          val[vertices[ii]->index()] += basis_ll[ii] * factor;
+      } // ll (quad points)
+    } // jj
+  } // void calculate_reconstructed_fluxes(...)
+
   std::unique_ptr<AlphaReturnType>
   get_alpha(const DomainType& u, const VectorType& alpha_in, const bool regularize) const
   {
@@ -2301,7 +2570,7 @@ public:
   }
 
   // temporary vectors to store inner products and exponentials
-  std::vector<std::vector<RangeFieldType>>& get_work_vecs() const
+  std::vector<std::vector<RangeFieldType>>& working_storage() const
   {
     thread_local std::vector<std::vector<RangeFieldType>> work_vecs;
     const auto& triangulation = basis_functions_.triangulation();
@@ -2343,15 +2612,14 @@ public:
     } // ii
   } // void calculate_J_Hinv(...)
 
-  void apply_inverse_hessian(const DomainType& alpha, const DomainType& u, DomainType& Hinv_u) const
+  void
+  apply_inverse_hessian(const QuadratureWeightsType& density_evaluations, const DomainType& u, DomainType& Hinv_u) const
   {
     thread_local SparseMatrixType H(basis_dimRange, basis_dimRange, pattern_, 0);
-    thread_local VectorType alpha_vec(basis_dimRange, 0., 0), u_vec(basis_dimRange, 0., 0),
-        Hinv_u_vec(basis_dimRange, 0., 0);
-    std::copy(alpha.begin(), alpha.end(), alpha_vec.begin());
-    std::copy(u.begin(), u.end(), u_vec.begin());
-    calculate_hessian(alpha_vec, M_, H);
+    calculate_hessian(density_evaluations, M_, H);
 #  if HAVE_EIGEN
+    thread_local VectorType u_vec(basis_dimRange, 0., 0), Hinv_u_vec(basis_dimRange, 0., 0);
+    std::copy(u.begin(), u.end(), u_vec.begin());
     typedef ::Eigen::SparseMatrix<RangeFieldType, ::Eigen::ColMajor> ColMajorBackendType;
     ColMajorBackendType colmajor_copy(H.backend());
     typedef ::Eigen::SimplicialLDLT<ColMajorBackendType> SolverType;
@@ -2390,7 +2658,7 @@ public:
     LocalVectorType local_alpha, local_u;
     const auto& triangulation = basis_functions_.triangulation();
     const auto& faces = triangulation.faces();
-    auto& work_vecs = get_work_vecs();
+    auto& work_vecs = working_storage();
     for (size_t jj = 0; jj < faces.size(); ++jj) {
       const auto& face = faces[jj];
       const auto& vertices = face->vertices();
@@ -2414,6 +2682,30 @@ public:
     g_k -= v;
   }
 
+  void calculate_hessian(const QuadratureWeightsType& density_evaluations,
+                         const BasisValuesMatrixType& M,
+                         SparseMatrixType& H) const
+  {
+    H *= 0.;
+    LocalMatrixType H_local(0.);
+    const auto& triangulation = basis_functions_.triangulation();
+    const auto& faces = triangulation.faces();
+    for (size_t jj = 0; jj < faces.size(); ++jj) {
+      H_local *= 0.;
+      const auto& face = faces[jj];
+      const auto& vertices = face->vertices();
+      for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
+        const auto& basis_ll = M[jj][ll];
+        for (size_t ii = 0; ii < 3; ++ii)
+          for (size_t kk = 0; kk < 3; ++kk)
+            H_local[ii][kk] += basis_ll[ii] * basis_ll[kk] * density_evaluations[jj][ll] * quad_weights_[jj][ll];
+      } // ll (quad points)
+      for (size_t ii = 0; ii < 3; ++ii)
+        for (size_t kk = 0; kk < 3; ++kk)
+          H.add_to_entry(vertices[ii]->index(), vertices[kk]->index(), H_local[ii][kk]);
+    } // jj (faces)
+  } // void calculate_hessian(...)
+
   void calculate_hessian(const VectorType& alpha,
                          const BasisValuesMatrixType& M,
                          SparseMatrixType& H,
@@ -2424,7 +2716,7 @@ public:
     LocalMatrixType H_local(0.);
     const auto& triangulation = basis_functions_.triangulation();
     const auto& faces = triangulation.faces();
-    auto& work_vecs = get_work_vecs();
+    auto& work_vecs = working_storage();
     for (size_t jj = 0; jj < faces.size(); ++jj) {
       H_local *= 0.;
       const auto& face = faces[jj];
@@ -2457,7 +2749,7 @@ public:
     assert(dd < dimFlux);
     J_dd *= 0.;
     LocalMatrixType J_local(0.);
-    auto& work_vecs = get_work_vecs();
+    auto& work_vecs = working_storage();
     const auto& triangulation = basis_functions_.triangulation();
     const auto& faces = triangulation.faces();
     for (size_t jj = 0; jj < faces.size(); ++jj) {
@@ -3270,7 +3562,7 @@ public:
   using LocalVectorType = XT::Common::FieldVector<RangeFieldType, block_size>;
   using BasisValuesMatrixType = FieldVector<std::vector<LocalVectorType>, num_intervals>;
   using QuadraturePointsType = FieldVector<std::vector<RangeFieldType>, num_intervals>;
-  using QuadratureWeightsType = FieldVector<std::vector<RangeFieldType>, num_intervals>;
+  using QuadratureWeightsType = QuadraturePointsType;
 
   explicit EntropyBasedFluxImplementation(const MomentBasis& basis_functions,
                                           const RangeFieldType tau,
@@ -3414,31 +3706,42 @@ public:
     return ret;
   }
 
-  static RangeFieldType minmod(const RangeFieldType& first_slope, const RangeFieldType& second_slope)
+  DomainType get_u(const QuadratureWeightsType& density_evaluations) const
   {
-    RangeFieldType ret = 0.;
-    if (std::signbit(first_slope) == std::signbit(second_slope)) // check for equal sign
-      ret = std::abs(first_slope) < std::abs(second_slope) ? first_slope : second_slope;
+    DomainType ret;
+    for (size_t jj = 0; jj < num_intervals; ++jj) {
+      for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
+        const auto& basis_ll = M_[jj][ll];
+        auto factor_ll = density_evaluations[jj][ll] * quad_weights_[jj][ll];
+        for (size_t ii = 0; ii < 2; ++ii)
+          ret[jj + ii] += basis_ll[ii] * factor_ll;
+      } // ll (quad points)
+    } // jj (intervals)
     return ret;
   }
 
-  static RangeFieldType maxmod(const RangeFieldType first_slope, const RangeFieldType second_slope)
+  void store_density_evaluations(QuadratureWeightsType& density_evaluations, const DomainType& alpha) const
   {
-    RangeFieldType ret(0.);
-    if (std::signbit(first_slope) == std::signbit(second_slope)) // check for equal sign
-      ret = (std::abs(first_slope) < std::abs(second_slope)) ? second_slope : first_slope;
-    return ret;
+    for (size_t jj = 0; jj < num_intervals; ++jj) {
+      density_evaluations[jj].resize(quad_points_[jj].size());
+      for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll)
+        density_evaluations[jj][ll] = std::exp(alpha[jj] * M_[jj][ll][0] + alpha[jj + 1] * M_[jj][ll][1]);
+    } // jj
   }
 
-  static RangeFieldType superbee(const RangeFieldType first_slope, const RangeFieldType second_slope)
+  void store_evaluations(QuadratureWeightsType& density_evaluations,
+                         const std::function<RangeFieldType(const FluxDomainType&)>& boundary_density) const
   {
-    const RangeFieldType first_minmod = minmod(first_slope, second_slope * 2.);
-    const RangeFieldType second_minmod = minmod(first_slope * 2., second_slope);
-    return maxmod(first_minmod, second_minmod);
+    for (size_t jj = 0; jj < num_intervals; ++jj) {
+      density_evaluations[jj].resize(quad_points_[jj].size());
+      for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll)
+        density_evaluations[jj][ll] = boundary_density(quad_points_[jj][ll]);
+    } // jj
   }
 
   template <class IntersectionType>
-  DomainType calculate_boundary_flux(const DomainType& alpha, const IntersectionType& intersection)
+  DomainType calculate_boundary_flux(const QuadratureWeightsType& density_evaluations,
+                                     const IntersectionType& intersection)
   {
     // evaluate exp(alpha^T b(v_i)) at all quadratures points v_i
     const auto dd = intersection.indexInInside() / 2;
@@ -3448,8 +3751,7 @@ public:
       for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
         const auto position = quad_points_[jj][ll];
         if (position * n_ij[dd] < 0.) {
-          RangeFieldType factor =
-              std::exp(alpha[jj] * M_[jj][ll][0] + alpha[jj + 1] * M_[jj][ll][1]) * quad_weights_[jj][ll] * position;
+          RangeFieldType factor = density_evaluations[jj][ll] * quad_weights_[jj][ll] * position;
           const auto& basis_ll = M_[jj][ll];
           for (size_t mm = 0; mm < 2; ++mm)
             ret[jj + mm] += basis_ll[mm] * factor;
@@ -3459,18 +3761,14 @@ public:
     return ret;
   }
 
-  // TODO: Calculates exp(alpha^T b) 2*dim times for each alpha (as it is contained in 2*dim stencils) at the moment.
-  template <class FluxesMapType>
-  void calculate_minmod_density_reconstruction(const FieldVector<DomainType, 3>& alphas,
-                                               FluxesMapType& flux_values,
-                                               const size_t dd) const
+  template <SlopeType slope_type, class FluxesMapType>
+  void calculate_reconstructed_fluxes(const FieldVector<const QuadratureWeightsType*, 3>& density_evaluations,
+                                      FluxesMapType& flux_values,
+                                      const size_t dd) const
   {
     // evaluate exp(alpha^T b(v_i)) at all quadratures points v_i for all three alphas
-    thread_local XT::Common::FieldVector<std::vector<RangeFieldType>, 3> density_evaluations(
-        std::vector<RangeFieldType>(quad_points_[0].size()));
     thread_local XT::Common::FieldVector<std::vector<RangeFieldType>, 2> reconstructed_values(
         std::vector<RangeFieldType>(quad_points_[0].size()));
-    thread_local XT::Common::FieldVector<LocalVectorType, 3> local_alphas;
 
     // get flux storage
     BasisDomainType coord(0.5);
@@ -3480,29 +3778,23 @@ public:
     auto& right_flux_value = flux_values[coord];
     right_flux_value = left_flux_value = DomainType(0.);
 
+    auto& vals_left = reconstructed_values[0];
+    auto& vals_right = reconstructed_values[1];
+    const auto slope_func =
+        (slope_type == SlopeType::minmod) ? XT::Common::minmod<RangeFieldType> : superbee<RangeFieldType>;
     for (size_t jj = 0; jj < num_intervals; ++jj) {
-      // get local alphas
-      for (size_t ii = 0; ii < 3; ++ii)
-        for (size_t mm = 0; mm < 2; ++mm)
-          local_alphas[ii][mm] = alphas[ii][jj + mm];
-
-      // evaluate densitys
-      for (size_t ii = 0; ii < 3; ++ii)
-        for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll)
-          density_evaluations[ii][ll] = std::exp(local_alphas[ii] * M_[jj][ll]);
-
       // reconstruct densities
-      auto& vals_left = reconstructed_values[0];
-      auto& vals_right = reconstructed_values[1];
-      for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
-        const auto slope = minmod(density_evaluations[1][ll] - density_evaluations[0][ll],
-                                  density_evaluations[2][ll] - density_evaluations[1][ll]);
-        //              const auto slope = superbee(density_evaluations[1][ll] - density_evaluations[0][ll],
-        //                                          density_evaluations[2][ll] - density_evaluations[1][ll]);
-        vals_left[ll] = density_evaluations[1][ll] - 0.5 * slope;
-        vals_right[ll] = density_evaluations[1][ll] + 0.5 * slope;
-      } // ll (quad points)
-
+      if (slope_type == SlopeType::no_slope) {
+        for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll)
+          vals_left[ll] = vals_right[ll] = (*density_evaluations[1])[jj][ll];
+      } else {
+        for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
+          const auto slope = slope_func((*density_evaluations[1])[jj][ll] - (*density_evaluations[0])[jj][ll],
+                                        (*density_evaluations[2])[jj][ll] - (*density_evaluations[1])[jj][ll]);
+          vals_left[ll] = (*density_evaluations[1])[jj][ll] - 0.5 * slope;
+          vals_right[ll] = (*density_evaluations[1])[jj][ll] + 0.5 * slope;
+        } // ll (quad points)
+      }
       // calculate fluxes
       for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
         const auto position = quad_points_[jj][ll];
@@ -3514,7 +3806,7 @@ public:
           val[jj + mm] += basis_ll[mm] * factor;
       } // ll (quad points)
     } // jj (intervals)
-  } // void calculate_minmod_density_reconstruction(...)
+  } // void calculate_reconstructed_fluxes(...)
 
   // returns (alpha, (actual_u, r)), where r is the regularization parameter and actual_u the regularized u
   std::unique_ptr<AlphaReturnType>
@@ -3634,14 +3926,13 @@ public:
     return true;
   }
 
-  FieldVector<std::vector<RangeFieldType>, num_intervals>& working_storage() const
+  QuadratureWeightsType& working_storage() const
   {
-    thread_local FieldVector<std::vector<RangeFieldType>, num_intervals> work_vec;
+    thread_local QuadratureWeightsType work_vec;
     for (size_t jj = 0; jj < num_intervals; ++jj)
       work_vec[jj].resize(quad_points_[jj].size());
     return work_vec;
   }
-
 
   RangeFieldType calculate_f(const VectorType& alpha, const VectorType& v) const
   {
@@ -3678,6 +3969,24 @@ public:
     calculate_u(alpha, g_k);
     g_k -= v;
   }
+
+  void calculate_hessian(const QuadratureWeightsType& density_evalutations,
+                         const BasisValuesMatrixType& M,
+                         VectorType& H_diag,
+                         FieldVector<RangeFieldType, dimRange - 1>& H_subdiag) const
+  {
+    std::fill(H_diag.begin(), H_diag.end(), 0.);
+    std::fill(H_subdiag.begin(), H_subdiag.end(), 0.);
+    for (size_t jj = 0; jj < num_intervals; ++jj) {
+      for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
+        const auto& basis_ll = M[jj][ll];
+        const auto factor = density_evalutations[jj][ll] * quad_weights_[jj][ll];
+        for (size_t ii = 0; ii < 2; ++ii)
+          H_diag[jj + ii] += std::pow(basis_ll[ii], 2) * factor;
+        H_subdiag[jj] += basis_ll[0] * basis_ll[1] * factor;
+      } // ll (quad points)
+    } // jj (intervals)
+  } // void calculate_hessian(...)
 
   void calculate_hessian(const DomainType& alpha,
                          const BasisValuesMatrixType& M,
@@ -3725,12 +4034,12 @@ public:
     } // jj (intervals)
   } // void calculate_J(...)
 
-  void apply_inverse_hessian(const DomainType& alpha, const DomainType& u, DomainType& Hinv_u) const
+  void
+  apply_inverse_hessian(const QuadratureWeightsType& density_evaluations, const DomainType& u, DomainType& Hinv_u) const
   {
     thread_local VectorType H_diag;
     thread_local FieldVector<RangeFieldType, dimRange - 1> H_subdiag;
-    calculate_hessian(alpha, M_, H_diag, H_subdiag);
-    //    std::cout << "H_diag: " << H_diag << ", H_subdiag: " << H_subdiag << std::endl;
+    calculate_hessian(density_evaluations, M_, H_diag, H_subdiag);
     // factorize H = LDL^T, where L is unit lower bidiagonal and D is diagonal
     // H_diag is overwritten by the diagonal elements of D
     // H_subdiag is overwritten by the subdiagonal elements of L

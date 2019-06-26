@@ -22,8 +22,6 @@
 
 #include <dune/gdt/operators/interfaces.hh>
 
-#include "slopes.hh"
-
 namespace Dune {
 namespace GDT {
 namespace internal {

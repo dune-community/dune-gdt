@@ -57,6 +57,7 @@ public:
   using DynamicFluxJacobianRangeType = typename FluxType::LocalFunctionType::DynamicJacobianRangeType;
   using GenericScalarFunctionType = XT::Functions::GenericFunction<dimFlux, 1, 1, RangeFieldType>;
   using ConstantScalarFunctionType = XT::Functions::ConstantFunction<dimFlux, 1, 1, RangeFieldType>;
+  using BoundaryDistributionType = std::function<std::function<RangeFieldType(const DomainType&)>(const DomainType&)>;
 
   using BaseType::default_boundary_cfg;
   using BaseType::default_grid_cfg;
@@ -172,6 +173,35 @@ public:
         [](const XT::Common::Parameter&) { return 0; },
         [=](const DomainType&, const XT::Common::Parameter&) { return value; });
   } // ... boundary_values()
+
+  virtual BoundaryDistributionType boundary_distribution() const
+  {
+    return [this](const DomainType&) { return [this](const DomainType&) { return this->psi_vac_; }; };
+  }
+
+  RangeReturnType
+  kinetic_boundary_flux_from_quadrature(const DomainType& x, const RangeFieldType& n, const size_t dd) const
+  {
+    RangeReturnType ret(0.);
+    const auto boundary_density = boundary_distribution()(x);
+    const auto& quadratures = basis_functions_.quadratures();
+    for (size_t jj = 0; jj < quadratures.size(); ++jj) {
+      for (size_t ll = 0; ll < quadratures[jj].size(); ++ll) {
+        const auto v = quadratures[jj][ll].position();
+        const auto b = basis_functions_.evaluate(v, jj);
+        if (v[dd] * n < 0) {
+          const RangeFieldType psi = boundary_density(v);
+          ret += b * psi * v[dd] * quadratures[jj][ll].weight();
+        }
+      } // ll
+    } // jj
+    return ret;
+  }
+
+  virtual RangeReturnType kinetic_boundary_flux(const DomainType& x, const RangeFieldType& n, const size_t dd) const
+  {
+    return kinetic_boundary_flux_from_quadrature(x, n, dd);
+  }
 
   virtual RangeFieldType CFL() const override
   {
