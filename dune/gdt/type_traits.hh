@@ -81,15 +81,18 @@ template <class GV, size_t r, size_t rC, class R>
 class SpaceInterface;
 
 // from #include <dune/gdt/momentmodels/basisfunctions.hh>
+enum class EntropyType;
+
 template <class DomainFieldType,
           size_t dimDomain,
           class RangeFieldType,
           size_t dimRange,
           size_t dimRangeCols,
-          size_t dimFlux>
+          size_t dimFlux,
+          EntropyType entropy>
 class HatFunctionMomentBasis;
 
-template <class DomainFieldType, class RangeFieldType, size_t order, size_t dimRangeCols>
+template <class DomainFieldType, class RangeFieldType, size_t order, size_t dimRangeCols, EntropyType entropy>
 class LegendreMomentBasis;
 
 template <class DomainFieldType,
@@ -98,13 +101,24 @@ template <class DomainFieldType,
           size_t dimRange,
           size_t dimRangeCols,
           size_t dimFlux,
-          size_t order>
+          size_t order,
+          EntropyType entropy>
 class PartialMomentBasis;
 
-template <class DomainFieldType, class RangeFieldType, size_t order, size_t fluxDim, bool only_positive>
+template <class DomainFieldType,
+          class RangeFieldType,
+          size_t order,
+          size_t fluxDim,
+          bool only_positive,
+          EntropyType entropy>
 class SphericalHarmonicsMomentBasis;
 
-template <class DomainFieldType, class RangeFieldType, size_t order, size_t fluxDim, bool only_even>
+template <class DomainFieldType,
+          class RangeFieldType,
+          size_t order,
+          size_t fluxDim,
+          bool only_even,
+          EntropyType entropy>
 class RealSphericalHarmonicsMomentBasis;
 
 
@@ -169,18 +183,23 @@ template <class DomainFieldType,
           class RangeFieldType,
           size_t dimRange_or_refinements,
           size_t dimRangeCols,
-          size_t dimFlux>
-struct is_hatfunction_basis<
-    HatFunctionMomentBasis<DomainFieldType, dimDomain, RangeFieldType, dimRange_or_refinements, dimRangeCols, dimFlux>>
-  : public std::true_type
+          size_t dimFlux,
+          EntropyType entropy>
+struct is_hatfunction_basis<HatFunctionMomentBasis<DomainFieldType,
+                                                   dimDomain,
+                                                   RangeFieldType,
+                                                   dimRange_or_refinements,
+                                                   dimRangeCols,
+                                                   dimFlux,
+                                                   entropy>> : public std::true_type
 {};
 
 template <class T>
 struct is_legendre_basis : public std::false_type
 {};
 
-template <class DomainFieldType, class RangeFieldType, size_t order, size_t dimRangeCols>
-struct is_legendre_basis<LegendreMomentBasis<DomainFieldType, RangeFieldType, order, dimRangeCols>>
+template <class DomainFieldType, class RangeFieldType, size_t order, size_t dimRangeCols, EntropyType entropy>
+struct is_legendre_basis<LegendreMomentBasis<DomainFieldType, RangeFieldType, order, dimRangeCols, entropy>>
   : public std::true_type
 {};
 
@@ -194,23 +213,30 @@ template <class DomainFieldType,
           size_t dimRange_or_refinements,
           size_t dimRangeCols,
           size_t dimFlux,
-          size_t order>
+          size_t order,
+          EntropyType entropy>
 struct is_partial_moment_basis<PartialMomentBasis<DomainFieldType,
                                                   dimDomain,
                                                   RangeFieldType,
                                                   dimRange_or_refinements,
                                                   dimRangeCols,
                                                   dimFlux,
-                                                  order>> : public std::true_type
+                                                  order,
+                                                  entropy>> : public std::true_type
 {};
 
 template <class T>
 struct is_spherical_harmonics_basis : public std::false_type
 {};
 
-template <class DomainFieldType, class RangeFieldType, size_t order, size_t fluxDim, bool only_positive>
+template <class DomainFieldType,
+          class RangeFieldType,
+          size_t order,
+          size_t fluxDim,
+          bool only_positive,
+          EntropyType entropy>
 struct is_spherical_harmonics_basis<
-    SphericalHarmonicsMomentBasis<DomainFieldType, RangeFieldType, order, fluxDim, only_positive>>
+    SphericalHarmonicsMomentBasis<DomainFieldType, RangeFieldType, order, fluxDim, only_positive, entropy>>
   : public std::true_type
 {};
 
@@ -218,9 +244,14 @@ template <class T>
 struct is_real_spherical_harmonics_basis : public std::false_type
 {};
 
-template <class DomainFieldType, class RangeFieldType, size_t order, size_t fluxDim, bool only_even>
+template <class DomainFieldType,
+          class RangeFieldType,
+          size_t order,
+          size_t fluxDim,
+          bool only_even,
+          EntropyType entropy>
 struct is_real_spherical_harmonics_basis<
-    RealSphericalHarmonicsMomentBasis<DomainFieldType, RangeFieldType, order, fluxDim, only_even>>
+    RealSphericalHarmonicsMomentBasis<DomainFieldType, RangeFieldType, order, fluxDim, only_even, entropy>>
   : public std::true_type
 {};
 

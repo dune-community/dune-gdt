@@ -133,12 +133,20 @@ struct OctaederStatistics<0>
 };
 
 
+enum class EntropyType
+{
+  MaxwellBoltzmann,
+  BoseEinstein
+};
+
+
 template <class DomainFieldImp,
           size_t domainDim,
           class RangeFieldImp,
           size_t rangeDim,
           size_t rangeDimCols = 1,
-          size_t fluxDim = domainDim>
+          size_t fluxDim = domainDim,
+          EntropyType entropy = EntropyType::MaxwellBoltzmann>
 class MomentBasisInterface
 {
 public:
@@ -297,11 +305,17 @@ public:
     return ret;
   }
 
+  // return alpha s.t. alpha_one * b(v) == 1 for all v
   virtual DynamicRangeType alpha_one() const = 0;
 
-  virtual DynamicRangeType alpha_iso() const
+  // returns alpha s.t. the distribution is isotropic and has density rho
+  virtual DynamicRangeType alpha_iso(const RangeFieldType rho = 1.) const
   {
-    return alpha_one() * std::log(1. / density(integrated()));
+    const auto scale_factor = rho / density(integrated());
+    if (entropy == EntropyType::MaxwellBoltzmann)
+      return alpha_one() * std::log(scale_factor);
+    else
+      return alpha_one() * std::log(scale_factor / (scale_factor + 1));
   }
 
   virtual RangeFieldType density(const DynamicRangeType& u) const = 0;

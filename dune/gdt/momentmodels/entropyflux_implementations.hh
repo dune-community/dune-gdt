@@ -89,7 +89,7 @@ enum class SlopeType
 };
 
 
-template <class MomentBasisImp>
+template <class MomentBasisImp, EntropyType entropy = EntropyType::MaxwellBoltzmann>
 class EntropyBasedFluxImplementationUnspecializedBase
   : public XT::Functions::FunctionInterface<MomentBasisImp::dimRange,
                                             MomentBasisImp::dimFlux,
@@ -184,9 +184,7 @@ public:
 
   VectorType get_isotropic_alpha(const DomainType& u) const
   {
-    static const auto alpha_iso = basis_functions_.alpha_iso();
-    static const auto alpha_one = basis_functions_.alpha_one();
-    return alpha_iso + alpha_one * std::log(basis_functions_.density(u));
+    return basis_functions_.alpha_iso(basis_functions_.density(u));
   }
 
   virtual RangeReturnType evaluate(const DomainType& u,
@@ -230,7 +228,7 @@ public:
   }
 
   // calculate \sum_{i=1}^d < v_i m \psi > n_i, where n is the unit outer normal,
-  // m is the basis function vector, phi_u is the ansatz corresponding to u
+  // m is the basis function vector, \psi is the ansatz corresponding to u
   // and x, v, t are the space, velocity and time variable, respectively
   // As we are using cartesian grids, n_i == 0 in all but one dimension, so only evaluate for i == dd
   DomainType
@@ -384,15 +382,15 @@ public:
       const auto density = basis_functions_.density(u);
       if (!(density > 0.) || std::isinf(density))
         return false;
-      const auto u_prime = u / density;
+      const auto phi = u / density;
       setup_linear_program(reinitialize);
       auto& lp = **lp_;
       constexpr int num_rows = static_cast<int>(basis_dimRange);
       // set rhs (equality constraints, so set both bounds equal
       for (int ii = 0; ii < num_rows; ++ii) {
         size_t uii = static_cast<size_t>(ii);
-        lp.setRowLower(ii, u_prime[uii]);
-        lp.setRowUpper(ii, u_prime[uii]);
+        lp.setRowLower(ii, phi[uii]);
+        lp.setRowUpper(ii, phi[uii]);
       }
       // set maximal wall time. If this is not set, in rare cases the primal method never returns
       lp.setMaximumWallSeconds(60);
@@ -489,7 +487,7 @@ public:
   }
 
   // calculate ret = \int (exp(beta_in * m))
-  RangeFieldType calculate_scalar_integral(const DomainType& beta_in, const BasisValuesMatrixType& M) const
+  RangeFieldType calculate_ansatz_density(const DomainType& beta_in, const BasisValuesMatrixType& M) const
   {
     auto& work_vec = working_storage();
     calculate_scalar_products(beta_in, M, work_vec);
@@ -498,23 +496,22 @@ public:
   }
 
   // calculate ret = \int (m1 exp(beta_in * m2))
-  void calculate_vector_integral(const DomainType& beta_in,
-                                 const BasisValuesMatrixType& M1,
-                                 const BasisValuesMatrixType& M2,
-                                 DomainType& ret,
-                                 bool same_beta = false,
-                                 bool only_first_component = false) const
+  void calculate_ansatz_moments(const DomainType& beta_in,
+                                const BasisValuesMatrixType& M,
+                                DomainType& ret,
+                                bool same_beta = false,
+                                bool only_first_component = false) const
   {
     auto& work_vec = working_storage();
     if (!same_beta) {
-      calculate_scalar_products(beta_in, M2, work_vec);
+      calculate_scalar_products(beta_in, M, work_vec);
       apply_exponential(work_vec);
     }
     std::fill(ret.begin(), ret.end(), 0.);
     const size_t num_quad_points = quad_weights_.size();
     for (size_t ll = 0; ll < num_quad_points; ++ll) {
       const auto factor_ll = work_vec[ll] * quad_weights_[ll];
-      const auto* basis_ll = &(M1.get_entry_ref(ll, 0.));
+      const auto* basis_ll = &(M.get_entry_ref(ll, 0.));
       for (size_t ii = 0; ii < (only_first_component ? 1 : basis_dimRange); ++ii)
         ret[ii] += basis_ll[ii] * factor_ll;
     } // ll
@@ -698,7 +695,7 @@ public:
     XT::LA::solve_lower_triangular(L, tmp_vec, v_k);
     v_k = tmp_vec;
     apply_inverse_matrix(L, P_k);
-    calculate_vector_integral(beta_out, P_k, P_k, g_k, false);
+    calculate_ansatz_moments(beta_out, P_k, g_k, false);
     g_k -= v_k;
   } // void change_basis(...)
 
@@ -769,7 +766,7 @@ public:
   DomainType get_u(const DomainType& alpha) const
   {
     DomainType ret;
-    calculate_vector_integral(alpha, M_, M_, ret);
+    calculate_ansatz_moments(alpha, M_, ret);
     return ret;
   }
 
@@ -875,15 +872,16 @@ public:
     if (!(density > 0.) || std::isinf(density))
       DUNE_THROW(Dune::MathError, "Negative, inf or NaN density!");
 
-    VectorType u_prime = u / density;
+    VectorType phi = u / density;
     VectorType alpha_initial = alpha_in - alpha_one * std::log(density);
+
     VectorType beta_in = alpha_initial;
     VectorType v, u_eps_diff, g_k, beta_out;
     RangeFieldType first_error_cond, second_error_cond, tau_prime;
 
     auto u_iso = basis_functions_.u_iso();
     const RangeFieldType dim_factor = is_full_moment_basis<MomentBasis>::value ? 1. : std::sqrt(dimFlux);
-    tau_prime = std::min(tau_ / ((1 + dim_factor * u_prime.two_norm()) * density + dim_factor * tau_), tau_);
+    tau_prime = std::min(tau_ / ((1 + dim_factor * phi.two_norm()) * density + dim_factor * tau_), tau_);
 
     thread_local auto T_k = XT::Common::make_unique<MatrixType>();
 
@@ -891,7 +889,7 @@ public:
     const auto r_max = r_sequence.back();
     for (const auto& r : r_sequence) {
       // regularize u
-      v = u_prime;
+      v = phi;
       if (r > 0) {
         beta_in = get_isotropic_alpha(v);
         VectorType r_times_u_iso = u_iso;
@@ -906,7 +904,7 @@ public:
       thread_local BasisValuesMatrixType P_k(M_.backend(), false, 0., 0);
       std::copy_n(M_.data(), M_.rows() * M_.cols(), P_k.data());
       // calculate f_0
-      RangeFieldType f_k = calculate_scalar_integral(beta_in, P_k);
+      RangeFieldType f_k = calculate_ansatz_density(beta_in, P_k);
       f_k -= beta_in * v_k;
 
       thread_local auto H = XT::Common::make_unique<MatrixType>(0.);
@@ -937,14 +935,14 @@ public:
         VectorType alpha_tilde;
         XT::LA::solve_lower_triangular_transposed(*T_k, alpha_tilde, beta_out);
         VectorType u_alpha_tilde;
-        calculate_vector_integral(alpha_tilde, M_, M_, u_alpha_tilde);
+        calculate_ansatz_moments(alpha_tilde, M_, u_alpha_tilde);
         VectorType g_alpha_tilde = u_alpha_tilde - v;
         auto density_tilde = basis_functions_.density(u_alpha_tilde);
         if (!(density_tilde > 0.) || std::isinf(density_tilde))
           break;
         const auto alpha_prime = alpha_tilde - alpha_one * std::log(density_tilde);
         VectorType u_alpha_prime;
-        calculate_vector_integral(alpha_prime, M_, M_, u_alpha_prime);
+        calculate_ansatz_moments(alpha_prime, M_, u_alpha_prime);
         u_eps_diff = v - u_alpha_prime * (1 - epsilon_gamma_);
         VectorType d_alpha_tilde;
         XT::LA::solve_lower_triangular_transposed(*T_k, d_alpha_tilde, d_k);
@@ -964,7 +962,7 @@ public:
             VectorType beta_new = d_k;
             beta_new *= zeta_k;
             beta_new += beta_out;
-            RangeFieldType f = calculate_scalar_integral(beta_new, P_k);
+            RangeFieldType f = calculate_ansatz_density(beta_new, P_k);
             f -= beta_new * v_k;
             if (pure_newton >= 2 || XT::Common::FloatCmp::le(f, f_k + xi_ * zeta_k * (g_k * d_k))) {
               beta_in = beta_new;
@@ -992,9 +990,9 @@ public:
 
 private:
   using BaseType::apply_inverse_matrix;
+  using BaseType::calculate_ansatz_density;
+  using BaseType::calculate_ansatz_moments;
   using BaseType::calculate_hessian;
-  using BaseType::calculate_scalar_integral;
-  using BaseType::calculate_vector_integral;
   using BaseType::get_isotropic_alpha;
 
   void change_basis(const DomainType& beta_in,
@@ -1016,7 +1014,7 @@ private:
     XT::LA::solve_lower_triangular(L, tmp_vec, v_k);
     v_k = tmp_vec;
     apply_inverse_matrix(L, P_k);
-    calculate_vector_integral(beta_out, P_k, P_k, g_k, false);
+    calculate_ansatz_moments(beta_out, P_k, g_k, false);
     g_k -= v_k;
   } // void change_basis(...)
 
@@ -1076,7 +1074,7 @@ public:
 
   DomainType get_u(const DomainType& alpha) const
   {
-    return calculate_vector_integral(alpha, M_, M_);
+    return calculate_ansatz_moments(alpha, M_);
   }
 
   // returns (alpha, (actual_u, r)), where r is the regularization parameter and actual_u the regularized u
@@ -1088,19 +1086,19 @@ public:
     static const auto alpha_one = basis_functions_.alpha_one();
     if (!(density > 0.) || std::isinf(density))
       DUNE_THROW(Dune::MathError, "Negative, inf or NaN density!");
-    VectorType u_prime = u / density;
+    VectorType phi = u / density;
     VectorType alpha_initial = alpha_in - alpha_one * std::log(density);
     VectorType v, g_k, d_k, tmp_vec, alpha_prime;
     RangeFieldType first_error_cond, second_error_cond, tau_prime;
     auto u_iso = basis_functions_.u_iso();
     const RangeFieldType dim_factor = is_full_moment_basis<MomentBasis>::value ? 1. : std::sqrt(dimFlux);
-    tau_prime = std::min(tau_ / ((1 + dim_factor * u_prime.two_norm()) * density + dim_factor * tau_), tau_);
+    tau_prime = std::min(tau_ / ((1 + dim_factor * phi.two_norm()) * density + dim_factor * tau_), tau_);
     VectorType alpha_k = alpha_initial;
     const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
     const auto r_max = r_sequence.back();
     for (const auto& r : r_sequence) {
       // regularize u
-      v = u_prime;
+      v = phi;
       if (r > 0) {
         alpha_k = get_isotropic_alpha(v);
         VectorType r_times_u_iso = u_iso;
@@ -1111,7 +1109,7 @@ public:
       // calculate T_k u
       VectorType v_k = v;
       // calculate f_0
-      RangeFieldType f_k = calculate_scalar_integral(alpha_k, M_);
+      RangeFieldType f_k = calculate_ansatz_density(alpha_k, M_);
       f_k -= alpha_k * v_k;
 
       thread_local auto H = XT::Common::make_unique<MatrixType>(0.);
@@ -1122,7 +1120,7 @@ public:
         if (kk > k_0_ && r < r_max)
           break;
         // calculate gradient g
-        calculate_vector_integral(alpha_k, M_, M_, g_k);
+        calculate_ansatz_moments(alpha_k, M_, g_k);
         g_k -= v_k;
         // calculate Hessian H
         calculate_hessian(alpha_k, M_, *H, true);
@@ -1153,7 +1151,7 @@ public:
           break;
         alpha_prime = alpha_tilde - alpha_one * std::log(density_tilde);
         auto& u_eps_diff = tmp_vec;
-        calculate_vector_integral(alpha_prime, M_, M_, u_eps_diff);
+        calculate_ansatz_moments(alpha_prime, M_, u_eps_diff);
         u_eps_diff *= -(1 - epsilon_gamma_);
         u_eps_diff += v;
 
@@ -1174,7 +1172,7 @@ public:
             alpha_new *= zeta_k;
             alpha_new += alpha_k;
             // calculate f(alpha_new)
-            RangeFieldType f_new = calculate_scalar_integral(alpha_new, M_);
+            RangeFieldType f_new = calculate_ansatz_density(alpha_new, M_);
             f_new -= alpha_new * v_k;
             if (pure_newton >= 2 || XT::Common::FloatCmp::le(f_new, f_k + xi_ * zeta_k * (g_k * d_k))) {
               alpha_k = alpha_new;
@@ -1197,9 +1195,9 @@ public:
   }
 
 private:
+  using BaseType::calculate_ansatz_density;
+  using BaseType::calculate_ansatz_moments;
   using BaseType::calculate_hessian;
-  using BaseType::calculate_scalar_integral;
-  using BaseType::calculate_vector_integral;
   using BaseType::get_isotropic_alpha;
 
   using BaseType::basis_functions_;
@@ -1348,7 +1346,7 @@ public:
   }
 
   // calculate \sum_{i=1}^d < v_i m \psi > n_i, where n is the unit outer normal,
-  // m is the basis function vector, phi_u is the ansatz corresponding to u
+  // m is the basis function vector, \psi is the ansatz corresponding to u
   // and x, v, t are the space, velocity and time variable, respectively
   // As we are using cartesian grids, n_i == 0 in all but one dimension, so only evaluate for i == dd
   DomainType
@@ -1402,7 +1400,7 @@ public:
   DomainType get_u(const DomainType& alpha) const
   {
     BlockVectorType u_block;
-    calculate_vector_integral(alpha, M_, M_, u_block);
+    calculate_ansatz_moments(alpha, M_, u_block);
     return u_block;
   }
 
@@ -1521,12 +1519,11 @@ public:
     *alpha_initial += alpha_in;
     if (!(density > 0. || !(basis_functions_.min_density(u) > 0.)) || std::isinf(density))
       DUNE_THROW(Dune::MathError, "Negative, inf or NaN density!");
-    auto u_prime = std::make_unique<const BlockVectorType>(u / density);
+    auto phi = std::make_unique<const BlockVectorType>(u / density);
 
     // if value has already been calculated for these values, skip computation
     RangeFieldType tau_prime = std::min(
-        tau_ / ((1 + std::sqrt(basis_dimRange) * u_prime->two_norm()) * density + std::sqrt(basis_dimRange) * tau_),
-        tau_);
+        tau_ / ((1 + std::sqrt(basis_dimRange) * phi->two_norm()) * density + std::sqrt(basis_dimRange) * tau_), tau_);
 
     // calculate moment vector for isotropic distribution
     auto u_iso = std::make_unique<const BlockVectorType>(basis_functions_.u_iso());
@@ -1542,7 +1539,7 @@ public:
     const auto r_max = r_sequence.back();
     for (const auto& r : r_sequence) {
       // regularize u
-      *v = *u_prime;
+      *v = *phi;
       if (r > 0.) {
         *beta_in = *get_isotropic_alpha(*v);
         // calculate v = (1-r) u + r u_iso
@@ -1560,7 +1557,7 @@ public:
       thread_local BasisValuesMatrixType P_k(XT::LA::CommonDenseMatrix<RangeFieldType>(0, 0, 0., 0));
       copy_basis_matrix(M_, P_k);
       // calculate f_0
-      RangeFieldType f_k = calculate_scalar_integral(*beta_in, P_k) - *beta_in * *v_k;
+      RangeFieldType f_k = calculate_ansatz_density(*beta_in, P_k) - *beta_in * *v_k;
 
       thread_local auto H = XT::Common::make_unique<BlockMatrixType>(0.);
 
@@ -1596,7 +1593,7 @@ public:
           XT::LA::solve_lower_triangular_transposed(T_k->block(jj), alpha_tilde->block(jj), beta_out->block(jj));
           XT::LA::solve_lower_triangular_transposed(T_k->block(jj), d_alpha_tilde->block(jj), d_k->block(jj));
         } // jj
-        calculate_vector_integral(*alpha_tilde, M_, M_, *u_alpha_tilde);
+        calculate_ansatz_moments(*alpha_tilde, M_, *u_alpha_tilde);
         *g_alpha_tilde = *u_alpha_tilde;
         *g_alpha_tilde -= *v;
         auto density_tilde = basis_functions_.density(*u_alpha_tilde);
@@ -1605,7 +1602,7 @@ public:
         *alpha_prime = *alpha_one;
         *alpha_prime *= -std::log(density_tilde);
         *alpha_prime += *alpha_tilde;
-        calculate_vector_integral(*alpha_prime, M_, M_, *u_alpha_prime);
+        calculate_ansatz_moments(*alpha_prime, M_, *u_alpha_prime);
         *u_eps_diff = *u_alpha_prime;
         *u_eps_diff *= -(1 - epsilon_gamma_);
         *u_eps_diff += *v;
@@ -1628,7 +1625,7 @@ public:
             *beta_new = *d_k;
             *beta_new *= zeta_k;
             *beta_new += *beta_out;
-            RangeFieldType f = calculate_scalar_integral(*beta_new, P_k) - *beta_new * *v_k;
+            RangeFieldType f = calculate_ansatz_density(*beta_new, P_k) - *beta_new * *v_k;
             if (pure_newton >= 2 || f <= f_k + xi_ * zeta_k * (*g_k * *d_k)) {
               *beta_in = *beta_new;
               f_k = f;
@@ -1704,7 +1701,7 @@ public:
   }
 
   // calculate ret = \int (exp(beta_in * m))
-  RangeFieldType calculate_scalar_integral(const BlockVectorType& beta_in, const BasisValuesMatrixType& M) const
+  RangeFieldType calculate_ansatz_density(const BlockVectorType& beta_in, const BasisValuesMatrixType& M) const
   {
     auto& work_vecs = working_storage();
     calculate_scalar_products(beta_in, M, work_vecs);
@@ -1717,33 +1714,30 @@ public:
   }
 
   // calculate ret = \int (m1 exp(beta_in * m2))
-  void calculate_vector_integral_block(const size_t jj,
-                                       const LocalVectorType& beta_in,
-                                       const XT::LA::CommonDenseMatrix<RangeFieldType>& M1,
-                                       const XT::LA::CommonDenseMatrix<RangeFieldType>& M2,
-                                       LocalVectorType& ret) const
+  void calculate_ansatz_moments_block(const size_t jj,
+                                      const LocalVectorType& beta_in,
+                                      const XT::LA::CommonDenseMatrix<RangeFieldType>& M,
+                                      LocalVectorType& ret) const
   {
     auto& work_vec = working_storage()[jj];
-    calculate_scalar_products_block(jj, beta_in, M2, work_vec);
+    calculate_scalar_products_block(jj, beta_in, M, work_vec);
     apply_exponential(work_vec);
     std::fill(ret.begin(), ret.end(), 0.);
     const size_t num_quad_points = quad_weights_[jj].size();
     for (size_t ll = 0; ll < num_quad_points; ++ll) {
       const auto factor = work_vec[ll] * quad_weights_[jj][ll];
-      const auto* basis_ll = &(M1.get_entry_ref(ll, 0.));
+      const auto* basis_ll = &(M.get_entry_ref(ll, 0.));
       for (size_t ii = 0; ii < block_size; ++ii)
         ret[ii] += basis_ll[ii] * factor;
     } // ll
   }
 
   // calculate ret = \int (m1 exp(beta_in * m2))
-  void calculate_vector_integral(const BlockVectorType& beta_in,
-                                 const BasisValuesMatrixType& M1,
-                                 const BasisValuesMatrixType& M2,
-                                 BlockVectorType& ret) const
+  void
+  calculate_ansatz_moments(const BlockVectorType& beta_in, const BasisValuesMatrixType& M, BlockVectorType& ret) const
   {
     for (size_t jj = 0; jj < num_blocks; ++jj)
-      calculate_vector_integral_block(jj, beta_in.block(jj), M1[jj], M2[jj], ret.block(jj));
+      calculate_ansatz_moments_block(jj, beta_in.block(jj), M[jj], ret.block(jj));
   }
 
   void copy_transposed(const LocalMatrixType& T_k, LocalMatrixType& T_k_trans) const
@@ -2013,7 +2007,7 @@ public:
       v_k.block(jj) = tmp_vec;
     } // jj
     apply_inverse_matrix(L, P_k);
-    calculate_vector_integral(beta_out, P_k, P_k, g_k);
+    calculate_ansatz_moments(beta_out, P_k, g_k);
     g_k -= v_k;
   } // void change_basis(...)
 
@@ -2290,7 +2284,7 @@ public:
   {
     VectorType u_vec(basis_dimRange), alpha_vec(basis_dimRange);
     std::copy(alpha.begin(), alpha.end(), alpha_vec.begin());
-    calculate_u(alpha_vec, u_vec);
+    calculate_ansatz_moments(alpha_vec, u_vec);
     DomainType u;
     std::copy(u_vec.begin(), u_vec.end(), u.begin());
     return u;
@@ -2435,16 +2429,15 @@ public:
     if (!(density > 0.) || std::isinf(density))
       DUNE_THROW(Dune::MathError, "Negative, inf or NaN density!");
 
-    VectorType u_prime(basis_dimRange, 0., 0);
+    VectorType phi(basis_dimRange, 0., 0);
     for (size_t ii = 0; ii < basis_dimRange; ++ii)
-      u_prime.set_entry(ii, u[ii] / density);
+      phi.set_entry(ii, u[ii] / density);
     VectorType alpha_one(basis_dimRange, 0., 0);
     basis_functions_.alpha_one(alpha_one);
 
     // if value has already been calculated for these values, skip computation
     RangeFieldType tau_prime = std::min(
-        tau_ / ((1 + std::sqrt(basis_dimRange) * u_prime.l2_norm()) * density + std::sqrt(basis_dimRange) * tau_),
-        tau_);
+        tau_ / ((1 + std::sqrt(basis_dimRange) * phi.l2_norm()) * density + std::sqrt(basis_dimRange) * tau_), tau_);
     thread_local SparseMatrixType H(basis_dimRange, basis_dimRange, pattern_, 0);
 #  if HAVE_EIGEN
     typedef ::Eigen::SparseMatrix<RangeFieldType, ::Eigen::ColMajor> ColMajorBackendType;
@@ -2465,7 +2458,7 @@ public:
     const auto r_max = r_sequence.back();
     for (const auto& r : r_sequence_) {
       // regularize u
-      v = u_prime;
+      v = phi;
       if (r > 0) {
         alpha_k = get_isotropic_alpha(v);
         tmp_vec = u_iso;
@@ -2518,7 +2511,7 @@ public:
         alpha_prime *= -std::log(density_tilde);
         alpha_prime += alpha_tilde;
         auto& u_eps_diff = tmp_vec;
-        calculate_u(alpha_prime, u_eps_diff); // store u_alpha_prime in u_eps_diff
+        calculate_ansatz_moments(alpha_prime, u_eps_diff); // store u_alpha_prime in u_eps_diff
         u_eps_diff *= -(1 - epsilon_gamma_);
         u_eps_diff += v;
         // checking realizability is cheap so we do not need the second stopping criterion
@@ -2650,9 +2643,9 @@ public:
     } // jj (faces)
     ret -= alpha * v;
     return ret;
-  } // void calculate_u(...)
+  } // void calculate_ansatz_moments(...)
 
-  void calculate_u(const VectorType& alpha, VectorType& u) const
+  void calculate_ansatz_moments(const VectorType& alpha, VectorType& u) const
   {
     u *= 0.;
     LocalVectorType local_alpha, local_u;
@@ -2674,11 +2667,11 @@ public:
       for (size_t ii = 0; ii < 3; ++ii)
         u.add_to_entry(vertices[ii]->index(), local_u[ii]);
     } // jj (faces)
-  } // void calculate_u(...)
+  } // void calculate_ansatz_moments(...)
 
   void calculate_gradient(const VectorType& alpha, const VectorType& v, VectorType& g_k) const
   {
-    calculate_u(alpha, g_k);
+    calculate_ansatz_moments(alpha, g_k);
     g_k -= v;
   }
 
@@ -2941,7 +2934,7 @@ public:
   }
 
   // calculate \sum_{i=1}^d < v_i m \psi > n_i, where n is the unit outer normal,
-  // m is the basis function vector, phi_u is the ansatz corresponding to u
+  // m is the basis function vector, \psi is the ansatz corresponding to u
   // and x, v, t are the space, velocity and time variable, respectively
   // As we are using cartesian grids, n_i == 0 in all but one dimension, so only evaluate for i == dd
   DomainType
@@ -3123,7 +3116,7 @@ public:
 
   DomainType get_u(const DomainType& alpha) const
   {
-    return calculate_vector_integral(alpha, M_, M_);
+    return calculate_ansatz_moments(alpha, M_, M_);
   }
 
   // returns (alpha, (actual_u, r)), where r is the regularization parameter and actual_u the regularized u
@@ -3136,10 +3129,10 @@ public:
     if (!(density > 0.) || std::isinf(density))
       DUNE_THROW(Dune::MathError, "Negative, inf or NaN density!");
     static const auto alpha_one = basis_functions_.alpha_one();
-    VectorType u_prime = u / density;
+    VectorType phi = u / density;
     VectorType alpha_initial = alpha_in - alpha_one * std::log(density);
     RangeFieldType tau_prime =
-        std::min(tau_ / ((1 + std::sqrt(dimRange) * u_prime.two_norm()) * density + std::sqrt(dimRange) * tau_), tau_);
+        std::min(tau_ / ((1 + std::sqrt(dimRange) * phi.two_norm()) * density + std::sqrt(dimRange) * tau_), tau_);
     // The hessian H is always symmetric and tridiagonal, so we only need to store the diagonal and subdiagonal
     // elements
     VectorType H_diag;
@@ -3153,7 +3146,7 @@ public:
     const auto r_max = r_sequence.back();
     for (const auto& r : r_sequence_) {
       // regularize u
-      v = u_prime;
+      v = phi;
       if (r > 0) {
         alpha_k = get_isotropic_alpha(v);
         VectorType r_times_u_iso(u_iso);
@@ -3193,7 +3186,7 @@ public:
         if (!(density_tilde > 0.) || std::isinf(density_tilde))
           break;
         const auto alpha_prime = alpha_tilde - alpha_one * std::log(density_tilde);
-        const auto u_alpha_prime = calculate_u(alpha_prime);
+        const auto u_alpha_prime = calculate_ansatz_moments(alpha_prime);
         auto u_eps_diff = v - u_alpha_prime * (1 - epsilon_gamma_);
         // checking realizability is cheap so we do not need the second stopping criterion
         if (g_k.two_norm() < tau_prime && is_realizable(u_eps_diff)) {
@@ -3263,7 +3256,7 @@ private:
     return ret;
   } // .. calculate_f(...)
 
-  VectorType calculate_u(const VectorType& alpha_k) const
+  VectorType calculate_ansatz_moments(const VectorType& alpha_k) const
   {
     VectorType u(0);
     for (size_t nn = 0; nn < dimRange; ++nn) {
@@ -3311,11 +3304,11 @@ private:
       } // if (nn < dimRange-1)
     } // nn
     return u;
-  } // VectorType calculate_u(...)
+  } // VectorType calculate_ansatz_moments(...)
 
   VectorType calculate_gradient(const VectorType& alpha_k, const VectorType& v) const
   {
-    return calculate_u(alpha_k) - v;
+    return calculate_ansatz_moments(alpha_k) - v;
   }
 
   void calculate_hessian(const VectorType& alpha_k,
@@ -3654,7 +3647,7 @@ public:
   }
 
   // calculate \sum_{i=1}^d < v_i m \psi > n_i, where n is the unit outer normal,
-  // m is the basis function vector, phi_u is the ansatz corresponding to u
+  // m is the basis function vector, \psi is the ansatz corresponding to u
   // and x, v, t are the space, velocity and time variable, respectively
   // As we are using cartesian grids, n_i == 0 in all but one dimension, so only evaluate for i == dd
   DomainType
@@ -3702,7 +3695,7 @@ public:
   DomainType get_u(const DomainType& alpha) const
   {
     DomainType ret;
-    calculate_u(alpha, ret);
+    calculate_ansatz_moments(alpha, ret);
     return ret;
   }
 
@@ -3818,10 +3811,10 @@ public:
     if (!(density > 0.) || std::isinf(density))
       DUNE_THROW(Dune::MathError, "Negative, inf or NaN density!");
     static const auto alpha_one = basis_functions_.alpha_one();
-    VectorType u_prime = u / density;
+    VectorType phi = u / density;
     VectorType alpha_initial = alpha_in - alpha_one * std::log(density);
     RangeFieldType tau_prime =
-        std::min(tau_ / ((1 + std::sqrt(dimRange) * u_prime.two_norm()) * density + std::sqrt(dimRange) * tau_), tau_);
+        std::min(tau_ / ((1 + std::sqrt(dimRange) * phi.two_norm()) * density + std::sqrt(dimRange) * tau_), tau_);
     // The hessian H is always symmetric and tridiagonal, so we only need to store the diagonal and subdiagonal
     // elements
     VectorType H_diag;
@@ -3836,7 +3829,7 @@ public:
     const auto r_max = r_sequence.back();
     for (const auto& r : r_sequence_) {
       // regularize u
-      v = u_prime;
+      v = phi;
       if (r > 0) {
         alpha_k = get_isotropic_alpha(v);
         VectorType r_times_u_iso(u_iso);
@@ -3877,7 +3870,7 @@ public:
         if (!(density_tilde > 0.) || std::isinf(density_tilde))
           break;
         const auto alpha_prime = alpha_tilde - alpha_one * std::log(density_tilde);
-        calculate_u(alpha_prime, u_alpha_prime);
+        calculate_ansatz_moments(alpha_prime, u_alpha_prime);
         auto u_eps_diff = v - u_alpha_prime * (1 - epsilon_gamma_);
         // checking realizability is cheap so we do not need the second stopping criterion
         if (g_k.two_norm() < tau_prime && is_realizable(u_eps_diff)) {
@@ -3946,9 +3939,9 @@ public:
     } // jj (intervals)
     ret -= alpha * v;
     return ret;
-  } // void calculate_u(...)
+  } // void calculate_ansatz_moments(...)
 
-  void calculate_u(const DomainType& alpha, DomainType& u) const
+  void calculate_ansatz_moments(const DomainType& alpha, DomainType& u) const
   {
     std::fill(u.begin(), u.end(), 0.);
     LocalVectorType local_alpha;
@@ -3962,11 +3955,11 @@ public:
           u[jj + ii] += basis_ll[ii] * factor_ll;
       } // ll (quad points)
     } // jj (intervals)
-  } // void calculate_u(...)
+  } // void calculate_ansatz_moments(...)
 
   void calculate_gradient(const VectorType& alpha, const VectorType& v, VectorType& g_k) const
   {
-    calculate_u(alpha, g_k);
+    calculate_ansatz_moments(alpha, g_k);
     g_k -= v;
   }
 

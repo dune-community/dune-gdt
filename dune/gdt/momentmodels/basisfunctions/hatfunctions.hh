@@ -29,15 +29,21 @@ template <class DomainFieldType,
           class RangeFieldType,
           size_t dimRange,
           size_t dimRangeCols = 1,
-          size_t dimFlux = dimDomain>
+          size_t dimFlux = dimDomain,
+          EntropyType entropy = EntropyType::MaxwellBoltzmann>
 class HatFunctionMomentBasis
 {
   //  static_assert(false, "Not implemented for this dimension!");
 };
 
-template <class DomainFieldType, class RangeFieldType, size_t rangeDim, size_t rangeDimCols, size_t fluxDim>
-class HatFunctionMomentBasis<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, fluxDim>
-  : public MomentBasisInterface<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, fluxDim>
+template <class DomainFieldType,
+          class RangeFieldType,
+          size_t rangeDim,
+          size_t rangeDimCols,
+          size_t fluxDim,
+          EntropyType entropy>
+class HatFunctionMomentBasis<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, fluxDim, entropy>
+  : public MomentBasisInterface<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, fluxDim, entropy>
 {
 public:
   static const size_t dimDomain = 1;
@@ -45,7 +51,8 @@ public:
   static const size_t dimRangeCols = rangeDimCols;
 
 private:
-  typedef MomentBasisInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols, fluxDim> BaseType;
+  using BaseType =
+      MomentBasisInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols, fluxDim, entropy>;
 
 public:
   using typename BaseType::DomainType;
@@ -328,17 +335,24 @@ private:
   const TriangulationType triangulation_;
 }; // class HatFunctionMomentBasis<DomainFieldType, 1, ...>
 
-template <class DomainFieldType, class RangeFieldType, size_t rangeDim, size_t rangeDimCols, size_t fluxDim>
-constexpr size_t HatFunctionMomentBasis<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, fluxDim>::dimRange;
+template <class DomainFieldType,
+          class RangeFieldType,
+          size_t rangeDim,
+          size_t rangeDimCols,
+          size_t fluxDim,
+          EntropyType entropy>
+constexpr size_t
+    HatFunctionMomentBasis<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, fluxDim, entropy>::dimRange;
 
-template <class DomainFieldType, class RangeFieldType, size_t refinements, size_t fluxDim>
-class HatFunctionMomentBasis<DomainFieldType, 3, RangeFieldType, refinements, 1, fluxDim>
+template <class DomainFieldType, class RangeFieldType, size_t refinements, size_t fluxDim, EntropyType entropy>
+class HatFunctionMomentBasis<DomainFieldType, 3, RangeFieldType, refinements, 1, fluxDim, entropy>
   : public MomentBasisInterface<DomainFieldType,
                                 3,
                                 RangeFieldType,
                                 OctaederStatistics<refinements>::num_vertices(),
                                 1,
-                                fluxDim>
+                                fluxDim,
+                                entropy>
 {
 public:
   static constexpr size_t dimDomain = 3;
@@ -347,11 +361,12 @@ public:
   static constexpr size_t dimFlux = fluxDim;
 
 private:
-  using BaseType = MomentBasisInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols, dimFlux>;
+  using BaseType =
+      MomentBasisInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols, dimFlux, entropy>;
   using ThisType = HatFunctionMomentBasis;
 
 public:
-  typedef SphericalTriangulation<DomainFieldType> TriangulationType;
+  using TriangulationType = SphericalTriangulation<DomainFieldType>;
   using typename BaseType::DomainType;
   using typename BaseType::DynamicRangeType;
   using typename BaseType::MatrixType;
@@ -682,8 +697,8 @@ protected:
   using BaseType::triangulation_;
 }; // class HatFunctionMomentBasis<DomainFieldType, 3, ...>
 
-template <class DomainFieldType, class RangeFieldType, size_t rangeDim, size_t fluxDim>
-constexpr size_t HatFunctionMomentBasis<DomainFieldType, 3, RangeFieldType, rangeDim, 1, fluxDim>::dimRange;
+template <class DomainFieldType, class RangeFieldType, size_t rangeDim, size_t fluxDim, EntropyType entropy>
+constexpr size_t HatFunctionMomentBasis<DomainFieldType, 3, RangeFieldType, rangeDim, 1, fluxDim, entropy>::dimRange;
 
 
 } // namespace GDT

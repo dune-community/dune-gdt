@@ -17,15 +17,20 @@ namespace Dune {
 namespace GDT {
 
 
-template <class DomainFieldType, class RangeFieldType, size_t order, size_t dimRangeCols = 1>
-class LegendreMomentBasis : public MomentBasisInterface<DomainFieldType, 1, RangeFieldType, order + 1, dimRangeCols>
+template <class DomainFieldType,
+          class RangeFieldType,
+          size_t order,
+          size_t dimRangeCols = 1,
+          EntropyType entropy = EntropyType::MaxwellBoltzmann>
+class LegendreMomentBasis
+  : public MomentBasisInterface<DomainFieldType, 1, RangeFieldType, order + 1, dimRangeCols, 1, entropy>
 {
 public:
   static const size_t dimDomain = 1;
   static const size_t dimRange = order + 1;
 
 private:
-  typedef MomentBasisInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols> BaseType;
+  typedef MomentBasisInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols, 1, entropy> BaseType;
 
 public:
   using typename BaseType::DomainType;

@@ -35,15 +35,21 @@ template <class DomainFieldType,
           size_t dimRange,
           size_t dimRangeCols = 1,
           size_t dimFlux = dimDomain,
-          size_t order = 1>
+          size_t order = 1,
+          EntropyType entropy = EntropyType::MaxwellBoltzmann>
 class PartialMomentBasis
 {
   //  static_assert(false, "Not implemented for this combination of dimension and order!");
 };
 
-template <class DomainFieldType, class RangeFieldType, size_t rangeDim, size_t rangeDimCols, size_t dimFlux>
-class PartialMomentBasis<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, dimFlux, 1>
-  : public MomentBasisInterface<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, dimFlux>
+template <class DomainFieldType,
+          class RangeFieldType,
+          size_t rangeDim,
+          size_t rangeDimCols,
+          size_t dimFlux,
+          EntropyType entropy>
+class PartialMomentBasis<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, dimFlux, 1, entropy>
+  : public MomentBasisInterface<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, dimFlux, entropy>
 {
 public:
   static constexpr size_t dimDomain = 1;
@@ -53,7 +59,8 @@ public:
   static constexpr size_t num_intervals = dimRange / 2;
 
 private:
-  typedef MomentBasisInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols> BaseType;
+  using BaseType =
+      MomentBasisInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols, dimFlux, entropy>;
 
 public:
   using typename BaseType::DomainType;
@@ -372,17 +379,24 @@ private:
   using BaseType::quadratures_;
 }; // class PartialMomentBasis<DomainFieldType, 1, ...>
 
-template <class DomainFieldType, class RangeFieldType, size_t rangeDim, size_t rangeDimCols, size_t dimFlux>
-constexpr size_t PartialMomentBasis<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, dimFlux, 1>::dimRange;
+template <class DomainFieldType,
+          class RangeFieldType,
+          size_t rangeDim,
+          size_t rangeDimCols,
+          size_t dimFlux,
+          EntropyType entropy>
+constexpr size_t
+    PartialMomentBasis<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, dimFlux, 1, entropy>::dimRange;
 
-template <class DomainFieldType, class RangeFieldType, size_t refinements, size_t dimFlux>
-class PartialMomentBasis<DomainFieldType, 3, RangeFieldType, refinements, 1, dimFlux, 1>
+template <class DomainFieldType, class RangeFieldType, size_t refinements, size_t dimFlux, EntropyType entropy>
+class PartialMomentBasis<DomainFieldType, 3, RangeFieldType, refinements, 1, dimFlux, 1, entropy>
   : public MomentBasisInterface<DomainFieldType,
                                 3,
                                 RangeFieldType,
                                 OctaederStatistics<refinements>::num_faces() * 4,
                                 1,
-                                dimFlux>
+                                dimFlux,
+                                entropy>
 {
 public:
   static const size_t dimDomain = 3;
@@ -392,11 +406,12 @@ public:
   static constexpr size_t num_blocks = dimRange / block_size;
 
 private:
-  using BaseType = MomentBasisInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols, dimFlux>;
+  using BaseType =
+      MomentBasisInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols, dimFlux, entropy>;
   using ThisType = PartialMomentBasis;
 
 public:
-  typedef SphericalTriangulation<DomainFieldType> TriangulationType;
+  using TriangulationType = SphericalTriangulation<DomainFieldType>;
   using typename BaseType::DomainType;
   using typename BaseType::DynamicRangeType;
   using typename BaseType::MatrixType;
@@ -796,11 +811,12 @@ private:
   mutable PlaneCoefficientsType plane_coefficients_;
 }; // class PartialMomentBasis<DomainFieldType, 3, ...>
 
-template <class DomainFieldType, class RangeFieldType, size_t refinements, size_t dimFlux>
-constexpr size_t PartialMomentBasis<DomainFieldType, 3, RangeFieldType, refinements, 1, dimFlux, 1>::dimRange;
+template <class DomainFieldType, class RangeFieldType, size_t refinements, size_t dimFlux, EntropyType entropy>
+constexpr size_t PartialMomentBasis<DomainFieldType, 3, RangeFieldType, refinements, 1, dimFlux, 1, entropy>::dimRange;
 
-template <class DomainFieldType, class RangeFieldType, size_t refinements, size_t dimFlux>
-constexpr size_t PartialMomentBasis<DomainFieldType, 3, RangeFieldType, refinements, 1, dimFlux, 1>::num_blocks;
+template <class DomainFieldType, class RangeFieldType, size_t refinements, size_t dimFlux, EntropyType entropy>
+constexpr size_t
+    PartialMomentBasis<DomainFieldType, 3, RangeFieldType, refinements, 1, dimFlux, 1, entropy>::num_blocks;
 
 
 } // namespace GDT

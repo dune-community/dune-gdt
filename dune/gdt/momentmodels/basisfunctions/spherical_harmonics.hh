@@ -23,14 +23,20 @@ namespace GDT {
 
 
 // TODO: use complex arithmetic, currently only usable for Pn Models in 2D, test for only_positive = false
-template <class DomainFieldType, class RangeFieldType, size_t order, size_t fluxDim = 3, bool only_positive = true>
+template <class DomainFieldType,
+          class RangeFieldType,
+          size_t order,
+          size_t fluxDim = 3,
+          bool only_positive = true,
+          EntropyType entropy = EntropyType::MaxwellBoltzmann>
 class SphericalHarmonicsMomentBasis
   : public MomentBasisInterface<DomainFieldType,
                                 3,
                                 RangeFieldType,
                                 only_positive ? ((order + 1) * (order + 2)) / 2 : (order + 1) * (order + 1),
                                 1,
-                                fluxDim>
+                                fluxDim,
+                                entropy>
 {
 public:
   static const size_t dimDomain = 3;
@@ -39,7 +45,7 @@ public:
   static const size_t dimFlux = fluxDim;
 
 private:
-  typedef MomentBasisInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, 1, dimFlux> BaseType;
+  using BaseType = MomentBasisInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, 1, dimFlux, entropy>;
 
 public:
   using typename BaseType::DomainType;
@@ -270,14 +276,20 @@ private:
 }; // class SphericalHarmonicsMomentBasis<DomainFieldType, 3, ...>
 
 
-template <class DomainFieldType, class RangeFieldType, size_t order, size_t fluxDim = 3, bool only_even = false>
+template <class DomainFieldType,
+          class RangeFieldType,
+          size_t order,
+          size_t fluxDim = 3,
+          bool only_even = false,
+          EntropyType entropy = EntropyType::MaxwellBoltzmann>
 class RealSphericalHarmonicsMomentBasis
   : public MomentBasisInterface<DomainFieldType,
                                 3,
                                 RangeFieldType,
                                 only_even ? ((order + 1) * (order + 2)) / 2 : (order + 1) * (order + 1),
                                 1,
-                                fluxDim>
+                                fluxDim,
+                                entropy>
 {
 public:
   static const size_t dimDomain = 3;
@@ -286,7 +298,7 @@ public:
   static const size_t dimRangeCols = 1;
 
 private:
-  typedef MomentBasisInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, 1, dimFlux> BaseType;
+  using BaseType = MomentBasisInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, 1, dimFlux, entropy>;
 
 public:
   using typename BaseType::DomainType;
