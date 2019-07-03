@@ -236,8 +236,8 @@ protected:
     }
   };
 
-  template <class anything>
-  struct helper<HatFunctionMomentBasis<DomainFieldType, dimDomain, RangeFieldType, dimRange>, anything>
+  template <class anything, EntropyType entropy>
+  struct helper<HatFunctionMomentBasis<DomainFieldType, dimDomain, RangeFieldType, dimRange, 1, 1, entropy>, anything>
     : public helper_base
   {
     using helper_base::denominator;
@@ -307,8 +307,9 @@ protected:
     } // ... get_kinetic_boundary_flux(...)
   };
 
-  template <class anything>
-  struct helper<PartialMomentBasis<DomainFieldType, dimDomain, RangeFieldType, dimRange>, anything> : public helper_base
+  template <class anything, EntropyType entropy>
+  struct helper<PartialMomentBasis<DomainFieldType, dimDomain, RangeFieldType, dimRange, 1, 1, 1, entropy>, anything>
+    : public helper_base
   {
     using helper_base::denominator;
     using helper_base::integral_1;

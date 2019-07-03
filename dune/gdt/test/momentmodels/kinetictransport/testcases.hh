@@ -58,13 +58,13 @@ struct RealizabilityLimiterChooser<GV,
 #ifndef USE_LP_POSITIVITY_LIMITER
 #  define USE_LP_POSITIVITY_LIMITER 0
 #endif // USE_LP_POSITIVITY_LIMITER
-template <class GV, size_t dimRange, class AnalyticalFluxType, class DiscreteFunctionType>
+template <class GV, size_t dimRange, class AnalyticalFluxType, class DiscreteFunctionType, EntropyType entropy>
 struct RealizabilityLimiterChooser<GV,
-                                   HatFunctionMomentBasis<double, 1, double, dimRange, 1, 1>,
+                                   HatFunctionMomentBasis<double, 1, double, dimRange, 1, 1, entropy>,
                                    AnalyticalFluxType,
                                    DiscreteFunctionType>
 {
-  using MomentBasis = HatFunctionMomentBasis<double, 1, double, dimRange, 1, 1>;
+  using MomentBasis = HatFunctionMomentBasis<double, 1, double, dimRange, 1, 1, entropy>;
   using EntropyFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
   static constexpr size_t quad_order = 15;
   static constexpr size_t quad_refinements = 0;
@@ -88,34 +88,34 @@ struct RealizabilityLimiterChooser<GV,
 #endif // HAVE_CLP
 };
 
-template <class GV, size_t dimRange, class AnalyticalFluxType, class DiscreteFunctionType>
+template <class GV, size_t dimRange, class AnalyticalFluxType, class DiscreteFunctionType, EntropyType entropy>
 struct RealizabilityLimiterChooser<GV,
-                                   PartialMomentBasis<double, 1, double, dimRange, 1, 1>,
+                                   PartialMomentBasis<double, 1, double, dimRange, 1, 1, 1, entropy>,
                                    AnalyticalFluxType,
                                    DiscreteFunctionType>
 {
-  using MomentBasis = PartialMomentBasis<double, 1, double, dimRange, 1, 1>;
+  using MomentBasis = PartialMomentBasis<double, 1, double, dimRange, 1, 1, 1, entropy>;
   using EntropyFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
   static constexpr size_t quad_order = 15;
   static constexpr size_t quad_refinements = 0;
 
   template <class EigenVectorWrapperType>
-  static std::unique_ptr<Dg1dRealizabilityLimitedSlope<GV, double, dimRange, EigenVectorWrapperType>>
+  static std::unique_ptr<Dg1dRealizabilityLimitedSlope<GV, double, dimRange, EigenVectorWrapperType, entropy>>
   make_slope(const EntropyFluxType& entropy_flux, const MomentBasis& basis_functions, const double epsilon)
   {
-    using SlopeType = Dg1dRealizabilityLimitedSlope<GV, double, dimRange, EigenVectorWrapperType>;
+    using SlopeType = Dg1dRealizabilityLimitedSlope<GV, double, dimRange, EigenVectorWrapperType, entropy>;
     return std::make_unique<SlopeType>(entropy_flux, basis_functions, epsilon);
   }
 };
 
 #if HAVE_CLP
-template <class GV, size_t order, class AnalyticalFluxType, class DiscreteFunctionType>
+template <class GV, size_t order, class AnalyticalFluxType, class DiscreteFunctionType, EntropyType entropy>
 struct RealizabilityLimiterChooser<GV,
-                                   RealSphericalHarmonicsMomentBasis<double, double, order, 3>,
+                                   RealSphericalHarmonicsMomentBasis<double, double, order, 3, false, entropy>,
                                    AnalyticalFluxType,
                                    DiscreteFunctionType>
 {
-  using MomentBasis = RealSphericalHarmonicsMomentBasis<double, double, order, 3>;
+  using MomentBasis = RealSphericalHarmonicsMomentBasis<double, double, order, 3, false, entropy>;
   using EntropyFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
   static constexpr size_t quad_order = 2 * order + 8;
   static constexpr size_t quad_refinements = 0;
@@ -130,13 +130,13 @@ struct RealizabilityLimiterChooser<GV,
 };
 #endif
 
-template <class GV, size_t refinements, class AnalyticalFluxType, class DiscreteFunctionType>
+template <class GV, size_t refinements, class AnalyticalFluxType, class DiscreteFunctionType, EntropyType entropy>
 struct RealizabilityLimiterChooser<GV,
-                                   HatFunctionMomentBasis<double, 3, double, refinements, 1, 3>,
+                                   HatFunctionMomentBasis<double, 3, double, refinements, 1, 3, entropy>,
                                    AnalyticalFluxType,
                                    DiscreteFunctionType>
 {
-  using MomentBasis = HatFunctionMomentBasis<double, 3, double, refinements, 1, 3>;
+  using MomentBasis = HatFunctionMomentBasis<double, 3, double, refinements, 1, 3, entropy>;
   using EntropyFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
   static constexpr size_t dimRange = MomentBasis::dimRange;
   static constexpr size_t quad_order = refinements == 0 ? 18 /*fekete rule number 7*/ : 9 /*fekete rule number 3*/;
@@ -162,13 +162,13 @@ struct RealizabilityLimiterChooser<GV,
 };
 
 #if HAVE_QHULL
-template <class GV, size_t refinements, class AnalyticalFluxType, class DiscreteFunctionType>
+template <class GV, size_t refinements, class AnalyticalFluxType, class DiscreteFunctionType, EntropyType entropy>
 struct RealizabilityLimiterChooser<GV,
-                                   PartialMomentBasis<double, 3, double, refinements, 1, 3, 1>,
+                                   PartialMomentBasis<double, 3, double, refinements, 1, 3, 1, entropy>,
                                    AnalyticalFluxType,
                                    DiscreteFunctionType>
 {
-  using MomentBasis = PartialMomentBasis<double, 3, double, refinements, 1, 3>;
+  using MomentBasis = PartialMomentBasis<double, 3, double, refinements, 1, 3, 1, entropy>;
   using EntropyFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
   static constexpr size_t quad_order = refinements == 0 ? 18 /*fekete rule number 7*/ : 9 /*fekete rule number 3*/;
   static constexpr size_t quad_refinements = 0;
@@ -291,6 +291,17 @@ struct SourceBeamMnExpectedResults<PartialMomentBasis<double, 1, double, 8, 1, 1
   static constexpr double l1norm = reconstruct ? 0.33140398337368543 : 0.3314039833756291;
   static constexpr double l2norm = reconstruct ? 0.45583354074069732 : 0.44484887610818585;
   static constexpr double linfnorm = reconstruct ? 0.99172184304625632 : 0.98930905293056492;
+  static constexpr double tol = 1e-9;
+};
+
+template <bool reconstruct>
+struct SourceBeamMnExpectedResults<PartialMomentBasis<double, 1, double, 8, 1, 1, 1, EntropyType::BoseEinstein>,
+                                   reconstruct,
+                                   false>
+{
+  static constexpr double l1norm = reconstruct ? 0.33140398337969496 : 0.33140398335992233;
+  static constexpr double l2norm = reconstruct ? 0.45580154156528901 : 0.44483189012485808;
+  static constexpr double linfnorm = reconstruct ? 0.99172111701075782 : 0.98930792103242149;
   static constexpr double tol = 1e-9;
 };
 

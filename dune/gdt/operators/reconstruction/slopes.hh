@@ -420,13 +420,16 @@ template <class GV,
           class RangeFieldType,
           size_t dimRange,
           class EigenVectorWrapperType,
+          EntropyType entropy = EntropyType::MaxwellBoltzmann,
           class SlopeType = MinmodSlope<XT::Grid::extract_entity_t<GV>, EigenVectorWrapperType>>
 class Dg1dRealizabilityLimitedSlope
   : public SlopeBase<XT::Grid::extract_entity_t<GV>, EigenVectorWrapperType, 3>
-  , public RealizabilityLimiterBase<GV, PartialMomentBasis<typename GV::ctype, 1, RangeFieldType, dimRange, 1, 1>>
+  , public RealizabilityLimiterBase<
+        GV,
+        PartialMomentBasis<typename GV::ctype, 1, RangeFieldType, dimRange, 1, 1, 1, entropy>>
 {
   using ThisType = Dg1dRealizabilityLimitedSlope;
-  using MomentBasis = Dune::GDT::PartialMomentBasis<RangeFieldType, 1, RangeFieldType, dimRange, 1, 1, 1>;
+  using MomentBasis = Dune::GDT::PartialMomentBasis<RangeFieldType, 1, RangeFieldType, dimRange, 1, 1, 1, entropy>;
   using RealizabilityBaseType = RealizabilityLimiterBase<GV, MomentBasis>;
   using typename RealizabilityBaseType::E;
   using typename RealizabilityBaseType::EntropyFluxType;
