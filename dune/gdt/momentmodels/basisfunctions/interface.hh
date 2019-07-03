@@ -146,7 +146,7 @@ template <class DomainFieldImp,
           size_t rangeDim,
           size_t rangeDimCols = 1,
           size_t fluxDim = domainDim,
-          EntropyType entropy = EntropyType::MaxwellBoltzmann>
+          EntropyType entrpy = EntropyType::MaxwellBoltzmann>
 class MomentBasisInterface
 {
 public:
@@ -158,6 +158,7 @@ public:
   static const size_t r = rangeDim;
   static const size_t rC = rangeDimCols;
   static const size_t d_flux = fluxDim;
+  static const EntropyType entropy = entrpy;
   using D = DomainFieldImp;
   using R = RangeFieldImp;
 

@@ -59,6 +59,7 @@ public:
   using QuadratureWeightsType = typename ImplementationType::QuadratureWeightsType;
   using BoundaryQuadratureWeightsType =
       std::vector<XT::Common::FieldVector<XT::Common::FieldVector<QuadratureWeightsType, 2>, dimFlux>>;
+  static const EntropyType entropy = MomentBasis::entropy;
 
   explicit EntropyBasedFluxEntropyCoordsFunction(
       const MomentBasis& basis_functions,
@@ -154,7 +155,7 @@ public:
 
   StateType get_u(const size_t entity_index) const
   {
-    return implementation_->get_u(density_evaluations_[entity_index]);
+    return implementation_->get_u((*eta_ast_prime_evaluations_)[entity_index]);
   }
 
   StateType get_alpha(const StateType& u) const
@@ -174,9 +175,9 @@ public:
     FieldVector<const QuadratureWeightsType*, 3> densities_stencil;
     for (size_t ii = 0; ii < 3; ++ii)
       if (entity_indices[ii] == size_t(-1))
-        densities_stencil[ii] = &boundary_density_evaluations_[entity_indices[1]][dd][boundary_direction[ii]];
+        densities_stencil[ii] = &boundary_distribution_evaluations_[entity_indices[1]][dd][boundary_direction[ii]];
       else
-        densities_stencil[ii] = &density_evaluations_[entity_indices[ii]];
+        densities_stencil[ii] = &(*eta_ast_prime_evaluations_)[entity_indices[ii]];
     implementation_->template calculate_reconstructed_fluxes<slope, FluxesMapType>(
         densities_stencil, precomputed_fluxes, dd);
   }
@@ -185,52 +186,95 @@ public:
   {
     const size_t dd = intersection.indexInInside() / 2;
     const size_t dir = intersection.indexInInside() % 2;
-    return implementation_->calculate_boundary_flux(boundary_density_evaluations_[entity_index][dd][dir], intersection);
+    return implementation_->calculate_boundary_flux(boundary_distribution_evaluations_[entity_index][dd][dir],
+                                                    intersection);
   }
 
   void apply_inverse_hessian(const size_t entity_index, const StateType& u, StateType& Hinv_u) const
   {
-    implementation_->apply_inverse_hessian(density_evaluations_[entity_index], u, Hinv_u);
+    implementation_->apply_inverse_hessian((*eta_ast_twoprime_evaluations_)[entity_index], u, Hinv_u);
   }
 
-  void store_density_evaluations(const size_t entity_index, const StateType& alpha)
+  void store_evaluations(const size_t entity_index, const StateType& alpha)
   {
-    implementation_->store_density_evaluations(density_evaluations_[entity_index], alpha);
+    implementation_->store_exp_evaluations(exp_evaluations_[entity_index], alpha);
+    if (entropy != EntropyType::MaxwellBoltzmann) {
+      implementation_->store_eta_ast_prime_evaluations(exp_evaluations_[entity_index],
+                                                       eta_ast_prime_storage_[entity_index]);
+      implementation_->store_eta_ast_twoprime_evaluations(exp_evaluations_[entity_index],
+                                                          eta_ast_twoprime_storage_[entity_index]);
+    }
   }
 
-  void store_boundary_evaluations(const std::function<RangeFieldType(const DomainType&)>& boundary_density,
+  void set_eta_ast_pointers()
+  {
+    if (entropy == EntropyType::MaxwellBoltzmann) {
+      eta_ast_prime_evaluations_ = &exp_evaluations_;
+      eta_ast_twoprime_evaluations_ = &exp_evaluations_;
+    } else {
+      eta_ast_prime_evaluations_ = &eta_ast_prime_storage_;
+      eta_ast_twoprime_evaluations_ = &eta_ast_twoprime_storage_;
+    }
+  }
+
+  void store_boundary_evaluations(const std::function<RangeFieldType(const DomainType&)>& boundary_distribution,
                                   const size_t entity_index,
                                   const size_t intersection_index)
   {
-    implementation_->store_evaluations(
-        boundary_density_evaluations_[entity_index][intersection_index / 2][intersection_index % 2], boundary_density);
+    implementation_->store_boundary_distribution_evaluations(
+        boundary_distribution_evaluations_[entity_index][intersection_index / 2][intersection_index % 2],
+        boundary_distribution);
   }
 
-  std::vector<QuadratureWeightsType>& density_evaluations()
+  std::vector<QuadratureWeightsType>& exp_evaluations()
   {
-    return density_evaluations_;
+    return exp_evaluations_;
   }
 
-  const std::vector<QuadratureWeightsType>& density_evaluations() const
+  const std::vector<QuadratureWeightsType>& exp_evaluations() const
   {
-    return density_evaluations_;
+    return exp_evaluations_;
   }
 
-  BoundaryQuadratureWeightsType& boundary_density_evaluations()
+  std::vector<QuadratureWeightsType>& eta_ast_prime_evaluations()
   {
-    return boundary_density_evaluations_;
+    return *eta_ast_prime_evaluations_;
   }
 
-  const BoundaryQuadratureWeightsType& boundary_density_evaluations() const
+  const std::vector<QuadratureWeightsType>& eta_ast_prime_evaluations() const
   {
-    return boundary_density_evaluations_;
+    return *eta_ast_prime_evaluations_;
+  }
+
+  std::vector<QuadratureWeightsType>& eta_ast_twoprime_evaluations()
+  {
+    return *eta_ast_twoprime_evaluations_;
+  }
+
+  const std::vector<QuadratureWeightsType>& eta_ast_twoprime_evaluations() const
+  {
+    return *eta_ast_twoprime_evaluations_;
+  }
+
+  BoundaryQuadratureWeightsType& boundary_distribution_evaluations()
+  {
+    return boundary_distribution_evaluations_;
+  }
+
+  const BoundaryQuadratureWeightsType& boundary_distribution_evaluations() const
+  {
+    return boundary_distribution_evaluations_;
   }
 
 
 private:
   std::shared_ptr<ImplementationType> implementation_;
-  std::vector<QuadratureWeightsType> density_evaluations_;
-  BoundaryQuadratureWeightsType boundary_density_evaluations_;
+  std::vector<QuadratureWeightsType> exp_evaluations_;
+  std::vector<QuadratureWeightsType> eta_ast_prime_storage_;
+  std::vector<QuadratureWeightsType> eta_ast_twoprime_storage_;
+  std::vector<QuadratureWeightsType>* eta_ast_prime_evaluations_;
+  std::vector<QuadratureWeightsType>* eta_ast_twoprime_evaluations_;
+  BoundaryQuadratureWeightsType boundary_distribution_evaluations_;
 };
 
 

@@ -83,11 +83,12 @@ public:
     XT::Common::FieldVector<RangeFieldType, dimRange> alpha;
     for (size_t ii = 0; ii < dimRange; ++ii)
       alpha[ii] = local_alpha_->dofs().get_entry(ii);
-    analytical_flux_.store_density_evaluations(entity_index, alpha);
+    analytical_flux_.store_evaluations(entity_index, alpha);
     for (auto&& intersection : Dune::intersections(space_.grid_view(), entity))
       if (intersection.boundary())
         analytical_flux_.store_boundary_evaluations(
             boundary_distribution_(intersection.geometry().center()), entity_index, intersection.indexInInside());
+    analytical_flux_.set_eta_ast_pointers();
   } // void apply_local(...)
 
 private:
@@ -149,8 +150,12 @@ public:
   void
   apply(const VectorType& alpha, VectorType& /*range*/, const XT::Common::Parameter& param = {}) const override final
   {
-    analytical_flux_.density_evaluations().resize(space_.grid_view().size(0));
-    analytical_flux_.boundary_density_evaluations().resize(space_.grid_view().size(0));
+    analytical_flux_.exp_evaluations().resize(space_.grid_view().size(0));
+    if (EntropyFluxType::entropy != EntropyType::MaxwellBoltzmann) {
+      analytical_flux_.eta_ast_prime_evaluations().resize(space_.grid_view().size(0));
+      analytical_flux_.eta_ast_twoprime_evaluations().resize(space_.grid_view().size(0));
+    }
+    analytical_flux_.boundary_distribution_evaluations().resize(space_.grid_view().size(0));
     LocalDensityEvaluatorType local_density_evaluator(
         space_, alpha, analytical_flux_, boundary_distribution_, min_acceptable_density_, param);
     auto walker = XT::Grid::Walker<typename SpaceType::GridViewType>(space_.grid_view());

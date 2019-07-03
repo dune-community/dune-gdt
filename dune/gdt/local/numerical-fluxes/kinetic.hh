@@ -34,7 +34,8 @@ class NumericalKineticFlux
                                                      typename MomentBasis::R,
                                                      MomentBasis::r,
                                                      MomentBasis::rC,
-                                                     MomentBasis::d_flux>,
+                                                     MomentBasis::d_flux,
+                                                     MomentBasis::entropy>,
                                 MomentBasis>::value,
                 "Basisfunctions have to be derived from MomentBasisInterface");
   static const size_t d = MomentBasis::dimFlux;

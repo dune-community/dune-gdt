@@ -81,7 +81,8 @@ public:
                                         RangeFieldType,
                                         dimRange,
                                         dimRangeCols,
-                                        dimFlux>&) const
+                                        dimFlux,
+                                        MomentBasis::entropy>&) const
   {
     // copy to CommonDenseMatrix as the FieldMatrix copies itself on the stack during solve which may case a
     // stackoverflow for large matrices

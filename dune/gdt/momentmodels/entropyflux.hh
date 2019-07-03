@@ -229,13 +229,12 @@ public:
       std::lock_guard<std::mutex> DUNE_UNUSED(guard)(*mutex_);
       const auto& basis_functions = implementation_.basis_functions();
       static const auto u_iso = basis_functions.u_iso();
-      static const auto alpha_iso = basis_functions.alpha_iso();
-      static const auto alpha_one = basis_functions.alpha_one();
       const auto density = basis_functions.density(u);
+      const auto alpha_iso = basis_functions.alpha_iso(density);
       const auto u_iso_scaled = u_iso * density;
       // calculate (inf-norm) distance to isotropic moment with same density
       RangeFieldType distance = (u - u_iso_scaled).infinity_norm();
-      VectorType alpha_start = XT::Common::convert_to<VectorType>(alpha_iso + alpha_one * std::log(density));
+      VectorType alpha_start = XT::Common::convert_to<VectorType>(alpha_iso);
       if (!XT::Common::FloatCmp::eq(distance, 0.) && use_entity_cache_) {
         // calculate distance to closest moment in entity_cache
         const auto entity_cache_dist_and_it = entity_cache_->find_closest(u);

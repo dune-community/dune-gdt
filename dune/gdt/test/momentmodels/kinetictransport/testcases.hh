@@ -34,13 +34,13 @@ template <class GV, class MomentBasisImp, class AnalyticalFluxType, class Discre
 struct RealizabilityLimiterChooser;
 
 #if HAVE_CLP
-template <class GV, size_t order, class AnalyticalFluxType, class DiscreteFunctionType>
+template <class GV, size_t order, class AnalyticalFluxType, class DiscreteFunctionType, EntropyType entropy>
 struct RealizabilityLimiterChooser<GV,
-                                   LegendreMomentBasis<double, double, order>,
+                                   LegendreMomentBasis<double, double, order, 1, entropy>,
                                    AnalyticalFluxType,
                                    DiscreteFunctionType>
 {
-  using MomentBasis = LegendreMomentBasis<double, double, order>;
+  using MomentBasis = LegendreMomentBasis<double, double, order, 1, entropy>;
   using EntropyFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
   static constexpr size_t quad_order = 54;
   static constexpr size_t quad_refinements = 1;
@@ -239,7 +239,13 @@ struct SourceBeamPnTestCase
 
 // SourceBeam Mn
 template <class MomentBasisImp, bool reconstruct, bool kinetic_scheme = false>
-struct SourceBeamMnExpectedResults;
+struct SourceBeamMnExpectedResults
+{
+  static constexpr double l1norm = 0.;
+  static constexpr double l2norm = 0.;
+  static constexpr double linfnorm = 0.;
+  static constexpr double tol = 1e-15;
+};
 
 template <bool reconstruct, bool kinetic_scheme>
 struct SourceBeamMnExpectedResults<LegendreMomentBasis<double, double, 7>, reconstruct, kinetic_scheme>
@@ -247,6 +253,17 @@ struct SourceBeamMnExpectedResults<LegendreMomentBasis<double, double, 7>, recon
   static constexpr double l1norm = reconstruct ? 0.28535354296013105 : 0.28535354295945792;
   static constexpr double l2norm = reconstruct ? 0.37115145999473981 : 0.36265752973701221;
   static constexpr double linfnorm = reconstruct ? 0.78506610334488358 : 0.78315544039143314;
+  static constexpr double tol = 1e-5;
+};
+
+template <bool reconstruct, bool kinetic_scheme>
+struct SourceBeamMnExpectedResults<LegendreMomentBasis<double, double, 7, 1, EntropyType::BoseEinstein>,
+                                   reconstruct,
+                                   kinetic_scheme>
+{
+  static constexpr double l1norm = reconstruct ? 0.28535354297901544 : 0.28535354297288812;
+  static constexpr double l2norm = reconstruct ? 0.37115153411073604 : 0.362657577171562;
+  static constexpr double linfnorm = reconstruct ? 0.78506610330723181 : 0.78315544052307973;
   static constexpr double tol = 1e-5;
 };
 
@@ -358,6 +375,17 @@ struct PlaneSourceMnExpectedResults<LegendreMomentBasis<double, double, 7>, reco
   static constexpr double l1norm = reconstruct ? 2.0000000240000007 : 2.0000000240000029;
   static constexpr double l2norm = reconstruct ? 2.785411193059216 : 2.746101358507282;
   static constexpr double linfnorm = reconstruct ? 4.9069101475812698 : 5.327698357914608;
+  static constexpr double tol = 1e-7;
+};
+
+template <bool reconstruct>
+struct PlaneSourceMnExpectedResults<LegendreMomentBasis<double, double, 7, 1, EntropyType::BoseEinstein>,
+                                    reconstruct,
+                                    false>
+{
+  static constexpr double l1norm = reconstruct ? 2.000000024000002 : 2.0000000239999993;
+  static constexpr double l2norm = reconstruct ? 2.8069260583498563 : 2.7602055903929905;
+  static constexpr double linfnorm = reconstruct ? 6.4746382357839973 : 6.5649315387146858;
   static constexpr double tol = 1e-7;
 };
 

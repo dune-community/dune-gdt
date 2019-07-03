@@ -174,6 +174,7 @@ struct HyperbolicMnDiscretization
     filename += "_grid_" + grid_config["num_elements"];
     filename += "_tend_" + XT::Common::to_string(t_end);
     filename += "_quad_" + XT::Common::to_string(quad_order);
+    filename += MomentBasis::entropy == EntropyType::MaxwellBoltzmann ? "_MaxwellBoltzmann_" : "_BoseEinstein_";
     filename += TestCaseType::reconstruction ? "_ord2" : "_ord1";
     filename += "_" + basis_functions->mn_name();
 
