@@ -28,9 +28,24 @@ using YaspGridTestCasesAll = testing::Types<
         SourceBeamMnTestCase<Yasp1, Dune::GDT::PartialMomentBasis<double, 1, double, 8, 1, 1, 1, entropy>, false>,
     Dune::GDT::SourceBeamMnTestCase<Yasp1, Dune::GDT::PartialMomentBasis<double, 1, double, 8, 1, 1, 1, entropy>, true>,
     Dune::GDT::
+        SourceBeamMnTestCase<Yasp1, Dune::GDT::HatFunctionMomentBasis<double, 1, double, 8, 1, 1, entropy>, false>,
+    Dune::GDT::
+        SourceBeamMnTestCase<Yasp1, Dune::GDT::HatFunctionMomentBasis<double, 1, double, 8, 1, 1, entropy>, true>,
+    Dune::GDT::
         PointSourceMnTestCase<Yasp3, Dune::GDT::HatFunctionMomentBasis<double, 3, double, 0, 1, 3, entropy>, false>,
     Dune::GDT::
-        PointSourceMnTestCase<Yasp3, Dune::GDT::HatFunctionMomentBasis<double, 3, double, 0, 1, 3, entropy>, true>>;
+        PointSourceMnTestCase<Yasp3, Dune::GDT::HatFunctionMomentBasis<double, 3, double, 0, 1, 3, entropy>, true>
+#if HAVE_CLP
+    ,
+    Dune::GDT::PointSourceMnTestCase<Yasp3,
+                                     Dune::GDT::RealSphericalHarmonicsMomentBasis<double, double, 2, 3, false, entropy>,
+                                     true>
+#endif
+#if HAVE_QHULL
+    ,
+    Dune::GDT::PointSourceMnTestCase<Yasp3, Dune::GDT::PartialMomentBasis<double, 3, double, 0, 1, 3, 1, entropy>, true>
+#endif
+    >;
 
 TYPED_TEST_CASE(HyperbolicMnTest, YaspGridTestCasesAll);
 TYPED_TEST(HyperbolicMnTest, check)

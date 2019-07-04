@@ -109,9 +109,6 @@ struct HyperbolicEntropicCoordsMnDiscretization
     auto flux = problem.flux();
     auto* entropy_flux = dynamic_cast<OldEntropyFluxType*>(flux.get());
     auto analytical_flux = std::make_unique<EntropyFluxType>(*entropy_flux);
-    // for Legendre polynomials and real spherical harmonics, the results are sensitive to the initial guess in the
-    // Newton algorithm. If the thread cache is enabled, the guess is different dependent on how many threads we are
-    // using, so for the tests we disable this cache to get reproducible results.
     const RangeFieldType CFL = problem.CFL();
 
     // calculate boundary values for alpha

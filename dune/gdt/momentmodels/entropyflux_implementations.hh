@@ -2608,7 +2608,7 @@ public:
     const auto& faces = basis_functions_.triangulation().faces();
     for (size_t jj = 0; jj < num_faces_; ++jj) {
       const auto& vertices = faces[jj]->vertices();
-      local_u *= 0.;
+      std::fill(local_u.begin(), local_u.end(), 0.);
       for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
         const auto factor = eta_ast_prime_vals[jj][ll] * quad_weights_[jj][ll];
         for (size_t ii = 0; ii < 3; ++ii)
@@ -3040,18 +3040,18 @@ public:
 #if ENTROPY_FLUX_USE_1D_HATFUNCTIONS_SPECIALIZATION
 #  if ENTROPY_FLUX_1D_HATFUNCTIONS_USE_ANALYTICAL_INTEGRALS
 /**
- * Specialization of EntropyBasedFluxImplementation for 1D Hatfunctions (no change of basis, analytic integrals +
- * Taylor)
+ * Specialization of EntropyBasedFluxImplementation for 1D Hatfunctions with MaxwellBoltzmann entropy
+ * (no change of basis, analytic integrals + Taylor)
  */
-template <class D, class R, size_t dimRange>
-class EntropyBasedFluxImplementation<HatFunctionMomentBasis<D, 1, R, dimRange, 1>>
+template <class D, class R, size_t dimRange, EntropyType entropy>
+class EntropyBasedFluxImplementation<HatFunctionMomentBasis<D, 1, R, dimRange, 1, 1, entropy>>
   : public XT::Functions::FunctionInterface<dimRange, 1, dimRange, R>
 {
   using BaseType = typename XT::Functions::FunctionInterface<dimRange, 1, dimRange, R>;
   using ThisType = EntropyBasedFluxImplementation;
 
 public:
-  using MomentBasis = HatFunctionMomentBasis<D, 1, R, dimRange, 1>;
+  using MomentBasis = HatFunctionMomentBasis<D, 1, R, dimRange, 1, 1, entropy>;
   static const size_t dimFlux = MomentBasis::dimFlux;
   static const size_t basis_dimRange = dimRange;
   using typename BaseType::DomainFieldType;
@@ -3064,6 +3064,7 @@ public:
   using FluxDomainType = FieldVector<DomainFieldType, dimFlux>;
   using VectorType = XT::Common::FieldVector<RangeFieldType, basis_dimRange>;
   using AlphaReturnType = std::pair<VectorType, std::pair<DomainType, RangeFieldType>>;
+  static_assert(entropy == EntropyType::MaxwellBoltzmann, "Not implemented for other entropies");
 
   explicit EntropyBasedFluxImplementation(const MomentBasis& basis_functions,
                                           const RangeFieldType tau,
@@ -3090,24 +3091,15 @@ public:
     , max_taylor_order_(max_taylor_order)
   {}
 
-  static bool is_realizable(const DomainType& u)
-  {
-    for (const auto& u_i : u)
-      if (!(u_i > 0.) || std::isinf(u_i))
-        return false;
-    return true;
-  }
+
+  // ============================================================================================
+  // ============================= FunctionInterface methods ====================================
+  // ============================================================================================
+
 
   virtual int order(const XT::Common::Parameter& /*param*/) const override
   {
     return 1;
-  }
-
-  VectorType get_isotropic_alpha(const DomainType& u) const
-  {
-    static const auto alpha_iso = basis_functions_.alpha_iso();
-    static const auto alpha_one = basis_functions_.alpha_one();
-    return alpha_iso + alpha_one * std::log(basis_functions_.density(u));
   }
 
   virtual RangeReturnType evaluate(const DomainType& u,
@@ -3192,6 +3184,12 @@ public:
     calculate_J(alpha, J_diag, J_subdiag);
     calculate_J_Hinv(result[0], J_diag, J_subdiag, H_diag, H_subdiag);
   }
+
+
+  // ============================================================================================
+  // =============================== Kinetic fluxes =============================================
+  // ============================================================================================
+
 
   // calculate \sum_{i=1}^d < v_i m \psi > n_i, where n is the unit outer normal,
   // m is the basis function vector, \psi is the ansatz corresponding to u
@@ -3369,14 +3367,15 @@ public:
     return ret;
   } // DomainType evaluate_kinetic_flux(...)
 
+
+  // ============================================================================================
+  // ============ Evaluations of ansatz distribution, moments, hessian etc. =====================
+  // ============================================================================================
+
+
   std::unique_ptr<AlphaReturnType> get_alpha(const DomainType& u) const
   {
     return get_alpha(u, get_isotropic_alpha(u), true);
-  }
-
-  DomainType get_u(const DomainType& alpha) const
-  {
-    return calculate_u(alpha, M_, M_);
   }
 
   // returns (alpha, (actual_u, r)), where r is the regularization parameter and actual_u the regularized u
@@ -3483,38 +3482,10 @@ public:
     return ret;
   } // ... get_alpha(...)
 
-  const MomentBasis& basis_functions() const
+  DomainType get_u(const DomainType& alpha) const
   {
-    return basis_functions_;
+    return calculate_u(alpha);
   }
-
-private:
-  RangeFieldType calculate_f(const VectorType& alpha_k, const VectorType& v) const
-  {
-    RangeFieldType ret(0);
-    for (size_t ii = 0; ii < dimRange - 1; ++ii) {
-      if (std::abs(alpha_k[ii + 1] - alpha_k[ii]) > taylor_tol_) {
-        ret += (v_points_[ii + 1] - v_points_[ii]) / (alpha_k[ii + 1] - alpha_k[ii])
-               * (std::exp(alpha_k[ii + 1]) - std::exp(alpha_k[ii]));
-      } else {
-        RangeFieldType update = 1.;
-        RangeFieldType result = 0.;
-        size_t ll = 1;
-        RangeFieldType base = alpha_k[ii + 1] - alpha_k[ii];
-        auto pow_frac = 1.;
-        while (ll <= max_taylor_order_ && XT::Common::FloatCmp::ne(update, 0.)) {
-          update = pow_frac;
-          result += update;
-          ++ll;
-          pow_frac *= base / ll;
-        }
-        assert(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
-        ret += result * (v_points_[ii + 1] - v_points_[ii]) * std::exp(alpha_k[ii]);
-      }
-    } // ii
-    ret -= alpha_k * v;
-    return ret;
-  } // .. calculate_f(...)
 
   VectorType calculate_u(const VectorType& alpha_k) const
   {
@@ -3565,6 +3536,34 @@ private:
     } // nn
     return u;
   } // VectorType calculate_u(...)
+
+
+  RangeFieldType calculate_f(const VectorType& alpha_k, const VectorType& v) const
+  {
+    RangeFieldType ret(0);
+    for (size_t ii = 0; ii < dimRange - 1; ++ii) {
+      if (std::abs(alpha_k[ii + 1] - alpha_k[ii]) > taylor_tol_) {
+        ret += (v_points_[ii + 1] - v_points_[ii]) / (alpha_k[ii + 1] - alpha_k[ii])
+               * (std::exp(alpha_k[ii + 1]) - std::exp(alpha_k[ii]));
+      } else {
+        RangeFieldType update = 1.;
+        RangeFieldType result = 0.;
+        size_t ll = 1;
+        RangeFieldType base = alpha_k[ii + 1] - alpha_k[ii];
+        auto pow_frac = 1.;
+        while (ll <= max_taylor_order_ && XT::Common::FloatCmp::ne(update, 0.)) {
+          update = pow_frac;
+          result += update;
+          ++ll;
+          pow_frac *= base / ll;
+        }
+        assert(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
+        ret += result * (v_points_[ii + 1] - v_points_[ii]) * std::exp(alpha_k[ii]);
+      }
+    } // ii
+    ret -= alpha_k * v;
+    return ret;
+  } // .. calculate_f(...)
 
   VectorType calculate_gradient(const VectorType& alpha_k, const VectorType& v) const
   {
@@ -3769,6 +3768,30 @@ private:
       for (size_t jj = 0; jj < ii; ++jj)
         std::swap(ret_ptr[jj * dimRange + ii], ret_ptr[ii * dimRange + jj]);
   } // void calculate_J_Hinv(...)
+
+
+  // ============================================================================================
+  // ================================== Helper functions ========================================
+  // ============================================================================================
+
+
+  const MomentBasis& basis_functions() const
+  {
+    return basis_functions_;
+  }
+
+  static bool is_realizable(const DomainType& u)
+  {
+    for (const auto& u_i : u)
+      if (!(u_i > 0.) || std::isinf(u_i))
+        return false;
+    return true;
+  }
+
+  VectorType get_isotropic_alpha(const DomainType& u) const
+  {
+    return basis_functions_.alpha_iso(basis_functions_.density(u));
+  }
 
   const MomentBasis& basis_functions_;
   const std::vector<RangeFieldType>& v_points_;

@@ -135,10 +135,17 @@ template <class AnalyticalFluxType,
           class DomainFieldType,
           size_t dimDomain,
           class RangeFieldType,
-          size_t dimRange_or_refinements>
-struct EigenvectorWrapperChooser<
-    Dune::GDT::PartialMomentBasis<DomainFieldType, dimDomain, RangeFieldType, dimRange_or_refinements, 1, dimDomain>,
-    AnalyticalFluxType>
+          size_t dimRange_or_refinements,
+          Dune::GDT::EntropyType entropy>
+struct EigenvectorWrapperChooser<Dune::GDT::PartialMomentBasis<DomainFieldType,
+                                                               dimDomain,
+                                                               RangeFieldType,
+                                                               dimRange_or_refinements,
+                                                               1,
+                                                               dimDomain,
+                                                               1,
+                                                               entropy>,
+                                 AnalyticalFluxType>
 {
   using type = Dune::GDT::internal::BlockedEigenvectorWrapper<AnalyticalFluxType>;
 };
