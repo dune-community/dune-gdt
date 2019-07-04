@@ -199,10 +199,9 @@ public:
   {
     implementation_->store_exp_evaluations(exp_evaluations_[entity_index], alpha);
     if (entropy != EntropyType::MaxwellBoltzmann) {
-      implementation_->store_eta_ast_prime_evaluations(exp_evaluations_[entity_index],
-                                                       eta_ast_prime_storage_[entity_index]);
-      implementation_->store_eta_ast_twoprime_evaluations(exp_evaluations_[entity_index],
-                                                          eta_ast_twoprime_storage_[entity_index]);
+      implementation_->store_eta_ast_prime_vals(exp_evaluations_[entity_index], eta_ast_prime_storage_[entity_index]);
+      implementation_->store_eta_ast_twoprime_vals(exp_evaluations_[entity_index],
+                                                   eta_ast_twoprime_storage_[entity_index]);
     }
   }
 

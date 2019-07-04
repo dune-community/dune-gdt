@@ -648,6 +648,17 @@ struct PointSourceMnExpectedResults<HatFunctionMomentBasis<double, 3, double, 0,
 };
 
 template <bool reconstruct>
+struct PointSourceMnExpectedResults<HatFunctionMomentBasis<double, 3, double, 0, 1, 3, EntropyType::BoseEinstein>,
+                                    reconstruct,
+                                    false>
+{
+  static constexpr double l1norm = reconstruct ? 1.0000000829624884 : 1.0000000829622837;
+  static constexpr double l2norm = reconstruct ? 2.694161596061091 : 2.6895958084783342;
+  static constexpr double linfnorm = reconstruct ? 10.377805677445533 : 10.396217979398697;
+  static constexpr double tol = reconstruct ? 1e-5 : 1e-9;
+};
+
+template <bool reconstruct>
 struct PointSourceMnExpectedResults<HatFunctionMomentBasis<double, 3, double, 0, 1, 3>, reconstruct, true>
 {
   static constexpr double l1norm = reconstruct ? 743.43592672927934 : 683.47651349520368;
