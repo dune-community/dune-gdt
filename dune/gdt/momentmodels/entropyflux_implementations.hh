@@ -541,26 +541,6 @@ public:
     return ret;
   } // DomainType evaluate_kinetic_flux_with_alphas(...)
 
-  // calculates inflow part of kinetic flux < v * b(v) psi(v)>_{+/-}  at the boundary
-  template <class IntersectionType>
-  DomainType calculate_boundary_flux(const QuadratureWeightsType& boundary_distribution_evaluations,
-                                     const IntersectionType& intersection)
-  {
-    const auto dd = intersection.indexInInside() / 2;
-    const auto& n_ij = intersection.centerUnitOuterNormal();
-    DomainType ret(0.);
-    for (size_t ll = 0; ll < quad_points_.size(); ++ll) {
-      const auto position = quad_points_[ll][dd];
-      if (position * n_ij[dd] < 0.) {
-        RangeFieldType factor = boundary_distribution_evaluations[ll] * quad_weights_[ll] * position;
-        const auto* basis_ll = &(M_.get_entry_ref(ll, 0.));
-        for (size_t ii = 0; ii < basis_dimRange; ++ii)
-          ret[ii] += basis_ll[ii] * factor;
-      }
-    } // ll
-    return ret;
-  }
-
   // Calculates left and right kinetic flux with reconstructed densities. Ansatz distribution values contains
   // evaluations of the ansatz distribution at each quadrature point for a stencil of three entities. The distributions
   // are reconstructed pointwise for each quadrature point and the resulting (part of) the kinetic flux is <
@@ -1975,29 +1955,6 @@ public:
     return ret;
   } // DomainType evaluate_kinetic_flux(...)
 
-  // calculates inflow part of kinetic flux < v * b(v) psi(v)>_{+/-}  at the boundary
-  template <class IntersectionType>
-  DomainType calculate_boundary_flux(const QuadratureWeightsType& boundary_distribution_evaluations,
-                                     const IntersectionType& intersection)
-  {
-    // evaluate exp(alpha^T b(v_i)) at all quadratures points v_i
-    const auto dd = intersection.indexInInside() / 2;
-    const auto& n_ij = intersection.centerUnitOuterNormal();
-    DomainType ret(0);
-    for (size_t jj = 0; jj < num_blocks; ++jj) {
-      const auto offset = block_size * jj;
-      for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
-        const auto position = quad_points_[jj][ll][dd];
-        if (position * n_ij[dd] < 0.) {
-          RangeFieldType factor = boundary_distribution_evaluations[jj][ll] * quad_weights_[jj][ll] * position;
-          for (size_t ii = 0; ii < block_size; ++ii)
-            ret[offset + ii] += M_[jj].get_entry(ll, ii) * factor;
-        }
-      } // ll
-    } // jj
-    return ret;
-  }
-
   // Calculates left and right kinetic flux with reconstructed densities. Ansatz distribution values contains
   // evaluations of the ansatz distribution at each quadrature point for a stencil of three entities. The distributions
   // are reconstructed pointwise for each quadrature point and the resulting (part of) the kinetic flux is <
@@ -2591,11 +2548,11 @@ public:
     return ret;
   } // ... get_alpha(...)
 
-  // returns density rho = < eta_ast_prime(beta_in * b(v)) >
-  RangeFieldType get_rho(const DomainType& beta_in) const
+  // returns density rho = < eta_ast_prime(alpha * b(v)) >
+  RangeFieldType get_rho(const DomainType& alpha) const
   {
     auto& eta_ast_prime_vals = working_storage();
-    evaluate_eta_ast_prime(beta_in, eta_ast_prime_vals);
+    evaluate_eta_ast_prime(alpha, eta_ast_prime_vals);
     RangeFieldType ret(0.);
     for (size_t jj = 0; jj < num_faces_; ++jj)
       ret += std::inner_product(
@@ -2603,13 +2560,13 @@ public:
     return ret;
   }
 
-  // returns < eta_ast(beta_in * b(v)) >
+  // returns < eta_ast(alpha * b(v)) >
   RangeFieldType get_eta_ast_integrated(const DomainType& alpha) const
   {
     return get_eta_ast_integrated(XT::LA::convert_to<VectorType>(alpha));
   }
 
-  // returns < eta_ast(beta_in * b(v)) >
+  // returns < eta_ast(alpha * b(v)) >
   RangeFieldType get_eta_ast_integrated(const VectorType& alpha) const
   {
     auto& eta_ast_vals = working_storage();
@@ -2635,7 +2592,7 @@ public:
     return XT::LA::convert_to<DomainType>(u);
   }
 
-  // calculate ret = < b eta_ast_prime(beta_in * b) >
+  // calculate ret = < b eta_ast_prime(alpha * b) >
   void calculate_u(const VectorType& alpha, VectorType& u) const
   {
     auto& eta_ast_prime_vals = working_storage();
@@ -2643,7 +2600,7 @@ public:
     calculate_u(eta_ast_prime_vals, u);
   } // void calculate_u(...)
 
-  // calculate ret = < b eta_ast_prime(beta_in * b) >
+  // calculate ret = < b eta_ast_prime(alpha * b) >
   void calculate_u(const QuadratureWeightsType& eta_ast_prime_vals, VectorType& u) const
   {
     u *= 0.;
@@ -2699,10 +2656,10 @@ public:
   void calculate_hessian(const VectorType& alpha,
                          const BasisValuesMatrixType& M,
                          SparseMatrixType& H,
-                         const bool use_work_vecs_results = false) const
+                         const bool use_working_storage = false) const
   {
     auto& eta_ast_twoprime_vals = working_storage();
-    if (!use_work_vecs_results)
+    if (!use_working_storage)
       evaluate_eta_ast_twoprime(alpha, eta_ast_twoprime_vals);
     calculate_hessian(eta_ast_twoprime_vals, M, H);
   } // void calculate_hessian(...)
@@ -2876,8 +2833,9 @@ public:
       QuadratureWeightsType& boundary_distribution_evaluations,
       const std::function<RangeFieldType(const FluxDomainType&)>& boundary_distribution) const
   {
+    boundary_distribution_evaluations.resize(num_faces_);
     for (size_t jj = 0; jj < num_faces_; ++jj) {
-      boundary_distribution_evaluations.resize(quad_points_[jj].size());
+      boundary_distribution_evaluations[jj].resize(quad_points_[jj].size());
       for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll)
         boundary_distribution_evaluations[jj][ll] = boundary_distribution(quad_points_[jj][ll]);
     }
@@ -2941,34 +2899,6 @@ public:
     ret *= n_ij[dd];
     return ret;
   } // DomainType evaluate_kinetic_flux(...)
-
-  // calculates inflow part of kinetic flux < v * b(v) psi(v)>_{+/-}  at the boundary
-  template <class IntersectionType>
-  DomainType calculate_boundary_flux(const QuadratureWeightsType& boundary_distribution_evaluations,
-                                     const IntersectionType& intersection)
-  {
-    // evaluate exp(alpha^T b(v_i)) at all quadratures points v_i
-    const auto dd = intersection.indexInInside() / 2;
-    const auto& n_ij = intersection.centerUnitOuterNormal();
-    const auto& faces = basis_functions_.triangulation().faces();
-    DomainType ret(0.);
-    LocalVectorType local_ret;
-    for (size_t jj = 0; jj < num_faces_; ++jj) {
-      local_ret *= 0.;
-      const auto& vertices = faces[jj]->vertices();
-      for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
-        const auto position = quad_points_[jj][ll][dd];
-        if (position * n_ij[dd] < 0.) {
-          RangeFieldType factor = boundary_distribution_evaluations[jj][ll] * quad_weights_[jj][ll] * position;
-          for (size_t ii = 0; ii < 3; ++ii)
-            local_ret[ii] += M_[jj][ll][ii] * factor;
-        }
-      } // ll (quad points)
-      for (size_t ii = 0; ii < 3; ++ii)
-        ret[vertices[ii]->index()] += local_ret[ii];
-    } // jj
-    return ret;
-  }
 
   // Calculates left and right kinetic flux with reconstructed densities. Ansatz distribution values contains
   // evaluations of the ansatz distribution at each quadrature point for a stencil of three entities. The distributions
@@ -3071,6 +3001,7 @@ public:
   {
     LocalVectorType local_alpha;
     const auto& faces = basis_functions_.triangulation().faces();
+    scalar_products.resize(num_faces_);
     for (size_t jj = 0; jj < num_faces_; ++jj) {
       scalar_products[jj].resize(quad_weights_[jj].size());
       const auto& vertices = faces[jj]->vertices();
@@ -3858,15 +3789,15 @@ private:
 /**
  * Specialization of EntropyBasedFluxImplementation for 1D Hatfunctions (no change of basis, use structure)
  */
-template <class D, class R, size_t dimRange>
-class EntropyBasedFluxImplementation<HatFunctionMomentBasis<D, 1, R, dimRange, 1, 1>>
+template <class D, class R, size_t dimRange, EntropyType entropy>
+class EntropyBasedFluxImplementation<HatFunctionMomentBasis<D, 1, R, dimRange, 1, 1, entropy>>
   : public XT::Functions::FunctionInterface<dimRange, 1, dimRange, R>
 {
   using BaseType = typename XT::Functions::FunctionInterface<dimRange, 1, dimRange, R>;
   using ThisType = EntropyBasedFluxImplementation;
 
 public:
-  using MomentBasis = HatFunctionMomentBasis<D, 1, R, dimRange, 1>;
+  using MomentBasis = HatFunctionMomentBasis<D, 1, R, dimRange, 1, 1, entropy>;
   static const size_t dimFlux = MomentBasis::dimFlux;
   static const size_t basis_dimRange = dimRange;
   using typename BaseType::DomainFieldType;
@@ -3921,16 +3852,15 @@ public:
     } // jj
   }
 
+
+  // ============================================================================================
+  // ============================= FunctionInterface methods ====================================
+  // ============================================================================================
+
+
   virtual int order(const XT::Common::Parameter& /*param*/) const override
   {
     return 1;
-  }
-
-  VectorType get_isotropic_alpha(const DomainType& u) const
-  {
-    static const auto alpha_iso = basis_functions_.alpha_iso();
-    static const auto alpha_one = basis_functions_.alpha_one();
-    return alpha_iso + alpha_one * std::log(basis_functions_.density(u));
   }
 
   virtual RangeReturnType evaluate(const DomainType& u,
@@ -3944,13 +3874,12 @@ public:
   {
     RangeReturnType ret(0.);
     // calculate ret[ii] = < omega[ii] m G_\alpha(u) >
-    LocalVectorType local_alpha;
+    auto& eta_ast_prime_vals = working_storage();
+    evaluate_eta_ast_prime(alpha, eta_ast_prime_vals);
     for (size_t jj = 0; jj < num_intervals; ++jj) {
-      for (size_t ii = 0; ii < 2; ++ii)
-        local_alpha[ii] = alpha[jj + ii];
       for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
         const auto& basis_ll = M_[jj][ll];
-        auto factor_ll = std::exp(local_alpha * basis_ll) * quad_points_[jj][ll] * quad_weights_[jj][ll];
+        auto factor_ll = eta_ast_prime_vals[jj][ll] * quad_points_[jj][ll] * quad_weights_[jj][ll];
         for (size_t ii = 0; ii < 2; ++ii)
           ret[0][jj + ii] += basis_ll[ii] * factor_ll;
       } // ll (quad points)
@@ -3975,175 +3904,38 @@ public:
     calculate_J_Hinv(result[0], J_diag, J_subdiag, H_diag, H_subdiag);
   }
 
-  // calculate \sum_{i=1}^d < v_i m \psi > n_i, where n is the unit outer normal,
-  // m is the basis function vector, \psi is the ansatz corresponding to u
-  // and x, v, t are the space, velocity and time variable, respectively
-  // As we are using cartesian grids, n_i == 0 in all but one dimension, so only evaluate for i == dd
-  DomainType
-  evaluate_kinetic_flux(const DomainType& u_i, const DomainType& u_j, const FluxDomainType& n_ij, const size_t dd) const
-  {
-    // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
-    const auto alpha_i = get_alpha(u_i, get_isotropic_alpha(u_i), true)->first;
-    const auto alpha_j = get_alpha(u_j, get_isotropic_alpha(u_j), true)->first;
-    evaluate_kinetic_flux_with_alphas(alpha_i, alpha_j, n_ij, dd);
-  } // DomainType evaluate_kinetic_flux(...)
 
-  DomainType evaluate_kinetic_flux_with_alphas(const VectorType& alpha_i,
-                                               const VectorType& alpha_j,
-                                               const FluxDomainType& n_ij,
-                                               const size_t DXTC_DEBUG_ONLY(dd)) const
-  {
-    assert(dd == 0);
-    // calculate < \mu m G_\alpha(u) > * n_ij
-    DomainType ret(0);
-    LocalVectorType local_alpha_i, local_alpha_j;
-    for (size_t jj = 0; jj < num_intervals; ++jj) {
-      for (size_t ii = 0; ii < 2; ++ii) {
-        local_alpha_i[ii] = alpha_i[jj + ii];
-        local_alpha_j[ii] = alpha_j[jj + ii];
-      }
-      for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
-        const auto& basis_ll = M_[jj][ll];
-        const auto position = quad_points_[jj][ll];
-        RangeFieldType factor =
-            position * n_ij[0] > 0. ? std::exp(local_alpha_i * basis_ll) : std::exp(local_alpha_j * basis_ll);
-        factor *= quad_weights_[jj][ll] * position;
-        for (size_t ii = 0; ii < 2; ++ii)
-          ret[jj + ii] += basis_ll[ii] * factor;
-      } // ll (quad points)
-    } // jj (intervals)
-    ret *= n_ij[0];
-    return ret;
-  } // ... evaluate_kinetic_flux(...)
+  // ============================================================================================
+  // ============ Evaluations of ansatz distribution, moments, hessian etc. =====================
+  // ============================================================================================
+
 
   std::unique_ptr<AlphaReturnType> get_alpha(const DomainType& u) const
   {
     return get_alpha(u, get_isotropic_alpha(u), true);
   }
 
-  DomainType get_u(const DomainType& alpha) const
-  {
-    DomainType ret;
-    calculate_u(alpha, ret);
-    return ret;
-  }
-
-  DomainType get_u(const QuadratureWeightsType& density_evaluations) const
-  {
-    DomainType ret;
-    for (size_t jj = 0; jj < num_intervals; ++jj) {
-      for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
-        const auto& basis_ll = M_[jj][ll];
-        auto factor_ll = density_evaluations[jj][ll] * quad_weights_[jj][ll];
-        for (size_t ii = 0; ii < 2; ++ii)
-          ret[jj + ii] += basis_ll[ii] * factor_ll;
-      } // ll (quad points)
-    } // jj (intervals)
-    return ret;
-  }
-
-  void store_density_evaluations(QuadratureWeightsType& density_evaluations, const DomainType& alpha) const
-  {
-    for (size_t jj = 0; jj < num_intervals; ++jj) {
-      density_evaluations[jj].resize(quad_points_[jj].size());
-      for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll)
-        density_evaluations[jj][ll] = std::exp(alpha[jj] * M_[jj][ll][0] + alpha[jj + 1] * M_[jj][ll][1]);
-    } // jj
-  }
-
-  void store_evaluations(QuadratureWeightsType& density_evaluations,
-                         const std::function<RangeFieldType(const FluxDomainType&)>& boundary_density) const
-  {
-    for (size_t jj = 0; jj < num_intervals; ++jj) {
-      density_evaluations[jj].resize(quad_points_[jj].size());
-      for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll)
-        density_evaluations[jj][ll] = boundary_density(quad_points_[jj][ll]);
-    } // jj
-  }
-
-  template <class IntersectionType>
-  DomainType calculate_boundary_flux(const QuadratureWeightsType& density_evaluations,
-                                     const IntersectionType& intersection)
-  {
-    // evaluate exp(alpha^T b(v_i)) at all quadratures points v_i
-    const auto dd = intersection.indexInInside() / 2;
-    const auto& n_ij = intersection.centerUnitOuterNormal();
-    DomainType ret(0.);
-    for (size_t jj = 0; jj < num_intervals; ++jj) {
-      for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
-        const auto position = quad_points_[jj][ll];
-        if (position * n_ij[dd] < 0.) {
-          RangeFieldType factor = density_evaluations[jj][ll] * quad_weights_[jj][ll] * position;
-          const auto& basis_ll = M_[jj][ll];
-          for (size_t mm = 0; mm < 2; ++mm)
-            ret[jj + mm] += basis_ll[mm] * factor;
-        }
-      } // ll
-    } // jj
-    return ret;
-  }
-
-  template <SlopeType slope_type, class FluxesMapType>
-  void calculate_reconstructed_fluxes(const FieldVector<const QuadratureWeightsType*, 3>& density_evaluations,
-                                      FluxesMapType& flux_values,
-                                      const size_t dd) const
-  {
-    // evaluate exp(alpha^T b(v_i)) at all quadratures points v_i for all three alphas
-    thread_local XT::Common::FieldVector<std::vector<RangeFieldType>, 2> reconstructed_values(
-        std::vector<RangeFieldType>(quad_points_[0].size()));
-
-    // get flux storage
-    BasisDomainType coord(0.5);
-    coord[dd] = 0;
-    auto& left_flux_value = flux_values[coord];
-    coord[dd] = 1;
-    auto& right_flux_value = flux_values[coord];
-    right_flux_value = left_flux_value = DomainType(0.);
-
-    auto& vals_left = reconstructed_values[0];
-    auto& vals_right = reconstructed_values[1];
-    const auto slope_func =
-        (slope_type == SlopeType::minmod) ? XT::Common::minmod<RangeFieldType> : superbee<RangeFieldType>;
-    for (size_t jj = 0; jj < num_intervals; ++jj) {
-      // reconstruct densities
-      if (slope_type == SlopeType::no_slope) {
-        for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll)
-          vals_left[ll] = vals_right[ll] = (*density_evaluations[1])[jj][ll];
-      } else {
-        for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
-          const auto slope = slope_func((*density_evaluations[1])[jj][ll] - (*density_evaluations[0])[jj][ll],
-                                        (*density_evaluations[2])[jj][ll] - (*density_evaluations[1])[jj][ll]);
-          vals_left[ll] = (*density_evaluations[1])[jj][ll] - 0.5 * slope;
-          vals_right[ll] = (*density_evaluations[1])[jj][ll] + 0.5 * slope;
-        } // ll (quad points)
-      }
-      // calculate fluxes
-      for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
-        const auto position = quad_points_[jj][ll];
-        RangeFieldType factor = position > 0. ? vals_right[ll] : vals_left[ll];
-        factor *= quad_weights_[jj][ll] * position;
-        auto& val = position > 0. ? right_flux_value : left_flux_value;
-        const auto& basis_ll = M_[jj][ll];
-        for (size_t mm = 0; mm < 2; ++mm)
-          val[jj + mm] += basis_ll[mm] * factor;
-      } // ll (quad points)
-    } // jj (intervals)
-  } // void calculate_reconstructed_fluxes(...)
-
   // returns (alpha, (actual_u, r)), where r is the regularization parameter and actual_u the regularized u
   std::unique_ptr<AlphaReturnType>
   get_alpha(const DomainType& u, const VectorType& alpha_in, const bool regularize) const
   {
     auto ret = std::make_unique<AlphaReturnType>();
-    // rescale u such that the density <psi> is 1
+
+    constexpr bool rescale = (entropy == EntropyType::MaxwellBoltzmann);
+
+    // rescale u such that the density <psi> is 1 if rescale is true
     RangeFieldType density = basis_functions_.density(u);
     if (!(density > 0.) || std::isinf(density))
       DUNE_THROW(Dune::MathError, "Negative, inf or NaN density!");
     static const auto alpha_one = basis_functions_.alpha_one();
-    VectorType phi = u / density;
-    VectorType alpha_initial = alpha_in - alpha_one * std::log(density);
+    VectorType phi = rescale ? u / density : u;
+    VectorType alpha_initial = alpha_in;
+    if (rescale)
+      alpha_initial -= alpha_one * std::log(density);
     RangeFieldType tau_prime =
-        std::min(tau_ / ((1 + std::sqrt(dimRange) * phi.two_norm()) * density + std::sqrt(dimRange) * tau_), tau_);
+        rescale
+            ? std::min(tau_ / ((1 + std::sqrt(dimRange) * phi.two_norm()) * density + std::sqrt(dimRange) * tau_), tau_)
+            : tau_;
     // The hessian H is always symmetric and tridiagonal, so we only need to store the diagonal and subdiagonal
     // elements
     VectorType H_diag;
@@ -4179,7 +3971,7 @@ public:
         // calculate gradient g
         calculate_gradient(alpha_k, v, g_k);
         // calculate Hessian H
-        calculate_hessian(alpha_k, M_, H_diag, H_subdiag);
+        calculate_hessian(alpha_k, M_, H_diag, H_subdiag, entropy == EntropyType::MaxwellBoltzmann);
         // calculate descent direction d_k;
         minus_g_k = g_k;
         minus_g_k *= -1;
@@ -4198,13 +3990,18 @@ public:
         auto density_tilde = basis_functions_.density(u_alpha_tilde);
         if (!(density_tilde > 0.) || std::isinf(density_tilde))
           break;
-        const auto alpha_prime = alpha_tilde - alpha_one * std::log(density_tilde);
-        calculate_u(alpha_prime, u_alpha_prime);
+        auto alpha_prime = alpha_tilde;
+        if (rescale) {
+          alpha_prime -= alpha_one * std::log(density_tilde);
+          calculate_u(alpha_prime, u_alpha_prime);
+        } else {
+          u_alpha_prime = u_alpha_tilde;
+        }
         auto u_eps_diff = v - u_alpha_prime * (1 - epsilon_gamma_);
         // checking realizability is cheap so we do not need the second stopping criterion
         if (g_k.two_norm() < tau_prime && is_realizable(u_eps_diff)) {
-          ret->first = alpha_prime + alpha_one * std::log(density);
-          ret->second = std::make_pair(v * density, r);
+          ret->first = rescale ? alpha_prime + alpha_one * std::log(density) : alpha_prime;
+          ret->second = std::make_pair(rescale ? v * density : v, r);
           return ret;
         } else {
           RangeFieldType zeta_k = 1;
@@ -4234,55 +4031,66 @@ public:
     return ret;
   } // ... get_alpha(...)
 
-  const MomentBasis& basis_functions() const
+  // returns density rho = < eta_ast_prime(alpha * b(v)) >
+  RangeFieldType get_rho(const DomainType& alpha) const
   {
-    return basis_functions_;
-  }
-
-  static bool is_realizable(const DomainType& u)
-  {
-    for (const auto& u_i : u)
-      if (!(u_i > 0.) || std::isinf(u_i))
-        return false;
-    return true;
-  }
-
-  QuadratureWeightsType& working_storage() const
-  {
-    thread_local QuadratureWeightsType work_vec;
+    auto& eta_ast_prime_vals = working_storage();
+    evaluate_eta_ast_prime(alpha, eta_ast_prime_vals);
+    RangeFieldType ret(0.);
     for (size_t jj = 0; jj < num_intervals; ++jj)
-      work_vec[jj].resize(quad_points_[jj].size());
-    return work_vec;
+      ret += std::inner_product(
+          quad_weights_[jj].begin(), quad_weights_[jj].end(), eta_ast_prime_vals[jj].begin(), RangeFieldType(0.));
+    return ret;
+  }
+
+  // returns < eta_ast(alpha * b(v)) >
+  RangeFieldType get_eta_ast_integrated(const DomainType& alpha) const
+  {
+    auto& eta_ast_vals = working_storage();
+    evaluate_eta_ast(alpha, eta_ast_vals);
+    RangeFieldType ret(0.);
+    for (size_t jj = 0; jj < num_intervals; ++jj)
+      ret += std::inner_product(
+          quad_weights_[jj].begin(), quad_weights_[jj].end(), eta_ast_vals[jj].begin(), RangeFieldType(0.));
+    return ret;
+  }
+
+  DomainType get_u(const DomainType& alpha) const
+  {
+    DomainType ret;
+    calculate_u(alpha, ret);
+    return ret;
+  }
+
+  DomainType get_u(const QuadratureWeightsType& eta_ast_prime_vals) const
+  {
+    DomainType ret;
+    calculate_u(eta_ast_prime_vals, ret);
+    return ret;
+  }
+
+  void calculate_u(const DomainType& alpha, DomainType& u) const
+  {
+    auto& eta_ast_prime_vals = working_storage();
+    evaluate_eta_ast_prime(alpha, eta_ast_prime_vals);
+    calculate_u(eta_ast_prime_vals, u);
+  } // void calculate_u(...)
+
+  void calculate_u(const QuadratureWeightsType& eta_ast_prime_vals, DomainType& u) const
+  {
+    std::fill(u.begin(), u.end(), 0.);
+    for (size_t jj = 0; jj < num_intervals; ++jj) {
+      for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
+        auto factor_ll = eta_ast_prime_vals[jj][ll] * quad_weights_[jj][ll];
+        for (size_t ii = 0; ii < 2; ++ii)
+          u[jj + ii] += M_[jj][ll][ii] * factor_ll;
+      } // ll (quad points)
+    } // jj (intervals)
   }
 
   RangeFieldType calculate_f(const VectorType& alpha, const VectorType& v) const
   {
-    RangeFieldType ret(0.);
-    XT::Common::FieldVector<RangeFieldType, block_size> local_alpha;
-    for (size_t jj = 0; jj < num_intervals; ++jj) {
-      for (size_t ii = 0; ii < 2; ++ii)
-        local_alpha[ii] = alpha[jj + ii];
-      for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll)
-        ret += std::exp(local_alpha * M_[jj][ll]) * quad_weights_[jj][ll];
-    } // jj (intervals)
-    ret -= alpha * v;
-    return ret;
-  } // void calculate_u(...)
-
-  void calculate_u(const DomainType& alpha, DomainType& u) const
-  {
-    std::fill(u.begin(), u.end(), 0.);
-    LocalVectorType local_alpha;
-    for (size_t jj = 0; jj < num_intervals; ++jj) {
-      for (size_t ii = 0; ii < 2; ++ii)
-        local_alpha[ii] = alpha[jj + ii];
-      for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
-        const auto& basis_ll = M_[jj][ll];
-        auto factor_ll = std::exp(local_alpha * basis_ll) * quad_weights_[jj][ll];
-        for (size_t ii = 0; ii < 2; ++ii)
-          u[jj + ii] += basis_ll[ii] * factor_ll;
-      } // ll (quad points)
-    } // jj (intervals)
+    return get_eta_ast_integrated(alpha) - alpha * v;
   } // void calculate_u(...)
 
   void calculate_gradient(const VectorType& alpha, const VectorType& v, VectorType& g_k) const
@@ -4291,7 +4099,7 @@ public:
     g_k -= v;
   }
 
-  void calculate_hessian(const QuadratureWeightsType& density_evalutations,
+  void calculate_hessian(const QuadratureWeightsType& eta_ast_twoprime_vals,
                          const BasisValuesMatrixType& M,
                          VectorType& H_diag,
                          FieldVector<RangeFieldType, dimRange - 1>& H_subdiag) const
@@ -4301,7 +4109,7 @@ public:
     for (size_t jj = 0; jj < num_intervals; ++jj) {
       for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
         const auto& basis_ll = M[jj][ll];
-        const auto factor = density_evalutations[jj][ll] * quad_weights_[jj][ll];
+        const auto factor = eta_ast_twoprime_vals[jj][ll] * quad_weights_[jj][ll];
         for (size_t ii = 0; ii < 2; ++ii)
           H_diag[jj + ii] += std::pow(basis_ll[ii], 2) * factor;
         H_subdiag[jj] += basis_ll[0] * basis_ll[1] * factor;
@@ -4312,23 +4120,13 @@ public:
   void calculate_hessian(const DomainType& alpha,
                          const BasisValuesMatrixType& M,
                          VectorType& H_diag,
-                         FieldVector<RangeFieldType, dimRange - 1>& H_subdiag) const
+                         FieldVector<RangeFieldType, dimRange - 1>& H_subdiag,
+                         const bool use_working_storage = false) const
   {
-    std::fill(H_diag.begin(), H_diag.end(), 0.);
-    std::fill(H_subdiag.begin(), H_subdiag.end(), 0.);
-    LocalVectorType local_alpha;
-    auto& work_vecs = working_storage();
-    for (size_t jj = 0; jj < num_intervals; ++jj) {
-      for (size_t ii = 0; ii < 2; ++ii)
-        local_alpha[ii] = alpha[jj + ii];
-      for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
-        const auto& basis_ll = M[jj][ll];
-        work_vecs[jj][ll] = std::exp(local_alpha * basis_ll) * quad_weights_[jj][ll];
-        for (size_t ii = 0; ii < 2; ++ii)
-          H_diag[jj + ii] += std::pow(basis_ll[ii], 2) * work_vecs[jj][ll];
-        H_subdiag[jj] += basis_ll[0] * basis_ll[1] * work_vecs[jj][ll];
-      } // ll (quad points)
-    } // jj (intervals)
+    auto& eta_ast_twoprime_vals = working_storage();
+    if (!use_working_storage)
+      evaluate_eta_ast_twoprime(alpha, eta_ast_twoprime_vals);
+    calculate_hessian(eta_ast_twoprime_vals, M, H_diag, H_subdiag);
   } // void calculate_hessian(...)
 
   // J = df/dalpha is the derivative of the flux with respect to alpha.
@@ -4337,20 +4135,21 @@ public:
   // vector-valued),
   // the derivative is the vector of matrices (df_1/dalpha, df_2/dalpha, ...)
   // this function returns the dd-th matrix df_dd/dalpha of J
-  // assumes work_vecs already contains the needed exp(alpha * m) values
+  // assumes work_vecs already contains the needed eta_ast_twoprime(alpha * b) values
   void calculate_J(const BasisValuesMatrixType& M,
                    VectorType& J_diag,
                    FieldVector<RangeFieldType, dimRange - 1>& J_subdiag) const
   {
     std::fill(J_diag.begin(), J_diag.end(), 0.);
     std::fill(J_subdiag.begin(), J_subdiag.end(), 0.);
-    const auto& work_vecs = working_storage();
+    const auto& eta_ast_twoprime_vals = working_storage();
     for (size_t jj = 0; jj < num_intervals; ++jj) {
       for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
         const auto& basis_ll = M[jj][ll];
+        const auto factor = eta_ast_twoprime_vals[jj][ll] * quad_points_[jj][ll] * quad_weights_[jj][ll];
         for (size_t ii = 0; ii < 2; ++ii)
-          J_diag[jj + ii] += std::pow(basis_ll[ii], 2) * work_vecs[jj][ll] * quad_points_[jj][ll];
-        J_subdiag[jj] += basis_ll[0] * basis_ll[1] * work_vecs[jj][ll] * quad_points_[jj][ll];
+          J_diag[jj + ii] += std::pow(basis_ll[ii], 2) * factor;
+        J_subdiag[jj] += basis_ll[0] * basis_ll[1] * factor;
       } // ll (quad points)
     } // jj (intervals)
   } // void calculate_J(...)
@@ -4399,6 +4198,248 @@ public:
       for (size_t jj = 0; jj < ii; ++jj)
         std::swap(ret_ptr[jj * dimRange + ii], ret_ptr[ii * dimRange + jj]);
   } // void calculate_J_Hinv(...)
+
+
+  // ============================================================================================
+  // ============================= Entropy evaluations ==========================================
+  // ============================================================================================
+
+
+  // evaluates \eta_{\ast}(\alpha^T b(v_i)) for all quadrature points v_i
+  void evaluate_eta_ast(const VectorType& alpha, QuadratureWeightsType& ret) const
+  {
+    calculate_scalar_products(alpha, ret);
+    apply_exponential(ret);
+    evaluate_eta_ast(ret);
+  }
+
+  // evaluates \eta_{\ast}(\alpha^T b(v_i)) for all quadrature points v_i, assumes that ret already contains
+  // exp(alpha^T b(v_i))
+  void evaluate_eta_ast(QuadratureWeightsType& ret) const
+  {
+    if (entropy == EntropyType::BoseEinstein)
+      for (size_t jj = 0; jj < num_intervals; ++jj)
+        for (size_t ll = 0; ll < ret[jj].size(); ++ll)
+          ret[jj][ll] = -std::log(1 - ret[jj][ll]);
+  }
+
+  // evaluates \eta_{\ast}^{\prime}(\alpha^T b(v_i)) for all quadrature points v_i
+  void evaluate_eta_ast_prime(const VectorType& alpha, QuadratureWeightsType& ret) const
+  {
+    calculate_scalar_products(alpha, ret);
+    apply_exponential(ret);
+    evaluate_eta_ast_prime(ret);
+  }
+
+  // evaluates \eta_{\ast}^{\prime}(\alpha^T b(v_i)) for all quadrature points v_i, assumes that ret already contains
+  // exp(alpha^T b(v_i))
+  void evaluate_eta_ast_prime(QuadratureWeightsType& ret) const
+  {
+    if (entropy == EntropyType::BoseEinstein)
+      for (size_t jj = 0; jj < num_intervals; ++jj)
+        for (size_t ll = 0; ll < ret[jj].size(); ++ll)
+          ret[jj][ll] /= (1 - ret[jj][ll]);
+  }
+
+  // evaluates \eta_{\ast}^{\prime\prime}(\alpha^T b(v_i)) for all quadrature points v_i
+  void evaluate_eta_ast_twoprime(const VectorType& alpha, QuadratureWeightsType& ret) const
+  {
+    calculate_scalar_products(alpha, ret);
+    apply_exponential(ret);
+    evaluate_eta_ast_twoprime(ret);
+  }
+
+  // evaluates \eta_{\ast}^{\prime\prime}(\alpha^T b(v_i)) for all quadrature points v_i, assumes that ret already
+  // contains exp(alpha^T b(v_i))
+  void evaluate_eta_ast_twoprime(QuadratureWeightsType& ret) const
+  {
+    if (entropy == EntropyType::BoseEinstein)
+      for (size_t jj = 0; jj < num_intervals; ++jj)
+        for (size_t ll = 0; ll < ret[jj].size(); ++ll)
+          ret[jj][ll] /= std::pow(1 - ret[jj][ll], 2);
+  }
+
+  // stores evaluations of exp(alpha^T b(v_i)) for all quadrature points v_i
+  void store_exp_evaluations(QuadratureWeightsType& exp_evaluations, const DomainType& alpha) const
+  {
+    this->calculate_scalar_products(XT::LA::convert_to<VectorType>(alpha), exp_evaluations);
+    this->apply_exponential(exp_evaluations);
+  }
+
+  void store_eta_ast_prime_vals(const QuadratureWeightsType& exp_evaluations, QuadratureWeightsType& eta_ast_prime_vals)
+  {
+    eta_ast_prime_vals = exp_evaluations;
+    evaluate_eta_ast_prime(eta_ast_prime_vals);
+  }
+
+  void store_eta_ast_twoprime_vals(const QuadratureWeightsType& exp_evaluations,
+                                   QuadratureWeightsType& eta_ast_twoprime_vals)
+  {
+    eta_ast_twoprime_vals = exp_evaluations;
+    evaluate_eta_ast_twoprime(eta_ast_twoprime_vals);
+  }
+
+  // stores evaluations of a given boundary distribution psi(v) at all quadrature points v_i
+  void store_boundary_distribution_evaluations(
+      QuadratureWeightsType& boundary_distribution_evaluations,
+      const std::function<RangeFieldType(const FluxDomainType&)>& boundary_distribution) const
+  {
+    for (size_t jj = 0; jj < num_intervals; ++jj) {
+      boundary_distribution_evaluations[jj].resize(quad_points_[jj].size());
+      for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll)
+        boundary_distribution_evaluations[jj][ll] = boundary_distribution(quad_points_[jj][ll]);
+    }
+  }
+
+
+  // ============================================================================================
+  // =============================== Kinetic fluxes =============================================
+  // ============================================================================================
+
+
+  // calculate \sum_{i=1}^d < v_i m \psi > n_i, where n is the unit outer normal,
+  // m is the basis function vector, \psi is the ansatz corresponding to u
+  // and x, v, t are the space, velocity and time variable, respectively
+  // As we are using cartesian grids, n_i == 0 in all but one dimension, so only evaluate for i == dd
+  DomainType
+  evaluate_kinetic_flux(const DomainType& u_i, const DomainType& u_j, const FluxDomainType& n_ij, const size_t dd) const
+  {
+    const auto alpha_i = get_alpha(u_i, get_isotropic_alpha(u_i), true)->first;
+    const auto alpha_j = get_alpha(u_j, get_isotropic_alpha(u_j), true)->first;
+    return evaluate_kinetic_flux_with_alphas(alpha_i, alpha_j, n_ij, dd);
+  } // DomainType evaluate_kinetic_flux(...)
+
+  DomainType evaluate_kinetic_flux_with_alphas(const VectorType& alpha_i,
+                                               const VectorType& alpha_j,
+                                               const FluxDomainType& n_ij,
+                                               const size_t dd) const
+  {
+    assert(dd == 0);
+    thread_local FieldVector<QuadratureWeightsType, 2> eta_ast_prime_vals;
+    for (size_t jj = 0; jj < num_intervals; ++jj) {
+      eta_ast_prime_vals[0][jj].resize(quad_points_[jj].size());
+      eta_ast_prime_vals[1][jj].resize(quad_points_[jj].size());
+    }
+    evaluate_eta_ast_prime(alpha_i, eta_ast_prime_vals[0]);
+    evaluate_eta_ast_prime(alpha_j, eta_ast_prime_vals[1]);
+    // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
+    DomainType ret(0);
+    for (size_t jj = 0; jj < num_intervals; ++jj) {
+      for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
+        const auto position = quad_points_[jj][ll];
+        RangeFieldType factor =
+            position * n_ij[dd] > 0. ? eta_ast_prime_vals[0][jj][ll] : eta_ast_prime_vals[1][jj][ll];
+        factor *= quad_weights_[jj][ll] * position;
+        for (size_t ii = 0; ii < 2; ++ii)
+          ret[jj + ii] += M_[jj][ll][ii] * factor;
+      } // ll (quad points)
+    } // jj (faces)
+    ret *= n_ij[dd];
+    return ret;
+  } // DomainType evaluate_kinetic_flux(...)
+
+  // Calculates left and right kinetic flux with reconstructed densities. Ansatz distribution values contains
+  // evaluations of the ansatz distribution at each quadrature point for a stencil of three entities. The distributions
+  // are reconstructed pointwise for each quadrature point and the resulting (part of) the kinetic flux is <
+  // psi_reconstr * b * v>_{+/-}.
+  template <SlopeType slope_type, class FluxesMapType>
+  void calculate_reconstructed_fluxes(const FieldVector<const QuadratureWeightsType*, 3>& ansatz_distribution_values,
+                                      FluxesMapType& flux_values,
+                                      const size_t dd) const
+  {
+    assert(dd == 0);
+    // get flux storage
+    BasisDomainType coord(0.5);
+    coord[dd] = 0;
+    auto& left_flux_value = flux_values[coord];
+    coord[dd] = 1;
+    auto& right_flux_value = flux_values[coord];
+    right_flux_value = left_flux_value = DomainType(0.);
+    thread_local XT::Common::FieldVector<std::vector<RangeFieldType>, 2> reconstructed_values(
+        std::vector<RangeFieldType>(quad_points_[0].size()));
+    const auto slope_func =
+        (slope_type == SlopeType::minmod) ? XT::Common::minmod<RangeFieldType> : superbee<RangeFieldType>;
+    auto& vals_left = reconstructed_values[0];
+    auto& vals_right = reconstructed_values[1];
+    for (size_t jj = 0; jj < num_intervals; ++jj) {
+      // reconstruct densities
+      if (slope_type == SlopeType::no_slope) {
+        for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll)
+          vals_left[ll] = vals_right[ll] = (*ansatz_distribution_values[1])[jj][ll];
+      } else {
+        for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
+          const auto slope =
+              slope_func((*ansatz_distribution_values[1])[jj][ll] - (*ansatz_distribution_values[0])[jj][ll],
+                         (*ansatz_distribution_values[2])[jj][ll] - (*ansatz_distribution_values[1])[jj][ll]);
+          vals_left[ll] = (*ansatz_distribution_values[1])[jj][ll] - 0.5 * slope;
+          vals_right[ll] = (*ansatz_distribution_values[1])[jj][ll] + 0.5 * slope;
+        } // ll (quad points)
+      }
+      // calculate fluxes
+      for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
+        const auto& position = quad_points_[jj][ll];
+        RangeFieldType factor = position > 0. ? vals_right[ll] : vals_left[ll];
+        factor *= quad_weights_[jj][ll] * position;
+        auto& val = position > 0. ? right_flux_value : left_flux_value;
+        const auto& basis_ll = M_[jj][ll];
+        for (size_t ii = 0; ii < 2; ++ii)
+          val[jj + ii] += basis_ll[ii] * factor;
+      } // ll (quad points)
+    } // jj
+  } // void calculate_reconstructed_fluxes(...)
+
+
+  // ============================================================================================
+  // ================================== Helper functions ========================================
+  // ============================================================================================
+
+
+  const MomentBasis& basis_functions() const
+  {
+    return basis_functions_;
+  }
+
+  void calculate_scalar_products(const VectorType& alpha, QuadratureWeightsType& scalar_products) const
+  {
+    LocalVectorType local_alpha;
+    for (size_t jj = 0; jj < num_intervals; ++jj) {
+      scalar_products[jj].resize(quad_weights_[jj].size());
+      for (size_t ii = 0; ii < 2; ++ii)
+        local_alpha[ii] = alpha[jj + ii];
+      for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll)
+        scalar_products[jj][ll] = local_alpha * M_[jj][ll];
+    } // jj
+  }
+
+  void apply_exponential(QuadratureWeightsType& values) const
+  {
+    for (size_t jj = 0; jj < num_intervals; ++jj) {
+      assert(values[jj].size() < std::numeric_limits<int>::max());
+      XT::Common::Mkl::exp(static_cast<int>(values[jj].size()), values[jj].data(), values[jj].data());
+    }
+  }
+
+  VectorType get_isotropic_alpha(const DomainType& u) const
+  {
+    return basis_functions_.alpha_iso(basis_functions_.density(u));
+  }
+
+  static bool is_realizable(const DomainType& u)
+  {
+    for (const auto& u_i : u)
+      if (!(u_i > 0.) || std::isinf(u_i))
+        return false;
+    return true;
+  }
+
+  QuadratureWeightsType& working_storage() const
+  {
+    thread_local QuadratureWeightsType work_vec;
+    for (size_t jj = 0; jj < num_intervals; ++jj)
+      work_vec[jj].resize(quad_points_[jj].size());
+    return work_vec;
+  }
+
 
 private:
   const MomentBasis& basis_functions_;

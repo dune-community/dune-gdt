@@ -182,14 +182,6 @@ public:
         densities_stencil, precomputed_fluxes, dd);
   }
 
-  StateType calculate_boundary_flux(const size_t entity_index, const I& intersection)
-  {
-    const size_t dd = intersection.indexInInside() / 2;
-    const size_t dir = intersection.indexInInside() % 2;
-    return implementation_->calculate_boundary_flux(boundary_distribution_evaluations_[entity_index][dd][dir],
-                                                    intersection);
-  }
-
   void apply_inverse_hessian(const size_t entity_index, const StateType& u, StateType& Hinv_u) const
   {
     implementation_->apply_inverse_hessian((*eta_ast_twoprime_evaluations_)[entity_index], u, Hinv_u);
