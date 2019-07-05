@@ -43,6 +43,7 @@ public:
   static const size_t dimRange = only_positive ? ((order + 1) * (order + 2)) / 2 : (order + 1) * (order + 1);
   static const size_t dimRangeCols = 1;
   static const size_t dimFlux = fluxDim;
+  static const size_t num_refinements = 0;
 
 private:
   using BaseType = MomentBasisInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, 1, dimFlux, entropy>;
@@ -146,7 +147,7 @@ public:
 
   virtual std::string short_id() const override final
   {
-    return "shm";
+    return "sh";
   }
 
   virtual std::string mn_name() const override final
@@ -296,6 +297,7 @@ public:
   static const size_t dimFlux = fluxDim;
   static const size_t dimRange = only_even ? ((order + 1) * (order + 2)) / 2 : (order + 1) * (order + 1);
   static const size_t dimRangeCols = 1;
+  static const size_t num_refinements = 0;
 
 private:
   using BaseType = MomentBasisInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, 1, dimFlux, entropy>;
@@ -398,7 +400,7 @@ public:
 
   virtual std::string short_id() const override final
   {
-    return "rhm";
+    return "rh";
   }
 
   virtual std::string mn_name() const override final

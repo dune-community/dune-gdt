@@ -470,8 +470,8 @@ public:
         const auto& u1 = u[2 * ii + 1];
         const auto& ubar0 = u_bar[2 * ii];
         const auto& ubar1 = u_bar[2 * ii + 1];
-        const auto& vj = basis_functions_.triangulation()[ii];
-        const auto& vjplus1 = basis_functions_.triangulation()[ii + 1];
+        const auto& vj = basis_functions_.partitioning()[ii];
+        const auto& vjplus1 = basis_functions_.partitioning()[ii + 1];
         FieldVector<RangeFieldType, 3> thetas_ii;
         if (!is_epsilon_realizable(ubar0, ubar1, vj, vjplus1, epsilon_)) {
           thetas[2 * ii] = 1.;

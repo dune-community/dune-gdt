@@ -24,7 +24,7 @@ namespace Dune {
 namespace GDT {
 
 
-template <class SpaceType, class VectorType, class MomentBasis, SlopeType slope>
+template <class SpaceType, class VectorType, class MomentBasis, SlopeLimiterType slope>
 class LocalEntropicHessianInverter : public XT::Grid::ElementFunctor<typename SpaceType::GridViewType>
 {
   using GridViewType = typename SpaceType::GridViewType;
@@ -107,7 +107,7 @@ private:
 
 template <class MomentBasisImp,
           class SpaceImp,
-          SlopeType slope,
+          SlopeLimiterType slope,
           class MatrixType = typename XT::LA::Container<typename MomentBasisImp::RangeFieldType>::MatrixType>
 class EntropicHessianInverter
   : public OperatorInterface<MatrixType, typename SpaceImp::GridViewType, MomentBasisImp::dimRange, 1>

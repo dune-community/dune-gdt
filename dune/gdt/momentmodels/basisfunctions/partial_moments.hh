@@ -70,7 +70,7 @@ public:
   using typename BaseType::RangeType;
   using typename BaseType::StringifierType;
   using typename BaseType::VisualizerType;
-  using TriangulationType = typename BaseType::Triangulation1dType;
+  using PartitioningType = typename BaseType::Partitioning1dType;
 
   static std::string static_id()
   {
@@ -86,17 +86,16 @@ public:
 
   PartialMomentBasis(const QuadraturesType& quadratures)
     : BaseType(quadratures)
-    , triangulation_(BaseType::create_1d_triangulation(num_intervals))
+    , partitioning_(BaseType::create_1d_partitioning(num_intervals))
   {
     BaseType::initialize_base_values();
   }
 
   PartialMomentBasis(const size_t quad_order = default_quad_order(),
-                     const size_t DXTC_DEBUG_ONLY(quad_refinements) = default_quad_refinements())
-    : BaseType(BaseType::gauss_lobatto_quadratures(num_intervals, quad_order))
-    , triangulation_(BaseType::create_1d_triangulation(num_intervals))
+                     const size_t quad_refinements = default_quad_refinements())
+    : BaseType(BaseType::gauss_lobatto_quadratures(num_intervals, quad_order, quad_refinements))
+    , partitioning_(BaseType::create_1d_partitioning(num_intervals))
   {
-    assert(quad_refinements == 0 && "Refinement of the quadrature intervals not implemented for this basis!");
     BaseType::initialize_base_values();
   }
 
@@ -120,15 +119,14 @@ public:
     DynamicRangeType ret(dimRange, 0);
     bool boundary = false;
     for (size_t ii = 0; ii < num_intervals; ++ii) {
-      if (XT::Common::FloatCmp::eq(v[0], triangulation_[ii]))
+      if (XT::Common::FloatCmp::eq(v[0], partitioning_[ii]))
         boundary = true;
-      if (XT::Common::FloatCmp::ge(v[0], triangulation_[ii])
-          && XT::Common::FloatCmp::le(v[0], triangulation_[ii + 1])) {
+      if (XT::Common::FloatCmp::ge(v[0], partitioning_[ii]) && XT::Common::FloatCmp::le(v[0], partitioning_[ii + 1])) {
         ret[2 * ii] = 1;
         ret[2 * ii + 1] = v[0];
       }
     }
-    if (XT::Common::FloatCmp::eq(v[0], triangulation_[num_intervals]))
+    if (XT::Common::FloatCmp::eq(v[0], partitioning_[num_intervals]))
       boundary = true;
     if (split_boundary && boundary)
       ret /= 2.;
@@ -139,8 +137,8 @@ public:
   {
     DynamicRangeType ret(dimRange, 0);
     for (size_t ii = 0; ii < num_intervals; ++ii) {
-      ret[2 * ii] = triangulation_[ii + 1] - triangulation_[ii];
-      ret[2 * ii + 1] = (std::pow(triangulation_[ii + 1], 2) - std::pow(triangulation_[ii], 2)) / 2.;
+      ret[2 * ii] = partitioning_[ii + 1] - partitioning_[ii];
+      ret[2 * ii + 1] = (std::pow(partitioning_[ii + 1], 2) - std::pow(partitioning_[ii], 2)) / 2.;
     }
     return ret;
   }
@@ -170,9 +168,9 @@ public:
   {
     MatrixType M(dimRange, dimRange, 0.);
     for (size_t ii = 0; ii < num_intervals; ++ii) {
-      M[2 * ii][2 * ii] = triangulation_[ii + 1] - triangulation_[ii];
-      M[2 * ii + 1][2 * ii + 1] = (std::pow(triangulation_[ii + 1], 3) - std::pow(triangulation_[ii], 3)) / 3.;
-      M[2 * ii][2 * ii + 1] = (std::pow(triangulation_[ii + 1], 2) - std::pow(triangulation_[ii], 2)) / 2.;
+      M[2 * ii][2 * ii] = partitioning_[ii + 1] - partitioning_[ii];
+      M[2 * ii + 1][2 * ii + 1] = (std::pow(partitioning_[ii + 1], 3) - std::pow(partitioning_[ii], 3)) / 3.;
+      M[2 * ii][2 * ii + 1] = (std::pow(partitioning_[ii + 1], 2) - std::pow(partitioning_[ii], 2)) / 2.;
       M[2 * ii + 1][2 * ii] = M[2 * ii][2 * ii + 1];
     }
     return M;
@@ -188,9 +186,9 @@ public:
   {
     MatrixType B(dimRange, dimRange, 0.);
     for (size_t ii = 0; ii < num_intervals; ++ii) {
-      B[2 * ii][2 * ii] = (std::pow(triangulation_[ii + 1], 2) - std::pow(triangulation_[ii], 2)) / 2.;
-      B[2 * ii + 1][2 * ii + 1] = (std::pow(triangulation_[ii + 1], 4) - std::pow(triangulation_[ii], 4)) / 4.;
-      B[2 * ii][2 * ii + 1] = (std::pow(triangulation_[ii + 1], 3) - std::pow(triangulation_[ii], 3)) / 3.;
+      B[2 * ii][2 * ii] = (std::pow(partitioning_[ii + 1], 2) - std::pow(partitioning_[ii], 2)) / 2.;
+      B[2 * ii + 1][2 * ii + 1] = (std::pow(partitioning_[ii + 1], 4) - std::pow(partitioning_[ii], 4)) / 4.;
+      B[2 * ii][2 * ii + 1] = (std::pow(partitioning_[ii + 1], 3) - std::pow(partitioning_[ii], 3)) / 3.;
       B[2 * ii + 1][2 * ii] = B[2 * ii][2 * ii + 1];
     }
     return FieldVector<MatrixType, dimDomain>(B);
@@ -220,11 +218,11 @@ public:
         ret_pos[num_intervals - 1][num_intervals] = mm_with_v[0][num_intervals - 1][num_intervals] / 2;
         ret_pos[num_intervals][num_intervals - 1] = mm_with_v[0][num_intervals][num_intervals - 1] / 2;
         // integral corresponding to constant basis function
-        ret_neg[num_intervals - 1][num_intervals - 1] = -std::pow(triangulation_[num_intervals / 2], 2) / 2;
-        ret_pos[num_intervals - 1][num_intervals - 1] = std::pow(triangulation_[num_intervals / 2], 2) / 2;
+        ret_neg[num_intervals - 1][num_intervals - 1] = -std::pow(partitioning_[num_intervals / 2], 2) / 2;
+        ret_pos[num_intervals - 1][num_intervals - 1] = std::pow(partitioning_[num_intervals / 2], 2) / 2;
         // integral corresponding to v basis function
-        ret_neg[num_intervals][num_intervals] = -std::pow(triangulation_[num_intervals / 2], 4) / 4;
-        ret_pos[num_intervals][num_intervals] = std::pow(triangulation_[num_intervals / 2], 4) / 4;
+        ret_neg[num_intervals][num_intervals] = -std::pow(partitioning_[num_intervals / 2], 4) / 4;
+        ret_pos[num_intervals][num_intervals] = std::pow(partitioning_[num_intervals / 2], 4) / 4;
       } else {
         // if there is an even number of intervals, the matrix is just split up in upper and lower part
         for (size_t nn = 0; nn < num_intervals; ++nn)
@@ -274,9 +272,9 @@ public:
     };
   } // ... stringifier()
 
-  const TriangulationType& triangulation() const
+  const PartitioningType& partitioning() const
   {
-    return triangulation_;
+    return partitioning_;
   }
 
   virtual DynamicRangeType alpha_one() const override final
@@ -350,7 +348,7 @@ public:
 
   virtual std::string short_id() const override final
   {
-    return "1dpm";
+    return "pm";
   }
 
   virtual std::string mn_name() const override final
@@ -367,15 +365,15 @@ public:
   std::vector<size_t> get_face_indices(const DomainType& v) const
   {
     std::vector<size_t> face_indices;
-    for (size_t jj = 0; jj < triangulation_.size() - 1; ++jj)
-      if (XT::Common::FloatCmp::ge(v[0], triangulation_[jj]) && XT::Common::FloatCmp::le(v[0], triangulation_[jj + 1]))
+    for (size_t jj = 0; jj < partitioning_.size() - 1; ++jj)
+      if (XT::Common::FloatCmp::ge(v[0], partitioning_[jj]) && XT::Common::FloatCmp::le(v[0], partitioning_[jj + 1]))
         face_indices.push_back(jj);
     assert(face_indices.size());
     return face_indices;
   }
 
 private:
-  const TriangulationType triangulation_;
+  const PartitioningType partitioning_;
   using BaseType::quadratures_;
 }; // class PartialMomentBasis<DomainFieldType, 1, ...>
 
@@ -404,6 +402,7 @@ public:
   static const size_t dimRangeCols = 1;
   static constexpr size_t block_size = 4;
   static constexpr size_t num_blocks = dimRange / block_size;
+  static constexpr size_t num_refinements = refinements;
 
 private:
   using BaseType =
@@ -587,7 +586,7 @@ public:
 
   virtual std::string short_id() const override final
   {
-    return "3dpm";
+    return "pm";
   }
 
   virtual std::string mn_name() const override final

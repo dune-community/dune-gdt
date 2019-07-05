@@ -26,7 +26,7 @@ namespace Dune {
 namespace GDT {
 
 
-template <class GridViewImp, class MomentBasisImp, SlopeType slope>
+template <class GridViewImp, class MomentBasisImp, SlopeLimiterType slope>
 class EntropyBasedFluxEntropyCoordsFunction
   : public XT::Functions::FluxFunctionInterface<XT::Grid::extract_entity_t<GridViewImp>,
                                                 MomentBasisImp::dimRange,
@@ -63,6 +63,7 @@ public:
 
   explicit EntropyBasedFluxEntropyCoordsFunction(
       const MomentBasis& basis_functions,
+      const bool disable_realizability_check = false,
       const RangeFieldType tau = 1e-9,
       const RangeFieldType epsilon_gamma = 0.01,
       const RangeFieldType chi = 0.5,
@@ -72,7 +73,7 @@ public:
       const size_t k_max = 1000,
       const RangeFieldType epsilon = std::pow(2, -52))
     : implementation_(std::make_shared<ImplementationType>(
-          basis_functions, tau, epsilon_gamma, chi, xi, r_sequence, k_0, k_max, epsilon))
+          basis_functions, tau, disable_realizability_check, epsilon_gamma, chi, xi, r_sequence, k_0, k_max, epsilon))
   {}
 
   explicit EntropyBasedFluxEntropyCoordsFunction(EntropyBasedFluxFunction<GridViewType, MomentBasis>& other)

@@ -252,14 +252,14 @@ protected:
     {
       DynamicRangeType ret(dimRange, 0);
       for (size_t nn = 0; nn < dimRange; ++nn) {
-        const auto& triangulation = basis_functions.triangulation();
-        const auto vn = triangulation[nn];
+        const auto& partitioning = basis_functions.partitioning();
+        const auto vn = partitioning[nn];
         if (nn < dimRange - 1) {
-          const auto vnp = triangulation[nn + 1];
+          const auto vnp = partitioning[nn + 1];
           ret[nn] += 1. / ((vn - vnp) * denominator()) * (integral_2(vn, vnp) - vnp * integral_1(vn, vnp));
         }
         if (nn > 0) {
-          const auto vnm = triangulation[nn - 1];
+          const auto vnm = partitioning[nn - 1];
           ret[nn] += 1. / ((vn - vnm) * denominator()) * (integral_2(vnm, vn) - vnm * integral_1(vnm, vn));
         }
       }
@@ -280,11 +280,11 @@ protected:
         DUNE_THROW(Dune::NotImplemented, "Only implemented for mn");
       if (x < 1.5) {
         DynamicRangeType ret(dimRange, 0.);
-        const auto& triangulation = basis_functions.triangulation();
+        const auto& partitioning = basis_functions.partitioning();
         for (size_t nn = 0; nn < dimRange; ++nn) {
-          const auto vn = triangulation[nn];
+          const auto vn = partitioning[nn];
           if (nn < dimRange - 1) {
-            const auto vnp = triangulation[nn + 1];
+            const auto vnp = partitioning[nn + 1];
             if (vnp > 0.) {
               const auto left_limit = vn > 0. ? vn : 0.;
               ret[nn] +=
@@ -293,7 +293,7 @@ protected:
           } // if (nn < dimRange -1)
           if (vn > 0.) {
             if (nn > 0) {
-              const auto vnm = triangulation[nn - 1];
+              const auto vnm = partitioning[nn - 1];
               const auto left_limit = vnm > 0. ? vnm : 0.;
               ret[nn] +=
                   1. / ((vn - vnm) * denominator()) * (integral_2(left_limit, vn) - vnm * integral_1(left_limit, vn));
@@ -320,11 +320,11 @@ protected:
                                                      const RangeFieldType psi_vac,
                                                      const bool /*is_mn_model*/)
     {
-      const auto& triangulation = basis_functions.triangulation();
+      const auto& partitioning = basis_functions.partitioning();
       DynamicRangeType ret(dimRange, 0);
       for (size_t ii = 0; ii < dimRange / 2; ++ii) {
-        ret[2 * ii] = integral_1(triangulation[ii], triangulation[ii + 1]) / denominator();
-        ret[2 * ii + 1] = integral_2(triangulation[ii], triangulation[ii + 1]) / denominator();
+        ret[2 * ii] = integral_1(partitioning[ii], partitioning[ii + 1]) / denominator();
+        ret[2 * ii + 1] = integral_2(partitioning[ii], partitioning[ii + 1]) / denominator();
       }
       // add small vacuum concentration to move away from realizable boundary
       ret += basis_functions.integrated() * psi_vac;
@@ -342,13 +342,13 @@ protected:
       if (!is_mn_model)
         DUNE_THROW(Dune::NotImplemented, "Only implemented for mn");
       if (x < 1.5) {
-        const auto& triangulation = basis_functions.triangulation();
+        const auto& partitioning = basis_functions.partitioning();
         DynamicRangeType ret(dimRange, 0.);
         for (size_t ii = 0; ii < dimRange / 2; ++ii) {
-          if (triangulation[ii + 1] > 0.) {
-            const auto left_limit = triangulation[ii] > 0. ? triangulation[ii] : 0.;
-            ret[2 * ii] = integral_2(left_limit, triangulation[ii + 1]) / denominator();
-            ret[2 * ii + 1] = integral_3(left_limit, triangulation[ii + 1]) / denominator();
+          if (partitioning[ii + 1] > 0.) {
+            const auto left_limit = partitioning[ii] > 0. ? partitioning[ii] : 0.;
+            ret[2 * ii] = integral_2(left_limit, partitioning[ii + 1]) / denominator();
+            ret[2 * ii + 1] = integral_3(left_limit, partitioning[ii + 1]) / denominator();
           }
         } // ii
         return ret;

@@ -49,6 +49,7 @@ public:
   static const size_t dimDomain = 1;
   static const size_t dimRange = rangeDim;
   static const size_t dimRangeCols = rangeDimCols;
+  static const size_t num_intervals = dimRange - 1;
 
 private:
   using BaseType =
@@ -62,7 +63,7 @@ public:
   using typename BaseType::RangeType;
   using typename BaseType::StringifierType;
   using typename BaseType::VisualizerType;
-  using TriangulationType = typename BaseType::Triangulation1dType;
+  using PartitioningType = typename BaseType::Partitioning1dType;
   template <class DiscreteFunctionType>
 
   static std::string static_id()
@@ -79,30 +80,28 @@ public:
 
   HatFunctionMomentBasis(const QuadraturesType& quadratures)
     : BaseType(quadratures)
-    , triangulation_(BaseType::create_1d_triangulation(dimRange - 1))
+    , partitioning_(BaseType::create_1d_partitioning(num_intervals))
   {
     BaseType::initialize_base_values();
   }
 
   HatFunctionMomentBasis(const size_t quad_order = default_quad_order(),
-                         const size_t DXTC_DEBUG_ONLY(quad_refinements) = default_quad_refinements())
-    : BaseType(BaseType::gauss_lobatto_quadratures(dimRange - 1, quad_order))
-    , triangulation_(BaseType::create_1d_triangulation(dimRange - 1))
+                         const size_t quad_refinements = default_quad_refinements())
+    : BaseType(BaseType::gauss_lobatto_quadratures(num_intervals, quad_order, quad_refinements))
+    , partitioning_(BaseType::create_1d_partitioning(num_intervals))
   {
-    assert(quad_refinements == 0 && "Refinement of the quadrature intervals not implemented for this basis!");
     BaseType::initialize_base_values();
   }
 
   virtual DynamicRangeType evaluate(const DomainType& v) const override final
   {
     DynamicRangeType ret(dimRange, 0);
+    const auto& mu = partitioning_;
     for (size_t ii = 0; ii < dimRange; ++ii) {
-      if (ii < dimRange - 1 && XT::Common::FloatCmp::ge(v[0], triangulation_[ii])
-          && XT::Common::FloatCmp::le(v[0], triangulation_[ii + 1]))
-        ret[ii] = (v - triangulation_[ii + 1]) / (triangulation_[ii] - triangulation_[ii + 1]);
-      if (ii > 0 && XT::Common::FloatCmp::ge(v[0], triangulation_[ii - 1])
-          && XT::Common::FloatCmp::le(v[0], triangulation_[ii]))
-        ret[ii] = (v - triangulation_[ii - 1]) / (triangulation_[ii] - triangulation_[ii - 1]);
+      if (ii < num_intervals && XT::Common::FloatCmp::ge(v[0], mu[ii]) && XT::Common::FloatCmp::le(v[0], mu[ii + 1]))
+        ret[ii] = (v - mu[ii + 1]) / (mu[ii] - mu[ii + 1]);
+      if (ii > 0 && XT::Common::FloatCmp::ge(v[0], mu[ii - 1]) && XT::Common::FloatCmp::le(v[0], mu[ii]))
+        ret[ii] = (v - mu[ii - 1]) / (mu[ii] - mu[ii - 1]);
     }
     return ret;
   } // ... evaluate(...)
@@ -110,10 +109,9 @@ public:
   virtual DynamicRangeType evaluate(const DomainType& v, const size_t interval_index) const override final
   {
     DynamicRangeType ret(dimRange, 0);
-    ret[interval_index] = (v - triangulation_[interval_index + 1])
-                          / (triangulation_[interval_index] - triangulation_[interval_index + 1]);
-    ret[interval_index + 1] =
-        (v - triangulation_[interval_index]) / (triangulation_[interval_index + 1] - triangulation_[interval_index]);
+    const auto& mu = partitioning_;
+    ret[interval_index] = (v - mu[interval_index + 1]) / (mu[interval_index] - mu[interval_index + 1]);
+    ret[interval_index + 1] = (v - mu[interval_index]) / (mu[interval_index + 1] - mu[interval_index]);
     return ret;
   } // ... evaluate(...)
 
@@ -121,20 +119,20 @@ public:
                                                                   const size_t interval_index) const
   {
     XT::Common::FieldVector<RangeFieldType, 2> ret;
-    ret[0] = (v - triangulation_[interval_index + 1])
-             / (triangulation_[interval_index] - triangulation_[interval_index + 1]);
-    ret[1] =
-        (v - triangulation_[interval_index]) / (triangulation_[interval_index + 1] - triangulation_[interval_index]);
+    const auto& mu = partitioning_;
+    ret[0] = (v - mu[interval_index + 1]) / (mu[interval_index] - mu[interval_index + 1]);
+    ret[1] = (v - mu[interval_index]) / (mu[interval_index + 1] - mu[interval_index]);
     return ret;
   } // ... evaluate(...)
 
   virtual DynamicRangeType integrated() const override final
   {
     DynamicRangeType ret(dimRange, 0);
-    ret[0] = triangulation_[1] - triangulation_[0];
-    for (size_t ii = 1; ii < dimRange - 1; ++ii)
-      ret[ii] = triangulation_[ii + 1] - triangulation_[ii - 1];
-    ret[dimRange - 1] = triangulation_[dimRange - 1] - triangulation_[dimRange - 2];
+    const auto& mu = partitioning_;
+    ret[0] = mu[1] - mu[0];
+    for (size_t ii = 1; ii < num_intervals; ++ii)
+      ret[ii] = mu[ii + 1] - mu[ii - 1];
+    ret[num_intervals] = mu[num_intervals] - mu[num_intervals - 1];
     ret *= 0.5;
     return ret;
   }
@@ -143,16 +141,17 @@ public:
   virtual MatrixType mass_matrix() const override final
   {
     MatrixType ret(dimRange, dimRange, 0);
-    ret[0][0] = (triangulation_[1] - triangulation_[0]) / 3.;
+    const auto& mu = partitioning_;
+    ret[0][0] = (mu[1] - mu[0]) / 3.;
     for (size_t rr = 0; rr < dimRange; ++rr) {
-      if (rr > 0 && rr < dimRange - 1)
-        ret[rr][rr] = (triangulation_[rr + 1] - triangulation_[rr - 1]) / 3.;
+      if (rr > 0 && rr < num_intervals)
+        ret[rr][rr] = (mu[rr + 1] - mu[rr - 1]) / 3.;
       if (rr > 0)
-        ret[rr][rr - 1] = (triangulation_[rr] - triangulation_[rr - 1]) / 6.;
-      if (rr < dimRange - 1)
-        ret[rr][rr + 1] = (triangulation_[rr + 1] - triangulation_[rr]) / 6.;
+        ret[rr][rr - 1] = (mu[rr] - mu[rr - 1]) / 6.;
+      if (rr < num_intervals)
+        ret[rr][rr + 1] = (mu[rr + 1] - mu[rr]) / 6.;
     }
-    ret[dimRange - 1][dimRange - 1] = (triangulation_[dimRange - 1] - triangulation_[dimRange - 2]) / 3.;
+    ret[num_intervals][num_intervals] = (mu[num_intervals] - mu[num_intervals - 1]) / 3.;
     return ret;
   }
 
@@ -165,26 +164,22 @@ public:
   virtual FieldVector<MatrixType, 1> flux_matrix() const override final
   {
     MatrixType ret(dimRange, dimRange, 0.);
-    ret[0][0] = (triangulation_[1] * triangulation_[1] + 2 * triangulation_[1] * triangulation_[0]
-                 - 3 * triangulation_[0] * triangulation_[0])
-                / 12.;
+    const auto& mu = partitioning_;
+    ret[0][0] = (std::pow(mu[1], 2) + 2 * mu[1] * mu[0] - 3 * std::pow(mu[0], 2)) / 12.;
     for (size_t rr = 0; rr < dimRange; ++rr) {
-      if (rr > 0 && rr < dimRange - 1)
+      if (rr > 0 && rr < num_intervals)
         ret[rr][rr] =
-            (triangulation_[rr + 1] * triangulation_[rr + 1] + 2 * triangulation_[rr + 1] * triangulation_[rr]
-             - 2 * triangulation_[rr] * triangulation_[rr - 1] - triangulation_[rr - 1] * triangulation_[rr - 1])
+            (std::pow(mu[rr + 1], 2) + 2 * mu[rr + 1] * mu[rr] - 2 * mu[rr] * mu[rr - 1] - std::pow(mu[rr - 1], 2))
             / 12.;
       if (rr > 0)
-        ret[rr][rr - 1] =
-            (triangulation_[rr] * triangulation_[rr] - triangulation_[rr - 1] * triangulation_[rr - 1]) / 12.;
-      if (rr < dimRange - 1)
-        ret[rr][rr + 1] =
-            (triangulation_[rr + 1] * triangulation_[rr + 1] - triangulation_[rr] * triangulation_[rr]) / 12.;
+        ret[rr][rr - 1] = (std::pow(mu[rr], 2) - std::pow(mu[rr - 1], 2)) / 12.;
+      if (rr < num_intervals)
+        ret[rr][rr + 1] = (std::pow(mu[rr + 1], 2) - std::pow(mu[rr], 2)) / 12.;
     }
-    ret[dimRange - 1][dimRange - 1] = (3 * triangulation_[dimRange - 1] * triangulation_[dimRange - 1]
-                                       - 2 * triangulation_[dimRange - 1] * triangulation_[dimRange - 2]
-                                       - triangulation_[dimRange - 2] * triangulation_[dimRange - 2])
-                                      / 12.;
+    ret[num_intervals][num_intervals] =
+        (3 * std::pow(mu[num_intervals], 2) - 2 * mu[num_intervals] * mu[num_intervals - 1]
+         - std::pow(mu[num_intervals - 1], 2))
+        / 12.;
     return ret;
   }
 
@@ -196,6 +191,7 @@ public:
     auto& ret_neg = ret[0][0];
     auto& ret_pos = ret[0][1];
     size_t N = dimRange;
+    const auto& mu = partitioning_;
     for (size_t nn = 0; nn < N; ++nn) {
       for (size_t mm = (nn > 0 ? nn - 1 : 0); mm <= (nn < N - 1 ? nn + 1 : nn); ++mm) {
         if (N % 2) {
@@ -204,8 +200,8 @@ public:
           else if (nn > N / 2 || mm > N / 2)
             ret_pos[nn][mm] = mm_with_v[0][nn][mm];
           else { // nn == mm == N/2
-            ret_neg[nn][mm] = -std::pow(triangulation_[mm - 1], 2) / 12.;
-            ret_pos[nn][mm] = std::pow(triangulation_[mm + 1], 2) / 12.;
+            ret_neg[nn][mm] = -std::pow(mu[mm - 1], 2) / 12.;
+            ret_pos[nn][mm] = std::pow(mu[mm + 1], 2) / 12.;
           }
         } else {
           if (nn < N / 2 - 1 || mm < N / 2 - 1)
@@ -213,18 +209,14 @@ public:
           else if (nn > N / 2 || mm > N / 2)
             ret_pos[nn][mm] = mm_with_v[0][nn][mm];
           else if (nn == N / 2 && mm == nn) {
-            ret_neg[nn][mm] = -std::pow(triangulation_[mm], 2) / 48.;
-            ret_pos[nn][mm] = (5 * std::pow(triangulation_[mm], 2) + 8 * triangulation_[mm] * triangulation_[mm + 1]
-                               + 4 * std::pow(triangulation_[mm + 1], 2))
-                              / 48.;
+            ret_neg[nn][mm] = -std::pow(mu[mm], 2) / 48.;
+            ret_pos[nn][mm] = (5 * std::pow(mu[mm], 2) + 8 * mu[mm] * mu[mm + 1] + 4 * std::pow(mu[mm + 1], 2)) / 48.;
           } else if (nn == N / 2 - 1 && mm == nn) {
-            ret_neg[nn][mm] = (-5 * std::pow(triangulation_[mm], 2) - 8 * triangulation_[mm] * triangulation_[mm - 1]
-                               - 4 * std::pow(triangulation_[mm - 1], 2))
-                              / 48.;
-            ret_pos[nn][mm] = std::pow(triangulation_[mm], 2) / 48.;
+            ret_neg[nn][mm] = (-5 * std::pow(mu[mm], 2) - 8 * mu[mm] * mu[mm - 1] - 4 * std::pow(mu[mm - 1], 2)) / 48.;
+            ret_pos[nn][mm] = std::pow(mu[mm], 2) / 48.;
           } else { // (((mm == N / 2 && nn == N / 2 - 1) || (mm == N / 2 - 1 && nn == N / 2))) {
-            ret_neg[nn][mm] = -std::pow(triangulation_[mm], 2) / 16.;
-            ret_pos[nn][mm] = std::pow(triangulation_[mm], 2) / 16.;
+            ret_neg[nn][mm] = -std::pow(mu[mm], 2) / 16.;
+            ret_pos[nn][mm] = std::pow(mu[mm], 2) / 16.;
           }
         } // else (N % 2)
       } // mm
@@ -250,7 +242,7 @@ public:
     const auto mass_mat = mass_matrix();
     for (size_t ii = 0; ii < dimRange; ++ii)
       for (size_t jj = 0; jj < dimRange; ++jj)
-        ret[ii][jj] = mass_mat[ii][dimRange - 1 - jj];
+        ret[ii][jj] = mass_mat[ii][num_intervals - jj];
     ret.rightmultiply(mass_matrix_inverse());
 #ifndef NDEBUG
     for (size_t ii = 0; ii < dimRange; ++ii)
@@ -272,9 +264,9 @@ public:
     };
   } // ... stringifier()
 
-  const TriangulationType& triangulation() const
+  const PartitioningType& partitioning() const
   {
-    return triangulation_;
+    return partitioning_;
   }
 
   virtual DynamicRangeType alpha_one() const override final
@@ -307,7 +299,7 @@ public:
 
   virtual std::string short_id() const override final
   {
-    return "1dhf";
+    return "hf";
   }
 
   virtual std::string mn_name() const override final
@@ -324,15 +316,15 @@ public:
   std::vector<size_t> get_face_indices(const DomainType& v) const
   {
     std::vector<size_t> face_indices;
-    for (size_t jj = 0; jj < triangulation_.size() - 1; ++jj)
-      if (XT::Common::FloatCmp::ge(v[0], triangulation_[jj]) && XT::Common::FloatCmp::le(v[0], triangulation_[jj + 1]))
+    for (size_t jj = 0; jj < partitioning_.size() - 1; ++jj)
+      if (XT::Common::FloatCmp::ge(v[0], partitioning_[jj]) && XT::Common::FloatCmp::le(v[0], partitioning_[jj + 1]))
         face_indices.push_back(jj);
     assert(face_indices.size());
     return face_indices;
   }
 
 private:
-  const TriangulationType triangulation_;
+  const PartitioningType partitioning_;
 }; // class HatFunctionMomentBasis<DomainFieldType, 1, ...>
 
 template <class DomainFieldType,
@@ -359,6 +351,7 @@ public:
   static constexpr size_t dimRange = OctaederStatistics<refinements>::num_vertices();
   static constexpr size_t dimRangeCols = 1;
   static constexpr size_t dimFlux = fluxDim;
+  static constexpr size_t num_refinements = refinements;
 
 private:
   using BaseType =
@@ -503,7 +496,7 @@ public:
 
   virtual std::string short_id() const override final
   {
-    return "3dhf";
+    return "hf";
   }
 
   virtual std::string mn_name() const override final

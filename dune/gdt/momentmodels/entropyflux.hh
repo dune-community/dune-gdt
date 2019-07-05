@@ -148,6 +148,7 @@ public:
   explicit EntropyBasedFluxFunction(
       const GridViewType& grid_view,
       const MomentBasis& basis_functions,
+      const bool disable_realizability_check = false,
       const RangeFieldType tau = 1e-9,
       const RangeFieldType epsilon_gamma = 0.01,
       const RangeFieldType chi = 0.5,
@@ -162,7 +163,7 @@ public:
     , entity_caches_(index_set_.size(0), LocalCacheType(cache_size))
     , mutexes_(index_set_.size(0))
     , implementation_(std::make_shared<ImplementationType>(
-          basis_functions, tau, epsilon_gamma, chi, xi, r_sequence, k_0, k_max, epsilon))
+          basis_functions, tau, disable_realizability_check, epsilon_gamma, chi, xi, r_sequence, k_0, k_max, epsilon))
   {}
 
   void enable_thread_cache()
@@ -327,6 +328,16 @@ public:
     const auto alpha_j = local_func->get_alpha(u_j, true)->first;
     return implementation_->evaluate_kinetic_flux_with_alphas(alpha_i, alpha_j, n_ij, dd);
   } // StateType evaluate_kinetic_flux(...)
+
+  // Returns alpha(u), starting from alpha_iso. To get better performance when calculating several alphas, use
+  // Localfunction's get_alpha
+  std::unique_ptr<AlphaReturnType> get_alpha(const StateType& u, const bool regularize) const
+  {
+    const auto& basis_functions = implementation_->basis_functions();
+    const auto density = basis_functions.density(u);
+    VectorType alpha_iso = XT::Common::convert_to<VectorType>(basis_functions.alpha_iso(density));
+    return implementation_->get_alpha(u, alpha_iso, regularize);
+  }
 
   const MomentBasis& basis_functions() const
   {

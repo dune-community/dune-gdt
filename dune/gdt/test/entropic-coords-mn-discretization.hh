@@ -103,7 +103,8 @@ struct HyperbolicEntropicCoordsMnDiscretization
     const auto boundary_distribution = problem.boundary_distribution();
 
     using AnalyticalFluxType = typename ProblemType::FluxType;
-    constexpr SlopeType slope = TestCaseType::reconstruction ? SlopeType::minmod : SlopeType::no_slope;
+    constexpr SlopeLimiterType slope =
+        TestCaseType::reconstruction ? SlopeLimiterType::minmod : SlopeLimiterType::no_slope;
     using EntropyFluxType = EntropyBasedFluxEntropyCoordsFunction<GV, MomentBasis, slope>;
     using OldEntropyFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
     auto flux = problem.flux();
@@ -276,13 +277,13 @@ struct HyperbolicEntropicCoordsMnDiscretization
                         const Dune::XT::Common::Parameter& /*param*/) {
       const auto& element = local_range.element();
       const auto center = element.geometry().center();
-      const auto u = analytical_flux->get_u(fv_space.grid_view().indexSet().index(element));
+      const auto u_elem = analytical_flux->get_u(fv_space.grid_view().indexSet().index(element));
       const auto sigma_a_value = sigma_a->evaluate(center)[0];
       const auto sigma_s_value = sigma_s->evaluate(center)[0];
       const auto sigma_t_value = sigma_a_value + sigma_s_value;
       const auto Q_value = Q->evaluate(center)[0];
-      auto ret = u * (-sigma_t_value);
-      ret += u_iso * basis_functions->density(u) * sigma_s_value;
+      auto ret = u_elem * (-sigma_t_value);
+      ret += u_iso * basis_functions->density(u_elem) * sigma_s_value;
       ret += basis_integrated * Q_value;
       for (size_t ii = 0; ii < local_range.dofs().size(); ++ii)
         local_range.dofs()[ii] += ret[ii];

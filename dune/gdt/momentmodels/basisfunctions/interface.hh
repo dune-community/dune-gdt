@@ -172,7 +172,7 @@ public:
   using QuadraturesType = std::vector<QuadratureType>;
   using VisualizerType = XT::Functions::VisualizerInterface<dimRange, dimRangeCols, RangeFieldType>;
   using StringifierType = std::function<std::string(const RangeType&)>;
-  using Triangulation1dType = std::vector<RangeFieldType>;
+  using Partitioning1dType = std::vector<RangeFieldType>;
   using SphericalTriangulationType = SphericalTriangulation<RangeFieldType>;
   using MergedQuadratureIterator =
       typename XT::Data::MergedQuadrature<RangeFieldType, dimDomain>::MergedQuadratureIterator;
@@ -361,9 +361,9 @@ public:
     return ret;
   }
 
-  static Triangulation1dType create_1d_triangulation(const size_t num_intervals)
+  static Partitioning1dType create_1d_partitioning(const size_t num_intervals)
   {
-    Triangulation1dType ret(num_intervals + 1);
+    Partitioning1dType ret(num_intervals + 1);
     for (size_t ii = 0; ii <= num_intervals; ++ii)
       ret[ii] = -1. + (2. * ii) / num_intervals;
     return ret;
@@ -377,24 +377,28 @@ public:
   // A Gauss-Lobatto quadrature on each interval
   template <size_t dD = dimDomain>
   static std::enable_if_t<dD == 1, QuadraturesType> gauss_lobatto_quadratures(const size_t num_intervals,
-                                                                              const size_t quad_order)
+                                                                              const size_t quad_order,
+                                                                              const size_t additional_refinements = 0)
   {
     QuadraturesType ret(num_intervals);
-    auto interval_boundaries = create_1d_triangulation(num_intervals);
+    const auto quads_per_interval = std::pow(2, additional_refinements);
+    const auto quadrature_boundaries = create_1d_partitioning(num_intervals * quads_per_interval);
     // quadrature on reference interval [0, 1]
     const auto reference_quadrature = XT::Data::GaussLobattoQuadrature<DomainFieldType>::get(quad_order);
     // map to quadrature on interval [a, b] by
     // x_i -> (1-x_i) a + x_i b
     // w_i -> w_i * (b-a)
     for (size_t ii = 0; ii < num_intervals; ++ii) {
-      for (const auto& quad_point : reference_quadrature) {
-        const auto& x = quad_point.position()[0];
-        const auto& a = interval_boundaries[ii];
-        const auto& b = interval_boundaries[ii + 1];
-        const auto pos = (1 - x) * a + x * b;
-        const auto weight = quad_point.weight() * (b - a);
-        ret[ii].emplace_back(pos, weight);
-      } // quad_points
+      for (size_t jj = 0; jj < quads_per_interval; ++jj) {
+        for (const auto& quad_point : reference_quadrature) {
+          const auto& x = quad_point.position()[0];
+          const auto& a = quadrature_boundaries[ii * quads_per_interval + jj];
+          const auto& b = quadrature_boundaries[ii * quads_per_interval + jj + 1];
+          const auto pos = (1 - x) * a + x * b;
+          const auto weight = quad_point.weight() * (b - a);
+          ret[ii].emplace_back(pos, weight);
+        } // quad_points
+      } // jj
     } // quad_cells
     return ret;
   }

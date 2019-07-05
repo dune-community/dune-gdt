@@ -25,7 +25,7 @@ namespace Dune {
 namespace GDT {
 
 
-template <class SpaceType, class VectorType, class MomentBasis, SlopeType slope>
+template <class SpaceType, class VectorType, class MomentBasis, SlopeLimiterType slope>
 class LocalDensityEvaluator : public XT::Grid::ElementFunctor<typename SpaceType::GridViewType>
 {
   using BaseType = XT::Grid::ElementFunctor<typename SpaceType::GridViewType>;
@@ -104,7 +104,7 @@ private:
 
 template <class MomentBasisImp,
           class SpaceImp,
-          SlopeType slope,
+          SlopeLimiterType slope,
           class MatrixType = typename XT::LA::Container<typename MomentBasisImp::RangeFieldType>::MatrixType>
 class DensityEvaluator
   : public OperatorInterface<MatrixType, typename SpaceImp::GridViewType, MomentBasisImp::dimRange, 1>

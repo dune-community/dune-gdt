@@ -83,7 +83,7 @@ std::enable_if_t<std::is_arithmetic<T>::value, T> superbee(const T first_slope, 
 #endif
 
 
-enum class SlopeType
+enum class SlopeLimiterType
 {
   minmod,
   superbee,
@@ -134,6 +134,7 @@ public:
 
   explicit EntropyBasedFluxImplementationUnspecializedBase(const MomentBasis& basis_functions,
                                                            const RangeFieldType tau,
+                                                           const bool disable_realizability_check,
                                                            const RangeFieldType epsilon_gamma,
                                                            const RangeFieldType chi,
                                                            const RangeFieldType xi,
@@ -146,6 +147,7 @@ public:
     , quad_weights_(quad_points_.size())
     , M_(quad_points_.size(), matrix_num_cols, 0., 0)
     , tau_(tau)
+    , disable_realizability_check_(disable_realizability_check)
     , epsilon_gamma_(epsilon_gamma)
     , chi_(chi)
     , xi_(xi)
@@ -545,7 +547,7 @@ public:
   // evaluations of the ansatz distribution at each quadrature point for a stencil of three entities. The distributions
   // are reconstructed pointwise for each quadrature point and the resulting (part of) the kinetic flux is <
   // psi_reconstr * b * v>_{+/-}.
-  template <SlopeType slope_type, class FluxesMapType>
+  template <SlopeLimiterType slope_type, class FluxesMapType>
   void calculate_reconstructed_fluxes(const FieldVector<const QuadratureWeightsType*, 3>& ansatz_distribution_values,
                                       FluxesMapType& flux_values,
                                       const size_t dd) const
@@ -555,12 +557,12 @@ public:
         QuadratureWeightsType(quad_points_.size()));
     auto& vals_left = reconstructed_values[0];
     auto& vals_right = reconstructed_values[1];
-    if (slope_type == SlopeType::no_slope) {
+    if (slope_type == SlopeLimiterType::no_slope) {
       for (size_t ll = 0; ll < quad_points_.size(); ++ll)
         vals_left[ll] = vals_right[ll] = (*ansatz_distribution_values[1])[ll];
     } else {
       const auto slope_func =
-          (slope_type == SlopeType::minmod) ? XT::Common::minmod<RangeFieldType> : superbee<RangeFieldType>;
+          (slope_type == SlopeLimiterType::minmod) ? XT::Common::minmod<RangeFieldType> : superbee<RangeFieldType>;
       for (size_t ll = 0; ll < quad_points_.size(); ++ll) {
         const auto slope = slope_func((*ansatz_distribution_values[1])[ll] - (*ansatz_distribution_values[0])[ll],
                                       (*ansatz_distribution_values[2])[ll] - (*ansatz_distribution_values[1])[ll]);
@@ -863,6 +865,7 @@ public:
   QuadratureWeightsType quad_weights_;
   BasisValuesMatrixType M_;
   const RangeFieldType tau_;
+  const bool disable_realizability_check_;
   const RangeFieldType epsilon_gamma_;
   const RangeFieldType chi_;
   const RangeFieldType xi_;
@@ -905,6 +908,7 @@ public:
 
   explicit EntropyBasedFluxImplementation(const MomentBasis& basis_functions,
                                           const RangeFieldType tau,
+                                          const bool disable_realizability_check,
                                           const RangeFieldType epsilon_gamma,
                                           const RangeFieldType chi,
                                           const RangeFieldType xi,
@@ -912,7 +916,8 @@ public:
                                           const size_t k_0,
                                           const size_t k_max,
                                           const RangeFieldType epsilon)
-    : BaseType(basis_functions, tau, epsilon_gamma, chi, xi, r_sequence, k_0, k_max, epsilon)
+    : BaseType(
+          basis_functions, tau, disable_realizability_check, epsilon_gamma, chi, xi, r_sequence, k_0, k_max, epsilon)
     , T_minus_one_(std::make_unique<MatrixType>())
   {
     XT::LA::eye_matrix(*T_minus_one_);
@@ -1017,7 +1022,8 @@ public:
         second_error_cond = std::exp(
             -(rescale ? d_alpha_tilde.one_norm() + std::abs(std::log(density_tilde)) : d_alpha_tilde.one_norm()));
         if (first_error_cond < tau_prime && 1 - epsilon_gamma_ < second_error_cond
-            && realizability_helper_.is_realizable(u_eps_diff, kk == static_cast<size_t>(0.8 * k_0_))) {
+            && (disable_realizability_check_
+                || realizability_helper_.is_realizable(u_eps_diff, kk == static_cast<size_t>(0.8 * k_0_)))) {
           ret->first = rescale ? alpha_prime + alpha_one * std::log(density) : alpha_prime;
           ret->second = std::make_pair(rescale ? v * density : v, r);
           return ret;
@@ -1087,6 +1093,7 @@ private:
 
   using BaseType::basis_functions_;
   using BaseType::chi_;
+  using BaseType::disable_realizability_check_;
   using BaseType::epsilon_;
   using BaseType::epsilon_gamma_;
   using BaseType::k_0_;
@@ -1125,6 +1132,7 @@ public:
 
   explicit EntropyBasedFluxImplementation(const MomentBasis& basis_functions,
                                           const RangeFieldType tau,
+                                          const bool disable_realizability_check,
                                           const RangeFieldType epsilon_gamma,
                                           const RangeFieldType chi,
                                           const RangeFieldType xi,
@@ -1132,7 +1140,8 @@ public:
                                           const size_t k_0,
                                           const size_t k_max,
                                           const RangeFieldType epsilon)
-    : BaseType(basis_functions, tau, epsilon_gamma, chi, xi, r_sequence, k_0, k_max, epsilon)
+    : BaseType(
+          basis_functions, tau, disable_realizability_check, epsilon_gamma, chi, xi, r_sequence, k_0, k_max, epsilon)
   {}
 
   std::unique_ptr<AlphaReturnType> get_alpha(const DomainType& u) const
@@ -1230,7 +1239,8 @@ public:
         first_error_cond = g_k.two_norm();
         second_error_cond = std::exp(-(rescale ? d_k.one_norm() + std::abs(std::log(density_tilde)) : d_k.one_norm()));
         if (first_error_cond < tau_prime && 1 - epsilon_gamma_ < second_error_cond
-            && realizability_helper_.is_realizable(u_eps_diff, kk == static_cast<size_t>(0.8 * k_0_))) {
+            && (disable_realizability_check_
+                || realizability_helper_.is_realizable(u_eps_diff, kk == static_cast<size_t>(0.8 * k_0_)))) {
           ret->first = rescale ? alpha_prime + alpha_one * std::log(density) : alpha_prime;
           ret->second = std::make_pair(rescale ? v * density : v, r);
           return ret;
@@ -1274,6 +1284,7 @@ private:
 
   using BaseType::basis_functions_;
   using BaseType::chi_;
+  using BaseType::disable_realizability_check_;
   using BaseType::epsilon_;
   using BaseType::epsilon_gamma_;
   using BaseType::k_0_;
@@ -1332,6 +1343,7 @@ public:
 
   explicit EntropyBasedFluxImplementation(const MomentBasis& basis_functions,
                                           const RangeFieldType tau,
+                                          const bool disable_realizability_check,
                                           const RangeFieldType epsilon_gamma,
                                           const RangeFieldType chi,
                                           const RangeFieldType xi,
@@ -1342,6 +1354,7 @@ public:
     : basis_functions_(basis_functions)
     , M_(XT::LA::CommonDenseMatrix<RangeFieldType>())
     , tau_(tau)
+    , disable_realizability_check_(disable_realizability_check)
     , epsilon_gamma_(epsilon_gamma)
     , chi_(chi)
     , xi_(xi)
@@ -1351,7 +1364,8 @@ public:
     , epsilon_(epsilon)
   {
     XT::LA::eye_matrix(T_minus_one_);
-    helper<dimFlux>::calculate_plane_coefficients(basis_functions_);
+    if (!disable_realizability_check)
+      helper<dimFlux>::calculate_plane_coefficients(basis_functions_);
     const auto& quadratures = basis_functions_.quadratures();
     assert(quadratures.size() == num_blocks);
     for (size_t jj = 0; jj < num_blocks; ++jj) {
@@ -1570,7 +1584,7 @@ public:
         if (g_alpha_tilde->two_norm() < tau_prime
             && 1 - epsilon_gamma_ < std::exp(-(rescale ? d_alpha_tilde->one_norm() + std::abs(std::log(density_tilde))
                                                        : d_alpha_tilde->one_norm()))
-            && helper<dimFlux>::is_realizable(*u_eps_diff, basis_functions_)) {
+            && (disable_realizability_check_ || helper<dimFlux>::is_realizable(*u_eps_diff, basis_functions_))) {
           ret->second.first = *v;
           ret->second.second = r;
           if (rescale) {
@@ -1959,7 +1973,7 @@ public:
   // evaluations of the ansatz distribution at each quadrature point for a stencil of three entities. The distributions
   // are reconstructed pointwise for each quadrature point and the resulting (part of) the kinetic flux is <
   // psi_reconstr * b * v>_{+/-}.
-  template <SlopeType slope_type, class FluxesMapType>
+  template <SlopeLimiterType slope_type, class FluxesMapType>
   void calculate_reconstructed_fluxes(const FieldVector<const QuadratureWeightsType*, 3>& ansatz_distribution_values,
                                       FluxesMapType& flux_values,
                                       const size_t dd) const
@@ -1981,10 +1995,10 @@ public:
     auto& vals_right = reconstructed_values[1];
 
     const auto slope_func =
-        (slope_type == SlopeType::minmod) ? XT::Common::minmod<RangeFieldType> : superbee<RangeFieldType>;
+        (slope_type == SlopeLimiterType::minmod) ? XT::Common::minmod<RangeFieldType> : superbee<RangeFieldType>;
     for (size_t jj = 0; jj < num_blocks; ++jj) {
       // reconstruct densities
-      if (slope_type == SlopeType::no_slope) {
+      if (slope_type == SlopeLimiterType::no_slope) {
         for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll)
           vals_left[ll] = vals_right[ll] = (*ansatz_distribution_values[1])[jj][ll];
       } else {
@@ -2185,8 +2199,8 @@ public:
       for (size_t jj = 0; jj < num_blocks; ++jj) {
         const auto& u0 = u.block(jj)[0];
         const auto& u1 = u.block(jj)[1];
-        const auto& v0 = basis_functions.triangulation()[jj];
-        const auto& v1 = basis_functions.triangulation()[jj + 1];
+        const auto& v0 = basis_functions.partitioning()[jj];
+        const auto& v1 = basis_functions.partitioning()[jj + 1];
         bool ret = (u0 >= 0) && (u1 <= v1 * u0) && (v0 * u0 <= u1);
         if (!ret)
           return false;
@@ -2200,6 +2214,7 @@ public:
   QuadratureWeightsType quad_weights_;
   BasisValuesMatrixType M_;
   const RangeFieldType tau_;
+  const bool disable_realizability_check_;
   const RangeFieldType epsilon_gamma_;
   const RangeFieldType chi_;
   const RangeFieldType xi_;
@@ -2255,6 +2270,7 @@ public:
 
   explicit EntropyBasedFluxImplementation(const MomentBasis& basis_functions,
                                           const RangeFieldType tau,
+                                          const bool /*disable_realizability_check*/,
                                           const RangeFieldType epsilon_gamma,
                                           const RangeFieldType chi,
                                           const RangeFieldType xi,
@@ -2904,7 +2920,7 @@ public:
   // evaluations of the ansatz distribution at each quadrature point for a stencil of three entities. The distributions
   // are reconstructed pointwise for each quadrature point and the resulting (part of) the kinetic flux is <
   // psi_reconstr * b * v>_{+/-}.
-  template <SlopeType slope_type, class FluxesMapType>
+  template <SlopeLimiterType slope_type, class FluxesMapType>
   void calculate_reconstructed_fluxes(const FieldVector<const QuadratureWeightsType*, 3>& ansatz_distribution_values,
                                       FluxesMapType& flux_values,
                                       const size_t dd) const
@@ -2920,13 +2936,13 @@ public:
         std::vector<RangeFieldType>(quad_points_[0].size()));
     const auto& faces = basis_functions_.triangulation().faces();
     const auto slope_func =
-        (slope_type == SlopeType::minmod) ? XT::Common::minmod<RangeFieldType> : superbee<RangeFieldType>;
+        (slope_type == SlopeLimiterType::minmod) ? XT::Common::minmod<RangeFieldType> : superbee<RangeFieldType>;
     auto& vals_left = reconstructed_values[0];
     auto& vals_right = reconstructed_values[1];
     for (size_t jj = 0; jj < num_faces_; ++jj) {
       const auto& vertices = faces[jj]->vertices();
       // reconstruct densities
-      if (slope_type == SlopeType::no_slope) {
+      if (slope_type == SlopeLimiterType::no_slope) {
         for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll)
           vals_left[ll] = vals_right[ll] = (*ansatz_distribution_values[1])[jj][ll];
       } else {
@@ -3068,6 +3084,7 @@ public:
 
   explicit EntropyBasedFluxImplementation(const MomentBasis& basis_functions,
                                           const RangeFieldType tau,
+                                          const bool /*disable_realizability_check*/,
                                           const RangeFieldType epsilon_gamma,
                                           const RangeFieldType chi,
                                           const RangeFieldType xi,
@@ -3078,7 +3095,7 @@ public:
                                           const RangeFieldType taylor_tol = 0.1,
                                           const size_t max_taylor_order = 200)
     : basis_functions_(basis_functions)
-    , v_points_(basis_functions_.triangulation())
+    , v_points_(basis_functions_.partitioning())
     , tau_(tau)
     , epsilon_gamma_(epsilon_gamma)
     , chi_(chi)
@@ -3842,6 +3859,7 @@ public:
 
   explicit EntropyBasedFluxImplementation(const MomentBasis& basis_functions,
                                           const RangeFieldType tau,
+                                          const bool /*disable_realizability_check*/,
                                           const RangeFieldType epsilon_gamma,
                                           const RangeFieldType chi,
                                           const RangeFieldType xi,
@@ -3850,7 +3868,7 @@ public:
                                           const size_t k_max,
                                           const RangeFieldType epsilon)
     : basis_functions_(basis_functions)
-    , grid_points_(basis_functions_.triangulation())
+    , grid_points_(basis_functions_.partitioning())
     , tau_(tau)
     , epsilon_gamma_(epsilon_gamma)
     , chi_(chi)
@@ -4365,7 +4383,7 @@ public:
   // evaluations of the ansatz distribution at each quadrature point for a stencil of three entities. The distributions
   // are reconstructed pointwise for each quadrature point and the resulting (part of) the kinetic flux is <
   // psi_reconstr * b * v>_{+/-}.
-  template <SlopeType slope_type, class FluxesMapType>
+  template <SlopeLimiterType slope_type, class FluxesMapType>
   void calculate_reconstructed_fluxes(const FieldVector<const QuadratureWeightsType*, 3>& ansatz_distribution_values,
                                       FluxesMapType& flux_values,
                                       const size_t dd) const
@@ -4381,12 +4399,12 @@ public:
     thread_local XT::Common::FieldVector<std::vector<RangeFieldType>, 2> reconstructed_values(
         std::vector<RangeFieldType>(quad_points_[0].size()));
     const auto slope_func =
-        (slope_type == SlopeType::minmod) ? XT::Common::minmod<RangeFieldType> : superbee<RangeFieldType>;
+        (slope_type == SlopeLimiterType::minmod) ? XT::Common::minmod<RangeFieldType> : superbee<RangeFieldType>;
     auto& vals_left = reconstructed_values[0];
     auto& vals_right = reconstructed_values[1];
     for (size_t jj = 0; jj < num_intervals; ++jj) {
       // reconstruct densities
-      if (slope_type == SlopeType::no_slope) {
+      if (slope_type == SlopeLimiterType::no_slope) {
         for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll)
           vals_left[ll] = vals_right[ll] = (*ansatz_distribution_values[1])[jj][ll];
       } else {

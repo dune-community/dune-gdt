@@ -39,7 +39,6 @@ public:
   using typename BaseType::QuadraturesType;
   using typename BaseType::RangeType;
   using typename BaseType::StringifierType;
-  using TriangulationType = typename BaseType::Triangulation1dType;
 
   LegendreMomentBasis(const QuadraturesType& quadratures)
     : BaseType(quadratures)
@@ -197,7 +196,7 @@ public:
 
   virtual std::string short_id() const override final
   {
-    return "leg";
+    return "";
   }
 
   virtual std::string mn_name() const override final

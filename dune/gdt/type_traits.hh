@@ -226,6 +226,36 @@ struct is_partial_moment_basis<PartialMomentBasis<DomainFieldType,
 {};
 
 template <class T>
+struct is_1d_partial_moment_basis : public std::false_type
+{};
+
+template <class DomainFieldType,
+          class RangeFieldType,
+          size_t dimRange_or_refinements,
+          size_t dimRangeCols,
+          size_t order,
+          EntropyType entropy>
+struct is_1d_partial_moment_basis<
+    PartialMomentBasis<DomainFieldType, 1, RangeFieldType, dimRange_or_refinements, dimRangeCols, 1, order, entropy>>
+  : public std::true_type
+{};
+
+template <class T>
+struct is_3d_partial_moment_basis : public std::false_type
+{};
+
+template <class DomainFieldType,
+          class RangeFieldType,
+          size_t dimRange_or_refinements,
+          size_t dimRangeCols,
+          size_t order,
+          EntropyType entropy>
+struct is_3d_partial_moment_basis<
+    PartialMomentBasis<DomainFieldType, 3, RangeFieldType, dimRange_or_refinements, dimRangeCols, 3, order, entropy>>
+  : public std::true_type
+{};
+
+template <class T>
 struct is_spherical_harmonics_basis : public std::false_type
 {};
 
