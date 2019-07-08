@@ -354,8 +354,8 @@ struct HyperbolicEntropicCoordsMnTest
     auto norms = HyperbolicEntropicCoordsMnDiscretization<TestCaseType>::run(
                      1,
                      0,
-                     TestCaseType::RealizabilityLimiterChooserType::quad_order,
-                     TestCaseType::RealizabilityLimiterChooserType::quad_refinements,
+                     TestCaseType::quad_order,
+                     TestCaseType::quad_refinements,
                      "",
                      2,
                      TestCaseType::t_end,

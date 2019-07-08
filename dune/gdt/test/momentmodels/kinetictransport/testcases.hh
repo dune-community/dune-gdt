@@ -29,6 +29,53 @@ namespace Dune {
 namespace GDT {
 
 
+// choose Quadrature suitable for MomentBasisImp
+template <class MomentBasisImp>
+struct QuadratureChooser;
+
+template <size_t order, EntropyType entropy>
+struct QuadratureChooser<LegendreMomentBasis<double, double, order, 1, entropy>>
+{
+  static constexpr size_t quad_order = 54;
+  static constexpr size_t quad_refinements = 1;
+};
+
+template <size_t dimRange, EntropyType entropy>
+struct QuadratureChooser<HatFunctionMomentBasis<double, 1, double, dimRange, 1, 1, entropy>>
+{
+  static constexpr size_t quad_order = 15;
+  static constexpr size_t quad_refinements = 0;
+};
+
+template <size_t dimRange, EntropyType entropy>
+struct QuadratureChooser<PartialMomentBasis<double, 1, double, dimRange, 1, 1, 1, entropy>>
+{
+  static constexpr size_t quad_order = 15;
+  static constexpr size_t quad_refinements = 0;
+};
+
+template <size_t order, EntropyType entropy>
+struct QuadratureChooser<RealSphericalHarmonicsMomentBasis<double, double, order, 3, false, entropy>>
+{
+  static constexpr size_t quad_order = 2 * order + 8;
+  static constexpr size_t quad_refinements = 0;
+};
+
+template <size_t refinements, EntropyType entropy>
+struct QuadratureChooser<HatFunctionMomentBasis<double, 3, double, refinements, 1, 3, entropy>>
+{
+  static constexpr size_t quad_order = refinements == 0 ? 18 /*fekete rule number 7*/ : 9 /*fekete rule number 3*/;
+  static constexpr size_t quad_refinements = 0;
+};
+
+template <size_t refinements, EntropyType entropy>
+struct QuadratureChooser<PartialMomentBasis<double, 3, double, refinements, 1, 3, 1, entropy>>
+{
+  static constexpr size_t quad_order = refinements == 0 ? 18 /*fekete rule number 7*/ : 9 /*fekete rule number 3*/;
+  static constexpr size_t quad_refinements = 0;
+};
+
+
 // choose RealizabilityLimiter suitable for MomentBasisImp
 template <class GV, class MomentBasisImp, class AnalyticalFluxType, class DiscreteFunctionType>
 struct RealizabilityLimiterChooser;
@@ -42,8 +89,6 @@ struct RealizabilityLimiterChooser<GV,
 {
   using MomentBasis = LegendreMomentBasis<double, double, order, 1, entropy>;
   using EntropyFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
-  static constexpr size_t quad_order = 54;
-  static constexpr size_t quad_refinements = 1;
 
   template <class EigenVectorWrapperType>
   static std::unique_ptr<LpConvexhullRealizabilityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType>>
@@ -66,8 +111,6 @@ struct RealizabilityLimiterChooser<GV,
 {
   using MomentBasis = HatFunctionMomentBasis<double, 1, double, dimRange, 1, 1, entropy>;
   using EntropyFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
-  static constexpr size_t quad_order = 15;
-  static constexpr size_t quad_refinements = 0;
 
 #if HAVE_CLP && USE_LP_POSITIVITY_LIMITER
   template <class EigenVectorWrapperType>
@@ -96,8 +139,6 @@ struct RealizabilityLimiterChooser<GV,
 {
   using MomentBasis = PartialMomentBasis<double, 1, double, dimRange, 1, 1, 1, entropy>;
   using EntropyFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
-  static constexpr size_t quad_order = 15;
-  static constexpr size_t quad_refinements = 0;
 
   template <class EigenVectorWrapperType>
   static std::unique_ptr<Dg1dRealizabilityLimitedSlope<GV, double, dimRange, EigenVectorWrapperType, entropy>>
@@ -117,8 +158,6 @@ struct RealizabilityLimiterChooser<GV,
 {
   using MomentBasis = RealSphericalHarmonicsMomentBasis<double, double, order, 3, false, entropy>;
   using EntropyFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
-  static constexpr size_t quad_order = 2 * order + 8;
-  static constexpr size_t quad_refinements = 0;
 
   template <class EigenVectorWrapperType>
   static std::unique_ptr<LpConvexhullRealizabilityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType>>
@@ -138,9 +177,6 @@ struct RealizabilityLimiterChooser<GV,
 {
   using MomentBasis = HatFunctionMomentBasis<double, 3, double, refinements, 1, 3, entropy>;
   using EntropyFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
-  static constexpr size_t dimRange = MomentBasis::dimRange;
-  static constexpr size_t quad_order = refinements == 0 ? 18 /*fekete rule number 7*/ : 9 /*fekete rule number 3*/;
-  static constexpr size_t quad_refinements = 0;
 
 #if HAVE_CLP && USE_LP_POSITIVITY_LIMITER
   template <class EigenVectorWrapperType>
@@ -170,8 +206,6 @@ struct RealizabilityLimiterChooser<GV,
 {
   using MomentBasis = PartialMomentBasis<double, 3, double, refinements, 1, 3, 1, entropy>;
   using EntropyFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
-  static constexpr size_t quad_order = refinements == 0 ? 18 /*fekete rule number 7*/ : 9 /*fekete rule number 3*/;
-  static constexpr size_t quad_refinements = 0;
 
   template <class EigenVectorWrapperType>
   static std::unique_ptr<DgConvexHullRealizabilityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType>>
@@ -334,6 +368,9 @@ struct SourceBeamMnTestCase : public SourceBeamPnTestCase<GridImp, MomentBasisIm
   using typename BaseType::GridViewType;
   using ProblemType = SourceBeamMn<GridViewType, MomentBasisImp>;
   using ExpectedResultsType = SourceBeamMnExpectedResults<MomentBasisImp, reconstruct, kinetic_scheme>;
+  using QuadratureChooserType = QuadratureChooser<MomentBasisImp>;
+  static constexpr size_t quad_order = QuadratureChooserType::quad_order;
+  static constexpr size_t quad_refinements = QuadratureChooserType::quad_refinements;
   using RealizabilityLimiterChooserType =
       RealizabilityLimiterChooser<GridViewType, MomentBasisImp, typename ProblemType::FluxType, DiscreteFunctionType>;
 };
@@ -469,6 +506,9 @@ struct PlaneSourceMnTestCase : SourceBeamMnTestCase<GridImp, MomentBasisImp, rec
   static constexpr RangeFieldType t_end = 0.25;
   static constexpr bool reconstruction = reconstruct;
   using ExpectedResultsType = PlaneSourceMnExpectedResults<MomentBasisImp, reconstruction, kinetic_scheme>;
+  using QuadratureChooserType = QuadratureChooser<MomentBasisImp>;
+  static constexpr size_t quad_order = QuadratureChooserType::quad_order;
+  static constexpr size_t quad_refinements = QuadratureChooserType::quad_refinements;
   using RealizabilityLimiterChooserType =
       RealizabilityLimiterChooser<GridViewType, MomentBasisImp, typename ProblemType::FluxType, DiscreteFunctionType>;
 };
@@ -730,6 +770,9 @@ struct PointSourceMnTestCase : SourceBeamMnTestCase<GridImp, MomentBasisImp, rec
   static constexpr RangeFieldType t_end = 0.1;
   static constexpr bool reconstruction = reconstruct;
   using ExpectedResultsType = PointSourceMnExpectedResults<MomentBasisImp, reconstruction, kinetic_scheme>;
+  using QuadratureChooserType = QuadratureChooser<MomentBasisImp>;
+  static constexpr size_t quad_order = QuadratureChooserType::quad_order;
+  static constexpr size_t quad_refinements = QuadratureChooserType::quad_refinements;
   using RealizabilityLimiterChooserType = RealizabilityLimiterChooser<GridViewType,
                                                                       MomentBasisImp,
                                                                       typename ProblemType::FluxType,
@@ -787,6 +830,9 @@ struct CheckerboardMnTestCase : SourceBeamMnTestCase<GridImp, MomentBasisImp, re
   static constexpr RangeFieldType t_end = 0.1;
   static constexpr bool reconstruction = reconstruct;
   using ExpectedResultsType = CheckerboardMnExpectedResults<MomentBasisImp, reconstruction, kinetic_scheme>;
+  using QuadratureChooserType = QuadratureChooser<MomentBasisImp>;
+  static constexpr size_t quad_order = QuadratureChooserType::quad_order;
+  static constexpr size_t quad_refinements = QuadratureChooserType::quad_refinements;
   using RealizabilityLimiterChooserType = RealizabilityLimiterChooser<GridViewType,
                                                                       MomentBasisImp,
                                                                       typename ProblemType::FluxType,
@@ -818,6 +864,9 @@ struct ShadowMnTestCase : SourceBeamMnTestCase<GridImp, MomentBasisImp, reconstr
   static constexpr RangeFieldType t_end = 0.1;
   static constexpr bool reconstruction = reconstruct;
   using ExpectedResultsType = ShadowMnExpectedResults<MomentBasisImp, reconstruction>;
+  using QuadratureChooserType = QuadratureChooser<MomentBasisImp>;
+  static constexpr size_t quad_order = QuadratureChooserType::quad_order;
+  static constexpr size_t quad_refinements = QuadratureChooserType::quad_refinements;
   using RealizabilityLimiterChooserType = RealizabilityLimiterChooser<GridViewType,
                                                                       MomentBasisImp,
                                                                       typename ProblemType::FluxType,
