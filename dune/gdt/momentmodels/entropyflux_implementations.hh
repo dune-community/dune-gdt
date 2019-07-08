@@ -789,15 +789,14 @@ public:
   template <class BasisFuncImp = MomentBasis, bool anything = true>
   struct RealizabilityHelper
   {
-    RealizabilityHelper(const MomentBasis& /*basis_functions*/, const std::vector<BasisDomainType>& /*quad_points*/)
+    RealizabilityHelper(const MomentBasis& /*basis_functions*/, const QuadraturePointsType& /*quad_points*/)
     {
-      DUNE_THROW(Dune::NotImplemented, "You are missing Clp!");
+      std::cerr << "Warning: You are missing Clp, realizability stopping condition will not be checked!" << std::endl;
     }
 
     bool is_realizable(const DomainType& /*u*/, const bool /*reinitialize*/) const
     {
-      DUNE_THROW(Dune::NotImplemented, "You are missing Clp!");
-      return false;
+      return true;
     }
   }; // struct RealizabilityHelper<...>
 #endif // HAVE_CLP
@@ -2178,13 +2177,12 @@ public:
 #  else
     static void calculate_plane_coefficients(const MomentBasis& /*basis_functions*/)
     {
-      DUNE_THROW(Dune::NotImplemented, "You are missing Qhull!");
+      std::cerr << "Warning: You are missing Clp, realizability stopping condition will not be checked!" << std::endl;
     }
 
     static bool is_realizable(const BlockVectorType& /*u*/, const MomentBasis& /*basis_functions*/)
     {
-      DUNE_THROW(Dune::NotImplemented, "You are missing Qhull!");
-      return false;
+      return true;
     }
 #  endif
   }; // class helper<...>

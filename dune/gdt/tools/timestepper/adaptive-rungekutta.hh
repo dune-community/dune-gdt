@@ -315,11 +315,17 @@ public:
         try {
           op_.apply(u_tmp_.dofs().vector(), stages_k_[ii].dofs().vector(), t + actual_dt * c_[ii]);
         } catch (const Dune::MathError& e) {
-          //          std::cout << "Caught error " << e.what() << std::endl;
           mixed_error = 1e10;
           skip_error_computation = true;
           time_step_scale_factor = 0.5;
           break;
+#if HAVE_TBB
+        } catch (const tbb::captured_exception& e) {
+          mixed_error = 1e10;
+          skip_error_computation = true;
+          time_step_scale_factor = 0.5;
+          break;
+#endif
         }
       }
 

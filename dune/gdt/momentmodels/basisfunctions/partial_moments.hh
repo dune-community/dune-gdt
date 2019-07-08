@@ -748,6 +748,8 @@ private:
     block_plane_coefficients.erase(coeff_to_erase_it);
     plane_coefficients_[jj] = block_plane_coefficients;
 #else // HAVE_QHULL
+    DUNE_UNUSED_PARAMETER(points);
+    DUNE_UNUSED_PARAMETER(jj);
     DUNE_THROW(Dune::NotImplemented, "You are missing Qhull!");
 #endif // HAVE_QHULL
   }
