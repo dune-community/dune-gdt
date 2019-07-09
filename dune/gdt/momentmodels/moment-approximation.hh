@@ -135,7 +135,7 @@ struct MomentApproximation
     const auto grid_view = grid_provider.leaf_view();
 
     // ***************** choose testcase *********************
-    RangeFieldType tau = 1e-9;
+    RangeFieldType tau = 1e-12;
     RangeFieldType additional_quad_refinements = 0;
     RangeFieldType basis_quad_order = MomentBasisType::default_quad_order();
     RangeFieldType basis_quad_refinements = MomentBasisType::default_quad_refinements();
@@ -149,7 +149,6 @@ struct MomentApproximation
         return v[0] < 0 || (XT::Common::is_zero(v[0]) && left) ? RangeFieldType(5e-9) : RangeFieldType(1);
       };
     } else if (testcase == "Gauss1d") {
-      tau = 1e-12;
       if (dimDomain != 1)
         DUNE_THROW(InvalidStateException,
                    "This is a 1-dimensional test, but the basis functions are " + XT::Common::to_string(dimDomain)
@@ -161,9 +160,6 @@ struct MomentApproximation
                * std::exp(std::pow(v[0] - mu, 2) / (-2 * std::pow(sigma, 2)));
       };
     } else if (testcase == "CrossingBeams1dSmooth") {
-      additional_quad_refinements = 4;
-      basis_quad_refinements = 4;
-      tau = 1e-12;
       if (dimDomain != 1)
         DUNE_THROW(InvalidStateException,
                    "This is a 1-dimensional test, but the basis functions are " + XT::Common::to_string(dimDomain)
@@ -175,8 +171,6 @@ struct MomentApproximation
                         5e-9);
       };
     } else if (testcase == "CrossingBeams1dDiscontinuous") {
-      additional_quad_refinements = 4;
-      basis_quad_refinements = 4;
       if (dimDomain != 1)
         DUNE_THROW(InvalidStateException,
                    "This is a 1-dimensional test, but the basis functions are " + XT::Common::to_string(dimDomain)
@@ -189,7 +183,6 @@ struct MomentApproximation
           return 5e-9;
       };
     } else if (testcase == "GaussOnSphere") {
-      tau = 1e-12;
       if (dimDomain != 3)
         DUNE_THROW(InvalidStateException,
                    "This is a 3-dimensional test, but the basis functions are " + XT::Common::to_string(dimDomain)
@@ -210,6 +203,51 @@ struct MomentApproximation
           return RangeFieldType(1);
         else
           return RangeFieldType(1e-8 / (4 * M_PI));
+      };
+    } else if (testcase == "CrossingBeams3d") {
+      if (dimDomain != 3)
+        DUNE_THROW(InvalidStateException,
+                   "This is a 3-dimensional test, but the basis functions are " + XT::Common::to_string(dimDomain)
+                       + "-dimensional!");
+      const RangeFieldType factor = 1e2;
+      const RangeFieldType norm = M_PI / factor;
+      const FieldVector<RangeFieldType, 3> center1{{1., 0., 0.}};
+      const FieldVector<RangeFieldType, 3> center2{{0., 1., 0.}};
+      psi = [factor, norm, center1, center2](const DomainType& v, const bool) {
+        return std::max((std::exp(-factor * (v - center1).two_norm2()) + std::exp(-factor * (v - center2).two_norm2()))
+                            / norm,
+                        1e-8 / (4 * M_PI));
+      };
+    } else if (testcase == "CrossingBeams3d_2") {
+      if (dimDomain != 3)
+        DUNE_THROW(InvalidStateException,
+                   "This is a 3-dimensional test, but the basis functions are " + XT::Common::to_string(dimDomain)
+                       + "-dimensional!");
+      const RangeFieldType factor = 1e2;
+      const RangeFieldType norm = M_PI / factor;
+      const FieldVector<RangeFieldType, 3> center1{{std::sqrt(1. / 3.), std::sqrt(1. / 3.), std::sqrt(1. / 3.)}};
+      const FieldVector<RangeFieldType, 3> center2{
+          {std::sqrt(1. / (2 * M_PI)), -std::sqrt(0.5 - 1. / (4 * M_PI)), std::sqrt(0.5 - 1. / (4 * M_PI))}};
+      psi = [factor, norm, center1, center2](const DomainType& v, const bool) {
+        return std::max((std::exp(-factor * (v - center1).two_norm2()) + std::exp(-factor * (v - center2).two_norm2()))
+                            / norm,
+                        1e-8 / (4 * M_PI));
+      };
+    } else if (testcase == "CrossingBeams3dDiscontinuous") {
+      if (dimDomain != 3)
+        DUNE_THROW(InvalidStateException,
+                   "This is a 3-dimensional test, but the basis functions are " + XT::Common::to_string(dimDomain)
+                       + "-dimensional!");
+      const FieldVector<RangeFieldType, 3> center1{{std::sqrt(1. / 3.), std::sqrt(1. / 3.), std::sqrt(1. / 3.)}};
+      const FieldVector<RangeFieldType, 3> center2{
+          {std::sqrt(1. / (2 * M_PI)), -std::sqrt(0.5 - 1. / (4 * M_PI)), std::sqrt(0.5 - 1. / (4 * M_PI))}};
+      const RangeFieldType r = 0.01;
+      const RangeFieldType r_squared = std::pow(r, 2);
+      psi = [r_squared, center1, center2](const DomainType& v, const bool) {
+        if ((v - center1).two_norm2() < r_squared || (v - center2).two_norm2() < r_squared)
+          return 1 / (M_PI * r_squared);
+        else
+          return 1e-8 / (4 * M_PI);
       };
     } else {
       DUNE_THROW(NotImplemented, "Unknown testcase " + testcase + "!");

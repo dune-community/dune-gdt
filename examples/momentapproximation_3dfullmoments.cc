@@ -19,8 +19,6 @@
 #include <dune/gdt/momentmodels/moment-approximation.hh>
 #include <dune/gdt/momentmodels/basisfunctions.hh>
 
-#include <dune/xt/common/string.hh>
-#include <dune/xt/common/parallel/threadmanager.hh>
 
 template <int momentOrder, Dune::GDT::EntropyType entropy>
 struct moment_approximation_helper
@@ -59,15 +57,20 @@ int main(int argc, char** argv)
   MPIHelper::instance(argc, argv);
 
   std::string testcasename = "GaussOnSphere";
-  if (argc == 2)
+  if (argc >= 2)
     testcasename = argv[1];
-  else if (argc > 2) {
-    std::cerr << "Too many command line arguments, please provide a testcase name only!" << std::endl;
+  if (argc == 3) {
+    DXTC_CONFIG["threading.max_count"] = argv[2];
+    XT::Common::threadManager().set_max_threads(XT::Common::from_string<size_t>(argv[2]));
+  } else if (argc > 3) {
+    std::cerr << "Too many command line arguments, please provide a testcase name and the number of threads only!"
+              << std::endl;
     return 1;
   }
 
-  static constexpr int max_order = 10;
   static constexpr EntropyType entropy = EntropyType::MaxwellBoltzmann;
-  const int quadrature_refinements = 5;
+  // static constexpr EntropyType entropy = EntropyType::BoseEinstein;
+  static constexpr int max_order = 10;
+  const int quadrature_refinements = 6;
   moment_approximation_helper<max_order, entropy>::run(quadrature_refinements, testcasename, testcasename);
 }
