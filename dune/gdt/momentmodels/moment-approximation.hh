@@ -63,9 +63,11 @@ struct MomentApproximation
   template <bool anything>
   struct QuadratureHelper<3, anything>
   {
-    static QuadraturesType get(const int quadrature_refinements, const int /*additional_refs*/)
+    static QuadraturesType
+    get(const int quadrature_refinements, const bool visualization, const int /*additional_refs*/)
     {
-      QuadratureRule<RangeFieldType, 2> reference_quadrature_rule = XT::Data::FeketeQuadrature<RangeFieldType>::get(1);
+      QuadratureRule<RangeFieldType, 2> reference_quadrature_rule =
+          XT::Data::FeketeQuadrature<RangeFieldType>::get(visualization ? 1 : 9);
       int quad_refs = quadrature_refinements;
       const size_t num_refs = MomentBasisType::num_refinements;
       const int additional_refs = quad_refs - static_cast<int>(num_refs);
@@ -81,7 +83,8 @@ struct MomentApproximation
   template <bool anything>
   struct QuadratureHelper<1, anything>
   {
-    static QuadraturesType get(const int num_quadrature_intervals, const int additional_refs)
+    static QuadraturesType
+    get(const int num_quadrature_intervals, const bool /*visualization*/, const int additional_refs)
     {
       return MomentBasisType::gauss_lobatto_quadratures(num_quadrature_intervals, 197, additional_refs);
     }
@@ -135,10 +138,9 @@ struct MomentApproximation
     const auto grid_view = grid_provider.leaf_view();
 
     // ***************** choose testcase *********************
-    RangeFieldType tau = 1e-12;
-    RangeFieldType additional_quad_refinements = 0;
-    RangeFieldType basis_quad_order = MomentBasisType::default_quad_order();
-    RangeFieldType basis_quad_refinements = MomentBasisType::default_quad_refinements();
+    RangeFieldType tau = 1e-9;
+    RangeFieldType additional_quad_refinements =
+        (dimDomain == 1 && quad_refinements < 50) ? std::ceil(std::log2(50. / quad_refinements)) : 0.;
     std::function<RangeFieldType(const DomainType&, const bool)> psi;
     if (testcase == "Heaviside") {
       if (dimDomain != 1)
@@ -149,6 +151,7 @@ struct MomentApproximation
         return v[0] < 0 || (XT::Common::is_zero(v[0]) && left) ? RangeFieldType(5e-9) : RangeFieldType(1);
       };
     } else if (testcase == "Gauss1d") {
+      tau = 1e-12;
       if (dimDomain != 1)
         DUNE_THROW(InvalidStateException,
                    "This is a 1-dimensional test, but the basis functions are " + XT::Common::to_string(dimDomain)
@@ -165,10 +168,21 @@ struct MomentApproximation
                    "This is a 1-dimensional test, but the basis functions are " + XT::Common::to_string(dimDomain)
                        + "-dimensional!");
       const RangeFieldType factor = 1e5;
-      const RangeFieldType norm = std::sqrt(M_PI) * std::erf(2 * std::sqrt(factor)) / (2 * std::sqrt(factor));
+      const RangeFieldType norm = std::sqrt(M_PI / factor);
       psi = [factor, norm](const DomainType& v, const bool) {
         return std::max((std::exp(-factor * std::pow(v[0] - 1, 2)) + std::exp(-factor * std::pow(v[0] + 1, 2))) / norm,
                         5e-9);
+      };
+    } else if (testcase == "CrossingBeams1dSmooth_2") {
+      if (dimDomain != 1)
+        DUNE_THROW(InvalidStateException,
+                   "This is a 1-dimensional test, but the basis functions are " + XT::Common::to_string(dimDomain)
+                       + "-dimensional!");
+      const RangeFieldType factor = 1e5;
+      const RangeFieldType norm = std::sqrt(M_PI / factor);
+      psi = [factor, norm](const DomainType& v, const bool) {
+        return std::max(
+            (std::exp(-factor * std::pow(v[0] - 0.5, 2)) + std::exp(-factor * std::pow(v[0] + 1, 2))) / norm, 5e-9);
       };
     } else if (testcase == "CrossingBeams1dDiscontinuous") {
       if (dimDomain != 1)
@@ -177,12 +191,25 @@ struct MomentApproximation
                        + "-dimensional!");
       psi = [](const DomainType& v, const bool) {
         RangeFieldType height = 100;
-        if (std::abs(v[0] + 1) < 1. / (2 * height) || std::abs(v[0] - 0.5) < 1. / (4 * height))
+        if (std::abs(v[0] + 1) < 1. / (2 * height) || std::abs(v[0] - 1) < 1. / (2 * height))
+          return height;
+        else
+          return 5e-9;
+      };
+    } else if (testcase == "CrossingBeams1dDiscontinuous_2") {
+      if (dimDomain != 1)
+        DUNE_THROW(InvalidStateException,
+                   "This is a 1-dimensional test, but the basis functions are " + XT::Common::to_string(dimDomain)
+                       + "-dimensional!");
+      psi = [](const DomainType& v, const bool) {
+        RangeFieldType height = 100;
+        if (std::abs(v[0] + 1) < 1. / (2 * height) || std::abs(v[0] - 0.5) < 1. / (2 * height))
           return height;
         else
           return 5e-9;
       };
     } else if (testcase == "GaussOnSphere") {
+      tau = 1e-12;
       if (dimDomain != 3)
         DUNE_THROW(InvalidStateException,
                    "This is a 3-dimensional test, but the basis functions are " + XT::Common::to_string(dimDomain)
@@ -241,7 +268,7 @@ struct MomentApproximation
       const FieldVector<RangeFieldType, 3> center1{{std::sqrt(1. / 3.), std::sqrt(1. / 3.), std::sqrt(1. / 3.)}};
       const FieldVector<RangeFieldType, 3> center2{
           {std::sqrt(1. / (2 * M_PI)), -std::sqrt(0.5 - 1. / (4 * M_PI)), std::sqrt(0.5 - 1. / (4 * M_PI))}};
-      const RangeFieldType r = 0.01;
+      const RangeFieldType r = 0.1;
       const RangeFieldType r_squared = std::pow(r, 2);
       psi = [r_squared, center1, center2](const DomainType& v, const bool) {
         if ((v - center1).two_norm2() < r_squared || (v - center2).two_norm2() < r_squared)
@@ -254,17 +281,27 @@ struct MomentApproximation
     }
 
     //******************* choose quadrature that is used for visualization and error calculation *******************
-    const auto quadratures = QuadratureHelper<>::get(quad_refinements, additional_quad_refinements);
-    std::shared_ptr<const MomentBasisType> basis_functions =
-        std::make_shared<const MomentBasisType>(basis_quad_order, basis_quad_refinements);
+    const auto visualization_quadratures = QuadratureHelper<>::get(quad_refinements, true, additional_quad_refinements);
+    const auto basis_quadratures = QuadratureHelper<>::get(quad_refinements, false, additional_quad_refinements);
+    std::shared_ptr<const MomentBasisType> basis_functions = std::make_shared<const MomentBasisType>(basis_quadratures);
 
     const auto u = basis_functions->get_moment_vector(psi);
     using MnFluxType = EntropyBasedFluxFunction<GridViewType, MomentBasisType>;
-    MnFluxType mn_flux(grid_view, *basis_functions, tau, true);
+    MnFluxType mn_flux(grid_view,
+                       *basis_functions,
+                       tau,
+                       true,
+                       0.01,
+                       0.5,
+                       1e-3,
+                       {0, 1e-8, 1e-6, 1e-4, 1e-3, 1e-2, 5e-2, 0.1, 0.5, 1},
+                       50,
+                       100);
+    const auto mn_begin = std::chrono::steady_clock::now();
     const auto mn_ret = mn_flux.get_alpha(u, true);
-    if (mn_ret->second.second > 0.)
-      std::cout << "Optimization problem regularized with r = " << mn_ret->second.second << " for the ansatz with "
-                << dimRange << " moments!" << std::endl;
+    const auto mn_end = std::chrono::steady_clock::now();
+    const std::chrono::duration<double> mn_time = mn_end - mn_begin;
+
     const auto alpha = mn_ret->first;
 
     const auto entropy_string =
@@ -276,13 +313,13 @@ struct MomentApproximation
     std::ofstream mn_file(filename_mn + ".txt");
     std::ofstream pn_file(filename_pn + ".txt");
     const std::string mn_errors_filename = filename + entropy_string + basis_functions->short_id() + "m_errors.txt";
-    const std::string pn_errors_filename = filename + basis_functions->short_id() + "p_errors.txt";
+    const std::string pn_errors_filename = filename + "_" + basis_functions->short_id() + "p_errors.txt";
     std::ofstream mn_errors_file(mn_errors_filename, std::ios_base::app);
     std::ofstream pn_errors_file(pn_errors_filename, std::ios_base::app);
     if (is_empty(mn_errors_filename))
-      mn_errors_file << "n l1error l2error linferror" << std::endl;
+      mn_errors_file << "n l1error l2error linferror time(s) r" << std::endl;
     if (is_empty(pn_errors_filename))
-      pn_errors_file << "n l1error l2error linferror" << std::endl;
+      pn_errors_file << "n l1error l2error linferror time(s)" << std::endl;
     for (size_t dd = 0; dd < dimDomain; ++dd) {
       mn_file << "v" << dd << " ";
       pn_file << "v" << dd << " ";
@@ -293,8 +330,11 @@ struct MomentApproximation
     RangeFieldType l1error_mn(0), l2error_mn(0), linferror_mn(0);
     RangeFieldType l1error_pn(0), l2error_pn(0), linferror_pn(0);
     DynamicRangeType pn_coeffs(dimRange);
+    const auto pn_begin = std::chrono::steady_clock::now();
     SolverHelper<>::solve(*basis_functions, u, pn_coeffs);
-    const auto quadrature = XT::Data::merged_quadrature(quadratures);
+    const auto pn_end = std::chrono::steady_clock::now();
+    const std::chrono::duration<double> pn_time = pn_end - pn_begin;
+    const auto quadrature = XT::Data::merged_quadrature(visualization_quadratures);
     for (auto it = quadrature.begin(); it != quadrature.end(); ++it) {
       const auto& quad_point = *it;
       const auto v = quad_point.position();
@@ -322,11 +362,11 @@ struct MomentApproximation
       linferror_pn = std::max(std::abs(psi_pn - psi(v, basis_functions->is_negative(it))), linferror_pn);
     }
     mn_errors_file << dimRange << " " << XT::Common::to_string(l1error_mn, 15) << " "
-                   << XT::Common::to_string(l2error_mn, 15) << " " << XT::Common::to_string(linferror_mn, 15)
-                   << std::endl;
+                   << XT::Common::to_string(l2error_mn, 15) << " " << XT::Common::to_string(linferror_mn, 15) << " "
+                   << mn_time.count() << " " << mn_ret->second.second << std::endl;
     pn_errors_file << dimRange << " " << XT::Common::to_string(l1error_pn, 15) << " "
-                   << XT::Common::to_string(l2error_pn, 15) << " " << XT::Common::to_string(linferror_pn, 15)
-                   << std::endl;
+                   << XT::Common::to_string(l2error_pn, 15) << " " << XT::Common::to_string(linferror_pn, 15) << " "
+                   << pn_time.count() << std::endl;
   }
 };
 

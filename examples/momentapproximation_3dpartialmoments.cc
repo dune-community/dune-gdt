@@ -9,6 +9,9 @@
 
 #include "config.h"
 
+#define HAVE_QHULL 0
+#define HAVE_CLP 0
+
 #include <dune/common/parallel/mpihelper.hh>
 
 #include <dune/xt/common/string.hh>
