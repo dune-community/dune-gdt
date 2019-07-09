@@ -156,7 +156,8 @@ public:
     , k_max_(k_max)
     , epsilon_(epsilon)
     , realizability_helper_(basis_functions_,
-                            quad_points_
+                            quad_points_,
+                            disable_realizability_check_
 #if HAVE_CLP
                             ,
                             lp_
@@ -200,7 +201,7 @@ public:
   virtual RangeReturnType evaluate(const DomainType& u,
                                    const XT::Common::Parameter& /*param*/ = {}) const override final
   {
-    const auto alpha = get_alpha(u, get_isotropic_alpha(u), true)->first;
+    const auto alpha = get_alpha(u, *get_isotropic_alpha(u), true)->first;
     return evaluate_with_alpha(alpha);
   }
 
@@ -224,7 +225,7 @@ public:
                         DynamicDerivativeRangeType& result,
                         const XT::Common::Parameter& /*param*/ = {}) const override final
   {
-    const auto alpha = get_alpha(u, get_isotropic_alpha(u), true)->first;
+    const auto alpha = get_alpha(u, *get_isotropic_alpha(u), true)->first;
     jacobian_with_alpha(alpha, result);
   }
 
@@ -260,7 +261,7 @@ public:
 
   std::unique_ptr<AlphaReturnType> get_alpha(const DomainType& u) const
   {
-    return get_alpha(u, get_isotropic_alpha(u), true);
+    return get_alpha(u, *get_isotropic_alpha(u), true);
   }
 
   // returns density rho = < eta_ast_prime(beta_in * b(v)) >
@@ -514,8 +515,8 @@ public:
   evaluate_kinetic_flux(const DomainType& u_i, const DomainType& u_j, const FluxDomainType& n_ij, const size_t dd) const
   {
     // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
-    const auto alpha_i = get_alpha(u_i, get_isotropic_alpha(u_i), true)->first;
-    const auto alpha_j = get_alpha(u_j, get_isotropic_alpha(u_j), true)->first;
+    const auto alpha_i = get_alpha(u_i, *get_isotropic_alpha(u_i), true)->first;
+    const auto alpha_j = get_alpha(u_j, *get_isotropic_alpha(u_j), true)->first;
     evaluate_kinetic_flux_with_alphas(alpha_i, alpha_j, n_ij, dd);
   } // DomainType evaluate_kinetic_flux(...)
 
@@ -713,9 +714,14 @@ public:
     return basis_functions_;
   }
 
-  VectorType get_isotropic_alpha(const DomainType& u) const
+  std::unique_ptr<VectorType> get_isotropic_alpha(const RangeFieldType density) const
   {
-    return basis_functions_.alpha_iso(basis_functions_.density(u));
+    return std::make_unique<VectorType>(basis_functions_.alpha_iso(density));
+  }
+
+  std::unique_ptr<VectorType> get_isotropic_alpha(const DomainType& u) const
+  {
+    return get_isotropic_alpha(basis_functions_.density(u));
   }
 
 #if HAVE_CLP
@@ -726,6 +732,7 @@ public:
 
     RealizabilityHelper(const MomentBasis& basis_functions,
                         const QuadraturePointsType& quad_points,
+                        const bool /*disable_realizability_check*/,
                         XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>>& lp)
       : basis_functions_(basis_functions)
       , quad_points_(quad_points)
@@ -790,7 +797,6 @@ public:
       return lp.primalFeasible();
     }
 
-  private:
     const MomentBasis& basis_functions_;
     const QuadraturePointsType& quad_points_;
     XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>>& lp_;
@@ -799,9 +805,12 @@ public:
   template <class BasisFuncImp = MomentBasis, bool anything = true>
   struct RealizabilityHelper
   {
-    RealizabilityHelper(const MomentBasis& /*basis_functions*/, const QuadraturePointsType& /*quad_points*/)
+    RealizabilityHelper(const MomentBasis& /*basis_functions*/,
+                        const QuadraturePointsType& /*quad_points*/,
+                        const bool disable_realizability_check)
     {
-      std::cerr << "Warning: You are missing Clp, realizability stopping condition will not be checked!" << std::endl;
+      if (!disable_realizability_check)
+        std::cerr << "Warning: You are missing Clp, realizability stopping condition will not be checked!" << std::endl;
     }
 
     bool is_realizable(const DomainType& /*u*/, const bool /*reinitialize*/) const
@@ -818,7 +827,8 @@ public:
       anything>
   {
     RealizabilityHelper(const MomentBasis& /*basis_functions*/,
-                        const std::vector<BasisDomainType>& /*quad_points*/
+                        const std::vector<BasisDomainType>& /*quad_points*/,
+                        const bool /*disable_realizability_check*/
 #if HAVE_CLP
                         ,
                         XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>>& /*lp*/)
@@ -966,7 +976,7 @@ public:
       // regularize u
       v = phi;
       if (r > 0) {
-        beta_in = get_isotropic_alpha(v);
+        beta_in = *get_isotropic_alpha(v);
         VectorType r_times_u_iso = u_iso;
         r_times_u_iso *= r;
         v *= 1 - r;
@@ -1072,7 +1082,6 @@ public:
     return ret;
   }
 
-private:
   using BaseType::all_positive;
   using BaseType::apply_inverse_matrix;
   using BaseType::calculate_hessian;
@@ -1159,7 +1168,7 @@ public:
 
   std::unique_ptr<AlphaReturnType> get_alpha(const DomainType& u) const
   {
-    return get_alpha(u, get_isotropic_alpha(u), true);
+    return get_alpha(u, *get_isotropic_alpha(u), true);
   }
 
   // returns (alpha, (actual_u, r)), where r is the regularization parameter and actual_u the regularized u
@@ -1189,7 +1198,7 @@ public:
       // regularize u
       v = phi;
       if (r > 0) {
-        alpha_k = get_isotropic_alpha(v);
+        alpha_k = *get_isotropic_alpha(v);
         VectorType r_times_u_iso = u_iso;
         r_times_u_iso *= r;
         v *= 1 - r;
@@ -1290,7 +1299,6 @@ public:
     return ret;
   }
 
-private:
   using BaseType::all_positive;
   using BaseType::calculate_hessian;
   using BaseType::calculate_u;
@@ -1379,7 +1387,7 @@ public:
     , epsilon_(epsilon)
   {
     XT::LA::eye_matrix(T_minus_one_);
-    if (!disable_realizability_check)
+    if (!disable_realizability_check_)
       helper<dimFlux>::calculate_plane_coefficients(basis_functions_);
     const auto& quadratures = basis_functions_.quadratures();
     assert(quadratures.size() == num_blocks);
@@ -1544,7 +1552,6 @@ public:
 
       int backtracking_failed = 0;
       for (size_t kk = 0; kk < k_max_; ++kk) {
-        std::cout << "r = " << r << ", kk = " << kk << std::endl;
         // exit inner for loop to increase r if too many iterations are used or cholesky decomposition fails
         if (kk > k_0_ && r < r_max)
           break;
@@ -2074,9 +2081,14 @@ public:
     return true;
   }
 
+  std::unique_ptr<BlockVectorType> get_isotropic_alpha(const RangeFieldType density) const
+  {
+    return std::make_unique<BlockVectorType>(basis_functions_.alpha_iso(density));
+  }
+
   std::unique_ptr<BlockVectorType> get_isotropic_alpha(const DomainType& u) const
   {
-    return std::make_unique<BlockVectorType>(basis_functions_.alpha_iso(basis_functions_.density(u)));
+    return get_isotropic_alpha(basis_functions_.density(u));
   }
 
   void copy_basis_matrix(const BasisValuesMatrixType& source_mat, BasisValuesMatrixType& range_mat) const
@@ -2209,7 +2221,7 @@ public:
 #  else
     static void calculate_plane_coefficients(const MomentBasis& /*basis_functions*/)
     {
-      std::cerr << "Warning: You are missing Clp, realizability stopping condition will not be checked!" << std::endl;
+      std::cerr << "Warning: You are missing Qhull, realizability stopping condition will not be checked!" << std::endl;
     }
 
     static bool is_realizable(const BlockVectorType& /*u*/, const MomentBasis& /*basis_functions*/)
@@ -2371,7 +2383,7 @@ public:
   virtual RangeReturnType evaluate(const DomainType& u,
                                    const XT::Common::Parameter& /*param*/ = {}) const override final
   {
-    const auto alpha = get_alpha(u, get_isotropic_alpha(u), true)->first;
+    const auto alpha = get_alpha(u, *get_isotropic_alpha(u), true)->first;
     return evaluate_with_alpha(alpha);
   }
 
@@ -2410,7 +2422,7 @@ public:
                         DynamicDerivativeRangeType& result,
                         const XT::Common::Parameter& /*param*/ = {}) const override final
   {
-    const auto alpha = get_alpha(u, get_isotropic_alpha(u), true)->first;
+    const auto alpha = get_alpha(u, *get_isotropic_alpha(u), true)->first;
     jacobian_with_alpha(alpha, result);
   }
 
@@ -2439,7 +2451,7 @@ public:
 
   std::unique_ptr<AlphaReturnType> get_alpha(const DomainType& u) const
   {
-    return get_alpha(u, get_isotropic_alpha(u), true);
+    return get_alpha(u, *get_isotropic_alpha(u), true);
   }
 
   // Solves the minimum entropy optimization problem for u.
@@ -2494,7 +2506,7 @@ public:
       // regularize u
       v = phi;
       if (r > 0) {
-        alpha_k = get_isotropic_alpha(v);
+        alpha_k = *get_isotropic_alpha(v);
         tmp_vec = u_iso;
         tmp_vec *= r;
         v *= 1 - r;
@@ -2896,8 +2908,8 @@ public:
   DomainType
   evaluate_kinetic_flux(const DomainType& u_i, const DomainType& u_j, const FluxDomainType& n_ij, const size_t dd) const
   {
-    const auto alpha_i = get_alpha(u_i, get_isotropic_alpha(u_i), true)->first;
-    const auto alpha_j = get_alpha(u_j, get_isotropic_alpha(u_j), true)->first;
+    const auto alpha_i = get_alpha(u_i, *get_isotropic_alpha(u_i), true)->first;
+    const auto alpha_j = get_alpha(u_j, *get_isotropic_alpha(u_j), true)->first;
     return evaluate_kinetic_flux_with_alphas(alpha_i, alpha_j, n_ij, dd);
   } // DomainType evaluate_kinetic_flux(...)
 
@@ -3003,21 +3015,26 @@ public:
   // ============================================================================================
 
 
-  VectorType get_isotropic_alpha(const DomainType& u) const
+  std::unique_ptr<VectorType> get_isotropic_alpha(const RangeFieldType density) const
   {
-    const auto alpha_iso_dynvector = basis_functions_.alpha_iso(basis_functions_.density(u));
-    VectorType ret(alpha_iso_dynvector.size(), 0., 0);
-    for (size_t ii = 0; ii < ret.size(); ++ii)
-      ret[ii] = alpha_iso_dynvector[ii];
+    const auto alpha_iso_dynvector = basis_functions_.alpha_iso(density);
+    auto ret = std::make_unique<VectorType>(alpha_iso_dynvector.size(), 0., 0);
+    for (size_t ii = 0; ii < ret->size(); ++ii)
+      (*ret)[ii] = alpha_iso_dynvector[ii];
     return ret;
   }
 
-  VectorType get_isotropic_alpha(const VectorType& u) const
+  std::unique_ptr<VectorType> get_isotropic_alpha(const DomainType& u) const
   {
-    DomainType u_domain;
+    return get_isotropic_alpha(basis_functions_.density(u));
+  }
+
+  std::unique_ptr<VectorType> get_isotropic_alpha(const VectorType& u) const
+  {
+    auto u_domain = std::make_unique<DomainType>();
     for (size_t ii = 0; ii < dimFlux; ++ii)
-      u_domain[ii] = u.get_entry(ii);
-    return get_isotropic_alpha(u_domain);
+      (*u_domain)[ii] = u.get_entry(ii);
+    return get_isotropic_alpha(*u_domain);
   }
 
   const MomentBasis& basis_functions() const
@@ -3163,7 +3180,7 @@ public:
   virtual RangeReturnType evaluate(const DomainType& u,
                                    const XT::Common::Parameter& /*param*/ = {}) const override final
   {
-    const auto alpha = get_alpha(u, get_isotropic_alpha(u), true)->first;
+    const auto alpha = get_alpha(u, *get_isotropic_alpha(u), true)->first;
     return evaluate_with_alpha(alpha);
   }
 
@@ -3230,7 +3247,7 @@ public:
                         DynamicDerivativeRangeType& result,
                         const XT::Common::Parameter& /*param*/ = {}) const override final
   {
-    const auto alpha = get_alpha(u, get_isotropic_alpha(u), true)->first;
+    const auto alpha = get_alpha(u, *get_isotropic_alpha(u), true)->first;
     jacobian_with_alpha(alpha, result);
   }
 
@@ -3257,8 +3274,8 @@ public:
   evaluate_kinetic_flux(const DomainType& u_i, const DomainType& u_j, const FluxDomainType& n_ij, const size_t dd) const
   {
     // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
-    const auto alpha_i = get_alpha(u_i, get_isotropic_alpha(u_i), true)->first;
-    const auto alpha_j = get_alpha(u_j, get_isotropic_alpha(u_j), true)->first;
+    const auto alpha_i = get_alpha(u_i, *get_isotropic_alpha(u_i), true)->first;
+    const auto alpha_j = get_alpha(u_j, *get_isotropic_alpha(u_j), true)->first;
     evaluate_kinetic_flux_with_alphas(alpha_i, alpha_j, n_ij, dd);
   } // DomainType evaluate_kinetic_flux(...)
 
@@ -3433,7 +3450,7 @@ public:
 
   std::unique_ptr<AlphaReturnType> get_alpha(const DomainType& u) const
   {
-    return get_alpha(u, get_isotropic_alpha(u), true);
+    return get_alpha(u, *get_isotropic_alpha(u), true);
   }
 
   // returns (alpha, (actual_u, r)), where r is the regularization parameter and actual_u the regularized u
@@ -3465,7 +3482,7 @@ public:
       // regularize u
       v = phi;
       if (r > 0) {
-        alpha_k = get_isotropic_alpha(v);
+        alpha_k = *get_isotropic_alpha(v);
         VectorType r_times_u_iso(u_iso);
         r_times_u_iso *= r;
         v *= 1 - r;
@@ -3846,9 +3863,14 @@ public:
     return true;
   }
 
-  VectorType get_isotropic_alpha(const DomainType& u) const
+  std::unique_ptr<VectorType> get_isotropic_alpha(const RangeFieldType density) const
   {
-    return basis_functions_.alpha_iso(basis_functions_.density(u));
+    return std::make_unique<VectorType>(basis_functions_.alpha_iso(density));
+  }
+
+  std::unique_ptr<VectorType> get_isotropic_alpha(const DomainType& u) const
+  {
+    return get_isotropic_alpha(basis_functions_.density(u));
   }
 
   const MomentBasis& basis_functions_;
@@ -3948,7 +3970,7 @@ public:
   virtual RangeReturnType evaluate(const DomainType& u,
                                    const XT::Common::Parameter& /*param*/ = {}) const override final
   {
-    const auto alpha = get_alpha(u, get_isotropic_alpha(u), true)->first;
+    const auto alpha = get_alpha(u, *get_isotropic_alpha(u), true)->first;
     return evaluate_with_alpha(alpha);
   }
 
@@ -3973,7 +3995,7 @@ public:
                         DynamicDerivativeRangeType& result,
                         const XT::Common::Parameter& /*param*/ = {}) const override final
   {
-    const auto alpha = get_alpha(u, get_isotropic_alpha(u), true)->first;
+    const auto alpha = get_alpha(u, *get_isotropic_alpha(u), true)->first;
     jacobian_with_alpha(alpha, result);
   }
 
@@ -3994,7 +4016,7 @@ public:
 
   std::unique_ptr<AlphaReturnType> get_alpha(const DomainType& u) const
   {
-    return get_alpha(u, get_isotropic_alpha(u), true);
+    return get_alpha(u, *get_isotropic_alpha(u), true);
   }
 
   // returns (alpha, (actual_u, r)), where r is the regularization parameter and actual_u the regularized u
@@ -4034,7 +4056,7 @@ public:
       // regularize u
       v = phi;
       if (r > 0) {
-        alpha_k = get_isotropic_alpha(v);
+        alpha_k = *get_isotropic_alpha(v);
         VectorType r_times_u_iso(u_iso);
         r_times_u_iso *= r;
         v *= 1 - r;
@@ -4390,8 +4412,8 @@ public:
   DomainType
   evaluate_kinetic_flux(const DomainType& u_i, const DomainType& u_j, const FluxDomainType& n_ij, const size_t dd) const
   {
-    const auto alpha_i = get_alpha(u_i, get_isotropic_alpha(u_i), true)->first;
-    const auto alpha_j = get_alpha(u_j, get_isotropic_alpha(u_j), true)->first;
+    const auto alpha_i = get_alpha(u_i, *get_isotropic_alpha(u_i), true)->first;
+    const auto alpha_j = get_alpha(u_j, *get_isotropic_alpha(u_j), true)->first;
     return evaluate_kinetic_flux_with_alphas(alpha_i, alpha_j, n_ij, dd);
   } // DomainType evaluate_kinetic_flux(...)
 
@@ -4505,9 +4527,14 @@ public:
     }
   }
 
-  VectorType get_isotropic_alpha(const DomainType& u) const
+  std::unique_ptr<VectorType> get_isotropic_alpha(const RangeFieldType density) const
   {
-    return basis_functions_.alpha_iso(basis_functions_.density(u));
+    return std::make_unique<VectorType>(basis_functions_.alpha_iso(density));
+  }
+
+  std::unique_ptr<VectorType> get_isotropic_alpha(const DomainType& u) const
+  {
+    return get_isotropic_alpha(basis_functions_.density(u));
   }
 
   static bool is_realizable(const DomainType& u)
@@ -4537,7 +4564,6 @@ public:
     return true;
   }
 
-private:
   const MomentBasis& basis_functions_;
   QuadraturePointsType quad_points_;
   QuadratureWeightsType quad_weights_;

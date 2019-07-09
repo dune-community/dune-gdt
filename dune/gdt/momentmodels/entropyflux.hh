@@ -148,8 +148,8 @@ public:
   explicit EntropyBasedFluxFunction(
       const GridViewType& grid_view,
       const MomentBasis& basis_functions,
-      const bool disable_realizability_check = false,
       const RangeFieldType tau = 1e-9,
+      const bool disable_realizability_check = false,
       const RangeFieldType epsilon_gamma = 0.01,
       const RangeFieldType chi = 0.5,
       const RangeFieldType xi = 1e-3,
@@ -335,8 +335,8 @@ public:
   {
     const auto& basis_functions = implementation_->basis_functions();
     const auto density = basis_functions.density(u);
-    VectorType alpha_iso = XT::Common::convert_to<VectorType>(basis_functions.alpha_iso(density));
-    return implementation_->get_alpha(u, alpha_iso, regularize);
+    auto alpha_iso = implementation_->get_isotropic_alpha(density);
+    return implementation_->get_alpha(u, *alpha_iso, regularize);
   }
 
   const MomentBasis& basis_functions() const
