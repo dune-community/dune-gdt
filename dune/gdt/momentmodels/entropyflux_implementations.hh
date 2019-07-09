@@ -657,6 +657,16 @@ public:
     return work_vec;
   }
 
+  bool all_positive(const QuadratureWeightsType& vals) const
+  {
+    for (size_t ll = 0; ll < quad_points_.size(); ++ll) {
+      const auto val = vals[ll];
+      if (val < 0. || std::isinf(val) || std::isnan(val))
+        return false;
+    }
+    return true;
+  }
+
   void copy_transposed(const MatrixType& T_k, MatrixType& T_k_trans) const
   {
     for (size_t ii = 0; ii < basis_dimRange; ++ii)
@@ -1020,7 +1030,9 @@ public:
         first_error_cond = g_alpha_tilde.two_norm();
         second_error_cond = std::exp(
             -(rescale ? d_alpha_tilde.one_norm() + std::abs(std::log(density_tilde)) : d_alpha_tilde.one_norm()));
+        const auto& eta_ast_prime_vals = working_storage();
         if (first_error_cond < tau_prime && 1 - epsilon_gamma_ < second_error_cond
+            && (entropy == EntropyType::MaxwellBoltzmann || all_positive(eta_ast_prime_vals))
             && (disable_realizability_check_
                 || realizability_helper_.is_realizable(u_eps_diff, kk == static_cast<size_t>(0.8 * k_0_)))) {
           ret->first = rescale ? alpha_prime + alpha_one * std::log(density) : alpha_prime;
@@ -1061,11 +1073,13 @@ public:
   }
 
 private:
+  using BaseType::all_positive;
   using BaseType::apply_inverse_matrix;
   using BaseType::calculate_hessian;
   using BaseType::calculate_u;
   using BaseType::get_eta_ast_integrated;
   using BaseType::get_isotropic_alpha;
+  using BaseType::working_storage;
 
   void change_basis(const DomainType& beta_in,
                     DomainType& v_k,
@@ -1238,6 +1252,7 @@ public:
         first_error_cond = g_k.two_norm();
         second_error_cond = std::exp(-(rescale ? d_k.one_norm() + std::abs(std::log(density_tilde)) : d_k.one_norm()));
         if (first_error_cond < tau_prime && 1 - epsilon_gamma_ < second_error_cond
+            && (entropy == EntropyType::MaxwellBoltzmann || all_positive(eta_ast_prime_vals))
             && (disable_realizability_check_
                 || realizability_helper_.is_realizable(u_eps_diff, kk == static_cast<size_t>(0.8 * k_0_)))) {
           ret->first = rescale ? alpha_prime + alpha_one * std::log(density) : alpha_prime;
@@ -1276,6 +1291,7 @@ public:
   }
 
 private:
+  using BaseType::all_positive;
   using BaseType::calculate_hessian;
   using BaseType::calculate_u;
   using BaseType::get_eta_ast_integrated;
@@ -1528,6 +1544,7 @@ public:
 
       int backtracking_failed = 0;
       for (size_t kk = 0; kk < k_max_; ++kk) {
+        std::cout << "r = " << r << ", kk = " << kk << std::endl;
         // exit inner for loop to increase r if too many iterations are used or cholesky decomposition fails
         if (kk > k_0_ && r < r_max)
           break;
@@ -1580,9 +1597,13 @@ public:
         *u_eps_diff = *u_alpha_prime;
         *u_eps_diff *= -(1 - epsilon_gamma_);
         *u_eps_diff += *v;
+
+        // working_storage contains eta_ast_prime evaluations due to the calculate_u call above
+        auto& eta_ast_prime_vals = working_storage();
         if (g_alpha_tilde->two_norm() < tau_prime
             && 1 - epsilon_gamma_ < std::exp(-(rescale ? d_alpha_tilde->one_norm() + std::abs(std::log(density_tilde))
                                                        : d_alpha_tilde->one_norm()))
+            && (entropy == EntropyType::MaxwellBoltzmann || all_positive(eta_ast_prime_vals))
             && (disable_realizability_check_ || helper<dimFlux>::is_realizable(*u_eps_diff, basis_functions_))) {
           ret->second.first = *v;
           ret->second.second = r;
@@ -2040,6 +2061,17 @@ public:
     for (size_t jj = 0; jj < num_blocks; ++jj)
       work_vecs[jj].resize(quad_points_[jj].size());
     return work_vecs;
+  }
+
+  bool all_positive(const QuadratureWeightsType& vals) const
+  {
+    for (size_t jj = 0; jj < num_blocks; ++jj)
+      for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
+        const auto val = vals[jj][ll];
+        if (val < 0. || std::isinf(val) || std::isnan(val))
+          return false;
+      }
+    return true;
   }
 
   std::unique_ptr<BlockVectorType> get_isotropic_alpha(const DomainType& u) const
@@ -3009,6 +3041,17 @@ public:
     for (size_t jj = 0; jj < num_faces_; ++jj)
       work_vecs[jj].resize(quad_points_[jj].size());
     return work_vecs;
+  }
+
+  bool all_positive(const QuadratureWeightsType& vals) const
+  {
+    for (size_t jj = 0; jj < num_faces_; ++jj)
+      for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
+        const auto val = vals[jj][ll];
+        if (val < 0. || std::isinf(val) || std::isnan(val))
+          return false;
+      }
+    return true;
   }
 
   void calculate_scalar_products(const VectorType& alpha, QuadratureWeightsType& scalar_products) const
@@ -4037,8 +4080,12 @@ public:
           u_alpha_prime = u_alpha_tilde;
         }
         auto u_eps_diff = v - u_alpha_prime * (1 - epsilon_gamma_);
+        auto& eta_ast_prime_vals = working_storage();
+        if (entropy == EntropyType::MaxwellBoltzmann)
+          evaluate_eta_ast_prime(eta_ast_prime_vals);
         // checking realizability is cheap so we do not need the second stopping criterion
-        if (g_k.two_norm() < tau_prime && is_realizable(u_eps_diff)) {
+        if (g_k.two_norm() < tau_prime && is_realizable(u_eps_diff)
+            && (entropy == EntropyType::MaxwellBoltzmann || all_positive(eta_ast_prime_vals))) {
           ret->first = rescale ? alpha_prime + alpha_one * std::log(density) : alpha_prime;
           ret->second = std::make_pair(rescale ? v * density : v, r);
           return ret;
@@ -4479,6 +4526,16 @@ public:
     return work_vec;
   }
 
+  bool all_positive(const QuadratureWeightsType& vals) const
+  {
+    for (size_t jj = 0; jj < num_intervals; ++jj)
+      for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
+        const auto val = vals[jj][ll];
+        if (val < 0. || std::isinf(val) || std::isnan(val))
+          return false;
+      }
+    return true;
+  }
 
 private:
   const MomentBasis& basis_functions_;

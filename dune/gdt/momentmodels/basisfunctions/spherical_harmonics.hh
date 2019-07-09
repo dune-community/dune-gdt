@@ -147,7 +147,7 @@ public:
 
   virtual std::string short_id() const override final
   {
-    return "sh";
+    return "";
   }
 
   virtual std::string mn_name() const override final
@@ -400,7 +400,7 @@ public:
 
   virtual std::string short_id() const override final
   {
-    return "rh";
+    return "";
   }
 
   virtual std::string mn_name() const override final
