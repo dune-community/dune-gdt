@@ -143,19 +143,6 @@ public:
     return ret;
   }
 
-  virtual DynamicRangeType
-  get_moment_vector(const std::function<RangeFieldType(DomainType, bool)>& psi) const override final
-  {
-    DynamicRangeType ret(dimRange, 0);
-    const auto merged_quadratures = XT::Data::merged_quadrature(quadratures_);
-    for (auto it = merged_quadratures.begin(); it != merged_quadratures.end(); ++it) {
-      const auto& quad_point = *it;
-      const auto& v = quad_point.position();
-      ret += evaluate(v, it.first_index()) * psi(v, is_negative(it)) * quad_point.weight();
-    }
-    return ret;
-  }
-
   virtual bool
   is_negative(const typename XT::Data::MergedQuadrature<RangeFieldType, dimDomain>::MergedQuadratureIterator& it)
       const override final
@@ -471,11 +458,20 @@ public:
   virtual DynamicRangeType evaluate(const DomainType& v, const size_t face_index) const override final
   {
     DynamicRangeType ret(dimRange, 0);
-    ret[4 * face_index] = 1.;
-    for (size_t ii = 1; ii < 4; ++ii) {
-      assert(4 * face_index + ii < ret.size());
-      ret[4 * face_index + ii] = v[ii - 1];
-    }
+    const auto local_eval = evaluate_on_face(v, face_index);
+    assert(4 * face_index + 3 < ret.size());
+    for (size_t ii = 0; ii < 4; ++ii)
+      ret[4 * face_index + ii] = local_eval[ii];
+    return ret;
+  } // ... evaluate(...)
+
+  // evaluate on spherical triangle face_index
+  virtual LocalVectorType evaluate_on_face(const DomainType& v, const size_t /*face_index*/) const
+  {
+    LocalVectorType ret;
+    ret[0] = 1.;
+    for (size_t ii = 1; ii < 4; ++ii)
+      ret[ii] = v[ii - 1];
     return ret;
   } // ... evaluate(...)
 
@@ -644,6 +640,24 @@ public:
     // Join the threads with the main thread
     for (size_t jj = 0; jj < num_blocks; ++jj)
       threads[jj].join();
+  }
+
+  virtual DynamicRangeType
+  get_moment_vector(const std::function<RangeFieldType(DomainType, bool)>& psi) const override final
+  {
+    DynamicRangeType ret(dimRange, 0);
+    for (size_t jj = 0; jj < quadratures_.size(); ++jj) {
+      const size_t offset = jj * block_size;
+      for (const auto& quad_point : quadratures_[jj]) {
+        const auto& v = quad_point.position();
+        const auto basis_val = evaluate_on_face(v, jj);
+        const auto psi_val = psi(v, false);
+        const auto factor = psi_val * quad_point.weight();
+        for (size_t ii = 0; ii < block_size; ++ii)
+          ret[offset + ii] += basis_val[ii] * factor;
+      }
+    }
+    return ret;
   }
 
   std::unique_ptr<BlockMatrixType> block_mass_matrix() const

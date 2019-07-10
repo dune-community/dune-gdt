@@ -1400,9 +1400,9 @@ public:
     for (size_t jj = 0; jj < num_blocks; ++jj) {
       M_[jj] = XT::LA::CommonDenseMatrix<RangeFieldType>(quad_points_[jj].size(), block_size, 0., 0);
       for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
-        const auto val = basis_functions_.evaluate(quad_points_[jj][ll], jj);
+        const auto val = basis_functions_.evaluate_on_face(quad_points_[jj][ll], jj);
         for (size_t ii = 0; ii < block_size; ++ii)
-          M_[jj].set_entry(ll, ii, val[block_size * jj + ii]);
+          M_[jj].set_entry(ll, ii, val[ii]);
       } // ll
     } // jj
   }
