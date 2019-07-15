@@ -17,8 +17,8 @@
 
 #include <dune/xt/la/solver.hh>
 
-#include <dune/gdt/momentmodels/basisfunctions.hh>
-#include <dune/gdt/momentmodels/entropyflux.hh>
+#include <dune/gdt/test/momentmodels/basisfunctions.hh>
+#include <dune/gdt/test/momentmodels/entropyflux.hh>
 #include <dune/gdt/test/momentmodels/kineticequation.hh>
 
 #include "../kineticequation.hh"

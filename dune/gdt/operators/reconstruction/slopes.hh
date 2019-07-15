@@ -28,8 +28,8 @@
 #include <dune/xt/common/fvector.hh>
 #include <dune/xt/common/parallel/threadstorage.hh>
 
-#include <dune/gdt/momentmodels/basisfunctions/partial_moments.hh>
-#include <dune/gdt/momentmodels/entropyflux.hh>
+#include <dune/gdt/test/momentmodels/basisfunctions/partial_moments.hh>
+#include <dune/gdt/test/momentmodels/entropyflux.hh>
 
 namespace Dune {
 namespace GDT {

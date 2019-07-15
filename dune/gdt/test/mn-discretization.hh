@@ -23,7 +23,7 @@
 #include <dune/gdt/operators/advection-fv-entropybased.hh>
 #include <dune/gdt/operators/advection-fv.hh>
 #include <dune/gdt/interpolations/default.hh>
-#include <dune/gdt/momentmodels/entropysolver.hh>
+#include <dune/gdt/test/momentmodels/entropysolver.hh>
 #include <dune/gdt/local/numerical-fluxes/kinetic.hh>
 #include <dune/gdt/local/operators/advection-fv.hh>
 #include <dune/gdt/spaces/l2/finite-volume.hh>

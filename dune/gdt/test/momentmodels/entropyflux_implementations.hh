@@ -40,7 +40,7 @@
 
 #include <dune/xt/functions/interfaces/function.hh>
 
-#include <dune/gdt/momentmodels/basisfunctions.hh>
+#include <dune/gdt/test/momentmodels/basisfunctions.hh>
 #include <dune/gdt/type_traits.hh>
 
 #include "config.h"

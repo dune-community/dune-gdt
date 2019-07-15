@@ -80,7 +80,7 @@ class LocalFiniteElementFamilyInterface;
 template <class GV, size_t r, size_t rC, class R>
 class SpaceInterface;
 
-// from #include <dune/gdt/momentmodels/basisfunctions.hh>
+// from #include <dune/gdt/test/momentmodels/basisfunctions.hh>
 enum class EntropyType;
 
 template <class DomainFieldType,
@@ -173,7 +173,7 @@ struct is_space<S, true> : public std::is_base_of<SpaceInterface<typename S::GV,
 {};
 
 
-// from #include <dune/gdt/momentmodels/basisfunctions.hh>
+// from #include <dune/gdt/test/momentmodels/basisfunctions.hh>
 template <class T>
 struct is_hatfunction_basis : public std::false_type
 {};

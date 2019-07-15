@@ -16,7 +16,7 @@
 #include <dune/xt/common/parameter.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/momentmodels/entropyflux.hh>
+#include <dune/gdt/test/momentmodels/entropyflux.hh>
 #include <dune/gdt/operators/interfaces.hh>
 #include <dune/gdt/type_traits.hh>
 

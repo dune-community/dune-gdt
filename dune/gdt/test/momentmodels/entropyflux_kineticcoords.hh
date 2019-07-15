@@ -18,9 +18,9 @@
 
 #include <dune/xt/functions/interfaces/flux-function.hh>
 
-#include <dune/gdt/momentmodels/basisfunctions.hh>
-#include <dune/gdt/momentmodels/entropyflux_implementations.hh>
-#include <dune/gdt/momentmodels/entropyflux.hh>
+#include <dune/gdt/test/momentmodels/basisfunctions.hh>
+#include <dune/gdt/test/momentmodels/entropyflux_implementations.hh>
+#include <dune/gdt/test/momentmodels/entropyflux.hh>
 
 namespace Dune {
 namespace GDT {

@@ -13,7 +13,7 @@
 
 #include <dune/grid/yaspgrid.hh>
 
-#include <dune/gdt/momentmodels/basisfunctions.hh>
+#include <dune/gdt/test/momentmodels/basisfunctions.hh>
 #include <dune/gdt/spaces/l2/finite-volume.hh>
 #include <dune/gdt/spaces/l2/discontinuous-lagrange.hh>
 #include <dune/gdt/tools/timestepper/interface.hh>

@@ -22,7 +22,7 @@
 #include <dune/xt/data/spherical_quadratures.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/momentmodels/triangulation.hh>
+#include <dune/gdt/test/momentmodels/triangulation.hh>
 
 namespace Dune {
 namespace GDT {

@@ -13,8 +13,8 @@
 
 #include <dune/xt/la/container.hh>
 
-#include <dune/gdt/momentmodels/basisfunctions.hh>
-#include <dune/gdt/momentmodels/entropyflux.hh>
+#include <dune/gdt/test/momentmodels/basisfunctions.hh>
+#include <dune/gdt/test/momentmodels/entropyflux.hh>
 
 #include "interface.hh"
 

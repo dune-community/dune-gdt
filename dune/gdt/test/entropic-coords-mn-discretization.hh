@@ -25,10 +25,10 @@
 #include <dune/gdt/operators/generic.hh>
 #include <dune/gdt/operators/reconstruction/linear_kinetic.hh>
 #include <dune/gdt/interpolations/default.hh>
-#include <dune/gdt/momentmodels/hessianinverter.hh>
-#include <dune/gdt/momentmodels/entropyflux_kineticcoords.hh>
-#include <dune/gdt/momentmodels/entropyflux.hh>
-#include <dune/gdt/momentmodels/density_evaluations.hh>
+#include <dune/gdt/test/momentmodels/hessianinverter.hh>
+#include <dune/gdt/test/momentmodels/entropyflux_kineticcoords.hh>
+#include <dune/gdt/test/momentmodels/entropyflux.hh>
+#include <dune/gdt/test/momentmodels/density_evaluations.hh>
 #include <dune/gdt/local/numerical-fluxes/kinetic.hh>
 #include <dune/gdt/local/operators/advection-fv.hh>
 #include <dune/gdt/spaces/l2/finite-volume.hh>

@@ -16,7 +16,7 @@
 
 #include <dune/xt/common/fmatrix.hh>
 
-#include <dune/gdt/momentmodels/triangulation.hh>
+#include <dune/gdt/test/momentmodels/triangulation.hh>
 
 #include "interface.hh"
 
