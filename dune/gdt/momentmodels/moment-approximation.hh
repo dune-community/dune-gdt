@@ -63,19 +63,23 @@ struct MomentApproximation
   template <bool anything>
   struct QuadratureHelper<3, anything>
   {
-    static QuadraturesType
-    get(const int quadrature_refinements, const bool visualization, const int /*additional_refs*/)
+    static std::unique_ptr<SphericalTriangulation<RangeFieldType>> create_triangulation()
+    {
+      return std::make_unique<SphericalTriangulation<RangeFieldType>>(MomentBasisType::num_refinements);
+    }
+
+    static QuadraturesType get(const SphericalTriangulation<RangeFieldType>& triangulation,
+                               const int quadrature_refinements,
+                               const bool visualization,
+                               const int /*additional_refs*/)
     {
       QuadratureRule<RangeFieldType, 2> reference_quadrature_rule =
           XT::Data::FeketeQuadrature<RangeFieldType>::get(visualization ? 1 : 9);
-      int quad_refs = quadrature_refinements;
-      const size_t num_refs = MomentBasisType::num_refinements;
-      const int additional_refs = quad_refs - static_cast<int>(num_refs);
+      const int additional_refs = quadrature_refinements - static_cast<int>(MomentBasisType::num_refinements);
       if (additional_refs < 0)
         DUNE_THROW(InvalidStateException,
                    "The number of refinements for the quadrature has to be greater or equal than the number of "
                    "refinements the basisfunctions use!");
-      SphericalTriangulation<RangeFieldType> triangulation(num_refs);
       return triangulation.quadrature_rules(static_cast<size_t>(additional_refs), reference_quadrature_rule);
     }
   };
@@ -83,8 +87,15 @@ struct MomentApproximation
   template <bool anything>
   struct QuadratureHelper<1, anything>
   {
-    static QuadraturesType
-    get(const int num_quadrature_intervals, const bool /*visualization*/, const int additional_refs)
+    static std::unique_ptr<SphericalTriangulation<RangeFieldType>> create_triangulation()
+    {
+      return std::make_unique<SphericalTriangulation<RangeFieldType>>();
+    }
+
+    static QuadraturesType get(const SphericalTriangulation<RangeFieldType>& /*triangulation*/,
+                               const int num_quadrature_intervals,
+                               const bool /*visualization*/,
+                               const int additional_refs)
     {
       return MomentBasisType::gauss_lobatto_quadratures(num_quadrature_intervals, 197, additional_refs);
     }
@@ -149,6 +160,14 @@ struct MomentApproximation
                        + "-dimensional!");
       psi = [](const DomainType& v, const bool left) {
         return v[0] < 0 || (XT::Common::is_zero(v[0]) && left) ? RangeFieldType(5e-9) : RangeFieldType(1);
+      };
+    } else if (testcase == "HeavisideUnfitted") {
+      if (dimDomain != 1)
+        DUNE_THROW(InvalidStateException,
+                   "This is a 1-dimensional test, but the basis functions are " + XT::Common::to_string(dimDomain)
+                       + "-dimensional!");
+      psi = [](const DomainType& v, const bool /*left*/) {
+        return v[0] < 1. / M_PI ? RangeFieldType(5e-9) : RangeFieldType(1);
       };
     } else if (testcase == "Gauss1d") {
       tau = 1e-12;
@@ -281,12 +300,30 @@ struct MomentApproximation
     }
 
     //******************* choose quadrature that is used for visualization and error calculation *******************
-    const auto visualization_quadratures = QuadratureHelper<>::get(quad_refinements, true, additional_quad_refinements);
-    const auto basis_quadratures = QuadratureHelper<>::get(quad_refinements, false, additional_quad_refinements);
-    std::shared_ptr<const MomentBasisType> basis_functions = std::make_shared<const MomentBasisType>(basis_quadratures);
+    auto begin = std::chrono::steady_clock::now();
+    const auto triangulation = QuadratureHelper<>::create_triangulation();
+    std::chrono::duration<double> time = std::chrono::steady_clock::now() - begin;
+    if (dimDomain == 3)
+      std::cout << "Creating triangulation took: " << time.count() << " s!" << std::endl;
+    begin = std::chrono::steady_clock::now();
+    const auto visualization_quadratures =
+        QuadratureHelper<>::get(*triangulation, quad_refinements, true, additional_quad_refinements);
+    const auto basis_quadratures =
+        QuadratureHelper<>::get(*triangulation, quad_refinements, false, additional_quad_refinements);
+    time = std::chrono::steady_clock::now() - begin;
+    std::cout << "Creating quadratures took: " << time.count() << " s!" << std::endl;
+    begin = std::chrono::steady_clock::now();
+    std::shared_ptr<const MomentBasisType> basis_functions =
+        std::make_shared<const MomentBasisType>(*triangulation, basis_quadratures);
+    time = std::chrono::steady_clock::now() - begin;
+    std::cout << "Creating basis functions took: " << time.count() << " s!" << std::endl;
 
+    begin = std::chrono::steady_clock::now();
     const auto u = basis_functions->get_moment_vector(psi);
+    time = std::chrono::steady_clock::now() - begin;
+    std::cout << "Calculating u took: " << time.count() << " s!" << std::endl;
     using MnFluxType = EntropyBasedFluxFunction<GridViewType, MomentBasisType>;
+    begin = std::chrono::steady_clock::now();
     MnFluxType mn_flux(grid_view,
                        *basis_functions,
                        tau,
@@ -297,10 +334,14 @@ struct MomentApproximation
                        {0, 1e-8, 1e-6, 1e-4, 1e-3, 1e-2, 5e-2, 0.1, 0.5, 1},
                        50,
                        100);
+    std::cout << "Creating entropy flux took: "
+              << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - begin).count()
+              << "s!" << std::endl;
     const auto mn_begin = std::chrono::steady_clock::now();
     const auto mn_ret = mn_flux.get_alpha(u, true);
     const auto mn_end = std::chrono::steady_clock::now();
     const std::chrono::duration<double> mn_time = mn_end - mn_begin;
+    std::cout << "Mn solve took: " << mn_time.count() << " s!" << std::endl;
 
     const auto alpha = mn_ret->first;
 
@@ -334,7 +375,9 @@ struct MomentApproximation
     SolverHelper<>::solve(*basis_functions, u, pn_coeffs);
     const auto pn_end = std::chrono::steady_clock::now();
     const std::chrono::duration<double> pn_time = pn_end - pn_begin;
+    std::cout << "Pn solve took: " << pn_time.count() << " s!" << std::endl;
     const auto quadrature = XT::Data::merged_quadrature(visualization_quadratures);
+    begin = std::chrono::steady_clock::now();
     for (auto it = quadrature.begin(); it != quadrature.end(); ++it) {
       const auto& quad_point = *it;
       const auto v = quad_point.position();
@@ -361,12 +404,15 @@ struct MomentApproximation
       l2error_pn += std::pow(psi_pn - psi(v, basis_functions->is_negative(it)), 2) * weight;
       linferror_pn = std::max(std::abs(psi_pn - psi(v, basis_functions->is_negative(it))), linferror_pn);
     }
+    time = std::chrono::steady_clock::now() - begin;
+    std::cout << "Calculating errors took: " << time.count() << " s!" << std::endl;
     mn_errors_file << dimRange << " " << XT::Common::to_string(l1error_mn, 15) << " "
                    << XT::Common::to_string(l2error_mn, 15) << " " << XT::Common::to_string(linferror_mn, 15) << " "
                    << mn_time.count() << " " << mn_ret->second.second << std::endl;
     pn_errors_file << dimRange << " " << XT::Common::to_string(l1error_pn, 15) << " "
                    << XT::Common::to_string(l2error_pn, 15) << " " << XT::Common::to_string(linferror_pn, 15) << " "
                    << pn_time.count() << std::endl;
+    std::cout << basis_functions->mn_name() << " done!" << std::endl;
   }
 };
 
