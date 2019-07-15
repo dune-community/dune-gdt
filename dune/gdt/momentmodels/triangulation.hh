@@ -143,21 +143,21 @@ public:
   QuadratureRuleType quadrature_rule(const QuadratureRule<RangeFieldType, 2>& reference_quadrature_rule) const
   {
     QuadratureRuleType quadrature_rule;
+    quadrature_rule.reserve(reference_quadrature_rule.size());
+    const FieldVectorType vertices_1_minus_0 = vertices_[1]->position() - vertices_[0]->position();
+    const FieldVectorType vertices_2_minus_0 = vertices_[2]->position() - vertices_[0]->position();
+    FieldVectorType ff, partial_s_gg, partial_t_gg;
     for (const auto& quad_point : reference_quadrature_rule) {
       const auto& ref_pos = quad_point.position();
       const auto& ref_weight = quad_point.weight();
       // map point to spherical triangle
-      const FieldVectorType vertices_1_minus_0 = vertices_[1]->position() - vertices_[0]->position();
-      const FieldVectorType vertices_2_minus_0 = vertices_[2]->position() - vertices_[0]->position();
-      FieldVectorType ff =
-          FieldVectorType(vertices_[0]->position() + ref_pos[0] * vertices_1_minus_0 + ref_pos[1] * vertices_2_minus_0);
+      ff = vertices_[0]->position() + ref_pos[0] * vertices_1_minus_0 + ref_pos[1] * vertices_2_minus_0;
       const RangeFieldType norm_ff = ff.two_norm();
-      const FieldVectorType pos = ff / norm_ff;
       const RangeFieldType norm_ff_3 = std::pow(norm_ff, 3);
-      const FieldVectorType partial_s_gg = vertices_2_minus_0 / norm_ff - ff * (ff * vertices_2_minus_0) / norm_ff_3;
-      const FieldVectorType partial_t_gg = vertices_1_minus_0 / norm_ff - ff * (ff * vertices_1_minus_0) / norm_ff_3;
+      partial_s_gg = vertices_2_minus_0 / norm_ff - ff * ((ff * vertices_2_minus_0) / norm_ff_3);
+      partial_t_gg = vertices_1_minus_0 / norm_ff - ff * ((ff * vertices_1_minus_0) / norm_ff_3);
       const RangeFieldType weight = XT::Common::cross_product(partial_s_gg, partial_t_gg).two_norm() * ref_weight;
-      quadrature_rule.emplace_back(QuadraturePoint<RangeFieldType, 3>(pos, weight));
+      quadrature_rule.emplace_back(ff / norm_ff, weight);
     }
     return quadrature_rule;
   }
@@ -342,8 +342,7 @@ public:
     for (size_t jj = 0; jj < faces_.size(); ++jj) {
       for (size_t ii = 0; ii < quadrature_faces[jj].size(); ++ii) {
         const auto quad_rule = quadrature_faces[jj][ii]->quadrature_rule(reference_quadrature_rule);
-        for (const auto& quad_point : quad_rule)
-          ret[jj].emplace_back(quad_point);
+        ret[jj].insert(ret[jj].end(), quad_rule.begin(), quad_rule.end());
       }
     }
     return ret;

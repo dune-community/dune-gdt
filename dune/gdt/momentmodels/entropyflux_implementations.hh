@@ -1356,12 +1356,12 @@ public:
   using BlockVectorType = XT::Common::BlockedFieldVector<RangeFieldType, num_blocks, block_size>;
   using VectorType = BlockVectorType;
   using LocalVectorType = typename BlockVectorType::BlockType;
-  using BasisValuesMatrixType = FieldVector<XT::LA::CommonDenseMatrix<RangeFieldType>, num_blocks>;
+  using BasisValuesMatrixType = std::vector<XT::LA::CommonDenseMatrix<RangeFieldType>>;
   using QuadraturePointsType =
-      FieldVector<std::vector<BasisDomainType, boost::alignment::aligned_allocator<BasisDomainType, 64>>, num_blocks>;
+      std::vector<std::vector<BasisDomainType, boost::alignment::aligned_allocator<BasisDomainType, 64>>>;
   using BlockQuadratureWeightsType =
       std::vector<RangeFieldType, boost::alignment::aligned_allocator<RangeFieldType, 64>>;
-  using QuadratureWeightsType = FieldVector<BlockQuadratureWeightsType, num_blocks>;
+  using QuadratureWeightsType = std::vector<BlockQuadratureWeightsType>;
   using AlphaReturnType = std::pair<BlockVectorType, std::pair<DomainType, RangeFieldType>>;
 
   explicit EntropyBasedFluxImplementation(const MomentBasis& basis_functions,
@@ -1375,7 +1375,9 @@ public:
                                           const size_t k_max,
                                           const RangeFieldType epsilon)
     : basis_functions_(basis_functions)
-    , M_(XT::LA::CommonDenseMatrix<RangeFieldType>())
+    , quad_points_(num_blocks)
+    , quad_weights_(num_blocks)
+    , M_(num_blocks, XT::LA::CommonDenseMatrix<RangeFieldType>())
     , tau_(tau)
     , disable_realizability_check_(disable_realizability_check)
     , epsilon_gamma_(epsilon_gamma)
@@ -1504,7 +1506,9 @@ public:
 
     if (!(density > 0. || !(basis_functions_.min_density(u) > 0.)) || std::isinf(density))
       DUNE_THROW(Dune::MathError, "Negative, inf or NaN density!");
-    auto phi = std::make_unique<const BlockVectorType>(rescale ? u / density : u);
+    auto phi = std::make_unique<BlockVectorType>(u);
+    if (rescale)
+      *phi *= 1. / density;
 
     // if value has already been calculated for these values, skip computation
     RangeFieldType tau_prime = rescale ? std::min(tau_
@@ -1514,8 +1518,9 @@ public:
                                        : tau_;
 
     // calculate moment vector for isotropic distribution
-    auto u_iso = std::make_unique<const BlockVectorType>(rescale ? basis_functions_.u_iso()
-                                                                 : basis_functions_.u_iso() * density);
+    auto u_iso = std::make_unique<BlockVectorType>(basis_functions_.u_iso());
+    if (!rescale)
+      *u_iso *= density;
 
     // define further variables
     auto g_k = std::make_unique<BlockVectorType>();
@@ -1543,7 +1548,7 @@ public:
       // calculate T_k u
       auto v_k = std::make_unique<BlockVectorType>(*v);
       // calculate values of basis p = S_k m
-      thread_local BasisValuesMatrixType P_k(XT::LA::CommonDenseMatrix<RangeFieldType>(0, 0, 0., 0));
+      thread_local BasisValuesMatrixType P_k(num_blocks, XT::LA::CommonDenseMatrix<RangeFieldType>(0, 0, 0., 0));
       copy_basis_matrix(M_, P_k);
       // calculate f_0
       RangeFieldType f_k = get_eta_ast_integrated(*beta_in, P_k) - *beta_in * *v_k;
@@ -1973,7 +1978,8 @@ public:
                                                const size_t dd) const
   {
     // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
-    thread_local FieldVector<QuadratureWeightsType, 2> eta_ast_prime_vals;
+    thread_local FieldVector<QuadratureWeightsType, 2> eta_ast_prime_vals{
+        {QuadratureWeightsType(num_blocks), QuadratureWeightsType(num_blocks)}};
     for (size_t jj = 0; jj < num_blocks; ++jj) {
       eta_ast_prime_vals[0][jj].resize(quad_points_[jj].size());
       eta_ast_prime_vals[1][jj].resize(quad_points_[jj].size());
@@ -2064,7 +2070,7 @@ public:
   // temporary vectors to store inner products and exponentials
   QuadratureWeightsType& working_storage() const
   {
-    thread_local QuadratureWeightsType work_vecs;
+    thread_local QuadratureWeightsType work_vecs(num_blocks);
     for (size_t jj = 0; jj < num_blocks; ++jj)
       work_vecs[jj].resize(quad_points_[jj].size());
     return work_vecs;
@@ -2335,19 +2341,18 @@ public:
     , num_faces_(basis_functions_.triangulation().faces().size())
   {
     const auto& triangulation = basis_functions_.triangulation();
-    const auto& vertices = triangulation.vertices();
     const auto& faces = triangulation.faces();
-    assert(vertices.size() == basis_dimRange);
+    assert(triangulation.vertices().size() == basis_dimRange);
     // create pattern
     XT::LA::SparsityPatternDefault pattern(basis_dimRange);
     for (size_t vertex_index = 0; vertex_index < basis_dimRange; ++vertex_index) {
-      const auto& vertex = vertices[vertex_index];
+      const auto& vertex = triangulation.vertices()[vertex_index];
       const auto& adjacent_faces = triangulation.get_face_indices(vertex->position());
       for (const auto& face_index : adjacent_faces) {
-        const auto& face = faces[face_index];
-        assert(face->vertices().size() == 3);
+        const auto& face_vertices = faces[face_index]->vertices();
+        assert(face_vertices.size() == 3);
         for (size_t jj = 0; jj < 3; ++jj)
-          pattern.insert(vertex_index, face->vertices()[jj]->index());
+          pattern.insert(vertex_index, face_vertices[jj]->index());
       }
     }
     pattern.sort();
@@ -2356,13 +2361,16 @@ public:
     const auto& quadratures = basis_functions_.quadratures();
     assert(quadratures.size() == num_faces_);
     for (size_t jj = 0; jj < num_faces_; ++jj) {
-      for (const auto& quad_point : quadratures[jj]) {
-        quad_points_[jj].emplace_back(quad_point.position());
-        quad_weights_[jj].emplace_back(quad_point.weight());
+      quad_points_[jj].resize(quadratures[jj].size());
+      quad_weights_[jj].resize(quadratures[jj].size());
+      for (size_t ll = 0; ll < quadratures[jj].size(); ++ll) {
+        const auto& quad_point = quadratures[jj][ll];
+        quad_points_[jj][ll] = quad_point.position();
+        quad_weights_[jj][ll] = quad_point.weight();
       }
     } // jj
     for (size_t jj = 0; jj < num_faces_; ++jj) {
-      M_[jj] = std::vector<LocalVectorType>(quad_points_[jj].size());
+      M_[jj].resize(quad_points_[jj].size());
       for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll)
         M_[jj][ll] = basis_functions_.evaluate_on_face(quad_points_[jj][ll], jj);
     } // jj

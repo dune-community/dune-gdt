@@ -54,6 +54,7 @@ public:
   using typename BaseType::MatrixType;
   using typename BaseType::QuadraturesType;
   using typename BaseType::RangeType;
+  using typename BaseType::SphericalTriangulationType;
   using typename BaseType::StringifierType;
   static_assert(order <= std::numeric_limits<int>::max(), "");
 
@@ -66,6 +67,12 @@ public:
 
   SphericalHarmonicsMomentBasis(const QuadraturesType& quadratures)
     : BaseType(quadratures)
+  {
+    BaseType::initialize_base_values();
+  }
+
+  SphericalHarmonicsMomentBasis(const SphericalTriangulationType& triangulation, const QuadraturesType& quadratures)
+    : BaseType(triangulation, quadratures)
   {
     BaseType::initialize_base_values();
   }
@@ -276,6 +283,15 @@ private:
   };
 }; // class SphericalHarmonicsMomentBasis<DomainFieldType, 3, ...>
 
+template <class DomainFieldType,
+          class RangeFieldType,
+          size_t order,
+          size_t fluxDim,
+          bool only_positive,
+          EntropyType entropy>
+const size_t SphericalHarmonicsMomentBasis<DomainFieldType, RangeFieldType, order, fluxDim, only_positive, entropy>::
+    num_refinements;
+
 
 template <class DomainFieldType,
           class RangeFieldType,
@@ -308,6 +324,7 @@ public:
   using typename BaseType::MatrixType;
   using typename BaseType::QuadraturesType;
   using typename BaseType::RangeType;
+  using typename BaseType::SphericalTriangulationType;
   using typename BaseType::StringifierType;
 
   static size_t default_quad_order()
@@ -319,6 +336,12 @@ public:
 
   RealSphericalHarmonicsMomentBasis(const QuadraturesType& quadratures)
     : BaseType(quadratures)
+  {
+    BaseType::initialize_base_values();
+  }
+
+  RealSphericalHarmonicsMomentBasis(const SphericalTriangulationType& triangulation, const QuadraturesType& quadratures)
+    : BaseType(triangulation, quadratures)
   {
     BaseType::initialize_base_values();
   }
@@ -583,6 +606,15 @@ private:
 
   using BaseType::quadratures_;
 }; // class RealSphericalHarmonicsMomentBasis<DomainFieldType, 3, ...>
+
+template <class DomainFieldType,
+          class RangeFieldType,
+          size_t order,
+          size_t fluxDim,
+          bool only_even,
+          EntropyType entropy>
+const size_t RealSphericalHarmonicsMomentBasis<DomainFieldType, RangeFieldType, order, fluxDim, only_even, entropy>::
+    num_refinements;
 
 
 } // namespace GDT

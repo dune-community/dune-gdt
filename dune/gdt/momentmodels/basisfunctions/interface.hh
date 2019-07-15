@@ -189,12 +189,19 @@ public:
   }
 
   MomentBasisInterface(const QuadraturesType& quadratures = QuadraturesType())
-    : quadratures_(quadratures)
+    : triangulation_(stored_triangulation_)
+    , quadratures_(quadratures)
   {}
 
   MomentBasisInterface(const size_t refinements, const QuadraturesType& quadratures = QuadraturesType())
-    : quadratures_(quadratures)
-    , triangulation_(refinements)
+    : stored_triangulation_(refinements)
+    , triangulation_(stored_triangulation_)
+    , quadratures_(quadratures)
+  {}
+
+  MomentBasisInterface(const SphericalTriangulationType& triangulation, const QuadraturesType& quadratures)
+    : triangulation_(triangulation)
+    , quadratures_(quadratures)
   {}
 
   virtual ~MomentBasisInterface() {}
@@ -522,7 +529,7 @@ protected:
     }
   } // void calculate_in_thread(...)
 
-  DynamicRangeType integrated_initializer(const QuadraturesType& quadratures) const
+  virtual DynamicRangeType integrated_initializer(const QuadraturesType& quadratures) const
   {
     size_t num_threads =
         std::min(XT::Common::threadManager().max_threads(), XT::Data::merged_quadrature(quadratures).size());
@@ -545,9 +552,9 @@ protected:
     return ret;
   }
 
-  void integrated_initializer_thread(DynamicRangeType& local_range,
-                                     const std::vector<MergedQuadratureIterator>& decomposition,
-                                     const size_t ii) const
+  virtual void integrated_initializer_thread(DynamicRangeType& local_range,
+                                             const std::vector<MergedQuadratureIterator>& decomposition,
+                                             const size_t ii) const
   {
     for (auto it = decomposition[ii]; it != decomposition[ii + 1]; ++it) {
       const auto& quad_point = *it;
@@ -557,8 +564,9 @@ protected:
     } // jj
   } // void calculate_in_thread(...)
 
+  SphericalTriangulationType stored_triangulation_;
+  const SphericalTriangulationType& triangulation_;
   QuadraturesType quadratures_;
-  SphericalTriangulationType triangulation_;
   DynamicRangeType integrated_;
   DynamicRangeType u_iso_;
 };

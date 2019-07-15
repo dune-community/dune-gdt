@@ -61,6 +61,7 @@ public:
   using typename BaseType::MatrixType;
   using typename BaseType::QuadraturesType;
   using typename BaseType::RangeType;
+  using typename BaseType::SphericalTriangulationType;
   using typename BaseType::StringifierType;
   using typename BaseType::VisualizerType;
   using PartitioningType = typename BaseType::Partitioning1dType;
@@ -84,6 +85,10 @@ public:
   {
     BaseType::initialize_base_values();
   }
+
+  HatFunctionMomentBasis(const SphericalTriangulationType& /*triangulation*/, const QuadraturesType& quadratures)
+    : HatFunctionMomentBasis(quadratures)
+  {}
 
   HatFunctionMomentBasis(const size_t quad_order = default_quad_order(),
                          const size_t quad_refinements = default_quad_refinements())
@@ -359,10 +364,11 @@ private:
   using ThisType = HatFunctionMomentBasis;
 
 public:
-  using TriangulationType = SphericalTriangulation<DomainFieldType>;
+  using TriangulationType = typename BaseType::SphericalTriangulationType;
   using typename BaseType::DomainType;
   using typename BaseType::DynamicRangeType;
   using typename BaseType::MatrixType;
+  using typename BaseType::MergedQuadratureIterator;
   using typename BaseType::QuadraturesType;
   using typename BaseType::RangeType;
   using typename BaseType::StringifierType;
@@ -370,6 +376,7 @@ public:
   using LocalMatrixType = XT::Common::FieldMatrix<RangeFieldType, 3, 3>;
 
   using BaseType::barycentre_rule;
+  using BaseType::is_negative;
 
   static size_t default_quad_order()
   {
@@ -380,6 +387,13 @@ public:
 
   HatFunctionMomentBasis(const QuadraturesType& quadratures)
     : BaseType(refinements, quadratures)
+  {
+    assert(triangulation_.vertices().size() == dimRange);
+    BaseType::initialize_base_values();
+  }
+
+  HatFunctionMomentBasis(const TriangulationType& triangulation, const QuadraturesType& quadratures)
+    : BaseType(triangulation, quadratures)
   {
     assert(triangulation_.vertices().size() == dimRange);
     BaseType::initialize_base_values();
@@ -548,6 +562,24 @@ public:
         u[ii] = u_iso_min[ii];
   }
 
+  virtual DynamicRangeType
+  get_moment_vector(const std::function<RangeFieldType(DomainType, bool)>& psi) const override final
+  {
+    DynamicRangeType ret(dimRange, 0.);
+    const auto merged_quads = XT::Data::merged_quadrature(quadratures_);
+    for (auto it = merged_quads.begin(); it != merged_quads.end(); ++it) {
+      const auto face_index = it.first_index();
+      const auto& vertices = triangulation_.faces()[face_index]->vertices();
+      const auto& quad_point = *it;
+      const auto& v = quad_point.position();
+      const auto val = evaluate_on_face(v, face_index);
+      const auto factor = psi(v, is_negative(it)) * quad_point.weight();
+      for (size_t ii = 0; ii < 3; ++ii)
+        ret[vertices[ii]->index()] += val[ii] * factor;
+    }
+    return ret;
+  }
+
 protected:
   template <class VertexVectorType>
   bool calculate_barycentric_coordinates(const DomainType& v, const VertexVectorType& vertices, DomainType& ret) const
@@ -686,12 +718,32 @@ protected:
     } // faces
   } // void calculate_in_thread(...)
 
+  virtual void integrated_initializer_thread(DynamicRangeType& local_range,
+                                             const std::vector<MergedQuadratureIterator>& decomposition,
+                                             const size_t ii) const override final
+  {
+    const auto& faces = triangulation_.faces();
+    for (auto it = decomposition[ii]; it != decomposition[ii + 1]; ++it) {
+      const auto face_index = it.first_index();
+      const auto& vertices = faces[face_index]->vertices();
+      const auto& quad_point = *it;
+      DomainType basis_evaluated = evaluate_on_face(quad_point.position(), face_index);
+      basis_evaluated *= quad_point.weight();
+      for (size_t nn = 0; nn < 3; ++nn)
+        local_range[vertices[nn]->index()] += basis_evaluated[nn];
+    } // jj
+  } // void calculate_in_thread(...)
+
   using BaseType::quadratures_;
   using BaseType::triangulation_;
 }; // class HatFunctionMomentBasis<DomainFieldType, 3, ...>
 
 template <class DomainFieldType, class RangeFieldType, size_t rangeDim, size_t fluxDim, EntropyType entropy>
 constexpr size_t HatFunctionMomentBasis<DomainFieldType, 3, RangeFieldType, rangeDim, 1, fluxDim, entropy>::dimRange;
+
+template <class DomainFieldType, class RangeFieldType, size_t rangeDim, size_t fluxDim, EntropyType entropy>
+constexpr size_t
+    HatFunctionMomentBasis<DomainFieldType, 3, RangeFieldType, rangeDim, 1, fluxDim, entropy>::num_refinements;
 
 
 } // namespace GDT

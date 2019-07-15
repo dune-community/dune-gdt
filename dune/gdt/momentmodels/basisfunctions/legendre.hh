@@ -38,6 +38,7 @@ public:
   using typename BaseType::MatrixType;
   using typename BaseType::QuadraturesType;
   using typename BaseType::RangeType;
+  using typename BaseType::SphericalTriangulationType;
   using typename BaseType::StringifierType;
 
   LegendreMomentBasis(const QuadraturesType& quadratures)
@@ -45,6 +46,10 @@ public:
   {
     BaseType::initialize_base_values();
   }
+
+  LegendreMomentBasis(const SphericalTriangulationType& /*triangulation*/, const QuadraturesType& quadratures)
+    : LegendreMomentBasis(quadratures)
+  {}
 
   static size_t default_quad_order()
   {

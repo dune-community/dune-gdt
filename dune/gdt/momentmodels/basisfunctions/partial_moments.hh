@@ -68,8 +68,10 @@ public:
   using typename BaseType::MatrixType;
   using typename BaseType::QuadraturesType;
   using typename BaseType::RangeType;
+  using typename BaseType::SphericalTriangulationType;
   using typename BaseType::StringifierType;
   using typename BaseType::VisualizerType;
+  using LocalVectorType = FieldVector<RangeFieldType, 2>;
   using PartitioningType = typename BaseType::Partitioning1dType;
 
   static std::string static_id()
@@ -91,6 +93,10 @@ public:
     BaseType::initialize_base_values();
   }
 
+  PartialMomentBasis(const SphericalTriangulationType& /*triangulation*/, const QuadraturesType& quadratures)
+    : PartialMomentBasis(quadratures)
+  {}
+
   PartialMomentBasis(const size_t quad_order = default_quad_order(),
                      const size_t quad_refinements = default_quad_refinements())
     : BaseType(BaseType::gauss_lobatto_quadratures(num_intervals, quad_order, quad_refinements))
@@ -101,36 +107,29 @@ public:
 
   virtual DynamicRangeType evaluate(const DomainType& v) const override final
   {
-    size_t dummy;
-    return evaluate(v, false, dummy);
+    for (size_t ii = 0; ii < num_intervals; ++ii)
+      if (XT::Common::FloatCmp::ge(v[0], partitioning_[ii]) && XT::Common::FloatCmp::le(v[0], partitioning_[ii + 1]))
+        return evaluate(v, ii);
   } // ... evaluate(...)
 
   // evaluate on interval ii
   virtual DynamicRangeType evaluate(const DomainType& v, const size_t ii) const override final
   {
     DynamicRangeType ret(dimRange, 0);
-    ret[2 * ii] = 1;
-    ret[2 * ii + 1] = v[0];
+    const auto local_ret = evaluate_on_interval(v, ii);
+    ret[2 * ii] = local_ret[0];
+    ret[2 * ii + 1] = local_ret[1];
     return ret;
   } // ... evaluate(...)
 
-  virtual DynamicRangeType evaluate(const DomainType& v, bool split_boundary, size_t& /*num_faces*/) const
+  LocalVectorType evaluate_on_interval(const DomainType& v, const size_t /*ii*/) const
   {
-    DynamicRangeType ret(dimRange, 0);
-    bool boundary = false;
-    for (size_t ii = 0; ii < num_intervals; ++ii) {
-      if (XT::Common::FloatCmp::eq(v[0], partitioning_[ii]))
-        boundary = true;
-      if (XT::Common::FloatCmp::ge(v[0], partitioning_[ii]) && XT::Common::FloatCmp::le(v[0], partitioning_[ii + 1])) {
-        ret[2 * ii] = 1;
-        ret[2 * ii + 1] = v[0];
-      }
-    }
-    if (XT::Common::FloatCmp::eq(v[0], partitioning_[num_intervals]))
-      boundary = true;
-    if (split_boundary && boundary)
-      ret /= 2.;
-    return ret;
+    return LocalVectorType{{1, v[0]}};
+  } // ... evaluate(...)
+
+  LocalVectorType evaluate_on_face(const DomainType& v, const size_t ii) const
+  {
+    return evaluate_on_interval(v, ii);
   } // ... evaluate(...)
 
   virtual DynamicRangeType integrated() const override final
@@ -397,7 +396,7 @@ private:
   using ThisType = PartialMomentBasis;
 
 public:
-  using TriangulationType = SphericalTriangulation<DomainFieldType>;
+  using TriangulationType = typename BaseType::SphericalTriangulationType;
   using typename BaseType::DomainType;
   using typename BaseType::DynamicRangeType;
   using typename BaseType::MatrixType;
@@ -437,6 +436,13 @@ public:
     BaseType::initialize_base_values();
   }
 
+  PartialMomentBasis(const TriangulationType& triangulation, const QuadraturesType& quadratures)
+    : BaseType(triangulation, quadratures)
+  {
+    assert(4 * triangulation_.faces().size() == dimRange);
+    BaseType::initialize_base_values();
+  }
+
   PartialMomentBasis(const size_t quad_order = default_quad_order(),
                      const size_t quad_refinements = default_quad_refinements())
     : BaseType(refinements)
@@ -450,8 +456,13 @@ public:
 
   virtual DynamicRangeType evaluate(const DomainType& v) const override final
   {
-    size_t dummy;
-    return evaluate(v, true, dummy);
+    DynamicRangeType ret(dimRange, 0);
+    const auto face_indices = triangulation_.get_face_indices(v);
+    if (face_indices.size() != 1)
+      DUNE_THROW(Dune::MathError,
+                 "Either v is not on the unit sphere or on a boundary between triangles where pointwise evaluation is "
+                 "not defined for this basis!");
+    return evaluate(v, face_indices[0]);
   } // ... evaluate(...)
 
   // evaluate on spherical triangle face_index
@@ -466,30 +477,12 @@ public:
   } // ... evaluate(...)
 
   // evaluate on spherical triangle face_index
-  virtual LocalVectorType evaluate_on_face(const DomainType& v, const size_t /*face_index*/) const
+  LocalVectorType evaluate_on_face(const DomainType& v, const size_t /*face_index*/) const
   {
     LocalVectorType ret;
     ret[0] = 1.;
     for (size_t ii = 1; ii < 4; ++ii)
       ret[ii] = v[ii - 1];
-    return ret;
-  } // ... evaluate(...)
-
-  virtual DynamicRangeType evaluate(const DomainType& v, bool split_boundary, size_t& num_faces) const
-  {
-    DynamicRangeType ret(dimRange, 0);
-    const auto face_indices = triangulation_.get_face_indices(v);
-    num_faces = face_indices.size();
-    assert(num_faces);
-    for (const auto& face_index : face_indices) {
-      ret[4 * face_index] = 1.;
-      for (size_t ii = 1; ii < 4; ++ii) {
-        assert(4 * face_index + ii < ret.size());
-        ret[4 * face_index + ii] = v[ii - 1];
-      }
-    } // face_indices
-    if (split_boundary)
-      ret /= RangeFieldType(num_faces);
     return ret;
   } // ... evaluate(...)
 
@@ -832,6 +825,10 @@ constexpr size_t PartialMomentBasis<DomainFieldType, 3, RangeFieldType, refineme
 template <class DomainFieldType, class RangeFieldType, size_t refinements, size_t dimFlux, EntropyType entropy>
 constexpr size_t
     PartialMomentBasis<DomainFieldType, 3, RangeFieldType, refinements, 1, dimFlux, 1, entropy>::num_blocks;
+
+template <class DomainFieldType, class RangeFieldType, size_t refinements, size_t dimFlux, EntropyType entropy>
+constexpr size_t
+    PartialMomentBasis<DomainFieldType, 3, RangeFieldType, refinements, 1, dimFlux, 1, entropy>::num_refinements;
 
 
 } // namespace GDT
