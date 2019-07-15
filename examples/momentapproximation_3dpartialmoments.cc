@@ -18,8 +18,8 @@
 
 #include <dune/xt/grid/grids.hh>
 
-#include <dune/gdt/momentmodels/moment-approximation.hh>
-#include <dune/gdt/momentmodels/basisfunctions.hh>
+#include <dune/gdt/test/momentmodels/moment-approximation.hh>
+#include <dune/gdt/test/momentmodels/basisfunctions.hh>
 
 
 template <int refinement, Dune::GDT::EntropyType entropy>
