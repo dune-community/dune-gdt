@@ -110,6 +110,8 @@ public:
     for (size_t ii = 0; ii < num_intervals; ++ii)
       if (XT::Common::FloatCmp::ge(v[0], partitioning_[ii]) && XT::Common::FloatCmp::le(v[0], partitioning_[ii + 1]))
         return evaluate(v, ii);
+    DUNE_THROW(Dune::MathError, "v has to be between -1 and 1!");
+    return DynamicRangeType();
   } // ... evaluate(...)
 
   // evaluate on interval ii

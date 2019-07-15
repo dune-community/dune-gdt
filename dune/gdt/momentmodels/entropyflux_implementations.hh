@@ -1946,6 +1946,7 @@ public:
       QuadratureWeightsType& boundary_distribution_evaluations,
       const std::function<RangeFieldType(const FluxDomainType&)>& boundary_distribution) const
   {
+    boundary_distribution_evaluations.resize(num_blocks);
     for (size_t jj = 0; jj < num_blocks; ++jj) {
       boundary_distribution_evaluations[jj].resize(quad_points_[jj].size());
       for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll)
@@ -2119,6 +2120,7 @@ public:
                                  const BasisValuesMatrixType& M,
                                  QuadratureWeightsType& scalar_products) const
   {
+    scalar_products.resize(num_blocks);
     for (size_t jj = 0; jj < num_blocks; ++jj) {
       scalar_products[jj].resize(quad_weights_[jj].size());
       calculate_scalar_products_block(jj, beta_in.block(jj), M[jj], scalar_products[jj]);
