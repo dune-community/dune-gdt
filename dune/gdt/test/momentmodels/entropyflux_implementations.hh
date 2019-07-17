@@ -1040,6 +1040,7 @@ public:
         first_error_cond = g_alpha_tilde.two_norm();
         second_error_cond = std::exp(
             -(rescale ? d_alpha_tilde.one_norm() + std::abs(std::log(density_tilde)) : d_alpha_tilde.one_norm()));
+        // working_storage contains eta_ast_prime evaluations due to the calculate_u call above
         const auto& eta_ast_prime_vals = working_storage();
         if (first_error_cond < tau_prime && 1 - epsilon_gamma_ < second_error_cond
             && (entropy == EntropyType::MaxwellBoltzmann || all_positive(eta_ast_prime_vals))
@@ -1260,6 +1261,11 @@ public:
 
         first_error_cond = g_k.two_norm();
         second_error_cond = std::exp(-(rescale ? d_k.one_norm() + std::abs(std::log(density_tilde)) : d_k.one_norm()));
+        auto& eta_ast_prime_vals = working_storage();
+        // if rescale is true, working storage already contains the eta_ast_prime evaluations due to the call to
+        // calculate_u above
+        if (!rescale)
+          evaluate_eta_ast_prime(eta_ast_prime_vals);
         if (first_error_cond < tau_prime && 1 - epsilon_gamma_ < second_error_cond
             && (entropy == EntropyType::MaxwellBoltzmann || all_positive(eta_ast_prime_vals))
             && (disable_realizability_check_
@@ -1302,8 +1308,10 @@ public:
   using BaseType::all_positive;
   using BaseType::calculate_hessian;
   using BaseType::calculate_u;
+  using BaseType::evaluate_eta_ast_prime;
   using BaseType::get_eta_ast_integrated;
   using BaseType::get_isotropic_alpha;
+  using BaseType::working_storage;
 
   using BaseType::basis_functions_;
   using BaseType::chi_;
@@ -4113,7 +4121,9 @@ public:
         }
         auto u_eps_diff = v - u_alpha_prime * (1 - epsilon_gamma_);
         auto& eta_ast_prime_vals = working_storage();
-        if (entropy == EntropyType::MaxwellBoltzmann)
+        // if rescale is true, working storage already contains the eta_ast_prime evaluations due to the call to
+        // calculate_u above
+        if (!rescale)
           evaluate_eta_ast_prime(eta_ast_prime_vals);
         // checking realizability is cheap so we do not need the second stopping criterion
         if (g_k.two_norm() < tau_prime && is_realizable(u_eps_diff)

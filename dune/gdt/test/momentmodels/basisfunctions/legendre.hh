@@ -28,6 +28,7 @@ class LegendreMomentBasis
 public:
   static const size_t dimDomain = 1;
   static const size_t dimRange = order + 1;
+  static const size_t num_intervals = size_t(-1);
 
 private:
   typedef MomentBasisInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols, 1, entropy> BaseType;
