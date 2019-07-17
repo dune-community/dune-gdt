@@ -20,8 +20,8 @@
 
 #include <dune/xt/grid/grids.hh>
 
-#include <dune/gdt/momentmodels/basisfunctions.hh>
-#include <dune/gdt/test/mn-discretization.hh>
+#include <dune/gdt/test/momentmodels/basisfunctions.hh>
+#include <dune/gdt/test/momentmodels/mn-discretization.hh>
 #include <dune/gdt/test/momentmodels/kinetictransport/testcases.hh>
 
 int main(int argc, char** argv)
