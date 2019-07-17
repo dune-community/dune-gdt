@@ -23,7 +23,7 @@
 template <int momentOrder, Dune::GDT::EntropyType entropy>
 struct moment_approximation_helper
 {
-  static void run(const std::string testcasename, const std::string filename)
+  static void run(const int min_quad_intervals, const std::string testcasename, const std::string filename)
   {
     using namespace Dune;
     using namespace Dune::GDT;
@@ -36,15 +36,16 @@ struct moment_approximation_helper
     using DiscreteFunctionType = DiscreteFunction<VectorType, GridViewType>;
 
     auto test = std::make_unique<MomentApproximation<MomentBasisType, DiscreteFunctionType>>();
-    test->run(MomentBasisType::num_intervals, testcasename, filename);
-    moment_approximation_helper<momentOrder - 2, entropy>::run(testcasename, filename);
+    test->run(min_quad_intervals, testcasename, filename);
+    moment_approximation_helper<momentOrder - 2, entropy>::run(min_quad_intervals, testcasename, filename);
   }
 };
 
 template <Dune::GDT::EntropyType entropy>
 struct moment_approximation_helper<0, entropy>
 {
-  static void run(const std::string /*testcasename*/, const std::string /*filename*/) {}
+  static void run(const int /*min_quad_intervals*/, const std::string /*testcasename*/, const std::string /*filename*/)
+  {}
 };
 
 
@@ -68,7 +69,9 @@ int main(int argc, char** argv)
   }
 
   static constexpr int max_number_of_moments = 50;
+  static constexpr int min_quad_intervals = 50;
   static_assert(!(max_number_of_moments % 2), "Maximal number of moments has to be even!");
   static constexpr EntropyType entropy = EntropyType::MaxwellBoltzmann;
-  moment_approximation_helper<max_number_of_moments, entropy>::run(testcasename, testcasename);
+  // static constexpr EntropyType entropy = EntropyType::BoseEinstein;
+  moment_approximation_helper<max_number_of_moments, entropy>::run(min_quad_intervals, testcasename, testcasename);
 }

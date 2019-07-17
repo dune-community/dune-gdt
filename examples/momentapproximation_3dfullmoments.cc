@@ -11,6 +11,7 @@
 
 #define HAVE_QHULL 0
 #define HAVE_CLP 0
+#define ENTROPY_FLUX_UNSPECIALIZED_USE_ADAPTIVE_CHANGE_OF_BASIS 0
 
 #include <dune/common/parallel/mpihelper.hh>
 
