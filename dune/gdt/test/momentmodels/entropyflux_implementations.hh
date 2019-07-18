@@ -1265,7 +1265,7 @@ public:
         // if rescale is true, working storage already contains the eta_ast_prime evaluations due to the call to
         // calculate_u above
         if (!rescale)
-          evaluate_eta_ast_prime(eta_ast_prime_vals);
+          evaluate_eta_ast_prime(alpha_prime, M_, eta_ast_prime_vals);
         if (first_error_cond < tau_prime && 1 - epsilon_gamma_ < second_error_cond
             && (entropy == EntropyType::MaxwellBoltzmann || all_positive(eta_ast_prime_vals))
             && (disable_realizability_check_
@@ -4124,7 +4124,7 @@ public:
         // if rescale is true, working storage already contains the eta_ast_prime evaluations due to the call to
         // calculate_u above
         if (!rescale)
-          evaluate_eta_ast_prime(eta_ast_prime_vals);
+          evaluate_eta_ast_prime(alpha_prime, eta_ast_prime_vals);
         // checking realizability is cheap so we do not need the second stopping criterion
         if (g_k.two_norm() < tau_prime && is_realizable(u_eps_diff)
             && (entropy == EntropyType::MaxwellBoltzmann || all_positive(eta_ast_prime_vals))) {

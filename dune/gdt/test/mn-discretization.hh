@@ -239,7 +239,7 @@ struct HyperbolicMnTest
   : public HyperbolicMnDiscretization<TestCaseType>
   , public ::testing::Test
 {
-  void run()
+  void run(const double tol = TestCaseType::ExpectedResultsType::tol)
   {
     auto norms = HyperbolicMnDiscretization<TestCaseType>::run(
                      1,
@@ -256,9 +256,9 @@ struct HyperbolicMnTest
     const double l2norm = norms[1];
     const double linfnorm = norms[2];
     using ResultsType = typename TestCaseType::ExpectedResultsType;
-    EXPECT_NEAR(ResultsType::l1norm, l1norm, ResultsType::l1norm * ResultsType::tol);
-    EXPECT_NEAR(ResultsType::l2norm, l2norm, ResultsType::l2norm * ResultsType::tol);
-    EXPECT_NEAR(ResultsType::linfnorm, linfnorm, ResultsType::linfnorm * ResultsType::tol);
+    EXPECT_NEAR(ResultsType::l1norm, l1norm, ResultsType::l1norm * tol);
+    EXPECT_NEAR(ResultsType::l2norm, l2norm, ResultsType::l2norm * tol);
+    EXPECT_NEAR(ResultsType::linfnorm, linfnorm, ResultsType::linfnorm * tol);
   }
 };
 

@@ -8,8 +8,6 @@
 // This one has to come first (includes the config.h)!
 #include <dune/xt/common/test/main.hxx>
 
-#define USE_LP_POSITIVITY_LIMITER 1
-
 #include <dune/gdt/test/momentmodels/kinetictransport/testcases.hh>
 #include <dune/gdt/test/entropic-coords-mn-discretization.hh>
 
