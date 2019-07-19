@@ -119,6 +119,7 @@ static void write_files(const bool visualize,
                         const VecDiscreteFunc& P,
                         const VecDiscreteFunc& Pnat,
                         const DiscreteFunc& phi,
+                        const DiscreteFunc& phi_zero,
                         const DiscreteFunc& phinat,
                         const DiscreteFunc& mu,
                         const std::string& prefix,
@@ -132,6 +133,7 @@ static void write_files(const bool visualize,
     P.visualize(prefix + "_" + P.name() + postfix);
     Pnat.visualize(prefix + "_" + Pnat.name() + postfix);
     phi.visualize(prefix + "_" + phi.name() + postfix);
+    phi_zero.visualize(prefix + "_" + phi_zero.name() + postfix);
     phinat.visualize(prefix + "_" + phinat.name() + postfix);
     mu.visualize(prefix + "_" + mu.name() + postfix);
   }
@@ -140,6 +142,7 @@ static void write_files(const bool visualize,
   write_to_textfile(P, prefix, step, t);
   write_to_textfile(Pnat, prefix, step, t);
   write_to_textfile(phi, prefix, step, t);
+  write_to_textfile(phi_zero, prefix, step, t);
   write_to_textfile(phinat, prefix, step, t);
   write_to_textfile(mu, prefix, step, t);
 }
@@ -155,6 +158,7 @@ void solve_navier_stokes(VecDiscreteFunc& u,
                          const double Re,
                          const double Fa,
                          const double xi,
+                         const double vol_domain,
                          const XT::Grid::BoundaryInfo<PI>& boundary_info)
 {
   if (Re > 1e-10)
@@ -275,17 +279,16 @@ void solve_navier_stokes(VecDiscreteFunc& u,
 
   // now solve the system
   XT::LA::SaddlePointSolver<double> solver(A, B, B, C);
-  // solve both by direct solver and by schurcomplement (where the schur complement is inverted by CG and the inner
+  // solve by schurcomplement (where the schur complement is inverted by CG and the inner
   // solves with A are using a direct method)
   std::string type = "cg_direct_schurcomplement";
   solver.apply(f_vector, g_vector, u.dofs().vector(), p.dofs().vector(), type);
 
-  // ensure int_\Omega p = 0
+  // ensure int_\Omega p = 0 (TODO: remove, not necessary as p is not used anywhere)
   auto p_integral = p_basis_integrated_vector * p.dofs().vector();
   auto p_correction = make_discrete_function<VectorType>(p_space, "p_corr");
-  auto vol_domain = 4.;
   XT::Functions::ConstantGridFunction<E> const_p_integral_func(p_integral / vol_domain);
-  interpolate(const_p_integral_func, p_correction);
+  default_interpolation(const_p_integral_func, p_correction);
   p -= p_correction;
 }
 
@@ -523,7 +526,7 @@ void solve_pfield(const VecDiscreteFunc& u,
       [&phi_zero_local, &g_D_local, epsilon](const DomainType& x_local, const XT::Common::Parameter& param) {
         const auto phi_zero_n = phi_zero_local->evaluate(x_local, param);
         const auto g_D = g_D_local->evaluate(x_local, param);
-        return 1. / epsilon * (phi_zero_n * phi_zero_n + 6. * g_D * phi_zero_n + 3. * g_D * g_D - 1);
+        return 1. / epsilon * (3. * phi_zero_n * phi_zero_n + 6. * g_D * phi_zero_n + 3. * g_D * g_D - 1);
       });
   S_00_operator.append(LocalElementIntegralBilinearForm<E, 1>(LocalElementProductIntegrand<E, 1>(A_prefactor)));
   S_00_operator.append(LocalElementIntegralBilinearForm<E, 1>(LocalEllipticIntegrand<E, 1>(epsilon)));
@@ -618,6 +621,8 @@ void solve_pfield(const VecDiscreteFunc& u,
       });
   f_functional.append(LocalElementIntegralFunctional<E, 1>(
       local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E, 1>(), f_pf)));
+  f_functional.append(LocalElementIntegralFunctional<E, 1>(
+      local_binary_to_unary_element_integrand(LocalEllipticIntegrand<E, 1>(-epsilon), g_D)));
   S_00_operator.append(f_functional);
 
   using RangeFieldType = typename XT::Functions::GenericGridFunction<E, 1>::RangeFieldType;
@@ -679,7 +684,8 @@ void solve_pfield(const VecDiscreteFunc& u,
   }
 
   // solve system
-  g_vector -= M * phi_zero.dofs().vector();
+  g_vector *= dt;
+  g_vector += M * phi_zero.dofs().vector();
   auto ret = XT::LA::solve(S, rhs_vector);
 
   // copy to vectors
@@ -742,12 +748,14 @@ int main(int argc, char* argv[])
 
     // output
     std::string filename = config.get("output.filename", "drosophila");
-    double write_step = config.template get<double>("output.write_step", 0.01);
+    // a negative value of write step is interpreted as "write all steps"
+    double write_step = config.template get<double>("output.write_step", -1.);
 
     // create grid for [0, 160] x [0, 40] with periodic boundaries in x-direction
-    FieldVector<double, d> upper_right{160., 40.};
-    auto grid = XT::Grid::make_cube_grid<G>(
-        /*lower_left=*/{0., 0.}, upper_right, /*num_elements=*/{num_elements_x, num_elements_y});
+    FieldVector<double, d> lower_left{{0., 0.}};
+    FieldVector<double, d> upper_right{{160., 40.}};
+    auto grid = XT::Grid::make_cube_grid<G>(lower_left, upper_right, /*num_elements=*/{num_elements_x, num_elements_y});
+    const double vol_domain = (upper_right[0] - lower_left[0]) * (upper_right[1] - lower_left[1]);
     auto nonperiodic_grid_view = grid.leaf_view();
     std::bitset<d> periodic_directions(periodic_dirs);
     PGV grid_view(nonperiodic_grid_view, periodic_directions);
@@ -796,7 +804,7 @@ int main(int argc, char* argv[])
     FieldVector<double, d> center{upper_right[0] / 2, upper_right[1] / 2};
     auto r = [center](const auto& xr) { return 5.0 - (center - xr).two_norm(); };
     const XT::Functions::GenericFunction<d> phi_initial(
-        10,
+        50,
         /*evaluate=*/
         [r, epsilon](const auto& x, const auto& /*param*/) { return std::tanh(r(x) / (std::sqrt(2) * epsilon)); },
         /*name=*/"phi_initial");
@@ -818,10 +826,10 @@ int main(int argc, char* argv[])
     const XT::Functions::ConstantFunction<d> minus_one(-1.);
 
     // interpolate initial and boundary values
-    interpolate(phi_initial, phi);
-    interpolate(P_initial, P);
+    default_interpolation(phi_initial, phi);
+    default_interpolation(P_initial, P);
     XT::Grid::AllDirichletBoundaryInfo<PI> all_dirichlet_boundary_info;
-    interpolate(minus_one, g_D_phi, all_dirichlet_boundary_info, XT::Grid::DirichletBoundary{});
+    boundary_interpolation(minus_one, g_D_phi, all_dirichlet_boundary_info, XT::Grid::DirichletBoundary{});
     phi_zero.dofs().vector() = phi.dofs().vector();
     phi_zero -= g_D_phi;
 
@@ -832,7 +840,7 @@ int main(int argc, char* argv[])
     size_t save_step_counter = 1;
 
     // save/visualize initial solution
-    write_files(true, u, p, P, Pnat, phi, phinat, mu, filename, 0, t);
+    write_files(true, u, p, P, Pnat, phi, phi_zero, phinat, mu, filename, 0, t);
 
     while (Dune::XT::Common::FloatCmp::lt(t, t_end)) {
       double max_dt = dt;
@@ -843,7 +851,7 @@ int main(int argc, char* argv[])
 
       // do a timestep
       std::cout << "Current time: " << t << std::endl;
-      solve_navier_stokes(u, p, P, Pnat, phi, phinat, mu, Re, Fa, xi, dirichlet_boundary_info);
+      solve_navier_stokes(u, p, P, Pnat, phi, phinat, mu, Re, Fa, xi, vol_domain, dirichlet_boundary_info);
       std::cout << "Stokes done" << std::endl;
       solve_ofield(u, P, Pnat, phi, xi, kappa, c_1, Pa, beta, dt);
       std::cout << "Ofield done" << std::endl;
@@ -854,8 +862,8 @@ int main(int argc, char* argv[])
       t += actual_dt;
 
       // check if data should be written in this timestep (and write)
-      if (Dune::XT::Common::FloatCmp::ge(t, next_save_time)) {
-        write_files(true, u, p, P, Pnat, phi, phinat, mu, filename, save_step_counter, t);
+      if (write_step < 0. || Dune::XT::Common::FloatCmp::ge(t, next_save_time)) {
+        write_files(true, u, p, P, Pnat, phi, phi_zero, phinat, mu, filename, save_step_counter, t);
         next_save_time += write_step;
         ++save_step_counter;
       }
