@@ -8,15 +8,24 @@ variables:
 
 unstable_gcc:
   extends: .jobtpl
+  tags:
+    - long execution time
+    - docker-in-docker
   variables:
     DOCKER_TAG: debian-unstable_gcc_full
 
 gcc:
   extends: .jobtpl
+  tags:
+    - long execution time
+    - docker-in-docker
   variables:
     DOCKER_TAG: debian_gcc_full
 
 clang:
   extends: .jobtpl
+  tags:
+    - long execution time
+    - docker-in-docker
   variables:
     DOCKER_TAG: debian_clang_full
