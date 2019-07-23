@@ -229,7 +229,7 @@ public:
     // calculate A_{ij} as \int \nabla v_i \nabla v_j
     A_operator.append(LocalElementIntegralBilinearForm<E, d>(
         LocalEllipticIntegrand<E, d>(problem_.diffusion_factor(), problem_.diffusion_tensor())));
-    // calculate B_{ij} as \int \nabla p_i div(v_j)
+    // calculate B_{ij} as \int -\nabla p_i div(v_j)
     B_operator.append(LocalElementIntegralBilinearForm<E, d, 1, RangeField, RangeField, 1>(
         LocalElementAnsatzValueTestDivProductIntegrand<E>(-1.)));
     // calculate rhs f as \int ff v and the integrated pressure space basis \int q_i

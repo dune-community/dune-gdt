@@ -54,8 +54,9 @@ public:
     , inducing_function_(new XT::Functions::FunctionAsGridFunctionWrapper<E, r, r, F>(
           new XT::Functions::ProductFunction<XT::Functions::ConstantFunction<d, 1, 1, F>,
                                              XT::Functions::ConstantFunction<d, r, r, F>>(
-              new XT::Functions::ConstantFunction<d, 1, 1, F>(inducing_value),
-              new XT::Functions::ConstantFunction<d, r, r, F>(XT::LA::eye_matrix<FieldMatrix<F, r, r>>(r)))))
+              std::make_shared<XT::Functions::ConstantFunction<d, 1, 1, F>>(inducing_value),
+              std::make_shared<XT::Functions::ConstantFunction<d, r, r, F>>(
+                  XT::LA::eye_matrix<FieldMatrix<F, r, r>>(r)))))
     , local_function_(inducing_function_.access().local_function())
     , test_basis_values_()
     , ansatz_basis_values_()
@@ -67,7 +68,8 @@ public:
           new XT::Functions::ProductFunction<XT::Functions::FunctionInterface<d, 1, 1, F>,
                                              XT::Functions::ConstantFunction<d, r, r, F>>(
               inducing_function,
-              new XT::Functions::ConstantFunction<d, r, r, F>(XT::LA::eye_matrix<FieldMatrix<F, r, r>>(r)))))
+              std::make_shared<XT::Functions::ConstantFunction<d, r, r, F>>(
+                  XT::LA::eye_matrix<FieldMatrix<F, r, r>>(r)))))
     , local_function_(inducing_function_.access().local_function())
     , test_basis_values_()
     , ansatz_basis_values_()
@@ -75,12 +77,11 @@ public:
 
   LocalElementProductIntegrand(const XT::Functions::GridFunctionInterface<E, 1, 1, F>& inducing_function)
     : BaseType()
-    , inducing_function_(new XT::Functions::FunctionAsGridFunctionWrapper<E, r, r, F>(
-          new XT::Functions::ProductGridFunction<XT::Functions::GridFunctionInterface<E, 1, 1, F>,
-                                                 XT::Functions::GridFunctionInterface<E, r, r, F>>(
-              inducing_function,
-              new XT::Functions::FunctionAsGridFunctionWrapper<E, r, r, F>(
-                  new XT::Functions::ConstantFunction<d, r, r, F>(XT::LA::eye_matrix<FieldMatrix<F, r, r>>(r))))))
+    , inducing_function_(new XT::Functions::ProductGridFunction<XT::Functions::GridFunctionInterface<E, 1, 1, F>,
+                                                                XT::Functions::GridFunctionInterface<E, r, r, F>>(
+          inducing_function,
+          std::make_shared<const XT::Functions::FunctionAsGridFunctionWrapper<E, r, r, F>>(
+              new XT::Functions::ConstantFunction<d, r, r, F>(XT::LA::eye_matrix<FieldMatrix<F, r, r>>(r)))))
     , local_function_(inducing_function_.access().local_function())
     , test_basis_values_()
     , ansatz_basis_values_()

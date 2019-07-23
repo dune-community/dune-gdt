@@ -293,6 +293,12 @@ public:
 
   FieldType scaling;
 
+  void clear()
+  {
+    WalkerBaseType::clear();
+    assembled_ = false;
+  }
+
   using WalkerBaseType::append;
 
   ThisType& append(const LocalElementBilinearFormInterface<E, r_r, r_rC, F, F, s_r, s_rC, F>& local_bilinear_form,

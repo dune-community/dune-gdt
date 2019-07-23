@@ -112,7 +112,8 @@ default_interpolation(const XT::Functions::GridFunctionInterface<XT::Grid::extra
   DefaultInterpolationElementFunctor<GV, r, rC, R, V, GridView<IGVT>> functor(source, target);
   auto walker = XT::Grid::Walker<GridView<IGVT>>(interpolation_grid_view);
   walker.append(functor);
-  walker.walk(true);
+  // Basis functions other than FV do not seem to be thread safe. TODO: fix
+  walker.walk(target.space().type() == SpaceType::finite_volume);
 } // ... default_interpolation(...)
 
 
