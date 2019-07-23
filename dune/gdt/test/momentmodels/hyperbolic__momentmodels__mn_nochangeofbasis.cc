@@ -11,7 +11,7 @@
 #include <dune/xt/common/test/main.hxx>
 
 #include <dune/gdt/test/momentmodels/kinetictransport/testcases.hh>
-#include <dune/gdt/test/mn-discretization.hh>
+#include <dune/gdt/test/momentmodels/mn-discretization.hh>
 
 using Yasp1 = Dune::YaspGrid<1, Dune::EquidistantOffsetCoordinates<double, 1>>;
 using Yasp3 = Dune::YaspGrid<3, Dune::EquidistantOffsetCoordinates<double, 3>>;

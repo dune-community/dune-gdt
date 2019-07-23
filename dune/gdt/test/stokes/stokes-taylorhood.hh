@@ -283,7 +283,7 @@ public:
     C.set_entry(dof_index, dof_index, 1.);
 
     // now solve the system
-    XT::LA::SaddlePointSolver<double> solver(A, B, B, C);
+    XT::LA::SaddlePointSolver<Vector, Matrix> solver(A, B, B, C);
     Vector solution_u(m), solution_p(n);
     // solve both by direct solver and by schurcomplement (where the schur complement is inverted by CG and the inner
     // solves with A are using a direct method)
