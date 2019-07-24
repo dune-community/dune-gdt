@@ -9,7 +9,7 @@
 #include <dune/xt/common/test/main.hxx>
 
 #define USE_FULL_LINEAR_RECONSTRUCTION_OPERATOR 0
-#include <dune/gdt/test/hyperbolic_momentmodels_pn_base.hh>
+#include <dune/gdt/test/momentmodels/hyperbolic_momentmodels_pn_base.hh>
 #include <dune/gdt/test/momentmodels/pn-discretization.hh>
 
 TYPED_TEST_CASE(HyperbolicPnTest, YaspGridTestCasesWithReconstruction);
