@@ -39,7 +39,7 @@
 #include <dune/gdt/local/integrands/elliptic.hh>
 #include <dune/gdt/local/integrands/symmetric_elliptic.hh>
 #include <dune/gdt/local/integrands/product.hh>
-#include <dune/gdt/local/integrands/quadratic.hh>
+#include <dune/gdt/local/integrands/gradient_value.hh>
 #include <dune/gdt/operators/localizable-bilinear-form.hh>
 #include <dune/gdt/operators/matrix-based.hh>
 #include <dune/gdt/spaces/h1/continuous-lagrange.hh>
@@ -220,7 +220,7 @@ struct StokesSolver
 
     MatrixOperator<MatrixType, PGV, 1, 1, d> B_operator(grid_view_, p_.space(), u_.space(), B_);
     // calculate A_{ij} as \int \nabla v_i \nabla v_j
-    A_operator_.append(LocalElementIntegralBilinearForm<E, d>(LocalSymmetricEllipticIntegrand<E, d>(1.)));
+    A_operator_.append(LocalElementIntegralBilinearForm<E, d>(LocalSymmetricEllipticIntegrand<E>(1.)));
     // calculate B_{ij} as \int \nabla p_i div(v_j)
     B_operator.append(LocalElementIntegralBilinearForm<E, d, 1, double, double, 1>(
         LocalElementAnsatzValueTestDivProductIntegrand<E>(-1.)));
@@ -508,7 +508,7 @@ struct OfieldSolver
     auto u_local = u_.local_function();
     // Omega - xi D = (1-xi)/2 \nabla u^T - (1+xi)/2 \nabla u
     const R xi = xi_;
-    XT::Functions::GenericGridFunction<E, d, d> dt_Omega_minus_xi_D(
+    XT::Functions::GenericGridFunction<E, d, d> dt_Omega_minus_xi_D_transposed(
         /*order = */ std::max(u_.space().max_polorder() - 1, 0),
         /*post_bind_func*/
         [&u_local](const E& element) { u_local->bind(element); },
@@ -518,14 +518,14 @@ struct OfieldSolver
           auto grad_u = u_local->jacobian(x_local, param);
           auto grad_u_T = grad_u;
           grad_u_T.transpose();
-          auto& ret = grad_u_T;
+          auto& ret = grad_u;
           ret *= dt * (1. - xi) / 2.;
-          grad_u *= dt * (1 + xi) / 2.;
-          ret -= grad_u;
+          grad_u_T *= dt * (1 + xi) / 2.;
+          ret -= grad_u_T;
           return ret;
         });
     S_00_operator_.append(
-        LocalElementIntegralBilinearForm<E, d>(LocalElementQuadraticIntegrand<E>(dt_Omega_minus_xi_D)));
+        LocalElementIntegralBilinearForm<E, d>(LocalElementProductIntegrand<E, d>(dt_Omega_minus_xi_D_transposed)));
     XT::Functions::GenericGridFunction<E, d, 1> dt_u(
         /*order = */ u_.space().max_polorder(),
         /*post_bind_func*/
@@ -575,8 +575,9 @@ struct OfieldSolver
           ret *= -2. * c_1 * Pa_inv;
           return ret;
         });
+    // Pn_otimes_Pn is symmetric, so no need to transpose
     S_10_operator_.append(
-        LocalElementIntegralBilinearForm<E, d>(LocalElementQuadraticIntegrand<E>(minus_two_frac_c1_Pa_Pn_otimes_Pn)));
+        LocalElementIntegralBilinearForm<E, d>(LocalElementProductIntegrand<E, d>(minus_two_frac_c1_Pa_Pn_otimes_Pn)));
 
     auto g_functional = make_vector_functional(P_.space(), g_vector_);
     g_vector_ *= 0.;
