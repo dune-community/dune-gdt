@@ -28,7 +28,10 @@ namespace GDT {
 
 /**
  * Given an inducing scalar function lambda and an inducing matrix-valued function kappa, computes
- * `lambda(x) * {[kappa(x) \nabla phi(x)] * \nabla psi(x)}` for all combinations of phi and psi in the bases.
+ * `lambda(x) * {[kappa(x) \nabla phi(x)] * \nabla psi(x)}` for all combinations of phi in the ansatz basis and psi in
+ * the test basis.
+ * If phi and psi are vector-valued, \nabla phi is the jacobian matrix and we are actually computing
+ * `lambda(x) * {[kappa(x) (\nabla phi(x))^T] : (\nabla psi(x))^T}`, where ':' denotes the matrix scalar product.
  */
 template <class E, size_t r = 1, class F = double>
 class LocalEllipticIntegrand : public LocalBinaryElementIntegrandInterface<E, r, 1, F, F, r, 1, F>

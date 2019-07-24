@@ -33,13 +33,13 @@ public:
 
   using GenericOrderFunctionType =
       std::function<int(const LocalBasisType& /*basis*/, const XT::Common::Parameter& /*param*/)>;
-  using GenericEvalauteFunctionType = std::function<void(const LocalBasisType& /*basis*/,
+  using GenericEvaluateFunctionType = std::function<void(const LocalBasisType& /*basis*/,
                                                          const DomainType& /*point_in_reference_element*/,
                                                          DynamicVector<F>& /*result*/,
                                                          const XT::Common::Parameter& /*param*/)>;
 
   GenericLocalUnaryElementIntegrand(GenericOrderFunctionType order_function,
-                                    GenericEvalauteFunctionType evaluate_function,
+                                    GenericEvaluateFunctionType evaluate_function,
                                     const XT::Common::ParameterType& param_type = {})
     : BaseType(param_type)
     , order_(order_function)
@@ -83,7 +83,7 @@ public:
 
 private:
   const GenericOrderFunctionType order_;
-  const GenericEvalauteFunctionType evaluate_;
+  const GenericEvaluateFunctionType evaluate_;
 }; // class GenericLocalUnaryElementIntegrand
 
 
@@ -109,14 +109,14 @@ public:
   using GenericOrderFunctionType = std::function<int(const LocalTestBasisType& /*test_basis*/,
                                                      const LocalAnsatzBasisType& /*ansatz_basis*/,
                                                      const XT::Common::Parameter& /*param*/)>;
-  using GenericEvalauteFunctionType = std::function<void(const LocalTestBasisType& /*test_basis*/,
+  using GenericEvaluateFunctionType = std::function<void(const LocalTestBasisType& /*test_basis*/,
                                                          const LocalAnsatzBasisType& /*ansatz_basis*/,
                                                          const DomainType& /*point_in_reference_element*/,
                                                          DynamicMatrix<F>& /*result*/,
                                                          const XT::Common::Parameter& /*param*/)>;
 
   GenericLocalBinaryElementIntegrand(GenericOrderFunctionType order_function,
-                                     GenericEvalauteFunctionType evaluate_function,
+                                     GenericEvaluateFunctionType evaluate_function,
                                      const XT::Common::ParameterType& param_type = {})
     : BaseType(param_type)
     , order_(order_function)
@@ -166,7 +166,7 @@ public:
 
 private:
   const GenericOrderFunctionType order_;
-  const GenericEvalauteFunctionType evaluate_;
+  const GenericEvaluateFunctionType evaluate_;
 }; // class GenericLocalBinaryElementIntegrand
 
 
@@ -183,14 +183,14 @@ public:
   using GenericOrderFunctionType = std::function<int(const LocalBasisType& /*inside_basis*/,
                                                      const LocalBasisType& /*outside_basis*/,
                                                      const XT::Common::Parameter& /*param*/)>;
-  using GenericEvalauteFunctionType = std::function<void(const LocalBasisType& /*inside_basis*/,
+  using GenericEvaluateFunctionType = std::function<void(const LocalBasisType& /*inside_basis*/,
                                                          const LocalBasisType& /*outside_basis*/,
                                                          const DomainType& /*point_in_reference_intersection*/,
                                                          DynamicMatrix<F>& /*result*/,
                                                          const XT::Common::Parameter& /*param*/)>;
 
   GenericLocalBinaryIntersectionIntegrand(GenericOrderFunctionType order_function,
-                                          GenericEvalauteFunctionType evaluate_function,
+                                          GenericEvaluateFunctionType evaluate_function,
                                           const XT::Common::ParameterType& param_type = {})
     : BaseType(param_type)
     , order_(order_function)
@@ -239,7 +239,7 @@ public:
 
 private:
   const GenericOrderFunctionType order_;
-  const GenericEvalauteFunctionType evaluate_;
+  const GenericEvaluateFunctionType evaluate_;
 }; // class GenericLocalBinaryIntersectionIntegrand
 
 

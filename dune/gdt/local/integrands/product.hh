@@ -28,9 +28,11 @@ namespace GDT {
 
 
 /**
- * Given an inducing function f, computes `f(x) * phi(x) * psi(x)` for all combinations of phi and psi in the bases.
+ * Given an inducing function f (may be matrix-valued), computes `(f(x) * psi(x)) * phi(x)` for all combinations of phi
+ * in the ansatz basis and psi in the test basis.
  *
  * \note Note that f can also be given as a scalar value or omitted.
+ * \note Applying f to the ansatz basis can be done by passing f^T (the transposed of f)
  *
  * \sa local_binary_to_unary_element_integrand
  */
