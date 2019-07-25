@@ -206,7 +206,7 @@ public:
     }
   }
 
-  void run()
+  void run(const int velocity_order = 2)
   {
     const auto& grid_view = problem_.grid_view();
     // Setup spaces and matrices and vectors
@@ -215,8 +215,8 @@ public:
     // \int (div u) q = \int gg q
     // System is [A B; B^T C] [u; p] = [f; g]
     // Dimensions are: A: n x n, B: n x m, C: m x m, u: n, f: n, p: m, g: m
-    const VelocitySpace velocity_space(grid_view, 2);
-    const PressureSpace pressure_space(grid_view, 1);
+    const VelocitySpace velocity_space(grid_view, velocity_order);
+    const PressureSpace pressure_space(grid_view, velocity_order - 1);
     const size_t m = velocity_space.mapper().size();
     const size_t n = pressure_space.mapper().size();
     auto pattern_A = make_element_sparsity_pattern(velocity_space, velocity_space, grid_view);
@@ -294,29 +294,39 @@ public:
       const auto actual_u_vector = solution_u + dirichlet_vector;
       // ensure int_\Omega p = 0
       auto p_integral = p_basis_integrated_vector * solution_p;
+      auto p_ref_integral = p_basis_integrated_vector * reference_solution_p_vector;
       auto p_correction = p_basis_integrated_vector;
       auto p_correction_func = make_discrete_function(pressure_space, p_correction);
-      auto vol_domain = 4.;
+      auto p_ref_correction = reference_solution_p_vector;
+      auto p_ref_correction_func = make_discrete_function(pressure_space, p_ref_correction);
+      const auto vol_domain = 4.;
       XT::Functions::ConstantGridFunction<E> const_p_integral_func(p_integral / vol_domain);
+      XT::Functions::ConstantGridFunction<E> const_p_ref_integral_func(p_ref_integral / vol_domain);
+      std::cout << p_ref_integral / vol_domain << std::endl;
       default_interpolation(const_p_integral_func, p_correction_func);
+      default_interpolation(const_p_ref_integral_func, p_ref_correction_func);
       const auto actual_p_vector = solution_p - p_correction;
+      const auto actual_p_ref_vector = reference_solution_p_vector - p_ref_correction;
       // calculate difference to reference solution
       const auto u_diff_vector = actual_u_vector - reference_solution_u_vector;
-      const auto p_diff_vector = actual_p_vector - reference_solution_p_vector;
+      const auto p_diff_vector = actual_p_vector - actual_p_ref_vector;
 
       auto sol_u_func = make_discrete_function(velocity_space, actual_u_vector);
       auto sol_p_func = make_discrete_function(pressure_space, actual_p_vector);
       auto p_diff = make_discrete_function(pressure_space, p_diff_vector);
       auto u_diff = make_discrete_function(velocity_space, u_diff_vector);
-      bool visualize = false;
+      auto actual_p_ref = make_discrete_function(pressure_space, actual_p_ref_vector);
+      bool visualize = true;
+      std::string grid_name = XT::Common::Typename<G>::value();
       if (visualize) {
-        sol_u_func.visualize("solution_u_" + type);
-        sol_p_func.visualize("solution_p_" + type);
-        reference_solution_u.visualize("u_ref");
-        reference_solution_p.visualize("p_ref");
-        u_diff.visualize("u_error_" + type);
-        p_diff.visualize("p_error_" + type);
+        sol_u_func.visualize("solution_u_" + type + "_" + grid_name);
+        sol_p_func.visualize("solution_p_" + type + "_" + grid_name);
+        reference_solution_u.visualize("u_ref_" + grid_name);
+        actual_p_ref.visualize("p_ref_" + grid_name);
+        u_diff.visualize("u_error_" + type + "_" + grid_name);
+        p_diff.visualize("p_error_" + type + "_" + grid_name);
       }
+      std::cout << type << std::endl;
       DXTC_EXPECT_FLOAT_LE(l2_norm(problem_.grid_view(), u_diff), 2.29e-06);
       DXTC_EXPECT_FLOAT_LE(l2_norm(problem_.grid_view(), p_diff), 2.22e-05);
     }

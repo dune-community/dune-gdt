@@ -279,7 +279,7 @@ private:
 template <class Implementation, class D, size_t d>
 class LocalFiniteElementCoefficientsWrapper : public LocalFiniteElementCoefficientsInterface<D, d>
 {
-  using ThisType = LocalFiniteElementCoefficientsWrapper<Implementation, D, d>;
+  using ThisType = LocalFiniteElementCoefficientsWrapper;
   using BaseType = LocalFiniteElementCoefficientsInterface<D, d>;
 
 public:
@@ -352,7 +352,7 @@ class LocalFiniteElementWrapper
   : XT::Common::ConstSharedStorageProvider<Implementation>
   , public LocalFiniteElementDefault<D, d, R, r, rC>
 {
-  using ThisType = LocalFiniteElementWrapper<Implementation, D, d, R, r, rC>;
+  using ThisType = LocalFiniteElementWrapper;
   using ImplementationProvider = XT::Common::ConstSharedStorageProvider<Implementation>;
   using BaseType = LocalFiniteElementDefault<D, d, R, r, rC>;
 

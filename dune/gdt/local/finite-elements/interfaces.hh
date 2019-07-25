@@ -154,7 +154,7 @@ private:
 template <class DomainField, size_t domain_dim>
 class LocalFiniteElementCoefficientsInterface
 {
-  using ThisType = LocalFiniteElementCoefficientsInterface<DomainField, domain_dim>;
+  using ThisType = LocalFiniteElementCoefficientsInterface;
 
 public:
   using D = DomainField;

@@ -36,16 +36,16 @@ namespace GDT {
 /**
  * Wraps the P0LocalFiniteElement from dune-localfunctions and adds Lagrange points.
  */
-template <class D, size_t d, class R>
+template <class D, size_t d, class R, size_t r = 1>
 class LocalZeroOrderLagrangeFiniteElement
-  : XT::Common::ConstStorageProvider<LocalFiniteElementWrapper<P0LocalFiniteElement<D, R, d>, D, d, R, 1>>
-  , public LocalFiniteElementDefault<D, d, R, 1>
+  : XT::Common::ConstStorageProvider<LocalFiniteElementWrapper<P0LocalFiniteElement<D, R, d>, D, d, R, r>>
+  , public LocalFiniteElementDefault<D, d, R, r>
 {
-  using ThisType = LocalZeroOrderLagrangeFiniteElement<D, d, R>;
+  using ThisType = LocalZeroOrderLagrangeFiniteElement;
   using Implementation = P0LocalFiniteElement<D, R, d>;
-  using Wrapper = LocalFiniteElementWrapper<Implementation, D, d, R, 1>;
+  using Wrapper = LocalFiniteElementWrapper<Implementation, D, d, R, r>;
   using Storage = XT::Common::ConstStorageProvider<Wrapper>;
-  using BaseType = LocalFiniteElementDefault<D, d, R, 1>;
+  using BaseType = LocalFiniteElementDefault<D, d, R, r>;
 
 public:
   LocalZeroOrderLagrangeFiniteElement(const GeometryType& geometry_type)
