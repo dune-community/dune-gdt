@@ -79,16 +79,16 @@ public:
                                                         const LocalElementOperatorType& local_operator,
                                                         const XT::Common::Parameter& param = {})
     : BaseType()
-    , source_space_(source_space)
-    , range_space_(range_space)
+    , source_space_(source_space.copy())
+    , range_space_(range_space.copy())
     , matrix_(matrix)
     , source_vector_(source_vector)
     , param_(param)
     , scaling_(param_.has_key("matrixoperator.scaling") ? param_.get("matrixoperator.scaling").at(0) : 1.)
     , eps_(param_.has_key("finite-difference-jacobians.eps") ? param_.get("finite-difference-jacobians.eps").at(0)
                                                              : 1e-7)
-    , source_(source_space_) // This is a full vector, and intended!
-    , range_(range_space_) // This is a full vector, and intended!
+    , source_(*source_space_) // This is a full vector, and intended!
+    , range_(*range_space_) // This is a full vector, and intended!
     , local_source_(source_.local_discrete_function())
     , local_range_(range_.local_discrete_function())
     , local_op_(local_operator.with_source(source_))
@@ -98,15 +98,15 @@ public:
 
   LocalElementOperatorFiniteDifferenceJacobianAssembler(const ThisType& other)
     : BaseType(other)
-    , source_space_(other.source_space_)
-    , range_space_(other.range_space_)
+    , source_space_(other.source_space_->copy())
+    , range_space_(other.range_space_->copy())
     , matrix_(other.matrix_)
     , source_vector_(other.source_vector_)
     , param_(other.param_)
     , scaling_(other.scaling_)
     , eps_(other.eps_)
-    , source_(source_space_) // This is a full vector, and intended!
-    , range_(range_space_) // This is a full vector, and intended!
+    , source_(*source_space_) // This is a full vector, and intended!
+    , range_(*range_space_) // This is a full vector, and intended!
     , local_source_(source_.local_discrete_function())
     , local_range_(range_.local_discrete_function())
     , local_op_(other.local_op_->with_source(source_))
@@ -124,10 +124,10 @@ public:
     // some preparations
     local_source_->bind(element);
     local_range_->bind(element);
-    source_space_.mapper().global_indices(element, global_source_indices_);
-    range_space_.mapper().global_indices(element, global_range_indices_);
-    const size_t local_source_size = source_space_.mapper().local_size(element);
-    const size_t local_range_size = range_space_.mapper().local_size(element);
+    source_space_->mapper().global_indices(element, global_source_indices_);
+    range_space_->mapper().global_indices(element, global_range_indices_);
+    const size_t local_source_size = source_space_->mapper().local_size(element);
+    const size_t local_range_size = range_space_->mapper().local_size(element);
     if (range_DoFs_.size() < local_range_size)
       range_DoFs_.resize(local_range_size, 0);
     local_range_->dofs().set_all(0);
@@ -157,8 +157,8 @@ public:
   } // ... apply_local(...)
 
 private:
-  const SourceSpaceType& source_space_;
-  const RangeSpaceType& range_space_;
+  std::unique_ptr<const SourceSpaceType> source_space_;
+  std::unique_ptr<const RangeSpaceType> range_space_;
   MatrixType& matrix_;
   const VectorType& source_vector_;
   const XT::Common::Parameter param_;
@@ -227,15 +227,15 @@ public:
                                                              const LocalIntersectionOperatorType& local_operator,
                                                              const XT::Common::Parameter& param = {},
                                                              const real_t<F> eps = 1e-7)
-    : source_space_(source_space)
-    , range_space_(range_space)
+    : source_space_(source_space.copy())
+    , range_space_(range_space.copy())
     , matrix_(matrix)
     , source_vector_(source_vector)
     , param_(param)
     , scaling_(param_.has_key("matrixoperator.scaling") ? param_.get("matrixoperator.scaling").at(0) : 1.)
     , eps_(eps)
-    , source_(source_space_) // This is a full vector, and intended!
-    , range_(range_space_) // This is a full vector, and intended!
+    , source_(*source_space_) // This is a full vector, and intended!
+    , range_(*range_space_) // This is a full vector, and intended!
     , local_source_inside_(source_.local_discrete_function())
     , local_source_outside_(source_.local_discrete_function())
     , local_range_inside_(range_.local_discrete_function())
@@ -247,15 +247,15 @@ public:
 
   LocalIntersectionOperatorFiniteDifferenceJacobianAssembler(const ThisType& other)
     : BaseType(other)
-    , source_space_(other.source_space_)
-    , range_space_(other.range_space_)
+    , source_space_(other.source_space_->copy())
+    , range_space_(other.range_space_->copy())
     , matrix_(other.matrix_)
     , source_vector_(other.source_vector_)
     , param_(other.param_)
     , scaling_(other.scaling_)
     , eps_(other.eps_)
-    , source_(source_space_) // This is a full vector, and intended!
-    , range_(range_space_) // This is a full vector, and intended!
+    , source_(*source_space_) // This is a full vector, and intended!
+    , range_(*range_space_) // This is a full vector, and intended!
     , local_source_inside_(source_.local_discrete_function())
     , local_source_outside_(source_.local_discrete_function())
     , local_range_inside_(range_.local_discrete_function())
@@ -278,20 +278,20 @@ public:
     // some preparations
     local_source_inside_->bind(inside_element);
     local_range_inside_->bind(inside_element);
-    source_space_.mapper().global_indices(inside_element, global_source_indices_inside_);
-    range_space_.mapper().global_indices(inside_element, global_range_indices_inside_);
-    const size_t local_source_inside_size = source_space_.mapper().local_size(inside_element);
-    const size_t local_source_outside_size = treat_outside ? source_space_.mapper().local_size(outside_element) : 0;
-    const size_t local_range_inside_size = range_space_.mapper().local_size(inside_element);
-    const size_t local_range_outside_size = treat_outside ? range_space_.mapper().local_size(outside_element) : 0;
+    source_space_->mapper().global_indices(inside_element, global_source_indices_inside_);
+    range_space_->mapper().global_indices(inside_element, global_range_indices_inside_);
+    const size_t local_source_inside_size = source_space_->mapper().local_size(inside_element);
+    const size_t local_source_outside_size = treat_outside ? source_space_->mapper().local_size(outside_element) : 0;
+    const size_t local_range_inside_size = range_space_->mapper().local_size(inside_element);
+    const size_t local_range_outside_size = treat_outside ? range_space_->mapper().local_size(outside_element) : 0;
     if (range_DoFs_inside_.size() < local_range_inside_size)
       range_DoFs_inside_.resize(local_range_inside_size, 0);
     local_range_inside_->dofs().set_all(0);
     if (treat_outside) {
       local_source_outside_->bind(outside_element);
       local_range_outside_->bind(outside_element);
-      source_space_.mapper().global_indices(outside_element, global_source_indices_outside_);
-      range_space_.mapper().global_indices(outside_element, global_range_indices_outside_);
+      source_space_->mapper().global_indices(outside_element, global_source_indices_outside_);
+      range_space_->mapper().global_indices(outside_element, global_range_indices_outside_);
       if (range_DoFs_outside_.size() < local_range_outside_size)
         range_DoFs_outside_.resize(local_range_outside_size, 0);
       local_range_outside_->dofs().set_all(0);
@@ -370,8 +370,8 @@ public:
   } // ... apply_local(...)
 
 private:
-  const SourceSpaceType& source_space_;
-  const RangeSpaceType& range_space_;
+  std::unique_ptr<const SourceSpaceType> source_space_;
+  std::unique_ptr<const RangeSpaceType> range_space_;
   MatrixType& matrix_;
   const VectorType& source_vector_;
   const XT::Common::Parameter param_;

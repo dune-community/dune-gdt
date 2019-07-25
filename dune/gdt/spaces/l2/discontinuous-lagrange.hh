@@ -95,6 +95,11 @@ public:
     this->update_after_adapt();
   }
 
+  virtual BaseType* copy() const override final
+  {
+    return new ThisType(*this);
+  }
+
   DiscontinuousLagrangeSpace(ThisType&&) = default;
 
   ThisType& operator=(const ThisType&) = delete;
