@@ -129,7 +129,7 @@ public:
   using BasisValuesMatrixType = XT::LA::CommonDenseMatrix<RangeFieldType>;
   using AlphaReturnType = std::pair<VectorType, std::pair<DomainType, RangeFieldType>>;
   using QuadraturePointsType = std::vector<BasisDomainType, boost::alignment::aligned_allocator<BasisDomainType, 64>>;
-  using QuadratureWeightsType = std::vector<RangeFieldType, boost::alignment::aligned_allocator<BasisDomainType, 64>>;
+  using QuadratureWeightsType = std::vector<RangeFieldType, boost::alignment::aligned_allocator<RangeFieldType, 64>>;
   static const EntropyType entropy = MomentBasis::entropy;
 
   explicit EntropyBasedFluxImplementationUnspecializedBase(const MomentBasis& basis_functions,
