@@ -360,6 +360,9 @@ class LocalRaviartThomasFiniteElementFamily : public ThreadSafeDefaultLocalLagra
 public:
   LocalRaviartThomasFiniteElementFamily()
     : BaseType([](const auto& geometry_type, const auto& order) {
+      // Can't figure out why this lock is needed, but for some reasons without it we are not thread-safe
+      static std::mutex mutex_;
+      std::lock_guard<std::mutex> DXTC_UNUSED(guard)(mutex_);
       return LocalRaviartThomasFiniteElementFactory<D, d, R>::create(geometry_type, order);
     })
   {}
