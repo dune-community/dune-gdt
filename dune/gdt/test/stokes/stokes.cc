@@ -23,25 +23,25 @@
 using namespace Dune;
 using namespace Dune::GDT::Test;
 
-template <class G>
-using StokesTest = StokesTestcase1<G>;
-
-using Grids2D = ::testing::Types<YASP_2D_EQUIDISTANT_OFFSET
+using SimplexGrids2D = ::testing::Types<
 #  if HAVE_DUNE_ALUGRID
-//                                 ,
-//                                 ALU_2D_SIMPLEX_CONFORMING
-//                                 ALU_2D_SIMPLEX_NONCONFORMING,
-//                                 ALU_2D_CUBE
+    ALU_2D_SIMPLEX_CONFORMING,
+    ALU_2D_SIMPLEX_NONCONFORMING
 #  endif
 #  if HAVE_DUNE_UGGRID || HAVE_UG
-//                                 ,
-//                                 UG_2D
+#    if HAVE_DUNE_ALUGRID
+    ,
+#    endif
+    UG_2D
 #  endif
-#  if HAVE_ALBERTA
-//                                 ,
-//                                 ALBERTA_2D
+    >;
+
+using CubeGrids2D = ::testing::Types<YASP_2D_EQUIDISTANT_OFFSET
+#  if HAVE_DUNE_ALUGRID
+                                     ,
+                                     ALU_2D_CUBE
 #  endif
-                                 >;
+                                     >;
 
 DUNE_XT_COMMON_TYPENAME(YASP_2D_EQUIDISTANT_OFFSET)
 #  if HAVE_DUNE_ALUGRID
@@ -57,19 +57,27 @@ DUNE_XT_COMMON_TYPENAME(ALBERTA_2D)
 #  endif
 
 
-TYPED_TEST_CASE(StokesTest, Grids2D);
+template <class G>
+using StokesTestSimplex = StokesTestcase1<G>;
+TYPED_TEST_CASE(StokesTestSimplex, SimplexGrids2D);
 
-TYPED_TEST(StokesTest, order2)
+TYPED_TEST(StokesTestSimplex, order2)
 {
-  this->run(2);
+  this->run(2, 2e-5, 3e-3);
 }
 
-#  if 0
-TYPED_TEST(StokesTest, order3)
-{
-  this->run(3);
-}
-#  endif
+template <class G>
+using StokesTestCube = StokesTestcase1<G>;
+TYPED_TEST_CASE(StokesTestCube, CubeGrids2D);
 
+TYPED_TEST(StokesTestCube, order2)
+{
+  this->run(2, 3e-6, 3e-5);
+}
+
+TYPED_TEST(StokesTestCube, order3)
+{
+  this->run(3, 4e-7, 7e-6);
+}
 
 #endif // HAVE_DUNE_ISTL

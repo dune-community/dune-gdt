@@ -206,7 +206,7 @@ public:
     }
   }
 
-  void run(const int velocity_order = 2)
+  void run(const int velocity_order, const double expected_error_u, const double expected_error_p)
   {
     const auto& grid_view = problem_.grid_view();
     // Setup spaces and matrices and vectors
@@ -302,7 +302,6 @@ public:
       const auto vol_domain = 4.;
       XT::Functions::ConstantGridFunction<E> const_p_integral_func(p_integral / vol_domain);
       XT::Functions::ConstantGridFunction<E> const_p_ref_integral_func(p_ref_integral / vol_domain);
-      std::cout << p_ref_integral / vol_domain << std::endl;
       default_interpolation(const_p_integral_func, p_correction_func);
       default_interpolation(const_p_ref_integral_func, p_ref_correction_func);
       const auto actual_p_vector = solution_p - p_correction;
@@ -326,9 +325,8 @@ public:
         u_diff.visualize("u_error_" + type + "_" + grid_name);
         p_diff.visualize("p_error_" + type + "_" + grid_name);
       }
-      std::cout << type << std::endl;
-      DXTC_EXPECT_FLOAT_LE(l2_norm(problem_.grid_view(), u_diff), 2.29e-06);
-      DXTC_EXPECT_FLOAT_LE(l2_norm(problem_.grid_view(), p_diff), 2.22e-05);
+      DXTC_EXPECT_FLOAT_LE(l2_norm(problem_.grid_view(), u_diff), expected_error_u);
+      DXTC_EXPECT_FLOAT_LE(l2_norm(problem_.grid_view(), p_diff), expected_error_p);
     }
   } // run
 

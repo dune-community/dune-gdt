@@ -72,6 +72,11 @@ public:
                                                                          : 0;
     })
   {
+    if (d >= 2 && order_ >= 3 && !XT::Grid::is_cube_alugrid<typename GV::Grid>::value
+        && !XT::Grid::is_yaspgrid<typename GV::Grid>::value && !XT::Grid::is_uggrid<typename GV::Grid>::value)
+      DUNE_THROW(Dune::NotImplemented,
+                 "For order > 2, there are problems with the local-to-global mapping on some grids, see the comment in "
+                 "the global_index method!");
     this->update_after_adapt();
   }
 
@@ -114,6 +119,18 @@ public:
       DUNE_THROW(Exceptions::mapper_error,
                  "local_size(element) = " << coeffs.size() << "\n   local_index = " << local_index);
     const auto& local_key = coeffs.local_key(local_index);
+    // TODO: If there are several DoFs on one subEntity (which is the case e.g. for third order lagrange elements), this
+    // mapping only works if the DoFs are numbered consistently between the elements. For example, if there are two DoFs
+    // on a shared edge between to codim 0 elements, the local_key.index() has to be the same for the same DoF in both
+    // elements. This does not seem to be the case for the simplex grids, the same DoF might be assigned the index 0 in
+    // one element and index 1 in the other element. Fixing this could be done by assigning an orientation to the edge
+    // by looking at the (indices of the) vertices of the edge and reordering the local indices if the orientation is
+    // not the same in all elements sharing the subentity.
+#ifndef NDEBUG
+    if (d >= 2 && order_ >= 3)
+      assert(element.geometry().type() == Dune::GeometryTypes::cube(d)
+             && "Not implemented for this element, see comment above!");
+#endif
     return mapper_.subIndex(element, local_key.subEntity(), local_key.codim()) + local_key.index();
   } // ... mapToGlobal(...)
 
