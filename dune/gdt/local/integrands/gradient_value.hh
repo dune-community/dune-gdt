@@ -130,10 +130,10 @@ private:
       ansatz_basis.jacobians(point_in_reference_element, jacobians, param);
 
       auto nabla_phi_times_u = values[0];
-      for (size_t ii = 0; ii < ansatz_basis.size(); ++ii) {
-        jacobians[ii].mv(vector_values, nabla_phi_times_u);
-        for (size_t jj = 0; jj < test_basis.size(); ++jj)
-          result[jj][ii] = nabla_phi_times_u * values[jj];
+      for (size_t jj = 0; jj < ansatz_basis.size(); ++jj) {
+        jacobians[jj].mv(vector_values, nabla_phi_times_u);
+        for (size_t ii = 0; ii < test_basis.size(); ++ii)
+          result[ii][jj] = nabla_phi_times_u * values[ii];
       }
     }
   };
@@ -154,10 +154,10 @@ private:
       test_basis.jacobians(point_in_reference_element, jacobians, param);
 
       auto nabla_psi_times_u = values[0];
-      for (size_t jj = 0; jj < test_basis.size(); ++jj) {
-        jacobians[jj].mv(vector_values, nabla_psi_times_u);
-        for (size_t ii = 0; ii < ansatz_basis.size(); ++ii)
-          result[jj][ii] = nabla_psi_times_u * values[ii];
+      for (size_t ii = 0; ii < test_basis.size(); ++ii) {
+        jacobians[ii].mv(vector_values, nabla_psi_times_u);
+        for (size_t jj = 0; jj < ansatz_basis.size(); ++jj)
+          result[ii][jj] = nabla_psi_times_u * values[jj];
       }
     }
   };

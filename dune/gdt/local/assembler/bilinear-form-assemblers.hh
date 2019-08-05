@@ -36,7 +36,7 @@ class LocalElementBilinearFormAssembler : public XT::Grid::ElementFunctor<GridVi
   static_assert(XT::LA::is_matrix<Matrix>::value, "");
   static_assert(XT::Grid::is_view<GridView>::value, "");
 
-  using ThisType = LocalElementBilinearFormAssembler<Matrix, GridView, t_r, t_rC, TR, TGV, AGV, a_r, a_rC, AR>;
+  using ThisType = LocalElementBilinearFormAssembler;
   using BaseType = XT::Grid::ElementFunctor<GridView>;
 
 public:

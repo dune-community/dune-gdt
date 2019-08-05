@@ -124,6 +124,7 @@ public:
    */
 
   using BaseType::visualize;
+  using BaseType::visualize_gradient;
 
   /**
    * \brief Visualizes the function using Dune::XT::Functions::GridFunctionInterface::visualize on the grid view
@@ -137,6 +138,20 @@ public:
   {
     this->visualize(space_.grid_view(), filename, space_.max_polorder() > 1, vtk_output_type, param);
   }
+
+  /**
+   * \brief Visualizes the function using Dune::XT::Functions::GridFunctionInterface::visualize on the grid view
+   *        associated with the space.
+   * \sa    Dune::XT::Functions::GridFunctionInterface::visualize
+   * \note  Subsampling is enabled by default for functions of order greater than one.
+   */
+  void visualize_gradient(const std::string filename,
+                          const VTK::OutputType vtk_output_type = VTK::appendedraw,
+                          const XT::Common::Parameter& param = {}) const
+  {
+    this->visualize_gradient(space_.grid_view(), filename, space_.max_polorder() > 1, vtk_output_type, param);
+  }
+
 
 protected:
   const SpaceType& space_;

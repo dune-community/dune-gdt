@@ -385,7 +385,7 @@ public:
                 const XT::Common::Configuration& opts,
                 const XT::Common::Parameter& param = {}) const override
   {
-    DUNE_THROW_IF(!assembled_, Exceptions::operator_error, "This operator has to be assembled to povide a jacobian!");
+    DUNE_THROW_IF(!assembled_, Exceptions::operator_error, "This operator has to be assembled to provide a jacobian!");
     OperatorBaseType::jacobian(source, jacobian_op, opts, param);
   }
 
