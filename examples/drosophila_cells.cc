@@ -63,8 +63,10 @@ using E = XT::Grid::extract_entity_t<GV>;
 using I = XT::Grid::extract_intersection_t<GV>;
 using PI = XT::Grid::extract_intersection_t<PGV>;
 using MatrixType = XT::LA::EigenRowMajorSparseMatrix<double>;
-using MatrixViewType = XT::LA::MatrixView<MatrixType>;
 using VectorType = XT::LA::EigenDenseVector<double>;
+// using MatrixType = XT::LA::IstlRowMajorSparseMatrix<double>;
+// using VectorType = XT::LA::IstlDenseVector<double>;
+using MatrixViewType = XT::LA::MatrixView<MatrixType>;
 using R = typename XT::Functions::GenericGridFunction<E, d>::RangeFieldType;
 using DiscreteFunctionType = DiscreteFunction<VectorType, PGV, 1, 1, R>;
 using VectorDiscreteFunctionType = DiscreteFunction<VectorType, PGV, d, 1, R>;
@@ -143,6 +145,11 @@ static void write_files(const bool visualize,
     phi_zero.visualize(prefix + "_" + phi_zero.name() + postfix);
     phinat.visualize(prefix + "_" + phinat.name() + postfix);
     mu.visualize(prefix + "_" + mu.name() + postfix);
+    p.visualize_gradient(prefix + "_" + p.name() + "_gradient" + postfix);
+    phi.visualize_gradient(prefix + "_" + phi.name() + "_gradient" + postfix);
+    phi_zero.visualize_gradient(prefix + "_" + phi_zero.name() + "_gradient" + postfix);
+    phinat.visualize_gradient(prefix + "_" + phinat.name() + "_gradient" + postfix);
+    mu.visualize_gradient(prefix + "_" + mu.name() + "_gradient" + postfix);
   }
   write_to_textfile(u, prefix, step, t);
   write_to_textfile(p, prefix, step, t);
@@ -200,6 +207,7 @@ struct StokesSolver
     , S_(m_ + n_, m_ + n_, create_pattern(m_, n_, pattern_A_, pattern_B_))
     , A_(m_, m_, pattern_A_)
     , B_(m_, n_, pattern_B_)
+    , C_(n_, n_, pattern_C_)
     , rhs_vector_(m_ + n_, 0.)
     , f_vector_(m_, 0.)
     , g_vector_(n_, 0.)
@@ -209,18 +217,11 @@ struct StokesSolver
   {
     if (Re_ > 1e-2)
       DUNE_THROW(Dune::NotImplemented, "No Navier-Stokes solver implemented yet!");
-    // Fix value of p at first DoF to 0 to ensure the uniqueness of the solution, i.e, we have set the m-th row of
-    // [A B; B^T 0] to the unit vector.
-    const size_t dof_index = 0;
-    pattern_C_.insert(dof_index, dof_index);
-    C_ = MatrixType(n_, n_, pattern_C_);
-    C_.set_entry(dof_index, dof_index, 1.);
-    B_.clear_col(dof_index);
-    g_vector_.set_entry(dof_index, 0.);
 
     MatrixOperator<MatrixType, PGV, 1, 1, d> B_operator(grid_view_, p_.space(), u_.space(), B_);
     // calculate A_{ij} as \int \nabla v_i \nabla v_j
     A_operator_.append(LocalElementIntegralBilinearForm<E, d>(LocalSymmetricEllipticIntegrand<E>(1.)));
+    //    A_operator_.append(LocalElementIntegralBilinearForm<E, d>(LocalEllipticIntegrand<E, d>(1.)));
     // calculate B_{ij} as \int \nabla p_i div(v_j)
     B_operator.append(LocalElementIntegralBilinearForm<E, d, 1, double, double, 1>(
         LocalElementAnsatzValueTestDivProductIntegrand<E>(-1.)));
@@ -237,7 +238,16 @@ struct StokesSolver
     A_operator_.assemble(false);
     B_operator.assemble(false);
 
-    dirichlet_constraints_.apply(A_);
+    // Fix value of p at first DoF to 0 to ensure the uniqueness of the solution, i.e, we have set the m-th row of
+    // [A B; B^T 0] to the unit vector.
+    const size_t dof_index = 0;
+    pattern_C_.insert(dof_index, dof_index);
+    C_ = MatrixType(n_, n_, pattern_C_);
+    C_.set_entry(dof_index, dof_index, 1.);
+    B_.clear_col(dof_index);
+    g_vector_.set_entry(dof_index, 0.);
+
+    dirichlet_constraints_.apply(A_, false, true);
     for (const auto& DoF : dirichlet_constraints_.dirichlet_DoFs())
       B_.clear_row(DoF);
 
@@ -324,7 +334,7 @@ struct StokesSolver
             div_P += grad_P[ii][ii];
             div_Pnat += grad_Pnat[ii][ii];
           }
-          const auto phi_tilde = (phi + 1) / 2;
+          const auto phi_tilde = (phi + 1.) / 2.;
 
           // evaluate rhs terms
           const auto Fa_inv_times_P_otimes_P_times_grad_phi_tilde = P * ((P * grad_phi) * Fa_inv * 0.5);
@@ -351,7 +361,7 @@ struct StokesSolver
                  + phinat_grad_phi + grad_P_T_times_Pnat;
         });
     f_functional.append(LocalElementIntegralFunctional<E, d>(
-        local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E, d>(), f)));
+        local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E, d>(1.), f)));
     A_operator_.clear();
     A_operator_.append(f_functional);
     f_vector_ *= 0.;
@@ -520,7 +530,7 @@ struct OfieldSolver
           grad_u_T.transpose();
           auto& ret = grad_u;
           ret *= dt * (1. - xi) / 2.;
-          grad_u_T *= dt * (1 + xi) / 2.;
+          grad_u_T *= dt * (1. + xi) / 2.;
           ret -= grad_u_T;
           return ret;
         });
@@ -695,20 +705,20 @@ struct PfieldSolver
     , M_(n_, n_, submatrix_pattern_)
     , E_(n_, n_, submatrix_pattern_)
     , S_00_(S_, 0, n_, 0, n_)
-    , S_02_(S_, 0, n_, 2 * n_, 3 * n_)
+    , S_01_(S_, 0, n_, n_, 2 * n_)
     , S_10_(S_, n_, 2 * n_, 0, n_)
     , S_11_(S_, n_, 2 * n_, n_, 2 * n_)
+    , S_12_(S_, n_, 2 * n_, 2 * n_, 3 * n_)
     , S_20_(S_, 2 * n_, 3 * n_, 0, n_)
-    , S_21_(S_, 2 * n_, 3 * n_, n_, 2 * n_)
     , S_22_(S_, 2 * n_, 3 * n_, 2 * n_, 3 * n_)
-    , S_00_operator_(grid_view_, phi_.space(), phi_.space(), S_00_)
-    , S_10_operator_(grid_view_, phinat_.space(), phi_.space(), S_10_)
-    , S_20_operator_(grid_view_, mu_.space(), phi_.space(), S_20_)
-    , S_22_operator_(grid_view_, mu_.space(), mu_.space(), S_22_)
+    , S_00_operator_(grid_view_, phinat_.space(), phi_.space(), S_00_)
+    , S_10_operator_(grid_view_, mu_.space(), phi_.space(), S_10_)
+    , S_12_operator_(grid_view_, mu_.space(), mu_.space(), S_12_)
+    , S_20_operator_(grid_view_, phi_.space(), phi_.space(), S_20_)
     , rhs_vector_(3 * n_, 0.)
-    , f_vector_(rhs_vector_, 0, n_)
-    , g_vector_(rhs_vector_, n_, 2 * n_)
-    , h_vector_(rhs_vector_, 2 * n_, 3 * n_)
+    , f_vector_(rhs_vector_, 2 * n_, 3 * n_)
+    , g_vector_(rhs_vector_, 0, n_)
+    , h_vector_(rhs_vector_, n_, 2 * n_)
     , dirichlet_constraints_(make_dirichlet_constraints(phi_.space(), boundary_info_))
   {
     assert(phinat_.space().mapper().size() == n_);
@@ -720,10 +730,10 @@ struct PfieldSolver
     M_operator.append(dirichlet_constraints_);
     M_operator.assemble(false);
     E_operator.assemble(false);
-    // Set matrix S_{02} = C = M
-    S_02_ = M_;
-    // Set matrix S_{21} = H = M
-    S_21_ = M_;
+    // Set matrix S_{22} = C = M
+    S_22_ = M_;
+    // Set matrix S_{11} = H = M
+    S_11_ = M_;
   }
 
   static XT::LA::SparsityPatternDefault create_pattern(const size_t n,
@@ -734,11 +744,11 @@ struct PfieldSolver
     for (size_t ii = 0; ii < n; ++ii)
       for (const auto& jj : submatrix_pattern.inner(ii)) {
         pattern.insert(ii, jj); // S_{00}
-        pattern.insert(ii, 2 * n + jj); // S_{02}
+        pattern.insert(ii, n + jj); // S_{01}
         pattern.insert(n + ii, jj); // S_{10}
         pattern.insert(n + ii, n + jj); // S_{11}
+        pattern.insert(n + ii, 2 * n + jj); // S_{12}
         pattern.insert(2 * n + ii, jj); // S_{20}
-        pattern.insert(2 * n + ii, n + jj); // S_{21}
         pattern.insert(2 * n + ii, 2 * n + jj); // S_{22}
       }
     pattern.sort();
@@ -750,30 +760,27 @@ struct PfieldSolver
     auto begin = std::chrono::steady_clock::now();
     S_00_operator_.clear();
     S_10_operator_.clear();
+    S_12_operator_.clear();
     S_20_operator_.clear();
-    S_22_operator_.clear();
-    // assemble matrix S_{00} = A
-    S_00_ = E_;
-    S_00_ *= epsilon_;
+    // assemble matrix S_{20} = A
+    S_20_ = E_;
+    S_20_ *= epsilon_;
     const auto phi_zero_local = phi_zero_.local_function();
     const auto g_D_local = g_D_.local_function();
+    const auto phi_local = phi_.local_function();
     const R epsilon_inv = 1. / epsilon_;
     XT::Functions::GenericGridFunction<E, 1, 1> A_prefactor(
         /*order = */ 2 * phi_.space().max_polorder(),
         /*post_bind_func*/
-        [&phi_zero_local, &g_D_local](const E& element) {
-          phi_zero_local->bind(element);
-          g_D_local->bind(element);
-        },
+        [&phi_local](const E& element) { phi_local->bind(element); },
         /*evaluate_func*/
-        [&phi_zero_local, &g_D_local, epsilon_inv](const DomainType& x_local, const XT::Common::Parameter& param) {
-          const auto phi_zero_n = phi_zero_local->evaluate(x_local, param);
-          const auto g_D = g_D_local->evaluate(x_local, param);
-          return epsilon_inv * (3. * std::pow(phi_zero_n, 2) + 6. * g_D * phi_zero_n + 3. * std::pow(g_D, 2) - 1);
+        [&phi_local, epsilon_inv](const DomainType& x_local, const XT::Common::Parameter& param) {
+          const auto phi_n = phi_local->evaluate(x_local, param);
+          return epsilon_inv * (3. * std::pow(phi_n, 2) - 1.);
         });
-    S_00_operator_.append(LocalElementIntegralBilinearForm<E, 1>(LocalElementProductIntegrand<E, 1>(A_prefactor)));
-    // assemble matrix S_{10} = M + dt D
-    S_10_ = M_;
+    S_20_operator_.append(LocalElementIntegralBilinearForm<E, 1>(LocalElementProductIntegrand<E, 1>(A_prefactor)));
+    // assemble matrix S_{00} = M + dt D
+    S_00_ = M_;
     const auto u_local = u_.local_function();
     XT::Functions::GenericGridFunction<E, d, 1> minus_u_dt(
         /*order = */ u_.space().max_polorder(),
@@ -785,53 +792,44 @@ struct PfieldSolver
           ret *= -dt;
           return ret;
         });
-    S_10_operator_.append(
+    S_00_operator_.append(
         LocalElementIntegralBilinearForm<E, 1>(LocalElementGradientValueIntegrand<E, 1, 1, R, R, R, true>(minus_u_dt)));
-    // assemble matrix S_{11} = dt E
-    S_11_ = E_;
-    S_11_ *= gamma_ * dt;
-    // assemble matrix S_{20} = G
-    S_20_ *= 0.;
+    // assemble matrix S_{01} = dt E
+    S_01_ = E_;
+    S_01_ *= gamma_ * dt;
+    // assemble matrix S_{10} = G
+    S_10_ *= 0.;
     const auto mu_local = mu_.local_function();
     const auto six_inv_Be_eps2 = 6. / (Be_ * std::pow(epsilon_, 2));
     XT::Functions::GenericGridFunction<E, 1, 1> G_prefactor(
         /*order = */ 2 * phi_.space().max_polorder(),
         /*post_bind_func*/
-        [&phi_zero_local, &g_D_local, &mu_local](const E& element) {
-          phi_zero_local->bind(element);
-          g_D_local->bind(element);
+        [&phi_local, &mu_local](const E& element) {
+          phi_local->bind(element);
           mu_local->bind(element);
         },
         /*evaluate_func*/
-        [&phi_zero_local, &g_D_local, &mu_local, six_inv_Be_eps2](const DomainType& x_local,
-                                                                  const XT::Common::Parameter& param) {
-          const auto phi_zero_n = phi_zero_local->evaluate(x_local, param);
-          const auto g_D = g_D_local->evaluate(x_local, param);
-          const auto mu_n = mu_local->evaluate(x_local, param);
-          return six_inv_Be_eps2 * (phi_zero_n * mu_n + g_D * mu_n);
+        [&phi_local, &mu_local, six_inv_Be_eps2](const DomainType& x_local, const XT::Common::Parameter& param) {
+          const auto phi_n = phi_local->evaluate(x_local, param)[0];
+          const auto mu_n = mu_local->evaluate(x_local, param)[0];
+          return six_inv_Be_eps2 * phi_n * mu_n;
         });
-    S_20_operator_.append(LocalElementIntegralBilinearForm<E, 1>(LocalElementProductIntegrand<E, 1>(G_prefactor)));
-    // assemble matrix S_{22} = J
-    S_22_ = E_;
-    S_22_ *= 1. / Be_;
+    S_10_operator_.append(LocalElementIntegralBilinearForm<E, 1>(LocalElementProductIntegrand<E, 1>(G_prefactor)));
+    // assemble matrix S_{12} = J
+    S_12_ = E_;
+    S_12_ *= 1. / Be_;
     const R Ca_inv = 1. / Ca_;
     const R Be_eps2_inv = 1. / (Be_ * std::pow(epsilon_, 2));
     XT::Functions::GenericGridFunction<E, 1, 1> J_prefactor(
         /*order = */ 2 * phi_.space().max_polorder(),
         /*post_bind_func*/
-        [&phi_zero_local, &g_D_local](const E& element) {
-          phi_zero_local->bind(element);
-          g_D_local->bind(element);
-        },
+        [&phi_local](const E& element) { phi_local->bind(element); },
         /*evaluate_func*/
-        [&phi_zero_local, &g_D_local, Ca_inv, Be_eps2_inv](const DomainType& x_local,
-                                                           const XT::Common::Parameter& param) {
-          const auto phi_zero_n = phi_zero_local->evaluate(x_local, param);
-          const auto g_D = g_D_local->evaluate(x_local, param);
-          return Ca_inv
-                 + Be_eps2_inv * (3. * std::pow(g_D, 2) - 1. + 3. * std::pow(phi_zero_n, 2) + 6. * g_D * phi_zero_n);
+        [&phi_local, Ca_inv, Be_eps2_inv](const DomainType& x_local, const XT::Common::Parameter& param) {
+          const auto phi_n = phi_local->evaluate(x_local, param);
+          return Ca_inv + Be_eps2_inv * (3. * std::pow(phi_n, 2) - 1.);
         });
-    S_22_operator_.append(LocalElementIntegralBilinearForm<E, 1>(LocalElementProductIntegrand<E, 1>(J_prefactor)));
+    S_12_operator_.append(LocalElementIntegralBilinearForm<E, 1>(LocalElementProductIntegrand<E, 1>(J_prefactor)));
 
     // create rhs = (f_{pf}, g_{pf}, h_{pf})
     auto f_functional = make_vector_functional(phi_zero_.space(), f_vector_);
@@ -857,7 +855,7 @@ struct PfieldSolver
         local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E, 1>(), f_pf)));
     f_functional.append(LocalElementIntegralFunctional<E, 1>(
         local_binary_to_unary_element_integrand(LocalEllipticIntegrand<E, 1>(-epsilon_), g_D_)));
-    S_00_operator_.append(f_functional);
+    S_20_operator_.append(f_functional);
 
     XT::Functions::GenericGridFunction<E, d, 1> dt_u(
         /*order = */ u_.space().max_polorder(),
@@ -871,7 +869,7 @@ struct PfieldSolver
         });
     g_functional.append(LocalElementIntegralFunctional<E, 1>(
         local_binary_to_unary_element_integrand(LocalElementGradientValueIntegrand<E>(dt_u), g_D_)));
-    S_10_operator_.append(g_functional);
+    S_00_operator_.append(g_functional);
 
     const auto P_local = P_.local_function();
     const R c_1 = c_1_;
@@ -890,20 +888,20 @@ struct PfieldSolver
         [&phi_zero_local, &g_D_local, &mu_local, &P_local, six_inv_Be_eps2, c_1, Pa, beta](
             const DomainType& x_local, const XT::Common::Parameter& param) {
           // evaluate phi_zero, g_D, mu, P, divP
-          const auto phi_zero_n = phi_zero_local->evaluate(x_local, param);
-          const auto g_D = g_D_local->evaluate(x_local, param);
-          const auto mu_n = mu_local->evaluate(x_local, param);
+          const auto phi_zero_n = phi_zero_local->evaluate(x_local, param)[0];
+          const auto g_D = g_D_local->evaluate(x_local, param)[0];
+          const auto mu_n = mu_local->evaluate(x_local, param)[0];
           const auto Pn = P_local->evaluate(x_local, param);
           const auto grad_P = P_local->jacobian(x_local, param);
           R div_P(0.);
           for (size_t ii = 0; ii < d; ++ii)
             div_P += grad_P[ii][ii];
-          return six_inv_Be_eps2 * (std::pow(phi_zero_n, 2) * mu_n + g_D * phi_zero_n * mu_n)
-                 - c_1 / (2. * Pa) * (Pn * Pn) - beta / Pa * div_P;
+          return six_inv_Be_eps2 * (std::pow(phi_zero_n, 2) + g_D * phi_zero_n) * mu_n - c_1 / (2. * Pa) * (Pn * Pn)
+                 - beta / Pa * div_P;
         });
     h_functional.append(LocalElementIntegralFunctional<E, 1>(
         local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E, 1>(), h_pf)));
-    S_20_operator_.append(h_functional);
+    S_10_operator_.append(h_functional);
 
     // assemble everything
     f_vector_ *= 0.;
@@ -911,20 +909,25 @@ struct PfieldSolver
     M_.mv(phi_zero_.dofs().vector(), g_vector_);
     S_00_operator_.assemble(false);
     S_10_operator_.assemble(false);
+    S_12_operator_.assemble(false);
     S_20_operator_.assemble(false);
-    S_22_operator_.assemble(false);
     std::chrono::duration<double> time = std::chrono::steady_clock::now() - begin;
     std::cout << "Assembling Pfield took: " << time.count() << " s!" << std::endl;
 
     // apply dirichlet constraints for phi
-    dirichlet_constraints_.apply(S_00_, f_vector_);
     for (const auto& DoF : dirichlet_constraints_.dirichlet_DoFs()) {
-      S_.unit_row(DoF);
-      S_.unit_col(DoF);
+      S_.clear_row(2 * n_ + DoF);
+      S_.clear_col(DoF);
     }
+    dirichlet_constraints_.apply(S_20_, f_vector_, false, true);
 
     // solve system
     begin = std::chrono::steady_clock::now();
+    //    std::ofstream S_file("S_" + XT::Common::to_string(dt) + ".txt");
+    //    S_file << S_ << std::endl;
+    //    S_file.close();
+    //    DUNE_THROW(Dune::NotImplemented, "");
+    //    const auto ret = XT::LA::solve(S_, rhs_vector_, XT::LA::SolverOptions<MatrixType>::options("lu.sparse"));
     const auto ret = XT::LA::solve(S_, rhs_vector_);
     time = std::chrono::steady_clock::now() - begin;
     std::cout << "Solving Pfield took: " << time.count() << " s!" << std::endl;
@@ -962,16 +965,16 @@ struct PfieldSolver
   MatrixType M_;
   MatrixType E_;
   MatrixViewType S_00_;
-  MatrixViewType S_02_;
+  MatrixViewType S_01_;
   MatrixViewType S_10_;
   MatrixViewType S_11_;
+  MatrixViewType S_12_;
   MatrixViewType S_20_;
-  MatrixViewType S_21_;
   MatrixViewType S_22_;
   MatrixOperator<MatrixViewType, PGV, 1> S_00_operator_;
   MatrixOperator<MatrixViewType, PGV, 1> S_10_operator_;
+  MatrixOperator<MatrixViewType, PGV, 1> S_12_operator_;
   MatrixOperator<MatrixViewType, PGV, 1> S_20_operator_;
-  MatrixOperator<MatrixViewType, PGV, 1> S_22_operator_;
   VectorType rhs_vector_;
   XT::LA::VectorView<VectorType> f_vector_;
   XT::LA::VectorView<VectorType> g_vector_;
@@ -1037,6 +1040,7 @@ int main(int argc, char* argv[])
     FieldVector<double, d> lower_left{{0., 0.}};
     FieldVector<double, d> upper_right{{160., 40.}};
     auto grid = XT::Grid::make_cube_grid<G>(lower_left, upper_right, /*num_elements=*/{num_elements_x, num_elements_y});
+    grid.grid().globalRefine(1);
     const double vol_domain = (upper_right[0] - lower_left[0]) * (upper_right[1] - lower_left[1]);
     auto nonperiodic_grid_view = grid.leaf_view();
     std::bitset<d> periodic_directions(periodic_dirs);
@@ -1076,6 +1080,7 @@ int main(int argc, char* argv[])
 
     // create and project initial values
     // we only need initial values for P and phi
+    // mu_initial is only needed because of the linearization
     // Initially, cell is circular with Radius R=5 and placed in the center of the domain
     // \Omega = [0, 160] \times [0, 40].
     // Initial condition for \phi thus is \tanh(\frac{r}{\sqrt{2}\epsilon}) with r the signed distance function to the
@@ -1087,6 +1092,26 @@ int main(int argc, char* argv[])
         /*evaluate=*/
         [r, epsilon](const auto& x, const auto& /*param*/) { return std::tanh(r(x) / (std::sqrt(2) * epsilon)); },
         /*name=*/"phi_initial");
+    const XT::Functions::GenericFunction<d> mu_initial(50,
+                                                       /*evaluate=*/
+                                                       [phi_initial, epsilon](const auto& /*x*/, const auto& param) {
+                                                         // TODO:: add approximation of laplacian term in definition of
+                                                         // mu
+                                                         //                                                         const
+                                                         //                                                         auto
+                                                         //                                                         phi
+                                                         //                                                         =
+                                                         //                                                         phi_initial.evaluate(x,
+                                                         //                                                         param);
+                                                         //                                                         return
+                                                         //                                                         1./epsilon
+                                                         //                                                         *
+                                                         //                                                         (std::pow(phi,3)
+                                                         //                                                         -
+                                                         //                                                         phi);
+                                                         return 0.; // 1./epsilon * (std::pow(phi,3) - phi);
+                                                       },
+                                                       /*name=*/"mu_initial");
 
     // initial condition for P is (1,0) + \delta where \delta(x) is vector-valued with random entries following an
     // uniform distribution on the interval [-0.05, 0.05]; restrict to cytoplasm by multiplying with (\phi + 1)/2
@@ -1094,9 +1119,10 @@ int main(int argc, char* argv[])
     const XT::Functions::GenericFunction<d, d> P_initial(50,
                                                          /*evaluate=*/
                                                          [phi_initial](const auto& x, const auto& param) {
-                                                           //                                                           auto rand1 = ((std::rand() % 2000) - 1000) / 20000.;
-                                                           //                                                           auto rand2 = ((std::rand() % 2000) - 1000) / 20000.;
-                                                           //                                                           auto ret = FieldVector<double, d>({1. + rand1, 0. + rand2});
+                                                           // auto rand1 = ((std::rand() % 2000) - 1000) / 20000.;
+                                                           // auto rand2 = ((std::rand() % 2000) - 1000) / 20000.;
+                                                           // auto ret = FieldVector<double, d>({1. + rand1, 0. +
+                                                           // rand2});
                                                            auto ret = FieldVector<double, d>({1., 0.});
                                                            ret *= (phi_initial.evaluate(x, param) + 1.) / 2.;
                                                            return ret;
@@ -1107,8 +1133,16 @@ int main(int argc, char* argv[])
     const XT::Functions::ConstantFunction<d, d> u_initial(0.);
 
     // interpolate initial and boundary values
-    //    default_interpolation(phi_initial, phi);
+    default_interpolation(phi_initial, phi);
+    default_interpolation(mu_initial, mu);
+    default_interpolation(P_initial, P);
+    default_interpolation(u_initial, u);
+    XT::Grid::AllDirichletBoundaryInfo<PI> all_dirichlet_boundary_info;
+    boundary_interpolation(minus_one, g_D_phi, all_dirichlet_boundary_info, XT::Grid::DirichletBoundary{});
+    phi_zero.dofs().vector() = phi.dofs().vector();
+    phi_zero.dofs().vector() -= g_D_phi.dofs().vector();
 
+#if 0
     const size_t m = phi.space().mapper().size();
     const auto M_pattern = make_element_sparsity_pattern(phi.space(), phi.space(), grid_view);
     MatrixType M(phi.space().mapper().size(), phi.space().mapper().size(), M_pattern);
@@ -1122,9 +1156,6 @@ int main(int argc, char* argv[])
     M_operator.assemble(false);
     phi.dofs().vector() = XT::LA::solve(M, rhs_vector);
 
-
-    //    default_interpolation(P_initial, P);
-
     const size_t m2 = P.space().mapper().size();
     const auto M2_pattern = make_element_sparsity_pattern(P.space(), P.space(), grid_view);
     MatrixType M2(m2, m2, M2_pattern);
@@ -1137,13 +1168,7 @@ int main(int argc, char* argv[])
     M2_operator.append(f2_functional);
     M2_operator.assemble(false);
     P.dofs().vector() = XT::LA::solve(M2, rhs_vector2);
-
-
-    default_interpolation(u_initial, u);
-    XT::Grid::AllDirichletBoundaryInfo<PI> all_dirichlet_boundary_info;
-    boundary_interpolation(minus_one, g_D_phi, all_dirichlet_boundary_info, XT::Grid::DirichletBoundary{});
-    phi_zero.dofs().vector() = phi.dofs().vector();
-    phi_zero -= g_D_phi;
+#endif
 
     // implicit Euler timestepping
     double t = 0;
@@ -1169,10 +1194,10 @@ int main(int argc, char* argv[])
 
       // do a timestep
       std::cout << "Current time: " << t << std::endl;
-      stokes_solver.apply();
-      std::cout << "Stokes done" << std::endl;
       pfield_solver.apply(actual_dt);
       std::cout << "Pfield done" << std::endl;
+      stokes_solver.apply();
+      std::cout << "Stokes done" << std::endl;
       ofield_solver.apply(actual_dt);
       std::cout << "Ofield done" << std::endl;
 
