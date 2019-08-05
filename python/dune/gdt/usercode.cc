@@ -20,6 +20,7 @@
 #include <dune/xt/grid/grids.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
 #include <dune/xt/grid/dd/glued.hh>
+#include <dune/xt/grid/dd/vtkwriter.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/functions/constant.hh>
 #include <dune/xt/functions/indicator.hh>

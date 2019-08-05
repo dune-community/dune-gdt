@@ -21,9 +21,7 @@ _test_logger_methods = list()
 _init_mpi_methods = list()
 _other_modules = ('xt.common', 'xt.grid', 'xt.functions', 'xt.la')
 
-_gdt_modules = (
-        'discretefunction',
-)
+_gdt_modules = ('discretefunction',)
 
 for module_name in _gdt_modules:
     mod = import_module('.{}'.format(module_name), 'dune.gdt')
