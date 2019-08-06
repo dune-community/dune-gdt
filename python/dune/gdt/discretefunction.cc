@@ -69,8 +69,7 @@ PYBIND11_MODULE(discretefunction, m)
   py::module::import("dune.xt.grid");
   py::module::import("dune.xt.functions");
 
-  Dune::XT::Common::bindings::addbind_exceptions(m);
-  Dune::XT::Common::bindings::add_initialization(m, "dune.gdt");
+  Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.discretefunction");
 
   bind_for_all_vectors_and_grids<>(m);
 } // PYBIND11_MODULE(discretefunction, ...)

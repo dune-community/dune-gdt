@@ -913,13 +913,13 @@ PYBIND11_MODULE(usercode, m)
   namespace py = pybind11;
   using namespace pybind11::literals;
 
-  Dune::XT::Common::bindings::addbind_exceptions(m);
-  Dune::XT::Common::bindings::add_initialization(m, "dune.gdt");
+  Dune::XT::Common::bindings::add_initialization(m, "dune.gdt", "usercode");
 
   py::module::import("dune.xt.common");
   py::module::import("dune.xt.la");
   py::module::import("dune.xt.grid");
   py::module::import("dune.xt.functions");
+  py::module::import("dune.gdt.discretefunction");
 
   // these might already be defined
   XT::Common::bindings::try_register(m, [](auto& m_) {
