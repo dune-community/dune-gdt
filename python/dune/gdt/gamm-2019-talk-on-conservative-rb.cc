@@ -310,8 +310,7 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
   py::module::import("dune.xt.grid");
   py::module::import("dune.xt.functions");
 
-  Dune::XT::Common::bindings::addbind_exceptions(m);
-  Dune::XT::Common::bindings::add_initialization(m, "dune.gdt");
+  Dune::XT::Common::bindings::add_initialization(m, "dune.gdt", "gamm_2019_talk_on_conservative_rb");
 
   py::class_<XT::Functions::Spe10::Model1Function<E, d, d, double>,
              XT::Functions::GridFunctionInterface<E, d, d, double>>

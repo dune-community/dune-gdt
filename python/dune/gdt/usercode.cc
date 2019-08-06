@@ -25,6 +25,7 @@ PYBIND11_MODULE(usercode, m)
   py::module::import("dune.xt.la");
   py::module::import("dune.xt.grid");
   py::module::import("dune.xt.functions");
+  py::module::import("dune.gdt.discretefunction");
 
   Dune::XT::Common::bindings::addbind_exceptions(m);
   Dune::XT::Common::bindings::add_initialization(m, "dune.gdt");

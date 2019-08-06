@@ -12,19 +12,19 @@
 #ifndef PYTHON_DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BINDINGS_HH
 #define PYTHON_DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BINDINGS_HH
 
-//#if  HAVE_DUNE_PYBINDXI
+#if HAVE_DUNE_PYBINDXI
 
-#include <dune/pybindxi/pybind11.h>
+#  include <dune/pybindxi/pybind11.h>
 
-#include <dune/xt/common/python.hh>
-#include <dune/xt/common/string.hh>
-#include <dune/xt/grid/type_traits.hh>
-#include <dune/xt/functions/interfaces/grid-function.hh>
-#include <python/dune/xt/la/container.bindings.hh>
-#include <python/dune/xt/grid/grids.bindings.hh>
-#include <python/dune/xt/functions/interfaces.hh>
+#  include <dune/xt/common/python.hh>
+#  include <dune/xt/common/string.hh>
+#  include <dune/xt/grid/type_traits.hh>
+#  include <dune/xt/functions/interfaces/grid-function.hh>
+#  include <python/dune/xt/la/container.bindings.hh>
+#  include <python/dune/xt/grid/grids.bindings.hh>
+#  include <python/dune/xt/functions/gridfunction-interface.hh>
 
-#include <dune/gdt/discretefunction/default.hh>
+#  include <dune/gdt/discretefunction/default.hh>
 
 namespace Dune {
 namespace GDT {
@@ -50,7 +50,7 @@ public:
     const auto grid_name = XT::Grid::bindings::grid_name<G>::value();
     if (std::is_same<R, double>::value)
       XT::Common::bindings::try_register(
-          m, [&](auto& module) { XT::Functions::bind_GridFunctionInterface<G, r, rC>(module, grid_name); });
+          m, [&](auto& module) { XT::Functions::bindings::bind_GridFunctionInterface<G, r, rC>(module, grid_name); });
 
     // type
     std::string ClassName = "DiscreteFunction_" + grid_name;
@@ -111,6 +111,6 @@ public:
 } // namespace Dune
 
 
-//#endif // HAVE_DUNE_PYBINDXI
+#endif // HAVE_DUNE_PYBINDXI
 
 #endif // PYTHON_DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BINDINGS_HH
