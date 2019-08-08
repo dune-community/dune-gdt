@@ -42,6 +42,7 @@
 #include <dune/gdt/spaces/h1/continuous-lagrange.hh>
 #include <dune/gdt/spaces/l2/discontinuous-lagrange.hh>
 #include <dune/gdt/spaces/l2/finite-volume.hh>
+#include <dune/gdt/spaces/parallel/dd_comm.hh>
 
 using namespace Dune;
 using namespace Dune::GDT;
@@ -62,22 +63,6 @@ static const LocalEllipticIpdgIntegrands::Method ipdg_variant =
 static std::string default_space_type()
 {
   return "cg_p1";
-}
-
-
-template <class GV>
-std::unique_ptr<GDT::SpaceInterface<GV>> make_subdomain_space(GV subdomain_grid_view, const std::string& space_type)
-{
-  if (space_type.size() >= 4 && space_type.substr(0, 4) == "cg_p") {
-    const auto order = XT::Common::from_string<int>(space_type.substr(4));
-    return std::make_unique<ContinuousLagrangeSpace<GV>>(subdomain_grid_view, order);
-  } else if (space_type.size() >= 4 && space_type.substr(0, 4) == "dg_p") {
-    const auto order = XT::Common::from_string<int>(space_type.substr(4));
-    return std::make_unique<DiscontinuousLagrangeSpace<GV>>(subdomain_grid_view, order);
-  } else
-    DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
-               "space_type = " << space_type << "\n   has to be 'cg_pX' or 'dg_pX' for some order X!");
-  return nullptr;
 }
 
 
@@ -161,6 +146,7 @@ class DomainDecomposition
 {
 public:
   using DdGridType = XT::Grid::DD::Glued<G, G, XT::Grid::Layers::leaf>;
+  using ParallelHelper = GDT::DomainDecompositionParallelHelper<DdGridType>;
 
 private:
   using GV = typename DdGridType::LocalViewType;
@@ -175,7 +161,19 @@ public:
     , vtk_writer_(dd_grid)
     , local_spaces_(dd_grid.num_subdomains(), nullptr)
     , local_discrete_functions_(dd_grid.num_subdomains(), nullptr)
+    , dof_communicator_(nullptr)
   {}
+
+  typename ParallelHelper::DofCommunicatorType& dof_communicator(std::string local_space_type = default_space_type())
+  {
+    if (dof_communicator_ == nullptr) {
+      dof_communicator_ = std::make_unique<typename ParallelHelper::DofCommunicatorType>(dd_grid.global_comm(),
+                                                                                         SolverCategory::overlapping);
+    }
+    ParallelHelper help{dd_grid, local_space_type, 1};
+    help.setup_parallel_indexset(*dof_communicator_);
+    return *dof_communicator_;
+  }
 
   void
   visualize_indicators(const std::vector<double>& indicators, const std::string& filename, const std::string& plot_name)
@@ -254,6 +252,7 @@ private:
   XT::Grid::DD::GluedVTKWriter<G, G, XT::Grid::Layers::leaf> vtk_writer_;
   std::vector<std::shared_ptr<SpaceInterface<GV>>> local_spaces_;
   std::vector<std::shared_ptr<std::vector<DiscreteFunction<V, GV>>>> local_discrete_functions_;
+  std::unique_ptr<ParallelHelper::DofCommunicatorType> dof_communicator_;
 }; // class DomainDecomposition
 
 
@@ -1038,6 +1037,7 @@ PYBIND11_MODULE(usercode, m)
       "write_visualization",
       [](DomainDecomposition& self, const std::string& filename_prefix) { self.write_visualization(filename_prefix); },
       "filename_prefix"_a);
+  domain_decomposition.def("dof_communicator", &DomainDecomposition::dof_communicator);
 
   py::class_<ContinuousLagrangePartitionOfUnity> cg_pou(
       m, "ContinuousLagrangePartitionOfUnity", "ContinuousLagrangePartitionOfUnity");
