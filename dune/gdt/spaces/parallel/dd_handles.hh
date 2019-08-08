@@ -21,7 +21,6 @@ namespace Dune {
 namespace GDT {
 namespace DD {
 
-static const int magic_number = 666;
 
 template <class VectorType, class ScalarType, class DdContainer, class Descriptor>
 class LocalView
@@ -163,10 +162,14 @@ public:
   template <class DdContainer, typename Entity>
   std::size_t size(const DdContainer& dd_container, const Entity& e) const
   {
-    //    bool contains = space.grid_view().indexSet().contains(e);
-    bool contains = true;
-    const auto& local_space = *dd_container.local_spaces_[e];
-    return contains ? local_size(local_space.mapper(), e) : 0u;
+    if constexpr (Entity::codimension == 0) {
+      //    bool contains = space.grid_view().indexSet().contains(e);
+      bool contains = true;
+      const auto& local_space = dd_container.local_space(e);
+      return contains ? local_size(local_space.mapper(), e) : 0u;
+    } else {
+      return 0;
+    }
   }
 };
 
@@ -502,8 +505,7 @@ public:
    * \param init_vector  Flag to control whether the result vector will be initialized.
    */
   GhostDataHandle(const DdContainer& sp, VectorType& v_, bool init_vector = true)
-    // magic_number = sp.mapper().max_local_size()
-    : BaseType(sp, v_, EntityDataCommunicationDescriptor<bool>(magic_number))
+    : BaseType(sp, v_, EntityDataCommunicationDescriptor<bool>(sp.max_local_size))
   {
     if (init_vector)
       v_.set_all(false);
@@ -615,8 +617,7 @@ public:
   DisjointPartitioningDataHandle(const DdContainer& dd_container, VectorType& v, bool init_vector = true)
     : BaseType(dd_container,
                v,
-               // TODO magic_number = space.mapper().max_local_size()
-               EntityDataCommunicationDescriptor<typename VectorType::ScalarType>(magic_number),
+               EntityDataCommunicationDescriptor<typename VectorType::ScalarType>(dd_container.max_local_size),
                DisjointPartitioningGatherScatter<typename VectorType::ScalarType>(
                    dd_container.dd_grid_.global_comm().rank()))
   {
@@ -685,9 +686,8 @@ public:
    * \param v           The result vector.
    * \param init_vector  Flag to control whether the result vector will be initialized.
    */
-  // TODO magic_number = space.mapper().max_local_size()
   SharedDOFDataHandle(const DdContainer& dd_container, VectorType& v, bool init_vector = true)
-    : BaseType(dd_container, v, EntityDataCommunicationDescriptor<bool>(magic_number))
+    : BaseType(dd_container, v, EntityDataCommunicationDescriptor<bool>(dd_container.max_local_size))
   {
     if (init_vector)
       v.set_all(false);

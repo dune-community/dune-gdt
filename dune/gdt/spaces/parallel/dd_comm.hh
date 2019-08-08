@@ -98,8 +98,8 @@ public:
     : dd_grid_(dd_grid)
     , dd_container_(dd_grid_, local_space_type)
     , rank_(dd_grid.macro_grid_view().comm().rank())
-    , rank_vector_(dd_grid.num_subdomains(), rank_)
-    , ghosts_(dd_grid.num_subdomains(), false)
+    , rank_vector_(dd_container_.sum_local_sizes, rank_)
+    , ghosts_(dd_container_.sum_local_sizes, false)
     , verbose_(verbose)
 
   {
@@ -225,37 +225,37 @@ void DomainDecompositionParallelHelper<DdGridType>::setup_parallel_indexset(DofC
     }
   }
 
-  // Publish global indices for the shared DOFS to other processors.
-  //  if (need_communication) {
-  //    GDT::DD::MinDataHandle<DdContainer, GlobalIndexVector> data_handle(dd_container_, scalarIndices);
-  //    macro_view.communicate(data_handle, _interiorBorder_all_interface, Dune::ForwardCommunication);
-  //  }
+  //   Publish global indices for the shared DOFS to other processors.
+  if (need_communication) {
+    GDT::DD::MinDataHandle<DdContainer, GlobalIndexVector> data_handle(dd_container_, scalarIndices);
+    macro_view.communicate(data_handle, _interiorBorder_all_interface, Dune::ForwardCommunication);
+  }
 
-  // Setup the index set
-  //  dof_communicator.indexSet().beginResize();
-  //  for (size_t i = 0; i < scalarIndices.size(); ++i) {
-  //    Dune::OwnerOverlapCopyAttributeSet::AttributeSet attr;
-  //    if (scalarIndices[i] != std::numeric_limits<GlobalIndex>::max()) {
-  //      // global index exist in index set
-  //      if (owned_for_amg(i)) {
-  //        // This dof is managed by us.
-  //        attr = Dune::OwnerOverlapCopyAttributeSet::owner;
-  //      } else {
-  //        attr = Dune::OwnerOverlapCopyAttributeSet::copy;
-  //      }
-  //      dof_communicator.indexSet().add(scalarIndices[i],
-  //                                      typename DofCommunicatorType::ParallelIndexSet::LocalIndex(i, attr));
-  //    }
-  //  }
+  //   Setup the index set
+  dof_communicator.indexSet().beginResize();
+  for (size_t i = 0; i < scalarIndices.size(); ++i) {
+    Dune::OwnerOverlapCopyAttributeSet::AttributeSet attr;
+    if (scalarIndices[i] != std::numeric_limits<GlobalIndex>::max()) {
+      // global index exist in index set
+      if (owned_for_amg(i)) {
+        // This dof is managed by us.
+        attr = Dune::OwnerOverlapCopyAttributeSet::owner;
+      } else {
+        attr = Dune::OwnerOverlapCopyAttributeSet::copy;
+      }
+      dof_communicator.indexSet().add(scalarIndices[i],
+                                      typename DofCommunicatorType::ParallelIndexSet::LocalIndex(i, attr));
+    }
+  }
   dof_communicator.indexSet().endResize();
 
   // Compute neighbors using communication
   std::set<int> neighbors;
 
-  //  if (need_communication) {
-  //    DD::SpaceNeighborDataHandle<DdContainer, int> data_handle(dd_container_, rank_, neighbors);
-  //    macro_view.communicate(data_handle, _all_all_interface, Dune::ForwardCommunication);
-  //  }
+  if (need_communication) {
+    DD::SpaceNeighborDataHandle<DdContainer, int> data_handle(dd_container_, rank_, neighbors);
+    macro_view.communicate(data_handle, _all_all_interface, Dune::ForwardCommunication);
+  }
 
   dof_communicator.remoteIndices().setNeighbours(neighbors);
   dof_communicator.remoteIndices().template rebuild<false>();
