@@ -24,7 +24,6 @@
 #include <dune/xt/functions/constant.hh>
 #include <dune/xt/functions/indicator.hh>
 #include <dune/xt/functions/interfaces/function.hh>
-#include <dune/xt/functions/spe10/model1.hh>
 
 #include <dune/gdt/functionals/vector-based.hh>
 #include <dune/gdt/interpolations.hh>
@@ -921,41 +920,6 @@ PYBIND11_MODULE(usercode, m)
   py::module::import("dune.xt.grid");
   py::module::import("dune.xt.functions");
   py::module::import("dune.gdt.discretefunction");
-
-  // these might already be defined
-  XT::Common::bindings::try_register(m, [](auto& m_) {
-    py::class_<XT::Functions::FunctionAsGridFunctionWrapper<E, 1, 1, double>,
-               XT::Functions::GridFunctionInterface<E, 1, 1, double>>
-        scalar_wrapper(m_, "ScalarFunctionAsGridFunctionWrapper", "ScalarFunctionAsGridFunctionWrapper");
-    scalar_wrapper.def(py::init([](const XT::Functions::FunctionInterface<d>& func) {
-                         return new XT::Functions::FunctionAsGridFunctionWrapper<E, 1, 1, double>(func);
-                       }),
-                       py::keep_alive<1, 2>(),
-                       "scalar_function"_a);
-  });
-  XT::Common::bindings::try_register(m, [](auto& m_) {
-    py::class_<XT::Functions::FunctionAsGridFunctionWrapper<E, d, d, double>,
-               XT::Functions::GridFunctionInterface<E, d, d, double>>
-        matrix_wrapper(m_, "MatrixFunctionAsGridFunctionWrapper", "MatrixFunctionAsGridFunctionWrapper");
-    matrix_wrapper.def(py::init([](const XT::Functions::FunctionInterface<d, d, d>& func) {
-                         return new XT::Functions::FunctionAsGridFunctionWrapper<E, d, d, double>(func);
-                       }),
-                       py::keep_alive<1, 2>(),
-                       "matrix_function"_a);
-  });
-
-  m.def("function_to_grid_function",
-        [](XT::Functions::FunctionInterface<d>& func) {
-          return std::make_unique<XT::Functions::FunctionAsGridFunctionWrapper<E, 1, 1, double>>(func);
-        },
-        py::keep_alive<0, 1>(),
-        "scalar_function"_a);
-  m.def("function_to_grid_function",
-        [](XT::Functions::FunctionInterface<d, d, d>& func) {
-          return std::make_unique<XT::Functions::FunctionAsGridFunctionWrapper<E, d, d, double>>(func);
-        },
-        py::keep_alive<0, 1>(),
-        "matrix_function"_a);
 
   py::class_<DomainDecomposition> domain_decomposition(m, "DomainDecomposition", "DomainDecomposition");
   domain_decomposition.def(py::init([](const std::array<unsigned int, d> num_macro_elements_per_dim,
