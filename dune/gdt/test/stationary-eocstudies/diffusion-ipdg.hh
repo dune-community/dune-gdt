@@ -28,6 +28,7 @@
 #include <dune/gdt/local/functionals/integrals.hh>
 #include <dune/gdt/local/bilinear-forms/integrals.hh>
 #include <dune/gdt/local/integrands/elliptic-ipdg.hh>
+#include <dune/gdt/local/integrands/ipdg.hh>
 #include <dune/gdt/local/integrands/elliptic.hh>
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/local/integrands/conversion.hh>
@@ -81,6 +82,7 @@ public:
   StationaryDiffusionIpdgEocStudy()
     : BaseType()
     , space_type_("")
+    , one_(1.)
   {}
 
 protected:
@@ -89,9 +91,7 @@ protected:
 
   virtual const XT::Grid::BoundaryInfo<I>& boundary_info() const = 0;
 
-  virtual const FF& diffusion_factor() const = 0;
-
-  virtual const FT& diffusion_tensor() const = 0;
+  virtual const FT& diffusion() const = 0;
 
   virtual const FF& force() const = 0;
 
@@ -125,15 +125,15 @@ protected:
     if (DXTC_TEST_CONFIG_GET("setup.visualize", false)) {
       const std::string prefix = XT::Common::Test::get_unique_test_name() + "_problem_";
       const std::string postfix = "_ref_" + XT::Common::to_string(refinement_level);
-      self.diffusion_factor().visualize(current_space.grid_view(), prefix + "diffusion_factor" + postfix);
-      self.diffusion_tensor().visualize(current_space.grid_view(), prefix + "diffusion_tensor" + postfix);
+      //      self.diffusion_factor().visualize(current_space.grid_view(), prefix + "diffusion_factor" + postfix);
+      self.diffusion().visualize(current_space.grid_view(), prefix + "diffusion" + postfix);
       self.force().visualize(current_space.grid_view(), prefix + "force" + postfix);
       //      self.dirichlet().visualize(current_space.grid_view(), prefix + "dirichlet" + postfix);
       //      self.neumann().visualize(current_space.grid_view(), prefix + "neumann" + postfix);
     }
     Timer timer;
     const auto solution = make_discrete_function(current_space, self.solve(current_space));
-    const auto diffusion = diffusion_factor() * diffusion_tensor();
+    const auto& one = one_.template as_grid_function<E>();
     // only set time if this did not happen in solve()
     if (self.current_data_["quantity"].count("time to solution (s)") == 0)
       self.current_data_["quantity"]["time to solution (s)"] = timer.elapsed();
@@ -146,21 +146,21 @@ protected:
             current_space.grid_view(), current_space, current_space, boundary_info());
         oswald_interpolation_operator.assemble(/*parallel=*/true);
         const auto h1_interpolation = oswald_interpolation_operator.apply(solution);
-        self.current_data_["norm"][norm_id] = elliptic_norm(
-            current_space.grid_view(), diffusion_factor(), diffusion_tensor(), solution - h1_interpolation);
+        self.current_data_["norm"][norm_id] =
+            elliptic_norm(current_space.grid_view(), one, diffusion(), solution - h1_interpolation);
       } else if (norm_id == "eta_R") {
         norm_it = remaining_norms.erase(norm_it); // ... or here ...
         // compute estimate
         auto rt_space = make_raviart_thomas_space(current_space.grid_view(), current_space.max_polorder() - 1);
         auto reconstruction_op = make_ipdg_flux_reconstruction_operator<M, ipdg_method>(
-            current_space.grid_view(), current_space, rt_space, diffusion_factor(), diffusion_tensor());
+            current_space.grid_view(), current_space, rt_space, one, diffusion());
         auto flux_reconstruction = reconstruction_op.apply(solution);
         double eta_R_2 = 0.;
         std::mutex eta_R_2_mutex;
         auto walker = XT::Grid::make_walker(current_space.grid_view());
         walker.append([]() {},
                       [&](const auto& element) {
-                        auto local_df = diffusion.local_function();
+                        auto local_df = this->diffusion().local_function();
                         local_df->bind(element);
                         auto local_force = this->force().local_function();
                         local_force->bind(element);
@@ -201,40 +201,36 @@ protected:
         // compute estimate
         auto rt_space = make_raviart_thomas_space(current_space.grid_view(), current_space.max_polorder() - 1);
         auto reconstruction_op = make_ipdg_flux_reconstruction_operator<M, ipdg_method>(
-            current_space.grid_view(), current_space, rt_space, diffusion_factor(), diffusion_tensor());
+            current_space.grid_view(), current_space, rt_space, one, diffusion());
         auto flux_reconstruction = reconstruction_op.apply(solution);
         double eta_DF_2 = 0.;
         std::mutex eta_DF_2_mutex;
         auto walker = XT::Grid::make_walker(current_space.grid_view());
-        walker.append([]() {},
-                      [&](const auto& element) {
-                        auto local_df = this->diffusion_factor().local_function();
-                        local_df->bind(element);
-                        auto local_dt = this->diffusion_tensor().local_function();
-                        local_dt->bind(element);
-                        auto local_solution = solution.local_function();
-                        local_solution->bind(element);
-                        auto local_reconstruction = flux_reconstruction.local_function();
-                        local_reconstruction->bind(element);
-                        auto result = XT::Grid::element_integral(
-                            element,
-                            [&](const auto& xx) {
-                              const auto df = local_df->evaluate(xx);
-                              const auto dt = local_dt->evaluate(xx);
-                              const auto diff = dt * df;
-                              const auto diff_inv = XT::LA::invert_matrix(diff);
-                              const auto solution_grad = local_solution->jacobian(xx)[0];
-                              const auto flux_rec = local_reconstruction->evaluate(xx);
-                              auto difference = diff * solution_grad + flux_rec;
-                              return (diff_inv * difference) * difference;
-                            },
-                            std::max(local_df->order() + local_dt->order() + std::max(local_solution->order() - 1, 0),
-                                     local_reconstruction->order())
-                                + /*over_integrate=*/3);
-                        std::lock_guard<std::mutex> lock(eta_DF_2_mutex);
-                        eta_DF_2 += result;
-                      },
-                      []() {});
+        walker.append(
+            []() {},
+            [&](const auto& element) {
+              auto local_df = this->diffusion().local_function();
+              local_df->bind(element);
+              auto local_solution = solution.local_function();
+              local_solution->bind(element);
+              auto local_reconstruction = flux_reconstruction.local_function();
+              local_reconstruction->bind(element);
+              auto result = XT::Grid::element_integral(
+                  element,
+                  [&](const auto& xx) {
+                    const auto diff = local_df->evaluate(xx);
+                    const auto diff_inv = XT::LA::invert_matrix(diff);
+                    const auto solution_grad = local_solution->jacobian(xx)[0];
+                    const auto flux_rec = local_reconstruction->evaluate(xx);
+                    auto difference = diff * solution_grad + flux_rec;
+                    return (diff_inv * difference) * difference;
+                  },
+                  std::max(local_df->order() + std::max(local_solution->order() - 1, 0), local_reconstruction->order())
+                      + /*over_integrate=*/3);
+              std::lock_guard<std::mutex> lock(eta_DF_2_mutex);
+              eta_DF_2 += result;
+            },
+            []() {});
         walker.walk(/*parallel=*/true);
         self.current_data_["norm"][norm_id] = std::sqrt(eta_DF_2);
       } else
@@ -262,21 +258,33 @@ protected:
 
   virtual std::unique_ptr<O> make_residual_operator(const S& space) override
   {
+    const auto& one = one_.template as_grid_function<E>();
     // define lhs operator (has to be a pointer to allow the residual operator to manage the memory in the end)
     auto lhs_op = std::make_unique<MatrixOperator<M, GV>>(make_matrix_operator<M>(
         space,
         (space_type_.size() >= 2 && space_type_.substr(0, 2) == "cg") ? Stencil::element
                                                                       : Stencil::element_and_intersection));
-    lhs_op->append(LocalElementIntegralBilinearForm<E>(
-        LocalEllipticIntegrand<E>(this->diffusion_factor(), this->diffusion_tensor())));
-    lhs_op->append(LocalIntersectionIntegralBilinearForm<I>(LocalEllipticIpdgIntegrands::Inner<I, double, ipdg_method>(
-                       this->diffusion_factor(), this->diffusion_tensor())),
+    // - volume term
+    lhs_op->append(LocalElementIntegralBilinearForm<E>(LocalEllipticIntegrand<E>(one, this->diffusion())));
+    // - inner faces
+    lhs_op->append(LocalIntersectionIntegralBilinearForm<I>(
+                       LocalEllipticIPDGIntegrands::InnerCoupling<I>(1., this->diffusion(), this->diffusion())),
                    {},
                    XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
     lhs_op->append(
+        LocalIntersectionIntegralBilinearForm<I>(LocalIPDGIntegrands::InnerPenalty<I>(
+            8, this->diffusion(), [](const auto& intersection) { return intersection.geometry().volume(); })),
+        {},
+        XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
+    // - Dirichlet faces
+    lhs_op->append(
         LocalIntersectionIntegralBilinearForm<I>(
-            LocalEllipticIpdgIntegrands::DirichletBoundaryLhs<I, double, ipdg_method>(this->diffusion_factor(),
-                                                                                      this->diffusion_tensor())),
+            LocalEllipticIPDGIntegrands::DirichletCoupling<I>(1., this->diffusion())),
+        {},
+        XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(this->boundary_info(), new XT::Grid::DirichletBoundary()));
+    lhs_op->append(
+        LocalIntersectionIntegralBilinearForm<I>(LocalIPDGIntegrands::BoundaryPenalty<I>(
+            14, this->diffusion(), [](const auto& intersection) { return intersection.geometry().volume(); })),
         {},
         XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(this->boundary_info(), new XT::Grid::DirichletBoundary()));
     // define rhs functional
@@ -297,6 +305,7 @@ protected:
   } // ... make_residual_operator(...)
 
   std::string space_type_;
+  XT::Functions::ConstantFunction<d> one_;
 }; // class StationaryDiffusionIpdgEocStudy
 
 
