@@ -32,6 +32,7 @@
 #include <dune/gdt/local/integrands/conversion.hh>
 #include <dune/gdt/local/integrands/elliptic-ipdg.hh>
 #include <dune/gdt/local/integrands/elliptic.hh>
+#include <dune/gdt/local/integrands/ipdg.hh>
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/operators/matrix-based.hh>
 #include <dune/gdt/tools/dirichlet-constraints.hh>
@@ -55,8 +56,6 @@ static const constexpr size_t d = G::dimension;
 using M = XT::LA::IstlRowMajorSparseMatrix<double>;
 using V = XT::LA::IstlDenseVector<double>;
 
-static const LocalEllipticIpdgIntegrands::Method ipdg_variant =
-    LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor;
 
 static std::string default_space_type()
 {
@@ -417,6 +416,7 @@ std::unique_ptr<M> assemble_local_system_matrix(const XT::Functions::GridFunctio
                 "ss = " << ss << "\n   domain_decomposition.dd_grid.num_subdomains() = "
                         << domain_decomposition.dd_grid.num_subdomains());
   std::unique_ptr<M> subdomain_matrix;
+  const auto diffusion = diffusion_factor * diffusion_tensor;
   bool found_subdomain = false;
   for (auto&& macro_element : elements(domain_decomposition.dd_grid.macro_grid_view())) {
     if (domain_decomposition.dd_grid.subdomain(macro_element) == ss) {
@@ -429,13 +429,19 @@ std::unique_ptr<M> assemble_local_system_matrix(const XT::Functions::GridFunctio
       auto subdomain_space = make_subdomain_space(subdomain_grid_view, space_type);
       // create operator
       auto subdomain_operator = make_matrix_operator<M>(*subdomain_space, Stencil::element_and_intersection);
-      const LocalElementIntegralBilinearForm<E> element_bilinear_form(
-          LocalEllipticIntegrand<E>(diffusion_factor, diffusion_tensor));
-      subdomain_operator.append(element_bilinear_form);
+      subdomain_operator.append(
+          LocalElementIntegralBilinearForm<E>(LocalEllipticIntegrand<E>(diffusion_factor, diffusion_tensor)));
       if (!subdomain_space->continuous(0)) {
-        const LocalIntersectionIntegralBilinearForm<I> coupling_bilinear_form(
-            LocalEllipticIpdgIntegrands::Inner<I, double, ipdg_variant>(diffusion_factor, diffusion_tensor));
-        subdomain_operator.append(coupling_bilinear_form, {}, XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
+        subdomain_operator.append(LocalIntersectionIntegralBilinearForm<I>(
+                                      LocalEllipticIPDGIntegrands::InnerCoupling<I>(
+                                          /*symmetric=*/1., diffusion, /*weight=*/diffusion_tensor)
+                                      + LocalIPDGIntegrands::InnerPenalty<I>(
+                                            /*penalty=*/8,
+                                            diffusion,
+                                            /*intersection_diameter=*/
+                                            [](const auto& intersection) { return intersection.geometry().volume(); })),
+                                  {},
+                                  XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
       }
       subdomain_operator.assemble();
       subdomain_matrix = std::make_unique<M>(subdomain_operator.matrix());
@@ -497,6 +503,7 @@ assemble_coupling_matrices(const XT::Functions::GridFunctionInterface<E>& diffus
   std::unique_ptr<M> coupling_matrix_in_out;
   std::unique_ptr<M> coupling_matrix_out_in;
   std::unique_ptr<M> coupling_matrix_out_out;
+  auto diffusion = diffusion_factor * diffusion_tensor;
   for (auto&& inside_macro_element : elements(domain_decomposition.dd_grid.macro_grid_view())) {
     if (domain_decomposition.dd_grid.subdomain(inside_macro_element) == ss) {
       // this is the subdomain we are interested in, create space
@@ -582,7 +589,13 @@ assemble_coupling_matrices(const XT::Functions::GridFunctionInterface<E>& diffus
             using I = CouplingIntersectionWithCorrectNormal<CouplingI, MacroI>;
             using E = typename I::InsideEntity;
             const LocalIntersectionIntegralBilinearForm<I> intersection_bilinear_form(
-                LocalEllipticIpdgIntegrands::Inner<I, double, ipdg_variant>(diffusion_factor, diffusion_tensor));
+                LocalEllipticIPDGIntegrands::InnerCoupling<I>(
+                    /*symmetric=*/1., diffusion, /*weight=*/diffusion_tensor)
+                + LocalIPDGIntegrands::InnerPenalty<I>(/*penalty=*/8,
+                                                       /*weight=*/diffusion,
+                                                       /*intersection_diameter=*/[](const auto& intersection) {
+                                                         return intersection.geometry().volume();
+                                                       }));
             for (auto coupling_intersection_it = coupling.template ibegin<0>();
                  coupling_intersection_it != coupling_intersection_it_end;
                  ++coupling_intersection_it) {
@@ -648,6 +661,7 @@ std::unique_ptr<M> assemble_boundary_matrix(const XT::Functions::GridFunctionInt
   using MGV = typename DomainDecomposition::DdGridType::MacroGridViewType;
   const XT::Grid::AllDirichletBoundaryInfo<XT::Grid::extract_intersection_t<MGV>> macro_boundary_info;
   std::unique_ptr<M> subdomain_matrix;
+  auto diffusion = diffusion_factor * diffusion_tensor;
   for (auto&& macro_element : elements(domain_decomposition.dd_grid.macro_grid_view())) {
     if (domain_decomposition.dd_grid.subdomain(macro_element) == ss) {
       // this is the subdomain we are interested in, create space
@@ -660,10 +674,13 @@ std::unique_ptr<M> assemble_boundary_matrix(const XT::Functions::GridFunctionInt
           domain_decomposition.dd_grid.macro_grid_view(), macro_element, macro_boundary_info);
       // create operator
       auto subdomain_operator = make_matrix_operator<M>(*subdomain_space, Stencil::element);
-      const LocalIntersectionIntegralBilinearForm<I> dirichlet_bilinear_form(
-          LocalEllipticIpdgIntegrands::DirichletBoundaryLhs<I, double, ipdg_variant>(diffusion_factor,
-                                                                                     diffusion_tensor));
-      subdomain_operator.append(dirichlet_bilinear_form,
+      subdomain_operator.append(LocalIntersectionIntegralBilinearForm<I>(
+                                    LocalEllipticIPDGIntegrands::DirichletCoupling<I>(/*symmetry=*/1., diffusion)
+                                    + LocalIPDGIntegrands::BoundaryPenalty<I>(
+                                          /*penalty=*/14,
+                                          /*weight=*/diffusion,
+                                          /*intersection_diameter=*/
+                                          [](const auto& intersection) { return intersection.geometry().volume(); })),
                                 {},
                                 XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(subdomain_boundary_info,
                                                                                    new XT::Grid::DirichletBoundary()));
@@ -688,6 +705,7 @@ assemble_local_product_contributions(const XT::Functions::GridFunctionInterface<
                 "ss = " << ss << "\n   domain_decomposition.dd_grid.num_subdomains() = "
                         << domain_decomposition.dd_grid.num_subdomains());
   std::unique_ptr<M> subdomain_matrix;
+  auto diffusion = diffusion_factor * diffusion_tensor;
   for (auto&& macro_element : elements(domain_decomposition.dd_grid.macro_grid_view())) {
     if (domain_decomposition.dd_grid.subdomain(macro_element) == ss) {
       // this is the subdomain we are interested in, create space
@@ -702,9 +720,13 @@ assemble_local_product_contributions(const XT::Functions::GridFunctionInterface<
           LocalEllipticIntegrand<E>(diffusion_factor, diffusion_tensor));
       subdomain_operator.append(element_bilinear_form);
       if (!subdomain_space->continuous(0)) {
-        const LocalIntersectionIntegralBilinearForm<I> coupling_bilinear_form(
-            LocalEllipticIpdgIntegrands::InnerOnlyPenalty<I, double, ipdg_variant>(diffusion_factor, diffusion_tensor));
-        subdomain_operator.append(coupling_bilinear_form, {}, XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
+        subdomain_operator.append(LocalIntersectionIntegralBilinearForm<I>(LocalIPDGIntegrands::InnerPenalty<I>(
+                                      /*penalty=*/8,
+                                      /*weight=*/diffusion,
+                                      /*intersection_diameter=*/
+                                      [](const auto& intersection) { return intersection.geometry().volume(); })),
+                                  {},
+                                  XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
       }
       subdomain_operator.assemble();
       subdomain_matrix = std::make_unique<M>(subdomain_operator.matrix());
@@ -730,6 +752,7 @@ assemble_coupling_product_contributions(const XT::Functions::GridFunctionInterfa
   std::unique_ptr<M> coupling_matrix_in_out;
   std::unique_ptr<M> coupling_matrix_out_in;
   std::unique_ptr<M> coupling_matrix_out_out;
+  auto diffusion = diffusion_factor * diffusion_tensor;
   for (auto&& inside_macro_element : elements(domain_decomposition.dd_grid.macro_grid_view())) {
     if (domain_decomposition.dd_grid.subdomain(inside_macro_element) == ss) {
       // this is the subdomain we are interested in, create space
@@ -813,8 +836,11 @@ assemble_coupling_product_contributions(const XT::Functions::GridFunctionInterfa
             using I = typename DomainDecomposition::DdGridType::GlueType::Intersection;
             using E = typename I::InsideEntity;
             const LocalIntersectionIntegralBilinearForm<I> intersection_bilinear_form(
-                LocalEllipticIpdgIntegrands::InnerOnlyPenalty<I, double, ipdg_variant>(diffusion_factor,
-                                                                                       diffusion_tensor));
+                LocalIPDGIntegrands::InnerPenalty<I>(/*penalty=*/8,
+                                                     /*weight=*/diffusion,
+                                                     /*intersection_diameter=*/[](const auto& intersection) {
+                                                       return intersection.geometry().volume();
+                                                     }));
             for (auto coupling_intersection_it = coupling.template ibegin<0>();
                  coupling_intersection_it != coupling_intersection_it_end;
                  ++coupling_intersection_it) {
@@ -880,6 +906,7 @@ assemble_boundary_product_contributions(const XT::Functions::GridFunctionInterfa
   using MGV = typename DomainDecomposition::DdGridType::MacroGridViewType;
   const XT::Grid::AllDirichletBoundaryInfo<XT::Grid::extract_intersection_t<MGV>> macro_boundary_info;
   std::unique_ptr<M> subdomain_matrix;
+  auto diffusion = diffusion_factor * diffusion_tensor;
   for (auto&& macro_element : elements(domain_decomposition.dd_grid.macro_grid_view())) {
     if (domain_decomposition.dd_grid.subdomain(macro_element) == ss) {
       // this is the subdomain we are interested in, create space
@@ -892,13 +919,15 @@ assemble_boundary_product_contributions(const XT::Functions::GridFunctionInterfa
           domain_decomposition.dd_grid.macro_grid_view(), macro_element, macro_boundary_info);
       // create operator
       auto subdomain_operator = make_matrix_operator<M>(*subdomain_space, Stencil::element);
-      const LocalIntersectionIntegralBilinearForm<I> dirichlet_bilinear_form(
-          LocalEllipticIpdgIntegrands::DirichletBoundaryLhsOnlyPenalty<I, double, ipdg_variant>(diffusion_factor,
-                                                                                                diffusion_tensor));
-      subdomain_operator.append(dirichlet_bilinear_form,
-                                {},
-                                XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(subdomain_boundary_info,
-                                                                                   new XT::Grid::DirichletBoundary()));
+      if (!subdomain_space->continuous(0))
+        subdomain_operator.append(LocalIntersectionIntegralBilinearForm<I>(LocalIPDGIntegrands::BoundaryPenalty<I>(
+                                      /*penalty=*/14,
+                                      /*weight=*/diffusion,
+                                      /*intersection_diameter=*/
+                                      [](const auto& intersection) { return intersection.geometry().volume(); })),
+                                  {},
+                                  XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(
+                                      subdomain_boundary_info, new XT::Grid::DirichletBoundary()));
       subdomain_operator.assemble();
       subdomain_matrix = std::make_unique<M>(subdomain_operator.matrix());
       break;
