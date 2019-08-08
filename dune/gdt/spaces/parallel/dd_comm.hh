@@ -51,14 +51,57 @@ class DomainDecompositionParallelHelper
 public:
   using DofCommunicatorType = typename DofCommunicationChooser<GV, true>::Type;
 
+  struct DdContainer
+  {
+
+    using MacroEntityType = typename DdGridType::MacroEntityType;
+    using MacroId = typename DdGridType::MacroGridType::GlobalIdSetType::IdType;
+    using LocalSpaceType = GDT::SpaceInterface<typename DdGridType::MicroGridViewType>;
+
+    DdContainer(const DdGridType& dd_grid, std::string local_space_type)
+      : dd_grid_(dd_grid)
+      , local_space_type_(local_space_type)
+      , macro_id_set_(dd_grid_.macro_grid_view().grid().globalIdSet())
+      , sum_local_sizes(0)
+      , max_local_size(std::numeric_limits<size_t>::min())
+    {
+      auto macro_view = dd_grid_.macro_grid_view();
+      const auto& subdomain_id_to_entity_idx = dd_grid_.subdomain_id_to_idx_map();
+
+      for (auto&& macro_element : elements(dd_grid_.macro_grid_view())) {
+        typename DdGridType::MicroGridViewType view{dd_grid_.local_grid(macro_element).leaf_view()};
+        auto lsp{make_subdomain_space(view, local_space_type_)};
+        const auto id{macro_id_set_.id(macro_element)};
+        local_spaces_.insert({id, std::move(lsp)});
+        const size_t size{local_spaces_.at(id)->mapper().size()};
+        sum_local_sizes += size;
+        max_local_size = std::max(size, max_local_size);
+        local_sizes_.insert({id, size});
+      }
+    }
+
+    const LocalSpaceType& local_space(const MacroEntityType& entity) const
+    {
+      return *local_spaces_.at(macro_id_set_.id(entity));
+    }
+
+    const DdGridType& dd_grid_;
+    const std::string local_space_type_;
+    std::map<MacroId, std::unique_ptr<LocalSpaceType>> local_spaces_;
+    std::map<MacroId, size_t> local_sizes_;
+    const typename DdGridType::MacroGridType::GlobalIdSet& macro_id_set_;
+    size_t sum_local_sizes;
+    size_t max_local_size;
+  };
+
   DomainDecompositionParallelHelper(const DdGridType& dd_grid, std::string local_space_type, int verbose = 1)
     : dd_grid_(dd_grid)
-    , local_space_type_(local_space_type)
+    , dd_container_(dd_grid_, local_space_type)
     , rank_(dd_grid.macro_grid_view().comm().rank())
-    // subdomain count ist nicht global summiert?!
     , rank_vector_(dd_grid.num_subdomains(), rank_)
     , ghosts_(dd_grid.num_subdomains(), false)
     , verbose_(verbose)
+
   {
     auto view = dd_grid_.macro_grid_view();
 
@@ -68,13 +111,13 @@ public:
 
     if (view.comm().size() > 1) {
       // find out about ghosts
-      GDT::DD::GhostDataHandle<DdGridType, GhostVector> gdh(dd_grid_, ghosts_, false);
+      GDT::DD::GhostDataHandle<DdContainer, GhostVector> gdh(dd_container_, ghosts_, false);
       view.communicate(gdh, _interiorBorder_all_interface, Dune::ForwardCommunication);
 
       // create disjoint DOF partitioning
       //            SpaceTypeDataHandle<SpaceType,RankVector,DisjointPartitioningGatherScatter<RankIndex> >
-      //  ibdh(dd_grid_,rank_vector_,DisjointPartitioningGatherScatter<RankIndex>(rank_));
-      GDT::DD::DisjointPartitioningDataHandle<DdGridType, RankVector> pdh(dd_grid_, rank_vector_);
+      //  ibdh(dd_container_,rank_vector_,DisjointPartitioningGatherScatter<RankIndex>(rank_));
+      GDT::DD::DisjointPartitioningDataHandle<DdContainer, RankVector> pdh(dd_container_, rank_vector_);
       view.communicate(pdh, _interiorBorder_all_interface, Dune::ForwardCommunication);
     }
   }
@@ -112,6 +155,7 @@ private:
 
 private:
   const DdGridType& dd_grid_;
+  DdContainer dd_container_;
   const std::string local_space_type_;
   const RankIndex rank_;
   RankVector rank_vector_; // vector to identify unique decomposition
@@ -139,25 +183,9 @@ void DomainDecompositionParallelHelper<DdGridType>::setup_parallel_indexset(DofC
   // ********************************************************************************
 
   const auto& macro_view = dd_grid_.macro_grid_view();
-  using LocalSpaceType = std::unique_ptr<GDT::SpaceInterface<typename DdGridType::MicroGridViewType>>;
-  using MacroEntity = typename DdGridType::MacroEntityType;
-  using MacroId = typename DdGridType::MacroGridType::GlobalIdSetType::IdType;
-  std::map<MacroId, LocalSpaceType> local_spaces;
-  const auto& macro_id_set = macro_view.grid().globalIdSet();
-  const auto& subdomain_id_to_entity_idx = dd_grid_.subdomain_id_to_idx_map();
-  std::map<MacroId, size_t> local_sizes;
-  size_t sum_local_sizes = 0;
-  for (auto&& macro_element : elements(dd_grid_.macro_grid_view())) {
-    typename DdGridType::MicroGridViewType view{dd_grid_.local_grid(macro_element).leaf_view()};
-    LocalSpaceType lsp{make_subdomain_space(view, local_space_type_)};
-    const auto id{macro_id_set.id(macro_element)};
-    local_spaces.insert({id, std::move(lsp)});
-    const size_t size{local_spaces.at(id)->mapper().size()};
-    sum_local_sizes += size;
-    local_sizes.insert({id, size});
-  }
+
   // WAS space.mapper().size()
-  const auto vector_size = sum_local_sizes;
+  const auto vector_size = dd_container_.sum_local_sizes;
 
   // Do we need to communicate at all?
   auto& comm = dd_grid_.global_comm();
@@ -167,8 +195,8 @@ void DomainDecompositionParallelHelper<DdGridType>::setup_parallel_indexset(DofC
   BoolVector sharedDOF(vector_size, false);
 
   if (need_communication) {
-    //    GDT::DD::SharedDOFDataHandle<DdGridType, BoolVector> data_handle(dd_grid_, sharedDOF, false);
-    //    macro_view.communicate(data_handle, _all_all_interface, Dune::ForwardCommunication);
+    GDT::DD::SharedDOFDataHandle<DdContainer, BoolVector> data_handle(dd_container_, sharedDOF, false);
+    macro_view.communicate(data_handle, _all_all_interface, Dune::ForwardCommunication);
   }
 
   // Count shared dofs that we own
@@ -199,7 +227,7 @@ void DomainDecompositionParallelHelper<DdGridType>::setup_parallel_indexset(DofC
 
   // Publish global indices for the shared DOFS to other processors.
   //  if (need_communication) {
-  //    GDT::DD::MinDataHandle<DdGridType, GlobalIndexVector> data_handle(dd_grid_, scalarIndices);
+  //    GDT::DD::MinDataHandle<DdContainer, GlobalIndexVector> data_handle(dd_container_, scalarIndices);
   //    macro_view.communicate(data_handle, _interiorBorder_all_interface, Dune::ForwardCommunication);
   //  }
 
@@ -225,7 +253,7 @@ void DomainDecompositionParallelHelper<DdGridType>::setup_parallel_indexset(DofC
   std::set<int> neighbors;
 
   //  if (need_communication) {
-  //    DD::SpaceNeighborDataHandle<DdGridType, int> data_handle(dd_grid_, rank_, neighbors);
+  //    DD::SpaceNeighborDataHandle<DdContainer, int> data_handle(dd_container_, rank_, neighbors);
   //    macro_view.communicate(data_handle, _all_all_interface, Dune::ForwardCommunication);
   //  }
 

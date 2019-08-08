@@ -23,11 +23,11 @@ namespace DD {
 
 static const int magic_number = 666;
 
-template <class VectorType, class ScalarType, class DdGridType, class Descriptor>
+template <class VectorType, class ScalarType, class DdContainer, class Descriptor>
 class LocalView
 {
   static_assert(XT::LA::is_vector<VectorType>::value, "");
-  using EntityType = typename DdGridType::MicroEntityType;
+  using MacroElement = typename DdContainer::MacroEntityType;
 
 private:
   void resize(size_t size)
@@ -39,26 +39,26 @@ private:
 public:
   using value_type = ScalarType;
 
-  LocalView(VectorType& vector, const DdGridType& space, const Descriptor& descriptor)
+  LocalView(VectorType& vector, const DdContainer& dd_container, const Descriptor& descriptor)
     : vector_(vector)
-    , dd_grid_(space)
+    , dd_container_(dd_container)
     , global_indices_(0)
     , value_cache_(0)
     , descriptor_(descriptor)
   {}
 
-  void bind(const EntityType& entity)
+  void bind(const MacroElement& entity)
   {
-    const size_t size{descriptor_.size(dd_grid_, entity)};
+    const size_t size{descriptor_.size(dd_container_, entity)};
     resize(size);
-    DUNE_THROW(NotImplemented, "");
-    //      dd_grid_.mapper().global_indices(entity, global_indices_);
-    //      for (auto i : XT::Common::value_range(size)) {
-    //        assert(i < global_indices_.size());
-    //        const auto global = global_indices_[i];
-    //        assert(global < vector_.size());
-    //        value_cache_[i] = vector_[global];
-    //      }
+    const auto& local_space = dd_container_.local_space(entity);
+    local_space.mapper().global_indices(entity, global_indices_);
+    for (auto i : XT::Common::value_range(size)) {
+      assert(i < global_indices_.size());
+      const auto global = global_indices_[i];
+      assert(global < vector_.size());
+      value_cache_[i] = vector_[global];
+    }
   }
 
   //! this needs to exist for communication to allow gather/scatter to define for codim non-zero. even if never called
@@ -96,7 +96,7 @@ public:
 
 private:
   VectorType& vector_;
-  const DdGridType& dd_grid_;
+  const DdContainer& dd_container_;
   Dune::DynamicVector<size_t> global_indices_;
   //! must use something that doesn't have specialized data storage for bool
   boost::container::vector<ScalarType> value_cache_;
@@ -105,7 +105,7 @@ private:
 
 //! We only ever communicate data on Elements, no matter what space
 template <typename DDGRID>
-static constexpr bool space_associates_data_with(const DDGRID& /*space*/, int codim)
+static constexpr bool dd_grid_associates_data_with(const DDGRID& /*space*/, int codim)
 {
   return codim == 0;
 }
@@ -117,23 +117,25 @@ template <typename E>
 struct DofDataCommunicationDescriptor
 {
 private:
-  template <class GV, class Entity>
-  static size_t local_size(const MapperInterface<GV>& mapper, const Entity& e, std::integral_constant<int, 0>)
+  template <class GV, class MacroEntity>
+  static size_t
+  local_size(const MapperInterface<GV>& local_mapper, const MacroEntity& e, std::integral_constant<int, 0>)
   {
-    return mapper.local_size(e);
+    //
+    return local_mapper.size();
   }
 
-  template <class GV, class Entity, int codim>
+  template <class GV, class MacroEntity, int codim>
   static std::enable_if_t<codim != 0, size_t>
-  local_size(const MapperInterface<GV>& /*mapper*/, const Entity& /*e*/, std::integral_constant<int, codim>)
+  local_size(const MapperInterface<GV>& /*mapper*/, const MacroEntity& /*e*/, std::integral_constant<int, codim>)
   {
     return 0;
   }
 
-  template <class GV, class Entity>
-  static size_t local_size(const MapperInterface<GV>& mapper, const Entity& e)
+  template <class GV, class MacroEntity>
+  static size_t local_size(const MapperInterface<GV>& mapper, const MacroEntity& e)
   {
-    return local_size(mapper, e, std::integral_constant<int, Entity::codimension>());
+    return local_size(mapper, e, std::integral_constant<int, MacroEntity::codimension>());
   }
 
 public:
@@ -145,25 +147,26 @@ public:
   // export original data type to fix up size information forwarded to standard gather / scatter functors
   typedef E OriginalDataType;
 
-  template <class DdGridType>
-  bool contains(const DdGridType& space, int /*dim*/, int codim) const
+  template <class DdContainer>
+  bool contains(const DdContainer& dd_container, int /*dim*/, int codim) const
   {
-    return space_associates_data_with(space, codim);
+    return dd_grid_associates_data_with(dd_container, codim);
   }
 
-  template <class DdGridType>
-  bool fixedSize(const DdGridType& /*space*/, int /*dim*/, int /*codim*/) const
+  template <class DdContainer>
+  bool fixedSize(const DdContainer& /*space*/, int /*dim*/, int /*codim*/) const
   {
     // we currently have no adaptive spaces
     return true;
   }
 
-  template <class DdGridType, typename Entity>
-  std::size_t size(const DdGridType& space, const Entity& e) const
+  template <class DdContainer, typename Entity>
+  std::size_t size(const DdContainer& dd_container, const Entity& e) const
   {
     //    bool contains = space.grid_view().indexSet().contains(e);
     bool contains = true;
-    return contains ? local_size(space.mapper(), e) : 0u;
+    const auto& local_space = *dd_container.local_spaces_[e];
+    return contains ? local_size(local_space.mapper(), e) : 0u;
   }
 };
 
@@ -177,25 +180,25 @@ struct EntityDataCommunicationDescriptor
   // grid's communication buffer
   static const bool wrap_buffer = false;
 
-  template <class DdGridType>
-  bool contains(const DdGridType& space, int /*dim*/, int codim) const
+  template <class DdContainer>
+  bool contains(const DdContainer& dd_container, int /*dim*/, int codim) const
   {
-    return space_associates_data_with(space, codim);
+    return dd_grid_associates_data_with(dd_container, codim);
   }
 
-  template <class DdGridType>
-  bool fixedSize(const DdGridType& /*space*/, int /*dim*/, int /*codim*/) const
+  template <class DdContainer>
+  bool fixedSize(const DdContainer& /*space*/, int /*dim*/, int /*codim*/) const
   {
     return true;
   }
 
-  template <class DdGridType, typename Entity>
-  std::size_t size(const DdGridType& space, const Entity& e) const
+  template <class DdContainer, typename Entity>
+  std::size_t size(const DdContainer& dd_container, const Entity& e) const
   {
     // TODO hardcoded true
     //      bool contains = space.grid_view().indexSet().contains(e);
     bool contains = true;
-    return (space_associates_data_with(space, Entity::codimension) && contains) ? count_ : 0;
+    return (dd_grid_associates_data_with(dd_container, Entity::codimension) && contains) ? count_ : 0;
   }
 
   //! remove default value, force handles to use actual space provided values
@@ -208,40 +211,39 @@ private:
 };
 
 
-template <class DdGridType,
+template <class DdContainer,
           typename VectorType,
           typename GatherScatter,
           typename CommunicationDescriptor = DofDataCommunicationDescriptor<typename VectorType::ScalarType>>
 class SpaceDataHandle
-  : public Dune::CommDataHandleIF<SpaceDataHandle<DdGridType, VectorType, GatherScatter, CommunicationDescriptor>,
+  : public Dune::CommDataHandleIF<SpaceDataHandle<DdContainer, VectorType, GatherScatter, CommunicationDescriptor>,
                                   typename CommunicationDescriptor::DataType>
 {
 
 public:
   using DataType = typename CommunicationDescriptor::DataType;
-  using Codim0EntityType = typename DdGridType::MicroEntityType;
-  //    using SpaceType = const SpaceInterface<GV, r, rD, R>;
+  using Codim0EntityType = typename DdContainer::MacroEntityType;
 
-  SpaceDataHandle(const DdGridType& dd_grid,
+  SpaceDataHandle(const DdContainer& dd_container,
                   VectorType& v,
                   CommunicationDescriptor communication_descriptor,
                   GatherScatter gather_scatter = GatherScatter())
-    : space_(dd_grid)
+    : dd_container_(dd_container)
     , gather_scatter_(gather_scatter)
     , communication_descriptor_(communication_descriptor)
-    , local_view_(v, dd_grid, communication_descriptor_)
+    , local_view_(v, dd_container, communication_descriptor_)
   {}
 
   //! returns true if data for this codim should be communicated
   bool contains(int dim, int codim) const
   {
-    return communication_descriptor_.contains(space_, dim, codim);
+    return communication_descriptor_.contains(dd_container_, dim, codim);
   }
 
   //!  \brief returns true if size per entity of given dim and codim is a constant
   bool fixedsize(int dim, int codim) const
   {
-    return communication_descriptor_.fixedSize(space_, dim, codim);
+    return communication_descriptor_.fixedSize(dd_container_, dim, codim);
   }
 
   /*!  \brief how many objects of type DataType have to be sent for a given entity
@@ -251,7 +253,7 @@ public:
   template <class EntityType>
   size_t size(const EntityType& entity) const
   {
-    return communication_descriptor_.size(space_, entity);
+    return communication_descriptor_.size(dd_container_, entity);
   }
 
   /** pack data from user to message buffer
@@ -283,11 +285,11 @@ public:
 
 
 private:
-  const DdGridType& space_;
+  const DdContainer& dd_container_;
   //! has to be mutable because gather is const
   mutable GatherScatter gather_scatter_;
   CommunicationDescriptor communication_descriptor_;
-  mutable DD::LocalView<VectorType, typename VectorType::ScalarType, DdGridType, CommunicationDescriptor> local_view_;
+  mutable DD::LocalView<VectorType, typename VectorType::ScalarType, DdContainer, CommunicationDescriptor> local_view_;
 };
 
 
@@ -410,21 +412,21 @@ public:
   }
 };
 
-template <class DdGridType, class VectorType>
+template <class DdContainer, class VectorType>
 class MinDataHandle
-  : public SpaceDataHandle<DdGridType,
+  : public SpaceDataHandle<DdContainer,
                            VectorType,
                            DataGatherScatter<MinGatherScatter>,
                            DofDataCommunicationDescriptor<typename VectorType::ScalarType>>
 {
-  typedef SpaceDataHandle<DdGridType,
+  typedef SpaceDataHandle<DdContainer,
                           VectorType,
                           DataGatherScatter<MinGatherScatter>,
                           DofDataCommunicationDescriptor<typename VectorType::ScalarType>>
       BaseType;
 
 public:
-  MinDataHandle(const DdGridType& sp, VectorType& v_)
+  MinDataHandle(const DdContainer& sp, VectorType& v_)
     : BaseType(sp, v_, DofDataCommunicationDescriptor<typename VectorType::ScalarType>())
   {}
 };
@@ -478,11 +480,12 @@ public:
  * \note In order to work correctly, the data handle must be communicated on the
  * Dune::InteriorBorder_All_Interface.
  */
-template <class DdGridType, class VectorType>
+template <class DdContainer, class VectorType>
 class GhostDataHandle
-  : public SpaceDataHandle<DdGridType, VectorType, GhostGatherScatter, EntityDataCommunicationDescriptor<bool>>
+  : public SpaceDataHandle<DdContainer, VectorType, GhostGatherScatter, EntityDataCommunicationDescriptor<bool>>
 {
-  typedef SpaceDataHandle<DdGridType, VectorType, GhostGatherScatter, EntityDataCommunicationDescriptor<bool>> BaseType;
+  typedef SpaceDataHandle<DdContainer, VectorType, GhostGatherScatter, EntityDataCommunicationDescriptor<bool>>
+      BaseType;
 
   //  static_assert((std::is_same<typename VectorType::ScalarType, bool>::value),
   //                "GhostDataHandle expects a vector of bool values");
@@ -498,7 +501,7 @@ public:
    * \param v_           The result vector.
    * \param init_vector  Flag to control whether the result vector will be initialized.
    */
-  GhostDataHandle(const DdGridType& sp, VectorType& v_, bool init_vector = true)
+  GhostDataHandle(const DdContainer& sp, VectorType& v_, bool init_vector = true)
     // magic_number = sp.mapper().max_local_size()
     : BaseType(sp, v_, EntityDataCommunicationDescriptor<bool>(magic_number))
   {
@@ -585,14 +588,14 @@ private:
  * \note In order to work correctly, the data handle must be communicated on the
  * Dune::InteriorBorder_All_Interface and the result vector must be initialized with the MPI rank value.
  */
-template <class DdGridType, class VectorType>
+template <class DdContainer, class VectorType>
 class DisjointPartitioningDataHandle
-  : public SpaceDataHandle<DdGridType,
+  : public SpaceDataHandle<DdContainer,
                            VectorType,
                            DisjointPartitioningGatherScatter<typename VectorType::ScalarType>,
                            EntityDataCommunicationDescriptor<typename VectorType::ScalarType>>
 {
-  typedef SpaceDataHandle<DdGridType,
+  typedef SpaceDataHandle<DdContainer,
                           VectorType,
                           DisjointPartitioningGatherScatter<typename VectorType::ScalarType>,
                           EntityDataCommunicationDescriptor<typename VectorType::ScalarType>>
@@ -609,15 +612,16 @@ public:
    * \param v           The result vector.
    * \param init_vector  Flag to control whether the result vector will be initialized.
    */
-  DisjointPartitioningDataHandle(const DdGridType& space, VectorType& v, bool init_vector = true)
-    : BaseType(space,
+  DisjointPartitioningDataHandle(const DdContainer& dd_container, VectorType& v, bool init_vector = true)
+    : BaseType(dd_container,
                v,
                // TODO magic_number = space.mapper().max_local_size()
                EntityDataCommunicationDescriptor<typename VectorType::ScalarType>(magic_number),
-               DisjointPartitioningGatherScatter<typename VectorType::ScalarType>(space.global_comm().rank()))
+               DisjointPartitioningGatherScatter<typename VectorType::ScalarType>(
+                   dd_container.dd_grid_.global_comm().rank()))
   {
     if (init_vector)
-      v.set_all(space.global_comm().rank());
+      v.set_all(dd_container.dd_grid_.global_comm().rank());
   }
 };
 
@@ -660,11 +664,11 @@ struct SharedDOFGatherScatter
  * \note In order to work correctly, the data handle must be communicated on the
  * Dune::All_All_Interface and the result vector must be initialized with false.
  */
-template <class DdGridType, class VectorType>
+template <class DdContainer, class VectorType>
 class SharedDOFDataHandle
-  : public SpaceDataHandle<DdGridType, VectorType, SharedDOFGatherScatter, EntityDataCommunicationDescriptor<bool>>
+  : public SpaceDataHandle<DdContainer, VectorType, SharedDOFGatherScatter, EntityDataCommunicationDescriptor<bool>>
 {
-  typedef SpaceDataHandle<DdGridType, VectorType, SharedDOFGatherScatter, EntityDataCommunicationDescriptor<bool>>
+  typedef SpaceDataHandle<DdContainer, VectorType, SharedDOFGatherScatter, EntityDataCommunicationDescriptor<bool>>
       BaseType;
 
   //  static_assert((std::is_same<typename VectorType::ScalarType, bool>::value),
@@ -682,8 +686,8 @@ public:
    * \param init_vector  Flag to control whether the result vector will be initialized.
    */
   // TODO magic_number = space.mapper().max_local_size()
-  SharedDOFDataHandle(const DdGridType& space, VectorType& v, bool init_vector = true)
-    : BaseType(space, v, EntityDataCommunicationDescriptor<bool>(magic_number))
+  SharedDOFDataHandle(const DdContainer& dd_container, VectorType& v, bool init_vector = true)
+    : BaseType(dd_container, v, EntityDataCommunicationDescriptor<bool>(magic_number))
   {
     if (init_vector)
       v.set_all(false);
@@ -699,8 +703,9 @@ public:
  * \note In order to work correctly, the data handle must be communicated on the
  * Dune::All_All_Interface.
  */
-template <class DdGridType, typename RankIndex>
-class SpaceNeighborDataHandle : public Dune::CommDataHandleIF<SpaceNeighborDataHandle<DdGridType, RankIndex>, RankIndex>
+template <class DdContainer, typename RankIndex>
+class SpaceNeighborDataHandle
+  : public Dune::CommDataHandleIF<SpaceNeighborDataHandle<DdContainer, RankIndex>, RankIndex>
 {
 
   // We deliberately avoid using the SpaceDataHandle here, as we don't want to incur the
@@ -709,8 +714,8 @@ class SpaceNeighborDataHandle : public Dune::CommDataHandleIF<SpaceNeighborDataH
 public:
   typedef RankIndex DataType;
 
-  SpaceNeighborDataHandle(const DdGridType& space, RankIndex rank, std::set<RankIndex>& neighbors)
-    : space_(space)
+  SpaceNeighborDataHandle(const DdContainer& dd_container, RankIndex rank, std::set<RankIndex>& neighbors)
+    : dd_container_(dd_container)
     , rank_(rank)
     , neighbors_(neighbors)
   {}
@@ -749,7 +754,7 @@ public:
   }
 
 private:
-  const DdGridType& space_;
+  const DdContainer& dd_container_;
   const RankIndex rank_;
   std::set<RankIndex>& neighbors_;
 };
