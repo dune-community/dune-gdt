@@ -1037,7 +1037,8 @@ PYBIND11_MODULE(usercode, m)
       "write_visualization",
       [](DomainDecomposition& self, const std::string& filename_prefix) { self.write_visualization(filename_prefix); },
       "filename_prefix"_a);
-  domain_decomposition.def("dof_communicator", &DomainDecomposition::dof_communicator);
+  domain_decomposition.def(
+      "dof_communicator", &DomainDecomposition::dof_communicator, py::return_value_policy::reference);
 
   py::class_<ContinuousLagrangePartitionOfUnity> cg_pou(
       m, "ContinuousLagrangePartitionOfUnity", "ContinuousLagrangePartitionOfUnity");
