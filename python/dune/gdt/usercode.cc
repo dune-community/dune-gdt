@@ -36,6 +36,7 @@
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/operators/matrix-based.hh>
 #include <dune/gdt/tools/dirichlet-constraints.hh>
+#include <dune/gdt/tools/grid-quality-estimates.hh>
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/h1/continuous-flattop.hh>
 #include <dune/gdt/spaces/h1/continuous-lagrange.hh>
@@ -1485,4 +1486,68 @@ PYBIND11_MODULE(usercode, m)
         py::call_guard<py::gil_scoped_release>(),
         "matrix"_a,
         "prune"_a = 1e-15);
+
+  m.def("estimate_inverse_inequality_constant",
+        [](DomainDecomposition& domain_decomposition, const size_t ss, const std::string space_type) {
+          DUNE_THROW_IF(ss >= domain_decomposition.dd_grid.num_subdomains(),
+                        XT::Common::Exceptions::index_out_of_range,
+                        "ss = " << ss << "\n   domain_decomposition.dd_grid.num_subdomains() = "
+                                << domain_decomposition.dd_grid.num_subdomains());
+          for (auto&& macro_element : elements(domain_decomposition.dd_grid.macro_grid_view())) {
+            if (domain_decomposition.dd_grid.subdomain(macro_element) == ss) {
+              // this is the subdomain we are interested in, create space
+              auto subdomain_grid_view = domain_decomposition.dd_grid.local_grid(macro_element).leaf_view();
+              auto subdomain_space = make_subdomain_space(subdomain_grid_view, space_type);
+              return estimate_inverse_inequality_constant(*subdomain_space);
+            }
+          }
+          DUNE_THROW(InvalidStateException, "This should not happen, ss = " << ss);
+          return 0.;
+        },
+        py::call_guard<py::gil_scoped_release>(),
+        "domain_decomposition"_a,
+        "ss"_a,
+        "space_type"_a = default_space_type());
+
+  m.def("estimate_combined_inverse_trace_inequality_constant",
+        [](DomainDecomposition& domain_decomposition, const size_t ss, const std::string space_type) {
+          DUNE_THROW_IF(ss >= domain_decomposition.dd_grid.num_subdomains(),
+                        XT::Common::Exceptions::index_out_of_range,
+                        "ss = " << ss << "\n   domain_decomposition.dd_grid.num_subdomains() = "
+                                << domain_decomposition.dd_grid.num_subdomains());
+          for (auto&& macro_element : elements(domain_decomposition.dd_grid.macro_grid_view())) {
+            if (domain_decomposition.dd_grid.subdomain(macro_element) == ss) {
+              // this is the subdomain we are interested in, create space
+              auto subdomain_grid_view = domain_decomposition.dd_grid.local_grid(macro_element).leaf_view();
+              auto subdomain_space = make_subdomain_space(subdomain_grid_view, space_type);
+              return estimate_combined_inverse_trace_inequality_constant(*subdomain_space);
+            }
+          }
+          DUNE_THROW(InvalidStateException, "This should not happen, ss = " << ss);
+          return 0.;
+        },
+        py::call_guard<py::gil_scoped_release>(),
+        "domain_decomposition"_a,
+        "ss"_a,
+        "space_type"_a = default_space_type());
+
+  m.def("estimate_element_to_intersection_equivalence_constant",
+        [](DomainDecomposition& domain_decomposition, const size_t ss) {
+          DUNE_THROW_IF(ss >= domain_decomposition.dd_grid.num_subdomains(),
+                        XT::Common::Exceptions::index_out_of_range,
+                        "ss = " << ss << "\n   domain_decomposition.dd_grid.num_subdomains() = "
+                                << domain_decomposition.dd_grid.num_subdomains());
+          for (auto&& macro_element : elements(domain_decomposition.dd_grid.macro_grid_view())) {
+            if (domain_decomposition.dd_grid.subdomain(macro_element) == ss) {
+              // this is the subdomain we are interested in, create space
+              auto subdomain_grid_view = domain_decomposition.dd_grid.local_grid(macro_element).leaf_view();
+              return estimate_element_to_intersection_equivalence_constant(subdomain_grid_view);
+            }
+          }
+          DUNE_THROW(InvalidStateException, "This should not happen, ss = " << ss);
+          return 0.;
+        },
+        py::call_guard<py::gil_scoped_release>(),
+        "domain_decomposition"_a,
+        "ss"_a);
 } // PYBIND11_MODULE(usercode, ...)
