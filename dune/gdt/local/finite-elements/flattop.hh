@@ -233,7 +233,7 @@ public:
   static std::unique_ptr<LocalFiniteElementInterface<D, d, R, r>>
   create(const GeometryType& geometry_type, const int& order, const D& overlap = 0.5)
   {
-    return helper<>::create(geometry_type, order);
+    return helper<>::create(geometry_type, order, overlap);
   }
 }; // class LocalFlatTopFiniteElementFactory
 
