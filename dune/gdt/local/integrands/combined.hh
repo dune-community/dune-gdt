@@ -52,6 +52,11 @@ namespace GDT {
 
 //  virtual std::unique_ptr<ThisType> copy() const = 0;
 
+// protected:
+//  virtual void post_bind(const IntersectionType& intrsctn) = 0;
+
+// public:
+
 //  /**
 //   * Returns the polynomial order of the integrand, given the basis.
 //   *
@@ -131,6 +136,10 @@ namespace GDT {
 
 //  virtual std::unique_ptr<ThisType> copy() const = 0;
 
+// protected:
+//  virtual void post_bind(const IntersectionType& intrsctn) = 0;
+
+// public:
 //  /**
 //   * Returns the polynomial order of the integrand, given the bases.
 //   *
@@ -207,6 +216,10 @@ namespace GDT {
 
 //  virtual std::unique_ptr<ThisType> copy() const = 0;
 
+// protected:
+//  virtual void post_bind(const IntersectionType& intrsctn) = 0;
+
+// public:
 //  /**
 //   * Returns the polynomial order of the integrand, given the bases.
 //   *
@@ -254,17 +267,20 @@ class LocalQuaternaryIntersectionIntegrandSum
 
 public:
   using typename BaseType::DomainType;
+  using typename BaseType::IntersectionType;
   using typename BaseType::LocalAnsatzBasisType;
   using typename BaseType::LocalTestBasisType;
 
   LocalQuaternaryIntersectionIntegrandSum(const BaseType& left, const BaseType& right)
-    : left_(left.copy().release())
+    : BaseType(left.parameter_type() + right.parameter_type())
+    , left_(left.copy().release())
     , right_(right.copy().release())
   {}
 
   LocalQuaternaryIntersectionIntegrandSum(const ThisType& other)
-    : left_(other.left_)
-    , right_(other.right_)
+    : BaseType(other)
+    , left_(other.left_.access().copy().release())
+    , right_(other.right_.access().copy().release())
   {}
 
   LocalQuaternaryIntersectionIntegrandSum(ThisType&& source) = default;
@@ -274,6 +290,14 @@ public:
     return std::make_unique<ThisType>(*this);
   }
 
+protected:
+  void post_bind(const IntersectionType& intrsctn) override final
+  {
+    left_.access().bind(intrsctn);
+    right_.access().bind(intrsctn);
+  }
+
+public:
   int order(const LocalTestBasisType& test_basis_inside,
             const LocalAnsatzBasisType& ansatz_basis_inside,
             const LocalTestBasisType& test_basis_outside,
@@ -340,8 +364,8 @@ public:
   } // ... evaluate(...)
 
 private:
-  XT::Common::ConstStorageProvider<BaseType> left_;
-  XT::Common::ConstStorageProvider<BaseType> right_;
+  XT::Common::StorageProvider<BaseType> left_;
+  XT::Common::StorageProvider<BaseType> right_;
   mutable DynamicMatrix<F> result_in_in_;
   mutable DynamicMatrix<F> result_in_out_;
   mutable DynamicMatrix<F> result_out_in_;
