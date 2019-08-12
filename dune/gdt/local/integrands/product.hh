@@ -18,7 +18,7 @@
 #include <dune/xt/functions/constant.hh>
 #include <dune/xt/functions/base/combined-functions.hh>
 #include <dune/xt/functions/base/combined-grid-functions.hh>
-#include <dune/xt/functions/base/function-as-grid-function.hh>
+#include <dune/xt/functions/grid-function.hh>
 #include <dune/xt/functions/interfaces/grid-function.hh>
 
 #include "interfaces.hh"
@@ -47,50 +47,16 @@ public:
   using typename BaseType::LocalAnsatzBasisType;
   using typename BaseType::LocalTestBasisType;
 
-  using GridFunctionType = XT::Functions::GridFunctionInterface<E, r, r, F>;
-
-  LocalElementProductIntegrand(const F& inducing_value = F(1))
+  LocalElementProductIntegrand(XT::Functions::GridFunction<E, r, r, F> weight = {1.})
     : BaseType()
-    , inducing_function_(new XT::Functions::FunctionAsGridFunctionWrapper<E, r, r, F>(
-          new XT::Functions::ProductFunction<XT::Functions::ConstantFunction<d, 1, 1, F>,
-                                             XT::Functions::ConstantFunction<d, r, r, F>>(
-              new XT::Functions::ConstantFunction<d, 1, 1, F>(inducing_value),
-              new XT::Functions::ConstantFunction<d, r, r, F>(XT::LA::eye_matrix<FieldMatrix<F, r, r>>(r)))))
-    , local_function_(inducing_function_.access().local_function())
-  {}
-
-  LocalElementProductIntegrand(const XT::Functions::FunctionInterface<d, 1, 1, F>& inducing_function)
-    : BaseType()
-    , inducing_function_(new XT::Functions::FunctionAsGridFunctionWrapper<E, r, r, F>(
-          new XT::Functions::ProductFunction<XT::Functions::FunctionInterface<d, 1, 1, F>,
-                                             XT::Functions::ConstantFunction<d, r, r, F>>(
-              inducing_function,
-              new XT::Functions::ConstantFunction<d, r, r, F>(XT::LA::eye_matrix<FieldMatrix<F, r, r>>(r)))))
-    , local_function_(inducing_function_.access().local_function())
-  {}
-
-  LocalElementProductIntegrand(const XT::Functions::GridFunctionInterface<E, 1, 1, F>& inducing_function)
-    : BaseType()
-    , inducing_function_(new XT::Functions::FunctionAsGridFunctionWrapper<E, r, r, F>(
-          new XT::Functions::ProductGridFunction<XT::Functions::GridFunctionInterface<E, 1, 1, F>,
-                                                 XT::Functions::GridFunctionInterface<E, r, r, F>>(
-              inducing_function,
-              new XT::Functions::FunctionAsGridFunctionWrapper<E, r, r, F>(
-                  new XT::Functions::ConstantFunction<d, r, r, F>(XT::LA::eye_matrix<FieldMatrix<F, r, r>>(r))))))
-    , local_function_(inducing_function_.access().local_function())
-  {}
-
-  template <class E_, typename = std::enable_if_t<std::is_same<E_, E>::value && r != 1, void>>
-  LocalElementProductIntegrand(const XT::Functions::GridFunctionInterface<E_, r, r, F>& inducing_function)
-    : BaseType()
-    , inducing_function_(inducing_function)
-    , local_function_(inducing_function_.access().local_function())
+    , weight_(weight)
+    , local_weight_(weight_.local_function())
   {}
 
   LocalElementProductIntegrand(const ThisType& other)
     : BaseType(other.parameter_type())
-    , inducing_function_(other.inducing_function_)
-    , local_function_(inducing_function_.access().local_function())
+    , weight_(other.weight_)
+    , local_weight_(weight_.local_function())
   {}
 
   LocalElementProductIntegrand(ThisType&& source) = default;
@@ -103,7 +69,7 @@ public:
 protected:
   void post_bind(const ElementType& ele) override final
   {
-    local_function_->bind(ele);
+    local_weight_->bind(ele);
   }
 
 public:
@@ -111,7 +77,7 @@ public:
             const LocalAnsatzBasisType& ansatz_basis,
             const XT::Common::Parameter& param = {}) const override final
   {
-    return local_function_->order(param) + test_basis.order(param) + ansatz_basis.order(param);
+    return local_weight_->order(param) + test_basis.order(param) + ansatz_basis.order(param);
   }
 
   using BaseType::evaluate;
@@ -130,16 +96,16 @@ public:
     // evaluate
     test_basis.evaluate(point_in_reference_element, test_basis_values_, param);
     ansatz_basis.evaluate(point_in_reference_element, ansatz_basis_values_, param);
-    const auto function_value = local_function_->evaluate(point_in_reference_element, param);
+    const auto weight = local_weight_->evaluate(point_in_reference_element, param);
     // compute product
     for (size_t ii = 0; ii < rows; ++ii)
       for (size_t jj = 0; jj < cols; ++jj)
-        result[ii][jj] = (function_value * test_basis_values_[ii]) * ansatz_basis_values_[jj];
+        result[ii][jj] = (weight * test_basis_values_[ii]) * ansatz_basis_values_[jj];
   } // ... evaluate(...)
 
 private:
-  const XT::Common::ConstStorageProvider<GridFunctionType> inducing_function_;
-  std::unique_ptr<typename GridFunctionType::LocalFunctionType> local_function_;
+  XT::Functions::GridFunction<E, r, r, F> weight_;
+  std::unique_ptr<typename XT::Functions::GridFunction<E, r, r, F>::LocalFunctionType> local_weight_;
   mutable std::vector<typename LocalTestBasisType::RangeType> test_basis_values_;
   mutable std::vector<typename LocalAnsatzBasisType::RangeType> ansatz_basis_values_;
 }; // class LocalElementProductIntegrand
@@ -167,53 +133,18 @@ public:
 
   using GridFunctionType = XT::Functions::GridFunctionInterface<E, r, r, F>;
 
-  LocalIntersectionProductIntegrand(const F& inducing_value = F(1))
+  LocalIntersectionProductIntegrand(XT::Functions::GridFunction<E, r, r, F> weight = {1.})
     : BaseType()
-    , inducing_function_(new XT::Functions::FunctionAsGridFunctionWrapper<E, r, r, F>(
-          new XT::Functions::ProductFunction<XT::Functions::ConstantFunction<d, 1, 1, F>,
-                                             XT::Functions::ConstantFunction<d, r, r, F>>(
-              new XT::Functions::ConstantFunction<d, 1, 1, F>(inducing_value),
-              new XT::Functions::ConstantFunction<d, r, r, F>(XT::LA::eye_matrix<FieldMatrix<F, r, r>>(r)))))
-    , local_function_in_(inducing_function_.access().local_function())
-    , local_function_out_(inducing_function_.access().local_function())
-  {}
-
-  LocalIntersectionProductIntegrand(const XT::Functions::FunctionInterface<d, 1, 1, F>& inducing_function)
-    : BaseType()
-    , inducing_function_(new XT::Functions::FunctionAsGridFunctionWrapper<E, r, r, F>(
-          new XT::Functions::ProductFunction<XT::Functions::FunctionInterface<d, 1, 1, F>,
-                                             XT::Functions::ConstantFunction<d, r, r, F>>(
-              inducing_function,
-              new XT::Functions::ConstantFunction<d, r, r, F>(XT::LA::eye_matrix<FieldMatrix<F, r, r>>(r)))))
-    , local_function_in_(inducing_function_.access().local_function())
-    , local_function_out_(inducing_function_.access().local_function())
-  {}
-
-  LocalIntersectionProductIntegrand(const XT::Functions::GridFunctionInterface<E, 1, 1, F>& inducing_function)
-    : BaseType()
-    , inducing_function_(new XT::Functions::FunctionAsGridFunctionWrapper<E, r, r, F>(
-          new XT::Functions::ProductGridFunction<XT::Functions::GridFunctionInterface<E, 1, 1, F>,
-                                                 XT::Functions::GridFunctionInterface<E, r, r, F>>(
-              inducing_function,
-              new XT::Functions::FunctionAsGridFunctionWrapper<E, r, r, F>(
-                  new XT::Functions::ConstantFunction<d, r, r, F>(XT::LA::eye_matrix<FieldMatrix<F, r, r>>(r))))))
-    , local_function_in_(inducing_function_.access().local_function())
-    , local_function_out_(inducing_function_.access().local_function())
-  {}
-
-  template <class E_, typename = std::enable_if_t<std::is_same<E_, E>::value && r != 1, void>>
-  LocalIntersectionProductIntegrand(const XT::Functions::GridFunctionInterface<E_, r, r, F>& inducing_function)
-    : BaseType()
-    , inducing_function_(inducing_function)
-    , local_function_in_(inducing_function_.access().local_function())
-    , local_function_out_(inducing_function_.access().local_function())
+    , weight_(weight)
+    , local_weight_in_(weight_.local_function())
+    , local_weight_out_(weight_.local_function())
   {}
 
   LocalIntersectionProductIntegrand(const ThisType& other)
     : BaseType(other.parameter_type())
-    , inducing_function_(other.inducing_function_)
-    , local_function_in_(inducing_function_.access().local_function())
-    , local_function_out_(inducing_function_.access().local_function())
+    , weight_(other.weight_)
+    , local_weight_in_(weight_.local_function())
+    , local_weight_out_(weight_.local_function())
   {}
 
   LocalIntersectionProductIntegrand(ThisType&& source) = default;
@@ -227,11 +158,11 @@ protected:
   void post_bind(const IntersectionType& intersct) override final
   {
     auto inside_element = intersct.inside();
-    local_function_in_->bind(inside_element);
+    local_weight_in_->bind(inside_element);
     if (intersct.neighbor()) {
-      local_function_out_->bind(intersct.outside());
+      local_weight_out_->bind(intersct.outside());
     } else
-      local_function_out_->bind(intersct.inside());
+      local_weight_out_->bind(intersct.inside());
   } // ... post_bind(...)
 
 public:
@@ -241,9 +172,9 @@ public:
             const LocalAnsatzBasisType& ansatz_basis_outside,
             const XT::Common::Parameter& param = {}) const override final
   {
-    return std::max(local_function_in_->order(param), local_function_out_->order(param))
+    return std::max(local_weight_in_->order(param), local_weight_out_->order(param))
            + std::max(test_basis_inside.order(param), test_basis_outside.order(param))
-           + std::max(ansatz_basis_outside.order(param), ansatz_basis_outside.order(param));
+           + std::max(ansatz_basis_inside.order(param), ansatz_basis_outside.order(param));
   }
 
   using BaseType::evaluate;
@@ -277,14 +208,14 @@ public:
         this->intersection().geometryInInside().global(point_in_reference_intersection);
     test_basis_inside.evaluate(point_in_inside_reference_element, test_basis_in_values_, param);
     ansatz_basis_inside.evaluate(point_in_inside_reference_element, ansatz_basis_in_values_, param);
-    const auto function_value_in = local_function_in_->evaluate(point_in_inside_reference_element, param);
+    const auto weight_in = local_weight_in_->evaluate(point_in_inside_reference_element, param);
     const auto point_in_outside_reference_element =
         this->intersection().geometryInOutside().global(point_in_reference_intersection);
     test_basis_outside.evaluate(point_in_outside_reference_element, test_basis_out_values_, param);
     ansatz_basis_outside.evaluate(point_in_outside_reference_element, ansatz_basis_out_values_, param);
-    const auto function_value_out = local_function_out_->evaluate(point_in_outside_reference_element, param);
+    const auto weight_out = local_weight_out_->evaluate(point_in_outside_reference_element, param);
     // compute integrand
-    const auto average_function_value = (function_value_in + function_value_out) * 0.5;
+    const auto average_function_value = (weight_in + weight_out) * 0.5;
     for (size_t ii = 0; ii < rows_in; ++ii) {
       for (size_t jj = 0; jj < cols_in; ++jj)
         result_in_in[ii][jj] = (average_function_value * ansatz_basis_in_values_[jj]) * test_basis_in_values_[ii];
@@ -300,9 +231,9 @@ public:
   } // ... evaluate(...)
 
 private:
-  const XT::Common::ConstStorageProvider<GridFunctionType> inducing_function_;
-  std::unique_ptr<typename GridFunctionType::LocalFunctionType> local_function_in_;
-  std::unique_ptr<typename GridFunctionType::LocalFunctionType> local_function_out_;
+  XT::Functions::GridFunction<E, r, r, F> weight_;
+  std::unique_ptr<typename XT::Functions::GridFunction<E, r, r, F>::LocalFunctionType> local_weight_in_;
+  std::unique_ptr<typename XT::Functions::GridFunction<E, r, r, F>::LocalFunctionType> local_weight_out_;
   mutable std::vector<typename LocalTestBasisType::RangeType> test_basis_in_values_;
   mutable std::vector<typename LocalTestBasisType::RangeType> test_basis_out_values_;
   mutable std::vector<typename LocalAnsatzBasisType::RangeType> ansatz_basis_in_values_;
