@@ -11,12 +11,7 @@
 #   Tobias Leibner  (2018)
 # ~~~
 
-file(GLOB_RECURSE header "*.hh")
+dune_pybindxi_add_module(_discretefunction_1d EXCLUDE_FROM_ALL ${header} discretefunction_1d.cc)
+dune_pybindxi_add_module(_discretefunction_2d EXCLUDE_FROM_ALL ${header} discretefunction_2d.cc)
+dune_pybindxi_add_module(_discretefunction_3d EXCLUDE_FROM_ALL ${header} discretefunction_3d.cc)
 
-dune_pybindxi_add_module(usercode EXCLUDE_FROM_ALL ${header} usercode.cc)
-dune_pybindxi_add_module(gamm_2019_talk_on_conservative_rb
-                         EXCLUDE_FROM_ALL
-                         ${header}
-                         gamm-2019-talk-on-conservative-rb.cc)
-
-add_subdirectory(discretefunction)
