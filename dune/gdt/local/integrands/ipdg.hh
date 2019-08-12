@@ -13,7 +13,7 @@
 #include <functional>
 
 #include <dune/xt/common/memory.hh>
-#include <dune/xt/functions/base/function-or-gridfunction.hh>
+#include <dune/xt/functions/grid-function.hh>
 #include <dune/xt/grid/entity.hh>
 #include <dune/xt/grid/intersection.hh>
 
@@ -72,7 +72,7 @@ public:
 
   InnerPenalty(
       const double& penalty,
-      XT::Functions::FunctionOrGridFunction<E, d, d> weight_function = {1.},
+      XT::Functions::GridFunction<E, d, d> weight_function = 1.,
       const std::function<double(const I&)>& intersection_diameter = internal::default_inner_intersection_diameter<I>())
     : BaseType(weight_function.parameter_type())
     , penalty_(penalty)
@@ -99,13 +99,12 @@ public:
   }
 
 protected:
-  void post_bind(const IntersectionType& intersection) override final
+  void post_bind(const IntersectionType& intrsctn) override final
   {
-    DUNE_THROW_IF(!intersection.neighbor(),
-                  Exceptions::integrand_error,
-                  "This integrand cannot be used on a boundary intersection!");
-    local_weight_in_->bind(intersection.inside());
-    local_weight_out_->bind(intersection.outside());
+    DUNE_THROW_IF(
+        !intrsctn.neighbor(), Exceptions::integrand_error, "This integrand cannot be used on a boundary intersection!");
+    local_weight_in_->bind(intrsctn.inside());
+    local_weight_out_->bind(intrsctn.outside());
   }
 
 public:
@@ -182,10 +181,10 @@ public:
 
 private:
   const double penalty_;
-  XT::Functions::FunctionOrGridFunction<E, d, d> weight_;
+  XT::Functions::GridFunction<E, d, d> weight_;
   const std::function<double(const I&)> intersection_diameter_;
-  std::unique_ptr<typename XT::Functions::FunctionOrGridFunction<E, d, d>::LocalFunctionType> local_weight_in_;
-  std::unique_ptr<typename XT::Functions::FunctionOrGridFunction<E, d, d>::LocalFunctionType> local_weight_out_;
+  std::unique_ptr<typename XT::Functions::GridFunction<E, d, d>::LocalFunctionType> local_weight_in_;
+  std::unique_ptr<typename XT::Functions::GridFunction<E, d, d>::LocalFunctionType> local_weight_out_;
   mutable std::vector<typename LocalTestBasisType::RangeType> test_basis_in_values_;
   mutable std::vector<typename LocalTestBasisType::RangeType> test_basis_out_values_;
   mutable std::vector<typename LocalAnsatzBasisType::RangeType> ansatz_basis_in_values_;
@@ -209,7 +208,7 @@ public:
   using typename BaseType::LocalTestBasisType;
 
   BoundaryPenalty(const double& penalty,
-                  XT::Functions::FunctionOrGridFunction<E, d, d> weight_function = {1.},
+                  XT::Functions::GridFunction<E, d, d> weight_function = 1.,
                   const std::function<double(const I&)>& intersection_diameter =
                       internal::default_boundary_intersection_diameter<I>())
     : BaseType()
@@ -293,9 +292,9 @@ public:
 
 private:
   const double penalty_;
-  XT::Functions::FunctionOrGridFunction<E, d, d> weight_;
+  XT::Functions::GridFunction<E, d, d> weight_;
   const std::function<double(const I&)> intersection_diameter_;
-  std::unique_ptr<typename XT::Functions::FunctionOrGridFunction<E, d, d>::LocalFunctionType> local_weight_;
+  std::unique_ptr<typename XT::Functions::GridFunction<E, d, d>::LocalFunctionType> local_weight_;
   mutable std::vector<typename LocalTestBasisType::RangeType> test_basis_values_;
   mutable std::vector<typename LocalAnsatzBasisType::RangeType> ansatz_basis_values_;
 }; // BoundaryPenalty
