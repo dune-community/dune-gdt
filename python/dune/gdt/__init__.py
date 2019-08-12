@@ -10,13 +10,3 @@
 #   René Fritze     (2016, 2018)
 # ~~~
 
-from dune.xt import _register_special_funcs
-
-for mod_name in (
-        'discretefunction',
-        'gamm_2019_talk_on_conservative_rb',
-        'tools',
-        'usercode',
-        ):
-    _register_special_funcs(mod_name, 'dune.gdt')
-
