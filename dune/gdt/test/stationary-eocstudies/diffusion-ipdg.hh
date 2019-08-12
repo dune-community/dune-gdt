@@ -27,9 +27,9 @@
 #include <dune/gdt/functionals/vector-based.hh>
 #include <dune/gdt/local/functionals/integrals.hh>
 #include <dune/gdt/local/bilinear-forms/integrals.hh>
-#include <dune/gdt/local/integrands/elliptic-ipdg.hh>
+#include <dune/gdt/local/integrands/laplace.hh>
+#include <dune/gdt/local/integrands/laplace-ipdg.hh>
 #include <dune/gdt/local/integrands/ipdg.hh>
-#include <dune/gdt/local/integrands/elliptic.hh>
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/local/integrands/conversion.hh>
 #include <dune/gdt/norms.hh>
@@ -265,10 +265,10 @@ protected:
         (space_type_.size() >= 2 && space_type_.substr(0, 2) == "cg") ? Stencil::element
                                                                       : Stencil::element_and_intersection));
     // - volume term
-    lhs_op->append(LocalElementIntegralBilinearForm<E>(LocalEllipticIntegrand<E>(one, this->diffusion())));
+    lhs_op->append(LocalElementIntegralBilinearForm<E>(LocalLaplaceIntegrand<E>(this->diffusion())));
     // - inner faces
     lhs_op->append(LocalIntersectionIntegralBilinearForm<I>(
-                       LocalEllipticIPDGIntegrands::InnerCoupling<I>(1., this->diffusion(), this->diffusion())),
+                       LocalLaplaceIPDGIntegrands::InnerCoupling<I>(1., this->diffusion(), this->diffusion())),
                    {},
                    XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
     lhs_op->append(
@@ -279,7 +279,7 @@ protected:
     // - Dirichlet faces
     lhs_op->append(
         LocalIntersectionIntegralBilinearForm<I>(
-            LocalEllipticIPDGIntegrands::DirichletCoupling<I>(1., this->diffusion())),
+            LocalLaplaceIPDGIntegrands::DirichletCoupling<I>(1., this->diffusion())),
         {},
         XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(this->boundary_info(), new XT::Grid::DirichletBoundary()));
     lhs_op->append(

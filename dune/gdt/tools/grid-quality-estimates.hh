@@ -24,7 +24,7 @@
 #include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/local/bilinear-forms/integrals.hh>
-#include <dune/gdt/local/integrands/elliptic.hh>
+#include <dune/gdt/local/integrands/laplace.hh>
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/spaces/interface.hh>
 
@@ -43,9 +43,9 @@ double estimate_inverse_inequality_constant(const SpaceInterface<GV, r>& space)
     basis->bind(element);
     const double h = XT::Grid::diameter(element);
     auto H1_product_matrix = XT::LA::convert_to<XT::LA::CommonDenseMatrix<double>>(
-        LocalElementIntegralBilinearForm<E, r>(LocalEllipticIntegrand<E, r>(1.)).apply2(*basis, *basis));
+        LocalElementIntegralBilinearForm<E, r>(LocalLaplaceIntegrand<E, r>()).apply2(*basis, *basis));
     auto L2_product_matrix = XT::LA::convert_to<XT::LA::CommonDenseMatrix<double>>(
-        LocalElementIntegralBilinearForm<E, r>(LocalElementProductIntegrand<E, r>(1.)).apply2(*basis, *basis));
+        LocalElementIntegralBilinearForm<E, r>(LocalElementProductIntegrand<E, r>()).apply2(*basis, *basis));
     auto evs =
         XT::LA::make_generalized_eigen_solver(H1_product_matrix,
                                               L2_product_matrix,
