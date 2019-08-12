@@ -123,8 +123,8 @@ double estimate_element_to_intersection_equivalence_constant(
     const double h = XT::Grid::diameter(element);
     for (auto&& intersection : intersections(grid_view, element))
       result = std::max(result, intersection_diameter(intersection) / h);
-    return result;
   }
+  return result;
 } // ... estimate_element_to_intersection_equivalence_constant(...)
 
 
