@@ -157,14 +157,17 @@ PYBIND11_MODULE(usercode, m)
 
   m.def("assemble_local_system_matrix",
         [](XT::Functions::GridFunctionInterface<E>& diffusion,
+           const double& penalty,
            XT::Functions::GridFunctionInterface<E>& weight,
            DomainDecomposition& domain_decomposition,
            const size_t ss,
            const std::string space_type) {
-          return std::move(assemble_local_system_matrix(diffusion, weight, domain_decomposition, ss, space_type));
+          return std::move(
+              assemble_local_system_matrix(diffusion, penalty, weight, domain_decomposition, ss, space_type));
         },
         py::call_guard<py::gil_scoped_release>(),
         "diffusion"_a,
+        "penalty"_a,
         "weight"_a,
         "domain_decomposition"_a,
         "ss"_a,
@@ -214,15 +217,17 @@ PYBIND11_MODULE(usercode, m)
         "space_type"_a = default_space_type());
   m.def("assemble_coupling_matrices",
         [](XT::Functions::GridFunctionInterface<E>& diffusion,
+           const double& penalty,
            XT::Functions::GridFunctionInterface<E>& weight,
            DomainDecomposition& domain_decomposition,
            const size_t ss,
            const size_t nn,
            const std::string space_type) {
-          return assemble_coupling_matrices(diffusion, weight, domain_decomposition, ss, nn, space_type);
+          return assemble_coupling_matrices(diffusion, penalty, weight, domain_decomposition, ss, nn, space_type);
         },
         py::call_guard<py::gil_scoped_release>(),
         "diffusion"_a,
+        "penalty"_a,
         "weight"_a,
         "domain_decomposition"_a,
         "ss"_a,
@@ -230,41 +235,48 @@ PYBIND11_MODULE(usercode, m)
         "space_type"_a = default_space_type());
   m.def("assemble_boundary_matrix",
         [](XT::Functions::GridFunctionInterface<E>& diffusion,
+           const double& penalty,
            XT::Functions::GridFunctionInterface<E>& weight,
            DomainDecomposition& domain_decomposition,
            const size_t ss,
            const std::string space_type) {
-          return std::move(assemble_boundary_matrix(diffusion, weight, domain_decomposition, ss, space_type));
+          return std::move(assemble_boundary_matrix(diffusion, penalty, weight, domain_decomposition, ss, space_type));
         },
         py::call_guard<py::gil_scoped_release>(),
         "diffusion"_a,
+        "penalty"_a,
         "weight"_a,
         "domain_decomposition"_a,
         "ss"_a,
         "space_type"_a = default_space_type());
 
   m.def("assemble_local_product_contributions",
-        [](XT::Functions::GridFunctionInterface<E>& weight,
+        [](const double& penalty,
+           XT::Functions::GridFunctionInterface<E>& weight,
            DomainDecomposition& domain_decomposition,
            const size_t ss,
            const std::string space_type) {
-          return std::move(assemble_local_product_contributions(weight, domain_decomposition, ss, space_type));
+          return std::move(assemble_local_product_contributions(penalty, weight, domain_decomposition, ss, space_type));
         },
         py::call_guard<py::gil_scoped_release>(),
+        "penalty"_a,
         "weight"_a,
         "domain_decomposition"_a,
         "ss"_a,
         "space_type"_a = default_space_type());
 
   m.def("assemble_coupling_product_contributions",
-        [](XT::Functions::GridFunctionInterface<E>& weight,
+        [](const double& penalty,
+           XT::Functions::GridFunctionInterface<E>& weight,
            DomainDecomposition& domain_decomposition,
            const size_t ss,
            const size_t nn,
            const std::string space_type) {
-          return std::move(assemble_coupling_product_contributions(weight, domain_decomposition, ss, nn, space_type));
+          return std::move(
+              assemble_coupling_product_contributions(penalty, weight, domain_decomposition, ss, nn, space_type));
         },
         py::call_guard<py::gil_scoped_release>(),
+        "penalty"_a,
         "weight"_a,
         "domain_decomposition"_a,
         "ss"_a,
@@ -272,13 +284,16 @@ PYBIND11_MODULE(usercode, m)
         "space_type"_a = default_space_type());
 
   m.def("assemble_boundary_product_contributions",
-        [](XT::Functions::GridFunctionInterface<E>& weight,
+        [](const double& penalty,
+           XT::Functions::GridFunctionInterface<E>& weight,
            DomainDecomposition& domain_decomposition,
            const size_t ss,
            const std::string space_type) {
-          return std::move(assemble_boundary_product_contributions(weight, domain_decomposition, ss, space_type));
+          return std::move(
+              assemble_boundary_product_contributions(penalty, weight, domain_decomposition, ss, space_type));
         },
         py::call_guard<py::gil_scoped_release>(),
+        "penalty"_a,
         "weight"_a,
         "domain_decomposition"_a,
         "ss"_a,

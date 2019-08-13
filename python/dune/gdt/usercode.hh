@@ -10,68 +10,13 @@
 #ifndef PYTHON_DUNE_GDT_USERCODE_HH
 #define PYTHON_DUNE_GDT_USERCODE_HH
 
-#include <dune/xt/la/container/istl.hh>
-#include <dune/xt/grid/boundaryinfo.hh>
-#include <dune/xt/grid/grids.hh>
-#include <dune/xt/grid/gridprovider/cube.hh>
-#include <dune/xt/grid/dd/glued.hh>
+#include <limits>
+
+#include <dune/xt/common/ranges.hh>
 #include <dune/xt/grid/type_traits.hh>
-#include <dune/xt/functions/constant.hh>
-#include <dune/xt/functions/indicator.hh>
-#include <dune/xt/functions/interfaces/function.hh>
 
-#include <dune/gdt/functionals/vector-based.hh>
-#include <dune/gdt/interpolations.hh>
-#include <dune/gdt/local/bilinear-forms/integrals.hh>
-#include <dune/gdt/local/functionals/integrals.hh>
-#include <dune/gdt/local/integrands/conversion.hh>
-#include <dune/gdt/local/integrands/laplace-ipdg.hh>
-#include <dune/gdt/local/integrands/laplace.hh>
-#include <dune/gdt/local/integrands/ipdg.hh>
-#include <dune/gdt/local/integrands/product.hh>
-#include <dune/gdt/operators/matrix-based.hh>
-#include <dune/gdt/tools/dirichlet-constraints.hh>
-#include <dune/gdt/tools/grid-quality-estimates.hh>
-#include <dune/gdt/spaces/interface.hh>
-#include <dune/gdt/spaces/h1/continuous-flattop.hh>
-#include <dune/gdt/spaces/h1/continuous-lagrange.hh>
-#include <dune/gdt/spaces/l2/discontinuous-lagrange.hh>
-#include <dune/gdt/spaces/l2/finite-volume.hh>
+// Needs to be defined before further includes, otherwise the diameter specialization is not found.
 
-using namespace Dune;
-using namespace Dune::GDT;
-
-using G = YASP_2D_EQUIDISTANT_OFFSET;
-
-using GP = XT::Grid::GridProvider<G>;
-using GV = typename G::LeafGridView;
-using E = XT::Grid::extract_entity_t<GV>;
-
-static const constexpr size_t d = G::dimension;
-using M = XT::LA::IstlRowMajorSparseMatrix<double>;
-using V = XT::LA::IstlDenseVector<double>;
-
-
-static std::string default_space_type()
-{
-  return "cg_p1";
-}
-
-
-template <class GV>
-std::unique_ptr<GDT::SpaceInterface<GV>> make_subdomain_space(GV subdomain_grid_view, const std::string& space_type)
-{
-  if (space_type.size() >= 4 && space_type.substr(0, 4) == "cg_p") {
-    const auto order = XT::Common::from_string<int>(space_type.substr(4));
-    return std::make_unique<ContinuousLagrangeSpace<GV>>(subdomain_grid_view, order);
-  } else if (space_type.size() >= 4 && space_type.substr(0, 4) == "dg_p") {
-    const auto order = XT::Common::from_string<int>(space_type.substr(4));
-    return std::make_unique<DiscontinuousLagrangeSpace<GV>>(subdomain_grid_view, order);
-  } else
-    DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
-               "space_type = " << space_type << "\n   has to be 'cg_pX' or 'dg_pX' for some order X!");
-  return nullptr;
-}
 
 /**
  * Inherits all types and methods from the coupling intersection, but uses the macro intersection to provide a correctly
@@ -87,6 +32,11 @@ class CouplingIntersectionWithCorrectNormal : public CouplingIntersectionType
 public:
   using typename BaseType::GlobalCoordinate;
   using typename BaseType::LocalCoordinate;
+
+  enum
+  {
+    dimension = MacroIntersectionType::dimension
+  };
 
   CouplingIntersectionWithCorrectNormal(const CouplingIntersectionType& coupling_intersection,
                                         const MacroIntersectionType& macro_intersection)
@@ -144,9 +94,91 @@ struct is_intersection<CouplingIntersectionWithCorrectNormal<C, I>> : public Dun
 };
 
 
+// Since CouplingIntersectionWithCorrectNormal is not derived from Dune::Intersection, we need this copy here :/
+template <class C, class I>
+double diameter(const CouplingIntersectionWithCorrectNormal<C, I>& intersection)
+{
+  auto max_dist = std::numeric_limits<typename I::ctype>::min();
+  const auto& geometry = intersection.geometry();
+  for (auto i : Common::value_range(geometry.corners())) {
+    const auto xi = geometry.corner(i);
+    for (auto j : Common::value_range(i + 1, geometry.corners())) {
+      auto xj = geometry.corner(j);
+      xj -= xi;
+      max_dist = std::max(max_dist, xj.two_norm());
+    }
+  }
+  return max_dist;
+} // diameter
+
+
 } // namespace Grid
 } // namespace XT
 } // namespace Dune
+
+
+#include <dune/xt/la/container/istl.hh>
+#include <dune/xt/grid/boundaryinfo.hh>
+#include <dune/xt/grid/grids.hh>
+#include <dune/xt/grid/gridprovider/cube.hh>
+#include <dune/xt/grid/dd/glued.hh>
+#include <dune/xt/functions/constant.hh>
+#include <dune/xt/functions/indicator.hh>
+#include <dune/xt/functions/interfaces/function.hh>
+
+#include <dune/gdt/functionals/vector-based.hh>
+#include <dune/gdt/interpolations.hh>
+#include <dune/gdt/local/bilinear-forms/integrals.hh>
+#include <dune/gdt/local/functionals/integrals.hh>
+#include <dune/gdt/local/integrands/conversion.hh>
+#include <dune/gdt/local/integrands/laplace-ipdg.hh>
+#include <dune/gdt/local/integrands/laplace.hh>
+#include <dune/gdt/local/integrands/ipdg.hh>
+#include <dune/gdt/local/integrands/product.hh>
+#include <dune/gdt/operators/matrix-based.hh>
+#include <dune/gdt/tools/dirichlet-constraints.hh>
+#include <dune/gdt/tools/grid-quality-estimates.hh>
+#include <dune/gdt/spaces/interface.hh>
+#include <dune/gdt/spaces/h1/continuous-flattop.hh>
+#include <dune/gdt/spaces/h1/continuous-lagrange.hh>
+#include <dune/gdt/spaces/l2/discontinuous-lagrange.hh>
+#include <dune/gdt/spaces/l2/finite-volume.hh>
+
+using namespace Dune;
+using namespace Dune::GDT;
+
+using G = YASP_2D_EQUIDISTANT_OFFSET;
+
+using GP = XT::Grid::GridProvider<G>;
+using GV = typename G::LeafGridView;
+using E = XT::Grid::extract_entity_t<GV>;
+
+static const constexpr size_t d = G::dimension;
+using M = XT::LA::IstlRowMajorSparseMatrix<double>;
+using V = XT::LA::IstlDenseVector<double>;
+
+
+static std::string default_space_type()
+{
+  return "cg_p1";
+}
+
+
+template <class GV>
+std::unique_ptr<GDT::SpaceInterface<GV>> make_subdomain_space(GV subdomain_grid_view, const std::string& space_type)
+{
+  if (space_type.size() >= 4 && space_type.substr(0, 4) == "cg_p") {
+    const auto order = XT::Common::from_string<int>(space_type.substr(4));
+    return std::make_unique<ContinuousLagrangeSpace<GV>>(subdomain_grid_view, order);
+  } else if (space_type.size() >= 4 && space_type.substr(0, 4) == "dg_p") {
+    const auto order = XT::Common::from_string<int>(space_type.substr(4));
+    return std::make_unique<DiscontinuousLagrangeSpace<GV>>(subdomain_grid_view, order);
+  } else
+    DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
+               "space_type = " << space_type << "\n   has to be 'cg_pX' or 'dg_pX' for some order X!");
+  return nullptr;
+}
+
 
 class DomainDecomposition
 {
@@ -399,6 +431,7 @@ public:
 
 
 std::unique_ptr<M> assemble_local_system_matrix(const XT::Functions::GridFunctionInterface<E>& diffusion,
+                                                const double& penalty,
                                                 const XT::Functions::GridFunctionInterface<E>& weight,
                                                 const DomainDecomposition& domain_decomposition,
                                                 const size_t ss,
@@ -421,16 +454,12 @@ std::unique_ptr<M> assemble_local_system_matrix(const XT::Functions::GridFunctio
       auto subdomain_operator = make_matrix_operator<M>(*subdomain_space, Stencil::element_and_intersection);
       subdomain_operator.append(LocalElementIntegralBilinearForm<E>(LocalLaplaceIntegrand<E>(diffusion)));
       if (!subdomain_space->continuous(0)) {
-        subdomain_operator.append(LocalIntersectionIntegralBilinearForm<I>(
-                                      LocalLaplaceIPDGIntegrands::InnerCoupling<I>(
-                                          /*symmetric=*/1., diffusion, /*weight=*/weight)
-                                      + LocalIPDGIntegrands::InnerPenalty<I>(
-                                            /*penalty=*/8,
-                                            diffusion,
-                                            /*intersection_diameter=*/
-                                            [](const auto& intersection) { return intersection.geometry().volume(); })),
-                                  {},
-                                  XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
+        subdomain_operator.append(
+            LocalIntersectionIntegralBilinearForm<I>(LocalLaplaceIPDGIntegrands::InnerCoupling<I>(
+                                                         /*symmetric=*/1., diffusion, weight)
+                                                     + LocalIPDGIntegrands::InnerPenalty<I>(penalty, weight)),
+            {},
+            XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
       }
       subdomain_operator.assemble();
       subdomain_matrix = std::make_unique<M>(subdomain_operator.matrix());
@@ -476,6 +505,7 @@ std::unique_ptr<V> assemble_local_rhs(const XT::Functions::GridFunctionInterface
 
 std::tuple<std::unique_ptr<M>, std::unique_ptr<M>, std::unique_ptr<M>, std::unique_ptr<M>>
 assemble_coupling_matrices(const XT::Functions::GridFunctionInterface<E>& diffusion,
+                           const double& penalty,
                            const XT::Functions::GridFunctionInterface<E>& weight,
                            DomainDecomposition& domain_decomposition,
                            const size_t ss,
@@ -570,18 +600,14 @@ assemble_coupling_matrices(const XT::Functions::GridFunctionInterface<E>& diffus
                                                       inner_subdomain_space->mapper().max_local_size());
             DynamicMatrix<double> local_matrix_out_out(outer_subdomain_space->mapper().max_local_size(),
                                                        outer_subdomain_space->mapper().max_local_size());
-            using MacroI = decltype(macro_intersection);
+            using MacroI = std::decay_t<decltype(macro_intersection)>;
             using CouplingI = typename DomainDecomposition::DdGridType::GlueType::Intersection;
             using I = CouplingIntersectionWithCorrectNormal<CouplingI, MacroI>;
             using E = typename I::InsideEntity;
             const LocalIntersectionIntegralBilinearForm<I> intersection_bilinear_form(
                 LocalLaplaceIPDGIntegrands::InnerCoupling<I>(
-                    /*symmetric=*/1., diffusion, /*weight=*/weight)
-                + LocalIPDGIntegrands::InnerPenalty<I>(/*penalty=*/8,
-                                                       /*weight=*/weight,
-                                                       /*intersection_diameter=*/[](const auto& intersection) {
-                                                         return intersection.geometry().volume();
-                                                       }));
+                    /*symmetric=*/1., diffusion, weight)
+                + LocalIPDGIntegrands::InnerPenalty<I>(penalty, weight));
             for (auto coupling_intersection_it = coupling.template ibegin<0>();
                  coupling_intersection_it != coupling_intersection_it_end;
                  ++coupling_intersection_it) {
@@ -635,6 +661,7 @@ assemble_coupling_matrices(const XT::Functions::GridFunctionInterface<E>& diffus
 
 
 std::unique_ptr<M> assemble_boundary_matrix(const XT::Functions::GridFunctionInterface<E>& diffusion,
+                                            const double& penalty,
                                             const XT::Functions::GridFunctionInterface<E>& weight,
                                             DomainDecomposition& domain_decomposition,
                                             const size_t ss,
@@ -661,11 +688,7 @@ std::unique_ptr<M> assemble_boundary_matrix(const XT::Functions::GridFunctionInt
       auto subdomain_operator = make_matrix_operator<M>(*subdomain_space, Stencil::element);
       subdomain_operator.append(LocalIntersectionIntegralBilinearForm<I>(
                                     LocalLaplaceIPDGIntegrands::DirichletCoupling<I>(/*symmetry=*/1., diffusion)
-                                    + LocalIPDGIntegrands::BoundaryPenalty<I>(
-                                          /*penalty=*/14,
-                                          /*weight=*/weight,
-                                          /*intersection_diameter=*/
-                                          [](const auto& intersection) { return intersection.geometry().volume(); })),
+                                    + LocalIPDGIntegrands::BoundaryPenalty<I>(penalty, weight)),
                                 {},
                                 XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(subdomain_boundary_info,
                                                                                    new XT::Grid::DirichletBoundary()));
@@ -678,7 +701,8 @@ std::unique_ptr<M> assemble_boundary_matrix(const XT::Functions::GridFunctionInt
 } // ... assemble_boundary_matrix(...)
 
 
-std::unique_ptr<M> assemble_local_product_contributions(const XT::Functions::GridFunctionInterface<E>& weight,
+std::unique_ptr<M> assemble_local_product_contributions(const double& penalty,
+                                                        const XT::Functions::GridFunctionInterface<E>& weight,
                                                         DomainDecomposition& domain_decomposition,
                                                         const size_t ss,
                                                         const std::string space_type)
@@ -700,13 +724,10 @@ std::unique_ptr<M> assemble_local_product_contributions(const XT::Functions::Gri
       auto subdomain_operator = make_matrix_operator<M>(*subdomain_space, Stencil::element_and_intersection);
       subdomain_operator.append(LocalElementIntegralBilinearForm<E>(LocalLaplaceIntegrand<E>(weight)));
       if (!subdomain_space->continuous(0)) {
-        subdomain_operator.append(LocalIntersectionIntegralBilinearForm<I>(LocalIPDGIntegrands::InnerPenalty<I>(
-                                      /*penalty=*/8,
-                                      /*weight=*/weight,
-                                      /*intersection_diameter=*/
-                                      [](const auto& intersection) { return intersection.geometry().volume(); })),
-                                  {},
-                                  XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
+        subdomain_operator.append(
+            LocalIntersectionIntegralBilinearForm<I>(LocalIPDGIntegrands::InnerPenalty<I>(penalty, weight)),
+            {},
+            XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
       }
       subdomain_operator.assemble();
       subdomain_matrix = std::make_unique<M>(subdomain_operator.matrix());
@@ -717,7 +738,8 @@ std::unique_ptr<M> assemble_local_product_contributions(const XT::Functions::Gri
 } // ... assemble_local_product_contributions(...)
 
 std::tuple<std::unique_ptr<M>, std::unique_ptr<M>, std::unique_ptr<M>, std::unique_ptr<M>>
-assemble_coupling_product_contributions(const XT::Functions::GridFunctionInterface<E>& weight,
+assemble_coupling_product_contributions(const double& penalty,
+                                        const XT::Functions::GridFunctionInterface<E>& weight,
                                         DomainDecomposition& domain_decomposition,
                                         const size_t ss,
                                         const size_t nn,
@@ -811,18 +833,16 @@ assemble_coupling_product_contributions(const XT::Functions::GridFunctionInterfa
                                                       inner_subdomain_space->mapper().max_local_size());
             DynamicMatrix<double> local_matrix_out_out(outer_subdomain_space->mapper().max_local_size(),
                                                        outer_subdomain_space->mapper().max_local_size());
-            using I = typename DomainDecomposition::DdGridType::GlueType::Intersection;
+            using MacroI = std::decay_t<decltype(macro_intersection)>;
+            using CouplingI = typename DomainDecomposition::DdGridType::GlueType::Intersection;
+            using I = CouplingIntersectionWithCorrectNormal<CouplingI, MacroI>;
             using E = typename I::InsideEntity;
             const LocalIntersectionIntegralBilinearForm<I> intersection_bilinear_form(
-                LocalIPDGIntegrands::InnerPenalty<I>(/*penalty=*/8,
-                                                     /*weight=*/weight,
-                                                     /*intersection_diameter=*/[](const auto& intersection) {
-                                                       return intersection.geometry().volume();
-                                                     }));
+                LocalIPDGIntegrands::InnerPenalty<I>(penalty, weight));
             for (auto coupling_intersection_it = coupling.template ibegin<0>();
                  coupling_intersection_it != coupling_intersection_it_end;
                  ++coupling_intersection_it) {
-              const auto& coupling_intersection = *coupling_intersection_it;
+              const I coupling_intersection(*coupling_intersection_it, macro_intersection);
               const auto inside_element = coupling_intersection.inside();
               const auto outside_element = coupling_intersection.outside();
               inside_basis->bind(inside_element);
@@ -870,7 +890,8 @@ assemble_coupling_product_contributions(const XT::Functions::GridFunctionInterfa
                          std::move(coupling_matrix_out_out));
 } // ... assemble_coupling_product_contributions(...)
 
-std::unique_ptr<M> assemble_boundary_product_contributions(const XT::Functions::GridFunctionInterface<E>& weight,
+std::unique_ptr<M> assemble_boundary_product_contributions(const double& penalty,
+                                                           const XT::Functions::GridFunctionInterface<E>& weight,
                                                            DomainDecomposition& domain_decomposition,
                                                            const size_t ss,
                                                            const std::string space_type)
@@ -895,14 +916,11 @@ std::unique_ptr<M> assemble_boundary_product_contributions(const XT::Functions::
       // create operator
       auto subdomain_operator = make_matrix_operator<M>(*subdomain_space, Stencil::element);
       if (!subdomain_space->continuous(0))
-        subdomain_operator.append(LocalIntersectionIntegralBilinearForm<I>(LocalIPDGIntegrands::BoundaryPenalty<I>(
-                                      /*penalty=*/14,
-                                      /*weight=*/weight,
-                                      /*intersection_diameter=*/
-                                      [](const auto& intersection) { return intersection.geometry().volume(); })),
-                                  {},
-                                  XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(
-                                      subdomain_boundary_info, new XT::Grid::DirichletBoundary()));
+        subdomain_operator.append(
+            LocalIntersectionIntegralBilinearForm<I>(LocalIPDGIntegrands::BoundaryPenalty<I>(penalty, weight)),
+            {},
+            XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(subdomain_boundary_info,
+                                                               new XT::Grid::DirichletBoundary()));
       subdomain_operator.assemble();
       subdomain_matrix = std::make_unique<M>(subdomain_operator.matrix());
       break;
