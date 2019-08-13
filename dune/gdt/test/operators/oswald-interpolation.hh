@@ -376,6 +376,8 @@ template <class G>
 struct OswaldInterpolationOperatorOnCubicLeafViewTest : public OswaldInterpolationOperatorOnLeafViewTest<G>
 {
   using BaseType = OswaldInterpolationOperatorOnLeafViewTest<G>;
+  using BaseType::d;
+  using typename BaseType::D;
   using typename BaseType::E;
   using typename BaseType::GV;
   using typename BaseType::M;
@@ -385,8 +387,6 @@ struct OswaldInterpolationOperatorOnCubicLeafViewTest : public OswaldInterpolati
 
   std::shared_ptr<XT::Grid::GridProvider<G>> make_grid() override final
   {
-    using D = typename G::ctype;
-    static const constexpr size_t d = G::dimension;
     FieldVector<D, d> lower_left(0.);
     auto upper_right = XT::Common::from_string<FieldVector<double, d>>("[3 1 1 1]");
     std::array<unsigned int, d> num_elements;

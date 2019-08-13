@@ -972,14 +972,14 @@ public:
 
     const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
     const auto r_max = r_sequence.back();
-    for (const auto& r : r_sequence) {
+    for (const auto& rr : r_sequence) {
       // regularize u
       v = phi;
-      if (r > 0) {
+      if (rr > 0) {
         beta_in = *get_isotropic_alpha(v);
         VectorType r_times_u_iso = u_iso;
-        r_times_u_iso *= r;
-        v *= 1 - r;
+        r_times_u_iso *= rr;
+        v *= 1 - rr;
         v += r_times_u_iso;
       }
       *T_k = *T_minus_one_;
@@ -996,13 +996,13 @@ public:
 
       int backtracking_failed = 0;
       for (size_t kk = 0; kk < k_max_; ++kk) {
-        // exit inner for loop to increase r if too many iterations are used or cholesky decomposition fails
-        if (kk > k_0_ && r < r_max)
+        // exit inner for loop to increase rr if too many iterations are used or cholesky decomposition fails
+        if (kk > k_0_ && rr < r_max)
           break;
         try {
           change_basis(beta_in, v_k, P_k, *T_k, g_k, beta_out, *H);
         } catch (const Dune::MathError&) {
-          if (r < r_max)
+          if (rr < r_max)
             break;
           const std::string err_msg =
               "Failed to converge for " + XT::Common::to_string(u) + " with density " + XT::Common::to_string(density)
@@ -1047,7 +1047,7 @@ public:
             && (disable_realizability_check_
                 || realizability_helper_.is_realizable(u_eps_diff, kk == static_cast<size_t>(0.8 * k_0_)))) {
           ret->first = rescale ? alpha_prime + alpha_one * std::log(density) : alpha_prime;
-          ret->second = std::make_pair(rescale ? v * density : v, r);
+          ret->second = std::make_pair(rescale ? v * density : v, rr);
           return ret;
         } else {
           RangeFieldType zeta_k = 1;
@@ -1071,7 +1071,7 @@ public:
             ++backtracking_failed;
         } // else (stopping conditions)
       } // k loop (Newton iterations)
-    } // r loop (Regularization parameter)
+    } // rr loop (Regularization parameter)
     const std::string err_msg = "Failed to converge for " + XT::Common::to_string(u) + " with density "
                                 + XT::Common::to_string(density) + " and multiplier " + XT::Common::to_string(beta_in)
                                 + " due to too many iterations! Last u_eps_diff = " + XT::Common::to_string(u_eps_diff)
@@ -1195,14 +1195,14 @@ public:
     VectorType alpha_k = alpha_initial;
     const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
     const auto r_max = r_sequence.back();
-    for (const auto& r : r_sequence) {
+    for (const auto& rr : r_sequence) {
       // regularize u
       v = phi;
-      if (r > 0) {
+      if (rr > 0) {
         alpha_k = *get_isotropic_alpha(v);
         VectorType r_times_u_iso = u_iso;
-        r_times_u_iso *= r;
-        v *= 1 - r;
+        r_times_u_iso *= rr;
+        v *= 1 - rr;
         v += r_times_u_iso;
       }
       // calculate T_k u
@@ -1215,8 +1215,8 @@ public:
 
       int backtracking_failed = 0;
       for (size_t kk = 0; kk < k_max_; ++kk) {
-        // exit inner for loop to increase r if too many iterations are used
-        if (kk > k_0_ && r < r_max)
+        // exit inner for loop to increase rr if too many iterations are used
+        if (kk > k_0_ && rr < r_max)
           break;
         // calculate gradient g
         calculate_u(alpha_k, M_, g_k);
@@ -1235,7 +1235,7 @@ public:
           // calculate d_k = L^{-T} d_tmp
           XT::LA::solve_lower_triangular_transposed(*H, d_k, tmp_vec);
         } catch (const Dune::MathError&) {
-          if (r < r_max)
+          if (rr < r_max)
             break;
           const std::string err_msg =
               "Failed to converge for " + XT::Common::to_string(u) + " with density " + XT::Common::to_string(density);
@@ -1271,7 +1271,7 @@ public:
             && (disable_realizability_check_
                 || realizability_helper_.is_realizable(u_eps_diff, kk == static_cast<size_t>(0.8 * k_0_)))) {
           ret->first = rescale ? alpha_prime + alpha_one * std::log(density) : alpha_prime;
-          ret->second = std::make_pair(rescale ? v * density : v, r);
+          ret->second = std::make_pair(rescale ? v * density : v, rr);
           return ret;
         } else {
           RangeFieldType zeta_k = 1;
@@ -1298,7 +1298,7 @@ public:
             ++backtracking_failed;
         } // else (stopping conditions)
       } // k loop (Newton iterations)
-    } // r loop (Regularization parameter)
+    } // rr loop (Regularization parameter)
     const std::string err_msg =
         "Failed to converge for " + XT::Common::to_string(u) + " with density " + XT::Common::to_string(density);
     DUNE_THROW(MathError, err_msg);
@@ -1539,16 +1539,16 @@ public:
 
     const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
     const auto r_max = r_sequence.back();
-    for (const auto& r : r_sequence) {
+    for (const auto& rr : r_sequence) {
       // regularize u
       *v = *phi;
-      if (r > 0.) {
+      if (rr > 0.) {
         *beta_in = *get_isotropic_alpha(*v);
         // calculate v = (1-r) u + r u_iso
         // use beta_out as storage for u_iso_in * r
-        *v *= (1 - r);
+        *v *= (1 - rr);
         *beta_out = *u_iso;
-        *beta_out *= r;
+        *beta_out *= rr;
         *v += *beta_out;
       }
       for (size_t jj = 0; jj < num_blocks; ++jj)
@@ -1566,12 +1566,12 @@ public:
       int backtracking_failed = 0;
       for (size_t kk = 0; kk < k_max_; ++kk) {
         // exit inner for loop to increase r if too many iterations are used or cholesky decomposition fails
-        if (kk > k_0_ && r < r_max)
+        if (kk > k_0_ && rr < r_max)
           break;
         try {
           change_basis(*beta_in, *v_k, P_k, *T_k, *g_k, *beta_out, *H);
         } catch (const Dune::MathError&) {
-          if (r < r_max)
+          if (rr < r_max)
             break;
           DUNE_THROW(Dune::MathError, "Failure to converge!");
         }
@@ -1626,7 +1626,7 @@ public:
             && (entropy == EntropyType::MaxwellBoltzmann || all_positive(eta_ast_prime_vals))
             && (disable_realizability_check_ || helper<dimFlux>::is_realizable(*u_eps_diff, basis_functions_))) {
           ret->second.first = *v;
-          ret->second.second = r;
+          ret->second.second = rr;
           if (rescale) {
             ret->first = *alpha_one;
             ret->first *= std::log(density);
@@ -1658,7 +1658,7 @@ public:
             ++backtracking_failed;
         } // else (stopping conditions)
       } // k loop (Newton iterations)
-    } // r loop (Regularization parameter)
+    } // rr loop (Regularization parameter)
     DUNE_THROW(MathError, "Failed to converge");
 
     return ret;
@@ -2520,14 +2520,14 @@ public:
         tmp_vec(basis_dimRange, 0., 0), alpha_prime(basis_dimRange);
     const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
     const auto r_max = r_sequence.back();
-    for (const auto& r : r_sequence_) {
+    for (const auto& rr : r_sequence_) {
       // regularize u
       v = phi;
-      if (r > 0) {
+      if (rr > 0) {
         alpha_k = *get_isotropic_alpha(v);
         tmp_vec = u_iso;
-        tmp_vec *= r;
-        v *= 1 - r;
+        tmp_vec *= rr;
+        v *= 1 - rr;
         v += tmp_vec;
       }
 
@@ -2537,7 +2537,7 @@ public:
       int backtracking_failed = 0;
       for (size_t kk = 0; kk < k_max_; ++kk) {
         // exit inner for loop to increase r if too many iterations are used
-        if (kk > k_0_ && r < r_max)
+        if (kk > k_0_ && rr < r_max)
           break;
         // calculate gradient g
         calculate_gradient(alpha_k, v, g_k);
@@ -2556,7 +2556,7 @@ public:
           solver.apply(tmp_vec, d_k);
 #  endif // HAVE_EIGEN
         } catch (const XT::LA::Exceptions::linear_solver_failed& error) {
-          if (r < r_max) {
+          if (rr < r_max) {
             break;
           } else {
             DUNE_THROW(XT::LA::Exceptions::linear_solver_failed,
@@ -2593,7 +2593,7 @@ public:
             ret->first = alpha_prime;
           }
           const auto v_ret_eig = rescale ? v * density : v;
-          ret->second = std::make_pair(XT::LA::convert_to<DomainType>(v_ret_eig), r);
+          ret->second = std::make_pair(XT::LA::convert_to<DomainType>(v_ret_eig), rr);
           return ret;
         } else {
           RangeFieldType zeta_k = 1;
@@ -2619,7 +2619,7 @@ public:
             ++backtracking_failed;
         } // else (stopping conditions)
       } // k loop (Newton iterations)
-    } // r loop (Regularization parameter)
+    } // rr loop (Regularization parameter)
     DUNE_THROW(MathError, "Failed to converge");
     return ret;
   } // ... get_alpha(...)
@@ -3496,14 +3496,14 @@ public:
     VectorType alpha_k = alpha_initial;
     const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
     const auto r_max = r_sequence.back();
-    for (const auto& r : r_sequence_) {
+    for (const auto& rr : r_sequence_) {
       // regularize u
       v = phi;
-      if (r > 0) {
+      if (rr > 0) {
         alpha_k = *get_isotropic_alpha(v);
         VectorType r_times_u_iso(u_iso);
-        r_times_u_iso *= r;
-        v *= 1 - r;
+        r_times_u_iso *= rr;
+        v *= 1 - rr;
         v += r_times_u_iso;
       }
 
@@ -3513,7 +3513,7 @@ public:
       int backtracking_failed = 0;
       for (size_t kk = 0; kk < k_max_; ++kk) {
         // exit inner for loop to increase r if too many iterations are used
-        if (kk > k_0_ && r < r_max)
+        if (kk > k_0_ && rr < r_max)
           break;
         // calculate gradient g
         VectorType g_k = calculate_gradient(alpha_k, v);
@@ -3526,7 +3526,7 @@ public:
           d_k = minus_g_k;
           XT::LA::solve_sym_tridiag_posdef(H_diag, H_subdiag, d_k);
         } catch (const Dune::MathError&) {
-          if (r < r_max)
+          if (rr < r_max)
             break;
           else
             DUNE_THROW(Dune::MathError, "Failure to converge!");
@@ -3543,7 +3543,7 @@ public:
         // checking realizability is cheap so we do not need the second stopping criterion
         if (g_k.two_norm() < tau_prime && is_realizable(u_eps_diff)) {
           ret->first = alpha_prime + alpha_one * std::log(density);
-          ret->second = std::make_pair(v * density, r);
+          ret->second = std::make_pair(v * density, rr);
           return ret;
         } else {
           RangeFieldType zeta_k = 1;
@@ -3569,7 +3569,7 @@ public:
             ++backtracking_failed;
         } // else (stopping conditions)
       } // k loop (Newton iterations)
-    } // r loop (Regularization parameter)
+    } // rr loop (Regularization parameter)
     DUNE_THROW(MathError, "Failed to converge");
 
     return ret;
@@ -4070,14 +4070,14 @@ public:
 
     const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
     const auto r_max = r_sequence.back();
-    for (const auto& r : r_sequence_) {
+    for (const auto& rr : r_sequence_) {
       // regularize u
       v = phi;
-      if (r > 0) {
+      if (rr > 0) {
         alpha_k = *get_isotropic_alpha(v);
         VectorType r_times_u_iso(u_iso);
-        r_times_u_iso *= r;
-        v *= 1 - r;
+        r_times_u_iso *= rr;
+        v *= 1 - rr;
         v += r_times_u_iso;
       }
 
@@ -4088,7 +4088,7 @@ public:
       VectorType g_k, d_k, minus_g_k, u_alpha_prime;
       for (size_t kk = 0; kk < k_max_; ++kk) {
         // exit inner for loop to increase r if too many iterations are used
-        if (kk > k_0_ && r < r_max)
+        if (kk > k_0_ && rr < r_max)
           break;
         // calculate gradient g
         calculate_gradient(alpha_k, v, g_k);
@@ -4101,7 +4101,7 @@ public:
           d_k = minus_g_k;
           XT::LA::solve_sym_tridiag_posdef(H_diag, H_subdiag, d_k);
         } catch (const Dune::MathError&) {
-          if (r < r_max)
+          if (rr < r_max)
             break;
           else
             DUNE_THROW(Dune::MathError, "Failure to converge!");
@@ -4129,7 +4129,7 @@ public:
         if (g_k.two_norm() < tau_prime && is_realizable(u_eps_diff)
             && (entropy == EntropyType::MaxwellBoltzmann || all_positive(eta_ast_prime_vals))) {
           ret->first = rescale ? alpha_prime + alpha_one * std::log(density) : alpha_prime;
-          ret->second = std::make_pair(rescale ? v * density : v, r);
+          ret->second = std::make_pair(rescale ? v * density : v, rr);
           return ret;
         } else {
           RangeFieldType zeta_k = 1;
@@ -4154,7 +4154,7 @@ public:
             ++backtracking_failed;
         } // else (stopping conditions)
       } // k loop (Newton iterations)
-    } // r loop (Regularization parameter)
+    } // rr loop (Regularization parameter)
     DUNE_THROW(MathError, "Failed to converge");
     return ret;
   } // ... get_alpha(...)

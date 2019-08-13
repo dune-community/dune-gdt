@@ -263,7 +263,7 @@ public:
           entity_cache_->insert(ret->second.first, ret->first);
         if (use_thread_cache_)
           thread_cache_.insert(ret->second.first, ret->first);
-        return std::move(ret);
+        return ret;
       }
     }
 

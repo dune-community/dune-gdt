@@ -102,7 +102,7 @@ public:
     auto ret = copy();
     ret->source_ = XT::Common::ConstStorageProvider<SourceType>(src);
     ret->local_source_ = ret->source().local_function();
-    return std::move(ret);
+    return ret;
   }
 
   const SourceType& source() const
@@ -211,7 +211,7 @@ public:
     auto ret = copy();
     ret->source_ = XT::Common::ConstStorageProvider<SourceType>(src);
     ret->local_source_ = ret->source().local_function();
-    return std::move(ret);
+    return ret;
   }
 
   const SourceType& source() const

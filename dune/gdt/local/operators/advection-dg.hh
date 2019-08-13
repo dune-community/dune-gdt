@@ -292,7 +292,7 @@ public:
     ret->source_ = XT::Common::ConstStorageProvider<SourceType>(src);
     ret->local_source_ = ret->source().local_function();
     ret->local_source_outside_ = ret->source().local_function();
-    return std::move(ret);
+    return ret;
   }
 
 private:
@@ -729,7 +729,7 @@ public:
     ret->source_ = XT::Common::ConstStorageProvider<SourceType>(src);
     ret->local_source_ = ret->source().local_function();
     ret->local_source_outside_ = ret->source().local_function();
-    return std::move(ret);
+    return ret;
   }
 
 private:
