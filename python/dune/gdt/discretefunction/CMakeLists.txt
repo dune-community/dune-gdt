@@ -14,4 +14,3 @@
 dune_pybindxi_add_module(_discretefunction_1d EXCLUDE_FROM_ALL ${header} discretefunction_1d.cc)
 dune_pybindxi_add_module(_discretefunction_2d EXCLUDE_FROM_ALL ${header} discretefunction_2d.cc)
 dune_pybindxi_add_module(_discretefunction_3d EXCLUDE_FROM_ALL ${header} discretefunction_3d.cc)
-
