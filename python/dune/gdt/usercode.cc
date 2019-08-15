@@ -43,6 +43,22 @@ PYBIND11_MODULE(usercode, m)
                            "upper_right"_a);
   domain_decomposition.def_property_readonly("num_subdomains",
                                              [](DomainDecomposition& self) { return self.dd_grid.num_subdomains(); });
+  domain_decomposition.def(
+      "num_elements",
+      [](DomainDecomposition& self, const size_t ss) {
+        DUNE_THROW_IF(ss >= self.dd_grid.num_subdomains(),
+                      XT::Common::Exceptions::index_out_of_range,
+                      "ss = " << ss << "\n   self.dd_grid.num_subdomains() = " << self.dd_grid.num_subdomains());
+        size_t result = 0;
+        for (auto&& macro_element : elements(self.dd_grid.macro_grid_view()))
+          if (self.dd_grid.subdomain(macro_element) == ss) {
+            result = make_finite_volume_space(self.dd_grid.local_grid(macro_element).leaf_view()).mapper().size();
+            break;
+          }
+        return result;
+      },
+      py::call_guard<py::gil_scoped_release>(),
+      "subdomain"_a);
   domain_decomposition.def_property_readonly("boundary_subdomains", [](DomainDecomposition& self) {
     std::vector<size_t> boundary_subdomains;
     for (auto&& macro_element : elements(self.dd_grid.macro_grid_view()))
@@ -65,6 +81,31 @@ PYBIND11_MODULE(usercode, m)
     }
     return neighboring_subdomains;
   });
+  domain_decomposition.def("max_subdomain_diameter",
+                           [](DomainDecomposition& self) {
+                             double H = 0.;
+                             for (auto&& macro_element : elements(self.dd_grid.macro_grid_view()))
+                               H = std::max(H, XT::Grid::diameter(macro_element));
+                             return H;
+                           },
+                           py::call_guard<py::gil_scoped_release>());
+  domain_decomposition.def(
+      "max_element_diameter",
+      [](DomainDecomposition& self, const size_t ss) {
+        DUNE_THROW_IF(ss >= self.dd_grid.num_subdomains(),
+                      XT::Common::Exceptions::index_out_of_range,
+                      "ss = " << ss << "\n   self.dd_grid.num_subdomains() = " << self.dd_grid.num_subdomains());
+        double h = 0.;
+        for (auto&& macro_element : elements(self.dd_grid.macro_grid_view()))
+          if (self.dd_grid.subdomain(macro_element) == ss) {
+            for (auto&& micro_element : elements(self.dd_grid.local_grid(macro_element).leaf_view()))
+              h = std::max(h, XT::Grid::diameter(micro_element));
+            break;
+          }
+        return h;
+      },
+      py::call_guard<py::gil_scoped_release>(),
+      "subdomain"_a);
   domain_decomposition.def(
       "visualize_indicators",
       [](DomainDecomposition& self,
@@ -113,7 +154,7 @@ PYBIND11_MODULE(usercode, m)
 
   py::class_<ContinuousLagrangePartitionOfUnity> cg_pou(
       m, "ContinuousLagrangePartitionOfUnity", "ContinuousLagrangePartitionOfUnity");
-  cg_pou.def(py::init([](const DomainDecomposition& dd) { return new ContinuousLagrangePartitionOfUnity(dd); }),
+  cg_pou.def(py::init([](DomainDecomposition& dd) { return new ContinuousLagrangePartitionOfUnity(dd); }),
              "domain_decomposition"_a,
              py::keep_alive<1, 2>());
   cg_pou.def_property_readonly("size", [](ContinuousLagrangePartitionOfUnity& self) { return self.size(); });
@@ -130,10 +171,17 @@ PYBIND11_MODULE(usercode, m)
              },
              "ss"_a,
              "space_type"_a = default_space_type());
+  cg_pou.def("visualize",
+             [](ContinuousLagrangePartitionOfUnity& self, const std::string& filename, const std::string space_type) {
+               self.visualize(filename, "CgPoU", space_type);
+             },
+             py::call_guard<py::gil_scoped_release>(),
+             "filename"_a,
+             "space_type"_a = default_space_type());
 
   py::class_<ContinuousFlatTopPartitionOfUnity> flattop_pou(
       m, "ContinuousFlatTopPartitionOfUnity", "ContinuousFlatTopPartitionOfUnity");
-  flattop_pou.def(py::init([](const DomainDecomposition& dd, const double& overlap) {
+  flattop_pou.def(py::init([](DomainDecomposition& dd, const double& overlap) {
                     return new ContinuousFlatTopPartitionOfUnity(dd, overlap);
                   }),
                   "domain_decomposition"_a,
@@ -153,6 +201,13 @@ PYBIND11_MODULE(usercode, m)
                     return self.on_subdomain(ss, space_type);
                   },
                   "ss"_a,
+                  "space_type"_a = default_space_type());
+  flattop_pou.def("visualize",
+                  [](ContinuousFlatTopPartitionOfUnity& self,
+                     const std::string& filename,
+                     const std::string space_type) { self.visualize(filename, "FlatTopPoU", space_type); },
+                  py::call_guard<py::gil_scoped_release>(),
+                  "filename"_a,
                   "space_type"_a = default_space_type());
 
   m.def("assemble_local_system_matrix",
