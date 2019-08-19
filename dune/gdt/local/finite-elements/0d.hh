@@ -161,7 +161,7 @@ public:
     : geometry_type_(GeometryTypes::simplex(0))
     , local_keys_(r)
   {
-    for (size_t ii = 0; ii < r; ++ii)
+    for (unsigned int ii = 0; ii < r; ++ii)
       local_keys_[ii] = LocalKey(0, 0, ii);
   }
 
