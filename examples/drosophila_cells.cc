@@ -995,9 +995,9 @@ struct PfieldSolver
     // apply dirichlet constraints for phi
     for (const auto& DoF : dirichlet_constraints_.dirichlet_DoFs()) {
       S_.clear_row(2 * n_ + DoF);
-      S_.clear_col(DoF);
+      S_20_.set_entry(DoF, DoF, 1.);
     }
-    dirichlet_constraints_.apply(S_20_, f_vector_, false, true);
+    dirichlet_constraints_.apply(f_vector_);
 
     // solve system
     begin = std::chrono::steady_clock::now();
@@ -1005,9 +1005,8 @@ struct PfieldSolver
     //    S_file << S_ << std::endl;
     //    S_file.close();
     //    DUNE_THROW(Dune::NotImplemented, "");
-    //        const auto ret = XT::LA::solve(S_, rhs_vector_, XT::LA::SolverOptions<MatrixType>::options("lu.umfpack"));
+    //    const auto ret = XT::LA::solve(S_, rhs_vector_, XT::LA::SolverOptions<MatrixType>::options("lu.umfpack"));
     //    const auto ret = XT::LA::solve(S_, rhs_vector_);
-
     // copy to guess vector
     //    VectorType ret;
     //    for (size_t ii = 0; ii < n_; ++ii)
@@ -1085,8 +1084,8 @@ int main(int argc, char* argv[])
     if (argc > 1)
       DXTC_CONFIG.read_options(argc, argv);
 #if HAVE_TBB
-    DXTC_CONFIG.set("threading.partition_factor", 10, true);
-    XT::Common::threadManager().set_max_threads(4);
+    DXTC_CONFIG.set("threading.partition_factor", 1, true);
+    XT::Common::threadManager().set_max_threads(1);
 #endif
 
     XT::Common::TimedLogger().create(DXTC_CONFIG_GET("logger.info", 1), DXTC_CONFIG_GET("logger.debug", -1));
@@ -1136,7 +1135,7 @@ int main(int argc, char* argv[])
     FieldVector<double, d> lower_left{{0., 0.}};
     FieldVector<double, d> upper_right{{160., 40.}};
     auto grid = XT::Grid::make_cube_grid<G>(lower_left, upper_right, /*num_elements=*/{num_elements_x, num_elements_y});
-    grid.grid().globalRefine(1);
+    grid.grid().globalRefine(0);
     const double vol_domain = (upper_right[0] - lower_left[0]) * (upper_right[1] - lower_left[1]);
     auto nonperiodic_grid_view = grid.leaf_view();
     std::bitset<d> periodic_directions(periodic_dirs);
@@ -1191,8 +1190,7 @@ int main(int argc, char* argv[])
     const XT::Functions::GenericFunction<d> mu_initial(50,
                                                        /*evaluate=*/
                                                        [phi_initial, epsilon](const auto& x, const auto& param) {
-                                                         // TODO:: add approximation of laplacian term in definition of
-                                                         // mu
+                                                         // TODO: add approximation of laplacian term
                                                          const auto phi = phi_initial.evaluate(x, param);
                                                          return 1. / epsilon * (std::pow(phi, 3) - phi);
                                                        },
@@ -1281,10 +1279,10 @@ int main(int argc, char* argv[])
       std::cout << "Current time: " << t << std::endl;
       pfield_solver.apply(actual_dt);
       std::cout << "Pfield done" << std::endl;
-      stokes_solver.apply();
-      std::cout << "Stokes done" << std::endl;
       ofield_solver.apply(actual_dt);
       std::cout << "Ofield done" << std::endl;
+      stokes_solver.apply();
+      std::cout << "Stokes done" << std::endl;
 
       t += actual_dt;
 
