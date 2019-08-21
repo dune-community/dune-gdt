@@ -96,6 +96,10 @@ public:
 protected:
   void post_bind(const ElementType& ele) override
   {
+#ifndef NDEBUG
+    if (!ele.geometry().affine())
+      std::cerr << "Warning: integration order has to be increased for non-affine geometries!" << std::endl;
+#endif
     local_diffusion_factor_->bind(ele);
     local_diffusion_tensor_->bind(ele);
   }
@@ -105,8 +109,8 @@ public:
             const LocalAnsatzBasisType& ansatz_basis,
             const XT::Common::Parameter& param = {}) const override final
   {
-    return local_diffusion_factor_->order(param) + local_diffusion_tensor_->order(param)
-           + std::max(test_basis.order(param) - 1, 0) + std::max(ansatz_basis.order(param) - 1, 0);
+    return local_diffusion_factor_->order(param) + local_diffusion_tensor_->order(param) + test_basis.order(param)
+           + ansatz_basis.order(param);
   }
 
   void evaluate(const LocalTestBasisType& test_basis,

@@ -139,7 +139,7 @@ public:
             const LocalAnsatzBasisType& ansatz_basis,
             const XT::Common::Parameter& param = {}) const override final
   {
-    return std::max(local_function_->order(param) + test_basis.order(param) + ansatz_basis.order(param) - 1, 0);
+    return local_function_->order(param) + test_basis.order(param) + ansatz_basis.order(param);
   }
 
   using BaseType::evaluate;
@@ -235,7 +235,7 @@ public:
             const LocalAnsatzBasisType& ansatz_basis,
             const XT::Common::Parameter& param = {}) const override final
   {
-    return std::max(local_function_->order(param) + test_basis.order(param) + ansatz_basis.order(param) - 1, 0);
+    return local_function_->order(param) + test_basis.order(param) + ansatz_basis.order(param);
   }
 
   using BaseType::evaluate;

@@ -9,13 +9,6 @@
 
 #include <dune/xt/common/test/main.hxx> // <- this one has to come first (includes the config.h)!
 
-#include <dune/geometry/quadraturerules.hh>
-
-#include <dune/xt/common/matrix.hh>
-
-#include <dune/xt/functions/generic/function.hh>
-#include <dune/xt/functions/generic/grid-function.hh>
-
 #include <dune/gdt/local/integrands/symmetric_elliptic.hh>
 
 #include <dune/gdt/test/integrands/integrands.hh>

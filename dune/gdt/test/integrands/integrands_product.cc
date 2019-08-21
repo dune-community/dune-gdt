@@ -9,11 +9,6 @@
 
 #include <dune/xt/common/test/main.hxx> // <- this one has to come first (includes the config.h)!
 
-#include <dune/geometry/quadraturerules.hh>
-
-#include <dune/xt/functions/generic/function.hh>
-#include <dune/xt/functions/generic/grid-function.hh>
-
 #include <dune/gdt/local/integrands/product.hh>
 
 #include <dune/gdt/test/integrands/integrands.hh>
@@ -32,6 +27,7 @@ struct ProductIntegrandTest : public IntegrandTest<G>
   using typename BaseType::DomainType;
   using typename BaseType::E;
   using typename BaseType::GV;
+  using typename BaseType::MatrixType;
   using typename BaseType::VectorJacobianType;
   using ScalarIntegrandType = LocalElementProductIntegrand<E, 1>;
   using VectorIntegrandType = LocalElementProductIntegrand<E, d>;
@@ -76,7 +72,6 @@ struct ProductIntegrandTest : public IntegrandTest<G>
     const auto element = *(grid_provider_->leaf_view().template begin<0>());
     scalar_integrand.bind(element);
     const auto integrand_order = scalar_integrand.order(*scalar_test_, *scalar_ansatz_);
-    EXPECT_EQ(9, integrand_order);
     DynamicMatrix<D> result(2, 2, 0.);
     for (const auto& quadrature_point : Dune::QuadratureRules<D, d>::rule(element.geometry().type(), integrand_order)) {
       const auto& x = quadrature_point.position();
@@ -101,7 +96,6 @@ struct ProductIntegrandTest : public IntegrandTest<G>
     const auto element = *(grid_provider_->leaf_view().template begin<0>());
     integrand.bind(element);
     const auto integrand_order = integrand.order(*vector_test_, *vector_ansatz_);
-    EXPECT_EQ(5, integrand_order);
     DynamicMatrix<D> result(2, 2, 0.);
     for (const auto& quadrature_point : Dune::QuadratureRules<D, d>::rule(element.geometry().type(), integrand_order)) {
       const auto& x = quadrature_point.position();
@@ -119,7 +113,29 @@ struct ProductIntegrandTest : public IntegrandTest<G>
     }
   }
 
+  virtual void is_integrated_correctly()
+  {
+    ScalarIntegrandType integrand(1.);
+    const auto& grid_view = grid_provider_->leaf_view();
+    const auto space = make_continuous_lagrange_space<1>(grid_view, /*polorder=*/2);
+    const auto n = space.mapper().size();
+    MatrixType mass_matrix(n, n, make_element_sparsity_pattern(space, space, grid_view));
+    MatrixOperator<MatrixType, GV, 1> product_operator(grid_view, space, space, mass_matrix);
+    product_operator.append(LocalElementIntegralBilinearForm<E, 1>(integrand));
+    product_operator.assemble(true);
+    const auto mat_data_ptr = XT::Common::serialize_rowwise(mass_matrix);
+    const auto min_entry = *std::min_element(mat_data_ptr.get(), mat_data_ptr.get() + n * n);
+    const auto max_entry = *std::max_element(mat_data_ptr.get(), mat_data_ptr.get() + n * n);
+    const auto square_sum = std::accumulate(
+        mat_data_ptr.get(), mat_data_ptr.get() + n * n, 0., [](const auto& a, const auto& b) { return a + b * b; });
+    EXPECT_NEAR((is_simplex_grid_ ? -0.001851851851852 : -0.002962962962963), min_entry, 1e-13);
+    EXPECT_NEAR((is_simplex_grid_ ? 0.029629629629630 : 0.047407407407407), max_entry, 1e-13);
+    EXPECT_NEAR((is_simplex_grid_ ? 0.058804012345679 : 0.066475994513031), square_sum, 1e-13);
+    // std::cout << XT::Common::to_string(mass_matrix, 15) << std::endl;
+  }
+
   using BaseType::grid_provider_;
+  using BaseType::is_simplex_grid_;
   using BaseType::scalar_ansatz_;
   using BaseType::scalar_test_;
   using BaseType::vector_ansatz_;
@@ -148,4 +164,9 @@ TYPED_TEST(ProductIntegrandTest, evaluates_correctly_for_scalar_bases)
 TYPED_TEST(ProductIntegrandTest, evaluates_correctly_for_vector_bases)
 {
   this->evaluates_correctly_for_vector_bases();
+}
+
+TYPED_TEST(ProductIntegrandTest, is_integrated_correctly)
+{
+  this->is_integrated_correctly();
 }

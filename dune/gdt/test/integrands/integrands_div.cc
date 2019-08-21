@@ -9,11 +9,6 @@
 
 #include <dune/xt/common/test/main.hxx> // <- this one has to come first (includes the config.h)!
 
-#include <dune/geometry/quadraturerules.hh>
-
-#include <dune/xt/functions/generic/function.hh>
-#include <dune/xt/functions/generic/grid-function.hh>
-
 #include <dune/gdt/local/integrands/div.hh>
 
 #include <dune/gdt/test/integrands/integrands.hh>
@@ -32,6 +27,7 @@ struct DivIntegrandTest : public IntegrandTest<G>
   using typename BaseType::DomainType;
   using typename BaseType::E;
   using typename BaseType::GV;
+  using typename BaseType::MatrixType;
   using typename BaseType::VectorJacobianType;
   using TestDivIntegrandType = LocalElementAnsatzValueTestDivProductIntegrand<E>;
   using AnsatzDivIntegrandType = LocalElementAnsatzDivTestValueProductIntegrand<E>;
@@ -71,12 +67,10 @@ struct DivIntegrandTest : public IntegrandTest<G>
     ansatz_div_integrand.bind(element);
     const auto test_div_integrand_order = test_div_integrand.order(*vector_test_, *scalar_ansatz_);
     const auto ansatz_div_integrand_order = ansatz_div_integrand.order(*scalar_test_, *vector_ansatz_);
-    EXPECT_EQ(6, test_div_integrand_order);
-    EXPECT_EQ(7, ansatz_div_integrand_order);
     DynamicMatrix<D> test_div_result(2, 2, 0.);
     DynamicMatrix<D> ansatz_div_result(2, 2, 0.);
-    for (const auto& quadrature_point :
-         Dune::QuadratureRules<D, d>::rule(element.geometry().type(), test_div_integrand_order)) {
+    for (const auto& quadrature_point : Dune::QuadratureRules<D, d>::rule(
+             element.geometry().type(), std::max(test_div_integrand_order, ansatz_div_integrand_order))) {
       const auto& x = quadrature_point.position();
       test_div_integrand.evaluate(*vector_test_, *scalar_ansatz_, x, test_div_result);
       ansatz_div_integrand.evaluate(*scalar_test_, *vector_ansatz_, x, ansatz_div_result);
@@ -95,7 +89,37 @@ struct DivIntegrandTest : public IntegrandTest<G>
     } // quadrature points
   } // ... evaluates_correctly()
 
+  virtual void is_integrated_correctly()
+  {
+    TestDivIntegrandType test_div_integrand(1.);
+    AnsatzDivIntegrandType ansatz_div_integrand(1.);
+    const auto& grid_view = grid_provider_->leaf_view();
+    const auto scalar_space = make_continuous_lagrange_space<1>(grid_view, /*polorder=*/2);
+    const auto vector_space = make_continuous_lagrange_space<d>(grid_view, /*polorder=*/2);
+    const auto m = scalar_space.mapper().size();
+    const auto n = vector_space.mapper().size();
+    MatrixType test_div_mat(n, m, make_element_sparsity_pattern(vector_space, scalar_space, grid_view));
+    MatrixType ansatz_div_mat(m, n, make_element_sparsity_pattern(scalar_space, vector_space, grid_view));
+    MatrixOperator<MatrixType, GV, 1, 1, d, 1> test_div_op(grid_view, scalar_space, vector_space, test_div_mat);
+    MatrixOperator<MatrixType, GV, d, 1, 1, 1> ansatz_div_op(grid_view, vector_space, scalar_space, ansatz_div_mat);
+    test_div_op.append(LocalElementIntegralBilinearForm<E, d, 1, double, double, 1, 1>(test_div_integrand));
+    test_div_op.assemble(true);
+    ansatz_div_op.append(LocalElementIntegralBilinearForm<E, 1, 1, double, double, d, 1>(ansatz_div_integrand));
+    ansatz_div_op.assemble(true);
+    EXPECT_TRUE(XT::Common::FloatCmp::eq(test_div_mat, XT::Common::transposed(ansatz_div_mat), 1e-14, 1e-14));
+    const auto mat_data_ptr = XT::Common::serialize_rowwise(test_div_mat);
+    const auto min_entry = *std::min_element(mat_data_ptr.get(), mat_data_ptr.get() + n * m);
+    const auto max_entry = *std::max_element(mat_data_ptr.get(), mat_data_ptr.get() + n * m);
+    const auto square_sum = std::accumulate(
+        mat_data_ptr.get(), mat_data_ptr.get() + n * m, 0., [](const auto& a, const auto& b) { return a + b * b; });
+    EXPECT_NEAR((is_simplex_grid_ ? -0.133333333333333 : -0.177777777777778), min_entry, 1e-13);
+    EXPECT_NEAR((is_simplex_grid_ ? 0.133333333333333 : 0.177777777777778), max_entry, 1e-13);
+    EXPECT_NEAR((is_simplex_grid_ ? 4.515925925925922 : 4.589465020576143), square_sum, 1e-13);
+    // std::cout << XT::Common::to_string(test_div_mat, 15) << std::endl;
+  }
+
   using BaseType::grid_provider_;
+  using BaseType::is_simplex_grid_;
   using BaseType::scalar_ansatz_;
   using BaseType::scalar_test_;
   using BaseType::vector_ansatz_;
@@ -116,7 +140,13 @@ TYPED_TEST(DivIntegrandTest, is_constructable)
 {
   this->is_constructable();
 }
+
 TYPED_TEST(DivIntegrandTest, evaluates_correctly)
 {
   this->evaluates_correctly();
+}
+
+TYPED_TEST(DivIntegrandTest, integrates_correctly)
+{
+  this->is_integrated_correctly();
 }

@@ -92,8 +92,7 @@ public:
             const LocalAnsatzBasisType& ansatz_basis,
             const XT::Common::Parameter& param = {}) const override final
   {
-    return std::max(
-        local_diffusion_factor_->order(param) + (test_basis.order(param) - 1) + (ansatz_basis.order(param) - 1), 0);
+    return local_diffusion_factor_->order(param) + test_basis.order(param) + ansatz_basis.order(param);
   }
 
   void evaluate(const LocalTestBasisType& test_basis,

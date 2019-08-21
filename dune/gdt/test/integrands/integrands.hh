@@ -12,14 +12,23 @@
 
 #include <array>
 
+#include <dune/geometry/quadraturerules.hh>
+#include <dune/geometry/type.hh>
+
 #include <dune/xt/common/test/gtest/gtest.h>
 #include <dune/xt/common/fvector.hh>
 
-#include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/grid/gridprovider.hh>
 #include <dune/xt/grid/grids.hh>
+#include <dune/xt/grid/type_traits.hh>
 
 #include <dune/xt/functions/generic/element-function.hh>
+#include <dune/xt/functions/generic/function.hh>
+#include <dune/xt/functions/generic/grid-function.hh>
+
+#include <dune/gdt/operators/matrix-based.hh>
+#include <dune/gdt/spaces/h1/continuous-lagrange.hh>
+#include <dune/gdt/tools/sparsity-pattern.hh>
 
 namespace Dune {
 namespace GDT {
@@ -43,12 +52,14 @@ struct IntegrandTest : public ::testing::Test
   using LocalVectorBasisType = XT::Functions::GenericElementFunctionSet<E, 2, 1>;
   using VectorRangeType = typename LocalVectorBasisType::RangeType;
   using VectorJacobianType = typename LocalVectorBasisType::DerivativeRangeType;
+  using MatrixType = typename XT::LA::Container<double, XT::LA::default_sparse_backend>::MatrixType;
 
   std::shared_ptr<XT::Grid::GridProvider<G>> grid_provider_;
   std::shared_ptr<LocalScalarBasisType> scalar_ansatz_;
   std::shared_ptr<LocalScalarBasisType> scalar_test_;
   std::shared_ptr<LocalVectorBasisType> vector_ansatz_;
   std::shared_ptr<LocalVectorBasisType> vector_test_;
+  static constexpr bool is_simplex_grid_ = XT::Grid::is_uggrid<G>::value || XT::Grid::is_simplex_alugrid<G>::value;
 
   virtual std::shared_ptr<XT::Grid::GridProvider<G>> make_grid()
   {
@@ -154,5 +165,19 @@ using Grids2D = ::testing::Types<YASP_2D_EQUIDISTANT_OFFSET
                                  ALBERTA_2D
 #endif
                                  >;
+
+DUNE_XT_COMMON_TYPENAME(YASP_2D_EQUIDISTANT_OFFSET)
+#if HAVE_DUNE_ALUGRID
+DUNE_XT_COMMON_TYPENAME(ALU_2D_SIMPLEX_CONFORMING)
+DUNE_XT_COMMON_TYPENAME(ALU_2D_SIMPLEX_NONCONFORMING)
+DUNE_XT_COMMON_TYPENAME(ALU_2D_CUBE)
+#endif
+#if HAVE_DUNE_UGGRID || HAVE_UG
+DUNE_XT_COMMON_TYPENAME(UG_2D)
+#endif
+#if HAVE_ALBERTA
+DUNE_XT_COMMON_TYPENAME(ALBERTA_2D)
+#endif
+
 
 #endif // DUNE_GDT_TEST_INTEGRANDS_INTEGRANDS_HH
