@@ -128,7 +128,7 @@ PYBIND11_MODULE(usercode, m)
       "filename_prefix"_a,
       "ss"_a,
       "subdomain_vector"_a,
-      "space_type"_a = default_space_type(),
+      "space_type"_a,
       "name"_a = "STATE");
   domain_decomposition.def("add_local_visualization",
                            [](DomainDecomposition& self,
@@ -138,7 +138,7 @@ PYBIND11_MODULE(usercode, m)
                               const std::string& name) { self.add_local_visualization(ss, vec, space_type, name); },
                            "ss"_a,
                            "subdomain_vector"_a,
-                           "space_type"_a = default_space_type(),
+                           "space_type"_a,
                            "name"_a = "STATE");
   domain_decomposition.def(
       "add_local_visualization",
@@ -170,13 +170,13 @@ PYBIND11_MODULE(usercode, m)
                return self.on_subdomain(ss, space_type);
              },
              "ss"_a,
-             "space_type"_a = default_space_type());
+             "space_type"_a);
   cg_pou.def("jacobians_on_subdomain",
              [](ContinuousLagrangePartitionOfUnity& self, const size_t ss, const std::string space_type) {
                return self.jacobians_on_subdomain(ss, space_type);
              },
              "ss"_a,
-             "space_type"_a = default_space_type());
+             "space_type"_a);
 
   py::class_<ContinuousFlatTopPartitionOfUnity> flattop_pou(
       m, "ContinuousFlatTopPartitionOfUnity", "ContinuousFlatTopPartitionOfUnity");
@@ -200,13 +200,13 @@ PYBIND11_MODULE(usercode, m)
                     return self.on_subdomain(ss, space_type);
                   },
                   "ss"_a,
-                  "space_type"_a = default_space_type());
+                  "space_type"_a);
   flattop_pou.def("jacobians_on_subdomain",
                   [](ContinuousFlatTopPartitionOfUnity& self, const size_t ss, const std::string space_type) {
                     return self.jacobians_on_subdomain(ss, space_type);
                   },
                   "ss"_a,
-                  "space_type"_a = default_space_type());
+                  "space_type"_a);
 
   m.def("assemble_local_system_matrix",
         [](XT::Functions::GridFunctionInterface<E>& diffusion,
@@ -224,7 +224,7 @@ PYBIND11_MODULE(usercode, m)
         "weight"_a,
         "domain_decomposition"_a,
         "ss"_a,
-        "space_type"_a = default_space_type());
+        "space_type"_a);
 
   m.def("assemble_local_l2_matrix",
         [](DomainDecomposition& domain_decomposition, const size_t ss, const std::string space_type) {
@@ -254,7 +254,7 @@ PYBIND11_MODULE(usercode, m)
         py::call_guard<py::gil_scoped_release>(),
         "domain_decomposition"_a,
         "ss"_a,
-        "space_type"_a = default_space_type());
+        "space_type"_a);
 
   m.def("assemble_local_rhs",
         [](XT::Functions::GridFunctionInterface<E>& force,
@@ -267,7 +267,7 @@ PYBIND11_MODULE(usercode, m)
         "force"_a,
         "domain_decomposition"_a,
         "ss"_a,
-        "space_type"_a = default_space_type());
+        "space_type"_a);
   m.def("assemble_coupling_matrices",
         [](XT::Functions::GridFunctionInterface<E>& diffusion,
            const double& penalty,
@@ -285,7 +285,7 @@ PYBIND11_MODULE(usercode, m)
         "domain_decomposition"_a,
         "ss"_a,
         "nn"_a,
-        "space_type"_a = default_space_type());
+        "space_type"_a);
   m.def("assemble_boundary_matrix",
         [](XT::Functions::GridFunctionInterface<E>& diffusion,
            const double& penalty,
@@ -301,7 +301,7 @@ PYBIND11_MODULE(usercode, m)
         "weight"_a,
         "domain_decomposition"_a,
         "ss"_a,
-        "space_type"_a = default_space_type());
+        "space_type"_a);
 
   m.def("assemble_local_product_contributions",
         [](const double& penalty,
@@ -316,7 +316,7 @@ PYBIND11_MODULE(usercode, m)
         "weight"_a,
         "domain_decomposition"_a,
         "ss"_a,
-        "space_type"_a = default_space_type());
+        "space_type"_a);
 
   m.def("assemble_coupling_product_contributions",
         [](const double& penalty,
@@ -334,7 +334,7 @@ PYBIND11_MODULE(usercode, m)
         "domain_decomposition"_a,
         "ss"_a,
         "nn"_a,
-        "space_type"_a = default_space_type());
+        "space_type"_a);
 
   m.def("assemble_boundary_product_contributions",
         [](const double& penalty,
@@ -350,7 +350,7 @@ PYBIND11_MODULE(usercode, m)
         "weight"_a,
         "domain_decomposition"_a,
         "ss"_a,
-        "space_type"_a = default_space_type());
+        "space_type"_a);
 
   m.def("coupling_DoFs",
         [](DomainDecomposition& domain_decomposition, const size_t ss, const size_t nn, const std::string space_type) {
@@ -403,13 +403,13 @@ PYBIND11_MODULE(usercode, m)
                             "ss = " << ss << "\n   nn = " << nn);
             }
           }
-          return edge_DoFs;
+          return std::vector<size_t>(edge_DoFs.begin(), edge_DoFs.end());
         },
         py::call_guard<py::gil_scoped_release>(),
         "domain_decomposition"_a,
         "ss"_a,
         "nn"_a,
-        "space_type"_a = default_space_type());
+        "space_type"_a);
 
   m.def("boundary_DoFs",
         [](DomainDecomposition& domain_decomposition, const size_t ss, const std::string space_type) {
@@ -438,12 +438,12 @@ PYBIND11_MODULE(usercode, m)
               break;
             }
           }
-          return boundary_DoFs;
+          return std::vector<size_t>(boundary_DoFs.begin(), boundary_DoFs.end());
         },
         py::call_guard<py::gil_scoped_release>(),
         "domain_decomposition"_a,
         "ss"_a,
-        "space_type"_a = default_space_type());
+        "space_type"_a);
 
   m.def("to_csr",
         [](M& matrix, const double& prune) {
@@ -509,7 +509,7 @@ PYBIND11_MODULE(usercode, m)
         py::call_guard<py::gil_scoped_release>(),
         "domain_decomposition"_a,
         "ss"_a,
-        "space_type"_a = default_space_type());
+        "space_type"_a);
 
   m.def("estimate_combined_inverse_trace_inequality_constant",
         [](DomainDecomposition& domain_decomposition, const size_t ss, const std::string space_type) {
@@ -531,7 +531,7 @@ PYBIND11_MODULE(usercode, m)
         py::call_guard<py::gil_scoped_release>(),
         "domain_decomposition"_a,
         "ss"_a,
-        "space_type"_a = default_space_type());
+        "space_type"_a);
 
   m.def("estimate_element_to_intersection_equivalence_constant",
         [](DomainDecomposition& domain_decomposition, const size_t ss) {

@@ -158,12 +158,6 @@ using M = XT::LA::IstlRowMajorSparseMatrix<double>;
 using V = XT::LA::IstlDenseVector<double>;
 
 
-static std::string default_space_type()
-{
-  return "cg_p1";
-}
-
-
 template <class GV>
 std::unique_ptr<GDT::SpaceInterface<GV>> make_subdomain_space(GV subdomain_grid_view, const std::string& space_type)
 {
