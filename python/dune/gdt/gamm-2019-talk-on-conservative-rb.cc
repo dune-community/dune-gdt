@@ -309,6 +309,7 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
   py::module::import("dune.xt.la");
   py::module::import("dune.xt.grid");
   py::module::import("dune.xt.functions");
+  py::module::import("dune.gdt.discretefunction");
 
   m.def("visualize",
         [](GP& grid, XT::Functions::FunctionInterface<d>& func, const std::string& filename) {
