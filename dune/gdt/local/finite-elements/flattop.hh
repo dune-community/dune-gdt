@@ -48,18 +48,34 @@ public:
     phi_L_ = [=](const D& x) {
       if (x < L_)
         return 1.;
-      else if (x < R_)
-        return -1. * (x / overlap) + R_ / overlap;
-      else
+      else if (x > R_)
         return 0.;
+      else
+        return -1. * (x / overlap) + R_ / overlap;
+    };
+    grad_phi_L_ = [=](const D& x) {
+      if (x < L_)
+        return 0.;
+      else if (x > R_)
+        return 0.;
+      else
+        return -1. / overlap;
     };
     phi_R_ = [=](const D& x) {
       if (x < L_)
         return 0.;
-      else if (x < R_)
-        return (x / overlap) - L_ / overlap;
-      else
+      else if (x > R_)
         return 1.;
+      else
+        return (x / overlap) - L_ / overlap;
+    };
+    grad_phi_R_ = [=](const D& x) {
+      if (x < L_)
+        return 0.;
+      else if (x > R_)
+        return 0.;
+      else
+        return (1. / overlap);
     };
   } // LocalFlatTop2dCubeFiniteElementBasis(...)
 
@@ -107,16 +123,33 @@ public:
 
   using BaseType::jacobian;
 
-  void jacobian(const DomainType& /*point_in_reference_element*/,
-                std::vector<DerivativeRangeType>& /*result*/) const override final
+  void jacobian(const DomainType& point_in_reference_element,
+                std::vector<DerivativeRangeType>& result) const override final
   {
-    DUNE_THROW(Exceptions::finite_element_error, "Not implemented yet, add this if required!");
-  }
+    if (result.size() < 4)
+      result.resize(4);
+    const auto& x = point_in_reference_element[0];
+    const auto& y = point_in_reference_element[1];
+    // * shape function 0
+    result[0][0][0] = grad_phi_L_(x) * phi_L_(y);
+    result[0][0][1] = phi_L_(x) * grad_phi_L_(y);
+    // * shape function 1
+    result[1][0][0] = grad_phi_R_(x) * phi_L_(y);
+    result[1][0][1] = phi_R_(x) * grad_phi_L_(y);
+    // * shape function 2
+    result[2][0][0] = grad_phi_L_(x) * phi_R_(y);
+    result[2][0][1] = phi_L_(x) * grad_phi_R_(y);
+    // * shape function 3
+    result[3][0][0] = grad_phi_R_(x) * phi_R_(y);
+    result[3][0][1] = phi_R_(x) * grad_phi_R_(y);
+  } // ... jacobian(...)
 
 private:
   const GeometryType geometry_type_;
   std::function<R(const D&)> phi_L_;
   std::function<R(const D&)> phi_R_;
+  std::function<R(const D&)> grad_phi_L_;
+  std::function<R(const D&)> grad_phi_R_;
 }; // class LocalFlatTop2dCubeFiniteElementBasis
 
 
