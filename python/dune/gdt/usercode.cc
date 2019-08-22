@@ -171,13 +171,6 @@ PYBIND11_MODULE(usercode, m)
              },
              "ss"_a,
              "space_type"_a = default_space_type());
-  cg_pou.def("visualize",
-             [](ContinuousLagrangePartitionOfUnity& self, const std::string& filename, const std::string space_type) {
-               self.visualize(filename, "CgPoU", space_type);
-             },
-             py::call_guard<py::gil_scoped_release>(),
-             "filename"_a,
-             "space_type"_a = default_space_type());
 
   py::class_<ContinuousFlatTopPartitionOfUnity> flattop_pou(
       m, "ContinuousFlatTopPartitionOfUnity", "ContinuousFlatTopPartitionOfUnity");
@@ -201,13 +194,6 @@ PYBIND11_MODULE(usercode, m)
                     return self.on_subdomain(ss, space_type);
                   },
                   "ss"_a,
-                  "space_type"_a = default_space_type());
-  flattop_pou.def("visualize",
-                  [](ContinuousFlatTopPartitionOfUnity& self,
-                     const std::string& filename,
-                     const std::string space_type) { self.visualize(filename, "FlatTopPoU", space_type); },
-                  py::call_guard<py::gil_scoped_release>(),
-                  "filename"_a,
                   "space_type"_a = default_space_type());
 
   m.def("assemble_local_system_matrix",

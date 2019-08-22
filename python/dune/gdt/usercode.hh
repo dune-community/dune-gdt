@@ -359,46 +359,6 @@ public:
     return search_result->second;
   } // ... local_index(...)
 
-  void visualize(const std::string filename_prefix, const std::string name_prefix, const std::string space_type)
-  {
-    auto pad = [](const size_t& ss, const size_t& max) {
-      auto max_len = XT::Common::to_string(max).size();
-      auto ss_str = XT::Common::to_string(ss);
-      std::string result;
-      for (size_t ii = 0; ii < (max_len - ss_str.size()); ++ii)
-        result += "0";
-      return result + ss_str;
-    };
-    // visualize all basis functions within their support
-    for (auto&& macro_element : elements(dd_.dd_grid.macro_grid_view())) {
-      auto ss = dd_.dd_grid.subdomain(macro_element);
-      auto global_indices = space_->mapper().global_indices(macro_element);
-      auto local_basis = on_subdomain(ss, space_type);
-      for (size_t ii = 0; ii < space_->mapper().local_size(macro_element); ++ii)
-        dd_.visualize_local(filename_prefix + "_basis_" + pad(global_indices[ii], space_->mapper().size()) + "__"
-                                + pad(ss, dd_.dd_grid.num_subdomains()),
-                            ss,
-                            local_basis[ii],
-                            space_type,
-                            name_prefix + +"_basis_" + pad(global_indices[ii], space_->mapper().size()));
-    }
-    // extend visulization by 0
-    for (auto&& macro_element : elements(dd_.dd_grid.macro_grid_view())) {
-      auto ss = dd_.dd_grid.subdomain(macro_element);
-      auto subdomain_grid_view = dd_.dd_grid.local_grid(macro_element).leaf_view();
-      auto subdomain_space = make_subdomain_space(subdomain_grid_view, space_type);
-      V zero(subdomain_space->mapper().size(), 0.);
-      for (size_t II = 0; II < this->size(); ++II)
-        if (patches_[II].count(ss) == 0)
-          dd_.visualize_local(filename_prefix + "_basis_" + pad(II, space_->mapper().size()) + "__"
-                                  + pad(ss, dd_.dd_grid.num_subdomains()),
-                              ss,
-                              zero,
-                              space_type,
-                              name_prefix + +"_basis_" + pad(II, space_->mapper().size()));
-    }
-  } // ... visualize(...)
-
 protected:
   DomainDecomposition& dd_;
   const std::unique_ptr<SpaceInterface<GV>> space_;
