@@ -364,7 +364,7 @@ public:
                                            const auto point_macro_reference_element =
                                                macro_element.geometry().local(point_in_physical_coordinates);
                                            return coarse_basis->jacobians_of_set(
-                                               point_macro_reference_element)[ii][jj][0];
+                                               point_macro_reference_element)[ii][0][jj];
                                          },
                                          *subdomain_space)
                     .dofs()
