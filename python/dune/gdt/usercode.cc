@@ -171,6 +171,12 @@ PYBIND11_MODULE(usercode, m)
              },
              "ss"_a,
              "space_type"_a = default_space_type());
+  cg_pou.def("jacobians_on_subdomain",
+             [](ContinuousLagrangePartitionOfUnity& self, const size_t ss, const std::string space_type) {
+               return self.jacobians_on_subdomain(ss, space_type);
+             },
+             "ss"_a,
+             "space_type"_a = default_space_type());
 
   py::class_<ContinuousFlatTopPartitionOfUnity> flattop_pou(
       m, "ContinuousFlatTopPartitionOfUnity", "ContinuousFlatTopPartitionOfUnity");
@@ -192,6 +198,12 @@ PYBIND11_MODULE(usercode, m)
   flattop_pou.def("on_subdomain",
                   [](ContinuousFlatTopPartitionOfUnity& self, const size_t ss, const std::string space_type) {
                     return self.on_subdomain(ss, space_type);
+                  },
+                  "ss"_a,
+                  "space_type"_a = default_space_type());
+  flattop_pou.def("jacobians_on_subdomain",
+                  [](ContinuousFlatTopPartitionOfUnity& self, const size_t ss, const std::string space_type) {
+                    return self.jacobians_on_subdomain(ss, space_type);
                   },
                   "ss"_a,
                   "space_type"_a = default_space_type());

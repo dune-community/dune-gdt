@@ -345,6 +345,39 @@ public:
     return interpolated_basis;
   } // ... on_subdomain(...)
 
+  std::vector<std::vector<V>> jacobians_on_subdomain(const size_t ss, const std::string space_type)
+  {
+    auto coarse_basis = space_->basis().localize();
+    std::vector<std::vector<V>> interpolated_jacobians;
+    for (auto&& macro_element : elements(dd_.dd_grid.macro_grid_view())) {
+      if (dd_.dd_grid.subdomain(macro_element) == ss) {
+        // this is the subdomain we are interested in, create space
+        auto subdomain_grid_view = dd_.dd_grid.local_grid(macro_element).leaf_view();
+        auto subdomain_space = make_subdomain_space(subdomain_grid_view, space_type);
+        coarse_basis->bind(macro_element);
+        for (size_t ii = 0; ii < coarse_basis->size(); ++ii) {
+          std::vector<V> basis_ii_jacobians;
+          for (size_t jj = 0; jj < d; ++jj)
+            basis_ii_jacobians.push_back(
+                default_interpolation<V>(std::max(coarse_basis->order() - 1, 0),
+                                         [&](const auto& point_in_physical_coordinates, const auto&) {
+                                           const auto point_macro_reference_element =
+                                               macro_element.geometry().local(point_in_physical_coordinates);
+                                           return coarse_basis->jacobians_of_set(
+                                               point_macro_reference_element)[ii][jj][0];
+                                         },
+                                         *subdomain_space)
+                    .dofs()
+                    .vector());
+          interpolated_jacobians.emplace_back(std::move(basis_ii_jacobians));
+        }
+        break;
+      }
+    }
+    DUNE_THROW_IF(interpolated_jacobians.size() == 0, InvalidStateException, "This should not happen, ss = " << ss);
+    return interpolated_jacobians;
+  } // ... jacobians_on_subdomain(...)
+
   size_t local_index(const size_t ii, const size_t ss)
   {
     DUNE_THROW_IF(
