@@ -39,7 +39,7 @@ public:
   using typename BaseType::RangeType;
 
   LocalFlatTop2dCubeFiniteElementBasis(const double& overlap = 0.5)
-    : geometry_type_(GeometryType::cube, 2)
+    : geometry_type_(Dune::GeometryTypes::cube(2))
   {
     // we cannot let L_ and R_ be members and define phi_L_ and phi_R_ in the ctor initializer list, as they will
     // copy/reference broken/empty/default L_ and R_
@@ -164,9 +164,7 @@ public:
     : BaseType(
           1,
           LocalFlatTop2dCubeFiniteElementBasis<D, R>(overlap).copy(),
-          LocalLagrangeFiniteElementFactory<D, 2, R, 1>::create(GeometryType(GeometryType::cube, 2), 1)
-              ->coefficients()
-              .copy(),
+          LocalLagrangeFiniteElementFactory<D, 2, R, 1>::create(Dune::GeometryTypes::cube(2), 1)->coefficients().copy(),
           LocalL2FiniteElementInterpolation<D, 2, R, 1>(LocalFlatTop2dCubeFiniteElementBasis<D, R>(overlap)).copy(),
           {})
   {}

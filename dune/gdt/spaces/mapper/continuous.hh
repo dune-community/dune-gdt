@@ -74,7 +74,7 @@ public:
                                                                          : 0;
     })
   {
-    if (d >= 2 && order_ >= 3 && !XT::Grid::is_cube_alugrid<typename GV::Grid>::value
+    if (d >= 2 && fe_order_ >= 3 && !XT::Grid::is_cube_alugrid<typename GV::Grid>::value
         && !XT::Grid::is_yaspgrid<typename GV::Grid>::value && !XT::Grid::is_uggrid<typename GV::Grid>::value)
       DUNE_THROW(Dune::NotImplemented,
                  "For order > 2, there are problems with the local-to-global mapping on some grids, see the comment in "
@@ -129,7 +129,7 @@ public:
     // by looking at the (indices of the) vertices of the edge and reordering the local indices if the orientation is
     // not the same in all elements sharing the subentity.
 #ifndef NDEBUG
-    if (d >= 2 && order_ >= 3)
+    if (d >= 2 && fe_order_ >= 3)
       assert(element.geometry().type() == Dune::GeometryTypes::cube(d)
              && "Not implemented for this element, see comment above!");
 #endif

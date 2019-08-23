@@ -77,7 +77,7 @@ public:
 
   ContinuousLagrangeSpace(const ThisType& other)
     : grid_view_(other.grid_view_)
-    , order_(other.order_)
+    , fe_order_(other.fe_order_)
     , local_finite_elements_(std::make_unique<LocalLagrangeFiniteElementFamily<D, d, R, r>>())
     , mapper_(nullptr)
     , basis_(nullptr)
