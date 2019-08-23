@@ -55,22 +55,20 @@ struct LaplaceIntegrandTest : public IntegrandTest<G>
   virtual void is_constructable() override final
   {
     ScalarIntegrandType scalar_integrand1;
-    ScalarIntegrandType scalar_integrand2(1., XT::LA::eye_matrix<FieldMatrix<D, d, d>>(d, d));
-    const XT::Functions::GenericFunction<d, 1> scalar_function(
-        2, [](const DomainType& x, const XT::Common::Parameter&) { return x[0] * x[1]; });
+    ScalarIntegrandType scalar_integrand2(XT::LA::eye_matrix<FieldMatrix<D, d, d>>(d, d));
     const XT::Functions::GenericFunction<d, 2, 2> matrix_function(
         1, [](const DomainType& x, const XT::Common::Parameter&) {
           return VectorJacobianType{{x[0], x[1]}, {1., 2.}};
         });
-    ScalarIntegrandType scalar_integrand3(scalar_function, matrix_function);
+    ScalarIntegrandType scalar_integrand3(matrix_function);
     ScalarIntegrandType scalar_integrand4(*diffusion_tensor_);
     DUNE_UNUSED_PARAMETER(scalar_integrand1);
     DUNE_UNUSED_PARAMETER(scalar_integrand2);
     DUNE_UNUSED_PARAMETER(scalar_integrand3);
     DUNE_UNUSED_PARAMETER(scalar_integrand4);
     VectorIntegrandType vector_integrand1;
-    VectorIntegrandType vector_integrand2(1., XT::LA::eye_matrix<FieldMatrix<D, d, d>>(d, d));
-    VectorIntegrandType vector_integrand3(scalar_function, matrix_function);
+    VectorIntegrandType vector_integrand2(XT::LA::eye_matrix<FieldMatrix<D, d, d>>(d, d));
+    VectorIntegrandType vector_integrand3(matrix_function);
     VectorIntegrandType vector_integrand4(*diffusion_tensor_);
     DUNE_UNUSED_PARAMETER(vector_integrand1);
     DUNE_UNUSED_PARAMETER(vector_integrand2);
@@ -130,9 +128,9 @@ struct LaplaceIntegrandTest : public IntegrandTest<G>
     const auto space = make_continuous_lagrange_space<1>(grid_view, /*polorder=*/2);
     const auto n = space.mapper().size();
     MatrixType stiffness_matrix(n, n, make_element_sparsity_pattern(space, space, grid_view));
-    MatrixOperator<MatrixType, GV, 1> elliptic_operator(grid_view, space, space, stiffness_matrix);
-    elliptic_operator.append(LocalElementIntegralBilinearForm<E, 1>(integrand));
-    elliptic_operator.assemble(true);
+    MatrixOperator<MatrixType, GV, 1> laplace_operator(grid_view, space, space, stiffness_matrix);
+    laplace_operator.append(LocalElementIntegralBilinearForm<E, 1>(integrand));
+    laplace_operator.assemble(true);
     const auto mat_data_ptr = XT::Common::serialize_rowwise(stiffness_matrix);
     const auto min_entry = *std::min_element(mat_data_ptr.get(), mat_data_ptr.get() + n * n);
     const auto max_entry = *std::max_element(mat_data_ptr.get(), mat_data_ptr.get() + n * n);
