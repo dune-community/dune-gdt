@@ -44,6 +44,7 @@
 #include <dune/gdt/operators/matrix-based.hh>
 #include <dune/gdt/spaces/h1/continuous-lagrange.hh>
 #include <dune/gdt/tools/dirichlet-constraints.hh>
+#include <dune/gdt/norms.hh>
 
 #include <dune/gdt/interpolations/boundary.hh>
 #include <dune/gdt/interpolations/default.hh>
@@ -69,6 +70,7 @@ using VectorType = XT::LA::EigenDenseVector<double>;
 // using MatrixType = XT::LA::IstlRowMajorSparseMatrix<double>;
 // using VectorType = XT::LA::IstlDenseVector<double>;
 using MatrixViewType = XT::LA::MatrixView<MatrixType>;
+using VectorViewType = XT::LA::VectorView<VectorType>;
 using R = typename XT::Functions::GenericGridFunction<E, d>::RangeFieldType;
 using DiscreteFunctionType = DiscreteFunction<VectorType, PGV, 1, 1, R>;
 using LocalDiscreteFunctionType = typename DiscreteFunctionType::LocalFunctionType;
@@ -132,35 +134,34 @@ static void write_files(const bool visualize,
                         const VectorDiscreteFunctionType& P,
                         const VectorDiscreteFunctionType& Pnat,
                         const DiscreteFunctionType& phi,
-                        const DiscreteFunctionType& phi_zero,
                         const DiscreteFunctionType& phinat,
                         const DiscreteFunctionType& mu,
                         const std::string& prefix,
                         const size_t step,
-                        const double t)
+                        const double t,
+                        const bool subsampling)
 {
   std::string postfix = "_" + Dune::XT::Common::to_string(step);
+  const auto mode = VTK::appendedraw;
+  const XT::Common::Parameter param{"subsampling", static_cast<double>(subsampling)};
   if (visualize) {
-    u.visualize(prefix + "_" + u.name() + postfix);
-    p.visualize(prefix + "_" + p.name() + postfix);
-    P.visualize(prefix + "_" + P.name() + postfix);
-    Pnat.visualize(prefix + "_" + Pnat.name() + postfix);
-    phi.visualize(prefix + "_" + phi.name() + postfix);
-    phi_zero.visualize(prefix + "_" + phi_zero.name() + postfix);
-    phinat.visualize(prefix + "_" + phinat.name() + postfix);
-    mu.visualize(prefix + "_" + mu.name() + postfix);
-    p.visualize_gradient(prefix + "_" + p.name() + "_gradient" + postfix);
-    phi.visualize_gradient(prefix + "_" + phi.name() + "_gradient" + postfix);
-    phi_zero.visualize_gradient(prefix + "_" + phi_zero.name() + "_gradient" + postfix);
-    phinat.visualize_gradient(prefix + "_" + phinat.name() + "_gradient" + postfix);
-    mu.visualize_gradient(prefix + "_" + mu.name() + "_gradient" + postfix);
+    u.visualize(prefix + "_" + u.name() + postfix, mode, param);
+    p.visualize(prefix + "_" + p.name() + postfix, mode, param);
+    P.visualize(prefix + "_" + P.name() + postfix, mode, param);
+    Pnat.visualize(prefix + "_" + Pnat.name() + postfix, mode, param);
+    phi.visualize(prefix + "_" + phi.name() + postfix, mode, param);
+    phinat.visualize(prefix + "_" + phinat.name() + postfix, mode, param);
+    mu.visualize(prefix + "_" + mu.name() + postfix, mode, param);
+    p.visualize_gradient(prefix + "_" + p.name() + "_gradient" + postfix, mode, param);
+    phi.visualize_gradient(prefix + "_" + phi.name() + "_gradient" + postfix, mode, param);
+    phinat.visualize_gradient(prefix + "_" + phinat.name() + "_gradient" + postfix, mode, param);
+    mu.visualize_gradient(prefix + "_" + mu.name() + "_gradient" + postfix, mode, param);
   }
   write_to_textfile(u, prefix, step, t);
   write_to_textfile(p, prefix, step, t);
   write_to_textfile(P, prefix, step, t);
   write_to_textfile(Pnat, prefix, step, t);
   write_to_textfile(phi, prefix, step, t);
-  write_to_textfile(phi_zero, prefix, step, t);
   write_to_textfile(phinat, prefix, step, t);
   write_to_textfile(mu, prefix, step, t);
 }
@@ -459,6 +460,7 @@ struct OfieldSolver
 #if HAVE_EIGEN
   using RowMajorBackendType = typename MatrixType::BackendType;
   using SolverType = ::Eigen::BiCGSTAB<RowMajorBackendType>;
+  // using SolverType = ::Eigen::BiCGSTAB<RowMajorBackendType, ::Eigen::IncompleteLUT<R>>;
 #endif // HAVE_EIGEN
 
   // Setup spaces and matrices and vectors
@@ -473,7 +475,8 @@ struct OfieldSolver
                const double kappa,
                const double c_1,
                const double Pa,
-               const double beta)
+               const double beta,
+               const bool linearize)
     : u_(u)
     , P_(P)
     , Pnat_(Pnat)
@@ -490,6 +493,7 @@ struct OfieldSolver
     , S_(2 * n_, 2 * n_, pattern_, 100)
     , M_(n_, n_, submatrix_pattern_)
     , C_elliptic_part_(n_, n_, submatrix_pattern_)
+    , C_linear_part_(n_, n_, submatrix_pattern_)
     , S_00_(S_, 0, n_, 0, n_)
     , S_01_(S_, 0, n_, n_, 2 * n_)
     , S_10_(S_, n_, 2 * n_, 0, n_)
@@ -501,6 +505,11 @@ struct OfieldSolver
     , old_result_(2 * n_, 0.)
     , f_vector_(rhs_vector_, 0, n_)
     , g_vector_(rhs_vector_, n_, 2 * n_)
+    , linearize_(linearize)
+    , residual_(2 * n_, 0.)
+    , x_n_(2 * n_, 0.)
+    , update_(2 * n_, 0.)
+    , candidate_(2 * n_, 0.)
   {
     // calculate M_{ij} as \int \psi_i phi_j
     M_operator_.append(LocalElementIntegralBilinearForm<E, d>(LocalElementProductIntegrand<E, d>(1.)));
@@ -533,17 +542,100 @@ struct OfieldSolver
     return pattern;
   }
 
-  void apply(const double dt)
+  double compute_residual(const VectorType& x_n, double l2_ref_P = 1., double l2_ref_Pnat = 1.)
   {
-    auto begin = std::chrono::steady_clock::now();
+    // linear part
+    S_.mv(x_n, residual_);
+    // subtract rhs
+    residual_ -= rhs_vector_;
+    if (linearize_)
+      return -1.;
+
+    // nonlinear part
+    thread_local std::unique_ptr<VectorLocalDiscreteFunctionType> P_local_;
+    VectorViewType res0_vec(residual_, 0, n_);
+    VectorViewType res1_vec(residual_, n_, 2 * n_);
+    const auto res0 = make_discrete_function(P_.space(), res0_vec);
+    const auto res1 = make_discrete_function(P_.space(), res1_vec);
+    auto nonlinear_res_functional = make_vector_functional(P_.space(), res1_vec);
+    XT::Functions::GenericGridFunction<E, d, 1> nonlinear_res_pf(
+        /*order = */ 3 * P_.space().max_polorder(),
+        /*post_bind_func*/
+        [& P_ = P_](const E& element) {
+          if (!P_local_)
+            P_local_ = P_.local_function();
+          P_local_->bind(element);
+        },
+        /*evaluate_func*/
+        [factor = -c_1_ * Pa_inv_](const DomainType& x_local, const XT::Common::Parameter& param) {
+          // evaluate P, divP
+          const auto P_n = P_local_->evaluate(x_local, param);
+          return P_n * (factor * (P_n * P_n));
+        });
+    nonlinear_res_functional.append(LocalElementIntegralFunctional<E, d>(
+        local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E, d>(), nonlinear_res_pf)));
+    S_00_operator_.clear();
+    S_00_operator_.append(nonlinear_res_functional);
+    S_00_operator_.assemble(true);
+    const auto& grid_view = P_.space().grid_view();
+    // relative error if l2_norm is > 1, else absolute error
+    l2_ref_P = l2_ref_P < 1. ? 1. : l2_ref_P;
+    l2_ref_Pnat = l2_ref_Pnat < 1. ? 1. : l2_ref_Pnat;
+    return l2_norm(grid_view, res0) / l2_ref_P + l2_norm(grid_view, res1) / l2_ref_Pnat;
+  }
+
+  void assemble_rhs(const double dt)
+  {
+    M_.mv(P_.dofs().vector(), f_vector_);
+    f_vector_ /= dt;
+
+    auto g_functional = make_vector_functional(P_.space(), g_vector_);
+    g_vector_ *= 0.;
+    thread_local std::unique_ptr<LocalDiscreteFunctionType> phi_local_;
+    thread_local std::unique_ptr<VectorLocalDiscreteFunctionType> P_local_;
+    XT::Functions::GenericGridFunction<E, d> g(
+        /*order = */ 3 * P_.space().max_polorder(),
+        /*post_bind_func*/
+        [linearize_ = linearize_, &P_ = P_, &phi_ = phi_](const E& element) {
+          if (!phi_local_)
+            phi_local_ = phi_.local_function();
+          phi_local_->bind(element);
+          if (linearize_) {
+            if (!P_local_)
+              P_local_ = P_.local_function();
+            P_local_->bind(element);
+          }
+        },
+        /*evaluate_func*/
+        [linearize_ = linearize_, factor1 = beta_ * Pa_inv_, factor2 = -2. * c_1_ * Pa_inv_](
+            const DomainType& x_local, const XT::Common::Parameter& param) {
+          // evaluate rhs terms
+          const auto grad_phi = phi_local_->jacobian(x_local, param)[0];
+          auto ret = grad_phi;
+          ret *= factor1;
+          if (linearize_) {
+            const auto P_n = P_local_->evaluate(x_local, param);
+            auto ret2 = P_n;
+            ret2 *= factor2 * (P_n * P_n);
+            ret += ret2;
+          }
+          return ret;
+        });
+    g_functional.append(LocalElementIntegralFunctional<E, d>(
+        local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E, d>(), g)));
+    S_10_operator_.clear();
+    S_10_operator_.append(g_functional);
+    S_10_operator_.assemble(true);
+  }
+
+  void assemble_linear_jacobian(const double dt)
+  {
     // assemble matrix S_{00} = M/dt + A
     S_00_operator_.clear();
     S_00_ = M_;
     S_00_ *= 1 / dt;
     // calculate A
     // Omega - xi D = (1-xi)/2 \nabla u^T - (1+xi)/2 \nabla u
-    thread_local std::unique_ptr<LocalDiscreteFunctionType> phi_local_;
-    thread_local std::unique_ptr<VectorLocalDiscreteFunctionType> P_local_;
     thread_local std::unique_ptr<VectorLocalDiscreteFunctionType> u_local_;
     const R xi = xi_;
     XT::Functions::GenericGridFunction<E, d, d> Omega_minus_xi_D_transposed(
@@ -569,31 +661,52 @@ struct OfieldSolver
     S_00_operator_.append(
         LocalElementIntegralBilinearForm<E, d>(LocalElementProductIntegrand<E, d>(Omega_minus_xi_D_transposed)));
     S_00_operator_.append(LocalElementIntegralBilinearForm<E, d>(LocalElementGradientValueIntegrand<E, d>(u_)));
+    S_00_operator_.assemble(true);
 
-    // calculate S_10 = C
+    // calculate linear part S_10 = C
     S_10_operator_.clear();
     S_10_ = C_elliptic_part_;
-    const R Pa_inv = Pa_inv_;
-    const R c_1 = c_1_;
-    XT::Functions::GenericGridFunction<E, 1, 1> frac_c1_Pa_times_phi_minus_Pn_times_Pn(
-        /*order = */ 2 * P_.space().max_polorder(),
+    thread_local std::unique_ptr<LocalDiscreteFunctionType> phi_local_;
+    XT::Functions::GenericGridFunction<E, 1, 1> c1_Pa_inv_phi(
+        /*order = */ phi_.space().max_polorder(),
         /*post_bind_func*/
-        [& P_ = P_, &phi_ = phi_](const E& element) {
-          if (!P_local_)
-            P_local_ = P_.local_function();
+        [& phi_ = phi_](const E& element) {
           if (!phi_local_)
             phi_local_ = phi_.local_function();
-          P_local_->bind(element);
           phi_local_->bind(element);
         },
         /*evaluate_func*/
-        [c_1, Pa_inv](const DomainType& x_local, const XT::Common::Parameter& param) {
-          const auto P_n = P_local_->evaluate(x_local, param);
+        [factor = c_1_ * Pa_inv_](const DomainType& x_local, const XT::Common::Parameter& param) {
           const auto phi = phi_local_->evaluate(x_local, param);
-          return c_1 * Pa_inv * (phi - P_n * P_n);
+          return factor * phi;
         });
-    S_10_operator_.append(LocalElementIntegralBilinearForm<E, d>(
-        LocalElementProductIntegrand<E, d>(frac_c1_Pa_times_phi_minus_Pn_times_Pn)));
+    S_10_operator_.append(LocalElementIntegralBilinearForm<E, d>(LocalElementProductIntegrand<E, d>(c1_Pa_inv_phi)));
+    S_10_operator_.assemble(true);
+    C_linear_part_ = S_10_;
+
+    // nonlinear part is equal to linearized part in first iteration
+    if (linearize_)
+      assemble_nonlinear_jacobian();
+  }
+
+  void assemble_nonlinear_jacobian()
+  {
+    S_10_operator_.clear();
+    thread_local std::unique_ptr<VectorLocalDiscreteFunctionType> P_local_;
+    XT::Functions::GenericGridFunction<E, 1, 1> c1_Pa_P2(
+        /*order = */ 2. * P_.space().max_polorder(),
+        /*post_bind_func*/
+        [& P_ = P_](const E& element) {
+          if (!P_local_)
+            P_local_ = P_.local_function();
+          P_local_->bind(element);
+        },
+        /*evaluate_func*/
+        [factor = -c_1_ * Pa_inv_](const DomainType& x_local, const XT::Common::Parameter& param) {
+          const auto P_n = P_local_->evaluate(x_local, param);
+          return factor * (P_n * P_n);
+        });
+    S_10_operator_.append(LocalElementIntegralBilinearForm<E, d>(LocalElementProductIntegrand<E, d>(c1_Pa_P2)));
     XT::Functions::GenericGridFunction<E, d, d> minus_two_frac_c1_Pa_Pn_otimes_Pn(
         /*order = */ 2 * P_.space().max_polorder(),
         /*post_bind_func*/
@@ -603,76 +716,143 @@ struct OfieldSolver
           P_local_->bind(element);
         },
         /*evaluate_func*/
-        [c_1, Pa_inv](const DomainType& x_local, const XT::Common::Parameter& param) {
+        [factor = -2. * c_1_ * Pa_inv_](const DomainType& x_local, const XT::Common::Parameter& param) {
           const auto P_n = P_local_->evaluate(x_local, param);
           FieldMatrix<R, d, d> ret;
           for (size_t ii = 0; ii < d; ++ii)
             for (size_t jj = 0; jj < d; ++jj)
               ret[ii][jj] = P_n[ii] * P_n[jj];
-          ret *= -2. * c_1 * Pa_inv;
+          ret *= factor;
           return ret;
         });
     // Pn_otimes_Pn is symmetric, so no need to transpose
     S_10_operator_.append(
         LocalElementIntegralBilinearForm<E, d>(LocalElementProductIntegrand<E, d>(minus_two_frac_c1_Pa_Pn_otimes_Pn)));
-
-    auto g_functional = make_vector_functional(P_.space(), g_vector_);
-    g_vector_ *= 0.;
-    const auto beta = beta_;
-    XT::Functions::GenericGridFunction<E, d> g(
-        /*order = */ 3 * P_.space().max_polorder(),
-        /*post_bind_func*/
-        [& P_ = P_, &phi_ = phi_](const E& element) {
-          if (!P_local_)
-            P_local_ = P_.local_function();
-          if (!phi_local_)
-            phi_local_ = phi_.local_function();
-          P_local_->bind(element);
-          phi_local_->bind(element);
-        },
-        /*evaluate_func*/
-        [beta, Pa_inv, c_1](const DomainType& x_local, const XT::Common::Parameter& param) {
-          // evaluate P, phi, \nabla phi
-          const auto P_n = P_local_->evaluate(x_local, param);
-          const auto grad_phi = phi_local_->jacobian(x_local, param)[0];
-
-          // evaluate rhs terms
-          auto frac_beta_Pa_grad_phi = grad_phi;
-          frac_beta_Pa_grad_phi *= beta * Pa_inv;
-          auto minus_two_frac_c1_Pa_Pn_times_Pn_Pn = P_n;
-          minus_two_frac_c1_Pa_Pn_times_Pn_Pn *= -2. * c_1 * Pa_inv * (P_n * P_n);
-          return frac_beta_Pa_grad_phi + minus_two_frac_c1_Pa_Pn_times_Pn_Pn;
-        });
-    g_functional.append(LocalElementIntegralFunctional<E, d>(
-        local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E, d>(), g)));
-    S_10_operator_.append(g_functional);
-    // assemble everything
-    S_00_operator_.assemble(true);
     S_10_operator_.assemble(true);
-    std::chrono::duration<double> time = std::chrono::steady_clock::now() - begin;
-    M_.mv(P_.dofs().vector(), f_vector_);
-    f_vector_ /= dt;
-    std::cout << "Assembling Ofield took: " << time.count() << " s!" << std::endl;
+  }
 
-    // solve system
-    VectorType ret;
-    // copy to guess vector
-    for (size_t ii = 0; ii < n_; ++ii)
-      old_result_[ii] = P_.dofs().vector()[ii];
-    for (size_t ii = 0; ii < n_; ++ii)
-      old_result_[n_ + ii] = Pnat_.dofs().vector()[ii];
-    begin = std::chrono::steady_clock::now();
-    //    const auto ret = XT::LA::solve(S_, rhs_vector_);
+  void copy_P_Pnat_to(VectorType& vec)
+  {
+    for (size_t ii = 0; ii < n_; ++ii) {
+      vec[ii] = P_.dofs().vector()[ii];
+      vec[n_ + ii] = Pnat_.dofs().vector()[ii];
+    }
+  }
+
+  void fill_P_Pnat_from(const VectorType& vec)
+  {
+    for (size_t ii = 0; ii < n_; ++ii) {
+      P_.dofs().vector()[ii] = vec[ii];
+      Pnat_.dofs().vector()[ii] = vec[n_ + ii];
+    }
+  }
+
+  void revert_jacobian_to_linear()
+  {
+    S_10_ = C_linear_part_;
+  }
+
+  void solve_linear_system(const size_t l)
+  {
+    const auto begin = std::chrono::steady_clock::now();
+    //    std::ofstream S_file("S_" + XT::Common::to_string(dt) + ".txt");
+    //    S_file << S_ << std::endl;
+    //    S_file.close();
+    //    DUNE_THROW(Dune::NotImplemented, "");
+    //    const auto ret = XT::LA::solve(S_, rhs_vector_, XT::LA::SolverOptions<MatrixType>::options("lu.umfpack"));
+    residual_ *= -1.;
+    //      update_ = XT::LA::solve(S_, residual_);
     solver_.compute(S_.backend());
-    ret.backend() = solver_.solveWithGuess(rhs_vector_.backend(), old_result_.backend());
-    time = std::chrono::steady_clock::now() - begin;
-    std::cout << "Solving Ofield took: " << time.count() << " s!" << std::endl;
+    update_.backend() = solver_.solveWithGuess(residual_.backend(), old_result_.backend());
+    old_result_ = update_;
+    const std::chrono::duration<double> time = std::chrono::steady_clock::now() - begin;
+    std::cout << "Solving Ofield in iteration " << l << " took: " << time.count() << " s!" << std::endl;
+  }
 
-    // copy to vectors
-    for (size_t ii = 0; ii < n_; ++ii)
-      P_.dofs().vector()[ii] = ret[ii];
-    for (size_t ii = 0; ii < n_; ++ii)
-      Pnat_.dofs().vector()[ii] = ret[n_ + ii];
+  void apply(const double dt)
+  {
+    auto begin = std::chrono::steady_clock::now();
+    // *********** assemble linear part of jacobian **********
+    begin = std::chrono::steady_clock::now();
+    assemble_linear_jacobian(dt);
+    std::chrono::duration<double> time = std::chrono::steady_clock::now() - begin;
+    std::cout << "Assembling linear part of jacobian took: " << time.count() << " s!" << std::endl;
+
+    // ************ create rhs = (f_{pf}, g_{pf}, h_{pf}) *************
+    begin = std::chrono::steady_clock::now();
+    assemble_rhs(dt);
+    time = std::chrono::steady_clock::now() - begin;
+    std::cout << "Assembling rhs took: " << time.count() << " s!" << std::endl;
+
+    // fill x_n
+    copy_P_Pnat_to(x_n_);
+
+    if (linearize_) {
+      compute_residual(x_n_);
+      solve_linear_system(0);
+      x_n_ += update_;
+      fill_P_Pnat_from(x_n_);
+    } else {
+
+      // *********** Newton ******************************
+      const auto tol = 1e-10;
+      const auto max_iter = 1000;
+      const auto max_dampening_iter = 1000;
+
+      const auto& grid_view = P_.space().grid_view();
+      const auto l2_ref_P = l2_norm(grid_view, P_);
+      const auto l2_ref_Pnat = l2_norm(grid_view, Pnat_);
+
+      size_t l = 0;
+      while (true) {
+
+        // ********* compute residual *********
+        begin = std::chrono::steady_clock::now();
+        const auto res = compute_residual(x_n_, l2_ref_P, l2_ref_Pnat);
+        time = std::chrono::steady_clock::now() - begin;
+        std::cout << "Computing residual took: " << time.count() << " s!" << std::endl;
+
+        if (res < tol)
+          break;
+
+        // ********** assemble nonlinear part of S = Jacobian ***********
+        begin = std::chrono::steady_clock::now();
+        assemble_nonlinear_jacobian();
+        time = std::chrono::steady_clock::now() - begin;
+        std::cout << "Assembling nonlinear part of jacobian took: " << time.count() << " s!" << std::endl;
+
+        // *********** solve system *************
+        solve_linear_system(l);
+
+        DUNE_THROW_IF(l >= max_iter, Exceptions::operator_error, "max iterations reached!\n|residual|_l2 = " << res);
+
+        // apply damping
+        size_t k = 0;
+        auto candidate_res = 2 * res; // any number such that we enter the while loop at least once
+        double lambda = 1;
+
+        // revert jacobian back to linear part to correctly calculate linear part of residual
+        revert_jacobian_to_linear();
+
+        // backtracking line search
+        const double gamma = 0.001;
+        while (candidate_res > (1 - gamma * lambda) * res) {
+          DUNE_THROW_IF(k >= max_dampening_iter,
+                        Exceptions::operator_error,
+                        "max iterations reached when trying to compute automatic dampening!\n|residual|_l2 = "
+                            << res << "\nl = " << l << "\n");
+          candidate_ = x_n_ + update_ * lambda;
+          fill_P_Pnat_from(candidate_);
+          candidate_res = compute_residual(candidate_, l2_ref_P, l2_ref_Pnat);
+          std::cout << "Candidate res: " << candidate_res << std::endl;
+          lambda /= 2;
+          k += 1;
+        }
+        std::cout << "Current res: " << candidate_res << std::endl;
+        x_n_ = candidate_;
+        l += 1;
+      } // while (true)
+    }
   }
 
   const VectorDiscreteFunctionType& u_;
@@ -691,6 +871,7 @@ struct OfieldSolver
   MatrixType S_;
   MatrixType M_;
   MatrixType C_elliptic_part_;
+  MatrixType C_linear_part_;
   MatrixViewType S_00_;
   MatrixViewType S_01_;
   MatrixViewType S_10_;
@@ -703,13 +884,18 @@ struct OfieldSolver
   XT::LA::VectorView<VectorType> f_vector_;
   XT::LA::VectorView<VectorType> g_vector_;
   SolverType solver_;
+  const bool linearize_;
+  VectorType residual_;
+  VectorType x_n_;
+  VectorType update_;
+  VectorType candidate_;
 };
 
 struct PfieldSolver
 {
 #if HAVE_EIGEN
   using RowMajorBackendType = typename MatrixType::BackendType;
-  using SolverType = ::Eigen::BiCGSTAB<RowMajorBackendType>;
+  using SolverType = ::Eigen::BiCGSTAB<RowMajorBackendType, ::Eigen::IncompleteLUT<R>>;
 #endif // HAVE_EIGEN
 
   // Setup spaces and matrices and vectors
@@ -718,10 +904,8 @@ struct PfieldSolver
   PfieldSolver(const VectorDiscreteFunctionType& u,
                const VectorDiscreteFunctionType& P,
                DiscreteFunctionType& phi,
-               DiscreteFunctionType& phi_zero,
                DiscreteFunctionType& phinat,
                DiscreteFunctionType& mu,
-               const DiscreteFunctionType& g_D,
                const double gamma,
                const double c_1,
                const double Pa,
@@ -729,14 +913,13 @@ struct PfieldSolver
                const double Ca,
                const double beta,
                const double epsilon,
-               const XT::Grid::BoundaryInfo<PI>& boundary_info)
+               const XT::Grid::BoundaryInfo<PI>& boundary_info,
+               const bool linearize)
     : u_(u)
     , P_(P)
     , phi_(phi)
-    , phi_zero_(phi_zero)
     , phinat_(phinat)
     , mu_(mu)
-    , g_D_(g_D)
     , gamma_(gamma)
     , c_1_(c_1)
     , Pa_(Pa)
@@ -745,6 +928,7 @@ struct PfieldSolver
     , beta_(beta)
     , epsilon_(epsilon)
     , boundary_info_(boundary_info)
+    , linearize_(linearize)
     , grid_view_(phi_.space().grid_view())
     , n_(phi_.space().mapper().size())
     , submatrix_pattern_(make_element_sparsity_pattern(phi_.space(), phi_.space(), grid_view_))
@@ -752,8 +936,9 @@ struct PfieldSolver
     , S_(3 * n_, 3 * n_, pattern_, 100)
     , M_(n_, n_, submatrix_pattern_)
     , elliptic_matrix_(n_, n_, submatrix_pattern_)
-    , A_elliptic_part_(n_, n_, submatrix_pattern_)
-    , J_elliptic_part_(n_, n_, submatrix_pattern_)
+    , A_linear_part_(n_, n_, submatrix_pattern_)
+    , A_nonlinear_part_(n_, n_, submatrix_pattern_)
+    , J_linear_part_(n_, n_, submatrix_pattern_)
     , S_00_(S_, 0, n_, 0, n_)
     , S_01_(S_, 0, n_, n_, 2 * n_)
     , S_10_(S_, n_, 2 * n_, 0, n_)
@@ -763,15 +948,17 @@ struct PfieldSolver
     , S_22_(S_, 2 * n_, 3 * n_, 2 * n_, 3 * n_)
     , S_00_operator_(grid_view_, phinat_.space(), phi_.space(), S_00_)
     , S_10_operator_(grid_view_, mu_.space(), phi_.space(), S_10_)
-    , S_12_operator_(grid_view_, mu_.space(), mu_.space(), S_12_)
-    , S_20_operator_(grid_view_, phi_.space(), phi_.space(), S_20_)
+    , A_nonlinear_part_operator_(grid_view_, mu_.space(), mu_.space(), A_nonlinear_part_)
     , rhs_vector_(3 * n_, 0., 100)
     , old_result_(3 * n_, 0.)
     , f_vector_(rhs_vector_, 2 * n_, 3 * n_)
-    , f_elliptic_part_(n_, 0.)
     , g_vector_(rhs_vector_, 0, n_)
     , h_vector_(rhs_vector_, n_, 2 * n_)
     , dirichlet_constraints_(make_dirichlet_constraints(phi_.space(), boundary_info_))
+    , residual_(3 * n_, 0.)
+    , x_n_(3 * n_, 0.)
+    , update_(3 * n_, 0.)
+    , candidate_(3 * n_, 0.)
   {
     assert(phinat_.space().mapper().size() == n_);
     assert(mu_.space().mapper().size() == n_);
@@ -780,17 +967,12 @@ struct PfieldSolver
     MatrixOperator<MatrixType, PGV, 1> elliptic_operator(
         grid_view_, phinat_.space(), phinat_.space(), elliptic_matrix_);
     elliptic_operator.append(LocalElementIntegralBilinearForm<E, 1>(LocalEllipticIntegrand<E, 1>(1.)));
-    auto f_functional = make_vector_functional(phi_zero_.space(), f_elliptic_part_);
-    f_functional.append(LocalElementIntegralFunctional<E, 1>(
-        local_binary_to_unary_element_integrand(LocalEllipticIntegrand<E, 1>(-epsilon_), g_D_)));
-    M_operator.append(f_functional);
     M_operator.append(dirichlet_constraints_);
     M_operator.assemble(true);
     elliptic_operator.assemble(true);
-    A_elliptic_part_ = elliptic_matrix_;
-    A_elliptic_part_ *= epsilon_;
-    J_elliptic_part_ = elliptic_matrix_;
-    J_elliptic_part_ *= 1. / Be_;
+    A_linear_part_ = elliptic_matrix_ * epsilon_;
+    J_linear_part_ = elliptic_matrix_ * 1. / Be_;
+    J_linear_part_ += M_ * 1. / Ca_;
     // Set matrix S_{22} = C = M
     S_22_ = M_;
     // Set matrix S_{11} = H = M
@@ -799,7 +981,13 @@ struct PfieldSolver
     S_01_ = elliptic_matrix_;
     S_01_ *= gamma_;
 
-    //    solver_.analyzePattern(S_.backend());
+    // apply Dirichlet constraints to linear part
+    for (const auto& DoF : dirichlet_constraints_.dirichlet_DoFs()) {
+      A_linear_part_.clear_row(DoF);
+      S_22_.clear_row(DoF);
+    }
+
+    solver_.analyzePattern(S_.backend());
   }
 
   static XT::LA::SparsityPatternDefault create_pattern(const size_t n,
@@ -821,24 +1009,50 @@ struct PfieldSolver
     return pattern;
   }
 
-  void apply(const double dt)
+  double
+  compute_residual(const VectorType& x_n, double l2_ref_phi = 1., double l2_ref_phinat = 1., double l2_ref_mu = 1.)
   {
-    auto begin = std::chrono::steady_clock::now();
-    S_00_operator_.clear();
-    S_10_operator_.clear();
-    S_12_operator_.clear();
-    S_20_operator_.clear();
-    // assemble matrix S_{20} = A
-    S_20_ = A_elliptic_part_;
+    VectorViewType res2_vec(residual_, 2 * n_, 3 * n_);
+    // linear part
+    S_.mv(x_n, residual_);
+    // subtract rhs
+    residual_ -= rhs_vector_;
+    if (linearize_) {
+      dirichlet_constraints_.apply(res2_vec);
+      return 10.;
+    }
+
+    // nonlinear part
     thread_local std::unique_ptr<LocalDiscreteFunctionType> phi_local_;
-    thread_local std::unique_ptr<LocalDiscreteFunctionType> phi_zero_local_;
-    thread_local std::unique_ptr<LocalDiscreteFunctionType> g_D_local_;
     thread_local std::unique_ptr<LocalDiscreteFunctionType> mu_local_;
-    thread_local std::unique_ptr<VectorLocalDiscreteFunctionType> u_local_;
-    thread_local std::unique_ptr<VectorLocalDiscreteFunctionType> P_local_;
-    const R epsilon_inv = 1. / epsilon_;
-    XT::Functions::GenericGridFunction<E, 1, 1> A_prefactor(
-        /*order = */ 2 * phi_.space().max_polorder(),
+    VectorViewType res0_vec(residual_, 0, n_);
+    VectorViewType res1_vec(residual_, n_, 2 * n_);
+    const auto res0 = make_discrete_function(phi_.space(), res0_vec);
+    const auto res1 = make_discrete_function(phi_.space(), res1_vec);
+    const auto res2 = make_discrete_function(phi_.space(), res2_vec);
+    auto nonlinear_res1_functional = make_vector_functional(phi_.space(), res1_vec);
+    auto nonlinear_res2_functional = make_vector_functional(phi_.space(), res2_vec);
+    XT::Functions::GenericGridFunction<E, 1, 1> nonlinear_res_pf1(
+        /*order = */ 3 * phi_.space().max_polorder(),
+        /*post_bind_func*/
+        [& phi_ = phi_, &mu_ = mu_](const E& element) {
+          if (!phi_local_)
+            phi_local_ = phi_.local_function();
+          phi_local_->bind(element);
+          if (!mu_local_)
+            mu_local_ = mu_.local_function();
+          mu_local_->bind(element);
+        },
+        /*evaluate_func*/
+        [inv_Be_eps2 = 1. / (Be_ * std::pow(epsilon_, 2))](const DomainType& x_local,
+                                                           const XT::Common::Parameter& param) {
+          // evaluate P, divP
+          const auto phi_n = phi_local_->evaluate(x_local, param);
+          const auto mu_n = mu_local_->evaluate(x_local, param);
+          return inv_Be_eps2 * (3. * phi_n * phi_n - 1) * mu_n;
+        });
+    XT::Functions::GenericGridFunction<E, 1, 1> nonlinear_res_pf2(
+        /*order = */ 3 * phi_.space().max_polorder(),
         /*post_bind_func*/
         [& phi_ = phi_](const E& element) {
           if (!phi_local_)
@@ -846,14 +1060,116 @@ struct PfieldSolver
           phi_local_->bind(element);
         },
         /*evaluate_func*/
-        [epsilon_inv](const DomainType& x_local, const XT::Common::Parameter& param) {
+        [inv_eps = 1. / epsilon_](const DomainType& x_local, const XT::Common::Parameter& param) {
+          // evaluate P, divP
           const auto phi_n = phi_local_->evaluate(x_local, param);
-          return epsilon_inv * (3. * phi_n * phi_n - 1.);
+          return inv_eps * (phi_n * phi_n - 1) * phi_n;
         });
-    S_20_operator_.append(LocalElementIntegralBilinearForm<E, 1>(LocalElementProductIntegrand<E, 1>(A_prefactor)));
+    nonlinear_res1_functional.append(LocalElementIntegralFunctional<E, 1>(
+        local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E, 1>(), nonlinear_res_pf1)));
+    nonlinear_res2_functional.append(LocalElementIntegralFunctional<E, 1>(
+        local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E, 1>(), nonlinear_res_pf2)));
+    S_00_operator_.clear();
+    S_00_operator_.append(nonlinear_res1_functional);
+    S_00_operator_.append(nonlinear_res2_functional);
+    S_00_operator_.assemble(true);
+    dirichlet_constraints_.apply(res2_vec);
+    const auto& grid_view = phi_.space().grid_view();
+    // relative error if l2_norm is > 1, else absolute error
+    l2_ref_phi = l2_ref_phi < 1. ? 1. : l2_ref_phi;
+    l2_ref_phinat = l2_ref_phinat < 1. ? 1. : l2_ref_phinat;
+    l2_ref_mu = l2_ref_mu < 1. ? 1. : l2_ref_mu;
+    return l2_norm(grid_view, res0) / l2_ref_phi + l2_norm(grid_view, res1) / l2_ref_phinat
+           + l2_norm(grid_view, res2) / l2_ref_mu;
+  }
+
+  void assemble_rhs(const double dt)
+  {
+    S_00_operator_.clear();
+    auto f_functional = make_vector_functional(phi_.space(), f_vector_);
+    auto h_functional = make_vector_functional(mu_.space(), h_vector_);
+
+    // calculate f
+    thread_local std::unique_ptr<LocalDiscreteFunctionType> phi_local_;
+    if (linearize_)
+      f_vector_ *= 0.;
+    XT::Functions::GenericGridFunction<E, 1, 1> f_pf(
+        /*order = */ 3 * phi_.space().max_polorder(),
+        /*post_bind_func*/
+        [& phi_ = phi_](const E& element) {
+          if (!phi_local_)
+            phi_local_ = phi_.local_function();
+          phi_local_->bind(element);
+        },
+        /*evaluate_func*/
+        [two_epsilon_inv = 2. / epsilon_](const DomainType& x_local, const XT::Common::Parameter& param) {
+          // evaluate phi_
+          const auto phi_n = phi_local_->evaluate(x_local, param);
+          return two_epsilon_inv * std::pow(phi_n, 3);
+        });
+    f_functional.append(LocalElementIntegralFunctional<E, 1>(
+        local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E, 1>(), f_pf)));
+    if (linearize_)
+      S_00_operator_.append(f_functional);
+
+    // calculate g
+    M_.mv(phi_.dofs().vector(), g_vector_);
+    g_vector_ /= dt;
+
+    // calculate h
+    h_vector_ *= 0.;
+    thread_local std::unique_ptr<VectorLocalDiscreteFunctionType> P_local_;
+    thread_local std::unique_ptr<LocalDiscreteFunctionType> mu_local_;
+    XT::Functions::GenericGridFunction<E, 1, 1> h_pf(
+        /*order = */ 3 * phi_.space().max_polorder(),
+        /*post_bind_func*/
+        [linearize_ = linearize_, &phi_ = phi_, &mu_ = mu_, &P_ = P_](const E& element) {
+          if (!P_local_)
+            P_local_ = P_.local_function();
+          P_local_->bind(element);
+          if (linearize_) {
+            if (!phi_local_)
+              phi_local_ = phi_.local_function();
+            phi_local_->bind(element);
+            if (!mu_local_)
+              mu_local_ = mu_.local_function();
+            mu_local_->bind(element);
+          }
+        },
+        /*evaluate_func*/
+        [linearize_ = linearize_,
+         factor0 = 6. / (Be_ * std::pow(epsilon_, 2)),
+         factor1 = -c_1_ / (2. * Pa_),
+         factor2 = -beta_ / Pa_](const DomainType& x_local, const XT::Common::Parameter& param) {
+          // evaluate P, divP
+          const auto Pn = P_local_->evaluate(x_local, param);
+          const auto grad_P = P_local_->jacobian(x_local, param);
+          R div_P(0.);
+          for (size_t ii = 0; ii < d; ++ii)
+            div_P += grad_P[ii][ii];
+          auto ret = factor1 * (Pn * Pn) + factor2 * div_P;
+          if (linearize_) {
+            const auto phi_n = phi_local_->evaluate(x_local, param);
+            const auto mu_n = mu_local_->evaluate(x_local, param);
+            ret += factor0 * std::pow(phi_n, 2) * mu_n;
+          }
+          return ret;
+        });
+    h_functional.append(LocalElementIntegralFunctional<E, 1>(
+        local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E, 1>(1.), h_pf)));
+    S_00_operator_.append(h_functional);
+
+    // assemble rhs
+    S_00_operator_.assemble(true);
+  }
+
+  void assemble_linear_jacobian(const double dt)
+  {
     // assemble matrix S_{00} = M/dt + D
+    S_00_operator_.clear();
     S_00_ = M_;
     S_00_ *= 1. / dt;
+    thread_local std::unique_ptr<VectorLocalDiscreteFunctionType> u_local_;
     XT::Functions::GenericGridFunction<E, d, 1> minus_u(
         /*order = */ u_.space().max_polorder(),
         /*post_bind_func*/
@@ -870,9 +1186,47 @@ struct PfieldSolver
         });
     S_00_operator_.append(
         LocalElementIntegralBilinearForm<E, 1>(LocalElementGradientValueIntegrand<E, 1, 1, R, R, R, true>(minus_u)));
+    S_00_operator_.assemble(true);
+    // linear part of matrix S_{12} = J
+    S_12_ = J_linear_part_;
+    // linear part of matrix S_{20} = A
+    S_20_ = A_linear_part_;
+
+    // nonlinear part is equal to linearized part in first iteration
+    if (linearize_)
+      assemble_nonlinear_jacobian();
+  }
+
+  void assemble_nonlinear_jacobian()
+  {
+    A_nonlinear_part_operator_.clear();
+    A_nonlinear_part_ *= 0.;
+    thread_local std::unique_ptr<LocalDiscreteFunctionType> phi_local_;
+    XT::Functions::GenericGridFunction<E, 1, 1> A_nonlinear_prefactor(
+        /*order = */ 2 * phi_.space().max_polorder(),
+        /*post_bind_func*/
+        [& phi_ = phi_](const E& element) {
+          if (!phi_local_)
+            phi_local_ = phi_.local_function();
+          phi_local_->bind(element);
+        },
+        /*evaluate_func*/
+        [](const DomainType& x_local, const XT::Common::Parameter& param) {
+          const auto phi_n = phi_local_->evaluate(x_local, param);
+          return (3. * phi_n * phi_n - 1.);
+        });
+    A_nonlinear_part_operator_.append(
+        LocalElementIntegralBilinearForm<E, 1>(LocalElementProductIntegrand<E, 1>(A_nonlinear_prefactor)));
+    A_nonlinear_part_operator_.assemble(true);
+    A_nonlinear_part_ *= 1. / epsilon_;
+    S_20_ += A_nonlinear_part_;
+    A_nonlinear_part_ *= 1. / (Be_ * epsilon_);
+    S_12_ += A_nonlinear_part_;
+
     // assemble matrix S_{10} = G
+    S_10_operator_.clear();
     S_10_ *= 0.;
-    const auto six_inv_Be_eps2 = 6. / (Be_ * std::pow(epsilon_, 2));
+    thread_local std::unique_ptr<LocalDiscreteFunctionType> mu_local_;
     XT::Functions::GenericGridFunction<E, 1, 1> G_prefactor(
         /*order = */ 2 * phi_.space().max_polorder(),
         /*post_bind_func*/
@@ -885,160 +1239,157 @@ struct PfieldSolver
           mu_local_->bind(element);
         },
         /*evaluate_func*/
-        [six_inv_Be_eps2](const DomainType& x_local, const XT::Common::Parameter& param) {
+        [six_inv_Be_eps2 = 6. / (Be_ * std::pow(epsilon_, 2))](const DomainType& x_local,
+                                                               const XT::Common::Parameter& param) {
           const auto phi_n = phi_local_->evaluate(x_local, param)[0];
           const auto mu_n = mu_local_->evaluate(x_local, param)[0];
           return six_inv_Be_eps2 * phi_n * mu_n;
         });
     S_10_operator_.append(LocalElementIntegralBilinearForm<E, 1>(LocalElementProductIntegrand<E, 1>(G_prefactor)));
-    // assemble matrix S_{12} = J
-    S_12_ = J_elliptic_part_;
-    const R Ca_inv = 1. / Ca_;
-    const R Be_eps2_inv = 1. / (Be_ * std::pow(epsilon_, 2));
-    XT::Functions::GenericGridFunction<E, 1, 1> J_prefactor(
-        /*order = */ 2 * phi_.space().max_polorder(),
-        /*post_bind_func*/
-        [& phi_ = phi_](const E& element) {
-          if (!phi_local_)
-            phi_local_ = phi_.local_function();
-          phi_local_->bind(element);
-        },
-        /*evaluate_func*/
-        [Ca_inv, Be_eps2_inv](const DomainType& x_local, const XT::Common::Parameter& param) {
-          const auto phi_n = phi_local_->evaluate(x_local, param);
-          return Ca_inv + Be_eps2_inv * (3. * std::pow(phi_n, 2) - 1.);
-        });
-    S_12_operator_.append(LocalElementIntegralBilinearForm<E, 1>(LocalElementProductIntegrand<E, 1>(J_prefactor)));
-
-    // create rhs = (f_{pf}, g_{pf}, h_{pf})
-    auto f_functional = make_vector_functional(phi_zero_.space(), f_vector_);
-    auto g_functional = make_vector_functional(phinat_.space(), g_vector_);
-    auto h_functional = make_vector_functional(mu_.space(), h_vector_);
-
-    XT::Functions::GenericGridFunction<E, 1, 1> f_pf(
-        /*order = */ 3 * phi_.space().max_polorder(),
-        /*post_bind_func*/
-        [& phi_ = phi_, &g_D_ = g_D_](const E& element) {
-          if (!phi_local_)
-            phi_local_ = phi_.local_function();
-          if (!g_D_local_)
-            g_D_local_ = g_D_.local_function();
-          phi_local_->bind(element);
-          g_D_local_->bind(element);
-        },
-        /*evaluate_func*/
-        [epsilon_inv](const DomainType& x_local, const XT::Common::Parameter& param) {
-          // evaluate phi_zero, g_D
-          const auto phi_n = phi_local_->evaluate(x_local, param);
-          const auto g_D = g_D_local_->evaluate(x_local, param);
-          const auto phi_2 = phi_n * phi_n;
-          const auto phi_3 = phi_2 * phi_n;
-          return epsilon_inv * (2. * phi_3 - (3. * phi_2 - 1) * g_D);
-        });
-    f_functional.append(LocalElementIntegralFunctional<E, 1>(
-        local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E, 1>(), f_pf)));
-    S_20_operator_.append(f_functional);
-
-    g_functional.append(LocalElementIntegralFunctional<E, 1>(
-        local_binary_to_unary_element_integrand(LocalElementGradientValueIntegrand<E>(u_), g_D_)));
-    S_00_operator_.append(g_functional);
-
-    const R c_1 = c_1_;
-    const R Pa = Pa_;
-    const R beta = beta_;
-    XT::Functions::GenericGridFunction<E, 1, 1> h_pf(
-        /*order = */ 3 * phi_.space().max_polorder(),
-        /*post_bind_func*/
-        [& phi_ = phi_, &phi_zero_ = phi_zero_, &mu_ = mu_, &P_ = P_](const E& element) {
-          if (!phi_local_)
-            phi_local_ = phi_.local_function();
-          if (!phi_zero_local_)
-            phi_zero_local_ = phi_zero_.local_function();
-          if (!mu_local_)
-            mu_local_ = mu_.local_function();
-          if (!P_local_)
-            P_local_ = P_.local_function();
-          phi_local_->bind(element);
-          phi_zero_local_->bind(element);
-          mu_local_->bind(element);
-          P_local_->bind(element);
-        },
-        /*evaluate_func*/
-        [six_inv_Be_eps2, c_1, Pa, beta](const DomainType& x_local, const XT::Common::Parameter& param) {
-          // evaluate phi, phi_zero, mu, P, divP
-          const auto phi_n = phi_local_->evaluate(x_local, param)[0];
-          const auto phi_zero_n = phi_zero_local_->evaluate(x_local, param)[0];
-          const auto mu_n = mu_local_->evaluate(x_local, param)[0];
-          const auto Pn = P_local_->evaluate(x_local, param);
-          const auto grad_P = P_local_->jacobian(x_local, param);
-          R div_P(0.);
-          for (size_t ii = 0; ii < d; ++ii)
-            div_P += grad_P[ii][ii];
-          return six_inv_Be_eps2 * phi_n * phi_zero_n * mu_n - c_1 / (2. * Pa) * (Pn * Pn) - beta / Pa * div_P;
-        });
-    h_functional.append(LocalElementIntegralFunctional<E, 1>(
-        local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E, 1>(), h_pf)));
-    S_10_operator_.append(h_functional);
-
-    // assemble everything
-    f_vector_ = f_elliptic_part_;
-    h_vector_ *= 0.;
-    M_.mv(phi_zero_.dofs().vector(), g_vector_);
-    g_vector_ /= dt;
-    S_00_operator_.assemble(true);
     S_10_operator_.assemble(true);
-    S_12_operator_.assemble(true);
-    S_20_operator_.assemble(true);
-    std::chrono::duration<double> time = std::chrono::steady_clock::now() - begin;
-    std::cout << "Assembling Pfield took: " << time.count() << " s!" << std::endl;
 
-    // apply dirichlet constraints for phi
-    for (const auto& DoF : dirichlet_constraints_.dirichlet_DoFs()) {
-      S_.clear_row(2 * n_ + DoF);
-      S_20_.set_entry(DoF, DoF, 1.);
+    // clear row, for computation of residual we do not want the unit row
+    for (const auto& DoF : dirichlet_constraints_.dirichlet_DoFs())
+      S_20_.unit_row(DoF);
+  }
+
+  void copy_phi_phinat_mu_to(VectorType& vec)
+  {
+    for (size_t ii = 0; ii < n_; ++ii) {
+      vec[ii] = phi_.dofs().vector()[ii];
+      vec[n_ + ii] = phinat_.dofs().vector()[ii];
+      vec[2 * n_ + ii] = mu_.dofs().vector()[ii];
     }
-    dirichlet_constraints_.apply(f_vector_);
+  }
 
-    // solve system
-    begin = std::chrono::steady_clock::now();
+  void fill_phi_phinat_mu_from(const VectorType& vec)
+  {
+    for (size_t ii = 0; ii < n_; ++ii) {
+      phi_.dofs().vector()[ii] = vec[ii];
+      phinat_.dofs().vector()[ii] = vec[n_ + ii];
+      mu_.dofs().vector()[ii] = vec[2 * n_ + ii];
+    }
+  }
+
+  void revert_jacobian_to_linear()
+  {
+    // clear S_{10} = G
+    S_10_ *= 0.;
+    // linear part of matrix S_{12} = J
+    S_12_ = J_linear_part_;
+    // linear part of matrix S_{20} = A
+    S_20_ = A_linear_part_;
+  }
+
+  void solve_linear_system(const size_t l)
+  {
+    const auto begin = std::chrono::steady_clock::now();
     //    std::ofstream S_file("S_" + XT::Common::to_string(dt) + ".txt");
     //    S_file << S_ << std::endl;
     //    S_file.close();
     //    DUNE_THROW(Dune::NotImplemented, "");
     //    const auto ret = XT::LA::solve(S_, rhs_vector_, XT::LA::SolverOptions<MatrixType>::options("lu.umfpack"));
-    //    const auto ret = XT::LA::solve(S_, rhs_vector_);
-    // copy to guess vector
-    //    VectorType ret;
-    //    for (size_t ii = 0; ii < n_; ++ii)
-    //      old_result_[ii] = phi_zero_.dofs().vector()[ii];
-    //    for (size_t ii = 0; ii < n_; ++ii)
-    //      old_result_[n_ + ii] = phinat_.dofs().vector()[ii];
-    //    for (size_t ii = 0; ii < n_; ++ii)
-    //      old_result_[2 * n_ + ii] = mu_.dofs().vector()[ii];
-    begin = std::chrono::steady_clock::now();
-    const auto ret = XT::LA::solve(S_, rhs_vector_);
-    //    solver_.compute(S_.backend());
-    //    ret.backend() = solver_.solveWithGuess(rhs_vector_.backend(), old_result_.backend());
-    time = std::chrono::steady_clock::now() - begin;
-    std::cout << "Solving Pfield took: " << time.count() << " s!" << std::endl;
+    residual_ *= -1.;
+    //      update_ = XT::LA::solve(S_, residual_);
+    solver_.compute(S_.backend());
+    update_.backend() = solver_.solveWithGuess(residual_.backend(), old_result_.backend());
+    old_result_ = update_;
+    const std::chrono::duration<double> time = std::chrono::steady_clock::now() - begin;
+    std::cout << "Solving Pfield in iteration " << l << " took: " << time.count() << " s!" << std::endl;
+  }
 
-    // copy to vectors
-    for (size_t ii = 0; ii < n_; ++ii)
-      phi_zero_.dofs().vector()[ii] = ret[ii];
-    for (size_t ii = 0; ii < n_; ++ii)
-      phinat_.dofs().vector()[ii] = ret[n_ + ii];
-    for (size_t ii = 0; ii < n_; ++ii)
-      mu_.dofs().vector()[ii] = ret[2 * n_ + ii];
-    phi_.dofs().vector() = phi_zero_.dofs().vector() + g_D_.dofs().vector();
+  void apply(const double dt)
+  {
+    auto begin = std::chrono::steady_clock::now();
+    // *********** assemble linear part of jacobian **********
+    begin = std::chrono::steady_clock::now();
+    assemble_linear_jacobian(dt);
+    std::chrono::duration<double> time = std::chrono::steady_clock::now() - begin;
+    std::cout << "Assembling linear part of jacobian took: " << time.count() << " s!" << std::endl;
+
+    // ************ create rhs = (f_{pf}, g_{pf}, h_{pf}) *************
+    begin = std::chrono::steady_clock::now();
+    assemble_rhs(dt);
+    time = std::chrono::steady_clock::now() - begin;
+    std::cout << "Assembling rhs took: " << time.count() << " s!" << std::endl;
+
+    // fill x_n
+    copy_phi_phinat_mu_to(x_n_);
+
+    if (linearize_) {
+      compute_residual(x_n_);
+      solve_linear_system(0);
+      x_n_ += update_;
+      fill_phi_phinat_mu_from(x_n_);
+    } else {
+
+      // *********** Newton ******************************
+      const auto tol = 1e-10;
+      const auto max_iter = 1000;
+      const auto max_dampening_iter = 1000;
+
+      const auto& grid_view = phi_.space().grid_view();
+      const auto l2_ref_phi = l2_norm(grid_view, phi_);
+      const auto l2_ref_phinat = l2_norm(grid_view, phinat_);
+      const auto l2_ref_mu = l2_norm(grid_view, mu_);
+
+      size_t l = 0;
+      while (true) {
+
+        // ********* compute residual *********
+        begin = std::chrono::steady_clock::now();
+        const auto res = compute_residual(x_n_, l2_ref_phi, l2_ref_phinat, l2_ref_mu);
+        time = std::chrono::steady_clock::now() - begin;
+        std::cout << "Computing residual took: " << time.count() << " s!" << std::endl;
+
+        if (res < tol)
+          break;
+
+        // ********** assemble nonlinear part of S = Jacobian ***********
+        begin = std::chrono::steady_clock::now();
+        assemble_nonlinear_jacobian();
+        time = std::chrono::steady_clock::now() - begin;
+        std::cout << "Assembling nonlinear part of jacobian took: " << time.count() << " s!" << std::endl;
+
+        // *********** solve system *************
+        solve_linear_system(l);
+
+        DUNE_THROW_IF(l >= max_iter, Exceptions::operator_error, "max iterations reached!\n|residual|_l2 = " << res);
+
+        // apply damping
+        size_t k = 0;
+        auto candidate_res = 2 * res; // any number such that we enter the while loop at least once
+        double lambda = 1;
+
+        // revert jacobian back to linear part to correctly calculate linear part of residual
+        revert_jacobian_to_linear();
+
+        // backtracking line search
+        const double gamma = 0.001;
+        while (candidate_res > (1 - gamma * lambda) * res) {
+          DUNE_THROW_IF(k >= max_dampening_iter,
+                        Exceptions::operator_error,
+                        "max iterations reached when trying to compute automatic dampening!\n|residual|_l2 = "
+                            << res << "\nl = " << l << "\n");
+          candidate_ = x_n_ + update_ * lambda;
+          fill_phi_phinat_mu_from(candidate_);
+          candidate_res = compute_residual(candidate_, l2_ref_phi, l2_ref_phinat, l2_ref_mu);
+          std::cout << "Candidate res: " << candidate_res << std::endl;
+          lambda /= 2;
+          k += 1;
+        }
+        std::cout << "Current res: " << candidate_res << std::endl;
+        x_n_ = candidate_;
+        l += 1;
+      } // while (true)
+    }
   }
 
   const VectorDiscreteFunctionType& u_;
   const VectorDiscreteFunctionType& P_;
   DiscreteFunctionType& phi_;
-  DiscreteFunctionType& phi_zero_;
   DiscreteFunctionType& phinat_;
   DiscreteFunctionType& mu_;
-  const DiscreteFunctionType& g_D_;
   const double gamma_;
   const double c_1_;
   const double Pa_;
@@ -1047,6 +1398,7 @@ struct PfieldSolver
   const double beta_;
   const double epsilon_;
   const XT::Grid::BoundaryInfo<PI>& boundary_info_;
+  const bool linearize_;
   const PGV& grid_view_;
   const size_t n_;
   const XT::LA::SparsityPatternDefault submatrix_pattern_;
@@ -1054,8 +1406,9 @@ struct PfieldSolver
   MatrixType S_;
   MatrixType M_;
   MatrixType elliptic_matrix_;
-  MatrixType A_elliptic_part_;
-  MatrixType J_elliptic_part_;
+  MatrixType A_linear_part_;
+  MatrixType A_nonlinear_part_;
+  MatrixType J_linear_part_;
   MatrixViewType S_00_;
   MatrixViewType S_01_;
   MatrixViewType S_10_;
@@ -1065,16 +1418,18 @@ struct PfieldSolver
   MatrixViewType S_22_;
   MatrixOperator<MatrixViewType, PGV, 1> S_00_operator_;
   MatrixOperator<MatrixViewType, PGV, 1> S_10_operator_;
-  MatrixOperator<MatrixViewType, PGV, 1> S_12_operator_;
-  MatrixOperator<MatrixViewType, PGV, 1> S_20_operator_;
+  MatrixOperator<MatrixType, PGV, 1> A_nonlinear_part_operator_;
   VectorType rhs_vector_;
   VectorType old_result_;
   XT::LA::VectorView<VectorType> f_vector_;
-  VectorType f_elliptic_part_;
   XT::LA::VectorView<VectorType> g_vector_;
   XT::LA::VectorView<VectorType> h_vector_;
   DirichletConstraints<PI, SpaceInterface<PGV, 1, 1, R>> dirichlet_constraints_;
   SolverType solver_;
+  VectorType residual_;
+  VectorType x_n_;
+  VectorType update_;
+  VectorType candidate_;
 };
 
 int main(int argc, char* argv[])
@@ -1102,6 +1457,8 @@ int main(int argc, char* argv[])
     // timestepping
     double t_end = config.template get<double>("fem.t_end", 340.);
     double dt = config.template get<double>("fem.dt", 0.005);
+    const bool linearize = config.template get<bool>("problem.linearize", false);
+    std::cout << "linearize: " << linearize << std::endl;
 
     // problem parameters
     double L = config.template get<double>("problem.L", 1e-6);
@@ -1127,7 +1484,8 @@ int main(int argc, char* argv[])
     std::cout << "Ca: " << Ca << ", Be: " << Be << ", Pa: " << Pa << ", Fa: " << Fa << ", Re: " << Re << std::endl;
 
     // output
-    std::string filename = config.get("output.filename", "drosophila");
+    std::string filename = config.get("output.filename", "drosophila") + (linearize ? "_linearized" : "");
+    bool subsampling = config.get<bool>("output.subsampling", true);
     // a negative value of write step is interpreted as "write all steps"
     double write_step = config.template get<double>("output.write_step", -1.);
 
@@ -1135,7 +1493,7 @@ int main(int argc, char* argv[])
     FieldVector<double, d> lower_left{{0., 0.}};
     FieldVector<double, d> upper_right{{160., 40.}};
     auto grid = XT::Grid::make_cube_grid<G>(lower_left, upper_right, /*num_elements=*/{num_elements_x, num_elements_y});
-    grid.grid().globalRefine(0);
+    grid.grid().globalRefine(1);
     const double vol_domain = (upper_right[0] - lower_left[0]) * (upper_right[1] - lower_left[1]);
     auto nonperiodic_grid_view = grid.leaf_view();
     std::bitset<d> periodic_directions(periodic_dirs);
@@ -1168,10 +1526,8 @@ int main(int argc, char* argv[])
     auto P = make_discrete_function<VectorType>(P_space, "P");
     auto Pnat = make_discrete_function<VectorType>(Pnat_space, "Pnat");
     auto phi = make_discrete_function<VectorType>(phi_space, "phi");
-    auto phi_zero = make_discrete_function<VectorType>(phi_space, "phizero");
     auto phinat = make_discrete_function<VectorType>(phinat_space, "phinat");
     auto mu = make_discrete_function<VectorType>(mu_space, "mu");
-    auto g_D_phi = make_discrete_function<VectorType>(phi_space, "g_D_phi");
 
     // create and project initial values
     // we only need initial values for P and phi
@@ -1221,9 +1577,7 @@ int main(int argc, char* argv[])
     default_interpolation(P_initial, P);
     default_interpolation(u_initial, u);
     XT::Grid::AllDirichletBoundaryInfo<PI> all_dirichlet_boundary_info;
-    boundary_interpolation(minus_one, g_D_phi, all_dirichlet_boundary_info, XT::Grid::DirichletBoundary{});
-    phi_zero.dofs().vector() = phi.dofs().vector();
-    phi_zero.dofs().vector() -= g_D_phi.dofs().vector();
+    boundary_interpolation(minus_one, phi, all_dirichlet_boundary_info, XT::Grid::DirichletBoundary{});
 
 #if 0
     const size_t m = phi.space().mapper().size();
@@ -1260,11 +1614,11 @@ int main(int argc, char* argv[])
     size_t save_step_counter = 1;
 
     // save/visualize initial solution
-    write_files(true, u, p, P, Pnat, phi, phi_zero, phinat, mu, filename, 0, t);
+    write_files(true, u, p, P, Pnat, phi, phinat, mu, filename, 0, t, subsampling);
 
-    OfieldSolver ofield_solver(u, P, Pnat, phi, xi, kappa, c_1, Pa, beta);
+    OfieldSolver ofield_solver(u, P, Pnat, phi, xi, kappa, c_1, Pa, beta, linearize);
     PfieldSolver pfield_solver(
-        u, P, phi, phi_zero, phinat, mu, g_D_phi, gamma, c_1, Pa, Be, Ca, beta, epsilon, dirichlet_boundary_info);
+        u, P, phi, phinat, mu, gamma, c_1, Pa, Be, Ca, beta, epsilon, dirichlet_boundary_info, linearize);
     StokesSolver stokes_solver(
         u, p, P, Pnat, phi, phinat, Re, Fa, xi, vol_domain, dirichlet_boundary_info, StokesSolverType::eigen_sparse_lu);
 
@@ -1288,7 +1642,7 @@ int main(int argc, char* argv[])
 
       // check if data should be written in this timestep (and write)
       if (write_step < 0. || Dune::XT::Common::FloatCmp::ge(t, next_save_time)) {
-        write_files(true, u, p, P, Pnat, phi, phi_zero, phinat, mu, filename, save_step_counter, t);
+        write_files(true, u, p, P, Pnat, phi, phinat, mu, filename, save_step_counter, t, subsampling);
         next_save_time += write_step;
         ++save_step_counter;
       }
