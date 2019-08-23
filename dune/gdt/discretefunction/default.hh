@@ -136,7 +136,9 @@ public:
                  const VTK::OutputType vtk_output_type = VTK::appendedraw,
                  const XT::Common::Parameter& param = {}) const
   {
-    this->visualize(space_.grid_view(), filename, space_.max_polorder() > 1, vtk_output_type, param);
+    const bool subsampling =
+        param.has_key("subsampling") ? static_cast<bool>(param.get("subsampling")[0]) : (space_.max_polorder() > 1);
+    this->visualize(space_.grid_view(), filename, subsampling, vtk_output_type, param);
   }
 
   /**
@@ -149,7 +151,9 @@ public:
                           const VTK::OutputType vtk_output_type = VTK::appendedraw,
                           const XT::Common::Parameter& param = {}) const
   {
-    this->visualize_gradient(space_.grid_view(), filename, space_.max_polorder() > 1, vtk_output_type, param);
+    const bool subsampling =
+        param.has_key("subsampling") ? static_cast<bool>(param.get("subsampling")[0]) : (space_.max_polorder() > 1);
+    this->visualize_gradient(space_.grid_view(), filename, subsampling, vtk_output_type, param);
   }
 
 

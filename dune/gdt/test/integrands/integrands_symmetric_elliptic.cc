@@ -77,7 +77,6 @@ struct SymmetricEllipticIntegrandTest : public IntegrandTest<G>
     const auto element = *(grid_provider_->leaf_view().template begin<0>());
     integrand.bind(element);
     const auto integrand_order = integrand.order(*vector_test_, *vector_ansatz_);
-    EXPECT_EQ(4, integrand_order);
     DynamicMatrix<D> result(2, 2, 0.);
     for (const auto& quadrature_point : Dune::QuadratureRules<D, d>::rule(element.geometry().type(), integrand_order)) {
       const auto& x = quadrature_point.position();
