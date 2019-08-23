@@ -147,7 +147,7 @@ protected:
         oswald_interpolation_operator.assemble(/*parallel=*/true);
         const auto h1_interpolation = oswald_interpolation_operator.apply(solution);
         self.current_data_["norm"][norm_id] =
-            elliptic_norm(current_space.grid_view(), one, diffusion(), solution - h1_interpolation);
+            elliptic_norm(current_space.grid_view(), diffusion(), solution - h1_interpolation);
       } else if (norm_id == "eta_R") {
         norm_it = remaining_norms.erase(norm_it); // ... or here ...
         // compute estimate
