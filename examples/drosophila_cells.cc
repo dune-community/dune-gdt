@@ -36,7 +36,7 @@
 #include <dune/gdt/local/functionals/integrals.hh>
 #include <dune/gdt/local/integrands/conversion.hh>
 #include <dune/gdt/local/integrands/div.hh>
-#include <dune/gdt/local/integrands/elliptic.hh>
+#include <dune/gdt/local/integrands/laplace.hh>
 #include <dune/gdt/local/integrands/symmetric_elliptic.hh>
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/local/integrands/gradient_value.hh>
@@ -521,7 +521,7 @@ struct OfieldSolver
     S_01_ *= 1. / kappa_;
 
     MatrixOperator<MatrixType, PGV, d> elliptic_operator(grid_view_, Pnat.space(), P_.space(), C_elliptic_part_);
-    elliptic_operator.append(LocalElementIntegralBilinearForm<E, d>(LocalEllipticIntegrand<E, d>(-Pa_inv_)));
+    elliptic_operator.append(LocalElementIntegralBilinearForm<E, d>(LocalLaplaceIntegrand<E, d>(-Pa_inv_)));
     elliptic_operator.assemble(true);
 
     solver_.analyzePattern(S_.backend());
@@ -966,7 +966,7 @@ struct PfieldSolver
     M_operator.append(LocalElementIntegralBilinearForm<E, 1>(LocalElementProductIntegrand<E, 1>(1.)));
     MatrixOperator<MatrixType, PGV, 1> elliptic_operator(
         grid_view_, phinat_.space(), phinat_.space(), elliptic_matrix_);
-    elliptic_operator.append(LocalElementIntegralBilinearForm<E, 1>(LocalEllipticIntegrand<E, 1>(1.)));
+    elliptic_operator.append(LocalElementIntegralBilinearForm<E, 1>(LocalLaplaceIntegrand<E, 1>(1.)));
     M_operator.append(dirichlet_constraints_);
     M_operator.assemble(true);
     elliptic_operator.assemble(true);
