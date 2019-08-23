@@ -16,7 +16,7 @@
 #include <dune/xt/functions/generic/function.hh>
 #include <dune/xt/functions/generic/grid-function.hh>
 
-#include <dune/gdt/local/integrands/elliptic.hh>
+#include <dune/gdt/local/integrands/laplace.hh>
 
 #include <dune/gdt/test/integrands/integrands.hh>
 
@@ -26,7 +26,7 @@ namespace Test {
 
 
 template <class G>
-struct EllipticIntegrandTest : public IntegrandTest<G>
+struct LaplaceIntegrandTest : public IntegrandTest<G>
 {
   using BaseType = IntegrandTest<G>;
   using BaseType::d;
@@ -36,19 +36,19 @@ struct EllipticIntegrandTest : public IntegrandTest<G>
   using typename BaseType::GV;
   using typename BaseType::MatrixType;
   using typename BaseType::VectorJacobianType;
-  using ScalarIntegrandType = LocalEllipticIntegrand<E, 1>;
-  using VectorIntegrandType = LocalEllipticIntegrand<E, d>;
+  using ScalarIntegrandType = LocalLaplaceIntegrand<E, 1>;
+  using VectorIntegrandType = LocalLaplaceIntegrand<E, d>;
 
   virtual void SetUp() override
   {
     BaseType::SetUp();
-    diffusion_factor_ = std::make_shared<XT::Functions::GenericGridFunction<E, 1>>(
-        2, [](const E&) {}, [](const DomainType& x, const XT::Common::Parameter&) { return x[0] * x[1]; });
     diffusion_tensor_ = std::make_shared<XT::Functions::GenericGridFunction<E, 2, 2>>(
-        1,
+        3,
         [](const E&) {},
         [](const DomainType& x, const XT::Common::Parameter&) {
-          return VectorJacobianType{{x[0], x[1]}, {1., 2.}};
+          VectorJacobianType ret{{x[0], x[1]}, {1., 2.}};
+          ret *= x[0] * x[1];
+          return ret;
         });
   }
 
@@ -63,7 +63,7 @@ struct EllipticIntegrandTest : public IntegrandTest<G>
           return VectorJacobianType{{x[0], x[1]}, {1., 2.}};
         });
     ScalarIntegrandType scalar_integrand3(scalar_function, matrix_function);
-    ScalarIntegrandType scalar_integrand4(*diffusion_factor_, *diffusion_tensor_);
+    ScalarIntegrandType scalar_integrand4(*diffusion_tensor_);
     DUNE_UNUSED_PARAMETER(scalar_integrand1);
     DUNE_UNUSED_PARAMETER(scalar_integrand2);
     DUNE_UNUSED_PARAMETER(scalar_integrand3);
@@ -71,7 +71,7 @@ struct EllipticIntegrandTest : public IntegrandTest<G>
     VectorIntegrandType vector_integrand1;
     VectorIntegrandType vector_integrand2(1., XT::LA::eye_matrix<FieldMatrix<D, d, d>>(d, d));
     VectorIntegrandType vector_integrand3(scalar_function, matrix_function);
-    VectorIntegrandType vector_integrand4(*diffusion_factor_, *diffusion_tensor_);
+    VectorIntegrandType vector_integrand4(*diffusion_tensor_);
     DUNE_UNUSED_PARAMETER(vector_integrand1);
     DUNE_UNUSED_PARAMETER(vector_integrand2);
     DUNE_UNUSED_PARAMETER(vector_integrand3);
@@ -80,7 +80,7 @@ struct EllipticIntegrandTest : public IntegrandTest<G>
 
   virtual void evaluates_correctly_for_scalar_bases()
   {
-    ScalarIntegrandType scalar_integrand(*diffusion_factor_, *diffusion_tensor_);
+    ScalarIntegrandType scalar_integrand(*diffusion_tensor_);
     const auto element = *(grid_provider_->leaf_view().template begin<0>());
     scalar_integrand.bind(element);
     const auto integrand_order = scalar_integrand.order(*scalar_test_, *scalar_ansatz_);
@@ -102,7 +102,7 @@ struct EllipticIntegrandTest : public IntegrandTest<G>
 
   virtual void evaluates_correctly_for_vector_bases()
   {
-    VectorIntegrandType integrand(*diffusion_factor_, *diffusion_tensor_);
+    VectorIntegrandType integrand(*diffusion_tensor_);
     const auto element = *(grid_provider_->leaf_view().template begin<0>());
     integrand.bind(element);
     const auto integrand_order = integrand.order(*vector_test_, *vector_ansatz_);
@@ -127,7 +127,6 @@ struct EllipticIntegrandTest : public IntegrandTest<G>
     ScalarIntegrandType integrand(1.);
     const auto& grid_view = grid_provider_->leaf_view();
     // std::string grid_name = XT::Common::Typename<G>::value();
-    // diffusion_factor_->visualize(grid_view, "factor_" + grid_name, true);
     const auto space = make_continuous_lagrange_space<1>(grid_view, /*polorder=*/2);
     const auto n = space.mapper().size();
     MatrixType stiffness_matrix(n, n, make_element_sparsity_pattern(space, space, grid_view));
@@ -151,9 +150,8 @@ struct EllipticIntegrandTest : public IntegrandTest<G>
   using BaseType::scalar_test_;
   using BaseType::vector_ansatz_;
   using BaseType::vector_test_;
-  std::shared_ptr<XT::Functions::GenericGridFunction<E, 1>> diffusion_factor_;
   std::shared_ptr<XT::Functions::GenericGridFunction<E, 2, 2>> diffusion_tensor_;
-}; // struct EllipticIntegrandTest
+}; // struct LaplaceIntegrandTest
 
 
 } // namespace Test
@@ -162,24 +160,24 @@ struct EllipticIntegrandTest : public IntegrandTest<G>
 
 
 template <class G>
-using EllipticIntegrandTest = Dune::GDT::Test::EllipticIntegrandTest<G>;
-TYPED_TEST_CASE(EllipticIntegrandTest, Grids2D);
+using LaplaceIntegrandTest = Dune::GDT::Test::LaplaceIntegrandTest<G>;
+TYPED_TEST_CASE(LaplaceIntegrandTest, Grids2D);
 
-TYPED_TEST(EllipticIntegrandTest, is_constructable)
+TYPED_TEST(LaplaceIntegrandTest, is_constructable)
 {
   this->is_constructable();
 }
-TYPED_TEST(EllipticIntegrandTest, evaluates_correctly_for_scalar_bases)
+TYPED_TEST(LaplaceIntegrandTest, evaluates_correctly_for_scalar_bases)
 {
   this->evaluates_correctly_for_scalar_bases();
 }
 
-TYPED_TEST(EllipticIntegrandTest, evaluates_correctly_for_vector_bases)
+TYPED_TEST(LaplaceIntegrandTest, evaluates_correctly_for_vector_bases)
 {
   this->evaluates_correctly_for_vector_bases();
 }
 
-TYPED_TEST(EllipticIntegrandTest, is_integrated_correctly)
+TYPED_TEST(LaplaceIntegrandTest, is_integrated_correctly)
 {
   this->is_integrated_correctly();
 }

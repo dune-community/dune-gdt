@@ -33,7 +33,7 @@
 #include <dune/gdt/local/bilinear-forms/integrals.hh>
 #include <dune/gdt/local/functionals/integrals.hh>
 #include <dune/gdt/local/integrands/abs.hh>
-#include <dune/gdt/local/integrands/elliptic.hh>
+#include <dune/gdt/local/integrands/laplace.hh>
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/operators/localizable-operator.hh>
 #include <dune/gdt/operators/oswald-interpolation.hh>
@@ -253,7 +253,7 @@ struct OswaldInterpolationOperatorOnLeafViewTest : public ::testing::Test
                     auto local_difference = difference.local_function();
                     local_difference->bind(element);
                     auto local_indicator = h1_element_indicators.local_discrete_function(element);
-                    local_indicator->dofs()[0] += LocalElementIntegralBilinearForm<E>(LocalEllipticIntegrand<E>(1.))
+                    local_indicator->dofs()[0] += LocalElementIntegralBilinearForm<E>(LocalLaplaceIntegrand<E>(1.))
                                                       .apply2(*local_difference, *local_difference)[0][0];
                   },
                   []() {});

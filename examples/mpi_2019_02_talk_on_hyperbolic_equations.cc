@@ -29,7 +29,7 @@
 #include <dune/gdt/local/numerical-fluxes/generic.hh>
 #include <dune/gdt/local/numerical-fluxes/upwind.hh>
 #include <dune/gdt/local/numerical-fluxes/vijayasundaram.hh>
-#include <dune/gdt/local/integrands/elliptic.hh>
+#include <dune/gdt/local/integrands/laplace.hh>
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/interpolations.hh>
 #include <dune/gdt/operators/advection-fv.hh>
@@ -198,7 +198,7 @@ GTEST_TEST(MPI201902TalkExamples, instationary_heat_equation)
   auto cg_space = make_continuous_lagrange_space(grid_view, 1);
   auto dirichlet_constraints = make_dirichlet_constraints(cg_space, boundary_info);
   auto spatial_op = make_matrix_operator<M>(cg_space, Stencil::element);
-  spatial_op.append(LocalElementIntegralBilinearForm<E>(LocalEllipticIntegrand<E>(1.)));
+  spatial_op.append(LocalElementIntegralBilinearForm<E>(LocalLaplaceIntegrand<E>(1.)));
   spatial_op.append(dirichlet_constraints);
   auto l2_op = make_matrix_operator<M>(cg_space, Stencil::element);
   l2_op.append(LocalElementIntegralBilinearForm<E>(LocalElementProductIntegrand<E>(1.)));

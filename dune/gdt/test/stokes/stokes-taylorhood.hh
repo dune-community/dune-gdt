@@ -31,7 +31,7 @@
 #include <dune/gdt/local/bilinear-forms/integrals.hh>
 #include <dune/gdt/local/integrands/conversion.hh>
 #include <dune/gdt/local/integrands/div.hh>
-#include <dune/gdt/local/integrands/elliptic.hh>
+#include <dune/gdt/local/integrands/laplace.hh>
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/local/functionals/integrals.hh>
 #include <dune/gdt/norms.hh>
@@ -60,16 +60,15 @@ struct StokesDirichletProblem
   using ScalarGridFunction = XT::Functions::GridFunctionInterface<E, 1, 1>;
   using VectorGridFunction = XT::Functions::GridFunctionInterface<E, d, 1>;
   using DomainType = typename ScalarGridFunction::LocalFunctionType::DomainType;
+  using DiffusionTensor = XT::Functions::GridFunctionInterface<E, d, d, RangeField>;
 
-  StokesDirichletProblem(std::shared_ptr<const ScalarGridFunction> diffusion_factor_in = default_diffusion_factor(),
+  StokesDirichletProblem(std::shared_ptr<const DiffusionTensor> diffusion_in = default_diffusion,
                          std::shared_ptr<const VectorGridFunction> rhs_f_in = default_rhs_f(),
                          std::shared_ptr<const VectorGridFunction> rhs_g_in = default_rhs_g(),
                          std::shared_ptr<const VectorGridFunction> dirichlet_in = default_dirichlet_values(),
                          std::shared_ptr<const VectorGridFunction> reference_sol_u = nullptr,
                          std::shared_ptr<const ScalarGridFunction> reference_sol_p = nullptr)
-    : diffusion_factor_(diffusion_factor_in)
-    , diffusion_tensor_(std::make_shared<const XT::Functions::ConstantGridFunction<E, d, d>>(
-          XT::LA::eye_matrix<FieldMatrix<double, d, d>>(d, d)))
+    : diffusion_(diffusion_in)
     , rhs_f_(rhs_f_in)
     , rhs_g_(rhs_g_in)
     , dirichlet_(dirichlet_in)
@@ -80,9 +79,10 @@ struct StokesDirichletProblem
     , grid_view_(grid_.leaf_view())
   {}
 
-  static std::shared_ptr<const ScalarGridFunction> default_diffusion_factor()
+  static std::shared_ptr<const DiffusionTensor> default_diffusion()
   {
-    return std::make_shared<const XT::Functions::ConstantGridFunction<E, 1, 1>>(1., "default diffusion factor");
+    return std::make_shared<const XT::Functions::ConstantGridFunction<E, d, d>>(
+        XT::LA::eye_matrix<FieldMatrix<double, d, d>>(d, d), "isotropic_diffusion");
   }
 
   static std::shared_ptr<const VectorGridFunction> default_rhs_f()
@@ -105,14 +105,9 @@ struct StokesDirichletProblem
     return grid_view_;
   } // ... make_initial_grid(...)
 
-  const ScalarGridFunction& diffusion_factor()
+  const XT::Functions::GridFunctionInterface<E, d, d>& diffusion()
   {
-    return *diffusion_factor_;
-  } // ... make_initial_grid(...)
-
-  const XT::Functions::GridFunctionInterface<E, d, d>& diffusion_tensor()
-  {
-    return *diffusion_tensor_;
+    return *diffusion_;
   } // ... make_initial_grid(...)
 
   const VectorGridFunction& rhs_f()
@@ -147,8 +142,7 @@ struct StokesDirichletProblem
     return boundary_info_;
   } // ... make_initial_grid(...)
 
-  std::shared_ptr<const ScalarGridFunction> diffusion_factor_;
-  std::shared_ptr<const XT::Functions::GridFunctionInterface<E, d, d, RangeField>> diffusion_tensor_;
+  std::shared_ptr<const DiffusionTensor> diffusion_;
   std::shared_ptr<const VectorGridFunction> rhs_f_;
   std::shared_ptr<const VectorGridFunction> rhs_g_;
   std::shared_ptr<const VectorGridFunction> dirichlet_;
@@ -227,8 +221,7 @@ public:
     MatrixOperator<Matrix, GV, d> A_operator(grid_view, velocity_space, velocity_space, A);
     MatrixOperator<Matrix, GV, 1, 1, d> B_operator(grid_view, pressure_space, velocity_space, B);
     // calculate A_{ij} as \int \nabla v_i \nabla v_j
-    A_operator.append(LocalElementIntegralBilinearForm<E, d>(
-        LocalEllipticIntegrand<E, d>(problem_.diffusion_factor(), problem_.diffusion_tensor())));
+    A_operator.append(LocalElementIntegralBilinearForm<E, d>(LocalLaplaceIntegrand<E, d>(problem_.diffusion())));
     // calculate B_{ij} as \int -\nabla p_i div(v_j)
     B_operator.append(LocalElementIntegralBilinearForm<E, d, 1, RangeField, RangeField, 1>(
         LocalElementAnsatzValueTestDivProductIntegrand<E>(-1.)));
@@ -346,7 +339,7 @@ class StokesTestcase1 : public StokesDirichletTest<G>
 
 public:
   StokesTestcase1()
-    : BaseType(ProblemType(ProblemType::default_diffusion_factor(),
+    : BaseType(ProblemType(ProblemType::default_diffusion(),
                            ProblemType::default_rhs_f(),
                            ProblemType::default_rhs_g(),
                            dirichlet(),
