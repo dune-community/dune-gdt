@@ -62,10 +62,12 @@ public:
   using typename BaseType::ElementType;
   using typename BaseType::GridViewType;
 
-  ContinuousMapper(const GridViewType& grd_vw, const LocalFiniteElementFamily& local_finite_elements, const int order)
+  ContinuousMapper(const GridViewType& grd_vw,
+                   const LocalFiniteElementFamily& local_finite_elements,
+                   const int fe_order)
     : grid_view_(grd_vw)
     , local_finite_elements_(local_finite_elements)
-    , order_(order)
+    , fe_order_(fe_order)
     , max_local_size_(0)
     , mapper_(grid_view_, [&](const auto& geometry_type, const auto /*grid_dim*/) {
       return (all_DoF_attached_geometry_types_.count(geometry_type) > 0) ? geometry_type_to_local_size_[geometry_type]
@@ -94,7 +96,7 @@ public:
   const LocalFiniteElementCoefficientsInterface<D, d>&
   local_coefficients(const GeometryType& geometry_type) const override final
   {
-    return local_finite_elements_.get(geometry_type, order_).coefficients();
+    return local_finite_elements_.get(geometry_type, fe_order_).coefficients();
   }
 
   size_t size() const override final
@@ -158,7 +160,7 @@ public:
     // collect all entities (for all codims) which are used to attach DoFs to
     all_DoF_attached_geometry_types_.clear();
     for (auto&& geometry_type : grid_view_.indexSet().types(0)) {
-      const auto& finite_element = local_finite_elements_.get(geometry_type, order_);
+      const auto& finite_element = local_finite_elements_.get(geometry_type, fe_order_);
       max_local_size_ = std::max(max_local_size_, finite_element.size());
       // loop over all keys of this finite element
       const auto& reference_element = ReferenceElements<D, d>::general(geometry_type);
@@ -184,7 +186,7 @@ public:
 private:
   const GridViewType& grid_view_;
   const LocalFiniteElementFamily& local_finite_elements_;
-  const int order_;
+  const int fe_order_;
   size_t global_size_;
   size_t max_local_size_;
   std::set<GeometryType> all_DoF_attached_geometry_types_;

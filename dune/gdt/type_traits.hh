@@ -23,6 +23,7 @@ namespace GDT {
 
 enum class SpaceType
 {
+  continuous_flattop,
   continuous_lagrange,
   discontinuous_lagrange,
   finite_volume,
@@ -34,6 +35,8 @@ std::ostream& operator<<(std::ostream& out, const SpaceType& space_type)
 {
   if (space_type == SpaceType::continuous_lagrange)
     out << "continuous_lagrange";
+  else if (space_type == SpaceType::continuous_flattop)
+    out << "continuous_flattop";
   else if (space_type == SpaceType::discontinuous_lagrange)
     out << "discontinuous_lagrange";
   else if (space_type == SpaceType::finite_volume)

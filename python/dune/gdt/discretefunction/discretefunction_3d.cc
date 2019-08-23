@@ -5,39 +5,30 @@
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Felix Schindler (2017)
-//   René Fritze     (2018)
+//   Felix Schindler (2019)
 
 #include "config.h"
 
 #if HAVE_DUNE_PYBINDXI
 
-#  include <dune/common/parallel/mpihelper.hh>
-
-#  include <dune/pybindxi/pybind11.h>
-#  include <dune/pybindxi/stl.h>
-
-#  include <python/dune/xt/common/bindings.hh>
-#  include <python/dune/gdt/shared.hh>
-
-#  include "diffusive-flux-estimation-operator.hh"
+#  include "discretefunction.hh"
 
 
-PYBIND11_MODULE(__local_diffusive_flux_estimation_operator, m)
+PYBIND11_MODULE(_discretefunction_3d, m)
 {
   namespace py = pybind11;
-  using namespace pybind11::literals;
-
-  Dune::XT::Common::bindings::addbind_exceptions(m);
+  using namespace Dune;
+  using namespace Dune::XT;
+  using namespace Dune::GDT;
 
   py::module::import("dune.xt.common");
+  py::module::import("dune.xt.la");
   py::module::import("dune.xt.grid");
   py::module::import("dune.xt.functions");
-  py::module::import("dune.xt.la");
 
-  DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BIND(m);
-
-  add_initialization(m, "dune.gdt.assembler");
+  bindings::DiscreteFunction_for_all_vectors_and_grids<LA::AvailableVectorTypes<double>,
+                                                       XT::Grid::Available3dGridTypes>::bind(m);
 }
+
 
 #endif // HAVE_DUNE_PYBINDXI

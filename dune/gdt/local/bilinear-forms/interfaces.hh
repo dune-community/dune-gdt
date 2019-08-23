@@ -173,6 +173,27 @@ public:
                       const XT::Common::Parameter& param = {}) const = 0;
 
   /**
+   * Variant which consideres the intersection only from the inside.
+   */
+  virtual void apply2(const IntersectionType& intersection,
+                      const LocalTestBasisType& test_basis,
+                      const LocalAnsatzBasisType& ansatz_basis,
+                      DynamicMatrix<F>& result,
+                      const XT::Common::Parameter& param = {}) const
+  {
+    this->apply2(intersection,
+                 test_basis,
+                 ansatz_basis,
+                 test_basis,
+                 ansatz_basis,
+                 result,
+                 unused_result_,
+                 unused_result_,
+                 unused_result_,
+                 param);
+  }
+
+  /**
    * This method is provided for convenience and should not be used within library code.
    */
   virtual std::array<DynamicMatrix<F>, 4> apply2(const IntersectionType& intersection,
@@ -197,7 +218,23 @@ public:
                  result_out_out,
                  param);
     return {result_in_in, result_in_out, result_out_in, result_out_out};
-  } // ... apply(...)
+  } // ... apply2(...)
+
+  /**
+   * This method is provided for convenience and should not be used within library code.
+   */
+  DynamicMatrix<F> apply2(const IntersectionType& intersection,
+                          const LocalTestBasisType& test_basis,
+                          const LocalAnsatzBasisType& ansatz_basis,
+                          const XT::Common::Parameter& param = {}) const
+  {
+    DynamicMatrix<F> result(test_basis.size(param), ansatz_basis.size(param), 0);
+    this->apply2(intersection.test_basis, ansatz_basis, param);
+    return result;
+  }
+
+protected:
+  mutable DynamicMatrix<F> unused_result_;
 }; // class LocalIntersectionBilinearFormInterface
 
 

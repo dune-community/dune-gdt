@@ -195,9 +195,9 @@ make_local_lagrange_finite_element(const GeometryType& geometry_type, const int 
 
 
 template <class D, size_t d, class R, size_t r = 1>
-class LocalLagrangeFiniteElementFamily : public ThreadSafeDefaultLocalLagrangeFiniteElementFamily<D, d, R, r>
+class LocalLagrangeFiniteElementFamily : public ThreadSafeDefaultLocalFiniteElementFamily<D, d, R, r>
 {
-  using BaseType = ThreadSafeDefaultLocalLagrangeFiniteElementFamily<D, d, R, r>;
+  using BaseType = ThreadSafeDefaultLocalFiniteElementFamily<D, d, R, r>;
 
 public:
   LocalLagrangeFiniteElementFamily()
