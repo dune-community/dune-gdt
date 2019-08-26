@@ -43,7 +43,8 @@ struct moment_approximation_helper
 template <Dune::GDT::EntropyType entropy>
 struct moment_approximation_helper<1, entropy>
 {
-  static void run(const int min_quad_intervals, const std::string /*testcasename*/, const std::string /*filename*/) {}
+  static void run(const int /*min_quad_intervals*/, const std::string /*testcasename*/, const std::string /*filename*/)
+  {}
 };
 
 
