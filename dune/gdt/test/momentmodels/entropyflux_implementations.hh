@@ -26,6 +26,8 @@
 #include <dune/xt/common/fmatrix.hh>
 #include <dune/xt/common/fvector.hh>
 #include <dune/xt/common/lapacke.hh>
+#include <dune/xt/common/cblas.hh>
+#include <dune/xt/common/mkl.hh>
 #include <dune/xt/common/math.hh>
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/common/parallel/threadstorage.hh>
@@ -680,9 +682,9 @@ public:
                                  const BasisValuesMatrixType& M,
                                  QuadratureWeightsType& scalar_products) const
   {
-#if HAVE_MKL || HAVE_CBLAS
-    XT::Common::Blas::dgemv(XT::Common::Blas::row_major(),
-                            XT::Common::Blas::no_trans(),
+#if HAVE_MKL
+    XT::Common::Cblas::dgemv(XT::Common::Cblas::row_major(),
+                            XT::Common::Cblas::no_trans(),
                             static_cast<int>(quad_points_.size()),
                             basis_dimRange,
                             1.,
@@ -850,16 +852,16 @@ public:
   // calculate (T_k^{-1} M^T)^T = M T_k^{-T}
   void apply_inverse_matrix(const MatrixType& T_k, BasisValuesMatrixType& M) const
   {
-#if HAVE_MKL || HAVE_CBLAS
+#if HAVE_MKL
     // Calculate the transpose here first as this is much faster than passing the matrix to dtrsm and using CblasTrans
     thread_local auto T_k_trans = std::make_unique<MatrixType>(0.);
     copy_transposed(T_k, *T_k_trans);
     assert(quad_points_.size() < std::numeric_limits<int>::max());
-    XT::Common::Blas::dtrsm(XT::Common::Blas::row_major(),
-                            XT::Common::Blas::right(),
-                            XT::Common::Blas::upper(),
-                            XT::Common::Blas::no_trans(),
-                            XT::Common::Blas::non_unit(),
+    XT::Common::Cblas::dtrsm(XT::Common::Cblas::row_major(),
+                            XT::Common::Cblas::right(),
+                            XT::Common::Cblas::upper(),
+                            XT::Common::Cblas::no_trans(),
+                            XT::Common::Cblas::non_unit(),
                             static_cast<int>(quad_points_.size()),
                             basis_dimRange,
                             1.,
@@ -2180,17 +2182,17 @@ public:
             (basis_ll[3] - T_k[3][0] * basis_ll[0] - T_k[3][1] * basis_ll[1] - T_k[3][2] * basis_ll[2]) * diag_inv[3];
       }
     } else {
-#  if HAVE_MKL || HAVE_CBLAS
+#  if HAVE_MKL
       thread_local LocalMatrixType T_k_trans(0.);
       assert(num_quad_points < std::numeric_limits<int>::max());
       // Calculate the transpose here first as this is much faster than passing the matrix to dtrsm and using
       // CblasTrans
       copy_transposed(T_k, T_k_trans);
-      XT::Common::Blas::dtrsm(XT::Common::Blas::row_major(),
-                              XT::Common::Blas::right(),
-                              XT::Common::Blas::upper(),
-                              XT::Common::Blas::no_trans(),
-                              XT::Common::Blas::non_unit(),
+      XT::Common::Cblas::dtrsm(XT::Common::Cblas::row_major(),
+                              XT::Common::Cblas::right(),
+                              XT::Common::Cblas::upper(),
+                              XT::Common::Cblas::no_trans(),
+                              XT::Common::Cblas::non_unit(),
                               static_cast<int>(num_quad_points),
                               block_size,
                               1.,
@@ -2759,7 +2761,10 @@ public:
     std::copy(Hinv_u_vec.begin(), Hinv_u_vec.end(), Hinv_u.begin());
 #  else // HAVE_EIGEN
     auto solver = XT::LA::make_solver(H);
-    solver.apply(u, Hinv_u);
+    VectorType Hinv_u_la(basis_dimRange);
+    VectorType u_la = XT::Common::convert_to<VectorType>(u);
+    solver.apply(u_la, Hinv_u_la);
+    Hinv_u = XT::Common::convert_to<DomainType>(Hinv_u_la);
 #  endif
   } // void apply_inverse_hessian(..)
 
