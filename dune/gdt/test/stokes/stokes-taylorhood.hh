@@ -44,7 +44,6 @@ namespace Dune {
 namespace GDT {
 namespace Test {
 
-#if HAVE_DUNE_ISTL
 
 template <class GV>
 struct StokesDirichletProblem
@@ -380,7 +379,6 @@ public:
   }
 }; // struct StokesTestcase1
 
-#endif // HAVE_DUNE_ISTL
 
 } // namespace Test
 } // namespace GDT
