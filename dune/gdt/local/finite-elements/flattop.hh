@@ -24,6 +24,9 @@ namespace GDT {
 
 
 /**
+ * Inspired by [Brenner, Davis, Sung, 2014, A partition of unity method for the displacement obstacle problem of clamped
+ *              Kirchhoff plates], section 2
+ *
  * \sa LocalFlatTop2dCubeFiniteElement
  * \sa LocalFlatTopFiniteElementFactory
  */
@@ -41,6 +44,9 @@ public:
   LocalFlatTop2dCubeFiniteElementBasis(const double& overlap = 0.5)
     : geometry_type_(GeometryType::cube, 2)
   {
+    DUNE_THROW_IF(
+        !(overlap > 0.), Exceptions::finite_element_error, "Overlap has to be in (0, 1], is " << overlap << "!");
+    DUNE_THROW_IF(overlap > 1., Exceptions::finite_element_error, "Overlap has to be in (0, 1], is " << overlap << "!");
     // we cannot let L_ and R_ be members and define phi_L_ and phi_R_ in the ctor initializer list, as they will
     // copy/reference broken/empty/default L_ and R_
     const auto L_ = (1. - overlap) / 2.;
