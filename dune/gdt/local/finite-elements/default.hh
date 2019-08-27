@@ -180,7 +180,7 @@ public:
     // TODO: Double checked locking pattern is not thread-safe without memory barriers.
     if (fes_.count(key) == 0) {
       // the FE needs to be created, we need to lock
-      std::lock_guard<std::mutex> DXTC_UNUSED(guard)(mutex_);
+      std::lock_guard<std::mutex> DXTC_UNUSED(guard){mutex_};
       // and to check again if someone else created the FE while we were waiting to acquire the lock
       if (fes_.count(key) == 0)
         fes_[key] = factory_(geometry_type, order);
