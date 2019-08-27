@@ -1,4 +1,4 @@
-// This file is part of the dune-gdt project:
+﻿// This file is part of the dune-gdt project:
 //   https://github.com/dune-community/dune-gdt
 // Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
 // License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
@@ -938,25 +938,24 @@ std::unique_ptr<M> assemble_boundary_product_contributions(const double& penalty
       // this is the subdomain we are interested in, create space
       auto subdomain_grid_view = domain_decomposition.dd_grid.local_grid(macro_element).leaf_view();
       using GV = decltype(subdomain_grid_view);
-      using E = typename GV::template Codim<0>::Entity;
       using I = typename GV::Intersection;
       auto subdomain_space = make_subdomain_space(subdomain_grid_view, space_type);
       const MacroGridBasedBoundaryInfo<MGV, GV> subdomain_boundary_info(
           domain_decomposition.dd_grid.macro_grid_view(), macro_element, macro_boundary_info);
       // create operator
       auto subdomain_operator = make_matrix_operator<M>(*subdomain_space, Stencil::element);
-      if (!subdomain_space->continuous(0))
-        subdomain_operator.append(
-            LocalIntersectionIntegralBilinearForm<I>(LocalIPDGIntegrands::BoundaryPenalty<I>(penalty, weight)),
-            {},
-            XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(subdomain_boundary_info,
-                                                               new XT::Grid::DirichletBoundary()));
+      subdomain_operator.append(
+          LocalIntersectionIntegralBilinearForm<I>(LocalIPDGIntegrands::BoundaryPenalty<I>(penalty, weight)),
+          {},
+          XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(subdomain_boundary_info,
+                                                             new XT::Grid::DirichletBoundary()));
       subdomain_operator.assemble();
       subdomain_matrix = std::make_unique<M>(subdomain_operator.matrix());
       break;
     }
   }
-  return std::move(subdomain_matrix);
+  DUNE_THROW_IF(!subdomain_matrix, XT::Common::Exceptions::index_out_of_range, "ss = " << ss);
+  return subdomain_matrix;
 } // ... assemble_boundary_product_contributions(...)
 
 
