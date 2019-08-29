@@ -624,7 +624,7 @@ private:
   double sigma_t_max_;
 };
 
-// using BoltzmannSolver2d = BoltzmannSolver<2>;
+using BoltzmannSolver2d = BoltzmannSolver<2>;
 using BoltzmannSolver3d = BoltzmannSolver<3>;
 
 // Python bindings
@@ -827,9 +827,9 @@ struct VectorExporter
 
 
 #include <dune/xt/common/disable_warnings.hh>
-// BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(init_overloads2d, BoltzmannSolver2d::init, 0, 9)
-// BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(next_n_time_steps_overloads2d, BoltzmannSolver2d::next_n_time_steps, 1, 2)
-// BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(apply_rhs_overloads2d, BoltzmannSolver2d::apply_rhs_operator, 3, 6)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(init_overloads2d, BoltzmannSolver2d::init, 0, 10)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(next_n_time_steps_overloads2d, BoltzmannSolver2d::next_n_time_steps, 1, 2)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(apply_rhs_overloads2d, BoltzmannSolver2d::apply_rhs_operator, 3, 6)
 
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(init_overloads3d, BoltzmannSolver3d::init, 0, 10)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(next_n_time_steps_overloads3d, BoltzmannSolver3d::next_n_time_steps, 1, 2)
@@ -841,7 +841,6 @@ BOOST_PYTHON_MODULE(libboltzmann)
 {
   typedef typename BoltzmannSolver3d::VectorType VectorType;
   typedef typename BoltzmannSolver3d::RangeFieldType RangeFieldType;
-#if 0
   // 2d
   VectorType (BoltzmannSolver2d::*apply_rhs_without_params2d)(VectorType, const double) const =
       &BoltzmannSolver2d::apply_rhs_operator;
@@ -862,8 +861,10 @@ BOOST_PYTHON_MODULE(libboltzmann)
                                           const double,
                                           const double,
                                           const double,
-                                          const double>>())
+                                          const double,
+                                          const bool>>())
       .def("init", &BoltzmannSolver2d::init, init_overloads2d())
+      .def("linear", &BoltzmannSolver2d::linear)
       .def("solve", &BoltzmannSolver2d::solve)
       .def("next_n_time_steps", &BoltzmannSolver2d::next_n_time_steps, next_n_time_steps_overloads2d())
       .def("reset", &BoltzmannSolver2d::reset)
@@ -886,7 +887,6 @@ BOOST_PYTHON_MODULE(libboltzmann)
   class_<typename BoltzmannSolver2d::SolutionVectorsVectorType>("SolutionVectorsVectorType")
       .def(vector_indexing_suite<typename BoltzmannSolver2d::SolutionVectorsVectorType>())
       .def("size", &BoltzmannSolver2d::SolutionVectorsVectorType::size);
-#endif
 
   // 3d
   VectorType (BoltzmannSolver3d::*apply_rhs_without_params3d)(VectorType, const double) const =
@@ -934,11 +934,9 @@ BOOST_PYTHON_MODULE(libboltzmann)
   VectorExporter<typename LA::CommonDenseVector<double>>::export_("CommonDenseVector");
 
   iterable_converter().from_python<std::vector<double>>();
-  iterable_converter().from_python<std::vector<LA::CommonDenseVector<double>>>();
   iterable_converter().from_python<std::vector<size_t>>();
 
   std_vector_to_python_converter<double>();
-  std_vector_to_python_converter<LA::CommonDenseVector<double>>();
   std_vector_to_python_converter<size_t>();
 }
 
