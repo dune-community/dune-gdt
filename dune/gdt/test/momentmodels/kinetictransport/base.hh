@@ -38,6 +38,7 @@ public:
   using BaseType::dimFlux;
   using BaseType::dimRange;
   using BaseType::dimRangeCols;
+  using typename BaseType::BasisDomainType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
   using typename BaseType::GenericFluxFunctionType;
@@ -57,7 +58,8 @@ public:
   using DynamicFluxJacobianRangeType = typename FluxType::LocalFunctionType::DynamicJacobianRangeType;
   using GenericScalarFunctionType = XT::Functions::GenericFunction<dimFlux, 1, 1, RangeFieldType>;
   using ConstantScalarFunctionType = XT::Functions::ConstantFunction<dimFlux, 1, 1, RangeFieldType>;
-  using BoundaryDistributionType = std::function<std::function<RangeFieldType(const DomainType&)>(const DomainType&)>;
+  using BoundaryDistributionType =
+      std::function<std::function<RangeFieldType(const BasisDomainType&)>(const DomainType&)>;
 
   using BaseType::default_boundary_cfg;
   using BaseType::default_grid_cfg;
@@ -126,26 +128,26 @@ public:
     const auto M_T = basis_functions_.mass_matrix(); // mass matrix is symmetric
     // solve
     DynamicVector<RangeFieldType> tmp_row(M_T.N(), 0.);
-    for (size_t dd = 0; dd < dimDomain; ++dd) {
+    for (size_t dd = 0; dd < dimFlux; ++dd) {
       for (size_t ii = 0; ii < M_T.N(); ++ii) {
         solve(M_T, tmp_row, A[dd][ii], basis_functions_);
         A[dd][ii] = tmp_row;
       }
     }
     auto order_func = [](const XT::Common::Parameter&) -> int { return 1; };
-    DynamicVector<XT::LA::CommonDenseMatrix<RangeFieldType>> A_la(dimDomain);
-    for (size_t dd = 0; dd < dimDomain; ++dd)
+    DynamicVector<XT::LA::CommonDenseMatrix<RangeFieldType>> A_la(dimFlux);
+    for (size_t dd = 0; dd < dimFlux; ++dd)
       A_la[dd] = A[dd];
     auto eval_func =
         [A_la](const DomainType&, const StateType& u, DynamicFluxRangeType& ret, const XT::Common::Parameter&) {
-          for (size_t dd = 0; dd < dimDomain; ++dd) {
+          for (size_t dd = 0; dd < dimFlux; ++dd) {
             auto row_view = ret[dd];
             A_la[dd].mv(u, row_view);
           }
         };
     auto jacobian_func =
         [A_la](const DomainType&, const StateType&, DynamicFluxJacobianRangeType& ret, const XT::Common::Parameter&) {
-          for (size_t dd = 0; dd < dimDomain; ++dd)
+          for (size_t dd = 0; dd < dimFlux; ++dd)
             ret[dd] = A_la[dd];
         };
     return std::make_unique<GenericFluxFunctionType>(order_func,
@@ -177,7 +179,7 @@ public:
 
   virtual BoundaryDistributionType boundary_distribution() const
   {
-    return [this](const DomainType&) { return [this](const DomainType&) { return this->psi_vac_; }; };
+    return [this](const DomainType&) { return [this](const BasisDomainType&) { return this->psi_vac_; }; };
   }
 
   RangeReturnType

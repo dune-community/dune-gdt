@@ -41,6 +41,7 @@ public:
   using BoundaryValueType = InitialValueType;
   using MatrixType = typename Dune::DynamicMatrix<RangeFieldType>;
   using DomainType = typename InitialValueType::DomainType;
+  using BasisDomainType = typename MomentBasis::DomainType;
   using StateType = typename FluxType::StateType;
   using RangeReturnType = typename InitialValueType::RangeReturnType;
   using DynamicRangeType = Dune::DynamicVector<RangeFieldType>;
