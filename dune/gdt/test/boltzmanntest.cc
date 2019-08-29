@@ -101,12 +101,11 @@ public:
   using VectorType = typename Dune::XT::LA::Container<RangeFieldType, LA::Backends::common_dense>::VectorType;
   using MatrixType = typename Dune::XT::LA::Container<RangeFieldType, LA::Backends::common_dense>::MatrixType;
   using DiscreteFunctionType = DiscreteFunction<VectorType, GridViewType, dimRange, 1, RangeFieldType>;
-  // using ProblemType = Dune::GDT::CheckerboardPn<E, MomentBasis>;
+  using PnProblemType = Dune::GDT::CheckerboardPn<E, MomentBasis>;
   using ProblemType = Dune::GDT::CheckerboardMn<GridViewType, MomentBasis>;
   using ConfigType = Common::Configuration;
   using AnalyticalFluxType = typename ProblemType::FluxType;
   using EntropyFluxType = typename ProblemType::ActualFluxType;
-  using ActualAnalyticalFluxType = typename ProblemType::ActualFluxType;
   using InitialValueType = typename ProblemType::InitialValueType;
   using BoundaryValueType = typename ProblemType::BoundaryValueType;
   using GridProviderFactoryType = Dune::XT::Grid::CubeGridProviderFactory<GridType>;
@@ -115,13 +114,17 @@ public:
   using EigenvectorWrapperType = typename EigenvectorWrapperChooser<MomentBasis, AnalyticalFluxType>::type;
   using EntropySolverType = Dune::GDT::EntropySolver<MomentBasis, SpaceType, MatrixType>;
   using FvOperatorType = Dune::GDT::EntropyBasedMomentFvOperator<AdvectionOperatorType, EntropySolverType>;
+  using PnFvOperatorType = AdvectionOperatorType;
   using RhsOperatorType = GenericOperator<MatrixType, GridViewType, dimRange>;
   using FluxTimeStepperType =
       ExplicitRungeKuttaTimeStepper<FvOperatorType, DiscreteFunctionType, TimeStepperMethods::explicit_euler>;
+  using PnFluxTimeStepperType =
+      ExplicitRungeKuttaTimeStepper<AdvectionOperatorType, DiscreteFunctionType, TimeStepperMethods::explicit_euler>;
   using KineticNumericalFluxType = NumericalKineticFlux<GridViewType, MomentBasis>;
   using RhsTimeStepperType =
       ExplicitRungeKuttaTimeStepper<RhsOperatorType, DiscreteFunctionType, TimeStepperMethods::explicit_euler>;
   using TimeStepperType = FractionalTimeStepper<FluxTimeStepperType, RhsTimeStepperType>;
+  using PnTimeStepperType = FractionalTimeStepper<PnFluxTimeStepperType, RhsTimeStepperType>;
   using SolutionType = typename TimeStepperType::DiscreteSolutionType;
   using SolutionVectorsVectorType = std::vector<VectorType>;
   using ParameterFunctionType = typename ProblemType::ScalarFunctionType;
@@ -134,7 +137,8 @@ public:
                   const RangeFieldType sigma_s_scattering = 1,
                   const RangeFieldType sigma_s_absorbing = 0,
                   const RangeFieldType sigma_a_scattering = 0,
-                  const RangeFieldType sigma_a_absorbing = 10)
+                  const RangeFieldType sigma_a_absorbing = 10,
+                  const bool linear = true)
   {
     auto num_save_steps_copy = num_save_steps;
     if (num_save_steps > 1e6) // hack to allow for size_t(-1) when called from the python bindings
@@ -147,35 +151,50 @@ public:
          sigma_s_scattering,
          sigma_s_absorbing,
          sigma_a_scattering,
-         sigma_a_absorbing);
+         sigma_a_absorbing,
+         linear);
     silent_ = silent;
   }
 
   double current_time() const
   {
-    return timestepper_->current_time();
+    return linear_ ? pn_timestepper_->current_time() : timestepper_->current_time();
   }
 
   double t_end() const
   {
-    return 3.2;
+    return linear_ ? pn_problem_->t_end() : problem_->t_end();
   }
 
   void set_current_time(const double time)
   {
-    timestepper_->current_time() = time;
+    if (linear_) {
+      pn_timestepper_->current_time() = time;
+    } else {
+      timestepper_->current_time() = time;
+    }
   }
 
   void set_current_solution(const VectorType& vec)
   {
-    timestepper_->current_solution().dofs().vector() = vec;
+    if (linear_) {
+      pn_timestepper_->current_solution().dofs().vector() = vec;
+      pn_flux_timestepper_->current_solution().dofs().vector() = vec;
+    } else {
+      timestepper_->current_solution().dofs().vector() = vec;
+      flux_timestepper_->current_solution().dofs().vector() = vec;
+    }
     rhs_timestepper_->current_solution().dofs().vector() = vec;
-    flux_timestepper_->current_solution().dofs().vector() = vec;
   }
 
   double time_step_length() const
   {
     return dt_;
+  }
+
+  bool linear() const
+  {
+    return linear_;
   }
 
   SolutionVectorsVectorType solve(const bool with_half_steps = false)
@@ -184,29 +203,44 @@ public:
       std::cout << "Solving... " << std::endl;
     DXTC_TIMINGS.start("fv.solve");
     const auto visualizer = basis_functions_->visualizer();
-    timestepper_->solve(t_end_,
-                        dt_,
-                        num_save_steps_,
-                        silent_ ? size_t(0) : size_t(-1),
-                        true,
-                        false,
-                        with_half_steps,
-                        false,
-                        false,
-                        file_path_,
-                        *visualizer);
+    if (linear_) {
+      pn_timestepper_->solve(t_end_,
+                             dt_,
+                             num_save_steps_,
+                             silent_ ? size_t(0) : size_t(-1),
+                             true,
+                             false,
+                             with_half_steps,
+                             false,
+                             false,
+                             file_path_,
+                             *visualizer);
+    } else {
+      timestepper_->solve(t_end_,
+                          dt_,
+                          num_save_steps_,
+                          silent_ ? size_t(0) : size_t(-1),
+                          true,
+                          false,
+                          with_half_steps,
+                          false,
+                          false,
+                          file_path_,
+                          *visualizer);
+    }
     DXTC_TIMINGS.stop("fv.solve");
     if (!silent_)
       std::cout << "Solving took: " << DXTC_TIMINGS.walltime("fv.solve") / 1000.0 << "s" << std::endl;
     if (visualize_solution_) {
       if (!silent_)
         std::cout << "Visualizing... ";
-      timestepper_->visualize_solution(file_path_, *visualizer);
+      linear_ ? pn_timestepper_->visualize_solution(file_path_, *visualizer)
+              : timestepper_->visualize_solution(file_path_, *visualizer);
       if (!silent_)
         std::cout << " done" << std::endl;
     }
     std::vector<VectorType> ret;
-    for (const auto& pair : timestepper_->solution())
+    for (const auto& pair : (linear_ ? pn_timestepper_->solution() : timestepper_->solution()))
       ret.push_back(pair.second.dofs().vector());
     return ret;
   }
@@ -217,7 +251,10 @@ public:
       std::cout << "Calculating next " << Common::to_string(n) << " time steps... " << std::endl;
     DXTC_TIMINGS.start("fv.solve");
     SolutionType solution;
-    timestepper_->next_n_steps(n, t_end_, dt_, !silent_, with_half_steps, solution);
+    if (linear_)
+      pn_timestepper_->next_n_steps(n, t_end_, dt_, !silent_, with_half_steps, solution);
+    else
+      timestepper_->next_n_steps(n, t_end_, dt_, !silent_, with_half_steps, solution);
     DXTC_TIMINGS.stop("fv.solve");
     if (!silent_)
       std::cout << "Solving took: " << DXTC_TIMINGS.walltime("fv.solve") / 1000.0 << "s" << std::endl;
@@ -230,12 +267,18 @@ public:
   VectorType apply_kinetic_operator(VectorType source, const double time, const double dt) const
   {
     VectorType ret(source);
-    kinetic_operator_->apply(source, ret, {{"t", {time}}, {"dt", {dt}}});
+    if (linear_) {
+      pn_kinetic_operator_->apply(source, ret, {{"t", {time}}, {"dt", {dt}}});
+    } else {
+      kinetic_operator_->apply(source, ret, {{"t", {time}}, {"dt", {dt}}});
+    }
     return ret;
   }
 
   VectorType apply_restricted_kinetic_operator(VectorType source) const
   {
+    if (linear_)
+      DUNE_THROW(Dune::NotImplemented, "This needs a Mn operator!");
     VectorType ret(restricted_op_output_dofs_->size(), 0.);
     RangeType u_entity;
     RangeType u_neighbor;
@@ -353,13 +396,15 @@ public:
   VectorType get_initial_values() const
   {
     DiscreteFunctionType ret(*fv_space_, "discrete_initial_values");
-    default_interpolation(*problem_->initial_values(), ret, *grid_view_);
+    const auto& problem = linear_ ? pn_problem_ : problem_;
+    default_interpolation(*problem->initial_values(), ret, *grid_view_);
     return ret.dofs().vector();
   }
 
   bool finished() const
   {
-    return Common::FloatCmp::ge(timestepper_->current_time(), t_end_);
+    const auto current_time = linear_ ? pn_timestepper_->current_time() : timestepper_->current_time();
+    return Common::FloatCmp::ge(current_time, t_end_);
   }
 
   void init(const std::string output_dir = "boltzmann",
@@ -370,7 +415,8 @@ public:
             const double sigma_s_scattering = 1.,
             const double sigma_s_absorbing = 0.,
             const double sigma_a_scattering = 0.,
-            const double sigma_a_absorbing = 10.)
+            const double sigma_a_absorbing = 10.,
+            const bool linear = true)
   {
 #if HAVE_MPI
     int initialized = 0;
@@ -384,6 +430,7 @@ public:
     visualize_solution_ = visualize_solution;
     file_path_ = output_dir;
     num_save_steps_ = num_save_steps;
+    linear_ = linear;
     // setup threadmanager
     DXTC_CONFIG.set("global.datadir", output_dir, true);
     DXTC_TIMINGS.set_outputdir(output_dir);
@@ -406,6 +453,9 @@ public:
 
     problem_ = std::make_shared<const ProblemType>(
         *basis_functions_, *grid_view_, grid_config, ProblemType::default_boundary_cfg());
+
+    pn_problem_ =
+        std::make_shared<const PnProblemType>(*basis_functions_, grid_config, ProblemType::default_boundary_cfg());
 
     // allocate a discrete function for the concentration
     u_ = std::make_shared<DiscreteFunctionType>(*fv_space_, "solution");
@@ -431,10 +481,14 @@ public:
 
     // create Operators
     flux_ = std::shared_ptr<const AnalyticalFluxType>(problem_->flux());
+    pn_flux_ = std::shared_ptr<const AnalyticalFluxType>(pn_problem_->flux());
     boundary_values_ = std::shared_ptr<const BoundaryValueType>(problem_->boundary_values());
     numerical_flux_ = std::make_shared<KineticNumericalFluxType>(*flux_, *basis_functions_);
+    pn_numerical_flux_ = std::make_shared<KineticNumericalFluxType>(*pn_flux_, *basis_functions_);
     advection_operator_ =
         std::make_shared<AdvectionOperatorType>(*grid_view_, *numerical_flux_, *fv_space_, *fv_space_);
+    pn_kinetic_operator_ =
+        std::make_shared<AdvectionOperatorType>(*grid_view_, *pn_numerical_flux_, *fv_space_, *fv_space_);
     entropy_solver_ =
         std::make_shared<EntropySolverType>(*(dynamic_cast<const EntropyFluxType*>(flux_.get())),
                                             *fv_space_,
@@ -444,8 +498,10 @@ public:
 
     // create timestepper
     flux_timestepper_ = std::make_shared<FluxTimeStepperType>(*kinetic_operator_, *u_, -1.0);
+    pn_flux_timestepper_ = std::make_shared<PnFluxTimeStepperType>(*pn_kinetic_operator_, *u_, -1.0);
     rhs_timestepper_ = std::make_shared<RhsTimeStepperType>(*rhs_operator_, *u_);
     timestepper_ = std::make_shared<TimeStepperType>(*flux_timestepper_, *rhs_timestepper_);
+    pn_timestepper_ = std::make_shared<PnTimeStepperType>(*pn_flux_timestepper_, *rhs_timestepper_);
 
     set_rhs_operator_parameters(sigma_s_scattering, sigma_s_absorbing, sigma_a_scattering, sigma_a_absorbing);
   } // void init()
@@ -455,11 +511,15 @@ public:
     u_ = std::make_shared<DiscreteFunctionType>(u_->space(), "solution");
     default_interpolation(*problem_->initial_values(), *u_, *grid_view_);
     flux_timestepper_ = std::make_shared<FluxTimeStepperType>(*kinetic_operator_, *u_, -1.0);
+    pn_flux_timestepper_ = std::make_shared<PnFluxTimeStepperType>(*pn_kinetic_operator_, *u_, -1.0);
     FluxTimeStepperType::reset_static_variables();
+    PnFluxTimeStepperType::reset_static_variables();
     rhs_timestepper_ = std::make_shared<RhsTimeStepperType>(*rhs_operator_, *u_);
     RhsTimeStepperType::reset_static_variables();
     timestepper_ = std::make_shared<TimeStepperType>(*flux_timestepper_, *rhs_timestepper_);
+    pn_timestepper_ = std::make_shared<PnTimeStepperType>(*pn_flux_timestepper_, *rhs_timestepper_);
     TimeStepperType::reset_static_variables();
+    PnTimeStepperType::reset_static_variables();
   }
 
   double calculate_max_sigma_t(const ParameterFunctionType& /*sigma_s*/, const ParameterFunctionType& /*sigma_a*/) const
@@ -475,6 +535,8 @@ public:
 
   void prepare_restricted_operator(const std::vector<size_t>& output_dofs)
   {
+    if (linear_)
+      DUNE_THROW(Dune::NotImplemented, "This needs a Mn operator!");
     if (!restricted_op_output_dofs_ || *restricted_op_output_dofs_ != output_dofs) {
       restricted_op_output_dofs_ = std::make_shared<std::vector<size_t>>(output_dofs);
       restricted_op_input_dofs_ = std::make_shared<std::vector<size_t>>();
@@ -529,21 +591,27 @@ private:
   std::shared_ptr<const GridViewType> grid_view_;
   std::shared_ptr<const MomentBasis> basis_functions_;
   std::shared_ptr<const ProblemType> problem_;
+  std::shared_ptr<const PnProblemType> pn_problem_;
   std::shared_ptr<const SpaceType> fv_space_;
   std::shared_ptr<DiscreteFunctionType> u_;
   std::shared_ptr<KineticNumericalFluxType> numerical_flux_;
+  std::shared_ptr<KineticNumericalFluxType> pn_numerical_flux_;
   std::shared_ptr<const AdvectionOperatorType> advection_operator_;
   std::shared_ptr<const EntropySolverType> entropy_solver_;
   std::shared_ptr<const FvOperatorType> kinetic_operator_;
+  std::shared_ptr<const AdvectionOperatorType> pn_kinetic_operator_;
   std::shared_ptr<std::vector<E>> restricted_op_entities_;
   std::shared_ptr<std::vector<size_t>> restricted_op_input_dofs_;
   std::shared_ptr<std::vector<size_t>> restricted_op_output_dofs_;
   std::shared_ptr<std::vector<std::map<size_t, size_t>>> restricted_op_entity_dofs_to_output_dofs_;
   std::shared_ptr<const RhsOperatorType> rhs_operator_;
   std::shared_ptr<FluxTimeStepperType> flux_timestepper_;
+  std::shared_ptr<PnFluxTimeStepperType> pn_flux_timestepper_;
   std::shared_ptr<RhsTimeStepperType> rhs_timestepper_;
   std::shared_ptr<TimeStepperType> timestepper_;
+  std::shared_ptr<PnTimeStepperType> pn_timestepper_;
   std::shared_ptr<const AnalyticalFluxType> flux_;
+  std::shared_ptr<const AnalyticalFluxType> pn_flux_;
   std::shared_ptr<const BoundaryValueType> boundary_values_;
   double t_end_;
   double dt_;
@@ -552,6 +620,7 @@ private:
   bool visualize_solution_;
   std::string file_path_;
   size_t num_save_steps_;
+  size_t linear_;
   double sigma_t_max_;
 };
 
@@ -762,7 +831,7 @@ struct VectorExporter
 // BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(next_n_time_steps_overloads2d, BoltzmannSolver2d::next_n_time_steps, 1, 2)
 // BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(apply_rhs_overloads2d, BoltzmannSolver2d::apply_rhs_operator, 3, 6)
 
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(init_overloads3d, BoltzmannSolver3d::init, 0, 9)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(init_overloads3d, BoltzmannSolver3d::init, 0, 10)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(next_n_time_steps_overloads3d, BoltzmannSolver3d::next_n_time_steps, 1, 2)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(apply_rhs_overloads3d, BoltzmannSolver3d::apply_rhs_operator, 3, 6)
 #include <dune/xt/common/reenable_warnings.hh>
@@ -839,8 +908,10 @@ BOOST_PYTHON_MODULE(libboltzmann)
                                           const double,
                                           const double,
                                           const double,
-                                          const double>>())
+                                          const double,
+                                          const bool>>())
       .def("init", &BoltzmannSolver3d::init, init_overloads3d())
+      .def("linear", &BoltzmannSolver3d::linear)
       .def("solve", &BoltzmannSolver3d::solve)
       .def("next_n_time_steps", &BoltzmannSolver3d::next_n_time_steps, next_n_time_steps_overloads3d())
       .def("reset", &BoltzmannSolver3d::reset)
