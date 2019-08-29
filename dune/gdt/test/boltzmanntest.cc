@@ -43,12 +43,12 @@
 #include <dune/gdt/tools/timestepper/explicit-rungekutta.hh>
 #include <dune/gdt/tools/timestepper/fractional-step.hh>
 #include <dune/gdt/tools/timestepper/matrix-exponential-kinetic-isotropic.hh>
-#include <dune/gdt/momentmodels/basisfunctions.hh>
-#include <dune/gdt/momentmodels/entropyflux.hh>
-#include <dune/gdt/momentmodels/entropysolver.hh>
+#include <dune/gdt/test/momentmodels/basisfunctions.hh>
+#include <dune/gdt/test/momentmodels/entropyflux.hh>
+#include <dune/gdt/test/momentmodels/entropysolver.hh>
 
 #include <dune/gdt/test/momentmodels/kinetictransport/checkerboard.hh>
-#include <dune/gdt/test/pn-discretization.hh>
+#include <dune/gdt/test/momentmodels/pn-discretization.hh>
 
 using namespace Dune::GDT;
 using namespace Dune::XT;
@@ -555,7 +555,7 @@ private:
   double sigma_t_max_;
 };
 
-using BoltzmannSolver2d = BoltzmannSolver<2>;
+// using BoltzmannSolver2d = BoltzmannSolver<2>;
 using BoltzmannSolver3d = BoltzmannSolver<3>;
 
 // Python bindings
@@ -758,9 +758,9 @@ struct VectorExporter
 
 
 #include <dune/xt/common/disable_warnings.hh>
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(init_overloads2d, BoltzmannSolver2d::init, 0, 9)
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(next_n_time_steps_overloads2d, BoltzmannSolver2d::next_n_time_steps, 1, 2)
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(apply_rhs_overloads2d, BoltzmannSolver2d::apply_rhs_operator, 3, 6)
+// BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(init_overloads2d, BoltzmannSolver2d::init, 0, 9)
+// BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(next_n_time_steps_overloads2d, BoltzmannSolver2d::next_n_time_steps, 1, 2)
+// BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(apply_rhs_overloads2d, BoltzmannSolver2d::apply_rhs_operator, 3, 6)
 
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(init_overloads3d, BoltzmannSolver3d::init, 0, 9)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(next_n_time_steps_overloads3d, BoltzmannSolver3d::next_n_time_steps, 1, 2)
@@ -770,8 +770,9 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(apply_rhs_overloads3d, BoltzmannSolver3d:
 
 BOOST_PYTHON_MODULE(libboltzmann)
 {
-  typedef typename BoltzmannSolver2d::VectorType VectorType;
-  typedef typename BoltzmannSolver2d::RangeFieldType RangeFieldType;
+  typedef typename BoltzmannSolver3d::VectorType VectorType;
+  typedef typename BoltzmannSolver3d::RangeFieldType RangeFieldType;
+#if 0
   // 2d
   VectorType (BoltzmannSolver2d::*apply_rhs_without_params2d)(VectorType, const double) const =
       &BoltzmannSolver2d::apply_rhs_operator;
@@ -816,6 +817,7 @@ BOOST_PYTHON_MODULE(libboltzmann)
   class_<typename BoltzmannSolver2d::SolutionVectorsVectorType>("SolutionVectorsVectorType")
       .def(vector_indexing_suite<typename BoltzmannSolver2d::SolutionVectorsVectorType>())
       .def("size", &BoltzmannSolver2d::SolutionVectorsVectorType::size);
+#endif
 
   // 3d
   VectorType (BoltzmannSolver3d::*apply_rhs_without_params3d)(VectorType, const double) const =
@@ -861,9 +863,11 @@ BOOST_PYTHON_MODULE(libboltzmann)
   VectorExporter<typename LA::CommonDenseVector<double>>::export_("CommonDenseVector");
 
   iterable_converter().from_python<std::vector<double>>();
+  iterable_converter().from_python<std::vector<LA::CommonDenseVector<double>>>();
   iterable_converter().from_python<std::vector<size_t>>();
 
   std_vector_to_python_converter<double>();
+  std_vector_to_python_converter<LA::CommonDenseVector<double>>();
   std_vector_to_python_converter<size_t>();
 }
 

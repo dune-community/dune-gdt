@@ -11,3 +11,6 @@
 # ~~~
 
 set(DUNE_GRID_EXPERIMENTAL_GRID_EXTENSIONS TRUE)
+
+# find_package(PythonLibs 3) dune_register_package_flags(LIBRARIES ${PYTHON_LIBRARIES} INCLUDE_DIRS
+# ${PYTHON_INCLUDE_DIRS})
