@@ -163,7 +163,7 @@ public:
   using R = RangeFieldImp;
 
   using DomainFieldType = DomainFieldImp;
-  using DomainType = XT::Common::FieldVector<DomainFieldType, dimDomain>;
+  using DomainType = FieldVector<DomainFieldType, dimDomain>;
   using RangeFieldType = RangeFieldImp;
   using MatrixType = DynamicMatrix<RangeFieldType>;
   using RangeType = typename XT::Functions::RangeTypeSelector<RangeFieldType, dimRange, dimRangeCols>::type;
