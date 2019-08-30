@@ -684,17 +684,17 @@ public:
   {
 #if HAVE_MKL
     XT::Common::Cblas::dgemv(XT::Common::Cblas::row_major(),
-                            XT::Common::Cblas::no_trans(),
-                            static_cast<int>(quad_points_.size()),
-                            basis_dimRange,
-                            1.,
-                            M.data(),
-                            matrix_num_cols,
-                            &(beta_in[0]),
-                            1,
-                            0.,
-                            scalar_products.data(),
-                            1);
+                             XT::Common::Cblas::no_trans(),
+                             static_cast<int>(quad_points_.size()),
+                             basis_dimRange,
+                             1.,
+                             M.data(),
+                             matrix_num_cols,
+                             &(beta_in[0]),
+                             1,
+                             0.,
+                             scalar_products.data(),
+                             1);
 #else
     const size_t num_quad_points = quad_points_.size();
     for (size_t ll = 0; ll < num_quad_points; ++ll) {
@@ -858,17 +858,17 @@ public:
     copy_transposed(T_k, *T_k_trans);
     assert(quad_points_.size() < std::numeric_limits<int>::max());
     XT::Common::Cblas::dtrsm(XT::Common::Cblas::row_major(),
-                            XT::Common::Cblas::right(),
-                            XT::Common::Cblas::upper(),
-                            XT::Common::Cblas::no_trans(),
-                            XT::Common::Cblas::non_unit(),
-                            static_cast<int>(quad_points_.size()),
-                            basis_dimRange,
-                            1.,
-                            &((*T_k_trans)[0][0]),
-                            basis_dimRange,
-                            M.data(),
-                            matrix_num_cols);
+                             XT::Common::Cblas::right(),
+                             XT::Common::Cblas::upper(),
+                             XT::Common::Cblas::no_trans(),
+                             XT::Common::Cblas::non_unit(),
+                             static_cast<int>(quad_points_.size()),
+                             basis_dimRange,
+                             1.,
+                             &((*T_k_trans)[0][0]),
+                             basis_dimRange,
+                             M.data(),
+                             matrix_num_cols);
 #else
     assert(quad_points_.size() == M.rows());
     VectorType tmp_vec, tmp_vec2;
@@ -2189,17 +2189,17 @@ public:
       // CblasTrans
       copy_transposed(T_k, T_k_trans);
       XT::Common::Cblas::dtrsm(XT::Common::Cblas::row_major(),
-                              XT::Common::Cblas::right(),
-                              XT::Common::Cblas::upper(),
-                              XT::Common::Cblas::no_trans(),
-                              XT::Common::Cblas::non_unit(),
-                              static_cast<int>(num_quad_points),
-                              block_size,
-                              1.,
-                              &(T_k_trans[0][0]),
-                              block_size,
-                              M.data(),
-                              block_size);
+                               XT::Common::Cblas::right(),
+                               XT::Common::Cblas::upper(),
+                               XT::Common::Cblas::no_trans(),
+                               XT::Common::Cblas::non_unit(),
+                               static_cast<int>(num_quad_points),
+                               block_size,
+                               1.,
+                               &(T_k_trans[0][0]),
+                               block_size,
+                               M.data(),
+                               block_size);
 #  else
       LocalVectorType tmp_vec, tmp_vec2;
       for (size_t ll = 0; ll < num_quad_points; ++ll) {
