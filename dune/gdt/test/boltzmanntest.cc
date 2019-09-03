@@ -943,6 +943,8 @@ BOOST_PYTHON_MODULE(libboltzmann)
 
 int main(int argc, char* argv[])
 {
+  static const size_t dimDomain = 2;
+  static const bool linear = true;
   try {
     // parse options
     if (argc == 1)
@@ -1063,7 +1065,6 @@ int main(int argc, char* argv[])
     parameterfile << "Gridsize: " << Common::to_string(grid_size) + " x " + Common::to_string(grid_size) << std::endl;
 
     // run solver
-    std::shared_ptr<BoltzmannSolver3d> solver;
     parameterfile << "Domain was composed of two materials, parameters were: " << std::endl
                   << "First material: sigma_s = " + Common::to_string(sigma_s_1)
                          + ", sigma_a = " + Common::to_string(sigma_a_1)
@@ -1072,20 +1073,21 @@ int main(int argc, char* argv[])
                          + ", sigma_a = " + Common::to_string(sigma_a_2)
                   << std::endl;
 
-    solver = std::make_shared<BoltzmannSolver3d>(
+    auto solver = std::make_shared<BoltzmannSolver<dimDomain>>(
         output_dir, num_save_steps, grid_size, visualize, silent, sigma_s_1, sigma_s_2, sigma_a_1, sigma_a_2);
 
     DXTC_TIMINGS.start("solve_all");
-    std::vector<size_t> output_dofs{2728, 3868, 4468, 929};
-    solver->prepare_restricted_operator(output_dofs);
-    using VectorType = typename LA::Container<double, LA::Backends::common_dense>::VectorType;
-    auto initial_vals = solver->get_initial_values();
-    RandomNumberGeneratorType rng{std::random_device()()};
-    std::uniform_real_distribution<double> distribution(1, 1000);
-    for (auto&& val : initial_vals)
-      val *= 1e4 * distribution(rng);
-    auto source_dofs = solver->restricted_op_input_dofs();
-    std::cout << source_dofs << std::endl;
+    if (!linear) {
+      std::vector<size_t> output_dofs{2728, 3868, 4468, 929};
+      solver->prepare_restricted_operator(output_dofs);
+      using VectorType = typename LA::Container<double, LA::Backends::common_dense>::VectorType;
+      auto initial_vals = solver->get_initial_values();
+      RandomNumberGeneratorType rng{std::random_device()()};
+      std::uniform_real_distribution<double> distribution(1, 1000);
+      for (auto&& val : initial_vals)
+        val *= 1e4 * distribution(rng);
+      auto source_dofs = solver->restricted_op_input_dofs();
+      std::cout << source_dofs << std::endl;
 #if 0
     VectorType initial_vals_restr{
         3.00887845e-05, 7.40090567e-05, 7.40090567e-05, 3.00887845e-05, 1.00000000e-08, 3.39443780e-04, 1.00000000e-08,
@@ -1113,18 +1115,19 @@ int main(int argc, char* argv[])
         1.00000000e-08, 1.00000000e-08, 1.20284294e-04, 1.00000000e-08, 1.20284294e-04, 1.00000000e-08, 1.00000000e-08,
         1.00000000e-08, 3.00887845e-05, 7.40090567e-05, 3.00887845e-05, 7.40090567e-05, 3.39443780e-04, 1.00000000e-08};
 #endif
-    VectorType initial_vals_restr(source_dofs.size());
-    for (size_t kk = 0; kk < source_dofs.size(); ++kk)
-      initial_vals_restr[kk] = initial_vals[source_dofs[kk]];
-    auto output1 = solver->apply_restricted_kinetic_operator(initial_vals_restr);
-    // for (size_t ii = 0; ii < 1000; ++ii) {
-    const size_t ii = 0;
-    const auto actual_initial_vals = initial_vals_restr * ii / 1000.;
-    output1 = solver->apply_restricted_kinetic_operator(actual_initial_vals);
-    // }
-    auto output2 = solver->apply_kinetic_operator(initial_vals, 0, solver->time_step_length());
-    for (size_t kk = 0; kk < output_dofs.size(); ++kk)
-      EXPECT_NEAR(output1[kk], output2[output_dofs[kk]], 1e-10);
+      VectorType initial_vals_restr(source_dofs.size());
+      for (size_t kk = 0; kk < source_dofs.size(); ++kk)
+        initial_vals_restr[kk] = initial_vals[source_dofs[kk]];
+      auto output1 = solver->apply_restricted_kinetic_operator(initial_vals_restr);
+      // for (size_t ii = 0; ii < 1000; ++ii) {
+      const size_t ii = 0;
+      const auto actual_initial_vals = initial_vals_restr * ii / 1000.;
+      output1 = solver->apply_restricted_kinetic_operator(actual_initial_vals);
+      // }
+      auto output2 = solver->apply_kinetic_operator(initial_vals, 0, solver->time_step_length());
+      for (size_t kk = 0; kk < output_dofs.size(); ++kk)
+        EXPECT_NEAR(output1[kk], output2[output_dofs[kk]], 1e-10);
+    }
     const auto result = solver->solve();
     std::cout << " Result = " << std::accumulate(result.back().begin(), result.back().end(), 0.) << std::endl;
     DXTC_TIMINGS.stop("solve_all");
