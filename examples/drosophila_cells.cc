@@ -320,8 +320,53 @@ struct StokesSolver
     thread_local std::vector<std::unique_ptr<LocalDiscreteFunctionType>> phinat_local_(num_cells);
     thread_local std::vector<std::unique_ptr<VectorLocalDiscreteFunctionType>> P_local_(num_cells);
     thread_local std::vector<std::unique_ptr<VectorLocalDiscreteFunctionType>> Pnat_local_(num_cells);
-    XT::Functions::GenericGridFunction<E, d> f(
-        /*order = */ 3 * u_.space().max_polorder(),
+
+    f_functional.append(LocalElementIntegralFunctional<E, d>(
+        /*order*/ [& P_space_ = P_[0].space()](
+                      const auto& test_basis,
+                      const auto& param) { return 3 * P_space_.max_polorder() + test_basis.order(param); },
+        /*evaluate_func*/
+        [Fa_inv, xi](const auto& test_basis,
+                     const DomainType& x_local,
+                     DynamicVector<R>& result,
+                     const XT::Common::Parameter& param) {
+          const size_t sz = test_basis.size(param);
+          if (result.size() < sz)
+            result.resize(sz);
+          std::fill(result.begin(), result.end(), 0.);
+          using TestBasisType = typename LocalElementIntegralFunctional<E, d>::GenericIntegrand::LocalBasisType;
+          thread_local std::vector<typename TestBasisType::RangeType> test_basis_values_;
+          thread_local std::vector<typename TestBasisType::DerivativeRangeType> test_basis_grads_;
+          test_basis.evaluate(x_local, test_basis_values_, param);
+          test_basis.jacobians(x_local, test_basis_grads_, param);
+
+          // evaluate P, Pnat, phi, phinat, \nabla P, \nabla Pnat, \nabla phi, div P, div Pnat and phi_tilde = (phi +
+          // 1)/2 return type of the jacobians is a FieldMatrix<r, d>
+          const size_t num_cells = P_local_.size();
+          for (size_t kk = 0; kk < num_cells; ++kk) {
+            const auto P = P_local_[kk]->evaluate(x_local, param);
+            const auto Pnat = Pnat_local_[kk]->evaluate(x_local, param);
+            const auto phi = phi_local_[kk]->evaluate(x_local, param)[0];
+            const auto phinat = phinat_local_[kk]->evaluate(x_local, param)[0];
+            const auto grad_P = P_local_[kk]->jacobian(x_local, param);
+            const auto grad_phi = phi_local_[kk]->jacobian(x_local, param)[0];
+            const auto phi_tilde = (phi + 1.) / 2.;
+
+            // evaluate rhs terms
+            const auto phinat_grad_phi = grad_phi * phinat;
+            auto grad_P_T_times_Pnat = P;
+            grad_P.mtv(Pnat, grad_P_T_times_Pnat);
+            for (size_t ii = 0; ii < sz; ++ii) {
+              for (size_t mm = 0; mm < d; ++mm) {
+                result[ii] += (phinat_grad_phi[mm] + grad_P_T_times_Pnat[mm]) * test_basis_values_[ii][mm];
+                for (size_t nn = 0; nn < d; ++nn)
+                  result[ii] += (-Fa_inv * phi_tilde * P[mm] * P[nn] - 0.5 * (xi + 1) * Pnat[mm] * P[nn]
+                                 - 0.5 * (xi - 1) * P[mm] * Pnat[nn])
+                                * test_basis_grads_[ii][mm][nn];
+              } // mm
+            } // ii
+          } // kk
+        },
         /*post_bind_func*/
         [& phi_ = phi_, &phinat_ = phinat_, &P_ = P_, &Pnat_ = Pnat_](const E& element) {
           for (size_t kk = 0; kk < P_.size(); ++kk) {
@@ -337,57 +382,8 @@ struct StokesSolver
             Pnat_local_[kk]->bind(element);
             phi_local_[kk]->bind(element);
             phinat_local_[kk]->bind(element);
-          }
-        },
-        /*evaluate_func*/
-        [Fa_inv, xi](const DomainType& x_local, const XT::Common::Parameter& param) {
-          // evaluate P, Pnat, phi, phinat, \nabla P, \nabla Pnat, \nabla phi, div P, div Pnat and phi_tilde = (phi +
-          // 1)/2 return type of the jacobians is a FieldMatrix<r, d>
-          XT::Common::FieldVector<R, d> ret = 0.;
-          const size_t num_cells = P_local_.size();
-          for (size_t kk = 0; kk < num_cells; ++kk) {
-            const auto P = P_local_[kk]->evaluate(x_local, param);
-            const auto Pnat = Pnat_local_[kk]->evaluate(x_local, param);
-            const auto phi = phi_local_[kk]->evaluate(x_local, param)[0];
-            const auto phinat = phinat_local_[kk]->evaluate(x_local, param)[0];
-            const auto grad_P = P_local_[kk]->jacobian(x_local, param);
-            const auto grad_Pnat = Pnat_local_[kk]->jacobian(x_local, param);
-            const auto grad_phi = phi_local_[kk]->jacobian(x_local, param)[0];
-            R div_P(0.), div_Pnat(0.);
-            for (size_t ii = 0; ii < d; ++ii) {
-              div_P += grad_P[ii][ii];
-              div_Pnat += grad_Pnat[ii][ii];
-            }
-            const auto phi_tilde = (phi + 1.) / 2.;
-
-            // evaluate rhs terms
-            const auto Fa_inv_times_P_otimes_P_times_grad_phi_tilde = P * ((P * grad_phi) * Fa_inv * 0.5);
-            auto grad_P_times_P = P;
-            grad_P.mv(P, grad_P_times_P);
-            const auto Fa_inv_times_phi_tilde_times_grad_P_times_P = grad_P_times_P * (phi_tilde * Fa_inv);
-            const auto Fa_inv_times_phi_tilde_times_P_times_div_P = P * (div_P * phi_tilde * Fa_inv);
-            const auto xi_plus = (xi + 1.) / 2.;
-            const auto xi_minus = (xi - 1.) / 2.;
-            auto grad_Pnat_times_P = P;
-            grad_Pnat.mv(P, grad_Pnat_times_P);
-            const auto xi_plus_times_grad_Pnat_times_P = grad_Pnat_times_P * xi_plus;
-            const auto xi_plus_times_Pnat_times_div_P = Pnat * (div_P * xi_plus);
-            auto grad_P_times_Pnat = P;
-            grad_P.mv(Pnat, grad_P_times_Pnat);
-            const auto phinat_grad_phi = grad_phi * phinat;
-            const auto xi_minus_times_grad_P_times_Pnat = grad_P_times_Pnat * xi_minus;
-            const auto xi_minus_times_P_times_div_Pnat = P * (div_Pnat * xi_minus);
-            auto grad_P_T_times_Pnat = P;
-            grad_P.mtv(Pnat, grad_P_T_times_Pnat);
-            ret += Fa_inv_times_P_otimes_P_times_grad_phi_tilde + Fa_inv_times_phi_tilde_times_grad_P_times_P
-                   + Fa_inv_times_phi_tilde_times_P_times_div_P + xi_plus_times_grad_Pnat_times_P
-                   + xi_plus_times_Pnat_times_div_P + xi_minus_times_grad_P_times_Pnat + xi_minus_times_P_times_div_Pnat
-                   + phinat_grad_phi + grad_P_T_times_Pnat;
           } // kk
-          return ret;
-        });
-    f_functional.append(LocalElementIntegralFunctional<E, d>(
-        local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E, d>(1.), f)));
+        }));
     A_operator_.clear();
     A_operator_.append(f_functional);
     f_vector_ *= 0.;
