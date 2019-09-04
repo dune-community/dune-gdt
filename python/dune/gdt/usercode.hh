@@ -136,6 +136,7 @@ double diameter(const CouplingIntersectionWithCorrectNormal<C, I>& intersection)
 #include <dune/gdt/local/integrands/ipdg.hh>
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/operators/matrix-based.hh>
+#include <dune/gdt/prolongations.hh>
 #include <dune/gdt/tools/dirichlet-constraints.hh>
 #include <dune/gdt/tools/grid-quality-estimates.hh>
 #include <dune/gdt/spaces/interface.hh>
@@ -298,6 +299,16 @@ public:
       }
     }
   } // ... ContinuousLagrangePartitionOfUnity(...)
+
+  DomainDecomposition& domain_decomposition()
+  {
+    return dd_;
+  }
+
+  const SpaceInterface<GV>& space() const
+  {
+    return *space_;
+  }
 
   size_t size() const
   {
@@ -950,6 +961,110 @@ std::unique_ptr<M> assemble_boundary_product_contributions(const double& penalty
   DUNE_THROW_IF(!subdomain_matrix, XT::Common::Exceptions::index_out_of_range, "ss = " << ss);
   return subdomain_matrix;
 } // ... assemble_boundary_product_contributions(...)
+
+std::vector<V> interpolate_pou(PartitionOfUnityBase& pou,
+                               DomainDecomposition& dd,
+                               const size_t ss,
+                               const std::string& space_type,
+                               const bool clean_up_since_grids_match)
+{
+  // find the subdomain and create the space
+  DUNE_THROW_IF(ss >= dd.dd_grid.num_subdomains(),
+                XT::Common::Exceptions::index_out_of_range,
+                "ss = " << ss << "\n   dd.dd_grid.num_subdomains() = " << dd.dd_grid.num_subdomains());
+  std::vector<V> interpolated_pou;
+  auto pou_basis = pou.space().basis().localize();
+  for (auto&& interpolation_subdomain : elements(dd.dd_grid.macro_grid_view())) {
+    if (dd.dd_grid.subdomain(interpolation_subdomain) == ss) {
+      // this is the subdomain we are interested in, create space
+      auto interpolation_grid_view = dd.dd_grid.local_grid(interpolation_subdomain).leaf_view();
+      auto interpolation_space = make_subdomain_space(interpolation_grid_view, space_type);
+      // walk over all pou subdomains in the support of the interpolation subdomain
+      for (auto&& pou_subdomain : elements(pou.domain_decomposition().dd_grid.macro_grid_view())) {
+        bool contained_in_interpolation_subdomain = false;
+        for (auto&& ii : XT::Common::value_range(pou_subdomain.geometry().corners())) {
+          auto corner_in_physical_coordinates = pou_subdomain.geometry().corner(ii);
+          auto corner_in_interpolation_subdomain_coordinates =
+              interpolation_subdomain.geometry().local(corner_in_physical_coordinates);
+          if (XT::Grid::reference_element(interpolation_subdomain)
+                  .checkInside(corner_in_interpolation_subdomain_coordinates)) {
+            contained_in_interpolation_subdomain = true;
+            break;
+          }
+        }
+        if (contained_in_interpolation_subdomain) {
+          pou_basis->bind(pou_subdomain);
+          //          /// BEGIN
+          //          using XT::Common::to_string;
+          //          auto pou_subdomain_grid_view =
+          //          pou.domain_decomposition().dd_grid.local_grid(pou_subdomain).leaf_view(); auto pou_subdomain_space
+          //          = make_subdomain_space(pou_subdomain_grid_view, space_type); auto pou_ss =
+          //          pou.domain_decomposition().dd_grid.subdomain(pou_subdomain); auto pou_vecs =
+          //          pou.on_subdomain(pou_ss, space_type); for (size_t ii = 0; ii < pou_vecs.size(); ++ii)
+          //            make_discrete_function(
+          //                *pou_subdomain_space, pou_vecs[ii], "pou_subdomain_" + to_string(pou_ss) + "_func_" +
+          //                to_string(ii)) .visualize("pou_subdomain_" + to_string(pou_ss) + "_func_" + to_string(ii));
+          //          /// END
+          std::vector<V> pou_interpolated_on_pou_subdomain;
+          for (size_t ii = 0; ii < pou_basis->size(); ++ii) { // Basically a copy of pou.onsubdomain(), what to do /:
+            pou_interpolated_on_pou_subdomain.emplace_back(
+                default_interpolation<V>(pou_basis->order(),
+                                         [&](const auto& point_in_physical_coordinates, const auto&) {
+                                           const auto point_in_pou_subdomain_reference_element_coordinates =
+                                               pou_subdomain.geometry().local(point_in_physical_coordinates);
+                                           FieldVector<double, 1> ret(0.);
+                                           if (XT::Grid::reference_element(pou_subdomain)
+                                                   .checkInside(point_in_pou_subdomain_reference_element_coordinates))
+                                             ret = pou_basis->evaluate_set(
+                                                 point_in_pou_subdomain_reference_element_coordinates)[ii];
+                                           else
+                                             ret *= 0.;
+                                           return ret;
+                                         },
+                                         *interpolation_space)
+                    .dofs()
+                    .vector());
+            if (clean_up_since_grids_match) {
+              // If the grids match exactly we get the wrong interpolation since we are looking for global coordinates
+              // and thus hit the vertices exactly, which lets the search find wrong entities to interpolate onto.
+              std::set<size_t> DoFs_to_clear;
+              for (auto&& interpolation_element : elements(interpolation_grid_view)) {
+                auto center_in_physical_coordinates = interpolation_element.geometry().center();
+                auto center_in_pou_subdomain_reference_element_coordinates =
+                    pou_subdomain.geometry().local(center_in_physical_coordinates);
+                if (!XT::Grid::reference_element(pou_subdomain)
+                         .checkInside(center_in_pou_subdomain_reference_element_coordinates)) {
+                  // checkin the center is enough to known that the whole element is not contained in pou_subdomain,
+                  // since the grids match
+                  for (auto&& DoF : interpolation_space->mapper().global_indices(interpolation_element))
+                    DoFs_to_clear.insert(DoF);
+                }
+              }
+              for (const size_t& DoF_to_clear : DoFs_to_clear)
+                for (auto& vec : pou_interpolated_on_pou_subdomain)
+                  vec[DoF_to_clear] *= 0;
+            }
+            for (size_t ii = 0; ii < pou_interpolated_on_pou_subdomain.size(); ++ii) /*{*/
+              //              /// BEGIN
+              //              make_discrete_function(*interpolation_space,
+              //                                     unclean_interpolated_pou[ii],
+              //                                     "pou_subdomain_" + to_string(pou_ss) + "_func_" + to_string(ii))
+              //                  .visualize("pou_subdomain_" + to_string(pou_ss) + "_func_" + to_string(ii)
+              //                             + "_on_interpolation_subdomain_" + to_string(ss));
+
+              //              /// END
+              if (pou_interpolated_on_pou_subdomain[ii].sup_norm() > 1e-15)
+                interpolated_pou.emplace_back(std::move(pou_interpolated_on_pou_subdomain[ii]));
+            /*}*/
+          }
+        }
+      }
+      break;
+    }
+  }
+  DUNE_THROW_IF(interpolated_pou.size() == 0, XT::Common::Exceptions::internal_error, "ss = " << ss);
+  return interpolated_pou;
+} // ... interpolate_pou(...)
 
 
 #endif // PYTHON_DUNE_GDT_USERCODE_HH

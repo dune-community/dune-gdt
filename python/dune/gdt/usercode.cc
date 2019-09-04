@@ -549,4 +549,33 @@ PYBIND11_MODULE(usercode, m)
         py::call_guard<py::gil_scoped_release>(),
         "domain_decomposition"_a,
         "ss"_a);
+
+  m.def("interpolate_pou",
+        [](ContinuousLagrangePartitionOfUnity& pou,
+           DomainDecomposition& dd,
+           const size_t ss,
+           const std::string& space_type,
+           const bool clean_up_since_grids_match) {
+          return interpolate_pou(pou, dd, ss, space_type, clean_up_since_grids_match);
+        },
+        py::call_guard<py::gil_scoped_release>(),
+        "pou"_a,
+        "dd"_a,
+        "ss"_a,
+        "space_type"_a,
+        "clean_up_since_grids_match"_a = false);
+  m.def("interpolate_pou",
+        [](ContinuousFlatTopPartitionOfUnity& pou,
+           DomainDecomposition& dd,
+           const size_t ss,
+           const std::string& space_type,
+           const bool clean_up_since_grids_match) {
+          return interpolate_pou(pou, dd, ss, space_type, clean_up_since_grids_match);
+        },
+        py::call_guard<py::gil_scoped_release>(),
+        "pou"_a,
+        "dd"_a,
+        "ss"_a,
+        "space_type"_a,
+        "clean_up_since_grids_match"_a = false);
 } // PYBIND11_MODULE(usercode, ...)
