@@ -44,10 +44,12 @@ public:
 
   LocalElementIntegralFunctional(typename GenericIntegrand::GenericOrderFunctionType order_function,
                                  typename GenericIntegrand::GenericEvaluateFunctionType evaluate_function,
+                                 typename GenericIntegrand::GenericPostBindFunctionType post_bind_function =
+                                     [](const E&) {},
                                  const XT::Common::ParameterType& param_type = {},
                                  const int over_integrate = 0)
     : BaseType(param_type)
-    , integrand_(GenericIntegrand(order_function, evaluate_function).copy())
+    , integrand_(GenericIntegrand(order_function, evaluate_function, post_bind_function).copy())
     , over_integrate_(over_integrate)
   {}
 
@@ -123,10 +125,12 @@ public:
 
   LocalIntersectionIntegralFunctional(typename GenericIntegrand::GenericOrderFunctionType order_function,
                                       typename GenericIntegrand::GenericEvaluateFunctionType evaluate_function,
+                                      typename GenericIntegrand::GenericPostBindFunctionType post_bind_function =
+                                          [](const I&) {},
                                       const XT::Common::ParameterType& param_type = {},
                                       const int over_integrate = 0)
     : BaseType(param_type)
-    , integrand_(GenericIntegrand(order_function, evaluate_function).copy())
+    , integrand_(GenericIntegrand(order_function, evaluate_function, post_bind_function).copy())
     , over_integrate_(over_integrate)
   {}
 
