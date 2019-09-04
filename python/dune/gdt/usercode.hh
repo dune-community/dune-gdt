@@ -193,7 +193,7 @@ public:
     , local_spaces_(dd_grid.num_subdomains(), nullptr)
     , local_discrete_functions_(dd_grid.num_subdomains(), nullptr)
   {
-    DUNE_THROW_IF(XT::Common::FloatCmp::lt(ll, XT::Common::FieldVector<double, d>{0.}),
+    DUNE_THROW_IF(XT::Common::FloatCmp::lt(ll, XT::Common::FieldVector<double, d>(0.)),
                   XT::Common::Exceptions::wrong_input_given,
                   "The GridGlue is known to fail for negative coordinates!");
   }
@@ -633,7 +633,6 @@ assemble_coupling_matrices(const XT::Functions::GridFunctionInterface<E>& diffus
             using MacroI = std::decay_t<decltype(macro_intersection)>;
             using CouplingI = typename DomainDecomposition::DdGridType::GlueType::Intersection;
             using I = CouplingIntersectionWithCorrectNormal<CouplingI, MacroI>;
-            using E = typename I::InsideEntity;
             const LocalIntersectionIntegralBilinearForm<I> intersection_bilinear_form(
                 LocalLaplaceIPDGIntegrands::InnerCoupling<I>(
                     /*symmetric=*/1., diffusion, weight)
@@ -708,8 +707,6 @@ std::unique_ptr<M> assemble_boundary_matrix(const XT::Functions::GridFunctionInt
     if (domain_decomposition.dd_grid.subdomain(macro_element) == ss) {
       // this is the subdomain we are interested in, create space
       auto subdomain_grid_view = domain_decomposition.dd_grid.local_grid(macro_element).leaf_view();
-      using GV = decltype(subdomain_grid_view);
-      using E = typename GV::template Codim<0>::Entity;
       using I = typename GV::Intersection;
       auto subdomain_space = make_subdomain_space(subdomain_grid_view, space_type);
       const MacroGridBasedBoundaryInfo<MGV, GV> subdomain_boundary_info(
@@ -746,8 +743,6 @@ std::unique_ptr<M> assemble_local_product_contributions(const double& penalty,
     if (domain_decomposition.dd_grid.subdomain(macro_element) == ss) {
       // this is the subdomain we are interested in, create space
       auto subdomain_grid_view = domain_decomposition.dd_grid.local_grid(macro_element).leaf_view();
-      using GV = decltype(subdomain_grid_view);
-      using E = typename GV::template Codim<0>::Entity;
       using I = typename GV::Intersection;
       auto subdomain_space = make_subdomain_space(subdomain_grid_view, space_type);
       // create operator
@@ -866,7 +861,6 @@ assemble_coupling_product_contributions(const double& penalty,
             using MacroI = std::decay_t<decltype(macro_intersection)>;
             using CouplingI = typename DomainDecomposition::DdGridType::GlueType::Intersection;
             using I = CouplingIntersectionWithCorrectNormal<CouplingI, MacroI>;
-            using E = typename I::InsideEntity;
             const LocalIntersectionIntegralBilinearForm<I> intersection_bilinear_form(
                 LocalIPDGIntegrands::InnerPenalty<I>(penalty, weight));
             for (auto coupling_intersection_it = coupling.template ibegin<0>();
@@ -937,7 +931,6 @@ std::unique_ptr<M> assemble_boundary_product_contributions(const double& penalty
     if (domain_decomposition.dd_grid.subdomain(macro_element) == ss) {
       // this is the subdomain we are interested in, create space
       auto subdomain_grid_view = domain_decomposition.dd_grid.local_grid(macro_element).leaf_view();
-      using GV = decltype(subdomain_grid_view);
       using I = typename GV::Intersection;
       auto subdomain_space = make_subdomain_space(subdomain_grid_view, space_type);
       const MacroGridBasedBoundaryInfo<MGV, GV> subdomain_boundary_info(
