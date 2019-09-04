@@ -26,7 +26,7 @@ namespace GDT {
  */
 template <class TargetElement, class SGV, size_t r, size_t rC, class R, class V>
 XT::Functions::ReinterpretLocalizableFunction<SGV, TargetElement, r, rC, R>
-reinterpret(const DiscreteFunction<V, SGV, r, rC, R>& source)
+reinterpret(const ConstDiscreteFunction<V, SGV, r, rC, R>& source)
 {
   return XT::Functions::ReinterpretLocalizableFunction<SGV, TargetElement, r, rC, R>(source,
                                                                                      source.space().grid_view());
@@ -41,7 +41,8 @@ template <class SGV, size_t r, size_t rC, class R, class V, class TargetGridView
 std::enable_if_t<
     XT::Grid::is_layer<TargetGridView>::value,
     XT::Functions::ReinterpretLocalizableFunction<SGV, XT::Grid::extract_entity_t<TargetGridView>, r, rC, R>>
-reinterpret(const DiscreteFunction<V, SGV, r, rC, R>& source, const TargetGridView& /*target_grid_view*/)
+reinterpret(const ConstDiscreteFunction<V, SGV, r, rC, R>& source,
+            const TargetGridView& /*target_grid_view_only_here_for_the_type_deduction*/)
 {
   return XT::Functions::ReinterpretLocalizableFunction<SGV, XT::Grid::extract_entity_t<TargetGridView>, r, rC, R>(
       source, source.space().grid_view());
