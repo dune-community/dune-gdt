@@ -46,7 +46,7 @@ namespace GDT {
 template <class SV, class SGV, size_t r, size_t rC, class SR, class TV, class TGV, class TR, class PGV>
 std::enable_if_t<std::is_same<XT::Grid::extract_entity_t<TGV>, typename PGV::Grid::template Codim<0>::Entity>::value,
                  void>
-prolong(const DiscreteFunction<SV, SGV, r, rC, SR>& source,
+prolong(const ConstDiscreteFunction<SV, SGV, r, rC, SR>& source,
         DiscreteFunction<TV, TGV, r, rC, TR>& target,
         const GridView<PGV>& prolongation_grid_view)
 {
@@ -59,7 +59,7 @@ prolong(const DiscreteFunction<SV, SGV, r, rC, SR>& source,
  *        target.space().grid_view() as prolongation_grid_view].
  */
 template <class SV, class SGV, size_t r, size_t rC, class SR, class TV, class TGV, class TR>
-void prolong(const DiscreteFunction<SV, SGV, r, rC, SR>& source, DiscreteFunction<TV, TGV, r, rC, TR>& target)
+void prolong(const ConstDiscreteFunction<SV, SGV, r, rC, SR>& source, DiscreteFunction<TV, TGV, r, rC, TR>& target)
 {
   prolong(source, target, target.space().grid_view());
 }
@@ -79,7 +79,7 @@ std::enable_if_t<
     XT::LA::is_vector<TargetVectorType>::value
         && std::is_same<XT::Grid::extract_entity_t<TGV>, typename PGV::Grid::template Codim<0>::Entity>::value,
     DiscreteFunction<TargetVectorType, TGV, r, rC, TR>>
-prolong(const DiscreteFunction<SV, SGV, r, rC, SR>& source,
+prolong(const ConstDiscreteFunction<SV, SGV, r, rC, SR>& source,
         const SpaceInterface<TGV, r, rC, TR>& target_space,
         const GridView<PGV>& prolongation_grid_view)
 {
@@ -101,7 +101,7 @@ auto target_function = prolong<TargetVectorType>(source, target_space);
  */
 template <class TargetVectorType, class SV, class SGV, size_t r, size_t rC, class SR, class TGV, class TR>
 std::enable_if_t<XT::LA::is_vector<TargetVectorType>::value, DiscreteFunction<TargetVectorType, TGV, r, rC, TR>>
-prolong(const DiscreteFunction<SV, SGV, r, rC, SR>& source, const SpaceInterface<TGV, r, rC, TR>& target_space)
+prolong(const ConstDiscreteFunction<SV, SGV, r, rC, SR>& source, const SpaceInterface<TGV, r, rC, TR>& target_space)
 {
   auto target_function = make_discrete_function<TargetVectorType>(target_space);
   prolong(source, target_function);
@@ -116,7 +116,7 @@ prolong(const DiscreteFunction<SV, SGV, r, rC, SR>& source, const SpaceInterface
 template <class V, class SGV, size_t r, size_t rC, class SR, class TGV, class TR, class PGV>
 std::enable_if_t<std::is_same<XT::Grid::extract_entity_t<TGV>, typename PGV::Grid::template Codim<0>::Entity>::value,
                  DiscreteFunction<V, TGV, r, rC, TR>>
-prolong(const DiscreteFunction<V, SGV, r, rC, SR>& source,
+prolong(const ConstDiscreteFunction<V, SGV, r, rC, SR>& source,
         const SpaceInterface<TGV, r, rC, TR>& target_space,
         const GridView<PGV>& prolongation_grid_view)
 {
@@ -134,7 +134,7 @@ prolong(const DiscreteFunction<V, SGV, r, rC, SR>& source,
 // we require the enable_if for disambigouation with a variant above
 template <class SGV, class V, size_t r, size_t rC, class SR, class TGV, class TR>
 std::enable_if_t<!XT::LA::is_vector<SGV>::value, DiscreteFunction<V, TGV, r, rC, TR>>
-prolong(const DiscreteFunction<V, SGV, r, rC, SR>& source, const SpaceInterface<TGV, r, rC, TR>& target_space)
+prolong(const ConstDiscreteFunction<V, SGV, r, rC, SR>& source, const SpaceInterface<TGV, r, rC, TR>& target_space)
 {
   auto target_function = make_discrete_function<V>(target_space);
   prolong(source, target_function);
