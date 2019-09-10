@@ -15,6 +15,9 @@
 # set up project
 project("dune-gdt" CXX)
 
+set(BUILD_SHARED_LIBS 1)
+set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
+
 cmake_minimum_required(VERSION 3.1)
 
 if(NOT (dune-common_DIR OR dune-common_ROOT OR "${CMAKE_PREFIX_PATH}" MATCHES ".*dune-common.*"))
