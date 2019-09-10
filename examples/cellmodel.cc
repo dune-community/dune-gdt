@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
     std::cout << "Ca: " << Ca << ", Be: " << Be << ", Pa: " << Pa << ", Fa: " << Fa << ", Re: " << Re << std::endl;
 
     // output
-    std::string filename = config.get("output.filename", "drosophila") + (linearize ? "_linearized" : "");
+    std::string filename = config.get("output.filename", "cellmodel") + (linearize ? "_linearized" : "");
     bool subsampling = config.get<bool>("output.subsampling", true);
     // a negative value of write step is interpreted as "write all steps"
     double write_step = config.template get<double>("output.write_step", -1.);
