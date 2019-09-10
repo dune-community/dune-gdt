@@ -10,6 +10,8 @@
 #   René Fritze     (2017 - 2018)
 # ~~~
 
+.vscode
+tags
 *.user
 *Makefile
 *Makefile.in
