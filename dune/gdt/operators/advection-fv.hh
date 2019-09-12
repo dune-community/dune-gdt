@@ -36,11 +36,11 @@ namespace GDT {
  *
  * \sa OperatorInterface
  */
-template <class M, class SGV, size_t m = 1, class RGV = SGV>
-class AdvectionFvOperator : public OperatorInterface<M, SGV, m, 1, m, 1, RGV>
+template <class M, class AGV, size_t m = 1, class RGV = AGV, class SGV = AGV>
+class AdvectionFvOperator : public LocalizableOperator<M, AGV, m, 1, m, 1, RGV, SGV>
 {
-  using ThisType = AdvectionFvOperator<M, SGV, m, RGV>;
-  using BaseType = OperatorInterface<M, SGV, m, 1, m, 1, RGV>;
+  using ThisType = AdvectionFvOperator<M, AGV, m, RGV, SGV>;
+  using BaseType = LocalizableOperator<M, AGV, m, 1, m, 1, RGV, SGV>;
 
 public:
   using typename BaseType::F;
@@ -64,30 +64,25 @@ public:
       const SourceSpaceType& source_space,
       const RangeSpaceType& range_space,
       const XT::Grid::IntersectionFilter<SGV>& periodicity_exception = XT::Grid::ApplyOn::NoIntersections<SGV>())
-    : BaseType(numerical_flux.parameter_type())
-    , assembly_grid_view_(assembly_grid_view)
+    : BaseType(assembly_grid_view, source_space, range_space)
     , numerical_flux_(numerical_flux.copy())
-    , source_space_(source_space)
-    , range_space_(range_space)
     , periodicity_exception_(periodicity_exception.copy())
+  {
+    // contributions from inner intersections
+    this->append(LocalAdvectionFvCouplingOperator<I, V, SGV, m, F, F, RGV, V>(*numerical_flux_),
+                 XT::Grid::ApplyOn::InnerIntersectionsOnce<SGV>());
+    // contributions from periodic boundaries
+    this->append(LocalAdvectionFvCouplingOperator<I, V, SGV, m, F, F, RGV, V>(*numerical_flux_),
+                 *(XT::Grid::ApplyOn::PeriodicBoundaryIntersectionsOnce<SGV>() && !(*periodicity_exception_)));
+  }
+
+  AdvectionFvOperator(ThisType&& source)
+    : BaseType(std::move(source))
+    , numerical_flux_(std::move(source.numerical_flux_))
+    , periodicity_exception_(std::move(source.periodicity_exception_))
   {}
 
-  AdvectionFvOperator(ThisType&& source) = default;
-
-  bool linear() const override final
-  {
-    return numerical_flux_->linear();
-  }
-
-  const SourceSpaceType& source_space() const override final
-  {
-    return source_space_;
-  }
-
-  const RangeSpaceType& range_space() const override final
-  {
-    return range_space_;
-  }
+  using BaseType::append;
 
   /// \name Non-periodic boundary treatment
   /// \{
@@ -97,12 +92,9 @@ public:
          const XT::Common::ParameterType& boundary_treatment_parameter_type = {},
          const XT::Grid::IntersectionFilter<SGV>& filter = XT::Grid::ApplyOn::BoundaryIntersections<SGV>())
   {
-    boundary_treatments_by_custom_numerical_flux_.emplace_back();
-    boundary_treatments_by_custom_numerical_flux_.back().first =
-        std::make_unique<BoundaryTreatmentByCustomNumericalFluxOperatorType>(numerical_boundary_treatment_flux,
-                                                                             boundary_treatment_parameter_type);
-    boundary_treatments_by_custom_numerical_flux_.back().second =
-        std::unique_ptr<XT::Grid::IntersectionFilter<SGV>>(filter.copy());
+    this->append(BoundaryTreatmentByCustomNumericalFluxOperatorType(numerical_boundary_treatment_flux,
+                                                                    boundary_treatment_parameter_type),
+                 filter);
     return *this;
   }
 
@@ -110,134 +102,30 @@ public:
                    const XT::Common::ParameterType& extrapolation_parameter_type = {},
                    const XT::Grid::IntersectionFilter<SGV>& filter = XT::Grid::ApplyOn::BoundaryIntersections<SGV>())
   {
-    boundary_treatments_by_custom_extrapolation_.emplace_back();
-    boundary_treatments_by_custom_extrapolation_.back().first =
-        std::make_unique<BoundaryTreatmentByCustomExtrapolationOperatorType>(
-            *numerical_flux_, extrapolation, extrapolation_parameter_type),
-    boundary_treatments_by_custom_extrapolation_.back().second =
-        std::unique_ptr<XT::Grid::IntersectionFilter<SGV>>(filter.copy());
+    this->append(BoundaryTreatmentByCustomExtrapolationOperatorType(
+                     *numerical_flux_, extrapolation, extrapolation_parameter_type),
+                 filter);
     return *this;
   }
 
   /// \}
 
-  using BaseType::apply;
-
-  void apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& param = {}) const override final
-  {
-    // some checks
-    DUNE_THROW_IF(!source.valid(), Exceptions::operator_error, "source contains inf or nan!");
-    DUNE_THROW_IF(!(this->parameter_type() <= param.type()),
-                  Exceptions::operator_error,
-                  "this->parameter_type() = " << this->parameter_type() << "\n   param.type() = " << param.type());
-    range.set_all(0);
-    const auto source_function = make_discrete_function(source_space_, source);
-    auto range_function = make_discrete_function(range_space_, range);
-    // set up the actual operator
-    auto localizable_op = make_localizable_operator(assembly_grid_view_, source_function, range_function);
-    // contributions from inner intersections
-    localizable_op.append(LocalAdvectionFvCouplingOperator<I, V, SGV, m, F, F, RGV, V>(*numerical_flux_),
-                          param,
-                          XT::Grid::ApplyOn::InnerIntersectionsOnce<SGV>());
-    // contributions from periodic boundaries
-    localizable_op.append(LocalAdvectionFvCouplingOperator<I, V, SGV, m, F, F, RGV, V>(*numerical_flux_),
-                          param,
-                          *(XT::Grid::ApplyOn::PeriodicBoundaryIntersectionsOnce<SGV>() && !(*periodicity_exception_)));
-    // contributions from other boundaries by custom numerical flux
-    for (const auto& boundary_treatment : boundary_treatments_by_custom_numerical_flux_) {
-      const auto& boundary_op = *boundary_treatment.first;
-      const auto& filter = *boundary_treatment.second;
-      localizable_op.append(boundary_op, param, filter);
-    }
-    // contributions from other boundaries by custom extrapolation
-    for (const auto& boundary_treatment : boundary_treatments_by_custom_extrapolation_) {
-      const auto& boundary_op = *boundary_treatment.first;
-      const auto& filter = *boundary_treatment.second;
-      localizable_op.append(boundary_op, param, filter);
-    }
-    // do the actual work
-    localizable_op.assemble(/*use_tbb=*/true);
-    DUNE_THROW_IF(!range.valid(), Exceptions::operator_error, "range contains inf or nan!");
-  } // ... apply(...)
-
-  std::vector<std::string> jacobian_options() const override final
-  {
-    return {"finite-differences"};
-  }
-
-  XT::Common::Configuration jacobian_options(const std::string& type) const override final
-  {
-    DUNE_THROW_IF(type != this->jacobian_options().at(0), Exceptions::operator_error, "type = " << type);
-    return {{"type", type}, {"eps", "1e-7"}};
-  }
-
-  using BaseType::jacobian;
-
-  void jacobian(const VectorType& source,
-                MatrixOperatorType& jacobian_op,
-                const XT::Common::Configuration& opts,
-                const XT::Common::Parameter& param = {}) const override final
-  {
-    // some checks
-    DUNE_THROW_IF(!source.valid(), Exceptions::operator_error, "source contains inf or nan!");
-    DUNE_THROW_IF(!(this->parameter_type() <= param.type()),
-                  Exceptions::operator_error,
-                  "this->parameter_type() = " << this->parameter_type() << "\n   param.type() = " << param.type());
-    DUNE_THROW_IF(!opts.has_key("type"), Exceptions::operator_error, opts);
-    DUNE_THROW_IF(opts.get<std::string>("type") != jacobian_options().at(0), Exceptions::operator_error, opts);
-    const auto default_opts = jacobian_options(jacobian_options().at(0));
-    const auto eps = opts.get("eps", default_opts.template get<double>("eps"));
-    const auto parameter = param + XT::Common::Parameter({"finite-difference-jacobians.eps", eps});
-    // append the same local ops with the same filters as in apply() above
-    // contributions from inner intersections
-    jacobian_op.append(LocalAdvectionFvCouplingOperator<I, V, SGV, m, F, F, RGV, V>(*numerical_flux_),
-                       source,
-                       parameter,
-                       XT::Grid::ApplyOn::InnerIntersectionsOnce<SGV>());
-    // contributions from periodic boundaries
-    jacobian_op.append(LocalAdvectionFvCouplingOperator<I, V, SGV, m, F, F, RGV, V>(*numerical_flux_),
-                       source,
-                       parameter,
-                       *(XT::Grid::ApplyOn::PeriodicBoundaryIntersectionsOnce<SGV>() && !(*periodicity_exception_)));
-    // contributions from other boundaries by custom numerical flux
-    for (const auto& boundary_treatment : boundary_treatments_by_custom_numerical_flux_) {
-      const auto& boundary_op = *boundary_treatment.first;
-      const auto& filter = *boundary_treatment.second;
-      jacobian_op.append(boundary_op, source, parameter, filter);
-    }
-    // contributions from other boundaries by custom extrapolation
-    for (const auto& boundary_treatment : boundary_treatments_by_custom_extrapolation_) {
-      const auto& boundary_op = *boundary_treatment.first;
-      const auto& filter = *boundary_treatment.second;
-      jacobian_op.append(boundary_op, source, parameter, filter);
-    }
-  } // ... jacobian(...)
-
 private:
-  const SGV assembly_grid_view_;
   std::unique_ptr<const NumericalFluxType> numerical_flux_;
-  const SourceSpaceType& source_space_;
-  const RangeSpaceType& range_space_;
   std::unique_ptr<XT::Grid::IntersectionFilter<SGV>> periodicity_exception_;
-  std::list<std::pair<std::unique_ptr<BoundaryTreatmentByCustomNumericalFluxOperatorType>,
-                      std::unique_ptr<XT::Grid::IntersectionFilter<SGV>>>>
-      boundary_treatments_by_custom_numerical_flux_;
-  std::list<std::pair<std::unique_ptr<BoundaryTreatmentByCustomExtrapolationOperatorType>,
-                      std::unique_ptr<XT::Grid::IntersectionFilter<SGV>>>>
-      boundary_treatments_by_custom_extrapolation_;
 }; // class AdvectionFvOperator
 
 
-template <class MatrixType, class SGV, size_t m, class F, class RGV>
-std::enable_if_t<XT::LA::is_matrix<MatrixType>::value, AdvectionFvOperator<MatrixType, SGV, m, RGV>>
+template <class MatrixType, class AGV, size_t m, class F, class RGV, class SGV>
+std::enable_if_t<XT::LA::is_matrix<MatrixType>::value, AdvectionFvOperator<MatrixType, AGV, m, RGV, SGV>>
 make_advection_fv_operator(
-    const SGV& assembly_grid_view,
-    const NumericalFluxInterface<XT::Grid::extract_intersection_t<SGV>, SGV::dimension, m, F>& numerical_flux,
+    const AGV& assembly_grid_view,
+    const NumericalFluxInterface<XT::Grid::extract_intersection_t<AGV>, AGV::dimension, m, F>& numerical_flux,
     const SpaceInterface<SGV, m, 1, F>& source_space,
     const SpaceInterface<RGV, m, 1, F>& range_space,
-    const XT::Grid::IntersectionFilter<SGV>& periodicity_exception = XT::Grid::ApplyOn::NoIntersections<SGV>())
+    const XT::Grid::IntersectionFilter<AGV>& periodicity_exception = XT::Grid::ApplyOn::NoIntersections<AGV>())
 {
-  return AdvectionFvOperator<MatrixType, SGV, m, RGV>(
+  return AdvectionFvOperator<MatrixType, AGV, m, RGV, SGV>(
       assembly_grid_view, numerical_flux, source_space, range_space, periodicity_exception);
 }
 
