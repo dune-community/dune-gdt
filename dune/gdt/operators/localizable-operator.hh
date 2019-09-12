@@ -11,6 +11,8 @@
 #ifndef DUNE_GDT_OPERATORS_LOCALIZABLE_OPERATOR_HH
 #define DUNE_GDT_OPERATORS_LOCALIZABLE_OPERATOR_HH
 
+#include <list>
+
 #include <dune/xt/common/deprecated.hh>
 #include <dune/xt/la/type_traits.hh>
 #include <dune/xt/grid/type_traits.hh>
@@ -21,6 +23,8 @@
 #include <dune/gdt/local/operators/generic.hh>
 #include <dune/gdt/local/operators/interfaces.hh>
 
+#include "interfaces.hh"
+
 namespace Dune {
 namespace GDT {
 
@@ -28,6 +32,8 @@ namespace GDT {
 /**
  * \todo Create LocalizableOperatorApplicator which accepts a GridFunction as source, derive
  *       LocalizableDiscreteOperatorApplicator from LocalizableOperatorApplicator.
+ *
+ * \note Most likely, you want to use LocalizableOperator.
  */
 template <class AssemblyGridView,
           class SourceVector,
@@ -213,6 +219,173 @@ make_localizable_operator_applicator(AGV assembly_grid_view,
   return LocalizableDiscreteOperatorApplicator<AGV, SV, s_r, s_rC, SF, SGV, r_r, r_rC, RF, RGV, RV>(
       assembly_grid_view, source, range);
 }
+
+
+/**
+ * \note See OperatorInterface for a description of the template arguments.
+ *
+ * \sa OperatorInterface
+ */
+template <class M,
+          class AssemblyGridView,
+          size_t s = 1,
+          size_t sC = 1,
+          size_t r = s,
+          size_t rC = sC,
+          class RGV = AssemblyGridView,
+          class SGV = AssemblyGridView>
+class LocalizableOperator : public OperatorInterface<M, SGV, s, sC, r, rC, RGV>
+{
+  static_assert(XT::Grid::is_view<AssemblyGridView>::value, "");
+  using ThisType = LocalizableOperator<M, AssemblyGridView, s, sC, r, rC, RGV, SGV>;
+  using BaseType = OperatorInterface<M, SGV, s, sC, r, rC, RGV>;
+
+public:
+  using AGV = AssemblyGridView;
+  using typename BaseType::F;
+  using typename BaseType::V;
+
+  using I = XT::Grid::extract_intersection_t<SGV>;
+
+  using typename BaseType::MatrixOperatorType;
+  using typename BaseType::RangeSpaceType;
+  using typename BaseType::SourceSpaceType;
+  using typename BaseType::VectorType;
+
+  using LocalElementOperatorType = LocalElementOperatorInterface<V, SGV, s, sC, F, r, rC, F, RGV, V>;
+  using LocalIntersectionOperatorType = LocalIntersectionOperatorInterface<I, V, SGV, s, sC, F, r, rC, F, RGV, V>;
+
+  LocalizableOperator(const AGV& assembly_grid_view,
+                      const SourceSpaceType& source_space,
+                      const RangeSpaceType& range_space)
+    : BaseType()
+    , assembly_grid_view_(assembly_grid_view)
+    , source_space_(source_space)
+    , range_space_(range_space)
+    , linear_(true)
+  {}
+
+  LocalizableOperator(ThisType&& source) = default;
+
+  bool linear() const override final
+  {
+    return linear_;
+  }
+
+  const SourceSpaceType& source_space() const override final
+  {
+    return source_space_;
+  }
+
+  const RangeSpaceType& range_space() const override final
+  {
+    return range_space_;
+  }
+
+  ThisType& append(const LocalElementOperatorType& local_operator,
+                   const XT::Grid::ElementFilter<AGV>& filter = XT::Grid::ApplyOn::AllElements<AGV>())
+  {
+    linear_ = linear_ && local_operator.linear();
+    this->extend_parameter_type(local_operator.parameter_type());
+    local_element_operators_.emplace_back(local_operator.copy(), filter.copy());
+    return *this;
+  }
+
+  ThisType& append(const LocalIntersectionOperatorType& local_operator,
+                   const XT::Grid::IntersectionFilter<AGV>& filter = XT::Grid::ApplyOn::AllIntersections<AGV>())
+  {
+    linear_ = linear_ && local_operator.linear();
+    this->extend_parameter_type(local_operator.parameter_type());
+    local_intersection_operators_.emplace_back(local_operator.copy(), filter.copy());
+    return *this;
+  }
+
+  using BaseType::apply;
+
+  void apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& param = {}) const override
+  {
+    // some checks
+    DUNE_THROW_IF(!source.valid(), Exceptions::operator_error, "source contains inf or nan!");
+    DUNE_THROW_IF(!(this->parameter_type() <= param.type()),
+                  Exceptions::operator_error,
+                  "this->parameter_type() = " << this->parameter_type() << "\n   param.type() = " << param.type());
+    range.set_all(0);
+    auto source_function = make_discrete_function(this->source_space_, source);
+    auto range_function = make_discrete_function(this->range_space_, range);
+    // set up the actual operator
+    auto localizable_op =
+        make_localizable_operator_applicator(this->assembly_grid_view_, source_function, range_function);
+    // - element contributions
+    for (const auto& op_and_filter : local_element_operators_) {
+      const auto& local_op = *op_and_filter.first;
+      const auto& filter = *op_and_filter.second;
+      localizable_op.append(local_op, param, filter);
+    }
+    // - intersection contributions
+    for (const auto& op_and_filter : local_intersection_operators_) {
+      const auto& local_op = *op_and_filter.first;
+      const auto& filter = *op_and_filter.second;
+      localizable_op.append(local_op, param, filter);
+    }
+    // and apply it in a grid walk
+    localizable_op.assemble(/*use_tbb=*/true);
+    DUNE_THROW_IF(!range.valid(), Exceptions::operator_error, "range contains inf or nan!");
+  } // ... apply(...)
+
+  std::vector<std::string> jacobian_options() const override final
+  {
+    return {"finite-differences"};
+  }
+
+  XT::Common::Configuration jacobian_options(const std::string& type) const override final
+  {
+    DUNE_THROW_IF(type != this->jacobian_options().at(0), Exceptions::operator_error, "type = " << type);
+    return {{"type", type}, {"eps", "1e-7"}};
+  }
+
+  using BaseType::jacobian;
+
+  void jacobian(const VectorType& source,
+                MatrixOperatorType& jacobian_op,
+                const XT::Common::Configuration& opts,
+                const XT::Common::Parameter& param = {}) const override final
+  {
+    // some checks
+    DUNE_THROW_IF(!source.valid(), Exceptions::operator_error, "source contains inf or nan!");
+    DUNE_THROW_IF(!(this->parameter_type() <= param.type()),
+                  Exceptions::operator_error,
+                  "this->parameter_type() = " << this->parameter_type() << "\n   param.type() = " << param.type());
+    DUNE_THROW_IF(!opts.has_key("type"), Exceptions::operator_error, opts);
+    DUNE_THROW_IF(opts.get<std::string>("type") != jacobian_options().at(0), Exceptions::operator_error, opts);
+    const auto default_opts = jacobian_options(jacobian_options().at(0));
+    const auto eps = opts.get("eps", default_opts.template get<double>("eps"));
+    const auto parameter = param + XT::Common::Parameter({"finite-difference-jacobians.eps", eps});
+    // append the same local ops with the same filters as in apply() above
+    // - element contributions
+    for (const auto& op_and_filter : local_element_operators_) {
+      const auto& local_op = *op_and_filter.first;
+      const auto& filter = *op_and_filter.second;
+      jacobian_op.append(local_op, source, parameter, filter);
+    }
+    // - intersection contributions
+    for (const auto& op_and_filter : local_intersection_operators_) {
+      const auto& local_op = *op_and_filter.first;
+      const auto& filter = *op_and_filter.second;
+      jacobian_op.append(local_op, source, parameter, filter);
+    }
+  } // ... jacobian(...)
+
+protected:
+  const AGV assembly_grid_view_;
+  const SourceSpaceType& source_space_;
+  const RangeSpaceType& range_space_;
+  bool linear_;
+  std::list<std::pair<std::unique_ptr<LocalElementOperatorType>, std::unique_ptr<XT::Grid::ElementFilter<AGV>>>>
+      local_element_operators_;
+  std::list<
+      std::pair<std::unique_ptr<LocalIntersectionOperatorType>, std::unique_ptr<XT::Grid::IntersectionFilter<AGV>>>>
+      local_intersection_operators_;
+}; // class LocalizableOperator
 
 
 } // namespace GDT
