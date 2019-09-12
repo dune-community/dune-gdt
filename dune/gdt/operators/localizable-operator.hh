@@ -11,6 +11,7 @@
 #ifndef DUNE_GDT_OPERATORS_LOCALIZABLE_OPERATOR_HH
 #define DUNE_GDT_OPERATORS_LOCALIZABLE_OPERATOR_HH
 
+#include <dune/xt/common/deprecated.hh>
 #include <dune/xt/la/type_traits.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/grid/walker.hh>
@@ -25,8 +26,8 @@ namespace GDT {
 
 
 /**
- * \todo Rename this one to LocalizableDiscreteOperatorBase, create LocalizableOperatorBase which accepts a GridFunction
- *       as source, derive LocalizableDiscreteOperatorBase from LocalizableOperatorBase.
+ * \todo Create LocalizableOperatorApplicator which accepts a GridFunction as source, derive
+ *       LocalizableDiscreteOperatorApplicator from LocalizableOperatorApplicator.
  */
 template <class AssemblyGridView,
           class SourceVector,
@@ -39,7 +40,7 @@ template <class AssemblyGridView,
           class RangeField = SourceField,
           class RangeGridView = SourceGridView,
           class RangeVector = SourceVector>
-class LocalizableOperatorBase : public XT::Grid::Walker<AssemblyGridView>
+class LocalizableDiscreteOperatorApplicator : public XT::Grid::Walker<AssemblyGridView>
 {
   static_assert(XT::Grid::is_view<AssemblyGridView>::value, "");
   static_assert(XT::LA::is_vector<SourceVector>::value, "");
@@ -47,17 +48,17 @@ class LocalizableOperatorBase : public XT::Grid::Walker<AssemblyGridView>
   static_assert(XT::Grid::is_view<RangeGridView>::value, "");
   static_assert(XT::LA::is_vector<RangeVector>::value, "");
 
-  using ThisType = LocalizableOperatorBase<AssemblyGridView,
-                                           SourceVector,
-                                           source_range_dim,
-                                           source_range_dim_cols,
-                                           SourceField,
-                                           SourceGridView,
-                                           range_range_dim,
-                                           range_range_dim_cols,
-                                           RangeField,
-                                           RangeGridView,
-                                           RangeVector>;
+  using ThisType = LocalizableDiscreteOperatorApplicator<AssemblyGridView,
+                                                         SourceVector,
+                                                         source_range_dim,
+                                                         source_range_dim_cols,
+                                                         SourceField,
+                                                         SourceGridView,
+                                                         range_range_dim,
+                                                         range_range_dim_cols,
+                                                         RangeField,
+                                                         RangeGridView,
+                                                         RangeVector>;
   using BaseType = XT::Grid::Walker<AssemblyGridView>;
 
 public:
@@ -90,7 +91,7 @@ public:
       GenericLocalIntersectionOperator<I, SV, SGV, s_r, s_rC, SF, r_r, r_rC, RF, RGV, RV>;
   using GenericLocalIntersectionFunctionType = typename GenericLocalIntersectionOperatorType::GenericFunctionType;
 
-  LocalizableOperatorBase(AssemblyGridViewType assembly_grid_view, const SourceType& src, RangeType& rng)
+  LocalizableDiscreteOperatorApplicator(AssemblyGridViewType assembly_grid_view, const SourceType& src, RangeType& rng)
     : BaseType(assembly_grid_view)
     , source_(src)
     , range_(rng)
@@ -164,7 +165,32 @@ protected:
   const SourceType& source_;
   RangeType& range_;
   bool assembled_;
-}; // class LocalizableOperatorBase
+}; // class LocalizableDiscreteOperatorApplicator
+
+
+template <class AssemblyGridView,
+          class SourceVector,
+          size_t source_range_dim = 1,
+          size_t source_range_dim_cols = 1,
+          class SourceField = double,
+          class SourceGridView = AssemblyGridView,
+          size_t range_range_dim = source_range_dim,
+          size_t range_range_dim_cols = source_range_dim_cols,
+          class RangeField = SourceField,
+          class RangeGridView = SourceGridView,
+          class RangeVector = SourceVector>
+using LocalizableOperatorBase DXT_DEPRECATED_MSG("Use LocalizableDiscreteOperatorApplicator instead (12.09.2019)!") =
+    LocalizableDiscreteOperatorApplicator<AssemblyGridView,
+                                          SourceVector,
+                                          source_range_dim,
+                                          source_range_dim_cols,
+                                          SourceField,
+                                          SourceGridView,
+                                          range_range_dim,
+                                          range_range_dim_cols,
+                                          RangeField,
+                                          RangeGridView,
+                                          RangeVector>;
 
 
 template <class AGV,
@@ -179,12 +205,12 @@ template <class AGV,
           class RGV,
           class RV>
 std::enable_if_t<XT::Grid::is_layer<AGV>::value,
-                 LocalizableOperatorBase<AGV, SV, s_r, s_rC, SF, SGV, r_r, r_rC, RF, RGV, RV>>
-make_localizable_operator(AGV assembly_grid_view,
-                          const ConstDiscreteFunction<SV, SGV, s_r, s_rC, SF>& source,
-                          DiscreteFunction<RV, RGV, r_r, r_rC, RF>& range)
+                 LocalizableDiscreteOperatorApplicator<AGV, SV, s_r, s_rC, SF, SGV, r_r, r_rC, RF, RGV, RV>>
+make_localizable_operator_applicator(AGV assembly_grid_view,
+                                     const ConstDiscreteFunction<SV, SGV, s_r, s_rC, SF>& source,
+                                     DiscreteFunction<RV, RGV, r_r, r_rC, RF>& range)
 {
-  return LocalizableOperatorBase<AGV, SV, s_r, s_rC, SF, SGV, r_r, r_rC, RF, RGV, RV>(
+  return LocalizableDiscreteOperatorApplicator<AGV, SV, s_r, s_rC, SF, SGV, r_r, r_rC, RF, RGV, RV>(
       assembly_grid_view, source, range);
 }
 
