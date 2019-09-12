@@ -73,6 +73,11 @@ public:
 
   virtual std::unique_ptr<ThisType> copy() const = 0;
 
+  virtual bool linear() const
+  {
+    return false;
+  }
+
   virtual void
   apply(const SourceType& source, LocalRangeType& local_range, const XT::Common::Parameter& param = {}) const = 0;
 }; // class LocalElementOperatorInterface
@@ -132,6 +137,11 @@ public:
   virtual ~LocalIntersectionOperatorInterface() = default;
 
   virtual std::unique_ptr<ThisType> copy() const = 0;
+
+  virtual bool linear() const
+  {
+    return false;
+  }
 
   /**
    * \note Presumes that local_range_inside is already bound to intersection.inside() and local_range_outside is

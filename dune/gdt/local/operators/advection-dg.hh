@@ -77,6 +77,12 @@ public:
     return std::make_unique<ThisType>(*this);
   }
 
+  /// \todo add linear() to XT::Functions::FluxFunctionInterface and return flux_.linear()!
+  bool linear() const override final
+  {
+    return false;
+  }
+
   void apply(const SourceType& source,
              LocalRangeType& local_range,
              const XT::Common::Parameter& param = {}) const override final
@@ -179,6 +185,11 @@ public:
   std::unique_ptr<BaseType> copy() const override final
   {
     return std::make_unique<ThisType>(*this);
+  }
+
+  bool linear() const override final
+  {
+    return numerical_flux_->linear();
   }
 
   void apply(const SourceType& source,
@@ -316,6 +327,12 @@ public:
     return std::make_unique<ThisType>(*this);
   }
 
+  /// \todo store some numerical_flux_linear in ctor and return that
+  bool linear() const override final
+  {
+    return false;
+  }
+
   void apply(const SourceType& source,
              const IntersectionType& intersection,
              LocalInsideRangeType& local_range_inside,
@@ -423,6 +440,11 @@ public:
   std::unique_ptr<BaseType> copy() const override final
   {
     return std::make_unique<ThisType>(*this);
+  }
+
+  bool linear() const override final
+  {
+    return numerical_flux_->linear();
   }
 
   void apply(const SourceType& source,
