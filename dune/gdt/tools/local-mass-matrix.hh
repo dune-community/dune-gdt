@@ -131,7 +131,7 @@ public:
   }
 
 private:
-  const AssemblyGridView& grid_view_;
+  const AssemblyGridView grid_view_;
   std::unique_ptr<const SpaceType> space_;
   const FiniteVolumeMapper<GV> element_mapper_;
   size_t instance_counter_;

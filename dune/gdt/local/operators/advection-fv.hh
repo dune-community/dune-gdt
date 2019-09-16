@@ -96,6 +96,11 @@ public:
     return std::make_unique<ThisType>(*this);
   }
 
+  bool linear() const override final
+  {
+    return numerical_flux_->linear();
+  }
+
   void apply(const IntersectionType& intersection,
              LocalInsideRangeType& local_range_inside,
              LocalOutsideRangeType& local_range_outside,
@@ -215,6 +220,12 @@ public:
     return std::make_unique<ThisType>(*this);
   }
 
+  /// \todo store some numerical_flux_linear in ctor and return that
+  bool linear() const override final
+  {
+    return false;
+  }
+
   void apply(const IntersectionType& intersection,
              LocalInsideRangeType& local_range_inside,
              LocalOutsideRangeType& /*local_range_outside*/,
@@ -316,6 +327,11 @@ public:
   std::unique_ptr<BaseType> copy() const override final
   {
     return std::make_unique<ThisType>(*this);
+  }
+
+  bool linear() const override final
+  {
+    return numerical_flux_->linear();
   }
 
   void apply(const IntersectionType& intersection,
