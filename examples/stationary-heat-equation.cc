@@ -98,7 +98,7 @@ int main(int argc, char* argv[])
 
     auto rhs_func = make_vector_functional<V>(space);
     rhs_func.append(LocalElementIntegralFunctional<E>(
-        local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E>(), force.as_grid_function<E>())));
+        local_binary_to_unary_element_integrand(LocalProductIntegrand<E>(), force.as_grid_function<E>())));
 
     auto dirichlet_constraints = make_dirichlet_constraints(space, boundary_info);
 
@@ -121,7 +121,7 @@ int main(int argc, char* argv[])
         LocalEllipticIntegrand<E>(lambda.as_grid_function<E>(), kappa.as_grid_function<E>())));
 
     auto l2_prod = make_localizable_bilinear_form(grid_view, error, error);
-    l2_prod.append(LocalElementIntegralBilinearForm<E>(LocalElementProductIntegrand<E>()));
+    l2_prod.append(LocalElementIntegralBilinearForm<E>(LocalProductIntegrand<E>()));
 
     walker.append(h1_prod);
     walker.append(l2_prod);

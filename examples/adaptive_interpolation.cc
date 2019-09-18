@@ -64,8 +64,7 @@ V compute_local_l2_norms(const XT::Functions::GridFunctionInterface<E>& func, co
                   auto local_func = func.local_function();
                   local_func->bind(element);
                   // models \int_element 1*phi*psi dx for any phi/psi
-                  const GDT::LocalElementIntegralBilinearForm<E> local_l2_product(
-                      GDT::LocalElementProductIntegrand<E>(1.));
+                  const GDT::LocalElementIntegralBilinearForm<E> local_l2_product(GDT::LocalProductIntegrand<E>(1.));
                   // evaluate local product with phi = psi = local_func
                   const auto element_l2_error2 = local_l2_product.apply2(*local_func, *local_func)[0][0];
                   // store in entry for this element (we keep them unsquared, makes for easier computation of total)
