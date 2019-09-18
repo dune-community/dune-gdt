@@ -202,7 +202,7 @@ GTEST_TEST(MPI201902TalkExamples, instationary_heat_equation)
   spatial_op.append(LocalElementIntegralBilinearForm<E>(LocalEllipticIntegrand<E>(1.)));
   spatial_op.append(dirichlet_constraints);
   auto l2_op = make_matrix_operator<M>(cg_space, Stencil::element);
-  l2_op.append(LocalElementIntegralBilinearForm<E>(LocalElementProductIntegrand<E>(1.)));
+  l2_op.append(LocalElementIntegralBilinearForm<E>(LocalProductIntegrand<E>(1.)));
   spatial_op.append(l2_op);
   spatial_op.assemble(/*SMP=*/true);
   dirichlet_constraints.apply(spatial_op.matrix());

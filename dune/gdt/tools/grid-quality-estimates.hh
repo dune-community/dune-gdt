@@ -45,7 +45,7 @@ double estimate_inverse_inequality_constant(const SpaceInterface<GV, r>& space)
     auto H1_product_matrix = XT::LA::convert_to<XT::LA::CommonDenseMatrix<double>>(
         LocalElementIntegralBilinearForm<E, r>(LocalLaplaceIntegrand<E, r>()).apply2(*basis, *basis));
     auto L2_product_matrix = XT::LA::convert_to<XT::LA::CommonDenseMatrix<double>>(
-        LocalElementIntegralBilinearForm<E, r>(LocalElementProductIntegrand<E, r>()).apply2(*basis, *basis));
+        LocalElementIntegralBilinearForm<E, r>(LocalProductIntegrand<E, r>()).apply2(*basis, *basis));
     auto evs =
         XT::LA::make_generalized_eigen_solver(H1_product_matrix,
                                               L2_product_matrix,
@@ -78,14 +78,14 @@ double estimate_combined_inverse_trace_inequality_constant(const SpaceInterface<
     XT::LA::CommonDenseMatrix<double> L2_face_product_matrix(basis->size(), basis->size(), 0.);
     DynamicMatrix<double> tmp_L2_face_product_matrix(basis->size(), basis->size(), 0.);
     for (auto&& intersection : intersections(space.grid_view(), element)) {
-      LocalIntersectionIntegralBilinearForm<I, r>(LocalIntersectionProductIntegrand<I, r>(1.))
+      LocalIntersectionIntegralBilinearForm<I, r>(LocalProductIntegrand<I, r>(1.))
           .apply2(intersection, *basis, *basis, tmp_L2_face_product_matrix);
       for (size_t ii = 0; ii < basis->size(); ++ii)
         for (size_t jj = 0; jj < basis->size(); ++jj)
           L2_face_product_matrix.add_to_entry(ii, jj, tmp_L2_face_product_matrix[ii][jj]);
     }
     auto L2_element_product_matrix = XT::LA::convert_to<XT::LA::CommonDenseMatrix<double>>(
-        LocalElementIntegralBilinearForm<E, r>(LocalElementProductIntegrand<E, r>(1.)).apply2(*basis, *basis));
+        LocalElementIntegralBilinearForm<E, r>(LocalProductIntegrand<E, r>(1.)).apply2(*basis, *basis));
     auto evs = XT::LA::make_generalized_eigen_solver(
                    L2_face_product_matrix,
                    L2_element_product_matrix,
