@@ -129,7 +129,7 @@ public:
   {
     DUNE_THROW_IF(rC != 1,
                   Exceptions::space_error,
-                  "Not implemented for matrix-valued spaces yet (due to LocalElementProductIntegrand)!");
+                  "Not implemented for matrix-valued spaces yet (due to LocalProductIntegrand)!");
     auto& element_restriction_data = persistent_data[element];
     auto& element_restriction_FE_data = element_restriction_data.first;
     auto& element_restriction_DoF_data = element_restriction_data.second;
@@ -143,7 +143,7 @@ public:
       auto element_basis = this->basis().localize();
       element_restriction_FE_data = element_basis->default_data(element.type());
       element_basis->restore(element, element_restriction_FE_data);
-      auto lhs = LocalElementIntegralBilinearForm<E, r, rC, R, R>(LocalElementProductIntegrand<E, r, R, R>())
+      auto lhs = LocalElementIntegralBilinearForm<E, r, rC, R, R>(LocalProductIntegrand<E, r, R, R>())
                      .apply2(*element_basis, *element_basis);
       DynamicVector<R> rhs(element_basis->size(), 0.);
       for (auto&& child_element : descendantElements(element, element.level() + 1)) {

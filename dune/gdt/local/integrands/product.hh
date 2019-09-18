@@ -243,6 +243,24 @@ private:
 }; // class LocalIntersectionProductIntegrand
 
 
+template <class E_or_I, size_t r = 1, class TR = double, class F = double, class AR = TR>
+class LocalProductIntegrand
+  : public std::conditional_t<XT::Grid::is_entity<E_or_I>::value,
+                              LocalElementProductIntegrand<E_or_I, r, TR, F, AR>,
+                              LocalIntersectionProductIntegrand<E_or_I, r, TR, F, AR>>
+{
+  using BaseType = std::conditional_t<XT::Grid::is_entity<E_or_I>::value,
+                                      LocalElementProductIntegrand<E_or_I, r, TR, F, AR>,
+                                      LocalIntersectionProductIntegrand<E_or_I, r, TR, F, AR>>;
+
+public:
+  template <class... Args>
+  explicit LocalProductIntegrand(Args&&... args)
+    : BaseType(std::forward<Args>(args)...)
+  {}
+}; // class LocalProductIntegrand
+
+
 } // namespace GDT
 } // namespace Dune
 

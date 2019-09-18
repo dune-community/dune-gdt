@@ -258,7 +258,7 @@ public:
           spatial_norm = [&](const DF& func) {
             auto localizable_product = make_localizable_bilinear_form(reference_space.grid_view(), func, func);
             localizable_product.append(LocalElementIntegralBilinearForm<E, m>(
-                LocalElementProductIntegrand<E, m>(), DXTC_TEST_CONFIG_GET("setup.over_integrate", 3)));
+                LocalProductIntegrand<E, m>(), DXTC_TEST_CONFIG_GET("setup.over_integrate", 3)));
             localizable_product.assemble(DXTC_TEST_CONFIG_GET("setup.use_tbb", true));
             return std::sqrt(localizable_product.result());
           };

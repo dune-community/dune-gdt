@@ -278,7 +278,7 @@ public:
         } else if (spatial_norm_id == "L_2") {
           spatial_norm = [&](const DF& func) {
             auto localizable_product = make_localizable_bilinear_form(reference_space.grid_view(), func, func);
-            localizable_product.append(LocalElementIntegralBilinearForm<E, m>(LocalElementProductIntegrand<E, m>()));
+            localizable_product.append(LocalElementIntegralBilinearForm<E, m>(LocalProductIntegrand<E, m>()));
             localizable_product.assemble();
             return std::sqrt(localizable_product.result());
           };
@@ -305,7 +305,7 @@ public:
           const auto& spatial_norm_as_temporal_grid_function = spatial_norm_function.template as_grid_function<TE>();
           auto localizable_temporal_product = make_localizable_bilinear_form(
               temporal_grid_view, spatial_norm_as_temporal_grid_function, spatial_norm_as_temporal_grid_function);
-          localizable_temporal_product.append(LocalElementIntegralBilinearForm<TE>(LocalElementProductIntegrand<TE>()));
+          localizable_temporal_product.append(LocalElementIntegralBilinearForm<TE>(LocalProductIntegrand<TE>()));
           localizable_temporal_product.assemble();
           current_data_["norm"][norm_id] = localizable_temporal_product.result();
         } else

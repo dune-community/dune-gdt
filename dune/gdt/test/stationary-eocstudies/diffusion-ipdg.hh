@@ -184,7 +184,7 @@ protected:
                             Exceptions::integrand_error,
                             "The minimum eigenvalue of a positiv definite matrix must not be negative!"
                                 << "\n\nmin_EV = " << min_EV);
-              auto L2_norm_2 = LocalElementIntegralBilinearForm<E>(LocalElementProductIntegrand<E>(),
+              auto L2_norm_2 = LocalElementIntegralBilinearForm<E>(LocalProductIntegrand<E>(),
                                                                    /*over_integrate=*/3)
                                    .apply2(*local_force - flux_divergence, *local_force - flux_divergence)[0][0];
               const auto h = XT::Grid::diameter(element);
@@ -288,7 +288,7 @@ protected:
     // define rhs functional
     auto rhs_func = make_vector_functional<V>(space);
     rhs_func.append(LocalElementIntegralFunctional<E>(
-        local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E>(), this->force())));
+        local_binary_to_unary_element_integrand(LocalProductIntegrand<E>(), this->force())));
     // ... add Dirichlet here
     // (if we add something here, the oswald interpolation in compute() needs to be adapted accordingly!)
     // ... add Neumann here

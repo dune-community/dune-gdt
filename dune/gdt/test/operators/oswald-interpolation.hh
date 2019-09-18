@@ -119,7 +119,7 @@ struct OswaldInterpolationOperatorOnLeafViewTest : public ::testing::Test
                     auto local_difference = difference.local_function();
                     local_difference->bind(element);
                     auto local_indicator = l2_element_indicators.local_discrete_function(element);
-                    local_indicator->dofs()[0] += LocalElementIntegralBilinearForm<E>(LocalElementProductIntegrand<E>())
+                    local_indicator->dofs()[0] += LocalElementIntegralBilinearForm<E>(LocalProductIntegrand<E>())
                                                       .apply2(*local_difference, *local_difference)[0][0];
                   },
                   []() {});

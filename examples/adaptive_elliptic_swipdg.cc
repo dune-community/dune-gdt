@@ -127,9 +127,8 @@ std::pair<V, F> compute_local_indicators(const DiscreteFunction<V, GV>& u_h,
                                     << "\n\nmin_EV = " << min_EV);
                   const auto C_P = 1. / (M_PIl * M_PIl); // Poincare constant (known for simplices/cubes)
                   const auto h = XT::Grid::diameter(element);
-                  auto L2_norm_2 =
-                      LocalElementIntegralBilinearForm<E>(LocalElementProductIntegrand<E>(), over_integrate)
-                          .apply2(*f_el - div_t_h_el, *f_el - div_t_h_el)[0][0];
+                  auto L2_norm_2 = LocalElementIntegralBilinearForm<E>(LocalProductIntegrand<E>(), over_integrate)
+                                       .apply2(*f_el - div_t_h_el, *f_el - div_t_h_el)[0][0];
                   const double eta_R_element_2 = (C_P * h * h * L2_norm_2) / min_EV;
                   // eta_DF
                   const double eta_DF_element_2 = XT::Grid::element_integral(
@@ -232,8 +231,8 @@ int main(int argc, char* argv[])
           {},
           XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(boundary_info, new XT::Grid::DirichletBoundary()));
       auto rhs_func = make_vector_functional<V>(dg_space);
-      rhs_func.append(LocalElementIntegralFunctional<E>(
-          local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E>(), f)));
+      rhs_func.append(
+          LocalElementIntegralFunctional<E>(local_binary_to_unary_element_integrand(LocalProductIntegrand<E>(), f)));
       // ... add Dirichlet here
       // (if we add something here, the oswald interpolation needs to be adapted accordingly!)
       // ... add Neumann here

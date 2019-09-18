@@ -228,12 +228,12 @@ public:
     Vector f_vector(m), p_basis_integrated_vector(n);
     auto f_functional = make_vector_functional(velocity_space, f_vector);
     f_functional.append(LocalElementIntegralFunctional<E, d>(
-        local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E, d>(), problem_.rhs_f())));
+        local_binary_to_unary_element_integrand(LocalProductIntegrand<E, d>(), problem_.rhs_f())));
     A_operator.append(f_functional);
     auto p_basis_integrated_functional = make_vector_functional(pressure_space, p_basis_integrated_vector);
     XT::Functions::ConstantGridFunction<E> one_function(1);
     p_basis_integrated_functional.append(LocalElementIntegralFunctional<E, 1>(
-        local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E, 1>(), one_function)));
+        local_binary_to_unary_element_integrand(LocalProductIntegrand<E, 1>(), one_function)));
     B_operator.append(p_basis_integrated_functional);
     // Dirichlet constrainst for u
     DirichletConstraints<I, VelocitySpace> dirichlet_constraints(problem_.boundary_info(), velocity_space);
