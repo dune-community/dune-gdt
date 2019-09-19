@@ -380,8 +380,6 @@ PYBIND11_MODULE(usercode, m)
                     DirichletConstraints<I, SpaceType> constraints(macro_boundary_info, *inner_subdomain_space);
                     const auto& coupling = domain_decomposition.dd_grid.coupling(
                         inside_macro_element, -1, outside_macro_element, -1, true);
-                    DynamicVector<size_t> global_indices_in(inner_subdomain_space->mapper().max_local_size());
-                    auto inside_basis = inner_subdomain_space->basis().localize();
                     const auto coupling_intersection_it_end = coupling.template iend<0>();
                     for (auto coupling_intersection_it = coupling.template ibegin<0>();
                          coupling_intersection_it != coupling_intersection_it_end;
@@ -395,10 +393,10 @@ PYBIND11_MODULE(usercode, m)
                   }
                 }
               }
-
               DUNE_THROW_IF(!found_correct_macro_intersection,
                             XT::Common::Exceptions::index_out_of_range,
                             "ss = " << ss << "\n   nn = " << nn);
+              break;
             }
           }
           return std::vector<size_t>(edge_DoFs.begin(), edge_DoFs.end());
