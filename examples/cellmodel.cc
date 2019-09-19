@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
                                  epsilon,
                                  In,
                                  linearize);
-    auto result = model_solver.solve(dt, write_step, filename, subsampling);
+    auto result = model_solver.solve(dt, true, write_step, filename, subsampling);
 
     for (const auto& vec1 : result[0])
       std::cout << &vec1 << std::endl;

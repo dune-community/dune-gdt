@@ -193,7 +193,7 @@ struct VectorExporter
         .def("standard_deviation", &Vec::standard_deviation)
         .def("set_all", &Vec::set_all)
         .def("valid", &Vec::valid)
-        .def("dim", &Vec::size)
+        .add_property("dim", &Vec::size)
         .def("mean", &Vec::mean)
         .def("amax", &Vec::amax)
         .def("sub", sub_void)
@@ -216,11 +216,11 @@ struct VectorExporter
 
 #include <dune/xt/common/disable_warnings.hh>
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(init_overloads2d, BoltzmannSolver2d::init, 0, 10)
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(next_n_time_steps_overloads2d, BoltzmannSolver2d::next_n_time_steps, 1, 2)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(next_n_timesteps_overloads2d, BoltzmannSolver2d::next_n_timesteps, 1, 2)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(apply_rhs_overloads2d, BoltzmannSolver2d::apply_rhs_operator, 3, 6)
 
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(init_overloads3d, BoltzmannSolver3d::init, 0, 10)
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(next_n_time_steps_overloads3d, BoltzmannSolver3d::next_n_time_steps, 1, 2)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(next_n_timesteps_overloads3d, BoltzmannSolver3d::next_n_timesteps, 1, 2)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(apply_rhs_overloads3d, BoltzmannSolver3d::apply_rhs_operator, 3, 6)
 
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(visualize_overloads, CellModelSolver::visualize, 3, 6)
@@ -257,7 +257,7 @@ BOOST_PYTHON_MODULE(libhapodgdt)
       .def("init", &BoltzmannSolver2d::init, init_overloads2d())
       .def("linear", &BoltzmannSolver2d::linear)
       .def("solve", &BoltzmannSolver2d::solve)
-      .def("next_n_time_steps", &BoltzmannSolver2d::next_n_time_steps, next_n_time_steps_overloads2d())
+      .def("next_n_timesteps", &BoltzmannSolver2d::next_n_timesteps, next_n_timesteps_overloads2d())
       .def("reset", &BoltzmannSolver2d::reset)
       .def("finished", &BoltzmannSolver2d::finished)
       .def("apply_kinetic_operator", &BoltzmannSolver2d::apply_kinetic_operator)
@@ -300,7 +300,7 @@ BOOST_PYTHON_MODULE(libhapodgdt)
       .def("init", &BoltzmannSolver3d::init, init_overloads3d())
       .def("linear", &BoltzmannSolver3d::linear)
       .def("solve", &BoltzmannSolver3d::solve)
-      .def("next_n_time_steps", &BoltzmannSolver3d::next_n_time_steps, next_n_time_steps_overloads3d())
+      .def("next_n_time_steps", &BoltzmannSolver3d::next_n_timesteps, next_n_timesteps_overloads3d())
       .def("reset", &BoltzmannSolver3d::reset)
       .def("finished", &BoltzmannSolver3d::finished)
       .def("apply_kinetic_operator", &BoltzmannSolver3d::apply_kinetic_operator)
@@ -323,6 +323,7 @@ BOOST_PYTHON_MODULE(libhapodgdt)
   // TODO: Find a way to increase that limit in boost or change constructor.
   class_<CellModelSolver>("CellModelSolver",
                           init<optional<const std::string,
+                                        const double,
                                         const unsigned int,
                                         const unsigned int,
                                         const double,
@@ -345,14 +346,16 @@ BOOST_PYTHON_MODULE(libhapodgdt)
       .def("set_ofield_variables", &CellModelSolver::set_ofield_variables)
       .def("set_stokes_variables", &CellModelSolver::set_stokes_variables)
       .def("solve", &CellModelSolver::solve)
+      .def("next_n_timesteps", &CellModelSolver::next_n_timesteps)
       .def("solve_pfield", &CellModelSolver::solve_pfield)
       .def("solve_ofield", &CellModelSolver::solve_ofield)
       .def("solve_stokes", &CellModelSolver::solve_stokes)
       .def("apply_pfield_product_operator", &CellModelSolver::apply_pfield_product_operator)
-      .def("apply_ofield_product_operator", &CellModelSolver::apply_pfield_product_operator)
-      .def("apply_stokes_product_operator", &CellModelSolver::apply_pfield_product_operator)
+      .def("apply_ofield_product_operator", &CellModelSolver::apply_ofield_product_operator)
+      .def("apply_stokes_product_operator", &CellModelSolver::apply_stokes_product_operator)
       .def("num_cells", &CellModelSolver::num_cells)
       .def("finished", &CellModelSolver::finished)
+      .def("linear", &CellModelSolver::linear)
       .def("pfield_vector", &CellModelSolver::pfield_vector)
       .def("ofield_vector", &CellModelSolver::ofield_vector)
       .def("stokes_vector", &CellModelSolver::stokes_vector);

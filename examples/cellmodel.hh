@@ -561,17 +561,13 @@ struct CellModelSolver
     return 0;
   }
 
-  bool linear() const
-  {
-    return linearize_;
-  }
-
   size_t num_cells() const
   {
     return num_cells_;
   }
 
   std::vector<std::vector<VectorType>> solve(const double dt,
+                                             const bool write,
                                              const double write_step,
                                              const std::string filename = "cellmodel",
                                              const bool subsampling = true)
@@ -581,7 +577,8 @@ struct CellModelSolver
     ret[1].push_back(ofield_vector_);
     ret[2].push_back(stokes_vector_);
     // implicit Euler timestepping
-    visualize(filename, 0, t_, subsampling);
+    if (write)
+      visualize(filename, 0, t_, subsampling);
     assert(Dune::XT::Common::FloatCmp::ge(t_end_, t_));
     double next_save_time = t_ + write_step > t_end_ ? t_end_ : t_ + write_step;
     size_t save_step_counter = 1;
@@ -615,10 +612,12 @@ struct CellModelSolver
       t_ += actual_dt;
 
       // check if data should be written in this timestep (and write)
-      if (write_step < 0. || Dune::XT::Common::FloatCmp::ge(t_, next_save_time)) {
-        visualize(filename, save_step_counter, t_, subsampling);
-        next_save_time += write_step;
-        ++save_step_counter;
+      if (write) {
+        if (write_step < 0. || Dune::XT::Common::FloatCmp::ge(t_, next_save_time)) {
+          visualize(filename, save_step_counter, t_, subsampling);
+          next_save_time += write_step;
+          ++save_step_counter;
+        }
       }
     } // while (t_ < t_end_)
     return ret;
@@ -722,6 +721,11 @@ struct CellModelSolver
     M_ofield_.mv(u_view, u_ret_view);
     M_p_stokes_.mv(p_view, p_ret_view);
     return ret;
+  }
+
+  bool linear() const
+  {
+    return linearize_;
   }
 
   bool finished() const

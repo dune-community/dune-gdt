@@ -246,7 +246,7 @@ public:
     return ret;
   }
 
-  SolutionVectorsVectorType next_n_time_steps(const size_t n, const bool with_half_steps = false) const
+  SolutionVectorsVectorType next_n_timesteps(const size_t n, const bool with_half_steps = false) const
   {
     if (!silent_)
       std::cout << "Calculating next " << XT::Common::to_string(n) << " time steps... " << std::endl;
