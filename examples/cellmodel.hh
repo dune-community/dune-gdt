@@ -636,7 +636,7 @@ struct CellModelSolver
       t_ = 1e-100;
     }
     // Undo hack to avoid adding initial_values twice
-    if (XT::Common::is_zero(t_ - 1e-100))
+    if (XT::Common::is_zero(t_ - 1e-100) && count == 0)
       t_ = 0.;
 
     // implicit Euler timestepping
@@ -652,19 +652,22 @@ struct CellModelSolver
       // do a timestep
       for (size_t kk = 0; kk < num_cells_; ++kk) {
         prepare_pfield_operator(dt, kk);
-        ret[0].push_back(solve_pfield(ret[0].back(), kk));
-        set_pfield_variables(kk, ret[0].back());
+        pfield_vector_ = solve_pfield(pfield_vector_, kk);
+        set_pfield_variables(kk, pfield_vector_);
+        ret[0].push_back(pfield_vector_);
         std::cout << "Pfield " << kk << " done" << std::endl;
         prepare_ofield_operator(dt, kk);
-        ret[1].push_back(solve_ofield(ret[1].back(), kk));
-        set_ofield_variables(kk, ret[1].back());
+        ofield_vector_ = solve_ofield(ofield_vector_, kk);
+        set_ofield_variables(kk, ofield_vector_);
+        ret[1].push_back(ofield_vector_);
         std::cout << "Ofield " << kk << " done" << std::endl;
       }
 
       // stokes system
       prepare_stokes_operator();
-      ret[2].push_back(solve_stokes());
-      set_stokes_variables(ret[2].back());
+      stokes_vector_ = solve_stokes();
+      set_stokes_variables(stokes_vector_);
+      ret[2].push_back(stokes_vector_);
       std::cout << "Stokes done" << std::endl;
 
       ++count;
@@ -730,6 +733,7 @@ struct CellModelSolver
 
   bool finished() const
   {
+    std::cout << t_end_ << " vs. " << t_ << std::endl;
     return XT::Common::FloatCmp::eq(t_end_, t_);
   }
 
