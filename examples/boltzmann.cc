@@ -9,6 +9,7 @@
 
 #include "config.h"
 
+#include "cellmodel.hh"
 #include "boltzmann.hh"
 
 using BoltzmannSolver2d = BoltzmannSolver<2>;
@@ -142,7 +143,7 @@ template <class Vec>
 struct VectorExporter
 {
   typedef typename Vec::ScalarType ScalarType;
-  typedef typename LA::VectorInterface<typename Vec::Traits, ScalarType> VectorInterfaceType;
+  typedef typename XT::LA::VectorInterface<typename Vec::Traits, ScalarType> VectorInterfaceType;
   typedef typename VectorInterfaceType::derived_type derived_type;
   typedef typename Vec::RealType RealType;
 
@@ -221,13 +222,16 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(apply_rhs_overloads2d, BoltzmannSolver2d:
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(init_overloads3d, BoltzmannSolver3d::init, 0, 10)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(next_n_time_steps_overloads3d, BoltzmannSolver3d::next_n_time_steps, 1, 2)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(apply_rhs_overloads3d, BoltzmannSolver3d::apply_rhs_operator, 3, 6)
+
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(visualize_overloads, CellModelSolver::visualize, 3, 6)
 #include <dune/xt/common/reenable_warnings.hh>
 
 
-BOOST_PYTHON_MODULE(libboltzmann)
+BOOST_PYTHON_MODULE(libhapodgdt)
 {
-  typedef typename BoltzmannSolver3d::VectorType VectorType;
-  typedef typename BoltzmannSolver3d::RangeFieldType RangeFieldType;
+  using VectorType = typename BoltzmannSolver3d::VectorType;
+  using RangeFieldType = typename BoltzmannSolver3d::RangeFieldType;
+
   // 2d
   VectorType (BoltzmannSolver2d::*apply_rhs_without_params2d)(VectorType, const double) const =
       &BoltzmannSolver2d::apply_rhs_operator;
@@ -270,10 +274,6 @@ BOOST_PYTHON_MODULE(libboltzmann)
       .def("set_current_solution", &BoltzmannSolver2d::set_current_solution)
       .def("time_step_length", &BoltzmannSolver2d::time_step_length)
       .def("t_end", &BoltzmannSolver2d::t_end);
-
-  class_<typename BoltzmannSolver2d::SolutionVectorsVectorType>("SolutionVectorsVectorType")
-      .def(vector_indexing_suite<typename BoltzmannSolver2d::SolutionVectorsVectorType>())
-      .def("size", &BoltzmannSolver2d::SolutionVectorsVectorType::size);
 
   // 3d
   VectorType (BoltzmannSolver3d::*apply_rhs_without_params3d)(VectorType, const double) const =
@@ -318,10 +318,56 @@ BOOST_PYTHON_MODULE(libboltzmann)
       .def("time_step_length", &BoltzmannSolver3d::time_step_length)
       .def("t_end", &BoltzmannSolver3d::t_end);
 
-  VectorExporter<typename LA::CommonDenseVector<double>>::export_("CommonDenseVector");
+  // Cell Model
+  // Boost.Python cannot handle more than about 14 arguments in the constructor by default
+  // TODO: Find a way to increase that limit in boost or change constructor.
+  class_<CellModelSolver>("CellModelSolver",
+                          init<optional<const std::string,
+                                        const unsigned int,
+                                        const unsigned int,
+                                        const double,
+                                        const double,
+                                        const double,
+                                        const double,
+                                        const double,
+                                        const double,
+                                        const double,
+                                        const double,
+                                        // const double,
+                                        // const double,
+                                        const double,
+                                        const double>>())
+      .def("visualize", &CellModelSolver::visualize, visualize_overloads())
+      .def("prepare_pfield_operator", &CellModelSolver::prepare_pfield_operator)
+      .def("prepare_ofield_operator", &CellModelSolver::prepare_ofield_operator)
+      .def("prepare_stokes_operator", &CellModelSolver::prepare_stokes_operator)
+      .def("set_pfield_variables", &CellModelSolver::set_pfield_variables)
+      .def("set_ofield_variables", &CellModelSolver::set_ofield_variables)
+      .def("set_stokes_variables", &CellModelSolver::set_stokes_variables)
+      .def("solve", &CellModelSolver::solve)
+      .def("solve_pfield", &CellModelSolver::solve_pfield)
+      .def("solve_ofield", &CellModelSolver::solve_ofield)
+      .def("solve_stokes", &CellModelSolver::solve_stokes)
+      .def("apply_pfield_product_operator", &CellModelSolver::apply_pfield_product_operator)
+      .def("apply_ofield_product_operator", &CellModelSolver::apply_pfield_product_operator)
+      .def("apply_stokes_product_operator", &CellModelSolver::apply_pfield_product_operator)
+      .def("num_cells", &CellModelSolver::num_cells)
+      .def("finished", &CellModelSolver::finished)
+      .def("pfield_vector", &CellModelSolver::pfield_vector)
+      .def("ofield_vector", &CellModelSolver::ofield_vector)
+      .def("stokes_vector", &CellModelSolver::stokes_vector);
+
+  // Vectors
+  VectorExporter<typename XT::LA::CommonDenseVector<double>>::export_("CommonDenseVector");
 
   iterable_converter().from_python<std::vector<double>>();
   iterable_converter().from_python<std::vector<size_t>>();
+
+  class_<std::vector<std::vector<typename XT::LA::CommonDenseVector<double>>>>("std_vec_of_std_vec_of_la_vecs")
+      .def(vector_indexing_suite<std::vector<std::vector<typename XT::LA::CommonDenseVector<double>>>>());
+
+  class_<std::vector<typename XT::LA::CommonDenseVector<double>>>("std_vec_of_la_vecs")
+      .def(vector_indexing_suite<std::vector<typename XT::LA::CommonDenseVector<double>>>());
 
   std_vector_to_python_converter<double>();
   std_vector_to_python_converter<size_t>();
@@ -359,7 +405,7 @@ int main(int argc, char* argv[])
         }
       } else if (std::string(argv[i]) == "-num_save_steps") {
         if (i + 1 < argc) {
-          num_save_steps = Common::from_string<size_t>(argv[++i]);
+          num_save_steps = XT::Common::from_string<size_t>(argv[++i]);
         } else {
           std::cerr << "-num_save_steps option requires one argument." << std::endl;
           return 1;
@@ -384,7 +430,7 @@ int main(int argc, char* argv[])
         sigma_a_2 = sigma_a_dist(rng);
       } else if (std::string(argv[i]) == "-gridsize") {
         if (i + 1 < argc) {
-          grid_size = Common::from_string<size_t>(argv[++i]);
+          grid_size = XT::Common::from_string<size_t>(argv[++i]);
         } else {
           std::cerr << "-gridsize option requires one argument." << std::endl;
           return 1;
@@ -396,7 +442,7 @@ int main(int argc, char* argv[])
           return 1;
         }
         if (i + 1 < argc) {
-          sigma_s_1 = Common::from_string<double>(argv[++i]);
+          sigma_s_1 = XT::Common::from_string<double>(argv[++i]);
           parameters_given = true;
         } else {
           std::cerr << "-sigma_s_1 option requires one argument." << std::endl;
@@ -409,7 +455,7 @@ int main(int argc, char* argv[])
           return 1;
         }
         if (i + 1 < argc) {
-          sigma_s_2 = Common::from_string<double>(argv[++i]);
+          sigma_s_2 = XT::Common::from_string<double>(argv[++i]);
           parameters_given = true;
         } else {
           std::cerr << "-sigma_s_2 option requires one argument." << std::endl;
@@ -422,7 +468,7 @@ int main(int argc, char* argv[])
           return 1;
         }
         if (i + 1 < argc) {
-          sigma_a_1 = Common::from_string<double>(argv[++i]);
+          sigma_a_1 = XT::Common::from_string<double>(argv[++i]);
           parameters_given = true;
         } else {
           std::cerr << "-sigma_a_1 option requires one argument." << std::endl;
@@ -435,7 +481,7 @@ int main(int argc, char* argv[])
           return 1;
         }
         if (i + 1 < argc) {
-          sigma_a_2 = Common::from_string<double>(argv[++i]);
+          sigma_a_2 = XT::Common::from_string<double>(argv[++i]);
           parameters_given = true;
         } else {
           std::cerr << "-sigma_a_2 option requires one argument." << std::endl;
@@ -449,15 +495,16 @@ int main(int argc, char* argv[])
 
     std::ofstream parameterfile;
     parameterfile.open(output_dir + "_parameters.txt");
-    parameterfile << "Gridsize: " << Common::to_string(grid_size) + " x " + Common::to_string(grid_size) << std::endl;
+    parameterfile << "Gridsize: " << XT::Common::to_string(grid_size) + " x " + XT::Common::to_string(grid_size)
+                  << std::endl;
 
     // run solver
     parameterfile << "Domain was composed of two materials, parameters were: " << std::endl
-                  << "First material: sigma_s = " + Common::to_string(sigma_s_1)
-                         + ", sigma_a = " + Common::to_string(sigma_a_1)
+                  << "First material: sigma_s = " + XT::Common::to_string(sigma_s_1)
+                         + ", sigma_a = " + XT::Common::to_string(sigma_a_1)
                   << std::endl
-                  << "Second material: sigma_s = " + Common::to_string(sigma_s_2)
-                         + ", sigma_a = " + Common::to_string(sigma_a_2)
+                  << "Second material: sigma_s = " + XT::Common::to_string(sigma_s_2)
+                         + ", sigma_a = " + XT::Common::to_string(sigma_a_2)
                   << std::endl;
 
     auto solver = std::make_shared<BoltzmannSolver<dimDomain>>(
@@ -467,7 +514,7 @@ int main(int argc, char* argv[])
     if (!linear) {
       std::vector<size_t> output_dofs{2728, 3868, 4468, 929};
       solver->prepare_restricted_operator(output_dofs);
-      using VectorType = typename LA::Container<double, LA::Backends::common_dense>::VectorType;
+      using VectorType = typename XT::LA::Container<double, XT::LA::Backends::common_dense>::VectorType;
       auto initial_vals = solver->get_initial_values();
       RandomNumberGeneratorType rng{std::random_device()()};
       std::uniform_real_distribution<double> distribution(1, 1000);

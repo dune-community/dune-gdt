@@ -14,7 +14,6 @@
 
 # set up project
 project("dune-gdt" CXX)
-set(BUILD_SHARED_LIBS 1)
 
 set(BUILD_SHARED_LIBS 1)
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
@@ -42,9 +41,9 @@ include(DuneUtils)
 # start a dune project with information from dune.module
 dune_project()
 if(DUNE_XT_WITH_PYTHON_BINDINGS)
-  dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune MODULE_LIBRARIES dunegdt boltzmann)
+  dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune MODULE_LIBRARIES dunegdt hapodgdt)
 else()
-  dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune MODULE_LIBRARIES boltzmann)
+  dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune MODULE_LIBRARIES hapodgdt)
 endif()
 
 add_header_listing()

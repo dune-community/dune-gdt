@@ -12,7 +12,3 @@
 # ~~~
 
 add_subdirectory(test EXCLUDE_FROM_ALL)
-
-set(lib_boltzmann_sources test/boltzmanntest.cc)
-
-dune_library_add_sources("boltzmann" SOURCES ${lib_boltzmann_sources})

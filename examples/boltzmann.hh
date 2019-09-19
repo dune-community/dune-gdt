@@ -7,8 +7,8 @@
 // Authors:
 //   Tobias Leibner (2019)
 
-#ifndef DUNE_GDT_TEST_BOLTZMANN_HH
-#define DUNE_GDT_TEST_BOLTZMANN_HH
+#ifndef DUNE_GDT_EXAMPLES_BOLTZMANN_HH
+#define DUNE_GDT_EXAMPLES_BOLTZMANN_HH
 
 #include <sys/resource.h>
 
@@ -51,8 +51,8 @@
 #include <dune/gdt/test/momentmodels/kinetictransport/checkerboard.hh>
 #include <dune/gdt/test/momentmodels/pn-discretization.hh>
 
+using namespace Dune;
 using namespace Dune::GDT;
-using namespace Dune::XT;
 
 typedef std::mt19937 RandomNumberGeneratorType;
 
@@ -85,9 +85,9 @@ public:
 
   using MomentBasis = typename std::conditional_t<
       dimDomain == 2,
-      Dune::GDT::SphericalHarmonicsMomentBasis<double, double, momentOrder_or_refinements, 2, true>,
-      //      Dune::GDT::PartialMomentBasis<double, 3, double, momentOrder_or_refinements, 1, 3, 1>>;
-      Dune::GDT::HatFunctionMomentBasis<double, 3, double, momentOrder_or_refinements, 1, 3>>;
+      GDT::SphericalHarmonicsMomentBasis<double, double, momentOrder_or_refinements, 2, true>,
+      //      GDT::PartialMomentBasis<double, 3, double, momentOrder_or_refinements, 1, 3, 1>>;
+      GDT::HatFunctionMomentBasis<double, 3, double, momentOrder_or_refinements, 1, 3>>;
   static constexpr size_t dimRange = MomentBasis::dimRange;
   static constexpr auto time_stepper_method = TimeStepperMethods::explicit_euler;
   static constexpr auto rhs_time_stepper_method = TimeStepperMethods::explicit_euler;
@@ -95,26 +95,26 @@ public:
   using DomainFieldType = typename MomentBasis::DomainFieldType;
   using RangeFieldType = typename MomentBasis::RangeFieldType;
   using RangeType = typename MomentBasis::RangeType;
-  using GridType = Dune::YaspGrid<dimDomain, Dune::EquidistantOffsetCoordinates<DomainFieldType, dimDomain>>;
+  using GridType = YaspGrid<dimDomain, EquidistantOffsetCoordinates<DomainFieldType, dimDomain>>;
   using GridViewType = typename GridType::LeafGridView;
-  using E = Dune::XT::Grid::extract_entity_t<GridViewType>;
+  using E = XT::Grid::extract_entity_t<GridViewType>;
   using SpaceType = FiniteVolumeSpace<GridViewType, dimRange, 1, RangeFieldType>;
-  using VectorType = typename Dune::XT::LA::Container<RangeFieldType, LA::Backends::common_dense>::VectorType;
-  using MatrixType = typename Dune::XT::LA::Container<RangeFieldType, LA::Backends::common_dense>::MatrixType;
+  using VectorType = typename XT::LA::Container<RangeFieldType, XT::LA::Backends::common_dense>::VectorType;
+  using MatrixType = typename XT::LA::Container<RangeFieldType, XT::LA::Backends::common_dense>::MatrixType;
   using DiscreteFunctionType = DiscreteFunction<VectorType, GridViewType, dimRange, 1, RangeFieldType>;
-  using PnProblemType = Dune::GDT::CheckerboardPn<E, MomentBasis>;
-  using ProblemType = Dune::GDT::CheckerboardMn<GridViewType, MomentBasis>;
-  using ConfigType = Common::Configuration;
+  using PnProblemType = GDT::CheckerboardPn<E, MomentBasis>;
+  using ProblemType = GDT::CheckerboardMn<GridViewType, MomentBasis>;
+  using ConfigType = XT::Common::Configuration;
   using AnalyticalFluxType = typename ProblemType::FluxType;
   using EntropyFluxType = typename ProblemType::ActualFluxType;
   using InitialValueType = typename ProblemType::InitialValueType;
   using BoundaryValueType = typename ProblemType::BoundaryValueType;
-  using GridProviderFactoryType = Dune::XT::Grid::CubeGridProviderFactory<GridType>;
-  using GridProviderType = Dune::XT::Grid::GridProvider<GridType>;
-  using AdvectionOperatorType = Dune::GDT::AdvectionFvOperator<MatrixType, GridViewType, dimRange>;
+  using GridProviderFactoryType = XT::Grid::CubeGridProviderFactory<GridType>;
+  using GridProviderType = XT::Grid::GridProvider<GridType>;
+  using AdvectionOperatorType = GDT::AdvectionFvOperator<MatrixType, GridViewType, dimRange>;
   using EigenvectorWrapperType = typename EigenvectorWrapperChooser<MomentBasis, AnalyticalFluxType>::type;
-  using EntropySolverType = Dune::GDT::EntropySolver<MomentBasis, SpaceType, MatrixType>;
-  using FvOperatorType = Dune::GDT::EntropyBasedMomentFvOperator<AdvectionOperatorType, EntropySolverType>;
+  using EntropySolverType = GDT::EntropySolver<MomentBasis, SpaceType, MatrixType>;
+  using FvOperatorType = GDT::EntropyBasedMomentFvOperator<AdvectionOperatorType, EntropySolverType>;
   using PnFvOperatorType = AdvectionOperatorType;
   using RhsOperatorType = GenericOperator<MatrixType, GridViewType, dimRange>;
   using FluxTimeStepperType =
@@ -249,7 +249,7 @@ public:
   SolutionVectorsVectorType next_n_time_steps(const size_t n, const bool with_half_steps = false) const
   {
     if (!silent_)
-      std::cout << "Calculating next " << Common::to_string(n) << " time steps... " << std::endl;
+      std::cout << "Calculating next " << XT::Common::to_string(n) << " time steps... " << std::endl;
     DXTC_TIMINGS.start("fv.solve");
     SolutionType solution;
     if (linear_)
@@ -279,7 +279,7 @@ public:
   VectorType apply_restricted_kinetic_operator(VectorType source) const
   {
     if (linear_)
-      DUNE_THROW(Dune::NotImplemented, "This needs a Mn operator!");
+      DUNE_THROW(NotImplemented, "This needs a Mn operator!");
     VectorType ret(restricted_op_output_dofs_->size(), 0.);
     RangeType u_entity;
     RangeType u_neighbor;
@@ -294,7 +294,7 @@ public:
         u_entity[kk] = source[jj * dimRange + kk];
       ++jj;
       basis_functions_->ensure_min_density(u_entity, min_acceptable_density);
-      for (auto&& intersection : Dune::intersections(*grid_view_, entity)) {
+      for (auto&& intersection : intersections(*grid_view_, entity)) {
         const auto intersection_center = intersection.geometry().center();
         if (intersection.neighbor()) {
           for (size_t kk = 0; kk < dimRange; ++kk)
@@ -304,7 +304,7 @@ public:
         } else if (intersection.boundary()) {
           u_neighbor = boundary_values_->evaluate(intersection_center);
         } else {
-          DUNE_THROW(Dune::MathError, "This should not happen!");
+          DUNE_THROW(MathError, "This should not happen!");
         }
         assert(intersection.indexInInside() >= 0);
         size_t direction = static_cast<size_t>(intersection.indexInInside()) / 2;
@@ -326,7 +326,7 @@ public:
   //  bool is_realizable(const VectorType& vector) const
   //  {
   //    const DiscreteFunctionType discrete_function(*fv_space_, vector);
-  //    for (const auto& entity : Dune::elements(fv_space_->grid_view())) {
+  //    for (const auto& entity : elements(fv_space_->grid_view())) {
   //      const auto local_vec =
   //      discrete_function.local_function(entity)->evaluate(entity.geometry.local(entity.geometry().center())); if
   //      (!basis_functions_.is_realizable(local_vec))
@@ -371,7 +371,7 @@ public:
     auto rhs_func = [=](const auto& /*source*/,
                         const auto& local_source,
                         auto& local_range,
-                        const Dune::XT::Common::Parameter& /*param*/) {
+                        const XT::Common::Parameter& /*param*/) {
       const auto& element = local_range.element();
       local_source->bind(element);
       const auto center = element.geometry().center();
@@ -390,8 +390,8 @@ public:
         *fv_space_, *fv_space_, std::vector<typename RhsOperatorType::GenericElementFunctionType>(1, rhs_func));
     rhs_timestepper_->set_operator(*rhs_operator_);
     sigma_t_max_ = calculate_max_sigma_t(*sigma_s, *sigma_a);
-    dt_ = std::min(problem_->CFL() * dx_,
-                   Dune::XT::Common::FloatCmp::ne(sigma_t_max_, 0.) ? 0.99 * 1. / sigma_t_max_ : 1e100);
+    dt_ =
+        std::min(problem_->CFL() * dx_, XT::Common::FloatCmp::ne(sigma_t_max_, 0.) ? 0.99 * 1. / sigma_t_max_ : 1e100);
   }
 
   VectorType get_initial_values() const
@@ -405,7 +405,7 @@ public:
   bool finished() const
   {
     const auto current_time = linear_ ? pn_timestepper_->current_time() : timestepper_->current_time();
-    return Common::FloatCmp::ge(current_time, t_end_);
+    return XT::Common::FloatCmp::ge(current_time, t_end_);
   }
 
   void init(const std::string output_dir = "boltzmann",
@@ -437,15 +437,15 @@ public:
     DXTC_TIMINGS.set_outputdir(output_dir);
 
     auto grid_config = ProblemType::default_grid_cfg();
-    grid_config["num_elements"] = "[" + Common::to_string(grid_size);
+    grid_config["num_elements"] = "[" + XT::Common::to_string(grid_size);
     for (size_t ii = 1; ii < dimDomain; ++ii)
-      grid_config["num_elements"] += " " + Common::to_string(grid_size);
+      grid_config["num_elements"] += " " + XT::Common::to_string(grid_size);
     grid_config["num_elements"] += "]";
 
     basis_functions_ = std::make_shared<const MomentBasis>();
 
     // create grid
-    auto grid_provider = GridProviderFactoryType::create(grid_config, Dune::MPIHelper::getCommunicator());
+    auto grid_provider = GridProviderFactoryType::create(grid_config, MPIHelper::getCommunicator());
     grid_ = grid_provider.grid_ptr();
 
     // make a product finite volume space on the leaf grid
@@ -472,12 +472,12 @@ public:
       std::cout << " done " << std::endl;
 
     // calculate dx and choose t_end and initial dt
-    Grid::Dimensions<GridViewType> dimensions(*grid_view_);
+    XT::Grid::Dimensions<GridViewType> dimensions(*grid_view_);
     if (dimDomain != 2 && dimDomain != 3)
-      DUNE_THROW(Dune::NotImplemented, "Need to adjust dx calculation!");
+      DUNE_THROW(NotImplemented, "Need to adjust dx calculation!");
     dx_ = dimensions.entity_width.max() / (dimDomain == 2 ? std::sqrt(2) : std::sqrt(3));
-    dt_ = std::min(problem_->CFL() * dx_,
-                   Dune::XT::Common::FloatCmp::ne(sigma_t_max_, 0.) ? 0.99 * 1. / sigma_t_max_ : 1e100);
+    dt_ =
+        std::min(problem_->CFL() * dx_, XT::Common::FloatCmp::ne(sigma_t_max_, 0.) ? 0.99 * 1. / sigma_t_max_ : 1e100);
     t_end_ = problem_->t_end();
 
     // create Operators
@@ -537,17 +537,17 @@ public:
   void prepare_restricted_operator(const std::vector<size_t>& output_dofs)
   {
     if (linear_)
-      DUNE_THROW(Dune::NotImplemented, "This needs a Mn operator!");
+      DUNE_THROW(NotImplemented, "This needs a Mn operator!");
     if (!restricted_op_output_dofs_ || *restricted_op_output_dofs_ != output_dofs) {
       restricted_op_output_dofs_ = std::make_shared<std::vector<size_t>>(output_dofs);
       restricted_op_input_dofs_ = std::make_shared<std::vector<size_t>>();
       restricted_op_entity_dofs_to_output_dofs_ = std::make_shared<std::vector<std::map<size_t, size_t>>>();
       const auto& mapper = fv_space_->mapper();
-      Dune::DynamicVector<size_t> global_dofs_entity;
-      Dune::DynamicVector<size_t> global_dofs_neighbor;
+      DynamicVector<size_t> global_dofs_entity;
+      DynamicVector<size_t> global_dofs_neighbor;
       // calculate entities corresponding to dofs in restricted operator
       restricted_op_entities_ = std::make_shared<std::vector<E>>();
-      for (auto&& entity : Dune::elements(*grid_view_)) {
+      for (auto&& entity : elements(*grid_view_)) {
         // we only want to add each entity once, but there may be several output_dofs per entity
         bool entity_added = false;
         mapper.global_indices(entity, global_dofs_entity);
@@ -559,7 +559,7 @@ public:
                 restricted_op_entities_->push_back(entity);
                 for (auto&& global_dof : global_dofs_entity)
                   restricted_op_input_dofs_->push_back(global_dof);
-                for (auto&& intersection : Dune::intersections(*grid_view_, entity)) {
+                for (auto&& intersection : intersections(*grid_view_, entity)) {
                   if (intersection.neighbor()) {
                     mapper.global_indices(intersection.outside(), global_dofs_neighbor);
                     for (auto&& global_dof : global_dofs_neighbor)
@@ -625,4 +625,4 @@ private:
   double sigma_t_max_;
 };
 
-#endif // DUNE_GDT_TEST_BOLTZMANN_HH
+#endif // DUNE_GDT_EXAMPLES_BOLTZMANN_HH
