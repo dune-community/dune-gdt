@@ -133,6 +133,7 @@ public:
   using F = FieldType;
 
   using SGV = SourceGridView;
+  using E = XT::Grid::extract_entity_t<SGV>;
   static const constexpr size_t s_r = source_dim;
   static const constexpr size_t s_rC = source_dim_cols;
 
@@ -141,6 +142,7 @@ public:
   static const constexpr size_t r_rC = range_dim_cols;
 
   using SourceSpaceType = SpaceInterface<SGV, s_r, s_rC, F>;
+  using SourceFunctionInterfaceType = XT::Functions::GridFunctionInterface<E, s_r, s_rC, F>;
   using SourceFunctionType = DiscreteFunction<V, SGV, s_r, s_rC, F>;
   using ConstSourceFunctionType = ConstDiscreteFunction<V, SGV, s_r, s_rC, F>;
 

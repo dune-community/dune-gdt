@@ -232,7 +232,7 @@ public:
     return std::make_unique<ThisType>(*this);
   }
 
-  virtual void post_bind(const I& intersect) const override final
+  virtual void post_bind(const I& intersect) override final
   {
     post_bind_(intersect);
   }

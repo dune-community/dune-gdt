@@ -56,13 +56,27 @@ public:
   using FluxType = XT::Functions::FluxFunctionInterface<E, m, d, m, RF>;
   using LocalMassMatrixProviderType = LocalMassMatrixProvider<RGV, m, 1, RF>;
 
+  // When using this constructor, source has to be set by a call to with_source before calling apply
+  LocalAdvectionDgVolumeOperator(const FluxType& flux)
+    : BaseType(flux.parameter_type())
+    , flux_(flux)
+    , local_flux_(flux_.local_function())
+  {}
+
   LocalAdvectionDgVolumeOperator(const SourceType& source, const FluxType& flux)
     : BaseType(source, flux.parameter_type())
     , flux_(flux)
     , local_flux_(flux_.local_function())
   {}
 
-  /// Applies the inverse of the local mass matrix.
+  // When using this constructor, source has to be set by a call to with_source before calling apply
+  LocalAdvectionDgVolumeOperator(const LocalMassMatrixProviderType& local_mass_matrices, const FluxType& flux)
+    : BaseType(flux.parameter_type())
+    , flux_(flux)
+    , local_flux_(flux_.local_function())
+    , local_mass_matrices_(local_mass_matrices)
+  {}
+
   LocalAdvectionDgVolumeOperator(const SourceType& source,
                                  const LocalMassMatrixProviderType& local_mass_matrices,
                                  const FluxType& flux)
@@ -72,7 +86,6 @@ public:
     , local_mass_matrices_(local_mass_matrices)
   {}
 
-  /// Applies the inverse of the local mass matrix.
   LocalAdvectionDgVolumeOperator(const SourceSpaceType& source_space,
                                  const SV& source_vector,
                                  const LocalMassMatrixProviderType& local_mass_matrices,
@@ -178,6 +191,15 @@ public:
   using NumericalFluxType = NumericalFluxInterface<I, d, m, IRR>;
   using LocalMassMatrixProviderType = LocalMassMatrixProvider<IRGV, m, 1, IRR>;
 
+  // When using this constructor, source has to be set by a call to with_source before calling apply
+  LocalAdvectionDgCouplingOperator(const NumericalFluxType& numerical_flux, bool compute_outside = true)
+    : BaseType(numerical_flux.parameter_type())
+    , local_source_outside_(nullptr)
+    , numerical_flux_(numerical_flux.copy())
+    , local_flux_(numerical_flux_->flux().local_function())
+    , compute_outside_(compute_outside)
+  {}
+
   LocalAdvectionDgCouplingOperator(const SourceType& source,
                                    const NumericalFluxType& numerical_flux,
                                    bool compute_outside = true)
@@ -188,7 +210,18 @@ public:
     , compute_outside_(compute_outside)
   {}
 
-  /// Applies the inverse of the local mass matrix.
+  // When using this constructor, source has to be set by a call to with_source before calling apply
+  LocalAdvectionDgCouplingOperator(const LocalMassMatrixProviderType& local_mass_matrices,
+                                   const NumericalFluxType& numerical_flux,
+                                   bool compute_outside = true)
+    : BaseType(numerical_flux.parameter_type())
+    , local_source_outside_(nullptr)
+    , numerical_flux_(numerical_flux.copy())
+    , local_flux_(numerical_flux_->flux().local_function())
+    , compute_outside_(compute_outside)
+    , local_mass_matrices_(local_mass_matrices)
+  {}
+
   LocalAdvectionDgCouplingOperator(const SourceType& source,
                                    const LocalMassMatrixProviderType& local_mass_matrices,
                                    const NumericalFluxType& numerical_flux,
@@ -201,7 +234,6 @@ public:
     , local_mass_matrices_(local_mass_matrices)
   {}
 
-  /// Applies the inverse of the local mass matrix.
   LocalAdvectionDgCouplingOperator(const SourceSpaceType& source_space,
                                    const SV& source_vector,
                                    const LocalMassMatrixProviderType& local_mass_matrices,
@@ -358,7 +390,6 @@ public:
     , numerical_flux_order_(numerical_flux_order)
   {}
 
-  /// Applies the inverse of the local mass matrix.
   LocalAdvectionDgBoundaryTreatmentByCustomNumericalFluxOperator(
       const SourceType& source,
       const LocalMassMatrixProviderType& local_mass_matrices,
@@ -371,7 +402,6 @@ public:
     , local_mass_matrices_(local_mass_matrices)
   {}
 
-  /// Applies the inverse of the local mass matrix.
   LocalAdvectionDgBoundaryTreatmentByCustomNumericalFluxOperator(
       const SourceSpaceType& source_space,
       const SV& source_vector,
@@ -493,7 +523,6 @@ public:
     , extrapolate_(boundary_extrapolation_lambda)
   {}
 
-  /// Applies the inverse of the local mass matrix.
   LocalAdvectionDgBoundaryTreatmentByCustomExtrapolationOperator(
       const SourceType& source,
       const LocalMassMatrixProviderType& local_mass_matrices,
@@ -507,7 +536,6 @@ public:
     , local_mass_matrices_(local_mass_matrices)
   {}
 
-  /// Applies the inverse of the local mass matrix.
   LocalAdvectionDgBoundaryTreatmentByCustomExtrapolationOperator(
       const SourceSpaceType& source_space,
       const SV& source_vector,
@@ -608,6 +636,19 @@ public:
   using FluxType = XT::Functions::FunctionInterface<m, d, m, RF>;
   using LocalMassMatrixProviderType = LocalMassMatrixProvider<RGV, m, 1, RF>;
 
+  // When using this constructor, source has to be set by a call to with_source before calling apply
+  LocalAdvectionDgArtificialViscosityShockCapturingOperator(const SGV& assembly_grid_view,
+                                                            const double& nu_1 = 0.2,
+                                                            const double& alpha_1 = 1.0,
+                                                            const size_t index = 0)
+    : BaseType()
+    , local_source_outside_(nullptr)
+    , assembly_grid_view_(assembly_grid_view)
+    , nu_1_(nu_1)
+    , alpha_1_(alpha_1)
+    , index_(index)
+  {}
+
   LocalAdvectionDgArtificialViscosityShockCapturingOperator(const SourceType& source,
                                                             const SGV& assembly_grid_view,
                                                             const double& nu_1 = 0.2,
@@ -621,7 +662,21 @@ public:
     , index_(index)
   {}
 
-  /// Applies the inverse of the local mass matrix.
+  // When using this constructor, source has to be set by a call to with_source before calling apply
+  LocalAdvectionDgArtificialViscosityShockCapturingOperator(const LocalMassMatrixProviderType& local_mass_matrices,
+                                                            const SGV& assembly_grid_view,
+                                                            const double& nu_1 = 0.2,
+                                                            const double& alpha_1 = 1.0,
+                                                            const size_t index = 0)
+    : BaseType()
+    , local_source_outside_(nullptr)
+    , assembly_grid_view_(assembly_grid_view)
+    , nu_1_(nu_1)
+    , alpha_1_(alpha_1)
+    , index_(index)
+    , local_mass_matrices_(local_mass_matrices)
+  {}
+
   LocalAdvectionDgArtificialViscosityShockCapturingOperator(const SourceType& source,
                                                             const LocalMassMatrixProviderType& local_mass_matrices,
                                                             const SGV& assembly_grid_view,
@@ -637,7 +692,6 @@ public:
     , local_mass_matrices_(local_mass_matrices)
   {}
 
-  /// Applies the inverse of the local mass matrix.
   LocalAdvectionDgArtificialViscosityShockCapturingOperator(
 
 

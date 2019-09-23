@@ -64,6 +64,12 @@ public:
   using NumericalFluxType = NumericalFluxInterface<I, d, m, RR>;
   using LocalIntersectionCoords = typename NumericalFluxType::LocalIntersectionCoords;
 
+  // When using this constructor, source has to be set by a call to with_source before calling apply
+  LocalAdvectionFvCouplingOperator(const NumericalFluxType& numerical_flux, const bool source_x_independent = false)
+    : BaseType(numerical_flux.parameter_type())
+    , source_is_x_independent_(source_x_independent)
+  {}
+
   LocalAdvectionFvCouplingOperator(const SourceType& source,
                                    const NumericalFluxType& numerical_flux,
                                    const bool source_x_independent = false)
@@ -178,6 +184,16 @@ public:
   using LambdaType = std::function<StateType(
       const StateType& /*u*/, const StateDomainType& /*n*/, const XT::Common::Parameter& /*param*/)>;
 
+  // When using this constructor, source has to be set by a call to with_source before calling apply
+  LocalAdvectionFvBoundaryTreatmentByCustomNumericalFluxOperator(
+      LambdaType numerical_boundary_flux_lambda,
+      const XT::Common::ParameterType& boundary_treatment_param_type = {},
+      const bool source_is_x_independent = false)
+    : BaseType(boundary_treatment_param_type)
+    , numerical_boundary_flux_(numerical_boundary_flux_lambda)
+    , source_is_x_independent_(source_is_x_independent)
+  {}
+
   LocalAdvectionFvBoundaryTreatmentByCustomNumericalFluxOperator(
       const SourceType& source,
       LambdaType numerical_boundary_flux_lambda,
@@ -279,6 +295,18 @@ public:
                                              const FluxType& /*flux*/,
                                              const StateType& /*u*/,
                                              const XT::Common::Parameter& /*param*/)>;
+
+  // When using this constructor, source has to be set by a call to with_source before calling apply
+  LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator(
+      const NumericalFluxType& numerical_flux,
+      LambdaType boundary_extrapolation_lambda,
+      const XT::Common::ParameterType& boundary_treatment_param_type = {},
+      const bool source_is_x_independent = false)
+    : BaseType(numerical_flux.parameter_type() + boundary_treatment_param_type)
+    , numerical_flux_(numerical_flux.copy())
+    , extrapolate_(boundary_extrapolation_lambda)
+    , source_is_x_independent_(source_is_x_independent)
+  {}
 
   LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator(
       const SourceType& source,

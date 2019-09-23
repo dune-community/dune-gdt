@@ -71,6 +71,13 @@ public:
 
   using ThisType = LocalElementOperatorInterface<SV, SGV, s_r, s_rC, SR, r_r, r_rC, RR, RGV, RV>;
 
+  // Allows default construction, source has to be set by a call to with_source before calling apply
+  LocalElementOperatorInterface(const XT::Common::ParameterType& param_type = {})
+    : XT::Common::ParametricInterface(param_type)
+    , source_()
+    , local_source_(nullptr)
+  {}
+
   LocalElementOperatorInterface(const SourceType& source, const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type)
     , source_(source)
@@ -177,6 +184,13 @@ public:
   using ORV = OutsideRangeVector;
   using ORGV = OutsideRangeGridView;
   using LocalOutsideRangeType = LocalDiscreteFunction<ORV, ORGV, r_r, r_rC, RF>;
+
+  // Allows default construction, source has to be set by a call to with_source before calling apply
+  LocalIntersectionOperatorInterface(const XT::Common::ParameterType& param_type = {})
+    : XT::Common::ParametricInterface(param_type)
+    , source_()
+    , local_source_(nullptr)
+  {}
 
   LocalIntersectionOperatorInterface(const SourceType& src, const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type)
