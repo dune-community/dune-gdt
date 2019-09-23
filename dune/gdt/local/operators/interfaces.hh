@@ -95,7 +95,7 @@ public:
   LocalElementOperatorInterface(const ThisType& other)
     : XT::Common::ParametricInterface(other)
     , source_(other.source_)
-    , local_source_(source_.access().local_function())
+    , local_source_(other.local_source_ ? source_.access().local_function() : nullptr)
   {}
 
   virtual ~LocalElementOperatorInterface() = default;
@@ -209,7 +209,7 @@ public:
   LocalIntersectionOperatorInterface(const ThisType& other)
     : XT::Common::ParametricInterface(other)
     , source_(other.source_)
-    , local_source_(source_.access().local_function())
+    , local_source_(other.local_source_ ? source_.access().local_function() : nullptr)
   {}
 
   virtual ~LocalIntersectionOperatorInterface() = default;

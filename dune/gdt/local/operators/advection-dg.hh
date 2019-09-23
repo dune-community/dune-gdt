@@ -249,7 +249,7 @@ public:
 
   LocalAdvectionDgCouplingOperator(const ThisType& other)
     : BaseType(other)
-    , local_source_outside_(source_.access().local_function())
+    , local_source_outside_(other.local_source_outside_ ? source_.access().local_function() : nullptr)
     , numerical_flux_(other.numerical_flux_->copy())
     , local_flux_(numerical_flux_->flux().local_function())
     , compute_outside_(other.compute_outside_)
@@ -714,7 +714,7 @@ public:
 
   LocalAdvectionDgArtificialViscosityShockCapturingOperator(const ThisType& other)
     : BaseType(other)
-    , local_source_outside_(source_.access().local_function())
+    , local_source_outside_(other.local_source_outside_ ? source_.access().local_function() : nullptr)
     , assembly_grid_view_(other.assembly_grid_view_)
     , nu_1_(other.nu_1_)
     , alpha_1_(other.alpha_1_)

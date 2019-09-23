@@ -67,6 +67,7 @@ public:
   // When using this constructor, source has to be set by a call to with_source before calling apply
   LocalAdvectionFvCouplingOperator(const NumericalFluxType& numerical_flux, const bool source_x_independent = false)
     : BaseType(numerical_flux.parameter_type())
+    , numerical_flux_(numerical_flux.copy())
     , source_is_x_independent_(source_x_independent)
   {}
 
