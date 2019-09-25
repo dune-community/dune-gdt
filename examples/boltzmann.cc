@@ -326,6 +326,7 @@ BOOST_PYTHON_MODULE(libhapodgdt)
                                         const double,
                                         const unsigned int,
                                         const unsigned int,
+                                        const bool,
                                         const double,
                                         const double,
                                         const double,
@@ -336,7 +337,7 @@ BOOST_PYTHON_MODULE(libhapodgdt)
                                         const double,
                                         // const double,
                                         // const double,
-                                        const double,
+                                        // const double,
                                         const double>>())
       .def("visualize", &CellModelSolver::visualize, visualize_overloads())
       .def("prepare_pfield_operator", &CellModelSolver::prepare_pfield_operator)
