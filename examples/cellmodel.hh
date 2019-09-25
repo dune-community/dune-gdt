@@ -152,6 +152,7 @@ struct CellModelSolver
                   const double t_end = 1.,
                   const unsigned int num_elements_x = 50,
                   const unsigned int num_elements_y = 50,
+                  const bool use_tbb = true,
                   const double Re = 5e-13,
                   const double Fa = 1.,
                   const double xi = 1.1,
@@ -193,6 +194,7 @@ struct CellModelSolver
     , mu_view_(pfield_vector_, 2 * size_phi_, 3 * size_phi_)
     , u_(u_space_, u_view_, "u")
     , p_(p_space_, p_view_, "p")
+    , use_tbb_(use_tbb)
     , Re_(Re)
     , Fa_inv_(1. / Fa)
     , xi_(xi)
@@ -443,9 +445,9 @@ struct CellModelSolver
     // Dirichlet constrainst for u
     A_stokes_operator_->append(u_dirichlet_constraints_);
     // assemble everything
-    A_stokes_operator_->assemble(true);
-    B_stokes_operator.assemble(true);
-    M_p_stokes_operator.assemble(true);
+    A_stokes_operator_->assemble(use_tbb_);
+    B_stokes_operator.assemble(use_tbb_);
+    M_p_stokes_operator.assemble(use_tbb_);
 
     // Fix value of p at first DoF to 0 to ensure the uniqueness of the solution, i.e, we have set the p_size_-th row of
     // [A B; B^T 0] to the unit vector.
@@ -473,7 +475,7 @@ struct CellModelSolver
      *************************************************************************************************/
     // calculate M_{ij} as \int \psi_i phi_j
     M_ofield_operator_->append(LocalElementIntegralBilinearForm<E, d>(LocalElementProductIntegrand<E, d>(1.)));
-    M_ofield_operator_->assemble(true);
+    M_ofield_operator_->assemble(use_tbb_);
     // set S_11 = D = M
     S_ofield_11_ = M_ofield_;
     // calculate S_01 = B
@@ -483,7 +485,7 @@ struct CellModelSolver
     MatrixOperator<MatrixType, PGV, d> ofield_elliptic_operator(
         grid_view_, u_space_, u_space_, C_ofield_elliptic_part_);
     ofield_elliptic_operator.append(LocalElementIntegralBilinearForm<E, d>(LocalLaplaceIntegrand<E, d>(-1. / Pa_)));
-    ofield_elliptic_operator.assemble(true);
+    ofield_elliptic_operator.assemble(use_tbb_);
     ofield_solver_->analyzePattern(S_ofield_.backend());
 
     /*************************************************************************************************
@@ -495,8 +497,8 @@ struct CellModelSolver
     MatrixOperator<MatrixType, PGV, 1> E_pfield_operator(grid_view_, phi_space_, phi_space_, E_pfield_);
     E_pfield_operator.append(LocalElementIntegralBilinearForm<E, 1>(LocalLaplaceIntegrand<E, 1>(1.)));
     M_pfield_operator.append(phi_dirichlet_constraints_);
-    M_pfield_operator.assemble(true);
-    E_pfield_operator.assemble(true);
+    M_pfield_operator.assemble(use_tbb_);
+    E_pfield_operator.assemble(use_tbb_);
     A_pfield_linear_part_ = E_pfield_ * epsilon_;
     J_pfield_linear_part_ = E_pfield_ * 1. / Be_;
     J_pfield_linear_part_ += M_pfield_ * 1. / Ca_;
@@ -655,12 +657,12 @@ struct CellModelSolver
         pfield_vector_ = solve_pfield(pfield_vector_, kk);
         set_pfield_variables(kk, pfield_vector_);
         ret[0].push_back(pfield_vector_);
-        std::cout << "Pfield " << kk << " done" << std::endl;
+        // std::cout << "Pfield " << kk << " done" << std::endl;
         prepare_ofield_operator(dt, kk);
         ofield_vector_ = solve_ofield(ofield_vector_, kk);
         set_ofield_variables(kk, ofield_vector_);
         ret[1].push_back(ofield_vector_);
-        std::cout << "Ofield " << kk << " done" << std::endl;
+        // std::cout << "Ofield " << kk << " done" << std::endl;
       }
 
       // stokes system
@@ -668,7 +670,7 @@ struct CellModelSolver
       stokes_vector_ = solve_stokes();
       set_stokes_variables(stokes_vector_);
       ret[2].push_back(stokes_vector_);
-      std::cout << "Stokes done" << std::endl;
+      // std::cout << "Stokes done" << std::endl;
 
       ++count;
       t_ += actual_dt;
@@ -733,7 +735,6 @@ struct CellModelSolver
 
   bool finished() const
   {
-    std::cout << t_end_ << " vs. " << t_ << std::endl;
     return XT::Common::FloatCmp::eq(t_end_, t_);
   }
 
@@ -942,9 +943,9 @@ struct CellModelSolver
     A_stokes_operator_->clear();
     A_stokes_operator_->append(f_functional);
     stokes_f_vector_ *= 0.;
-    A_stokes_operator_->assemble(true);
+    A_stokes_operator_->assemble(use_tbb_);
     std::chrono::duration<double> time = std::chrono::steady_clock::now() - begin;
-    std::cout << "Assembling Stokes took: " << time.count() << " s!" << std::endl;
+    // std::cout << "Assembling Stokes took: " << time.count() << " s!" << std::endl;
 
     // apply dirichlet constraints for u.
     u_dirichlet_constraints_.apply(stokes_f_vector_);
@@ -965,7 +966,7 @@ struct CellModelSolver
     EigenVectorType ret(size_u_ + size_p_);
     ret.backend() = stokes_solver_->solve(stokes_rhs_vector_.backend());
     std::chrono::duration<double> time = std::chrono::steady_clock::now() - begin;
-    std::cout << "Solving Stokes took: " << time.count() << " s!" << std::endl;
+    // std::cout << "Solving Stokes took: " << time.count() << " s!" << std::endl;
 
     // ensure int_\Omega p = 0 (TODO: remove, not necessary as p is not used anywhere)
     // auto p_integral = p_basis_integrated_vector_ * p_.dofs().vector();
@@ -1015,7 +1016,7 @@ struct CellModelSolver
           local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E, d>(), nonlinear_res_pf)));
       S_ofield_00_operator_->clear();
       S_ofield_00_operator_->append(nonlinear_res_functional);
-      S_ofield_00_operator_->assemble(true);
+      S_ofield_00_operator_->assemble(use_tbb_);
     }
     // relative error if l2_norm is > 1, else absolute error
     return residual;
@@ -1056,7 +1057,7 @@ struct CellModelSolver
         local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E, d>(), g)));
     S_ofield_10_operator_->clear();
     S_ofield_10_operator_->append(g_functional);
-    S_ofield_10_operator_->assemble(true);
+    S_ofield_10_operator_->assemble(use_tbb_);
   }
 
   void assemble_ofield_linear_jacobian(const double dt, const size_t ll)
@@ -1086,7 +1087,7 @@ struct CellModelSolver
     S_ofield_00_operator_->append(
         LocalElementIntegralBilinearForm<E, d>(LocalElementProductIntegrand<E, d>(Omega_minus_xi_D_transposed)));
     S_ofield_00_operator_->append(LocalElementIntegralBilinearForm<E, d>(LocalElementGradientValueIntegrand<E, d>(u_)));
-    S_ofield_00_operator_->assemble(true);
+    S_ofield_00_operator_->assemble(use_tbb_);
 
     // calculate linear part S_10 = C
     S_ofield_10_operator_->clear();
@@ -1102,7 +1103,7 @@ struct CellModelSolver
         });
     S_ofield_10_operator_->append(
         LocalElementIntegralBilinearForm<E, d>(LocalElementProductIntegrand<E, d>(c1_Pa_inv_phi)));
-    S_ofield_10_operator_->assemble(true);
+    S_ofield_10_operator_->assemble(use_tbb_);
     C_ofield_linear_part_ = S_ofield_10_;
 
     // nonlinear part is equal to linearized part in first iteration
@@ -1142,7 +1143,7 @@ struct CellModelSolver
     // Pn_otimes_Pn is symmetric, so no need to transpose
     S_ofield_10_operator_->append(
         LocalElementIntegralBilinearForm<E, d>(LocalElementProductIntegrand<E, d>(minus_two_frac_c1_Pa_Pn_otimes_Pn)));
-    S_ofield_10_operator_->assemble(true);
+    S_ofield_10_operator_->assemble(use_tbb_);
   }
 
   void revert_ofield_jacobian_to_linear() const
@@ -1188,7 +1189,7 @@ struct CellModelSolver
 
       // *********** Newton ******************************
       const auto tol = 1e-10;
-      const auto max_iter = 1000;
+      const auto max_iter = 20;
       const auto max_dampening_iter = 1000;
 
       auto l2_norm_P = l2_norm(grid_view_, P_[ll]);
@@ -1199,7 +1200,7 @@ struct CellModelSolver
       auto residual = apply_ofield_operator(source, ll);
       auto res_norm = ofield_residual_norm(residual, l2_norm_P, l2_norm_Pnat);
       std::chrono::duration<double> time = std::chrono::steady_clock::now() - begin;
-      std::cout << "Computing residual took: " << time.count() << " s!" << std::endl;
+      // std::cout << "Computing residual took: " << time.count() << " s!" << std::endl;
 
       size_t iter = 0;
       VectorType x_n = source;
@@ -1213,14 +1214,17 @@ struct CellModelSolver
         begin = std::chrono::steady_clock::now();
         assemble_ofield_nonlinear_jacobian(x_n, ll);
         time = std::chrono::steady_clock::now() - begin;
-        std::cout << "Assembling nonlinear part of jacobian took: " << time.count() << " s!" << std::endl;
+        // std::cout << "Assembling nonlinear part of jacobian took: " << time.count() << " s!" << std::endl;
 
         // *********** solve system *************
         residual *= -1.;
         update = solve_ofield_linear_system(residual, ll);
 
-        DUNE_THROW_IF(
-            iter >= max_iter, Exceptions::operator_error, "max iterations reached!\n|residual|_l2 = " << res_norm);
+        DUNE_THROW_IF(iter >= max_iter,
+                      Exceptions::operator_error,
+                      "max iterations in ofield reached!\n|residual|_l2 = " << res_norm << ", param: "
+                                                                            << "(" << Re_ << ", " << 1. / Fa_inv_
+                                                                            << ", " << xi_ << ")" << std::endl);
 
         // apply damping
         size_t k = 0;
@@ -1240,13 +1244,13 @@ struct CellModelSolver
           x_n_plus_1 = x_n + update * lambda;
           residual = apply_ofield_operator(x_n_plus_1, ll);
           candidate_res = ofield_residual_norm(residual, l2_norm_P, l2_norm_Pnat);
-          std::cout << "Candidate res: " << candidate_res << std::endl;
+          // std::cout << "Candidate res: " << candidate_res << std::endl;
           lambda /= 2;
           k += 1;
         }
         x_n = x_n_plus_1;
         res_norm = candidate_res;
-        std::cout << "Current res: " << candidate_res << std::endl;
+        // std::cout << "Current res: " << candidate_res << std::endl;
         iter += 1;
       } // while (true)
       return x_n;
@@ -1373,7 +1377,7 @@ struct CellModelSolver
       S_pfield_00_operator_->clear();
       S_pfield_00_operator_->append(nonlinear_res1_functional);
       S_pfield_00_operator_->append(nonlinear_res2_functional);
-      S_pfield_00_operator_->assemble(true);
+      S_pfield_00_operator_->assemble(use_tbb_);
     }
     phi_dirichlet_constraints_.apply(res2_vec);
     // relative error if l2_norm is > 1, else absolute error
@@ -1556,7 +1560,7 @@ struct CellModelSolver
     S_pfield_00_operator_->append(h_functional);
 
     // assemble rhs
-    S_pfield_00_operator_->assemble(true);
+    S_pfield_00_operator_->assemble(use_tbb_);
   }
 
   void assemble_pfield_linear_jacobian(const double dt, const size_t ll)
@@ -1577,7 +1581,7 @@ struct CellModelSolver
         });
     S_pfield_00_operator_->append(
         LocalElementIntegralBilinearForm<E, 1>(LocalElementGradientValueIntegrand<E, 1, 1, R, R, R, true>(minus_u)));
-    S_pfield_00_operator_->assemble(true);
+    S_pfield_00_operator_->assemble(use_tbb_);
     // linear part of matrix S_{12} = J
     S_pfield_12_ = J_pfield_linear_part_;
     // linear part of matrix S_{20} = A
@@ -1604,7 +1608,7 @@ struct CellModelSolver
         });
     A_pfield_nonlinear_part_operator_->append(
         LocalElementIntegralBilinearForm<E, 1>(LocalElementProductIntegrand<E, 1>(A_nonlinear_prefactor)));
-    A_pfield_nonlinear_part_operator_->assemble(true);
+    A_pfield_nonlinear_part_operator_->assemble(use_tbb_);
     A_pfield_nonlinear_part_ *= 1. / epsilon_;
     S_pfield_20_ += A_pfield_nonlinear_part_;
     A_pfield_nonlinear_part_ *= 1. / (Be_ * epsilon_);
@@ -1669,7 +1673,7 @@ struct CellModelSolver
         });
     S_pfield_10_operator_->append(
         LocalElementIntegralBilinearForm<E, 1>(LocalElementProductIntegrand<E, 1>(G_prefactor)));
-    S_pfield_10_operator_->assemble(true);
+    S_pfield_10_operator_->assemble(use_tbb_);
 
     for (const auto& DoF : phi_dirichlet_constraints_.dirichlet_DoFs())
       S_pfield_20_.unit_row(DoF);
@@ -1706,7 +1710,7 @@ struct CellModelSolver
 
       // *********** Newton ******************************
       const auto tol = 1e-10;
-      const auto max_iter = 1000;
+      const auto max_iter = 20;
       const auto max_dampening_iter = 1000;
 
       const auto l2_norm_phi = l2_norm(grid_view_, phi_[ll]);
@@ -1718,7 +1722,7 @@ struct CellModelSolver
       auto residual = apply_pfield_operator(source, ll);
       auto res_norm = pfield_residual_norm(residual, l2_norm_phi, l2_norm_phinat, l2_norm_mu);
       std::chrono::duration<double> time = std::chrono::steady_clock::now() - begin;
-      std::cout << "Computing residual took: " << time.count() << " s!" << std::endl;
+      // std::cout << "Computing residual took: " << time.count() << " s!" << std::endl;
 
       size_t iter = 0;
       VectorType x_n = source;
@@ -1732,14 +1736,17 @@ struct CellModelSolver
         begin = std::chrono::steady_clock::now();
         assemble_pfield_nonlinear_jacobian(x_n, ll);
         time = std::chrono::steady_clock::now() - begin;
-        std::cout << "Assembling nonlinear part of jacobian took: " << time.count() << " s!" << std::endl;
+        // std::cout << "Assembling nonlinear part of jacobian took: " << time.count() << " s!" << std::endl;
 
         // *********** solve system *************
         residual *= -1.;
         update = solve_pfield_linear_system(residual, ll);
 
-        DUNE_THROW_IF(
-            iter >= max_iter, Exceptions::operator_error, "max iterations reached!\n|residual|_l2 = " << res_norm);
+        DUNE_THROW_IF(iter >= max_iter,
+                      Exceptions::operator_error,
+                      "max iterations in pfield reached!\n|residual|_l2 = " << res_norm << ", param: "
+                                                                            << "(" << Re_ << ", " << 1. / Fa_inv_
+                                                                            << ", " << xi_ << ")" << std::endl);
 
         // apply damping
         size_t k = 0;
@@ -1759,13 +1766,13 @@ struct CellModelSolver
           x_n_plus_1 = x_n + update * lambda;
           residual = apply_pfield_operator(x_n_plus_1, ll);
           candidate_res = pfield_residual_norm(residual, l2_norm_phi, l2_norm_phinat, l2_norm_mu);
-          std::cout << "Candidate res: " << candidate_res << std::endl;
+          // std::cout << "Candidate res: " << candidate_res << std::endl;
           lambda /= 2;
           k += 1;
         }
         x_n = x_n_plus_1;
         res_norm = candidate_res;
-        std::cout << "Current res: " << candidate_res << std::endl;
+        // std::cout << "Current res: " << candidate_res << std::endl;
         iter += 1;
       } // while (true)
       return x_n;
@@ -1803,6 +1810,7 @@ struct CellModelSolver
   std::vector<ViewDiscreteFunctionType> phi_;
   std::vector<ViewDiscreteFunctionType> phinat_;
   std::vector<ViewDiscreteFunctionType> mu_;
+  const bool use_tbb_;
   const double Re_;
   const double Fa_inv_;
   const double xi_;
