@@ -67,12 +67,12 @@ public:
     , u_iso_(other.u_iso_)
   {}
 
-  virtual XT::Grid::ElementFunctor<GridViewType>* copy() override final
+  XT::Grid::ElementFunctor<GridViewType>* copy() override final
   {
     return new KineticIsotropicLocalFunctor(*this);
   }
 
-  virtual void apply_local(const E& entity) override final
+  void apply_local(const E& entity) override final
   {
     local_solution_->bind(entity);
 
@@ -145,7 +145,7 @@ public:
     , Q_(Q)
   {}
 
-  virtual RangeFieldType step(const RangeFieldType dt, const RangeFieldType max_dt) override final
+  RangeFieldType step(const RangeFieldType dt, const RangeFieldType max_dt) override final
   {
     const RangeFieldType actual_dt = std::min(dt, max_dt);
     auto& t = current_time();

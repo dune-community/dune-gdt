@@ -65,12 +65,12 @@ public:
     , target_basis_(target_.space().basis().localize())
   {}
 
-  virtual XT::Grid::ElementFunctor<IGV>* copy() override final
+  XT::Grid::ElementFunctor<IGV>* copy() override final
   {
     return new DefaultInterpolationElementFunctor(*this);
   }
 
-  virtual void apply_local(const E& element) override final
+  void apply_local(const E& element) override final
   {
     local_source_->bind(element);
     local_dof_vector_.bind(element);

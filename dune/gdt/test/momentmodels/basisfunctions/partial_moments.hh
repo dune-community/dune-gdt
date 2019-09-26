@@ -105,7 +105,7 @@ public:
     BaseType::initialize_base_values();
   }
 
-  virtual DynamicRangeType evaluate(const DomainType& v) const override final
+  DynamicRangeType evaluate(const DomainType& v) const override final
   {
     for (size_t ii = 0; ii < num_intervals; ++ii)
       if (XT::Common::FloatCmp::ge(v[0], partitioning_[ii]) && XT::Common::FloatCmp::le(v[0], partitioning_[ii + 1]))
@@ -115,7 +115,7 @@ public:
   } // ... evaluate(...)
 
   // evaluate on interval ii
-  virtual DynamicRangeType evaluate(const DomainType& v, const size_t ii) const override final
+  DynamicRangeType evaluate(const DomainType& v, const size_t ii) const override final
   {
     DynamicRangeType ret(dimRange, 0);
     const auto local_ret = evaluate_on_interval(v, ii);
@@ -134,7 +134,7 @@ public:
     return evaluate_on_interval(v, ii);
   } // ... evaluate(...)
 
-  virtual DynamicRangeType integrated() const override final
+  DynamicRangeType integrated() const override final
   {
     DynamicRangeType ret(dimRange, 0);
     for (size_t ii = 0; ii < num_intervals; ++ii) {
@@ -152,7 +152,7 @@ public:
   }
 
   // returns matrix with entries <h_i h_j>
-  virtual MatrixType mass_matrix() const override final
+  MatrixType mass_matrix() const override final
   {
     MatrixType M(dimRange, dimRange, 0.);
     for (size_t ii = 0; ii < num_intervals; ++ii) {
@@ -164,13 +164,13 @@ public:
     return M;
   }
 
-  virtual MatrixType mass_matrix_inverse() const override final
+  MatrixType mass_matrix_inverse() const override final
   {
     return tridiagonal_matrix_inverse<RangeFieldType, dimRange>(mass_matrix());
   }
 
   // returns matrix with entries <v h_i h_j>
-  virtual FieldVector<MatrixType, dimDomain> flux_matrix() const override final
+  FieldVector<MatrixType, dimDomain> flux_matrix() const override final
   {
     MatrixType B(dimRange, dimRange, 0.);
     for (size_t ii = 0; ii < num_intervals; ++ii) {
@@ -183,7 +183,7 @@ public:
   }
 
   // returns V M^-1 where the matrix V has entries <v h_i h_j>_- and <v h_i h_j>_+
-  virtual FieldVector<FieldVector<MatrixType, 2>, 1> kinetic_flux_matrices() const override final
+  FieldVector<FieldVector<MatrixType, 2>, 1> kinetic_flux_matrices() const override final
   {
     FieldVector<FieldVector<MatrixType, 2>, 1> ret(FieldVector<MatrixType, 2>(MatrixType(dimRange, dimRange, 0.)));
     auto mm_with_v = flux_matrix();
@@ -232,7 +232,7 @@ public:
     return ret;
   }
 
-  virtual MatrixType reflection_matrix(const DomainType& n) const override final
+  MatrixType reflection_matrix(const DomainType& n) const override final
   {
     MatrixType ret(dimRange, dimRange, 0);
     for (size_t ii = 0; ii < dimDomain; ++ii)
@@ -265,7 +265,7 @@ public:
     return partitioning_;
   }
 
-  virtual DynamicRangeType alpha_one() const override final
+  DynamicRangeType alpha_one() const override final
   {
     DynamicRangeType ret(dimRange, 0);
     for (size_t ii = 0; ii < dimRange; ii += 2)
@@ -273,7 +273,7 @@ public:
     return ret;
   }
 
-  virtual RangeFieldType density(const DynamicRangeType& u) const override final
+  RangeFieldType density(const DynamicRangeType& u) const override final
   {
     RangeFieldType ret(0.);
     for (size_t ii = 0; ii < dimRange; ii += 2) {
@@ -312,7 +312,7 @@ public:
   // For the partial moments, we might not be able to solve the optimization problem for some moments where the density
   // on one interval/spherical triangle is very low. The overall density might be much higher than the density on that
   // triangle, so we specialize this function.
-  virtual void ensure_min_density(DynamicRangeType& u, const RangeFieldType min_density) const override final
+  void ensure_min_density(DynamicRangeType& u, const RangeFieldType min_density) const override final
   {
     const auto u_iso_min = u_iso() * min_density;
     for (size_t jj = 0; jj < num_intervals; ++jj) {
@@ -323,7 +323,7 @@ public:
     }
   }
 
-  virtual void ensure_min_density(RangeType& u, const RangeFieldType min_density) const override final
+  void ensure_min_density(RangeType& u, const RangeFieldType min_density) const override final
   {
     const auto u_iso_min = u_iso() * min_density;
     for (size_t jj = 0; jj < num_intervals; ++jj) {
@@ -334,17 +334,17 @@ public:
     }
   }
 
-  virtual std::string short_id() const override final
+  std::string short_id() const override final
   {
     return "pm";
   }
 
-  virtual std::string mn_name() const override final
+  std::string mn_name() const override final
   {
     return "pmm" + XT::Common::to_string(dimRange);
   }
 
-  virtual std::string pn_name() const override final
+  std::string pn_name() const override final
   {
     return "pmp" + XT::Common::to_string(dimRange);
   }
@@ -456,7 +456,7 @@ public:
     BaseType::initialize_base_values();
   }
 
-  virtual DynamicRangeType evaluate(const DomainType& v) const override final
+  DynamicRangeType evaluate(const DomainType& v) const override final
   {
     DynamicRangeType ret(dimRange, 0);
     const auto face_indices = triangulation_.get_face_indices(v);
@@ -468,7 +468,7 @@ public:
   } // ... evaluate(...)
 
   // evaluate on spherical triangle face_index
-  virtual DynamicRangeType evaluate(const DomainType& v, const size_t face_index) const override final
+  DynamicRangeType evaluate(const DomainType& v, const size_t face_index) const override final
   {
     DynamicRangeType ret(dimRange, 0);
     const auto local_eval = evaluate_on_face(v, face_index);
@@ -498,12 +498,12 @@ public:
     };
   } // ... stringifier()
 
-  virtual RangeFieldType unit_ball_volume() const override final
+  RangeFieldType unit_ball_volume() const override final
   {
     return BaseType::unit_ball_volume_quad();
   }
 
-  virtual DynamicRangeType alpha_one() const override final
+  DynamicRangeType alpha_one() const override final
   {
     DynamicRangeType ret(dimRange, 0.);
     for (size_t ii = 0; ii < dimRange; ii += 4)
@@ -519,7 +519,7 @@ public:
     return ret;
   }
 
-  virtual RangeFieldType density(const DynamicRangeType& u) const override final
+  RangeFieldType density(const DynamicRangeType& u) const override final
   {
     RangeFieldType ret(0.);
     for (size_t ii = 0; ii < dimRange; ii += 4)
@@ -548,7 +548,7 @@ public:
   // For the partial moments, we might not be able to solve the optimization problem for some moments where the density
   // on one interval/spherical triangle is very low. The overall density might be much higher than the density on that
   // triangle, so we specialize this function.
-  virtual void ensure_min_density(DynamicRangeType& u, const RangeFieldType min_density) const override final
+  void ensure_min_density(DynamicRangeType& u, const RangeFieldType min_density) const override final
   {
     const auto u_iso_min = u_iso() * min_density;
     for (size_t jj = 0; jj < num_blocks; ++jj) {
@@ -563,7 +563,7 @@ public:
   // For the partial moments, we might not be able to solve the optimization problem for some moments where the density
   // on one interval/spherical triangle is very low. The overall density might be much higher than the density on that
   // triangle, so we specialize this function.
-  virtual void ensure_min_density(RangeType& u, const RangeFieldType min_density) const override final
+  void ensure_min_density(RangeType& u, const RangeFieldType min_density) const override final
   {
     const auto u_iso_min = u_iso() * min_density;
     for (size_t jj = 0; jj < num_blocks; ++jj) {
@@ -575,17 +575,17 @@ public:
     }
   }
 
-  virtual std::string short_id() const override final
+  std::string short_id() const override final
   {
     return "pm";
   }
 
-  virtual std::string mn_name() const override final
+  std::string mn_name() const override final
   {
     return "pmm" + XT::Common::to_string(dimRange);
   }
 
-  virtual std::string pn_name() const override final
+  std::string pn_name() const override final
   {
     return "pmp" + XT::Common::to_string(dimRange);
   }
@@ -662,12 +662,12 @@ public:
     return block_matrix;
   } // ... mass_matrix()
 
-  virtual MatrixType mass_matrix() const override final
+  MatrixType mass_matrix() const override final
   {
     return block_mass_matrix()->convert_to_dynamic_matrix();
   } // ... mass_matrix()
 
-  virtual FieldVector<MatrixType, dimFlux> flux_matrix() const override final
+  FieldVector<MatrixType, dimFlux> flux_matrix() const override final
   {
     FieldVector<MatrixType, dimFlux> B(MatrixType(dimRange, dimRange, 0));
     BlockMatrixType block_matrix;
@@ -679,7 +679,7 @@ public:
   }
 
   // returns V M^-1 where V has entries <v h_i h_j>_- and <v h_i h_j>_+
-  virtual FieldVector<FieldVector<MatrixType, 2>, dimFlux> kinetic_flux_matrices() const override final
+  FieldVector<FieldVector<MatrixType, 2>, dimFlux> kinetic_flux_matrices() const override final
   {
     FieldVector<FieldVector<MatrixType, 2>, dimFlux> B_kinetic(
         FieldVector<MatrixType, 2>(MatrixType(dimRange, dimRange, 0.)));

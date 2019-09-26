@@ -37,17 +37,17 @@ public:
     , inverse_hessian_operator_(inverse_hessian_operator)
   {}
 
-  virtual bool linear() const override final
+  bool linear() const override final
   {
     return false;
   }
 
-  virtual const SourceSpaceType& source_space() const override final
+  const SourceSpaceType& source_space() const override final
   {
     return operator_.source_space();
   }
 
-  virtual const RangeSpaceType& range_space() const override final
+  const RangeSpaceType& range_space() const override final
   {
     return operator_.range_space();
   }
@@ -94,17 +94,17 @@ public:
     , inverse_hessian_operator_(inverse_hessian_operator)
   {}
 
-  virtual bool linear() const override final
+  bool linear() const override final
   {
     return false;
   }
 
-  virtual const SourceSpaceType& source_space() const override final
+  const SourceSpaceType& source_space() const override final
   {
     return advection_op_.source_space();
   }
 
-  virtual const RangeSpaceType& range_space() const override final
+  const RangeSpaceType& range_space() const override final
   {
     return advection_op_.range_space();
   }
@@ -150,17 +150,17 @@ public:
     , entropy_solver_(entropy_solver)
   {}
 
-  virtual bool linear() const override final
+  bool linear() const override final
   {
     return false;
   }
 
-  virtual const SourceSpaceType& source_space() const override final
+  const SourceSpaceType& source_space() const override final
   {
     return advection_operator_.source_space();
   }
 
-  virtual const RangeSpaceType& range_space() const override final
+  const RangeSpaceType& range_space() const override final
   {
     return advection_operator_.range_space();
   }

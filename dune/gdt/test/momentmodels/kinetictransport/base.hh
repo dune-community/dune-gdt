@@ -121,7 +121,7 @@ public:
   }
 
   // flux matrix A = B M^{-1} with B_{ij} = <v h_i h_j>
-  virtual std::unique_ptr<FluxType> flux() const override
+  std::unique_ptr<FluxType> flux() const override
   {
     // calculate B row-wise by solving M^{T} A^T = B^T column-wise
     auto A = basis_functions_.flux_matrix();
@@ -160,7 +160,7 @@ public:
 
   // Initial value of the kinetic equation is a constant vacuum concentration psi_vac.
   // Thus, the initial value of the n-th moment is basis_integrated * psi_vac.
-  virtual std::unique_ptr<InitialValueType> initial_values() const override
+  std::unique_ptr<InitialValueType> initial_values() const override
   {
     RangeReturnType value = basis_functions_.integrated() * psi_vac_;
     return std::make_unique<GenericFunctionType>(
@@ -169,7 +169,7 @@ public:
   } // ... initial_values()
 
   // Use a constant vacuum concentration basis_integrated * psi_vac as default boundary value
-  virtual std::unique_ptr<BoundaryValueType> boundary_values() const override
+  std::unique_ptr<BoundaryValueType> boundary_values() const override
   {
     RangeReturnType value = basis_functions_.integrated() * psi_vac_;
     return std::make_unique<GenericFunctionType>(
@@ -206,22 +206,22 @@ public:
     return kinetic_boundary_flux_from_quadrature(x, n, dd);
   }
 
-  virtual RangeFieldType CFL() const override
+  RangeFieldType CFL() const override
   {
     return 0.49;
   }
 
-  virtual RangeFieldType t_end() const override
+  RangeFieldType t_end() const override
   {
     return 1.;
   }
 
-  virtual XT::Common::Configuration grid_config() const override
+  XT::Common::Configuration grid_config() const override
   {
     return grid_cfg_;
   }
 
-  virtual XT::Common::Configuration boundary_config() const override
+  XT::Common::Configuration boundary_config() const override
   {
     return boundary_cfg_;
   }

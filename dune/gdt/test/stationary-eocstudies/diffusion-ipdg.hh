@@ -95,7 +95,7 @@ protected:
 
   virtual const FF& force() const = 0;
 
-  virtual std::vector<std::string> norms() const override
+  std::vector<std::string> norms() const override
   {
     auto nrms = BaseType::norms();
     nrms.push_back("eta_NC");
@@ -240,7 +240,7 @@ protected:
     return BaseType::compute(refinement_level, remaining_norms, remaining_estimates, remaining_quantities);
   } // ... compute(...)
 
-  virtual std::unique_ptr<S> make_space(const GP& current_grid) override
+  std::unique_ptr<S> make_space(const GP& current_grid) override
   {
     if (space_type_ == "fv")
       return std::make_unique<FiniteVolumeSpace<GV>>(current_grid.leaf_view());
@@ -256,7 +256,7 @@ protected:
     }
   } // ... make_space(...)
 
-  virtual std::unique_ptr<O> make_residual_operator(const S& space) override
+  std::unique_ptr<O> make_residual_operator(const S& space) override
   {
     const auto& one = one_.template as_grid_function<E>();
     // define lhs operator (has to be a pointer to allow the residual operator to manage the memory in the end)

@@ -60,7 +60,7 @@ private:
       , index_set_(index_set)
     {}
 
-    virtual int order(const XT::Common::Parameter& /*mu*/ = {}) const override
+    int order(const XT::Common::Parameter& /*mu*/ = {}) const override
     {
       DUNE_THROW(Dune::InvalidStateException, "This function can't be integrated!");
       return 2;
@@ -68,12 +68,12 @@ private:
 
     using BaseType::element;
 
-    virtual void post_bind(const E& elem) override final
+    void post_bind(const E& elem) override final
     {
       local_values_ = &(values_[index_set_.index(elem)]);
     }
 
-    virtual RangeReturnType evaluate(const DomainType& xx, const XT::Common::Parameter& /*param*/) const override
+    RangeReturnType evaluate(const DomainType& xx, const XT::Common::Parameter& /*param*/) const override
     {
       try {
         return local_values_->at(xx);
@@ -105,7 +105,7 @@ public:
     assert(grid_view.size(0) >= 0);
   }
 
-  virtual std::unique_ptr<LocalFunctionType> local_function() const override final
+  std::unique_ptr<LocalFunctionType> local_function() const override final
   {
     return std::make_unique<DiscreteValuedLocalFunction>(values_, index_set_);
   }

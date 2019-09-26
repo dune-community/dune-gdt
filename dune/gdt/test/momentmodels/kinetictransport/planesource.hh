@@ -59,7 +59,7 @@ public:
 
   // Initial value of the kinetic equation is psi_vac + delta(x).
   // Thus the initial value for the n-th moment is base_integrated_n * (psi_vac + delta(x))
-  virtual std::unique_ptr<InitialValueType> initial_values() const override
+  std::unique_ptr<InitialValueType> initial_values() const override
   {
     const DomainType lower_left = XT::Common::from_string<DomainType>(grid_cfg_["lower_left"]);
     const DomainType upper_right = XT::Common::from_string<DomainType>(grid_cfg_["upper_right"]);
@@ -82,22 +82,22 @@ public:
     return std::make_unique<GenericFunctionType>(0, eval_func);
   } // ... initial_values()
 
-  virtual RangeFieldType t_end() const override
+  RangeFieldType t_end() const override
   {
     return 1.0;
   }
 
-  virtual std::unique_ptr<ScalarFunctionType> sigma_a() const override
+  std::unique_ptr<ScalarFunctionType> sigma_a() const override
   {
     return std::make_unique<ConstantScalarFunctionType>(0.);
   }
 
-  virtual std::unique_ptr<ScalarFunctionType> sigma_s() const override
+  std::unique_ptr<ScalarFunctionType> sigma_s() const override
   {
     return std::make_unique<ConstantScalarFunctionType>(1.);
   }
 
-  virtual std::unique_ptr<ScalarFunctionType> Q() const override
+  std::unique_ptr<ScalarFunctionType> Q() const override
   {
     return std::make_unique<ConstantScalarFunctionType>(0.);
   }
@@ -136,7 +136,7 @@ public:
     return "planesourcemn";
   }
 
-  virtual std::unique_ptr<FluxType> flux() const override
+  std::unique_ptr<FluxType> flux() const override
   {
     return std::make_unique<ActualFluxType>(grid_view_, basis_functions_);
   }

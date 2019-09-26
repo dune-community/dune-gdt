@@ -87,7 +87,7 @@ public:
 
   using BaseType::evaluate;
 
-  virtual DynamicRangeType evaluate(const DomainType& v) const override
+  DynamicRangeType evaluate(const DomainType& v) const override
   {
     const auto v_spherical = XT::Common::CoordinateConverter<DomainFieldType>::to_spherical(v);
     return evaluate_in_spherical_coords(v_spherical);
@@ -105,14 +105,14 @@ public:
     return ret;
   } // ... evaluate(...)
 
-  virtual DynamicRangeType integrated() const override final
+  DynamicRangeType integrated() const override final
   {
     DynamicRangeType ret(dimRange, 0.);
     ret[0] = std::sqrt(4. * M_PI);
     return ret;
   }
 
-  virtual MatrixType mass_matrix() const override
+  MatrixType mass_matrix() const override
   {
     MatrixType M(dimRange, dimRange, 0);
     for (size_t rr = 0; rr < dimRange; ++rr)
@@ -120,12 +120,12 @@ public:
     return M;
   }
 
-  virtual MatrixType mass_matrix_inverse() const override
+  MatrixType mass_matrix_inverse() const override
   {
     return mass_matrix();
   }
 
-  virtual FieldVector<MatrixType, dimFlux> flux_matrix() const override
+  FieldVector<MatrixType, dimFlux> flux_matrix() const override
   {
     FieldVector<MatrixType, dimFlux> ret(MatrixType(dimRange, dimRange, 0));
     ret[0] = create_Bx();
@@ -140,29 +140,29 @@ public:
     return [](const RangeType& val) { return XT::Common::to_string(val[0] * std::sqrt(4 * M_PI), 15); };
   } // ... stringifier()
 
-  virtual DynamicRangeType alpha_one() const override final
+  DynamicRangeType alpha_one() const override final
   {
     DynamicRangeType ret(dimRange, 0.);
     ret[0] = std::sqrt(4. * M_PI);
     return ret;
   }
 
-  virtual RangeFieldType density(const DynamicRangeType& u) const override final
+  RangeFieldType density(const DynamicRangeType& u) const override final
   {
     return u[0] * std::sqrt(4 * M_PI);
   }
 
-  virtual std::string short_id() const override final
+  std::string short_id() const override final
   {
     return "";
   }
 
-  virtual std::string mn_name() const override final
+  std::string mn_name() const override final
   {
     return "m" + XT::Common::to_string(order);
   }
 
-  virtual std::string pn_name() const override final
+  std::string pn_name() const override final
   {
     return "p" + XT::Common::to_string(order);
   }
@@ -356,7 +356,7 @@ public:
 
   using BaseType::evaluate;
 
-  virtual DynamicRangeType evaluate(const DomainType& v) const override
+  DynamicRangeType evaluate(const DomainType& v) const override
   {
     const auto v_spherical = XT::Common::CoordinateConverter<DomainFieldType>::to_spherical(v);
     return evaluate_in_spherical_coords(v_spherical);
@@ -381,7 +381,7 @@ public:
     return ret;
   }
 
-  virtual MatrixType mass_matrix() const override
+  MatrixType mass_matrix() const override
   {
     MatrixType M(dimRange, dimRange, 0.);
     for (size_t rr = 0; rr < dimRange; ++rr)
@@ -389,12 +389,12 @@ public:
     return M;
   }
 
-  virtual MatrixType mass_matrix_inverse() const override
+  MatrixType mass_matrix_inverse() const override
   {
     return mass_matrix();
   }
 
-  virtual FieldVector<MatrixType, dimFlux> flux_matrix() const override
+  FieldVector<MatrixType, dimFlux> flux_matrix() const override
   {
     FieldVector<MatrixType, dimFlux> ret(MatrixType(dimRange, dimRange, 0));
     ret[0] = create_Bx();
@@ -409,29 +409,29 @@ public:
     return [](const RangeType& val) { return XT::Common::to_string(val[0] * std::sqrt(4 * M_PI), 15); };
   } // ... stringifier()
 
-  virtual DynamicRangeType alpha_one() const override final
+  DynamicRangeType alpha_one() const override final
   {
     DynamicRangeType ret(dimRange, 0.);
     ret[0] = std::sqrt(4. * M_PI);
     return ret;
   }
 
-  virtual RangeFieldType density(const DynamicRangeType& u) const override final
+  RangeFieldType density(const DynamicRangeType& u) const override final
   {
     return u[0] * std::sqrt(4 * M_PI);
   }
 
-  virtual std::string short_id() const override final
+  std::string short_id() const override final
   {
     return "";
   }
 
-  virtual std::string mn_name() const override final
+  std::string mn_name() const override final
   {
     return "m" + XT::Common::to_string(order);
   }
 
-  virtual std::string pn_name() const override final
+  std::string pn_name() const override final
   {
     return "p" + XT::Common::to_string(order);
   }

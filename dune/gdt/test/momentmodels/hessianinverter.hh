@@ -69,7 +69,7 @@ public:
     , param_(other.param_)
   {}
 
-  virtual XT::Grid::ElementFunctor<GridViewType>* copy() override final
+  XT::Grid::ElementFunctor<GridViewType>* copy() override final
   {
     return new LocalEntropicHessianInverter(*this);
   }
@@ -128,17 +128,17 @@ public:
     , space_(space)
   {}
 
-  virtual bool linear() const override final
+  bool linear() const override final
   {
     return false;
   }
 
-  virtual const SourceSpaceType& source_space() const override final
+  const SourceSpaceType& source_space() const override final
   {
     return space_;
   }
 
-  virtual const RangeSpaceType& range_space() const override final
+  const RangeSpaceType& range_space() const override final
   {
     return space_;
   }

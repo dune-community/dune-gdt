@@ -59,7 +59,7 @@ public:
   }
 
   // Initial value of the kinetic equation is psi_vac + 1/(4 pi^4 sigma^3) * exp(-||x||^2/(pi*sigma^2)).
-  virtual std::unique_ptr<InitialValueType> initial_values() const override
+  std::unique_ptr<InitialValueType> initial_values() const override
   {
     RangeReturnType basis_integrated = basis_functions_.integrated();
     const auto psi_vac = psi_vac_;
@@ -72,23 +72,23 @@ public:
     return std::make_unique<GenericFunctionType>(21, eval_func);
   } // ... initial_values()
 
-  virtual RangeFieldType t_end() const override
+  RangeFieldType t_end() const override
   {
     return 0.75;
   }
 
   // sigma_a = 0, sigma_s = 1, Q = 0
-  virtual std::unique_ptr<ScalarFunctionType> sigma_a() const override
+  std::unique_ptr<ScalarFunctionType> sigma_a() const override
   {
     return std::make_unique<ConstantScalarFunctionType>(0.);
   }
 
-  virtual std::unique_ptr<ScalarFunctionType> sigma_s() const override
+  std::unique_ptr<ScalarFunctionType> sigma_s() const override
   {
     return std::make_unique<ConstantScalarFunctionType>(1.);
   }
 
-  virtual std::unique_ptr<ScalarFunctionType> Q() const override
+  std::unique_ptr<ScalarFunctionType> Q() const override
   {
     return std::make_unique<ConstantScalarFunctionType>(0.);
   }
@@ -125,7 +125,7 @@ public:
     return "pointsourcemn";
   }
 
-  virtual std::unique_ptr<FluxType> flux() const override final
+  std::unique_ptr<FluxType> flux() const override final
   {
     return std::make_unique<ActualFluxType>(grid_view_, basis_functions_);
   }

@@ -64,24 +64,24 @@ public:
     return grid_config;
   }
 
-  virtual RangeFieldType t_end() const override
+  RangeFieldType t_end() const override
   {
     return 3.2;
   }
 
   // Q = 0 except in the center where Q = 1. sigma_s = sigma_t = 1 in scattering regions, sigma_s = 0, sigma_t
   // = 10 in absorbing regions. Center is also a scattering region.
-  virtual std::unique_ptr<ScalarFunctionType> sigma_a() const override
+  std::unique_ptr<ScalarFunctionType> sigma_a() const override
   {
     return create_parameter_function(10., 0., 0.);
   }
 
-  virtual std::unique_ptr<ScalarFunctionType> sigma_s() const override
+  std::unique_ptr<ScalarFunctionType> sigma_s() const override
   {
     return create_parameter_function(0., 1., 1.);
   }
 
-  virtual std::unique_ptr<ScalarFunctionType> Q() const override
+  std::unique_ptr<ScalarFunctionType> Q() const override
   {
     return create_parameter_function(0., 0., 1. / std::sqrt(4. * M_PI));
   }
@@ -171,7 +171,7 @@ public:
     return "checkerboardmn";
   }
 
-  virtual std::unique_ptr<FluxType> flux() const override
+  std::unique_ptr<FluxType> flux() const override
   {
     return std::make_unique<ActualFluxType>(grid_view_, basis_functions_);
   }

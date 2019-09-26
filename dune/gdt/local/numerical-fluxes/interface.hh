@@ -157,7 +157,7 @@ private:
   mutable StateType v_;
 
 protected:
-  virtual void post_bind(const I& inter) override
+  void post_bind(const I& inter) override
   {
     local_flux_inside_->bind(inter.inside());
     if (inter.neighbor())

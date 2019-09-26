@@ -54,25 +54,25 @@ public:
     return grid_config;
   }
 
-  virtual RangeFieldType t_end() const override
+  RangeFieldType t_end() const override
   {
     return 20;
   }
 
   // sigma_a = 50 on [2,3]x[1,3]x[0,2], sigma_s = 0, Q = 0
-  virtual std::unique_ptr<ScalarFunctionType> sigma_a() const override
+  std::unique_ptr<ScalarFunctionType> sigma_a() const override
   {
     return std::make_unique<GenericScalarFunctionType>(0, [=](const DomainType& x, const XT::Common::Parameter&) {
       return (x[0] < 2 || x[0] > 3 || x[1] < 1 || x[1] > 3 || x[2] < 0 || x[2] > 2) ? 0. : 50.;
     });
   }
 
-  virtual std::unique_ptr<ScalarFunctionType> sigma_s() const override
+  std::unique_ptr<ScalarFunctionType> sigma_s() const override
   {
     return std::make_unique<ConstantScalarFunctionType>(0.);
   }
 
-  virtual std::unique_ptr<ScalarFunctionType> Q() const override
+  std::unique_ptr<ScalarFunctionType> Q() const override
   {
     return std::make_unique<ConstantScalarFunctionType>(0.);
   }
@@ -80,7 +80,7 @@ public:
 #define USE_DIRAC_BOUNDARY 0
   // Boundary value of kinetic equation is either \dirac(v - (1, 0, 0)) or an isotropic beam with density 2,
   // i.e. 2/(4 pi), at x = 0 and psi_vac else
-  virtual std::unique_ptr<BoundaryValueType> boundary_values() const override final
+  std::unique_ptr<BoundaryValueType> boundary_values() const override final
   {
     auto basis_integrated = basis_functions_.integrated();
     const auto psi_vac = psi_vac_;
@@ -133,7 +133,7 @@ public:
     return "Shadowmn";
   }
 
-  virtual std::unique_ptr<FluxType> flux() const override
+  std::unique_ptr<FluxType> flux() const override
   {
     return std::make_unique<ActualFluxType>(grid_view_, basis_functions_);
   }

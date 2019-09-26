@@ -61,7 +61,7 @@ public:
     second_stepper_.set_solution_pointer(solution());
   } // constructor
 
-  virtual RangeFieldType step(const RangeFieldType dt, const RangeFieldType max_dt) override final
+  RangeFieldType step(const RangeFieldType dt, const RangeFieldType max_dt) override final
   {
     auto& t = current_time();
     const RangeFieldType actual_dt = std::min(dt, max_dt);
@@ -113,7 +113,7 @@ public:
     second_stepper_.set_solution_pointer(solution());
   } // constructor
 
-  virtual RangeFieldType step(const RangeFieldType dt, const RangeFieldType max_dt) override final
+  RangeFieldType step(const RangeFieldType dt, const RangeFieldType max_dt) override final
   {
     auto& t = current_time();
     const RangeFieldType actual_dt = std::min(dt, max_dt);

@@ -132,7 +132,7 @@ public:
     : BaseType(analytical_flux, flux_is_affine)
   {}
 
-  virtual void apply_eigenvectors(const size_t /*dd*/, const VectorType& u, VectorType& ret) const override final
+  void apply_eigenvectors(const size_t /*dd*/, const VectorType& u, VectorType& ret) const override final
   {
     ret = u;
   }
@@ -154,7 +154,7 @@ public:
                                          const XT::Common::Parameter& /*param*/) const override final
   {}
 
-  virtual const MatrixType& eigenvectors(const size_t /*dd*/) const override final
+  const MatrixType& eigenvectors(const size_t /*dd*/) const override final
   {
     DUNE_THROW(Dune::NotImplemented, "This class does not provide eigenvectors!");
     return zero_;
@@ -310,18 +310,18 @@ public:
       jacobian_ = nullptr;
   }
 
-  virtual void apply_eigenvectors(const size_t dd, const VectorType& u, VectorType& ret) const override final
+  void apply_eigenvectors(const size_t dd, const VectorType& u, VectorType& ret) const override final
   {
     (*eigenvectors_)[dd].mv(u, ret);
   }
 
-  virtual void apply_inverse_eigenvectors(const size_t dd, const VectorType& u, VectorType& ret) const override final
+  void apply_inverse_eigenvectors(const size_t dd, const VectorType& u, VectorType& ret) const override final
   {
     thread_local VectorType work = V::create(dimRange);
     XT::LA::solve_qr_factorized((*QR_)[dd], tau_[dd], permutations_[dd], ret, u, &work);
   }
 
-  virtual const MatrixType& eigenvectors(const size_t dd) const override final
+  const MatrixType& eigenvectors(const size_t dd) const override final
   {
     return (*eigenvectors_)[dd];
   }
@@ -482,12 +482,12 @@ public:
     }
   }
 
-  virtual void apply_eigenvectors(const size_t dd, const VectorType& u, VectorType& ret) const override final
+  void apply_eigenvectors(const size_t dd, const VectorType& u, VectorType& ret) const override final
   {
     eigenvectors_[dd].mv(u, ret);
   }
 
-  virtual void apply_inverse_eigenvectors(const size_t dd, const VectorType& u, VectorType& ret) const override final
+  void apply_inverse_eigenvectors(const size_t dd, const VectorType& u, VectorType& ret) const override final
   {
     LocalVectorType work;
     for (size_t jj = 0; jj < num_blocks; ++jj)
@@ -495,7 +495,7 @@ public:
           QR_[dd].block(jj), tau_[dd].block(jj), permutations_[dd].block(jj), ret.block(jj), u.block(jj), &work);
   }
 
-  virtual const MatrixType& eigenvectors(const size_t dd) const override final
+  const MatrixType& eigenvectors(const size_t dd) const override final
   {
     return eigenvectors_[dd];
   }

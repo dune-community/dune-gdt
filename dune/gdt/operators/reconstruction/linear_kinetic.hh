@@ -63,12 +63,12 @@ public:
     , param_(other.param_)
   {}
 
-  virtual XT::Grid::ElementFunctor<GV>* copy() override final
+  XT::Grid::ElementFunctor<GV>* copy() override final
   {
     return new ThisType(*this);
   }
 
-  virtual void apply_local(const EntityType& entity) override final
+  void apply_local(const EntityType& entity) override final
   {
     // In a MPI parallel run, if entity is on boundary of overlap, we do not have to reconstruct
     if (!fill_stencils(entity))

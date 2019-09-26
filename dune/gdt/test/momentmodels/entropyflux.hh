@@ -212,14 +212,14 @@ public:
       , implementation_(implementation)
     {}
 
-    virtual void post_bind(const E& element) override final
+    void post_bind(const E& element) override final
     {
       const auto index = index_set_.index(element);
       entity_cache_ = &(entity_caches_[index]);
       mutex_ = &(mutexes_[index]);
     }
 
-    virtual int order(const XT::Common::Parameter&) const override final
+    int order(const XT::Common::Parameter&) const override final
     {
       return 1.;
     }
@@ -296,12 +296,12 @@ public:
     std::mutex* mutex_;
   }; // class Localfunction
 
-  virtual bool x_dependent() const override final
+  bool x_dependent() const override final
   {
     return false;
   }
 
-  virtual std::unique_ptr<LocalFunctionType> local_function() const override final
+  std::unique_ptr<LocalFunctionType> local_function() const override final
   {
     return std::make_unique<Localfunction>(
         index_set_, entity_caches_, use_thread_cache_, use_entity_cache_, mutexes_, *implementation_);

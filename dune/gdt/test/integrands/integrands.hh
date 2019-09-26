@@ -69,7 +69,7 @@ struct IntegrandTest : public ::testing::Test
                                     XT::Common::from_string<std::array<unsigned int, d>>("[9 2 2 2]")));
   }
 
-  virtual void SetUp() override
+  void SetUp() override
   {
     grid_provider_ = make_grid();
     // {x, x^2 y}

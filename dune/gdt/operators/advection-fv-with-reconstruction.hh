@@ -46,17 +46,17 @@ public:
     , reconstruction_(reconstruction_operator.range_space().mapper().size())
   {}
 
-  virtual bool linear() const override final
+  bool linear() const override final
   {
     return false;
   }
 
-  virtual const SourceSpaceType& source_space() const override final
+  const SourceSpaceType& source_space() const override final
   {
     return reconstruction_operator_.source_space();
   }
 
-  virtual const RangeSpaceType& range_space() const override final
+  const RangeSpaceType& range_space() const override final
   {
     return advection_operator_.range_space();
   }
@@ -102,17 +102,17 @@ public:
     , reconstruction_operator_(reconstruction_operator)
   {}
 
-  virtual bool linear() const override final
+  bool linear() const override final
   {
     return false;
   }
 
-  virtual const SourceSpaceType& source_space() const override final
+  const SourceSpaceType& source_space() const override final
   {
     return advection_operator_.source_space();
   }
 
-  virtual const RangeSpaceType& range_space() const override final
+  const RangeSpaceType& range_space() const override final
   {
     return advection_operator_.range_space();
   }

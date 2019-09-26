@@ -84,7 +84,7 @@ public:
   using typename BaseType::StencilType;
   using typename BaseType::VectorType;
 
-  virtual BaseType* copy() const override final
+  BaseType* copy() const override final
   {
     return new ThisType(*this);
   }
@@ -112,7 +112,7 @@ public:
   using typename BaseType::StencilType;
   using typename BaseType::VectorType;
 
-  virtual BaseType* copy() const override final
+  BaseType* copy() const override final
   {
     return new ThisType();
   }
@@ -140,7 +140,7 @@ public:
   using typename BaseType::StencilType;
   using typename BaseType::VectorType;
 
-  virtual BaseType* copy() const override final
+  BaseType* copy() const override final
   {
     return new ThisType(*this);
   }
@@ -168,7 +168,7 @@ class NoSlope : public SlopeBase<E, EigenVectorWrapperType, stencil_size>
 public:
   using typename BaseType::StencilType;
 
-  virtual BaseType* copy() const override final
+  BaseType* copy() const override final
   {
     return new ThisType(*this);
   }
@@ -193,7 +193,7 @@ class MinmodSlope : public SlopeBase<E, EigenVectorWrapperType, 3>
 public:
   using typename BaseType::StencilType;
 
-  virtual BaseType* copy() const override final
+  BaseType* copy() const override final
   {
     return new ThisType(*this);
   }
@@ -232,7 +232,7 @@ public:
   using typename BaseType::StencilType;
   using typename BaseType::VectorType;
 
-  virtual BaseType* copy() const override final
+  BaseType* copy() const override final
   {
     return new ThisType(*this);
   }
@@ -269,7 +269,7 @@ public:
   using typename BaseType::StencilType;
   using typename BaseType::VectorType;
 
-  virtual BaseType* copy() const override final
+  BaseType* copy() const override final
   {
     return new ThisType(*this);
   }
@@ -365,7 +365,7 @@ public:
     , epsilon_(epsilon)
   {}
 
-  virtual BaseType* copy() const override final
+  BaseType* copy() const override final
   {
     return new ThisType(*this);
   }
@@ -448,7 +448,7 @@ public:
     , epsilon_(epsilon)
   {}
 
-  virtual BaseType* copy() const override final
+  BaseType* copy() const override final
   {
     return new ThisType(*this);
   }
@@ -550,7 +550,7 @@ public:
     calculate_plane_coefficients();
   }
 
-  virtual BaseType* copy() const override final
+  BaseType* copy() const override final
   {
     return new ThisType(*this);
   }
@@ -669,7 +669,7 @@ public:
         coeff.second -= epsilon_ * coeff.first.two_norm();
   }
 
-  virtual BaseType* copy() const override final
+  BaseType* copy() const override final
   {
     return new ThisType(*this);
   }
@@ -794,7 +794,7 @@ public:
     , slope_limiter_(other.slope_limiter_)
   {}
 
-  virtual BaseType* copy() const override final
+  BaseType* copy() const override final
   {
     return new ThisType(*this);
   }
@@ -950,7 +950,7 @@ public:
     , slope_limiter_(other.slope_limiter_)
   {}
 
-  virtual BaseType* copy() const override final
+  BaseType* copy() const override final
   {
     return new ThisType(*this);
   }

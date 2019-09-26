@@ -78,7 +78,7 @@ public:
     , stencils_(d, StencilType(stencil_size))
   {}
 
-  virtual XT::Grid::ElementFunctor<GV>* copy() override final
+  XT::Grid::ElementFunctor<GV>* copy() override final
   {
     return new ThisType(*this);
   }
@@ -88,7 +88,7 @@ public:
     return new ThisType(*this);
   }
 
-  virtual void apply_local(const E& entity) override final
+  void apply_local(const E& entity) override final
   {
     // In a MPI parallel run, if entity is on boundary of overlap, we do not have to reconstruct
     if (!fill_stencils(entity))
@@ -189,12 +189,12 @@ public:
     , reconstructed_function_(other.reconstructed_function_)
   {}
 
-  virtual XT::Grid::ElementFunctor<GV>* copy() override final
+  XT::Grid::ElementFunctor<GV>* copy() override final
   {
     return new ThisType(*this);
   }
 
-  virtual void apply_local(const EntityType& entity) override final
+  void apply_local(const EntityType& entity) override final
   {
     slope_functor_->apply_local(entity);
     // reconstructed function is f(x) = u_entity + slope_matrix * (x - (0.5, 0.5, 0.5, ...))
@@ -264,12 +264,12 @@ public:
     , local_dof_vector_(target_.dofs().localize())
   {}
 
-  virtual XT::Grid::ElementFunctor<GV>* copy() override final
+  XT::Grid::ElementFunctor<GV>* copy() override final
   {
     return new LocalLinearReconstructionOperator(*this);
   }
 
-  virtual void apply_local(const EntityType& entity) override final
+  void apply_local(const EntityType& entity) override final
   {
     slope_functor_->apply_local(entity);
     // reconstructed function is f(x) = u_entity + slope_matrix * (x - (0.5, 0.5, 0.5, ...))
@@ -337,17 +337,17 @@ public:
     , flux_is_affine_(flux_is_affine)
   {}
 
-  virtual bool linear() const override final
+  bool linear() const override final
   {
     return false;
   }
 
-  virtual const SourceSpaceType& source_space() const override final
+  const SourceSpaceType& source_space() const override final
   {
     return source_space_;
   }
 
-  virtual const RangeSpaceType& range_space() const override final
+  const RangeSpaceType& range_space() const override final
   {
     return range_space_;
   }

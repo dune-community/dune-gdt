@@ -71,7 +71,7 @@ public:
     , index_set_(space_.grid_view().indexSet())
   {}
 
-  virtual XT::Grid::ElementFunctor<GridViewType>* copy() override final
+  XT::Grid::ElementFunctor<GridViewType>* copy() override final
   {
     return new LocalDensityEvaluator(*this);
   }
@@ -132,17 +132,17 @@ public:
     , min_acceptable_density_(min_acceptable_density)
   {}
 
-  virtual bool linear() const override final
+  bool linear() const override final
   {
     return false;
   }
 
-  virtual const SourceSpaceType& source_space() const override final
+  const SourceSpaceType& source_space() const override final
   {
     return space_;
   }
 
-  virtual const RangeSpaceType& range_space() const override final
+  const RangeSpaceType& range_space() const override final
   {
     return space_;
   }

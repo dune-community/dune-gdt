@@ -240,7 +240,7 @@ public:
     : ExplicitRungeKuttaTimeStepper(op, initial_values, r, t_0)
   {}
 
-  virtual RangeFieldType step(const RangeFieldType dt, const RangeFieldType max_dt) override final
+  RangeFieldType step(const RangeFieldType dt, const RangeFieldType max_dt) override final
   {
     const RangeFieldType actual_dt = std::min(dt, max_dt);
     auto& t = current_time();

@@ -56,17 +56,17 @@ public:
     , post_bind_(other.post_bind_)
   {}
 
-  virtual std::unique_ptr<BaseType> copy() const override final
+  std::unique_ptr<BaseType> copy() const override final
   {
     return std::make_unique<ThisType>(*this);
   }
 
-  virtual void post_bind(const E& ele) override final
+  void post_bind(const E& ele) override final
   {
     post_bind_(ele);
   }
 
-  virtual int order(const LocalBasisType& basis, const XT::Common::Parameter& param = {}) const override final
+  int order(const LocalBasisType& basis, const XT::Common::Parameter& param = {}) const override final
   {
     return order_(basis, this->parse_parameter(param));
   }
@@ -143,12 +143,12 @@ public:
     , post_bind_(other.post_bind_)
   {}
 
-  virtual std::unique_ptr<BaseType> copy() const override final
+  std::unique_ptr<BaseType> copy() const override final
   {
     return std::make_unique<ThisType>(*this);
   }
 
-  virtual void post_bind(const E& ele) override final
+  void post_bind(const E& ele) override final
   {
     post_bind_(ele);
   }
@@ -227,12 +227,12 @@ public:
     , post_bind_(other.post_bind_)
   {}
 
-  virtual std::unique_ptr<BaseType> copy() const override final
+  std::unique_ptr<BaseType> copy() const override final
   {
     return std::make_unique<ThisType>(*this);
   }
 
-  virtual void post_bind(const I& intersect) override final
+  void post_bind(const I& intersect) override final
   {
     post_bind_(intersect);
   }

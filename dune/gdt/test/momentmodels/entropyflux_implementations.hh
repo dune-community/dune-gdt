@@ -195,7 +195,7 @@ public:
   // ============================================================================================
 
 
-  virtual int order(const XT::Common::Parameter& /*param*/ = {}) const override
+  int order(const XT::Common::Parameter& /*param*/ = {}) const override
   {
     return 1;
   }
@@ -1425,7 +1425,7 @@ public:
   // ============================================================================================
 
 
-  virtual int order(const XT::Common::Parameter& /*param*/) const override
+  int order(const XT::Common::Parameter& /*param*/) const override
   {
     return 1;
   }
@@ -2395,7 +2395,7 @@ public:
   // ============================================================================================
 
 
-  virtual int order(const XT::Common::Parameter& /*param*/ = {}) const override
+  int order(const XT::Common::Parameter& /*param*/ = {}) const override
   {
     return 1;
   }
@@ -3195,7 +3195,7 @@ public:
   // ============================================================================================
 
 
-  virtual int order(const XT::Common::Parameter& /*param*/) const override
+  int order(const XT::Common::Parameter& /*param*/) const override
   {
     return 1;
   }
@@ -3985,7 +3985,7 @@ public:
   // ============================================================================================
 
 
-  virtual int order(const XT::Common::Parameter& /*param*/) const override
+  int order(const XT::Common::Parameter& /*param*/) const override
   {
     return 1;
   }

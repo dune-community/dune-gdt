@@ -74,7 +74,7 @@ public:
     this->update_after_adapt();
   }
 
-  virtual BaseType* copy() const override final
+  BaseType* copy() const override final
   {
     return new ThisType(*this);
   }

@@ -102,17 +102,17 @@ public:
     , reference_solution_on_reference_grid_(nullptr)
   {}
 
-  virtual size_t num_refinements() const override
+  size_t num_refinements() const override
   {
     return num_refinements_;
   }
 
-  virtual std::vector<std::string> targets() const override
+  std::vector<std::string> targets() const override
   {
     return {"h"};
   }
 
-  virtual std::vector<std::string> norms() const override
+  std::vector<std::string> norms() const override
   {
     // We currently support the following temporal norms:
     //   L_infty
@@ -123,12 +123,12 @@ public:
     return {"L_infty/L_2"};
   }
 
-  virtual std::vector<std::pair<std::string, std::string>> estimates() const override
+  std::vector<std::pair<std::string, std::string>> estimates() const override
   {
     return {};
   }
 
-  virtual std::vector<std::string> quantities() const override
+  std::vector<std::string> quantities() const override
   {
     std::vector<std::string> ret = {"time to solution (s)", "rel mass conserv error", "num timesteps"};
     if (this->adaptive_timestepping()) {
@@ -140,7 +140,7 @@ public:
     return ret;
   } // ... quantities(...)
 
-  virtual std::string discretization_info_title() const override
+  std::string discretization_info_title() const override
   {
     return " |grid| |   #DoFs";
   }
@@ -151,7 +151,7 @@ protected:
   virtual std::unique_ptr<S> make_space(const GP& current_grid) = 0;
 
 public:
-  virtual std::string discretization_info(const size_t refinement_level) override
+  std::string discretization_info(const size_t refinement_level) override
   {
     if (current_refinement_ != refinement_level) {
       // clear the current state

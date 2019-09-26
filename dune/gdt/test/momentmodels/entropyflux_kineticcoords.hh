@@ -95,7 +95,7 @@ public:
       : implementation_(implementation)
     {}
 
-    virtual int order(const XT::Common::Parameter&) const override final
+    int order(const XT::Common::Parameter&) const override final
     {
       return 1.;
     }
@@ -119,12 +119,12 @@ public:
     const ImplementationType& implementation_;
   }; // class Localfunction
 
-  virtual bool x_dependent() const override final
+  bool x_dependent() const override final
   {
     return false;
   }
 
-  virtual std::unique_ptr<LocalFunctionType> local_function() const override final
+  std::unique_ptr<LocalFunctionType> local_function() const override final
   {
     return std::make_unique<Localfunction>(*implementation_);
   }

@@ -329,7 +329,7 @@ public:
         local_range_outside.dofs()[ii] += outside_local_dofs_[ii];
   } // ... apply(...)
 
-  virtual std::unique_ptr<BaseType> with_source(const SourceType& src) const override final
+  std::unique_ptr<BaseType> with_source(const SourceType& src) const override final
   {
     auto ret = std::make_unique<ThisType>(*this);
     ret->source_ = XT::Common::ConstStorageProvider<SourceType>(src);
@@ -799,7 +799,7 @@ public:
       local_range.dofs()[ii] += local_dofs_[ii];
   } // ... apply(...)
 
-  virtual std::unique_ptr<BaseType> with_source(const SourceType& src) const override final
+  std::unique_ptr<BaseType> with_source(const SourceType& src) const override final
   {
     auto ret = std::make_unique<ThisType>(*this);
     ret->source_ = XT::Common::ConstStorageProvider<SourceType>(src);

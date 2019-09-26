@@ -76,7 +76,7 @@ public:
 
   using BaseType::evaluate;
 
-  virtual DynamicRangeType evaluate(const DomainType& v) const override
+  DynamicRangeType evaluate(const DomainType& v) const override
   {
     DynamicRangeType ret(dimRange);
     ret[0] = 1.;
@@ -94,7 +94,7 @@ public:
     return ret;
   }
 
-  virtual MatrixType mass_matrix() const override
+  MatrixType mass_matrix() const override
   {
     MatrixType M(dimRange, dimRange, 0.);
     for (size_t rr = 0; rr < dimRange; ++rr)
@@ -102,7 +102,7 @@ public:
     return M;
   }
 
-  virtual MatrixType mass_matrix_inverse() const override
+  MatrixType mass_matrix_inverse() const override
   {
     MatrixType Minv(dimRange, dimRange, 0.);
     for (size_t rr = 0; rr < dimRange; ++rr)
@@ -110,7 +110,7 @@ public:
     return Minv;
   }
 
-  virtual FieldVector<MatrixType, dimDomain> flux_matrix() const override
+  FieldVector<MatrixType, dimDomain> flux_matrix() const override
   {
     MatrixType B(dimRange, dimRange, 0);
     for (size_t rr = 0; rr < dimRange; ++rr) {
@@ -125,7 +125,7 @@ public:
   }
 
   // returns V M^-1 where the matrix V has entries <v h_i h_j>_- and <v h_i h_j>_+
-  virtual FieldVector<FieldVector<MatrixType, 2>, 1> kinetic_flux_matrices() const override final
+  FieldVector<FieldVector<MatrixType, 2>, 1> kinetic_flux_matrices() const override final
   {
     FieldVector<FieldVector<MatrixType, 2>, 1> ret(FieldVector<MatrixType, 2>(MatrixType(dimRange, dimRange, 0.)));
     auto mm_with_v = flux_matrix();
@@ -160,7 +160,7 @@ public:
     return ret;
   }
 
-  virtual MatrixType reflection_matrix(const DomainType& n) const override final
+  MatrixType reflection_matrix(const DomainType& n) const override final
   {
     MatrixType ret(dimRange, dimRange, 0);
     for (size_t ii = 0; ii < dimDomain; ++ii)
@@ -188,29 +188,29 @@ public:
     return [](const RangeType& val) { return XT::Common::to_string(val[0], 15); };
   } // ... stringifier()
 
-  virtual DynamicRangeType alpha_one() const override final
+  DynamicRangeType alpha_one() const override final
   {
     DynamicRangeType ret(dimRange, 0.);
     ret[0] = 1.;
     return ret;
   }
 
-  virtual RangeFieldType density(const DynamicRangeType& u) const override final
+  RangeFieldType density(const DynamicRangeType& u) const override final
   {
     return u[0];
   }
 
-  virtual std::string short_id() const override final
+  std::string short_id() const override final
   {
     return "";
   }
 
-  virtual std::string mn_name() const override final
+  std::string mn_name() const override final
   {
     return "m" + XT::Common::to_string(order);
   }
 
-  virtual std::string pn_name() const override final
+  std::string pn_name() const override final
   {
     return "p" + XT::Common::to_string(order);
   }

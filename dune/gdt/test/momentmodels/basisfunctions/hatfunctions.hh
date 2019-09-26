@@ -98,7 +98,7 @@ public:
     BaseType::initialize_base_values();
   }
 
-  virtual DynamicRangeType evaluate(const DomainType& v) const override final
+  DynamicRangeType evaluate(const DomainType& v) const override final
   {
     DynamicRangeType ret(dimRange, 0);
     const auto& mu = partitioning_;
@@ -111,7 +111,7 @@ public:
     return ret;
   } // ... evaluate(...)
 
-  virtual DynamicRangeType evaluate(const DomainType& v, const size_t interval_index) const override final
+  DynamicRangeType evaluate(const DomainType& v, const size_t interval_index) const override final
   {
     DynamicRangeType ret(dimRange, 0);
     const auto& mu = partitioning_;
@@ -130,7 +130,7 @@ public:
     return ret;
   } // ... evaluate(...)
 
-  virtual DynamicRangeType integrated() const override final
+  DynamicRangeType integrated() const override final
   {
     DynamicRangeType ret(dimRange, 0);
     const auto& mu = partitioning_;
@@ -143,7 +143,7 @@ public:
   }
 
   // returns matrix with entries <h_i h_j>
-  virtual MatrixType mass_matrix() const override final
+  MatrixType mass_matrix() const override final
   {
     MatrixType ret(dimRange, dimRange, 0);
     const auto& mu = partitioning_;
@@ -160,13 +160,13 @@ public:
     return ret;
   }
 
-  virtual MatrixType mass_matrix_inverse() const override final
+  MatrixType mass_matrix_inverse() const override final
   {
     return tridiagonal_matrix_inverse<RangeFieldType, dimRange>(mass_matrix());
   }
 
   // returns matrix with entries <v h_i h_j>
-  virtual FieldVector<MatrixType, 1> flux_matrix() const override final
+  FieldVector<MatrixType, 1> flux_matrix() const override final
   {
     MatrixType ret(dimRange, dimRange, 0.);
     const auto& mu = partitioning_;
@@ -189,7 +189,7 @@ public:
   }
 
   // returns V M^-1 where the matrix V has entries <v h_i h_j>_- and <v h_i h_j>_+
-  virtual FieldVector<FieldVector<MatrixType, 2>, 1> kinetic_flux_matrices() const override final
+  FieldVector<FieldVector<MatrixType, 2>, 1> kinetic_flux_matrices() const override final
   {
     FieldVector<FieldVector<MatrixType, 2>, 1> ret(FieldVector<MatrixType, 2>(MatrixType(dimRange, dimRange, 0.)));
     auto mm_with_v = flux_matrix();
@@ -237,7 +237,7 @@ public:
     return ret;
   }
 
-  virtual MatrixType reflection_matrix(const DomainType& n) const override final
+  MatrixType reflection_matrix(const DomainType& n) const override final
   {
     MatrixType ret(dimRange, dimRange, 0);
     for (size_t ii = 0; ii < dimDomain; ++ii)
@@ -274,19 +274,19 @@ public:
     return partitioning_;
   }
 
-  virtual DynamicRangeType alpha_one() const override final
+  DynamicRangeType alpha_one() const override final
   {
     return DynamicRangeType(dimRange, 1.);
   }
 
-  virtual RangeFieldType density(const DynamicRangeType& u) const override final
+  RangeFieldType density(const DynamicRangeType& u) const override final
   {
     return std::accumulate(u.begin(), u.end(), RangeFieldType(0));
   }
 
   using BaseType::u_iso;
 
-  virtual void ensure_min_density(DynamicRangeType& u, const RangeFieldType min_density) const override final
+  void ensure_min_density(DynamicRangeType& u, const RangeFieldType min_density) const override final
   {
     const auto u_iso_min = u_iso() * min_density;
     for (size_t ii = 0; ii < dimRange; ++ii)
@@ -294,7 +294,7 @@ public:
         u[ii] = u_iso_min[ii];
   }
 
-  virtual void ensure_min_density(RangeType& u, const RangeFieldType min_density) const override final
+  void ensure_min_density(RangeType& u, const RangeFieldType min_density) const override final
   {
     const auto u_iso_min = u_iso() * min_density;
     for (size_t ii = 0; ii < dimRange; ++ii)
@@ -302,17 +302,17 @@ public:
         u[ii] = u_iso_min[ii];
   }
 
-  virtual std::string short_id() const override final
+  std::string short_id() const override final
   {
     return "hf";
   }
 
-  virtual std::string mn_name() const override final
+  std::string mn_name() const override final
   {
     return "hfm" + XT::Common::to_string(dimRange);
   }
 
-  virtual std::string pn_name() const override final
+  std::string pn_name() const override final
   {
     return "hfp" + XT::Common::to_string(dimRange);
   }
@@ -419,7 +419,7 @@ public:
     BaseType::initialize_base_values();
   }
 
-  virtual DynamicRangeType evaluate(const DomainType& v) const override
+  DynamicRangeType evaluate(const DomainType& v) const override
   {
     DynamicRangeType ret(dimRange, 0);
     bool success = false;
@@ -438,7 +438,7 @@ public:
     return ret;
   } // ... evaluate(...)
 
-  virtual DynamicRangeType evaluate(const DomainType& v, const size_t face_index) const override final
+  DynamicRangeType evaluate(const DomainType& v, const size_t face_index) const override final
   {
     DynamicRangeType ret(dimRange, 0);
     auto barycentric_coords = evaluate_on_face(v, face_index);
@@ -476,12 +476,12 @@ public:
     return triangulation_;
   }
 
-  virtual RangeFieldType unit_ball_volume() const override final
+  RangeFieldType unit_ball_volume() const override final
   {
     return BaseType::unit_ball_volume_quad();
   }
 
-  virtual DynamicRangeType alpha_one() const override final
+  DynamicRangeType alpha_one() const override final
   {
     return DynamicRangeType(dimRange, 1.);
   }
@@ -493,7 +493,7 @@ public:
       XT::Common::VectorAbstraction<Vec>::set_entry(ret, ii, 1.);
   }
 
-  virtual RangeFieldType density(const DynamicRangeType& u) const override final
+  RangeFieldType density(const DynamicRangeType& u) const override final
   {
     return std::accumulate(u.begin(), u.end(), 0.);
   }
@@ -508,17 +508,17 @@ public:
     return ret;
   }
 
-  virtual std::string short_id() const override final
+  std::string short_id() const override final
   {
     return "hf";
   }
 
-  virtual std::string mn_name() const override final
+  std::string mn_name() const override final
   {
     return "hfm" + XT::Common::to_string(dimRange);
   }
 
-  virtual std::string pn_name() const override final
+  std::string pn_name() const override final
   {
     return "hfp" + XT::Common::to_string(dimRange);
   }
@@ -546,7 +546,7 @@ public:
       V::set_entry(ret, ii, ret_range[ii]);
   }
 
-  virtual void ensure_min_density(DynamicRangeType& u, const RangeFieldType min_density) const override final
+  void ensure_min_density(DynamicRangeType& u, const RangeFieldType min_density) const override final
   {
     const auto u_iso_min = u_iso() * min_density;
     for (size_t ii = 0; ii < dimRange; ++ii)
@@ -554,7 +554,7 @@ public:
         u[ii] = u_iso_min[ii];
   }
 
-  virtual void ensure_min_density(RangeType& u, const RangeFieldType min_density) const override final
+  void ensure_min_density(RangeType& u, const RangeFieldType min_density) const override final
   {
     const auto u_iso_min = u_iso() * min_density;
     for (size_t ii = 0; ii < dimRange; ++ii)

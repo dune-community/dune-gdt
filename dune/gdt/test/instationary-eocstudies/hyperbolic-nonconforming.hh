@@ -90,7 +90,7 @@ protected:
 
   virtual DF make_initial_values(const S& space) = 0;
 
-  virtual std::unique_ptr<S> make_space(const GP& current_grid) override
+  std::unique_ptr<S> make_space(const GP& current_grid) override
   {
     if (space_type_ == "fv")
       return std::make_unique<FiniteVolumeSpace<GV, m>>(XT::Grid::make_periodic_grid_layer(current_grid.leaf_view()));
@@ -104,7 +104,7 @@ protected:
     }
   } // ... make_space(...)
 
-  virtual std::unique_ptr<O> make_lhs_operator(const S& space) override
+  std::unique_ptr<O> make_lhs_operator(const S& space) override
   {
     std::unique_ptr<NF> numerical_flux;
     if (numerical_flux_type_ == "upwind")

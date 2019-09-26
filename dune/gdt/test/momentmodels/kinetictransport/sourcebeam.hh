@@ -80,7 +80,7 @@ public:
   // \psi_{vac} = 0.5*10^(-8) at x = 3, with g(v) = exp(-10^5(v-1)^2), so n-th component of boundary value has to be
   // \frac{<base_n(v)*g(v)>}{<g>} at x = 0 and \psi_{vac}*base_integrated_n
   // at x = 3.
-  virtual std::unique_ptr<BoundaryValueType> boundary_values() const override final
+  std::unique_ptr<BoundaryValueType> boundary_values() const override final
   {
     return std::make_unique<GenericFunctionType>(1, [&](const DomainType& x, const XT::Common::Parameter&) {
       if (x[0] < 1.5) {
@@ -94,7 +94,7 @@ public:
     });
   } // ... boundary_values()
 
-  virtual BoundaryDistributionType boundary_distribution() const override final
+  BoundaryDistributionType boundary_distribution() const override final
   {
     return [this](const DomainType& x) -> std::function<RangeFieldType(const DomainType&)> {
       if (x[0] > 1.5)
@@ -118,20 +118,20 @@ public:
     return helper<MomentBasis>::get_left_boundary_values(basis_functions_, psi_vac_, is_mn_model_);
   }
 
-  virtual RangeFieldType t_end() const override
+  RangeFieldType t_end() const override
   {
     return 2.5;
   }
 
   // sigma_a = 1 if x <= 2, 0 else
-  virtual std::unique_ptr<ScalarFunctionType> sigma_a() const override
+  std::unique_ptr<ScalarFunctionType> sigma_a() const override
   {
     return std::make_unique<GenericScalarFunctionType>(
         0, [](const DomainType& x, const XT::Common::Parameter&) { return x[0] > 2 ? 0. : 1.; });
   }
 
   // sigma_s = 0 if x <= 1, 2 if 1 < x <= 2, 10 else
-  virtual std::unique_ptr<ScalarFunctionType> sigma_s() const override
+  std::unique_ptr<ScalarFunctionType> sigma_s() const override
   {
     return std::make_unique<GenericScalarFunctionType>(0, [](const DomainType& x, const XT::Common::Parameter&) {
       if (x[0] > 2)
@@ -144,7 +144,7 @@ public:
   }
 
   // Q = 0.5 if 1 <= x <= 1.5, 0 else
-  virtual std::unique_ptr<ScalarFunctionType> Q() const override
+  std::unique_ptr<ScalarFunctionType> Q() const override
   {
     return std::make_unique<GenericScalarFunctionType>(
         0, [](const DomainType& x, const XT::Common::Parameter&) { return x[0] < 1 || x[0] > 1.5 ? 0. : 0.5; });
@@ -390,7 +390,7 @@ public:
     return "sourcebeammn";
   }
 
-  virtual std::unique_ptr<FluxType> flux() const override
+  std::unique_ptr<FluxType> flux() const override
   {
     return std::make_unique<ActualFluxType>(grid_view_, basis_functions_);
   }
