@@ -305,4 +305,6 @@ make_discrete_function(const SpaceInterface<GV, r, rC, R>& space, const std::str
 } // namespace GDT
 } // namespace Dune
 
+#include "default-datahandle.hh"
+
 #endif // DUNE_GDT_DISCRETEFUNCTION_DEFAULT_HH
