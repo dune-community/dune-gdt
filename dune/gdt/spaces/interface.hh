@@ -74,10 +74,7 @@ public:
     , adapted_(false)
   {}
 
-  virtual ThisType* copy() const
-  {
-    return nullptr;
-  }
+  virtual ThisType* copy() const = 0;
 
   virtual ~SpaceInterface() = default;
 
