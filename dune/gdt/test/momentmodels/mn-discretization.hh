@@ -78,7 +78,7 @@ struct HyperbolicMnDiscretization
     assert(grid_ptr->comm().size() == 1 || grid_ptr->overlapSize(0) > 0);
     const GV grid_view(grid_ptr->leafGridView());
     const SpaceType fv_space(grid_view);
-    const AdvectionSourceSpaceType advection_source_space(grid_view, 1);
+    const AdvectionSourceSpaceType advection_source_space(grid_view);
 
     //******************* create EquationType object ***************************************
     std::shared_ptr<const MomentBasis> basis_functions = std::make_shared<const MomentBasis>(

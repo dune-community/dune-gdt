@@ -30,6 +30,7 @@ namespace GDT {
 
 
 /**
+ * This class is deprecated, use LocalLaplaceIntegrand instead (10.08.2019)!
  * Given an inducing scalar function lambda and an inducing matrix-valued function kappa, computes
  * `lambda(x) * {[kappa(x) \nabla phi(x)] * \nabla psi(x)}` for all combinations of phi in the ansatz basis and psi in
  * the test basis.

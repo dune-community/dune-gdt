@@ -8,8 +8,8 @@
 //   Rene Milk      (2017 - 2018)
 //   Tobias Leibner (2017)
 
-#ifndef DUNE_GDT_OPERATORS_FV_RECONSTRUCTION_LINEAR_HH
-#define DUNE_GDT_OPERATORS_FV_RECONSTRUCTION_LINEAR_HH
+#ifndef DUNE_GDT_OPERATORS_RECONSTRUCTION_LINEAR_HH
+#define DUNE_GDT_OPERATORS_RECONSTRUCTION_LINEAR_HH
 
 #include <dune/geometry/quadraturerules.hh>
 
@@ -485,4 +485,4 @@ private:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_OPERATORS_FV_RECONSTRUCTION_LINEAR_HH
+#endif // DUNE_GDT_OPERATORS_RECONSTRUCTION_LINEAR_HH

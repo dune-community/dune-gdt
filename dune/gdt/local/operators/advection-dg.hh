@@ -58,39 +58,42 @@ public:
 
   // When using this constructor, source has to be set by a call to with_source before calling apply
   LocalAdvectionDgVolumeOperator(const FluxType& flux)
-    : BaseType(flux.parameter_type())
+    : BaseType(1, flux.parameter_type())
     , flux_(flux)
     , local_flux_(flux_.local_function())
   {}
 
   LocalAdvectionDgVolumeOperator(const SourceType& source, const FluxType& flux)
-    : BaseType(source, flux.parameter_type())
+    : BaseType(source, 1, flux.parameter_type())
     , flux_(flux)
     , local_flux_(flux_.local_function())
   {}
 
   // When using this constructor, source has to be set by a call to with_source before calling apply
+  /// Applies the inverse of the local mass matrix.
   LocalAdvectionDgVolumeOperator(const LocalMassMatrixProviderType& local_mass_matrices, const FluxType& flux)
-    : BaseType(flux.parameter_type())
+    : BaseType(1, flux.parameter_type())
     , flux_(flux)
     , local_flux_(flux_.local_function())
     , local_mass_matrices_(local_mass_matrices)
   {}
 
+  /// Applies the inverse of the local mass matrix.
   LocalAdvectionDgVolumeOperator(const SourceType& source,
                                  const LocalMassMatrixProviderType& local_mass_matrices,
                                  const FluxType& flux)
-    : BaseType(source, flux.parameter_type())
+    : BaseType(source, 1, flux.parameter_type())
     , flux_(flux)
     , local_flux_(flux_.local_function())
     , local_mass_matrices_(local_mass_matrices)
   {}
 
+  /// Applies the inverse of the local mass matrix.
   LocalAdvectionDgVolumeOperator(const SourceSpaceType& source_space,
                                  const SV& source_vector,
                                  const LocalMassMatrixProviderType& local_mass_matrices,
                                  const FluxType& flux)
-    : BaseType(source_space, source_vector, flux.parameter_type())
+    : BaseType(source_space, source_vector, 1, flux.parameter_type())
     , flux_(flux)
     , local_flux_(flux_.local_function())
     , local_mass_matrices_(local_mass_matrices)
@@ -116,15 +119,16 @@ public:
 
   void apply(LocalRangeType& local_range, const XT::Common::Parameter& param = {}) const override final
   {
+    const auto& u_ = local_sources_[0];
     const auto& element = local_range.element();
     const auto& basis = local_range.basis();
     local_dofs_.resize(basis.size(param));
     local_dofs_ *= 0.;
-    local_source_->bind(element);
-    const auto local_source_order = local_source_->order(param);
+    u_->bind(element);
+    const auto u_order = u_->order(param);
     const auto local_basis_order = basis.order(param);
     local_flux_->bind(element);
-    const auto integrand_order = local_flux_->order(param) * local_source_order + std::max(local_basis_order - 1, 0);
+    const auto integrand_order = local_flux_->order(param) * u_order + std::max(local_basis_order - 1, 0);
     for (const auto& quadrature_point : QuadratureRules<D, d>::rule(element.geometry().type(), integrand_order)) {
       // prepare
       const auto point_in_reference_element = quadrature_point.position();
@@ -132,7 +136,7 @@ public:
       const auto quadrature_weight = quadrature_point.weight();
       // evaluate
       basis.jacobians(point_in_reference_element, basis_jacobians_, param);
-      const auto source_value = local_source_->evaluate(point_in_reference_element, param);
+      const auto source_value = u_->evaluate(point_in_reference_element, param);
       const auto flux_value = local_flux_->evaluate(point_in_reference_element, source_value, param);
       // compute
       for (size_t ii = 0; ii < basis.size(param); ++ii)
@@ -147,7 +151,7 @@ public:
   } // ... apply(...)
 
 private:
-  using BaseType::local_source_;
+  using BaseType::local_sources_;
   const FluxType& flux_;
   std::unique_ptr<typename FluxType::LocalFunctionType> local_flux_;
   const XT::Common::ConstStorageProvider<LocalMassMatrixProviderType> local_mass_matrices_;
@@ -193,8 +197,7 @@ public:
 
   // When using this constructor, source has to be set by a call to with_source before calling apply
   LocalAdvectionDgCouplingOperator(const NumericalFluxType& numerical_flux, bool compute_outside = true)
-    : BaseType(numerical_flux.parameter_type())
-    , local_source_outside_(nullptr)
+    : BaseType(2, numerical_flux.parameter_type())
     , numerical_flux_(numerical_flux.copy())
     , local_flux_(numerical_flux_->flux().local_function())
     , compute_outside_(compute_outside)
@@ -203,44 +206,43 @@ public:
   LocalAdvectionDgCouplingOperator(const SourceType& source,
                                    const NumericalFluxType& numerical_flux,
                                    bool compute_outside = true)
-    : BaseType(source, numerical_flux.parameter_type())
-    , local_source_outside_(source_.access().local_function())
+    : BaseType(source, 2, numerical_flux.parameter_type())
     , numerical_flux_(numerical_flux.copy())
     , local_flux_(numerical_flux_->flux().local_function())
     , compute_outside_(compute_outside)
   {}
 
   // When using this constructor, source has to be set by a call to with_source before calling apply
+  /// Applies the inverse of the local mass matrix.
   LocalAdvectionDgCouplingOperator(const LocalMassMatrixProviderType& local_mass_matrices,
                                    const NumericalFluxType& numerical_flux,
                                    bool compute_outside = true)
-    : BaseType(numerical_flux.parameter_type())
-    , local_source_outside_(nullptr)
+    : BaseType(2, numerical_flux.parameter_type())
     , numerical_flux_(numerical_flux.copy())
     , local_flux_(numerical_flux_->flux().local_function())
     , compute_outside_(compute_outside)
     , local_mass_matrices_(local_mass_matrices)
   {}
 
+  /// Applies the inverse of the local mass matrix.
   LocalAdvectionDgCouplingOperator(const SourceType& source,
                                    const LocalMassMatrixProviderType& local_mass_matrices,
                                    const NumericalFluxType& numerical_flux,
                                    bool compute_outside = true)
-    : BaseType(source, numerical_flux.parameter_type())
-    , local_source_outside_(source_.access().local_function())
+    : BaseType(source, 2, numerical_flux.parameter_type())
     , numerical_flux_(numerical_flux.copy())
     , local_flux_(numerical_flux_->flux().local_function())
     , compute_outside_(compute_outside)
     , local_mass_matrices_(local_mass_matrices)
   {}
 
+  /// Applies the inverse of the local mass matrix.
   LocalAdvectionDgCouplingOperator(const SourceSpaceType& source_space,
                                    const SV& source_vector,
                                    const LocalMassMatrixProviderType& local_mass_matrices,
                                    const NumericalFluxType& numerical_flux,
                                    bool compute_outside = true)
-    : BaseType(source_space, source_vector, numerical_flux.parameter_type())
-    , local_source_outside_(source_.access().local_function())
+    : BaseType(source_space, source_vector, 2, numerical_flux.parameter_type())
     , numerical_flux_(numerical_flux.copy())
     , local_flux_(numerical_flux_->flux().local_function())
     , compute_outside_(compute_outside)
@@ -249,7 +251,6 @@ public:
 
   LocalAdvectionDgCouplingOperator(const ThisType& other)
     : BaseType(other)
-    , local_source_outside_(other.local_source_outside_ ? source_.access().local_function() : nullptr)
     , numerical_flux_(other.numerical_flux_->copy())
     , local_flux_(numerical_flux_->flux().local_function())
     , compute_outside_(other.compute_outside_)
@@ -271,6 +272,8 @@ public:
              LocalOutsideRangeType& local_range_outside,
              const XT::Common::Parameter& param = {}) const override final
   {
+    const auto& u_ = local_sources_[0];
+    const auto& v_ = local_sources_[1];
     const auto& inside_element = local_range_inside.element();
     const auto& outside_element = local_range_outside.element();
     const auto& inside_basis = local_range_inside.basis();
@@ -284,10 +287,10 @@ public:
     const auto inside_flux_order = local_flux_->order(param);
     local_flux_->bind(intersection.outside());
     const auto outside_flux_order = local_flux_->order(param);
-    local_source_->bind(inside_element);
-    local_source_outside_->bind(outside_element);
-    const auto u_order = local_source_->order(param);
-    const auto v_order = local_source_outside_->order(param);
+    u_->bind(inside_element);
+    v_->bind(outside_element);
+    const auto u_order = u_->order(param);
+    const auto v_order = v_->order(param);
     const auto integrand_order = std::max(inside_basis.order(param), outside_basis.order(param))
                                  + std::max(inside_flux_order * u_order, outside_flux_order * v_order);
     for (const auto& quadrature_point :
@@ -305,8 +308,8 @@ public:
       inside_basis.evaluate(point_in_inside_reference_element, inside_basis_values_);
       if (compute_outside_)
         outside_basis.evaluate(point_in_outside_reference_element, outside_basis_values_);
-      const auto u_val = local_source_->evaluate(point_in_inside_reference_element);
-      const auto v_val = local_source_outside_->evaluate(point_in_outside_reference_element);
+      const auto u_val = u_->evaluate(point_in_inside_reference_element);
+      const auto v_val = v_->evaluate(point_in_outside_reference_element);
       const auto g = numerical_flux_->apply(point_in_reference_intersection, u_val, v_val, normal, param);
       // compute
       for (size_t ii = 0; ii < inside_basis.size(param); ++ii)
@@ -329,19 +332,8 @@ public:
         local_range_outside.dofs()[ii] += outside_local_dofs_[ii];
   } // ... apply(...)
 
-  std::unique_ptr<BaseType> with_source(const SourceType& src) const override final
-  {
-    auto ret = std::make_unique<ThisType>(*this);
-    ret->source_ = XT::Common::ConstStorageProvider<SourceType>(src);
-    ret->local_source_ = ret->source().local_function();
-    ret->local_source_outside_ = ret->source().local_function();
-    return ret;
-  }
-
 private:
-  using BaseType::local_source_;
-  using BaseType::source_;
-  std::unique_ptr<LocalSourceType> local_source_outside_;
+  using BaseType::local_sources_;
   const std::unique_ptr<NumericalFluxType> numerical_flux_;
   std::unique_ptr<typename NumericalFluxType::FluxType::LocalFunctionType> local_flux_;
   const bool compute_outside_;
@@ -385,23 +377,25 @@ public:
       LambdaType numerical_boundary_flux,
       const int numerical_flux_order,
       const XT::Common::ParameterType& numerical_flux_param_type = {})
-    : BaseType(source, numerical_flux_param_type)
+    : BaseType(source, 1, numerical_flux_param_type)
     , numerical_boundary_flux_(numerical_boundary_flux)
     , numerical_flux_order_(numerical_flux_order)
   {}
 
+  /// Applies the inverse of the local mass matrix.
   LocalAdvectionDgBoundaryTreatmentByCustomNumericalFluxOperator(
       const SourceType& source,
       const LocalMassMatrixProviderType& local_mass_matrices,
       LambdaType numerical_boundary_flux,
       const int numerical_flux_order,
       const XT::Common::ParameterType& numerical_flux_param_type = {})
-    : BaseType(source, numerical_flux_param_type)
+    : BaseType(source, 1, numerical_flux_param_type)
     , numerical_boundary_flux_(numerical_boundary_flux)
     , numerical_flux_order_(numerical_flux_order)
     , local_mass_matrices_(local_mass_matrices)
   {}
 
+  /// Applies the inverse of the local mass matrix.
   LocalAdvectionDgBoundaryTreatmentByCustomNumericalFluxOperator(
       const SourceSpaceType& source_space,
       const SV& source_vector,
@@ -409,7 +403,7 @@ public:
       LambdaType numerical_boundary_flux,
       const int numerical_flux_order,
       const XT::Common::ParameterType& numerical_flux_param_type = {})
-    : BaseType(source_space, source_vector, numerical_flux_param_type)
+    : BaseType(source_space, source_vector, 1, numerical_flux_param_type)
     , numerical_boundary_flux_(numerical_boundary_flux)
     , numerical_flux_order_(numerical_flux_order)
     , local_mass_matrices_(local_mass_matrices)
@@ -439,12 +433,13 @@ public:
              LocalOutsideRangeType& /*local_range_outside*/,
              const XT::Common::Parameter& param = {}) const override final
   {
+    const auto& u_ = local_sources_[0];
     const auto& element = local_range_inside.element();
     const auto& inside_basis = local_range_inside.basis();
     inside_local_dofs_.resize(inside_basis.size(param));
     inside_local_dofs_ *= 0.;
-    local_source_->bind(element);
-    const auto integrand_order = inside_basis.order(param) + numerical_flux_order_ * local_source_->order(param);
+    u_->bind(element);
+    const auto integrand_order = inside_basis.order(param) + numerical_flux_order_ * u_->order(param);
     for (const auto& quadrature_point :
          QuadratureRules<D, d - 1>::rule(intersection.geometry().type(), integrand_order)) {
       // prepare
@@ -456,8 +451,7 @@ public:
           intersection.geometryInInside().global(point_in_reference_intersection);
       // evaluate
       inside_basis.evaluate(point_in_inside_reference_element, inside_basis_values_);
-      const auto g =
-          numerical_boundary_flux_(local_source_->evaluate(point_in_inside_reference_element), normal, param);
+      const auto g = numerical_boundary_flux_(u_->evaluate(point_in_inside_reference_element), normal, param);
       // compute
       for (size_t ii = 0; ii < inside_basis.size(param); ++ii)
         inside_local_dofs_[ii] += integration_factor * quadrature_weight * (g * inside_basis_values_[ii]);
@@ -471,7 +465,7 @@ public:
   } // ... apply(...)
 
 private:
-  using BaseType::local_source_;
+  using BaseType::local_sources_;
   const LambdaType numerical_boundary_flux_;
   const int numerical_flux_order_;
   const XT::Common::ConstStorageProvider<LocalMassMatrixProviderType> local_mass_matrices_;
@@ -517,25 +511,27 @@ public:
       const NumericalFluxType& numerical_flux,
       LambdaType boundary_extrapolation_lambda,
       const XT::Common::ParameterType& boundary_treatment_param_type = {})
-    : BaseType(source, numerical_flux.parameter_type() + boundary_treatment_param_type)
+    : BaseType(source, 1, numerical_flux.parameter_type() + boundary_treatment_param_type)
     , numerical_flux_(numerical_flux.copy())
     , local_flux_(numerical_flux_->flux().local_function())
     , extrapolate_(boundary_extrapolation_lambda)
   {}
 
+  /// Applies the inverse of the local mass matrix.
   LocalAdvectionDgBoundaryTreatmentByCustomExtrapolationOperator(
       const SourceType& source,
       const LocalMassMatrixProviderType& local_mass_matrices,
       const NumericalFluxType& numerical_flux,
       LambdaType boundary_extrapolation_lambda,
       const XT::Common::ParameterType& boundary_treatment_param_type = {})
-    : BaseType(source, numerical_flux.parameter_type() + boundary_treatment_param_type)
+    : BaseType(source, 1, numerical_flux.parameter_type() + boundary_treatment_param_type)
     , numerical_flux_(numerical_flux.copy())
     , local_flux_(numerical_flux_->flux().local_function())
     , extrapolate_(boundary_extrapolation_lambda)
     , local_mass_matrices_(local_mass_matrices)
   {}
 
+  /// Applies the inverse of the local mass matrix.
   LocalAdvectionDgBoundaryTreatmentByCustomExtrapolationOperator(
       const SourceSpaceType& source_space,
       const SV& source_vector,
@@ -543,7 +539,7 @@ public:
       const NumericalFluxType& numerical_flux,
       LambdaType boundary_extrapolation_lambda,
       const XT::Common::ParameterType& boundary_treatment_param_type = {})
-    : BaseType(source_space, source_vector, numerical_flux.parameter_type() + boundary_treatment_param_type)
+    : BaseType(source_space, source_vector, 1, numerical_flux.parameter_type() + boundary_treatment_param_type)
     , numerical_flux_(numerical_flux.copy())
     , local_flux_(numerical_flux_->flux().local_function())
     , extrapolate_(boundary_extrapolation_lambda)
@@ -573,14 +569,15 @@ public:
              LocalOutsideRangeType& /*local_range_outside*/,
              const XT::Common::Parameter& param = {}) const override final
   {
+    const auto& u_ = local_sources_[0];
     const auto& element = local_range_inside.element();
     const auto& inside_basis = local_range_inside.basis();
     inside_local_dofs_.resize(inside_basis.size(param));
     inside_local_dofs_ *= 0.;
     numerical_flux_->bind(intersection);
     local_flux_->bind(intersection.inside());
-    local_source_->bind(element);
-    const auto integrand_order = inside_basis.order(param) + local_flux_->order(param) * local_source_->order(param);
+    u_->bind(element);
+    const auto integrand_order = inside_basis.order(param) + local_flux_->order(param) * u_->order(param);
     for (const auto& quadrature_point :
          QuadratureRules<D, d - 1>::rule(intersection.geometry().type(), integrand_order)) {
       // prepare
@@ -592,7 +589,7 @@ public:
           intersection.geometryInInside().global(point_in_reference_intersection);
       // evaluate
       inside_basis.evaluate(point_in_inside_reference_element, inside_basis_values_);
-      const auto u = local_source_->evaluate(point_in_inside_reference_element);
+      const auto u = u_->evaluate(point_in_inside_reference_element);
       const auto v = extrapolate_(intersection, point_in_reference_intersection, numerical_flux_->flux(), u, param);
       const auto g = numerical_flux_->apply(point_in_reference_intersection, u, v, normal, param);
       // compute
@@ -608,7 +605,7 @@ public:
   } // ... apply(...)
 
 private:
-  using BaseType::local_source_;
+  using BaseType::local_sources_;
   const std::unique_ptr<NumericalFluxType> numerical_flux_;
   std::unique_ptr<typename NumericalFluxType::FluxType::LocalFunctionType> local_flux_;
   const LambdaType extrapolate_;
@@ -641,8 +638,7 @@ public:
                                                             const double& nu_1 = 0.2,
                                                             const double& alpha_1 = 1.0,
                                                             const size_t index = 0)
-    : BaseType()
-    , local_source_outside_(nullptr)
+    : BaseType(2)
     , assembly_grid_view_(assembly_grid_view)
     , nu_1_(nu_1)
     , alpha_1_(alpha_1)
@@ -654,8 +650,7 @@ public:
                                                             const double& nu_1 = 0.2,
                                                             const double& alpha_1 = 1.0,
                                                             const size_t index = 0)
-    : BaseType(source)
-    , local_source_outside_(source_.access().local_function())
+    : BaseType(source, 2)
     , assembly_grid_view_(assembly_grid_view)
     , nu_1_(nu_1)
     , alpha_1_(alpha_1)
@@ -663,13 +658,13 @@ public:
   {}
 
   // When using this constructor, source has to be set by a call to with_source before calling apply
+  /// Applies the inverse of the local mass matrix.
   LocalAdvectionDgArtificialViscosityShockCapturingOperator(const LocalMassMatrixProviderType& local_mass_matrices,
                                                             const SGV& assembly_grid_view,
                                                             const double& nu_1 = 0.2,
                                                             const double& alpha_1 = 1.0,
                                                             const size_t index = 0)
-    : BaseType()
-    , local_source_outside_(nullptr)
+    : BaseType(2)
     , assembly_grid_view_(assembly_grid_view)
     , nu_1_(nu_1)
     , alpha_1_(alpha_1)
@@ -677,14 +672,14 @@ public:
     , local_mass_matrices_(local_mass_matrices)
   {}
 
+  /// Applies the inverse of the local mass matrix.
   LocalAdvectionDgArtificialViscosityShockCapturingOperator(const SourceType& source,
                                                             const LocalMassMatrixProviderType& local_mass_matrices,
                                                             const SGV& assembly_grid_view,
                                                             const double& nu_1 = 0.2,
                                                             const double& alpha_1 = 1.0,
                                                             const size_t index = 0)
-    : BaseType(source)
-    , local_source_outside_(source_.access().local_function())
+    : BaseType(source, 2)
     , assembly_grid_view_(assembly_grid_view)
     , nu_1_(nu_1)
     , alpha_1_(alpha_1)
@@ -692,19 +687,15 @@ public:
     , local_mass_matrices_(local_mass_matrices)
   {}
 
-  LocalAdvectionDgArtificialViscosityShockCapturingOperator(
-
-
-      const SourceSpaceType& source_space,
-      const SV& source_vector,
-
-      const LocalMassMatrixProviderType& local_mass_matrices,
-      const SGV& assembly_grid_view,
-      const double& nu_1 = 0.2,
-      const double& alpha_1 = 1.0,
-      const size_t index = 0)
-    : BaseType(source_space, source_vector)
-    , local_source_outside_(source_.access().local_function())
+  /// Applies the inverse of the local mass matrix.
+  LocalAdvectionDgArtificialViscosityShockCapturingOperator(const SourceSpaceType& source_space,
+                                                            const SV& source_vector,
+                                                            const LocalMassMatrixProviderType& local_mass_matrices,
+                                                            const SGV& assembly_grid_view,
+                                                            const double& nu_1 = 0.2,
+                                                            const double& alpha_1 = 1.0,
+                                                            const size_t index = 0)
+    : BaseType(source_space, source_vector, 2)
     , assembly_grid_view_(assembly_grid_view)
     , nu_1_(nu_1)
     , alpha_1_(alpha_1)
@@ -714,7 +705,6 @@ public:
 
   LocalAdvectionDgArtificialViscosityShockCapturingOperator(const ThisType& other)
     : BaseType(other)
-    , local_source_outside_(other.local_source_outside_ ? source_.access().local_function() : nullptr)
     , assembly_grid_view_(other.assembly_grid_view_)
     , nu_1_(other.nu_1_)
     , alpha_1_(other.alpha_1_)
@@ -729,12 +719,14 @@ public:
 
   void apply(LocalRangeType& local_range, const XT::Common::Parameter& param = {}) const override final
   {
+    const auto& u_ = local_sources_[0];
+    const auto& v_ = local_sources_[1];
     const auto& element = local_range.element();
     const auto& basis = local_range.basis();
     local_dofs_.resize(basis.size(param));
     local_dofs_ *= 0.;
-    local_source_->bind(element);
-    if (local_source_->order(param) <= 0 || basis.order(param) <= 0)
+    u_->bind(element);
+    if (u_->order(param) <= 0 || basis.order(param) <= 0)
       return;
     // compute jump indicator (8.176)
     double element_jump_indicator = 0;
@@ -744,9 +736,8 @@ public:
         if (d > 1)
           element_boundary_without_domain_boundary += XT::Grid::diameter(intersection);
         const auto neighbor = intersection.outside();
-        local_source_outside_->bind(neighbor);
-        const auto integration_order =
-            std::pow(std::max(local_source_->order(param), local_source_outside_->order(param)), 2);
+        v_->bind(neighbor);
+        const auto integration_order = std::pow(std::max(u_->order(param), v_->order(param)), 2);
         for (auto&& quadrature_point :
              QuadratureRules<D, d - 1>::rule(intersection.geometry().type(), integration_order)) {
           const auto point_in_reference_intersection = quadrature_point.position();
@@ -756,8 +747,8 @@ public:
               intersection.geometryInOutside().global(point_in_reference_intersection);
           const auto integration_factor = intersection.geometry().integrationElement(point_in_reference_intersection);
           const auto quadrature_weight = quadrature_point.weight();
-          const auto value_on_element = local_source_->evaluate(point_in_reference_element, param)[index_];
-          const auto value_on_neighbor = local_source_outside_->evaluate(point_in_reference_neighbor, param)[index_];
+          const auto value_on_element = u_->evaluate(point_in_reference_element, param)[index_];
+          const auto value_on_neighbor = v_->evaluate(point_in_reference_neighbor, param)[index_];
           element_jump_indicator +=
               integration_factor * quadrature_weight * std::pow(value_on_element - value_on_neighbor, 2);
         }
@@ -779,11 +770,11 @@ public:
     if (smoothed_discrete_jump_indicator > 0) {
       const auto h = element.geometry().volume();
       for (const auto& quadrature_point : QuadratureRules<D, d>::rule(
-               element.type(), std::max(0, local_source_->order(param) - 1) + std::max(0, basis.order(param) - 1))) {
+               element.type(), std::max(0, u_->order(param) - 1) + std::max(0, basis.order(param) - 1))) {
         const auto point_in_reference_element = quadrature_point.position();
         const auto integration_factor = element.geometry().integrationElement(point_in_reference_element);
         const auto quadrature_weight = quadrature_point.weight();
-        const auto source_jacobian = local_source_->jacobian(point_in_reference_element, param);
+        const auto source_jacobian = u_->jacobian(point_in_reference_element, param);
         basis.jacobians(point_in_reference_element, basis_jacobians_, param);
         // compute beta_h
         for (size_t ii = 0; ii < basis.size(param); ++ii)
@@ -799,19 +790,8 @@ public:
       local_range.dofs()[ii] += local_dofs_[ii];
   } // ... apply(...)
 
-  std::unique_ptr<BaseType> with_source(const SourceType& src) const override final
-  {
-    auto ret = std::make_unique<ThisType>(*this);
-    ret->source_ = XT::Common::ConstStorageProvider<SourceType>(src);
-    ret->local_source_ = ret->source().local_function();
-    ret->local_source_outside_ = ret->source().local_function();
-    return ret;
-  }
-
 private:
-  using BaseType::local_source_;
-  using BaseType::source_;
-  std::unique_ptr<LocalSourceType> local_source_outside_;
+  using BaseType::local_sources_;
   const SGV& assembly_grid_view_;
   const double nu_1_;
   const double alpha_1_;

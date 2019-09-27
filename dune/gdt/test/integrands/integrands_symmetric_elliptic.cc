@@ -9,7 +9,7 @@
 
 #include <dune/xt/common/test/main.hxx> // <- this one has to come first (includes the config.h)!
 
-#include <dune/gdt/local/integrands/symmetric_elliptic.hh>
+#include <dune/gdt/local/integrands/symmetrized-laplace.hh>
 
 #include <dune/gdt/test/integrands/integrands.hh>
 
@@ -19,7 +19,7 @@ namespace Test {
 
 
 template <class G>
-struct SymmetricEllipticIntegrandTest : public IntegrandTest<G>
+struct SymmetrizedLaplaceIntegrandTest : public IntegrandTest<G>
 {
   using BaseType = IntegrandTest<G>;
   using BaseType::d;
@@ -30,7 +30,7 @@ struct SymmetricEllipticIntegrandTest : public IntegrandTest<G>
   using typename BaseType::LocalVectorBasisType;
   using typename BaseType::VectorJacobianType;
   using typename BaseType::VectorRangeType;
-  using VectorIntegrandType = LocalSymmetricEllipticIntegrand<E>;
+  using VectorIntegrandType = LocalSymmetrizedLaplaceIntegrand<E>;
 
   virtual void SetUp() override
   {
@@ -97,7 +97,7 @@ struct SymmetricEllipticIntegrandTest : public IntegrandTest<G>
   using BaseType::vector_ansatz_;
   using BaseType::vector_test_;
   std::shared_ptr<XT::Functions::GenericGridFunction<E, 1>> diffusion_factor_;
-}; // struct SymmetricEllipticIntegrandTest
+}; // struct SymmetrizedLaplaceIntegrandTest
 
 
 } // namespace Test
@@ -106,15 +106,15 @@ struct SymmetricEllipticIntegrandTest : public IntegrandTest<G>
 
 
 template <class G>
-using SymmetricEllipticIntegrandTest = Dune::GDT::Test::SymmetricEllipticIntegrandTest<G>;
-TYPED_TEST_CASE(SymmetricEllipticIntegrandTest, Grids2D);
+using SymmetrizedLaplaceIntegrandTest = Dune::GDT::Test::SymmetrizedLaplaceIntegrandTest<G>;
+TYPED_TEST_CASE(SymmetrizedLaplaceIntegrandTest, Grids2D);
 
-TYPED_TEST(SymmetricEllipticIntegrandTest, is_constructable)
+TYPED_TEST(SymmetrizedLaplaceIntegrandTest, is_constructable)
 {
   this->is_constructable();
 }
 
-TYPED_TEST(SymmetricEllipticIntegrandTest, evaluates_correctly)
+TYPED_TEST(SymmetrizedLaplaceIntegrandTest, evaluates_correctly)
 {
   this->evaluates_correctly();
 }

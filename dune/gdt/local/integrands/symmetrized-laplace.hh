@@ -5,14 +5,10 @@
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Felix Schindler (2013 - 2018)
-//   Kirsten Weber   (2013)
-//   René Fritze     (2014, 2016, 2018)
-//   René Milk       (2017)
 //   Tobias Leibner  (2014, 2016 - 2018)
 
-#ifndef DUNE_GDT_LOCAL_INTEGRANDS_SYMMETRIC_ELLIPTIC_HH
-#define DUNE_GDT_LOCAL_INTEGRANDS_SYMMETRIC_ELLIPTIC_HH
+#ifndef DUNE_GDT_LOCAL_INTEGRANDS_SYMMETRIZED_LAPLACE_HH
+#define DUNE_GDT_LOCAL_INTEGRANDS_SYMMETRIZED_LAPLACE_HH
 
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/la/container/eye-matrix.hh>
@@ -32,12 +28,12 @@ namespace GDT {
  * psi in the test basis. Here, ':' denotes the (matrix) scalar product.
  */
 template <class E, class F = double>
-class LocalSymmetricEllipticIntegrand
+class LocalSymmetrizedLaplaceIntegrand
   : public LocalBinaryElementIntegrandInterface<E, E::dimension, 1, F, F, E::dimension, 1, F>
 {
 
   using BaseType = LocalBinaryElementIntegrandInterface<E, E::dimension, 1, F, F, E::dimension, 1, F>;
-  using ThisType = LocalSymmetricEllipticIntegrand;
+  using ThisType = LocalSymmetrizedLaplaceIntegrand;
 
 public:
   using BaseType::d;
@@ -49,32 +45,32 @@ public:
 
   using DiffusionFactorType = XT::Functions::GridFunctionInterface<E, 1, 1, F>;
 
-  LocalSymmetricEllipticIntegrand(const F& diffusion_factor = F(1))
+  LocalSymmetrizedLaplaceIntegrand(const F& diffusion_factor = F(1))
     : BaseType()
     , diffusion_factor_(new XT::Functions::FunctionAsGridFunctionWrapper<E, 1, 1, F>(
           new XT::Functions::ConstantFunction<d, 1, 1, F>(diffusion_factor)))
     , local_diffusion_factor_(diffusion_factor_.access().local_function())
   {}
 
-  LocalSymmetricEllipticIntegrand(const XT::Functions::FunctionInterface<d, 1, 1, F>& diffusion_factor)
+  LocalSymmetrizedLaplaceIntegrand(const XT::Functions::FunctionInterface<d, 1, 1, F>& diffusion_factor)
     : BaseType(diffusion_factor.parameter_type())
     , diffusion_factor_(new XT::Functions::FunctionAsGridFunctionWrapper<E, 1, 1, F>(diffusion_factor))
     , local_diffusion_factor_(diffusion_factor_.access().local_function())
   {}
 
-  LocalSymmetricEllipticIntegrand(const DiffusionFactorType& diffusion_factor)
+  LocalSymmetrizedLaplaceIntegrand(const DiffusionFactorType& diffusion_factor)
     : BaseType(diffusion_factor.parameter_type())
     , diffusion_factor_(diffusion_factor)
     , local_diffusion_factor_(diffusion_factor_.access().local_function())
   {}
 
-  LocalSymmetricEllipticIntegrand(const ThisType& other)
+  LocalSymmetrizedLaplaceIntegrand(const ThisType& other)
     : BaseType(other.parameter_type())
     , diffusion_factor_(other.diffusion_factor_)
     , local_diffusion_factor_(diffusion_factor_.access().local_function())
   {}
 
-  LocalSymmetricEllipticIntegrand(ThisType&& source) = default;
+  LocalSymmetrizedLaplaceIntegrand(ThisType&& source) = default;
 
   std::unique_ptr<BaseType> copy() const override final
   {
@@ -131,10 +127,10 @@ private:
   mutable std::vector<typename LocalTestBasisType::DerivativeRangeType> test_basis_grads_;
   mutable std::vector<typename LocalAnsatzBasisType::DerivativeRangeType> ansatz_basis_grads_;
   mutable std::vector<typename LocalAnsatzBasisType::DerivativeRangeType> symmetric_ansatz_basis_grads_;
-}; // class LocalSymmetricEllipticIntegrand
+}; // class LocalSymmetrizedLaplaceIntegrand
 
 
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_LOCAL_INTEGRANDS_SYMMETRIC_ELLIPTIC_HH
+#endif // DUNE_GDT_LOCAL_INTEGRANDS_SYMMETRIZED_LAPLACE_HH

@@ -25,8 +25,8 @@
 #include <dune/xt/functions/interfaces/grid-function.hh>
 #include <dune/xt/functions/generic/grid-function.hh>
 
-#include <dune/gdt/discretefunction/datahandle.hh>
 #include <dune/gdt/operators/interfaces.hh>
+#include <dune/gdt/discretefunction/default.hh>
 
 #include "enums.hh"
 

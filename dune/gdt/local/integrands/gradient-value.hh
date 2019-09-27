@@ -7,13 +7,12 @@
 // Authors:
 //   Tobias Leibner  (2019)
 
-#ifndef DUNE_GDT_LOCAL_INTEGRANDS_QUADRATIC_HH
-#define DUNE_GDT_LOCAL_INTEGRANDS_QUADRATIC_HH
+#ifndef DUNE_GDT_LOCAL_INTEGRANDS_GRADIENT_VALUE_HH
+#define DUNE_GDT_LOCAL_INTEGRANDS_GRADIENT_VALUE_HH
 
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/functions/constant.hh>
-#include <dune/xt/functions/base/function-as-grid-function.hh>
-#include <dune/xt/functions/interfaces/grid-function.hh>
+#include <dune/xt/functions/grid-function.hh>
 
 #include "interfaces.hh"
 
@@ -53,25 +52,19 @@ public:
       typename std::conditional_t<use_test_gradient, LocalTestBasisType, LocalAnsatzBasisType>::DerivativeRangeType>;
   static const size_t vector_size = d;
 
-  using VectorGridFunctionType = XT::Functions::GridFunctionInterface<E, vector_size, 1, F>;
+  using VectorGridFunctionType = XT::Functions::GridFunction<E, vector_size, 1, F>;
   using VectorValues = typename VectorGridFunctionType::LocalFunctionType::RangeReturnType;
 
-  LocalElementGradientValueIntegrand(const XT::Functions::FunctionInterface<d, vector_size, 1, F>& vector_in)
+  LocalElementGradientValueIntegrand(const VectorGridFunctionType vector_in)
     : BaseType()
-    , vector_(new XT::Functions::FunctionAsGridFunctionWrapper<E, vector_size, 1, F>(vector_in))
-    , local_function_(vector_.access().local_function())
-  {}
-
-  LocalElementGradientValueIntegrand(const VectorGridFunctionType& vector_in)
-    : BaseType(vector_in.parameter_type())
     , vector_(vector_in)
-    , local_function_(vector_.access().local_function())
+    , local_function_(vector_.local_function())
   {}
 
   LocalElementGradientValueIntegrand(const ThisType& other)
     : BaseType(other.parameter_type())
     , vector_(other.vector_)
-    , local_function_(vector_.access().local_function())
+    , local_function_(vector_.local_function())
   {}
 
   LocalElementGradientValueIntegrand(ThisType&& source) = default;
@@ -162,7 +155,7 @@ private:
     }
   };
 
-  const XT::Common::ConstStorageProvider<VectorGridFunctionType> vector_;
+  const VectorGridFunctionType vector_;
   std::unique_ptr<typename VectorGridFunctionType::LocalFunctionType> local_function_;
   mutable VectorValues vector_values_;
   mutable BasisValues values_;
@@ -173,4 +166,4 @@ private:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_LOCAL_INTEGRANDS_QUADRATIC_HH
+#endif // DUNE_GDT_LOCAL_INTEGRANDS_GRADIENT_VALUE_HH

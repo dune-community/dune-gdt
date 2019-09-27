@@ -8,8 +8,8 @@
 //   Rene Milk      (2017 - 2018)
 //   Tobias Leibner (2017)
 
-#ifndef DUNE_GDT_OPERATORS_FV_RECONSTRUCTION_INTERNAL_HH
-#define DUNE_GDT_OPERATORS_FV_RECONSTRUCTION_INTERNAL_HH
+#ifndef DUNE_GDT_OPERATORS_RECONSTRUCTION_INTERNAL_HH
+#define DUNE_GDT_OPERATORS_RECONSTRUCTION_INTERNAL_HH
 
 #include <dune/xt/common/debug.hh>
 #include <dune/xt/common/fvector.hh>
@@ -518,4 +518,4 @@ protected:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_OPERATORS_FV_RECONSTRUCTION_INTERNAL_HH
+#endif // DUNE_GDT_OPERATORS_RECONSTRUCTION_INTERNAL_HH

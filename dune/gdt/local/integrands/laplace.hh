@@ -60,6 +60,10 @@ public:
 protected:
   void post_bind(const ElementType& ele) override
   {
+#ifndef NDEBUG
+    if (!ele.geometry().affine())
+      std::cerr << "Warning: integration order has to be increased for non-affine geometries!" << std::endl;
+#endif
     local_weight_->bind(ele);
   }
 

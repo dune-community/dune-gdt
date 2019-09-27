@@ -92,13 +92,8 @@ public:
           n,
           direction);
       for (auto&& entry : ret)
-        if (std::isnan(entry) || std::isinf(entry)) {
-          //          std::cout << XT::Common::to_string(ret) << std::endl;
-          //          std::cout << XT::Common::to_string(u) << std::endl;
-          //          std::cout << XT::Common::to_string(v) << std::endl;
-          //          std::cout << this->intersection().geometry().center() << std::endl;
+        if (std::isnan(entry) || std::isinf(entry))
           DUNE_THROW(Dune::MathError, "NaN or inf in kinetic flux");
-        }
       return ret;
     } else {
       static const auto flux_matrices = initialize_flux_matrices(basis_);

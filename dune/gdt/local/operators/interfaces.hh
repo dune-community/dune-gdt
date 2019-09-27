@@ -21,7 +21,9 @@
 #include <dune/xt/common/parameter.hh>
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/common/memory.hh>
+
 #include <dune/xt/grid/type_traits.hh>
+#include <dune/xt/grid/bound-object.hh>
 
 #include <dune/gdt/local/discretefunction.hh>
 #include <dune/gdt/discretefunction/default.hh>
@@ -40,7 +42,9 @@ template <class SourceVector,
           class RangeField = SourceField,
           class RangeGridView = SourceGridView,
           class RangeVector = SourceVector>
-class LocalElementOperatorInterface : public XT::Common::ParametricInterface
+class LocalElementOperatorInterface
+  : public XT::Common::ParametricInterface
+  , public XT::Grid::ElementBoundObject<XT::Grid::extract_entity_t<SourceGridView>>
 {
   static_assert(
       std::is_same<XT::Grid::extract_entity_t<SourceGridView>, XT::Grid::extract_entity_t<RangeGridView>>::value, "");
@@ -67,36 +71,51 @@ public:
   using LocalSourceType = typename SourceType::LocalFunctionType;
   using DiscreteSourceType = ConstDiscreteFunction<SV, SGV, s_r, s_rC, SR>;
   using SourceSpaceType = typename DiscreteSourceType::SpaceType;
-  using LocalDiscreteSourceType = typename DiscreteSourceType::ConstLocalDiscreteFunctionType;
 
   using ThisType = LocalElementOperatorInterface<SV, SGV, s_r, s_rC, SR, r_r, r_rC, RR, RGV, RV>;
 
-  // Allows default construction, source has to be set by a call to with_source before calling apply
-  LocalElementOperatorInterface(const XT::Common::ParameterType& param_type = {})
+  // Allows construction without source, source has to be set by a call to with_source before calling apply
+  LocalElementOperatorInterface(const size_t num_local_sources = 1, const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type)
     , source_()
-    , local_source_(nullptr)
-  {}
+    , local_sources_(0)
+  {
+    for (size_t ii = 0; ii < num_local_sources; ++ii)
+      local_sources_.emplace_back(nullptr);
+  }
 
-  LocalElementOperatorInterface(const SourceType& source, const XT::Common::ParameterType& param_type = {})
+  LocalElementOperatorInterface(const SourceType& source,
+                                const size_t num_local_sources = 1,
+                                const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type)
     , source_(source)
-    , local_source_(source_.access().local_function())
-  {}
+    , local_sources_(0)
+  {
+    for (size_t ii = 0; ii < num_local_sources; ++ii)
+      local_sources_.emplace_back(source_.access().local_function());
+  }
 
   LocalElementOperatorInterface(const SourceSpaceType& source_space,
                                 const SV& source_vector,
+                                const size_t num_local_sources = 1,
                                 const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type)
     , source_(new DiscreteSourceType(source_space, source_vector))
-    , local_source_(source_.access().local_function())
-  {}
+    , local_sources_(0)
+  {
+    for (size_t ii = 0; ii < num_local_sources; ++ii)
+      local_sources_.emplace_back(source_.access().local_function());
+  }
 
   LocalElementOperatorInterface(const ThisType& other)
     : XT::Common::ParametricInterface(other)
+    , XT::Grid::ElementBoundObject<E>()
     , source_(other.source_)
-    , local_source_(other.local_source_ ? source_.access().local_function() : nullptr)
-  {}
+    , local_sources_(0)
+  {
+    for (size_t ii = 0; ii < other.local_sources_.size(); ++ii)
+      local_sources_.emplace_back(other.local_sources_[ii] ? source_.access().local_function() : nullptr);
+  }
 
   virtual ~LocalElementOperatorInterface() = default;
 
@@ -113,7 +132,8 @@ public:
   {
     auto ret = copy();
     ret->source_ = XT::Common::ConstStorageProvider<SourceType>(src);
-    ret->local_source_ = ret->source().local_function();
+    for (size_t ii = 0; ii < local_sources_.size(); ++ii)
+      ret->local_sources_[ii] = ret->source().local_function();
     return ret;
   }
 
@@ -122,14 +142,21 @@ public:
     return source_.access();
   }
 
-  const std::unique_ptr<LocalSourceType>& local_source() const
+  const std::vector<std::unique_ptr<LocalSourceType>>& local_sources() const
   {
-    return local_source_;
+    return local_sources_;
   }
 
 protected:
+  // We are binding the first local_source to ele and leave the others unbound
+  void post_bind(const E& ele) override
+  {
+    if (local_sources_.size() > 0 && local_sources_[0])
+      local_sources_[0]->bind(ele);
+  }
+
   XT::Common::ConstStorageProvider<SourceType> source_;
-  std::unique_ptr<LocalSourceType> local_source_;
+  std::vector<std::unique_ptr<LocalSourceType>> local_sources_;
 }; // class LocalElementOperatorInterface
 
 
@@ -146,7 +173,9 @@ template <class Intersection,
           class InsideRangeVector = SourceVector,
           class OutsideRangeGridView = InsideRangeGridView,
           class OutsideRangeVector = InsideRangeVector>
-class LocalIntersectionOperatorInterface : public XT::Common::ParametricInterface
+class LocalIntersectionOperatorInterface
+  : public XT::Common::ParametricInterface
+  , public XT::Grid::IntersectionBoundObject<Intersection>
 {
   static_assert(XT::Grid::is_intersection<Intersection>::value, "");
   static_assert(std::is_same<typename Intersection::Entity, XT::Grid::extract_entity_t<InsideRangeGridView>>::value,
@@ -172,7 +201,6 @@ public:
   using LocalSourceType = typename SourceType::LocalFunctionType;
   using DiscreteSourceType = ConstDiscreteFunction<SV, SGV, s_r, s_rC, SF>;
   using SourceSpaceType = typename DiscreteSourceType::SpaceType;
-  using LocalDiscreteSourceType = typename DiscreteSourceType::ConstLocalDiscreteFunctionType;
 
   using IRV = InsideRangeVector;
   using IRGV = InsideRangeGridView;
@@ -185,32 +213,49 @@ public:
   using ORGV = OutsideRangeGridView;
   using LocalOutsideRangeType = LocalDiscreteFunction<ORV, ORGV, r_r, r_rC, RF>;
 
-  // Allows default construction, source has to be set by a call to with_source before calling apply
-  LocalIntersectionOperatorInterface(const XT::Common::ParameterType& param_type = {})
+  // Allows construction without source, source has to be set by a call to with_source before calling apply
+  LocalIntersectionOperatorInterface(const size_t num_local_sources = 2,
+                                     const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type)
     , source_()
-    , local_source_(nullptr)
-  {}
+    , local_sources_(0)
+  {
+    for (size_t ii = 0; ii < num_local_sources; ++ii)
+      local_sources_.emplace_back(nullptr);
+  }
 
-  LocalIntersectionOperatorInterface(const SourceType& src, const XT::Common::ParameterType& param_type = {})
+  LocalIntersectionOperatorInterface(const SourceType& src,
+                                     const size_t num_local_sources = 2,
+                                     const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type)
     , source_(src)
-    , local_source_(source_.access().local_function())
-  {}
+    , local_sources_(0)
+  {
+    for (size_t ii = 0; ii < num_local_sources; ++ii)
+      local_sources_.emplace_back(source_.access().local_function());
+  }
 
   LocalIntersectionOperatorInterface(const SourceSpaceType& source_space,
                                      const SV& source_vector,
+                                     const size_t num_local_sources = 2,
                                      const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type)
     , source_(new DiscreteSourceType(source_space, source_vector))
-    , local_source_(source_.access().local_function())
-  {}
+    , local_sources_(0)
+  {
+    for (size_t ii = 0; ii < num_local_sources; ++ii)
+      local_sources_.emplace_back(source_.access().local_function());
+  }
 
   LocalIntersectionOperatorInterface(const ThisType& other)
     : XT::Common::ParametricInterface(other)
+    , XT::Grid::IntersectionBoundObject<Intersection>()
     , source_(other.source_)
-    , local_source_(other.local_source_ ? source_.access().local_function() : nullptr)
-  {}
+    , local_sources_(0)
+  {
+    for (size_t ii = 0; ii < other.local_sources_.size(); ++ii)
+      local_sources_.emplace_back(other.local_sources_[ii] ? source_.access().local_function() : nullptr);
+  }
 
   virtual ~LocalIntersectionOperatorInterface() = default;
 
@@ -234,7 +279,8 @@ public:
   {
     auto ret = copy();
     ret->source_ = XT::Common::ConstStorageProvider<SourceType>(src);
-    ret->local_source_ = ret->source().local_function();
+    for (size_t ii = 0; ii < local_sources_.size(); ++ii)
+      ret->local_sources_[ii] = ret->source().local_function();
     return ret;
   }
 
@@ -243,14 +289,23 @@ public:
     return source_.access();
   }
 
-  const std::unique_ptr<LocalSourceType>& local_source() const
+  const std::vector<std::unique_ptr<LocalSourceType>>& local_sources() const
   {
-    return local_source_;
+    return local_sources_;
   }
 
 protected:
+  // We are binding the first local_source to intersection.inside() and the second one to intersection.outside()
+  void post_bind(const I& inter) override
+  {
+    if (local_sources_.size() > 0 && local_sources_[0])
+      local_sources_[0]->bind(inter.inside());
+    if (local_sources_.size() > 1 && local_sources_[1])
+      local_sources_[1]->bind(inter.outside());
+  }
+
   XT::Common::ConstStorageProvider<SourceType> source_;
-  std::unique_ptr<LocalSourceType> local_source_;
+  std::vector<std::unique_ptr<LocalSourceType>> local_sources_;
 }; // class LocalIntersectionOperatorInterface
 
 

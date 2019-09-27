@@ -75,7 +75,7 @@ private:
   using GlobalBasisImplementation = DefaultGlobalBasis<GridViewType, r, 1, R>;
 
 public:
-  DiscontinuousLagrangeSpace(GridViewType grd_vw, const int order)
+  DiscontinuousLagrangeSpace(GridViewType grd_vw, const int order = 1)
     : grid_view_(grd_vw)
     , order_(order)
     , local_finite_elements_(std::make_unique<const LocalLagrangeFiniteElementFamily<D, d, R, r>>())

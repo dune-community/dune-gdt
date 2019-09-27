@@ -20,21 +20,22 @@
 #include <dune/xt/la/container.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/operators/advection-fv-entropybased.hh>
-#include <dune/gdt/operators/advection-fv.hh>
-#include <dune/gdt/operators/generic.hh>
-#include <dune/gdt/operators/reconstruction/linear_kinetic.hh>
 #include <dune/gdt/interpolations/default.hh>
-#include <dune/gdt/test/momentmodels/hessianinverter.hh>
-#include <dune/gdt/test/momentmodels/entropyflux_kineticcoords.hh>
-#include <dune/gdt/test/momentmodels/entropyflux.hh>
-#include <dune/gdt/test/momentmodels/density_evaluations.hh>
 #include <dune/gdt/local/numerical-fluxes/kinetic.hh>
 #include <dune/gdt/local/operators/advection-fv.hh>
+#include <dune/gdt/local/operators/generic.hh>
+#include <dune/gdt/operators/advection-fv.hh>
+#include <dune/gdt/operators/advection-fv-entropybased.hh>
+#include <dune/gdt/operators/localizable-operator.hh>
+#include <dune/gdt/operators/reconstruction/linear_kinetic.hh>
 #include <dune/gdt/spaces/l2/finite-volume.hh>
-#include <dune/gdt/tools/timestepper/fractional-step.hh>
-#include <dune/gdt/tools/timestepper/explicit-rungekutta.hh>
+#include <dune/gdt/test/momentmodels/entropyflux_kineticcoords.hh>
+#include <dune/gdt/test/momentmodels/entropyflux.hh>
+#include <dune/gdt/test/momentmodels/hessianinverter.hh>
+#include <dune/gdt/test/momentmodels/density_evaluations.hh>
 #include <dune/gdt/tools/timestepper/adaptive-rungekutta.hh>
+#include <dune/gdt/tools/timestepper/explicit-rungekutta.hh>
+#include <dune/gdt/tools/timestepper/fractional-step.hh>
 #include <dune/gdt/tools/timestepper/matrix-exponential-kinetic-isotropic.hh>
 
 #include <dune/gdt/test/momentmodels/kineticequation.hh>
@@ -89,7 +90,7 @@ struct HyperbolicEntropicCoordsMnDiscretization
     assert(grid_ptr->comm().size() == 1 || grid_ptr->overlapSize(0) > 0);
     const GV grid_view(grid_ptr->leafGridView());
     const SpaceType fv_space(grid_view);
-    const AdvectionSourceSpaceType advection_source_space(grid_view, 1);
+    const AdvectionSourceSpaceType advection_source_space(grid_view);
 
     //******************* create EquationType object ***************************************
     std::shared_ptr<const MomentBasis> basis_functions = std::make_shared<const MomentBasis>(
@@ -167,7 +168,7 @@ struct HyperbolicEntropicCoordsMnDiscretization
     //    using FvOperatorType = EntropicCoordinatesOperator<
     //        NonEntropicAdvectionOperatorType,
     //        HessianInverterType>;
-    using NonEntropicRhsOperatorType = GenericOperator<MatrixType, GV, dimRange>;
+    using NonEntropicRhsOperatorType = LocalizableOperator<MatrixType, GV, dimRange>;
     //    using RhsOperatorType = EntropicCoordinatesOperator<NonEntropicRhsOperatorType, HessianInverterType>;
     using DensityOperatorType = DensityEvaluator<MomentBasis, SpaceType, slope>;
     using CombinedOperatorType = EntropicCoordinatesCombinedOperator<DensityOperatorType,
@@ -288,8 +289,8 @@ struct HyperbolicEntropicCoordsMnDiscretization
       for (size_t ii = 0; ii < local_range.dofs().size(); ++ii)
         local_range.dofs()[ii] += ret[ii];
     };
-    NonEntropicRhsOperatorType non_entropic_rhs_operator(
-        fv_space, fv_space, std::vector<typename NonEntropicRhsOperatorType::GenericElementFunctionType>(1, rhs_func));
+    NonEntropicRhsOperatorType non_entropic_rhs_operator(grid_view, fv_space, fv_space);
+    non_entropic_rhs_operator.append(GenericLocalElementOperator<VectorType, GV, dimRange>(rhs_func));
     //    RhsOperatorType rhs_operator(non_entropic_rhs_operator, hessian_inverter);
     CombinedOperatorType combined_operator(
         density_operator, non_entropic_advection_operator, non_entropic_rhs_operator, hessian_inverter);

@@ -14,7 +14,7 @@
 #include <dune/xt/functions/generic/function.hh>
 #include <dune/xt/functions/generic/grid-function.hh>
 
-#include <dune/gdt/local/integrands/gradient_value.hh>
+#include <dune/gdt/local/integrands/gradient-value.hh>
 
 #include <dune/gdt/test/integrands/integrands.hh>
 

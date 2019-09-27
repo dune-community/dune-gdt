@@ -47,14 +47,23 @@ public:
   using typename BaseType::SourceType;
 
   using GenericFunctionType = std::function<void(const SourceType& /*source*/,
-                                                 const std::unique_ptr<LocalSourceType>& /*local_source*/,
+                                                 const std::vector<std::unique_ptr<LocalSourceType>>& /*local_source*/,
                                                  LocalRangeType& /*local_range*/,
                                                  const XT::Common::Parameter& /*param*/)>;
 
+  // When using this constructor, source has to be set by a call to with_source before calling apply
+  GenericLocalElementOperator(GenericFunctionType func,
+                              const size_t num_local_sources = 0,
+                              const XT::Common::ParameterType& param_type = {})
+    : BaseType(num_local_sources, param_type)
+    , func_(func)
+  {}
+
   GenericLocalElementOperator(const SourceType& source,
                               GenericFunctionType func,
+                              const size_t num_local_sources = 0,
                               const XT::Common::ParameterType& param_type = {})
-    : BaseType(source, param_type)
+    : BaseType(source, num_local_sources, param_type)
     , func_(func)
   {}
 
@@ -70,7 +79,7 @@ public:
 
   void apply(LocalRangeType& local_range, const XT::Common::Parameter& param = {}) const override final
   {
-    func_(this->source(), this->local_source(), local_range, this->parse_parameter(param));
+    func_(this->source(), this->local_sources(), local_range, this->parse_parameter(param));
   }
 
 private:
@@ -111,16 +120,25 @@ public:
   using typename BaseType::SourceType;
 
   using GenericFunctionType = std::function<void(const SourceType& /*source*/,
-                                                 const std::unique_ptr<LocalSourceType>& /*local_source*/,
+                                                 const std::vector<std::unique_ptr<LocalSourceType>>& /*local_source*/,
                                                  const IntersectionType& /*intersection*/,
                                                  LocalInsideRangeType& /*local_range_inside*/,
                                                  LocalOutsideRangeType& /*local_range_outside*/,
                                                  const XT::Common::Parameter& /*param*/)>;
 
+  // When using this constructor, source has to be set by a call to with_source before calling apply
+  GenericLocalIntersectionOperator(GenericFunctionType func,
+                                   const size_t num_local_sources = 1,
+                                   const XT::Common::ParameterType& param_type = {})
+    : BaseType(num_local_sources, param_type)
+    , func_(func)
+  {}
+
   GenericLocalIntersectionOperator(const SourceType& source,
                                    GenericFunctionType func,
+                                   const size_t num_local_sources = 1,
                                    const XT::Common::ParameterType& param_type = {})
-    : BaseType(source, param_type)
+    : BaseType(source, num_local_sources, param_type)
     , func_(func)
   {}
 
@@ -140,7 +158,7 @@ public:
              const XT::Common::Parameter& param = {}) const override final
   {
     func_(this->source(),
-          this->local_source(),
+          this->local_sources(),
           intersection,
           local_range_inside,
           local_range_outside,
