@@ -113,10 +113,12 @@ public:
   {
     density_op_.apply(source, range, param);
     VectorType u_update = range;
+    VectorType rhs_update = range;
     std::fill(u_update.begin(), u_update.end(), 0.);
     advection_op_.apply(source, u_update, param);
     u_update *= -1.;
-    rhs_op_.apply(source, u_update, param);
+    rhs_op_.apply(source, rhs_update, param);
+    u_update += rhs_update;
     inverse_hessian_operator_.apply_inverse_hessian(source, u_update, range, param);
   }
 

@@ -258,7 +258,6 @@ protected:
 
   std::unique_ptr<O> make_residual_operator(const S& space) override
   {
-    const auto& one = one_.template as_grid_function<E>();
     // define lhs operator (has to be a pointer to allow the residual operator to manage the memory in the end)
     auto lhs_op = std::make_unique<MatrixOperator<M, GV>>(make_matrix_operator<M>(
         space,

@@ -262,7 +262,7 @@ public:
     const auto normal = intersection().centerUnitOuterNormal();
     const auto g = numerical_boundary_flux_(u_, normal, param);
     const auto h_intersection = intersection().geometry().volume();
-    const auto h_element = intersection.inside().geometry().volume();
+    const auto h_element = intersection().inside().geometry().volume();
     for (size_t ii = 0; ii < m; ++ii)
       local_range_inside.dofs()[ii] += (g[ii] * h_intersection) / h_element;
   } // ... apply(...)

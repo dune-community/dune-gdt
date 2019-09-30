@@ -328,7 +328,7 @@ public:
     // apply local mass matrix, if required (not optimal, uses a temporary)
     if (local_mass_matrices_.valid())
       inside_local_dofs_ =
-          local_mass_matrices_.access().local_mass_matrix_inverse(intersection.inside()) * inside_local_dofs_;
+          local_mass_matrices_.access().local_mass_matrix_inverse(intersection().inside()) * inside_local_dofs_;
     if (compute_outside_ && local_mass_matrices_.valid())
       outside_local_dofs_ =
           local_mass_matrices_.access().local_mass_matrix_inverse(local_range_outside.element()) * outside_local_dofs_;
