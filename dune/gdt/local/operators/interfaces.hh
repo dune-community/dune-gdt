@@ -249,7 +249,7 @@ public:
 
   LocalIntersectionOperatorInterface(const ThisType& other)
     : XT::Common::ParametricInterface(other)
-    , XT::Grid::IntersectionBoundObject<Intersection>()
+    , XT::Grid::IntersectionBoundObject<Intersection>(other)
     , source_(other.source_)
     , local_sources_(0)
   {
@@ -270,8 +270,7 @@ public:
    * \note Presumes that local_range_inside is already bound to intersection.inside() and local_range_outside is
    *       already bound to intersection.outside()!
    **/
-  virtual void apply(const IntersectionType& intersection,
-                     LocalInsideRangeType& local_range_inside,
+  virtual void apply(LocalInsideRangeType& local_range_inside,
                      LocalOutsideRangeType& local_range_outside,
                      const XT::Common::Parameter& param = {}) const = 0;
 

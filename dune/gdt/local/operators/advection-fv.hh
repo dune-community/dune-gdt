@@ -110,8 +110,7 @@ public:
     return numerical_flux_->linear();
   }
 
-  void apply(const IntersectionType& intersection,
-             LocalInsideRangeType& local_range_inside,
+  void apply(LocalInsideRangeType& local_range_inside,
              LocalOutsideRangeType& local_range_outside,
              const XT::Common::Parameter& param = {}) const override final
   {
@@ -247,8 +246,7 @@ public:
     return false;
   }
 
-  void apply(const IntersectionType& intersection,
-             LocalInsideRangeType& local_range_inside,
+  void apply(LocalInsideRangeType& local_range_inside,
              LocalOutsideRangeType& /*local_range_outside*/,
              const XT::Common::Parameter& param = {}) const override final
   {
@@ -368,8 +366,7 @@ public:
     return numerical_flux_->linear();
   }
 
-  void apply(const IntersectionType& intersection,
-             LocalInsideRangeType& local_range_inside,
+  void apply(LocalInsideRangeType& local_range_inside,
              LocalOutsideRangeType& /*local_range_outside*/,
              const XT::Common::Parameter& param = {}) const override final
   {

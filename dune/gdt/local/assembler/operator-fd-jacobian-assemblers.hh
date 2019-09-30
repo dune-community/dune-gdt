@@ -276,6 +276,7 @@ public:
   {
     const bool treat_outside = intersection.neighbor();
     // some preparations
+    local_op_->bind(intersection);
     local_source_inside_->bind(inside_element);
     local_range_inside_->bind(inside_element);
     source_space_->mapper().global_indices(inside_element, global_source_indices_inside_);
@@ -297,7 +298,7 @@ public:
       local_range_outside_->dofs().set_all(0);
     }
     // apply op as is, keep the result, clear local range
-    local_op_->apply(intersection, *local_range_inside_, *local_range_outside_, param_);
+    local_op_->apply(*local_range_inside_, *local_range_outside_, param_);
     for (size_t ii = 0; ii < local_range_inside_size; ++ii)
       range_DoFs_inside_[ii] = local_range_inside_->dofs()[ii];
     local_range_inside_->dofs().set_all(0);
@@ -313,7 +314,7 @@ public:
       const auto eps = eps_ * (1. + std::abs(jjth_source_DoF));
       local_source_inside_->dofs()[jj] += eps;
       // apply op with perturbed source DoF
-      local_op_->apply(intersection, *local_range_inside_, *local_range_outside_, param_);
+      local_op_->apply(*local_range_inside_, *local_range_outside_, param_);
       // observe perturbation in inside range DoFs
       for (size_t ii = 0; ii < local_range_inside_size; ++ii) {
         auto derivative = (local_range_inside_->dofs()[ii] - range_DoFs_inside_[ii]) / eps;
@@ -346,7 +347,7 @@ public:
         const auto eps = eps_ * (1. + std::abs(jjth_source_DoF));
         local_source_outside_->dofs()[jj] += eps;
         // apply op with perturbed source DoF
-        local_op_->apply(intersection, *local_range_inside_, *local_range_outside_, param_);
+        local_op_->apply(*local_range_inside_, *local_range_outside_, param_);
         // observe perturbation in inside range DoFs
         for (size_t ii = 0; ii < local_range_inside_size; ++ii) {
           auto derivative = (local_range_inside_->dofs()[ii] - range_DoFs_inside_[ii]) / eps;
