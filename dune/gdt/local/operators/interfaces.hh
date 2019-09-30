@@ -300,7 +300,7 @@ protected:
     if (local_sources_.size() > 0 && local_sources_[0])
       local_sources_[0]->bind(inter.inside());
     if (local_sources_.size() > 1 && local_sources_[1])
-      local_sources_[1]->bind(inter.outside());
+      local_sources_[1]->bind(inter.neighbor() ? inter.outside() : inter.inside());
   }
 
   XT::Common::ConstStorageProvider<SourceType> source_;

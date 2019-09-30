@@ -287,8 +287,6 @@ public:
   {
     const auto& u_ = local_sources_[0];
     const auto& v_ = local_sources_[1];
-    const auto& inside_element = local_range_inside.element();
-    const auto& outside_element = local_range_outside.element();
     const auto& inside_basis = local_range_inside.basis();
     const auto& outside_basis = local_range_outside.basis();
     inside_local_dofs_.resize(inside_basis.size(param));
@@ -329,10 +327,11 @@ public:
     }
     // apply local mass matrix, if required (not optimal, uses a temporary)
     if (local_mass_matrices_.valid())
-      inside_local_dofs_ = local_mass_matrices_.access().local_mass_matrix_inverse(inside_element) * inside_local_dofs_;
+      inside_local_dofs_ =
+          local_mass_matrices_.access().local_mass_matrix_inverse(intersection.inside()) * inside_local_dofs_;
     if (compute_outside_ && local_mass_matrices_.valid())
       outside_local_dofs_ =
-          local_mass_matrices_.access().local_mass_matrix_inverse(outside_element) * outside_local_dofs_;
+          local_mass_matrices_.access().local_mass_matrix_inverse(local_range_outside.element()) * outside_local_dofs_;
     // add to local range
     for (size_t ii = 0; ii < inside_basis.size(param); ++ii)
       local_range_inside.dofs()[ii] += inside_local_dofs_[ii];
@@ -347,7 +346,7 @@ protected:
     BaseType::post_bind(inter);
     numerical_flux_->bind(inter);
     local_flux_inside_->bind(inter.inside());
-    local_flux_outside_->bind(inter.outside());
+    local_flux_outside_->bind(inter.neighbor() ? inter.outside() : inter.inside());
   }
 
 private:
