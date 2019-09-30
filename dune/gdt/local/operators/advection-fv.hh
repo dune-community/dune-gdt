@@ -170,7 +170,7 @@ template <class I, class SV, class SGV, size_t m = 1, class SF = double, class R
 class LocalAdvectionFvBoundaryTreatmentByCustomNumericalFluxOperator
   : public LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>
 {
-  using ThisType = LocalAdvectionFvBoundaryTreatmentByCustomNumericalFluxOperator<I, SV, SGV, m, SF, RF, RGV, RV>;
+  using ThisType = LocalAdvectionFvBoundaryTreatmentByCustomNumericalFluxOperator;
   using BaseType = LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>;
   using CouplingOperatorType = LocalAdvectionFvCouplingOperator<I, SV, SGV, m, SF, RF, RGV, RV>;
 
@@ -276,7 +276,7 @@ template <class I, class SV, class SGV, size_t m = 1, class SF = double, class R
 class LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator
   : public LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>
 {
-  using ThisType = LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator<I, SV, SGV, m, SF, RF, RGV, RV>;
+  using ThisType = LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator;
   using BaseType = LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>;
   using CouplingOperatorType = LocalAdvectionFvCouplingOperator<I, SV, SGV, m, SF, RF, RGV, RV>;
 

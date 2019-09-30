@@ -38,7 +38,7 @@ template <class SV,
           class RV = SV>
 class GenericLocalElementOperator : public LocalElementOperatorInterface<SV, SGV, s_r, s_rC, SF, r_r, r_rC, RF, RGV, RV>
 {
-  using ThisType = GenericLocalElementOperator<SV, SGV, s_r, s_rC, SF, r_r, r_rC, RF, RGV, RV>;
+  using ThisType = GenericLocalElementOperator;
   using BaseType = LocalElementOperatorInterface<SV, SGV, s_r, s_rC, SF, r_r, r_rC, RF, RGV, RV>;
 
 public:
@@ -109,7 +109,7 @@ template <class I,
 class GenericLocalIntersectionOperator
   : public LocalIntersectionOperatorInterface<I, SV, SGV, s_r, s_rC, SF, r_r, r_rC, RF, IRGV, IRV, ORGV, ORV>
 {
-  using ThisType = GenericLocalIntersectionOperator<I, SV, SGV, s_r, s_rC, SF, r_r, r_rC, RF, IRGV, IRV, ORGV, ORV>;
+  using ThisType = GenericLocalIntersectionOperator;
   using BaseType = LocalIntersectionOperatorInterface<I, SV, SGV, s_r, s_rC, SF, r_r, r_rC, RF, IRGV, IRV, ORGV, ORV>;
 
 public:

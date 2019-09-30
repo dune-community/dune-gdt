@@ -26,7 +26,7 @@ namespace GDT {
 template <class E, size_t r = 1, size_t rC = 1, class R = double, class F = R>
 class LocalElementIntegralFunctional : public LocalElementFunctionalInterface<E, r, rC, R, F>
 {
-  using ThisType = LocalElementIntegralFunctional<E, r, rC, R, F>;
+  using ThisType = LocalElementIntegralFunctional;
   using BaseType = LocalElementFunctionalInterface<E, r, rC, R, F>;
 
 public:
@@ -106,7 +106,7 @@ private:
 template <class I, size_t r = 1, size_t rC = 1, class R = double, class F = R>
 class LocalIntersectionIntegralFunctional : public LocalIntersectionFunctionalInterface<I, r, rC, R, F>
 {
-  using ThisType = LocalIntersectionIntegralFunctional<I, r, rC, R, F>;
+  using ThisType = LocalIntersectionIntegralFunctional;
   using BaseType = LocalIntersectionFunctionalInterface<I, r, rC, R, F>;
 
 public:

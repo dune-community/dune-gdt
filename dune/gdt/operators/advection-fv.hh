@@ -41,7 +41,7 @@ namespace GDT {
 template <class M, class AGV, size_t m = 1, class RGV = AGV, class SGV = AGV>
 class AdvectionFvOperator : public LocalizableOperator<M, AGV, m, 1, m, 1, RGV, SGV>
 {
-  using ThisType = AdvectionFvOperator<M, AGV, m, RGV, SGV>;
+  using ThisType = AdvectionFvOperator;
   using BaseType = LocalizableOperator<M, AGV, m, 1, m, 1, RGV, SGV>;
 
 public:

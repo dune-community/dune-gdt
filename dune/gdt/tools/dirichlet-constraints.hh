@@ -51,7 +51,7 @@ class DirichletConstraints
                                               std::set<size_t>,
                                               internal::setUnion<size_t>>
 {
-  using ThisType = DirichletConstraints<IntersectionType, SpaceType>;
+  using ThisType = DirichletConstraints;
   using BaseType = XT::Grid::ElementFunctor<typename SpaceType::GridViewType>;
   using Propagator = XT::Common::ThreadResultPropagator<ThisType, std::set<size_t>, internal::setUnion<size_t>>;
   friend Propagator;

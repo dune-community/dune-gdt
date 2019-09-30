@@ -42,7 +42,7 @@ class LocalDofVector;
 template <class DomainField, size_t domain_dim, class RangeField, size_t range_dim, size_t range_dim_columns = 1>
 class LocalFiniteElementBasisInterface
 {
-  using ThisType = LocalFiniteElementBasisInterface<DomainField, domain_dim, RangeField, range_dim, range_dim_columns>;
+  using ThisType = LocalFiniteElementBasisInterface;
 
 public:
   using D = DomainField;

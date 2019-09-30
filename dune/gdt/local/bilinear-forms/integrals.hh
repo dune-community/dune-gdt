@@ -36,7 +36,7 @@ template <class E,
           class AR = TR>
 class LocalElementIntegralBilinearForm : public LocalElementBilinearFormInterface<E, t_r, t_rC, TR, F, a_r, a_rC, AR>
 {
-  using ThisType = LocalElementIntegralBilinearForm<E, t_r, t_rC, TR, F, a_r, a_rC, AR>;
+  using ThisType = LocalElementIntegralBilinearForm;
   using BaseType = LocalElementBilinearFormInterface<E, t_r, t_rC, TR, F, a_r, a_rC, AR>;
 
 public:
@@ -132,7 +132,7 @@ template <class I,
 class LocalIntersectionIntegralBilinearForm
   : public LocalIntersectionBilinearFormInterface<I, t_r, t_rC, TR, F, a_r, a_rC, AR>
 {
-  using ThisType = LocalIntersectionIntegralBilinearForm<I, t_r, t_rC, TR, F, a_r, a_rC, AR>;
+  using ThisType = LocalIntersectionIntegralBilinearForm;
   using BaseType = LocalIntersectionBilinearFormInterface<I, t_r, t_rC, TR, F, a_r, a_rC, AR>;
 
 public:

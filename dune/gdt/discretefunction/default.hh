@@ -56,7 +56,7 @@ class ConstDiscreteFunction
       range_dim,
       range_dim_cols,
       RangeField>;
-  using ThisType = ConstDiscreteFunction<Vector, GridView, range_dim, range_dim_cols, RangeField>;
+  using ThisType = ConstDiscreteFunction;
 
 public:
   using ConstDofVectorType = ConstDofVector<Vector, GridView>;
@@ -182,7 +182,7 @@ class DiscreteFunction
   : XT::Common::StorageProvider<Vector>
   , public ConstDiscreteFunction<Vector, GridView, range_dim, range_dim_cols, RangeField>
 {
-  using ThisType = DiscreteFunction<Vector, GridView, range_dim, range_dim_cols, RangeField>;
+  using ThisType = DiscreteFunction;
   using VectorStorage = XT::Common::StorageProvider<Vector>;
   using BaseType = ConstDiscreteFunction<Vector, GridView, range_dim, range_dim_cols, RangeField>;
 

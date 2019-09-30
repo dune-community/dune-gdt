@@ -41,7 +41,7 @@ class LocalMassMatrixProvider
 {
   static_assert(XT::Grid::is_view<AGV>::value, "");
 
-  using ThisType = LocalMassMatrixProvider<GV, r, rC, F>;
+  using ThisType = LocalMassMatrixProvider;
   using BaseType = XT::Grid::ElementFunctor<GV>;
   using Propagator = XT::Common::ThreadResultPropagator<
       LocalMassMatrixProvider<GV, r, rC, F>,

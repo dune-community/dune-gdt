@@ -72,7 +72,7 @@ public:
   using DiscreteSourceType = ConstDiscreteFunction<SV, SGV, s_r, s_rC, SR>;
   using SourceSpaceType = typename DiscreteSourceType::SpaceType;
 
-  using ThisType = LocalElementOperatorInterface<SV, SGV, s_r, s_rC, SR, r_r, r_rC, RR, RGV, RV>;
+  using ThisType = LocalElementOperatorInterface;
 
   // Allows construction without source, source has to be set by a call to with_source before calling apply
   LocalElementOperatorInterface(const size_t num_local_sources = 1, const XT::Common::ParameterType& param_type = {})

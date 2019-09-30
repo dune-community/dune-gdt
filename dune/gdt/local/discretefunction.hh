@@ -34,7 +34,7 @@ class ConstLocalDiscreteFunction
   static_assert(XT::LA::is_vector<Vector>::value, "");
   static_assert(range_dim_cols == 1, "The matrix-valued case requires updates to evaluate/jacobian/derivative!");
 
-  using ThisType = ConstLocalDiscreteFunction<Vector, GridView, range_dim, range_dim_cols, RangeField>;
+  using ThisType = ConstLocalDiscreteFunction;
   using BaseType = XT::Functions::
       ElementFunctionInterface<XT::Grid::extract_entity_t<GridView>, range_dim, range_dim_cols, RangeField>;
 
@@ -293,7 +293,7 @@ private:
 template <class V, class GV, size_t r = 1, size_t rC = 1, class R = double>
 class LocalDiscreteFunction : public ConstLocalDiscreteFunction<V, GV, r, rC, R>
 {
-  using ThisType = LocalDiscreteFunction<V, GV, r, rC, R>;
+  using ThisType = LocalDiscreteFunction;
   using BaseType = ConstLocalDiscreteFunction<V, GV, r, rC, R>;
 
 public:

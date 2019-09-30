@@ -28,7 +28,7 @@ class LocalElementFunctionalAssembler : public XT::Grid::ElementFunctor<GridView
   static_assert(XT::Grid::is_view<GridView>::value, "");
   static_assert(XT::Grid::is_view<SpaceGridView>::value, "");
 
-  using ThisType = LocalElementFunctionalAssembler<Vector, GridView, r, rC, R, SpaceGridView>;
+  using ThisType = LocalElementFunctionalAssembler;
   using BaseType = XT::Grid::ElementFunctor<GridView>;
 
 public:

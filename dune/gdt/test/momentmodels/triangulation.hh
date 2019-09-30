@@ -79,7 +79,7 @@ private:
 template <class RangeFieldImp = double>
 class SphericalTriangle
 {
-  using ThisType = SphericalTriangle<RangeFieldImp>;
+  using ThisType = SphericalTriangle;
 
 public:
   using RangeFieldType = RangeFieldImp;

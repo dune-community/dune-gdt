@@ -142,7 +142,7 @@ class LocalIntersectionBilinearFormAssembler : public XT::Grid::IntersectionFunc
   static_assert(XT::LA::is_matrix<Matrix>::value, "");
   static_assert(XT::Grid::is_view<GridView>::value, "");
 
-  using ThisType = LocalIntersectionBilinearFormAssembler<Matrix, GridView, t_r, t_rC, TR, TGV, AGV, a_r, a_rC, AR>;
+  using ThisType = LocalIntersectionBilinearFormAssembler;
   using BaseType = XT::Grid::IntersectionFunctor<GridView>;
 
 public:

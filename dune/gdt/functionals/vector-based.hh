@@ -43,7 +43,7 @@ class ConstVectorBasedFunctional : public FunctionalInterface<V, GV, r, rC, F>
   // All other types are checked elsewhere.
   static_assert(XT::LA::is_vector<V>::value, "");
 
-  using ThisType = ConstVectorBasedFunctional<V, GV, r, rC, F>;
+  using ThisType = ConstVectorBasedFunctional;
   using FunctionalBaseType = FunctionalInterface<V, GV, r, rC, F>;
 
 public:
@@ -143,7 +143,7 @@ class VectorBasedFunctional
   static_assert(std::is_same<XT::Grid::extract_entity_t<GV>, XT::Grid::extract_entity_t<AssemblyGridView>>::value,
                 "We cannot handle different element types!");
 
-  using ThisType = VectorBasedFunctional<V, GV, r, rC, F, AssemblyGridView>;
+  using ThisType = VectorBasedFunctional;
   using VectorStorage = XT::Common::StorageProvider<V>;
   using FunctionalBaseType = ConstVectorBasedFunctional<V, GV, r, rC, F>;
   using WalkerBaseType = XT::Grid::Walker<AssemblyGridView>;

@@ -150,7 +150,7 @@ public:
   using RangeFunctionType = DiscreteFunction<V, RGV, r_r, r_rC, F>;
   using ConstRangeFunctionType = ConstDiscreteFunction<V, RGV, r_r, r_rC, F>;
 
-  using ThisType = OperatorInterface<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
+  using ThisType = OperatorInterface;
   using MatrixOperatorType = MatrixOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
   using ConstLincombOperatorType = ConstLincombOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
   using LincombOperatorType = LincombOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;

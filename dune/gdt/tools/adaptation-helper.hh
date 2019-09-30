@@ -35,7 +35,7 @@ namespace GDT {
 template <class V, class GV, size_t r = 1, size_t rC = 1, class RF = double>
 class AdaptationHelper
 {
-  using ThisType = AdaptationHelper<V, GV, r, rC, RF>;
+  using ThisType = AdaptationHelper;
 
 public:
   using DiscreteFunctionType = DiscreteFunction<V, GV, r, rC, RF>;

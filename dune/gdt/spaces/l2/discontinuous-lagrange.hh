@@ -59,7 +59,7 @@ namespace GDT {
 template <class GV, size_t r = 1, class R = double>
 class DiscontinuousLagrangeSpace : public SpaceInterface<GV, r, 1, R>
 {
-  using ThisType = DiscontinuousLagrangeSpace<GV, r, R>;
+  using ThisType = DiscontinuousLagrangeSpace;
   using BaseType = SpaceInterface<GV, r, 1, R>;
 
 public:

@@ -59,7 +59,7 @@ class LocalElementOperatorFiniteDifferenceJacobianAssembler : public XT::Grid::E
   static_assert(std::is_same<XT::Grid::extract_entity_t<SGV>, XT::Grid::extract_entity_t<RGV>>::value, "");
 
   using BaseType = XT::Grid::ElementFunctor<SGV>;
-  using ThisType = LocalElementOperatorFiniteDifferenceJacobianAssembler<M, SGV, s_r, s_rC, F, r_r, r_rC, RGV>;
+  using ThisType = LocalElementOperatorFiniteDifferenceJacobianAssembler;
 
 public:
   using typename BaseType::ElementType;
@@ -205,7 +205,7 @@ class LocalIntersectionOperatorFiniteDifferenceJacobianAssembler : public XT::Gr
   static_assert(std::is_same<XT::Grid::extract_entity_t<SGV>, XT::Grid::extract_entity_t<RGV>>::value, "");
 
   using BaseType = XT::Grid::IntersectionFunctor<SGV>;
-  using ThisType = LocalIntersectionOperatorFiniteDifferenceJacobianAssembler<M, SGV, s_r, s_rC, F, r_r, r_rC, RGV>;
+  using ThisType = LocalIntersectionOperatorFiniteDifferenceJacobianAssembler;
 
 public:
   using typename BaseType::ElementType;

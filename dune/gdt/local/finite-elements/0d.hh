@@ -153,7 +153,7 @@ private:
 template <class D>
 class Local0dFiniteElementCoefficients : public LocalFiniteElementCoefficientsInterface<D, 0>
 {
-  using ThisType = Local0dFiniteElementCoefficients<D>;
+  using ThisType = Local0dFiniteElementCoefficients;
   using BaseType = LocalFiniteElementCoefficientsInterface<D, 0>;
 
 public:

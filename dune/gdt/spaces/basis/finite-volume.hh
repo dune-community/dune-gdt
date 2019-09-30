@@ -27,7 +27,7 @@ namespace GDT {
 template <class GV, size_t r = 1, class R = double>
 class FiniteVolumeGlobalBasis : public GlobalBasisInterface<GV, r, 1, R>
 {
-  using ThisType = FiniteVolumeGlobalBasis<GV, r, R>;
+  using ThisType = FiniteVolumeGlobalBasis;
   using BaseType = GlobalBasisInterface<GV, r, 1, R>;
 
 public:

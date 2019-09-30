@@ -48,7 +48,7 @@ class LocalPowerFiniteElementBasis
 template <size_t power, class D, size_t d, class R, size_t r>
 class LocalPowerFiniteElementBasis<power, D, d, R, r, 1> : public LocalFiniteElementBasisInterface<D, d, R, power * r>
 {
-  using ThisType = LocalPowerFiniteElementBasis<power, D, d, R, r, 1>;
+  using ThisType = LocalPowerFiniteElementBasis;
   using BaseType = LocalFiniteElementBasisInterface<D, d, R, power * r>;
 
 public:
@@ -149,7 +149,7 @@ template <size_t power, class D, size_t d, class R, size_t r>
 class LocalPowerFiniteElementInterpolation<power, D, d, R, r, 1>
   : public LocalFiniteElementInterpolationInterface<D, d, R, power * r, 1>
 {
-  using ThisType = LocalPowerFiniteElementInterpolation<power, D, d, R, r, 1>;
+  using ThisType = LocalPowerFiniteElementInterpolation;
   using BaseType = LocalFiniteElementInterpolationInterface<D, d, R, power * r, 1>;
 
 public:
@@ -235,7 +235,7 @@ private:
 template <class D, size_t d>
 class LocalPowerFiniteElementCoefficients : public LocalFiniteElementCoefficientsInterface<D, d>
 {
-  using ThisType = LocalPowerFiniteElementCoefficients<D, d>;
+  using ThisType = LocalPowerFiniteElementCoefficients;
   using BaseType = LocalFiniteElementCoefficientsInterface<D, d>;
 
 public:
@@ -317,7 +317,7 @@ class LocalPowerFiniteElement
 template <class D, size_t d, class R, size_t r, size_t rC>
 class LocalPowerFiniteElement<1, D, d, R, r, rC> : public LocalFiniteElementDefault<D, d, R, r, rC>
 {
-  using ThisType = LocalPowerFiniteElement<1, D, d, R, r, rC>;
+  using ThisType = LocalPowerFiniteElement;
   using BaseType = LocalFiniteElementDefault<D, d, R, r, rC>;
 
 public:
@@ -339,7 +339,7 @@ public:
 template <size_t power, class D, size_t d, class R, size_t r>
 class LocalPowerFiniteElement<power, D, d, R, r, 1> : public LocalFiniteElementDefault<D, d, R, power * r>
 {
-  using ThisType = LocalPowerFiniteElement<power, D, d, R, r, 1>;
+  using ThisType = LocalPowerFiniteElement;
   using BaseType = LocalFiniteElementDefault<D, d, R, power * r>;
 
 public:

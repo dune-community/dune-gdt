@@ -282,7 +282,7 @@ template <class M,
 class LocalizableOperator : public OperatorInterface<M, SGV, s, sC, r, rC, RGV>
 {
   static_assert(XT::Grid::is_view<AssemblyGridView>::value, "");
-  using ThisType = LocalizableOperator<M, AssemblyGridView, s, sC, r, rC, RGV, SGV>;
+  using ThisType = LocalizableOperator;
   using BaseType = OperatorInterface<M, SGV, s, sC, r, rC, RGV>;
 
 public:

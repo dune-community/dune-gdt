@@ -51,7 +51,7 @@ class LocalElementOperatorApplicator : public XT::Grid::ElementFunctor<AssemblyG
   static_assert(std::is_same<XT::Grid::extract_entity_t<AssemblyGridView>, XT::Grid::extract_entity_t<SGV>>::value, "");
   static_assert(std::is_same<XT::Grid::extract_entity_t<AssemblyGridView>, XT::Grid::extract_entity_t<RGV>>::value, "");
 
-  using ThisType = LocalElementOperatorApplicator<AssemblyGridView, SV, s_r, s_rC, SF, SGV, r_r, r_rC, RF, RGV, RV>;
+  using ThisType = LocalElementOperatorApplicator;
   using BaseType = XT::Grid::ElementFunctor<AssemblyGridView>;
 
 public:

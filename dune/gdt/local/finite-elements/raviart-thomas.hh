@@ -41,7 +41,7 @@ namespace GDT {
 template <class D, size_t d, class R>
 class LocalRaviartThomasInterpolation : public LocalFiniteElementInterpolationInterface<D, d, R, d, 1>
 {
-  using ThisType = LocalRaviartThomasInterpolation<D, d, R>;
+  using ThisType = LocalRaviartThomasInterpolation;
   using BaseType = LocalFiniteElementInterpolationInterface<D, d, R, d, 1>;
 
 public:

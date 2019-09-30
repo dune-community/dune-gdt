@@ -49,7 +49,7 @@ namespace GDT {
 template <class GV, class R = double>
 class RaviartThomasSpace : public SpaceInterface<GV, GV::dimension, 1, R>
 {
-  using ThisType = RaviartThomasSpace<GV, R>;
+  using ThisType = RaviartThomasSpace;
   using BaseType = SpaceInterface<GV, GV::dimension, 1, R>;
 
 public:

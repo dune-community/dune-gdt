@@ -31,7 +31,7 @@ class LocalizableFunctionalBase : public XT::Grid::Walker<GridView>
 {
   static_assert(XT::Grid::is_view<GridView>::value, "");
 
-  using ThisType = LocalizableFunctionalBase<GridView, range_dim, range_dim_cols, RangeField>;
+  using ThisType = LocalizableFunctionalBase;
   using BaseType = XT::Grid::Walker<GridView>;
 
 public:

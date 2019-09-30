@@ -38,7 +38,7 @@ class FiniteVolumeSpace
 template <class GV, size_t r, class R>
 class FiniteVolumeSpace<GV, r, 1, R> : public SpaceInterface<GV, r, 1, R>
 {
-  using ThisType = FiniteVolumeSpace<GV, r, 1, R>;
+  using ThisType = FiniteVolumeSpace;
   using BaseType = SpaceInterface<GV, r, 1, R>;
 
 public:

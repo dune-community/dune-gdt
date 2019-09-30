@@ -30,7 +30,7 @@ namespace GDT {
 template <class D = double, class R = double>
 class LocalFlatTop2dCubeFiniteElementBasis : public LocalFiniteElementBasisInterface<D, 2, R, 1, 1>
 {
-  using ThisType = LocalFlatTop2dCubeFiniteElementBasis<D, R>;
+  using ThisType = LocalFlatTop2dCubeFiniteElementBasis;
   using BaseType = LocalFiniteElementBasisInterface<D, 2, R, 1, 1>;
 
 public:
@@ -156,7 +156,7 @@ private:
 template <class D = double, class R = double>
 class LocalFlatTop2dCubeFiniteElement : public LocalFiniteElementDefault<D, 2, R, 1>
 {
-  using ThisType = LocalFlatTop2dCubeFiniteElement<D, R>;
+  using ThisType = LocalFlatTop2dCubeFiniteElement;
   using BaseType = LocalFiniteElementDefault<D, 2, R, 1>;
 
 public:

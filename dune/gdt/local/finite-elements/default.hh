@@ -28,7 +28,7 @@ namespace GDT {
 template <class D, size_t d, class R, size_t r, size_t rC = 1>
 class LocalFiniteElementDefault : public LocalFiniteElementInterface<D, d, R, r, rC>
 {
-  using ThisType = LocalFiniteElementDefault<D, d, R, r, rC>;
+  using ThisType = LocalFiniteElementDefault;
   using BaseType = LocalFiniteElementInterface<D, d, R, r, rC>;
 
 public:
@@ -150,7 +150,7 @@ private:
 template <class D, size_t d, class R = double, size_t r = 1, size_t rC = 1>
 class ThreadSafeDefaultLocalFiniteElementFamily : public LocalFiniteElementFamilyInterface<D, d, R, r, rC>
 {
-  using ThisType = ThreadSafeDefaultLocalFiniteElementFamily<D, d, R, r, rC>;
+  using ThisType = ThreadSafeDefaultLocalFiniteElementFamily;
   using BaseType = LocalFiniteElementFamilyInterface<D, d, R, r, rC>;
 
 public:
@@ -198,7 +198,7 @@ private:
 template <class D, size_t d, class R, size_t r = 1>
 class LocalL2FiniteElementInterpolation : public LocalFiniteElementInterpolationInterface<D, d, R, r, 1>
 {
-  using ThisType = LocalL2FiniteElementInterpolation<D, d, R, r>;
+  using ThisType = LocalL2FiniteElementInterpolation;
   using BaseType = LocalFiniteElementInterpolationInterface<D, d, R, r, 1>;
 
 public:

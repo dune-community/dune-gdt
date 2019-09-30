@@ -81,7 +81,7 @@ public:
 template <class Implementation, class D, size_t d, class R, size_t r, size_t rC = 1>
 class LocalFiniteElementBasisWrapper : public LocalFiniteElementBasisInterface<D, d, R, r, rC>
 {
-  using ThisType = LocalFiniteElementBasisWrapper<Implementation, D, d, R, r, rC>;
+  using ThisType = LocalFiniteElementBasisWrapper;
   using BaseType = LocalFiniteElementBasisInterface<D, d, R, r, rC>;
 
 public:
@@ -164,7 +164,7 @@ private:
 template <class Implementation, class D, size_t d, class R, size_t r, size_t rC = 1>
 class LocalFiniteElementInterpolationWrapper : public LocalFiniteElementInterpolationInterface<D, d, R, r, rC>
 {
-  using ThisType = LocalFiniteElementInterpolationWrapper<Implementation, D, d, R, r, rC>;
+  using ThisType = LocalFiniteElementInterpolationWrapper;
   using BaseType = LocalFiniteElementInterpolationInterface<D, d, R, r, rC>;
 
   template <class R_ = R, size_t r_ = r, size_t rC_ = rC>

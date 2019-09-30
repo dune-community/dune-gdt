@@ -39,7 +39,7 @@ namespace GDT {
 template <class E, size_t r = 1, class TR = double, class F = double, class AR = TR>
 class LocalElementProductIntegrand : public LocalBinaryElementIntegrandInterface<E, r, 1, TR, F, r, 1, AR>
 {
-  using ThisType = LocalElementProductIntegrand<E, r, TR, F, AR>;
+  using ThisType = LocalElementProductIntegrand;
   using BaseType = LocalBinaryElementIntegrandInterface<E, r, 1, TR, F, r, 1, AR>;
 
 public:
@@ -122,7 +122,7 @@ private:
 template <class I, size_t r = 1, class TR = double, class F = double, class AR = TR>
 class LocalIntersectionProductIntegrand : public LocalQuaternaryIntersectionIntegrandInterface<I, r, 1, TR, F, r, 1, AR>
 {
-  using ThisType = LocalIntersectionProductIntegrand<I, r, TR, F, AR>;
+  using ThisType = LocalIntersectionProductIntegrand;
   using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I, r, 1, TR, F, r, 1, AR>;
 
 public:

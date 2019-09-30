@@ -41,7 +41,7 @@ namespace GDT {
 template <class SV, class SGV, size_t m = 1, class SF = double, class RF = SF, class RGV = SGV, class RV = SV>
 class LocalAdvectionDgVolumeOperator : public LocalElementOperatorInterface<SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>
 {
-  using ThisType = LocalAdvectionDgVolumeOperator<SV, SGV, m, SF, RF, RGV, RV>;
+  using ThisType = LocalAdvectionDgVolumeOperator;
   using BaseType = LocalElementOperatorInterface<SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>;
 
 public:
@@ -179,7 +179,7 @@ template <class I,
 class LocalAdvectionDgCouplingOperator
   : public LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SR, m, 1, IRR, IRGV, IRV, ORGV, ORV>
 {
-  using ThisType = LocalAdvectionDgCouplingOperator<I, SV, SGV, m, SR, IRR, IRGV, IRV, ORR, ORGV, ORV>;
+  using ThisType = LocalAdvectionDgCouplingOperator;
   using BaseType = LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SR, m, 1, IRR, IRGV, IRV, ORGV, ORV>;
 
 public:
@@ -353,7 +353,7 @@ template <class I, class SV, class SGV, size_t m = 1, class SF = double, class R
 class LocalAdvectionDgBoundaryTreatmentByCustomNumericalFluxOperator
   : public LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>
 {
-  using ThisType = LocalAdvectionDgBoundaryTreatmentByCustomNumericalFluxOperator<I, SV, SGV, m, SF, RF, RGV, RV>;
+  using ThisType = LocalAdvectionDgBoundaryTreatmentByCustomNumericalFluxOperator;
   using BaseType = LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>;
 
 public:
@@ -481,7 +481,7 @@ template <class I, class SV, class SGV, size_t m = 1, class SF = double, class R
 class LocalAdvectionDgBoundaryTreatmentByCustomExtrapolationOperator
   : public LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>
 {
-  using ThisType = LocalAdvectionDgBoundaryTreatmentByCustomExtrapolationOperator<I, SV, SGV, m, SF, RF, RGV, RV>;
+  using ThisType = LocalAdvectionDgBoundaryTreatmentByCustomExtrapolationOperator;
   using BaseType = LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>;
 
 public:
@@ -616,7 +616,7 @@ template <class SV, class SGV, size_t m = 1, class SF = double, class RF = SF, c
 class LocalAdvectionDgArtificialViscosityShockCapturingOperator
   : public LocalElementOperatorInterface<SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>
 {
-  using ThisType = LocalAdvectionDgArtificialViscosityShockCapturingOperator<SV, SGV, m, SF, RF, RGV, RV>;
+  using ThisType = LocalAdvectionDgArtificialViscosityShockCapturingOperator;
   using BaseType = LocalElementOperatorInterface<SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>;
 
 public:

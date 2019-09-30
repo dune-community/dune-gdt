@@ -59,7 +59,7 @@ template <class I>
 class InnerPenalty : public LocalQuaternaryIntersectionIntegrandInterface<I>
 {
   using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I>;
-  using ThisType = InnerPenalty<I>;
+  using ThisType = InnerPenalty;
 
 public:
   using BaseType::d;
@@ -196,7 +196,7 @@ template <class I>
 class BoundaryPenalty : public LocalQuaternaryIntersectionIntegrandInterface<I>
 {
   using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I>;
-  using ThisType = BoundaryPenalty<I>;
+  using ThisType = BoundaryPenalty;
 
 public:
   using BaseType::d;
