@@ -82,6 +82,7 @@ public:
   void apply_local(const ElementType& element) override final
   {
     local_range_->bind(element);
+    local_operator_->bind(element);
     local_operator_->apply(*local_range_, param_);
   }
 

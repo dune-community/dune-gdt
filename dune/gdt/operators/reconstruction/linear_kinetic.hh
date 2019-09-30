@@ -28,20 +28,18 @@ namespace Dune {
 namespace GDT {
 
 
-template <class GV, class AnalyticalFluxType, class BoundaryValueType, class LocalVectorType>
+template <class GV, class AnalyticalFluxType, class LocalVectorType>
 class LocalPointwiseLinearKineticReconstructionOperator : public XT::Grid::ElementFunctor<GV>
 {
   using ThisType = LocalPointwiseLinearKineticReconstructionOperator;
   using BaseType = XT::Grid::ElementFunctor<GV>;
-  static constexpr size_t dimDomain = BoundaryValueType::d;
-  static constexpr size_t dimRange = BoundaryValueType::r;
+  static constexpr size_t dimDomain = GV::dimension;
+  static constexpr size_t dimRange = AnalyticalFluxType::state_dim;
   using EntityType = typename GV::template Codim<0>::Entity;
-  using RangeFieldType = typename BoundaryValueType::RangeFieldType;
   static constexpr size_t stencil_size = 3;
   using StencilType = XT::Common::FieldVector<size_t, stencil_size>;
   using StencilsType = FieldVector<StencilType, dimDomain>;
-  using DomainType = typename BoundaryValueType::DomainType;
-  using RangeType = typename BoundaryValueType::RangeReturnType;
+  using RangeFieldType = typename AnalyticalFluxType::RangeFieldType;
   using ReconstructedFunctionType = DiscreteValuedGridFunction<GV, dimRange, 1, RangeFieldType>;
 
 public:
@@ -114,25 +112,21 @@ private:
 // Does not reconstruct a full first-order DG function, but only stores the reconstructed values at the intersection
 // centers. This avoids the interpolation in this operator and the evaluation of the reconstructed function in the
 // finite volume operator which are both quite expensive for large dimRange.
-template <class GV, class BoundaryValueImp, class AnalyticalFluxType, class VectorType, class LocalVectorType>
+template <class GV, class AnalyticalFluxType, class VectorType, class LocalVectorType>
 class PointwiseLinearKineticReconstructionOperator
 {
 public:
-  using BoundaryValueType = BoundaryValueImp;
   using E = XT::Grid::extract_entity_t<GV>;
   using EigenVectorWrapperType = internal::DummyEigenVectorWrapper<AnalyticalFluxType, LocalVectorType>;
-  using R = typename BoundaryValueType::R;
-  static constexpr size_t dimDomain = BoundaryValueType::d;
-  static constexpr size_t dimRange = BoundaryValueType::r;
+  using R = typename AnalyticalFluxType::R;
+  static constexpr size_t dimDomain = GV::dimension;
+  static constexpr size_t dimRange = AnalyticalFluxType::state_dim;
   using SpaceType = SpaceInterface<GV, dimRange, 1, R>;
   using ReconstructedFunctionType = DiscreteValuedGridFunction<GV, dimRange, 1, R>;
   using ReconstructedValuesType = std::vector<typename ReconstructedFunctionType::LocalFunctionValuesType>;
 
-  PointwiseLinearKineticReconstructionOperator(const BoundaryValueType& boundary_values,
-                                               const SpaceType& space,
-                                               const AnalyticalFluxType& analytical_flux)
-    : boundary_values_(boundary_values)
-    , space_(space)
+  PointwiseLinearKineticReconstructionOperator(const SpaceType& space, const AnalyticalFluxType& analytical_flux)
+    : space_(space)
     , analytical_flux_(analytical_flux)
   {}
 
@@ -146,23 +140,12 @@ public:
     return space_;
   }
 
-  void apply(const VectorType& source, ReconstructedFunctionType& range, const XT::Common::Parameter& param) const
+  void apply(const VectorType& /*source*/, ReconstructedFunctionType& range, const XT::Common::Parameter& param) const
   {
-    // evaluate cell averages
-    const auto& grid_view = space_.grid_view();
-    const auto& index_set = grid_view.indexSet();
-    std::vector<LocalVectorType> source_values(index_set.size(0));
-    auto source_func = make_discrete_function(space_, source);
-    const auto local_source = source_func.local_function();
-    for (const auto& entity : Dune::elements(grid_view)) {
-      local_source->bind(entity);
-      const auto entity_index = index_set.index(entity);
-      source_values[entity_index] = local_source->evaluate(entity.geometry().local(entity.geometry().center()));
-    }
-
     // do reconstruction
+    const auto& grid_view = space_.grid_view();
     auto local_reconstruction_operator =
-        LocalPointwiseLinearKineticReconstructionOperator<GV, AnalyticalFluxType, BoundaryValueType, LocalVectorType>(
+        LocalPointwiseLinearKineticReconstructionOperator<GV, AnalyticalFluxType, LocalVectorType>(
             range, grid_view, analytical_flux_, param);
     auto walker = XT::Grid::Walker<GV>(grid_view);
     walker.append(local_reconstruction_operator);
@@ -170,7 +153,6 @@ public:
   } // void apply(...)
 
 private:
-  const BoundaryValueType& boundary_values_;
   const SpaceType& space_;
   const AnalyticalFluxType& analytical_flux_;
 }; // class PointwiseLinearKineticReconstructionOperator<...>

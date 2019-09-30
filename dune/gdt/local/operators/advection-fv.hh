@@ -381,7 +381,7 @@ public:
     if (numerical_flux_->x_dependent())
       x_in_intersection_coords_ = intersection().geometry().local(intersection().geometry().center());
     u_ = local_sources_[0]->evaluate(source_is_elementwise_constant_ ? CouplingOperatorType::static_x
-                                                                     : intersection.geometryInInside().center());
+                                                                     : intersection().geometryInInside().center());
     v_ = extrapolate_(intersection(),
                       ReferenceElements<D, d - 1>::general(intersection().type()).position(0, 0),
                       numerical_flux_->flux(),

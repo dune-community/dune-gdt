@@ -109,7 +109,7 @@ public:
 
   LocalElementOperatorInterface(const ThisType& other)
     : XT::Common::ParametricInterface(other)
-    , XT::Grid::ElementBoundObject<E>()
+    , XT::Grid::ElementBoundObject<E>(other)
     , source_(other.source_)
     , local_sources_(0)
   {

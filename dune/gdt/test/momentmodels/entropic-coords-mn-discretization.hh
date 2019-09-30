@@ -70,7 +70,6 @@ struct HyperbolicEntropicCoordsMnDiscretization
     using I = XT::Grid::extract_intersection_t<GV>;
     using ProblemType = typename TestCaseType::ProblemType;
     using RangeFieldType = typename MomentBasis::RangeFieldType;
-    using BoundaryValueType = typename ProblemType::BoundaryValueType;
     static constexpr size_t dimDomain = MomentBasis::dimDomain;
     static constexpr size_t dimRange = MomentBasis::dimRange;
     using MatrixType = typename XT::LA::Container<RangeFieldType>::MatrixType;
@@ -160,7 +159,7 @@ struct HyperbolicEntropicCoordsMnDiscretization
                                                                              RangeType>;
 #else
     using ReconstructionOperatorType =
-        PointwiseLinearKineticReconstructionOperator<GV, BoundaryValueType, EntropyFluxType, VectorType, RangeType>;
+        PointwiseLinearKineticReconstructionOperator<GV, EntropyFluxType, VectorType, RangeType>;
 #endif
     using ReconstructionAdvectionOperatorType =
         AdvectionWithPointwiseReconstructionOperator<AdvectionOperatorType, ReconstructionOperatorType>;
@@ -248,7 +247,7 @@ struct HyperbolicEntropicCoordsMnDiscretization
     XT::Grid::ApplyOn::NonPeriodicBoundaryIntersections<GV> filter;
     advection_operator.append(boundary_lambda, {}, filter);
 
-    ReconstructionOperatorType reconstruction_operator(boundary_values_alpha, fv_space, *analytical_flux);
+    ReconstructionOperatorType reconstruction_operator(fv_space, *analytical_flux);
     ReconstructionAdvectionOperatorType reconstruction_advection_operator(advection_operator, reconstruction_operator);
 
     if (XT::Common::is_zero(t_end))

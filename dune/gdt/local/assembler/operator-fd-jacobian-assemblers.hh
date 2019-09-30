@@ -122,6 +122,7 @@ public:
   void apply_local(const ElementType& element) override final
   {
     // some preparations
+    local_op_->bind(element);
     local_source_->bind(element);
     local_range_->bind(element);
     source_space_->mapper().global_indices(element, global_source_indices_);
