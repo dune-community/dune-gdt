@@ -222,7 +222,7 @@ public:
     local_range_inside_->bind(inside_element);
     local_range_outside_->bind(outside_element);
     local_operator_->bind(intersection);
-    local_operator_->apply(intersection, *local_range_inside_, *local_range_outside_, param_);
+    local_operator_->apply(*local_range_inside_, *local_range_outside_, param_);
   }
 
 private:

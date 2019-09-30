@@ -110,6 +110,8 @@ public:
     return numerical_flux_->linear();
   }
 
+  using BaseType::intersection;
+
   void apply(LocalInsideRangeType& local_range_inside,
              LocalOutsideRangeType& local_range_outside,
              const XT::Common::Parameter& param = {}) const override final
@@ -119,16 +121,16 @@ public:
                   Exceptions::operator_error,
                   "Use LocalAdvectionDgCouplingOperator instead!");
     u_ = local_sources_[0]->evaluate(source_is_elementwise_constant_ ? static_x
-                                                                     : intersection.geometryInInside().center());
+                                                                     : intersection().geometryInInside().center());
     v_ = local_sources_[1]->evaluate(source_is_elementwise_constant_ ? static_x
-                                                                     : intersection.geometryInOutside().center());
-    const auto normal = intersection.centerUnitOuterNormal();
+                                                                     : intersection().geometryInOutside().center());
+    const auto normal = intersection().centerUnitOuterNormal();
     if (numerical_flux_->x_dependent())
-      x_in_intersection_coords_ = intersection.geometry().local(intersection.geometry().center());
+      x_in_intersection_coords_ = intersection().geometry().local(intersection().geometry().center());
     const auto g = numerical_flux_->apply(x_in_intersection_coords_, u_, v_, normal, param);
-    const auto h_intersection = intersection.geometry().volume();
-    const auto h_inside_element = intersection.inside().geometry().volume();
-    const auto h_outside_element = intersection.outside().geometry().volume();
+    const auto h_intersection = intersection().geometry().volume();
+    const auto h_inside_element = intersection().inside().geometry().volume();
+    const auto h_outside_element = intersection().outside().geometry().volume();
     for (size_t ii = 0; ii < m; ++ii) {
       local_range_inside.dofs()[ii] += (g[ii] * h_intersection) / h_inside_element;
       local_range_outside.dofs()[ii] -= (g[ii] * h_intersection) / h_outside_element;
@@ -246,6 +248,8 @@ public:
     return false;
   }
 
+  using BaseType::intersection;
+
   void apply(LocalInsideRangeType& local_range_inside,
              LocalOutsideRangeType& /*local_range_outside*/,
              const XT::Common::Parameter& param = {}) const override final
@@ -253,13 +257,12 @@ public:
     DUNE_THROW_IF(local_range_inside.space().type() != SpaceType::finite_volume,
                   Exceptions::operator_error,
                   "Use LocalAdvectionDgBoundaryTreatmentByCustomNumericalFluxOperator instead!");
-    const auto& element = local_range_inside.element();
     u_ = local_sources_[0]->evaluate(source_is_elementwise_constant_ ? CouplingOperatorType::static_x
-                                                                     : intersection.geometryInInside().center());
-    const auto normal = intersection.centerUnitOuterNormal();
+                                                                     : intersection().geometryInInside().center());
+    const auto normal = intersection().centerUnitOuterNormal();
     const auto g = numerical_boundary_flux_(u_, normal, param);
-    const auto h_intersection = intersection.geometry().volume();
-    const auto h_element = element.geometry().volume();
+    const auto h_intersection = intersection().geometry().volume();
+    const auto h_element = intersection.inside().geometry().volume();
     for (size_t ii = 0; ii < m; ++ii)
       local_range_inside.dofs()[ii] += (g[ii] * h_intersection) / h_element;
   } // ... apply(...)
@@ -366,6 +369,8 @@ public:
     return numerical_flux_->linear();
   }
 
+  using BaseType::intersection;
+
   void apply(LocalInsideRangeType& local_range_inside,
              LocalOutsideRangeType& /*local_range_outside*/,
              const XT::Common::Parameter& param = {}) const override final
@@ -374,18 +379,18 @@ public:
                   Exceptions::operator_error,
                   "Use LocalAdvectionDgBoundaryTreatmentByCustomExtrapolationOperator instead!");
     if (numerical_flux_->x_dependent())
-      x_in_intersection_coords_ = intersection.geometry().local(intersection.geometry().center());
+      x_in_intersection_coords_ = intersection().geometry().local(intersection().geometry().center());
     u_ = local_sources_[0]->evaluate(source_is_elementwise_constant_ ? CouplingOperatorType::static_x
                                                                      : intersection.geometryInInside().center());
-    v_ = extrapolate_(intersection,
-                      ReferenceElements<D, d - 1>::general(intersection.type()).position(0, 0),
+    v_ = extrapolate_(intersection(),
+                      ReferenceElements<D, d - 1>::general(intersection().type()).position(0, 0),
                       numerical_flux_->flux(),
                       u_,
                       param);
-    const auto normal = intersection.centerUnitOuterNormal();
+    const auto normal = intersection().centerUnitOuterNormal();
     const auto g = numerical_flux_->apply(x_in_intersection_coords_, u_, v_, normal, param);
-    const auto h_intersection = intersection.geometry().volume();
-    const auto h_element = intersection.inside().geometry().volume();
+    const auto h_intersection = intersection().geometry().volume();
+    const auto h_element = intersection().inside().geometry().volume();
     for (size_t ii = 0; ii < m; ++ii)
       local_range_inside.dofs()[ii] += (g[ii] * h_intersection) / h_element;
   } // ... apply(...)

@@ -158,7 +158,7 @@ public:
   {
     func_(this->source(),
           this->local_sources(),
-          intersection,
+          this->intersection(),
           local_range_inside,
           local_range_outside,
           this->parse_parameter(param));
