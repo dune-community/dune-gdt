@@ -336,6 +336,34 @@ public:
     return dt;
   } // ... next_n_steps(...)
 
+  virtual RangeFieldType solve(const RangeFieldType t_end,
+                               const RangeFieldType initial_dt,
+                               const size_t num_save_steps,
+                               const size_t num_output_steps,
+                               const bool save_solution,
+                               const bool visualize,
+                               const bool write_discrete,
+                               const bool write_exact,
+                               const std::string prefix,
+                               const VisualizerType& visualizer,
+                               const StringifierType& stringifier,
+                               const GridFunctionType& exact_solution = dummy_solution())
+  {
+    return solve(t_end,
+                 initial_dt,
+                 num_save_steps,
+                 num_output_steps,
+                 save_solution,
+                 visualize,
+                 false,
+                 write_discrete,
+                 write_exact,
+                 prefix,
+                 visualizer,
+                 stringifier,
+                 exact_solution);
+  }
+
   // default solve, use internal solution
   virtual RangeFieldType solve(const RangeFieldType t_end,
                                const RangeFieldType initial_dt,
