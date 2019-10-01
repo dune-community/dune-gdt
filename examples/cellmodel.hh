@@ -39,9 +39,9 @@
 #include <dune/gdt/local/integrands/conversion.hh>
 #include <dune/gdt/local/integrands/div.hh>
 #include <dune/gdt/local/integrands/laplace.hh>
-#include <dune/gdt/local/integrands/symmetric_elliptic.hh>
+#include <dune/gdt/local/integrands/symmetrized-laplace.hh>
 #include <dune/gdt/local/integrands/product.hh>
-#include <dune/gdt/local/integrands/gradient_value.hh>
+#include <dune/gdt/local/integrands/gradient-value.hh>
 #include <dune/gdt/operators/localizable-bilinear-form.hh>
 #include <dune/gdt/operators/matrix-based.hh>
 #include <dune/gdt/spaces/h1/continuous-lagrange.hh>
@@ -874,7 +874,7 @@ struct CellModelSolver
 
   void prepare_stokes_operator()
   {
-    auto begin = std::chrono::steady_clock::now();
+    // auto begin = std::chrono::steady_clock::now();
     auto f_functional = make_vector_functional(u_space_, stokes_f_vector_);
 
     u_discr_func_.dofs().vector() = u_.dofs().vector();
@@ -944,7 +944,7 @@ struct CellModelSolver
     A_stokes_operator_->append(f_functional);
     stokes_f_vector_ *= 0.;
     A_stokes_operator_->assemble(use_tbb_);
-    std::chrono::duration<double> time = std::chrono::steady_clock::now() - begin;
+    // std::chrono::duration<double> time = std::chrono::steady_clock::now() - begin;
     // std::cout << "Assembling Stokes took: " << time.count() << " s!" << std::endl;
 
     // apply dirichlet constraints for u.
@@ -962,10 +962,10 @@ struct CellModelSolver
   VectorType solve_stokes() const
   {
     // now solve the system
-    auto begin = std::chrono::steady_clock::now();
+    // auto begin = std::chrono::steady_clock::now();
     EigenVectorType ret(size_u_ + size_p_);
     ret.backend() = stokes_solver_->solve(stokes_rhs_vector_.backend());
-    std::chrono::duration<double> time = std::chrono::steady_clock::now() - begin;
+    // std::chrono::duration<double> time = std::chrono::steady_clock::now() - begin;
     // std::cout << "Solving Stokes took: " << time.count() << " s!" << std::endl;
 
     // ensure int_\Omega p = 0 (TODO: remove, not necessary as p is not used anywhere)

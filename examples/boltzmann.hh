@@ -30,26 +30,28 @@
 
 #include <dune/xt/common/string.hh>
 #include <dune/xt/common/timings.hh>
+
 #include <dune/xt/grid/gridprovider/cube.hh>
 #include <dune/xt/grid/information.hh>
 #include <dune/xt/grid/type_traits.hh>
+
 #include <dune/xt/la/container/common.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/operators/advection-fv.hh>
-#include <dune/gdt/operators/generic.hh>
-#include <dune/gdt/operators/advection-fv-entropybased.hh>
 #include <dune/gdt/interpolations.hh>
+#include <dune/gdt/local/operators/generic.hh>
+#include <dune/gdt/operators/advection-fv.hh>
+#include <dune/gdt/operators/advection-fv-entropybased.hh>
+#include <dune/gdt/operators/localizable-operator.hh>
 #include <dune/gdt/spaces/l2/finite-volume.hh>
-#include <dune/gdt/tools/timestepper/explicit-rungekutta.hh>
-#include <dune/gdt/tools/timestepper/fractional-step.hh>
-#include <dune/gdt/tools/timestepper/matrix-exponential-kinetic-isotropic.hh>
 #include <dune/gdt/test/momentmodels/basisfunctions.hh>
 #include <dune/gdt/test/momentmodels/entropyflux.hh>
 #include <dune/gdt/test/momentmodels/entropysolver.hh>
-
 #include <dune/gdt/test/momentmodels/kinetictransport/checkerboard.hh>
 #include <dune/gdt/test/momentmodels/pn-discretization.hh>
+#include <dune/gdt/tools/timestepper/explicit-rungekutta.hh>
+#include <dune/gdt/tools/timestepper/fractional-step.hh>
+#include <dune/gdt/tools/timestepper/matrix-exponential-kinetic-isotropic.hh>
 
 using namespace Dune;
 using namespace Dune::GDT;
@@ -116,7 +118,7 @@ public:
   using EntropySolverType = GDT::EntropySolver<MomentBasis, SpaceType, MatrixType>;
   using FvOperatorType = GDT::EntropyBasedMomentFvOperator<AdvectionOperatorType, EntropySolverType>;
   using PnFvOperatorType = AdvectionOperatorType;
-  using RhsOperatorType = GenericOperator<MatrixType, GridViewType, dimRange>;
+  using RhsOperatorType = LocalizableOperator<MatrixType, GridViewType, dimRange>;
   using FluxTimeStepperType =
       ExplicitRungeKuttaTimeStepper<FvOperatorType, DiscreteFunctionType, TimeStepperMethods::explicit_euler>;
   using PnFluxTimeStepperType =
@@ -373,9 +375,9 @@ public:
                         auto& local_range,
                         const XT::Common::Parameter& /*param*/) {
       const auto& element = local_range.element();
-      local_source->bind(element);
+      local_source[0]->bind(element);
       const auto center = element.geometry().center();
-      const auto u = local_source->evaluate(center);
+      const auto u = local_source[0]->evaluate(element.geometry().local(center));
       const auto sigma_a_value = sigma_a->evaluate(center)[0];
       const auto sigma_s_value = sigma_s->evaluate(center)[0];
       const auto sigma_t_value = sigma_a_value + sigma_s_value;
@@ -386,8 +388,8 @@ public:
       for (size_t ii = 0; ii < local_range.dofs().size(); ++ii)
         local_range.dofs()[ii] = ret[ii];
     };
-    rhs_operator_ = std::make_shared<const RhsOperatorType>(
-        *fv_space_, *fv_space_, std::vector<typename RhsOperatorType::GenericElementFunctionType>(1, rhs_func));
+    rhs_operator_ = std::make_shared<RhsOperatorType>(fv_space_->grid_view(), *fv_space_, *fv_space_);
+    rhs_operator_->append(GenericLocalElementOperator<VectorType, GridViewType, dimRange>(rhs_func));
     rhs_timestepper_->set_operator(*rhs_operator_);
     sigma_t_max_ = calculate_max_sigma_t(*sigma_s, *sigma_a);
     dt_ =
@@ -605,7 +607,7 @@ private:
   std::shared_ptr<std::vector<size_t>> restricted_op_input_dofs_;
   std::shared_ptr<std::vector<size_t>> restricted_op_output_dofs_;
   std::shared_ptr<std::vector<std::map<size_t, size_t>>> restricted_op_entity_dofs_to_output_dofs_;
-  std::shared_ptr<const RhsOperatorType> rhs_operator_;
+  std::shared_ptr<RhsOperatorType> rhs_operator_;
   std::shared_ptr<FluxTimeStepperType> flux_timestepper_;
   std::shared_ptr<PnFluxTimeStepperType> pn_flux_timestepper_;
   std::shared_ptr<RhsTimeStepperType> rhs_timestepper_;
