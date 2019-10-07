@@ -29,11 +29,11 @@ namespace Dune {
 namespace GDT {
 
 
-template <class GV, class LocalFiniteElementFamily, size_t basis_functions_per_subentity = 1>
+template <class GV, class LocalFiniteElementFamily>
 class ContinuousMapper : public MapperInterface<GV>
 {
   static_assert(is_local_finite_element_family<LocalFiniteElementFamily>::value, "");
-  using ThisType = ContinuousMapper<GV, LocalFiniteElementFamily, basis_functions_per_subentity>;
+  using ThisType = ContinuousMapper;
   using BaseType = MapperInterface<GV>;
 
   template <int d>
@@ -70,9 +70,15 @@ public:
     , fe_order_(fe_order)
     , max_local_size_(0)
     , mapper_(grid_view_, [&](const auto& geometry_type, const auto /*grid_dim*/) {
-      return all_DoF_attached_geometry_types_.count(geometry_type) > 0;
+      return (all_DoF_attached_geometry_types_.count(geometry_type) > 0) ? geometry_type_to_local_size_[geometry_type]
+                                                                         : 0;
     })
   {
+    if (d >= 2 && fe_order_ >= 3 && !XT::Grid::is_cube_alugrid<typename GV::Grid>::value
+        && !XT::Grid::is_yaspgrid<typename GV::Grid>::value && !XT::Grid::is_uggrid<typename GV::Grid>::value)
+      DUNE_THROW(Dune::NotImplemented,
+                 "For order > 2, there are problems with the local-to-global mapping on some grids, see the comment in "
+                 "the global_index method!");
     this->update_after_adapt();
   }
 
@@ -95,7 +101,7 @@ public:
 
   size_t size() const override final
   {
-    return basis_functions_per_subentity * mapper_.size();
+    return mapper_.size();
   }
 
   size_t max_local_size() const override final
@@ -115,8 +121,19 @@ public:
       DUNE_THROW(Exceptions::mapper_error,
                  "local_size(element) = " << coeffs.size() << "\n   local_index = " << local_index);
     const auto& local_key = coeffs.local_key(local_index);
-    return basis_functions_per_subentity * mapper_.subIndex(element, local_key.subEntity(), local_key.codim())
-           + local_key.index();
+    // TODO: If there are several DoFs on one subEntity (which is the case e.g. for third order lagrange elements), this
+    // mapping only works if the DoFs are numbered consistently between the elements. For example, if there are two DoFs
+    // on a shared edge between to codim 0 elements, the local_key.index() has to be the same for the same DoF in both
+    // elements. This does not seem to be the case for the simplex grids, the same DoF might be assigned the index 0 in
+    // one element and index 1 in the other element. Fixing this could be done by assigning an orientation to the edge
+    // by looking at the (indices of the) vertices of the edge and reordering the local indices if the orientation is
+    // not the same in all elements sharing the subentity.
+#ifndef NDEBUG
+    if (d >= 2 && fe_order_ >= 3)
+      assert(element.geometry().type() == Dune::GeometryTypes::cube(d)
+             && "Not implemented for this element, see comment above!");
+#endif
+    return mapper_.subIndex(element, local_key.subEntity(), local_key.codim()) + local_key.index();
   } // ... mapToGlobal(...)
 
   using BaseType::global_indices;
@@ -130,8 +147,7 @@ public:
       indices.resize(local_sz, 0);
     for (size_t ii = 0; ii < local_sz; ++ii) {
       const auto& local_key = coeffs.local_key(ii);
-      indices[ii] = basis_functions_per_subentity * mapper_.subIndex(element, local_key.subEntity(), local_key.codim())
-                    + local_key.index();
+      indices[ii] = mapper_.subIndex(element, local_key.subEntity(), local_key.codim()) + local_key.index();
     }
   } // ... globalIndices(...)
 
@@ -149,19 +165,16 @@ public:
       // loop over all keys of this finite element
       const auto& reference_element = ReferenceElements<D, d>::general(geometry_type);
       const auto& coeffs = finite_element.coefficients();
+      const auto& local_key_indices = coeffs.local_key_indices();
       for (size_t ii = 0; ii < coeffs.size(); ++ii) {
         const auto& local_key = coeffs.local_key(ii);
-        // Currently only works if each subEntity has exactly basis_functions_per_subentity DoFs, if there is a variable
-        // number of DoFs per element we would need to do more complicated things in the global index mapping.
-        DUNE_THROW_IF(!(local_key.index() < basis_functions_per_subentity),
-                      Exceptions::mapper_error,
-                      "This case is not covered yet, when we have a variable number of DoFs per (sub)entity!");
         // find the (sub)entity for this key
         const auto sub_entity = local_key.subEntity();
         const auto codim = local_key.codim();
         const auto& subentity_geometry_type = reference_element.type(sub_entity, codim);
         // and add the respective geometry type
         all_DoF_attached_geometry_types_.insert(subentity_geometry_type);
+        geometry_type_to_local_size_[subentity_geometry_type] = local_key_indices[codim][sub_entity].size();
       }
     }
     DUNE_THROW_IF(all_DoF_attached_geometry_types_.size() == 0,
@@ -174,8 +187,10 @@ private:
   const GridViewType& grid_view_;
   const LocalFiniteElementFamily& local_finite_elements_;
   const int fe_order_;
+  size_t global_size_;
   size_t max_local_size_;
   std::set<GeometryType> all_DoF_attached_geometry_types_;
+  std::map<GeometryType, size_t> geometry_type_to_local_size_;
   Implementation mapper_;
 }; // class ContinuousMapper
 

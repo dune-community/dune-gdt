@@ -41,7 +41,7 @@ class IpdgFluxReconstructionOperator : public OperatorInterface<M, SGV, 1, 1, RG
 {
   static_assert(XT::Grid::is_view<AssemblyGridView>::value, "");
   using BaseType = OperatorInterface<M, SGV, 1, 1, RGV::dimension, 1, RGV>;
-  using ThisType = IpdgFluxReconstructionOperator<M, AssemblyGridView, ipdg, SGV, RGV>;
+  using ThisType = IpdgFluxReconstructionOperator;
 
 public:
   using typename BaseType::F;

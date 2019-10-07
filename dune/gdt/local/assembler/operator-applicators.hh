@@ -51,7 +51,7 @@ class LocalElementOperatorApplicator : public XT::Grid::ElementFunctor<AssemblyG
   static_assert(std::is_same<XT::Grid::extract_entity_t<AssemblyGridView>, XT::Grid::extract_entity_t<SGV>>::value, "");
   static_assert(std::is_same<XT::Grid::extract_entity_t<AssemblyGridView>, XT::Grid::extract_entity_t<RGV>>::value, "");
 
-  using ThisType = LocalElementOperatorApplicator<AssemblyGridView, SV, s_r, s_rC, SF, SGV, r_r, r_rC, RF, RGV, RV>;
+  using ThisType = LocalElementOperatorApplicator;
   using BaseType = XT::Grid::ElementFunctor<AssemblyGridView>;
 
 public:
@@ -62,18 +62,16 @@ public:
   using LocalOperatorType = LocalElementOperatorInterface<SV, SGV, s_r, s_rC, SF, r_r, r_rC, RF, RGV, RV>;
 
   LocalElementOperatorApplicator(const LocalOperatorType& local_operator,
-                                 const SourceType& source,
                                  RangeType& range,
                                  const XT::Common::Parameter& param = {})
     : local_operator_(local_operator.copy())
-    , source_(source)
     , range_(range)
     , param_(param)
     , local_range_(range_.local_discrete_function())
   {}
 
   LocalElementOperatorApplicator(const ThisType& other)
-    : LocalElementOperatorApplicator(*other.local_operator_, other.source_, other.range_, other.param_)
+    : LocalElementOperatorApplicator(*other.local_operator_, other.range_, other.param_)
   {}
 
   BaseType* copy() override final
@@ -84,12 +82,12 @@ public:
   void apply_local(const ElementType& element) override final
   {
     local_range_->bind(element);
-    local_operator_->apply(source_, *local_range_, param_);
+    local_operator_->bind(element);
+    local_operator_->apply(*local_range_, param_);
   }
 
 private:
   const std::unique_ptr<LocalOperatorType> local_operator_;
-  const SourceType& source_;
   RangeType& range_;
   const XT::Common::Parameter param_;
   std::unique_ptr<typename RangeType::LocalDiscreteFunctionType> local_range_;
@@ -103,12 +101,11 @@ template <class SV, class GV, size_t s_r, size_t s_rC, class SF, size_t r_r, siz
 std::unique_ptr<LocalElementOperatorApplicator<GV, SV, s_r, s_rC, SF, GV, r_r, r_rC, RF, GV, RV>>
 make_local_element_operator_applicator(
     const LocalElementOperatorInterface<SV, GV, s_r, s_rC, SF, r_r, r_rC, RF, GV, RV>& local_operator,
-    const ConstDiscreteFunction<SV, GV, s_r, s_rC, SF>& source,
     DiscreteFunction<RV, GV, r_r, r_rC, RF>& range,
     const XT::Common::Parameter& param = {})
 {
   return std::make_unique<LocalElementOperatorApplicator<GV, SV, s_r, s_rC, SF, GV, r_r, r_rC, RF, GV, RV>>(
-      local_operator, source, range, param);
+      local_operator, range, param);
 }
 
 /**
@@ -128,13 +125,12 @@ template <class AssemblyGridView,
 std::unique_ptr<LocalElementOperatorApplicator<AssemblyGridView, SV, s_r, s_rC, SF, SGV, r_r, r_rC, RF, RGV, RV>>
 make_local_element_operator_applicator(
     const LocalElementOperatorInterface<SV, SGV, s_r, s_rC, SF, r_r, r_rC, RF, RGV, RV>& local_operator,
-    const ConstDiscreteFunction<SV, SGV, s_r, s_rC, SF>& source,
     DiscreteFunction<RV, RGV, r_r, r_rC, RF>& range,
     const XT::Common::Parameter& param = {})
 {
   return std::make_unique<
       LocalElementOperatorApplicator<AssemblyGridView, SV, s_r, s_rC, SF, SGV, r_r, r_rC, RF, RGV, RV>>(
-      local_operator, source, range, param);
+      local_operator, range, param);
 }
 
 
@@ -199,12 +195,10 @@ public:
       LocalIntersectionOperatorInterface<IntersectionType, SV, SGV, s_r, s_rC, SF, r_r, r_rC, RF, IRGV, IRV, ORGV, ORV>;
 
   LocalIntersectionOperatorApplicator(const LocalOperatorType& local_operator,
-                                      const SourceType& source,
                                       InsideRangeType& range_inside,
                                       OutsideRangeType& range_outside,
                                       const XT::Common::Parameter& param = {})
     : local_operator_(local_operator.copy())
-    , source_(source)
     , range_inside_(range_inside)
     , range_outside_(range_outside)
     , param_(param)
@@ -214,7 +208,7 @@ public:
 
   LocalIntersectionOperatorApplicator(const ThisType& other)
     : LocalIntersectionOperatorApplicator(
-          *other.local_operator_, other.source_, other.range_inside_, other.range_outside_, other.param_)
+          *other.local_operator_, other.range_inside_, other.range_outside_, other.param_)
   {}
 
   BaseType* copy() override final
@@ -228,12 +222,12 @@ public:
   {
     local_range_inside_->bind(inside_element);
     local_range_outside_->bind(outside_element);
-    local_operator_->apply(source_, intersection, *local_range_inside_, *local_range_outside_, param_);
+    local_operator_->bind(intersection);
+    local_operator_->apply(*local_range_inside_, *local_range_outside_, param_);
   }
 
 private:
   const std::unique_ptr<LocalOperatorType> local_operator_;
-  const SourceType& source_;
   InsideRangeType& range_inside_;
   OutsideRangeType& range_outside_;
   const XT::Common::Parameter param_;
@@ -263,14 +257,13 @@ std::enable_if_t<
     std::unique_ptr<LocalIntersectionOperatorApplicator<GV, SV, s_r, s_rC, SF, GV, r_r, r_rC, RF, GV, IRV, GV, ORV>>>
 make_local_intersection_operator_applicator(
     const LocalIntersectionOperatorInterface<I, SV, GV, s_r, s_rC, SF, r_r, r_rC, RF, GV, IRV, GV, ORV>& local_operator,
-    const ConstDiscreteFunction<SV, GV, s_r, s_rC, SF>& source,
     DiscreteFunction<IRV, GV, r_r, r_rC, RF>& range_inside,
     DiscreteFunction<ORV, GV, r_r, r_rC, RF>& range_outside,
     const XT::Common::Parameter& param = {})
 {
   return std::make_unique<
       LocalIntersectionOperatorApplicator<GV, SV, s_r, s_rC, SF, GV, r_r, r_rC, RF, GV, IRV, GV, ORV>>(
-      local_operator, source, range_inside, range_outside, param);
+      local_operator, range_inside, range_outside, param);
 } // ... make_local_intersection_operator_applicator(...)
 
 template <class I, class SV, class GV, size_t s_r, size_t s_rC, class SF, size_t r_r, size_t r_rC, class RF, class RV>
@@ -278,12 +271,11 @@ std::enable_if_t<std::is_same<XT::Grid::extract_intersection_t<GV>, I>::value,
                  std::unique_ptr<LocalIntersectionOperatorApplicator<GV, SV, s_r, s_rC, SF, GV, r_r, r_rC, RF, GV, RV>>>
 make_local_intersection_operator_applicator(
     const LocalIntersectionOperatorInterface<I, SV, GV, s_r, s_rC, SF, r_r, r_rC, RF, GV, RV>& local_operator,
-    const ConstDiscreteFunction<SV, GV, s_r, s_rC, SF>& source,
     DiscreteFunction<RV, GV, r_r, r_rC, RF>& range,
     const XT::Common::Parameter& param = {})
 {
   return std::make_unique<LocalIntersectionOperatorApplicator<GV, SV, s_r, s_rC, SF, GV, r_r, r_rC, RF, GV, RV>>(
-      local_operator, source, range, range, param);
+      local_operator, range, range, param);
 }
 
 /**
@@ -322,7 +314,6 @@ std::enable_if_t<std::is_same<XT::Grid::extract_intersection_t<AssemblyGridView>
 make_local_intersection_operator_applicator(
     const LocalIntersectionOperatorInterface<I, SV, SGV, s_r, s_rC, SF, r_r, r_rC, RF, IRGV, IRV, ORGV, ORV>&
         local_operator,
-    const ConstDiscreteFunction<SV, SGV, s_r, s_rC, SF>& source,
     DiscreteFunction<IRV, IRGV, r_r, r_rC, RF>& range_inside,
     DiscreteFunction<ORV, ORGV, r_r, r_rC, RF>& range_outside,
     const XT::Common::Parameter& param = {})
@@ -339,8 +330,7 @@ make_local_intersection_operator_applicator(
                                                               IRGV,
                                                               IRV,
                                                               ORGV,
-                                                              ORV>>(
-      local_operator, source, range_inside, range_outside, param);
+                                                              ORV>>(local_operator, range_inside, range_outside, param);
 } // ... make_local_intersection_operator_applicator(...)
 
 template <class AssemblyGridView,
@@ -361,13 +351,12 @@ std::enable_if_t<
         LocalIntersectionOperatorApplicator<AssemblyGridView, SV, s_r, s_rC, SF, SGV, r_r, r_rC, RF, RGV, RV>>>
 make_local_intersection_operator_applicator(
     const LocalIntersectionOperatorInterface<I, SV, SGV, s_r, s_rC, SF, r_r, r_rC, RF, RGV, RV>& local_operator,
-    const ConstDiscreteFunction<SV, SGV, s_r, s_rC, SF>& source,
     DiscreteFunction<RV, RGV, r_r, r_rC, RF>& range,
     const XT::Common::Parameter& param = {})
 {
   return std::make_unique<
       LocalIntersectionOperatorApplicator<AssemblyGridView, SV, s_r, s_rC, SF, SGV, r_r, r_rC, RF, RGV, RV>>(
-      local_operator, source, range, range, param);
+      local_operator, range, range, param);
 }
 
 /// \}

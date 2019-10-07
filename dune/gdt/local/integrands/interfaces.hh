@@ -59,7 +59,7 @@ class LocalUnaryElementIntegrandInterface
 {
   static_assert(XT::Grid::is_entity<Element>::value, "");
 
-  using ThisType = LocalUnaryElementIntegrandInterface<Element, range_dim, range_dim_cols, RangeField, Field>;
+  using ThisType = LocalUnaryElementIntegrandInterface;
 
 public:
   using E = Element;
@@ -138,14 +138,7 @@ class LocalBinaryElementIntegrandInterface
 {
   static_assert(XT::Grid::is_entity<Element>::value, "");
 
-  using ThisType = LocalBinaryElementIntegrandInterface<Element,
-                                                        test_range_dim,
-                                                        test_range_dim_cols,
-                                                        TestRangeField,
-                                                        Field,
-                                                        ansatz_range_dim,
-                                                        ansatz_range_dim_cols,
-                                                        AnsatzRangeField>;
+  using ThisType = LocalBinaryElementIntegrandInterface;
 
 public:
   using E = Element;
@@ -230,8 +223,7 @@ class LocalBinaryIntersectionIntegrandInterface
 {
   static_assert(XT::Grid::is_intersection<Intersection>::value, "");
 
-  using ThisType =
-      LocalBinaryIntersectionIntegrandInterface<Intersection, range_dim, range_dim_cols, RangeField, Field>;
+  using ThisType = LocalBinaryIntersectionIntegrandInterface;
 
 public:
   using typename XT::Grid::IntersectionBoundObject<Intersection>::IntersectionType;
@@ -309,14 +301,7 @@ class LocalQuaternaryIntersectionIntegrandInterface
 {
   static_assert(XT::Grid::is_intersection<Intersection>::value, "");
 
-  using ThisType = LocalQuaternaryIntersectionIntegrandInterface<Intersection,
-                                                                 test_range_dim,
-                                                                 test_range_dim_cols,
-                                                                 TestRangeField,
-                                                                 Field,
-                                                                 ansatz_range_dim,
-                                                                 ansatz_range_dim_cols,
-                                                                 AnsatzRangeField>;
+  using ThisType = LocalQuaternaryIntersectionIntegrandInterface;
 
 public:
   using typename XT::Grid::IntersectionBoundObject<Intersection>::IntersectionType;

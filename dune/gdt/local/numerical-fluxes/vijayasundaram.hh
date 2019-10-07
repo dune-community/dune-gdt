@@ -97,6 +97,8 @@ public:
     return std::make_unique<ThisType>(*this);
   }
 
+  NumericalVijayasundaramFlux(const ThisType& other) = default;
+
   using BaseType::apply;
 
   StateType apply(const LocalIntersectionCoords& x,

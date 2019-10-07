@@ -12,6 +12,8 @@
 #ifndef DUNE_GDT_OPERATORS_ADVECTION_FV_HH
 #define DUNE_GDT_OPERATORS_ADVECTION_FV_HH
 
+#include <dune/grid/common/partitionset.hh>
+
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/grid/filters.hh>
@@ -39,19 +41,23 @@ namespace GDT {
 template <class M, class AGV, size_t m = 1, class RGV = AGV, class SGV = AGV>
 class AdvectionFvOperator : public LocalizableOperator<M, AGV, m, 1, m, 1, RGV, SGV>
 {
-  using ThisType = AdvectionFvOperator<M, AGV, m, RGV, SGV>;
+  using ThisType = AdvectionFvOperator;
   using BaseType = LocalizableOperator<M, AGV, m, 1, m, 1, RGV, SGV>;
 
 public:
+  using BaseType::s_r;
+  using BaseType::s_rC;
   using typename BaseType::F;
   using typename BaseType::V;
 
   using I = XT::Grid::extract_intersection_t<SGV>;
+  using E = XT::Grid::extract_entity_t<SGV>;
   using NumericalFluxType = NumericalFluxInterface<I, SGV::dimension, m, F>;
   using BoundaryTreatmentByCustomNumericalFluxOperatorType =
       LocalAdvectionFvBoundaryTreatmentByCustomNumericalFluxOperator<I, V, SGV, m, F, F, RGV, V>;
   using BoundaryTreatmentByCustomExtrapolationOperatorType =
       LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator<I, V, SGV, m, F, F, RGV, V>;
+  using SourceType = XT::Functions::GridFunctionInterface<E, s_r, s_rC, F>;
 
   using typename BaseType::MatrixOperatorType;
   using typename BaseType::RangeSpaceType;

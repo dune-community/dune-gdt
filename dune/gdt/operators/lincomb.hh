@@ -28,7 +28,7 @@ namespace GDT {
 template <class M, class SGV, size_t s_r = 1, size_t s_rC = 1, size_t r_r = s_r, size_t r_rC = s_rC, class RGV = SGV>
 class ConstLincombOperator : public OperatorInterface<M, SGV, s_r, s_rC, r_r, r_rC, RGV>
 {
-  using ThisType = ConstLincombOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
+  using ThisType = ConstLincombOperator;
   using BaseType = OperatorInterface<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
 
 public:
@@ -338,7 +338,7 @@ make_const_lincomb_operator(const SpaceInterface<GV, r, rC, F>& space)
 template <class M, class SGV, size_t s_r = 1, size_t s_rC = 1, size_t r_r = s_r, size_t r_rC = s_rC, class RGV = SGV>
 class LincombOperator : public ConstLincombOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>
 {
-  using ThisType = LincombOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
+  using ThisType = LincombOperator;
   using BaseType = ConstLincombOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
 
 public:

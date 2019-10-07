@@ -28,7 +28,7 @@ namespace GDT {
 //{
 //  static_assert(XT::Grid::is_entity<Element>::value, "");
 
-//  using ThisType = LocalUnaryElementIntegrandInterface<Element, range_dim, range_dim_cols, RangeField, Field>;
+//  using ThisType = LocalUnaryElementIntegrandInterface;
 
 // public:
 //  using E = Element;
@@ -263,7 +263,7 @@ class LocalQuaternaryIntersectionIntegrandSum
   : public LocalQuaternaryIntersectionIntegrandInterface<I, t_r, t_rC, TF, F, a_r, a_rC, AF>
 {
   using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I, t_r, t_rC, TF, F, a_r, a_rC, AF>;
-  using ThisType = LocalQuaternaryIntersectionIntegrandSum<I, t_r, t_rC, TF, F, a_r, a_rC, AF>;
+  using ThisType = LocalQuaternaryIntersectionIntegrandSum;
 
 public:
   using typename BaseType::DomainType;

@@ -37,7 +37,7 @@ namespace GDT {
 template <class GL, class R = double>
 class RaviartThomasGlobalBasis : public GlobalBasisInterface<GL, GL::dimension, 1, R>
 {
-  using ThisType = RaviartThomasGlobalBasis<GL, R>;
+  using ThisType = RaviartThomasGlobalBasis;
   using BaseType = GlobalBasisInterface<GL, GL::dimension, 1, R>;
 
 public:

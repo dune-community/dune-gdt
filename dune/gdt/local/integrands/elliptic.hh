@@ -30,8 +30,12 @@ namespace GDT {
 
 
 /**
+ * This class is deprecated, use LocalLaplaceIntegrand instead (10.08.2019)!
  * Given an inducing scalar function lambda and an inducing matrix-valued function kappa, computes
- * `lambda(x) * {[kappa(x) \nabla phi(x)] * \nabla psi(x)}` for all combinations of phi and psi in the bases.
+ * `lambda(x) * {[kappa(x) \nabla phi(x)] * \nabla psi(x)}` for all combinations of phi in the ansatz basis and psi in
+ * the test basis.
+ * If phi and psi are vector-valued, \nabla phi is the jacobian matrix and we are actually computing
+ * `lambda(x) * {[kappa(x) (\nabla phi(x))^T] : (\nabla psi(x))^T}`, where ':' denotes the matrix scalar product.
  */
 template <class E, size_t r = 1, class F = double>
 class DXT_DEPRECATED_MSG("Use LocalLaplaceIntegrand instead (10.08.2019)!") LocalEllipticIntegrand
@@ -97,6 +101,10 @@ public:
 protected:
   void post_bind(const ElementType& ele) override
   {
+#  ifndef NDEBUG
+    if (!ele.geometry().affine())
+      std::cerr << "Warning: integration order has to be increased for non-affine geometries!" << std::endl;
+#  endif
     local_diffusion_factor_->bind(ele);
     local_diffusion_tensor_->bind(ele);
   }
@@ -106,8 +114,8 @@ public:
             const LocalAnsatzBasisType& ansatz_basis,
             const XT::Common::Parameter& param = {}) const override final
   {
-    return local_diffusion_factor_->order(param) + local_diffusion_tensor_->order(param)
-           + std::max(test_basis.order(param) - 1, 0) + std::max(ansatz_basis.order(param) - 1, 0);
+    return local_diffusion_factor_->order(param) + local_diffusion_tensor_->order(param) + test_basis.order(param)
+           + ansatz_basis.order(param);
   }
 
   void evaluate(const LocalTestBasisType& test_basis,

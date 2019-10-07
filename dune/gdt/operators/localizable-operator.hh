@@ -73,10 +73,12 @@ public:
 
   using SV = SourceVector;
   using SGV = SourceGridView;
+  using E = XT::Grid::extract_entity_t<SGV>;
   static const constexpr size_t s_r = source_range_dim;
   static const constexpr size_t s_rC = source_range_dim_cols;
   using SF = SourceField;
-  using SourceType = ConstDiscreteFunction<SV, SGV, s_r, s_rC, SF>;
+  using DiscreteSourceType = ConstDiscreteFunction<SV, SGV, s_r, s_rC, SF>;
+  using SourceType = XT::Functions::GridFunctionInterface<E, s_r, s_rC, SF>;
 
   using RV = RangeVector;
   using RGV = RangeGridView;
@@ -129,7 +131,7 @@ public:
                    const XT::Common::Parameter& param = {},
                    const ElementFilterType& filter = ApplyOnAllElements())
   {
-    this->append(make_local_element_operator_applicator(local_operator, source_, range_, param).release(), filter);
+    this->append(make_local_element_operator_applicator(local_operator, range_, param).release(), filter);
     return *this;
   }
 
@@ -137,7 +139,7 @@ public:
                    const XT::Common::Parameter& param = {},
                    const ElementFilterType& filter = ApplyOnAllElements())
   {
-    this->append(GenericLocalElementOperatorType(generic_function, param.type()), param, filter);
+    this->append(GenericLocalElementOperatorType(source(), generic_function, param.type()), param, filter);
     return *this;
   }
 
@@ -146,7 +148,7 @@ public:
          const XT::Common::Parameter& param = {},
          const IntersectionFilterType& filter = ApplyOnAllIntersections())
   {
-    this->append(make_local_intersection_operator_applicator(local_operator, source_, range_, param).release(), filter);
+    this->append(make_local_intersection_operator_applicator(local_operator, range_, param).release(), filter);
     return *this;
   }
 
@@ -154,7 +156,7 @@ public:
                    const XT::Common::Parameter& param = {},
                    const IntersectionFilterType& filter = ApplyOnAllIntersections())
   {
-    this->append(GenericLocalIntersectionFunctionType(generic_function, param.type()), param, filter);
+    this->append(GenericLocalIntersectionOperatorType(source(), generic_function, param.type()), param, filter);
     return *this;
   }
 
@@ -220,6 +222,49 @@ make_localizable_operator_applicator(AGV assembly_grid_view,
       assembly_grid_view, source, range);
 }
 
+template <class AGV,
+          size_t s_r,
+          size_t s_rC,
+          class SF,
+          size_t r_r,
+          size_t r_rC,
+          class RF,
+          class RGV,
+          class RV,
+          class SV = RV>
+std::enable_if_t<XT::Grid::is_layer<AGV>::value,
+                 LocalizableDiscreteOperatorApplicator<AGV, SV, s_r, s_rC, SF, AGV, r_r, r_rC, RF, RGV, RV>>
+make_localizable_operator_applicator(
+    AGV assembly_grid_view,
+    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<AGV>, s_r, s_rC, SF>& source,
+    DiscreteFunction<RV, RGV, r_r, r_rC, RF>& range)
+{
+  return LocalizableDiscreteOperatorApplicator<AGV, SV, s_r, s_rC, SF, AGV, r_r, r_rC, RF, RGV, RV>(
+      assembly_grid_view, source, range);
+}
+
+template <class AGV,
+          class SV,
+          size_t s_r,
+          size_t s_rC,
+          class SF,
+          class SGV,
+          size_t r_r,
+          size_t r_rC,
+          class RF,
+          class RGV,
+          class RV>
+std::enable_if_t<XT::Grid::is_layer<AGV>::value,
+                 LocalizableOperatorBase<AGV, SV, s_r, s_rC, SF, SGV, r_r, r_rC, RF, RGV, RV>>
+make_localizable_operator(
+    AGV assembly_grid_view,
+    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<SGV>, s_r, s_rC, SF>& source,
+    DiscreteFunction<RV, RGV, r_r, r_rC, RF>& range)
+{
+  return LocalizableOperatorBase<AGV, SV, s_r, s_rC, SF, SGV, r_r, r_rC, RF, RGV, RV>(
+      assembly_grid_view, source, range);
+}
+
 
 /**
  * \note See OperatorInterface for a description of the template arguments.
@@ -237,7 +282,7 @@ template <class M,
 class LocalizableOperator : public OperatorInterface<M, SGV, s, sC, r, rC, RGV>
 {
   static_assert(XT::Grid::is_view<AssemblyGridView>::value, "");
-  using ThisType = LocalizableOperator<M, AssemblyGridView, s, sC, r, rC, RGV, SGV>;
+  using ThisType = LocalizableOperator;
   using BaseType = OperatorInterface<M, SGV, s, sC, r, rC, RGV>;
 
 public:
@@ -249,6 +294,7 @@ public:
 
   using typename BaseType::MatrixOperatorType;
   using typename BaseType::RangeSpaceType;
+  using typename BaseType::SourceFunctionInterfaceType;
   using typename BaseType::SourceSpaceType;
   using typename BaseType::VectorType;
 
@@ -302,34 +348,40 @@ public:
 
   using BaseType::apply;
 
-  void apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& param = {}) const override
+  void apply(const SourceFunctionInterfaceType& source_function,
+             VectorType& range,
+             const XT::Common::Parameter& param = {}) const
   {
-    // some checks
-    DUNE_THROW_IF(!source.valid(), Exceptions::operator_error, "source contains inf or nan!");
     DUNE_THROW_IF(!(this->parameter_type() <= param.type()),
                   Exceptions::operator_error,
                   "this->parameter_type() = " << this->parameter_type() << "\n   param.type() = " << param.type());
     range.set_all(0);
-    auto source_function = make_discrete_function(this->source_space_, source);
     auto range_function = make_discrete_function(this->range_space_, range);
     // set up the actual operator
     auto localizable_op =
         make_localizable_operator_applicator(this->assembly_grid_view_, source_function, range_function);
     // - element contributions
     for (const auto& op_and_filter : local_element_operators_) {
-      const auto& local_op = *op_and_filter.first;
+      const auto local_op = op_and_filter.first->with_source(source_function);
       const auto& filter = *op_and_filter.second;
-      localizable_op.append(local_op, param, filter);
+      localizable_op.append(*local_op, param, filter);
     }
     // - intersection contributions
     for (const auto& op_and_filter : local_intersection_operators_) {
-      const auto& local_op = *op_and_filter.first;
+      const auto local_op = op_and_filter.first->with_source(source_function);
       const auto& filter = *op_and_filter.second;
-      localizable_op.append(local_op, param, filter);
+      localizable_op.append(*local_op, param, filter);
     }
     // and apply it in a grid walk
     localizable_op.assemble(/*use_tbb=*/true);
     DUNE_THROW_IF(!range.valid(), Exceptions::operator_error, "range contains inf or nan!");
+  } // ... apply(...)
+
+  void apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& param = {}) const override
+  {
+    DUNE_THROW_IF(!source.valid(), Exceptions::operator_error, "source contains inf or nan!");
+    const auto source_function = make_discrete_function(this->source_space_, source);
+    apply(source_function, range, param);
   } // ... apply(...)
 
   std::vector<std::string> jacobian_options() const override final
@@ -362,16 +414,17 @@ public:
     const auto parameter = param + XT::Common::Parameter({"finite-difference-jacobians.eps", eps});
     // append the same local ops with the same filters as in apply() above
     // - element contributions
+    const auto source_function = make_discrete_function(this->source_space_, source);
     for (const auto& op_and_filter : local_element_operators_) {
-      const auto& local_op = *op_and_filter.first;
+      const auto local_op = op_and_filter.first->with_source(source_function);
       const auto& filter = *op_and_filter.second;
-      jacobian_op.append(local_op, source, parameter, filter);
+      jacobian_op.append(*local_op, source, parameter, filter);
     }
     // - intersection contributions
     for (const auto& op_and_filter : local_intersection_operators_) {
-      const auto& local_op = *op_and_filter.first;
+      const auto local_op = op_and_filter.first->with_source(source_function);
       const auto& filter = *op_and_filter.second;
-      jacobian_op.append(local_op, source, parameter, filter);
+      jacobian_op.append(*local_op, source, parameter, filter);
     }
   } // ... jacobian(...)
 

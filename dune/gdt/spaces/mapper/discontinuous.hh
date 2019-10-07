@@ -31,7 +31,7 @@ template <class GV, class LocalFiniteElementFamily>
 class DiscontinuousMapper : public MapperInterface<GV>
 {
   static_assert(is_local_finite_element_family<LocalFiniteElementFamily>::value, "");
-  using ThisType = DiscontinuousMapper<GV, LocalFiniteElementFamily>;
+  using ThisType = DiscontinuousMapper;
   using BaseType = MapperInterface<GV>;
 
 public:

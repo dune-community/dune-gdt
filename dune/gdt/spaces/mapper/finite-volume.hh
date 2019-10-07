@@ -32,7 +32,7 @@ class FiniteVolumeMapper : public MapperInterface<GV>
 {
   static_assert(rC == 1, "The FiniteVolumeMapper is not yet available for rC > 1!");
 
-  using ThisType = FiniteVolumeMapper<GV, r, rC>;
+  using ThisType = FiniteVolumeMapper;
   using BaseType = MapperInterface<GV>;
 
 public:

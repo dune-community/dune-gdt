@@ -44,7 +44,7 @@ template <class I>
 class InnerCoupling : public LocalQuaternaryIntersectionIntegrandInterface<I>
 {
   using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I>;
-  using ThisType = InnerCoupling<I>;
+  using ThisType = InnerCoupling;
 
 public:
   using BaseType::d;
@@ -226,7 +226,7 @@ template <class I>
 class DirichletCoupling : public LocalQuaternaryIntersectionIntegrandInterface<I>
 {
   using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I>;
-  using ThisType = DirichletCoupling<I>;
+  using ThisType = DirichletCoupling;
 
 public:
   using BaseType::d;
@@ -519,7 +519,7 @@ class DXT_DEPRECATED_MSG(
   : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
 {
   using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>;
-  using ThisType = Inner<I, F, method>;
+  using ThisType = Inner;
 
 public:
   using BaseType::d;
@@ -1012,7 +1012,7 @@ class DXT_DEPRECATED_MSG(
     DirichletBoundaryLhs : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
 {
   using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>;
-  using ThisType = DirichletBoundaryLhs<I, F, method>;
+  using ThisType = DirichletBoundaryLhs;
 
 public:
   using BaseType::d;
@@ -1453,7 +1453,7 @@ class DXT_DEPRECATED_MSG("Use LocalIPDGIntegrands::InnerPenalty instead (05.08.2
   : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
 {
   using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>;
-  using ThisType = InnerOnlyPenalty<I, F, method>;
+  using ThisType = InnerOnlyPenalty;
 
 public:
   using BaseType::d;
@@ -1905,7 +1905,7 @@ class DXT_DEPRECATED_MSG("Use LocalIPDGIntegrands::BoundaryPenalty instead (05.0
     DirichletBoundaryLhsOnlyPenalty : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
 {
   using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>;
-  using ThisType = DirichletBoundaryLhsOnlyPenalty<I, F, method>;
+  using ThisType = DirichletBoundaryLhsOnlyPenalty;
 
 public:
   using BaseType::d;

@@ -62,7 +62,7 @@ static inline size_t advection_dg_artificial_viscosity_default_component()
 template <class M, class AGV, size_t m = 1, class RGV = AGV, class SGV = AGV>
 class AdvectionDgOperator : public LocalizableOperator<M, AGV, m, 1, m, 1, RGV, SGV>
 {
-  using ThisType = AdvectionDgOperator<M, AGV, m, RGV, SGV>;
+  using ThisType = AdvectionDgOperator;
   using BaseType = LocalizableOperator<M, AGV, m, 1, m, 1, RGV, SGV>;
 
 protected:

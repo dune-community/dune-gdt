@@ -38,7 +38,7 @@ class FiniteVolumeSpace
 template <class GV, size_t r, class R>
 class FiniteVolumeSpace<GV, r, 1, R> : public SpaceInterface<GV, r, 1, R>
 {
-  using ThisType = FiniteVolumeSpace<GV, r, 1, R>;
+  using ThisType = FiniteVolumeSpace;
   using BaseType = SpaceInterface<GV, r, 1, R>;
 
 public:
@@ -65,7 +65,20 @@ public:
     this->update_after_adapt();
   }
 
-  FiniteVolumeSpace(const ThisType&) = default;
+  FiniteVolumeSpace(const ThisType& other)
+    : grid_view_(other.grid_view_)
+    , local_finite_elements_(std::make_unique<const LocalLagrangeFiniteElementFamily<D, d, R, r>>())
+    , mapper_(grid_view_)
+    , basis_(grid_view_)
+  {
+    this->update_after_adapt();
+  }
+
+  BaseType* copy() const override final
+  {
+    return new ThisType(*this);
+  }
+
   FiniteVolumeSpace(ThisType&&) = default;
 
   ThisType& operator=(const ThisType&) = delete;

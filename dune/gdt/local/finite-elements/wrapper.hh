@@ -81,7 +81,7 @@ public:
 template <class Implementation, class D, size_t d, class R, size_t r, size_t rC = 1>
 class LocalFiniteElementBasisWrapper : public LocalFiniteElementBasisInterface<D, d, R, r, rC>
 {
-  using ThisType = LocalFiniteElementBasisWrapper<Implementation, D, d, R, r, rC>;
+  using ThisType = LocalFiniteElementBasisWrapper;
   using BaseType = LocalFiniteElementBasisInterface<D, d, R, r, rC>;
 
 public:
@@ -164,7 +164,7 @@ private:
 template <class Implementation, class D, size_t d, class R, size_t r, size_t rC = 1>
 class LocalFiniteElementInterpolationWrapper : public LocalFiniteElementInterpolationInterface<D, d, R, r, rC>
 {
-  using ThisType = LocalFiniteElementInterpolationWrapper<Implementation, D, d, R, r, rC>;
+  using ThisType = LocalFiniteElementInterpolationWrapper;
   using BaseType = LocalFiniteElementInterpolationInterface<D, d, R, r, rC>;
 
   template <class R_ = R, size_t r_ = r, size_t rC_ = rC>
@@ -244,7 +244,8 @@ public:
 
   size_t size() const override final
   {
-    return XT::Common::numeric_cast<size_t>(imp_->size());
+    assert(imp_->size() >= 0 && imp_->size() < std::numeric_limits<size_t>::max());
+    return static_cast<size_t>(imp_->size());
   }
 
   using BaseType::interpolate;
@@ -279,7 +280,7 @@ private:
 template <class Implementation, class D, size_t d>
 class LocalFiniteElementCoefficientsWrapper : public LocalFiniteElementCoefficientsInterface<D, d>
 {
-  using ThisType = LocalFiniteElementCoefficientsWrapper<Implementation, D, d>;
+  using ThisType = LocalFiniteElementCoefficientsWrapper;
   using BaseType = LocalFiniteElementCoefficientsInterface<D, d>;
 
 public:
@@ -352,7 +353,7 @@ class LocalFiniteElementWrapper
   : XT::Common::ConstSharedStorageProvider<Implementation>
   , public LocalFiniteElementDefault<D, d, R, r, rC>
 {
-  using ThisType = LocalFiniteElementWrapper<Implementation, D, d, R, r, rC>;
+  using ThisType = LocalFiniteElementWrapper;
   using ImplementationProvider = XT::Common::ConstSharedStorageProvider<Implementation>;
   using BaseType = LocalFiniteElementDefault<D, d, R, r, rC>;
 

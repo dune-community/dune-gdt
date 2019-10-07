@@ -41,7 +41,7 @@ class LocalMassMatrixProvider
 {
   static_assert(XT::Grid::is_view<AGV>::value, "");
 
-  using ThisType = LocalMassMatrixProvider<GV, r, rC, F>;
+  using ThisType = LocalMassMatrixProvider;
   using BaseType = XT::Grid::ElementFunctor<GV>;
   using Propagator = XT::Common::ThreadResultPropagator<
       LocalMassMatrixProvider<GV, r, rC, F>,
@@ -60,20 +60,20 @@ public:
     : BaseType()
     , Propagator(this)
     , grid_view_(grid_view)
-    , space_(space)
+    , space_(space.copy())
     , element_mapper_(grid_view_)
     , instance_counter_(0)
-    , local_basis_(space_.basis().localize())
+    , local_basis_(space_->basis().localize())
   {}
 
   LocalMassMatrixProvider(const ThisType& other)
     : BaseType(other)
     , Propagator(this)
     , grid_view_(other.grid_view_)
-    , space_(other.space_)
+    , space_(other.space_->copy())
     , element_mapper_(grid_view_)
     , instance_counter_(other.instance_counter_ + 1)
-    , local_basis_(space_.basis().localize())
+    , local_basis_(space_->basis().localize())
   {}
 
   void apply_local(const ElementType& element) override
@@ -132,7 +132,7 @@ public:
 
 private:
   const AssemblyGridView grid_view_;
-  const SpaceType& space_;
+  std::unique_ptr<const SpaceType> space_;
   const FiniteVolumeMapper<GV> element_mapper_;
   size_t instance_counter_;
   std::unique_ptr<typename SpaceType::GlobalBasisType::LocalizedType> local_basis_;

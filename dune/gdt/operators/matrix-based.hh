@@ -46,7 +46,7 @@ namespace GDT {
 template <class M, class SGV, size_t s_r = 1, size_t s_rC = 1, size_t r_r = s_r, size_t r_rC = s_rC, class RGV = SGV>
 class ConstMatrixOperator : public OperatorInterface<M, SGV, s_r, s_rC, r_r, r_rC, RGV>
 {
-  using ThisType = ConstMatrixOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
+  using ThisType = ConstMatrixOperator;
   using BaseType = OperatorInterface<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
 
 public:
@@ -221,7 +221,7 @@ class MatrixOperator
   , public ConstMatrixOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>
   , public XT::Grid::Walker<SGV>
 {
-  using ThisType = MatrixOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
+  using ThisType = MatrixOperator;
   using MatrixStorage = XT::Common::StorageProvider<M>;
   using OperatorBaseType = ConstMatrixOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
   using WalkerBaseType = XT::Grid::Walker<SGV>;
@@ -292,6 +292,12 @@ public:
   }
 
   FieldType scaling;
+
+  void clear()
+  {
+    WalkerBaseType::clear();
+    assembled_ = false;
+  }
 
   using WalkerBaseType::append;
 
@@ -379,7 +385,7 @@ public:
                 const XT::Common::Configuration& opts,
                 const XT::Common::Parameter& param = {}) const override
   {
-    DUNE_THROW_IF(!assembled_, Exceptions::operator_error, "This operator has to be assembled to povide a jacobian!");
+    DUNE_THROW_IF(!assembled_, Exceptions::operator_error, "This operator has to be assembled to provide a jacobian!");
     OperatorBaseType::jacobian(source, jacobian_op, opts, param);
   }
 

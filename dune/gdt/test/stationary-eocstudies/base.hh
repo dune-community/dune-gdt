@@ -36,7 +36,7 @@
 #include <dune/gdt/local/bilinear-forms/integrals.hh>
 #include <dune/gdt/local/functionals/integrals.hh>
 #include <dune/gdt/local/integrands/abs.hh>
-#include <dune/gdt/local/integrands/elliptic.hh>
+#include <dune/gdt/local/integrands/laplace.hh>
 #include <dune/gdt/local/integrands/identity.hh>
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/operators/constant.hh>
@@ -101,33 +101,33 @@ public:
     , reference_solution_on_reference_grid_(nullptr)
   {}
 
-  virtual size_t num_refinements() const override
+  size_t num_refinements() const override
   {
     return num_refinements_;
   }
 
-  virtual std::vector<std::string> targets() const override
+  std::vector<std::string> targets() const override
   {
     return {"h"};
   }
 
-  virtual std::vector<std::string> norms() const override
+  std::vector<std::string> norms() const override
   {
     // We currently support the following norms: L_1, L_2, H_1_semi
     return {"L_2", "H_1_semi"};
   }
 
-  virtual std::vector<std::pair<std::string, std::string>> estimates() const override
+  std::vector<std::pair<std::string, std::string>> estimates() const override
   {
     return {};
   }
 
-  virtual std::vector<std::string> quantities() const override
+  std::vector<std::string> quantities() const override
   {
     return {"time to solution (s)"};
   }
 
-  virtual std::string discretization_info_title() const override
+  std::string discretization_info_title() const override
   {
     return " |grid| |   #DoFs";
   }
@@ -138,7 +138,7 @@ protected:
   virtual std::unique_ptr<S> make_space(const GP& current_grid) = 0;
 
 public:
-  virtual std::string discretization_info(const size_t refinement_level) override
+  std::string discretization_info(const size_t refinement_level) override
   {
     if (current_refinement_ != refinement_level) {
       // clear the current state
@@ -266,7 +266,7 @@ public:
           spatial_norm = [&](const DF& func) {
             auto localizable_product = make_localizable_bilinear_form(reference_space.grid_view(), func, func);
             localizable_product.append(LocalElementIntegralBilinearForm<E, m>(
-                LocalEllipticIntegrand<E, m>(), DXTC_TEST_CONFIG_GET("setup.over_integrate", 3)));
+                LocalLaplaceIntegrand<E, m>(), DXTC_TEST_CONFIG_GET("setup.over_integrate", 3)));
             localizable_product.assemble(DXTC_TEST_CONFIG_GET("setup.use_tbb", true));
             return std::sqrt(localizable_product.result());
           };

@@ -133,6 +133,7 @@ public:
   using F = FieldType;
 
   using SGV = SourceGridView;
+  using E = XT::Grid::extract_entity_t<SGV>;
   static const constexpr size_t s_r = source_dim;
   static const constexpr size_t s_rC = source_dim_cols;
 
@@ -141,6 +142,7 @@ public:
   static const constexpr size_t r_rC = range_dim_cols;
 
   using SourceSpaceType = SpaceInterface<SGV, s_r, s_rC, F>;
+  using SourceFunctionInterfaceType = XT::Functions::GridFunctionInterface<E, s_r, s_rC, F>;
   using SourceFunctionType = DiscreteFunction<V, SGV, s_r, s_rC, F>;
   using ConstSourceFunctionType = ConstDiscreteFunction<V, SGV, s_r, s_rC, F>;
 
@@ -148,7 +150,7 @@ public:
   using RangeFunctionType = DiscreteFunction<V, RGV, r_r, r_rC, F>;
   using ConstRangeFunctionType = ConstDiscreteFunction<V, RGV, r_r, r_rC, F>;
 
-  using ThisType = OperatorInterface<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
+  using ThisType = OperatorInterface;
   using MatrixOperatorType = MatrixOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
   using ConstLincombOperatorType = ConstLincombOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
   using LincombOperatorType = LincombOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
@@ -531,7 +533,7 @@ invert_options(some_type).get<std::string>("type") == some_type
 
   virtual VectorType apply(const VectorType& source, const XT::Common::Parameter& param = {}) const
   {
-    VectorType range(this->range_space().mapper().size(), 0);
+    VectorType range(this->range_space().mapper().size(), 0.);
     this->apply(source, range, param);
     return range;
   }

@@ -33,7 +33,7 @@ template <class I>
 class InnerCoupling : public LocalQuaternaryIntersectionIntegrandInterface<I>
 {
   using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I>;
-  using ThisType = InnerCoupling<I>;
+  using ThisType = InnerCoupling;
 
 public:
   using BaseType::d;
@@ -214,7 +214,7 @@ template <class I>
 class DirichletCoupling : public LocalQuaternaryIntersectionIntegrandInterface<I>
 {
   using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I>;
-  using ThisType = DirichletCoupling<I>;
+  using ThisType = DirichletCoupling;
 
 public:
   using BaseType::d;

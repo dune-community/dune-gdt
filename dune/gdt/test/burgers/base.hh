@@ -135,7 +135,7 @@ protected:
     this->num_additional_refinements_for_reference_ = 2;
   }
 
-  virtual void compute_reference_solution() override
+  void compute_reference_solution() override
   {
     auto& self = *this;
     auto st = self.space_type_;

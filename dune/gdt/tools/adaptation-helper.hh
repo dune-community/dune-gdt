@@ -35,7 +35,7 @@ namespace GDT {
 template <class V, class GV, size_t r = 1, size_t rC = 1, class RF = double>
 class AdaptationHelper
 {
-  using ThisType = AdaptationHelper<V, GV, r, rC, RF>;
+  using ThisType = AdaptationHelper;
 
 public:
   using DiscreteFunctionType = DiscreteFunction<V, GV, r, rC, RF>;
@@ -50,11 +50,11 @@ public:
 
   ThisType& append(SpaceType& space, DiscreteFunctionType& discrete_function)
   {
-    data_->emplace_back(space,
-                        discrete_function,
+    data_->emplace_back(XT::Common::StorageProvider<SpaceType>(space),
+                        XT::Common::StorageProvider<DiscreteFunctionType>(discrete_function),
                         PersistentContainer<G, std::pair<DynamicVector<RF>, DynamicVector<RF>>>(
                             grid_, 0, std::make_pair(DynamicVector<RF>(), DynamicVector<RF>())),
-                        discrete_function.local_discrete_function());
+                        std::move(discrete_function.local_discrete_function()));
     return *this;
   }
 
