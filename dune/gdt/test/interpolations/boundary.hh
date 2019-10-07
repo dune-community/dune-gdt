@@ -12,8 +12,8 @@
 
 #include <dune/xt/common/fvector.hh>
 #include <dune/xt/common/string.hh>
-#include <dune/xt/common/test/gtest/gtest.h>
-#include <dune/xt/common/test/common.hh>
+#include <dune/xt/test/gtest/gtest.h>
+#include <dune/xt/test/common.hh>
 #include <dune/xt/grid/boundaryinfo/normalbased.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
 #include <dune/xt/grid/structuredgridfactory.hh>

@@ -10,7 +10,7 @@
 #ifndef DUNE_GDT_TEST_STATIONARY_HEAT_EQUATION_ESV2007_HH
 #define DUNE_GDT_TEST_STATIONARY_HEAT_EQUATION_ESV2007_HH
 
-#include <dune/xt/common/test/gtest/gtest.h>
+#include <dune/xt/test/gtest/gtest.h>
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/la/container/eye-matrix.hh>
 #include <dune/xt/grid/boundaryinfo/alldirichlet.hh>

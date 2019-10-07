@@ -14,10 +14,5 @@
 enable_testing()
 
 set(DXT_TEST_TIMEOUT 1000)
-if(DUNE_XT_WITH_PYTHON_BINDINGS)
-  begin_testcases(dunegdt)
-else()
-  begin_testcases()
-endif()
 
-end_testcases()
+finalize_test_setup()

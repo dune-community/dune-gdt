@@ -16,5 +16,5 @@
 Module: dune-gdt
 Version: 18.11-dev
 Maintainer: felix.schindler@wwu.de
-Depends: dune-localfunctions dune-xt-grid (>= 18.11) dune-xt-la (>= 18.11) dune-xt-functions (>= 18.11)
+Depends: dune-localfunctions dune-xt (>= 18.11)
 Suggests: dune-fem (>= 1.3)

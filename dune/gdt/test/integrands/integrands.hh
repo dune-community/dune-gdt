@@ -15,7 +15,7 @@
 #include <dune/geometry/quadraturerules.hh>
 #include <dune/geometry/type.hh>
 
-#include <dune/xt/common/test/gtest/gtest.h>
+#include <dune/xt/test/gtest/gtest.h>
 #include <dune/xt/common/fvector.hh>
 
 #include <dune/xt/grid/gridprovider.hh>
