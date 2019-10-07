@@ -10,7 +10,7 @@
 #define DUNE_XT_COMMON_TEST_MAIN_ENABLE_TIMED_LOGGING 1
 #define DUNE_XT_COMMON_TEST_MAIN_ENABLE_INFO_LOGGING 1
 
-#include <dune/xt/common/test/main.hxx> // <- this one has to come first (includes the config.h)!
+#include <dune/xt/test/main.hxx> // <- this one has to come first (includes the config.h)!
 
 #include <dune/xt/grid/grids.hh>
 

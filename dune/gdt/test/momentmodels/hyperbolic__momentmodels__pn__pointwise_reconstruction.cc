@@ -6,7 +6,7 @@
 //   Tobias Leibner  (2016)
 
 // This one has to come first (includes the config.h)!
-#include <dune/xt/common/test/main.hxx>
+#include <dune/xt/test/main.hxx>
 
 #define USE_FULL_LINEAR_RECONSTRUCTION_OPERATOR 0
 #include <dune/gdt/test/momentmodels/hyperbolic_momentmodels_pn_base.hh>

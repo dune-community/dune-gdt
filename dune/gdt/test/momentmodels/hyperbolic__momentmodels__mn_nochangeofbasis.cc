@@ -8,7 +8,7 @@
 #define ENTROPY_FLUX_UNSPECIALIZED_USE_ADAPTIVE_CHANGE_OF_BASIS 0
 
 // This one has to come first (includes the config.h)!
-#include <dune/xt/common/test/main.hxx>
+#include <dune/xt/test/main.hxx>
 
 #include <dune/gdt/test/momentmodels/kinetictransport/testcases.hh>
 #include <dune/gdt/test/momentmodels/mn-discretization.hh>
