@@ -38,7 +38,7 @@ namespace GDT {
  * `lambda(x) * {[kappa(x) (\nabla phi(x))^T] : (\nabla psi(x))^T}`, where ':' denotes the matrix scalar product.
  */
 template <class E, size_t r = 1, class F = double>
-class DXT_DEPRECATED_MSG("Use LocalLaplaceIntegrand instead (10.08.2019)!") LocalEllipticIntegrand
+class /*DXT_DEPRECATED_MSG("Use LocalLaplaceIntegrand instead (10.08.2019)!")*/ LocalEllipticIntegrand
   : public LocalBinaryElementIntegrandInterface<E, r, 1, F, F, r, 1, F>
 {
   using BaseType = LocalBinaryElementIntegrandInterface<E, r, 1, F, F, r, 1, F>;

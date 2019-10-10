@@ -19,6 +19,7 @@
 
 #include <dune/xt/la/container/common.hh>
 #include <dune/xt/la/container/eigen.hh>
+#include <dune/xt/la/container/matrix-market.hh>
 #include <dune/xt/la/container/matrix-view.hh>
 #include <dune/xt/la/container/vector-view.hh>
 #include <dune/xt/la/solver.hh>
@@ -517,6 +518,7 @@ struct CellModelSolver
     }
 
     pfield_solver_->analyzePattern(S_pfield_.backend());
+    // XT::LA::write_matrix_market(M_pfield_, "phasefield_mass_matrix.mtx");
   } // constructor
 
   static XT::Common::FieldVector<R, d> get_lower_left(const std::string& testcase)

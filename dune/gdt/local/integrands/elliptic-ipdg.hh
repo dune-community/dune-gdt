@@ -344,7 +344,7 @@ private:
 namespace LocalEllipticIpdgIntegrands {
 
 
-enum class DXT_DEPRECATED_MSG("Use the LocalLaplaceIPDGIntegrands instead (10.08.2019)!") Method
+enum class /*DXT_DEPRECATED_MSG("Use the LocalLaplaceIPDGIntegrands instead (10.08.2019)!")*/ Method
 {
   ipdg,
   nipdg,
@@ -444,7 +444,7 @@ namespace internal {
 /**
  * \note see Epshteyn, Riviere, 2007
  */
-DXT_DEPRECATED_MSG("Use the LocalLaplaceIPDGIntegrands instead (10.08.2019)!")
+// DXT_DEPRECATED_MSG("Use the LocalLaplaceIPDGIntegrands instead (10.08.2019)!")
 static inline double default_beta(const size_t d)
 {
   return 1.0 / (d - 1.0);
@@ -454,7 +454,7 @@ static inline double default_beta(const size_t d)
 /**
  * \note see Epshteyn, Riviere, 2007
  */
-DXT_DEPRECATED_MSG("Use the LocalLaplaceIPDGIntegrands instead (10.08.2019)!")
+// DXT_DEPRECATED_MSG("Use the LocalLaplaceIPDGIntegrands instead (10.08.2019)!")
 static inline double inner_sigma(const size_t pol_order)
 {
   double sigma = 1.0;
@@ -482,7 +482,7 @@ static inline double inner_sigma(const size_t pol_order)
 /**
  * \note see Epshteyn, Riviere, 2007
  */
-DXT_DEPRECATED_MSG("Use the LocalLaplaceIPDGIntegrands instead (10.08.2019)!")
+// DXT_DEPRECATED_MSG("Use the LocalLaplaceIPDGIntegrands instead (10.08.2019)!")
 static inline double boundary_sigma(const size_t pol_order)
 {
   double sigma = 1.0;
@@ -514,9 +514,9 @@ static inline double boundary_sigma(const size_t pol_order)
  * \sa [Epshteyn, Riviere, 2007] for the meaning of beta
  */
 template <class I, class F = double, Method method = default_method>
-class DXT_DEPRECATED_MSG(
-    "Use LocalLaplaceIPDGIntegrands::InnerCoupling + LocalIPDGIntegrands::InnerPenalty} instead (10.08.2019)!") Inner
-  : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
+// class DXT_DEPRECATED_MSG(
+//    "Use LocalLaplaceIPDGIntegrands::InnerCoupling + LocalIPDGIntegrands::InnerPenalty} instead (10.08.2019)!")
+class Inner : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
 {
   using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>;
   using ThisType = Inner;
@@ -1007,8 +1007,8 @@ private:
  * \sa [Epshteyn, Riviere, 2007] for the meaning of beta
  */
 template <class I, class F = double, Method method = default_method>
-class DXT_DEPRECATED_MSG(
-    "Use LocalLaplaceIPDGIntegrands::DirichletCoupling + LocalIPDGIntegrands::boundaryPenalty instead (10.08.2019)!")
+class /*DXT_DEPRECATED_MSG(
+    "Use LocalLaplaceIPDGIntegrands::DirichletCoupling + LocalIPDGIntegrands::boundaryPenalty instead (10.08.2019)!")*/
     DirichletBoundaryLhs : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
 {
   using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>;
@@ -1449,7 +1449,7 @@ public:
  * \sa [Epshteyn, Riviere, 2007] for the meaning of beta
  */
 template <class I, class F = double, Method method = default_method>
-class DXT_DEPRECATED_MSG("Use LocalIPDGIntegrands::InnerPenalty instead (05.08.2019)!") InnerOnlyPenalty
+class /*DXT_DEPRECATED_MSG("Use LocalIPDGIntegrands::InnerPenalty instead (05.08.2019)!")*/ InnerOnlyPenalty
   : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
 {
   using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>;
@@ -1901,7 +1901,7 @@ private:
  * \sa [Epshteyn, Riviere, 2007] for the meaning of beta
  */
 template <class I, class F = double, Method method = default_method>
-class DXT_DEPRECATED_MSG("Use LocalIPDGIntegrands::BoundaryPenalty instead (05.08.2019)!")
+class /*DXT_DEPRECATED_MSG("Use LocalIPDGIntegrands::BoundaryPenalty instead (05.08.2019)!")*/
     DirichletBoundaryLhsOnlyPenalty : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
 {
   using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>;
