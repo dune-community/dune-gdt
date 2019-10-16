@@ -34,7 +34,7 @@ class ConstLocalDiscreteFunction
   static_assert(XT::LA::is_vector<Vector>::value, "");
   static_assert(range_dim_cols == 1, "The matrix-valued case requires updates to evaluate/jacobian/derivative!");
 
-  using ThisType = ConstLocalDiscreteFunction<Vector, GridView, range_dim, range_dim_cols, RangeField>;
+  using ThisType = ConstLocalDiscreteFunction;
   using BaseType = XT::Functions::
       ElementFunctionInterface<XT::Grid::extract_entity_t<GridView>, range_dim, range_dim_cols, RangeField>;
 
@@ -63,19 +63,19 @@ public:
 
   ConstLocalDiscreteFunction(const SpaceType& spc, const ConstDofVectorType& dof_vector)
     : BaseType()
-    , space_(spc)
+    , space_(spc.copy())
     , dof_vector_(dof_vector.localize())
-    , basis_(space_.basis().localize())
-    , basis_values_(space_.mapper().max_local_size())
-    , dynamic_basis_values_(space_.mapper().max_local_size())
-    , basis_derivatives_(space_.mapper().max_local_size())
-    , dynamic_basis_derivatives_(space_.mapper().max_local_size())
+    , basis_(space_->basis().localize())
+    , basis_values_(space_->mapper().max_local_size())
+    , dynamic_basis_values_(space_->mapper().max_local_size())
+    , basis_derivatives_(space_->mapper().max_local_size())
+    , dynamic_basis_derivatives_(space_->mapper().max_local_size())
   {}
 
   virtual ~ConstLocalDiscreteFunction() = default;
 
 protected:
-  virtual void post_bind(const ElementType& ent) override
+  void post_bind(const ElementType& ent) override
   {
     basis_->bind(ent);
     dof_vector_.bind(ent);
@@ -90,7 +90,7 @@ public:
 
   const SpaceType& space() const
   {
-    return space_;
+    return *space_;
   }
 
   const LocalBasisType& basis() const
@@ -119,7 +119,7 @@ public:
   {
     DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
     RangeReturnType result(0);
-    if (space_.type() == GDT::SpaceType::finite_volume) {
+    if (space_->type() == GDT::SpaceType::finite_volume) {
       for (size_t ii = 0; ii < r; ++ii)
         result[ii] = dof_vector_[ii];
     } else {
@@ -135,7 +135,7 @@ public:
   {
     DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
     DerivativeRangeReturnType result(0);
-    if (space_.type() == GDT::SpaceType::finite_volume) {
+    if (space_->type() == GDT::SpaceType::finite_volume) {
       return result;
     } else {
       basis_->jacobians(point_in_reference_element, basis_derivatives_, param);
@@ -150,7 +150,7 @@ public:
                                        const XT::Common::Parameter& /*param*/ = {}) const override final
   {
     DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
-    DUNE_THROW_IF(space_.type() != GDT::SpaceType::finite_volume,
+    DUNE_THROW_IF(space_->type() != GDT::SpaceType::finite_volume,
                   Exceptions::discrete_function_error,
                   "arbitrary derivatives are not supported by the local finite elements!\n\n"
                       << "alpha = " << alpha << "\n"
@@ -183,7 +183,7 @@ public:
     DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
     RangeSelector::ensure_size(result);
     result *= 0;
-    if (space_.type() == GDT::SpaceType::finite_volume) {
+    if (space_->type() == GDT::SpaceType::finite_volume) {
       for (size_t ii = 0; ii < r; ++ii)
         result[ii] = dof_vector_[ii];
     } else {
@@ -200,7 +200,7 @@ public:
     DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
     DerivativeRangeSelector::ensure_size(result);
     result *= 0;
-    if (space_.type() == GDT::SpaceType::finite_volume) {
+    if (space_->type() == GDT::SpaceType::finite_volume) {
       return;
     } else {
       basis_->jacobians(point_in_reference_element, dynamic_basis_derivatives_, param);
@@ -215,7 +215,7 @@ public:
                   const XT::Common::Parameter& /*param*/ = {}) const override final
   {
     DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
-    DUNE_THROW_IF(space_.type() != GDT::SpaceType::finite_volume,
+    DUNE_THROW_IF(space_->type() != GDT::SpaceType::finite_volume,
                   Exceptions::discrete_function_error,
                   "arbitrary derivatives are not supported by the local finite elements!\n\n"
                       << "alpha = " << alpha << "\n"
@@ -248,7 +248,7 @@ public:
   {
     DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
     this->assert_correct_dims(row, col, "evaluate");
-    if (space_.type() == GDT::SpaceType::finite_volume) {
+    if (space_->type() == GDT::SpaceType::finite_volume) {
       return dof_vector_[row];
     } else {
       R result(0);
@@ -266,7 +266,7 @@ public:
   {
     DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
     this->assert_correct_dims(row, col, "jacobian");
-    if (space_.type() == GDT::SpaceType::finite_volume) {
+    if (space_->type() == GDT::SpaceType::finite_volume) {
       return 0;
     } else {
       SingleDerivativeRangeReturnType result(0);
@@ -280,7 +280,7 @@ public:
   /// \}
 
 private:
-  const SpaceType& space_;
+  std::unique_ptr<const SpaceType> space_;
   ConstLocalDofVectorType dof_vector_;
   std::unique_ptr<LocalBasisType> basis_;
   mutable std::vector<RangeType> basis_values_;
@@ -293,7 +293,7 @@ private:
 template <class V, class GV, size_t r = 1, size_t rC = 1, class R = double>
 class LocalDiscreteFunction : public ConstLocalDiscreteFunction<V, GV, r, rC, R>
 {
-  using ThisType = LocalDiscreteFunction<V, GV, r, rC, R>;
+  using ThisType = LocalDiscreteFunction;
   using BaseType = ConstLocalDiscreteFunction<V, GV, r, rC, R>;
 
 public:

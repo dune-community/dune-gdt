@@ -68,8 +68,8 @@ protected:
 
 
 /**
- * Given an inducing function f, computes `f(x) * phi(x) * div(psi(x))` for all combinations of phi and psi in the
- * bases.
+ * Given an inducing function f, computes `f(x) * phi(x) * div(psi(x))` for all combinations of phi in the ansatz basis
+ * and psi in the test basis.
  *
  * \note Note that f can also be given as a scalar value or omitted.
  *
@@ -139,7 +139,7 @@ public:
             const LocalAnsatzBasisType& ansatz_basis,
             const XT::Common::Parameter& param = {}) const override final
   {
-    return std::max(local_function_->order(param) + test_basis.order(param) + ansatz_basis.order(param) - 1, 0);
+    return local_function_->order(param) + test_basis.order(param) + ansatz_basis.order(param);
   }
 
   using BaseType::evaluate;
@@ -169,7 +169,8 @@ private:
 
 
 /**
- * Given an inducing function f, computes `f(x) * div phi(x) * psi(x)` for all combinations of phi and psi in the bases.
+ * Given an inducing function f, computes `f(x) * div(phi(x)) * psi(x)` for all combinations of phi in the ansatz basis
+ * and psi in the test basis.
  *
  * \sa LocalElementAnsatzValueTestDivProductIntegrand
  */
@@ -234,7 +235,7 @@ public:
             const LocalAnsatzBasisType& ansatz_basis,
             const XT::Common::Parameter& param = {}) const override final
   {
-    return std::max(local_function_->order(param) + test_basis.order(param) + ansatz_basis.order(param) - 1 + 10, 0);
+    return local_function_->order(param) + test_basis.order(param) + ansatz_basis.order(param);
   }
 
   using BaseType::evaluate;
@@ -245,14 +246,15 @@ public:
                 DynamicMatrix<F>& result,
                 const XT::Common::Parameter& param = {}) const override final
   {
-    DivBaseType::evaluate(test_basis,
-                          ansatz_basis,
+    DivBaseType::evaluate(ansatz_basis,
+                          test_basis,
                           point_in_reference_element,
                           result,
                           param,
                           *local_function_,
                           ansatz_basis_jacobians_,
                           test_basis_values_);
+    result = XT::Common::transposed(result);
   } // ... evaluate(...)
 
 private:

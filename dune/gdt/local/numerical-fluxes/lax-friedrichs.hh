@@ -19,31 +19,35 @@ namespace Dune {
 namespace GDT {
 
 
-template <size_t d, size_t m = 1, class R = double>
-class NumericalLaxFriedrichsFlux : public internal::ThisNumericalFluxIsNotAvailableForTheseDimensions<d, m, R>
+template <class I, size_t d, size_t m, class R = double>
+class NumericalLaxFriedrichsFlux : public NumericalFluxInterface<I, d, m, R>
 {
-public:
-  template <class... Args>
-  explicit NumericalLaxFriedrichsFlux(Args&&... /*args*/)
-    : internal::ThisNumericalFluxIsNotAvailableForTheseDimensions<d, m, R>()
-  {}
-};
-
-template <size_t d, class R>
-class NumericalLaxFriedrichsFlux<d, 1, R> : public NumericalFluxInterface<d, 1, R>
-{
-  static const constexpr size_t m = 1;
-  using ThisType = NumericalLaxFriedrichsFlux<d, m, R>;
-  using BaseType = NumericalFluxInterface<d, m, R>;
+  using ThisType = NumericalLaxFriedrichsFlux;
+  using BaseType = NumericalFluxInterface<I, d, m, R>;
 
 public:
   using typename BaseType::FluxType;
+  using typename BaseType::LocalIntersectionCoords;
   using typename BaseType::PhysicalDomainType;
-  using typename BaseType::StateRangeType;
+  using typename BaseType::StateType;
+  using typename BaseType::XIndependentFluxType;
+  using FluxJacobianType = XT::Common::FieldVector<XT::Common::FieldMatrix<R, m, m>, d>;
 
-  NumericalLaxFriedrichsFlux(const FluxType& flx)
+  NumericalLaxFriedrichsFlux(const FluxType& flx, const double lambda = 0.)
     : BaseType(flx)
-  {}
+    , lambda_(lambda)
+  {
+    if (XT::Common::is_zero(lambda_) && m != 1)
+      DUNE_THROW(Dune::NotImplemented, "Not yet implemented for m > 1 if lambda is not provided!");
+  }
+
+  NumericalLaxFriedrichsFlux(const XIndependentFluxType& func, const double lambda = 0.)
+    : BaseType(func)
+    , lambda_(lambda)
+  {
+    if (XT::Common::is_zero(lambda_) && m != 1)
+      DUNE_THROW(Dune::NotImplemented, "Not yet implemented for m > 1 if lambda is not provided!");
+  }
 
   NumericalLaxFriedrichsFlux(const ThisType& other) = default;
 
@@ -54,23 +58,55 @@ public:
 
   using BaseType::apply;
 
-  StateRangeType apply(const StateRangeType& u,
-                       const StateRangeType& v,
-                       const PhysicalDomainType& n,
-                       const XT::Common::Parameter& param = {}) const override final
+  StateType apply(const LocalIntersectionCoords& x,
+                  const StateType& u,
+                  const StateType& v,
+                  const PhysicalDomainType& n,
+                  const XT::Common::Parameter& param = {}) const override final
   {
-    const auto lambda =
-        1. / std::max(this->flux().jacobian(u, param).infinity_norm(), this->flux().jacobian(v, param).infinity_norm());
-    return 0.5 * ((this->flux().evaluate(u, param) + this->flux().evaluate(v, param)) * n) + 0.5 * ((u - v) / lambda);
+    // prepare
+    this->compute_entity_coords(x);
+    // evaluate
+    R lambda = lambda_;
+    if (XT::Common::is_zero(lambda)) {
+      const auto df_u = local_flux_inside_->jacobian(x_in_inside_coords_, u, param);
+      const auto df_v = local_flux_outside_->jacobian(x_in_outside_coords_, v, param);
+      for (size_t dd = 0; dd < d; ++dd) {
+        lambda = std::max(lambda, df_u[dd].infinity_norm());
+        lambda = std::max(lambda, df_v[dd].infinity_norm());
+      }
+      lambda = 1. / lambda;
+    }
+    const auto f_u = local_flux_inside_->evaluate(x_in_inside_coords_, u, param);
+    const auto f_v = local_flux_outside_->evaluate(x_in_outside_coords_, v, param);
+    StateType ret(0.);
+    for (size_t dd = 0; dd < d; ++dd)
+      ret += (f_u[dd] + f_v[dd]) * (n[dd] * 0.5);
+    ret += (u - v) * (0.5 / lambda);
+    return ret;
   }
+
+private:
+  using BaseType::local_flux_inside_;
+  using BaseType::local_flux_outside_;
+  using BaseType::x_in_inside_coords_;
+  using BaseType::x_in_outside_coords_;
+  const double lambda_;
 }; // class NumericalLaxFriedrichsFlux
 
 
-template <size_t d, size_t m, class R>
-NumericalLaxFriedrichsFlux<d, m, R>
+template <class I, size_t d, size_t m, class R>
+NumericalLaxFriedrichsFlux<I, d, m, R>
+make_numerical_lax_friedrichs_flux(const XT::Functions::FluxFunctionInterface<I, m, d, m, R>& flux)
+{
+  return NumericalLaxFriedrichsFlux<I, d, m, R>(flux);
+}
+
+template <class I, size_t d, size_t m, class R>
+NumericalLaxFriedrichsFlux<I, d, m, R>
 make_numerical_lax_friedrichs_flux(const XT::Functions::FunctionInterface<m, d, m, R>& flux)
 {
-  return NumericalLaxFriedrichsFlux<d, m, R>(flux);
+  return NumericalLaxFriedrichsFlux<I, d, m, R>(flux);
 }
 
 

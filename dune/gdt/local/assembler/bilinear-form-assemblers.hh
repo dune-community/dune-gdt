@@ -36,7 +36,7 @@ class LocalElementBilinearFormAssembler : public XT::Grid::ElementFunctor<GridVi
   static_assert(XT::LA::is_matrix<Matrix>::value, "");
   static_assert(XT::Grid::is_view<GridView>::value, "");
 
-  using ThisType = LocalElementBilinearFormAssembler<Matrix, GridView, t_r, t_rC, TR, TGV, AGV, a_r, a_rC, AR>;
+  using ThisType = LocalElementBilinearFormAssembler;
   using BaseType = XT::Grid::ElementFunctor<GridView>;
 
 public:
@@ -53,41 +53,41 @@ public:
                                     MatrixType& global_matrix,
                                     const XT::Common::Parameter& param = {})
     : BaseType()
-    , test_space_(test_space)
-    , ansatz_space_(ansatz_space)
+    , test_space_(test_space.copy())
+    , ansatz_space_(ansatz_space.copy())
     , local_bilinear_form_(local_two_form.copy())
     , global_matrix_(global_matrix)
     , param_(param)
     , scaling_(param_.has_key("matrixoperator.scaling") ? param_.get("matrixoperator.scaling").at(0) : 1.)
-    , local_matrix_(test_space_.mapper().max_local_size(), ansatz_space_.mapper().max_local_size())
-    , global_test_indices_(test_space_.mapper().max_local_size())
-    , global_ansatz_indices_(ansatz_space_.mapper().max_local_size())
-    , test_basis_(test_space_.basis().localize())
-    , ansatz_basis_(ansatz_space_.basis().localize())
+    , local_matrix_(test_space_->mapper().max_local_size(), ansatz_space_->mapper().max_local_size())
+    , global_test_indices_(test_space_->mapper().max_local_size())
+    , global_ansatz_indices_(ansatz_space_->mapper().max_local_size())
+    , test_basis_(test_space_->basis().localize())
+    , ansatz_basis_(ansatz_space_->basis().localize())
   {
-    DUNE_THROW_IF(global_matrix_.rows() != test_space_.mapper().size(),
+    DUNE_THROW_IF(global_matrix_.rows() != test_space_->mapper().size(),
                   XT::Common::Exceptions::shapes_do_not_match,
                   "global_matrix_.rows() = " << global_matrix_.rows() << "\n  "
-                                             << "test_space_.mapper().size()" << test_space_.mapper().size());
-    DUNE_THROW_IF(global_matrix_.cols() != ansatz_space_.mapper().size(),
+                                             << "test_space_->mapper().size()" << test_space_->mapper().size());
+    DUNE_THROW_IF(global_matrix_.cols() != ansatz_space_->mapper().size(),
                   XT::Common::Exceptions::shapes_do_not_match,
                   "global_matrix_.cols() = " << global_matrix_.cols() << "\n  "
-                                             << "ansatz_space_.mapper().size()" << ansatz_space_.mapper().size());
+                                             << "ansatz_space_->mapper().size()" << ansatz_space_->mapper().size());
   }
 
   LocalElementBilinearFormAssembler(const ThisType& other)
     : BaseType()
-    , test_space_(other.test_space_)
-    , ansatz_space_(other.ansatz_space_)
+    , test_space_(other.test_space_->copy())
+    , ansatz_space_(other.ansatz_space_->copy())
     , local_bilinear_form_(other.local_bilinear_form_->copy())
     , global_matrix_(other.global_matrix_)
     , param_(other.param_)
     , scaling_(other.scaling_)
-    , local_matrix_(test_space_.mapper().max_local_size(), ansatz_space_.mapper().max_local_size())
-    , global_test_indices_(test_space_.mapper().max_local_size())
-    , global_ansatz_indices_(ansatz_space_.mapper().max_local_size())
-    , test_basis_(test_space_.basis().localize())
-    , ansatz_basis_(ansatz_space_.basis().localize())
+    , local_matrix_(test_space_->mapper().max_local_size(), ansatz_space_->mapper().max_local_size())
+    , global_test_indices_(test_space_->mapper().max_local_size())
+    , global_ansatz_indices_(ansatz_space_->mapper().max_local_size())
+    , test_basis_(test_space_->basis().localize())
+    , ansatz_basis_(ansatz_space_->basis().localize())
   {}
 
   LocalElementBilinearFormAssembler(ThisType&& source) = default;
@@ -104,8 +104,8 @@ public:
     ansatz_basis_->bind(element);
     local_bilinear_form_->apply2(*test_basis_, *ansatz_basis_, local_matrix_, param_);
     // copy local matrix to global matrix
-    test_space_.mapper().global_indices(element, global_test_indices_);
-    ansatz_space_.mapper().global_indices(element, global_ansatz_indices_);
+    test_space_->mapper().global_indices(element, global_test_indices_);
+    ansatz_space_->mapper().global_indices(element, global_ansatz_indices_);
     for (size_t ii = 0; ii < test_basis_->size(param_); ++ii)
       for (size_t jj = 0; jj < ansatz_basis_->size(param_); ++jj)
         global_matrix_.add_to_entry(
@@ -113,8 +113,8 @@ public:
   } // ... apply_local(...)
 
 private:
-  const TestSpaceType& test_space_;
-  const AnsatzSpaceType& ansatz_space_;
+  const std::unique_ptr<TestSpaceType> test_space_;
+  const std::unique_ptr<AnsatzSpaceType> ansatz_space_;
   const std::unique_ptr<LocalBilinearFormType> local_bilinear_form_;
   MatrixType& global_matrix_;
   XT::Common::Parameter param_;
@@ -142,7 +142,7 @@ class LocalIntersectionBilinearFormAssembler : public XT::Grid::IntersectionFunc
   static_assert(XT::LA::is_matrix<Matrix>::value, "");
   static_assert(XT::Grid::is_view<GridView>::value, "");
 
-  using ThisType = LocalIntersectionBilinearFormAssembler<Matrix, GridView, t_r, t_rC, TR, TGV, AGV, a_r, a_rC, AR>;
+  using ThisType = LocalIntersectionBilinearFormAssembler;
   using BaseType = XT::Grid::IntersectionFunctor<GridView>;
 
 public:
@@ -161,55 +161,55 @@ public:
                                          MatrixType& global_matrix,
                                          const XT::Common::Parameter& param = {})
     : BaseType()
-    , test_space_(test_space)
-    , ansatz_space_(ansatz_space)
+    , test_space_(test_space.copy())
+    , ansatz_space_(ansatz_space.copy())
     , local_bilinear_form_(local_two_form.copy())
     , global_matrix_(global_matrix)
     , param_(param)
     , scaling_(param_.has_key("matrixoperator.scaling") ? param_.get("matrixoperator.scaling").at(0) : 1.)
-    , local_matrix_in_in_(test_space_.mapper().max_local_size(), ansatz_space_.mapper().max_local_size())
-    , local_matrix_in_out_(test_space_.mapper().max_local_size(), ansatz_space_.mapper().max_local_size())
-    , local_matrix_out_in_(test_space_.mapper().max_local_size(), ansatz_space_.mapper().max_local_size())
-    , local_matrix_out_out_(test_space_.mapper().max_local_size(), ansatz_space_.mapper().max_local_size())
-    , global_test_indices_in_(test_space_.mapper().max_local_size())
-    , global_test_indices_out_(test_space_.mapper().max_local_size())
-    , global_ansatz_indices_in_(ansatz_space_.mapper().max_local_size())
-    , global_ansatz_indices_out_(ansatz_space_.mapper().max_local_size())
-    , test_basis_inside_(test_space_.basis().localize())
-    , test_basis_outside_(test_space_.basis().localize())
-    , ansatz_basis_inside_(ansatz_space_.basis().localize())
-    , ansatz_basis_outside_(ansatz_space_.basis().localize())
+    , local_matrix_in_in_(test_space_->mapper().max_local_size(), ansatz_space_->mapper().max_local_size())
+    , local_matrix_in_out_(test_space_->mapper().max_local_size(), ansatz_space_->mapper().max_local_size())
+    , local_matrix_out_in_(test_space_->mapper().max_local_size(), ansatz_space_->mapper().max_local_size())
+    , local_matrix_out_out_(test_space_->mapper().max_local_size(), ansatz_space_->mapper().max_local_size())
+    , global_test_indices_in_(test_space_->mapper().max_local_size())
+    , global_test_indices_out_(test_space_->mapper().max_local_size())
+    , global_ansatz_indices_in_(ansatz_space_->mapper().max_local_size())
+    , global_ansatz_indices_out_(ansatz_space_->mapper().max_local_size())
+    , test_basis_inside_(test_space_->basis().localize())
+    , test_basis_outside_(test_space_->basis().localize())
+    , ansatz_basis_inside_(ansatz_space_->basis().localize())
+    , ansatz_basis_outside_(ansatz_space_->basis().localize())
   {
-    DUNE_THROW_IF(global_matrix_.rows() != test_space_.mapper().size(),
+    DUNE_THROW_IF(global_matrix_.rows() != test_space_->mapper().size(),
                   XT::Common::Exceptions::shapes_do_not_match,
                   "global_matrix_.rows() = " << global_matrix_.rows() << "\n  "
-                                             << "test_space_.mapper().size()" << test_space_.mapper().size());
-    DUNE_THROW_IF(global_matrix_.cols() != ansatz_space_.mapper().size(),
+                                             << "test_space_->mapper().size()" << test_space_->mapper().size());
+    DUNE_THROW_IF(global_matrix_.cols() != ansatz_space_->mapper().size(),
                   XT::Common::Exceptions::shapes_do_not_match,
                   "global_matrix_.cols() = " << global_matrix_.cols() << "\n  "
-                                             << "ansatz_space_.mapper().size()" << ansatz_space_.mapper().size());
+                                             << "ansatz_space_->mapper().size()" << ansatz_space_->mapper().size());
   }
 
   LocalIntersectionBilinearFormAssembler(const ThisType& other)
     : BaseType()
-    , test_space_(other.test_space_)
-    , ansatz_space_(other.ansatz_space_)
+    , test_space_(other.test_space_->copy())
+    , ansatz_space_(other.ansatz_space_->copy())
     , local_bilinear_form_(other.local_bilinear_form_->copy())
     , global_matrix_(other.global_matrix_)
     , param_(other.param_)
     , scaling_(other.scaling_)
-    , local_matrix_in_in_(test_space_.mapper().max_local_size(), ansatz_space_.mapper().max_local_size())
-    , local_matrix_in_out_(test_space_.mapper().max_local_size(), ansatz_space_.mapper().max_local_size())
-    , local_matrix_out_in_(test_space_.mapper().max_local_size(), ansatz_space_.mapper().max_local_size())
-    , local_matrix_out_out_(test_space_.mapper().max_local_size(), ansatz_space_.mapper().max_local_size())
-    , global_test_indices_in_(test_space_.mapper().max_local_size())
-    , global_test_indices_out_(test_space_.mapper().max_local_size())
-    , global_ansatz_indices_in_(ansatz_space_.mapper().max_local_size())
-    , global_ansatz_indices_out_(ansatz_space_.mapper().max_local_size())
-    , test_basis_inside_(test_space_.basis().localize())
-    , test_basis_outside_(test_space_.basis().localize())
-    , ansatz_basis_inside_(ansatz_space_.basis().localize())
-    , ansatz_basis_outside_(ansatz_space_.basis().localize())
+    , local_matrix_in_in_(test_space_->mapper().max_local_size(), ansatz_space_->mapper().max_local_size())
+    , local_matrix_in_out_(test_space_->mapper().max_local_size(), ansatz_space_->mapper().max_local_size())
+    , local_matrix_out_in_(test_space_->mapper().max_local_size(), ansatz_space_->mapper().max_local_size())
+    , local_matrix_out_out_(test_space_->mapper().max_local_size(), ansatz_space_->mapper().max_local_size())
+    , global_test_indices_in_(test_space_->mapper().max_local_size())
+    , global_test_indices_out_(test_space_->mapper().max_local_size())
+    , global_ansatz_indices_in_(ansatz_space_->mapper().max_local_size())
+    , global_ansatz_indices_out_(ansatz_space_->mapper().max_local_size())
+    , test_basis_inside_(test_space_->basis().localize())
+    , test_basis_outside_(test_space_->basis().localize())
+    , ansatz_basis_inside_(ansatz_space_->basis().localize())
+    , ansatz_basis_outside_(ansatz_space_->basis().localize())
   {}
 
   LocalIntersectionBilinearFormAssembler(ThisType&& source) = default;
@@ -239,10 +239,10 @@ public:
                                  local_matrix_out_out_,
                                  param_);
     // copy local matrices to global matrix
-    test_space_.mapper().global_indices(inside_element, global_test_indices_in_);
-    test_space_.mapper().global_indices(outside_element, global_test_indices_out_);
-    ansatz_space_.mapper().global_indices(inside_element, global_ansatz_indices_in_);
-    ansatz_space_.mapper().global_indices(outside_element, global_ansatz_indices_out_);
+    test_space_->mapper().global_indices(inside_element, global_test_indices_in_);
+    test_space_->mapper().global_indices(outside_element, global_test_indices_out_);
+    ansatz_space_->mapper().global_indices(inside_element, global_ansatz_indices_in_);
+    ansatz_space_->mapper().global_indices(outside_element, global_ansatz_indices_out_);
     for (size_t ii = 0; ii < test_basis_inside_->size(param_); ++ii) {
       for (size_t jj = 0; jj < ansatz_basis_inside_->size(param_); ++jj)
         global_matrix_.add_to_entry(
@@ -262,8 +262,8 @@ public:
   } // ... apply_local(...)
 
 private:
-  const TestSpaceType& test_space_;
-  const AnsatzSpaceType& ansatz_space_;
+  const std::unique_ptr<TestSpaceType> test_space_;
+  const std::unique_ptr<AnsatzSpaceType> ansatz_space_;
   const std::unique_ptr<LocalBilinearFormType> local_bilinear_form_;
   MatrixType& global_matrix_;
   XT::Common::Parameter param_;

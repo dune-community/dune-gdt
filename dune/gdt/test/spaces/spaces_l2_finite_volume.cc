@@ -8,7 +8,7 @@
 //   Felix Schindler (2018)
 //   René Fritze     (2018)
 
-#include <dune/xt/common/test/main.hxx> // <- this one has to come first (includes the config.h)!
+#include <dune/xt/test/main.hxx> // <- this one has to come first (includes the config.h)!
 
 #include <algorithm>
 #include <memory>
@@ -254,14 +254,15 @@ struct FiniteVolumeSpaceOnCubicLeafView
 {
   using GridProviderType = Dune::XT::Grid::GridProvider<G>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;
+  using BaseType = FiniteVolumeSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, r>;
+  using BaseType::d;
+  using typename BaseType::D;
 
   std::shared_ptr<GridProviderType> grid_provider;
   std::shared_ptr<LeafGridViewType> leaf_view;
 
   FiniteVolumeSpaceOnCubicLeafView()
   {
-    using D = typename G::ctype;
-    static const constexpr size_t d = G::dimension;
     Dune::FieldVector<D, d> lower_left(-1.5); //  (i) negative coordinates and not the same as the reference element
     Dune::FieldVector<D, d> upper_right(-1.);
     std::array<unsigned int, d> num_elements; // (ii) at least 3 elements to have fully inner ones
@@ -345,14 +346,15 @@ struct FiniteVolumeSpaceOnPrismLeafView
 {
   using GridProviderType = Dune::XT::Grid::GridProvider<G>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;
+  using BaseType = FiniteVolumeSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, r>;
+  using BaseType::d;
+  using typename BaseType::D;
 
   std::shared_ptr<GridProviderType> grid_provider;
   std::shared_ptr<LeafGridViewType> leaf_view;
 
   FiniteVolumeSpaceOnPrismLeafView()
   {
-    using D = typename G::ctype;
-    static const constexpr size_t d = G::dimension;
     if (d == 3) {
       Dune::GridFactory<G> factory;
       for (auto&& vertex : {Dune::XT::Common::FieldVector<D, d>({-1., -1.5, -1.5}),
@@ -435,14 +437,15 @@ struct FiniteVolumeSpaceOnPyramidLeafView
 {
   using GridProviderType = Dune::XT::Grid::GridProvider<G>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;
+  using BaseType = FiniteVolumeSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, r>;
+  using BaseType::d;
+  using typename BaseType::D;
 
   std::shared_ptr<GridProviderType> grid_provider;
   std::shared_ptr<LeafGridViewType> leaf_view;
 
   FiniteVolumeSpaceOnPyramidLeafView()
   {
-    using D = typename G::ctype;
-    static const constexpr size_t d = G::dimension;
     if (d == 3) {
       Dune::GridFactory<G> factory;
       for (auto&& vertex : {Dune::XT::Common::FieldVector<D, d>({0, 0, 0}),
@@ -524,14 +527,15 @@ struct FiniteVolumeSpaceOnMixedLeafView
 {
   using GridProviderType = Dune::XT::Grid::GridProvider<G>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;
+  using BaseType = FiniteVolumeSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, r>;
+  using BaseType::d;
+  using typename BaseType::D;
 
   std::shared_ptr<GridProviderType> grid_provider;
   std::shared_ptr<LeafGridViewType> leaf_view;
 
   FiniteVolumeSpaceOnMixedLeafView()
   {
-    using D = typename G::ctype;
-    static const constexpr size_t d = G::dimension;
     switch (d) {
       case 1: {
         // cannot use ASSERT_... in a ctor

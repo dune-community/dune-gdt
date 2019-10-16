@@ -9,7 +9,7 @@
 //   René Fritze     (2018)
 //   Tobias Leibner  (2018)
 
-#include <dune/xt/common/test/main.hxx> // <- this one has to come first (includes the config.h)!
+#include <dune/xt/test/main.hxx> // <- this one has to come first (includes the config.h)!
 
 #include <algorithm>
 #include <memory>
@@ -398,14 +398,15 @@ struct RtSpaceOnCubicLeafView : public RtSpace<typename Dune::XT::Grid::GridProv
 {
   using GridProviderType = Dune::XT::Grid::GridProvider<G>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;
+  using BaseType = RtSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, p>;
+  using BaseType::d;
+  using typename BaseType::D;
 
   std::shared_ptr<GridProviderType> grid_provider;
   std::shared_ptr<LeafGridViewType> leaf_view;
 
   RtSpaceOnCubicLeafView()
   {
-    using D = typename G::ctype;
-    static const constexpr size_t d = G::dimension;
     Dune::FieldVector<D, d> lower_left(-1.5); //  (i) negative coordinates and not the same as the reference element
     Dune::FieldVector<D, d> upper_right(-1.);
     std::array<unsigned int, d> num_elements; // (ii) at least 3 elements to have fully inner ones
@@ -495,14 +496,15 @@ struct RtSpaceOnMixedLeafView : public RtSpace<typename Dune::XT::Grid::GridProv
 {
   using GridProviderType = Dune::XT::Grid::GridProvider<G>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;
+  using BaseType = RtSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, p>;
+  using BaseType::d;
+  using typename BaseType::D;
 
   std::shared_ptr<GridProviderType> grid_provider;
   std::shared_ptr<LeafGridViewType> leaf_view;
 
   RtSpaceOnMixedLeafView()
   {
-    using D = typename G::ctype;
-    static const constexpr size_t d = G::dimension;
     switch (d) {
       case 1: {
         // cannot use ASSERT_... in a ctor

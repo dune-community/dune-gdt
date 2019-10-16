@@ -70,7 +70,7 @@ struct ContinuousLagrangeSpaceTest
     std::set<size_t> global_DoF_indices;
     for (const auto& entry : global_lagrange_point_to_global_indices_map) {
       const auto global_DoF_indices_per_point = entry.second;
-      EXPECT_EQ(global_DoF_indices_per_point.size(), 1);
+      EXPECT_EQ(1, global_DoF_indices_per_point.size());
       global_DoF_indices.insert(*(global_DoF_indices_per_point.begin()));
     }
     EXPECT_EQ(global_lagrange_point_to_global_indices_map.size(), global_DoF_indices.size());

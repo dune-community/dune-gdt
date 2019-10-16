@@ -48,7 +48,7 @@ class LocalElementBilinearFormAccumulator
 {
   static_assert(XT::Grid::is_view<GV>::value, "");
 
-  using ThisType = LocalElementBilinearFormAccumulator<GV, s_r, s_rC, SF, R, r_r, r_rC, RF>;
+  using ThisType = LocalElementBilinearFormAccumulator;
   using BaseType = XT::Grid::ElementFunctor<GV>;
   using Propagator =
       XT::Common::ThreadResultPropagator<LocalElementBilinearFormAccumulator<GV, s_r, s_rC, SF, R, r_r, r_rC, RF>, R>;
