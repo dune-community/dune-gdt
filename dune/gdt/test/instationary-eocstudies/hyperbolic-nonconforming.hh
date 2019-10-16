@@ -13,7 +13,7 @@
 #define DUNE_GDT_TEST_INSTATIONARY_EOCSTUDIES_HYPERBOLIC_NONCONFORMING_HH
 
 #include <dune/xt/common/bisect.hh>
-#include <dune/xt/common/test/common.hh>
+#include <dune/xt/test/common.hh>
 
 #include <dune/xt/grid/view/periodic.hh>
 
@@ -60,9 +60,10 @@ protected:
   using typename BaseType::R;
   using typename BaseType::S;
   using typename BaseType::V;
+  using I = XT::Grid::extract_intersection_t<GV>;
 
   using F = XT::Functions::FunctionInterface<m, d, m>;
-  using NF = NumericalFluxInterface<d, m>;
+  using NF = NumericalFluxInterface<I, d, m>;
 
 public:
   InstationaryNonconformingHyperbolicEocStudy(
@@ -89,7 +90,7 @@ protected:
 
   virtual DF make_initial_values(const S& space) = 0;
 
-  virtual std::unique_ptr<S> make_space(const GP& current_grid) override
+  std::unique_ptr<S> make_space(const GP& current_grid) override
   {
     if (space_type_ == "fv")
       return std::make_unique<FiniteVolumeSpace<GV, m>>(XT::Grid::make_periodic_grid_layer(current_grid.leaf_view()));
@@ -103,17 +104,17 @@ protected:
     }
   } // ... make_space(...)
 
-  virtual std::unique_ptr<O> make_lhs_operator(const S& space) override
+  std::unique_ptr<O> make_lhs_operator(const S& space) override
   {
     std::unique_ptr<NF> numerical_flux;
     if (numerical_flux_type_ == "upwind")
-      numerical_flux = std::make_unique<NumericalUpwindFlux<d, m>>(flux());
+      numerical_flux = std::make_unique<NumericalUpwindFlux<I, d, m>>(flux());
     else if (numerical_flux_type_ == "vijayasundaram")
-      numerical_flux = std::make_unique<NumericalVijayasundaramFlux<d, m>>(flux());
+      numerical_flux = std::make_unique<NumericalVijayasundaramFlux<I, d, m>>(flux());
     else if (numerical_flux_type_ == "lax_friedrichs")
-      numerical_flux = std::make_unique<NumericalLaxFriedrichsFlux<d, m>>(flux());
+      numerical_flux = std::make_unique<NumericalLaxFriedrichsFlux<I, d, m>>(flux());
     else if (numerical_flux_type_ == "engquist_osher")
-      numerical_flux = std::make_unique<NumericalEngquistOsherFlux<d, m>>(flux());
+      numerical_flux = std::make_unique<NumericalEngquistOsherFlux<I, d, m>>(flux());
     else {
       DUNE_THROW(XT::Common::Exceptions::wrong_input_given, "numerical_flux_type_ = " << numerical_flux_type_);
       return nullptr;

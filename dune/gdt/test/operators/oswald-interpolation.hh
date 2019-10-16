@@ -12,8 +12,8 @@
 
 #include <dune/xt/common/fvector.hh>
 #include <dune/xt/common/string.hh>
-#include <dune/xt/common/test/gtest/gtest.h>
-#include <dune/xt/common/test/common.hh>
+#include <dune/xt/test/gtest/gtest.h>
+#include <dune/xt/test/common.hh>
 
 #include <dune/xt/la/container/istl.hh>
 
@@ -33,7 +33,7 @@
 #include <dune/gdt/local/bilinear-forms/integrals.hh>
 #include <dune/gdt/local/functionals/integrals.hh>
 #include <dune/gdt/local/integrands/abs.hh>
-#include <dune/gdt/local/integrands/elliptic.hh>
+#include <dune/gdt/local/integrands/laplace.hh>
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/operators/localizable-operator.hh>
 #include <dune/gdt/operators/oswald-interpolation.hh>
@@ -253,7 +253,7 @@ struct OswaldInterpolationOperatorOnLeafViewTest : public ::testing::Test
                     auto local_difference = difference.local_function();
                     local_difference->bind(element);
                     auto local_indicator = h1_element_indicators.local_discrete_function(element);
-                    local_indicator->dofs()[0] += LocalElementIntegralBilinearForm<E>(LocalEllipticIntegrand<E>(1.))
+                    local_indicator->dofs()[0] += LocalElementIntegralBilinearForm<E>(LocalLaplaceIntegrand<E>(1.))
                                                       .apply2(*local_difference, *local_difference)[0][0];
                   },
                   []() {});
@@ -376,6 +376,8 @@ template <class G>
 struct OswaldInterpolationOperatorOnCubicLeafViewTest : public OswaldInterpolationOperatorOnLeafViewTest<G>
 {
   using BaseType = OswaldInterpolationOperatorOnLeafViewTest<G>;
+  using BaseType::d;
+  using typename BaseType::D;
   using typename BaseType::E;
   using typename BaseType::GV;
   using typename BaseType::M;
@@ -385,8 +387,6 @@ struct OswaldInterpolationOperatorOnCubicLeafViewTest : public OswaldInterpolati
 
   std::shared_ptr<XT::Grid::GridProvider<G>> make_grid() override final
   {
-    using D = typename G::ctype;
-    static const constexpr size_t d = G::dimension;
     FieldVector<D, d> lower_left(0.);
     auto upper_right = XT::Common::from_string<FieldVector<double, d>>("[3 1 1 1]");
     std::array<unsigned int, d> num_elements;

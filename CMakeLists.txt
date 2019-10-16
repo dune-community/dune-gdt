@@ -30,9 +30,9 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules" "${dune-comm
 include(DuneMacros)
 
 # dune-xt-common
-find_package(dune-xt-common REQUIRED)
+find_package(dune-xt REQUIRED)
 find_package(dune-pybindxi REQUIRED)
-list(APPEND CMAKE_MODULE_PATH "${dune-xt-common_MODULE_PATH}" "${dune-pybindxi_MODULE_PATH}")
+list(APPEND CMAKE_MODULE_PATH "${dune-xt_MODULE_PATH}" "${dune-pybindxi_MODULE_PATH}")
 include(DuneUtils)
 
 # start a dune project with information from dune.module
@@ -68,7 +68,7 @@ dune_pybindxi_install_python_package(PATH python)
 include_dependent_binary_python_dirs()
 # do not change order here
 add_subdirectory(python)
-dxt_add_make_dependent_bindings(dune-xt-common dune-xt-la dune-xt-grid dune-xt-functions dune-xt-data)
+dxt_add_make_dependent_bindings(dune-xt)
 
 # enable headercheck
 add_definitions("-DENABLE_HEADERCHECK=1")

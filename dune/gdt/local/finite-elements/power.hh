@@ -48,7 +48,7 @@ class LocalPowerFiniteElementBasis
 template <size_t power, class D, size_t d, class R, size_t r>
 class LocalPowerFiniteElementBasis<power, D, d, R, r, 1> : public LocalFiniteElementBasisInterface<D, d, R, power * r>
 {
-  using ThisType = LocalPowerFiniteElementBasis<power, D, d, R, r, 1>;
+  using ThisType = LocalPowerFiniteElementBasis;
   using BaseType = LocalFiniteElementBasisInterface<D, d, R, power * r>;
 
 public:
@@ -149,7 +149,7 @@ template <size_t power, class D, size_t d, class R, size_t r>
 class LocalPowerFiniteElementInterpolation<power, D, d, R, r, 1>
   : public LocalFiniteElementInterpolationInterface<D, d, R, power * r, 1>
 {
-  using ThisType = LocalPowerFiniteElementInterpolation<power, D, d, R, r, 1>;
+  using ThisType = LocalPowerFiniteElementInterpolation;
   using BaseType = LocalFiniteElementInterpolationInterface<D, d, R, power * r, 1>;
 
 public:
@@ -193,10 +193,17 @@ public:
     const size_t sz = this->size();
     if (dofs.size() < sz)
       dofs.resize(sz);
+    eval_cache_.clear();
     for (size_t pp = 0; pp < power; ++pp) {
       unpowered_->interpolate(
           [&](const auto& point_in_reference_element) {
-            const auto tmp = local_function(point_in_reference_element);
+            auto cache_it = eval_cache_.find(point_in_reference_element);
+            if (cache_it == eval_cache_.end())
+              cache_it =
+                  eval_cache_
+                      .insert(std::make_pair(point_in_reference_element, local_function(point_in_reference_element)))
+                      .first;
+            const RangeType& tmp = cache_it->second;
             FieldVector<R, r> ret;
             for (size_t rr = 0; rr < r; ++rr)
               ret[rr] = tmp[pp * r + rr];
@@ -213,6 +220,7 @@ public:
 private:
   const std::unique_ptr<const UnpoweredType> unpowered_;
   mutable DynamicVector<R> unpowered_dofs_;
+  mutable std::map<DomainType, RangeType, XT::Common::FieldVectorLess> eval_cache_;
 }; // class LocalPowerFiniteElementInterpolation
 
 
@@ -227,7 +235,7 @@ private:
 template <class D, size_t d>
 class LocalPowerFiniteElementCoefficients : public LocalFiniteElementCoefficientsInterface<D, d>
 {
-  using ThisType = LocalPowerFiniteElementCoefficients<D, d>;
+  using ThisType = LocalPowerFiniteElementCoefficients;
   using BaseType = LocalFiniteElementCoefficientsInterface<D, d>;
 
 public:
@@ -309,7 +317,7 @@ class LocalPowerFiniteElement
 template <class D, size_t d, class R, size_t r, size_t rC>
 class LocalPowerFiniteElement<1, D, d, R, r, rC> : public LocalFiniteElementDefault<D, d, R, r, rC>
 {
-  using ThisType = LocalPowerFiniteElement<1, D, d, R, r, rC>;
+  using ThisType = LocalPowerFiniteElement;
   using BaseType = LocalFiniteElementDefault<D, d, R, r, rC>;
 
 public:
@@ -331,7 +339,7 @@ public:
 template <size_t power, class D, size_t d, class R, size_t r>
 class LocalPowerFiniteElement<power, D, d, R, r, 1> : public LocalFiniteElementDefault<D, d, R, power * r>
 {
-  using ThisType = LocalPowerFiniteElement<power, D, d, R, r, 1>;
+  using ThisType = LocalPowerFiniteElement;
   using BaseType = LocalFiniteElementDefault<D, d, R, power * r>;
 
 public:

@@ -32,7 +32,7 @@
 #include <dune/gdt/local/bilinear-forms/integrals.hh>
 #include <dune/gdt/local/functionals/integrals.hh>
 #include <dune/gdt/local/integrands/conversion.hh>
-#include <dune/gdt/local/integrands/elliptic.hh>
+#include <dune/gdt/local/integrands/laplace.hh>
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/operators/localizable-bilinear-form.hh>
 #include <dune/gdt/operators/matrix-based.hh>
@@ -63,7 +63,6 @@ int main(int argc, char* argv[])
     XT::Common::TimedLogger().create(DXTC_CONFIG_GET("logger.info", 1), DXTC_CONFIG_GET("logger.debug", -1));
     auto logger = XT::Common::TimedLogger().get("main");
 
-    const XT::Functions::ConstantFunction<d> lambda(1);
     const XT::Functions::ConstantFunction<d, d, d> kappa(
         XT::Common::from_string<FieldMatrix<double, d, d>>("[1 0 0; 0 1 0; 0 0 1]"));
     const XT::Functions::GenericFunction<d> force(3, [](const auto& x, const auto& /*param*/) {
@@ -93,8 +92,7 @@ int main(int argc, char* argv[])
     auto space = make_continuous_lagrange_space(grid_view, /*polorder=*/1);
 
     auto lhs_op = make_matrix_operator<M>(space, Stencil::element);
-    lhs_op.append(LocalElementIntegralBilinearForm<E>(
-        LocalEllipticIntegrand<E>(lambda.as_grid_function<E>(), kappa.as_grid_function<E>())));
+    lhs_op.append(LocalElementIntegralBilinearForm<E>(LocalLaplaceIntegrand<E>(kappa.as_grid_function<E>())));
 
     auto rhs_func = make_vector_functional<V>(space);
     rhs_func.append(LocalElementIntegralFunctional<E>(
@@ -117,8 +115,7 @@ int main(int argc, char* argv[])
     const auto error = solution - exact_solution.as_grid_function<E>();
 
     auto h1_prod = make_localizable_bilinear_form(grid_view, error, error);
-    h1_prod.append(LocalElementIntegralBilinearForm<E>(
-        LocalEllipticIntegrand<E>(lambda.as_grid_function<E>(), kappa.as_grid_function<E>())));
+    h1_prod.append(LocalElementIntegralBilinearForm<E>(LocalLaplaceIntegrand<E>(kappa.as_grid_function<E>())));
 
     auto l2_prod = make_localizable_bilinear_form(grid_view, error, error);
     l2_prod.append(LocalElementIntegralBilinearForm<E>(LocalElementProductIntegrand<E>()));

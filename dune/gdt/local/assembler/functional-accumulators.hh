@@ -40,7 +40,7 @@ class LocalElementFunctionalAccumulator
 {
   static_assert(XT::Grid::is_view<GridView>::value, "");
 
-  using ThisType = LocalElementFunctionalAccumulator<GridView, r, rC, R, F>;
+  using ThisType = LocalElementFunctionalAccumulator;
   using BaseType = XT::Grid::ElementFunctor<GridView>;
   using Propagator = XT::Common::ThreadResultPropagator<LocalElementFunctionalAccumulator<GridView, r, rC, R, F>, F>;
   friend Propagator;

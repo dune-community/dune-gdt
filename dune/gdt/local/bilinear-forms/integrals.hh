@@ -36,7 +36,7 @@ template <class E,
           class AR = TR>
 class LocalElementIntegralBilinearForm : public LocalElementBilinearFormInterface<E, t_r, t_rC, TR, F, a_r, a_rC, AR>
 {
-  using ThisType = LocalElementIntegralBilinearForm<E, t_r, t_rC, TR, F, a_r, a_rC, AR>;
+  using ThisType = LocalElementIntegralBilinearForm;
   using BaseType = LocalElementBilinearFormInterface<E, t_r, t_rC, TR, F, a_r, a_rC, AR>;
 
 public:
@@ -55,7 +55,7 @@ public:
   {}
 
   LocalElementIntegralBilinearForm(typename GenericIntegrand::GenericOrderFunctionType order_function,
-                                   typename GenericIntegrand::GenericEvalauteFunctionType evaluate_function,
+                                   typename GenericIntegrand::GenericEvaluateFunctionType evaluate_function,
                                    const XT::Common::ParameterType& param_type = {},
                                    const int over_integrate = 0)
     : BaseType(param_type)
@@ -132,7 +132,7 @@ template <class I,
 class LocalIntersectionIntegralBilinearForm
   : public LocalIntersectionBilinearFormInterface<I, t_r, t_rC, TR, F, a_r, a_rC, AR>
 {
-  using ThisType = LocalIntersectionIntegralBilinearForm<I, t_r, t_rC, TR, F, a_r, a_rC, AR>;
+  using ThisType = LocalIntersectionIntegralBilinearForm;
   using BaseType = LocalIntersectionBilinearFormInterface<I, t_r, t_rC, TR, F, a_r, a_rC, AR>;
 
 public:

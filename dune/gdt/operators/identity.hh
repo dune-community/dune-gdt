@@ -31,7 +31,7 @@ namespace GDT {
 template <class M, class GV, size_t r = 1, size_t rC = 1>
 class IdentityOperator : public OperatorInterface<M, GV, r, rC>
 {
-  using ThisType = IdentityOperator<M, GV, r, rC>;
+  using ThisType = IdentityOperator;
   using BaseType = OperatorInterface<M, GV, r, rC>;
 
 public:

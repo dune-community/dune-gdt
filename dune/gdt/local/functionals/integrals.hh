@@ -26,7 +26,7 @@ namespace GDT {
 template <class E, size_t r = 1, size_t rC = 1, class R = double, class F = R>
 class LocalElementIntegralFunctional : public LocalElementFunctionalInterface<E, r, rC, R, F>
 {
-  using ThisType = LocalElementIntegralFunctional<E, r, rC, R, F>;
+  using ThisType = LocalElementIntegralFunctional;
   using BaseType = LocalElementFunctionalInterface<E, r, rC, R, F>;
 
 public:
@@ -43,11 +43,13 @@ public:
   {}
 
   LocalElementIntegralFunctional(typename GenericIntegrand::GenericOrderFunctionType order_function,
-                                 typename GenericIntegrand::GenericEvalauteFunctionType evaluate_function,
+                                 typename GenericIntegrand::GenericEvaluateFunctionType evaluate_function,
+                                 typename GenericIntegrand::GenericPostBindFunctionType post_bind_function =
+                                     [](const E&) {},
                                  const XT::Common::ParameterType& param_type = {},
                                  const int over_integrate = 0)
     : BaseType(param_type)
-    , integrand_(GenericIntegrand(order_function, evaluate_function).copy())
+    , integrand_(GenericIntegrand(order_function, evaluate_function, post_bind_function).copy())
     , over_integrate_(over_integrate)
   {}
 
@@ -104,7 +106,7 @@ private:
 template <class I, size_t r = 1, size_t rC = 1, class R = double, class F = R>
 class LocalIntersectionIntegralFunctional : public LocalIntersectionFunctionalInterface<I, r, rC, R, F>
 {
-  using ThisType = LocalIntersectionIntegralFunctional<I, r, rC, R, F>;
+  using ThisType = LocalIntersectionIntegralFunctional;
   using BaseType = LocalIntersectionFunctionalInterface<I, r, rC, R, F>;
 
 public:
@@ -122,11 +124,13 @@ public:
   {}
 
   LocalIntersectionIntegralFunctional(typename GenericIntegrand::GenericOrderFunctionType order_function,
-                                      typename GenericIntegrand::GenericEvalauteFunctionType evaluate_function,
+                                      typename GenericIntegrand::GenericEvaluateFunctionType evaluate_function,
+                                      typename GenericIntegrand::GenericPostBindFunctionType post_bind_function =
+                                          [](const I&) {},
                                       const XT::Common::ParameterType& param_type = {},
                                       const int over_integrate = 0)
     : BaseType(param_type)
-    , integrand_(GenericIntegrand(order_function, evaluate_function).copy())
+    , integrand_(GenericIntegrand(order_function, evaluate_function, post_bind_function).copy())
     , over_integrate_(over_integrate)
   {}
 

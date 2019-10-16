@@ -45,7 +45,7 @@ class OswaldInterpolationOperator : public OperatorInterface<M, SGV, dim, dim_co
   static_assert(dim == 1, "I did not think about this yet, feel free to implement!");
   static_assert(dim_cols == 1, "I did not think about this yet, feel free to implement!");
   using BaseType = OperatorInterface<M, SGV, dim, dim_cols, dim, dim_cols, RGV>;
-  using ThisType = OswaldInterpolationOperator<M, AssemblyGridView, dim, dim_cols, SGV, RGV>;
+  using ThisType = OswaldInterpolationOperator;
 
 public:
   using typename BaseType::RangeSpaceType;
