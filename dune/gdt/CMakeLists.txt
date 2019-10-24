@@ -11,6 +11,4 @@
 #   Tobias Leibner  (2017 - 2018)
 # ~~~
 
-add_subdir_tests(test)
-
 add_subdirectory(test EXCLUDE_FROM_ALL)
