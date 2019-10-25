@@ -13,7 +13,7 @@
 #define DUNE_GDT_TEST_INSTATIONARY_EOCSTUDIES_HYPERBOLIC_NONCONFORMING_HH
 
 #include <dune/xt/common/bisect.hh>
-#include <dune/xt/common/test/common.hh>
+#include <dune/xt/test/common.hh>
 
 #include <dune/xt/grid/view/periodic.hh>
 

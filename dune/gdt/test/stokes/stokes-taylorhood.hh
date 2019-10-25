@@ -10,9 +10,9 @@
 #ifndef DUNE_GDT_TEST_STOKES_STOKES_TAYLORHOOD_HH
 #define DUNE_GDT_TEST_STOKES_STOKES_TAYLORHOOD_HH
 
-#include <dune/xt/common/test/common.hh>
-#include <dune/xt/common/test/float_cmp.hh>
-#include <dune/xt/common/test/gtest/gtest.h>
+#include <dune/xt/test/common.hh>
+#include <dune/xt/test/common/float_cmp.hh>
+#include <dune/xt/test/gtest/gtest.h>
 
 #include <dune/xt/la/algorithms/cholesky.hh>
 #include <dune/xt/la/container/istl.hh>

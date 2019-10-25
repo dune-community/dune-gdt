@@ -14,7 +14,7 @@
 #include <boost/math/special_functions/legendre.hpp>
 #include <boost/math/special_functions/spherical_harmonic.hpp>
 
-#include <dune/xt/common/coordinates.hh>
+#include <dune/xt/data/coordinates.hh>
 
 #include "interface.hh"
 
@@ -89,7 +89,7 @@ public:
 
   DynamicRangeType evaluate(const DomainType& v) const override
   {
-    const auto v_spherical = XT::Common::CoordinateConverter<DomainFieldType>::to_spherical(v);
+    const auto v_spherical = XT::Data::CoordinateConverter<DomainFieldType>::to_spherical(v);
     return evaluate_in_spherical_coords(v_spherical);
   } // ... evaluate(...)
 
@@ -358,7 +358,7 @@ public:
 
   DynamicRangeType evaluate(const DomainType& v) const override
   {
-    const auto v_spherical = XT::Common::CoordinateConverter<DomainFieldType>::to_spherical(v);
+    const auto v_spherical = XT::Data::CoordinateConverter<DomainFieldType>::to_spherical(v);
     return evaluate_in_spherical_coords(v_spherical);
   } // ... evaluate(...)
 

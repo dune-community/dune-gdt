@@ -25,7 +25,7 @@
 
 #include <dune/localfunctions/lagrange/equidistantpoints.hh>
 
-#include <dune/xt/common/test/gtest/gtest.h>
+#include <dune/xt/test/gtest/gtest.h>
 #include <dune/xt/common/float_cmp.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
 #include <dune/xt/grid/grids.hh>

@@ -9,7 +9,7 @@
 //   René Fritze     (2018)
 //   Tobias Leibner  (2018)
 
-#include <dune/xt/common/test/main.hxx> // <- this one has to come first (includes the config.h)!
+#include <dune/xt/test/main.hxx> // <- this one has to come first (includes the config.h)!
 
 #include <algorithm>
 #include <memory>

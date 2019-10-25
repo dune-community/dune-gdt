@@ -7,7 +7,7 @@
 // Authors:
 //   Felix Schindler (2019)
 
-#include <dune/xt/common/test/main.hxx> // <- this one has to come first (includes the config.h)!
+#include <dune/xt/test/main.hxx> // <- this one has to come first (includes the config.h)!
 
 #include <dune/xt/grid/grids.hh>
 

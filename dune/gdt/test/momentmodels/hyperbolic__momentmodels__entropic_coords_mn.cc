@@ -6,7 +6,7 @@
 //   Tobias Leibner  (2016)
 
 // This one has to come first (includes the config.h)!
-#include <dune/xt/common/test/main.hxx>
+#include <dune/xt/test/main.hxx>
 
 #include <dune/gdt/test/momentmodels/kinetictransport/testcases.hh>
 #include <dune/gdt/test/momentmodels/entropic-coords-mn-discretization.hh>
