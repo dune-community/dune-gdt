@@ -45,13 +45,16 @@ public:
 
   explicit LocalDensityEvaluator(const SpaceType& space,
                                  const VectorType& alpha_dofs,
+                                 VectorType& range_dofs,
                                  EntropyFluxType& analytical_flux,
                                  const BoundaryDistributionType& boundary_distribution,
                                  const RangeFieldType min_acceptable_density,
                                  const XT::Common::Parameter& param)
     : space_(space)
     , alpha_(space_, alpha_dofs, "alpha")
+    , range_(space_, range_dofs, "regularized alpha")
     , local_alpha_(alpha_.local_discrete_function())
+    , local_range_(range_.local_discrete_function())
     , analytical_flux_(analytical_flux)
     , boundary_distribution_(boundary_distribution)
     , min_acceptable_density_(min_acceptable_density)
@@ -63,7 +66,9 @@ public:
     : BaseType(other)
     , space_(other.space_)
     , alpha_(space_, other.alpha_.dofs().vector(), "source")
+    , range_(space_, other.range_.dofs().vector(), "range")
     , local_alpha_(alpha_.local_discrete_function())
+    , local_range_(range_.local_discrete_function())
     , analytical_flux_(other.analytical_flux_)
     , boundary_distribution_(other.boundary_distribution_)
     , min_acceptable_density_(other.min_acceptable_density_)
@@ -79,11 +84,14 @@ public:
   void apply_local(const EntityType& entity) override final
   {
     local_alpha_->bind(entity);
+    local_range_->bind(entity);
     const auto entity_index = index_set_.index(entity);
     XT::Common::FieldVector<RangeFieldType, dimRange> alpha;
     for (size_t ii = 0; ii < dimRange; ++ii)
       alpha[ii] = local_alpha_->dofs().get_entry(ii);
     analytical_flux_.store_evaluations(entity_index, alpha);
+    for (size_t ii = 0; ii < dimRange; ++ii)
+      local_range_->dofs().set_entry(ii, alpha[ii]);
     for (auto&& intersection : Dune::intersections(space_.grid_view(), entity))
       if (intersection.boundary())
         analytical_flux_.store_boundary_evaluations(
@@ -94,7 +102,9 @@ public:
 private:
   const SpaceType& space_;
   const ConstDiscreteFunctionType alpha_;
+  DiscreteFunctionType range_;
   std::unique_ptr<typename ConstDiscreteFunctionType::ConstLocalDiscreteFunctionType> local_alpha_;
+  std::unique_ptr<typename DiscreteFunctionType::LocalDiscreteFunctionType> local_range_;
   EntropyFluxType& analytical_flux_;
   const BoundaryDistributionType& boundary_distribution_;
   const RangeFieldType min_acceptable_density_;
@@ -147,17 +157,17 @@ public:
     return space_;
   }
 
-  void
-  apply(const VectorType& alpha, VectorType& /*range*/, const XT::Common::Parameter& param = {}) const override final
+  void apply(const VectorType& alpha, VectorType& range, const XT::Common::Parameter& param = {}) const override final
   {
-    analytical_flux_.exp_evaluations().resize(space_.grid_view().size(0));
+    const auto num_entities = space_.grid_view().size(0);
+    analytical_flux_.exp_evaluations().resize(num_entities);
     if (EntropyFluxType::entropy != EntropyType::MaxwellBoltzmann) {
-      analytical_flux_.eta_ast_prime_evaluations().resize(space_.grid_view().size(0));
-      analytical_flux_.eta_ast_twoprime_evaluations().resize(space_.grid_view().size(0));
+      analytical_flux_.eta_ast_prime_evaluations().resize(num_entities);
+      analytical_flux_.eta_ast_twoprime_evaluations().resize(num_entities);
     }
-    analytical_flux_.boundary_distribution_evaluations().resize(space_.grid_view().size(0));
+    analytical_flux_.boundary_distribution_evaluations().resize(num_entities);
     LocalDensityEvaluatorType local_density_evaluator(
-        space_, alpha, analytical_flux_, boundary_distribution_, min_acceptable_density_, param);
+        space_, alpha, range, analytical_flux_, boundary_distribution_, min_acceptable_density_, param);
     auto walker = XT::Grid::Walker<typename SpaceType::GridViewType>(space_.grid_view());
     walker.append(local_density_evaluator);
     walker.walk(true);

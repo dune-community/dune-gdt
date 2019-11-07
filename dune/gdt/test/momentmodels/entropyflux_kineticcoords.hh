@@ -188,13 +188,26 @@ public:
     implementation_->apply_inverse_hessian((*eta_ast_twoprime_evaluations_)[entity_index], u, Hinv_u);
   }
 
-  void store_evaluations(const size_t entity_index, const StateType& alpha)
+  void store_evaluations(const size_t entity_index, StateType& alpha, bool check = true)
   {
     implementation_->store_exp_evaluations(exp_evaluations_[entity_index], alpha);
     if (entropy != EntropyType::MaxwellBoltzmann) {
       implementation_->store_eta_ast_prime_vals(exp_evaluations_[entity_index], eta_ast_prime_storage_[entity_index]);
       implementation_->store_eta_ast_twoprime_vals(exp_evaluations_[entity_index],
                                                    eta_ast_twoprime_storage_[entity_index]);
+    }
+    set_eta_ast_pointers();
+    // check for inf and nan and very low densities
+    if (check) {
+      const auto& u = get_u(entity_index);
+      for (auto&& entry : u)
+        if (std::isnan(entry) || std::isinf(entry))
+          DUNE_THROW(Dune::MathError, "inf or nan in u!");
+      const auto rho = basis_functions().density(u);
+      if (rho < 1e-9) {
+        alpha = basis_functions().alpha_iso(1e-8);
+        store_evaluations(entity_index, alpha, false);
+      }
     }
   }
 
@@ -257,7 +270,6 @@ public:
   {
     return boundary_distribution_evaluations_;
   }
-
 
 private:
   std::shared_ptr<ImplementationType> implementation_;

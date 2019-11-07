@@ -101,7 +101,7 @@ public:
         return [this](const DomainType& /*v*/) { return this->psi_vac_; };
       else
         return [this](const DomainType& v) {
-          const RangeFieldType val = std::exp(-1e5 * std::pow(v[0] - 1., 2));
+          const RangeFieldType val = std::exp(-1e5 * std::pow(v[0] - 1., 2)) / helper_base::denominator();
           return (val > this->psi_vac_) ? val : this->psi_vac_;
         };
     };

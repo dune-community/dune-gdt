@@ -262,7 +262,8 @@ struct SourceBeamPnTestCase
   using SpaceType = FiniteVolumeSpace<GridViewType, dimRange, 1, RangeFieldType>;
   using AdvectionSourceSpaceType =
       std::conditional_t<reconstruct, DiscontinuousLagrangeSpace<GridViewType, dimRange, RangeFieldType>, SpaceType>;
-  using VectorType = typename Dune::XT::LA::Container<RangeFieldType, Dune::XT::LA::default_backend>::VectorType;
+  static constexpr auto la_backend = Dune::XT::LA::Backends::eigen_sparse;
+  using VectorType = typename Dune::XT::LA::Container<RangeFieldType, la_backend>::VectorType;
   using DiscreteFunctionType = DiscreteFunction<VectorType, GridViewType, dimRange, 1, RangeFieldType>;
   using ProblemType = SourceBeamPn<E, MomentBasis>;
   static constexpr RangeFieldType t_end = 0.25;

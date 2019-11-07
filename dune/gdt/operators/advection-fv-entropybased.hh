@@ -92,6 +92,7 @@ public:
     , advection_op_(advection_op)
     , rhs_op_(rhs_op)
     , inverse_hessian_operator_(inverse_hessian_operator)
+    , reg_indicators_(advection_op_.source_space().grid_view().size(0), false)
   {}
 
   bool linear() const override final
@@ -119,13 +120,20 @@ public:
     u_update *= -1.;
     rhs_op_.apply(source, rhs_update, param);
     u_update += rhs_update;
-    inverse_hessian_operator_.apply_inverse_hessian(source, u_update, range, param);
+    std::fill(reg_indicators_.begin(), reg_indicators_.end(), false);
+    inverse_hessian_operator_.apply_inverse_hessian(source, u_update, reg_indicators_, range, param);
+  }
+
+  const std::vector<bool> reg_indicators() const
+  {
+    return reg_indicators_;
   }
 
   const DensityOperatorType& density_op_;
   const AdvectionOperatorType& advection_op_;
   const RhsOperatorType& rhs_op_;
   const InverseHessianOperatorType& inverse_hessian_operator_;
+  mutable std::vector<bool> reg_indicators_;
 }; // class EntropicCoordinatesOperator<...>
 
 

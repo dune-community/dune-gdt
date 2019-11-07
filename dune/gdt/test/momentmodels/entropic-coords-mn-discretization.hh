@@ -33,7 +33,7 @@
 #include <dune/gdt/test/momentmodels/entropyflux.hh>
 #include <dune/gdt/test/momentmodels/hessianinverter.hh>
 #include <dune/gdt/test/momentmodels/density_evaluations.hh>
-#include <dune/gdt/tools/timestepper/adaptive-rungekutta.hh>
+#include <dune/gdt/tools/timestepper/adaptive-rungekutta-kinetic.hh>
 #include <dune/gdt/tools/timestepper/explicit-rungekutta.hh>
 #include <dune/gdt/tools/timestepper/fractional-step.hh>
 #include <dune/gdt/tools/timestepper/matrix-exponential-kinetic-isotropic.hh>
@@ -72,8 +72,9 @@ struct HyperbolicEntropicCoordsMnDiscretization
     using RangeFieldType = typename MomentBasis::RangeFieldType;
     static constexpr size_t dimDomain = MomentBasis::dimDomain;
     static constexpr size_t dimRange = MomentBasis::dimRange;
-    using MatrixType = typename XT::LA::Container<RangeFieldType>::MatrixType;
-    using VectorType = typename XT::LA::Container<RangeFieldType>::VectorType;
+    static const auto la_backend = TestCaseType::la_backend;
+    using MatrixType = typename XT::LA::Container<RangeFieldType, la_backend>::MatrixType;
+    using VectorType = typename XT::LA::Container<RangeFieldType, la_backend>::VectorType;
     using GenericFunctionType = XT::Functions::GenericFunction<dimDomain, dimRange, 1, RangeFieldType>;
     using DomainType = FieldVector<RangeFieldType, dimDomain>;
     using RangeType = FieldVector<RangeFieldType, dimRange>;
@@ -149,7 +150,7 @@ struct HyperbolicEntropicCoordsMnDiscretization
     // ******************** choose flux and rhs operator and timestepper ******************************************
 
     using AdvectionOperatorType = AdvectionFvOperator<MatrixType, GV, dimRange>;
-    using HessianInverterType = EntropicHessianInverter<MomentBasis, SpaceType, slope>;
+    using HessianInverterType = EntropicHessianInverter<MomentBasis, SpaceType, slope, MatrixType>;
 #if 0
     using ReconstructionOperatorType = PointwiseLinearReconstructionNoCharOperator<
                                                                              GV,
@@ -169,7 +170,7 @@ struct HyperbolicEntropicCoordsMnDiscretization
     //        HessianInverterType>;
     using NonEntropicRhsOperatorType = LocalizableOperator<MatrixType, GV, dimRange>;
     //    using RhsOperatorType = EntropicCoordinatesOperator<NonEntropicRhsOperatorType, HessianInverterType>;
-    using DensityOperatorType = DensityEvaluator<MomentBasis, SpaceType, slope>;
+    using DensityOperatorType = DensityEvaluator<MomentBasis, SpaceType, slope, MatrixType>;
     using CombinedOperatorType = EntropicCoordinatesCombinedOperator<DensityOperatorType,
                                                                      NonEntropicAdvectionOperatorType,
                                                                      NonEntropicRhsOperatorType,
@@ -185,16 +186,18 @@ struct HyperbolicEntropicCoordsMnDiscretization
     //                                      TimeStepperMethods::explicit_euler>;
 
     //    using OperatorTimeStepperType =
-    //        AdaptiveRungeKuttaTimeStepper<FvOperatorType,
+    //        KineticAdaptiveRungeKuttaTimeStepper<FvOperatorType,
     //                                      DiscreteFunctionType>;
     //    using RhsTimeStepperType =
-    //        AdaptiveRungeKuttaTimeStepper<RhsOperatorType,
+    //        KineticAdaptiveRungeKuttaTimeStepper<RhsOperatorType,
     //                                      DiscreteFunctionType>;
 
     //    using TimeStepperType = FractionalTimeStepper<OperatorTimeStepperType, RhsTimeStepperType>;
 
-    using TimeStepperType =
-        AdaptiveRungeKuttaTimeStepper<CombinedOperatorType, DiscreteFunctionType, TimeStepperMethods::dormand_prince>;
+    using TimeStepperType = KineticAdaptiveRungeKuttaTimeStepper<CombinedOperatorType,
+                                                                 DiscreteFunctionType,
+                                                                 EntropyFluxType,
+                                                                 TimeStepperMethods::dormand_prince>;
 
     // *************** Calculate dx and initial dt **************************************
     Dune::XT::Grid::Dimensions<GV> dimensions(grid_view);
@@ -285,8 +288,9 @@ struct HyperbolicEntropicCoordsMnDiscretization
       auto ret = u_elem * (-sigma_t_value);
       ret += u_iso * basis_functions->density(u_elem) * sigma_s_value;
       ret += basis_integrated * Q_value;
-      for (size_t ii = 0; ii < local_range.dofs().size(); ++ii)
-        local_range.dofs()[ii] += ret[ii];
+      auto& range_dofs = local_range.dofs();
+      for (size_t ii = 0; ii < dimRange; ++ii)
+        range_dofs[ii] += ret[ii];
     };
     NonEntropicRhsOperatorType non_entropic_rhs_operator(grid_view, fv_space, fv_space);
     non_entropic_rhs_operator.append(GenericLocalElementOperator<VectorType, GV, dimRange>(rhs_func));
@@ -298,13 +302,21 @@ struct HyperbolicEntropicCoordsMnDiscretization
     //    OperatorTimeStepperType timestepper_op(fv_operator, alpha, -1.0);
     //    RhsTimeStepperType timestepper_rhs(rhs_operator, alpha, 1.0);
     //    TimeStepperType timestepper(timestepper_op, timestepper_rhs);
-    TimeStepperType timestepper(combined_operator, alpha, 1.);
+    TimeStepperType timestepper(combined_operator, *analytical_flux, alpha, 1.);
 
     auto begin_time = std::chrono::steady_clock::now();
     auto visualizer = std::make_unique<XT::Functions::GenericVisualizer<dimRange, 1, double>>(
         1, [&basis_functions, &analytical_flux](const int /*comp*/, const auto& val) {
           return basis_functions->density(analytical_flux->get_u(val));
         });
+    // auto visualizer = std::make_unique<XT::Functions::GenericVisualizer<dimRange, 1, double>>(
+    //     1, [](const int /*comp*/, const auto& val) {
+    //       double ret = 0.;
+    //       for (const auto& entry : val)
+    //         ret = std::max(std::abs(entry), ret);
+    //       return ret;
+    //     });
+
     timestepper.solve(t_end,
                       dt,
                       num_save_steps,
@@ -352,14 +364,14 @@ struct HyperbolicEntropicCoordsMnTest
   void run()
   {
     auto norms = HyperbolicEntropicCoordsMnDiscretization<TestCaseType>::run(
-                     1,
+                     100,
                      0,
                      TestCaseType::quad_order,
                      TestCaseType::quad_refinements,
                      "",
                      2,
                      TestCaseType::t_end,
-                     "test_kinetic",
+                     "test_kinetic_alpha",
                      Dune::GDT::is_full_moment_basis<typename TestCaseType::MomentBasis>::value)
                      .first;
     const double l1norm = norms[0];
