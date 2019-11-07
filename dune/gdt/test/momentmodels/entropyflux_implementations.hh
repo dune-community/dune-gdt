@@ -2341,6 +2341,7 @@ public:
     : basis_functions_(basis_functions)
     , quad_points_(basis_functions_.triangulation().faces().size())
     , quad_weights_(basis_functions_.triangulation().faces().size())
+    , v_positive_(basis_functions_.triangulation().faces().size())
     , M_(basis_functions_.triangulation().faces().size())
     , tau_(tau)
     , epsilon_gamma_(epsilon_gamma)
@@ -2373,6 +2374,9 @@ public:
     const auto& quadratures = basis_functions_.quadratures();
     assert(quadratures.size() == num_faces_);
     for (size_t jj = 0; jj < num_faces_; ++jj) {
+      const auto face_center = faces[jj]->center();
+      for (size_t dd = 0; dd < 3; ++dd)
+        v_positive_[jj][dd] = face_center[dd] > 0.;
       quad_points_[jj].resize(quadratures[jj].size());
       quad_weights_[jj].resize(quadratures[jj].size());
       for (size_t ll = 0; ll < quadratures[jj].size(); ++ll) {
@@ -2964,13 +2968,14 @@ public:
     const auto& faces = basis_functions_.triangulation().faces();
     LocalVectorType local_ret;
     for (size_t jj = 0; jj < num_faces_; ++jj) {
+      const bool positive_dir = v_positive_[jj][dd];
+      const auto& eta_ast_prime = ((n_ij[dd] > 0. && positive_dir) || (n_ij[dd] < 0. && !positive_dir))
+                                      ? eta_ast_prime_vals[0][jj]
+                                      : eta_ast_prime_vals[1][jj];
       local_ret *= 0.;
       const auto& vertices = faces[jj]->vertices();
       for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
-        const auto position = quad_points_[jj][ll][dd];
-        RangeFieldType factor =
-            position * n_ij[dd] > 0. ? eta_ast_prime_vals[0][jj][ll] : eta_ast_prime_vals[1][jj][ll];
-        factor *= quad_weights_[jj][ll] * position;
+        RangeFieldType factor = eta_ast_prime[ll] * quad_weights_[jj][ll] * quad_points_[jj][ll][dd];
         for (size_t ii = 0; ii < 3; ++ii)
           local_ret[ii] += M_[jj][ll][ii] * factor;
       } // ll (quad points)
@@ -3004,31 +3009,36 @@ public:
         (slope_type == SlopeLimiterType::minmod) ? XT::Common::minmod<RangeFieldType> : superbee<RangeFieldType>;
     auto& vals_left = reconstructed_values[0];
     auto& vals_right = reconstructed_values[1];
+    thread_local LocalVectorType face_flux(0.);
     for (size_t jj = 0; jj < num_faces_; ++jj) {
+      face_flux *= 0.;
+      const bool positive_dir = v_positive_[jj][dd];
+      auto& outside_vals = positive_dir ? vals_right : vals_left;
       const auto& vertices = faces[jj]->vertices();
+      const size_t num_quad_points = quad_weights_[jj].size();
+      const auto& non_reconstructed_values = (*ansatz_distribution_values[1])[jj];
       // reconstruct densities
       if (slope_type == SlopeLimiterType::no_slope) {
-        for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll)
-          vals_left[ll] = vals_right[ll] = (*ansatz_distribution_values[1])[jj][ll];
+        for (size_t ll = 0; ll < num_quad_points; ++ll)
+          outside_vals[ll] = non_reconstructed_values[ll];
       } else {
-        for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
-          const auto slope =
-              slope_func((*ansatz_distribution_values[1])[jj][ll] - (*ansatz_distribution_values[0])[jj][ll],
-                         (*ansatz_distribution_values[2])[jj][ll] - (*ansatz_distribution_values[1])[jj][ll]);
-          vals_left[ll] = (*ansatz_distribution_values[1])[jj][ll] - 0.5 * slope;
-          vals_right[ll] = (*ansatz_distribution_values[1])[jj][ll] + 0.5 * slope;
+        const auto sign = positive_dir ? 1. : -1.;
+        for (size_t ll = 0; ll < num_quad_points; ++ll) {
+          const auto slope = slope_func(non_reconstructed_values[ll] - (*ansatz_distribution_values[0])[jj][ll],
+                                        (*ansatz_distribution_values[2])[jj][ll] - non_reconstructed_values[ll]);
+          outside_vals[ll] = non_reconstructed_values[ll] + sign * 0.5 * slope;
         } // ll (quad points)
       }
       // calculate fluxes
       for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
-        const auto& position = quad_points_[jj][ll][dd];
-        RangeFieldType factor = position > 0. ? vals_right[ll] : vals_left[ll];
-        factor *= quad_weights_[jj][ll] * position;
-        auto& val = position > 0. ? right_flux_value : left_flux_value;
+        RangeFieldType factor = outside_vals[ll] * quad_weights_[jj][ll] * quad_points_[jj][ll][dd];
         const auto& basis_ll = M_[jj][ll];
         for (size_t ii = 0; ii < 3; ++ii)
-          val[vertices[ii]->index()] += basis_ll[ii] * factor;
+          face_flux[ii] += basis_ll[ii] * factor;
       } // ll (quad points)
+      auto& val = positive_dir ? right_flux_value : left_flux_value;
+      for (size_t ii = 0; ii < 3; ++ii)
+        val[vertices[ii]->index()] += face_flux[ii];
     } // jj
   } // void calculate_reconstructed_fluxes(...)
 
@@ -3120,6 +3130,7 @@ public:
   const MomentBasis& basis_functions_;
   QuadraturePointsType quad_points_;
   QuadratureWeightsType quad_weights_;
+  std::vector<std::bitset<3>> v_positive_;
   BasisValuesMatrixType M_;
   const RangeFieldType tau_;
   const RangeFieldType epsilon_gamma_;
