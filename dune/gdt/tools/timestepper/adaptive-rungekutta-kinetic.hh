@@ -110,7 +110,7 @@ public:
                                        DiscreteFunctionType& initial_values,
                                        const RangeFieldType r = 1.0,
                                        const double t_0 = 0.0,
-                                       const RangeFieldType tol = 1e-4,
+                                       const RangeFieldType tol = 1e-2,
                                        const RangeFieldType scale_factor_min = 0.2,
                                        const RangeFieldType scale_factor_max = 5,
                                        const MatrixType& A = ButcherArrayProviderType::A(),
@@ -201,7 +201,6 @@ public:
     auto& alpha_n = current_solution();
 
     while (Dune::XT::Common::FloatCmp::gt(mixed_error, tol_)) {
-      last_stage_of_previous_step_ = nullptr;
       bool skip_error_computation = false;
       actual_dt *= time_step_scale_factor;
       size_t first_stage_to_compute = 0;
@@ -254,6 +253,7 @@ public:
                 std::cout << "density: " << old_density << ", new_density: " << new_density << std::endl;
               }
             }
+            last_stage_of_previous_step_ = nullptr;
             DUNE_THROW(Dune::MathError, "Regularization done!");
           }
         } catch (const Dune::MathError& e) {
@@ -281,6 +281,30 @@ public:
 
       if (!skip_error_computation) {
 
+
+        // compute error vector
+        alpha_tmp_.dofs().vector() = stages_k_[0].dofs().vector() * b_diff_[0];
+        for (size_t ii = 1; ii < num_stages_; ++ii)
+          alpha_tmp_.dofs().vector() += stages_k_[ii].dofs().vector() * b_diff_[ii];
+        alpha_tmp_.dofs().vector() *= actual_dt * r_;
+
+        // calculate u at timestep n+1
+        for (size_t ii = 0; ii < num_stages_; ++ii)
+          alpha_n.dofs().vector() += stages_k_[ii].dofs().vector() * (actual_dt * r_ * b_1_[ii]);
+
+        // scale error, use absolute error if norm is less than 0.01 and relative error else
+        auto& diff_vector = alpha_tmp_.dofs().vector();
+        for (size_t ii = 0; ii < diff_vector.size(); ++ii) {
+          if (std::abs(alpha_n.dofs().vector()[ii]) > 0.01)
+            diff_vector[ii] /= std::abs(alpha_n.dofs().vector()[ii]);
+        }
+        mixed_error = diff_vector.sup_norm();
+        // scale dt to get the estimated optimal time step length, TODO: adapt formula
+        time_step_scale_factor =
+            std::min(std::max(0.9 * std::pow(tol_ / mixed_error, 1.0 / 5.0), scale_factor_min_), scale_factor_max_);
+
+
+#if 0
         alpha_tmp_.dofs().vector() = alpha_n.dofs().vector();
 
         // calculate alpha at timestep n+1
@@ -316,6 +340,7 @@ public:
         // scale dt to get the estimated optimal time step length, TODO: adapt formula
         time_step_scale_factor =
             std::min(std::max(0.9 * std::pow(tol_ / mixed_error, 1.0 / 5.0), scale_factor_min_), scale_factor_max_);
+#endif
 
         if (mixed_error > tol_) { // go back from u at timestep n+1 to timestep n
           for (size_t ii = 0; ii < num_stages_; ++ii)

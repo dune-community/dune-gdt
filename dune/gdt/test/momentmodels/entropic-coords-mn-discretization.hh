@@ -197,7 +197,7 @@ struct HyperbolicEntropicCoordsMnDiscretization
     using TimeStepperType = KineticAdaptiveRungeKuttaTimeStepper<CombinedOperatorType,
                                                                  DiscreteFunctionType,
                                                                  EntropyFluxType,
-                                                                 TimeStepperMethods::dormand_prince>;
+                                                                 TimeStepperMethods::bogacki_shampine>;
 
     // *************** Calculate dx and initial dt **************************************
     Dune::XT::Grid::Dimensions<GV> dimensions(grid_view);
