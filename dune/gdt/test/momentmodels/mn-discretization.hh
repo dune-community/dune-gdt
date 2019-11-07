@@ -65,8 +65,9 @@ struct HyperbolicMnDiscretization
     using BoundaryValueType = typename ProblemType::BoundaryValueType;
     static constexpr size_t dimDomain = MomentBasis::dimDomain;
     static constexpr size_t dimRange = MomentBasis::dimRange;
-    using MatrixType = typename XT::LA::Container<RangeFieldType>::MatrixType;
-    using VectorType = typename XT::LA::Container<RangeFieldType>::VectorType;
+    static const auto la_backend = TestCaseType::la_backend;
+    using MatrixType = typename XT::LA::Container<RangeFieldType, la_backend>::MatrixType;
+    using VectorType = typename XT::LA::Container<RangeFieldType, la_backend>::VectorType;
 
     //******************* create grid and FV space ***************************************
     auto grid_config = ProblemType::default_grid_cfg();
@@ -109,7 +110,7 @@ struct HyperbolicMnDiscretization
 
     using AdvectionOperatorType = AdvectionFvOperator<MatrixType, GV, dimRange>;
     using EigenvectorWrapperType = typename EigenvectorWrapperChooser<MomentBasis, AnalyticalFluxType>::type;
-    using EntropySolverType = EntropySolver<MomentBasis, SpaceType>;
+    using EntropySolverType = EntropySolver<MomentBasis, SpaceType, MatrixType>;
     //    using ReconstructionOperatorType =
     //        LinearReconstructionOperator<AnalyticalFluxType, BoundaryValueType, GV, MatrixType,
     //        EigenvectorWrapperType>;

@@ -100,6 +100,8 @@ public:
                                                const ReconstructionOperatorType& reconstruction_operator)
     : advection_operator_(advection_operator)
     , reconstruction_operator_(reconstruction_operator)
+    , reconstructed_values_(source_space().grid_view().indexSet().size(0))
+    , reconstructed_function_(source_space().grid_view(), reconstructed_values_)
   {}
 
   bool linear() const override final
@@ -120,19 +122,17 @@ public:
   void apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& param) const override final
   {
     // do reconstruction
-    typename ReconstructionOperatorType::ReconstructedValuesType reconstructed_values(
-        source_space().grid_view().indexSet().size(0));
-    typename ReconstructionOperatorType::ReconstructedFunctionType reconstructed_function(source_space().grid_view(),
-                                                                                          reconstructed_values);
-    reconstruction_operator_.apply(source, reconstructed_function, param);
+    reconstruction_operator_.apply(source, reconstructed_function_, param);
 
     // apply advection operator
     std::fill(range.begin(), range.end(), 0.);
-    advection_operator_.apply(reconstructed_function, range, param);
+    advection_operator_.apply(reconstructed_function_, range, param);
   }
 
   const AdvectionOperatorType& advection_operator_;
   const ReconstructionOperatorType& reconstruction_operator_;
+  typename ReconstructionOperatorType::ReconstructedValuesType reconstructed_values_;
+  mutable typename ReconstructionOperatorType::ReconstructedFunctionType reconstructed_function_;
 }; // class AdvectionWithReconstructionOperator<...>
 
 
