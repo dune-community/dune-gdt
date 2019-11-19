@@ -241,6 +241,32 @@ public:
     return exp_evaluations_;
   }
 
+  void prepare_storage(const GridViewType& grid_view)
+  {
+    const auto num_entities = grid_view.size(0);
+    exp_evaluations_.resize(num_entities);
+    if (entropy != EntropyType::MaxwellBoltzmann) {
+      eta_ast_prime_storage_.resize(num_entities);
+      eta_ast_twoprime_storage_.resize(num_entities);
+    }
+    boundary_distribution_evaluations_.resize(num_entities);
+    for (auto&& entity : Dune::elements(grid_view)) {
+      const auto entity_index = grid_view.indexSet().index(entity);
+      implementation_->resize_quad_weights_type(exp_evaluations_[entity_index]);
+      if (entropy != EntropyType::MaxwellBoltzmann) {
+        implementation_->resize_quad_weights_type(eta_ast_prime_storage_[entity_index]);
+        implementation_->resize_quad_weights_type(eta_ast_twoprime_storage_[entity_index]);
+      }
+      for (auto&& intersection : Dune::intersections(grid_view, entity)) {
+        if (intersection.boundary()) {
+          const auto intersection_index = intersection.indexInInside();
+          implementation_->resize_quad_weights_type(
+              boundary_distribution_evaluations_[entity_index][intersection_index / 2][intersection_index % 2]);
+        }
+      } // intersections
+    } // entities
+  } // void prepare_storage(...)
+
   std::vector<QuadratureWeightsType>& eta_ast_prime_evaluations()
   {
     return *eta_ast_prime_evaluations_;
