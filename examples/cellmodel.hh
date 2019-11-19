@@ -753,6 +753,9 @@ struct CellModelSolver
       u_.add_to_vtkwriter(*vtk_writer);
       p_.add_to_vtkwriter(*vtk_writer);
       for (size_t kk = 0; kk < num_cells_; ++kk) {
+        // std::cout << "phi l2_norm: " << l2_norm(phi_[kk].space().grid_view(), phi_[kk]) << std::endl;
+        // std::cout << "phinat l2_norm: " << l2_norm(phinat_[kk].space().grid_view(), phinat_[kk]) << std::endl;
+        // std::cout << "mu l2_norm: " << l2_norm(mu_[kk].space().grid_view(), mu_[kk]) << std::endl;
         P_[kk].add_to_vtkwriter(*vtk_writer);
         Pnat_[kk].add_to_vtkwriter(*vtk_writer);
         phi_[kk].add_to_vtkwriter(*vtk_writer);
