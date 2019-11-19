@@ -475,7 +475,6 @@ public:
   // stores evaluations of exp(alpha^T b(v_i)) for all quadrature points v_i
   void store_exp_evaluations(QuadratureWeightsType& exp_evaluations, const DomainType& alpha) const
   {
-    exp_evaluations.resize(quad_points_.size());
     this->calculate_scalar_products(alpha, M_, exp_evaluations);
     this->apply_exponential(exp_evaluations);
   }
@@ -498,7 +497,6 @@ public:
       QuadratureWeightsType& boundary_distribution_evaluations,
       const std::function<RangeFieldType(const FluxDomainType&)>& boundary_distribution) const
   {
-    boundary_distribution_evaluations.resize(quad_points_.size());
     for (size_t ll = 0; ll < quad_points_.size(); ++ll)
       boundary_distribution_evaluations[ll] = boundary_distribution(quad_points_[ll]);
   }
@@ -1956,12 +1954,9 @@ public:
       QuadratureWeightsType& boundary_distribution_evaluations,
       const std::function<RangeFieldType(const FluxDomainType&)>& boundary_distribution) const
   {
-    boundary_distribution_evaluations.resize(num_blocks);
-    for (size_t jj = 0; jj < num_blocks; ++jj) {
-      boundary_distribution_evaluations[jj].resize(quad_points_[jj].size());
+    for (size_t jj = 0; jj < num_blocks; ++jj)
       for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll)
         boundary_distribution_evaluations[jj][ll] = boundary_distribution(quad_points_[jj][ll]);
-    }
   }
 
 
@@ -2130,11 +2125,8 @@ public:
                                  const BasisValuesMatrixType& M,
                                  QuadratureWeightsType& scalar_products) const
   {
-    scalar_products.resize(num_blocks);
-    for (size_t jj = 0; jj < num_blocks; ++jj) {
-      scalar_products[jj].resize(quad_weights_[jj].size());
+    for (size_t jj = 0; jj < num_blocks; ++jj)
       calculate_scalar_products_block(jj, beta_in.block(jj), M[jj], scalar_products[jj]);
-    }
   }
 
   void apply_exponential(BlockQuadratureWeightsType& values) const
@@ -2390,7 +2382,6 @@ public:
       for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll)
         M_[jj][ll] = basis_functions_.evaluate_on_face(quad_points_[jj][ll], jj);
     } // jj
-
   } // constructor
 
 
@@ -2918,12 +2909,9 @@ public:
       QuadratureWeightsType& boundary_distribution_evaluations,
       const std::function<RangeFieldType(const FluxDomainType&)>& boundary_distribution) const
   {
-    boundary_distribution_evaluations.resize(num_faces_);
-    for (size_t jj = 0; jj < num_faces_; ++jj) {
-      boundary_distribution_evaluations[jj].resize(quad_points_[jj].size());
+    for (size_t jj = 0; jj < num_faces_; ++jj)
       for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll)
         boundary_distribution_evaluations[jj][ll] = boundary_distribution(quad_points_[jj][ll]);
-    }
   }
 
 
@@ -2954,7 +2942,7 @@ public:
                                                const FluxDomainType& n_ij,
                                                const size_t dd) const
   {
-    thread_local FieldVector<QuadratureWeightsType, 2> eta_ast_prime_vals;
+    thread_local std::array<QuadratureWeightsType, 2> eta_ast_prime_vals;
     eta_ast_prime_vals[0].resize(num_faces_);
     eta_ast_prime_vals[1].resize(num_faces_);
     for (size_t jj = 0; jj < num_faces_; ++jj) {
@@ -3093,14 +3081,22 @@ public:
     return work_vecs;
   }
 
+  void resize_quad_weights_type(QuadratureWeightsType& weights) const
+  {
+    weights.resize(num_faces_);
+    for (size_t jj = 0; jj < num_faces_; ++jj)
+      weights[jj].resize(quad_weights_[jj].size());
+  }
+
   bool all_positive(const QuadratureWeightsType& vals) const
   {
-    for (size_t jj = 0; jj < num_faces_; ++jj)
+    for (size_t jj = 0; jj < num_faces_; ++jj) {
       for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
         const auto val = vals[jj][ll];
         if (val < 0. || std::isinf(val) || std::isnan(val))
           return false;
-      }
+      } // ll
+    } // jj
     return true;
   }
 
@@ -3108,9 +3104,7 @@ public:
   {
     LocalVectorType local_alpha;
     const auto& faces = basis_functions_.triangulation().faces();
-    scalar_products.resize(num_faces_);
     for (size_t jj = 0; jj < num_faces_; ++jj) {
-      scalar_products[jj].resize(quad_weights_[jj].size());
       const auto& vertices = faces[jj]->vertices();
       for (size_t ii = 0; ii < 3; ++ii)
         local_alpha[ii] = alpha.get_entry(vertices[ii]->index());
@@ -4429,7 +4423,6 @@ public:
       const std::function<RangeFieldType(const FluxDomainType&)>& boundary_distribution) const
   {
     for (size_t jj = 0; jj < num_intervals; ++jj) {
-      boundary_distribution_evaluations[jj].resize(quad_points_[jj].size());
       for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll)
         boundary_distribution_evaluations[jj][ll] = boundary_distribution(quad_points_[jj][ll]);
     }

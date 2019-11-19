@@ -140,7 +140,9 @@ public:
     , space_(space)
     , boundary_distribution_(boundary_distribution)
     , min_acceptable_density_(min_acceptable_density)
-  {}
+  {
+    analytical_flux_.prepare_storage(space_.grid_view());
+  }
 
   bool linear() const override final
   {
@@ -159,13 +161,6 @@ public:
 
   void apply(const VectorType& alpha, VectorType& range, const XT::Common::Parameter& param = {}) const override final
   {
-    const auto num_entities = space_.grid_view().size(0);
-    analytical_flux_.exp_evaluations().resize(num_entities);
-    if (EntropyFluxType::entropy != EntropyType::MaxwellBoltzmann) {
-      analytical_flux_.eta_ast_prime_evaluations().resize(num_entities);
-      analytical_flux_.eta_ast_twoprime_evaluations().resize(num_entities);
-    }
-    analytical_flux_.boundary_distribution_evaluations().resize(num_entities);
     LocalDensityEvaluatorType local_density_evaluator(
         space_, alpha, range, analytical_flux_, boundary_distribution_, min_acceptable_density_, param);
     auto walker = XT::Grid::Walker<typename SpaceType::GridViewType>(space_.grid_view());

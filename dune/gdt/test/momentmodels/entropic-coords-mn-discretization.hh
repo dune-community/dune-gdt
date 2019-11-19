@@ -31,6 +31,7 @@
 #include <dune/gdt/spaces/l2/finite-volume.hh>
 #include <dune/gdt/test/momentmodels/entropyflux_kineticcoords.hh>
 #include <dune/gdt/test/momentmodels/entropyflux.hh>
+#include <dune/gdt/test/momentmodels/entropysolver.hh>
 #include <dune/gdt/test/momentmodels/hessianinverter.hh>
 #include <dune/gdt/test/momentmodels/density_evaluations.hh>
 #include <dune/gdt/tools/timestepper/adaptive-rungekutta-kinetic.hh>
@@ -128,12 +129,19 @@ struct HyperbolicEntropicCoordsMnDiscretization
 
     // ***************** project initial values to discrete function *********************
     // create a discrete function for the solution
-    DiscreteFunctionType u(fv_space, "solution");
-    DiscreteFunctionType alpha(fv_space, "solution");
+    DiscreteFunctionType u(fv_space, "u_initial");
+    DiscreteFunctionType alpha(fv_space, "alpha_initial");
     // project initial values
     default_interpolation(*initial_values_u, u, grid_view);
 
     // convert initial values to alpha
+    // using EntropySolverType = EntropySolver<MomentBasis, SpaceType, MatrixType>;
+    // EntropySolverType entropy_solver(*entropy_flux,
+    //                                  fv_space,
+    //                                  problem.psi_vac() * basis_functions->unit_ball_volume() / 10,
+    //                                  filename);
+    // entropy_solver.apply(u.dofs().vector(), alpha.dofs().vector(), {});
+
     const auto u_local_func = u.local_discrete_function();
     const auto alpha_local_func = alpha.local_discrete_function();
     XT::Common::FieldVector<RangeFieldType, dimRange> u_local;
@@ -364,8 +372,8 @@ struct HyperbolicEntropicCoordsMnTest
   void run()
   {
     auto norms = HyperbolicEntropicCoordsMnDiscretization<TestCaseType>::run(
-                     100,
-                     0,
+                     10,
+                     -1,
                      TestCaseType::quad_order,
                      TestCaseType::quad_refinements,
                      "",
