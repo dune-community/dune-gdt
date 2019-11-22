@@ -377,6 +377,17 @@ public:
     return *this;
   } // ... assemble(...)
 
+  template <class EntityRange>
+  ThisType& assemble_range(const EntityRange& entity_range)
+  {
+    if (!assembled_) {
+      // This clears all appended operators, which is ok, since we are done after assembling once!
+      this->walk_range(entity_range);
+      assembled_ = true;
+    }
+    return *this;
+  } // ... assemble(...)
+
   using OperatorBaseType::jacobian;
 
   /// \todo Store appended local bilinear forms and append them to jacobian_op?

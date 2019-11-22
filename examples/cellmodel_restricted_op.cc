@@ -11,6 +11,8 @@
 
 #include "cellmodel.hh"
 
+#include <random>
+
 int main(int argc, char* argv[])
 {
   try {
@@ -75,7 +77,7 @@ int main(int argc, char* argv[])
                                  t_end,
                                  num_elements_x,
                                  num_elements_y,
-                                 true,
+                                 false,
                                  Re,
                                  Fa,
                                  xi,
@@ -89,62 +91,50 @@ int main(int argc, char* argv[])
                                  epsilon,
                                  In,
                                  linearize);
-    auto result = model_solver.solve(dt, true, write_step, filename, subsampling);
+    CellModelSolver model_solver2(testcase,
+                                  t_end,
+                                  num_elements_x,
+                                  num_elements_y,
+                                  false,
+                                  Re,
+                                  Fa,
+                                  xi,
+                                  kappa,
+                                  c_1,
+                                  Pa,
+                                  beta,
+                                  gamma,
+                                  Be,
+                                  Ca,
+                                  epsilon,
+                                  In,
+                                  linearize);
 
-    for (const auto& vec1 : result[0])
-      std::cout << &vec1 << std::endl;
-
-#if 0
-    // save/visualize initial solution
-    model_solver.visualize(filename, 0, 0., subsampling);
-
-    // implicit Euler timestepping
-    double t = 0;
-    assert(Dune::XT::Common::FloatCmp::ge(t_end, t));
-    double next_save_time = t + write_step > t_end ? t_end : t + write_step;
-    size_t save_step_counter = 1;
-
-    VectorType stokes_vec = model_solver.stokes_vector();
-    VectorType pfield_vec = model_solver.pfield_vector();
-    VectorType ofield_vec = model_solver.ofield_vector();
-
+    const size_t max_output_dof = model_solver.pfield_vector().size();
+    const size_t num_output_dofs = 20;
+    std::vector<size_t> pfield_output_dofs(num_output_dofs);
+    std::random_device dev;
+    std::mt19937 rng(dev());
+    std::uniform_int_distribution<typename std::mt19937::result_type> distrib(0, max_output_dof);
+    for (size_t ii = 0; ii < num_output_dofs; ++ii)
+      pfield_output_dofs[ii] = distrib(rng);
     const size_t num_cells = model_solver.num_cells_;
-    while (Dune::XT::Common::FloatCmp::lt(t, t_end)) {
-      double max_dt = dt;
-      // match saving times and t_end exactly
-      if (Dune::XT::Common::FloatCmp::gt(t + dt, t_end))
-        max_dt = t_end - t;
-      double actual_dt = std::min(dt, max_dt);
-
-      // do a timestep
-      std::cout << "Current time: " << t << std::endl;
-      for (size_t kk = 0; kk < num_cells; ++kk) {
-        model_solver.prepare_pfield_operator(dt, kk);
-        pfield_vec = model_solver.solve_pfield(pfield_vec, kk);
-        model_solver.set_pfield_variables(kk, pfield_vec);
-        std::cout << "Pfield " << kk << " done" << std::endl;
-        model_solver.prepare_ofield_operator(dt, kk);
-        ofield_vec = model_solver.solve_ofield(ofield_vec, kk);
-        model_solver.set_ofield_variables(kk, ofield_vec);
-        std::cout << "Ofield " << kk << " done" << std::endl;
-      }
-
-      // stokes system
-      model_solver.prepare_stokes_operator();
-      stokes_vec = model_solver.solve_stokes();
-      model_solver.set_stokes_variables(stokes_vec);
-      std::cout << "Stokes done" << std::endl;
-
-      t += actual_dt;
-
-      // check if data should be written in this timestep (and write)
-      if (write_step < 0. || Dune::XT::Common::FloatCmp::ge(t, next_save_time)) {
-        model_solver.visualize(filename, save_step_counter, t, subsampling);
-        next_save_time += write_step;
-        ++save_step_counter;
-      }
-    } // while (t < t_end)
-#endif
+    auto source = model_solver.pfield_vector();
+    for (size_t kk = 0; kk < num_cells; ++kk) {
+      model_solver.prepare_restricted_pfield_operator(pfield_output_dofs, dt, kk);
+      const auto& pfield_input_dofs = model_solver.pfield_restricted_op_input_dofs(kk);
+      const size_t num_input_dofs = pfield_input_dofs.size();
+      typename CellModelSolver::VectorType restricted_source(num_input_dofs, 0.);
+      for (size_t ii = 0; ii < num_input_dofs; ++ii)
+        restricted_source[ii] = source[pfield_input_dofs[ii]];
+      auto restricted_result = model_solver.apply_restricted_pfield_operator(restricted_source, kk);
+      model_solver2.prepare_pfield_operator(dt, kk);
+      auto result = model_solver2.apply_pfield_operator(source, kk);
+      for (size_t ii = 0; ii < num_output_dofs; ++ii)
+        if (XT::Common::FloatCmp::ne(restricted_result[ii], result[pfield_output_dofs[ii]], 1e-13, 1e-13))
+          std::cout << "Failed: " << ii << ", " << pfield_output_dofs[ii] << ", " << result[pfield_output_dofs[ii]]
+                    << ", " << restricted_result[ii] << std::endl;
+    }
   } catch (Exception& e) {
     std::cerr << "\nDUNE reported error: " << e.what() << std::endl;
     return EXIT_FAILURE;

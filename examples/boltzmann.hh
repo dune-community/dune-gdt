@@ -267,7 +267,7 @@ public:
     return ret;
   }
 
-  VectorType apply_kinetic_operator(VectorType source, const double time, const double dt) const
+  VectorType apply_kinetic_operator(const VectorType& source, const double time, const double dt) const
   {
     VectorType ret(source);
     if (linear_) {
@@ -278,7 +278,7 @@ public:
     return ret;
   }
 
-  VectorType apply_restricted_kinetic_operator(VectorType source) const
+  VectorType apply_restricted_kinetic_operator(const VectorType& source) const
   {
     if (linear_)
       DUNE_THROW(NotImplemented, "This needs a Mn operator!");
@@ -389,7 +389,7 @@ public:
         local_range.dofs()[ii] = ret[ii];
     };
     rhs_operator_ = std::make_shared<RhsOperatorType>(fv_space_->grid_view(), *fv_space_, *fv_space_);
-    rhs_operator_->append(GenericLocalElementOperator<VectorType, GridViewType, dimRange>(rhs_func));
+    rhs_operator_->append(GenericLocalElementOperator<VectorType, GridViewType, dimRange>(rhs_func, 1));
     rhs_timestepper_->set_operator(*rhs_operator_);
     sigma_t_max_ = calculate_max_sigma_t(*sigma_s, *sigma_a);
     dt_ =

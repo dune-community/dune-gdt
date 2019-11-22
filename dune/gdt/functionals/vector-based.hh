@@ -241,6 +241,16 @@ public:
     assembled_ = true;
   }
 
+  template <class EntityRange>
+  void assemble_range(const EntityRange& entity_range)
+  {
+    if (assembled_)
+      return;
+    // This clears all appended functionals, which is ok, since we are done after assembling once!
+    this->walk_range(entity_range);
+    assembled_ = true;
+  }
+
   FieldType apply(const SourceType& source) const override final
   {
     DUNE_THROW_IF(!assembled_,
