@@ -224,6 +224,9 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(next_n_timesteps_overloads3d, BoltzmannSo
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(apply_rhs_overloads3d, BoltzmannSolver3d::apply_rhs_operator, 3, 6)
 
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(visualize_overloads, CellModelSolver::visualize, 3, 6)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(visualize_pfield_overloads, CellModelSolver::visualize_pfield, 2, 3)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(visualize_ofield_overloads, CellModelSolver::visualize_ofield, 2, 3)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(visualize_stokes_overloads, CellModelSolver::visualize_stokes, 2, 3)
 #include <dune/xt/common/reenable_warnings.hh>
 
 
@@ -340,6 +343,9 @@ BOOST_PYTHON_MODULE(libhapodgdt)
                                         // const double,
                                         const double>>())
       .def("visualize", &CellModelSolver::visualize, visualize_overloads())
+      .def("visualize_pfield", &CellModelSolver::visualize_pfield, visualize_pfield_overloads())
+      .def("visualize_ofield", &CellModelSolver::visualize_ofield, visualize_ofield_overloads())
+      .def("visualize_stokes", &CellModelSolver::visualize_stokes, visualize_stokes_overloads())
       .def("prepare_pfield_operator", &CellModelSolver::prepare_pfield_operator)
       .def("prepare_ofield_operator", &CellModelSolver::prepare_ofield_operator)
       .def("prepare_stokes_operator", &CellModelSolver::prepare_stokes_operator)
