@@ -346,29 +346,35 @@ BOOST_PYTHON_MODULE(libhapodgdt)
       .def("visualize_pfield", &CellModelSolver::visualize_pfield, visualize_pfield_overloads())
       .def("visualize_ofield", &CellModelSolver::visualize_ofield, visualize_ofield_overloads())
       .def("visualize_stokes", &CellModelSolver::visualize_stokes, visualize_stokes_overloads())
-      .def("prepare_pfield_operator", &CellModelSolver::prepare_pfield_operator)
-      .def("prepare_ofield_operator", &CellModelSolver::prepare_ofield_operator)
-      .def("prepare_stokes_operator", &CellModelSolver::prepare_stokes_operator)
-      .def("apply_pfield_operator", &CellModelSolver::apply_pfield_operator)
-      .def("apply_ofield_operator", &CellModelSolver::apply_ofield_operator)
-      .def("apply_stokes_operator", &CellModelSolver::apply_stokes_operator)
-      .def("set_pfield_variables", &CellModelSolver::set_pfield_variables)
-      .def("set_ofield_variables", &CellModelSolver::set_ofield_variables)
-      .def("set_stokes_variables", &CellModelSolver::set_stokes_variables)
+      .def("prepare_pfield_op", &CellModelSolver::prepare_pfield_op)
+      .def("prepare_ofield_op", &CellModelSolver::prepare_ofield_op)
+      .def("prepare_stokes_op", &CellModelSolver::prepare_stokes_op)
+      .def("apply_pfield_op", &CellModelSolver::apply_pfield_op)
+      .def("apply_ofield_op", &CellModelSolver::apply_ofield_op)
+      .def("apply_stokes_op", &CellModelSolver::apply_stokes_op)
+      .def("set_pfield_vec", &CellModelSolver::set_pfield_vec)
+      .def("set_ofield_vec", &CellModelSolver::set_ofield_vec)
+      .def("set_stokes_vec", &CellModelSolver::set_stokes_vec)
       .def("solve", &CellModelSolver::solve)
       .def("next_n_timesteps", &CellModelSolver::next_n_timesteps)
-      .def("solve_pfield", &CellModelSolver::solve_pfield)
-      .def("solve_ofield", &CellModelSolver::solve_ofield)
-      .def("solve_stokes", &CellModelSolver::solve_stokes)
-      .def("apply_pfield_product_operator", &CellModelSolver::apply_pfield_product_operator)
-      .def("apply_ofield_product_operator", &CellModelSolver::apply_ofield_product_operator)
-      .def("apply_stokes_product_operator", &CellModelSolver::apply_stokes_product_operator)
+      .def("apply_inverse_pfield_op", &CellModelSolver::apply_inverse_pfield_op)
+      .def("apply_inverse_ofield_op", &CellModelSolver::apply_inverse_ofield_op)
+      .def("apply_inverse_stokes_op", &CellModelSolver::apply_inverse_stokes_op)
+      .def("apply_pfield_product_op", &CellModelSolver::apply_pfield_product_op)
+      .def("apply_ofield_product_op", &CellModelSolver::apply_ofield_product_op)
+      .def("apply_stokes_product_op", &CellModelSolver::apply_stokes_product_op)
       .def("num_cells", &CellModelSolver::num_cells)
       .def("finished", &CellModelSolver::finished)
       .def("linear", &CellModelSolver::linear)
-      .def("pfield_vector", &CellModelSolver::pfield_vector)
-      .def("ofield_vector", &CellModelSolver::ofield_vector)
-      .def("stokes_vector", &CellModelSolver::stokes_vector);
+      .def("pfield_vec",
+           &CellModelSolver::pfield_vec,
+           boost::python::return_value_policy<boost::python::return_by_value>())
+      .def("ofield_vec",
+           &CellModelSolver::ofield_vec,
+           boost::python::return_value_policy<boost::python::return_by_value>())
+      .def("stokes_vec",
+           &CellModelSolver::stokes_vec,
+           boost::python::return_value_policy<boost::python::return_by_value>());
 
   // Vectors
   VectorExporter<typename XT::LA::CommonDenseVector<double>>::export_("CommonDenseVector");

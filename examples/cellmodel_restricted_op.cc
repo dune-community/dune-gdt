@@ -108,9 +108,9 @@ int main(int argc, char* argv[])
                                   In,
                                   linearize);
 
-    const size_t max_output_dofs = model_solver.pfield_vector().size();
+    const size_t max_output_dofs = model_solver.pfield_vec(0).size();
     // choose all dofs
-    // const size_t num_output_dofs = model_solver.pfield_vector().size();
+    // const size_t num_output_dofs = model_solver.pfield_vec(0).size();
     // std::vector<size_t> pfield_output_dofs(max_output_dofs);
     // for (size_t ii = 0; ii < max_output_dofs; ++ii)
     // pfield_output_dofs[ii] = ii;
@@ -123,8 +123,8 @@ int main(int argc, char* argv[])
     for (size_t ii = 0; ii < num_output_dofs; ++ii)
       pfield_output_dofs[ii] = distrib(rng);
     using VectorType = typename CellModelSolver::VectorType;
-    const size_t num_cells = model_solver.num_cells_;
-    auto source = model_solver.pfield_vector();
+    const size_t num_cells = model_solver.num_cells();
+    auto source = model_solver.pfield_vec(0);
     std::chrono::duration<double> restricted_prep_time(0.);
     std::chrono::duration<double> restricted_apply_time(0.);
     std::chrono::duration<double> restricted_jac_time(0.);
@@ -134,25 +134,25 @@ int main(int argc, char* argv[])
     for (size_t run = 0; run < 100; ++run) {
       for (size_t kk = 0; kk < num_cells; ++kk) {
         auto begin = std::chrono::steady_clock::now();
-        model_solver.prepare_restricted_pfield_operator(pfield_output_dofs, dt, kk);
+        model_solver.prepare_restricted_pfield_op(pfield_output_dofs, dt, kk);
         restricted_prep_time += std::chrono::steady_clock::now() - begin;
-        const auto& pfield_input_dofs = model_solver.pfield_restricted_op_input_dofs(kk);
+        const auto& pfield_input_dofs = model_solver.pfield_deim_input_dofs(kk);
         const size_t num_input_dofs = pfield_input_dofs.size();
         VectorType restricted_source(num_input_dofs, 0.);
         for (size_t ii = 0; ii < num_input_dofs; ++ii)
           restricted_source[ii] = source[pfield_input_dofs[ii]];
         VectorType restricted_jac_result(num_output_dofs, 0.);
         begin = std::chrono::steady_clock::now();
-        auto restricted_result = model_solver.apply_restricted_pfield_operator(restricted_source, kk);
+        auto restricted_result = model_solver.apply_restricted_pfield_op(restricted_source, kk);
         restricted_apply_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
         model_solver.apply_pfield_jacobian(source, restricted_jac_result, kk, true);
         restricted_jac_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
-        model_solver2.prepare_pfield_operator(dt, kk);
+        model_solver2.prepare_pfield_op(dt, kk);
         prep_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
-        auto result = model_solver2.apply_pfield_operator(source, kk);
+        auto result = model_solver2.apply_pfield_op(source, kk);
         apply_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
         model_solver2.assemble_pfield_nonlinear_jacobian(source, kk, false);
