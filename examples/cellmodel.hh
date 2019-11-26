@@ -188,6 +188,7 @@ struct CellModelSolver
     , Be_(Be)
     , Ca_(Ca)
     , epsilon_(epsilon)
+    , epsilon_inv_(1. / epsilon_)
     , In_(In)
     , vol_domain_((upper_right_[0] - lower_left_[0]) * (upper_right_[1] - lower_left_[1]))
     , num_cells_(get_num_cells(testcase))
@@ -1736,18 +1737,6 @@ struct CellModelSolver
       G_pfield_nonlinear_part_ *= 0.;
     else
       partially_scal_mat(phinat_output_dofs, G_pfield_nonlinear_part_, pfield_submatrix_pattern_, 0.);
-    const auto Bfunc = [epsilon_inv = 1. / epsilon_,
-                        this](const size_t kk, const DomainType& x_local, const XT::Common::Parameter& param) {
-      const R phi_n = this->eval_phi(kk, x_local, param);
-      return epsilon_inv * std::pow(std::pow(phi_n, 2) - 1, 2);
-    };
-    const auto wfunc = [this](const size_t kk, const DomainType& x_local, const XT::Common::Parameter& param) {
-      const R phi_n = this->eval_phi(kk, x_local, param);
-      if (XT::Common::FloatCmp::lt(std::abs(phi_n), 1.))
-        return std::exp(-0.5 * std::pow(std::log((1 + phi_n) / (1 - phi_n)), 2));
-      else
-        return 0.;
-    };
     XT::Functions::GenericGridFunction<E, 1, 1> G_prefactor(
         /*order = */ 2 * phi_space_.max_polorder(),
         /*post_bind_func*/
@@ -1760,13 +1749,8 @@ struct CellModelSolver
           }
         },
         /*evaluate_func*/
-        [cell,
-         In_inv = 1. / In_,
-         eps_inv = 1. / epsilon_,
-         six_inv_Be_eps2 = 6. / (Be_ * std::pow(epsilon_, 2)),
-         &Bfunc,
-         &wfunc,
-         this](const DomainType& x_local, const XT::Common::Parameter& param) {
+        [cell, In_inv = 1. / In_, eps_inv = 1. / epsilon_, six_inv_Be_eps2 = 6. / (Be_ * std::pow(epsilon_, 2)), this](
+            const DomainType& x_local, const XT::Common::Parameter& param) {
           const R phi_n = this->eval_phi(cell, x_local, param);
           const R mu_n = this->eval_mu(cell, x_local, param);
           auto ret = six_inv_Be_eps2 * phi_n * mu_n;
@@ -1775,8 +1759,8 @@ struct CellModelSolver
             R Bsum = 0.;
             for (size_t kk = 0; kk < this->num_cells_; ++kk) {
               if (kk != cell) {
-                wsum += wfunc(kk, x_local, param);
-                Bsum += Bfunc(kk, x_local, param);
+                wsum += this->w_func(kk, x_local, param);
+                Bsum += this->B_func(kk, x_local, param);
               }
             } // kk
             ret += In_inv * 4 * eps_inv * (3. * std::pow(phi_n, 2) - 1) * wsum;
@@ -1807,18 +1791,6 @@ struct CellModelSolver
     const auto res2 = make_discrete_function(phi_space_, res2_vec);
     auto nonlinear_res1_functional = make_vector_functional(phi_space_, res1_vec);
     auto nonlinear_res2_functional = make_vector_functional(phi_space_, res2_vec);
-    const auto Bfunc = [epsilon_inv = 1. / epsilon_,
-                        this](const size_t kk, const DomainType& x_local, const XT::Common::Parameter& param) {
-      const auto phi_n = this->eval_phi(kk, x_local, param);
-      return epsilon_inv * std::pow(std::pow(phi_n, 2) - 1, 2);
-    };
-    const auto wfunc = [this](const size_t kk, const DomainType& x_local, const XT::Common::Parameter& param) {
-      const auto phi_n = this->eval_phi(kk, x_local, param);
-      if (XT::Common::FloatCmp::lt(std::abs(phi_n), 1.))
-        return std::exp(-0.5 * std::pow(std::log((1 + phi_n) / (1 - phi_n)), 2));
-      else
-        return 0.;
-    };
     XT::Functions::GenericGridFunction<E, 1, 1> nonlinear_res_pf1(
         /*order = */ 3 * phi_space_.max_polorder(),
         /*post_bind_func*/
@@ -1831,11 +1803,9 @@ struct CellModelSolver
           }
         },
         /*evaluate_func*/
-        [wfunc,
-         Bfunc,
-         cell,
+        [cell,
          In_inv = 1. / In_,
-         eps_inv = 1. / epsilon_,
+         eps_inv = epsilon_inv_,
          num_cells = num_cells_,
          inv_Be_eps2 = 1. / (Be_ * std::pow(epsilon_, 2)),
          this](const DomainType& x_local, const XT::Common::Parameter& param) {
@@ -1848,8 +1818,8 @@ struct CellModelSolver
             R Bsum = 0.;
             for (size_t kk = 0; kk < num_cells; ++kk) {
               if (kk != cell) {
-                wsum += wfunc(kk, x_local, param);
-                Bsum += Bfunc(kk, x_local, param);
+                wsum += this->w_func(kk, x_local, param);
+                Bsum += this->B_func(kk, x_local, param);
               }
             } // kk
             ret += In_inv * 4 * eps_inv * (std::pow(phi_n, 3) - phi_n) * wsum;
@@ -2331,6 +2301,21 @@ private:
            + l2_norm(grid_view_, res2) / l2_ref_mu;
   }
 
+  R B_func(const size_t kk, const DomainType& x_local, const XT::Common::Parameter& param)
+  {
+    const R phi_n = eval_phi(kk, x_local, param);
+    return epsilon_inv_ * std::pow(std::pow(phi_n, 2) - 1, 2);
+  }
+
+  R w_func(const size_t kk, const DomainType& x_local, const XT::Common::Parameter& param)
+  {
+    const R phi_n = eval_phi(kk, x_local, param);
+    if (XT::Common::FloatCmp::lt(std::abs(phi_n), 1.))
+      return std::exp(-0.5 * std::pow(std::log((1 + phi_n) / (1 - phi_n)), 2));
+    else
+      return 0.;
+  }
+
   //******************************************************************************************************************
   //*******************************************  Member variables ****************************************************
   //******************************************************************************************************************
@@ -2352,6 +2337,7 @@ private:
   const double Be_;
   const double Ca_;
   const double epsilon_;
+  const double epsilon_inv_;
   const double In_;
   const double vol_domain_;
   const size_t num_cells_;
