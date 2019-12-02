@@ -111,35 +111,53 @@ static void write_to_textfile(const DiscreteFunc& func, const std::string& prefi
   } // if (rank == 0)
 } // void write_to_textfile()
 
-template <class VectorType,
-          class MatrixType,
-          class SolverType>
+template <class VectorType, class MatrixType, class SolverType, class DirichletConstraintsType>
 class PfieldPhiMuMatrixOperator : public Dune::LinearOperator<VectorType, VectorType>
 {
   using BaseType = Dune::LinearOperator<VectorType, VectorType>;
-  using MatrixViewType = XT::LA::MatrixView<MatrixType>;
   using VectorViewType = XT::LA::VectorView<VectorType>;
   using ConstVectorViewType = XT::LA::ConstVectorView<VectorType>;
 
 public:
   using Vector = VectorType;
   using Matrix = MatrixType;
+  using Dirichlet = DirichletConstraintsType;
   using Field = typename VectorType::ScalarType;
 
   // Matrix dimensions are
   // A: m x m, B1, B2: m x n, C: n x n
-  PfieldPhiMuMatrixOperator(const MatrixViewType& M_dt_D, const SolverType& M_inv, const MatrixViewType& dt_E, const MatrixViewType& G, const MatrixViewType& J, const MatrixViewType& A, const MatrixViewType& C)
-    : M_dt_D_(M_dt_D)
+  PfieldPhiMuMatrixOperator(const Matrix& M,
+                            const SolverType& M_inv,
+                            const Matrix& D,
+                            const Matrix& M_ell,
+                            const Matrix& G,
+                            const Matrix& M_nonlin,
+                            const Dirichlet& dirichlet,
+                            const double gamma,
+                            const double eps,
+                            const double Be,
+                            const double Ca)
+    : M_(M)
     , M_inv_(M_inv)
-    , dt_E_(dt_E)
+    , D_(D)
+    , M_ell_(M_ell)
     , G_(G)
-    , J_(J)
-    , A_(A)
-    , C_(C)
-    , size_phi_(dt_E_.rows())
+    , M_nonlin_(M_nonlin)
+    , A_(M_)
+    , J_(M_)
+    , dirichlet_(dirichlet)
+    , gamma_(gamma)
+    , eps_(eps)
+    , Be_(Be)
+    , Ca_(Ca)
+    , size_phi_(M_.rows())
+    , x_phi_(size_phi_)
+    , x_mu_(size_phi_)
+    , y_phi_(size_phi_)
+    , y_mu_(size_phi_)
     , tmp_vec_(size_phi_)
     , tmp_vec2_(size_phi_)
-    , tmp_vec3_(2*size_phi_)
+    , tmp_vec3_(2 * size_phi_)
   {}
 
   /*! \brief apply operator to x:  \f$ y = S(x) \f$
@@ -148,28 +166,44 @@ public:
    */
   void apply(const Vector& x, Vector& y) const override final
   {
-    const ConstVectorViewType x_phi(x, 0, size_phi_);
-    const ConstVectorViewType x_mu(x, size_phi_, 2 * size_phi_);
-    VectorViewType y_phi(y, 0, size_phi_);
-    VectorViewType y_mu(y, size_phi_, 2 * size_phi_);
-    M_dt_D_.mv(x_phi, y_phi);
-    G_.mv(x_phi, tmp_vec_);
-    J_.mv(x_mu, tmp_vec2_);
+    // copy to temporary vectors (we do not use vector views to improve performance of mv)
+    for (size_t ii = 0; ii < size_phi_; ++ii) {
+      x_phi_[ii] = x[ii];
+      x_mu_[ii] = x[ii + size_phi_];
+    }
+    // apply matrices
+    // apply M + dt D
+    M_.mv(x_phi_, y_phi_);
+    D_.mv(x_phi_, tmp_vec_);
+    y_phi_.axpy(dt_, tmp_vec_);
+    // compute H^{-1} (G phi + J mu)
+    G_.mv(x_phi_, tmp_vec_);
+    J_.mv(x_mu_, tmp_vec2_);
     tmp_vec_ += tmp_vec2_;
     tmp_vec_.backend() = M_inv_.solve(tmp_vec_.backend());
-    dt_E_.mv(tmp_vec_, tmp_vec2_);
-    y_phi -= tmp_vec2_;
-    A_.mv(x_phi, y_mu);
-    C_.mv(x_mu, tmp_vec_);
-    y_mu += tmp_vec_;
+    // apply dt E
+    M_ell_.mv(tmp_vec_, tmp_vec2_);
+    y_phi_.axpy(-dt_ * gamma_, tmp_vec2_);
+    // apply A
+    A_.mv(x_phi_, y_mu_);
+    // apply C
+    M_.mv(x_mu_, tmp_vec_);
+    y_mu_ += tmp_vec_;
+    // apply constraints
+    for (const auto& DoF : dirichlet_.dirichlet_DoFs())
+      y_mu_[DoF] = x_phi_[DoF];
+    // copy to result vector
+    for (size_t ii = 0; ii < size_phi_; ++ii) {
+      y[ii] = y_phi_[ii];
+      y[ii + size_phi_] = y_mu_[ii];
+    }
   }
 
   void applyscaleadd(Field alpha, const Vector& x, Vector& y) const override final
   {
     auto& Sx = tmp_vec3_;
     apply(x, Sx);
-    Sx *= alpha;
-    y += Sx;
+    y.axpy(alpha, Sx);
   }
 
   //! Category of the linear operator (see SolverCategory::Category)
@@ -178,19 +212,160 @@ public:
     return SolverCategory::Category::sequential;
   }
 
+  void prepare(const double dt)
+  {
+    dt_ = dt;
+    // precompute A and J (M_nonlin_ may have changed)
+    // saves three mvs in each apply, can be dropped if memory is an issue
+    J_ = M_nonlin_;
+    J_ *= 1. / (Be_ * std::pow(eps_, 2));
+    J_.axpy(1. / Ca_, M_);
+    J_.axpy(1. / Be_, M_ell_);
+    A_ = M_nonlin_;
+    A_ *= 1. / eps_;
+    A_.axpy(eps_, M_ell_);
+  }
+
 private:
-  const MatrixViewType& M_dt_D_;
+  const Matrix& M_;
   const SolverType& M_inv_;
-  const MatrixViewType& dt_E_;
-  const MatrixViewType& G_;
-  const MatrixViewType& J_;
-  const MatrixViewType& A_;
-  const MatrixViewType& C_;
+  const Matrix& D_;
+  const Matrix& M_ell_;
+  const Matrix& G_;
+  const Matrix& M_nonlin_;
+  MatrixType A_;
+  MatrixType J_;
+  const Dirichlet& dirichlet_;
+  const double gamma_;
+  const double eps_;
+  const double Be_;
+  const double Ca_;
+  double dt_;
   const size_t size_phi_;
   // vectors to store intermediate results
+  mutable Vector x_phi_;
+  mutable Vector x_mu_;
+  mutable Vector y_phi_;
+  mutable Vector y_mu_;
   mutable Vector tmp_vec_;
   mutable Vector tmp_vec2_;
   mutable Vector tmp_vec3_;
+};
+
+
+template <class VectorType, class MatrixType, class DirichletConstraintsType>
+class PfieldMatrixLinearPartOperator : public Dune::LinearOperator<VectorType, VectorType>
+{
+  using BaseType = Dune::LinearOperator<VectorType, VectorType>;
+  using VectorViewType = XT::LA::VectorView<VectorType>;
+  using ConstVectorViewType = XT::LA::ConstVectorView<VectorType>;
+
+public:
+  using Vector = VectorType;
+  using Matrix = MatrixType;
+  using Dirichlet = DirichletConstraintsType;
+  using Field = typename VectorType::ScalarType;
+
+  // Matrix dimensions are
+  // A: m x m, B1, B2: m x n, C: n x n
+  PfieldMatrixLinearPartOperator(const Matrix& M,
+                                 const Matrix& D,
+                                 const Matrix& M_ell,
+                                 const Dirichlet& dirichlet,
+                                 const double gamma,
+                                 const double eps,
+                                 const double Be)
+    : M_(M)
+    , D_(D)
+    , M_ell_(M_ell)
+    , dirichlet_(dirichlet)
+    , gamma_(gamma)
+    , eps_(eps)
+    , Be_(Be)
+    , size_phi_(M_.rows())
+    , x_phi_(size_phi_)
+    , x_phinat_(size_phi_)
+    , x_mu_(size_phi_)
+    , y_phi_(size_phi_)
+    , y_phinat_(size_phi_)
+    , y_mu_(size_phi_)
+    , tmp_vec_(size_phi_)
+    , tmp_vec2_(3 * size_phi_)
+  {}
+
+  /*! \brief apply operator to x:  \f$ y = S(x) \f$
+        The input vector is consistent and the output must also be
+     consistent on the interior+border partition.
+   */
+  void apply(const Vector& x, Vector& y) const override final
+  {
+    // copy to temporary vectors (we do not use vector views to improve performance of mv)
+    for (size_t ii = 0; ii < size_phi_; ++ii) {
+      x_phi_[ii] = x[ii];
+      x_phinat_[ii] = x[size_phi_ + ii];
+      x_mu_[ii] = x[2 * size_phi_ + ii];
+    }
+    // apply matrices
+    // first row
+    M_.mv(x_phi_, y_phi_);
+    D_.mv(x_phi_, tmp_vec_);
+    y_phi_.axpy(dt_, tmp_vec_);
+    M_ell_.mv(x_phinat_, tmp_vec_);
+    y_phi_.axpy(dt_ * gamma_, tmp_vec_);
+    // second row
+    M_.mv(x_phinat_, y_phinat_);
+    M_ell_.mv(x_mu_, tmp_vec_);
+    y_phinat_.axpy(1. / Be_, tmp_vec_);
+    // third row
+    M_.mv(x_mu_, y_mu_);
+    M_ell_.mv(x_phi_, tmp_vec_);
+    y_mu_.axpy(eps_, tmp_vec_);
+    dirichlet_.apply(y_mu_);
+    // copy to result vector
+    for (size_t ii = 0; ii < size_phi_; ++ii) {
+      y[ii] = y_phi_[ii];
+      y[size_phi_ + ii] = y_phinat_[ii];
+      y[2 * size_phi_ + ii] = y_mu_[ii];
+    }
+  }
+
+  void applyscaleadd(Field alpha, const Vector& x, Vector& y) const override final
+  {
+    auto& Sx = tmp_vec2_;
+    apply(x, Sx);
+    y.axpy(alpha, Sx);
+  }
+
+  //! Category of the linear operator (see SolverCategory::Category)
+  SolverCategory::Category category() const override final
+  {
+    return SolverCategory::Category::sequential;
+  }
+
+  void prepare(const double dt)
+  {
+    dt_ = dt;
+  }
+
+private:
+  const Matrix& M_;
+  const Matrix& D_;
+  const Matrix& M_ell_;
+  const Dirichlet& dirichlet_;
+  const double gamma_;
+  const double eps_;
+  const double Be_;
+  double dt_;
+  const size_t size_phi_;
+  // vectors to store intermediate results
+  mutable Vector x_phi_;
+  mutable Vector x_phinat_;
+  mutable Vector x_mu_;
+  mutable Vector y_phi_;
+  mutable Vector y_phinat_;
+  mutable Vector y_mu_;
+  mutable Vector tmp_vec_;
+  mutable Vector tmp_vec2_;
 };
 
 
@@ -233,6 +408,11 @@ struct CellModelSolver
   using DirectSolverType = ::Eigen::SparseLU<ColMajorBackendType>;
   using SolverType = ::Eigen::BiCGSTAB<RowMajorBackendType, ::Eigen::IncompleteLUT<R>>;
   using DiagSolverType = ::Eigen::BiCGSTAB<RowMajorBackendType, ::Eigen::DiagonalPreconditioner<R>>;
+  using PhiDirichletConstraintsType = DirichletConstraints<PI, SpaceInterface<PGV, 1, 1, R>>;
+  using PfieldPhiMuMatrixOperatorType =
+      PfieldPhiMuMatrixOperator<EigenVectorType, MatrixType, DirectSolverType, PhiDirichletConstraintsType>;
+  using PfieldPhiMuSolverType = Dune::RestartedGMResSolver<EigenVectorType>;
+  // using PfieldPhiMuSolverType = Dune::BiCGSTABSolver<EigenVectorType>;
   using PerThreadVectorLocalFunc = XT::Common::PerThreadValue<std::unique_ptr<VectorLocalDiscreteFunctionType>>;
   using PerThreadScalarLocalFuncs = XT::Common::PerThreadValue<std::vector<std::unique_ptr<LocalDiscreteFunctionType>>>;
   using PerThreadVectorLocalFuncs =
@@ -323,8 +503,8 @@ struct CellModelSolver
           std::make_shared<MatrixOperator<MatrixViewType, PGV, d>>(grid_view_, u_space_, u_space_, S_ofield_00_))
     , C_ofield_linear_part_op_(
           std::make_shared<MatrixOperator<MatrixType, PGV, d>>(grid_view_, u_space_, u_space_, C_ofield_linear_part_))
-    , C_ofield_nonlinear_part_op_(
-          std::make_shared<MatrixOperator<MatrixType, PGV, d>>(grid_view_, u_space_, u_space_, C_ofield_nonlinear_part_))
+    , C_ofield_nonlinear_part_op_(std::make_shared<MatrixOperator<MatrixType, PGV, d>>(
+          grid_view_, u_space_, u_space_, C_ofield_nonlinear_part_))
     , M_ofield_op_(std::make_shared<MatrixOperator<MatrixType, PGV, d>>(grid_view_, u_space_, u_space_, M_ofield_))
     , ofield_rhs_vector_(2 * size_u_, 0., 100)
     , ofield_f_vector_(ofield_rhs_vector_, 0, size_u_)
@@ -338,45 +518,51 @@ struct CellModelSolver
     , ofield_solver_(std::make_shared<SolverType>())
     , ofield_mass_matrix_solver_(std::make_shared<DirectSolverType>())
     , ofield_schur_solver_(std::make_shared<DiagSolverType>())
+    , pfield_submatrix_pattern_(make_element_sparsity_pattern(phi_space_, phi_space_, grid_view_))
+    // , S_pfield_(3 * size_phi_, 3 * size_phi_, create_pfield_pattern(size_phi_, pfield_submatrix_pattern_), 100)
+    // , S_pfield_00_(S_pfield_, 0, size_phi_, 0, size_phi_)
+    // , S_pfield_01_(S_pfield_, 0, size_phi_, size_phi_, 2 * size_phi_)
+    // , S_pfield_10_(S_pfield_, size_phi_, 2 * size_phi_, 0, size_phi_)
+    // , S_pfield_11_(S_pfield_, size_phi_, 2 * size_phi_, size_phi_, 2 * size_phi_)
+    // , S_pfield_12_(S_pfield_, size_phi_, 2 * size_phi_, 2 * size_phi_, 3 * size_phi_)
+    // , S_pfield_20_(S_pfield_, 2 * size_phi_, 3 * size_phi_, 0, size_phi_)
+    // , S_pfield_22_(S_pfield_, 2 * size_phi_, 3 * size_phi_, 2 * size_phi_, 3 * size_phi_)
+    , M_pfield_(size_phi_, size_phi_, pfield_submatrix_pattern_)
+    , D_pfield_(size_phi_, size_phi_, pfield_submatrix_pattern_)
+    , M_ell_pfield_(size_phi_, size_phi_, pfield_submatrix_pattern_)
+    , M_nonlin_pfield_(size_phi_, size_phi_, pfield_submatrix_pattern_)
+    , G_pfield_(size_phi_, size_phi_, pfield_submatrix_pattern_)
     , pfield_solver_(std::make_shared<SolverType>())
     , pfield_mass_matrix_solver_(std::make_shared<DirectSolverType>())
-    , pfield_submatrix_pattern_(make_element_sparsity_pattern(phi_space_, phi_space_, grid_view_))
-    , S_pfield_(3 * size_phi_, 3 * size_phi_, create_pfield_pattern(size_phi_, pfield_submatrix_pattern_), 100)
-    , S_pfield_00_(S_pfield_, 0, size_phi_, 0, size_phi_)
-    , S_pfield_01_(S_pfield_, 0, size_phi_, size_phi_, 2 * size_phi_)
-    , S_pfield_10_(S_pfield_, size_phi_, 2 * size_phi_, 0, size_phi_)
-    , S_pfield_11_(S_pfield_, size_phi_, 2 * size_phi_, size_phi_, 2 * size_phi_)
-    , S_pfield_12_(S_pfield_, size_phi_, 2 * size_phi_, 2 * size_phi_, 3 * size_phi_)
-    , S_pfield_20_(S_pfield_, 2 * size_phi_, 3 * size_phi_, 0, size_phi_)
-    , S_pfield_22_(S_pfield_, 2 * size_phi_, 3 * size_phi_, 2 * size_phi_, 3 * size_phi_)
-    , M_pfield_(size_phi_, size_phi_, pfield_submatrix_pattern_)
-    , E_pfield_(size_phi_, size_phi_, pfield_submatrix_pattern_)
-    , A_pfield_linear_part_(size_phi_, size_phi_, pfield_submatrix_pattern_)
-    , A_pfield_nonlinear_part_(size_phi_, size_phi_, pfield_submatrix_pattern_)
-    , G_pfield_nonlinear_part_(size_phi_, size_phi_, pfield_submatrix_pattern_)
-    , J_pfield_linear_part_(size_phi_, size_phi_, pfield_submatrix_pattern_)
-    , S_pfield_00_op_(
-          std::make_shared<MatrixOperator<MatrixViewType, PGV, 1>>(grid_view_, phi_space_, phi_space_, S_pfield_00_))
-    , S_pfield_10_op_(
-          std::make_shared<MatrixOperator<MatrixViewType, PGV, 1>>(grid_view_, phi_space_, phi_space_, S_pfield_10_))
-    , A_pfield_nonlinear_part_op_(std::make_shared<MatrixOperator<MatrixType, PGV, 1>>(
-          grid_view_, phi_space_, phi_space_, A_pfield_nonlinear_part_))
-    , G_pfield_nonlinear_part_op_(std::make_shared<MatrixOperator<MatrixType, PGV, 1>>(
-          grid_view_, phi_space_, phi_space_, G_pfield_nonlinear_part_))
+    , pfield_phimu_matrixop_(M_pfield_,
+                             *pfield_mass_matrix_solver_,
+                             D_pfield_,
+                             M_ell_pfield_,
+                             G_pfield_,
+                             M_nonlin_pfield_,
+                             phi_dirichlet_constraints_,
+                             gamma_,
+                             epsilon_,
+                             Be_,
+                             Ca_)
+    , pfield_jac_linear_op_(M_pfield_, D_pfield_, M_ell_pfield_, phi_dirichlet_constraints_, gamma_, epsilon_, Be_)
+    , identity_prec_(SolverCategory::Category::sequential)
+    , pfield_phimu_solver_(
+          std::make_shared<PfieldPhiMuSolverType>(pfield_phimu_matrixop_, identity_prec_, 1e-10, 20, 10000, false))
+    , D_pfield_op_(std::make_shared<MatrixOperator<MatrixType, PGV, 1>>(grid_view_, phi_space_, phi_space_, D_pfield_))
+    , G_pfield_op_(std::make_shared<MatrixOperator<MatrixType, PGV, 1>>(grid_view_, phi_space_, phi_space_, G_pfield_))
+    , M_nonlin_pfield_op_(
+          std::make_shared<MatrixOperator<MatrixType, PGV, 1>>(grid_view_, phi_space_, phi_space_, M_nonlin_pfield_))
     , pfield_rhs_vector_(3 * size_phi_, 0., 100)
     , pfield_g_vector_(pfield_rhs_vector_, 0, size_phi_)
     , pfield_h_vector_(pfield_rhs_vector_, size_phi_, 2 * size_phi_)
     , pfield_f_vector_(pfield_rhs_vector_, 2 * size_phi_, 3 * size_phi_)
-    , phi_tmp_eigen_vec_(size_phi_, 0., 0)
-    , pfield_tmp_rhs_phi_(size_phi_, 0., 0)
-    , pfield_tmp_rhs_phinat_(size_phi_, 0., 0)
-    , pfield_tmp_rhs_mu_(size_phi_, 0., 0)
-    , pfield_tmp_phimu_(2 * size_phi_, 0., 0)
-    , pfield_tmp_phimu_phi_(pfield_tmp_phimu_, 0, size_phi_)
-    , pfield_tmp_phimu_mu_(pfield_tmp_phimu_, size_phi_, 2 *size_phi_ )
+    , phi_tmp_eigen_(size_phi_)
+    , phi_tmp_eigen2_(size_phi_)
+    , pfield_tmp_phimu_(num_cells_, EigenVectorType(2 * size_phi_, 0., 0))
     , pfield_tmp_rhs_phimu_(2 * size_phi_, 0., 0)
     , pfield_tmp_rhs_phimu_phi_(pfield_tmp_rhs_phimu_, 0, size_phi_)
-    , pfield_tmp_rhs_phimu_mu_(pfield_tmp_rhs_phimu_, size_phi_, 2 *size_phi_ )
+    , pfield_tmp_rhs_phimu_mu_(pfield_tmp_rhs_phimu_, size_phi_, 2 * size_phi_)
     , pfield_old_result_(num_cells_, EigenVectorType(3 * size_phi_, 0.))
     , pfield_deim_input_dofs_(num_cells_)
     , phinat_deim_input_dofs_begin_(num_cells_)
@@ -547,6 +733,8 @@ struct CellModelSolver
       boundary_interpolation(minus_one, phi_[kk], all_dirichlet_boundary_info, XT::Grid::DirichletBoundary{});
       default_interpolation(*mu_initial_funcs[kk], mu_[kk]);
       default_interpolation(*P_initial_funcs[kk], P_[kk]);
+      pfield_tmp_phimu_phi_.emplace_back(pfield_tmp_phimu_[kk], 0, size_phi_);
+      pfield_tmp_phimu_mu_.emplace_back(pfield_tmp_phimu_[kk], size_phi_, 2 * size_phi_);
     }
 
     /*************************************************************************************************
@@ -628,29 +816,22 @@ struct CellModelSolver
 
     MatrixOperator<MatrixType, PGV, 1> M_pfield_op(grid_view_, phi_space_, phi_space_, M_pfield_);
     M_pfield_op.append(LocalElementIntegralBilinearForm<E, 1>(LocalElementProductScalarWeightIntegrand<E, 1>(1.)));
-    MatrixOperator<MatrixType, PGV, 1> E_pfield_op(grid_view_, phi_space_, phi_space_, E_pfield_);
-    E_pfield_op.append(LocalElementIntegralBilinearForm<E, 1>(LocalLaplaceIntegrand<E, 1>(1.)));
+    MatrixOperator<MatrixType, PGV, 1> M_ell_pfield_op(grid_view_, phi_space_, phi_space_, M_ell_pfield_);
+    M_ell_pfield_op.append(LocalElementIntegralBilinearForm<E, 1>(LocalLaplaceIntegrand<E, 1>(1.)));
     M_pfield_op.append(phi_dirichlet_constraints_);
+    M_pfield_op.append(M_ell_pfield_op);
     M_pfield_op.assemble(use_tbb_);
-    E_pfield_op.assemble(use_tbb_);
-    A_pfield_linear_part_ = E_pfield_ * epsilon_;
-    J_pfield_linear_part_ = E_pfield_ * 1. / Be_;
-    J_pfield_linear_part_ += M_pfield_ * 1. / Ca_;
     // Set matrix S_{22} = C = M
-    S_pfield_22_ = M_pfield_;
-    // Set matrix S_{11} = H = M
-    S_pfield_11_ = M_pfield_;
-    // Set matrix S_{01} = E
-    E_pfield_ *= gamma_;
-    S_pfield_01_ = E_pfield_;
-
-    // apply Dirichlet constraints to linear part
-    for (const auto& DoF : phi_dirichlet_constraints_.dirichlet_DoFs()) {
-      A_pfield_linear_part_.clear_row(DoF);
-      S_pfield_22_.clear_row(DoF);
-    }
-
-    pfield_solver_->analyzePattern(S_pfield_.backend());
+    // S_pfield_22_ = M_pfield_;
+    // // apply Dirichlet constraints to linear part
+    // for (const auto& DoF : phi_dirichlet_constraints_.dirichlet_DoFs())
+    //   S_pfield_22_.clear_row(DoF);
+    // // Set matrix S_{11} = H = M
+    // S_pfield_11_ = M_pfield_;
+    // // Set matrix S_{01} = E
+    // S_pfield_01_ = M_ell_pfield_;
+    // S_pfield_01_ *= gamma_;
+    // pfield_solver_->analyzePattern(S_pfield_.backend());
     // XT::LA::write_matrix_market(M_pfield_, "phasefield_mass_matrix.mtx");
     M_pfield_colmajor_ = M_pfield_.backend();
     pfield_mass_matrix_solver_->analyzePattern(M_pfield_colmajor_);
@@ -1005,10 +1186,9 @@ struct CellModelSolver
     phi_tmp_[cell].dofs().vector() = phi_[cell].dofs().vector();
     assemble_ofield_rhs(dt, cell);
     assemble_ofield_linear_jacobian(dt, cell);
-
   }
 
-  void prepare_pfield_op(const double dt, const size_t cell)
+  void prepare_pfield_op(const double dt, const size_t cell, const bool restricted = false)
   {
     u_tmp_.dofs().vector() = u_.dofs().vector();
     P_tmp_[cell].dofs().vector() = P_[cell].dofs().vector();
@@ -1016,68 +1196,70 @@ struct CellModelSolver
       phi_tmp_[kk].dofs().vector() = phi_[kk].dofs().vector();
       mu_tmp_[kk].dofs().vector() = mu_[kk].dofs().vector();
     }
-    assemble_pfield_rhs(dt, cell, false);
-    assemble_pfield_linear_jacobian(dt, cell);
+    assemble_pfield_rhs(dt, cell, restricted);
+    assemble_pfield_linear_jacobian(dt, cell, restricted);
+    pfield_jac_linear_op_.prepare(dt);
+    dt_ = dt;
   }
 
-  void prepare_restricted_pfield_op(const std::vector<size_t>& output_dofs, const double dt, const size_t cell)
-  {
-    if (!pfield_deim_output_dofs_[cell] || *pfield_deim_output_dofs_[cell] != output_dofs) {
-      const auto& pattern = create_pfield_pattern(size_phi_, pfield_submatrix_pattern_);
-      pfield_deim_output_dofs_[cell] = std::make_shared<std::vector<size_t>>(output_dofs);
-      // sort output into dofs belonging to phi, phinat and mu
-      auto& phi_output_dofs = phi_deim_output_dofs_[cell];
-      auto& phinat_output_dofs = phinat_deim_output_dofs_[cell];
-      auto& mu_output_dofs = mu_deim_output_dofs_[cell];
-      auto& phinat_mu_output_dofs = both_mu_and_phi_deim_output_dofs_[cell];
-      for (const auto& dof : output_dofs) {
-        if (dof < size_phi_)
-          phi_output_dofs.push_back(dof);
-        else if (dof < 2 * size_phi_)
-          phinat_output_dofs.push_back(dof);
-        else
-          mu_output_dofs.push_back(dof);
-      }
-      for (auto& dof : phinat_output_dofs)
-        dof -= size_phi_;
-      for (auto& dof : mu_output_dofs)
-        dof -= 2 * size_phi_;
-      for (const auto& dof : phinat_output_dofs)
-        if (std::find(mu_output_dofs.begin(), mu_output_dofs.end(), dof) != mu_output_dofs.end())
-          phinat_mu_output_dofs.push_back(dof);
-      // get input dofs corresponding to output dofs
-      auto& input_dofs = pfield_deim_input_dofs_[cell];
-      input_dofs.clear();
-      for (const auto& dof : output_dofs) {
-        const auto& new_input_dofs = pattern.inner(dof);
-        input_dofs.insert(input_dofs.end(), new_input_dofs.begin(), new_input_dofs.end());
-      } // output_dofs
-      // sort and remove duplicate entries
-      std::sort(input_dofs.begin(), input_dofs.end());
-      input_dofs.erase(std::unique(input_dofs.begin(), input_dofs.end()), input_dofs.end());
-      phinat_deim_input_dofs_begin_[cell] =
-          std::lower_bound(input_dofs.begin(), input_dofs.end(), size_phi_) - input_dofs.begin();
-      mu_deim_input_dofs_begin_[cell] =
-          std::lower_bound(input_dofs.begin(), input_dofs.end(), 2 * size_phi_) - input_dofs.begin();
+  // void prepare_restricted_pfield_op(const std::vector<size_t>& output_dofs, const double dt, const size_t cell)
+  // {
+  //   if (!pfield_deim_output_dofs_[cell] || *pfield_deim_output_dofs_[cell] != output_dofs) {
+  //     const auto& pattern = create_pfield_pattern(size_phi_, pfield_submatrix_pattern_);
+  //     pfield_deim_output_dofs_[cell] = std::make_shared<std::vector<size_t>>(output_dofs);
+  //     // sort output into dofs belonging to phi, phinat and mu
+  //     auto& phi_output_dofs = phi_deim_output_dofs_[cell];
+  //     auto& phinat_output_dofs = phinat_deim_output_dofs_[cell];
+  //     auto& mu_output_dofs = mu_deim_output_dofs_[cell];
+  //     auto& phinat_mu_output_dofs = both_mu_and_phi_deim_output_dofs_[cell];
+  //     for (const auto& dof : output_dofs) {
+  //       if (dof < size_phi_)
+  //         phi_output_dofs.push_back(dof);
+  //       else if (dof < 2 * size_phi_)
+  //         phinat_output_dofs.push_back(dof);
+  //       else
+  //         mu_output_dofs.push_back(dof);
+  //     }
+  //     for (auto& dof : phinat_output_dofs)
+  //       dof -= size_phi_;
+  //     for (auto& dof : mu_output_dofs)
+  //       dof -= 2 * size_phi_;
+  //     for (const auto& dof : phinat_output_dofs)
+  //       if (std::find(mu_output_dofs.begin(), mu_output_dofs.end(), dof) != mu_output_dofs.end())
+  //         phinat_mu_output_dofs.push_back(dof);
+  //     // get input dofs corresponding to output dofs
+  //     auto& input_dofs = pfield_deim_input_dofs_[cell];
+  //     input_dofs.clear();
+  //     for (const auto& dof : output_dofs) {
+  //       const auto& new_input_dofs = pattern.inner(dof);
+  //       input_dofs.insert(input_dofs.end(), new_input_dofs.begin(), new_input_dofs.end());
+  //     } // output_dofs
+  //     // sort and remove duplicate entries
+  //     std::sort(input_dofs.begin(), input_dofs.end());
+  //     input_dofs.erase(std::unique(input_dofs.begin(), input_dofs.end()), input_dofs.end());
+  //     phinat_deim_input_dofs_begin_[cell] =
+  //         std::lower_bound(input_dofs.begin(), input_dofs.end(), size_phi_) - input_dofs.begin();
+  //     mu_deim_input_dofs_begin_[cell] =
+  //         std::lower_bound(input_dofs.begin(), input_dofs.end(), 2 * size_phi_) - input_dofs.begin();
 
-      // store all entities that contain an output dof
-      const auto& mapper = phi_space_.mapper();
-      DynamicVector<size_t> global_indices;
-      pfield_deim_entities_[cell].clear();
-      for (const auto& entity : Dune::elements(grid_view_)) {
-        mapper.global_indices(entity, global_indices);
-        maybe_add_entity(entity, global_indices, *pfield_deim_output_dofs_[cell], pfield_deim_entities_[cell]);
-      } // entities
-    } // if (not already computed)
-    u_tmp_.dofs().vector() = u_.dofs().vector();
-    P_tmp_[cell].dofs().vector() = P_[cell].dofs().vector();
-    for (size_t kk = 0; kk < num_cells_; kk++) {
-      phi_tmp_[kk].dofs().vector() = phi_[kk].dofs().vector();
-      mu_tmp_[kk].dofs().vector() = mu_[kk].dofs().vector();
-    }
-    assemble_pfield_rhs(dt, cell, true);
-    assemble_pfield_restricted_linear_jacobian(dt, cell);
-  }
+  //     // store all entities that contain an output dof
+  //     const auto& mapper = phi_space_.mapper();
+  //     DynamicVector<size_t> global_indices;
+  //     pfield_deim_entities_[cell].clear();
+  //     for (const auto& entity : Dune::elements(grid_view_)) {
+  //       mapper.global_indices(entity, global_indices);
+  //       maybe_add_entity(entity, global_indices, *pfield_deim_output_dofs_[cell], pfield_deim_entities_[cell]);
+  //     } // entities
+  //   } // if (not already computed)
+  //   u_tmp_.dofs().vector() = u_.dofs().vector();
+  //   P_tmp_[cell].dofs().vector() = P_[cell].dofs().vector();
+  //   for (size_t kk = 0; kk < num_cells_; kk++) {
+  //     phi_tmp_[kk].dofs().vector() = phi_[kk].dofs().vector();
+  //     mu_tmp_[kk].dofs().vector() = mu_[kk].dofs().vector();
+  //   }
+  //   assemble_pfield_rhs(dt, cell, true);
+  //   assemble_pfield_restricted_linear_jacobian(dt, cell, true);
+  // }
 
   //******************************************************************************************************************
   //*********************************************** Apply operators **************************************************
@@ -1128,7 +1310,7 @@ struct CellModelSolver
   {
     // linear part
     VectorType residual(y.size());
-    S_pfield_.mv(y, residual);
+    pfield_jac_linear_op_.apply(y, residual);
     // subtract rhs
     residual -= pfield_rhs_vector_;
     // if (!linearize_) {
@@ -1139,28 +1321,29 @@ struct CellModelSolver
     return residual;
   }
 
-  VectorType apply_restricted_pfield_op(const VectorType& ld_source, const size_t cell)
-  {
-    // copy values to high-dimensional vector
-    auto& source = pfield_tmp_vec_;
-    auto& residual = pfield_tmp_vec2_;
-    const auto& output_dofs = *pfield_deim_output_dofs_[cell];
-    const auto& input_dofs = pfield_deim_input_dofs_[cell];
-    copy_ld_to_hd_vec(input_dofs, ld_source, source);
-    // linear part
-    partial_mv_hd_to_hd(output_dofs, S_pfield_, source, residual);
-    // subtract rhs
-    partially_sub_vecs(output_dofs, residual, pfield_rhs_vector_);
-    // copy source values to temporary discrete functions
-    partially_fill_tmp_pfield(cell, source);
-    // nonlinear part
-    assemble_nonlinear_part_of_pfield_residual(residual, cell, true);
-    // copy to low-dimensional output residual
-    VectorType ret(output_dofs.size());
-    for (size_t ii = 0; ii < output_dofs.size(); ++ii)
-      ret[ii] = residual[output_dofs[ii]];
-    return ret;
-  }
+
+  // VectorType apply_restricted_pfield_op(const VectorType& ld_source, const size_t cell)
+  // {
+  //   // copy values to high-dimensional vector
+  //   auto& source = pfield_tmp_vec_;
+  //   auto& residual = pfield_tmp_vec2_;
+  //   const auto& output_dofs = *pfield_deim_output_dofs_[cell];
+  //   const auto& input_dofs = pfield_deim_input_dofs_[cell];
+  //   copy_ld_to_hd_vec(input_dofs, ld_source, source);
+  //   // linear part
+  //   partial_mv_hd_to_hd(output_dofs, S_pfield_, source, residual);
+  //   // subtract rhs
+  //   partially_sub_vecs(output_dofs, residual, pfield_rhs_vector_);
+  //   // copy source values to temporary discrete functions
+  //   partially_fill_tmp_pfield(cell, source);
+  //   // nonlinear part
+  //   assemble_nonlinear_part_of_pfield_residual(residual, cell, true);
+  //   // copy to low-dimensional output residual
+  //   VectorType ret(output_dofs.size());
+  //   for (size_t ii = 0; ii < output_dofs.size(); ++ii)
+  //     ret[ii] = residual[output_dofs[ii]];
+  //   return ret;
+  // }
 
   //******************************************************************************************************************
   //******************************************* Apply inverse operators **********************************************
@@ -1318,7 +1501,7 @@ struct CellModelSolver
         double lambda = 1;
 
         // revert jacobian back to linear part to correctly calculate linear part of residual
-        revert_pfield_jacobian_to_linear();
+        // revert_pfield_jacobian_to_linear();
 
         // backtracking line search
         const double gamma = 0.001;
@@ -1347,12 +1530,12 @@ struct CellModelSolver
   //********************************************** Apply jacobians ***************************************************
   //******************************************************************************************************************
 
-  VectorType apply_S_pfield(const VectorType& vec)
-  {
-    VectorType ret(vec.size());
-    S_pfield_.mv(vec, ret);
-    return ret;
-  }
+  // VectorType apply_S_pfield(const VectorType& vec)
+  // {
+  //   VectorType ret(vec.size());
+  //   S_pfield_.mv(vec, ret);
+  //   return ret;
+  // }
 
   // Currently takes a full-dimensional vector, but only applies the rows that are in pfield_output_dofs
   // As the rows are sparse, there shouldn't be too much performance impact of applying to the whole vector
@@ -1372,32 +1555,34 @@ struct CellModelSolver
     // linear part
     if (!restricted) {
       // no need to set full_range = range to zero here, will be overwritten by mv
-      S_pfield_.mv(source, range);
+      pfield_jac_linear_op_.apply(source, range);
     } else {
-      partially_scal_vec(output_dofs, full_range, 0.);
-      partial_mv_hd_to_ld(output_dofs, S_pfield_, source, range);
+      // TODO:
+      // pfield_jac_linear_restricted_op_.apply(source, range);
+      // partially_scal_vec(output_dofs, full_range, 0.);
+      // partial_mv_hd_to_ld(output_dofs, S_pfield_, source, range);
     }
     // nonlinear_part
     if (!restricted)
       fill_tmp_pfield(cell, source);
     else
       partially_fill_tmp_pfield(cell, source);
-    assemble_A_pfield_nonlinear_part(cell, restricted);
+    assemble_M_nonlin_pfield(cell, restricted);
     auto& tmp_vec = phi_tmp_vec_;
     if (!restricted) {
-      A_pfield_nonlinear_part_.mv(source_mu, tmp_vec);
+      M_nonlin_pfield_.mv(source_mu, tmp_vec);
       tmp_vec *= 1. / (Be_ * std::pow(epsilon_, 2));
       range_phinat += tmp_vec;
-      A_pfield_nonlinear_part_.mv(source_phi, tmp_vec);
+      M_nonlin_pfield_.mv(source_phi, tmp_vec);
       tmp_vec *= 1. / epsilon_;
       for (const auto& DoF : phi_dirichlet_constraints_.dirichlet_DoFs())
         tmp_vec[DoF] = source_phi[DoF];
       range_mu += tmp_vec;
     } else {
-      partial_mv_hd_to_hd(phinat_output_dofs, A_pfield_nonlinear_part_, source_mu, tmp_vec);
+      partial_mv_hd_to_hd(phinat_output_dofs, M_nonlin_pfield_, source_mu, tmp_vec);
       partially_scal_vec(phinat_output_dofs, tmp_vec, 1. / (Be_ * std::pow(epsilon_, 2)));
       partially_add_vecs(phinat_output_dofs, range_phinat, tmp_vec);
-      partial_mv_hd_to_hd(mu_output_dofs, A_pfield_nonlinear_part_, source_phi, tmp_vec);
+      partial_mv_hd_to_hd(mu_output_dofs, M_nonlin_pfield_, source_phi, tmp_vec);
       partially_scal_vec(mu_output_dofs, tmp_vec, 1. / epsilon_);
       // TODO: Only apply if DoF is both in dirichlet_dofs and in mu_output_dofs
       for (const auto& DoF : phi_dirichlet_constraints_.dirichlet_DoFs())
@@ -1406,12 +1591,12 @@ struct CellModelSolver
     }
 
     // assemble matrix S_{10} = G
-    assemble_G_pfield_nonlinear_part(cell, restricted);
+    assemble_G_pfield(cell, restricted);
     if (!restricted) {
-      G_pfield_nonlinear_part_.mv(source_phi, tmp_vec);
+      G_pfield_.mv(source_phi, tmp_vec);
       range_phinat += tmp_vec;
     } else {
-      partial_mv_hd_to_hd(phinat_output_dofs, G_pfield_nonlinear_part_, source_phi, tmp_vec);
+      partial_mv_hd_to_hd(phinat_output_dofs, G_pfield_, source_phi, tmp_vec);
       partially_add_vecs(phinat_output_dofs, range_phinat, tmp_vec);
     }
 
@@ -1525,11 +1710,11 @@ struct CellModelSolver
     M_ofield_.mv(P_[cell].dofs().vector(), ofield_f_vector_);
     ofield_f_vector_ /= dt;
     ofield_P_rhs_vector_ = ofield_f_vector_;
-    ofield_P_rhs_vector_.axpy(-1./kappa_, ofield_g_vector_);
+    ofield_P_rhs_vector_.axpy(-1. / kappa_, ofield_g_vector_);
   }
 
   // Computes phase field rhs using currently stored values of variables and stores in pfield_rhs_vector_
-  void assemble_pfield_rhs(const double dt, const size_t cell, const bool restricted)
+  void assemble_pfield_rhs(const double /*dt*/, const size_t cell, const bool restricted)
   {
     const auto& phi_output_dofs = phi_deim_output_dofs_[cell];
     auto f_functional = make_vector_functional(phi_space_, pfield_f_vector_);
@@ -1646,11 +1831,12 @@ struct CellModelSolver
           const auto phi = this->eval_phi(cell, x_local, param);
           return factor * phi;
         });
-    C_ofield_linear_part_op_->append(LocalElementIntegralBilinearForm<E, d>(LocalElementProductScalarWeightIntegrand<E, d>(c1_Pa_inv_phi)));
+    C_ofield_linear_part_op_->append(
+        LocalElementIntegralBilinearForm<E, d>(LocalElementProductScalarWeightIntegrand<E, d>(c1_Pa_inv_phi)));
     C_ofield_linear_part_op_->assemble(use_tbb_);
     S_ofield_10_ = C_ofield_linear_part_;
     S_schur_ofield_linear_part_ = S_ofield_00_;
-    S_schur_ofield_linear_part_.axpy(-1./kappa_, C_ofield_linear_part_);
+    S_schur_ofield_linear_part_.axpy(-1. / kappa_, C_ofield_linear_part_);
     S_schur_ofield_ = S_schur_ofield_linear_part_;
 
     // nonlinear part is equal to linearized part in first iteration
@@ -1674,14 +1860,15 @@ struct CellModelSolver
           const auto P_n = this->eval_P(cell, x_local, param);
           return factor * P_n.two_norm2();
         });
-    C_ofield_nonlinear_part_op_->append(LocalElementIntegralBilinearForm<E, d>(LocalElementProductScalarWeightIntegrand<E, d>(c1_Pa_P2)));
+    C_ofield_nonlinear_part_op_->append(
+        LocalElementIntegralBilinearForm<E, d>(LocalElementProductScalarWeightIntegrand<E, d>(c1_Pa_P2)));
     C_ofield_nonlinear_part_ *= 0.;
     C_ofield_nonlinear_part_op_->clear();
-    C_ofield_nonlinear_part_op_->append(
-        LocalElementIntegralBilinearForm<E, d>(LocalElementOtimesMatrixIntegrand<E, d>(P_tmp_[cell], -2.*c_1_ / Pa_)));
+    C_ofield_nonlinear_part_op_->append(LocalElementIntegralBilinearForm<E, d>(
+        LocalElementOtimesMatrixIntegrand<E, d>(P_tmp_[cell], -2. * c_1_ / Pa_)));
     C_ofield_nonlinear_part_op_->assemble(use_tbb_);
     S_ofield_10_ += C_ofield_nonlinear_part_;
-    S_schur_ofield_.axpy(-1./kappa_, C_ofield_nonlinear_part_);
+    S_schur_ofield_.axpy(-1. / kappa_, C_ofield_nonlinear_part_);
   }
 
   // reverts S_ofield_ to the state directly after assemble_ofield_linear_jacobian has been called the last time
@@ -1692,134 +1879,126 @@ struct CellModelSolver
     S_schur_ofield_ = S_schur_ofield_linear_part_;
   }
 
-  // assembles linear part of phase field jacobian and stores in S_pfield_
-  void assemble_pfield_linear_jacobian(const double dt, const size_t cell)
+  // assembles linear part of phase field jacobian
+  void assemble_pfield_linear_jacobian(const double /*dt*/, const size_t cell, const bool restricted)
   {
     // assemble matrix S_{00} = M + dt D
-    S_pfield_00_ = M_pfield_;
-    assemble_pfield_linear_jacobian_u_dependent_part(dt, cell, false);
-    S_pfield_01_ = E_pfield_;
-    S_pfield_01_ *= dt;
-    // linear part of matrix S_{12} = J
-    S_pfield_12_ = J_pfield_linear_part_;
-    // linear part of matrix S_{20} = A
-    S_pfield_20_ = A_pfield_linear_part_;
+    assemble_D_pfield(cell, restricted);
     // nonlinear part is equal to linearized part in first iteration
     if (linearize_)
-      assemble_pfield_nonlinear_jacobian(pfield_vec(cell), cell, false);
+      assemble_pfield_nonlinear_jacobian(pfield_vec(cell), cell, restricted);
   }
 
-  void assemble_pfield_linear_jacobian_u_dependent_part(const size_t dt, const size_t cell, const bool restricted) const
+  // void assemble_S_pfield()
+  // {
+  //   assemble_D_pfield(cell, false);
+  //   S_pfield_00_ = M_pfield_;
+  //   S_pfield_00_.axpy(dt, D_pfield_);
+  //   S_pfield_01_ = M_ell_pfield_;
+  //   S_pfield_01_ *= gamma_ * dt;
+  //   // linear part of matrix S_{12} = J
+  //   S_pfield_12_ = M_ell_pfield_;
+  //   S_pfield_12_ *= 1./Be_;
+  //   // linear part of matrix S_{20} = A
+  //   S_pfield_20_ = M_ell_pfield_;
+  //   S_pfield_20_ *= epsilon_;
+  // }
+
+  void assemble_D_pfield(const size_t cell, const bool restricted)
   {
-    XT::Functions::GenericGridFunction<E, d, 1> minus_u_dt(
+    const auto& phi_output_dofs = phi_deim_output_dofs_[cell];
+    if (!restricted)
+      D_pfield_ *= 0.;
+    else
+      partially_scal_mat(phi_output_dofs, D_pfield_, pfield_submatrix_pattern_, 0.);
+    XT::Functions::GenericGridFunction<E, d, 1> minus_u(
         /*order = */ u_space_.max_polorder(),
         /*post_bind_func*/
         [this](const E& element) { this->bind_u(element); },
         /*evaluate_func*/
-        [dt, this](const DomainType& x_local, const XT::Common::Parameter& param) {
+        [this](const DomainType& x_local, const XT::Common::Parameter& param) {
           auto ret = this->eval_u(x_local, param);
-          ret *= -dt;
+          ret *= -1;
           return ret;
         });
-    S_pfield_00_op_->clear();
-    S_pfield_00_op_->append(
-        LocalElementIntegralBilinearForm<E, 1>(LocalElementGradientValueIntegrand<E, 1, 1, R, R, R, true>(minus_u_dt)));
+    D_pfield_op_->clear();
+    D_pfield_op_->append(
+        LocalElementIntegralBilinearForm<E, 1>(LocalElementGradientValueIntegrand<E, 1, 1, R, R, R, true>(minus_u)));
     if (!restricted)
-      S_pfield_00_op_->assemble(use_tbb_);
+      D_pfield_op_->assemble(use_tbb_);
     else
-      S_pfield_00_op_->assemble_range(pfield_deim_entities_[cell]);
+      D_pfield_op_->assemble_range(pfield_deim_entities_[cell]);
   }
 
-  // assembles nonlinear part of phase field jacobian and adds to S_pfield_
-  // if assemble_pfield_linear_jacobian has been called first, S_pfield now contains the whole phase field jacobian
+  // assembles nonlinear part of phase field jacobian
   void assemble_pfield_nonlinear_jacobian(const VectorType& y, const size_t cell, const bool restricted)
   {
-    const auto& phinat_output_dofs = phinat_deim_output_dofs_[cell];
-    const auto& mu_output_dofs = mu_deim_output_dofs_[cell];
-    const auto& phinat_mu_output_dofs = both_mu_and_phi_deim_output_dofs_[cell];
     if (!restricted)
       fill_tmp_pfield(cell, y);
     else
       partially_fill_tmp_pfield(cell, y);
-    assemble_A_pfield_nonlinear_part(cell, restricted);
-    if (!restricted) {
-      A_pfield_nonlinear_part_ *= 1. / epsilon_;
-      S_pfield_20_ += A_pfield_nonlinear_part_;
-      A_pfield_nonlinear_part_ *= 1. / (Be_ * epsilon_);
-      S_pfield_12_ += A_pfield_nonlinear_part_;
-    } else {
-      partially_scal_mat(mu_output_dofs, A_pfield_nonlinear_part_, pfield_submatrix_pattern_, 1. / epsilon_);
-      partially_add_mats(mu_output_dofs, S_pfield_20_, A_pfield_nonlinear_part_);
-      // if there are a phinat dof and a mu dof that share the same row of A we have to undo the previous scaling first
-      partially_scal_mat(phinat_mu_output_dofs, A_pfield_nonlinear_part_, pfield_submatrix_pattern_, epsilon_);
-      partially_scal_mat(
-          phinat_output_dofs, A_pfield_nonlinear_part_, pfield_submatrix_pattern_, 1. / (Be_ * std::pow(epsilon_, 2)));
-      partially_add_mats(phinat_output_dofs, S_pfield_12_, A_pfield_nonlinear_part_);
-    }
-    // TODO: use something like restriced_unit_row in the restricted case
-    for (const auto& DoF : phi_dirichlet_constraints_.dirichlet_DoFs())
-      S_pfield_20_.unit_row(DoF);
-
-    // assemble matrix S_{10} = G
-    assemble_G_pfield_nonlinear_part(cell, restricted);
-    if (!restricted)
-      S_pfield_10_ = G_pfield_nonlinear_part_;
-    else
-      partially_copy_mat(phinat_output_dofs, S_pfield_10_, G_pfield_nonlinear_part_);
+    assemble_M_nonlin_pfield(cell, restricted);
+    assemble_G_pfield(cell, restricted);
+    pfield_phimu_matrixop_.prepare(dt_);
   }
 
   // reverts S_pfield_ to the state directly after assemble_pfield_linear_jacobian has been called the last time
   // Assumes only blocks that are touched by assemble_pfield_nonlinear_jacobian are modified
-  void revert_pfield_jacobian_to_linear()
-  {
-    // clear S_{10} = G
-    S_pfield_10_ *= 0.;
-    // linear part of matrix S_{12} = J
-    S_pfield_12_ = J_pfield_linear_part_;
-    // linear part of matrix S_{20} = A
-    S_pfield_20_ = A_pfield_linear_part_;
-  }
+  // void revert_pfield_jacobian_to_linear()
+  // {
+  //   // clear S_{10} = G
+  //   S_pfield_10_ *= 0.;
+  //   // linear part of matrix S_{12} = J
+  //   S_pfield_12_ = M_ell_pfield_;
+  //   S_pfield_12_ *= 1./Be_;
+  //   // linear part of matrix S_{20} = A
+  //   S_pfield_20_ = M_ell_pfield_;
+  //   S_pfield_20_ *= epsilon_;
+  // }
 
-  void assemble_pfield_restricted_linear_jacobian(const double dt, const size_t cell)
+  // void assemble_pfield_restricted_linear_jacobian(const double dt, const size_t cell)
+  // {
+  //   // assemble matrix S_{00} = M/dt + D
+  //   const auto& phi_output_dofs = phi_deim_output_dofs_[cell];
+  //   const auto& phinat_output_dofs = phinat_deim_output_dofs_[cell];
+  //   const auto& mu_output_dofs = mu_deim_output_dofs_[cell];
+  //   partially_copy_mat(phi_output_dofs, S_pfield_00_, M_pfield_);
+  //   partially_scal_mat(phi_output_dofs, S_pfield_00_, 1. / dt);
+  //   assemble_D_pfield(dt, cell, true);
+  //   // linear part of matrix S_{12} = J
+  //   partially_copy_mat(phinat_output_dofs, S_pfield_12_, M_ell_pfield_);
+  //   partially_scal_mat(phinat_output_dofs, S_pfield_12_, 1./Be_);
+  //   // linear part of matrix S_{20} = A
+  //   partially_copy_mat(mu_output_dofs, S_pfield_20_, M_ell_pfield_);
+  //   partially_scal_mat(mu_output_dofs, S_pfield_20_, epsilon_);
+  // }
+
+  // void revert_restricted_pfield_jacobian_to_linear(const size_t cell)
+  // {
+  //   const auto& phinat_output_dofs = phinat_deim_output_dofs_[cell];
+  //   const auto& mu_output_dofs = mu_deim_output_dofs_[cell];
+  //   // clear S_{10} = G
+  //   partially_scal_mat(phinat_output_dofs, S_pfield_10_, 0.);
+  //   // linear part of matrix S_{12} = J
+  //   partially_copy_mat(phinat_output_dofs, S_pfield_12_, M_ell_pfield_);
+  //   partially_scal_mat(phinat_output_dofs, S_pfield_12_, 1./Be_);
+  //   // linear part of matrix S_{20} = A
+  //   partially_copy_mat(mu_output_dofs, S_pfield_20_, M_ell_pfield_);
+  //   partially_scal_mat(mu_output_dofs, S_pfield_20_, epsilon_);
+  // }
+
+  // stores matrix with entries \int (3 phi^2 - 1) varphi_i varphi_j in M_nonlin_pfield_
+  void assemble_M_nonlin_pfield(const size_t cell, const bool restricted)
   {
-    // assemble matrix S_{00} = M/dt + D
-    const auto& phi_output_dofs = phi_deim_output_dofs_[cell];
     const auto& phinat_output_dofs = phinat_deim_output_dofs_[cell];
     const auto& mu_output_dofs = mu_deim_output_dofs_[cell];
-    partially_copy_mat(phi_output_dofs, S_pfield_00_, M_pfield_);
-    partially_scal_mat(phi_output_dofs, S_pfield_00_, 1. / dt);
-    assemble_pfield_linear_jacobian_u_dependent_part(dt, cell, true);
-    // linear part of matrix S_{12} = J
-    partially_copy_mat(phinat_output_dofs, S_pfield_12_, J_pfield_linear_part_);
-    // linear part of matrix S_{20} = A
-    partially_copy_mat(mu_output_dofs, S_pfield_20_, A_pfield_linear_part_);
-  }
-
-  void revert_restricted_pfield_jacobian_to_linear(const size_t cell)
-  {
-    const auto& phinat_output_dofs = phinat_deim_output_dofs_[cell];
-    const auto& mu_output_dofs = mu_deim_output_dofs_[cell];
-    // clear S_{10} = G
-    partially_scal_mat(phinat_output_dofs, S_pfield_10_, 0.);
-    // linear part of matrix S_{12} = J
-    partially_copy_mat(phinat_output_dofs, S_pfield_12_, J_pfield_linear_part_);
-    // linear part of matrix S_{20} = A
-    partially_copy_mat(mu_output_dofs, S_pfield_20_, A_pfield_linear_part_);
-  }
-
-  // stores nonlinear part of block A of the phase field jacobian matrix in A_pfield_nonlinear_part_
-  void assemble_A_pfield_nonlinear_part(const size_t cell, const bool restricted)
-  {
-    const auto& phinat_output_dofs = phinat_deim_output_dofs_[cell];
-    const auto& mu_output_dofs = mu_deim_output_dofs_[cell];
-    A_pfield_nonlinear_part_op_->clear();
     if (!restricted) {
-      A_pfield_nonlinear_part_ *= 0.;
+      M_nonlin_pfield_ *= 0.;
     } else {
-      partially_scal_mat(mu_output_dofs, A_pfield_nonlinear_part_, pfield_submatrix_pattern_, 0.);
-      partially_scal_mat(phinat_output_dofs, A_pfield_nonlinear_part_, pfield_submatrix_pattern_, 0.);
+      partially_scal_mat(mu_output_dofs, M_nonlin_pfield_, pfield_submatrix_pattern_, 0.);
+      partially_scal_mat(phinat_output_dofs, M_nonlin_pfield_, pfield_submatrix_pattern_, 0.);
     }
-    XT::Functions::GenericGridFunction<E, 1, 1> A_nonlinear_prefactor(
+    XT::Functions::GenericGridFunction<E, 1, 1> M_nonlin_prefactor(
         /*order = */ 2 * phi_space_.max_polorder(),
         /*post_bind_func*/
         [cell, this](const E& element) { this->bind_phi(cell, element); },
@@ -1828,23 +2007,23 @@ struct CellModelSolver
           const R phi_n = this->eval_phi(cell, x_local, param);
           return (3. * phi_n * phi_n - 1.);
         });
-    A_pfield_nonlinear_part_op_->append(
-        LocalElementIntegralBilinearForm<E, 1>(LocalElementProductScalarWeightIntegrand<E, 1>(A_nonlinear_prefactor)));
+    M_nonlin_pfield_op_->clear();
+    M_nonlin_pfield_op_->append(
+        LocalElementIntegralBilinearForm<E, 1>(LocalElementProductScalarWeightIntegrand<E, 1>(M_nonlin_prefactor)));
     if (!restricted)
-      A_pfield_nonlinear_part_op_->assemble(use_tbb_);
+      M_nonlin_pfield_op_->assemble(use_tbb_);
     else
-      A_pfield_nonlinear_part_op_->assemble_range(pfield_deim_entities_[cell]);
+      M_nonlin_pfield_op_->assemble_range(pfield_deim_entities_[cell]);
   }
 
   // stores nonlinear part of block G of the phase field jacobian matrix in G_pfield_nonlinear_part_
-  void assemble_G_pfield_nonlinear_part(const size_t cell, const bool restricted)
+  void assemble_G_pfield(const size_t cell, const bool restricted)
   {
-    const auto& phinat_output_dofs = phinat_deim_output_dofs_[cell];
-    G_pfield_nonlinear_part_op_->clear();
+    const auto& phi_output_dofs = phi_deim_output_dofs_[cell];
     if (!restricted)
-      G_pfield_nonlinear_part_ *= 0.;
+      G_pfield_ *= 0.;
     else
-      partially_scal_mat(phinat_output_dofs, G_pfield_nonlinear_part_, pfield_submatrix_pattern_, 0.);
+      partially_scal_mat(phi_output_dofs, G_pfield_, pfield_submatrix_pattern_, 0.);
     XT::Functions::GenericGridFunction<E, 1, 1> G_prefactor(
         /*order = */ 2 * phi_space_.max_polorder(),
         /*post_bind_func*/
@@ -1882,12 +2061,13 @@ struct CellModelSolver
           } // num_cells > 1
           return ret;
         });
-    G_pfield_nonlinear_part_op_->append(
+    G_pfield_op_->clear();
+    G_pfield_op_->append(
         LocalElementIntegralBilinearForm<E, 1>(LocalElementProductScalarWeightIntegrand<E, 1>(G_prefactor)));
     if (!restricted)
-      G_pfield_nonlinear_part_op_->assemble(use_tbb_);
+      G_pfield_op_->assemble(use_tbb_);
     else
-      G_pfield_nonlinear_part_op_->assemble_range(pfield_deim_entities_[cell]);
+      G_pfield_op_->assemble_range(pfield_deim_entities_[cell]);
   }
 
   // assembles nonlinear part of phasefield residual and adds to residual
@@ -1912,6 +2092,7 @@ struct CellModelSolver
         },
         /*evaluate_func*/
         [cell,
+         Ca_inv = 1. / Ca_,
          In_inv = 1. / In_,
          eps_inv = epsilon_inv_,
          num_cells = num_cells_,
@@ -1920,7 +2101,7 @@ struct CellModelSolver
           // evaluate P, divP
           const auto phi_n = this->eval_phi(cell, x_local, param);
           const auto mu_n = this->eval_mu(cell, x_local, param);
-          auto ret = inv_Be_eps2 * (3. * phi_n * phi_n - 1) * mu_n;
+          auto ret = (Ca_inv + inv_Be_eps2 * (3. * phi_n * phi_n - 1)) * mu_n;
           if (num_cells > 1) {
             R wsum = 0.;
             R Bsum = 0.;
@@ -2226,8 +2407,9 @@ private:
     // compute P^{n+1} first
     ofield_schur_solver_->compute(S_schur_ofield_.backend());
     ofield_P_rhs_vector_ = rhs_P;
-    ofield_P_rhs_vector_.axpy(-1./kappa_, rhs_Pnat);
-    P_eigen_[cell].backend() = ofield_schur_solver_->solveWithGuess(ofield_P_rhs_vector_.backend(), P_eigen_[cell].backend());
+    ofield_P_rhs_vector_.axpy(-1. / kappa_, rhs_Pnat);
+    P_eigen_[cell].backend() =
+        ofield_schur_solver_->solveWithGuess(ofield_P_rhs_vector_.backend(), P_eigen_[cell].backend());
 
     // compute P^{natural,n+1}
     EigenVectorType C_P(size_u_, 0., 0);
@@ -2238,7 +2420,7 @@ private:
 
     // copy to return vector and return
     VectorViewType ret_P_view_(ret, 0., size_u_);
-    VectorViewType ret_Pnat_view_(ret, size_u_, 2*size_u_);
+    VectorViewType ret_Pnat_view_(ret, size_u_, 2 * size_u_);
     ret_P_view_ = P_eigen_[cell];
     ret_Pnat_view_ = Pnat_eigen_;
     return ret;
@@ -2265,37 +2447,30 @@ private:
     ConstVectorViewType rhs_mu(rhs, 2 * size_phi_, 3 * size_phi_);
     // apply inverse of first factor to rhs
     // phi part
-    phi_tmp_eigen_vec_ = rhs_phinat;
-    phi_tmp_eigen_vec_.backend() = pfield_mass_matrix_solver_->solve(phi_tmp_eigen_vec_.backend());
-    S_pfield_01_.mv(phi_tmp_eigen_vec_, pfield_tmp_rhs_phi_);
-    pfield_tmp_rhs_phi_ *= -1.;
-    pfield_tmp_rhs_phi_ += rhs_phi;
-    // phinat part
-    pfield_tmp_rhs_phinat_ = rhs_mu;
-    // mu part
-    // pfield_tmp_rhs_mu_ = rhs_phinat;
-    // pfield_tmp_rhs_mu_.backend() = pfield_mass_matrix_solver_->solve(pfield_tmp_rhs_mu_.backend());
-    // now solve phi-mu-system first
-    using MatrixOpType = PfieldPhiMuMatrixOperator<EigenVectorType, MatrixType, DirectSolverType>;
-    MatrixOpType matrix_op(S_pfield_00_, *pfield_mass_matrix_solver_, S_pfield_01_, S_pfield_10_, S_pfield_12_, S_pfield_20_, S_pfield_22_);
-    XT::LA::IdentityPreconditioner<MatrixOpType> prec(SolverCategory::Category::sequential);
-    // Dune::BiCGSTABSolver<EigenVectorType> outer_solver(matrix_op, prec, 1e-10, 10000, false);
-    Dune::RestartedGMResSolver<EigenVectorType> outer_solver(matrix_op, prec, 1e-10, 20, 10000, false);
+    phi_tmp_eigen_ = rhs_phinat;
+    phi_tmp_eigen_.backend() = pfield_mass_matrix_solver_->solve(phi_tmp_eigen_.backend());
+    M_ell_pfield_.mv(phi_tmp_eigen_, phi_tmp_eigen2_);
+    phi_tmp_eigen2_ *= -gamma_ * dt_;
+    phi_tmp_eigen2_ += rhs_phi;
+    pfield_tmp_rhs_phimu_phi_ = phi_tmp_eigen2_;
+    pfield_tmp_rhs_phimu_mu_ = rhs_mu;
     Dune::InverseOperatorResult res;
-    pfield_tmp_rhs_phimu_phi_ = pfield_tmp_rhs_phi_;
-    pfield_tmp_rhs_phimu_mu_ = pfield_tmp_rhs_phinat_;
-    outer_solver.apply(pfield_tmp_phimu_, pfield_tmp_rhs_phimu_, res);
-    ret_phi = pfield_tmp_phimu_phi_;
-    ret_mu = pfield_tmp_phimu_mu_;
+    pfield_phimu_solver_->apply(pfield_tmp_phimu_[cell], pfield_tmp_rhs_phimu_, res);
+    ret_phi = pfield_tmp_phimu_phi_[cell];
+    ret_mu = pfield_tmp_phimu_mu_[cell];
     // now solve for phinat
     // compute mu part of rhs
-    pfield_tmp_rhs_mu_ = rhs_phinat;
-    S_pfield_10_.mv(ret_phi, phi_tmp_eigen_vec_);
-    pfield_tmp_rhs_mu_ -= phi_tmp_eigen_vec_;
-    S_pfield_12_.mv(ret_mu, phi_tmp_eigen_vec_);
-    pfield_tmp_rhs_mu_ -= phi_tmp_eigen_vec_;
-    pfield_tmp_rhs_mu_.backend() = pfield_mass_matrix_solver_->solve(pfield_tmp_rhs_mu_.backend());
-    ret_phinat = pfield_tmp_rhs_mu_;
+    phi_tmp_eigen_ = rhs_phinat;
+    G_pfield_.mv(ret_phi, phi_tmp_eigen2_);
+    phi_tmp_eigen_ -= phi_tmp_eigen2_;
+    M_pfield_.mv(ret_mu, phi_tmp_eigen2_);
+    phi_tmp_eigen_.axpy(-1. / Ca_, phi_tmp_eigen2_);
+    M_ell_pfield_.mv(ret_mu, phi_tmp_eigen2_);
+    phi_tmp_eigen_.axpy(-1. / Be_, phi_tmp_eigen2_);
+    M_nonlin_pfield_.mv(ret_mu, phi_tmp_eigen2_);
+    phi_tmp_eigen_.axpy(-1. / (Be_ * std::pow(epsilon_, 2)), phi_tmp_eigen2_);
+    phi_tmp_eigen_.backend() = pfield_mass_matrix_solver_->solve(phi_tmp_eigen_.backend());
+    ret_phinat = phi_tmp_eigen_;
     return ret;
   }
 
@@ -2576,7 +2751,7 @@ private:
   // Dirichlet constraints
   const XT::Grid::AllDirichletBoundaryInfo<PI> boundary_info_;
   DirichletConstraints<PI, SpaceInterface<PGV, d, 1, R>> u_dirichlet_constraints_;
-  DirichletConstraints<PI, SpaceInterface<PGV, 1, 1, R>> phi_dirichlet_constraints_;
+  PhiDirichletConstraintsType phi_dirichlet_constraints_;
   // Sparsity pattern of one block of orientation field system matrix
   XT::LA::SparsityPatternDefault ofield_submatrix_pattern_;
   // Orientation field system matrix S = (M/dt+A B; C D)
@@ -2620,48 +2795,51 @@ private:
   mutable ColMajorBackendType S_colmajor_;
   mutable ColMajorBackendType M_ofield_colmajor_;
   mutable ColMajorBackendType S_schur_ofield_colmajor_;
-  // Linear solvers
+  // Linear solvers and linear operators needed for solvers
   std::shared_ptr<DirectSolverType> stokes_solver_;
   mutable std::shared_ptr<SolverType> ofield_solver_;
   mutable std::shared_ptr<DirectSolverType> ofield_mass_matrix_solver_;
   mutable std::shared_ptr<DiagSolverType> ofield_schur_solver_;
-  mutable std::shared_ptr<SolverType> pfield_solver_;
-  mutable std::shared_ptr<DirectSolverType> pfield_mass_matrix_solver_;
   // Sparsity pattern of one block of phase field system matrix
   const XT::LA::SparsityPatternDefault pfield_submatrix_pattern_;
   // Phase field system matrix S = (M/dt+D E 0; G H J; A 0 C)
-  MatrixType S_pfield_;
-  MatrixViewType S_pfield_00_;
-  MatrixViewType S_pfield_01_;
-  MatrixViewType S_pfield_10_;
-  MatrixViewType S_pfield_11_;
-  MatrixViewType S_pfield_12_;
-  MatrixViewType S_pfield_20_;
-  MatrixViewType S_pfield_22_;
+  // MatrixType S_pfield_;
+  // MatrixViewType S_pfield_00_;
+  // MatrixViewType S_pfield_01_;
+  // MatrixViewType S_pfield_10_;
+  // MatrixViewType S_pfield_11_;
+  // MatrixViewType S_pfield_12_;
+  // MatrixViewType S_pfield_20_;
+  // MatrixViewType S_pfield_22_;
   MatrixType M_pfield_;
-  MatrixType E_pfield_;
-  MatrixType A_pfield_linear_part_;
-  MatrixType A_pfield_nonlinear_part_;
-  MatrixType G_pfield_nonlinear_part_;
-  MatrixType J_pfield_linear_part_;
+  MatrixType D_pfield_;
+  MatrixType M_ell_pfield_;
+  MatrixType M_nonlin_pfield_;
+  MatrixType G_pfield_;
   mutable ColMajorBackendType M_pfield_colmajor_;
+  // Pfield solvers and linear operators
+  mutable std::shared_ptr<SolverType> pfield_solver_;
+  mutable std::shared_ptr<DirectSolverType> pfield_mass_matrix_solver_;
+  PfieldPhiMuMatrixOperatorType pfield_phimu_matrixop_;
+  PfieldMatrixLinearPartOperator<VectorType, MatrixType, PhiDirichletConstraintsType> pfield_jac_linear_op_;
+  XT::LA::IdentityPreconditioner<PfieldPhiMuMatrixOperatorType> identity_prec_;
+  mutable std::shared_ptr<PfieldPhiMuSolverType> pfield_phimu_solver_;
   // Matrix operators for phasefield matrices
   std::shared_ptr<MatrixOperator<MatrixViewType, PGV, 1>> S_pfield_00_op_;
   std::shared_ptr<MatrixOperator<MatrixViewType, PGV, 1>> S_pfield_10_op_;
-  std::shared_ptr<MatrixOperator<MatrixType, PGV, 1>> A_pfield_nonlinear_part_op_;
-  std::shared_ptr<MatrixOperator<MatrixType, PGV, 1>> G_pfield_nonlinear_part_op_;
+  std::shared_ptr<MatrixOperator<MatrixType, PGV, 1>> D_pfield_op_;
+  std::shared_ptr<MatrixOperator<MatrixType, PGV, 1>> G_pfield_op_;
+  std::shared_ptr<MatrixOperator<MatrixType, PGV, 1>> M_nonlin_pfield_op_;
   // Phase field rhs vector (g h f)
   VectorType pfield_rhs_vector_;
   VectorViewType pfield_g_vector_;
   VectorViewType pfield_h_vector_;
   VectorViewType pfield_f_vector_;
-  EigenVectorType phi_tmp_eigen_vec_;
-  EigenVectorType pfield_tmp_rhs_phi_;
-  EigenVectorType pfield_tmp_rhs_phinat_;
-  EigenVectorType pfield_tmp_rhs_mu_;
-  EigenVectorType pfield_tmp_phimu_;
-  EigenVectorViewType pfield_tmp_phimu_phi_;
-  EigenVectorViewType pfield_tmp_phimu_mu_;
+  EigenVectorType phi_tmp_eigen_;
+  EigenVectorType phi_tmp_eigen2_;
+  std::vector<EigenVectorType> pfield_tmp_phimu_;
+  std::vector<EigenVectorViewType> pfield_tmp_phimu_phi_;
+  std::vector<EigenVectorViewType> pfield_tmp_phimu_mu_;
   EigenVectorType pfield_tmp_rhs_phimu_;
   EigenVectorViewType pfield_tmp_rhs_phimu_phi_;
   EigenVectorViewType pfield_tmp_rhs_phimu_mu_;
@@ -2700,6 +2878,7 @@ private:
   mutable std::shared_ptr<PerThreadScalarLocalFuncs> phi_tmp_local_;
   mutable std::shared_ptr<PerThreadScalarLocalFuncs> phinat_tmp_local_;
   mutable std::shared_ptr<PerThreadScalarLocalFuncs> mu_tmp_local_;
+  double dt_;
 };
 
 #endif // DUNE_GDT_EXAMPLES_CELLMODEL_HH
