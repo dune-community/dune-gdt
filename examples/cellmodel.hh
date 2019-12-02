@@ -15,7 +15,8 @@
 
 #include <dune/common/parallel/mpihelper.hh>
 
-#include <dune/xt/common/math.hh>
+#include <dune/istl/operators.hh>
+#include <dune/istl/solvers.hh>
 
 #include <dune/xt/la/container/common.hh>
 #include <dune/xt/la/container/eigen.hh>
@@ -23,6 +24,7 @@
 #include <dune/xt/la/container/matrix-view.hh>
 #include <dune/xt/la/container/vector-view.hh>
 #include <dune/xt/la/solver.hh>
+#include <dune/xt/la/solver/istl/preconditioners.hh>
 
 #include <dune/xt/grid/boundaryinfo.hh>
 #include <dune/xt/grid/filters/element.hh>
@@ -109,6 +111,89 @@ static void write_to_textfile(const DiscreteFunc& func, const std::string& prefi
   } // if (rank == 0)
 } // void write_to_textfile()
 
+template <class VectorType,
+          class MatrixType,
+          class SolverType>
+class PfieldPhiMuMatrixOperator : public Dune::LinearOperator<VectorType, VectorType>
+{
+  using BaseType = Dune::LinearOperator<VectorType, VectorType>;
+  using MatrixViewType = XT::LA::MatrixView<MatrixType>;
+  using VectorViewType = XT::LA::VectorView<VectorType>;
+  using ConstVectorViewType = XT::LA::ConstVectorView<VectorType>;
+
+public:
+  using Vector = VectorType;
+  using Matrix = MatrixType;
+  using Field = typename VectorType::ScalarType;
+
+  // Matrix dimensions are
+  // A: m x m, B1, B2: m x n, C: n x n
+  PfieldPhiMuMatrixOperator(const MatrixViewType& M_dt_D, const SolverType& M_inv, const MatrixViewType& dt_E, const MatrixViewType& G, const MatrixViewType& J, const MatrixViewType& A, const MatrixViewType& C)
+    : M_dt_D_(M_dt_D)
+    , M_inv_(M_inv)
+    , dt_E_(dt_E)
+    , G_(G)
+    , J_(J)
+    , A_(A)
+    , C_(C)
+    , size_phi_(dt_E_.rows())
+    , tmp_vec_(size_phi_)
+    , tmp_vec2_(size_phi_)
+    , tmp_vec3_(2*size_phi_)
+  {}
+
+  /*! \brief apply operator to x:  \f$ y = S(x) \f$
+        The input vector is consistent and the output must also be
+     consistent on the interior+border partition.
+   */
+  void apply(const Vector& x, Vector& y) const override final
+  {
+    const ConstVectorViewType x_phi(x, 0, size_phi_);
+    const ConstVectorViewType x_mu(x, size_phi_, 2 * size_phi_);
+    VectorViewType y_phi(y, 0, size_phi_);
+    VectorViewType y_mu(y, size_phi_, 2 * size_phi_);
+    M_dt_D_.mv(x_phi, y_phi);
+    G_.mv(x_phi, tmp_vec_);
+    J_.mv(x_mu, tmp_vec2_);
+    tmp_vec_ += tmp_vec2_;
+    tmp_vec_.backend() = M_inv_.solve(tmp_vec_.backend());
+    dt_E_.mv(tmp_vec_, tmp_vec2_);
+    y_phi -= tmp_vec2_;
+    A_.mv(x_phi, y_mu);
+    C_.mv(x_mu, tmp_vec_);
+    y_mu += tmp_vec_;
+  }
+
+  void applyscaleadd(Field alpha, const Vector& x, Vector& y) const override final
+  {
+    auto& Sx = tmp_vec3_;
+    apply(x, Sx);
+    Sx *= alpha;
+    y += Sx;
+  }
+
+  //! Category of the linear operator (see SolverCategory::Category)
+  SolverCategory::Category category() const override final
+  {
+    return SolverCategory::Category::sequential;
+  }
+
+private:
+  const MatrixViewType& M_dt_D_;
+  const SolverType& M_inv_;
+  const MatrixViewType& dt_E_;
+  const MatrixViewType& G_;
+  const MatrixViewType& J_;
+  const MatrixViewType& A_;
+  const MatrixViewType& C_;
+  const size_t size_phi_;
+  // vectors to store intermediate results
+  mutable Vector tmp_vec_;
+  mutable Vector tmp_vec2_;
+  mutable Vector tmp_vec3_;
+};
+
+
 struct CellModelSolver
 {
   // using G = ALU_2D_SIMPLEX_CONFORMING;
@@ -145,8 +230,9 @@ struct CellModelSolver
   using JacobianRetType = XT::Common::FieldMatrix<R, d, d>;
   using ColMajorBackendType = ::Eigen::SparseMatrix<R, ::Eigen::ColMajor>;
   using RowMajorBackendType = typename MatrixType::BackendType;
-  using StokesSolverType = ::Eigen::SparseLU<ColMajorBackendType>;
+  using DirectSolverType = ::Eigen::SparseLU<ColMajorBackendType>;
   using SolverType = ::Eigen::BiCGSTAB<RowMajorBackendType, ::Eigen::IncompleteLUT<R>>;
+  using DiagSolverType = ::Eigen::BiCGSTAB<RowMajorBackendType, ::Eigen::DiagonalPreconditioner<R>>;
   using PerThreadVectorLocalFunc = XT::Common::PerThreadValue<std::unique_ptr<VectorLocalDiscreteFunctionType>>;
   using PerThreadScalarLocalFuncs = XT::Common::PerThreadValue<std::vector<std::unique_ptr<LocalDiscreteFunctionType>>>;
   using PerThreadVectorLocalFuncs =
@@ -230,18 +316,30 @@ struct CellModelSolver
     , M_ofield_(size_u_, size_u_, ofield_submatrix_pattern_)
     , C_ofield_elliptic_part_(size_u_, size_u_, ofield_submatrix_pattern_)
     , C_ofield_linear_part_(size_u_, size_u_, ofield_submatrix_pattern_)
+    , C_ofield_nonlinear_part_(size_u_, size_u_, ofield_submatrix_pattern_)
+    , S_schur_ofield_linear_part_(size_u_, size_u_, ofield_submatrix_pattern_)
+    , S_schur_ofield_(size_u_, size_u_, ofield_submatrix_pattern_)
     , S_ofield_00_op_(
           std::make_shared<MatrixOperator<MatrixViewType, PGV, d>>(grid_view_, u_space_, u_space_, S_ofield_00_))
-    , S_ofield_10_op_(
-          std::make_shared<MatrixOperator<MatrixViewType, PGV, d>>(grid_view_, u_space_, u_space_, S_ofield_10_))
+    , C_ofield_linear_part_op_(
+          std::make_shared<MatrixOperator<MatrixType, PGV, d>>(grid_view_, u_space_, u_space_, C_ofield_linear_part_))
+    , C_ofield_nonlinear_part_op_(
+          std::make_shared<MatrixOperator<MatrixType, PGV, d>>(grid_view_, u_space_, u_space_, C_ofield_nonlinear_part_))
     , M_ofield_op_(std::make_shared<MatrixOperator<MatrixType, PGV, d>>(grid_view_, u_space_, u_space_, M_ofield_))
     , ofield_rhs_vector_(2 * size_u_, 0., 100)
     , ofield_f_vector_(ofield_rhs_vector_, 0, size_u_)
     , ofield_g_vector_(ofield_rhs_vector_, size_u_, 2 * size_u_)
+    , ofield_P_rhs_vector_(size_u_, 0., 0)
+    , ofield_Pnat_rhs_vector_(size_u_, 0., 0)
+    , P_eigen_(num_cells_, EigenVectorType(size_u_, 0., 0))
+    , Pnat_eigen_(size_u_, 0., 0)
     , ofield_old_result_(num_cells_, EigenVectorType(2 * size_u_, 0.))
-    , stokes_solver_(std::make_shared<StokesSolverType>())
+    , stokes_solver_(std::make_shared<DirectSolverType>())
     , ofield_solver_(std::make_shared<SolverType>())
+    , ofield_mass_matrix_solver_(std::make_shared<DirectSolverType>())
+    , ofield_schur_solver_(std::make_shared<DiagSolverType>())
     , pfield_solver_(std::make_shared<SolverType>())
+    , pfield_mass_matrix_solver_(std::make_shared<DirectSolverType>())
     , pfield_submatrix_pattern_(make_element_sparsity_pattern(phi_space_, phi_space_, grid_view_))
     , S_pfield_(3 * size_phi_, 3 * size_phi_, create_pfield_pattern(size_phi_, pfield_submatrix_pattern_), 100)
     , S_pfield_00_(S_pfield_, 0, size_phi_, 0, size_phi_)
@@ -269,6 +367,16 @@ struct CellModelSolver
     , pfield_g_vector_(pfield_rhs_vector_, 0, size_phi_)
     , pfield_h_vector_(pfield_rhs_vector_, size_phi_, 2 * size_phi_)
     , pfield_f_vector_(pfield_rhs_vector_, 2 * size_phi_, 3 * size_phi_)
+    , phi_tmp_eigen_vec_(size_phi_, 0., 0)
+    , pfield_tmp_rhs_phi_(size_phi_, 0., 0)
+    , pfield_tmp_rhs_phinat_(size_phi_, 0., 0)
+    , pfield_tmp_rhs_mu_(size_phi_, 0., 0)
+    , pfield_tmp_phimu_(2 * size_phi_, 0., 0)
+    , pfield_tmp_phimu_phi_(pfield_tmp_phimu_, 0, size_phi_)
+    , pfield_tmp_phimu_mu_(pfield_tmp_phimu_, size_phi_, 2 *size_phi_ )
+    , pfield_tmp_rhs_phimu_(2 * size_phi_, 0., 0)
+    , pfield_tmp_rhs_phimu_phi_(pfield_tmp_rhs_phimu_, 0, size_phi_)
+    , pfield_tmp_rhs_phimu_mu_(pfield_tmp_rhs_phimu_, size_phi_, 2 *size_phi_ )
     , pfield_old_result_(num_cells_, EigenVectorType(3 * size_phi_, 0.))
     , pfield_deim_input_dofs_(num_cells_)
     , phinat_deim_input_dofs_begin_(num_cells_)
@@ -455,12 +563,12 @@ struct CellModelSolver
     // calculate B_{ij} as \int \nabla p_i div(v_j)
     B_stokes_op.append(LocalElementIntegralBilinearForm<E, d, 1, double, double, 1>(
         LocalElementAnsatzValueTestDivProductIntegrand<E>(-1.)));
-    M_p_stokes_op.append(LocalElementIntegralBilinearForm<E, 1>(LocalElementProductIntegrand<E, 1>()));
+    M_p_stokes_op.append(LocalElementIntegralBilinearForm<E, 1>(LocalElementProductScalarWeightIntegrand<E, 1>()));
 
     auto p_basis_integrated_functional = make_vector_functional(p_space_, p_basis_integrated_vector_);
     const XT::Functions::ConstantGridFunction<E> one_function(1);
     p_basis_integrated_functional.append(LocalElementIntegralFunctional<E, 1>(
-        local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E, 1>(), one_function)));
+        local_binary_to_unary_element_integrand(LocalElementProductScalarWeightIntegrand<E, 1>(), one_function)));
     B_stokes_op.append(p_basis_integrated_functional);
 
     // Dirichlet constrainst for u
@@ -495,7 +603,7 @@ struct CellModelSolver
      ************************************ Orientationfield *******************************************
      *************************************************************************************************/
     // calculate M_{ij} as \int \psi_i phi_j
-    M_ofield_op_->append(LocalElementIntegralBilinearForm<E, d>(LocalElementProductIntegrand<E, d>(1.)));
+    M_ofield_op_->append(LocalElementIntegralBilinearForm<E, d>(LocalElementProductScalarWeightIntegrand<E, d>(1.)));
     M_ofield_op_->assemble(use_tbb_);
     // set S_11 = D = M
     S_ofield_11_ = M_ofield_;
@@ -506,14 +614,20 @@ struct CellModelSolver
     MatrixOperator<MatrixType, PGV, d> ofield_elliptic_op(grid_view_, u_space_, u_space_, C_ofield_elliptic_part_);
     ofield_elliptic_op.append(LocalElementIntegralBilinearForm<E, d>(LocalLaplaceIntegrand<E, d>(-1. / Pa_)));
     ofield_elliptic_op.assemble(use_tbb_);
-    ofield_solver_->analyzePattern(S_ofield_.backend());
+    // S_schur_ofield_colmajor_ = S_schur_ofield_.backend();
+    // ofield_solver_->analyzePattern(S_ofield_.backend());
+    ofield_schur_solver_->analyzePattern(S_schur_ofield_.backend());
+    M_ofield_colmajor_ = M_ofield_.backend();
+    ofield_mass_matrix_solver_->analyzePattern(M_ofield_colmajor_);
+    ofield_mass_matrix_solver_->factorize(M_ofield_colmajor_);
+
 
     /*************************************************************************************************
      **************************************** Phasefield *********************************************
      *************************************************************************************************/
 
     MatrixOperator<MatrixType, PGV, 1> M_pfield_op(grid_view_, phi_space_, phi_space_, M_pfield_);
-    M_pfield_op.append(LocalElementIntegralBilinearForm<E, 1>(LocalElementProductIntegrand<E, 1>(1.)));
+    M_pfield_op.append(LocalElementIntegralBilinearForm<E, 1>(LocalElementProductScalarWeightIntegrand<E, 1>(1.)));
     MatrixOperator<MatrixType, PGV, 1> E_pfield_op(grid_view_, phi_space_, phi_space_, E_pfield_);
     E_pfield_op.append(LocalElementIntegralBilinearForm<E, 1>(LocalLaplaceIntegrand<E, 1>(1.)));
     M_pfield_op.append(phi_dirichlet_constraints_);
@@ -527,8 +641,8 @@ struct CellModelSolver
     // Set matrix S_{11} = H = M
     S_pfield_11_ = M_pfield_;
     // Set matrix S_{01} = E
+    E_pfield_ *= gamma_;
     S_pfield_01_ = E_pfield_;
-    S_pfield_01_ *= gamma_;
 
     // apply Dirichlet constraints to linear part
     for (const auto& DoF : phi_dirichlet_constraints_.dirichlet_DoFs()) {
@@ -538,6 +652,9 @@ struct CellModelSolver
 
     pfield_solver_->analyzePattern(S_pfield_.backend());
     // XT::LA::write_matrix_market(M_pfield_, "phasefield_mass_matrix.mtx");
+    M_pfield_colmajor_ = M_pfield_.backend();
+    pfield_mass_matrix_solver_->analyzePattern(M_pfield_colmajor_);
+    pfield_mass_matrix_solver_->factorize(M_pfield_colmajor_);
   } // constructor
 
   size_t num_cells() const
@@ -888,6 +1005,7 @@ struct CellModelSolver
     phi_tmp_[cell].dofs().vector() = phi_[cell].dofs().vector();
     assemble_ofield_rhs(dt, cell);
     assemble_ofield_linear_jacobian(dt, cell);
+
   }
 
   void prepare_pfield_op(const double dt, const size_t cell)
@@ -978,14 +1096,14 @@ struct CellModelSolver
   VectorType apply_ofield_op(const VectorType& y, const size_t cell) const
   {
     // linear part
-    VectorType residual(y.size());
-    S_ofield_.mv(y, residual);
+    VectorType ret(y.size());
+    S_ofield_.mv(y, ret);
     // subtract rhs
-    residual -= ofield_rhs_vector_;
+    ret -= ofield_rhs_vector_;
     if (!linearize_) {
       fill_tmp_ofield(cell, y);
       // nonlinear part
-      VectorViewType res1_vec(residual, size_u_, 2 * size_u_);
+      VectorViewType res1_vec(ret, size_u_, 2 * size_u_);
       auto nonlinear_res_functional = make_vector_functional(u_space_, res1_vec);
       XT::Functions::GenericGridFunction<E, d, 1> nonlinear_res_pf(
           /*order = */ 3 * u_space_.max_polorder(),
@@ -998,13 +1116,11 @@ struct CellModelSolver
             return P_n * (factor * (P_n * P_n));
           });
       nonlinear_res_functional.append(LocalElementIntegralFunctional<E, d>(
-          local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E, d>(), nonlinear_res_pf)));
-      S_ofield_00_op_->clear();
-      S_ofield_00_op_->append(nonlinear_res_functional);
-      S_ofield_00_op_->assemble(use_tbb_);
+          local_binary_to_unary_element_integrand(LocalElementProductScalarWeightIntegrand<E, d>(), nonlinear_res_pf)));
+      nonlinear_res_functional.assemble(use_tbb_);
     }
     // relative error if l2_norm is > 1, else absolute error
-    return residual;
+    return ret;
   }
 
   // Applies cell-th phase field operator (applies F if phase field equation is F(y) = 0)
@@ -1080,7 +1196,7 @@ struct CellModelSolver
 
       // *********** Newton ******************************
       const auto tol = 1e-10;
-      const auto max_iter = 20;
+      const auto max_iter = 200;
       const auto max_dampening_iter = 1000;
 
       auto l2_norm_P = l2_norm(grid_view_, P_[cell]);
@@ -1094,8 +1210,8 @@ struct CellModelSolver
       // std::cout << "Computing residual took: " << time.count() << " s!" << std::endl;
 
       size_t iter = 0;
-      VectorType x_n = y_guess;
-      VectorType x_n_plus_1 = y_guess;
+      VectorType y_n = y_guess;
+      VectorType y_n_plus_1 = y_guess;
       VectorType update;
       while (true) {
         if (res_norm < tol)
@@ -1103,7 +1219,7 @@ struct CellModelSolver
 
         // ********** assemble nonlinear part of S = Jacobian ***********
         begin = std::chrono::steady_clock::now();
-        assemble_ofield_nonlinear_jacobian(x_n, cell);
+        assemble_ofield_nonlinear_jacobian(y_n, cell);
         time = std::chrono::steady_clock::now() - begin;
         // std::cout << "Assembling nonlinear part of jacobian took: " << time.count() << " s!" << std::endl;
 
@@ -1132,19 +1248,19 @@ struct CellModelSolver
                         Exceptions::operator_error,
                         "max iterations reached when trying to compute automatic dampening!\n|residual|_l2 = "
                             << res_norm << "\nl = " << iter << "\n");
-          x_n_plus_1 = x_n + update * lambda;
-          residual = apply_ofield_op(x_n_plus_1, cell);
+          y_n_plus_1 = y_n + update * lambda;
+          residual = apply_ofield_op(y_n_plus_1, cell);
           candidate_res = ofield_residual_norm(residual, l2_norm_P, l2_norm_Pnat);
           // std::cout << "Candidate res: " << candidate_res << std::endl;
           lambda /= 2;
           k += 1;
         }
-        x_n = x_n_plus_1;
+        y_n = y_n_plus_1;
         res_norm = candidate_res;
         // std::cout << "Current res: " << candidate_res << std::endl;
         iter += 1;
       } // while (true)
-      return x_n;
+      return y_n;
     }
   }
 
@@ -1158,7 +1274,7 @@ struct CellModelSolver
 
       // *********** Newton ******************************
       const auto tol = 1e-10;
-      const auto max_iter = 20;
+      const auto max_iter = 200;
       const auto max_dampening_iter = 1000;
 
       const auto l2_norm_phi = l2_norm(grid_view_, phi_[cell]);
@@ -1376,9 +1492,6 @@ struct CellModelSolver
   // Computes orientation field rhs using currently stored values of variables and stores in ofield_rhs_vector_
   void assemble_ofield_rhs(const double dt, const size_t cell)
   {
-    M_ofield_.mv(P_[cell].dofs().vector(), ofield_f_vector_);
-    ofield_f_vector_ /= dt;
-
     auto g_functional = make_vector_functional(u_space_, ofield_g_vector_);
     ofield_g_vector_ *= 0.;
     XT::Functions::GenericGridFunction<E, d> g(
@@ -1406,8 +1519,13 @@ struct CellModelSolver
           return ret;
         });
     g_functional.append(LocalElementIntegralFunctional<E, d>(
-        local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E, d>(), g)));
+        local_binary_to_unary_element_integrand(LocalElementProductScalarWeightIntegrand<E, d>(), g)));
     g_functional.assemble(use_tbb_);
+
+    M_ofield_.mv(P_[cell].dofs().vector(), ofield_f_vector_);
+    ofield_f_vector_ /= dt;
+    ofield_P_rhs_vector_ = ofield_f_vector_;
+    ofield_P_rhs_vector_.axpy(-1./kappa_, ofield_g_vector_);
   }
 
   // Computes phase field rhs using currently stored values of variables and stores in pfield_rhs_vector_
@@ -1430,18 +1548,15 @@ struct CellModelSolver
           return two_epsilon_inv * std::pow(phi_n, 3);
         });
     f_functional.append(LocalElementIntegralFunctional<E, 1>(
-        local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E, 1>(), f_pf)));
+        local_binary_to_unary_element_integrand(LocalElementProductScalarWeightIntegrand<E, 1>(), f_pf)));
     if (linearize_)
       h_functional.append(f_functional);
 
     // calculate g
-    if (!restricted) {
+    if (!restricted)
       M_pfield_.mv(phi_[cell].dofs().vector(), pfield_g_vector_);
-      pfield_g_vector_ /= dt;
-    } else {
+    else
       partial_mv_hd_to_hd(phi_output_dofs, M_pfield_, phi_[cell].dofs().vector(), pfield_g_vector_);
-      partially_scal_vec(phi_output_dofs, pfield_g_vector_, 1. / dt);
-    }
 
     // calculate h
     if (!restricted) {
@@ -1481,7 +1596,7 @@ struct CellModelSolver
           return ret;
         });
     h_functional.append(LocalElementIntegralFunctional<E, 1>(
-        local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E, 1>(1.), h_pf)));
+        local_binary_to_unary_element_integrand(LocalElementProductScalarWeightIntegrand<E, 1>(1.), h_pf)));
     // assemble rhs
     if (!restricted)
       h_functional.assemble(use_tbb_);
@@ -1520,8 +1635,8 @@ struct CellModelSolver
     S_ofield_00_op_->assemble(use_tbb_);
 
     // calculate linear part S_10 = C
-    S_ofield_10_op_->clear();
-    S_ofield_10_ = C_ofield_elliptic_part_;
+    C_ofield_linear_part_op_->clear();
+    C_ofield_linear_part_ = C_ofield_elliptic_part_;
     XT::Functions::GenericGridFunction<E, 1, 1> c1_Pa_inv_phi(
         /*order = */ u_space_.max_polorder(),
         /*post_bind_func*/
@@ -1531,9 +1646,12 @@ struct CellModelSolver
           const auto phi = this->eval_phi(cell, x_local, param);
           return factor * phi;
         });
-    S_ofield_10_op_->append(LocalElementIntegralBilinearForm<E, d>(LocalElementProductIntegrand<E, d>(c1_Pa_inv_phi)));
-    S_ofield_10_op_->assemble(use_tbb_);
-    C_ofield_linear_part_ = S_ofield_10_;
+    C_ofield_linear_part_op_->append(LocalElementIntegralBilinearForm<E, d>(LocalElementProductScalarWeightIntegrand<E, d>(c1_Pa_inv_phi)));
+    C_ofield_linear_part_op_->assemble(use_tbb_);
+    S_ofield_10_ = C_ofield_linear_part_;
+    S_schur_ofield_linear_part_ = S_ofield_00_;
+    S_schur_ofield_linear_part_.axpy(-1./kappa_, C_ofield_linear_part_);
+    S_schur_ofield_ = S_schur_ofield_linear_part_;
 
     // nonlinear part is equal to linearized part in first iteration
     if (linearize_)
@@ -1545,9 +1663,8 @@ struct CellModelSolver
   // jacobian
   void assemble_ofield_nonlinear_jacobian(const VectorType& y, const size_t cell) const
   {
-    S_ofield_10_op_->clear();
     ConstVectorViewType P_vec(y, 0, size_u_);
-    const auto P = make_discrete_function(u_space_, P_vec);
+    P_tmp_[cell].dofs().vector() = P_vec;
     XT::Functions::GenericGridFunction<E, 1, 1> c1_Pa_P2(
         /*order = */ 2. * u_space_.max_polorder(),
         /*post_bind_func*/
@@ -1557,25 +1674,14 @@ struct CellModelSolver
           const auto P_n = this->eval_P(cell, x_local, param);
           return factor * P_n.two_norm2();
         });
-    S_ofield_10_op_->append(LocalElementIntegralBilinearForm<E, d>(LocalElementProductIntegrand<E, d>(c1_Pa_P2)));
-    XT::Functions::GenericGridFunction<E, d, d> minus_two_frac_c1_Pa_Pn_otimes_Pn(
-        /*order = */ 2 * u_space_.max_polorder(),
-        /*post_bind_func*/
-        [cell, this](const E& element) { this->bind_P(cell, element); },
-        /*evaluate_func*/
-        [cell, factor = -2. * c_1_ / Pa_, this](const DomainType& x_local, const XT::Common::Parameter& param) {
-          const auto P_n = this->eval_P(cell, x_local, param);
-          FieldMatrix<R, d, d> ret;
-          for (size_t ii = 0; ii < d; ++ii)
-            for (size_t jj = 0; jj < d; ++jj)
-              ret[ii][jj] = P_n[ii] * P_n[jj];
-          ret *= factor;
-          return ret;
-        });
-    // Pn_otimes_Pn is symmetric, so no need to transpose
-    S_ofield_10_op_->append(
-        LocalElementIntegralBilinearForm<E, d>(LocalElementProductIntegrand<E, d>(minus_two_frac_c1_Pa_Pn_otimes_Pn)));
-    S_ofield_10_op_->assemble(use_tbb_);
+    C_ofield_nonlinear_part_op_->append(LocalElementIntegralBilinearForm<E, d>(LocalElementProductScalarWeightIntegrand<E, d>(c1_Pa_P2)));
+    C_ofield_nonlinear_part_ *= 0.;
+    C_ofield_nonlinear_part_op_->clear();
+    C_ofield_nonlinear_part_op_->append(
+        LocalElementIntegralBilinearForm<E, d>(LocalElementOtimesMatrixIntegrand<E, d>(P_tmp_[cell], -2.*c_1_ / Pa_)));
+    C_ofield_nonlinear_part_op_->assemble(use_tbb_);
+    S_ofield_10_ += C_ofield_nonlinear_part_;
+    S_schur_ofield_.axpy(-1./kappa_, C_ofield_nonlinear_part_);
   }
 
   // reverts S_ofield_ to the state directly after assemble_ofield_linear_jacobian has been called the last time
@@ -1583,15 +1689,17 @@ struct CellModelSolver
   void revert_ofield_jacobian_to_linear() const
   {
     S_ofield_10_ = C_ofield_linear_part_;
+    S_schur_ofield_ = S_schur_ofield_linear_part_;
   }
 
   // assembles linear part of phase field jacobian and stores in S_pfield_
   void assemble_pfield_linear_jacobian(const double dt, const size_t cell)
   {
-    // assemble matrix S_{00} = M/dt + D
+    // assemble matrix S_{00} = M + dt D
     S_pfield_00_ = M_pfield_;
-    S_pfield_00_ *= 1. / dt;
-    assemble_pfield_linear_jacobian_u_dependent_part(cell, false);
+    assemble_pfield_linear_jacobian_u_dependent_part(dt, cell, false);
+    S_pfield_01_ = E_pfield_;
+    S_pfield_01_ *= dt;
     // linear part of matrix S_{12} = J
     S_pfield_12_ = J_pfield_linear_part_;
     // linear part of matrix S_{20} = A
@@ -1601,21 +1709,21 @@ struct CellModelSolver
       assemble_pfield_nonlinear_jacobian(pfield_vec(cell), cell, false);
   }
 
-  void assemble_pfield_linear_jacobian_u_dependent_part(const size_t cell, const bool restricted) const
+  void assemble_pfield_linear_jacobian_u_dependent_part(const size_t dt, const size_t cell, const bool restricted) const
   {
-    XT::Functions::GenericGridFunction<E, d, 1> minus_u(
+    XT::Functions::GenericGridFunction<E, d, 1> minus_u_dt(
         /*order = */ u_space_.max_polorder(),
         /*post_bind_func*/
         [this](const E& element) { this->bind_u(element); },
         /*evaluate_func*/
-        [this](const DomainType& x_local, const XT::Common::Parameter& param) {
+        [dt, this](const DomainType& x_local, const XT::Common::Parameter& param) {
           auto ret = this->eval_u(x_local, param);
-          ret *= -1.;
+          ret *= -dt;
           return ret;
         });
     S_pfield_00_op_->clear();
     S_pfield_00_op_->append(
-        LocalElementIntegralBilinearForm<E, 1>(LocalElementGradientValueIntegrand<E, 1, 1, R, R, R, true>(minus_u)));
+        LocalElementIntegralBilinearForm<E, 1>(LocalElementGradientValueIntegrand<E, 1, 1, R, R, R, true>(minus_u_dt)));
     if (!restricted)
       S_pfield_00_op_->assemble(use_tbb_);
     else
@@ -1680,7 +1788,7 @@ struct CellModelSolver
     const auto& mu_output_dofs = mu_deim_output_dofs_[cell];
     partially_copy_mat(phi_output_dofs, S_pfield_00_, M_pfield_);
     partially_scal_mat(phi_output_dofs, S_pfield_00_, 1. / dt);
-    assemble_pfield_linear_jacobian_u_dependent_part(cell, true);
+    assemble_pfield_linear_jacobian_u_dependent_part(dt, cell, true);
     // linear part of matrix S_{12} = J
     partially_copy_mat(phinat_output_dofs, S_pfield_12_, J_pfield_linear_part_);
     // linear part of matrix S_{20} = A
@@ -1721,7 +1829,7 @@ struct CellModelSolver
           return (3. * phi_n * phi_n - 1.);
         });
     A_pfield_nonlinear_part_op_->append(
-        LocalElementIntegralBilinearForm<E, 1>(LocalElementProductIntegrand<E, 1>(A_nonlinear_prefactor)));
+        LocalElementIntegralBilinearForm<E, 1>(LocalElementProductScalarWeightIntegrand<E, 1>(A_nonlinear_prefactor)));
     if (!restricted)
       A_pfield_nonlinear_part_op_->assemble(use_tbb_);
     else
@@ -1775,7 +1883,7 @@ struct CellModelSolver
           return ret;
         });
     G_pfield_nonlinear_part_op_->append(
-        LocalElementIntegralBilinearForm<E, 1>(LocalElementProductIntegrand<E, 1>(G_prefactor)));
+        LocalElementIntegralBilinearForm<E, 1>(LocalElementProductScalarWeightIntegrand<E, 1>(G_prefactor)));
     if (!restricted)
       G_pfield_nonlinear_part_op_->assemble(use_tbb_);
     else
@@ -1844,9 +1952,9 @@ struct CellModelSolver
           return inv_eps * (phi_n * phi_n - 1) * phi_n;
         });
     nonlinear_res1_functional.append(LocalElementIntegralFunctional<E, 1>(
-        local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E, 1>(), nonlinear_res_pf1)));
+        local_binary_to_unary_element_integrand(LocalElementProductScalarWeightIntegrand<E, 1>(), nonlinear_res_pf1)));
     nonlinear_res2_functional.append(LocalElementIntegralFunctional<E, 1>(
-        local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E, 1>(), nonlinear_res_pf2)));
+        local_binary_to_unary_element_integrand(LocalElementProductScalarWeightIntegrand<E, 1>(), nonlinear_res_pf2)));
     nonlinear_res1_functional.append(nonlinear_res2_functional);
     if (!restricted)
       nonlinear_res1_functional.assemble(use_tbb_);
@@ -2091,6 +2199,7 @@ private:
   //*******************************************  Linear solvers ******************************************************
   //******************************************************************************************************************
 
+#if 0
   VectorType solve_ofield_linear_system(const VectorType& rhs, const size_t cell) const
   {
     //    std::ofstream S_file("S_" + XT::Common::to_string(dt) + ".txt");
@@ -2106,16 +2215,90 @@ private:
     ofield_old_result_[cell] = update;
     return XT::Common::convert_to<VectorType>(update);
   }
+#endif
+
+  VectorType solve_ofield_linear_system(const VectorType& rhs, const size_t cell) const
+  {
+    VectorType ret(2 * size_u_, 0., 0);
+    ConstVectorViewType rhs_P(rhs, 0, size_u_);
+    ConstVectorViewType rhs_Pnat(rhs, size_u_, 2 * size_u_);
+
+    // compute P^{n+1} first
+    ofield_schur_solver_->compute(S_schur_ofield_.backend());
+    ofield_P_rhs_vector_ = rhs_P;
+    ofield_P_rhs_vector_.axpy(-1./kappa_, rhs_Pnat);
+    P_eigen_[cell].backend() = ofield_schur_solver_->solveWithGuess(ofield_P_rhs_vector_.backend(), P_eigen_[cell].backend());
+
+    // compute P^{natural,n+1}
+    EigenVectorType C_P(size_u_, 0., 0);
+    ofield_Pnat_rhs_vector_ = rhs_Pnat;
+    S_ofield_10_.mv(P_eigen_[cell], C_P);
+    ofield_Pnat_rhs_vector_ -= C_P;
+    Pnat_eigen_.backend() = ofield_mass_matrix_solver_->solve(ofield_Pnat_rhs_vector_.backend());
+
+    // copy to return vector and return
+    VectorViewType ret_P_view_(ret, 0., size_u_);
+    VectorViewType ret_Pnat_view_(ret, size_u_, 2*size_u_);
+    ret_P_view_ = P_eigen_[cell];
+    ret_Pnat_view_ = Pnat_eigen_;
+    return ret;
+  }
+
+  // VectorType solve_pfield_linear_system(const VectorType& rhs, const size_t cell)
+  // {
+  //   EigenVectorType update(rhs.size());
+  //   pfield_solver_->compute(S_pfield_.backend());
+  //   const auto rhs_eig = XT::Common::convert_to<EigenVectorType>(rhs);
+  //   update.backend() = pfield_solver_->solveWithGuess(rhs_eig.backend(), pfield_old_result_[cell].backend());
+  //   pfield_old_result_[cell] = update;
+  //   return XT::Common::convert_to<VectorType>(update);
+  // }
 
   VectorType solve_pfield_linear_system(const VectorType& rhs, const size_t cell)
   {
-    EigenVectorType update(rhs.size());
-    pfield_solver_->compute(S_pfield_.backend());
-    const auto rhs_eig = XT::Common::convert_to<EigenVectorType>(rhs);
-    update.backend() = pfield_solver_->solveWithGuess(rhs_eig.backend(), pfield_old_result_[cell].backend());
-    pfield_old_result_[cell] = update;
-    return XT::Common::convert_to<VectorType>(update);
+    VectorType ret(3 * size_phi_, 0.);
+    VectorViewType ret_phi(ret, 0, size_phi_);
+    VectorViewType ret_phinat(ret, size_phi_, 2 * size_phi_);
+    VectorViewType ret_mu(ret, 2 * size_phi_, 3 * size_phi_);
+    ConstVectorViewType rhs_phi(rhs, 0, size_phi_);
+    ConstVectorViewType rhs_phinat(rhs, size_phi_, 2 * size_phi_);
+    ConstVectorViewType rhs_mu(rhs, 2 * size_phi_, 3 * size_phi_);
+    // apply inverse of first factor to rhs
+    // phi part
+    phi_tmp_eigen_vec_ = rhs_phinat;
+    phi_tmp_eigen_vec_.backend() = pfield_mass_matrix_solver_->solve(phi_tmp_eigen_vec_.backend());
+    S_pfield_01_.mv(phi_tmp_eigen_vec_, pfield_tmp_rhs_phi_);
+    pfield_tmp_rhs_phi_ *= -1.;
+    pfield_tmp_rhs_phi_ += rhs_phi;
+    // phinat part
+    pfield_tmp_rhs_phinat_ = rhs_mu;
+    // mu part
+    // pfield_tmp_rhs_mu_ = rhs_phinat;
+    // pfield_tmp_rhs_mu_.backend() = pfield_mass_matrix_solver_->solve(pfield_tmp_rhs_mu_.backend());
+    // now solve phi-mu-system first
+    using MatrixOpType = PfieldPhiMuMatrixOperator<EigenVectorType, MatrixType, DirectSolverType>;
+    MatrixOpType matrix_op(S_pfield_00_, *pfield_mass_matrix_solver_, S_pfield_01_, S_pfield_10_, S_pfield_12_, S_pfield_20_, S_pfield_22_);
+    XT::LA::IdentityPreconditioner<MatrixOpType> prec(SolverCategory::Category::sequential);
+    // Dune::BiCGSTABSolver<EigenVectorType> outer_solver(matrix_op, prec, 1e-10, 10000, false);
+    Dune::RestartedGMResSolver<EigenVectorType> outer_solver(matrix_op, prec, 1e-10, 20, 10000, false);
+    Dune::InverseOperatorResult res;
+    pfield_tmp_rhs_phimu_phi_ = pfield_tmp_rhs_phi_;
+    pfield_tmp_rhs_phimu_mu_ = pfield_tmp_rhs_phinat_;
+    outer_solver.apply(pfield_tmp_phimu_, pfield_tmp_rhs_phimu_, res);
+    ret_phi = pfield_tmp_phimu_phi_;
+    ret_mu = pfield_tmp_phimu_mu_;
+    // now solve for phinat
+    // compute mu part of rhs
+    pfield_tmp_rhs_mu_ = rhs_phinat;
+    S_pfield_10_.mv(ret_phi, phi_tmp_eigen_vec_);
+    pfield_tmp_rhs_mu_ -= phi_tmp_eigen_vec_;
+    S_pfield_12_.mv(ret_mu, phi_tmp_eigen_vec_);
+    pfield_tmp_rhs_mu_ -= phi_tmp_eigen_vec_;
+    pfield_tmp_rhs_mu_.backend() = pfield_mass_matrix_solver_->solve(pfield_tmp_rhs_mu_.backend());
+    ret_phinat = pfield_tmp_rhs_mu_;
+    return ret;
   }
+
 
   //***************************************************************************************************************
   //*********************************************  Helper methods  ************************************************
@@ -2404,18 +2587,28 @@ private:
   mutable MatrixViewType S_ofield_11_;
   // Orientation field mass matrix
   MatrixType M_ofield_;
-  // Part of C that is independent of u and dt
+  // Part of C that is independent of phi and dt
   MatrixType C_ofield_elliptic_part_;
-  // Whole linear part of C (elliptic part + u-dependent part)
+  // Whole linear part of C (elliptic part + phi-dependent part)
   MatrixType C_ofield_linear_part_;
+  // Whole linear part of C (elliptic part + phi-dependent part)
+  mutable MatrixType C_ofield_nonlinear_part_;
+  // Linear part of ofield schur matrix M/dt + A - 1/kappa C
+  MatrixType S_schur_ofield_linear_part_;
+  mutable MatrixType S_schur_ofield_;
   // Matrix operators for orientation field matrices
   mutable std::shared_ptr<MatrixOperator<MatrixViewType, PGV, d>> S_ofield_00_op_;
-  mutable std::shared_ptr<MatrixOperator<MatrixViewType, PGV, d>> S_ofield_10_op_;
+  mutable std::shared_ptr<MatrixOperator<MatrixType, PGV, d>> C_ofield_linear_part_op_;
+  mutable std::shared_ptr<MatrixOperator<MatrixType, PGV, d>> C_ofield_nonlinear_part_op_;
   std::shared_ptr<MatrixOperator<MatrixType, PGV, d>> M_ofield_op_;
   // finite element vector rhs = (f; g) for ofield system and views on P and Pnat parts f and g
   VectorType ofield_rhs_vector_;
   VectorViewType ofield_f_vector_;
   VectorViewType ofield_g_vector_;
+  mutable EigenVectorType ofield_P_rhs_vector_;
+  mutable EigenVectorType ofield_Pnat_rhs_vector_;
+  mutable std::vector<EigenVectorType> P_eigen_;
+  mutable EigenVectorType Pnat_eigen_;
   // Vectors for orientation field Newton scheme
   // TODO: do we need all these vectors? Do we need the same vectors for pfield or can we use the same ones for both?
   mutable std::vector<EigenVectorType> ofield_old_result_;
@@ -2423,12 +2616,17 @@ private:
   VectorType ofield_x_n_;
   VectorType ofield_update_;
   VectorType ofield_candidate_;
-  // Eigen column major matrix backend, needed for stokes solver
+  // Eigen column major matrix backend, needed for direct solvers
   mutable ColMajorBackendType S_colmajor_;
+  mutable ColMajorBackendType M_ofield_colmajor_;
+  mutable ColMajorBackendType S_schur_ofield_colmajor_;
   // Linear solvers
-  std::shared_ptr<StokesSolverType> stokes_solver_;
+  std::shared_ptr<DirectSolverType> stokes_solver_;
   mutable std::shared_ptr<SolverType> ofield_solver_;
+  mutable std::shared_ptr<DirectSolverType> ofield_mass_matrix_solver_;
+  mutable std::shared_ptr<DiagSolverType> ofield_schur_solver_;
   mutable std::shared_ptr<SolverType> pfield_solver_;
+  mutable std::shared_ptr<DirectSolverType> pfield_mass_matrix_solver_;
   // Sparsity pattern of one block of phase field system matrix
   const XT::LA::SparsityPatternDefault pfield_submatrix_pattern_;
   // Phase field system matrix S = (M/dt+D E 0; G H J; A 0 C)
@@ -2446,6 +2644,7 @@ private:
   MatrixType A_pfield_nonlinear_part_;
   MatrixType G_pfield_nonlinear_part_;
   MatrixType J_pfield_linear_part_;
+  mutable ColMajorBackendType M_pfield_colmajor_;
   // Matrix operators for phasefield matrices
   std::shared_ptr<MatrixOperator<MatrixViewType, PGV, 1>> S_pfield_00_op_;
   std::shared_ptr<MatrixOperator<MatrixViewType, PGV, 1>> S_pfield_10_op_;
@@ -2453,9 +2652,19 @@ private:
   std::shared_ptr<MatrixOperator<MatrixType, PGV, 1>> G_pfield_nonlinear_part_op_;
   // Phase field rhs vector (g h f)
   VectorType pfield_rhs_vector_;
-  XT::LA::VectorView<VectorType> pfield_g_vector_;
-  XT::LA::VectorView<VectorType> pfield_h_vector_;
-  XT::LA::VectorView<VectorType> pfield_f_vector_;
+  VectorViewType pfield_g_vector_;
+  VectorViewType pfield_h_vector_;
+  VectorViewType pfield_f_vector_;
+  EigenVectorType phi_tmp_eigen_vec_;
+  EigenVectorType pfield_tmp_rhs_phi_;
+  EigenVectorType pfield_tmp_rhs_phinat_;
+  EigenVectorType pfield_tmp_rhs_mu_;
+  EigenVectorType pfield_tmp_phimu_;
+  EigenVectorViewType pfield_tmp_phimu_phi_;
+  EigenVectorViewType pfield_tmp_phimu_mu_;
+  EigenVectorType pfield_tmp_rhs_phimu_;
+  EigenVectorViewType pfield_tmp_rhs_phimu_phi_;
+  EigenVectorViewType pfield_tmp_rhs_phimu_mu_;
   // Vectors for phasefield field Newton scheme
   // TODO: do we need all these vectors? Do we need the same vectors for ofield or can we use the same ones for both?
   std::vector<EigenVectorType> pfield_old_result_;

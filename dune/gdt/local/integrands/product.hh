@@ -112,6 +112,169 @@ private:
   mutable std::vector<typename LocalAnsatzBasisType::RangeType> ansatz_basis_values_;
 }; // class LocalElementProductIntegrand
 
+template <class E, size_t r = 1, class TR = double, class F = double, class AR = TR>
+class LocalElementProductScalarWeightIntegrand : public LocalBinaryElementIntegrandInterface<E, r, 1, TR, F, r, 1, AR>
+{
+  using ThisType = LocalElementProductScalarWeightIntegrand;
+  using BaseType = LocalBinaryElementIntegrandInterface<E, r, 1, TR, F, r, 1, AR>;
+
+public:
+  using BaseType::d;
+  using typename BaseType::DomainType;
+  using typename BaseType::ElementType;
+  using typename BaseType::LocalAnsatzBasisType;
+  using typename BaseType::LocalTestBasisType;
+
+  LocalElementProductScalarWeightIntegrand(XT::Functions::GridFunction<E, 1, 1, F> weight = 1.)
+    : BaseType()
+    , weight_(weight)
+    , local_weight_(weight_.local_function())
+  {}
+
+  LocalElementProductScalarWeightIntegrand(const ThisType& other)
+    : BaseType(other.parameter_type())
+    , weight_(other.weight_)
+    , local_weight_(weight_.local_function())
+  {}
+
+  LocalElementProductScalarWeightIntegrand(ThisType&& source) = default;
+
+  std::unique_ptr<BaseType> copy() const override final
+  {
+    return std::make_unique<ThisType>(*this);
+  }
+
+protected:
+  void post_bind(const ElementType& ele) override final
+  {
+    local_weight_->bind(ele);
+  }
+
+public:
+  int order(const LocalTestBasisType& test_basis,
+            const LocalAnsatzBasisType& ansatz_basis,
+            const XT::Common::Parameter& param = {}) const override final
+  {
+    return local_weight_->order(param) + test_basis.order(param) + ansatz_basis.order(param);
+  }
+
+  using BaseType::evaluate;
+
+  void evaluate(const LocalTestBasisType& test_basis,
+                const LocalAnsatzBasisType& ansatz_basis,
+                const DomainType& point_in_reference_element,
+                DynamicMatrix<F>& result,
+                const XT::Common::Parameter& param = {}) const override final
+  {
+    // prepare storage
+    const size_t rows = test_basis.size(param);
+    const size_t cols = ansatz_basis.size(param);
+    if (result.rows() < rows || result.cols() < cols)
+      result.resize(rows, cols);
+    // evaluate
+    test_basis.evaluate(point_in_reference_element, test_basis_values_, param);
+    ansatz_basis.evaluate(point_in_reference_element, ansatz_basis_values_, param);
+    const auto weight = local_weight_->evaluate(point_in_reference_element, param);
+    // compute product
+    for (size_t ii = 0; ii < rows; ++ii)
+      for (size_t jj = 0; jj < cols; ++jj)
+        result[ii][jj] = (test_basis_values_[ii] * ansatz_basis_values_[jj]) * weight;
+  } // ... evaluate(...)
+
+private:
+  XT::Functions::GridFunction<E, 1, 1, F> weight_;
+  std::unique_ptr<typename XT::Functions::GridFunction<E, 1, 1, F>::LocalFunctionType> local_weight_;
+  mutable std::vector<typename LocalTestBasisType::RangeType> test_basis_values_;
+  mutable std::vector<typename LocalAnsatzBasisType::RangeType> ansatz_basis_values_;
+}; // class LocalElementProductScalarWeightIntegrand
+
+template <class E, size_t r = 1, class TR = double, class F = double, class AR = TR>
+class LocalElementOtimesMatrixIntegrand : public LocalBinaryElementIntegrandInterface<E, r, 1, TR, F, r, 1, AR>
+{
+  using ThisType = LocalElementOtimesMatrixIntegrand;
+  using BaseType = LocalBinaryElementIntegrandInterface<E, r, 1, TR, F, r, 1, AR>;
+
+public:
+  using BaseType::d;
+  using typename BaseType::DomainType;
+  using typename BaseType::ElementType;
+  using typename BaseType::LocalAnsatzBasisType;
+  using typename BaseType::LocalTestBasisType;
+
+  LocalElementOtimesMatrixIntegrand(XT::Functions::GridFunction<E, r, 1, F> vec,
+                                    XT::Functions::GridFunction<E, 1, 1, F> weight = {1.})
+    : BaseType()
+    , vec_(vec)
+    , local_vec_(vec_.local_function())
+    , weight_(weight)
+    , local_weight_(weight_.local_function())
+  {}
+
+  LocalElementOtimesMatrixIntegrand(const ThisType& other)
+    : BaseType(other.parameter_type())
+    , vec_(other.vec_)
+    , local_vec_(vec_.local_function())
+    , weight_(other.weight_)
+    , local_weight_(weight_.local_function())
+  {}
+
+  LocalElementOtimesMatrixIntegrand(ThisType&& source) = default;
+
+  std::unique_ptr<BaseType> copy() const override final
+  {
+    return std::make_unique<ThisType>(*this);
+  }
+
+protected:
+  void post_bind(const ElementType& ele) override final
+  {
+    local_vec_->bind(ele);
+    local_weight_->bind(ele);
+  }
+
+public:
+  int order(const LocalTestBasisType& test_basis,
+            const LocalAnsatzBasisType& ansatz_basis,
+            const XT::Common::Parameter& param = {}) const override final
+  {
+    return local_weight_->order(param) + local_vec_->order(param) + test_basis.order(param) + ansatz_basis.order(param);
+  }
+
+  using BaseType::evaluate;
+
+  void evaluate(const LocalTestBasisType& test_basis,
+                const LocalAnsatzBasisType& ansatz_basis,
+                const DomainType& point_in_reference_element,
+                DynamicMatrix<F>& result,
+                const XT::Common::Parameter& param = {}) const override final
+  {
+    // prepare storage
+    const size_t rows = test_basis.size(param);
+    const size_t cols = ansatz_basis.size(param);
+    if (result.rows() < rows || result.cols() < cols)
+      result.resize(rows, cols);
+    // evaluate
+    test_basis.evaluate(point_in_reference_element, test_basis_values_, param);
+    ansatz_basis.evaluate(point_in_reference_element, ansatz_basis_values_, param);
+    const auto vec = local_vec_->evaluate(point_in_reference_element, param);
+    const auto weight = local_weight_->evaluate(point_in_reference_element, param);
+    // compute product
+    for (size_t ii = 0; ii < rows; ++ii) {
+      const auto factor_ii = (vec * test_basis_values_[ii]) * weight;
+      for (size_t jj = 0; jj < cols; ++jj)
+        result[ii][jj] = (vec * ansatz_basis_values_[jj]) * factor_ii;
+    }
+  } // ... evaluate(...)
+
+private:
+  XT::Functions::GridFunction<E, r, 1, F> vec_;
+  std::unique_ptr<typename XT::Functions::GridFunction<E, r, 1, F>::LocalFunctionType> local_vec_;
+  XT::Functions::GridFunction<E, 1, 1, F> weight_;
+  std::unique_ptr<typename XT::Functions::GridFunction<E, 1, 1, F>::LocalFunctionType> local_weight_;
+  mutable std::vector<typename LocalTestBasisType::RangeType> test_basis_values_;
+  mutable std::vector<typename LocalAnsatzBasisType::RangeType> ansatz_basis_values_;
+}; // class LocalElementProductIntegrand
+
 
 /**
  * Given an inducing function f, computes `<f> * phi * psi` for all combinations of phi and psi in the bases, where
