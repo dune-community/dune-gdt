@@ -96,10 +96,9 @@ public:
     // loop over all quadrature points
     const auto integrand_order = integrand_->order(test_basis, ansatz_basis) + over_integrate_;
     for (const auto& quadrature_point : QuadratureRules<D, d>::rule(element.type(), integrand_order)) {
-      const auto point_in_reference_element = quadrature_point.position();
+      const auto& point_in_reference_element = quadrature_point.position();
       // integration factors
-      const auto integration_factor = element.geometry().integrationElement(point_in_reference_element);
-      const auto quadrature_weight = quadrature_point.weight();
+      const auto factor = element.geometry().integrationElement(point_in_reference_element) * quadrature_point.weight();
       // evaluate the integrand
       integrand_->evaluate(test_basis, ansatz_basis, point_in_reference_element, integrand_values_, param);
       assert(integrand_values_.rows() >= rows && "This must not happen!");
@@ -107,7 +106,7 @@ public:
       // compute integral
       for (size_t ii = 0; ii < rows; ++ii)
         for (size_t jj = 0; jj < cols; ++jj)
-          result[ii][jj] += integrand_values_[ii][jj] * integration_factor * quadrature_weight;
+          result[ii][jj] += integrand_values_[ii][jj] * factor;
     } // loop over all quadrature points
   } // ... apply(...)
 
