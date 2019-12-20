@@ -214,7 +214,7 @@ public:
   }
 
   // returns <b>, where b is the basis functions vector
-  virtual DynamicRangeType integrated() const
+  virtual const DynamicRangeType& integrated() const
   {
     return integrated_;
   }
@@ -233,21 +233,30 @@ public:
     return ret;
   }
 
-  virtual DynamicRangeType get_moment_vector(const std::function<RangeFieldType(DomainType, bool)>& psi) const
+  // Get moment vector from distribution function psi. psi also takes an array of bools as argument to decide which
+  // value to use at the discontinuities. Is currently ignored in all testcases except the Heaviside test in one
+  // dimension, so we only have to test if we are on the positive or negative interval touching 0. For more general
+  // testcases, this would have to be adapted.
+  virtual DynamicRangeType get_u(const std::function<RangeFieldType(DomainType, std::array<int, dimDomain>)>& psi) const
   {
     DynamicRangeType ret(dimRange, 0.);
     const auto merged_quads = XT::Data::merged_quadrature(quadratures());
     for (auto it = merged_quads.begin(); it != merged_quads.end(); ++it) {
       const auto& quad_point = *it;
       const auto& v = quad_point.position();
-      ret += evaluate(v, it.first_index()) * psi(v, is_negative(it)) * quad_point.weight();
+      ret += evaluate(v, it.first_index()) * psi(v, has_fixed_sign(it.first_index())) * quad_point.weight();
     }
     return ret;
   }
 
-  virtual bool is_negative(const MergedQuadratureIterator& /*it*/) const
+  // Tests (per coordinate direction) whether the positions in the quadrature with index index are all negative or
+  // positive. Returns -1 if the entries are all non-positive, 1 if the entries are all non-negative, and 0 else.
+  virtual std::array<int, dimDomain> has_fixed_sign(const size_t /*index*/) const
   {
-    return false;
+    std::array<int, dimDomain> ret;
+    for (size_t dd = 0; dd < dimDomain; ++dd)
+      ret[dd] = 0;
+    return ret;
   }
 
   virtual FieldVector<MatrixType, dimFlux> flux_matrix() const
@@ -347,6 +356,11 @@ public:
     }
   }
 
+  virtual bool adjust_alpha_to_ensure_min_density(RangeType& /*alpha*/, const RangeFieldType /*min_density*/) const
+  {
+    return false;
+  }
+
   // Volume of integration domain. For the Mn models it is important that u_iso has density 1. If the basis is exactly
   // integrated, we thus use the exact unit ball volume. If the basis is only integrated by quadrature, we have to use
   // <1> as volume to get a density of 1.
@@ -355,7 +369,7 @@ public:
     return unit_ball_volume_exact();
   }
 
-  virtual DynamicRangeType u_iso() const
+  virtual const DynamicRangeType& u_iso() const
   {
     return u_iso_;
   }

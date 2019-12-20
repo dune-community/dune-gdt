@@ -11,10 +11,11 @@
 #ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_HATFUNCTIONS_HH
 #define DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_HATFUNCTIONS_HH
 
-#include <vector>
 #include <string>
+#include <vector>
 
 #include <dune/xt/common/fmatrix.hh>
+#include <dune/xt/common/numeric.hh>
 
 #include <dune/gdt/test/momentmodels/triangulation.hh>
 
@@ -22,6 +23,129 @@
 
 namespace Dune {
 namespace GDT {
+
+
+template <class DomainFieldType,
+          size_t domainDim,
+          class RangeFieldType,
+          size_t rangeDim,
+          size_t fluxDim,
+          EntropyType entropy>
+class HatFunctionMomentBasisBase
+  : public MomentBasisInterface<DomainFieldType, domainDim, RangeFieldType, rangeDim, 1, fluxDim, entropy>
+{
+  using BaseType = MomentBasisInterface<DomainFieldType, domainDim, RangeFieldType, rangeDim, 1, fluxDim, entropy>;
+
+public:
+  using BaseType::dimDomain;
+  using BaseType::dimRange;
+
+  using typename BaseType::DynamicRangeType;
+  using typename BaseType::RangeType;
+  using typename BaseType::StringifierType;
+
+  template <class... Args>
+  HatFunctionMomentBasisBase(Args&&... args)
+    : BaseType(std::forward<Args>(args)...)
+  {}
+
+  static StringifierType stringifier()
+  {
+    return [](const RangeType& val) {
+      RangeFieldType psi(0);
+      for (const auto& entry : val)
+        psi += entry;
+      return XT::Common::to_string(psi, 15);
+    };
+  } // ... stringifier()
+
+  DynamicRangeType alpha_one() const override final
+  {
+    return DynamicRangeType(dimRange, 1.);
+  }
+
+  RangeFieldType density(const DynamicRangeType& u) const override final
+  {
+    return XT::Common::reduce(&(u[0]), &(u[0]) + dimRange, RangeFieldType(0));
+  }
+
+  RangeFieldType density(const RangeType& u) const override final
+  {
+    return XT::Common::reduce(&(u[0]), &(u[0]) + dimRange, RangeFieldType(0));
+  }
+
+  template <class Vec>
+  std::enable_if_t<XT::Common::is_vector<Vec>::value, void> alpha_one(Vec& ret) const
+  {
+    for (size_t ii = 0; ii < ret.size(); ++ii)
+      XT::Common::VectorAbstraction<Vec>::set_entry(ret, ii, 1.);
+  }
+
+  template <class Vec>
+  std::enable_if_t<XT::Common::is_vector<Vec>::value && !std::is_same<Vec, DynamicRangeType>::value, RangeFieldType>
+  density(const Vec& u) const
+  {
+    RangeFieldType ret(0.);
+    for (size_t ii = 0; ii < u.size(); ++ii)
+      ret += XT::Common::VectorAbstraction<Vec>::get_entry(u, ii);
+    return ret;
+  }
+
+  using BaseType::u_iso;
+
+  template <class Vec>
+  std::enable_if_t<XT::Common::is_vector<Vec>::value, void> u_iso(Vec& ret) const
+  {
+    const auto& ret_range = u_iso();
+    using V = XT::Common::VectorAbstraction<Vec>;
+    for (size_t ii = 0; ii < dimRange; ++ii)
+      V::set_entry(ret, ii, ret_range[ii]);
+  }
+
+  void ensure_min_density(DynamicRangeType& u, const RangeFieldType psi_min) const override final
+  {
+    const auto u_iso_min = u_iso() * psi_min;
+    for (size_t ii = 0; ii < dimRange; ++ii)
+      if (u[ii] < u_iso_min[ii])
+        u[ii] = u_iso_min[ii];
+  }
+
+  void ensure_min_density(RangeType& u, const RangeFieldType psi_min) const override final
+  {
+    const auto u_iso_min = u_iso() * psi_min;
+    for (size_t ii = 0; ii < dimRange; ++ii)
+      if (u[ii] < u_iso_min[ii])
+        u[ii] = u_iso_min[ii];
+  }
+
+  bool adjust_alpha_to_ensure_min_density(RangeType& alpha, const RangeFieldType psi_min) const override final
+  {
+    bool changed = false;
+    const auto alpha_min = std::log(psi_min);
+    for (size_t ii = 0; ii < dimRange; ++ii) {
+      if (alpha[ii] < alpha_min) {
+        alpha[ii] = alpha_min;
+        changed = true;
+      }
+    }
+    return changed;
+  }
+
+  std::string short_id() const override final
+  {
+    return "hf";
+  }
+
+  std::string mn_name() const override final
+  {
+    return "hfm" + XT::Common::to_string(dimRange);
+  }
+
+  std::string pn_name() const override final
+  {
+    return "hfp" + XT::Common::to_string(dimRange);
+  }
+}; // class HatFunctionMomentBasisBase
 
 
 template <class DomainFieldType,
@@ -43,7 +167,7 @@ template <class DomainFieldType,
           size_t fluxDim,
           EntropyType entropy>
 class HatFunctionMomentBasis<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, fluxDim, entropy>
-  : public MomentBasisInterface<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, fluxDim, entropy>
+  : public HatFunctionMomentBasisBase<DomainFieldType, 1, RangeFieldType, rangeDim, fluxDim, entropy>
 {
 public:
   static const size_t dimDomain = 1;
@@ -52,8 +176,7 @@ public:
   static const size_t num_intervals = dimRange - 1;
 
 private:
-  using BaseType =
-      MomentBasisInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols, fluxDim, entropy>;
+  using BaseType = HatFunctionMomentBasisBase<DomainFieldType, 1, RangeFieldType, rangeDim, fluxDim, entropy>;
 
 public:
   using typename BaseType::DomainType;
@@ -63,14 +186,7 @@ public:
   using typename BaseType::RangeType;
   using typename BaseType::SphericalTriangulationType;
   using typename BaseType::StringifierType;
-  using typename BaseType::VisualizerType;
   using PartitioningType = typename BaseType::Partitioning1dType;
-  template <class DiscreteFunctionType>
-
-  static std::string static_id()
-  {
-    return "hatfunctions";
-  }
 
   static size_t default_quad_order()
   {
@@ -129,18 +245,6 @@ public:
     ret[1] = (v - mu[interval_index]) / (mu[interval_index + 1] - mu[interval_index]);
     return ret;
   } // ... evaluate(...)
-
-  DynamicRangeType integrated() const override final
-  {
-    DynamicRangeType ret(dimRange, 0);
-    const auto& mu = partitioning_;
-    ret[0] = mu[1] - mu[0];
-    for (size_t ii = 1; ii < num_intervals; ++ii)
-      ret[ii] = mu[ii + 1] - mu[ii - 1];
-    ret[num_intervals] = mu[num_intervals] - mu[num_intervals - 1];
-    ret *= 0.5;
-    return ret;
-  }
 
   // returns matrix with entries <h_i h_j>
   MatrixType mass_matrix() const override final
@@ -259,64 +363,6 @@ public:
     return ret;
   }
 
-  static StringifierType stringifier()
-  {
-    return [](const RangeType& val) {
-      RangeFieldType psi(0);
-      for (const auto& entry : val)
-        psi += entry;
-      return XT::Common::to_string(psi, 15);
-    };
-  } // ... stringifier()
-
-  const PartitioningType& partitioning() const
-  {
-    return partitioning_;
-  }
-
-  DynamicRangeType alpha_one() const override final
-  {
-    return DynamicRangeType(dimRange, 1.);
-  }
-
-  RangeFieldType density(const DynamicRangeType& u) const override final
-  {
-    return std::accumulate(u.begin(), u.end(), RangeFieldType(0));
-  }
-
-  using BaseType::u_iso;
-
-  void ensure_min_density(DynamicRangeType& u, const RangeFieldType min_density) const override final
-  {
-    const auto u_iso_min = u_iso() * min_density;
-    for (size_t ii = 0; ii < dimRange; ++ii)
-      if (u[ii] < u_iso_min[ii])
-        u[ii] = u_iso_min[ii];
-  }
-
-  void ensure_min_density(RangeType& u, const RangeFieldType min_density) const override final
-  {
-    const auto u_iso_min = u_iso() * min_density;
-    for (size_t ii = 0; ii < dimRange; ++ii)
-      if (u[ii] < u_iso_min[ii])
-        u[ii] = u_iso_min[ii];
-  }
-
-  std::string short_id() const override final
-  {
-    return "hf";
-  }
-
-  std::string mn_name() const override final
-  {
-    return "hfm" + XT::Common::to_string(dimRange);
-  }
-
-  std::string pn_name() const override final
-  {
-    return "hfp" + XT::Common::to_string(dimRange);
-  }
-
   // get indices of all faces that contain point v
   std::vector<size_t> get_face_indices(const DomainType& v) const
   {
@@ -328,7 +374,47 @@ public:
     return face_indices;
   }
 
+  DynamicRangeType integrated_initializer(const QuadraturesType& /*quadratures*/) const override final
+  {
+    DynamicRangeType ret(dimRange, 0);
+    const auto& mu = partitioning_;
+    ret[0] = mu[1] - mu[0];
+    for (size_t ii = 1; ii < num_intervals; ++ii)
+      ret[ii] = mu[ii + 1] - mu[ii - 1];
+    ret[num_intervals] = mu[num_intervals] - mu[num_intervals - 1];
+    ret *= 0.5;
+    return ret;
+  }
+
+  const PartitioningType& partitioning() const
+  {
+    return partitioning_;
+  }
+
+  DynamicRangeType
+  get_u(const std::function<RangeFieldType(DomainType, std::array<int, dimDomain>)>& psi) const override final
+  {
+    DynamicRangeType ret(dimRange, 0.);
+    const auto merged_quads = XT::Data::merged_quadrature(quadratures_);
+    for (auto it = merged_quads.begin(); it != merged_quads.end(); ++it) {
+      const auto& quad_point = *it;
+      const size_t interval_index = it.first_index();
+      const auto& v = quad_point.position();
+      const auto val = evaluate_on_interval(v, interval_index);
+      const auto factor = psi(v, has_fixed_sign(interval_index)) * quad_point.weight();
+      for (size_t ii = 0; ii < 2; ++ii)
+        ret[interval_index + ii] += val[ii] * factor;
+    }
+    return ret;
+  }
+
+  std::array<int, dimDomain> has_fixed_sign(const size_t index) const override final
+  {
+    return BaseType::interval_has_fixed_sign(index, num_intervals);
+  }
+
 private:
+  using BaseType::quadratures_;
   const PartitioningType partitioning_;
 }; // class HatFunctionMomentBasis<DomainFieldType, 1, ...>
 
@@ -343,13 +429,12 @@ constexpr size_t
 
 template <class DomainFieldType, class RangeFieldType, size_t refinements, size_t fluxDim, EntropyType entropy>
 class HatFunctionMomentBasis<DomainFieldType, 3, RangeFieldType, refinements, 1, fluxDim, entropy>
-  : public MomentBasisInterface<DomainFieldType,
-                                3,
-                                RangeFieldType,
-                                OctaederStatistics<refinements>::num_vertices(),
-                                1,
-                                fluxDim,
-                                entropy>
+  : public HatFunctionMomentBasisBase<DomainFieldType,
+                                      3,
+                                      RangeFieldType,
+                                      OctaederStatistics<refinements>::num_vertices(),
+                                      fluxDim,
+                                      entropy>
 {
 public:
   static constexpr size_t dimDomain = 3;
@@ -359,8 +444,12 @@ public:
   static constexpr size_t num_refinements = refinements;
 
 private:
-  using BaseType =
-      MomentBasisInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols, dimFlux, entropy>;
+  using BaseType = HatFunctionMomentBasisBase<DomainFieldType,
+                                              3,
+                                              RangeFieldType,
+                                              OctaederStatistics<refinements>::num_vertices(),
+                                              fluxDim,
+                                              entropy>;
   using ThisType = HatFunctionMomentBasis;
 
 public:
@@ -372,11 +461,9 @@ public:
   using typename BaseType::QuadraturesType;
   using typename BaseType::RangeType;
   using typename BaseType::StringifierType;
-  using typename BaseType::VisualizerType;
   using LocalMatrixType = XT::Common::FieldMatrix<RangeFieldType, 3, 3>;
 
   using BaseType::barycentre_rule;
-  using BaseType::is_negative;
 
   static size_t default_quad_order()
   {
@@ -461,16 +548,6 @@ public:
     return ret;
   } // ... evaluate(...)
 
-  static StringifierType stringifier()
-  {
-    return [](const RangeType& val) {
-      RangeFieldType psi(0);
-      for (const auto& entry : val)
-        psi += entry;
-      return XT::Common::to_string(psi, 15);
-    };
-  } // ... stringifier()
-
   const TriangulationType& triangulation() const
   {
     return triangulation_;
@@ -479,48 +556,6 @@ public:
   RangeFieldType unit_ball_volume() const override final
   {
     return BaseType::unit_ball_volume_quad();
-  }
-
-  DynamicRangeType alpha_one() const override final
-  {
-    return DynamicRangeType(dimRange, 1.);
-  }
-
-  template <class Vec>
-  std::enable_if_t<XT::Common::is_vector<Vec>::value, void> alpha_one(Vec& ret) const
-  {
-    for (size_t ii = 0; ii < ret.size(); ++ii)
-      XT::Common::VectorAbstraction<Vec>::set_entry(ret, ii, 1.);
-  }
-
-  RangeFieldType density(const DynamicRangeType& u) const override final
-  {
-    return std::accumulate(u.begin(), u.end(), 0.);
-  }
-
-  template <class Vec>
-  std::enable_if_t<XT::Common::is_vector<Vec>::value && !std::is_same<Vec, DynamicRangeType>::value, RangeFieldType>
-  density(const Vec& u) const
-  {
-    RangeFieldType ret(0.);
-    for (size_t ii = 0; ii < u.size(); ++ii)
-      ret += XT::Common::VectorAbstraction<Vec>::get_entry(u, ii);
-    return ret;
-  }
-
-  std::string short_id() const override final
-  {
-    return "hf";
-  }
-
-  std::string mn_name() const override final
-  {
-    return "hfm" + XT::Common::to_string(dimRange);
-  }
-
-  std::string pn_name() const override final
-  {
-    return "hfp" + XT::Common::to_string(dimRange);
   }
 
   // get indices of all faces that contain point v
@@ -537,33 +572,8 @@ public:
 
   using BaseType::u_iso;
 
-  template <class Vec>
-  std::enable_if_t<XT::Common::is_vector<Vec>::value, void> u_iso(Vec& ret) const
-  {
-    auto ret_range = u_iso();
-    using V = XT::Common::VectorAbstraction<Vec>;
-    for (size_t ii = 0; ii < dimRange; ++ii)
-      V::set_entry(ret, ii, ret_range[ii]);
-  }
-
-  void ensure_min_density(DynamicRangeType& u, const RangeFieldType min_density) const override final
-  {
-    const auto u_iso_min = u_iso() * min_density;
-    for (size_t ii = 0; ii < dimRange; ++ii)
-      if (u[ii] < u_iso_min[ii])
-        u[ii] = u_iso_min[ii];
-  }
-
-  void ensure_min_density(RangeType& u, const RangeFieldType min_density) const override final
-  {
-    const auto u_iso_min = u_iso() * min_density;
-    for (size_t ii = 0; ii < dimRange; ++ii)
-      if (u[ii] < u_iso_min[ii])
-        u[ii] = u_iso_min[ii];
-  }
-
-  virtual DynamicRangeType
-  get_moment_vector(const std::function<RangeFieldType(DomainType, bool)>& psi) const override final
+  DynamicRangeType
+  get_u(const std::function<RangeFieldType(DomainType, std::array<int, dimDomain>)>& psi) const override final
   {
     DynamicRangeType ret(dimRange, 0.);
     const auto merged_quads = XT::Data::merged_quadrature(quadratures_);
@@ -573,11 +583,16 @@ public:
       const auto& quad_point = *it;
       const auto& v = quad_point.position();
       const auto val = evaluate_on_face(v, face_index);
-      const auto factor = psi(v, is_negative(it)) * quad_point.weight();
+      const auto factor = psi(v, has_fixed_sign(it)) * quad_point.weight();
       for (size_t ii = 0; ii < 3; ++ii)
         ret[vertices[ii]->index()] += val[ii] * factor;
     }
     return ret;
+  }
+
+  std::array<int, dimDomain> has_fixed_sign(const size_t index) const override final
+  {
+    return BaseType::triangle_has_fixed_sign(index);
   }
 
 protected:
@@ -653,10 +668,10 @@ protected:
     return ret;
   }
 
-  virtual void parallel_quadrature(const QuadraturesType& quadratures,
-                                   MatrixType& matrix,
-                                   const size_t v_index,
-                                   const bool reflecting = false) const override final
+  void parallel_quadrature(const QuadraturesType& quadratures,
+                           MatrixType& matrix,
+                           const size_t v_index,
+                           const bool reflecting = false) const override final
   {
     const auto& faces = triangulation_.faces();
     size_t num_threads = std::min(XT::Common::threadManager().max_threads(), faces.size());
@@ -689,12 +704,12 @@ protected:
     } // threads
   } // void parallel_quadrature(...)
 
-  virtual void calculate_in_thread_hat(std::vector<LocalMatrixType>& local_matrices,
-                                       const QuadraturesType& quadratures,
-                                       const size_t v_index,
-                                       const std::vector<size_t>& decomposition,
-                                       const size_t ii,
-                                       const bool reflecting) const
+  void calculate_in_thread_hat(std::vector<LocalMatrixType>& local_matrices,
+                               const QuadraturesType& quadratures,
+                               const size_t v_index,
+                               const std::vector<size_t>& decomposition,
+                               const size_t ii,
+                               const bool reflecting) const
   {
     const auto& reflected_indices = triangulation_.reflected_face_indices();
     for (size_t face_index = decomposition[ii]; face_index < decomposition[ii + 1]; ++face_index) {
@@ -718,9 +733,9 @@ protected:
     } // faces
   } // void calculate_in_thread(...)
 
-  virtual void integrated_initializer_thread(DynamicRangeType& local_range,
-                                             const std::vector<MergedQuadratureIterator>& decomposition,
-                                             const size_t ii) const override final
+  void integrated_initializer_thread(DynamicRangeType& local_range,
+                                     const std::vector<MergedQuadratureIterator>& decomposition,
+                                     const size_t ii) const override final
   {
     const auto& faces = triangulation_.faces();
     for (auto it = decomposition[ii]; it != decomposition[ii + 1]; ++it) {

@@ -13,6 +13,7 @@
 
 #include <boost/iostreams/stream.hpp>
 #include <boost/iostreams/device/null.hpp>
+#include <boost/math/special_functions/lambert_w.hpp>
 
 #if HAVE_QHULL
 #  include <dune/xt/common/disable_warnings.hh>
@@ -27,6 +28,200 @@
 
 namespace Dune {
 namespace GDT {
+
+
+template <class DomainFieldType,
+          size_t domainDim,
+          class RangeFieldType,
+          size_t rangeDim,
+          size_t dimFlux,
+          EntropyType entropy,
+          size_t sizeBlock>
+class PartialMomentBasisBase
+  : public MomentBasisInterface<DomainFieldType, domainDim, RangeFieldType, rangeDim, 1, dimFlux, entropy>
+{
+  using BaseType = MomentBasisInterface<DomainFieldType, domainDim, RangeFieldType, rangeDim, 1, dimFlux, entropy>;
+  using ThisType = PartialMomentBasisBase;
+
+public:
+  using BaseType::dimDomain;
+  using BaseType::dimRange;
+  static constexpr size_t block_size = sizeBlock;
+  static constexpr size_t num_blocks = dimRange / block_size;
+
+  using typename BaseType::DomainType;
+  using typename BaseType::DynamicRangeType;
+  using typename BaseType::RangeType;
+  using typename BaseType::StringifierType;
+  using LocalVectorType = XT::Common::FieldVector<RangeFieldType, block_size>;
+
+  template <class... Args>
+  PartialMomentBasisBase(Args&&... args)
+    : BaseType(std::forward<Args>(args)...)
+  {}
+
+  // evaluate on spherical triangle face_index
+  DynamicRangeType evaluate(const DomainType& v, const size_t face_index) const override final
+  {
+    DynamicRangeType ret(dimRange, 0);
+    const auto local_eval = evaluate_on_face(v, face_index);
+    for (size_t ii = 0; ii < block_size; ++ii)
+      ret[block_size * face_index + ii] = local_eval[ii];
+    return ret;
+  } // ... evaluate(...)
+
+  // evaluate on spherical triangle face_index
+  LocalVectorType evaluate_on_face(const DomainType& v, const size_t /*face_index*/) const
+  {
+    LocalVectorType ret;
+    ret[0] = 1.;
+    for (size_t ii = 1; ii < block_size; ++ii)
+      ret[ii] = v[ii - 1];
+    return ret;
+  } // ... evaluate(...)
+
+  static StringifierType stringifier()
+  {
+    return [](const DynamicRangeType& val) {
+      RangeFieldType psi(0);
+      for (size_t ii = 0; ii < dimRange; ii += block_size)
+        psi += val[ii];
+      return XT::Common::to_string(psi, 15);
+    };
+  } // ... stringifier()
+
+  DynamicRangeType alpha_one() const override final
+  {
+    DynamicRangeType ret(dimRange, 0.);
+    for (size_t ii = 0; ii < dimRange; ii += block_size)
+      ret[ii] = 1.;
+    return ret;
+  }
+
+  RangeFieldType density(const RangeType& u) const override final
+  {
+    RangeFieldType ret(0.);
+    for (size_t ii = 0; ii < dimRange; ii += block_size)
+      ret += u[ii];
+    return ret;
+  }
+
+  RangeFieldType density(const DynamicRangeType& u) const override final
+  {
+    RangeFieldType ret(0.);
+    for (size_t ii = 0; ii < dimRange; ii += block_size)
+      ret += u[ii];
+    return ret;
+  }
+
+  RangeFieldType density(const XT::Common::BlockedFieldVector<RangeFieldType, num_blocks, block_size>& u) const
+  {
+    RangeFieldType ret(0.);
+    for (size_t jj = 0; jj < num_blocks; ++jj)
+      ret += u.block(jj)[0];
+    return ret;
+  }
+
+  RangeFieldType min_density(const XT::Common::BlockedFieldVector<RangeFieldType, num_blocks, block_size>& u) const
+  {
+    RangeFieldType ret(u.block(0)[0]);
+    for (size_t jj = 1; jj < num_blocks; ++jj)
+      ret = std::min(ret, u.block(jj)[0]);
+    return ret;
+  }
+
+  using BaseType::u_iso;
+
+  // For the partial moments, we might not be able to solve the optimization problem for some moments where the density
+  // on one interval/spherical triangle is very low. The overall density might be much higher than the density on that
+  // triangle, so we specialize this function.
+  void ensure_min_density(DynamicRangeType& u, const RangeFieldType min_density) const override final
+  {
+    const auto u_iso_min = u_iso() * min_density;
+    for (size_t jj = 0; jj < num_blocks; ++jj) {
+      const auto block_density = u[block_size * jj];
+      if (block_density < u_iso_min[block_size * jj]) {
+        for (size_t ii = 0; ii < block_size; ++ii)
+          u[block_size * jj + ii] = u_iso_min[block_size * jj + ii];
+      }
+    }
+  }
+
+  // For the partial moments, we might not be able to solve the optimization problem for some moments where the density
+  // on one interval/spherical triangle is very low. The overall density might be much higher than the density on that
+  // triangle, so we specialize this function.
+  void ensure_min_density(RangeType& u, const RangeFieldType min_density) const override final
+  {
+    const auto u_iso_min = u_iso() * min_density;
+    for (size_t jj = 0; jj < num_blocks; ++jj) {
+      const auto block_density = u[block_size * jj];
+      if (block_density < u_iso_min[block_size * jj]) {
+        for (size_t ii = 0; ii < block_size; ++ii)
+          u[block_size * jj + ii] = u_iso_min[block_size * jj + ii];
+      }
+    }
+  }
+
+  using BaseType::has_fixed_sign;
+
+  DynamicRangeType
+  get_u(const std::function<RangeFieldType(DomainType, std::array<int, dimDomain>)>& psi) const override final
+  {
+    DynamicRangeType ret(dimRange, 0);
+    for (size_t jj = 0; jj < quadratures_.size(); ++jj) {
+      const size_t offset = jj * block_size;
+      for (const auto& quad_point : quadratures_[jj]) {
+        const auto& v = quad_point.position();
+        const auto basis_val = evaluate_on_face(v, jj);
+        const auto psi_val = psi(v, has_fixed_sign(jj));
+        const auto factor = psi_val * quad_point.weight();
+        for (size_t ii = 0; ii < block_size; ++ii)
+          ret[offset + ii] += basis_val[ii] * factor;
+      }
+    }
+    return ret;
+  }
+
+  std::string short_id() const override final
+  {
+    return "pm";
+  }
+
+  std::string mn_name() const override final
+  {
+    return "pmm" + XT::Common::to_string(dimRange);
+  }
+
+  std::string pn_name() const override final
+  {
+    return "pmp" + XT::Common::to_string(dimRange);
+  }
+
+protected:
+  using BaseType::quadratures_;
+}; // class PartialMomentBasisBase<...>
+
+template <class DomainFieldType,
+          size_t domainDim,
+          class RangeFieldType,
+          size_t rangeDim,
+          size_t dimFlux,
+          EntropyType entropy,
+          size_t sizeBlock>
+constexpr size_t
+    PartialMomentBasisBase<DomainFieldType, domainDim, RangeFieldType, rangeDim, dimFlux, entropy, sizeBlock>::
+        num_blocks;
+
+template <class DomainFieldType,
+          size_t domainDim,
+          class RangeFieldType,
+          size_t rangeDim,
+          size_t dimFlux,
+          EntropyType entropy,
+          size_t sizeBlock>
+constexpr size_t
+    PartialMomentBasisBase<DomainFieldType, domainDim, RangeFieldType, rangeDim, dimFlux, entropy, sizeBlock>::
+        block_size;
 
 
 template <class DomainFieldType,
@@ -49,20 +244,16 @@ template <class DomainFieldType,
           size_t dimFlux,
           EntropyType entropy>
 class PartialMomentBasis<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, dimFlux, 1, entropy>
-  : public MomentBasisInterface<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, dimFlux, entropy>
+  : public PartialMomentBasisBase<DomainFieldType, 1, RangeFieldType, rangeDim, dimFlux, entropy, 2>
 {
+  using BaseType = PartialMomentBasisBase<DomainFieldType, 1, RangeFieldType, rangeDim, dimFlux, entropy, 2>;
+
 public:
-  static constexpr size_t dimDomain = 1;
-  static constexpr size_t dimRange = rangeDim;
-  static constexpr size_t dimRangeCols = rangeDimCols;
+  using BaseType::dimDomain;
+  using BaseType::dimRange;
   static_assert(!(dimRange % 2), "dimRange has to be even!");
-  static constexpr size_t num_intervals = dimRange / 2;
+  static constexpr size_t num_intervals = BaseType::num_blocks;
 
-private:
-  using BaseType =
-      MomentBasisInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols, dimFlux, entropy>;
-
-public:
   using typename BaseType::DomainType;
   using typename BaseType::DynamicRangeType;
   using typename BaseType::MatrixType;
@@ -70,14 +261,8 @@ public:
   using typename BaseType::RangeType;
   using typename BaseType::SphericalTriangulationType;
   using typename BaseType::StringifierType;
-  using typename BaseType::VisualizerType;
   using LocalVectorType = FieldVector<RangeFieldType, 2>;
   using PartitioningType = typename BaseType::Partitioning1dType;
-
-  static std::string static_id()
-  {
-    return "pcw";
-  }
 
   static size_t default_quad_order()
   {
@@ -105,6 +290,8 @@ public:
     BaseType::initialize_base_values();
   }
 
+  using BaseType::evaluate;
+
   DynamicRangeType evaluate(const DomainType& v) const override final
   {
     for (size_t ii = 0; ii < num_intervals; ++ii)
@@ -114,41 +301,54 @@ public:
     return DynamicRangeType();
   } // ... evaluate(...)
 
-  // evaluate on interval ii
-  DynamicRangeType evaluate(const DomainType& v, const size_t ii) const override final
+  bool adjust_alpha_to_ensure_min_density(RangeType& alpha, const RangeFieldType psi_min) const override final
   {
-    DynamicRangeType ret(dimRange, 0);
-    const auto local_ret = evaluate_on_interval(v, ii);
-    ret[2 * ii] = local_ret[0];
-    ret[2 * ii + 1] = local_ret[1];
-    return ret;
-  } // ... evaluate(...)
-
-  LocalVectorType evaluate_on_interval(const DomainType& v, const size_t /*ii*/) const
-  {
-    return LocalVectorType{{1, v[0]}};
-  } // ... evaluate(...)
-
-  LocalVectorType evaluate_on_face(const DomainType& v, const size_t ii) const
-  {
-    return evaluate_on_interval(v, ii);
-  } // ... evaluate(...)
-
-  DynamicRangeType integrated() const override final
-  {
-    DynamicRangeType ret(dimRange, 0);
+    bool changed = false;
+    const auto alpha_min = std::log(psi_min);
     for (size_t ii = 0; ii < num_intervals; ++ii) {
-      ret[2 * ii] = partitioning_[ii + 1] - partitioning_[ii];
-      ret[2 * ii + 1] = (std::pow(partitioning_[ii + 1], 2) - std::pow(partitioning_[ii], 2)) / 2.;
-    }
-    return ret;
-  }
-
-  virtual bool
-  is_negative(const typename XT::Data::MergedQuadrature<RangeFieldType, dimDomain>::MergedQuadratureIterator& it)
-      const override final
-  {
-    return it.first_index() < num_intervals / 2;
+      auto& alpha_0 = alpha[2 * ii];
+      auto& alpha_1 = alpha[2 * ii + 1];
+      const auto mu_i = partitioning_[ii];
+      const auto mu_ip1 = partitioning_[ii + 1];
+      const auto alpha_left = alpha_0 + mu_i * alpha_1;
+      const auto alpha_right = alpha_0 + mu_ip1 * alpha_1;
+      const bool min_is_left = alpha_left < alpha_right;
+      const auto alpha_min_ii = min_is_left ? alpha_left : alpha_right;
+      const auto alpha_max_ii = min_is_left ? alpha_right : alpha_left;
+      if (alpha_min_ii < alpha_min) {
+        if (XT::Common::FloatCmp::le(alpha_max_ii, alpha_min)) {
+          alpha_0 = alpha_min;
+          alpha_1 = 0.;
+          changed = true;
+        } else {
+          // We know that alpha_1 != 0 because alpha_max_ii > alpha_min and alpha_min_ii < alpha_min
+          const auto rho_ii = -(std::exp(alpha_0 + mu_i * alpha_1) - std::exp(alpha_0 + mu_ip1 * alpha_1)) / alpha_1;
+          if (std::isnan(rho_ii) || std::isinf(rho_ii))
+            DUNE_THROW(Dune::MathError, "Inf or nan in rho!");
+          const auto h = (mu_ip1 - mu_i);
+          if (XT::Common::FloatCmp::le(rho_ii, psi_min * h)) {
+            alpha_0 = alpha_min;
+            alpha_1 = 0.;
+            changed = true;
+            continue;
+          }
+          // get positive slope
+#if 0
+        // Set minimum to alpha_min, leave max alpha unchanged
+        alpha_1 = (alpha_max_ii - alpha_min_ii) / h;
+#else
+          // Set minimum to alpha_min, leave rho unchanged
+          alpha_1 = -1. / h * boost::math::lambert_wm1(-h * psi_min / rho_ii * std::exp(-h * psi_min / rho_ii))
+                    - psi_min / rho_ii;
+#endif
+          if (!min_is_left)
+            alpha_1 *= -1.; // slope has to be negative in this case
+          alpha_0 = alpha_min - (min_is_left ? mu_i : mu_ip1) * alpha_1;
+          changed = true;
+        }
+      }
+    } // ii
+    return changed;
   }
 
   // returns matrix with entries <h_i h_j>
@@ -250,103 +450,9 @@ public:
     return ret;
   }
 
-  static StringifierType stringifier()
-  {
-    return [](const RangeType& val) {
-      RangeFieldType psi(0);
-      for (size_t ii = 0; ii < dimRange; ii += 2)
-        psi += val[ii];
-      return XT::Common::to_string(psi, 15);
-    };
-  } // ... stringifier()
-
   const PartitioningType& partitioning() const
   {
     return partitioning_;
-  }
-
-  DynamicRangeType alpha_one() const override final
-  {
-    DynamicRangeType ret(dimRange, 0);
-    for (size_t ii = 0; ii < dimRange; ii += 2)
-      ret[ii] = 1.;
-    return ret;
-  }
-
-  RangeFieldType density(const DynamicRangeType& u) const override final
-  {
-    RangeFieldType ret(0.);
-    for (size_t ii = 0; ii < dimRange; ii += 2) {
-      ret += u[ii];
-    }
-    return ret;
-  }
-
-  RangeFieldType density(const RangeType& u) const
-  {
-    RangeFieldType ret(0.);
-    for (size_t ii = 0; ii < dimRange; ii += 2) {
-      ret += u[ii];
-    }
-    return ret;
-  }
-
-  RangeFieldType density(const XT::Common::BlockedFieldVector<RangeFieldType, num_intervals, 2>& u) const
-  {
-    RangeFieldType ret(0.);
-    for (size_t jj = 0; jj < num_intervals; ++jj)
-      ret += u.block(jj)[0];
-    return ret;
-  }
-
-  RangeFieldType min_density(const XT::Common::BlockedFieldVector<RangeFieldType, num_intervals, 2>& u) const
-  {
-    RangeFieldType ret(u.block(0)[0]);
-    for (size_t jj = 1; jj < num_intervals; ++jj)
-      ret = std::min(ret, u.block(jj)[0]);
-    return ret;
-  }
-
-  using BaseType::u_iso;
-
-  // For the partial moments, we might not be able to solve the optimization problem for some moments where the density
-  // on one interval/spherical triangle is very low. The overall density might be much higher than the density on that
-  // triangle, so we specialize this function.
-  void ensure_min_density(DynamicRangeType& u, const RangeFieldType min_density) const override final
-  {
-    const auto u_iso_min = u_iso() * min_density;
-    for (size_t jj = 0; jj < num_intervals; ++jj) {
-      if (u[2 * jj] < u_iso_min[2 * jj]) {
-        u[2 * jj] = u_iso_min[2 * jj];
-        u[2 * jj + 1] = u_iso_min[2 * jj + 1];
-      }
-    }
-  }
-
-  void ensure_min_density(RangeType& u, const RangeFieldType min_density) const override final
-  {
-    const auto u_iso_min = u_iso() * min_density;
-    for (size_t jj = 0; jj < num_intervals; ++jj) {
-      if (u[2 * jj] < u_iso_min[2 * jj]) {
-        u[2 * jj] = u_iso_min[2 * jj];
-        u[2 * jj + 1] = u_iso_min[2 * jj + 1];
-      }
-    }
-  }
-
-  std::string short_id() const override final
-  {
-    return "pm";
-  }
-
-  std::string mn_name() const override final
-  {
-    return "pmm" + XT::Common::to_string(dimRange);
-  }
-
-  std::string pn_name() const override final
-  {
-    return "pmp" + XT::Common::to_string(dimRange);
   }
 
   // get indices of all faces that contain point
@@ -358,6 +464,21 @@ public:
         face_indices.push_back(jj);
     assert(face_indices.size());
     return face_indices;
+  }
+
+  DynamicRangeType integrated_initializer(const QuadraturesType& /*quadratures*/) const override final
+  {
+    DynamicRangeType ret(dimRange, 0);
+    for (size_t ii = 0; ii < num_intervals; ++ii) {
+      ret[2 * ii] = partitioning_[ii + 1] - partitioning_[ii];
+      ret[2 * ii + 1] = (std::pow(partitioning_[ii + 1], 2) - std::pow(partitioning_[ii], 2)) / 2.;
+    }
+    return ret;
+  }
+
+  std::array<int, dimDomain> has_fixed_sign(const size_t index) const override final
+  {
+    return BaseType::interval_has_fixed_sign(index, num_intervals);
   }
 
 private:
@@ -372,32 +493,34 @@ template <class DomainFieldType,
           size_t dimFlux,
           EntropyType entropy>
 constexpr size_t
-    PartialMomentBasis<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, dimFlux, 1, entropy>::dimRange;
+    PartialMomentBasis<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, dimFlux, 1, entropy>::num_intervals;
 
 template <class DomainFieldType, class RangeFieldType, size_t refinements, size_t dimFlux, EntropyType entropy>
 class PartialMomentBasis<DomainFieldType, 3, RangeFieldType, refinements, 1, dimFlux, 1, entropy>
-  : public MomentBasisInterface<DomainFieldType,
-                                3,
-                                RangeFieldType,
-                                OctaederStatistics<refinements>::num_faces() * 4,
-                                1,
-                                dimFlux,
-                                entropy>
+  : public PartialMomentBasisBase<DomainFieldType,
+                                  3,
+                                  RangeFieldType,
+                                  OctaederStatistics<refinements>::num_faces() * 4,
+                                  dimFlux,
+                                  entropy,
+                                  4>
 {
-public:
-  static const size_t dimDomain = 3;
-  static const size_t dimRange = OctaederStatistics<refinements>::num_faces() * 4;
-  static const size_t dimRangeCols = 1;
-  static constexpr size_t block_size = 4;
-  static constexpr size_t num_blocks = dimRange / block_size;
-  static constexpr size_t num_refinements = refinements;
-
-private:
-  using BaseType =
-      MomentBasisInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols, dimFlux, entropy>;
+  using BaseType = PartialMomentBasisBase<DomainFieldType,
+                                          3,
+                                          RangeFieldType,
+                                          OctaederStatistics<refinements>::num_faces() * 4,
+                                          dimFlux,
+                                          entropy,
+                                          4>;
   using ThisType = PartialMomentBasis;
 
 public:
+  using BaseType::block_size;
+  using BaseType::dimDomain;
+  using BaseType::dimRange;
+  using BaseType::num_blocks;
+  static constexpr size_t num_refinements = refinements;
+
   using TriangulationType = typename BaseType::SphericalTriangulationType;
   using typename BaseType::DomainType;
   using typename BaseType::DynamicRangeType;
@@ -406,7 +529,6 @@ public:
   using typename BaseType::QuadratureType;
   using typename BaseType::RangeType;
   using typename BaseType::StringifierType;
-  using typename BaseType::VisualizerType;
   using BlockRangeType = XT::Common::FieldVector<RangeFieldType, block_size>;
   using BlockPlaneCoefficientsType = typename std::vector<std::pair<BlockRangeType, RangeFieldType>>;
   using PlaneCoefficientsType = XT::Common::FieldVector<BlockPlaneCoefficientsType, num_blocks>;
@@ -456,6 +578,8 @@ public:
     BaseType::initialize_base_values();
   }
 
+  using BaseType::evaluate;
+
   DynamicRangeType evaluate(const DomainType& v) const override final
   {
     DynamicRangeType ret(dimRange, 0);
@@ -467,127 +591,9 @@ public:
     return evaluate(v, face_indices[0]);
   } // ... evaluate(...)
 
-  // evaluate on spherical triangle face_index
-  DynamicRangeType evaluate(const DomainType& v, const size_t face_index) const override final
-  {
-    DynamicRangeType ret(dimRange, 0);
-    const auto local_eval = evaluate_on_face(v, face_index);
-    assert(4 * face_index + 3 < ret.size());
-    for (size_t ii = 0; ii < 4; ++ii)
-      ret[4 * face_index + ii] = local_eval[ii];
-    return ret;
-  } // ... evaluate(...)
-
-  // evaluate on spherical triangle face_index
-  LocalVectorType evaluate_on_face(const DomainType& v, const size_t /*face_index*/) const
-  {
-    LocalVectorType ret;
-    ret[0] = 1.;
-    for (size_t ii = 1; ii < 4; ++ii)
-      ret[ii] = v[ii - 1];
-    return ret;
-  } // ... evaluate(...)
-
-  static StringifierType stringifier()
-  {
-    return [](const DynamicRangeType& val) {
-      RangeFieldType psi(0);
-      for (size_t ii = 0; ii < dimRange; ii += 4)
-        psi += val[ii];
-      return XT::Common::to_string(psi, 15);
-    };
-  } // ... stringifier()
-
   RangeFieldType unit_ball_volume() const override final
   {
     return BaseType::unit_ball_volume_quad();
-  }
-
-  DynamicRangeType alpha_one() const override final
-  {
-    DynamicRangeType ret(dimRange, 0.);
-    for (size_t ii = 0; ii < dimRange; ii += 4)
-      ret[ii] = 1.;
-    return ret;
-  }
-
-  virtual RangeFieldType density(const RangeType& u) const
-  {
-    RangeFieldType ret(0.);
-    for (size_t ii = 0; ii < dimRange; ii += 4)
-      ret += u[ii];
-    return ret;
-  }
-
-  RangeFieldType density(const DynamicRangeType& u) const override final
-  {
-    RangeFieldType ret(0.);
-    for (size_t ii = 0; ii < dimRange; ii += 4)
-      ret += u[ii];
-    return ret;
-  }
-
-  RangeFieldType density(const XT::Common::BlockedFieldVector<RangeFieldType, dimRange / 4, 4>& u) const
-  {
-    RangeFieldType ret(0.);
-    for (size_t jj = 0; jj < dimRange / 4; ++jj)
-      ret += u.block(jj)[0];
-    return ret;
-  }
-
-  RangeFieldType min_density(const XT::Common::BlockedFieldVector<RangeFieldType, dimRange / 4, 4>& u) const
-  {
-    RangeFieldType ret(u.block(0)[0]);
-    for (size_t jj = 1; jj < dimRange / 4; ++jj)
-      ret = std::min(ret, u.block(jj)[0]);
-    return ret;
-  }
-
-  using BaseType::u_iso;
-
-  // For the partial moments, we might not be able to solve the optimization problem for some moments where the density
-  // on one interval/spherical triangle is very low. The overall density might be much higher than the density on that
-  // triangle, so we specialize this function.
-  void ensure_min_density(DynamicRangeType& u, const RangeFieldType min_density) const override final
-  {
-    const auto u_iso_min = u_iso() * min_density;
-    for (size_t jj = 0; jj < num_blocks; ++jj) {
-      const auto block_density = u[4 * jj];
-      if (block_density < u_iso_min[4 * jj]) {
-        for (size_t ii = 0; ii < block_size; ++ii)
-          u[4 * jj + ii] = u_iso_min[4 * jj + ii];
-      }
-    }
-  }
-
-  // For the partial moments, we might not be able to solve the optimization problem for some moments where the density
-  // on one interval/spherical triangle is very low. The overall density might be much higher than the density on that
-  // triangle, so we specialize this function.
-  void ensure_min_density(RangeType& u, const RangeFieldType min_density) const override final
-  {
-    const auto u_iso_min = u_iso() * min_density;
-    for (size_t jj = 0; jj < num_blocks; ++jj) {
-      const auto block_density = u[4 * jj];
-      if (block_density < u_iso_min[4 * jj]) {
-        for (size_t ii = 0; ii < block_size; ++ii)
-          u[4 * jj + ii] = u_iso_min[4 * jj + ii];
-      }
-    }
-  }
-
-  std::string short_id() const override final
-  {
-    return "pm";
-  }
-
-  std::string mn_name() const override final
-  {
-    return "pmm" + XT::Common::to_string(dimRange);
-  }
-
-  std::string pn_name() const override final
-  {
-    return "pmp" + XT::Common::to_string(dimRange);
   }
 
   std::vector<size_t> get_face_indices(const DomainType& v) const
@@ -637,24 +643,6 @@ public:
       threads[jj].join();
   }
 
-  virtual DynamicRangeType
-  get_moment_vector(const std::function<RangeFieldType(DomainType, bool)>& psi) const override final
-  {
-    DynamicRangeType ret(dimRange, 0);
-    for (size_t jj = 0; jj < quadratures_.size(); ++jj) {
-      const size_t offset = jj * block_size;
-      for (const auto& quad_point : quadratures_[jj]) {
-        const auto& v = quad_point.position();
-        const auto basis_val = evaluate_on_face(v, jj);
-        const auto psi_val = psi(v, false);
-        const auto factor = psi_val * quad_point.weight();
-        for (size_t ii = 0; ii < block_size; ++ii)
-          ret[offset + ii] += basis_val[ii] * factor;
-      }
-    }
-    return ret;
-  }
-
   std::unique_ptr<BlockMatrixType> block_mass_matrix() const
   {
     auto block_matrix = std::make_unique<BlockMatrixType>();
@@ -697,6 +685,10 @@ public:
     return B_kinetic;
   } // ... kinetic_flux_matrices()
 
+  std::array<int, dimDomain> has_fixed_sign(const size_t index) const override final
+  {
+    return BaseType::triangle_has_fixed_sign(index);
+  }
 
 private:
   void calculate_plane_coefficients_block(std::vector<XT::Common::FieldVector<RangeFieldType, block_size>>& points,
@@ -820,13 +812,6 @@ private:
   using BaseType::triangulation_;
   mutable PlaneCoefficientsType plane_coefficients_;
 }; // class PartialMomentBasis<DomainFieldType, 3, ...>
-
-template <class DomainFieldType, class RangeFieldType, size_t refinements, size_t dimFlux, EntropyType entropy>
-constexpr size_t PartialMomentBasis<DomainFieldType, 3, RangeFieldType, refinements, 1, dimFlux, 1, entropy>::dimRange;
-
-template <class DomainFieldType, class RangeFieldType, size_t refinements, size_t dimFlux, EntropyType entropy>
-constexpr size_t
-    PartialMomentBasis<DomainFieldType, 3, RangeFieldType, refinements, 1, dimFlux, 1, entropy>::num_blocks;
 
 template <class DomainFieldType, class RangeFieldType, size_t refinements, size_t dimFlux, EntropyType entropy>
 constexpr size_t
