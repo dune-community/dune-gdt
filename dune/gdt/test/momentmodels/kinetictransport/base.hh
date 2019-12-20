@@ -41,6 +41,7 @@ public:
   using typename BaseType::BasisDomainType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
+  using typename BaseType::DynamicRangeType;
   using typename BaseType::GenericFluxFunctionType;
   using typename BaseType::GenericFunctionType;
   using typename BaseType::MatrixType;
@@ -162,19 +163,19 @@ public:
   // Thus, the initial value of the n-th moment is basis_integrated * psi_vac.
   std::unique_ptr<InitialValueType> initial_values() const override
   {
-    RangeReturnType value = basis_functions_.integrated() * psi_vac_;
+    const auto value = basis_functions_.integrated() * psi_vac_;
     return std::make_unique<GenericFunctionType>(
         [](const XT::Common::Parameter&) { return 0; },
-        [value](const DomainType&, const XT::Common::Parameter&) { return value; });
+        [value](const DomainType&, DynamicRangeType& ret, const XT::Common::Parameter&) { ret = value; });
   } // ... initial_values()
 
   // Use a constant vacuum concentration basis_integrated * psi_vac as default boundary value
   std::unique_ptr<BoundaryValueType> boundary_values() const override
   {
-    RangeReturnType value = basis_functions_.integrated() * psi_vac_;
+    const auto value = basis_functions_.integrated() * psi_vac_;
     return std::make_unique<GenericFunctionType>(
         [](const XT::Common::Parameter&) { return 0; },
-        [=](const DomainType&, const XT::Common::Parameter&) { return value; });
+        [=](const DomainType&, DynamicRangeType& ret, const XT::Common::Parameter&) { ret = value; });
   } // ... boundary_values()
 
   virtual BoundaryDistributionType boundary_distribution() const

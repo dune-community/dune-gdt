@@ -28,6 +28,7 @@ public:
   using BaseType::dimRange;
   using typename BaseType::ConstantScalarFunctionType;
   using typename BaseType::DomainType;
+  using typename BaseType::DynamicRangeType;
   using typename BaseType::GenericFunctionType;
   using typename BaseType::InitialValueType;
   using typename BaseType::MomentBasis;
@@ -66,18 +67,17 @@ public:
     const size_t num_elements = XT::Common::from_string<std::vector<size_t>>(grid_cfg_["num_elements"])[0];
     const RangeFieldType len_domain = upper_right[0] - lower_left[0];
     const RangeFieldType vol_entity = len_domain / num_elements;
-    RangeReturnType basis_integrated = basis_functions_.integrated();
+    const auto basis_integrated = basis_functions_.integrated();
     const RangeFieldType domain_center = lower_left[0] + len_domain / 2;
 
     // approximate delta function by constant value of 1/(2*vol_entity) on cells on both side of 0.
-    const auto eval_func = [=](const DomainType& x, const XT::Common::Parameter&) {
-      auto ret = basis_integrated;
+    const auto eval_func = [=](const DomainType& x, DynamicRangeType& ret, const XT::Common::Parameter&) {
+      ret = basis_integrated;
       if (XT::Common::FloatCmp::ge(x[0], domain_center - vol_entity)
           && XT::Common::FloatCmp::le(x[0], domain_center + vol_entity))
         ret *= psi_vac_ + 1. / (2. * vol_entity);
       else
         ret *= psi_vac_;
-      return ret;
     };
     return std::make_unique<GenericFunctionType>(0, eval_func);
   } // ... initial_values()

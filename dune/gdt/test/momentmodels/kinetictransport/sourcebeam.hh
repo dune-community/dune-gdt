@@ -82,16 +82,15 @@ public:
   // at x = 3.
   std::unique_ptr<BoundaryValueType> boundary_values() const override final
   {
-    return std::make_unique<GenericFunctionType>(1, [&](const DomainType& x, const XT::Common::Parameter&) {
-      if (x[0] < 1.5) {
-        static auto ret = helper<MomentBasis>::get_left_boundary_values(basis_functions_, psi_vac_, is_mn_model_);
-        return ret;
-      } else {
-        auto ret = basis_functions_.integrated();
-        ret *= psi_vac_;
-        return ret;
-      }
-    });
+    return std::make_unique<GenericFunctionType>(
+        1, [&](const DomainType& x, DynamicRangeType& ret, const XT::Common::Parameter&) {
+          if (x[0] < 1.5) {
+            helper<MomentBasis>::get_left_boundary_values(basis_functions_, psi_vac_, is_mn_model_, ret);
+          } else {
+            ret = basis_functions_.integrated();
+            ret *= psi_vac_;
+          }
+        });
   } // ... boundary_values()
 
   BoundaryDistributionType boundary_distribution() const override final
@@ -115,7 +114,9 @@ public:
 
   RangeReturnType left_boundary_value() const
   {
-    return helper<MomentBasis>::get_left_boundary_values(basis_functions_, psi_vac_, is_mn_model_);
+    DynamicRangeType ret;
+    helper<MomentBasis>::get_left_boundary_values(basis_functions_, psi_vac_, is_mn_model_, ret);
+    return ret;
   }
 
   RangeFieldType t_end() const override
@@ -198,15 +199,16 @@ protected:
     using helper_base::denominator;
     using helper_base::g;
 
-    static DynamicRangeType get_left_boundary_values(const MomentBasisImp& basis_functions,
-                                                     const RangeFieldType& psi_vac,
-                                                     const bool is_mn_model)
+    static void get_left_boundary_values(const MomentBasisImp& basis_functions,
+                                         const RangeFieldType& psi_vac,
+                                         const bool is_mn_model,
+                                         DynamicRangeType& ret)
     {
-      DynamicRangeType ret(dimRange, 0);
       // For the MN-Models, we have to use the quadrature also used in the optimization problem to guarantee
       // realizability of the boundary_values.
       // For the PN-Models, we do not have these issues and just use a very fine quadrature (which is not a performance
       // problem as the integration is only done once).
+      std::fill(ret.begin(), ret.end(), 0.);
       const auto& quadratures =
           is_mn_model ? basis_functions.quadratures() : MomentBasisImp::gauss_lobatto_quadratures(100, 31);
       for (size_t ii = 0; ii < quadratures.size(); ++ii) {
@@ -221,7 +223,6 @@ protected:
       ret /= denominator();
       // add small vacuum concentration to move away from realizable boundary
       ret += basis_functions.integrated() * psi_vac;
-      return ret;
     }
 
     static DynamicRangeType get_kinetic_boundary_flux(const MomentBasisImp& /*basis_functions*/,
@@ -246,11 +247,12 @@ protected:
     using helper_base::integral_2;
     using helper_base::integral_3;
 
-    static DynamicRangeType get_left_boundary_values(const MomentBasisImp& basis_functions,
-                                                     const RangeFieldType psi_vac,
-                                                     const bool /*is_mn_model*/)
+    static void get_left_boundary_values(const MomentBasisImp& basis_functions,
+                                         const RangeFieldType psi_vac,
+                                         const bool /*is_mn_model*/,
+                                         DynamicRangeType& ret)
     {
-      DynamicRangeType ret(dimRange, 0);
+      std::fill(ret.begin(), ret.end(), 0.);
       for (size_t nn = 0; nn < dimRange; ++nn) {
         const auto& partitioning = basis_functions.partitioning();
         const auto vn = partitioning[nn];
@@ -265,7 +267,6 @@ protected:
       }
       // add small vacuum concentration to move away from realizable boundary
       ret += basis_functions.integrated() * psi_vac;
-      return ret;
     } // ... get_left_boundary_values(...)
 
     static DynamicRangeType get_kinetic_boundary_flux(const MomentBasisImp& basis_functions,
@@ -316,19 +317,19 @@ protected:
     using helper_base::integral_2;
     using helper_base::integral_3;
 
-    static DynamicRangeType get_left_boundary_values(const MomentBasisImp& basis_functions,
-                                                     const RangeFieldType psi_vac,
-                                                     const bool /*is_mn_model*/)
+    static void get_left_boundary_values(const MomentBasisImp& basis_functions,
+                                         const RangeFieldType psi_vac,
+                                         const bool /*is_mn_model*/,
+                                         DynamicRangeType& ret)
     {
       const auto& partitioning = basis_functions.partitioning();
-      DynamicRangeType ret(dimRange, 0);
+      std::fill(ret.begin(), ret.end(), 0.);
       for (size_t ii = 0; ii < dimRange / 2; ++ii) {
         ret[2 * ii] = integral_1(partitioning[ii], partitioning[ii + 1]) / denominator();
         ret[2 * ii + 1] = integral_2(partitioning[ii], partitioning[ii + 1]) / denominator();
       }
       // add small vacuum concentration to move away from realizable boundary
       ret += basis_functions.integrated() * psi_vac;
-      return ret;
     }
 
     static DynamicRangeType get_kinetic_boundary_flux(const MomentBasisImp& basis_functions,

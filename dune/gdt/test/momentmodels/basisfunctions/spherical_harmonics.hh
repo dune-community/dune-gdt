@@ -105,13 +105,6 @@ public:
     return ret;
   } // ... evaluate(...)
 
-  DynamicRangeType integrated() const override final
-  {
-    DynamicRangeType ret(dimRange, 0.);
-    ret[0] = std::sqrt(4. * M_PI);
-    return ret;
-  }
-
   MatrixType mass_matrix() const override
   {
     MatrixType M(dimRange, dimRange, 0);
@@ -165,6 +158,14 @@ public:
   std::string pn_name() const override final
   {
     return "p" + XT::Common::to_string(order);
+  }
+
+
+  DynamicRangeType integrated_initializer() const override final
+  {
+    DynamicRangeType ret(dimRange, 0.);
+    ret[0] = std::sqrt(4. * M_PI);
+    return ret;
   }
 
 private:
