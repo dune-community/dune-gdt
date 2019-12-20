@@ -313,12 +313,14 @@ public:
         index_set_, entity_caches_, use_thread_cache_, use_entity_cache_, mutexes_, *implementation_);
   }
 
-  StateType evaluate_kinetic_flux(const E& inside_entity,
-                                  const E& outside_entity,
-                                  const StateType& u_i,
-                                  const StateType& u_j,
-                                  const DomainType& n_ij,
-                                  const size_t dd) const
+  template <class StateTp, class RetType>
+  void evaluate_kinetic_flux(const E& inside_entity,
+                             const E& outside_entity,
+                             const StateTp& u_i,
+                             const StateTp& u_j,
+                             const DomainType& n_ij,
+                             const size_t dd,
+                             RetType& ret) const
   {
     // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
     const auto local_func = derived_local_function();
@@ -326,8 +328,9 @@ public:
     const auto alpha_i = local_func->get_alpha(u_i, true)->first;
     local_func->bind(outside_entity);
     const auto alpha_j = local_func->get_alpha(u_j, true)->first;
-    return implementation_->evaluate_kinetic_flux_with_alphas(alpha_i, alpha_j, n_ij, dd);
+    ret = implementation_->evaluate_kinetic_flux_with_alphas(alpha_i, alpha_j, n_ij, dd);
   } // StateType evaluate_kinetic_flux(...)
+
 
   // Returns alpha(u), starting from alpha_iso. To get better performance when calculating several alphas, use
   // Localfunction's get_alpha

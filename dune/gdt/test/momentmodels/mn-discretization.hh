@@ -148,14 +148,15 @@ struct HyperbolicMnDiscretization
     using BoundaryOperator =
         LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator<I, VectorType, GV, dimRange>;
     using LambdaType = typename BoundaryOperator::LambdaType;
-    using StateType = typename BoundaryOperator::StateType;
+    using DynamicStateType = typename BoundaryOperator::DynamicStateType;
     LambdaType boundary_lambda =
         [&boundary_values](const I& intersection,
                            const FieldVector<RangeFieldType, dimDomain - 1>& xx_in_reference_intersection_coordinates,
                            const AnalyticalFluxType& /*flux*/,
-                           const StateType& /*u*/,
-                           const XT::Common::Parameter& /*param*/) {
-          return boundary_values->evaluate(intersection.geometry().global(xx_in_reference_intersection_coordinates));
+                           const DynamicStateType& /*u*/,
+                           DynamicStateType& v,
+                           const XT::Common::Parameter& param) {
+          boundary_values->evaluate(intersection.geometry().global(xx_in_reference_intersection_coordinates), v, param);
         };
     XT::Grid::ApplyOn::NonPeriodicBoundaryIntersections<GV> filter;
     advection_operator.append(boundary_lambda, {}, filter);
@@ -243,13 +244,13 @@ struct HyperbolicMnTest
   void run(const double tol = TestCaseType::ExpectedResultsType::tol)
   {
     auto norms = HyperbolicMnDiscretization<TestCaseType>::run(
-                     1,
+                     DXTC_CONFIG.get("num_save_steps", 1),
                      0,
                      TestCaseType::quad_order,
                      TestCaseType::quad_refinements,
-                     "",
+                     DXTC_CONFIG.get("grid_size", ""),
                      2,
-                     TestCaseType::t_end,
+                     DXTC_CONFIG.get("t_end", TestCaseType::t_end),
                      "test",
                      Dune::GDT::is_full_moment_basis<typename TestCaseType::MomentBasis>::value)
                      .first;
