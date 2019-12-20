@@ -844,11 +844,17 @@ struct CheckerboardMnTestCase : SourceBeamMnTestCase<GridImp, MomentBasisImp, re
 
 
 // ShadowMn
-template <class MomentBasisImp, bool reconstruct>
-struct ShadowMnExpectedResults;
+template <class MomentBasisImp, bool reconstruct, bool kinetic_scheme>
+struct ShadowMnExpectedResults
+{
+  static constexpr double l1norm = 0.;
+  static constexpr double l2norm = 0.;
+  static constexpr double linfnorm = 0.;
+  static constexpr double tol = 1e-15;
+};
 
 template <bool reconstruct>
-struct ShadowMnExpectedResults<RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, reconstruct>
+struct ShadowMnExpectedResults<RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, reconstruct, false>
 {
   static constexpr double l1norm = reconstruct ? 0. : 0.59248402251960053;
   static constexpr double l2norm = reconstruct ? 0. : 0.097644561106262767;
@@ -857,16 +863,16 @@ struct ShadowMnExpectedResults<RealSphericalHarmonicsMomentBasis<double, double,
 };
 
 
-template <class GridImp, class MomentBasisImp, bool reconstruct>
-struct ShadowMnTestCase : SourceBeamMnTestCase<GridImp, MomentBasisImp, reconstruct>
+template <class GridImp, class MomentBasisImp, bool reconstruct, bool kinetic_scheme = false>
+struct ShadowMnTestCase : SourceBeamMnTestCase<GridImp, MomentBasisImp, reconstruct, kinetic_scheme>
 {
-  using BaseType = SourceBeamMnTestCase<GridImp, MomentBasisImp, reconstruct>;
+  using BaseType = typename ShadowMnTestCase::SourceBeamMnTestCase;
   using typename BaseType::GridViewType;
   using ProblemType = ShadowMn<GridViewType, MomentBasisImp>;
   using typename BaseType::RangeFieldType;
   static constexpr RangeFieldType t_end = 0.1;
   static constexpr bool reconstruction = reconstruct;
-  using ExpectedResultsType = ShadowMnExpectedResults<MomentBasisImp, reconstruction>;
+  using ExpectedResultsType = ShadowMnExpectedResults<MomentBasisImp, reconstruction, kinetic_scheme>;
   using QuadratureChooserType = QuadratureChooser<MomentBasisImp>;
   static constexpr size_t quad_order = QuadratureChooserType::quad_order;
   static constexpr size_t quad_refinements = QuadratureChooserType::quad_refinements;

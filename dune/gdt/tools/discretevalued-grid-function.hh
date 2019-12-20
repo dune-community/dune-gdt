@@ -51,6 +51,7 @@ private:
 
   public:
     using typename BaseType::DomainType;
+    using typename BaseType::DynamicRangeType;
     using typename BaseType::E;
     using typename BaseType::RangeReturnType;
     using LocalFunctionValuesType = std::map<DomainType, RangeReturnType, XT::Common::FieldVectorLess>;
@@ -73,7 +74,7 @@ private:
       local_values_ = &(values_[index_set_.index(elem)]);
     }
 
-    RangeReturnType evaluate(const DomainType& xx, const XT::Common::Parameter& /*param*/) const override
+    RangeReturnType evaluate(const DomainType& xx, const XT::Common::Parameter& /*param*/) const override final
     {
       try {
         return local_values_->at(xx);
@@ -85,6 +86,22 @@ private:
                        << XT::Common::to_string(element().geometry().center()) << " in this function!");
       }
       return RangeReturnType{};
+    }
+
+    void
+    evaluate(const DomainType& xx, DynamicRangeType& ret, const XT::Common::Parameter& /*param*/) const override final
+    {
+      try {
+        const auto& vals = local_values_->at(xx);
+        for (size_t ii = 0; ii < r; ++ii)
+          ret[ii] = vals[ii];
+      } catch (const std::out_of_range& /*e*/) {
+        DUNE_THROW(Dune::RangeError,
+                   "There are no values for local coord "
+                       << XT::Common::to_string(xx) << " (global coord "
+                       << XT::Common::to_string(element().geometry().global(xx)) << ") on entity "
+                       << XT::Common::to_string(element().geometry().center()) << " in this function!");
+      }
     }
 
   private:

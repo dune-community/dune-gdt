@@ -47,6 +47,7 @@ public:
   using PhysicalDomainType = typename FluxType::DomainType;
   using LocalIntersectionCoords = FieldVector<typename I::ctype, d - 1>;
   using StateType = typename FluxType::StateType;
+  using DynamicStateType = typename FluxType::DynamicStateType;
 
   NumericalFluxInterface(const FluxType& flx, const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type + flx.parameter_type())
@@ -101,12 +102,29 @@ public:
     return flux_.access();
   }
 
+  // One of the two following apply methods has to be implemented by derived classes
   virtual StateType apply(const LocalIntersectionCoords& x_in_local_intersection_coords,
                           const StateType& u,
                           const StateType& v,
                           const PhysicalDomainType& n,
-                          const XT::Common::Parameter& param = {}) const = 0;
+                          const XT::Common::Parameter& param = {}) const
+  {
+    DynamicStateType ret(m, 0.);
+    apply(x_in_local_intersection_coords, u, v, n, ret, param);
+    return XT::Common::convert_to<StateType>(ret);
+  }
 
+  virtual void apply(const LocalIntersectionCoords& x_in_local_intersection_coords,
+                     const DynamicStateType& u,
+                     const DynamicStateType& v,
+                     const PhysicalDomainType& n,
+                     DynamicStateType& ret,
+                     const XT::Common::Parameter& param = {}) const
+  {
+    ret = XT::Common::convert_to<DynamicStateType>(apply(x_in_local_intersection_coords, u, v, n, param));
+  }
+
+  // Convenience apply methods
   template <class V>
   StateType apply(const LocalIntersectionCoords x_in_local_intersection_coords,
                   const StateType& u,

@@ -81,12 +81,15 @@ public:
   {
     local_u_update_->bind(entity);
     local_range_->bind(entity);
-    XT::Common::FieldVector<RangeFieldType, dimRange> u, Hinv_u;
+    const auto& local_u_dofs = local_u_update_->dofs();
     for (size_t ii = 0; ii < dimRange; ++ii)
-      u[ii] = local_u_update_->dofs().get_entry(ii);
+      Hinv_u_[ii] = local_u_dofs.get_entry(ii);
     const auto entity_index = space_.grid_view().indexSet().index(entity);
     try {
-      analytical_flux_.apply_inverse_hessian(entity_index, u, Hinv_u);
+      analytical_flux_.apply_inverse_hessian(entity_index, Hinv_u_);
+      for (auto&& entry : Hinv_u_)
+        if (std::isnan(entry) || std::isinf(entry))
+          DUNE_THROW(Dune::MathError, "Hessian");
     } catch (const Dune::MathError& e) {
       if (param_.has_key("reg") && param_.get("reg")[0]) {
         reg_indicators_[entity_index] = true;
@@ -94,15 +97,9 @@ public:
       } else
         throw e;
     }
-    for (auto&& entry : Hinv_u)
-      if (std::isnan(entry) || std::isinf(entry)) {
-        //        std::cout << "x: " << entity.geometry().center() << "u: " << u << ", alpha: " << alpha << ", Hinv_u: "
-        //        << Hinv_u << std::endl;
-        DUNE_THROW(Dune::MathError, "Hessian");
-      }
-
+    auto& local_range_dofs = local_range_->dofs();
     for (size_t ii = 0; ii < dimRange; ++ii)
-      local_range_->dofs().set_entry(ii, Hinv_u[ii]);
+      local_range_dofs.set_entry(ii, Hinv_u_[ii]);
   } // void apply_local(...)
 
 private:
@@ -116,6 +113,8 @@ private:
   std::unique_ptr<typename DiscreteFunctionType::LocalDiscreteFunctionType> local_range_;
   const EntropyFluxType& analytical_flux_;
   const XT::Common::Parameter& param_;
+  XT::Common::FieldVector<RangeFieldType, dimRange> u_tmp_;
+  XT::Common::FieldVector<RangeFieldType, dimRange> Hinv_u_;
 }; // class LocalEntropicHessianInverter<...>
 
 template <class MomentBasisImp,

@@ -328,6 +328,11 @@ public:
 
   virtual RangeFieldType density(const DynamicRangeType& u) const = 0;
 
+  virtual RangeFieldType density(const RangeType& u) const
+  {
+    return density(XT::Common::convert_to<DynamicRangeType>(u));
+  }
+
   virtual void ensure_min_density(DynamicRangeType& u, const RangeFieldType min_density) const
   {
     if (density(u) < min_density)
@@ -443,6 +448,29 @@ protected:
   {
     integrated_ = integrated_initializer(quadratures_);
     u_iso_ = integrated() / density(integrated());
+  }
+
+  std::array<int, dimDomain> interval_has_fixed_sign(const size_t index, const size_t num_intervals) const
+  {
+    std::array<int, dimDomain> ret;
+    const bool odd = num_intervals % 2;
+    if (index < num_intervals / 2)
+      ret[0] = -1;
+    else if (odd && index == num_intervals / 2)
+      ret[0] = 0;
+    else
+      ret[0] = 1;
+    return ret;
+  }
+
+  // assumes that each spherical triangle is contained in one octand of the sphere
+  std::array<int, dimDomain> triangle_has_fixed_sign(const size_t index) const
+  {
+    std::array<int, dimDomain> ret;
+    const auto center = triangulation_.faces()[index].center();
+    for (size_t dd = 0; dd < dimDomain; ++dd)
+      ret[dd] = center[dd] < 0. ? -1 : 1;
+    return ret;
   }
 
   void
@@ -570,6 +598,16 @@ protected:
   DynamicRangeType integrated_;
   DynamicRangeType u_iso_;
 };
+
+template <class DomainFieldImp,
+          size_t domainDim,
+          class RangeFieldImp,
+          size_t rangeDim,
+          size_t rangeDimCols,
+          size_t fluxDim,
+          EntropyType entropy>
+const size_t
+    MomentBasisInterface<DomainFieldImp, domainDim, RangeFieldImp, rangeDim, rangeDimCols, fluxDim, entropy>::dimRange;
 
 
 } // namespace GDT

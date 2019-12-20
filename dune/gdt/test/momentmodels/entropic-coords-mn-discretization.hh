@@ -277,8 +277,8 @@ struct HyperbolicEntropicCoordsMnDiscretization
     HessianInverterType hessian_inverter(*analytical_flux, fv_space);
     auto& non_entropic_advection_operator = reconstruction_advection_operator;
 
-    const auto u_iso = basis_functions->u_iso();
-    const auto basis_integrated = basis_functions->integrated();
+    static const RangeType u_iso = basis_functions->u_iso();
+    static const RangeType basis_integrated = basis_functions->integrated();
     const auto sigma_a = problem.sigma_a();
     const auto sigma_s = problem.sigma_s();
     const auto Q = problem.Q();
@@ -293,9 +293,10 @@ struct HyperbolicEntropicCoordsMnDiscretization
       const auto sigma_s_value = sigma_s->evaluate(center)[0];
       const auto sigma_t_value = sigma_a_value + sigma_s_value;
       const auto Q_value = Q->evaluate(center)[0];
-      auto ret = u_elem * (-sigma_t_value);
-      ret += u_iso * basis_functions->density(u_elem) * sigma_s_value;
-      ret += basis_integrated * Q_value;
+      auto ret = u_elem;
+      ret *= -sigma_t_value;
+      ret.axpy(basis_functions->density(u_elem) * sigma_s_value, u_iso);
+      ret.axpy(Q_value, basis_integrated);
       auto& range_dofs = local_range.dofs();
       for (size_t ii = 0; ii < dimRange; ++ii)
         range_dofs[ii] += ret[ii];

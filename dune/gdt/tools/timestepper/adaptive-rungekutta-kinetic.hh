@@ -110,7 +110,7 @@ public:
                                        DiscreteFunctionType& initial_values,
                                        const RangeFieldType r = 1.0,
                                        const double t_0 = 0.0,
-                                       const RangeFieldType tol = 1e-2,
+                                       const RangeFieldType tol = 1e-3,
                                        const RangeFieldType scale_factor_min = 0.2,
                                        const RangeFieldType scale_factor_max = 5,
                                        const MatrixType& A = ButcherArrayProviderType::A(),
@@ -208,11 +208,10 @@ public:
         stages_k_[0].dofs().vector() = last_stage_of_previous_step_->dofs().vector();
         first_stage_to_compute = 1;
       }
-      // std::cout << "t: " << t << ", dt: " << actual_dt << std::endl;
 
       bool consider_regularization = actual_dt < 1e-5 ? true : false;
       for (size_t ii = first_stage_to_compute; ii < num_stages_; ++ii) {
-        std::fill(stages_k_[ii].dofs().vector().begin(), stages_k_[ii].dofs().vector().end(), RangeFieldType(0.));
+        stages_k_[ii].dofs().vector() *= 0.;
         alpha_tmp_.dofs().vector() = alpha_n.dofs().vector();
         for (size_t jj = 0; jj < ii; ++jj)
           alpha_tmp_.dofs().vector() += stages_k_[jj].dofs().vector() * (actual_dt * r_ * (A_[ii][jj]));
@@ -249,8 +248,6 @@ public:
                   local_alpha_vec[jj] += alpha_one[jj] * factor;
                   local_alpha->dofs().set_entry(jj, local_alpha_vec[jj]);
                 }
-                const auto new_density = basis_functions.density(entropy_flux_.get_u(local_alpha_vec));
-                std::cout << "density: " << old_density << ", new_density: " << new_density << std::endl;
               }
             }
             last_stage_of_previous_step_ = nullptr;
@@ -261,27 +258,19 @@ public:
           skip_error_computation = true;
           time_step_scale_factor = 0.5;
           std::cout << "MathError! " << e.what() << std::endl;
-          // std::cout << XT::Common::to_string(alpha_n.dofs().vector()) << std::endl;
-          // for (size_t jj = 0; jj < ii; ++jj)
-          //   std::cout << XT::Common::to_string(stages_k_[jj].dofs().vector()) << std::endl;
           break;
 #if HAVE_TBB
         } catch (const tbb::captured_exception& e) {
           mixed_error = 1e10;
           skip_error_computation = true;
           time_step_scale_factor = 0.5;
-          std::cout << "MathError! " << e.what() << std::endl;
-          // std::cout << XT::Common::to_string(alpha_n.dofs().vector()) << std::endl;
-          // for (size_t jj = 0; jj < ii; ++jj)
-          // std::cout << XT::Common::to_string(stages_k_[jj].dofs().vector()) << std::endl;
+          std::cout << "TBB error! " << e.what() << std::endl;
           break;
 #endif
         }
       }
 
       if (!skip_error_computation) {
-
-
         // compute error vector
         alpha_tmp_.dofs().vector() = stages_k_[0].dofs().vector() * b_diff_[0];
         for (size_t ii = 1; ii < num_stages_; ++ii)
@@ -303,45 +292,6 @@ public:
         time_step_scale_factor =
             std::min(std::max(0.9 * std::pow(tol_ / mixed_error, 1.0 / 5.0), scale_factor_min_), scale_factor_max_);
 
-
-#if 0
-        alpha_tmp_.dofs().vector() = alpha_n.dofs().vector();
-
-        // calculate alpha at timestep n+1
-        for (size_t ii = 0; ii < num_stages_; ++ii)
-          alpha_n.dofs().vector() += stages_k_[ii].dofs().vector() * (actual_dt * r_ * b_1_[ii]);
-        const auto u_1 = get_u(alpha_n);
-
-        // compute alternative alpha
-        for (size_t ii = 0; ii < num_stages_; ++ii)
-          alpha_tmp_.dofs().vector() += stages_k_[ii].dofs().vector() * (actual_dt * r_ * b_2_[ii]);
-        const auto u_2 = get_u(alpha_tmp_);
-
-        // scale error, use absolute error if norm is less than 0.01 and relative error else
-        auto diff_vector = u_1.dofs().vector() - u_2.dofs().vector();
-        for (size_t ii = 0; ii < diff_vector.size(); ++ii) {
-          if (std::abs(u_1.dofs().vector()[ii]) > 0.01)
-            diff_vector[ii] /= std::abs(u_1.dofs().vector()[ii]);
-        }
-        mixed_error = diff_vector.sup_norm();
-
-        // compute error vector in alpha
-        diff_vector = alpha_n.dofs().vector() - alpha_tmp_.dofs().vector();
-
-        // scale error, use absolute error if norm is less than 0.01 and relative error else
-        for (size_t ii = 0; ii < diff_vector.size(); ++ii) {
-          if (std::abs(alpha_n.dofs().vector()[ii]) > 0.01)
-            diff_vector[ii] /= std::abs(alpha_n.dofs().vector()[ii]);
-        }
-        mixed_error = std::max(mixed_error, diff_vector.sup_norm());
-        if (std::isnan(mixed_error))
-          mixed_error = 1e10;
-
-        // scale dt to get the estimated optimal time step length, TODO: adapt formula
-        time_step_scale_factor =
-            std::min(std::max(0.9 * std::pow(tol_ / mixed_error, 1.0 / 5.0), scale_factor_min_), scale_factor_max_);
-#endif
-
         if (mixed_error > tol_) { // go back from u at timestep n+1 to timestep n
           for (size_t ii = 0; ii < num_stages_; ++ii)
             alpha_n.dofs().vector() += stages_k_[ii].dofs().vector() * (-1.0 * r_ * actual_dt * b_1_[ii]);
@@ -351,30 +301,6 @@ public:
     // if (!last_stage_of_previous_step_)
     // last_stage_of_previous_step_ = Dune::XT::Common::make_unique<DiscreteFunctionType>(alpha_n);
     // last_stage_of_previous_step_->dofs().vector() = stages_k_[num_stages_ - 1].dofs().vector();
-
-#if 0
-    const auto alpha_local_func = alpha_n.local_discrete_function();
-    for (auto&& element : Dune::elements(alpha_n.space().grid_view())) {
-      alpha_local_func->bind(element);
-      for (size_t ii = 0; ii < BaseType::dimRange; ++ii) {
-//        constexpr double min_val = -100.;
-        constexpr double max_val = 1000.;
-        const auto entry_ii = alpha_local_func->dofs().get_entry(ii);
-        if (std::abs(entry_ii) > max_val) {
-//          std::cout << "limited from " << alpha_local_func->dofs().get_entry(ii) << " to " << min_val << " in entity " << element.geometry().center() << std::endl;
-//          std::cout << "Entries are: ";
-//          for (size_t jj = 0; jj < BaseType::dimRange; ++jj) {
-//            std::cout << alpha_local_func->dofs().get_entry(jj) << " ";
-//          }
-//          std::cout << std::endl;
-          last_stage_of_previous_step_ = nullptr;
-//          alpha_local_func->dofs().set_entry(ii, min_val);
-          std::cout << "Replacing " << entry_ii << " by " << std::copysign(max_val, entry_ii) << std::endl;
-          alpha_local_func->dofs().set_entry(ii, std::copysign(max_val, entry_ii));
-        }
-      } // ii
-    } // elements
-#endif
 
     t += actual_dt;
 

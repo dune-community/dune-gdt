@@ -98,14 +98,11 @@ public:
 
   void global_indices(const ElementType& element, DynamicVector<size_t>& indices) const override final
   {
-    if (indices.size() < r * rC)
-      indices.resize(r * rC);
-    size_t local_index = 0;
-    for (size_t ii = 0; ii < r; ++ii)
-      for (size_t jj = 0; jj < rC; ++jj) {
-        indices[local_index] = mapper_.index(element) * r * rC + local_index;
-        ++local_index;
-      }
+    constexpr size_t local_sz = r * rC;
+    if (indices.size() < local_sz)
+      indices.resize(local_sz);
+    size_t* indices_ptr = &indices[0];
+    std::iota(indices_ptr, indices_ptr + local_sz, mapper_.index(element) * local_sz);
   } // ... global_indices(...)
 
   void update_after_adapt() override final
