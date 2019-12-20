@@ -195,8 +195,8 @@ protected:
                                                                 /*periodicity_restriction=*/impermeable_wall_filter);
       // the actual handling of impermeable walls
       op->append(/*numerical_boundary_flux=*/
-                 [&](const auto& u, const auto& n, const auto& /*param*/) {
-                   return euler_tools.flux_at_impermeable_walls(XT::LA::convert_to<RangeType>(u), n);
+                 [&](const auto& u, const auto& n, auto& ret, const auto& /*param*/) {
+                   ret = euler_tools.flux_at_impermeable_walls(XT::LA::convert_to<RangeType>(u), n);
                  },
                  {},
                  impermeable_wall_filter);
@@ -219,6 +219,7 @@ protected:
               const auto& xx_in_reference_intersection_coordinates,
               const auto& /*flux*/,
               const auto& u,
+              auto& v,
               const auto& /*param*/) {
             const auto normal = intersection.unitOuterNormal(xx_in_reference_intersection_coordinates);
             const auto rho_v_p = euler_tools.primitives(XT::LA::convert_to<RangeType>(u));
@@ -226,7 +227,7 @@ protected:
             auto velocity = std::get<1>(rho_v_p);
             const auto& pressure = std::get<2>(rho_v_p);
             velocity -= normal * 2. * (velocity * normal);
-            return euler_tools.conservative(rho, velocity, pressure);
+            v = euler_tools.conservative(rho, velocity, pressure);
           },
           {},
           impermeable_wall_filter);
@@ -264,6 +265,7 @@ protected:
                                                                 const auto& xx_in_reference_intersection_coordinates,
                                                                 const auto& /*flux*/,
                                                                 const auto& u_,
+                                                                auto& v,
                                                                 const auto& param) {
         // evaluate boundary values
         const auto element = intersection.inside();
@@ -280,22 +282,22 @@ protected:
         // compute v
         if (flow_speed < -a) {
           // supersonic inlet
-          return bv;
+          v = bv;
         } else if (!(flow_speed > 0)) {
           // subsonic inlet
           const auto rho_outer = euler_tools.density(bv);
           const auto v_outer = euler_tools.velocity(bv);
           const auto p_inner = euler_tools.pressure(u);
-          return euler_tools.conservative(rho_outer, v_outer, p_inner);
+          v = euler_tools.conservative(rho_outer, v_outer, p_inner);
         } else if (flow_speed < a) {
           // subsonic outlet
           const auto rho_inner = euler_tools.density(u);
           const auto v_inner = euler_tools.velocity(u);
           const auto p_outer = euler_tools.pressure(bv);
-          return euler_tools.conservative(rho_inner, v_inner, p_outer);
+          v = euler_tools.conservative(rho_inner, v_inner, p_outer);
         } else {
           // supersonic outlet
-          return RangeType(u);
+          v = u;
         }
       }; // ... heuristic_euler_inflow_outflow_treatment(...)
       op->append(heuristic_euler_inflow_outflow_treatment, {}, inflow_outflow_filter);
@@ -306,6 +308,7 @@ protected:
               const auto& xx_in_reference_intersection_coordinates,
               const auto& /*flux*/,
               const auto& u,
+              auto& v,
               const auto& /*param*/) {
             const auto normal = intersection.unitOuterNormal(xx_in_reference_intersection_coordinates);
             const auto rho_v_p = euler_tools.primitives(XT::LA::convert_to<RangeType>(u));
@@ -313,7 +316,7 @@ protected:
             auto velocity = std::get<1>(rho_v_p);
             const auto& pressure = std::get<2>(rho_v_p);
             velocity -= normal * 2. * (velocity * normal);
-            return euler_tools.conservative(rho, velocity, pressure);
+            v = euler_tools.conservative(rho, velocity, pressure);
           },
           {},
           impermeable_wall_filter);

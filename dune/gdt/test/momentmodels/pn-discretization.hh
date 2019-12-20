@@ -206,8 +206,9 @@ struct HyperbolicPnDiscretization
     using BoundaryValueType = typename ProblemType::BoundaryValueType;
     static constexpr size_t dimDomain = MomentBasis::dimDomain;
     static constexpr size_t dimRange = MomentBasis::dimRange;
-    using MatrixType = typename XT::LA::Container<RangeFieldType>::MatrixType;
-    using VectorType = typename XT::LA::Container<RangeFieldType>::VectorType;
+    static const auto la_backend = TestCaseType::la_backend;
+    using MatrixType = typename XT::LA::Container<RangeFieldType, la_backend>::MatrixType;
+    using VectorType = typename XT::LA::Container<RangeFieldType, la_backend>::VectorType;
 
     //******************* create grid and FV space ***************************************
     auto grid_config = ProblemType::default_grid_cfg();
@@ -294,14 +295,15 @@ struct HyperbolicPnDiscretization
     using BoundaryOperator =
         LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator<I, VectorType, GV, dimRange>;
     using LambdaType = typename BoundaryOperator::LambdaType;
-    using StateType = typename BoundaryOperator::StateType;
+    using DynamicStateType = typename BoundaryOperator::DynamicStateType;
     LambdaType boundary_lambda =
         [&boundary_values](const I& intersection,
                            const FieldVector<RangeFieldType, dimDomain - 1>& xx_in_reference_intersection_coordinates,
                            const AnalyticalFluxType& /*flux*/,
-                           const StateType& /*u*/,
-                           const XT::Common::Parameter& /*param*/) {
-          return boundary_values->evaluate(intersection.geometry().global(xx_in_reference_intersection_coordinates));
+                           const DynamicStateType& /*u*/,
+                           DynamicStateType& v,
+                           const XT::Common::Parameter& param) {
+          boundary_values->evaluate(intersection.geometry().global(xx_in_reference_intersection_coordinates), v, param);
         };
     XT::Grid::ApplyOn::NonPeriodicBoundaryIntersections<GV> filter;
     advection_operator.append(boundary_lambda, {}, filter);

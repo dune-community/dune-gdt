@@ -79,6 +79,7 @@ struct HyperbolicEntropicCoordsMnDiscretization
     using GenericFunctionType = XT::Functions::GenericFunction<dimDomain, dimRange, 1, RangeFieldType>;
     using DomainType = FieldVector<RangeFieldType, dimDomain>;
     using RangeType = FieldVector<RangeFieldType, dimRange>;
+    using DynamicRangeType = DynamicVector<RangeFieldType>;
     //        static const RangeFieldType scale_factor = 1e2;
 
     //******************* create grid and FV space ***************************************
@@ -124,7 +125,9 @@ struct HyperbolicEntropicCoordsMnDiscretization
           alpha_boundary_vals.insert(std::make_pair(x, analytical_flux->get_alpha(u)));
         }
     GenericFunctionType boundary_values_alpha(
-        1, [&](const DomainType& x, const XT::Common::Parameter&) { return alpha_boundary_vals[x]; });
+        1, [&](const DomainType& x, DynamicRangeType& ret, const XT::Common::Parameter&) {
+          ret = alpha_boundary_vals[x];
+        });
 
 
     // ***************** project initial values to discrete function *********************
@@ -224,7 +227,6 @@ struct HyperbolicEntropicCoordsMnDiscretization
     using BoundaryOperator =
         LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator<I, VectorType, GV, dimRange>;
     using LambdaType = typename BoundaryOperator::LambdaType;
-    using StateType = typename BoundaryOperator::StateType;
 
     // calculate boundary kinetic fluxes
     // apply density_operator first to store boundary_evaluations
@@ -233,27 +235,29 @@ struct HyperbolicEntropicCoordsMnDiscretization
     density_operator.apply(alpha.dofs().vector(), alpha.dofs().vector());
 
     // store boundary fluxes
-    std::map<DomainType, RangeType, XT::Common::FieldVectorFloatLess> boundary_fluxes;
+    std::map<DomainType, DynamicRangeType, XT::Common::FieldVectorFloatLess> boundary_fluxes;
     for (const auto& element : Dune::elements(grid_view))
       for (const auto& intersection : Dune::intersections(grid_view, element))
         if (intersection.boundary()) {
           const auto x = intersection.geometry().center();
           const auto dd = intersection.indexInInside() / 2;
-          const auto boundary_flux = problem.kinetic_boundary_flux(x, intersection.centerUnitOuterNormal()[dd], dd);
+          const DynamicRangeType boundary_flux =
+              problem.kinetic_boundary_flux(x, intersection.centerUnitOuterNormal()[dd], dd);
           boundary_fluxes.insert(std::make_pair(x, boundary_flux));
         }
     GenericFunctionType boundary_kinetic_fluxes(
-        1, [&](const DomainType& x, const XT::Common::Parameter&) { return boundary_fluxes[x]; });
+        1, [&](const DomainType& x, DynamicRangeType& ret, const XT::Common::Parameter&) { ret = boundary_fluxes[x]; });
 
 
     LambdaType boundary_lambda =
         [&](const I& intersection,
             const FieldVector<RangeFieldType, dimDomain - 1>& xx_in_reference_intersection_coordinates,
             const AnalyticalFluxType& /*flux*/,
-            const StateType& /*u*/,
-            const XT::Common::Parameter& /*param*/) {
-          return boundary_kinetic_fluxes.evaluate(
-              intersection.geometry().global(xx_in_reference_intersection_coordinates));
+            const DynamicRangeType& /*u*/,
+            DynamicRangeType& v,
+            const XT::Common::Parameter& param) {
+          boundary_kinetic_fluxes.evaluate(
+              intersection.geometry().global(xx_in_reference_intersection_coordinates), v, param);
         };
     XT::Grid::ApplyOn::NonPeriodicBoundaryIntersections<GV> filter;
     advection_operator.append(boundary_lambda, {}, filter);
