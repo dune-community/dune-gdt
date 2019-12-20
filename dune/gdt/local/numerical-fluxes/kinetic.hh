@@ -48,6 +48,7 @@ class NumericalKineticFlux
   using SparseMatrixType = typename XT::LA::CommonSparseMatrix<R>;
 
 public:
+  using typename BaseType::DynamicStateType;
   using typename BaseType::FluxType;
   using typename BaseType::LocalIntersectionCoords;
   using typename BaseType::PhysicalDomainType;
@@ -81,23 +82,41 @@ public:
                   const PhysicalDomainType& n,
                   const XT::Common::Parameter& /*param*/ = {}) const override final
   {
+    StateType ret;
+    apply_imp(u, v, n, ret);
+    return ret;
+  }
+
+  void apply(const LocalIntersectionCoords& /*x*/,
+             const DynamicStateType& u,
+             const DynamicStateType& v,
+             const PhysicalDomainType& n,
+             DynamicStateType& ret,
+             const XT::Common::Parameter& /*param*/ = {}) const override final
+  {
+    apply_imp(u, v, n, ret);
+  }
+
+private:
+  template <class StateTp, class RetType>
+  void apply_imp(const StateTp& u, const StateTp& v, const PhysicalDomainType& n, RetType& ret) const
+  {
     // find direction of unit outer normal (we assume an axis-aligned cube grid)
     size_t direction = intersection().indexInInside() / 2;
     if (dynamic_cast<const EntropyFluxType*>(&flux()) != nullptr) {
-      auto ret = dynamic_cast<const EntropyFluxType*>(&flux())->evaluate_kinetic_flux(
+      dynamic_cast<const EntropyFluxType*>(&flux())->evaluate_kinetic_flux(
           intersection().inside(),
           intersection().neighbor() ? intersection().outside() : intersection().inside(),
           u,
           v,
           n,
-          direction);
+          direction,
+          ret);
       for (auto&& entry : ret)
         if (std::isnan(entry) || std::isinf(entry))
           DUNE_THROW(Dune::MathError, "NaN or inf in kinetic flux");
-      return ret;
     } else {
       static const auto flux_matrices = initialize_flux_matrices(basis_);
-      StateType ret(0);
       auto tmp_vec = ret;
       const auto& inner_flux_matrix = flux_matrices[direction][n[direction] > 0 ? 1 : 0];
       const auto& outer_flux_matrix = flux_matrices[direction][n[direction] > 0 ? 0 : 1];
@@ -105,11 +124,9 @@ public:
       outer_flux_matrix.mv(v, ret);
       ret += tmp_vec;
       ret *= n[direction];
-      return ret;
     }
   }
 
-private:
   static FieldVector<FieldVector<SparseMatrixType, 2>, d> initialize_flux_matrices(const MomentBasis& basis)
   {
     // calculate < v_i b b^T >_- M^{-1} and < v_i b b^T >_+ M^{-1}

@@ -82,7 +82,7 @@ public:
   // i.e. 2/(4 pi), at x = 0 and psi_vac else
   std::unique_ptr<BoundaryValueType> boundary_values() const override final
   {
-    auto basis_integrated = basis_functions_.integrated();
+    const auto basis_integrated = basis_functions_.integrated();
     const auto psi_vac = psi_vac_;
     return std::make_unique<GenericFunctionType>(
         0, [basis_integrated, psi_vac](const DomainType& x, const XT::Common::Parameter&) {

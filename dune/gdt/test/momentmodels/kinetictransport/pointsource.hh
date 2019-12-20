@@ -61,7 +61,7 @@ public:
   // Initial value of the kinetic equation is psi_vac + 1/(4 pi^4 sigma^3) * exp(-||x||^2/(pi*sigma^2)).
   std::unique_ptr<InitialValueType> initial_values() const override
   {
-    RangeReturnType basis_integrated = basis_functions_.integrated();
+    const RangeReturnType basis_integrated = basis_functions_.integrated();
     const auto psi_vac = psi_vac_;
     const auto eval_func = [basis_integrated, psi_vac](const DomainType& x, const XT::Common::Parameter&) {
       static const auto sigma = 0.03;

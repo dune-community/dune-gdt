@@ -93,13 +93,16 @@ public:
   {
     return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>(
         "[" + Dune::XT::Common::to_string(7.0 / 24.0, 15) + " " + Dune::XT::Common::to_string(1.0 / 4.0, 15) + " "
-        + Dune::XT::Common::to_string(1.0 / 3.0, 15) + " " + Dune::XT::Common::to_string(1.0 / 8.0, 15) + " 0]");
+        + Dune::XT::Common::to_string(1.0 / 3.0, 15) + " " + Dune::XT::Common::to_string(1.0 / 8.0, 15) + "]");
   }
 
   static Dune::DynamicVector<RangeFieldType> c()
   {
     return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>("[0.5 0.75 1 0]");
   }
+
+  // lower one of the two orders
+  static constexpr size_t q = 2;
 };
 
 // Dormand-Prince (adaptive RK45)
@@ -146,6 +149,9 @@ public:
     return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>(
         "[0 0.2 0.3 0.8 " + Dune::XT::Common::to_string(8.0 / 9.0, 15) + " 1 1]");
   }
+
+  // lower one of the two orders
+  static constexpr size_t q = 4;
 }; // Dormand-Prince (RK45)
 
 
