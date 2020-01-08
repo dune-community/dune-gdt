@@ -518,11 +518,8 @@ struct CellModelSolver
   using PI = XT::Grid::extract_intersection_t<PGV>;
   using MatrixType = XT::LA::EigenRowMajorSparseMatrix<double>;
   using DenseMatrixType = XT::LA::EigenDenseMatrix<double>;
-  //   using VectorType = XT::LA::EigenDenseVector<double>;
   using VectorType = XT::LA::CommonDenseVector<double>;
   using EigenVectorType = XT::LA::EigenDenseVector<double>;
-  // using MatrixType = XT::LA::IstlRowMajorSparseMatrix<double>;
-  // using VectorType = XT::LA::IstlDenseVector<double>;
   using MatrixViewType = XT::LA::MatrixView<MatrixType>;
   using VectorViewType = XT::LA::VectorView<VectorType>;
   using EigenVectorViewType = XT::LA::VectorView<EigenVectorType>;
@@ -575,7 +572,6 @@ struct CellModelSolver
                   const double In = 1.,
                   const bool linearize = false,
                   const double pol_order = 2)
-    // do a global refine once, this makes simplicial grids look more symmetric
     : lower_left_(get_lower_left(testcase))
     , upper_right_(get_upper_right(testcase))
     , t_end_(t_end)
@@ -597,6 +593,7 @@ struct CellModelSolver
     , vol_domain_((upper_right_[0] - lower_left_[0]) * (upper_right_[1] - lower_left_[1]))
     , num_cells_(get_num_cells(testcase))
     , linearize_(linearize)
+    // do a global refine once, this makes simplicial grids look more symmetric
     , grid_(XT::Grid::make_cube_grid<G>(lower_left_, upper_right_, {num_elements_x, num_elements_y}, 1))
     , nonperiodic_grid_view_(grid_.leaf_view())
     , grid_view_(nonperiodic_grid_view_, std::bitset<d>(get_periodic_directions(testcase)))
@@ -906,9 +903,12 @@ struct CellModelSolver
     // Dirichlet constrainst for u
     A_stokes_op_->append(u_dirichlet_constraints_);
     // assemble everything
+    A_stokes_op_->append(B_stokes_op);
+    A_stokes_op_->append(M_p_stokes_op);
     A_stokes_op_->assemble(use_tbb_);
-    B_stokes_op.assemble(use_tbb_);
-    M_p_stokes_op.assemble(use_tbb_);
+    for (const auto& dof : u_dirichlet_constraints_.dirichlet_DoFs())
+      std::cout << dof << " ";
+    std::cout << std::endl;
 
     // Fix value of p at first DoF to 0 to ensure the uniqueness of the solution, i.e, we have set the p_size_-th row of
     // [A B; B^T 0] to the unit vector.
@@ -959,6 +959,14 @@ struct CellModelSolver
     M_pfield_op.append(phi_dirichlet_constraints_);
     M_pfield_op.append(M_ell_pfield_op);
     M_pfield_op.assemble(use_tbb_);
+
+    M_pfield_colmajor_ = M_pfield_.backend();
+    pfield_mass_matrix_solver_->analyzePattern(M_pfield_colmajor_);
+    pfield_mass_matrix_solver_->factorize(M_pfield_colmajor_);
+  } // constructor
+
+  void pfield_jacobian()
+  {
     // Set matrix S_{22} = C = M
     // S_pfield_22_ = M_pfield_;
     // // apply Dirichlet constraints to linear part
@@ -971,10 +979,7 @@ struct CellModelSolver
     // S_pfield_01_ *= gamma_;
     // pfield_solver_->analyzePattern(S_pfield_.backend());
     // XT::LA::write_matrix_market(M_pfield_, "phasefield_mass_matrix.mtx");
-    M_pfield_colmajor_ = M_pfield_.backend();
-    pfield_mass_matrix_solver_->analyzePattern(M_pfield_colmajor_);
-    pfield_mass_matrix_solver_->factorize(M_pfield_colmajor_);
-  } // constructor
+  }
 
   size_t num_cells() const
   {
