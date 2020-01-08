@@ -248,7 +248,6 @@ struct HyperbolicEntropicCoordsMnDiscretization
     GenericFunctionType boundary_kinetic_fluxes(
         1, [&](const DomainType& x, DynamicRangeType& ret, const XT::Common::Parameter&) { ret = boundary_fluxes[x]; });
 
-
     LambdaType boundary_lambda =
         [&](const I& intersection,
             const FieldVector<RangeFieldType, dimDomain - 1>& xx_in_reference_intersection_coordinates,
@@ -270,7 +269,10 @@ struct HyperbolicEntropicCoordsMnDiscretization
 
     if (!filename.empty())
       filename += "_";
-    filename += "minmod_";
+    if (TestCaseType::reconstruction && slope == SlopeLimiterType::minmod)
+      filename += "minmod_";
+    else if (TestCaseType::reconstruction && slope == SlopeLimiterType::superbee)
+      filename += "superbee_";
     filename += ProblemType::static_id();
     filename += "_grid_" + grid_config["num_elements"];
     filename += "_tend_" + XT::Common::to_string(t_end);
@@ -377,13 +379,13 @@ struct HyperbolicEntropicCoordsMnTest
   void run()
   {
     auto norms = HyperbolicEntropicCoordsMnDiscretization<TestCaseType>::run(
-                     10,
-                     -1,
+                     DXTC_CONFIG.get("num_save_steps", 1),
+                     0,
                      TestCaseType::quad_order,
                      TestCaseType::quad_refinements,
-                     "",
+                     DXTC_CONFIG.get("grid_size", ""),
                      2,
-                     TestCaseType::t_end,
+                     DXTC_CONFIG.get("t_end", TestCaseType::t_end),
                      "test_kinetic_alpha",
                      Dune::GDT::is_full_moment_basis<typename TestCaseType::MomentBasis>::value)
                      .first;

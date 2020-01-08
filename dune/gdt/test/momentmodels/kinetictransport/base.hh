@@ -232,9 +232,15 @@ public:
     return "kinetictransportequation";
   }
 
-  virtual const RangeFieldType psi_vac() const
+  virtual RangeFieldType psi_vac() const
   {
     return psi_vac_;
+  }
+
+  // correct for 1d on interval [-1, 1], override else
+  virtual RangeFieldType rho_vac() const
+  {
+    return psi_vac_ * 2;
   }
 
 protected:
