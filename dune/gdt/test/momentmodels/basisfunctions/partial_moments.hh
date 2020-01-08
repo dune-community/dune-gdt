@@ -312,6 +312,13 @@ public:
       const auto mu_ip1 = partitioning_[ii + 1];
       const auto alpha_left = alpha_0 + mu_i * alpha_1;
       const auto alpha_right = alpha_0 + mu_ip1 * alpha_1;
+      const auto max_alpha = std::max(alpha_left, alpha_right);
+      if (max_alpha < alpha_min) {
+        alpha_0 = alpha_min;
+        alpha_1 = 0.;
+        changed = true;
+      }
+#if 0
       const bool min_is_left = alpha_left < alpha_right;
       const auto alpha_min_ii = min_is_left ? alpha_left : alpha_right;
       const auto alpha_max_ii = min_is_left ? alpha_right : alpha_left;
@@ -333,20 +340,21 @@ public:
             continue;
           }
           // get positive slope
-#if 0
+#  if 0
         // Set minimum to alpha_min, leave max alpha unchanged
         alpha_1 = (alpha_max_ii - alpha_min_ii) / h;
-#else
+#  else
           // Set minimum to alpha_min, leave rho unchanged
           alpha_1 = -1. / h * boost::math::lambert_wm1(-h * psi_min / rho_ii * std::exp(-h * psi_min / rho_ii))
                     - psi_min / rho_ii;
-#endif
+#  endif
           if (!min_is_left)
             alpha_1 *= -1.; // slope has to be negative in this case
           alpha_0 = alpha_min - (min_is_left ? mu_i : mu_ip1) * alpha_1;
           changed = true;
         }
       }
+#endif
     } // ii
     return changed;
   }

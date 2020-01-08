@@ -356,7 +356,7 @@ public:
     }
   }
 
-  virtual bool adjust_alpha_to_ensure_min_density(RangeType& /*alpha*/, const RangeFieldType /*min_density*/) const
+  virtual bool adjust_alpha_to_ensure_min_density(RangeType& /*alpha*/, const RangeFieldType /*psi_min*/) const
   {
     return false;
   }
@@ -481,7 +481,7 @@ protected:
   std::array<int, dimDomain> triangle_has_fixed_sign(const size_t index) const
   {
     std::array<int, dimDomain> ret;
-    const auto center = triangulation_.faces()[index].center();
+    const auto center = triangulation_.faces()[index]->center();
     for (size_t dd = 0; dd < dimDomain; ++dd)
       ret[dd] = center[dd] < 0. ? -1 : 1;
     return ret;

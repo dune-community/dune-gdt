@@ -121,12 +121,21 @@ public:
   bool adjust_alpha_to_ensure_min_density(RangeType& alpha, const RangeFieldType psi_min) const override final
   {
     bool changed = false;
-    const auto alpha_min = std::log(psi_min);
-    for (size_t ii = 0; ii < dimRange; ++ii) {
-      if (alpha[ii] < alpha_min) {
+    const RangeFieldType alpha_min = std::log(psi_min);
+    const RangeFieldType alpha_min_eps = alpha_min + std::abs(alpha_min) * 1e-14;
+    if (std::max(alpha[0], alpha[1]) < alpha_min_eps) {
+      alpha[0] = alpha_min;
+      changed = true;
+    }
+    for (size_t ii = 1; ii < dimRange - 1; ++ii) {
+      if (alpha[ii] < alpha_min_eps && alpha[ii - 1] < alpha_min_eps && alpha[ii + 1] < alpha_min_eps) {
         alpha[ii] = alpha_min;
         changed = true;
       }
+    }
+    if (std::max(alpha[dimRange - 2], alpha[dimRange - 1]) < alpha_min_eps) {
+      alpha[dimRange - 1] = alpha_min;
+      changed = true;
     }
     return changed;
   }
@@ -583,7 +592,7 @@ public:
       const auto& quad_point = *it;
       const auto& v = quad_point.position();
       const auto val = evaluate_on_face(v, face_index);
-      const auto factor = psi(v, has_fixed_sign(it)) * quad_point.weight();
+      const auto factor = psi(v, has_fixed_sign(it.first_index())) * quad_point.weight();
       for (size_t ii = 0; ii < 3; ++ii)
         ret[vertices[ii]->index()] += val[ii] * factor;
     }

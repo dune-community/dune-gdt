@@ -227,13 +227,18 @@ public:
     if (check) {
       const auto u = get_u(entity_index);
       const double* u_ptr = &(u[0]);
-      // if (std::any_of(u_ptr, u_ptr + basis_dimRange, [](const auto& a) { return std::isnan(a) || std::isinf(a); }))
       const auto val = XT::Common::reduce(u_ptr, u_ptr + basis_dimRange, 0.);
       if (std::isnan(val) || std::isinf(val))
         DUNE_THROW(Dune::MathError, "inf or nan in u!");
-      const bool changed = basis_functions().adjust_alpha_to_ensure_min_density(alpha, psi_min);
-      if (changed)
-        store_evaluations(entity_index, alpha, psi_min, false);
+      const auto rho = basis_functions().density(u);
+      const auto& rho_min = psi_min;
+      if (rho < rho_min) {
+        alpha = basis_functions().alpha_iso(rho_min);
+        store_evaluations(entity_index, alpha, rho_min, false);
+      }
+      // const bool changed = basis_functions().adjust_alpha_to_ensure_min_density(alpha, psi_min);
+      // if (changed)
+      // store_evaluations(entity_index, alpha, psi_min, false);
     }
   }
 

@@ -69,6 +69,7 @@ public:
   typedef typename Dune::DynamicMatrix<RangeFieldType> MatrixType;
   typedef typename Dune::DynamicVector<RangeFieldType> VectorType;
   typedef typename std::vector<std::pair<RangeFieldType, DiscreteFunctionType>> SolutionType;
+  static constexpr size_t q = ButcherArrayProviderType::q;
   using EntropyFluxType = EntropyFluxImp;
   using BaseType::dimRange;
 
@@ -121,10 +122,12 @@ public:
     , op_(op)
     , entropy_flux_(entropy_flux)
     , r_(r)
-    , tol_(tol)
+    , atol_(tol)
+    , rtol_(tol)
     , scale_factor_min_(scale_factor_min)
     , scale_factor_max_(scale_factor_max)
     , alpha_tmp_(BaseType::current_solution())
+    , alpha_np1_(BaseType::current_solution())
     , A_(A)
     , b_1_(b_1)
     , b_2_(b_2)
@@ -132,7 +135,8 @@ public:
     , b_diff_(b_2_ - b_1_)
     , num_stages_(A_.rows())
   {
-    assert(Dune::XT::Common::FloatCmp::gt(tol_, 0.0));
+    assert(Dune::XT::Common::FloatCmp::ge(atol_, 0.0));
+    assert(Dune::XT::Common::FloatCmp::ge(rtol_, 0.0));
     assert(Dune::XT::Common::FloatCmp::le(scale_factor_min_, 1.0));
     assert(Dune::XT::Common::FloatCmp::ge(scale_factor_max_, 1.0));
     assert(A_.rows() == A_.cols() && "A has to be a square matrix");
@@ -200,7 +204,7 @@ public:
     auto& t = current_time();
     auto& alpha_n = current_solution();
 
-    while (Dune::XT::Common::FloatCmp::gt(mixed_error, tol_)) {
+    while (mixed_error > 1.) {
       bool skip_error_computation = false;
       actual_dt *= time_step_scale_factor;
       size_t first_stage_to_compute = 0;
@@ -257,47 +261,51 @@ public:
           mixed_error = 1e10;
           skip_error_computation = true;
           time_step_scale_factor = 0.5;
-          std::cout << "MathError! " << e.what() << std::endl;
+          // std::cout << "MathError! " << e.what() << std::endl;
           break;
 #if HAVE_TBB
         } catch (const tbb::captured_exception& e) {
           mixed_error = 1e10;
           skip_error_computation = true;
           time_step_scale_factor = 0.5;
-          std::cout << "TBB error! " << e.what() << std::endl;
+          // std::cout << "TBB error! " << e.what() << std::endl;
           break;
 #endif
         }
       }
 
       if (!skip_error_computation) {
-        // compute error vector
-        alpha_tmp_.dofs().vector() = stages_k_[0].dofs().vector() * b_diff_[0];
-        for (size_t ii = 1; ii < num_stages_; ++ii)
-          alpha_tmp_.dofs().vector() += stages_k_[ii].dofs().vector() * b_diff_[ii];
-        alpha_tmp_.dofs().vector() *= actual_dt * r_;
-
-        // calculate u at timestep n+1
-        for (size_t ii = 0; ii < num_stages_; ++ii)
-          alpha_n.dofs().vector() += stages_k_[ii].dofs().vector() * (actual_dt * r_ * b_1_[ii]);
-
-        // scale error, use absolute error if norm is less than 0.01 and relative error else
-        auto& diff_vector = alpha_tmp_.dofs().vector();
-        for (size_t ii = 0; ii < diff_vector.size(); ++ii) {
-          if (std::abs(alpha_n.dofs().vector()[ii]) > 0.01)
-            diff_vector[ii] /= std::abs(alpha_n.dofs().vector()[ii]);
+        // calculate two approximations of alpha at timestep n+1.
+        alpha_tmp_.dofs().vector() = alpha_n.dofs().vector();
+        alpha_np1_.dofs().vector() = alpha_n.dofs().vector();
+        for (size_t ii = 0; ii < num_stages_; ++ii) {
+          alpha_np1_.dofs().vector().axpy(actual_dt * r_ * b_1_[ii], stages_k_[ii].dofs().vector());
+          alpha_tmp_.dofs().vector().axpy(actual_dt * r_ * b_2_[ii], stages_k_[ii].dofs().vector());
         }
-        mixed_error = diff_vector.sup_norm();
-        // scale dt to get the estimated optimal time step length, TODO: adapt formula
+
+        // calculate error
+        const auto* alpha_tmp_data =
+            XT::Common::VectorAbstraction<typename DiscreteFunctionType::VectorType>::data(alpha_tmp_.dofs().vector());
+        const auto* alpha_np1_data =
+            XT::Common::VectorAbstraction<typename DiscreteFunctionType::VectorType>::data(alpha_np1_.dofs().vector());
+        mixed_error =
+            XT::Common::transform_reduce(alpha_tmp_data,
+                                         alpha_tmp_data + alpha_tmp_.dofs().vector().size(),
+                                         alpha_np1_data,
+                                         0.,
+                                         /*reduction*/ [](const auto& a, const auto& b) { return std::max(a, b); },
+                                         /*transformation*/
+                                         [atol = atol_, rtol = rtol_](const auto& a, const auto& b) {
+                                           return std::abs(a - b) / (atol + std::max(std::abs(a), std::abs(b)) * rtol);
+                                         });
+        // scale dt to get the estimated optimal time step length
         time_step_scale_factor =
-            std::min(std::max(0.9 * std::pow(tol_ / mixed_error, 1.0 / 5.0), scale_factor_min_), scale_factor_max_);
-
-        if (mixed_error > tol_) { // go back from u at timestep n+1 to timestep n
-          for (size_t ii = 0; ii < num_stages_; ++ii)
-            alpha_n.dofs().vector() += stages_k_[ii].dofs().vector() * (-1.0 * r_ * actual_dt * b_1_[ii]);
-        }
+            std::min(std::max(0.8 * std::pow(1. / mixed_error, 1. / (q + 1.)), scale_factor_min_), scale_factor_max_);
       }
-    } // while (mixed_error > tol_)
+    } // while (mixed_error > 1.)
+
+    alpha_n.dofs().vector() = alpha_np1_.dofs().vector();
+
     // if (!last_stage_of_previous_step_)
     // last_stage_of_previous_step_ = Dune::XT::Common::make_unique<DiscreteFunctionType>(alpha_n);
     // last_stage_of_previous_step_->dofs().vector() = stages_k_[num_stages_ - 1].dofs().vector();
@@ -311,10 +319,12 @@ private:
   const OperatorType& op_;
   const EntropyFluxType& entropy_flux_;
   const RangeFieldType r_;
-  const RangeFieldType tol_;
+  const RangeFieldType atol_;
+  const RangeFieldType rtol_;
   const RangeFieldType scale_factor_min_;
   const RangeFieldType scale_factor_max_;
   DiscreteFunctionType alpha_tmp_;
+  DiscreteFunctionType alpha_np1_;
   const MatrixType A_;
   const VectorType b_1_;
   const VectorType b_2_;
