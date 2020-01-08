@@ -238,7 +238,7 @@ public:
             for (auto&& entity : Dune::elements(grid_view)) {
               const auto entity_index = grid_view.indexSet().index(entity);
               if (reg_indicators[entity_index]) {
-                std::cout << "Regularized on entity " << entity_index << " with r = " << r << std::endl;
+                // std::cout << "Regularized on entity " << entity_index << " with r = " << r << std::endl;
                 local_alpha->bind(entity);
                 for (size_t jj = 0; jj < dimRange; ++jj)
                   local_alpha_vec[jj] = local_alpha->dofs().get_entry(jj);
@@ -306,9 +306,9 @@ public:
 
     alpha_n.dofs().vector() = alpha_np1_.dofs().vector();
 
-    // if (!last_stage_of_previous_step_)
-    // last_stage_of_previous_step_ = Dune::XT::Common::make_unique<DiscreteFunctionType>(alpha_n);
-    // last_stage_of_previous_step_->dofs().vector() = stages_k_[num_stages_ - 1].dofs().vector();
+    if (!last_stage_of_previous_step_)
+      last_stage_of_previous_step_ = Dune::XT::Common::make_unique<DiscreteFunctionType>(alpha_n);
+    last_stage_of_previous_step_->dofs().vector() = stages_k_[num_stages_ - 1].dofs().vector();
 
     t += actual_dt;
 
