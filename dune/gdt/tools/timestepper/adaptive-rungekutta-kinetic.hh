@@ -17,6 +17,7 @@
 #include <dune/gdt/operators/interfaces.hh>
 
 #include <dune/xt/common/memory.hh>
+#include <dune/xt/common/numeric.hh>
 #include <dune/xt/common/string.hh>
 
 #include "adaptive-rungekutta.hh"
