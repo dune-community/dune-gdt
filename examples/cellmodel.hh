@@ -1344,64 +1344,63 @@ struct CellModelSolver
     dt_ = dt;
   }
 
-  // void prepare_restricted_pfield_op(const std::vector<size_t>& output_dofs, const double dt, const size_t cell)
-  // {
-  //   if (!pfield_deim_output_dofs_[cell] || *pfield_deim_output_dofs_[cell] != output_dofs) {
-  //     const auto& pattern = create_pfield_pattern(size_phi_, pfield_submatrix_pattern_);
-  //     pfield_deim_output_dofs_[cell] = std::make_shared<std::vector<size_t>>(output_dofs);
-  //     // sort output into dofs belonging to phi, phinat and mu
-  //     auto& phi_output_dofs = phi_deim_output_dofs_[cell];
-  //     auto& phinat_output_dofs = phinat_deim_output_dofs_[cell];
-  //     auto& mu_output_dofs = mu_deim_output_dofs_[cell];
-  //     auto& phinat_mu_output_dofs = both_mu_and_phi_deim_output_dofs_[cell];
-  //     for (const auto& dof : output_dofs) {
-  //       if (dof < size_phi_)
-  //         phi_output_dofs.push_back(dof);
-  //       else if (dof < 2 * size_phi_)
-  //         phinat_output_dofs.push_back(dof);
-  //       else
-  //         mu_output_dofs.push_back(dof);
-  //     }
-  //     for (auto& dof : phinat_output_dofs)
-  //       dof -= size_phi_;
-  //     for (auto& dof : mu_output_dofs)
-  //       dof -= 2 * size_phi_;
-  //     for (const auto& dof : phinat_output_dofs)
-  //       if (std::find(mu_output_dofs.begin(), mu_output_dofs.end(), dof) != mu_output_dofs.end())
-  //         phinat_mu_output_dofs.push_back(dof);
-  //     // get input dofs corresponding to output dofs
-  //     auto& input_dofs = pfield_deim_input_dofs_[cell];
-  //     input_dofs.clear();
-  //     for (const auto& dof : output_dofs) {
-  //       const auto& new_input_dofs = pattern.inner(dof);
-  //       input_dofs.insert(input_dofs.end(), new_input_dofs.begin(), new_input_dofs.end());
-  //     } // output_dofs
-  //     // sort and remove duplicate entries
-  //     std::sort(input_dofs.begin(), input_dofs.end());
-  //     input_dofs.erase(std::unique(input_dofs.begin(), input_dofs.end()), input_dofs.end());
-  //     phinat_deim_input_dofs_begin_[cell] =
-  //         std::lower_bound(input_dofs.begin(), input_dofs.end(), size_phi_) - input_dofs.begin();
-  //     mu_deim_input_dofs_begin_[cell] =
-  //         std::lower_bound(input_dofs.begin(), input_dofs.end(), 2 * size_phi_) - input_dofs.begin();
-
-  //     // store all entities that contain an output dof
-  //     const auto& mapper = phi_space_.mapper();
-  //     DynamicVector<size_t> global_indices;
-  //     pfield_deim_entities_[cell].clear();
-  //     for (const auto& entity : Dune::elements(grid_view_)) {
-  //       mapper.global_indices(entity, global_indices);
-  //       maybe_add_entity(entity, global_indices, *pfield_deim_output_dofs_[cell], pfield_deim_entities_[cell]);
-  //     } // entities
-  //   } // if (not already computed)
-  //   u_tmp_.dofs().vector() = u_.dofs().vector();
-  //   P_tmp_[cell].dofs().vector() = P_[cell].dofs().vector();
-  //   for (size_t kk = 0; kk < num_cells_; kk++) {
-  //     phi_tmp_[kk].dofs().vector() = phi_[kk].dofs().vector();
-  //     mu_tmp_[kk].dofs().vector() = mu_[kk].dofs().vector();
-  //   }
-  //   assemble_pfield_rhs(dt, cell, true);
-  //   assemble_pfield_restricted_linear_jacobian(dt, cell, true);
-  // }
+  void prepare_restricted_pfield_op(const std::vector<size_t>& output_dofs, const double dt, const size_t cell)
+  {
+    if (!pfield_deim_output_dofs_[cell] || *pfield_deim_output_dofs_[cell] != output_dofs) {
+      const auto& pattern = create_pfield_pattern(size_phi_, pfield_submatrix_pattern_);
+      pfield_deim_output_dofs_[cell] = std::make_shared<std::vector<size_t>>(output_dofs);
+      // sort output into dofs belonging to phi, phinat and mu
+      auto& phi_output_dofs = phi_deim_output_dofs_[cell];
+      auto& phinat_output_dofs = phinat_deim_output_dofs_[cell];
+      auto& mu_output_dofs = mu_deim_output_dofs_[cell];
+      auto& phinat_mu_output_dofs = both_mu_and_phi_deim_output_dofs_[cell];
+      for (const auto& dof : output_dofs) {
+        if (dof < size_phi_)
+          phi_output_dofs.push_back(dof);
+        else if (dof < 2 * size_phi_)
+          phinat_output_dofs.push_back(dof);
+        else
+          mu_output_dofs.push_back(dof);
+      }
+      for (auto& dof : phinat_output_dofs)
+        dof -= size_phi_;
+      for (auto& dof : mu_output_dofs)
+        dof -= 2 * size_phi_;
+      for (const auto& dof : phinat_output_dofs)
+        if (std::find(mu_output_dofs.begin(), mu_output_dofs.end(), dof) != mu_output_dofs.end())
+          phinat_mu_output_dofs.push_back(dof);
+      // get input dofs corresponding to output dofs
+      auto& input_dofs = pfield_deim_input_dofs_[cell];
+      input_dofs.clear();
+      for (const auto& dof : output_dofs) {
+        const auto& new_input_dofs = pattern.inner(dof);
+        input_dofs.insert(input_dofs.end(), new_input_dofs.begin(), new_input_dofs.end());
+      } // output_dofs
+      // sort and remove duplicate entries
+      std::sort(input_dofs.begin(), input_dofs.end());
+      input_dofs.erase(std::unique(input_dofs.begin(), input_dofs.end()), input_dofs.end());
+      phinat_deim_input_dofs_begin_[cell] =
+          std::lower_bound(input_dofs.begin(), input_dofs.end(), size_phi_) - input_dofs.begin();
+      mu_deim_input_dofs_begin_[cell] =
+          std::lower_bound(input_dofs.begin(), input_dofs.end(), 2 * size_phi_) - input_dofs.begin();
+      // store all entities that contain an output dof
+      const auto& mapper = phi_space_.mapper();
+      DynamicVector<size_t> global_indices;
+      pfield_deim_entities_[cell].clear();
+      for (const auto& entity : Dune::elements(grid_view_)) {
+        mapper.global_indices(entity, global_indices);
+        maybe_add_entity(entity, global_indices, *pfield_deim_output_dofs_[cell], pfield_deim_entities_[cell]);
+      } // entities
+    } // if (not already computed)
+    u_tmp_.dofs().vector() = u_.dofs().vector();
+    P_tmp_[cell].dofs().vector() = P_[cell].dofs().vector();
+    for (size_t kk = 0; kk < num_cells_; kk++) {
+      phi_tmp_[kk].dofs().vector() = phi_[kk].dofs().vector();
+      mu_tmp_[kk].dofs().vector() = mu_[kk].dofs().vector();
+    }
+    assemble_pfield_rhs(dt, cell, true);
+    // assemble_pfield_restricted_linear_jacobian(dt, cell, true);
+  }
 
   //******************************************************************************************************************
   //*********************************************** Apply operators **************************************************
@@ -1463,29 +1462,29 @@ struct CellModelSolver
     return residual;
   }
 
-
-  // VectorType apply_restricted_pfield_op(const VectorType& ld_source, const size_t cell)
-  // {
-  //   // copy values to high-dimensional vector
-  //   auto& source = pfield_tmp_vec_;
-  //   auto& residual = pfield_tmp_vec2_;
-  //   const auto& output_dofs = *pfield_deim_output_dofs_[cell];
-  //   const auto& input_dofs = pfield_deim_input_dofs_[cell];
-  //   copy_ld_to_hd_vec(input_dofs, ld_source, source);
-  //   // linear part
-  //   partial_mv_hd_to_hd(output_dofs, S_pfield_, source, residual);
-  //   // subtract rhs
-  //   partially_sub_vecs(output_dofs, residual, pfield_rhs_vector_);
-  //   // copy source values to temporary discrete functions
-  //   partially_fill_tmp_pfield(cell, source);
-  //   // nonlinear part
-  //   assemble_nonlinear_part_of_pfield_residual(residual, cell, true);
-  //   // copy to low-dimensional output residual
-  //   VectorType ret(output_dofs.size());
-  //   for (size_t ii = 0; ii < output_dofs.size(); ++ii)
-  //     ret[ii] = residual[output_dofs[ii]];
-  //   return ret;
-  // }
+  VectorType apply_restricted_pfield_op(const VectorType& ld_source, const size_t cell)
+  {
+    // copy values to high-dimensional vector
+    auto& source = pfield_tmp_vec_;
+    auto& residual = pfield_tmp_vec2_;
+    const auto& output_dofs = *pfield_deim_output_dofs_[cell];
+    const auto& input_dofs = pfield_deim_input_dofs_[cell];
+    copy_ld_to_hd_vec(input_dofs, ld_source, source);
+    // linear part
+    // partial_mv_hd_to_hd(output_dofs, S_pfield_, source, residual);
+    // pfield_jac_linear_op_.apply(source, residual, true);
+    // subtract rhs
+    partially_sub_vecs(output_dofs, residual, pfield_rhs_vector_);
+    // copy source values to temporary discrete functions
+    partially_fill_tmp_pfield(cell, source);
+    // nonlinear part
+    assemble_nonlinear_part_of_pfield_residual(residual, cell, true);
+    // copy to low-dimensional output residual
+    VectorType ret(output_dofs.size());
+    for (size_t ii = 0; ii < output_dofs.size(); ++ii)
+      ret[ii] = residual[output_dofs[ii]];
+    return ret;
+  }
 
   //******************************************************************************************************************
   //******************************************* Apply inverse operators **********************************************

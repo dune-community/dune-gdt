@@ -156,12 +156,12 @@ int main(int argc, char* argv[])
         apply_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
         model_solver2.assemble_pfield_nonlinear_jacobian(source, kk, false);
-        const auto jac_result = model_solver2.apply_S_pfield(source);
-        model_solver2.revert_pfield_jacobian_to_linear();
+        // const auto jac_result = model_solver2.apply_S_pfield(source);
+        // model_solver2.revert_pfield_jacobian_to_linear();
         jac_time += std::chrono::steady_clock::now() - begin;
-        auto jac_result2 = jac_result;
-        jac_result2 *= 0.;
-        model_solver2.apply_pfield_jacobian(source, jac_result2, kk, false);
+        // auto jac_result2 = jac_result;
+        // jac_result2 *= 0.;
+        // model_solver2.apply_pfield_jacobian(source, jac_result2, kk, false);
         // There are differences of about 1e-13, caused by the different mv methods in assemble_pfield_rhs (mv from
         // Eigen vs mv_restricted);
         const double apply_tol = 1e-12;
@@ -171,12 +171,13 @@ int main(int argc, char* argv[])
           if (XT::Common::FloatCmp::ne(restricted_result[ii], result[pfield_output_dofs[ii]], apply_tol, apply_tol))
             std::cout << "Failed apply restricted: " << ii << ", " << pfield_output_dofs[ii] << ", "
                       << result[pfield_output_dofs[ii]] << ", " << restricted_result[ii] << std::endl;
-          if (XT::Common::FloatCmp::ne(restricted_jac_result[ii], jac_result[pfield_output_dofs[ii]], jac_tol, jac_tol)
-              || XT::Common::FloatCmp::ne(
-                     restricted_jac_result[ii], jac_result2[pfield_output_dofs[ii]], jac_tol, jac_tol))
-            std::cout << "Failed apply restricted jacobian: " << ii << ", " << pfield_output_dofs[ii] << ", "
-                      << jac_result[pfield_output_dofs[ii]] << ", " << jac_result2[pfield_output_dofs[ii]] << ", "
-                      << restricted_jac_result[ii] << std::endl;
+          // if (XT::Common::FloatCmp::ne(restricted_jac_result[ii], jac_result[pfield_output_dofs[ii]], jac_tol,
+          // jac_tol)
+          // || XT::Common::FloatCmp::ne(
+          //  restricted_jac_result[ii], jac_result2[pfield_output_dofs[ii]], jac_tol, jac_tol))
+          // std::cout << "Failed apply restricted jacobian: " << ii << ", " << pfield_output_dofs[ii] << ", "
+          // << jac_result[pfield_output_dofs[ii]] << ", " << jac_result2[pfield_output_dofs[ii]] << ", "
+          // << restricted_jac_result[ii] << std::endl;
         } // ii
       } // kk
     } // runs
