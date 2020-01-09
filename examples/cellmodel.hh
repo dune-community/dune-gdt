@@ -906,9 +906,6 @@ struct CellModelSolver
     A_stokes_op_->append(B_stokes_op);
     A_stokes_op_->append(M_p_stokes_op);
     A_stokes_op_->assemble(use_tbb_);
-    for (const auto& dof : u_dirichlet_constraints_.dirichlet_DoFs())
-      std::cout << dof << " ";
-    std::cout << std::endl;
 
     // Fix value of p at first DoF to 0 to ensure the uniqueness of the solution, i.e, we have set the p_size_-th row of
     // [A B; B^T 0] to the unit vector.
@@ -1322,7 +1319,7 @@ struct CellModelSolver
     assemble_stokes_rhs();
   }
 
-  void prepare_ofield_op(const double dt, const size_t cell)
+  void prepare_ofield_op(const double dt, const size_t cell, const bool /*restricted*/ = false)
   {
     u_tmp_.dofs().vector() = u_.dofs().vector();
     P_tmp_[cell].dofs().vector() = P_[cell].dofs().vector();

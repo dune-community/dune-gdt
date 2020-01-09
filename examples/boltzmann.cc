@@ -227,6 +227,8 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(visualize_overloads, CellModelSolver::vis
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(visualize_pfield_overloads, CellModelSolver::visualize_pfield, 2, 3)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(visualize_ofield_overloads, CellModelSolver::visualize_ofield, 2, 3)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(visualize_stokes_overloads, CellModelSolver::visualize_stokes, 2, 3)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(prepare_pfield_op_overloads, CellModelSolver::prepare_pfield_op, 2, 3)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(prepare_ofield_op_overloads, CellModelSolver::prepare_ofield_op, 2, 3)
 #include <dune/xt/common/reenable_warnings.hh>
 
 
@@ -346,8 +348,8 @@ BOOST_PYTHON_MODULE(libhapodgdt)
       .def("visualize_pfield", &CellModelSolver::visualize_pfield, visualize_pfield_overloads())
       .def("visualize_ofield", &CellModelSolver::visualize_ofield, visualize_ofield_overloads())
       .def("visualize_stokes", &CellModelSolver::visualize_stokes, visualize_stokes_overloads())
-      .def("prepare_pfield_op", &CellModelSolver::prepare_pfield_op)
-      .def("prepare_ofield_op", &CellModelSolver::prepare_ofield_op)
+      .def("prepare_pfield_op", &CellModelSolver::prepare_pfield_op, prepare_pfield_op_overloads())
+      .def("prepare_ofield_op", &CellModelSolver::prepare_ofield_op, prepare_ofield_op_overloads())
       .def("prepare_stokes_op", &CellModelSolver::prepare_stokes_op)
       .def("apply_pfield_op", &CellModelSolver::apply_pfield_op)
       .def("apply_ofield_op", &CellModelSolver::apply_ofield_op)
