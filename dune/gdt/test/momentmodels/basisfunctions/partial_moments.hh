@@ -13,7 +13,7 @@
 
 #include <boost/iostreams/stream.hpp>
 #include <boost/iostreams/device/null.hpp>
-#include <boost/math/special_functions/lambert_w.hpp>
+// #include <boost/math/special_functions/lambert_w.hpp>
 
 #if HAVE_QHULL
 #  include <dune/xt/common/disable_warnings.hh>
