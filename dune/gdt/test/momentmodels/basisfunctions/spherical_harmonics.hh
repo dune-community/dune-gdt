@@ -160,8 +160,7 @@ public:
     return "p" + XT::Common::to_string(order);
   }
 
-
-  DynamicRangeType integrated_initializer() const override final
+  DynamicRangeType integrated_initializer(const QuadraturesType& /*quadratures*/) const override final
   {
     DynamicRangeType ret(dimRange, 0.);
     ret[0] = std::sqrt(4. * M_PI);
