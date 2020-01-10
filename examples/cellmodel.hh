@@ -1496,10 +1496,16 @@ struct CellModelSolver
     return ret;
   }
 
-  VectorType
-  apply_ofield_op_with_param(const VectorType& y, const size_t cell, const XT::Common::Parameter& /*param*/) const
+  VectorType apply_ofield_op_with_param(const VectorType& y, const size_t cell, const double Pa)
   {
-    // TODO: implement parameter handling
+    if (XT::Common::FloatCmp::ne(Pa, Pa_)) {
+      Pa_ = Pa;
+      C_ofield_elliptic_part_ *= 0.;
+      MatrixOperator<MatrixType, PGV, d> ofield_elliptic_op(grid_view_, u_space_, u_space_, C_ofield_elliptic_part_);
+      ofield_elliptic_op.append(LocalElementIntegralBilinearForm<E, d>(LocalLaplaceIntegrand<E, d>(-1. / Pa_)));
+      ofield_elliptic_op.assemble(use_tbb_);
+      prepare_ofield_op(dt_, cell);
+    }
     return apply_ofield_op(y, cell);
   }
 
@@ -1535,30 +1541,20 @@ struct CellModelSolver
 
   VectorType apply_pfield_op_with_param(const VectorType& y,
                                         const size_t cell,
-                                        const XT::Common::Parameter& param,
+                                        const double Be,
+                                        const double Ca,
+                                        const double Pa,
                                         const bool restricted = false)
   {
-    const double Be = param.has_key("Be") ? param.get("Be")[0] : Be_;
-    const double Ca = param.has_key("Ca") ? param.get("Ca")[0] : Ca_;
-    const double Pa = param.has_key("Pa") ? param.get("Pa")[0] : Pa_;
-    const double c_1 = param.has_key("c_1") ? param.get("c_1")[0] : c_1_;
-    const double eps = param.has_key("eps") ? param.get("eps")[0] : epsilon_;
-    const double gamma = param.has_key("gamma") ? param.get("gamma")[0] : gamma_;
-    // beta is assumed to be const
-    if (XT::Common::FloatCmp::ne(c_1, c_1_) || XT::Common::FloatCmp::ne(Be, Be_) || XT::Common::FloatCmp::ne(Pa, Pa_)
-        || XT::Common::FloatCmp::ne(Ca, Ca_) || XT::Common::FloatCmp::ne(gamma, gamma_)
-        || XT::Common::FloatCmp::ne(eps, epsilon_)) {
-      c_1_ = c_1;
+    if (XT::Common::FloatCmp::ne(Be, Be_) || XT::Common::FloatCmp::ne(Pa, Pa_) || XT::Common::FloatCmp::ne(Ca, Ca_)) {
       Be_ = Be;
       Pa_ = Pa;
-      epsilon_ = eps;
-      gamma_ = gamma;
       Ca_ = Ca;
       // TODO: we do not need to reassemble rhs if only Ca or gamma is changed and we do not need to prepare the phimu
       // operator again if only c_1 or Pa have changed
       assemble_pfield_rhs(dt_, cell, restricted);
-      pfield_jac_linear_op_.set_params(gamma, eps, Be);
-      pfield_phimu_matrixop_.set_params(gamma, eps, Be, Ca);
+      pfield_jac_linear_op_.set_params(gamma_, epsilon_, Be);
+      pfield_phimu_matrixop_.set_params(gamma_, epsilon_, Be, Ca);
       pfield_phimu_matrixop_.prepare(dt_);
     }
     return apply_pfield_op(y, cell, restricted);

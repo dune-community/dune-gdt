@@ -231,8 +231,8 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(prepare_pfield_op_overloads, CellModelSol
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(prepare_ofield_op_overloads, CellModelSolver::prepare_ofield_op, 2, 3)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(apply_pfield_op_with_param_overloads,
                                        CellModelSolver::apply_pfield_op_with_param,
-                                       3,
-                                       4)
+                                       5,
+                                       6)
 #include <dune/xt/common/reenable_warnings.hh>
 
 
