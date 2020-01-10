@@ -131,10 +131,11 @@ int main(int argc, char* argv[])
     std::chrono::duration<double> prep_time(0.);
     std::chrono::duration<double> apply_time(0.);
     std::chrono::duration<double> jac_time(0.);
-    for (size_t run = 0; run < 100; ++run) {
-      for (size_t kk = 0; kk < num_cells; ++kk) {
+    for (size_t kk = 0; kk < num_cells; ++kk) {
+      model_solver.compute_restricted_pfield_dofs(pfield_output_dofs, kk);
+      for (size_t run = 0; run < 100; ++run) {
         auto begin = std::chrono::steady_clock::now();
-        model_solver.prepare_restricted_pfield_op(pfield_output_dofs, dt, kk);
+        model_solver.prepare_pfield_op(dt, kk, true);
         restricted_prep_time += std::chrono::steady_clock::now() - begin;
         const auto& pfield_input_dofs = model_solver.pfield_deim_input_dofs(kk);
         const size_t num_input_dofs = pfield_input_dofs.size();
@@ -143,7 +144,7 @@ int main(int argc, char* argv[])
           restricted_source[ii] = source[pfield_input_dofs[ii]];
         VectorType restricted_jac_result(num_output_dofs, 0.);
         begin = std::chrono::steady_clock::now();
-        auto restricted_result = model_solver.apply_restricted_pfield_op(restricted_source, kk);
+        auto restricted_result = model_solver.apply_pfield_op(restricted_source, kk, true);
         restricted_apply_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
         model_solver.apply_pfield_jacobian(source, restricted_jac_result, kk, true);
@@ -152,16 +153,12 @@ int main(int argc, char* argv[])
         model_solver2.prepare_pfield_op(dt, kk);
         prep_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
-        auto result = model_solver2.apply_pfield_op(source, kk);
+        auto result = model_solver2.apply_pfield_op(source, kk, false);
         apply_time += std::chrono::steady_clock::now() - begin;
+        VectorType jac_result = result;
         begin = std::chrono::steady_clock::now();
-        model_solver2.assemble_pfield_nonlinear_jacobian(source, kk, false);
-        // const auto jac_result = model_solver2.apply_S_pfield(source);
-        // model_solver2.revert_pfield_jacobian_to_linear();
+        model_solver2.apply_pfield_jacobian(source, jac_result, kk, false);
         jac_time += std::chrono::steady_clock::now() - begin;
-        // auto jac_result2 = jac_result;
-        // jac_result2 *= 0.;
-        // model_solver2.apply_pfield_jacobian(source, jac_result2, kk, false);
         // There are differences of about 1e-13, caused by the different mv methods in assemble_pfield_rhs (mv from
         // Eigen vs mv_restricted);
         const double apply_tol = 1e-12;
@@ -171,16 +168,12 @@ int main(int argc, char* argv[])
           if (XT::Common::FloatCmp::ne(restricted_result[ii], result[pfield_output_dofs[ii]], apply_tol, apply_tol))
             std::cout << "Failed apply restricted: " << ii << ", " << pfield_output_dofs[ii] << ", "
                       << result[pfield_output_dofs[ii]] << ", " << restricted_result[ii] << std::endl;
-          // if (XT::Common::FloatCmp::ne(restricted_jac_result[ii], jac_result[pfield_output_dofs[ii]], jac_tol,
-          // jac_tol)
-          // || XT::Common::FloatCmp::ne(
-          //  restricted_jac_result[ii], jac_result2[pfield_output_dofs[ii]], jac_tol, jac_tol))
-          // std::cout << "Failed apply restricted jacobian: " << ii << ", " << pfield_output_dofs[ii] << ", "
-          // << jac_result[pfield_output_dofs[ii]] << ", " << jac_result2[pfield_output_dofs[ii]] << ", "
-          // << restricted_jac_result[ii] << std::endl;
+          if (XT::Common::FloatCmp::ne(restricted_jac_result[ii], jac_result[pfield_output_dofs[ii]], jac_tol, jac_tol))
+            std::cout << "Failed apply restricted jacobian: " << ii << ", " << pfield_output_dofs[ii] << ", "
+                      << jac_result[pfield_output_dofs[ii]] << ", " << restricted_jac_result[ii] << std::endl;
         } // ii
-      } // kk
-    } // runs
+      } // runs
+    } // kk
     std::cout << "prep: " << prep_time.count() << "  vs. " << restricted_prep_time.count() << std::endl;
     std::cout << "apply: " << apply_time.count() << "  vs. " << restricted_apply_time.count() << std::endl;
     std::cout << "jac: " << jac_time.count() << "  vs. " << restricted_jac_time.count() << std::endl;

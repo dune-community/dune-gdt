@@ -229,6 +229,10 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(visualize_ofield_overloads, CellModelSolv
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(visualize_stokes_overloads, CellModelSolver::visualize_stokes, 2, 3)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(prepare_pfield_op_overloads, CellModelSolver::prepare_pfield_op, 2, 3)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(prepare_ofield_op_overloads, CellModelSolver::prepare_ofield_op, 2, 3)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(apply_pfield_op_with_param_overloads,
+                                       CellModelSolver::apply_pfield_op_with_param,
+                                       3,
+                                       4)
 #include <dune/xt/common/reenable_warnings.hh>
 
 
@@ -354,6 +358,11 @@ BOOST_PYTHON_MODULE(libhapodgdt)
       .def("apply_pfield_op", &CellModelSolver::apply_pfield_op)
       .def("apply_ofield_op", &CellModelSolver::apply_ofield_op)
       .def("apply_stokes_op", &CellModelSolver::apply_stokes_op)
+      .def("apply_pfield_op_with_param",
+           &CellModelSolver::apply_pfield_op_with_param,
+           apply_pfield_op_with_param_overloads())
+      .def("apply_ofield_op_with_param", &CellModelSolver::apply_ofield_op_with_param)
+      .def("apply_stokes_op_with_param", &CellModelSolver::apply_stokes_op_with_param)
       .def("set_pfield_vec", &CellModelSolver::set_pfield_vec)
       .def("set_ofield_vec", &CellModelSolver::set_ofield_vec)
       .def("set_stokes_vec", &CellModelSolver::set_stokes_vec)

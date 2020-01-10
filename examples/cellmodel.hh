@@ -349,9 +349,19 @@ public:
     return SolverCategory::Category::sequential;
   }
 
-  void prepare(const double dt)
+  void set_params(const double gamma, const double eps, const double Be, const double Ca)
+  {
+    gamma_ = gamma;
+    eps_ = eps;
+    Be_ = Be;
+    Ca_ = Ca;
+  }
+
+  void prepare(const double dt /*, const size_t cell, const bool restricted*/)
   {
     dt_ = dt;
+    // cell_ = cell;
+    // restricted_ = restricted;
     // precompute A and J (M_nonlin_ may have changed)
     // saves three mvs in each apply, can be dropped if memory is an issue
     J_.backend() = M_nonlin_.backend();
@@ -373,10 +383,10 @@ private:
   MatrixType A_;
   MatrixType J_;
   const Dirichlet& dirichlet_;
-  const double gamma_;
-  const double eps_;
-  const double Be_;
-  const double Ca_;
+  double gamma_;
+  double eps_;
+  double Be_;
+  double Ca_;
   double dt_;
   const size_t size_phi_;
   // vectors to store intermediate results
@@ -390,7 +400,7 @@ private:
 };
 
 
-template <class VectorType, class MatrixType, class DirichletConstraintsType>
+template <class VectorType, class MatrixType, class DirichletConstraintsType, class CellModelSolverType>
 class PfieldMatrixLinearPartOperator : public Dune::LinearOperator<VectorType, VectorType>
 {
   using BaseType = Dune::LinearOperator<VectorType, VectorType>;
@@ -411,7 +421,8 @@ public:
                                  const Dirichlet& dirichlet,
                                  const double gamma,
                                  const double eps,
-                                 const double Be)
+                                 const double Be,
+                                 const CellModelSolverType* cellmodel_solver)
     : M_(M)
     , D_(D)
     , M_ell_(M_ell)
@@ -419,6 +430,7 @@ public:
     , gamma_(gamma)
     , eps_(eps)
     , Be_(Be)
+    , cellmodel_solver_(cellmodel_solver)
     , size_phi_(M_.rows())
     , x_phi_(size_phi_, 0., 0)
     , x_phinat_(size_phi_, 0., 0)
@@ -437,33 +449,61 @@ public:
   void apply(const Vector& x, Vector& y) const override final
   {
     // copy to temporary vectors (we do not use vector views to improve performance of mv)
-    for (size_t ii = 0; ii < size_phi_; ++ii) {
-      x_phi_[ii] = x[ii];
-      x_phinat_[ii] = x[size_phi_ + ii];
-      x_mu_[ii] = x[2 * size_phi_ + ii];
-    }
+    const auto& input_dofs = cellmodel_solver_->pfield_deim_input_dofs_[cell_];
+    const auto& phinat_begin = cellmodel_solver_->phinat_deim_input_dofs_begin_[cell_];
+    const auto& mu_begin = cellmodel_solver_->mu_deim_input_dofs_begin_[cell_];
+    if (!restricted_) {
+      for (size_t ii = 0; ii < size_phi_; ++ii) {
+        x_phi_[ii] = x[ii];
+        x_phinat_[ii] = x[size_phi_ + ii];
+        x_mu_[ii] = x[2 * size_phi_ + ii];
+      }
+    } else {
+      for (size_t ii = 0; ii < phinat_begin; ++ii)
+        x_phi_[input_dofs[ii]] = x[input_dofs[ii]];
+      for (size_t ii = phinat_begin; ii < mu_begin; ++ii)
+        x_phinat_[input_dofs[ii] - size_phi_] = x[input_dofs[ii]];
+      for (size_t ii = mu_begin; ii < input_dofs.size(); ++ii)
+        x_phinat_[input_dofs[ii] - 2 * size_phi_] = x[input_dofs[ii]];
+    } // if (!restricted)
     // apply matrices
+    const auto mv = cellmodel_solver_->template mv_func<Vector>(restricted_);
+    const auto axpy = cellmodel_solver_->template axpy_func<Vector>(restricted_);
     // first row
-    M_.mv(x_phi_, y_phi_);
-    D_.mv(x_phi_, tmp_vec_);
-    y_phi_.axpy(dt_, tmp_vec_);
-    M_ell_.mv(x_phinat_, tmp_vec_);
-    y_phi_.axpy(dt_ * gamma_, tmp_vec_);
+    const auto& phi_dofs = cellmodel_solver_->phi_deim_output_dofs_[cell_];
+    mv(M_, x_phi_, y_phi_, phi_dofs);
+    mv(D_, x_phi_, tmp_vec_, phi_dofs);
+    mv(D_, x_phi_, tmp_vec_, phi_dofs);
+    axpy(y_phi_, dt_, tmp_vec_, phi_dofs);
+    mv(D_, x_phi_, tmp_vec_, phi_dofs);
+    mv(M_ell_, x_phinat_, tmp_vec_, phi_dofs);
+    axpy(y_phi_, dt_ * gamma_, tmp_vec_, phi_dofs);
     // second row
-    M_.mv(x_phinat_, y_phinat_);
-    M_ell_.mv(x_mu_, tmp_vec_);
-    y_phinat_.axpy(1. / Be_, tmp_vec_);
+    const auto& phinat_dofs = cellmodel_solver_->phinat_deim_output_dofs_[cell_];
+    mv(M_, x_phinat_, y_phinat_, phinat_dofs);
+    mv(M_ell_, x_mu_, tmp_vec_, phinat_dofs);
+    axpy(y_phinat_, 1. / Be_, tmp_vec_, phinat_dofs);
     // third row
-    M_.mv(x_mu_, y_mu_);
-    M_ell_.mv(x_phi_, tmp_vec_);
-    y_mu_.axpy(eps_, tmp_vec_);
+    const auto& mu_dofs = cellmodel_solver_->mu_deim_output_dofs_[cell_];
+    mv(M_, x_mu_, y_mu_, mu_dofs);
+    mv(M_ell_, x_phi_, tmp_vec_, mu_dofs);
+    axpy(y_mu_, eps_, tmp_vec_, mu_dofs);
     dirichlet_.apply(y_mu_);
     // copy to result vector
-    for (size_t ii = 0; ii < size_phi_; ++ii) {
-      y[ii] = y_phi_[ii];
-      y[size_phi_ + ii] = y_phinat_[ii];
-      y[2 * size_phi_ + ii] = y_mu_[ii];
-    }
+    if (!restricted_) {
+      for (size_t ii = 0; ii < size_phi_; ++ii) {
+        y[ii] = y_phi_[ii];
+        y[size_phi_ + ii] = y_phinat_[ii];
+        y[2 * size_phi_ + ii] = y_mu_[ii];
+      }
+    } else {
+      for (size_t ii = 0; ii < phinat_begin; ++ii)
+        y[input_dofs[ii]] = y_phi_[input_dofs[ii]];
+      for (size_t ii = phinat_begin; ii < mu_begin; ++ii)
+        y[input_dofs[ii]] = y_phinat_[input_dofs[ii] - size_phi_];
+      for (size_t ii = mu_begin; ii < input_dofs.size(); ++ii)
+        y[input_dofs[ii]] = y_mu_[input_dofs[ii] - 2 * size_phi_];
+    } // if (!restricted)
   }
 
   void applyscaleadd(Field alpha, const Vector& x, Vector& y) const override final
@@ -473,15 +513,24 @@ public:
     y.axpy(alpha, Sx);
   }
 
+  void set_params(const double gamma, const double eps, const double Be)
+  {
+    gamma_ = gamma;
+    eps_ = eps;
+    Be_ = Be;
+  }
+
   //! Category of the linear operator (see SolverCategory::Category)
   SolverCategory::Category category() const override final
   {
     return SolverCategory::Category::sequential;
   }
 
-  void prepare(const double dt)
+  void prepare(const double dt, const size_t cell, const bool restricted = false)
   {
     dt_ = dt;
+    cell_ = cell;
+    restricted_ = restricted;
   }
 
 private:
@@ -489,9 +538,12 @@ private:
   const Matrix& D_;
   const Matrix& M_ell_;
   const Dirichlet& dirichlet_;
-  const double gamma_;
-  const double eps_;
-  const double Be_;
+  double gamma_;
+  double eps_;
+  double Be_;
+  const CellModelSolverType* cellmodel_solver_;
+  size_t cell_;
+  bool restricted_;
   double dt_;
   const size_t size_phi_;
   // vectors to store intermediate results
@@ -558,18 +610,18 @@ struct CellModelSolver
                   const unsigned int num_elements_x = 50,
                   const unsigned int num_elements_y = 50,
                   const bool use_tbb = true,
-                  const double Re = 5e-13,
-                  const double Fa = 1.,
-                  const double xi = 1.1,
-                  const double kappa = 1.65,
-                  const double c_1 = 5.,
-                  const double Pa = 1,
-                  const double beta = 0.,
-                  const double gamma = 0.025,
-                  const double Be = 0.3,
-                  const double Ca = 0.1,
-                  const double epsilon = 0.21,
-                  const double In = 1.,
+                  const double Re = 5e-13, // Reynolds number
+                  const double Fa = 1., // active force number
+                  const double xi = 1.1, // alignment of P with the flow, > 0 for rod-like cells and < 0 for oblate ones
+                  const double kappa = 1.65, // eta_rot/eta, scaling factor between rotational and dynamic viscosity
+                  const double c_1 = 5., // double well shape parameter
+                  const double Pa = 1, // polarization elasticity number
+                  const double beta = 0., // alignment of P with the boundary of cell
+                  const double gamma = 0.025, // phase field mobility coefficient
+                  const double Be = 0.3, // bending capillary number, ratio of viscous forces to bending forces
+                  const double Ca = 0.1, // capillary number, ratio of viscous forces to surface tension forces
+                  const double epsilon = 0.21, // phase field parameter
+                  const double In = 1., // interaction parameter
                   const bool linearize = false,
                   const double pol_order = 2)
     : lower_left_(get_lower_left(testcase))
@@ -588,7 +640,6 @@ struct CellModelSolver
     , Be_(Be)
     , Ca_(Ca)
     , epsilon_(epsilon)
-    , epsilon_inv_(1. / epsilon_)
     , In_(In)
     , vol_domain_((upper_right_[0] - lower_left_[0]) * (upper_right_[1] - lower_left_[1]))
     , num_cells_(get_num_cells(testcase))
@@ -687,7 +738,8 @@ struct CellModelSolver
                              epsilon_,
                              Be_,
                              Ca_)
-    , pfield_jac_linear_op_(M_pfield_, D_pfield_, M_ell_pfield_, phi_dirichlet_constraints_, gamma_, epsilon_, Be_)
+    , pfield_jac_linear_op_(
+          M_pfield_, D_pfield_, M_ell_pfield_, phi_dirichlet_constraints_, gamma_, epsilon_, Be_, this)
     , pfield_phimu_solver_(
           std::make_shared<PfieldPhiMuSolverType>(pfield_phimu_matrixop_, identity_prec_, 1e-10, 20, 10000, false))
     , D_pfield_op_(std::make_shared<MatrixOperator<MatrixType, PGV, 1>>(grid_view_, phi_space_, phi_space_, D_pfield_))
@@ -1340,11 +1392,11 @@ struct CellModelSolver
     }
     assemble_pfield_rhs(dt, cell, restricted);
     assemble_pfield_linear_jacobian(dt, cell, restricted);
-    pfield_jac_linear_op_.prepare(dt);
+    pfield_jac_linear_op_.prepare(dt, cell, restricted);
     dt_ = dt;
   }
 
-  void prepare_restricted_pfield_op(const std::vector<size_t>& output_dofs, const double dt, const size_t cell)
+  void compute_restricted_pfield_dofs(const std::vector<size_t>& output_dofs, const size_t cell)
   {
     if (!pfield_deim_output_dofs_[cell] || *pfield_deim_output_dofs_[cell] != output_dofs) {
       const auto& pattern = create_pfield_pattern(size_phi_, pfield_submatrix_pattern_);
@@ -1392,15 +1444,7 @@ struct CellModelSolver
         maybe_add_entity(entity, global_indices, *pfield_deim_output_dofs_[cell], pfield_deim_entities_[cell]);
       } // entities
     } // if (not already computed)
-    u_tmp_.dofs().vector() = u_.dofs().vector();
-    P_tmp_[cell].dofs().vector() = P_[cell].dofs().vector();
-    for (size_t kk = 0; kk < num_cells_; kk++) {
-      phi_tmp_[kk].dofs().vector() = phi_[kk].dofs().vector();
-      mu_tmp_[kk].dofs().vector() = mu_[kk].dofs().vector();
-    }
-    assemble_pfield_rhs(dt, cell, true);
-    // assemble_pfield_restricted_linear_jacobian(dt, cell, true);
-  }
+  } // void compute_restricted_pfield_dofs(...)
 
   //******************************************************************************************************************
   //*********************************************** Apply operators **************************************************
@@ -1413,6 +1457,12 @@ struct CellModelSolver
     S_stokes_.mv(y, ret);
     ret -= stokes_rhs_vector_;
     return ret;
+  }
+
+  VectorType apply_stokes_op_with_param(VectorType y, const XT::Common::Parameter& /*param*/) const
+  {
+    // TODO: implement parameter handling
+    return apply_stokes_op(y);
   }
 
   // Applies cell-th orientation field operator (applies F if the orientation field equation is F(y) = 0)
@@ -1446,44 +1496,72 @@ struct CellModelSolver
     return ret;
   }
 
-  // Applies cell-th phase field operator (applies F if phase field equation is F(y) = 0)
-  VectorType apply_pfield_op(const VectorType& y, const size_t cell)
+  VectorType
+  apply_ofield_op_with_param(const VectorType& y, const size_t cell, const XT::Common::Parameter& /*param*/) const
   {
-    // linear part
-    VectorType residual(y.size());
-    pfield_jac_linear_op_.apply(y, residual);
-    // subtract rhs
-    residual -= pfield_rhs_vector_;
-    // if (!linearize_) {
-    fill_tmp_pfield(cell, y);
-    // nonlinear part
-    assemble_nonlinear_part_of_pfield_residual(residual, cell, false);
-    // }
-    return residual;
+    // TODO: implement parameter handling
+    return apply_ofield_op(y, cell);
   }
 
-  VectorType apply_restricted_pfield_op(const VectorType& ld_source, const size_t cell)
+  // Applies cell-th phase field operator (applies F if phase field equation is F(y) = 0)
+  VectorType apply_pfield_op(const VectorType& y, const size_t cell, const bool restricted)
   {
-    // copy values to high-dimensional vector
-    auto& source = pfield_tmp_vec_;
-    auto& residual = pfield_tmp_vec2_;
     const auto& output_dofs = *pfield_deim_output_dofs_[cell];
     const auto& input_dofs = pfield_deim_input_dofs_[cell];
-    copy_ld_to_hd_vec(input_dofs, ld_source, source);
+    auto& source = pfield_tmp_vec_;
+    auto& residual = pfield_tmp_vec2_;
+    // copy values to high-dimensional vector
+    if (restricted)
+      copy_ld_to_hd_vec(input_dofs, y, source);
+    else
+      source = y;
     // linear part
-    // partial_mv_hd_to_hd(output_dofs, S_pfield_, source, residual);
-    // pfield_jac_linear_op_.apply(source, residual, true);
+    pfield_jac_linear_op_.apply(source, residual);
     // subtract rhs
-    partially_sub_vecs(output_dofs, residual, pfield_rhs_vector_);
-    // copy source values to temporary discrete functions
-    partially_fill_tmp_pfield(cell, source);
+    const auto sub = sub_func<VectorType>(restricted);
+    sub(residual, pfield_rhs_vector_, output_dofs);
+    fill_tmp_pfield(cell, source, restricted);
     // nonlinear part
-    assemble_nonlinear_part_of_pfield_residual(residual, cell, true);
-    // copy to low-dimensional output residual
-    VectorType ret(output_dofs.size());
-    for (size_t ii = 0; ii < output_dofs.size(); ++ii)
-      ret[ii] = residual[output_dofs[ii]];
-    return ret;
+    assemble_nonlinear_part_of_pfield_residual(residual, cell, restricted);
+    if (restricted) {
+      VectorType ret(output_dofs.size());
+      for (size_t ii = 0; ii < output_dofs.size(); ++ii)
+        ret[ii] = residual[output_dofs[ii]];
+      return ret;
+    } else {
+      return residual;
+    }
+  }
+
+  VectorType apply_pfield_op_with_param(const VectorType& y,
+                                        const size_t cell,
+                                        const XT::Common::Parameter& param,
+                                        const bool restricted = false)
+  {
+    const double Be = param.has_key("Be") ? param.get("Be")[0] : Be_;
+    const double Ca = param.has_key("Ca") ? param.get("Ca")[0] : Ca_;
+    const double Pa = param.has_key("Pa") ? param.get("Pa")[0] : Pa_;
+    const double c_1 = param.has_key("c_1") ? param.get("c_1")[0] : c_1_;
+    const double eps = param.has_key("eps") ? param.get("eps")[0] : epsilon_;
+    const double gamma = param.has_key("gamma") ? param.get("gamma")[0] : gamma_;
+    // beta is assumed to be const
+    if (XT::Common::FloatCmp::ne(c_1, c_1_) || XT::Common::FloatCmp::ne(Be, Be_) || XT::Common::FloatCmp::ne(Pa, Pa_)
+        || XT::Common::FloatCmp::ne(Ca, Ca_) || XT::Common::FloatCmp::ne(gamma, gamma_)
+        || XT::Common::FloatCmp::ne(eps, epsilon_)) {
+      c_1_ = c_1;
+      Be_ = Be;
+      Pa_ = Pa;
+      epsilon_ = eps;
+      gamma_ = gamma;
+      Ca_ = Ca;
+      // TODO: we do not need to reassemble rhs if only Ca or gamma is changed and we do not need to prepare the phimu
+      // operator again if only c_1 or Pa have changed
+      assemble_pfield_rhs(dt_, cell, restricted);
+      pfield_jac_linear_op_.set_params(gamma, eps, Be);
+      pfield_phimu_matrixop_.set_params(gamma, eps, Be, Ca);
+      pfield_phimu_matrixop_.prepare(dt_);
+    }
+    return apply_pfield_op(y, cell, restricted);
   }
 
   //******************************************************************************************************************
@@ -1607,7 +1685,7 @@ struct CellModelSolver
 
       // ********* compute residual *********
       auto begin = std::chrono::steady_clock::now();
-      auto residual = apply_pfield_op(y_guess, cell);
+      auto residual = apply_pfield_op(y_guess, cell, false);
       auto res_norm = pfield_residual_norm(residual, l2_norm_phi, l2_norm_phinat, l2_norm_mu);
       std::chrono::duration<double> time = std::chrono::steady_clock::now() - begin;
       // std::cout << "Computing residual took: " << time.count() << " s!" << std::endl;
@@ -1652,7 +1730,7 @@ struct CellModelSolver
                         "max iterations reached when trying to compute automatic dampening!\n|residual|_l2 = "
                             << res_norm << "\nl = " << iter << "\n");
           x_n_plus_1 = x_n + update * lambda;
-          residual = apply_pfield_op(x_n_plus_1, cell);
+          residual = apply_pfield_op(x_n_plus_1, cell, false);
           candidate_res = pfield_residual_norm(residual, l2_norm_phi, l2_norm_phinat, l2_norm_mu);
           // std::cout << "Candidate res: " << candidate_res << std::endl;
           lambda /= 2;
@@ -1694,52 +1772,28 @@ struct CellModelSolver
     const ConstVectorViewType source_phinat(source, size_phi_, 2 * size_phi_);
     const ConstVectorViewType source_mu(source, 2 * size_phi_, 3 * size_phi_);
     // linear part
-    if (!restricted) {
-      // no need to set full_range = range to zero here, will be overwritten by mv
-      pfield_jac_linear_op_.apply(source, range);
-    } else {
-      // TODO:
-      // pfield_jac_linear_restricted_op_.apply(source, range);
-      // partially_scal_vec(output_dofs, full_range, 0.);
-      // partial_mv_hd_to_ld(output_dofs, S_pfield_, source, range);
-    }
+    pfield_jac_linear_op_.apply(source, full_range);
     // nonlinear_part
-    if (!restricted)
-      fill_tmp_pfield(cell, source);
-    else
-      partially_fill_tmp_pfield(cell, source);
+    fill_tmp_pfield(cell, source, restricted);
     assemble_M_nonlin_pfield(cell, restricted);
     auto& tmp_vec = phi_tmp_vec_;
-    if (!restricted) {
-      M_nonlin_pfield_.mv(source_mu, tmp_vec);
-      tmp_vec *= 1. / (Be_ * std::pow(epsilon_, 2));
-      range_phinat += tmp_vec;
-      M_nonlin_pfield_.mv(source_phi, tmp_vec);
-      tmp_vec *= 1. / epsilon_;
-      for (const auto& DoF : phi_dirichlet_constraints_.dirichlet_DoFs())
-        tmp_vec[DoF] = source_phi[DoF];
-      range_mu += tmp_vec;
-    } else {
-      partial_mv_hd_to_hd(phinat_output_dofs, M_nonlin_pfield_, source_mu, tmp_vec);
-      partially_scal_vec(phinat_output_dofs, tmp_vec, 1. / (Be_ * std::pow(epsilon_, 2)));
-      partially_add_vecs(phinat_output_dofs, range_phinat, tmp_vec);
-      partial_mv_hd_to_hd(mu_output_dofs, M_nonlin_pfield_, source_phi, tmp_vec);
-      partially_scal_vec(mu_output_dofs, tmp_vec, 1. / epsilon_);
-      // TODO: Only apply if DoF is both in dirichlet_dofs and in mu_output_dofs
-      for (const auto& DoF : phi_dirichlet_constraints_.dirichlet_DoFs())
-        tmp_vec[DoF] = source_phi[DoF];
-      partially_add_vecs(mu_output_dofs, range_mu, tmp_vec);
-    }
+    const auto mv = mv_func<ConstVectorViewType, VectorType>(restricted);
+    const auto axpy = axpy_func<VectorViewType, VectorType>(restricted);
+    const auto scal = scal_func<VectorType>(restricted);
+    const auto add = add_func<VectorViewType, VectorType>(restricted);
+    mv(M_nonlin_pfield_, source_mu, tmp_vec, phinat_output_dofs);
+    axpy(range_phinat, 1. / (Be_ * std::pow(epsilon_, 2)), tmp_vec, phinat_output_dofs);
+    mv(M_nonlin_pfield_, source_phi, tmp_vec, mu_output_dofs);
+    scal(tmp_vec, 1. / epsilon_, mu_output_dofs);
+    // TODO: Only apply if DoF is both in dirichlet_dofs and in mu_output_dofs in restricted case
+    for (const auto& DoF : phi_dirichlet_constraints_.dirichlet_DoFs())
+      tmp_vec[DoF] = source_phi[DoF];
+    add(range_mu, tmp_vec, mu_output_dofs);
 
     // assemble matrix S_{10} = G
     assemble_G_pfield(cell, restricted);
-    if (!restricted) {
-      G_pfield_.mv(source_phi, tmp_vec);
-      range_phinat += tmp_vec;
-    } else {
-      partial_mv_hd_to_hd(phinat_output_dofs, G_pfield_, source_phi, tmp_vec);
-      partially_add_vecs(phinat_output_dofs, range_phinat, tmp_vec);
-    }
+    mv(G_pfield_, source_phi, tmp_vec, phinat_output_dofs);
+    add(range_phinat, tmp_vec, phinat_output_dofs);
 
     if (restricted)
       for (size_t ii = 0; ii < output_dofs.size(); ++ii)
@@ -1855,6 +1909,7 @@ struct CellModelSolver
   void assemble_pfield_rhs(const double /*dt*/, const size_t cell, const bool restricted)
   {
     const auto& phi_output_dofs = phi_deim_output_dofs_[cell];
+    const auto& phinat_output_dofs = phinat_deim_output_dofs_[cell];
     auto f_functional = make_vector_functional(phi_space_, pfield_f_vector_);
     auto h_functional = make_vector_functional(phi_space_, pfield_h_vector_);
     // calculate f
@@ -1876,18 +1931,12 @@ struct CellModelSolver
       h_functional.append(f_functional);
 
     // calculate g
-    if (!restricted)
-      M_pfield_.mv(phi_[cell].dofs().vector(), pfield_g_vector_);
-    else
-      partial_mv_hd_to_hd(phi_output_dofs, M_pfield_, phi_[cell].dofs().vector(), pfield_g_vector_);
+    const auto mv = mv_func<VectorViewType>(restricted);
+    mv(M_pfield_, phi_[cell].dofs().vector(), pfield_g_vector_, phi_output_dofs);
 
     // calculate h
-    if (!restricted) {
-      pfield_h_vector_ *= 0.;
-    } else {
-      const auto& phinat_output_dofs = phinat_deim_output_dofs_[cell];
-      partially_scal_vec(phinat_output_dofs, pfield_h_vector_, 0.);
-    }
+    const auto scal = scal_func<VectorViewType>(restricted);
+    scal(pfield_h_vector_, 0., phinat_output_dofs);
     XT::Functions::GenericGridFunction<E, 1, 1> h_pf(
         /*order = */ 3 * phi_space_.max_polorder(),
         /*post_bind_func*/
@@ -2068,10 +2117,7 @@ struct CellModelSolver
   // assembles nonlinear part of phase field jacobian
   void assemble_pfield_nonlinear_jacobian(const VectorType& y, const size_t cell, const bool restricted)
   {
-    if (!restricted)
-      fill_tmp_pfield(cell, y);
-    else
-      partially_fill_tmp_pfield(cell, y);
+    fill_tmp_pfield(cell, y, restricted);
     assemble_M_nonlin_pfield(cell, restricted);
     assemble_G_pfield(cell, restricted);
     pfield_phimu_matrixop_.prepare(dt_);
@@ -2229,7 +2275,7 @@ struct CellModelSolver
         [cell,
          Ca_inv = 1. / Ca_,
          In_inv = 1. / In_,
-         eps_inv = epsilon_inv_,
+         eps_inv = 1. / epsilon_,
          num_cells = num_cells_,
          inv_Be_eps2 = 1. / (Be_ * std::pow(epsilon_, 2)),
          this](const DomainType& x_local, const XT::Common::Parameter& param) {
@@ -2295,7 +2341,7 @@ struct CellModelSolver
     return pfield_deim_input_dofs_[cell].size();
   }
 
-private:
+  // private:
   //******************************************************************************************************************
   //************ The following methods all bind or evaluate the respective temporary discrete function ***************
   //******************************************************************************************************************
@@ -2448,59 +2494,83 @@ private:
         mat.set_entry(row, col, mat.get_entry(row, col) * alpha);
   }
 
-  // Matrix vector multiplication, only utilizing the rows given by rows.
-  // Expects high-dimensional matrix, source and range.
-  // Entries of hd_range whose indices are not contained in rows are not modified.
-  template <class VecType1, class VecType2>
-  void partial_mv_hd_to_hd(const std::vector<size_t>& rows,
-                           const MatrixType& mat,
-                           const VecType1& hd_source,
-                           VecType2& hd_range) const
+  // Matrix vector multiplication.
+  // In the restricted case, only uses the matrix rows provided and does not touch the other entries of range.
+  template <class VecType1, class VecType2 = VecType1>
+  std::function<void(const MatrixType&, const VecType1&, VecType2&, const std::vector<size_t>&)>
+  mv_func(const bool restricted) const
   {
-    for (const auto& row : rows) {
-      hd_range[row] = 0.;
-      for (typename MatrixType::BackendType::InnerIterator it(mat.backend(), row); it; ++it)
-        hd_range[row] += it.value() * hd_source[it.col()];
-    }
-  }
-
-  // Matrix vector multiplication, only utilizing the rows given by rows.
-  // Expects high-dimensional matrix and source.
-  // Result is stored in low-dimensional vector ld_range (assumes ld_range.size() == rows.size()).
-  template <class VecType1, class VecType2>
-  void partial_mv_hd_to_ld(const std::vector<size_t>& rows,
-                           const MatrixType& mat,
-                           const VecType1& hd_source,
-                           VecType2& ld_range) const
-  {
-    for (size_t ii = 0; ii < rows.size(); ++ii) {
-      ld_range[ii] = 0.;
-      for (typename MatrixType::BackendType::InnerIterator it(mat.backend(), rows[ii]); it; ++it)
-        ld_range[ii] += it.value() * hd_source[it.col()];
-    }
+    if (!restricted) {
+      return [](const MatrixType& mat, const VecType1& source, VecType2& range, const std::vector<size_t>&) {
+        mat.mv(source, range);
+      };
+    } else {
+      return [](const MatrixType& mat, const VecType1& source, VecType2& range, const std::vector<size_t>& rows) {
+        for (const auto& row : rows) {
+          range[row] = 0.;
+          for (typename MatrixType::BackendType::InnerIterator it(mat.backend(), row); it; ++it)
+            range[row] += it.value() * source[it.col()];
+        }
+      };
+    } // if (restricted)
   }
 
   // Multiplies given entries of vec by alpha.
   template <class VecType>
-  void partially_scal_vec(const std::vector<size_t>& indices, VecType& vec, const R& alpha) const
+  std::function<void(VecType&, const R, const std::vector<size_t>&)> scal_func(const bool restricted) const
   {
-    for (const auto& dof : indices)
-      vec[dof] *= alpha;
+    if (!restricted) {
+      return [](VecType& vec, const R alpha, const std::vector<size_t>&) { vec *= alpha; };
+    } else {
+      return [](VecType& vec, const R alpha, const std::vector<size_t>& dofs) {
+        for (const auto& dof : dofs)
+          vec[dof] *= alpha;
+      };
+    } // if (restricted)
   }
 
   // Adds given entries of rhs to respective entries of lhs.
-  template <class VecType1, class VecType2>
-  void partially_add_vecs(const std::vector<size_t>& indices, VecType1& lhs, const VecType2& rhs) const
+  template <class VecType1, class VecType2 = VecType1>
+  std::function<void(VecType1&, const VecType2&, const std::vector<size_t>&)> add_func(const bool restricted) const
   {
-    for (const auto& dof : indices)
-      lhs[dof] += rhs[dof];
+    if (!restricted) {
+      return [](VecType1& lhs, const VecType2& rhs, const std::vector<size_t>&) { lhs += rhs; };
+    } else {
+      return [](VecType1& lhs, const VecType2& rhs, const std::vector<size_t>& dofs) {
+        for (const auto& dof : dofs)
+          lhs[dof] += rhs[dof];
+      };
+    } // if (restricted)
   }
 
   // Subtracts given entries of rhs from respective entries of lhs.
-  void partially_sub_vecs(const std::vector<size_t>& indices, VectorType& lhs, const VectorType& rhs) const
+  template <class VecType1, class VecType2 = VecType1>
+  std::function<void(VecType1&, const VecType2&, const std::vector<size_t>&)> sub_func(const bool restricted) const
   {
-    for (const auto& dof : indices)
-      lhs[dof] -= rhs[dof];
+    if (!restricted) {
+      return [](VecType1& lhs, const VecType2& rhs, const std::vector<size_t>&) { lhs -= rhs; };
+    } else {
+      return [](VecType1& lhs, const VecType2& rhs, const std::vector<size_t>& dofs) {
+        for (const auto& dof : dofs)
+          lhs[dof] -= rhs[dof];
+      };
+    } // if (restricted)
+  }
+
+  // Computes lhs += alpha * rhs;
+  template <class VecType1, class VecType2 = VecType1>
+  std::function<void(VecType1&, const R, const VecType2&, const std::vector<size_t>&)>
+  axpy_func(const bool restricted) const
+  {
+    if (!restricted) {
+      return
+          [](VecType1& lhs, const R alpha, const VecType2& rhs, const std::vector<size_t>&) { lhs.axpy(alpha, rhs); };
+    } else {
+      return [](VecType1& lhs, const R alpha, const VecType2& rhs, const std::vector<size_t>& dofs) {
+        for (const auto& dof : dofs)
+          lhs[dof] += rhs[dof] * alpha;
+      };
+    } // if (restricted)
   }
 
   // Copies low-dimensional vec to given entries of high-dimensional vec.
@@ -2748,22 +2818,20 @@ private:
   }
 
   // sets temporary phase field discrete functions to source values
-  void fill_tmp_pfield(const size_t cell, const VectorType& source) const
+  void fill_tmp_pfield(const size_t cell, const VectorType& source, const bool restricted) const
   {
-    ConstVectorViewType phi_vec(source, 0, size_phi_);
-    ConstVectorViewType mu_vec(source, 2 * size_phi_, 3 * size_phi_);
-    phi_tmp_[cell].dofs().vector() = phi_vec;
-    mu_tmp_[cell].dofs().vector() = mu_vec;
-  }
-
-  // sets temporary phase field discrete functions to source values, but only the dofs needed for DEIM
-  void partially_fill_tmp_pfield(const size_t cell, const VectorType& source) const
-  {
-    const auto& input_dofs = pfield_deim_input_dofs_[cell];
-    for (size_t ii = 0; ii < phinat_deim_input_dofs_begin_[cell]; ++ii)
-      phi_tmp_[cell].dofs().vector().set_entry(input_dofs[ii], source[input_dofs[ii]]);
-    for (size_t ii = mu_deim_input_dofs_begin_[cell]; ii < input_dofs.size(); ++ii)
-      mu_tmp_[cell].dofs().vector().set_entry(input_dofs[ii] - 2 * size_phi_, source[input_dofs[ii]]);
+    if (!restricted) {
+      ConstVectorViewType phi_vec(source, 0, size_phi_);
+      ConstVectorViewType mu_vec(source, 2 * size_phi_, 3 * size_phi_);
+      phi_tmp_[cell].dofs().vector() = phi_vec;
+      mu_tmp_[cell].dofs().vector() = mu_vec;
+    } else {
+      const auto& input_dofs = pfield_deim_input_dofs_[cell];
+      for (size_t ii = 0; ii < phinat_deim_input_dofs_begin_[cell]; ++ii)
+        phi_tmp_[cell].dofs().vector().set_entry(input_dofs[ii], source[input_dofs[ii]]);
+      for (size_t ii = mu_deim_input_dofs_begin_[cell]; ii < input_dofs.size(); ++ii)
+        mu_tmp_[cell].dofs().vector().set_entry(input_dofs[ii] - 2 * size_phi_, source[input_dofs[ii]]);
+    }
   }
 
   // error norm used in orientation field Newton iteration
@@ -2800,7 +2868,7 @@ private:
   R B_func(const size_t kk, const DomainType& x_local, const XT::Common::Parameter& param)
   {
     const R phi_n = eval_phi(kk, x_local, param);
-    return epsilon_inv_ * std::pow(std::pow(phi_n, 2) - 1, 2);
+    return 1 / epsilon_ * std::pow(std::pow(phi_n, 2) - 1, 2);
   }
 
   R w_func(const size_t kk, const DomainType& x_local, const XT::Common::Parameter& param)
@@ -2823,18 +2891,17 @@ private:
   double t_;
   const bool use_tbb_;
   const double Re_;
-  const double Fa_inv_;
-  const double xi_;
-  const double kappa_;
-  const double c_1_;
-  const double Pa_;
-  const double beta_;
-  const double gamma_;
-  const double Be_;
-  const double Ca_;
-  const double epsilon_;
-  const double epsilon_inv_;
-  const double In_;
+  double Fa_inv_;
+  double xi_;
+  double kappa_;
+  double c_1_;
+  double Pa_;
+  double beta_;
+  double gamma_;
+  double Be_;
+  double Ca_;
+  double epsilon_;
+  double In_;
   const double vol_domain_;
   const size_t num_cells_;
   const bool linearize_;
@@ -2962,7 +3029,8 @@ private:
   mutable std::shared_ptr<SolverType> pfield_solver_;
   mutable std::shared_ptr<DirectSolverType> pfield_mass_matrix_solver_;
   PfieldPhiMuMatrixOperatorType pfield_phimu_matrixop_;
-  PfieldMatrixLinearPartOperator<VectorType, MatrixType, PhiDirichletConstraintsType> pfield_jac_linear_op_;
+  PfieldMatrixLinearPartOperator<VectorType, MatrixType, PhiDirichletConstraintsType, CellModelSolver>
+      pfield_jac_linear_op_;
   mutable std::shared_ptr<PfieldPhiMuSolverType> pfield_phimu_solver_;
   // Matrix operators for phasefield matrices
   std::shared_ptr<MatrixOperator<MatrixViewType, PGV, 1>> S_pfield_00_op_;
