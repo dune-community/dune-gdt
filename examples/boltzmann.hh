@@ -291,7 +291,7 @@ public:
     size_t jj = 0;
     for (size_t ii = 0; ii < restricted_op_entities_->size(); ++ii) {
       const auto& entity = (*restricted_op_entities_)[ii];
-      RangeType ret_entity(0.);
+      RangeType ret_entity(0.), local_ret(0.);
       for (size_t kk = 0; kk < dimRange; ++kk)
         u_entity[kk] = source[jj * dimRange + kk];
       ++jj;
@@ -313,8 +313,8 @@ public:
         const auto local_intersection_center = intersection.geometry().local(intersection_center);
         auto n_ij = intersection.unitOuterNormal(local_intersection_center);
         const auto neighbor = intersection.neighbor() ? intersection.outside() : entity;
-        ret_entity += mn_flux->evaluate_kinetic_flux(entity, neighbor, u_entity, u_neighbor, n_ij, direction)
-                      * intersection.geometry().integrationElement(local_intersection_center);
+        mn_flux->evaluate_kinetic_flux(entity, neighbor, u_entity, u_neighbor, n_ij, direction, local_ret);
+        ret_entity += local_ret * intersection.geometry().integrationElement(local_intersection_center);
       } // intersections
       ret_entity /= entity.geometry().volume();
       for (const auto& pair : (*restricted_op_entity_dofs_to_output_dofs_)[ii]) {
