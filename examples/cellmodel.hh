@@ -1498,6 +1498,12 @@ struct CellModelSolver
 
   VectorType apply_ofield_op_with_param(const VectorType& y, const size_t cell, const double Pa)
   {
+    update_ofield_parameters(cell, Pa);
+    return apply_ofield_op(y, cell);
+  }
+
+  void update_ofield_parameters(const size_t cell, const double Pa)
+  {
     if (XT::Common::FloatCmp::ne(Pa, Pa_)) {
       Pa_ = Pa;
       C_ofield_elliptic_part_ *= 0.;
@@ -1506,7 +1512,6 @@ struct CellModelSolver
       ofield_elliptic_op.assemble(use_tbb_);
       prepare_ofield_op(dt_, cell);
     }
-    return apply_ofield_op(y, cell);
   }
 
   // Applies cell-th phase field operator (applies F if phase field equation is F(y) = 0)
@@ -1539,12 +1544,8 @@ struct CellModelSolver
     }
   }
 
-  VectorType apply_pfield_op_with_param(const VectorType& y,
-                                        const size_t cell,
-                                        const double Be,
-                                        const double Ca,
-                                        const double Pa,
-                                        const bool restricted = false)
+  void
+  update_pfield_parameters(const size_t cell, const bool restricted, const double Be, const double Ca, const double Pa)
   {
     if (XT::Common::FloatCmp::ne(Be, Be_) || XT::Common::FloatCmp::ne(Pa, Pa_) || XT::Common::FloatCmp::ne(Ca, Ca_)) {
       Be_ = Be;
@@ -1557,6 +1558,16 @@ struct CellModelSolver
       pfield_phimu_matrixop_.set_params(gamma_, epsilon_, Be, Ca);
       pfield_phimu_matrixop_.prepare(dt_);
     }
+  }
+
+  VectorType apply_pfield_op_with_param(const VectorType& y,
+                                        const size_t cell,
+                                        const double Be,
+                                        const double Ca,
+                                        const double Pa,
+                                        const bool restricted = false)
+  {
+    update_pfield_parameters(cell, restricted, Be, Ca, Pa);
     return apply_pfield_op(y, cell, restricted);
   }
 
@@ -1662,6 +1673,12 @@ struct CellModelSolver
     }
   }
 
+  VectorType apply_inverse_ofield_op_with_param(const VectorType& y_guess, const size_t cell, const double Pa)
+  {
+    update_ofield_parameters(cell, Pa);
+    return apply_inverse_ofield_op(y_guess, cell);
+  }
+
   // Applies inverse phase field operator (solves F(y) = 0)
   // y_guess is the initial guess for the Newton iteration
   VectorType apply_inverse_pfield_op(const VectorType& y_guess, const size_t cell)
@@ -1739,6 +1756,13 @@ struct CellModelSolver
       } // while (true)
       return x_n;
     }
+  }
+
+  VectorType apply_inverse_pfield_op_with_param(
+      const VectorType& y_guess, const size_t cell, const double Be, const double Ca, const double Pa)
+  {
+    update_pfield_parameters(cell, false, Be, Ca, Pa);
+    return apply_inverse_pfield_op(y_guess, cell);
   }
 
   //******************************************************************************************************************
