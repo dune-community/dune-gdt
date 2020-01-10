@@ -3675,12 +3675,7 @@ public:
     return ret;
   } // ... get_alpha(...)
 
-  DomainType get_u(const DomainType& alpha) const
-  {
-    return get_u(alpha);
-  }
-
-  VectorType get_u(const VectorType& alpha_k) const
+  VectorType get_u(const DomainType& alpha_k) const
   {
     VectorType u(0);
     for (size_t nn = 0; nn < dimRange; ++nn) {
