@@ -610,16 +610,16 @@ struct CellModelSolver
                   const unsigned int num_elements_x = 50,
                   const unsigned int num_elements_y = 50,
                   const bool use_tbb = true,
+                  const double Be = 0.3, // bending capillary number, ratio of viscous forces to bending forces
+                  const double Ca = 0.1, // capillary number, ratio of viscous forces to surface tension forces
+                  const double Pa = 1, // polarization elasticity number
                   const double Re = 5e-13, // Reynolds number
                   const double Fa = 1., // active force number
                   const double xi = 1.1, // alignment of P with the flow, > 0 for rod-like cells and < 0 for oblate ones
                   const double kappa = 1.65, // eta_rot/eta, scaling factor between rotational and dynamic viscosity
                   const double c_1 = 5., // double well shape parameter
-                  const double Pa = 1, // polarization elasticity number
                   const double beta = 0., // alignment of P with the boundary of cell
                   const double gamma = 0.025, // phase field mobility coefficient
-                  const double Be = 0.3, // bending capillary number, ratio of viscous forces to bending forces
-                  const double Ca = 0.1, // capillary number, ratio of viscous forces to surface tension forces
                   const double epsilon = 0.21, // phase field parameter
                   const double In = 1., // interaction parameter
                   const bool linearize = false,
@@ -635,6 +635,8 @@ struct CellModelSolver
     , kappa_(kappa)
     , c_1_(c_1)
     , Pa_(Pa)
+    , last_pfield_Pa_(Pa_)
+    , last_ofield_Pa_(Pa_)
     , beta_(beta)
     , gamma_(gamma)
     , Be_(Be)
@@ -985,6 +987,7 @@ struct CellModelSolver
      *************************************************************************************************/
     // calculate M_{ij} as \int \psi_i phi_j
     M_ofield_op_->append(LocalElementIntegralBilinearForm<E, d>(LocalElementProductScalarWeightIntegrand<E, d>(1.)));
+    C_ofield_elliptic_part_ *= 0.;
     MatrixOperator<MatrixType, PGV, d> ofield_elliptic_op(grid_view_, u_space_, u_space_, C_ofield_elliptic_part_);
     ofield_elliptic_op.append(LocalElementIntegralBilinearForm<E, d>(LocalLaplaceIntegrand<E, d>(-1. / Pa_)));
     M_ofield_op_->append(ofield_elliptic_op);
@@ -1504,8 +1507,11 @@ struct CellModelSolver
 
   void update_ofield_parameters(const size_t cell, const double Pa)
   {
-    if (XT::Common::FloatCmp::ne(Pa, Pa_)) {
+    // Pa may have been set to a new value already (via update_pfield_parameters)
+    if (XT::Common::FloatCmp::ne(Pa, last_ofield_Pa_)) {
+      std::cout << "Ofield params updated, old Pa = " << last_ofield_Pa_ << ", new Pa = " << Pa << std::endl;
       Pa_ = Pa;
+      last_ofield_Pa_ = Pa_;
       C_ofield_elliptic_part_ *= 0.;
       MatrixOperator<MatrixType, PGV, d> ofield_elliptic_op(grid_view_, u_space_, u_space_, C_ofield_elliptic_part_);
       ofield_elliptic_op.append(LocalElementIntegralBilinearForm<E, d>(LocalLaplaceIntegrand<E, d>(-1. / Pa_)));
@@ -1547,10 +1553,14 @@ struct CellModelSolver
   void
   update_pfield_parameters(const size_t cell, const bool restricted, const double Be, const double Ca, const double Pa)
   {
-    if (XT::Common::FloatCmp::ne(Be, Be_) || XT::Common::FloatCmp::ne(Pa, Pa_) || XT::Common::FloatCmp::ne(Ca, Ca_)) {
+    if (XT::Common::FloatCmp::ne(Be, Be_) || XT::Common::FloatCmp::ne(Ca, Ca_)
+        || XT::Common::FloatCmp::ne(Pa, last_pfield_Pa_)) {
+      std::cout << "Pfield params updated, old (Be, Ca, Pa) = " << Be_ << ", " << Ca_ << ", " << last_pfield_Pa_
+                << ", new = " << Be << ", " << Ca << ", " << Pa << std::endl;
       Be_ = Be;
-      Pa_ = Pa;
       Ca_ = Ca;
+      Pa_ = Pa;
+      last_pfield_Pa_ = Pa_;
       // TODO: we do not need to reassemble rhs if only Ca or gamma is changed and we do not need to prepare the phimu
       // operator again if only c_1 or Pa have changed
       assemble_pfield_rhs(dt_, cell, restricted);
@@ -1567,6 +1577,7 @@ struct CellModelSolver
                                         const double Pa,
                                         const bool restricted = false)
   {
+    // std::cout << "Pfield: Be " << Be << ", Ca: " << Ca << ", Pa: " << Pa << std::endl;
     update_pfield_parameters(cell, restricted, Be, Ca, Pa);
     return apply_pfield_op(y, cell, restricted);
   }
@@ -1675,6 +1686,7 @@ struct CellModelSolver
 
   VectorType apply_inverse_ofield_op_with_param(const VectorType& y_guess, const size_t cell, const double Pa)
   {
+    // std::cout << "Ofield inverse params: Pa: " << Pa << std::endl;
     update_ofield_parameters(cell, Pa);
     return apply_inverse_ofield_op(y_guess, cell);
   }
@@ -1761,6 +1773,7 @@ struct CellModelSolver
   VectorType apply_inverse_pfield_op_with_param(
       const VectorType& y_guess, const size_t cell, const double Be, const double Ca, const double Pa)
   {
+    // std::cout << "Pfield inverse params: Be " << Be << ", Ca: " << Ca << ", Pa: " << Pa << std::endl;
     update_pfield_parameters(cell, false, Be, Ca, Pa);
     return apply_inverse_pfield_op(y_guess, cell);
   }
@@ -1921,7 +1934,6 @@ struct CellModelSolver
     g_functional.append(LocalElementIntegralFunctional<E, d>(
         local_binary_to_unary_element_integrand(LocalElementProductScalarWeightIntegrand<E, d>(), g)));
     g_functional.assemble(use_tbb_);
-
     M_ofield_.mv(P_[cell].dofs().vector(), ofield_f_vector_);
   }
 
@@ -2916,6 +2928,8 @@ struct CellModelSolver
   double kappa_;
   double c_1_;
   double Pa_;
+  double last_pfield_Pa_;
+  double last_ofield_Pa_;
   double beta_;
   double gamma_;
   double Be_;

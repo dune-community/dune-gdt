@@ -59,9 +59,12 @@ int main(int argc, char* argv[])
     double beta = config.template get<double>("problem.beta", 0.);
     double In = config.template get<double>("problem.In", 1.);
     double Re = rho * U * L / eta;
-    double Ca = 2. * std::sqrt(2) / 3. * eta * U / sigma;
-    double Be = 4. * std::sqrt(2) / 3. * eta * U * L * L / b_N;
-    double Pa = eta * U * L / k;
+    // double Ca = 2. * std::sqrt(2) / 3. * eta * U / sigma;
+    // double Be = 4. * std::sqrt(2) / 3. * eta * U * L * L / b_N;
+    // double Pa = eta * U * L / k;
+    double Be = config.template get<double>("problem.Be", 0.3);
+    double Ca = config.template get<double>("problem.Ca", 0.1);
+    double Pa = config.template get<double>("problem.Pa", 1.0);
     double Fa = eta * U / (zeta * L);
     const double kappa = eta_rot / eta;
     std::cout << "Ca: " << Ca << ", Be: " << Be << ", Pa: " << Pa << ", Fa: " << Fa << ", Re: " << Re << std::endl;
@@ -77,25 +80,25 @@ int main(int argc, char* argv[])
                                  num_elements_x,
                                  num_elements_y,
                                  num_threads > 1,
+                                 Be,
+                                 Ca,
+                                 Pa,
                                  Re,
                                  Fa,
                                  xi,
                                  kappa,
                                  c_1,
-                                 Pa,
                                  beta,
                                  gamma,
-                                 Be,
-                                 Ca,
                                  epsilon,
                                  In,
                                  linearize);
+#if 1
     auto result = model_solver.solve(dt, true, write_step, filename, subsampling);
-
     for (const auto& vec1 : result[0])
       std::cout << &vec1 << std::endl;
 
-#if 0
+#else
     // save/visualize initial solution
     model_solver.visualize(filename, 0, 0., subsampling);
 
@@ -105,11 +108,19 @@ int main(int argc, char* argv[])
     double next_save_time = t + write_step > t_end ? t_end : t + write_step;
     size_t save_step_counter = 1;
 
-    VectorType stokes_vec = model_solver.stokes_vector();
-    VectorType pfield_vec = model_solver.pfield_vector();
-    VectorType ofield_vec = model_solver.ofield_vector();
+    // auto stokes_vec = model_solver.stokes_vec();
+    // auto pfield_vec = model_solver.pfield_vec(0);
+    // auto ofield_vec = model_solver.ofield_vec(0);
+
 
     const size_t num_cells = model_solver.num_cells_;
+    std::vector<std::vector<typename CellModelSolver::VectorType>> ret(1 + 2 * num_cells);
+    for (size_t kk = 0; kk < num_cells; ++kk) {
+      ret[kk].push_back(model_solver.pfield_vec(kk));
+      ret[num_cells + kk].push_back(model_solver.ofield_vec(kk));
+    }
+    ret[2 * num_cells].push_back(model_solver.stokes_vec());
+
     while (Dune::XT::Common::FloatCmp::lt(t, t_end)) {
       double max_dt = dt;
       // match saving times and t_end exactly
@@ -120,31 +131,53 @@ int main(int argc, char* argv[])
       // do a timestep
       std::cout << "Current time: " << t << std::endl;
       for (size_t kk = 0; kk < num_cells; ++kk) {
-        model_solver.prepare_pfield_operator(dt, kk);
-        pfield_vec = model_solver.solve_pfield(pfield_vec, kk);
-        model_solver.set_pfield_variables(kk, pfield_vec);
+        // model_solver.set_pfield_vec(kk, pfield_vec);
+        // model_solver.set_ofield_vec(kk, ofield_vec);
+        // model_solver.set_stokes_vec(stokes_vec);
+        // model_solver.prepare_pfield_op(dt, kk);
+        // pfield_vec = model_solver.apply_inverse_pfield_op_with_param(pfield_vec, kk, Be, Ca, Pa);
+        // std::cout << "Pfield " << kk << " done" << std::endl;
+        // model_solver.set_pfield_vec(kk, pfield_vec);
+        // model_solver.set_ofield_vec(kk, ofield_vec);
+        // model_solver.set_stokes_vec(stokes_vec);
+        // model_solver.prepare_ofield_op(dt, kk);
+        // ofield_vec = model_solver.apply_inverse_ofield_op_with_param(ofield_vec, kk, Pa);
+        // model_solver.set_pfield_vec(kk, pfield_vec);
+        // model_solver.set_ofield_vec(kk, ofield_vec);
+        // std::cout << "Ofield " << kk << " done" << std::endl;
+        model_solver.set_pfield_vec(kk, ret[kk].back());
+        model_solver.prepare_pfield_op(dt, kk);
+        ret[kk].push_back(model_solver.apply_inverse_pfield_op_with_param(ret[kk].back(), kk, Be, Ca, Pa));
         std::cout << "Pfield " << kk << " done" << std::endl;
-        model_solver.prepare_ofield_operator(dt, kk);
-        ofield_vec = model_solver.solve_ofield(ofield_vec, kk);
-        model_solver.set_ofield_variables(kk, ofield_vec);
+        model_solver.set_pfield_vec(kk, ret[kk].back());
+        model_solver.prepare_ofield_op(dt, kk);
+        ret[num_cells + kk].push_back(
+            model_solver.apply_inverse_ofield_op_with_param(ret[kk + num_cells].back(), kk, Pa));
+        model_solver.set_ofield_vec(kk, ret[num_cells + kk].back());
         std::cout << "Ofield " << kk << " done" << std::endl;
       }
 
       // stokes system
-      model_solver.prepare_stokes_operator();
-      stokes_vec = model_solver.solve_stokes();
-      model_solver.set_stokes_variables(stokes_vec);
+      model_solver.prepare_stokes_op();
+      ret[2 * num_cells].push_back(model_solver.apply_inverse_stokes_op());
+      model_solver.set_stokes_vec(ret[2 * num_cells].back());
       std::cout << "Stokes done" << std::endl;
 
       t += actual_dt;
 
       // check if data should be written in this timestep (and write)
-      if (write_step < 0. || Dune::XT::Common::FloatCmp::ge(t, next_save_time)) {
-        model_solver.visualize(filename, save_step_counter, t, subsampling);
-        next_save_time += write_step;
-        ++save_step_counter;
-      }
+      //  if (write_step < 0. || Dune::XT::Common::FloatCmp::ge(t, next_save_time)) {
+      //    model_solver.visualize(filename, save_step_counter, t, subsampling);
+      //    next_save_time += write_step;
+      //    ++save_step_counter;
+      //  }
     } // while (t < t_end)
+    for (size_t ii = 0; ii < ret[0].size(); ++ii) {
+      model_solver.set_pfield_vec(0, ret[0][ii]);
+      model_solver.set_ofield_vec(0, ret[num_cells][ii]);
+      model_solver.set_stokes_vec(ret[2 * num_cells][ii]);
+      model_solver.visualize(filename, ii, ii, subsampling);
+    }
 #endif
   } catch (Exception& e) {
     std::cerr << "\nDUNE reported error: " << e.what() << std::endl;
