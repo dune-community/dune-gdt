@@ -357,11 +357,9 @@ public:
     Ca_ = Ca;
   }
 
-  void prepare(const double dt /*, const size_t cell, const bool restricted*/)
+  void prepare(const double dt)
   {
     dt_ = dt;
-    // cell_ = cell;
-    // restricted_ = restricted;
     // precompute A and J (M_nonlin_ may have changed)
     // saves three mvs in each apply, can be dropped if memory is an issue
     J_.backend() = M_nonlin_.backend();
@@ -464,7 +462,7 @@ public:
       for (size_t ii = phinat_begin; ii < mu_begin; ++ii)
         x_phinat_[input_dofs[ii] - size_phi_] = x[input_dofs[ii]];
       for (size_t ii = mu_begin; ii < input_dofs.size(); ++ii)
-        x_phinat_[input_dofs[ii] - 2 * size_phi_] = x[input_dofs[ii]];
+        x_mu_[input_dofs[ii] - 2 * size_phi_] = x[input_dofs[ii]];
     } // if (!restricted)
     // apply matrices
     const auto mv = cellmodel_solver_->template mv_func<Vector>(restricted_);
@@ -473,9 +471,7 @@ public:
     const auto& phi_dofs = cellmodel_solver_->phi_deim_output_dofs_[cell_];
     mv(M_, x_phi_, y_phi_, phi_dofs);
     mv(D_, x_phi_, tmp_vec_, phi_dofs);
-    mv(D_, x_phi_, tmp_vec_, phi_dofs);
     axpy(y_phi_, dt_, tmp_vec_, phi_dofs);
-    mv(D_, x_phi_, tmp_vec_, phi_dofs);
     mv(M_ell_, x_phinat_, tmp_vec_, phi_dofs);
     axpy(y_phi_, dt_ * gamma_, tmp_vec_, phi_dofs);
     // second row
@@ -497,12 +493,12 @@ public:
         y[2 * size_phi_ + ii] = y_mu_[ii];
       }
     } else {
-      for (size_t ii = 0; ii < phinat_begin; ++ii)
-        y[input_dofs[ii]] = y_phi_[input_dofs[ii]];
-      for (size_t ii = phinat_begin; ii < mu_begin; ++ii)
-        y[input_dofs[ii]] = y_phinat_[input_dofs[ii] - size_phi_];
-      for (size_t ii = mu_begin; ii < input_dofs.size(); ++ii)
-        y[input_dofs[ii]] = y_mu_[input_dofs[ii] - 2 * size_phi_];
+      for (const auto& dof : phi_dofs)
+        y[dof] = y_phi_[dof];
+      for (const auto& dof : phinat_dofs)
+        y[size_phi_ + dof] = y_phinat_[dof];
+      for (const auto& dof : mu_dofs)
+        y[2 * size_phi_ + dof] = y_mu_[dof];
     } // if (!restricted)
   }
 
@@ -763,6 +759,7 @@ struct CellModelSolver
     , phinat_deim_input_dofs_begin_(num_cells_)
     , mu_deim_input_dofs_begin_(num_cells_)
     , pfield_deim_output_dofs_(num_cells_)
+    , pfield_deim_unique_output_dofs_(num_cells_)
     , phi_deim_output_dofs_(num_cells_)
     , phinat_deim_output_dofs_(num_cells_)
     , mu_deim_output_dofs_(num_cells_)
@@ -1403,13 +1400,24 @@ struct CellModelSolver
   {
     if (!pfield_deim_output_dofs_[cell] || *pfield_deim_output_dofs_[cell] != output_dofs) {
       const auto& pattern = create_pfield_pattern(size_phi_, pfield_submatrix_pattern_);
+      // We need to keep the original output_dofs which is unordered and may contain duplicates, as the restricted
+      // operator will return exactly these dofs. For computations, however, we often need unique dofs.
       pfield_deim_output_dofs_[cell] = std::make_shared<std::vector<size_t>>(output_dofs);
+      auto& unique_output_dofs = pfield_deim_unique_output_dofs_[cell];
+      unique_output_dofs = output_dofs;
+      std::sort(unique_output_dofs.begin(), unique_output_dofs.end());
+      unique_output_dofs.erase(std::unique(unique_output_dofs.begin(), unique_output_dofs.end()),
+                               unique_output_dofs.end());
       // sort output into dofs belonging to phi, phinat and mu
       auto& phi_output_dofs = phi_deim_output_dofs_[cell];
       auto& phinat_output_dofs = phinat_deim_output_dofs_[cell];
       auto& mu_output_dofs = mu_deim_output_dofs_[cell];
       auto& phinat_mu_output_dofs = both_mu_and_phi_deim_output_dofs_[cell];
-      for (const auto& dof : output_dofs) {
+      phi_output_dofs.clear();
+      phinat_output_dofs.clear();
+      mu_output_dofs.clear();
+      phinat_mu_output_dofs.clear();
+      for (const auto& dof : unique_output_dofs) {
         if (dof < size_phi_)
           phi_output_dofs.push_back(dof);
         else if (dof < 2 * size_phi_)
@@ -1427,10 +1435,10 @@ struct CellModelSolver
       // get input dofs corresponding to output dofs
       auto& input_dofs = pfield_deim_input_dofs_[cell];
       input_dofs.clear();
-      for (const auto& dof : output_dofs) {
+      for (const auto& dof : unique_output_dofs) {
         const auto& new_input_dofs = pattern.inner(dof);
         input_dofs.insert(input_dofs.end(), new_input_dofs.begin(), new_input_dofs.end());
-      } // output_dofs
+      }
       // sort and remove duplicate entries
       std::sort(input_dofs.begin(), input_dofs.end());
       input_dofs.erase(std::unique(input_dofs.begin(), input_dofs.end()), input_dofs.end());
@@ -1524,6 +1532,7 @@ struct CellModelSolver
   VectorType apply_pfield_op(const VectorType& y, const size_t cell, const bool restricted)
   {
     const auto& output_dofs = *pfield_deim_output_dofs_[cell];
+    const auto& unique_output_dofs = pfield_deim_unique_output_dofs_[cell];
     const auto& input_dofs = pfield_deim_input_dofs_[cell];
     auto& source = pfield_tmp_vec_;
     auto& residual = pfield_tmp_vec2_;
@@ -1536,9 +1545,9 @@ struct CellModelSolver
     pfield_jac_linear_op_.apply(source, residual);
     // subtract rhs
     const auto sub = sub_func<VectorType>(restricted);
-    sub(residual, pfield_rhs_vector_, output_dofs);
-    fill_tmp_pfield(cell, source, restricted);
+    sub(residual, pfield_rhs_vector_, unique_output_dofs);
     // nonlinear part
+    fill_tmp_pfield(cell, source, restricted);
     assemble_nonlinear_part_of_pfield_residual(residual, cell, restricted);
     if (restricted) {
       VectorType ret(output_dofs.size());
@@ -1782,16 +1791,8 @@ struct CellModelSolver
   //********************************************** Apply jacobians ***************************************************
   //******************************************************************************************************************
 
-  // VectorType apply_S_pfield(const VectorType& vec)
-  // {
-  //   VectorType ret(vec.size());
-  //   S_pfield_.mv(vec, ret);
-  //   return ret;
-  // }
-
   // Currently takes a full-dimensional vector, but only applies the rows that are in pfield_output_dofs
   // As the rows are sparse, there shouldn't be too much performance impact of applying to the whole vector
-  // TODO: change to matrix-free evaluation (?)
   void apply_pfield_jacobian(const VectorType& source, VectorType& range, const size_t cell, const bool restricted)
   {
     const auto& output_dofs = *pfield_deim_output_dofs_[cell];
@@ -1814,24 +1815,62 @@ struct CellModelSolver
     const auto axpy = axpy_func<VectorViewType, VectorType>(restricted);
     const auto scal = scal_func<VectorType>(restricted);
     const auto add = add_func<VectorViewType, VectorType>(restricted);
+    // apply missing parts of J (including the linear 1./Ca_ part)
     mv(M_nonlin_pfield_, source_mu, tmp_vec, phinat_output_dofs);
     axpy(range_phinat, 1. / (Be_ * std::pow(epsilon_, 2)), tmp_vec, phinat_output_dofs);
+    mv(M_pfield_, source_mu, tmp_vec, phinat_output_dofs);
+    axpy(range_phinat, 1. / Ca_, tmp_vec, phinat_output_dofs);
+    // apply missing parts of A
     mv(M_nonlin_pfield_, source_phi, tmp_vec, mu_output_dofs);
     scal(tmp_vec, 1. / epsilon_, mu_output_dofs);
     // TODO: Only apply if DoF is both in dirichlet_dofs and in mu_output_dofs in restricted case
     for (const auto& DoF : phi_dirichlet_constraints_.dirichlet_DoFs())
       tmp_vec[DoF] = source_phi[DoF];
     add(range_mu, tmp_vec, mu_output_dofs);
-
-    // assemble matrix S_{10} = G
+    // apply G
     assemble_G_pfield(cell, restricted);
     mv(G_pfield_, source_phi, tmp_vec, phinat_output_dofs);
     add(range_phinat, tmp_vec, phinat_output_dofs);
 
     if (restricted)
       for (size_t ii = 0; ii < output_dofs.size(); ++ii)
+        range.set_entry(ii, full_range.get_entry(output_dofs[ii]));
+  }
+
+#if 0
+  // Currently takes a full-dimensional vector, but only applies the rows that are in pfield_output_dofs
+  // As the rows are sparse, there shouldn't be too much performance impact of applying to the whole vector
+  void apply_ofield_jacobian(const VectorType& source, VectorType& range, const size_t cell, const bool restricted)
+  {
+    const auto& output_dofs = *ofield_deim_output_dofs_[cell];
+    const auto& P_output_dofs = P_deim_output_dofs_[cell];
+    const auto& Pnat_output_dofs = Pnat_deim_output_dofs_[cell];
+    VectorType& full_range = restricted ? ofield_tmp_vec_ : range;
+    VectorViewType range_P(full_range, 0, size_u_);
+    VectorViewType range_Pnat(full_range, size_u_, 2 * size_u_);
+    const ConstVectorViewType source_P(source, 0, size_u_);
+    const ConstVectorViewType source_Pnat(source, size_u_, 2 * size_u_);
+    // linear part
+    ofield_jac_linear_op_.apply(source, full_range);
+    // nonlinear_part
+    fill_tmp_ofield(cell, source, restricted);
+    assemble_C_ofield_nonlinear_part(cell, restricted);
+    auto& tmp_vec = phi_tmp_vec_;
+    const auto mv = mv_func<ConstVectorViewType, VectorType>(restricted);
+    const auto axpy = axpy_func<VectorViewType, VectorType>(restricted);
+    const auto scal = scal_func<VectorType>(restricted);
+    const auto add = add_func<VectorViewType, VectorType>(restricted);
+    mv(M_nonlin_pfield_, source_mu, tmp_vec, phinat_output_dofs);
+    axpy(range_phinat, 1. / (Be_ * std::pow(epsilon_, 2)), tmp_vec, phinat_output_dofs);
+    mv(M_nonlin_pfield_, source_phi, tmp_vec, mu_output_dofs);
+    scal(tmp_vec, 1. / epsilon_, mu_output_dofs);
+
+    if (restricted)
+      for (size_t ii = 0; ii < output_dofs.size(); ++ii)
         range.add_to_entry(ii, full_range.get_entry(output_dofs[ii]));
   }
+#endif
+
 
   //******************************************************************************************************************
   //**************************** Methods to assemble rhs, residuals and jacobians ************************************
@@ -2063,7 +2102,14 @@ struct CellModelSolver
   // assembles nonlinear part of orientation field jacobian and adds to S_ofield_
   // if assemble_ofield_linear_jacobian has been called first, S_ofield now contains the whole orientation field
   // jacobian
-  void assemble_ofield_nonlinear_jacobian(const VectorType& y, const size_t cell) const
+  void assemble_ofield_nonlinear_jacobian(const VectorType& y, const size_t cell, const bool restricted = false) const
+  {
+    assemble_C_ofield_nonlinear_part(y, cell, restricted);
+    S_schur_ofield_.backend() = S_schur_ofield_linear_part_.backend();
+    S_schur_ofield_.axpy(-dt_ / kappa_, C_ofield_nonlinear_part_);
+  }
+
+  void assemble_C_ofield_nonlinear_part(const VectorType& y, const size_t cell, const bool restricted = false) const
   {
     ConstVectorViewType P_vec(y, 0, size_u_);
     P_tmp_[cell].dofs().vector() = P_vec;
@@ -2083,8 +2129,6 @@ struct CellModelSolver
     C_ofield_nonlinear_part_op_->append(LocalElementIntegralBilinearForm<E, d>(
         LocalElementOtimesMatrixIntegrand<E, d>(P_tmp_[cell], -2. * c_1_ / Pa_)));
     C_ofield_nonlinear_part_op_->assemble(use_tbb_);
-    S_schur_ofield_.backend() = S_schur_ofield_linear_part_.backend();
-    S_schur_ofield_.axpy(-dt_ / kappa_, C_ofield_nonlinear_part_);
   }
 
   // reverts S_ofield_ to the state directly after assemble_ofield_linear_jacobian has been called the last time
@@ -2120,13 +2164,24 @@ struct CellModelSolver
   //   S_pfield_20_ *= epsilon_;
   // }
 
+  void set_mat_to_zero(MatrixType& mat,
+                       const bool restricted,
+                       const XT::LA::SparsityPatternDefault& pattern,
+                       const std::vector<size_t>& rows)
+  {
+    if (!restricted) {
+      mat.set_to_zero();
+    } else {
+      for (const auto& row : rows)
+        for (const auto& col : pattern.inner(row))
+          mat.set_entry(row, col, 0.);
+    }
+  }
+
   void assemble_D_pfield(const size_t cell, const bool restricted)
   {
     const auto& phi_output_dofs = phi_deim_output_dofs_[cell];
-    if (!restricted)
-      D_pfield_.set_to_zero();
-    else
-      partially_scal_mat(phi_output_dofs, D_pfield_, pfield_submatrix_pattern_, 0.);
+    set_mat_to_zero(D_pfield_, restricted, pfield_submatrix_pattern_, phi_output_dofs);
     XT::Functions::GenericGridFunction<E, d, 1> minus_u(
         /*order = */ u_space_.max_polorder(),
         /*post_bind_func*/
@@ -2205,12 +2260,9 @@ struct CellModelSolver
   {
     const auto& phinat_output_dofs = phinat_deim_output_dofs_[cell];
     const auto& mu_output_dofs = mu_deim_output_dofs_[cell];
-    if (!restricted) {
-      M_nonlin_pfield_.set_to_zero();
-    } else {
-      partially_scal_mat(mu_output_dofs, M_nonlin_pfield_, pfield_submatrix_pattern_, 0.);
-      partially_scal_mat(phinat_output_dofs, M_nonlin_pfield_, pfield_submatrix_pattern_, 0.);
-    }
+    set_mat_to_zero(M_nonlin_pfield_, restricted, pfield_submatrix_pattern_, mu_output_dofs);
+    if (restricted)
+      set_mat_to_zero(M_nonlin_pfield_, restricted, pfield_submatrix_pattern_, phinat_output_dofs);
     XT::Functions::GenericGridFunction<E, 1, 1> M_nonlin_prefactor(
         /*order = */ 2 * phi_space_.max_polorder(),
         /*post_bind_func*/
@@ -2232,11 +2284,8 @@ struct CellModelSolver
   // stores nonlinear part of block G of the phase field jacobian matrix in G_pfield_nonlinear_part_
   void assemble_G_pfield(const size_t cell, const bool restricted)
   {
-    const auto& phi_output_dofs = phi_deim_output_dofs_[cell];
-    if (!restricted)
-      G_pfield_.set_to_zero();
-    else
-      partially_scal_mat(phi_output_dofs, G_pfield_, pfield_submatrix_pattern_, 0.);
+    const auto& phinat_output_dofs = phinat_deim_output_dofs_[cell];
+    set_mat_to_zero(G_pfield_, restricted, pfield_submatrix_pattern_, phinat_output_dofs);
     XT::Functions::GenericGridFunction<E, 1, 1> G_prefactor(
         /*order = */ 2 * phi_space_.max_polorder(),
         /*post_bind_func*/
@@ -2485,46 +2534,46 @@ struct CellModelSolver
   // Copys given row of source_mat to target_mat.
   // TODO: This functions could be much more efficient for row or col major matrices with the same pattern (which we
   // usually have) by directly copying the values array. This would probably need something like a RowMajorMatrixView.
-  void
-  partially_copy_mat(const std::vector<size_t>& rows, MatrixViewType& target_mat, const MatrixType& source_mat) const
-  {
-    const auto& pattern = target_mat.get_pattern();
-    for (const auto& row : rows)
-      for (const auto& col : pattern.inner(row))
-        target_mat.set_entry(row, col, source_mat.get_entry(row, col));
-  }
+  // void
+  // partially_copy_mat(const std::vector<size_t>& rows, MatrixViewType& target_mat, const MatrixType& source_mat) const
+  // {
+  //   const auto& pattern = target_mat.get_pattern();
+  //   for (const auto& row : rows)
+  //     for (const auto& col : pattern.inner(row))
+  //       target_mat.set_entry(row, col, source_mat.get_entry(row, col));
+  // }
 
   // Adds given row of rhs to the respective rows of lhs.
   // TODO: This functions could be much more efficient for row or col major matrices with the same pattern by directly
   // modifying the values array. This would probably need something like a RowMajorMatrixView.
-  void partially_add_mats(const std::vector<size_t>& rows, MatrixViewType& lhs, const MatrixType& rhs) const
-  {
-    const auto& pattern = lhs.get_pattern();
-    for (const auto& row : rows)
-      for (const auto& col : pattern.inner(row))
-        lhs.add_to_entry(row, col, rhs.get_entry(row, col));
-  }
+  // void partially_add_mats(const std::vector<size_t>& rows, MatrixViewType& lhs, const MatrixType& rhs) const
+  // {
+  //   const auto& pattern = lhs.get_pattern();
+  //   for (const auto& row : rows)
+  //     for (const auto& col : pattern.inner(row))
+  //       lhs.add_to_entry(row, col, rhs.get_entry(row, col));
+  // }
 
   // Multiplies given rows of mat by alpha.
   // TODO: This functions could be much more efficient for row or col major matrices by directly modifying the values
   // array. This would probably need something like a RowMajorMatrixView.
-  void partially_scal_mat(const std::vector<size_t>& rows, MatrixViewType& mat, const R& alpha) const
-  {
-    const auto& pattern = mat.get_pattern();
-    for (const auto& row : rows)
-      for (const auto& col : pattern.inner(row))
-        mat.set_entry(row, col, mat.get_entry(row, col) * alpha);
-  }
+  // void partially_scal_mat(const std::vector<size_t>& rows, MatrixViewType& mat, const R& alpha) const
+  // {
+  //   const auto& pattern = mat.get_pattern();
+  //   for (const auto& row : rows)
+  //     for (const auto& col : pattern.inner(row))
+  //       mat.set_entry(row, col, mat.get_entry(row, col) * alpha);
+  // }
 
-  void partially_scal_mat(const std::vector<size_t>& rows,
-                          MatrixType& mat,
-                          const XT::LA::SparsityPatternDefault& pattern,
-                          const R& alpha) const
-  {
-    for (const auto& row : rows)
-      for (const auto& col : pattern.inner(row))
-        mat.set_entry(row, col, mat.get_entry(row, col) * alpha);
-  }
+  // void partially_scal_mat(const std::vector<size_t>& rows,
+  //                         MatrixType& mat,
+  //                         const XT::LA::SparsityPatternDefault& pattern,
+  //                         const R& alpha) const
+  // {
+  //   for (const auto& row : rows)
+  //     for (const auto& col : pattern.inner(row))
+  //       mat.set_entry(row, col, mat.get_entry(row, col) * alpha);
+  // }
 
   // Matrix vector multiplication.
   // In the restricted case, only uses the matrix rows provided and does not touch the other entries of range.
@@ -2693,6 +2742,7 @@ struct CellModelSolver
     phi_tmp_eigen2_ *= -gamma_ * dt_;
     phi_tmp_eigen2_ += rhs_phi;
     pfield_tmp_rhs_phimu_phi_ = phi_tmp_eigen2_;
+    // mu part
     pfield_tmp_rhs_phimu_mu_ = rhs_mu;
     Dune::InverseOperatorResult res;
     pfield_phimu_solver_->apply(pfield_tmp_phimu_[cell], pfield_tmp_rhs_phimu_, res);
@@ -3096,6 +3146,7 @@ struct CellModelSolver
   std::vector<size_t> mu_deim_input_dofs_begin_;
   // output dofs that were computed by the DEIM algorithm
   std::vector<std::shared_ptr<std::vector<size_t>>> pfield_deim_output_dofs_;
+  std::vector<std::vector<size_t>> pfield_deim_unique_output_dofs_;
   // output dofs for the respective variables, shifted to range [0, size_phi)
   std::vector<std::vector<size_t>> phi_deim_output_dofs_;
   std::vector<std::vector<size_t>> phinat_deim_output_dofs_;

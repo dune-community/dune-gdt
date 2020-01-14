@@ -119,9 +119,7 @@ int main(int argc, char* argv[])
     std::vector<size_t> pfield_output_dofs(num_output_dofs);
     std::random_device dev;
     std::mt19937 rng(dev());
-    std::uniform_int_distribution<typename std::mt19937::result_type> distrib(0, max_output_dofs);
-    for (size_t ii = 0; ii < num_output_dofs; ++ii)
-      pfield_output_dofs[ii] = distrib(rng);
+    std::uniform_int_distribution<typename std::mt19937::result_type> distrib(0, max_output_dofs - 1);
     using VectorType = typename CellModelSolver::VectorType;
     const size_t num_cells = model_solver.num_cells();
     auto source = model_solver.pfield_vec(0);
@@ -131,9 +129,15 @@ int main(int argc, char* argv[])
     std::chrono::duration<double> prep_time(0.);
     std::chrono::duration<double> apply_time(0.);
     std::chrono::duration<double> jac_time(0.);
-    for (size_t kk = 0; kk < num_cells; ++kk) {
-      model_solver.compute_restricted_pfield_dofs(pfield_output_dofs, kk);
-      for (size_t run = 0; run < 100; ++run) {
+    for (size_t run = 0; run < 10; ++run) {
+      std::cout << "Run " << run << std::endl;
+      // std::cout << "Output_dofs: (";
+      for (size_t ii = 0; ii < num_output_dofs; ++ii) {
+        pfield_output_dofs[ii] = distrib(rng);
+        // std::cout << pfield_output_dofs[ii] << (ii == num_output_dofs - 1 ? ")\n" : ", ");
+      }
+      for (size_t kk = 0; kk < num_cells; ++kk) {
+        model_solver.compute_restricted_pfield_dofs(pfield_output_dofs, kk);
         auto begin = std::chrono::steady_clock::now();
         model_solver.prepare_pfield_op(dt, kk, true);
         restricted_prep_time += std::chrono::steady_clock::now() - begin;
@@ -172,8 +176,8 @@ int main(int argc, char* argv[])
             std::cout << "Failed apply restricted jacobian: " << ii << ", " << pfield_output_dofs[ii] << ", "
                       << jac_result[pfield_output_dofs[ii]] << ", " << restricted_jac_result[ii] << std::endl;
         } // ii
-      } // runs
-    } // kk
+      } // kk
+    } // runs
     std::cout << "prep: " << prep_time.count() << "  vs. " << restricted_prep_time.count() << std::endl;
     std::cout << "apply: " << apply_time.count() << "  vs. " << restricted_apply_time.count() << std::endl;
     std::cout << "jac: " << jac_time.count() << "  vs. " << restricted_jac_time.count() << std::endl;
