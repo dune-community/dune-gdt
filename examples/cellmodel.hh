@@ -1945,7 +1945,7 @@ struct CellModelSolver
     range = solve_pfield_linear_system(rhs, cell);
   }
 
-  void apply_inverse_ofield_jacobian_with_param(const VectorType& source,
+  void apply_inverse_pfield_jacobian_with_param(const VectorType& source,
                                                 const VectorType& rhs,
                                                 VectorType& range,
                                                 const size_t cell,
