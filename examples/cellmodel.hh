@@ -1482,7 +1482,7 @@ struct CellModelSolver
       ofield_deim_entities_[cell].clear();
       for (const auto& entity : Dune::elements(grid_view_)) {
         mapper.global_indices(entity, global_indices);
-        maybe_add_entity(entity, global_indices, *ofield_deim_output_dofs_[cell], ofield_deim_entities_[cell]);
+        maybe_add_entity(entity, global_indices, *ofield_deim_output_dofs_[cell], ofield_deim_entities_[cell], size_u_);
       } // entities
     } // if (not already computed)
   } // void compute_restricted_pfield_dofs(...)
@@ -1543,7 +1543,8 @@ struct CellModelSolver
       pfield_deim_entities_[cell].clear();
       for (const auto& entity : Dune::elements(grid_view_)) {
         mapper.global_indices(entity, global_indices);
-        maybe_add_entity(entity, global_indices, *pfield_deim_output_dofs_[cell], pfield_deim_entities_[cell]);
+        maybe_add_entity(
+            entity, global_indices, *pfield_deim_output_dofs_[cell], pfield_deim_entities_[cell], size_phi_);
       } // entities
     } // if (not already computed)
   } // void compute_restricted_pfield_dofs(...)
@@ -3046,10 +3047,11 @@ struct CellModelSolver
   void maybe_add_entity(const E& entity,
                         const DynamicVector<size_t>& global_indices,
                         const std::vector<size_t>& output_dofs,
-                        std::vector<E>& input_entities) const
+                        std::vector<E>& input_entities,
+                        const size_t subvector_size) const
   {
     for (const auto& output_dof : output_dofs) {
-      const size_t dof = output_dof % size_phi_;
+      const size_t dof = output_dof % subvector_size;
       for (size_t jj = 0; jj < global_indices.size(); ++jj) {
         if (global_indices[jj] == dof) {
           input_entities.push_back(entity);
