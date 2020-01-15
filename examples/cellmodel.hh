@@ -1879,11 +1879,16 @@ struct CellModelSolver
   //********************************************** Apply jacobians ***************************************************
   //******************************************************************************************************************
 
+  void prepare_pfield_jacobian(const VectorType& source, const size_t cell, const bool restricted = false)
+  {
+    assemble_pfield_nonlinear_jacobian(source, cell, restricted);
+  }
+
   // Currently takes a full-dimensional vector, but only applies the rows that are in pfield_output_dofs
   // As the rows are sparse, there shouldn't be too much performance impact of applying to the whole vector
-  void
-  apply_pfield_jacobian(const VectorType& source, VectorType& range, const size_t cell, const bool restricted = false)
+  VectorType apply_pfield_jacobian(const VectorType& source, const size_t cell, const bool restricted = false)
   {
+    VectorType range(source.size(), 0.);
     const auto& output_dofs = *pfield_deim_output_dofs_[cell];
     const auto& phinat_output_dofs = phinat_deim_output_dofs_[cell];
     const auto& mu_output_dofs = mu_deim_output_dofs_[cell];
@@ -1897,8 +1902,6 @@ struct CellModelSolver
     // linear part
     pfield_jac_linear_op_.apply(source, full_range);
     // nonlinear_part
-    fill_tmp_pfield(cell, source, restricted);
-    assemble_M_nonlin_pfield(cell, restricted);
     auto& tmp_vec = phi_tmp_vec_;
     const auto mv = mv_func<ConstVectorViewType, VectorType>(restricted);
     const auto axpy = axpy_func<VectorViewType, VectorType>(restricted);
@@ -1917,51 +1920,48 @@ struct CellModelSolver
       tmp_vec[DoF] = source_phi[DoF];
     add(range_mu, tmp_vec, mu_output_dofs);
     // apply G
-    assemble_G_pfield(cell, restricted);
     mv(G_pfield_, source_phi, tmp_vec, phinat_output_dofs);
     add(range_phinat, tmp_vec, phinat_output_dofs);
 
     if (restricted)
       for (size_t ii = 0; ii < output_dofs.size(); ++ii)
         range.set_entry(ii, full_range.get_entry(output_dofs[ii]));
+    return range;
   }
 
-  void apply_pfield_jacobian_with_param(const VectorType& source,
-                                        VectorType& range,
-                                        const size_t cell,
-                                        const double Be,
-                                        const double Ca,
-                                        const double Pa,
-                                        const bool restricted = false)
+  VectorType apply_pfield_jacobian_with_param(const VectorType& source,
+                                              const size_t cell,
+                                              const double Be,
+                                              const double Ca,
+                                              const double Pa,
+                                              const bool restricted = false)
   {
     update_pfield_parameters(cell, restricted, Be, Ca, Pa);
-    apply_pfield_jacobian(source, range, cell, restricted);
+    return apply_pfield_jacobian(source, cell, restricted);
   }
 
-  void
-  apply_inverse_pfield_jacobian(const VectorType& source, const VectorType& rhs, VectorType& range, const size_t cell)
+  VectorType apply_inverse_pfield_jacobian(const VectorType& rhs, const size_t cell)
   {
-    assemble_pfield_nonlinear_jacobian(source, cell, false);
-    range = solve_pfield_linear_system(rhs, cell);
+    return solve_pfield_linear_system(rhs, cell);
   }
 
-  void apply_inverse_pfield_jacobian_with_param(const VectorType& source,
-                                                const VectorType& rhs,
-                                                VectorType& range,
-                                                const size_t cell,
-                                                const double Be,
-                                                const double Ca,
-                                                const double Pa)
+  VectorType apply_inverse_pfield_jacobian_with_param(
+      const VectorType& rhs, const size_t cell, const double Be, const double Ca, const double Pa)
   {
     update_pfield_parameters(cell, false, Be, Ca, Pa);
-    apply_inverse_pfield_jacobian(source, rhs, range, cell);
+    return apply_inverse_pfield_jacobian(rhs, cell);
+  }
+
+  void prepare_ofield_jacobian(const VectorType& source, const size_t cell, const bool /*restricted*/ = false)
+  {
+    assemble_ofield_nonlinear_jacobian(source, cell);
   }
 
   // Currently takes a full-dimensional vector, but only applies the rows that are in pfield_output_dofs
   // As the rows are sparse, there shouldn't be too much performance impact of applying to the whole vector
-  void
-  apply_ofield_jacobian(const VectorType& source, VectorType& range, const size_t cell, const bool restricted = false)
+  VectorType apply_ofield_jacobian(const VectorType& source, const size_t cell, const bool restricted = false)
   {
+    VectorType range(source.size(), 0.);
     const auto& output_dofs = *ofield_deim_output_dofs_[cell];
     const auto& Pnat_output_dofs = Pnat_deim_output_dofs_[cell];
     VectorType& full_range = restricted ? ofield_tmp_vec_ : range;
@@ -1972,8 +1972,6 @@ struct CellModelSolver
     // linear part
     ofield_jac_linear_op_.apply(source, full_range);
     // nonlinear_part
-    fill_tmp_ofield(cell, source, restricted);
-    assemble_C_ofield_nonlinear_part(cell, restricted);
     auto& tmp_vec = u_tmp_vec_;
     const auto mv = mv_func<ConstVectorViewType, VectorType>(restricted);
     const auto add = add_func<VectorViewType, VectorType>(restricted);
@@ -1982,42 +1980,41 @@ struct CellModelSolver
     if (restricted)
       for (size_t ii = 0; ii < output_dofs.size(); ++ii)
         range.set_entry(ii, full_range.get_entry(output_dofs[ii]));
+    return range;
   }
 
-  void apply_ofield_jacobian_with_param(const VectorType& source,
-                                        VectorType& range,
-                                        const size_t cell,
-                                        const double Pa,
-                                        const bool /*restricted*/ = false)
+  VectorType apply_ofield_jacobian_with_param(const VectorType& source,
+                                              const size_t cell,
+                                              const double Pa,
+                                              const bool /*restricted*/ = false)
   {
     update_ofield_parameters(cell, Pa);
-    apply_ofield_jacobian(source, range, cell);
+    return apply_ofield_jacobian(source, cell);
   }
 
-  void
-  apply_inverse_ofield_jacobian(const VectorType& source, const VectorType& rhs, VectorType& range, const size_t cell)
+  VectorType apply_inverse_ofield_jacobian(const VectorType& rhs, const size_t cell)
   {
-    assemble_ofield_nonlinear_jacobian(source, cell, false);
-    range = solve_ofield_linear_system(rhs, cell);
+    return solve_ofield_linear_system(rhs, cell);
   }
 
-  void apply_inverse_ofield_jacobian_with_param(
-      const VectorType& source, const VectorType& rhs, VectorType& range, const size_t cell, const double Pa)
+  VectorType apply_inverse_ofield_jacobian_with_param(const VectorType& rhs, const size_t cell, const double Pa)
   {
     update_ofield_parameters(cell, Pa);
-    apply_inverse_ofield_jacobian(source, rhs, range, cell);
+    return apply_inverse_ofield_jacobian(rhs, cell);
   }
 
-  void apply_stokes_jacobian(const VectorType& source, VectorType& range, const bool /*restricted*/ = false)
+  VectorType apply_stokes_jacobian(const VectorType& source, const bool /*restricted*/ = false)
   {
+    VectorType range(source.size());
     S_stokes_.mv(source, range);
+    return range;
   }
 
-  void apply_inverse_stokes_jacobian(const VectorType& rhs, VectorType& range, const size_t cell)
+  VectorType apply_inverse_stokes_jacobian(const VectorType& rhs, const size_t cell)
   {
     EigenVectorType rhs_eigen = XT::Common::convert_to<EigenVectorType>(rhs);
     EigenVectorType ret(stokes_solver_->solve(rhs_eigen.backend()));
-    range = XT::Common::convert_to<VectorType>(ret);
+    return XT::Common::convert_to<VectorType>(ret);
   }
 
   //******************************************************************************************************************
@@ -2349,7 +2346,7 @@ struct CellModelSolver
   }
 
   // assembles nonlinear part of phase field jacobian
-  void assemble_pfield_nonlinear_jacobian(const VectorType& y, const size_t cell, const bool restricted)
+  void assemble_pfield_nonlinear_jacobian(const VectorType& y, const size_t cell, const bool restricted = false)
   {
     fill_tmp_pfield(cell, y, restricted);
     assemble_M_nonlin_pfield(cell, restricted);
