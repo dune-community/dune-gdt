@@ -229,20 +229,20 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(visualize_ofield_overloads, CellModelSolv
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(visualize_stokes_overloads, CellModelSolver::visualize_stokes, 2, 3)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(prepare_pfield_op_overloads, CellModelSolver::prepare_pfield_op, 2, 3)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(prepare_ofield_op_overloads, CellModelSolver::prepare_ofield_op, 2, 3)
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(prepare_pfield_jacobian_overloads,
-                                       CellModelSolver::prepare_pfield_jacobian,
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(set_pfield_jacobian_state_overloads,
+                                       CellModelSolver::set_pfield_jacobian_state,
                                        2,
                                        3)
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(prepare_ofield_jacobian_overloads,
-                                       CellModelSolver::prepare_ofield_jacobian,
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(set_ofield_jacobian_state_overloads,
+                                       CellModelSolver::set_ofield_jacobian_state,
                                        2,
                                        3)
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(prepare_pfield_jacobian_with_param_overloads,
-                                       CellModelSolver::prepare_pfield_jacobian_with_param,
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(set_pfield_jacobian_state_with_param_overloads,
+                                       CellModelSolver::set_pfield_jacobian_state_with_param,
                                        5,
                                        6)
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(prepare_ofield_jacobian_with_param_overloads,
-                                       CellModelSolver::prepare_ofield_jacobian_with_param,
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(set_ofield_jacobian_state_with_param_overloads,
+                                       CellModelSolver::set_ofield_jacobian_state_with_param,
                                        3,
                                        4)
 
@@ -396,14 +396,18 @@ BOOST_PYTHON_MODULE(libhapodgdt)
       .def("apply_pfield_product_op", &CellModelSolver::apply_pfield_product_op)
       .def("apply_ofield_product_op", &CellModelSolver::apply_ofield_product_op)
       .def("apply_stokes_product_op", &CellModelSolver::apply_stokes_product_op)
-      .def("prepare_pfield_jacobian", &CellModelSolver::prepare_pfield_jacobian, prepare_pfield_jacobian_overloads())
-      .def("prepare_ofield_jacobian", &CellModelSolver::prepare_ofield_jacobian, prepare_ofield_jacobian_overloads())
-      .def("prepare_pfield_jacobian_with_param",
-           &CellModelSolver::prepare_pfield_jacobian_with_param,
-           prepare_pfield_jacobian_with_param_overloads())
-      .def("prepare_ofield_jacobian_with_param",
-           &CellModelSolver::prepare_ofield_jacobian_with_param,
-           prepare_ofield_jacobian_with_param_overloads())
+      .def("set_pfield_jacobian_state",
+           &CellModelSolver::set_pfield_jacobian_state,
+           set_pfield_jacobian_state_overloads())
+      .def("set_ofield_jacobian_state",
+           &CellModelSolver::set_ofield_jacobian_state,
+           set_ofield_jacobian_state_overloads())
+      .def("set_pfield_jacobian_state_with_param",
+           &CellModelSolver::set_pfield_jacobian_state_with_param,
+           set_pfield_jacobian_state_with_param_overloads())
+      .def("set_ofield_jacobian_state_with_param",
+           &CellModelSolver::set_ofield_jacobian_state_with_param,
+           set_ofield_jacobian_state_with_param_overloads())
       .def("apply_pfield_jacobian", &CellModelSolver::apply_pfield_jacobian, apply_pfield_jacobian_overloads())
       .def("apply_ofield_jacobian", &CellModelSolver::apply_ofield_jacobian, apply_ofield_jacobian_overloads())
       .def("apply_stokes_jacobian", &CellModelSolver::apply_stokes_jacobian, apply_stokes_jacobian_overloads())

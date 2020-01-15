@@ -165,19 +165,24 @@ public:
         x_Pnat_[input_dofs[ii] - size_P_] = x[input_dofs[ii]];
     }
     // apply matrices
+    const auto mv = cellmodel_solver_->template mv_func<Vector>(restricted_);
+    const auto axpy = cellmodel_solver_->template axpy_func<Vector>(restricted_);
+    const auto add = cellmodel_solver_->template add_func<Vector>(restricted_);
     // M+dtA
-    M_.mv(x_P_, y_P_);
-    A_.mv(x_P_, tmp_vec_);
-    y_P_.axpy(dt_, tmp_vec_);
-    // dt B and D
-    M_.mv(x_Pnat_, y_Pnat_);
-    y_P_.axpy(dt_ / kappa_, y_Pnat_);
-    // linear part of C
-    C_lin_.mv(x_P_, tmp_vec_);
-    y_Pnat_ += tmp_vec_;
-    // copy to result vector
     const auto& P_dofs = cellmodel_solver_->P_deim_output_dofs_[cell_];
+    mv(M_, x_P_, y_P_, P_dofs);
+    mv(A_, x_P_, tmp_vec_, P_dofs);
+    axpy(y_P_, dt_, tmp_vec_, P_dofs);
+    // dt B and D
     const auto& Pnat_dofs = cellmodel_solver_->Pnat_deim_output_dofs_[cell_];
+    mv(M_, x_Pnat_, y_Pnat_, P_dofs);
+    if (restricted_)
+      mv(M_, x_Pnat_, y_Pnat_, Pnat_dofs);
+    axpy(y_P_, dt_ / kappa_, y_Pnat_, P_dofs);
+    // linear part of C
+    mv(C_lin_, x_P_, tmp_vec_, Pnat_dofs);
+    add(y_Pnat_, tmp_vec_, Pnat_dofs);
+    // copy to result vector
     if (!restricted_) {
       for (size_t ii = 0; ii < size_P_; ++ii) {
         y[ii] = y_P_[ii];
@@ -737,6 +742,7 @@ struct CellModelSolver
     , ofield_schur_solver_(
           std::make_shared<OfieldSchurSolverType>(ofield_schur_op_, identity_prec_, 1e-10, 20, 10000, false))
     , ofield_tmp_vec_(2 * size_u_, 0., 0)
+    , ofield_tmp_vec2_(2 * size_u_, 0., 0)
     // , ofield_schur_solver_(std::make_shared<DiagSolverType>())
     , ofield_deim_input_dofs_(num_cells_)
     , Pnat_deim_input_dofs_begin_(num_cells_)
@@ -1561,38 +1567,59 @@ struct CellModelSolver
     return apply_stokes_op(y);
   }
 
-  // Applies cell-th orientation field operator (applies F if the orientation field equation is F(y) = 0)
-  VectorType apply_ofield_op(const VectorType& y, const size_t cell, const bool restricted = false) const
+  void assemble_nonlinear_part_of_ofield_residual(VectorType& residual, const size_t cell, const bool restricted)
   {
+    // nonlinear part
+    VectorViewType res1_vec(residual, size_u_, 2 * size_u_);
+    auto nonlinear_res_functional = make_vector_functional(u_space_, res1_vec);
+    XT::Functions::GenericGridFunction<E, d, 1> nonlinear_res_pf(
+        /*order = */ 3 * u_space_.max_polorder(),
+        /*post_bind_func*/
+        [cell, this](const E& element) { this->bind_P(cell, element); },
+        /*evaluate_func*/
+        [cell, factor = -c_1_ / Pa_, this](const DomainType& x_local, const XT::Common::Parameter& param) {
+          // evaluate P, divP
+          auto ret = this->eval_P(cell, x_local, param);
+          ret *= factor * (ret * ret);
+          return ret;
+        });
+    nonlinear_res_functional.append(LocalElementIntegralFunctional<E, d>(
+        local_binary_to_unary_element_integrand(LocalElementProductScalarWeightIntegrand<E, d>(), nonlinear_res_pf)));
+    if (!restricted)
+      nonlinear_res_functional.assemble(use_tbb_);
+    else
+      nonlinear_res_functional.assemble_range(ofield_deim_entities_[cell]);
+  }
+
+  // Applies cell-th orientation field operator (applies F if the orientation field equation is F(y) = 0)
+  VectorType apply_ofield_op(const VectorType& y, const size_t cell, const bool restricted = false)
+  {
+    const auto& output_dofs = *ofield_deim_output_dofs_[cell];
+    const auto& unique_output_dofs = ofield_deim_unique_output_dofs_[cell];
+    const auto& input_dofs = ofield_deim_input_dofs_[cell];
+    auto& source = ofield_tmp_vec_;
+    auto& residual = ofield_tmp_vec2_;
+    // copy values to high-dimensional vector
+    if (restricted)
+      copy_ld_to_hd_vec(input_dofs, y, source);
+    else
+      source = y;
     // linear part
-    VectorType ret(y.size());
-    ofield_jac_linear_op_.apply(y, ret);
+    ofield_jac_linear_op_.apply(source, residual);
     // subtract rhs
-    ret -= ofield_rhs_vector_;
-    if (!linearize_) {
-      fill_tmp_ofield(cell, y, restricted);
-      // nonlinear part
-      VectorViewType res1_vec(ret, size_u_, 2 * size_u_);
-      auto nonlinear_res_functional = make_vector_functional(u_space_, res1_vec);
-      XT::Functions::GenericGridFunction<E, d, 1> nonlinear_res_pf(
-          /*order = */ 3 * u_space_.max_polorder(),
-          /*post_bind_func*/
-          [cell, this](const E& element) { this->bind_P(cell, element); },
-          /*evaluate_func*/
-          [cell, factor = -c_1_ / Pa_, this](const DomainType& x_local, const XT::Common::Parameter& param) {
-            // evaluate P, divP
-            auto ret = this->eval_P(cell, x_local, param);
-            ret *= factor * (ret * ret);
-            return ret;
-          });
-      nonlinear_res_functional.append(LocalElementIntegralFunctional<E, d>(
-          local_binary_to_unary_element_integrand(LocalElementProductScalarWeightIntegrand<E, d>(), nonlinear_res_pf)));
-      if (!restricted)
-        nonlinear_res_functional.assemble(use_tbb_);
-      else
-        nonlinear_res_functional.assemble_range(ofield_deim_entities_[cell]);
+    const auto sub = sub_func<VectorType>(restricted);
+    sub(residual, ofield_rhs_vector_, unique_output_dofs);
+    // nonlinear part
+    fill_tmp_ofield(cell, source, restricted);
+    assemble_nonlinear_part_of_ofield_residual(residual, cell, restricted);
+    if (restricted) {
+      VectorType ret(output_dofs.size());
+      for (size_t ii = 0; ii < output_dofs.size(); ++ii)
+        ret[ii] = residual[output_dofs[ii]];
+      return ret;
+    } else {
+      return residual;
     }
-    return ret;
   }
 
   VectorType apply_ofield_op_with_param(const VectorType& y, const size_t cell, const double Pa)
@@ -1879,20 +1906,20 @@ struct CellModelSolver
   //********************************************** Apply jacobians ***************************************************
   //******************************************************************************************************************
 
-  void prepare_pfield_jacobian(const VectorType& source, const size_t cell, const bool restricted = false)
+  void set_pfield_jacobian_state(const VectorType& source, const size_t cell, const bool restricted = false)
   {
     assemble_pfield_nonlinear_jacobian(source, cell, restricted);
   }
 
-  void prepare_pfield_jacobian_with_param(const VectorType& source,
-                                          const size_t cell,
-                                          const double Be,
-                                          const double Ca,
-                                          const double Pa,
-                                          const bool restricted = false)
+  void set_pfield_jacobian_state_with_param(const VectorType& source,
+                                            const size_t cell,
+                                            const double Be,
+                                            const double Ca,
+                                            const double Pa,
+                                            const bool restricted = false)
   {
     update_pfield_parameters(cell, restricted, Be, Ca, Pa);
-    prepare_pfield_jacobian(source, cell, restricted);
+    set_pfield_jacobian_state(source, cell, restricted);
   }
 
   // Currently takes a full-dimensional vector, but only applies the rows that are in pfield_output_dofs
@@ -1945,18 +1972,18 @@ struct CellModelSolver
     return solve_pfield_linear_system(rhs, cell);
   }
 
-  void prepare_ofield_jacobian(const VectorType& source, const size_t cell, const bool /*restricted*/ = false)
+  void set_ofield_jacobian_state(const VectorType& source, const size_t cell, const bool /*restricted*/ = false)
   {
     assemble_ofield_nonlinear_jacobian(source, cell);
   }
 
-  void prepare_ofield_jacobian_with_param(const VectorType& source,
-                                          const size_t cell,
-                                          const double Pa,
-                                          const bool restricted = false)
+  void set_ofield_jacobian_state_with_param(const VectorType& source,
+                                            const size_t cell,
+                                            const double Pa,
+                                            const bool restricted = false)
   {
     update_ofield_parameters(cell, Pa);
-    prepare_ofield_jacobian(source, cell, restricted);
+    set_ofield_jacobian_state(source, cell, restricted);
   }
 
   // Currently takes a full-dimensional vector, but only applies the rows that are in pfield_output_dofs
@@ -1997,7 +2024,7 @@ struct CellModelSolver
     return range;
   }
 
-  VectorType apply_inverse_stokes_jacobian(const VectorType& rhs, const size_t cell)
+  VectorType apply_inverse_stokes_jacobian(const VectorType& rhs)
   {
     EigenVectorType rhs_eigen = XT::Common::convert_to<EigenVectorType>(rhs);
     EigenVectorType ret(stokes_solver_->solve(rhs_eigen.backend()));
@@ -2234,7 +2261,7 @@ struct CellModelSolver
   // assembles nonlinear part of orientation field jacobian and adds to S_ofield_
   // if assemble_ofield_linear_jacobian has been called first, S_ofield now contains the whole orientation field
   // jacobian
-  void assemble_ofield_nonlinear_jacobian(const VectorType& y, const size_t cell, const bool restricted = false) const
+  void assemble_ofield_nonlinear_jacobian(const VectorType& y, const size_t cell, const bool restricted = false)
   {
     fill_tmp_ofield(cell, y, restricted);
     assemble_C_ofield_nonlinear_part(cell, restricted);
@@ -2242,7 +2269,7 @@ struct CellModelSolver
     S_schur_ofield_.axpy(-dt_ / kappa_, C_ofield_nonlinear_part_);
   }
 
-  void assemble_C_ofield_nonlinear_part(const size_t cell, const bool restricted = false) const
+  void assemble_C_ofield_nonlinear_part(const size_t cell, const bool restricted = false)
   {
     XT::Functions::GenericGridFunction<E, 1, 1> c1_Pa_P2(
         /*order = */ 2. * u_space_.max_polorder(),
@@ -2253,13 +2280,16 @@ struct CellModelSolver
           const auto P_n = this->eval_P(cell, x_local, param);
           return factor * P_n.two_norm2();
         });
-    C_ofield_nonlinear_part_.set_to_zero();
+    set_mat_to_zero(C_ofield_nonlinear_part_, restricted, ofield_submatrix_pattern_, Pnat_deim_output_dofs_[cell]);
     C_ofield_nonlinear_part_op_->clear();
     C_ofield_nonlinear_part_op_->append(
         LocalElementIntegralBilinearForm<E, d>(LocalElementProductScalarWeightIntegrand<E, d>(c1_Pa_P2)));
     C_ofield_nonlinear_part_op_->append(LocalElementIntegralBilinearForm<E, d>(
         LocalElementOtimesMatrixIntegrand<E, d>(P_tmp_[cell], -2. * c_1_ / Pa_)));
-    C_ofield_nonlinear_part_op_->assemble(use_tbb_);
+    if (!restricted)
+      C_ofield_nonlinear_part_op_->assemble(use_tbb_);
+    else
+      C_ofield_nonlinear_part_op_->assemble_range(ofield_deim_entities_[cell]);
   }
 
   // reverts S_ofield_ to the state directly after assemble_ofield_linear_jacobian has been called the last time
@@ -3236,6 +3266,7 @@ struct CellModelSolver
   XT::LA::IdentityPreconditioner<PfieldPhiMuMatrixOperatorType> identity_prec_;
   mutable std::shared_ptr<OfieldSchurSolverType> ofield_schur_solver_;
   VectorType ofield_tmp_vec_;
+  VectorType ofield_tmp_vec2_;
   // Indices for restricted operator in DEIM context
   std::vector<std::vector<size_t>> ofield_deim_input_dofs_;
   std::vector<size_t> Pnat_deim_input_dofs_begin_;

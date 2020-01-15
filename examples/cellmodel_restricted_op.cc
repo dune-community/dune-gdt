@@ -128,10 +128,16 @@ int main(int argc, char* argv[])
     const size_t num_cells = model_solver.num_cells();
     auto pfield_source = model_solver.pfield_vec(0);
     auto ofield_source = model_solver.ofield_vec(0);
+    auto pfield_state = model_solver.pfield_vec(0);
+    auto ofield_state = model_solver.ofield_vec(0);
     // ensure source_vectors are non-zero to avoid masking errors
     for (auto& entry : pfield_source)
       entry += double_distrib(rng);
     for (auto& entry : ofield_source)
+      entry += double_distrib(rng);
+    for (auto& entry : pfield_state)
+      entry += double_distrib(rng);
+    for (auto& entry : ofield_state)
       entry += double_distrib(rng);
     std::chrono::duration<double> restricted_prep_time(0.);
     std::chrono::duration<double> restricted_apply_time(0.);
@@ -150,28 +156,28 @@ int main(int argc, char* argv[])
         model_solver.compute_restricted_pfield_dofs(pfield_output_dofs, kk);
         auto begin = std::chrono::steady_clock::now();
         model_solver.prepare_pfield_op(dt, kk, true);
+        model_solver.set_pfield_jacobian_state(pfield_state, kk, true);
         restricted_prep_time += std::chrono::steady_clock::now() - begin;
         const auto& pfield_input_dofs = model_solver.pfield_deim_input_dofs(kk);
         const size_t num_input_dofs = pfield_input_dofs.size();
         VectorType restricted_source(num_input_dofs, 0.);
         for (size_t ii = 0; ii < num_input_dofs; ++ii)
           restricted_source[ii] = pfield_source[pfield_input_dofs[ii]];
-        VectorType restricted_jac_result(num_output_dofs, 0.);
         begin = std::chrono::steady_clock::now();
         auto restricted_result = model_solver.apply_pfield_op(restricted_source, kk, true);
         restricted_apply_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
-        model_solver.apply_pfield_jacobian(pfield_source, restricted_jac_result, kk, true);
+        auto restricted_jac_result = model_solver.apply_pfield_jacobian(pfield_source, kk, true);
         restricted_jac_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
         model_solver2.prepare_pfield_op(dt, kk);
+        model_solver2.set_pfield_jacobian_state(pfield_state, kk, false);
         prep_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
         auto result = model_solver2.apply_pfield_op(pfield_source, kk, false);
         apply_time += std::chrono::steady_clock::now() - begin;
-        VectorType jac_result = result;
         begin = std::chrono::steady_clock::now();
-        model_solver2.apply_pfield_jacobian(pfield_source, jac_result, kk, false);
+        auto jac_result = model_solver2.apply_pfield_jacobian(pfield_source, kk, false);
         jac_time += std::chrono::steady_clock::now() - begin;
         // There are differences of about 1e-13, caused by the different mv methods in assemble_pfield_rhs (mv from
         // Eigen vs mv_restricted);
@@ -194,31 +200,31 @@ int main(int argc, char* argv[])
         // std::cout << ofield_output_dofs[ii] << (ii == num_output_dofs - 1 ? ")\n" : ", ");
       }
       for (size_t kk = 0; kk < num_cells; ++kk) {
-        model_solver.compute_restricted_ofield_dofs(pfield_output_dofs, kk);
+        model_solver.compute_restricted_ofield_dofs(ofield_output_dofs, kk);
         auto begin = std::chrono::steady_clock::now();
         model_solver.prepare_ofield_op(dt, kk, true);
+        model_solver.set_ofield_jacobian_state(ofield_state, kk, true);
         restricted_prep_time += std::chrono::steady_clock::now() - begin;
         const auto& ofield_input_dofs = model_solver.ofield_deim_input_dofs(kk);
         const size_t num_input_dofs = ofield_input_dofs.size();
         VectorType restricted_source(num_input_dofs, 0.);
         for (size_t ii = 0; ii < num_input_dofs; ++ii)
           restricted_source[ii] = ofield_source[ofield_input_dofs[ii]];
-        VectorType restricted_jac_result(num_output_dofs, 0.);
         begin = std::chrono::steady_clock::now();
         auto restricted_result = model_solver.apply_ofield_op(restricted_source, kk, true);
         restricted_apply_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
-        model_solver.apply_ofield_jacobian(ofield_source, restricted_jac_result, kk, true);
+        auto restricted_jac_result = model_solver.apply_ofield_jacobian(ofield_source, kk, true);
         restricted_jac_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
         model_solver2.prepare_ofield_op(dt, kk);
+        model_solver2.set_ofield_jacobian_state(ofield_state, kk, false);
         prep_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
         auto result = model_solver2.apply_ofield_op(ofield_source, kk, false);
         apply_time += std::chrono::steady_clock::now() - begin;
-        VectorType jac_result = result;
         begin = std::chrono::steady_clock::now();
-        model_solver2.apply_ofield_jacobian(ofield_source, jac_result, kk, false);
+        auto jac_result = model_solver2.apply_ofield_jacobian(ofield_source, kk, false);
         jac_time += std::chrono::steady_clock::now() - begin;
         // There are differences of about 1e-13, caused by the different mv methods in assemble_ofield_rhs (mv from
         // Eigen vs mv_restricted);
