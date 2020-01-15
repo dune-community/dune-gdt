@@ -111,7 +111,7 @@ static void write_to_textfile(const DiscreteFunc& func, const std::string& prefi
   } // if (rank == 0)
 } // void write_to_textfile()
 
-template <class VectorType, class MatrixType>
+template <class VectorType, class MatrixType, class CellModelSolverType>
 class OfieldMatrixLinearPartOperator : public Dune::LinearOperator<VectorType, VectorType>
 {
   using BaseType = Dune::LinearOperator<VectorType, VectorType>;
@@ -125,11 +125,16 @@ public:
 
   // Matrix dimensions are
   // A: m x m, B1, B2: m x n, C: n x n
-  OfieldMatrixLinearPartOperator(const Matrix& M, const Matrix& A, const Matrix& C_lin, const double kappa)
+  OfieldMatrixLinearPartOperator(const Matrix& M,
+                                 const Matrix& A,
+                                 const Matrix& C_lin,
+                                 const double kappa,
+                                 const CellModelSolverType* cellmodel_solver)
     : M_(M)
     , A_(A)
     , C_lin_(C_lin)
     , kappa_(kappa)
+    , cellmodel_solver_(cellmodel_solver)
     , size_P_(M_.rows())
     , x_P_(size_P_, 0., 0)
     , x_Pnat_(size_P_, 0., 0)
@@ -145,10 +150,19 @@ public:
    */
   void apply(const Vector& x, Vector& y) const override final
   {
+    const auto& input_dofs = cellmodel_solver_->ofield_deim_input_dofs_[cell_];
+    const auto& Pnat_begin = cellmodel_solver_->Pnat_deim_input_dofs_begin_[cell_];
     // copy to temporary vectors (we do not use vector views to improve performance of mv)
-    for (size_t ii = 0; ii < size_P_; ++ii) {
-      x_P_[ii] = x[ii];
-      x_Pnat_[ii] = x[size_P_ + ii];
+    if (!restricted_) {
+      for (size_t ii = 0; ii < size_P_; ++ii) {
+        x_P_[ii] = x[ii];
+        x_Pnat_[ii] = x[size_P_ + ii];
+      }
+    } else {
+      for (size_t ii = 0; ii < Pnat_begin; ++ii)
+        x_P_[input_dofs[ii]] = x[input_dofs[ii]];
+      for (size_t ii = Pnat_begin; ii < input_dofs.size(); ++ii)
+        x_Pnat_[input_dofs[ii] - size_P_] = x[input_dofs[ii]];
     }
     // apply matrices
     // M+dtA
@@ -162,9 +176,18 @@ public:
     C_lin_.mv(x_P_, tmp_vec_);
     y_Pnat_ += tmp_vec_;
     // copy to result vector
-    for (size_t ii = 0; ii < size_P_; ++ii) {
-      y[ii] = y_P_[ii];
-      y[size_P_ + ii] = y_Pnat_[ii];
+    const auto& P_dofs = cellmodel_solver_->P_deim_output_dofs_[cell_];
+    const auto& Pnat_dofs = cellmodel_solver_->Pnat_deim_output_dofs_[cell_];
+    if (!restricted_) {
+      for (size_t ii = 0; ii < size_P_; ++ii) {
+        y[ii] = y_P_[ii];
+        y[size_P_ + ii] = y_Pnat_[ii];
+      }
+    } else {
+      for (const auto& dof : P_dofs)
+        y[dof] = y_P_[dof];
+      for (const auto& dof : Pnat_dofs)
+        y[size_P_ + dof] = y_Pnat_[dof];
     }
   }
 
@@ -181,9 +204,11 @@ public:
     return SolverCategory::Category::sequential;
   }
 
-  void prepare(const double dt)
+  void prepare(const double dt, const size_t cell, const bool restricted = false)
   {
     dt_ = dt;
+    cell_ = cell;
+    restricted_ = restricted;
   }
 
 private:
@@ -191,7 +216,10 @@ private:
   const Matrix& A_;
   const Matrix& C_lin_;
   const double kappa_;
+  const CellModelSolverType* cellmodel_solver_;
   double dt_;
+  size_t cell_;
+  bool restricted_;
   const size_t size_P_;
   // vectors to store intermediate results
   mutable Vector x_P_;
@@ -693,7 +721,7 @@ struct CellModelSolver
           std::make_shared<MatrixOperator<MatrixType, PGV, d>>(grid_view_, u_space_, u_space_, C_ofield_linear_part_))
     , C_ofield_nonlinear_part_op_(std::make_shared<MatrixOperator<MatrixType, PGV, d>>(
           grid_view_, u_space_, u_space_, C_ofield_nonlinear_part_))
-    , ofield_jac_linear_op_(M_ofield_, A_ofield_, C_ofield_linear_part_, kappa_)
+    , ofield_jac_linear_op_(M_ofield_, A_ofield_, C_ofield_linear_part_, kappa_, this)
     , ofield_schur_op_(S_schur_ofield_)
     , ofield_rhs_vector_(2 * size_u_, 0., num_mutexes_ofield_)
     , ofield_f_vector_(ofield_rhs_vector_, 0, size_u_)
@@ -1380,13 +1408,13 @@ struct CellModelSolver
     assemble_stokes_rhs();
   }
 
-  void prepare_ofield_op(const double dt, const size_t cell, const bool /*restricted*/ = false)
+  void prepare_ofield_op(const double dt, const size_t cell, const bool restricted = false)
   {
     u_tmp_.dofs().vector() = u_.dofs().vector();
     P_tmp_[cell].dofs().vector() = P_[cell].dofs().vector();
     phi_tmp_[cell].dofs().vector() = phi_[cell].dofs().vector();
     dt_ = dt;
-    ofield_jac_linear_op_.prepare(dt);
+    ofield_jac_linear_op_.prepare(dt, cell, restricted);
     assemble_ofield_rhs(dt, cell);
     assemble_ofield_linear_jacobian(dt, cell);
   }
@@ -1534,7 +1562,7 @@ struct CellModelSolver
   }
 
   // Applies cell-th orientation field operator (applies F if the orientation field equation is F(y) = 0)
-  VectorType apply_ofield_op(const VectorType& y, const size_t cell, const bool /*restricted*/ = false) const
+  VectorType apply_ofield_op(const VectorType& y, const size_t cell, const bool restricted = false) const
   {
     // linear part
     VectorType ret(y.size());
@@ -1542,7 +1570,7 @@ struct CellModelSolver
     // subtract rhs
     ret -= ofield_rhs_vector_;
     if (!linearize_) {
-      fill_tmp_ofield(cell, y);
+      fill_tmp_ofield(cell, y, restricted);
       // nonlinear part
       VectorViewType res1_vec(ret, size_u_, 2 * size_u_);
       auto nonlinear_res_functional = make_vector_functional(u_space_, res1_vec);
@@ -1559,7 +1587,10 @@ struct CellModelSolver
           });
       nonlinear_res_functional.append(LocalElementIntegralFunctional<E, d>(
           local_binary_to_unary_element_integrand(LocalElementProductScalarWeightIntegrand<E, d>(), nonlinear_res_pf)));
-      nonlinear_res_functional.assemble(use_tbb_);
+      if (!restricted)
+        nonlinear_res_functional.assemble(use_tbb_);
+      else
+        nonlinear_res_functional.assemble_range(ofield_deim_entities_[cell]);
     }
     return ret;
   }
@@ -1895,13 +1926,19 @@ struct CellModelSolver
         range.set_entry(ii, full_range.get_entry(output_dofs[ii]));
   }
 
+  void
+  apply_inverse_pfield_jacobian(const VectorType& source, const VectorType& rhs, VectorType& range, const size_t cell)
+  {
+    assemble_pfield_nonlinear_jacobian(source, cell, false);
+    range = solve_pfield_linear_system(rhs, cell);
+  }
+
   // Currently takes a full-dimensional vector, but only applies the rows that are in pfield_output_dofs
   // As the rows are sparse, there shouldn't be too much performance impact of applying to the whole vector
   void
   apply_ofield_jacobian(const VectorType& source, VectorType& range, const size_t cell, const bool restricted = false)
   {
     const auto& output_dofs = *ofield_deim_output_dofs_[cell];
-    const auto& P_output_dofs = P_deim_output_dofs_[cell];
     const auto& Pnat_output_dofs = Pnat_deim_output_dofs_[cell];
     VectorType& full_range = restricted ? ofield_tmp_vec_ : range;
     VectorViewType range_P(full_range, 0, size_u_);
@@ -1910,36 +1947,36 @@ struct CellModelSolver
     const ConstVectorViewType source_Pnat(source, size_u_, 2 * size_u_);
     // linear part
     ofield_jac_linear_op_.apply(source, full_range);
-#if 0
     // nonlinear_part
     fill_tmp_ofield(cell, source, restricted);
     assemble_C_ofield_nonlinear_part(cell, restricted);
-    auto& tmp_vec = phi_tmp_vec_;
+    auto& tmp_vec = u_tmp_vec_;
     const auto mv = mv_func<ConstVectorViewType, VectorType>(restricted);
-    const auto axpy = axpy_func<VectorViewType, VectorType>(restricted);
-    const auto scal = scal_func<VectorType>(restricted);
     const auto add = add_func<VectorViewType, VectorType>(restricted);
-    mv(M_nonlin_pfield_, source_mu, tmp_vec, phinat_output_dofs);
-    axpy(range_phinat, 1. / (Be_ * std::pow(epsilon_, 2)), tmp_vec, phinat_output_dofs);
-    mv(M_nonlin_pfield_, source_phi, tmp_vec, mu_output_dofs);
-    scal(tmp_vec, 1. / epsilon_, mu_output_dofs);
-
+    mv(C_ofield_nonlinear_part_, source_P, tmp_vec, Pnat_output_dofs);
+    add(range_Pnat, tmp_vec, Pnat_output_dofs);
     if (restricted)
       for (size_t ii = 0; ii < output_dofs.size(); ++ii)
-        range.add_to_entry(ii, full_range.get_entry(output_dofs[ii]));
-#endif
+        range.set_entry(ii, full_range.get_entry(output_dofs[ii]));
+  }
+
+  void
+  apply_inverse_ofield_jacobian(const VectorType& source, const VectorType& rhs, VectorType& range, const size_t cell)
+  {
+    assemble_ofield_nonlinear_jacobian(source, cell, false);
+    range = solve_ofield_linear_system(rhs, cell);
   }
 
   void apply_stokes_jacobian(const VectorType& source, VectorType& range, const bool /*restricted*/ = false)
   {
-    VectorViewType range_u(range, 0, size_u_);
-    VectorViewType range_p(range, size_u_, size_u_ + size_p_);
-    const ConstVectorViewType source_u(source, 0, size_u_);
-    const ConstVectorViewType source_p(source, size_u_, size_u_ + size_p_);
-    A_stokes_.mv(source_u, range_u);
-    B_stokes_.mv(source_p, u_tmp_vec_);
-    range_u += u_tmp_vec_;
-    BT_stokes_.mv(source_u, range_p);
+    S_stokes_.mv(source, range);
+  }
+
+  void apply_inverse_stokes_jacobian(const VectorType& rhs, VectorType& range, const size_t cell)
+  {
+    EigenVectorType rhs_eigen = XT::Common::convert_to<EigenVectorType>(rhs);
+    EigenVectorType ret(stokes_solver_->solve(rhs_eigen.backend()));
+    range = XT::Common::convert_to<VectorType>(ret);
   }
 
   //******************************************************************************************************************
@@ -2174,15 +2211,14 @@ struct CellModelSolver
   // jacobian
   void assemble_ofield_nonlinear_jacobian(const VectorType& y, const size_t cell, const bool restricted = false) const
   {
-    assemble_C_ofield_nonlinear_part(y, cell, restricted);
+    fill_tmp_ofield(cell, y, restricted);
+    assemble_C_ofield_nonlinear_part(cell, restricted);
     S_schur_ofield_.backend() = S_schur_ofield_linear_part_.backend();
     S_schur_ofield_.axpy(-dt_ / kappa_, C_ofield_nonlinear_part_);
   }
 
-  void assemble_C_ofield_nonlinear_part(const VectorType& y, const size_t cell, const bool restricted = false) const
+  void assemble_C_ofield_nonlinear_part(const size_t cell, const bool restricted = false) const
   {
-    ConstVectorViewType P_vec(y, 0, size_u_);
-    P_tmp_[cell].dofs().vector() = P_vec;
     XT::Functions::GenericGridFunction<E, 1, 1> c1_Pa_P2(
         /*order = */ 2. * u_space_.max_polorder(),
         /*post_bind_func*/
@@ -2490,6 +2526,12 @@ struct CellModelSolver
   size_t pfield_deim_input_dofs_size(const size_t cell) const
   {
     return pfield_deim_input_dofs_[cell].size();
+  }
+
+  // Dofs needed for evaluation of output_dofs provided in
+  std::vector<size_t> ofield_deim_input_dofs(const size_t cell) const
+  {
+    return ofield_deim_input_dofs_[cell];
   }
 
   // private:
@@ -2963,10 +3005,16 @@ struct CellModelSolver
   }
 
   // sets temporary orientation field discrete functions to source values
-  void fill_tmp_ofield(const size_t cell, const VectorType& source) const
+  void fill_tmp_ofield(const size_t cell, const VectorType& source, const bool restricted = false) const
   {
-    ConstVectorViewType P_vec(source, 0, size_u_);
-    P_tmp_[cell].dofs().vector() = P_vec;
+    if (!restricted) {
+      ConstVectorViewType P_vec(source, 0, size_u_);
+      P_tmp_[cell].dofs().vector() = P_vec;
+    } else {
+      const auto& input_dofs = ofield_deim_input_dofs_[cell];
+      for (size_t ii = 0; ii < Pnat_deim_input_dofs_begin_[cell]; ++ii)
+        P_tmp_[cell].dofs().vector().set_entry(input_dofs[ii], source[input_dofs[ii]]);
+    }
   }
 
   // sets temporary phase field discrete functions to source values
@@ -3139,7 +3187,7 @@ struct CellModelSolver
   mutable std::shared_ptr<MatrixOperator<MatrixType, PGV, d>> A_ofield_op_;
   mutable std::shared_ptr<MatrixOperator<MatrixType, PGV, d>> C_ofield_linear_part_op_;
   mutable std::shared_ptr<MatrixOperator<MatrixType, PGV, d>> C_ofield_nonlinear_part_op_;
-  OfieldMatrixLinearPartOperator<VectorType, MatrixType> ofield_jac_linear_op_;
+  OfieldMatrixLinearPartOperator<VectorType, MatrixType, CellModelSolver> ofield_jac_linear_op_;
   OfieldSchurComplementOperator<EigenVectorType, MatrixType> ofield_schur_op_;
   // finite element vector rhs = (f; g) for ofield system and views on P and Pnat parts f and g
   VectorType ofield_rhs_vector_;
