@@ -233,6 +233,9 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(apply_pfield_op_with_param_overloads,
                                        CellModelSolver::apply_pfield_op_with_param,
                                        5,
                                        6)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(apply_pfield_jacobian_overloads, CellModelSolver::apply_pfield_jacobian, 3, 4)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(apply_ofield_jacobian_overloads, CellModelSolver::apply_ofield_jacobian, 3, 4)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(apply_stokes_jacobian_overloads, CellModelSolver::apply_stokes_jacobian, 2, 3)
 #include <dune/xt/common/reenable_warnings.hh>
 
 
@@ -376,6 +379,9 @@ BOOST_PYTHON_MODULE(libhapodgdt)
       .def("apply_pfield_product_op", &CellModelSolver::apply_pfield_product_op)
       .def("apply_ofield_product_op", &CellModelSolver::apply_ofield_product_op)
       .def("apply_stokes_product_op", &CellModelSolver::apply_stokes_product_op)
+      .def("apply_pfield_jacobian", &CellModelSolver::apply_pfield_jacobian, apply_pfield_jacobian_overloads())
+      .def("apply_ofield_jacobian", &CellModelSolver::apply_ofield_jacobian, apply_ofield_jacobian_overloads())
+      .def("apply_stokes_jacobian", &CellModelSolver::apply_stokes_jacobian, apply_stokes_jacobian_overloads())
       .def("num_cells", &CellModelSolver::num_cells)
       .def("finished", &CellModelSolver::finished)
       .def("linear", &CellModelSolver::linear)

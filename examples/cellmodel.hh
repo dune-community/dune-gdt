@@ -708,7 +708,15 @@ struct CellModelSolver
     , identity_prec_(SolverCategory::Category::sequential)
     , ofield_schur_solver_(
           std::make_shared<OfieldSchurSolverType>(ofield_schur_op_, identity_prec_, 1e-10, 20, 10000, false))
+    , ofield_tmp_vec_(2 * size_u_, 0., 0)
     // , ofield_schur_solver_(std::make_shared<DiagSolverType>())
+    , ofield_deim_input_dofs_(num_cells_)
+    , Pnat_deim_input_dofs_begin_(num_cells_)
+    , ofield_deim_output_dofs_(num_cells_)
+    , ofield_deim_unique_output_dofs_(num_cells_)
+    , P_deim_output_dofs_(num_cells_)
+    , Pnat_deim_output_dofs_(num_cells_)
+    , ofield_deim_entities_(num_cells_)
     , pfield_submatrix_pattern_(make_element_sparsity_pattern(phi_space_, phi_space_, grid_view_))
     // , S_pfield_(3 * size_phi_, 3 * size_phi_, create_pfield_pattern(size_phi_, pfield_submatrix_pattern_), 100)
     // , S_pfield_00_(S_pfield_, 0, size_phi_, 0, size_phi_)
@@ -768,6 +776,7 @@ struct CellModelSolver
     , pfield_tmp_vec_(3 * size_phi_, 0., 0)
     , pfield_tmp_vec2_(3 * size_phi_, 0., 0)
     , phi_tmp_vec_(size_phi_, 0., 0)
+    , u_tmp_vec_(size_u_, 0., 0)
     , u_tmp_(u_space_)
     , u_tmp_local_(std::make_shared<PerThreadVectorLocalFunc>())
     , P_tmp_local_(std::make_shared<PerThreadVectorLocalFuncs>(num_cells_))
@@ -1396,6 +1405,54 @@ struct CellModelSolver
     dt_ = dt;
   }
 
+  void compute_restricted_ofield_dofs(const std::vector<size_t>& output_dofs, const size_t cell)
+  {
+    if (!ofield_deim_output_dofs_[cell] || *ofield_deim_output_dofs_[cell] != output_dofs) {
+      const auto& pattern = create_ofield_pattern(size_u_, ofield_submatrix_pattern_);
+      // We need to keep the original output_dofs which is unordered and may contain duplicates, as the restricted
+      // operator will return exactly these dofs. For computations, however, we often need unique dofs.
+      ofield_deim_output_dofs_[cell] = std::make_shared<std::vector<size_t>>(output_dofs);
+      auto& unique_output_dofs = ofield_deim_unique_output_dofs_[cell];
+      unique_output_dofs = output_dofs;
+      std::sort(unique_output_dofs.begin(), unique_output_dofs.end());
+      unique_output_dofs.erase(std::unique(unique_output_dofs.begin(), unique_output_dofs.end()),
+                               unique_output_dofs.end());
+      // sort output into dofs belonging to phi, phinat and mu
+      auto& P_output_dofs = P_deim_output_dofs_[cell];
+      auto& Pnat_output_dofs = Pnat_deim_output_dofs_[cell];
+      P_output_dofs.clear();
+      Pnat_output_dofs.clear();
+      for (const auto& dof : unique_output_dofs) {
+        if (dof < size_u_)
+          P_output_dofs.push_back(dof);
+        else
+          Pnat_output_dofs.push_back(dof);
+      }
+      for (auto& dof : Pnat_output_dofs)
+        dof -= size_u_;
+      // get input dofs corresponding to output dofs
+      auto& input_dofs = ofield_deim_input_dofs_[cell];
+      input_dofs.clear();
+      for (const auto& dof : unique_output_dofs) {
+        const auto& new_input_dofs = pattern.inner(dof);
+        input_dofs.insert(input_dofs.end(), new_input_dofs.begin(), new_input_dofs.end());
+      }
+      // sort and remove duplicate entries
+      std::sort(input_dofs.begin(), input_dofs.end());
+      input_dofs.erase(std::unique(input_dofs.begin(), input_dofs.end()), input_dofs.end());
+      Pnat_deim_input_dofs_begin_[cell] =
+          std::lower_bound(input_dofs.begin(), input_dofs.end(), size_u_) - input_dofs.begin();
+      // store all entities that contain an output dof
+      const auto& mapper = u_space_.mapper();
+      DynamicVector<size_t> global_indices;
+      ofield_deim_entities_[cell].clear();
+      for (const auto& entity : Dune::elements(grid_view_)) {
+        mapper.global_indices(entity, global_indices);
+        maybe_add_entity(entity, global_indices, *ofield_deim_output_dofs_[cell], ofield_deim_entities_[cell]);
+      } // entities
+    } // if (not already computed)
+  } // void compute_restricted_pfield_dofs(...)
+
   void compute_restricted_pfield_dofs(const std::vector<size_t>& output_dofs, const size_t cell)
   {
     if (!pfield_deim_output_dofs_[cell] || *pfield_deim_output_dofs_[cell] != output_dofs) {
@@ -1477,7 +1534,7 @@ struct CellModelSolver
   }
 
   // Applies cell-th orientation field operator (applies F if the orientation field equation is F(y) = 0)
-  VectorType apply_ofield_op(const VectorType& y, const size_t cell) const
+  VectorType apply_ofield_op(const VectorType& y, const size_t cell, const bool /*restricted*/ = false) const
   {
     // linear part
     VectorType ret(y.size());
@@ -1793,7 +1850,8 @@ struct CellModelSolver
 
   // Currently takes a full-dimensional vector, but only applies the rows that are in pfield_output_dofs
   // As the rows are sparse, there shouldn't be too much performance impact of applying to the whole vector
-  void apply_pfield_jacobian(const VectorType& source, VectorType& range, const size_t cell, const bool restricted)
+  void
+  apply_pfield_jacobian(const VectorType& source, VectorType& range, const size_t cell, const bool restricted = false)
   {
     const auto& output_dofs = *pfield_deim_output_dofs_[cell];
     const auto& phinat_output_dofs = phinat_deim_output_dofs_[cell];
@@ -1837,10 +1895,10 @@ struct CellModelSolver
         range.set_entry(ii, full_range.get_entry(output_dofs[ii]));
   }
 
-#if 0
   // Currently takes a full-dimensional vector, but only applies the rows that are in pfield_output_dofs
   // As the rows are sparse, there shouldn't be too much performance impact of applying to the whole vector
-  void apply_ofield_jacobian(const VectorType& source, VectorType& range, const size_t cell, const bool restricted)
+  void
+  apply_ofield_jacobian(const VectorType& source, VectorType& range, const size_t cell, const bool restricted = false)
   {
     const auto& output_dofs = *ofield_deim_output_dofs_[cell];
     const auto& P_output_dofs = P_deim_output_dofs_[cell];
@@ -1852,6 +1910,7 @@ struct CellModelSolver
     const ConstVectorViewType source_Pnat(source, size_u_, 2 * size_u_);
     // linear part
     ofield_jac_linear_op_.apply(source, full_range);
+#if 0
     // nonlinear_part
     fill_tmp_ofield(cell, source, restricted);
     assemble_C_ofield_nonlinear_part(cell, restricted);
@@ -1868,9 +1927,20 @@ struct CellModelSolver
     if (restricted)
       for (size_t ii = 0; ii < output_dofs.size(); ++ii)
         range.add_to_entry(ii, full_range.get_entry(output_dofs[ii]));
-  }
 #endif
+  }
 
+  void apply_stokes_jacobian(const VectorType& source, VectorType& range, const bool /*restricted*/ = false)
+  {
+    VectorViewType range_u(range, 0, size_u_);
+    VectorViewType range_p(range, size_u_, size_u_ + size_p_);
+    const ConstVectorViewType source_u(source, 0, size_u_);
+    const ConstVectorViewType source_p(source, size_u_, size_u_ + size_p_);
+    A_stokes_.mv(source_u, range_u);
+    B_stokes_.mv(source_p, u_tmp_vec_);
+    range_u += u_tmp_vec_;
+    BT_stokes_.mv(source_u, range_p);
+  }
 
   //******************************************************************************************************************
   //**************************** Methods to assemble rhs, residuals and jacobians ************************************
@@ -3092,6 +3162,20 @@ struct CellModelSolver
   mutable std::shared_ptr<DirectSolverType> ofield_mass_matrix_solver_;
   XT::LA::IdentityPreconditioner<PfieldPhiMuMatrixOperatorType> identity_prec_;
   mutable std::shared_ptr<OfieldSchurSolverType> ofield_schur_solver_;
+  VectorType ofield_tmp_vec_;
+  // Indices for restricted operator in DEIM context
+  std::vector<std::vector<size_t>> ofield_deim_input_dofs_;
+  std::vector<size_t> Pnat_deim_input_dofs_begin_;
+  // output dofs that were computed by the DEIM algorithm
+  std::vector<std::shared_ptr<std::vector<size_t>>> ofield_deim_output_dofs_;
+  std::vector<std::vector<size_t>> ofield_deim_unique_output_dofs_;
+  // output dofs for the respective variables, shifted to range [0, size_phi)
+  std::vector<std::vector<size_t>> P_deim_output_dofs_;
+  std::vector<std::vector<size_t>> Pnat_deim_output_dofs_;
+  // Entities that we have to walk over to calculate values at output dofs
+  std::vector<std::vector<E>> ofield_deim_entities_;
+  // DiscreteFunctions and vectors to be used in (nonlinear) calculations where a source vector is provided
+
   // Sparsity pattern of one block of phase field system matrix
   const XT::LA::SparsityPatternDefault pfield_submatrix_pattern_;
   // Phase field system matrix S = (M/dt+D E 0; G H J; A 0 C)
@@ -3135,9 +3219,6 @@ struct CellModelSolver
   EigenVectorType pfield_tmp_rhs_phimu_;
   EigenVectorViewType pfield_tmp_rhs_phimu_phi_;
   EigenVectorViewType pfield_tmp_rhs_phimu_mu_;
-  // Vectors for phasefield field Newton scheme
-  // TODO: do we need all these vectors? Do we need the same vectors for ofield or can we use the same ones for both?
-  // std::vector<EigenVectorType> pfield_old_result_;
   // Indices for restricted operator in DEIM context
   std::vector<std::vector<size_t>> pfield_deim_input_dofs_;
   // phinat_deim_input_dofs_begin_[cell] contains index of first phinat input dof in pfield_deim_input_dofs_[cell]
@@ -3159,6 +3240,7 @@ struct CellModelSolver
   VectorType pfield_tmp_vec_;
   VectorType pfield_tmp_vec2_;
   VectorType phi_tmp_vec_;
+  VectorType u_tmp_vec_;
   mutable VectorDiscreteFunctionType u_tmp_;
   mutable std::vector<VectorDiscreteFunctionType> P_tmp_;
   mutable std::vector<VectorDiscreteFunctionType> Pnat_tmp_;
