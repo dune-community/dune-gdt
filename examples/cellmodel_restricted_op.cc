@@ -159,7 +159,7 @@ int main(int argc, char* argv[])
       for (size_t kk = 0; kk < num_cells; ++kk) {
         model_solver.compute_restricted_pfield_dofs(pfield_output_dofs, kk);
         auto begin = std::chrono::steady_clock::now();
-        model_solver.prepare_pfield_op(dt, kk, true);
+        model_solver.prepare_pfield_operator(dt, kk, true);
         model_solver.set_pfield_jacobian_state(pfield_state, kk, true);
         restricted_prep_time += std::chrono::steady_clock::now() - begin;
         const auto& pfield_input_dofs = model_solver.pfield_deim_input_dofs(kk);
@@ -168,17 +168,17 @@ int main(int argc, char* argv[])
         for (size_t ii = 0; ii < num_input_dofs; ++ii)
           restricted_source[ii] = pfield_source[pfield_input_dofs[ii]];
         begin = std::chrono::steady_clock::now();
-        auto restricted_result = model_solver.apply_pfield_op(restricted_source, kk, true);
+        auto restricted_result = model_solver.apply_pfield_operator(restricted_source, kk, true);
         restricted_apply_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
         auto restricted_jac_result = model_solver.apply_pfield_jacobian(pfield_source, kk, true);
         restricted_jac_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
-        model_solver2.prepare_pfield_op(dt, kk);
+        model_solver2.prepare_pfield_operator(dt, kk);
         model_solver2.set_pfield_jacobian_state(pfield_state, kk, false);
         prep_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
-        auto result = model_solver2.apply_pfield_op(pfield_source, kk, false);
+        auto result = model_solver2.apply_pfield_operator(pfield_source, kk, false);
         apply_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
         auto jac_result = model_solver2.apply_pfield_jacobian(pfield_source, kk, false);
@@ -206,7 +206,7 @@ int main(int argc, char* argv[])
       for (size_t kk = 0; kk < num_cells; ++kk) {
         model_solver.compute_restricted_ofield_dofs(ofield_output_dofs, kk);
         auto begin = std::chrono::steady_clock::now();
-        model_solver.prepare_ofield_op(dt, kk, true);
+        model_solver.prepare_ofield_operator(dt, kk, true);
         model_solver.set_ofield_jacobian_state(ofield_state, kk, true);
         restricted_prep_time += std::chrono::steady_clock::now() - begin;
         const auto& ofield_input_dofs = model_solver.ofield_deim_input_dofs(kk);
@@ -215,17 +215,17 @@ int main(int argc, char* argv[])
         for (size_t ii = 0; ii < num_input_dofs; ++ii)
           restricted_source[ii] = ofield_source[ofield_input_dofs[ii]];
         begin = std::chrono::steady_clock::now();
-        auto restricted_result = model_solver.apply_ofield_op(restricted_source, kk, true);
+        auto restricted_result = model_solver.apply_ofield_operator(restricted_source, kk, true);
         restricted_apply_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
         auto restricted_jac_result = model_solver.apply_ofield_jacobian(ofield_source, kk, true);
         restricted_jac_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
-        model_solver2.prepare_ofield_op(dt, kk);
+        model_solver2.prepare_ofield_operator(dt, kk);
         model_solver2.set_ofield_jacobian_state(ofield_state, kk, false);
         prep_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
-        auto result = model_solver2.apply_ofield_op(ofield_source, kk, false);
+        auto result = model_solver2.apply_ofield_operator(ofield_source, kk, false);
         apply_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
         auto jac_result = model_solver2.apply_ofield_jacobian(ofield_source, kk, false);

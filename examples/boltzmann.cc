@@ -227,8 +227,14 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(visualize_overloads, CellModelSolver::vis
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(visualize_pfield_overloads, CellModelSolver::visualize_pfield, 2, 3)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(visualize_ofield_overloads, CellModelSolver::visualize_ofield, 2, 3)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(visualize_stokes_overloads, CellModelSolver::visualize_stokes, 2, 3)
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(prepare_pfield_op_overloads, CellModelSolver::prepare_pfield_op, 2, 3)
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(prepare_ofield_op_overloads, CellModelSolver::prepare_ofield_op, 2, 3)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(prepare_pfield_operator_overloads,
+                                       CellModelSolver::prepare_pfield_operator,
+                                       2,
+                                       3)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(prepare_ofield_operator_overloads,
+                                       CellModelSolver::prepare_ofield_operator,
+                                       2,
+                                       3)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(set_pfield_jacobian_state_overloads,
                                        CellModelSolver::set_pfield_jacobian_state,
                                        2,
@@ -237,19 +243,9 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(set_ofield_jacobian_state_overloads,
                                        CellModelSolver::set_ofield_jacobian_state,
                                        2,
                                        3)
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(set_pfield_jacobian_state_with_param_overloads,
-                                       CellModelSolver::set_pfield_jacobian_state_with_param,
-                                       5,
-                                       6)
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(set_ofield_jacobian_state_with_param_overloads,
-                                       CellModelSolver::set_ofield_jacobian_state_with_param,
-                                       3,
-                                       4)
-
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(apply_pfield_op_with_param_overloads,
-                                       CellModelSolver::apply_pfield_op_with_param,
-                                       5,
-                                       6)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(apply_pfield_operator_overloads, CellModelSolver::apply_pfield_operator, 2, 3)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(apply_ofield_operator_overloads, CellModelSolver::apply_ofield_operator, 2, 3)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(apply_stokes_operator_overloads, CellModelSolver::apply_stokes_operator, 1, 2)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(apply_pfield_jacobian_overloads, CellModelSolver::apply_pfield_jacobian, 2, 3)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(apply_ofield_jacobian_overloads, CellModelSolver::apply_ofield_jacobian, 2, 3)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(apply_stokes_jacobian_overloads, CellModelSolver::apply_stokes_jacobian, 1, 2)
@@ -372,48 +368,37 @@ BOOST_PYTHON_MODULE(libhapodgdt)
       .def("visualize_pfield", &CellModelSolver::visualize_pfield, visualize_pfield_overloads())
       .def("visualize_ofield", &CellModelSolver::visualize_ofield, visualize_ofield_overloads())
       .def("visualize_stokes", &CellModelSolver::visualize_stokes, visualize_stokes_overloads())
-      .def("prepare_pfield_op", &CellModelSolver::prepare_pfield_op, prepare_pfield_op_overloads())
-      .def("prepare_ofield_op", &CellModelSolver::prepare_ofield_op, prepare_ofield_op_overloads())
-      .def("prepare_stokes_op", &CellModelSolver::prepare_stokes_op)
-      .def("apply_pfield_op", &CellModelSolver::apply_pfield_op)
-      .def("apply_ofield_op", &CellModelSolver::apply_ofield_op)
-      .def("apply_stokes_op", &CellModelSolver::apply_stokes_op)
-      .def("apply_pfield_op_with_param",
-           &CellModelSolver::apply_pfield_op_with_param,
-           apply_pfield_op_with_param_overloads())
-      .def("apply_ofield_op_with_param", &CellModelSolver::apply_ofield_op_with_param)
-      .def("apply_stokes_op_with_param", &CellModelSolver::apply_stokes_op_with_param)
+      .def("prepare_pfield_operator", &CellModelSolver::prepare_pfield_operator, prepare_pfield_operator_overloads())
+      .def("prepare_ofield_operator", &CellModelSolver::prepare_ofield_operator, prepare_ofield_operator_overloads())
+      .def("prepare_stokes_operator", &CellModelSolver::prepare_stokes_operator)
+      .def("apply_pfield_operator", &CellModelSolver::apply_pfield_operator, apply_pfield_operator_overloads())
+      .def("apply_ofield_operator", &CellModelSolver::apply_ofield_operator, apply_ofield_operator_overloads())
+      .def("apply_stokes_operator", &CellModelSolver::apply_stokes_operator, apply_stokes_operator_overloads())
       .def("set_pfield_vec", &CellModelSolver::set_pfield_vec)
       .def("set_ofield_vec", &CellModelSolver::set_ofield_vec)
       .def("set_stokes_vec", &CellModelSolver::set_stokes_vec)
       .def("solve", &CellModelSolver::solve)
       .def("next_n_timesteps", &CellModelSolver::next_n_timesteps)
-      .def("apply_inverse_pfield_op", &CellModelSolver::apply_inverse_pfield_op)
-      .def("apply_inverse_ofield_op", &CellModelSolver::apply_inverse_ofield_op)
-      .def("apply_inverse_pfield_op_with_param", &CellModelSolver::apply_inverse_pfield_op_with_param)
-      .def("apply_inverse_ofield_op_with_param", &CellModelSolver::apply_inverse_ofield_op_with_param)
-      .def("apply_inverse_stokes_op", &CellModelSolver::apply_inverse_stokes_op)
-      .def("apply_pfield_product_op", &CellModelSolver::apply_pfield_product_op)
-      .def("apply_ofield_product_op", &CellModelSolver::apply_ofield_product_op)
-      .def("apply_stokes_product_op", &CellModelSolver::apply_stokes_product_op)
+      .def("apply_inverse_pfield_operator", &CellModelSolver::apply_inverse_pfield_operator)
+      .def("apply_inverse_ofield_operator", &CellModelSolver::apply_inverse_ofield_operator)
+      .def("apply_inverse_stokes_operator", &CellModelSolver::apply_inverse_stokes_operator)
+      .def("apply_pfield_product_operator", &CellModelSolver::apply_pfield_product_operator)
+      .def("apply_ofield_product_operator", &CellModelSolver::apply_ofield_product_operator)
+      .def("apply_stokes_product_operator", &CellModelSolver::apply_stokes_product_operator)
       .def("set_pfield_jacobian_state",
            &CellModelSolver::set_pfield_jacobian_state,
            set_pfield_jacobian_state_overloads())
       .def("set_ofield_jacobian_state",
            &CellModelSolver::set_ofield_jacobian_state,
            set_ofield_jacobian_state_overloads())
-      .def("set_pfield_jacobian_state_with_param",
-           &CellModelSolver::set_pfield_jacobian_state_with_param,
-           set_pfield_jacobian_state_with_param_overloads())
-      .def("set_ofield_jacobian_state_with_param",
-           &CellModelSolver::set_ofield_jacobian_state_with_param,
-           set_ofield_jacobian_state_with_param_overloads())
       .def("apply_pfield_jacobian", &CellModelSolver::apply_pfield_jacobian, apply_pfield_jacobian_overloads())
       .def("apply_ofield_jacobian", &CellModelSolver::apply_ofield_jacobian, apply_ofield_jacobian_overloads())
       .def("apply_stokes_jacobian", &CellModelSolver::apply_stokes_jacobian, apply_stokes_jacobian_overloads())
       .def("apply_inverse_pfield_jacobian", &CellModelSolver::apply_inverse_pfield_jacobian)
       .def("apply_inverse_ofield_jacobian", &CellModelSolver::apply_inverse_ofield_jacobian)
       .def("apply_inverse_stokes_jacobian", &CellModelSolver::apply_inverse_stokes_jacobian)
+      .def("update_pfield_parameters", &CellModelSolver::update_pfield_parameters)
+      .def("update_ofield_parameters", &CellModelSolver::update_ofield_parameters)
       .def("num_cells", &CellModelSolver::num_cells)
       .def("finished", &CellModelSolver::finished)
       .def("linear", &CellModelSolver::linear)

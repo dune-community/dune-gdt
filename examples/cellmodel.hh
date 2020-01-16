@@ -1153,19 +1153,19 @@ struct CellModelSolver
       // do a timestep
       std::cout << "Current time: " << t_ << std::endl;
       for (size_t kk = 0; kk < num_cells_; ++kk) {
-        prepare_pfield_op(dt, kk);
-        ret[kk].push_back(apply_inverse_pfield_op(ret[kk].back(), kk));
+        prepare_pfield_operator(dt, kk);
+        ret[kk].push_back(apply_inverse_pfield_operator(ret[kk].back(), kk));
         set_pfield_vec(kk, ret[kk].back());
         std::cout << "Pfield " << kk << " done" << std::endl;
-        prepare_ofield_op(dt, kk);
-        ret[num_cells_ + kk].push_back(apply_inverse_ofield_op(ret[num_cells_ + kk].back(), kk));
+        prepare_ofield_operator(dt, kk);
+        ret[num_cells_ + kk].push_back(apply_inverse_ofield_operator(ret[num_cells_ + kk].back(), kk));
         set_ofield_vec(kk, ret[num_cells_ + kk].back());
         std::cout << "Ofield " << kk << " done" << std::endl;
       }
 
       // stokes system
-      prepare_stokes_op();
-      ret[2 * num_cells_].push_back(apply_inverse_stokes_op());
+      prepare_stokes_operator();
+      ret[2 * num_cells_].push_back(apply_inverse_stokes_operator());
       set_stokes_vec(ret[2 * num_cells_].back());
       std::cout << "Stokes done" << std::endl;
 
@@ -1214,19 +1214,19 @@ struct CellModelSolver
 
       // do a timestep
       for (size_t kk = 0; kk < num_cells_; ++kk) {
-        prepare_pfield_op(dt, kk);
-        pfield_vectors_[kk] = apply_inverse_pfield_op(pfield_vectors_[kk], kk);
+        prepare_pfield_operator(dt, kk);
+        pfield_vectors_[kk] = apply_inverse_pfield_operator(pfield_vectors_[kk], kk);
         ret[kk].push_back(pfield_vectors_[kk]);
         // std::cout << "Pfield " << kk << " done" << std::endl;
-        prepare_ofield_op(dt, kk);
-        ofield_vectors_[kk] = apply_inverse_ofield_op(ofield_vectors_[kk], kk);
+        prepare_ofield_operator(dt, kk);
+        ofield_vectors_[kk] = apply_inverse_ofield_operator(ofield_vectors_[kk], kk);
         ret[num_cells_ + kk].push_back(ofield_vectors_[kk]);
         // std::cout << "Ofield " << kk << " done" << std::endl;
       }
 
       // stokes system
-      prepare_stokes_op();
-      stokes_vector_ = apply_inverse_stokes_op();
+      prepare_stokes_operator();
+      stokes_vector_ = apply_inverse_stokes_operator();
       ret[2 * num_cells_].push_back(stokes_vector_);
       // std::cout << "Stokes done" << std::endl;
 
@@ -1243,7 +1243,7 @@ struct CellModelSolver
   // applies the pfield mass matrix to phi, phinat, mu
   // To calculate the sum of the squared L2 products of phi, phinat and mu, calculate the inner product of the result
   // with vec.
-  VectorType apply_pfield_product_op(const VectorType& vec) const
+  VectorType apply_pfield_product_operator(const VectorType& vec) const
   {
     VectorType ret(3 * size_phi_);
     ConstVectorViewType phi_view(vec, 0, size_phi_);
@@ -1260,7 +1260,7 @@ struct CellModelSolver
 
   // applies the ofield mass matrix to P, Pnat
   // To calculate the sum of the squared L2 products of P and Pnat, calculate the inner product of the result with vec.
-  VectorType apply_ofield_product_op(const VectorType& vec) const
+  VectorType apply_ofield_product_operator(const VectorType& vec) const
   {
     VectorType ret(2 * size_u_);
     ConstVectorViewType P_view(vec, 0, size_u_);
@@ -1274,7 +1274,7 @@ struct CellModelSolver
 
   // applies the ofield mass matrix to P, Pnat
   // To calculate the sum of the squared L2 products of P and Pnat, calculate the inner product of the result with vec.
-  VectorType apply_stokes_product_op(const VectorType& vec) const
+  VectorType apply_stokes_product_operator(const VectorType& vec) const
   {
     VectorType ret(size_u_ + size_p_);
     ConstVectorViewType u_view(vec, 0, size_u_);
@@ -1427,7 +1427,7 @@ struct CellModelSolver
   //****** the values of other variables, so cannot be computed once and for all in the constructor )       **********
   //******************************************************************************************************************
 
-  void prepare_stokes_op()
+  void prepare_stokes_operator()
   {
     u_tmp_.dofs().vector() = u_.dofs().vector();
     for (size_t kk = 0; kk < num_cells_; kk++) {
@@ -1439,7 +1439,7 @@ struct CellModelSolver
     assemble_stokes_rhs();
   }
 
-  void prepare_ofield_op(const double dt, const size_t cell, const bool restricted = false)
+  void prepare_ofield_operator(const double dt, const size_t cell, const bool restricted = false)
   {
     u_tmp_.dofs().vector() = u_.dofs().vector();
     P_tmp_[cell].dofs().vector() = P_[cell].dofs().vector();
@@ -1450,7 +1450,7 @@ struct CellModelSolver
     assemble_ofield_linear_jacobian(dt, cell);
   }
 
-  void prepare_pfield_op(const double dt, const size_t cell, const bool restricted = false)
+  void prepare_pfield_operator(const double dt, const size_t cell, const bool restricted = false)
   {
     u_tmp_.dofs().vector() = u_.dofs().vector();
     P_tmp_[cell].dofs().vector() = P_[cell].dofs().vector();
@@ -1579,18 +1579,12 @@ struct CellModelSolver
   //******************************************************************************************************************
 
   // Applies stokes operator (applies the F if Stokes equation is F(y) = 0)
-  VectorType apply_stokes_op(VectorType y) const
+  VectorType apply_stokes_operator(VectorType y, const bool /*restricted*/ = false) const
   {
     VectorType ret(size_u_ + size_p_, 0.);
     S_stokes_.mv(y, ret);
     ret -= stokes_rhs_vector_;
     return ret;
-  }
-
-  VectorType apply_stokes_op_with_param(VectorType y, const XT::Common::Parameter& /*param*/) const
-  {
-    // TODO: implement parameter handling
-    return apply_stokes_op(y);
   }
 
   void assemble_nonlinear_part_of_ofield_residual(VectorType& residual, const size_t cell, const bool restricted)
@@ -1618,7 +1612,7 @@ struct CellModelSolver
   }
 
   // Applies cell-th orientation field operator (applies F if the orientation field equation is F(y) = 0)
-  VectorType apply_ofield_op(const VectorType& y, const size_t cell, const bool restricted = false)
+  VectorType apply_ofield_operator(const VectorType& y, const size_t cell, const bool restricted = false)
   {
     const auto& output_dofs = *ofield_deim_output_dofs_[cell];
     const auto& unique_output_dofs = ofield_deim_unique_output_dofs_[cell];
@@ -1648,13 +1642,7 @@ struct CellModelSolver
     }
   }
 
-  VectorType apply_ofield_op_with_param(const VectorType& y, const size_t cell, const double Pa)
-  {
-    update_ofield_parameters(cell, Pa);
-    return apply_ofield_op(y, cell);
-  }
-
-  void update_ofield_parameters(const size_t cell, const double Pa)
+  void update_ofield_parameters(const double Pa)
   {
     // Pa may have been set to a new value already (via update_pfield_parameters)
     if (XT::Common::FloatCmp::ne(Pa, last_ofield_Pa_)) {
@@ -1665,12 +1653,11 @@ struct CellModelSolver
       MatrixOperator<MatrixType, PGV, d> ofield_elliptic_op(grid_view_, u_space_, u_space_, C_ofield_elliptic_part_);
       ofield_elliptic_op.append(LocalElementIntegralBilinearForm<E, d>(LocalLaplaceIntegrand<E, d>(-1. / Pa_)));
       ofield_elliptic_op.assemble(use_tbb_);
-      prepare_ofield_op(dt_, cell);
     }
   }
 
   // Applies cell-th phase field operator (applies F if phase field equation is F(y) = 0)
-  VectorType apply_pfield_op(const VectorType& y, const size_t cell, const bool restricted)
+  VectorType apply_pfield_operator(const VectorType& y, const size_t cell, const bool restricted = false)
   {
     const auto& output_dofs = *pfield_deim_output_dofs_[cell];
     const auto& unique_output_dofs = pfield_deim_unique_output_dofs_[cell];
@@ -1700,8 +1687,7 @@ struct CellModelSolver
     }
   }
 
-  void
-  update_pfield_parameters(const size_t cell, const bool restricted, const double Be, const double Ca, const double Pa)
+  void update_pfield_parameters(const double Be, const double Ca, const double Pa)
   {
     if (XT::Common::FloatCmp::ne(Be, Be_) || XT::Common::FloatCmp::ne(Ca, Ca_)
         || XT::Common::FloatCmp::ne(Pa, last_pfield_Pa_)) {
@@ -1711,25 +1697,9 @@ struct CellModelSolver
       Ca_ = Ca;
       Pa_ = Pa;
       last_pfield_Pa_ = Pa_;
-      // TODO: we do not need to reassemble rhs if only Ca or gamma is changed and we do not need to prepare the phimu
-      // operator again if only c_1 or Pa have changed
-      assemble_pfield_rhs(dt_, cell, restricted);
       pfield_jac_linear_op_.set_params(gamma_, epsilon_, Be);
       pfield_phimu_matrixop_.set_params(gamma_, epsilon_, Be, Ca);
-      pfield_phimu_matrixop_.prepare(dt_);
     }
-  }
-
-  VectorType apply_pfield_op_with_param(const VectorType& y,
-                                        const size_t cell,
-                                        const double Be,
-                                        const double Ca,
-                                        const double Pa,
-                                        const bool restricted = false)
-  {
-    // std::cout << "Pfield: Be " << Be << ", Ca: " << Ca << ", Pa: " << Pa << std::endl;
-    update_pfield_parameters(cell, restricted, Be, Ca, Pa);
-    return apply_pfield_op(y, cell, restricted);
   }
 
   //******************************************************************************************************************
@@ -1737,7 +1707,7 @@ struct CellModelSolver
   //******************************************************************************************************************
 
   // Applies inverse stokes operator (solves F(y) = 0)
-  VectorType apply_inverse_stokes_op() const
+  VectorType apply_inverse_stokes_operator() const
   {
     // now solve the system
     // auto begin = std::chrono::steady_clock::now();
@@ -1758,7 +1728,7 @@ struct CellModelSolver
 
   // Applies inverse orientation field operator (solves F(y) = 0)
   // y_guess is the initial guess for the Newton iteration
-  VectorType apply_inverse_ofield_op(const VectorType& y_guess, const size_t cell)
+  VectorType apply_inverse_ofield_operator(const VectorType& y_guess, const size_t cell)
   {
     if (linearize_) {
       return solve_ofield_linear_system(ofield_rhs_vector_, cell);
@@ -1774,7 +1744,7 @@ struct CellModelSolver
 
       // ********* compute residual *********
       auto begin = std::chrono::steady_clock::now();
-      auto residual = apply_ofield_op(y_guess, cell);
+      auto residual = apply_ofield_operator(y_guess, cell);
       auto res_norm = ofield_residual_norm(residual, l2_norm_P, l2_norm_Pnat);
       std::chrono::duration<double> time = std::chrono::steady_clock::now() - begin;
       // std::cout << "Computing residual took: " << time.count() << " s!" << std::endl;
@@ -1819,7 +1789,7 @@ struct CellModelSolver
                         "max iterations reached when trying to compute automatic dampening!\n|residual|_l2 = "
                             << res_norm << "\nl = " << iter << "\n");
           y_n_plus_1 = y_n + update * lambda;
-          residual = apply_ofield_op(y_n_plus_1, cell);
+          residual = apply_ofield_operator(y_n_plus_1, cell);
           candidate_res = ofield_residual_norm(residual, l2_norm_P, l2_norm_Pnat);
           // std::cout << "Candidate res: " << candidate_res << std::endl;
           lambda /= 2;
@@ -1834,16 +1804,9 @@ struct CellModelSolver
     }
   }
 
-  VectorType apply_inverse_ofield_op_with_param(const VectorType& y_guess, const size_t cell, const double Pa)
-  {
-    // std::cout << "Ofield inverse params: Pa: " << Pa << std::endl;
-    update_ofield_parameters(cell, Pa);
-    return apply_inverse_ofield_op(y_guess, cell);
-  }
-
   // Applies inverse phase field operator (solves F(y) = 0)
   // y_guess is the initial guess for the Newton iteration
-  VectorType apply_inverse_pfield_op(const VectorType& y_guess, const size_t cell)
+  VectorType apply_inverse_pfield_operator(const VectorType& y_guess, const size_t cell)
   {
     if (linearize_) {
       return solve_pfield_linear_system(pfield_rhs_vector_, cell);
@@ -1860,7 +1823,7 @@ struct CellModelSolver
 
       // ********* compute residual *********
       auto begin = std::chrono::steady_clock::now();
-      auto residual = apply_pfield_op(y_guess, cell, false);
+      auto residual = apply_pfield_operator(y_guess, cell, false);
       auto res_norm = pfield_residual_norm(residual, l2_norm_phi, l2_norm_phinat, l2_norm_mu);
       std::chrono::duration<double> time = std::chrono::steady_clock::now() - begin;
       // std::cout << "Computing residual took: " << time.count() << " s!" << std::endl;
@@ -1905,7 +1868,7 @@ struct CellModelSolver
                         "max iterations reached when trying to compute automatic dampening!\n|residual|_l2 = "
                             << res_norm << "\nl = " << iter << "\n");
           x_n_plus_1 = x_n + update * lambda;
-          residual = apply_pfield_op(x_n_plus_1, cell, false);
+          residual = apply_pfield_operator(x_n_plus_1, cell, false);
           candidate_res = pfield_residual_norm(residual, l2_norm_phi, l2_norm_phinat, l2_norm_mu);
           // std::cout << "Candidate res: " << candidate_res << std::endl;
           lambda /= 2;
@@ -1920,14 +1883,6 @@ struct CellModelSolver
     }
   }
 
-  VectorType apply_inverse_pfield_op_with_param(
-      const VectorType& y_guess, const size_t cell, const double Be, const double Ca, const double Pa)
-  {
-    // std::cout << "Pfield inverse params: Be " << Be << ", Ca: " << Ca << ", Pa: " << Pa << std::endl;
-    update_pfield_parameters(cell, false, Be, Ca, Pa);
-    return apply_inverse_pfield_op(y_guess, cell);
-  }
-
   //******************************************************************************************************************
   //********************************************** Apply jacobians ***************************************************
   //******************************************************************************************************************
@@ -1935,17 +1890,6 @@ struct CellModelSolver
   void set_pfield_jacobian_state(const VectorType& source, const size_t cell, const bool restricted = false)
   {
     assemble_pfield_nonlinear_jacobian(source, cell, restricted);
-  }
-
-  void set_pfield_jacobian_state_with_param(const VectorType& source,
-                                            const size_t cell,
-                                            const double Be,
-                                            const double Ca,
-                                            const double Pa,
-                                            const bool restricted = false)
-  {
-    update_pfield_parameters(cell, restricted, Be, Ca, Pa);
-    set_pfield_jacobian_state(source, cell, restricted);
   }
 
   // Currently takes a full-dimensional vector, but only applies the rows that are in pfield_output_dofs
@@ -1998,18 +1942,9 @@ struct CellModelSolver
     return solve_pfield_linear_system(rhs, cell);
   }
 
-  void set_ofield_jacobian_state(const VectorType& source, const size_t cell, const bool /*restricted*/ = false)
+  void set_ofield_jacobian_state(const VectorType& source, const size_t cell, const bool restricted = false)
   {
-    assemble_ofield_nonlinear_jacobian(source, cell);
-  }
-
-  void set_ofield_jacobian_state_with_param(const VectorType& source,
-                                            const size_t cell,
-                                            const double Pa,
-                                            const bool restricted = false)
-  {
-    update_ofield_parameters(cell, Pa);
-    set_ofield_jacobian_state(source, cell, restricted);
+    assemble_ofield_nonlinear_jacobian(source, cell, restricted);
   }
 
   // Currently takes a full-dimensional vector, but only applies the rows that are in pfield_output_dofs
