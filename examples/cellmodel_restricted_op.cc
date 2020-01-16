@@ -88,6 +88,8 @@ int main(int argc, char* argv[])
                                  gamma,
                                  epsilon,
                                  In,
+                                 "custom",
+                                 "schur",
                                  linearize);
     CellModelSolver model_solver2(testcase,
                                   t_end,
@@ -106,6 +108,8 @@ int main(int argc, char* argv[])
                                   gamma,
                                   epsilon,
                                   In,
+                                  "custom",
+                                  "schur",
                                   linearize);
 
     const size_t pfield_size = model_solver.pfield_vec(0).size();

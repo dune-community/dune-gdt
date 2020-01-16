@@ -620,12 +620,13 @@ struct CellModelSolver
   using JacobianRetType = XT::Common::FieldMatrix<R, d, d>;
   using ColMajorBackendType = ::Eigen::SparseMatrix<R, ::Eigen::ColMajor>;
   using RowMajorBackendType = typename MatrixType::BackendType;
-  using DirectSolverType = ::Eigen::SparseLU<ColMajorBackendType>;
+  using LUSolverType = ::Eigen::SparseLU<ColMajorBackendType>;
+  using OfieldDirectSolverType = ::Eigen::SparseLU<ColMajorBackendType>;
   using SolverType = ::Eigen::BiCGSTAB<RowMajorBackendType, ::Eigen::IncompleteLUT<R>>;
   using DiagSolverType = ::Eigen::BiCGSTAB<RowMajorBackendType, ::Eigen::DiagonalPreconditioner<R>>;
   using PhiDirichletConstraintsType = DirichletConstraints<PI, SpaceInterface<PGV, 1, 1, R>>;
   using PfieldPhiMuMatrixOperatorType =
-      PfieldPhiMuMatrixOperator<EigenVectorType, MatrixType, DirectSolverType, PhiDirichletConstraintsType>;
+      PfieldPhiMuMatrixOperator<EigenVectorType, MatrixType, LUSolverType, PhiDirichletConstraintsType>;
   using PfieldPhiMuSolverType = Dune::RestartedGMResSolver<EigenVectorType>;
   // using PfieldPhiMuSolverType = Dune::BiCGSTABSolver<EigenVectorType>;
   using OfieldSchurSolverType = Dune::RestartedGMResSolver<EigenVectorType>;
@@ -651,6 +652,8 @@ struct CellModelSolver
                   const double gamma = 0.025, // phase field mobility coefficient
                   const double epsilon = 0.21, // phase field parameter
                   const double In = 1., // interaction parameter
+                  const std::string& pfield_solver_type = "custom",
+                  const std::string& ofield_solver_type = "schur",
                   const bool linearize = false,
                   const double pol_order = 2)
     : lower_left_(get_lower_left(testcase))
@@ -672,6 +675,8 @@ struct CellModelSolver
     , Ca_(Ca)
     , epsilon_(epsilon)
     , In_(In)
+    , pfield_solver_type_(pfield_solver_type)
+    , ofield_solver_type_(ofield_solver_type)
     , vol_domain_((upper_right_[0] - lower_left_[0]) * (upper_right_[1] - lower_left_[1]))
     , num_cells_(get_num_cells(testcase))
     , linearize_(linearize)
@@ -708,11 +713,14 @@ struct CellModelSolver
     , u_dirichlet_constraints_(make_dirichlet_constraints(u_space_, boundary_info_))
     , phi_dirichlet_constraints_(make_dirichlet_constraints(phi_space_, boundary_info_))
     , ofield_submatrix_pattern_(make_element_sparsity_pattern(u_space_, u_space_, grid_view_))
-    // , S_ofield_(2 * size_u_, 2 * size_u_, create_ofield_pattern(size_u_, ofield_submatrix_pattern_), 100)
-    // , S_ofield_00_(S_ofield_, 0, size_u_, 0, size_u_)
-    // , S_ofield_01_(S_ofield_, 0, size_u_, size_u_, 2 * size_u_)
-    // , S_ofield_10_(S_ofield_, size_u_, 2 * size_u_, 0, size_u_)
-    // , S_ofield_11_(S_ofield_, size_u_, 2 * size_u_, size_u_, 2 * size_u_)
+    , S_ofield_(ofield_solver_type_ == "direct"
+                    ? std::make_shared<MatrixType>(
+                          2 * size_u_, 2 * size_u_, create_ofield_pattern(size_u_, ofield_submatrix_pattern_), 0)
+                    : std::make_shared<MatrixType>(0, 0))
+    , S_ofield_00_(*S_ofield_, 0, size_u_, 0, size_u_)
+    , S_ofield_01_(*S_ofield_, 0, size_u_, size_u_, 2 * size_u_)
+    , S_ofield_10_(*S_ofield_, size_u_, 2 * size_u_, 0, size_u_)
+    , S_ofield_11_(*S_ofield_, size_u_, 2 * size_u_, size_u_, 2 * size_u_)
     , M_ofield_(size_u_, size_u_, ofield_submatrix_pattern_, num_mutexes_ofield_)
     , A_ofield_(size_u_, size_u_, ofield_submatrix_pattern_, num_mutexes_ofield_)
     , C_ofield_elliptic_part_(size_u_, size_u_, ofield_submatrix_pattern_, num_mutexes_ofield_)
@@ -735,9 +743,10 @@ struct CellModelSolver
     , P_tmp_eigen_(size_u_, 0., 0)
     , P_tmp_eigen2_(size_u_, 0., 0)
     // , ofield_old_result_(num_cells_, EigenVectorType(2 * size_u_, 0.))
-    , stokes_solver_(std::make_shared<DirectSolverType>())
+    , stokes_solver_(std::make_shared<LUSolverType>())
     , ofield_solver_(std::make_shared<SolverType>())
-    , ofield_mass_matrix_solver_(std::make_shared<DirectSolverType>())
+    , ofield_direct_solver_(std::make_shared<OfieldDirectSolverType>())
+    , ofield_mass_matrix_solver_(std::make_shared<LUSolverType>())
     , identity_prec_(SolverCategory::Category::sequential)
     , ofield_schur_solver_(
           std::make_shared<OfieldSchurSolverType>(ofield_schur_op_, identity_prec_, 1e-10, 20, 10000, false))
@@ -766,7 +775,7 @@ struct CellModelSolver
     , M_nonlin_pfield_(size_phi_, size_phi_, pfield_submatrix_pattern_, num_mutexes_pfield_)
     , G_pfield_(size_phi_, size_phi_, pfield_submatrix_pattern_, num_mutexes_pfield_)
     , pfield_solver_(std::make_shared<SolverType>())
-    , pfield_mass_matrix_solver_(std::make_shared<DirectSolverType>())
+    , pfield_mass_matrix_solver_(std::make_shared<LUSolverType>())
     , pfield_phimu_matrixop_(M_pfield_,
                              *pfield_mass_matrix_solver_,
                              D_pfield_,
@@ -1033,12 +1042,12 @@ struct CellModelSolver
     M_ofield_op_->append(ofield_elliptic_op);
     M_ofield_op_->assemble(use_tbb_);
     // S_schur_ofield_colmajor_ = S_schur_ofield_.backend();
-    // ofield_solver_->analyzePattern(S_ofield_.backend());
     // ofield_schur_solver_->analyzePattern(S_schur_ofield_.backend());
     M_ofield_colmajor_ = M_ofield_.backend();
     ofield_mass_matrix_solver_->analyzePattern(M_ofield_colmajor_);
     ofield_mass_matrix_solver_->factorize(M_ofield_colmajor_);
-
+    if (ofield_solver_type_ == "direct")
+      setup_direct_ofield_solver();
 
     /*************************************************************************************************
      **************************************** Phasefield *********************************************
@@ -1086,6 +1095,22 @@ struct CellModelSolver
   bool finished() const
   {
     return XT::Common::FloatCmp::eq(t_end_, t_);
+  }
+
+  void setup_direct_ofield_solver()
+  {
+    S_ofield_11_ = M_ofield_;
+    ofield_direct_solver_->analyzePattern(S_ofield_->backend());
+  }
+
+  void fill_S_ofield() const
+  {
+    S_ofield_00_ = M_ofield_;
+    S_ofield_00_.axpy(dt_, A_ofield_);
+    S_ofield_01_ = M_ofield_;
+    S_ofield_01_ *= dt_ / kappa_;
+    S_ofield_10_ = C_ofield_linear_part_;
+    S_ofield_10_ += C_ofield_nonlinear_part_;
   }
 
   //******************************************************************************************************************
@@ -2834,25 +2859,29 @@ struct CellModelSolver
   //*******************************************  Linear solvers ******************************************************
   //******************************************************************************************************************
 
-#if 0
   VectorType solve_ofield_linear_system(const VectorType& rhs, const size_t cell) const
   {
-    //    std::ofstream S_file("S_" + XT::Common::to_string(dt) + ".txt");
-    //    S_file << S_ << std::endl;
-    //    S_file.close();
-    //    DUNE_THROW(NotImplemented, "");
-    //    const auto ret = XT::LA::solve(S_, rhs_vector_, XT::LA::SolverOptions<MatrixType>::options("lu.umfpack"));
-    //      ofield_update_ = XT::LA::solve(S_, ofield_residual_);
+    if (ofield_solver_type_ == "direct") {
+      return ofield_apply_direct_solver(rhs, cell);
+    } else if (ofield_solver_type_ == "schur") {
+      return ofield_apply_schur_solver(rhs, cell);
+    } else {
+      DUNE_THROW(Dune::NotImplemented,
+                 "Orientation field solver of type '" + ofield_solver_type_ + "' not implemented!");
+    }
+  }
+
+  VectorType ofield_apply_direct_solver(const VectorType& rhs, const size_t cell) const
+  {
+    fill_S_ofield();
     EigenVectorType update(rhs.size());
-    ofield_solver_->compute(S_ofield_.backend());
+    ofield_direct_solver_->factorize(S_ofield_->backend());
     const auto rhs_eig = XT::Common::convert_to<EigenVectorType>(rhs);
-    update.backend() = ofield_solver_->solveWithGuess(rhs_eig.backend(), ofield_old_result_[cell].backend());
-    ofield_old_result_[cell] = update;
+    update.backend() = ofield_direct_solver_->solve(rhs_eig.backend());
     return XT::Common::convert_to<VectorType>(update);
   }
-#endif
 
-  VectorType solve_ofield_linear_system(const VectorType& rhs, const size_t cell) const
+  VectorType ofield_apply_schur_solver(const VectorType& rhs, const size_t cell) const
   {
     VectorType ret(2 * size_u_, 0., 0);
     ConstVectorViewType rhs_P(rhs, 0, size_u_);
@@ -3161,6 +3190,8 @@ struct CellModelSolver
   double Ca_;
   double epsilon_;
   double In_;
+  std::string pfield_solver_type_;
+  std::string ofield_solver_type_;
   const double vol_domain_;
   const size_t num_cells_;
   const bool linearize_;
@@ -3222,11 +3253,11 @@ struct CellModelSolver
   // Sparsity pattern of one block of orientation field system matrix
   XT::LA::SparsityPatternDefault ofield_submatrix_pattern_;
   // Orientation field system matrix S = (M/dt+A B; C D)
-  // MatrixType S_ofield_;
-  // mutable MatrixViewType S_ofield_00_;
-  // mutable MatrixViewType S_ofield_01_;
-  // mutable MatrixViewType S_ofield_10_;
-  // mutable MatrixViewType S_ofield_11_;
+  std::shared_ptr<MatrixType> S_ofield_;
+  mutable MatrixViewType S_ofield_00_;
+  mutable MatrixViewType S_ofield_01_;
+  mutable MatrixViewType S_ofield_10_;
+  mutable MatrixViewType S_ofield_11_;
   // Orientation field mass matrix
   MatrixType M_ofield_;
   MatrixType A_ofield_;
@@ -3262,9 +3293,10 @@ struct CellModelSolver
   mutable ColMajorBackendType M_ofield_colmajor_;
   mutable ColMajorBackendType S_schur_ofield_colmajor_;
   // Linear solvers and linear operators needed for solvers
-  std::shared_ptr<DirectSolverType> stokes_solver_;
+  std::shared_ptr<LUSolverType> stokes_solver_;
   mutable std::shared_ptr<SolverType> ofield_solver_;
-  mutable std::shared_ptr<DirectSolverType> ofield_mass_matrix_solver_;
+  mutable std::shared_ptr<OfieldDirectSolverType> ofield_direct_solver_;
+  mutable std::shared_ptr<LUSolverType> ofield_mass_matrix_solver_;
   XT::LA::IdentityPreconditioner<PfieldPhiMuMatrixOperatorType> identity_prec_;
   mutable std::shared_ptr<OfieldSchurSolverType> ofield_schur_solver_;
   VectorType ofield_tmp_vec_;
@@ -3301,7 +3333,7 @@ struct CellModelSolver
   mutable ColMajorBackendType M_pfield_colmajor_;
   // Pfield solvers and linear operators
   mutable std::shared_ptr<SolverType> pfield_solver_;
-  mutable std::shared_ptr<DirectSolverType> pfield_mass_matrix_solver_;
+  mutable std::shared_ptr<LUSolverType> pfield_mass_matrix_solver_;
   PfieldPhiMuMatrixOperatorType pfield_phimu_matrixop_;
   PfieldMatrixLinearPartOperator<VectorType, MatrixType, PhiDirichletConstraintsType, CellModelSolver>
       pfield_jac_linear_op_;

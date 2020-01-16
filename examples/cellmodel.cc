@@ -92,6 +92,8 @@ int main(int argc, char* argv[])
                                  gamma,
                                  epsilon,
                                  In,
+                                 "custom",
+                                 "schur",
                                  linearize);
 #if 1
     auto result = model_solver.solve(dt, true, write_step, filename, subsampling);
