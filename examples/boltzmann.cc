@@ -183,6 +183,7 @@ struct VectorExporter
         .def(init<const size_t, const ScalarType, optional<const size_t>>())
         .def("create_from_buffer", &create_from_buffer)
         .staticmethod("create_from_buffer")
+        .def("__eq__", &Vec::operator==)
         .def("size", &Vec::size)
         .def("add_to_entry", &Vec::add_to_entry)
         .def("__setitem__", &Vec::set_entry)
