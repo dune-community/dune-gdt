@@ -214,25 +214,25 @@ public:
                            param);
       assert(integrand_values_in_in_.rows() >= rows_in && "This must not happen!");
       assert(integrand_values_in_in_.cols() >= cols_in && "This must not happen!");
-      assert(integrand_values_in_out_.rows() >= rows_in && "This must not happen!");
-      assert(integrand_values_in_out_.cols() >= cols_out && "This must not happen!");
-      assert(integrand_values_out_in_.rows() >= rows_out && "This must not happen!");
-      assert(integrand_values_out_in_.cols() >= cols_in && "This must not happen!");
-      assert(integrand_values_out_out_.rows() >= rows_out && "This must not happen!");
-      assert(integrand_values_out_out_.cols() >= cols_out && "This must not happen!");
+      // assert(integrand_values_in_out_.rows() >= rows_in && "This must not happen!");
+      // assert(integrand_values_in_out_.cols() >= cols_out && "This must not happen!");
+      // assert(integrand_values_out_in_.rows() >= rows_out && "This must not happen!");
+      // assert(integrand_values_out_in_.cols() >= cols_in && "This must not happen!");
+      // assert(integrand_values_out_out_.rows() >= rows_out && "This must not happen!");
+      // assert(integrand_values_out_out_.cols() >= cols_out && "This must not happen!");
       // compute integral
       for (size_t ii = 0; ii < rows_in; ++ii) {
         for (size_t jj = 0; jj < cols_in; ++jj)
           result_in_in[ii][jj] += integrand_values_in_in_[ii][jj] * integration_factor * quadrature_weight;
-        for (size_t jj = 0; jj < cols_out; ++jj)
-          result_in_out[ii][jj] += integrand_values_in_out_[ii][jj] * integration_factor * quadrature_weight;
+        // for (size_t jj = 0; jj < cols_out; ++jj)
+        // result_in_out[ii][jj] += integrand_values_in_out_[ii][jj] * integration_factor * quadrature_weight;
       }
-      for (size_t ii = 0; ii < rows_out; ++ii) {
-        for (size_t jj = 0; jj < cols_in; ++jj)
-          result_out_in[ii][jj] += integrand_values_out_in_[ii][jj] * integration_factor * quadrature_weight;
-        for (size_t jj = 0; jj < cols_out; ++jj)
-          result_out_out[ii][jj] += integrand_values_out_out_[ii][jj] * integration_factor * quadrature_weight;
-      }
+      // for (size_t ii = 0; ii < rows_out; ++ii) {
+      // for (size_t jj = 0; jj < cols_in; ++jj)
+      // result_out_in[ii][jj] += integrand_values_out_in_[ii][jj] * integration_factor * quadrature_weight;
+      // for (size_t jj = 0; jj < cols_out; ++jj)
+      // result_out_out[ii][jj] += integrand_values_out_out_[ii][jj] * integration_factor * quadrature_weight;
+      // }
     } // loop over all quadrature points
   } // ... apply2(...)
 

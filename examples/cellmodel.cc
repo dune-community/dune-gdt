@@ -74,6 +74,11 @@ int main(int argc, char* argv[])
     bool subsampling = config.get<bool>("output.subsampling", true);
     // a negative value of write step is interpreted as "write all steps"
     double write_step = config.template get<double>("output.write_step", -1.);
+    const double gmres_reduction = DXTC_CONFIG_GET("gmres_reduction", 1e-10);
+    const int direct_gmres_restart = DXTC_CONFIG_GET("direct_gmres_restart", 100);
+    // const int custom_gmres_restart = DXTC_CONFIG_GET("custom_gmres_restart", 40);
+    const int gmres_verbose = DXTC_CONFIG_GET("gmres_verbose", 0);
+
 
     CellModelSolver model_solver(testcase,
                                  t_end,
@@ -92,8 +97,12 @@ int main(int argc, char* argv[])
                                  gamma,
                                  epsilon,
                                  In,
-                                 "custom",
+                                 //  "custom",
+                                 "direct",
                                  "schur",
+                                 gmres_reduction,
+                                 direct_gmres_restart,
+                                 gmres_verbose,
                                  linearize);
 #if 1
     auto result = model_solver.solve(dt, true, write_step, filename, subsampling);

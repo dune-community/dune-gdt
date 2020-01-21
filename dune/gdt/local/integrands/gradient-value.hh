@@ -167,6 +167,110 @@ private:
 }; // class LocalElementGradientValueIntegrand
 
 
+/**
+ * Given an inducing (scalar-valued) function eps, computes `eps(x) * (\nabla phi(x) * n) * psi(x)` for all combinations
+ * of phi in the ansatz basis and psi in the test basis. Here, n is the unit outer normal of the intersection. Test and
+ * ansatz basis have to be scalar-valued, vector-valued bases are not (yet) implemented.
+ */
+template <class I, class RF = double, class F = double>
+class LocalBoundaryIntersectionGradientValueIntegrand
+  : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, RF, F>
+{
+  using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, RF, F>;
+  using ThisType = LocalBoundaryIntersectionGradientValueIntegrand;
+
+public:
+  using BaseType::d;
+  using typename BaseType::DomainType;
+  using typename BaseType::E;
+  using typename BaseType::IntersectionType;
+  using typename BaseType::LocalAnsatzBasisType;
+  using typename BaseType::LocalTestBasisType;
+  using TestBasisValues = std::vector<typename LocalTestBasisType::RangeType>;
+  using AnsatzBasisJacobians = std::vector<typename LocalAnsatzBasisType::DerivativeRangeType>;
+  using GridFunctionType = XT::Functions::GridFunction<E, 1, 1, F>;
+
+  LocalBoundaryIntersectionGradientValueIntegrand(const F eps = 1.)
+    : BaseType()
+    , eps_(eps)
+    , local_eps_(eps_.local_function())
+  {}
+
+  LocalBoundaryIntersectionGradientValueIntegrand(const GridFunctionType eps)
+    : BaseType()
+    , eps_(eps)
+    , local_eps_(eps_.local_function())
+  {}
+
+  LocalBoundaryIntersectionGradientValueIntegrand(const ThisType& other)
+    : BaseType(other.parameter_type())
+    , eps_(other.eps_)
+    , local_eps_(eps_.local_function())
+  {}
+
+  LocalBoundaryIntersectionGradientValueIntegrand(ThisType&& source) = default;
+
+  std::unique_ptr<BaseType> copy() const override final
+  {
+    return std::make_unique<ThisType>(*this);
+  }
+
+protected:
+  void post_bind(const IntersectionType& inter) override final
+  {
+    local_eps_->bind(inter.inside());
+  }
+
+public:
+  int order(const LocalTestBasisType& test_basis,
+            const LocalAnsatzBasisType& ansatz_basis,
+            const LocalTestBasisType& /*test_basis_outside*/,
+            const LocalAnsatzBasisType& /*ansatz_basis_outside*/,
+            const XT::Common::Parameter& param = {}) const override final
+  {
+    return local_eps_->order(param) + test_basis.order(param) + ansatz_basis.order(param);
+  }
+
+  using BaseType::evaluate;
+
+  void evaluate(const LocalTestBasisType& test_basis,
+                const LocalAnsatzBasisType& ansatz_basis,
+                const LocalTestBasisType& /*test_basis_outside*/,
+                const LocalAnsatzBasisType& /*ansatz_basis_outside*/,
+                const DomainType& point_in_reference_intersection,
+                DynamicMatrix<F>& result,
+                DynamicMatrix<F>& /*result_in_out*/,
+                DynamicMatrix<F>& /*result_out_in*/,
+                DynamicMatrix<F>& /*result_out_out*/,
+                const XT::Common::Parameter& param = {}) const override final
+  {
+    // prepare storage
+    const size_t rows = test_basis.size(param);
+    const size_t cols = ansatz_basis.size(param);
+    if (result.rows() < rows || result.cols() < cols)
+      result.resize(rows, cols);
+    const auto point_in_inside_reference_element =
+        this->intersection().geometryInInside().global(point_in_reference_intersection);
+    const F eps = local_eps_->evaluate(point_in_inside_reference_element, param);
+    test_basis.evaluate(point_in_inside_reference_element, test_values_, param);
+    ansatz_basis.jacobians(point_in_inside_reference_element, ansatz_jacobians_, param);
+    const auto n = this->intersection().unitOuterNormal(point_in_reference_intersection);
+    for (size_t jj = 0; jj < cols; ++jj) {
+      // Ansatz is required to be scalar-valued, so jacobians are 1 x d matrices
+      const F val_jj = (ansatz_jacobians_[jj][0] * n) * eps;
+      for (size_t ii = 0; ii < rows; ++ii)
+        result[ii][jj] = val_jj * test_values_[ii];
+    }
+  } // ... evaluate(...)
+
+private:
+  const GridFunctionType eps_;
+  std::unique_ptr<typename GridFunctionType::LocalFunctionType> local_eps_;
+  mutable TestBasisValues test_values_;
+  mutable AnsatzBasisJacobians ansatz_jacobians_;
+}; // class LocalBoundaryIntersectionGradientValueIntegrand
+
+
 } // namespace GDT
 } // namespace Dune
 

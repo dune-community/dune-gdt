@@ -153,11 +153,11 @@ int main(int argc, char* argv[])
     std::chrono::duration<double> pfield_direct_time(0.);
     std::chrono::duration<double> ofield_direct_time(0.);
     auto begin = std::chrono::steady_clock::now();
-    const auto result2 = model_solver2.solve(dt, false, write_step, filename, subsampling);
-    pfield_direct_time = std::chrono::steady_clock::now() - begin;
-    begin = std::chrono::steady_clock::now();
     const auto result1 = model_solver.solve(dt, false, write_step, filename, subsampling);
     ref_time = std::chrono::steady_clock::now() - begin;
+    begin = std::chrono::steady_clock::now();
+    const auto result2 = model_solver2.solve(dt, false, write_step, filename, subsampling);
+    pfield_direct_time = std::chrono::steady_clock::now() - begin;
     // begin = std::chrono::steady_clock::now();
     // const auto result3 = model_solver3.solve(dt, false, write_step, filename, subsampling);
     // ofield_direct_time = std::chrono::steady_clock::now() - begin;
