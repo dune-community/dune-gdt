@@ -12,7 +12,8 @@
 
 #include <dune/istl/preconditioner.hh>
 
-using namespace Dune;
+namespace Dune {
+
 
 template <class VectorType>
 class IdentityPreconditioner : public Dune::Preconditioner<VectorType, VectorType>
@@ -117,5 +118,8 @@ private:
   const SolverType& M_inv_;
   SolverCategory::Category category_;
 };
+
+
+} // namespace Dune
 
 #endif // DUNE_GDT_TEST_CELLMODEL_PRECONDITIONERS_HH

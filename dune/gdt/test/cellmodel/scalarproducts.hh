@@ -12,7 +12,8 @@
 
 #include <dune/istl/scalarproducts.hh>
 
-using namespace Dune;
+namespace Dune {
+
 
 template <class VectorType, class MatrixType>
 class MassMatrixScalarProduct : public ScalarProduct<VectorType>
@@ -118,5 +119,8 @@ private:
   mutable VectorType tmp_vec_;
   mutable VectorType tmp_vec2_;
 };
+
+
+} // namespace Dune
 
 #endif // DUNE_GDT_TEST_CELLMODEL_SCALARPRODUCTS_HH

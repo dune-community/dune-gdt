@@ -58,7 +58,6 @@ struct CellModelSolver
   using I = XT::Grid::extract_intersection_t<GV>;
   using PI = XT::Grid::extract_intersection_t<PGV>;
   using MatrixType = XT::LA::EigenRowMajorSparseMatrix<double>;
-  using DenseMatrixType = XT::LA::EigenDenseMatrix<double>;
   using VectorType = XT::LA::CommonDenseVector<double>;
   using EigenVectorType = XT::LA::EigenDenseVector<double>;
   using MatrixViewType = XT::LA::MatrixView<MatrixType>;
@@ -699,7 +698,7 @@ struct CellModelSolver
   std::shared_ptr<MatrixOperator<MatrixType, PGV, 1>> M_nonlin_pfield_op_;
   PfieldMatrixLinearPartOperator<VectorType, MatrixType, PhiDirichletConstraintsType, CellModelSolver>
       pfield_jac_linear_op_;
-  PfieldLinearSolver<VectorType, MatrixType, EigenVectorType, PhiDirichletConstraintsType> pfield_solver_;
+  PfieldLinearSolver pfield_solver_;
   // Phase field rhs vector (g h f)
   VectorType pfield_rhs_vector_;
   VectorViewType pfield_g_vector_;

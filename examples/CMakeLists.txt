@@ -44,5 +44,9 @@ add_custom_target(examples)
 add_dependencies(examples ${examples_targets})
 
 dune_library_add_sources("boltzmann" SOURCES boltzmann-bindings.cc)
-dune_library_add_sources("cellmodel" SOURCES cellmodel-bindings.cc ../dune/gdt/test/cellmodel/cellmodel.cc)
+dune_library_add_sources("cellmodel"
+                         SOURCES
+                         cellmodel-bindings.cc
+                         ../dune/gdt/test/cellmodel/cellmodel.cc
+                         ../dune/gdt/test/cellmodel/linearsolvers.cc)
 dune_library_add_sources("vectors" SOURCES xt-vector-bindings.cc)

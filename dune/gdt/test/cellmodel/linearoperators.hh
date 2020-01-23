@@ -11,8 +11,10 @@
 #define DUNE_GDT_TEST_CELLMODEL_LINEAROPERATORS_HH
 
 #include <dune/istl/operators.hh>
+#include <dune/xt/common/parameter.hh>
 
-using namespace Dune;
+namespace Dune {
+
 
 template <class VectorType>
 class LinearOperatorWrapper : public Dune::LinearOperator<VectorType, VectorType>
@@ -226,7 +228,7 @@ public:
     last_E_result_ = tmp_vec_.backend();
     M_ell_.mv(tmp_vec_, tmp_vec2_);
     y.axpy(-dt_ * gamma_, tmp_vec2_);
-    for (const auto& DoF : solver_.dirichlet_constraints().dirichlet_DoFs())
+    for (const auto& DoF : solver_.dirichlet_dofs())
       y[DoF] = x[DoF];
   }
 
@@ -450,5 +452,8 @@ private:
   mutable Vector y_mu_;
   mutable Vector tmp_vec_;
 };
+
+
+} // namespace Dune
 
 #endif // DUNE_GDT_TEST_CELLMODEL_LINEAROPERATORS_HH

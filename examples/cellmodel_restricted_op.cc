@@ -9,7 +9,7 @@
 
 #include "config.h"
 
-#include "cellmodel.hh"
+#include <dune/gdt/test/cellmodel/cellmodel.hh>
 
 #include <chrono>
 #include <random>

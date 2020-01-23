@@ -15,6 +15,7 @@
 
 int main(int argc, char* argv[])
 {
+  using namespace Dune;
   try {
     MPIHelper::instance(argc, argv);
     if (argc > 1)
