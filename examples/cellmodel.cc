@@ -9,7 +9,9 @@
 
 #include "config.h"
 
-#include "cellmodel.hh"
+#include <dune/common/parallel/mpihelper.hh>
+
+#include <dune/gdt/test/cellmodel/cellmodel.hh>
 
 int main(int argc, char* argv[])
 {
@@ -75,10 +77,11 @@ int main(int argc, char* argv[])
     // a negative value of write step is interpreted as "write all steps"
     double write_step = config.template get<double>("output.write_step", -1.);
     const double gmres_reduction = DXTC_CONFIG_GET("gmres_reduction", 1e-10);
-    const int direct_gmres_restart = DXTC_CONFIG_GET("direct_gmres_restart", 100);
-    // const int custom_gmres_restart = DXTC_CONFIG_GET("custom_gmres_restart", 40);
+    const int gmres_restart = DXTC_CONFIG_GET("gmres_restart", 100);
+    const double inner_gmres_reduction = DXTC_CONFIG_GET("inner_gmres_reduction", 1e-3);
+    const int inner_gmres_maxit = DXTC_CONFIG_GET("inner_gmres_maxit", 10);
     const int gmres_verbose = DXTC_CONFIG_GET("gmres_verbose", 0);
-
+    // const std::string pfield_solver_type = DXTC_CONFIG_GET("pfield_solver_type", "custom");
 
     CellModelSolver model_solver(testcase,
                                  t_end,
@@ -97,15 +100,21 @@ int main(int argc, char* argv[])
                                  gamma,
                                  epsilon,
                                  In,
-                                 //  "custom",
-                                 "direct",
+                                 PfieldLinearSolverType::schur_fgmres_gmres,
+                                 PfieldMassMatrixSolverType::sparse_lu,
                                  "schur",
                                  gmres_reduction,
-                                 direct_gmres_restart,
+                                 gmres_restart,
+                                 gmres_verbose,
+                                 inner_gmres_reduction,
+                                 inner_gmres_maxit,
                                  gmres_verbose,
                                  linearize);
 #if 1
+    auto begin = std::chrono::steady_clock::now();
     auto result = model_solver.solve(dt, true, write_step, filename, subsampling);
+    const std::chrono::duration<double> time = std::chrono::steady_clock::now() - begin;
+    std::cout << "Solving took: " << time.count() << " s." << std::endl;
     for (const auto& vec1 : result[0])
       std::cout << &vec1 << std::endl;
 

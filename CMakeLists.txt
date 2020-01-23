@@ -41,9 +41,15 @@ include(DuneUtils)
 # start a dune project with information from dune.module
 dune_project()
 if(DUNE_XT_WITH_PYTHON_BINDINGS)
-  dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune MODULE_LIBRARIES dunegdt hapodgdt)
+  dune_enable_all_packages(INCLUDE_DIRS
+                           ${dune-gdt_SOURCE_DIR}/dune
+                           MODULE_LIBRARIES
+                           dunegdt
+                           boltzmann
+                           cellmodel
+                           vectors)
 else()
-  dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune MODULE_LIBRARIES hapodgdt)
+  dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune MODULE_LIBRARIES boltzmann cellmodel vectors)
 endif()
 
 add_header_listing()

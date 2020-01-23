@@ -20,11 +20,6 @@
 #include <fstream>
 #include <random>
 
-#include <boost/timer/timer.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/python.hpp>
-#include <boost/python/numpy.hpp>
-
 #include <dune/common/parallel/mpihelper.hh>
 #include <dune/common/fvector.hh>
 

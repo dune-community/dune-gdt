@@ -31,7 +31,7 @@ enum class SpaceType
 };
 
 
-std::ostream& operator<<(std::ostream& out, const SpaceType& space_type)
+inline std::ostream& operator<<(std::ostream& out, const SpaceType& space_type)
 {
   if (space_type == SpaceType::continuous_lagrange)
     out << "continuous_lagrange";
