@@ -10,7 +10,7 @@
 #ifndef DUNE_GDT_TEST_CELLMODEL_LINEAR_SOLVER_TYPES_HH
 #define DUNE_GDT_TEST_CELLMODEL_LINEAR_SOLVER_TYPES_HH
 
-enum class PfieldLinearSolverType
+enum class CellModelLinearSolverType
 {
   direct,
   gmres,
@@ -21,7 +21,7 @@ enum class PfieldLinearSolverType
   schur_fgmres_bicgstab
 };
 
-enum class PfieldMassMatrixSolverType
+enum class CellModelMassMatrixSolverType
 {
   sparse_lu,
   cg,

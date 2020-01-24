@@ -82,7 +82,6 @@ struct CellModelSolver
   using LUSolverType = ::Eigen::SparseLU<ColMajorBackendType>;
   using OfieldDirectSolverType = ::Eigen::SparseLU<ColMajorBackendType>;
   using PhiDirichletConstraintsType = DirichletConstraints<PI, SpaceInterface<PGV, 1, 1, R>>;
-
   using OfieldSchurSolverType = Dune::RestartedGMResSolver<EigenVectorType>;
   using PerThreadVectorLocalFunc = XT::Common::PerThreadValue<std::unique_ptr<VectorLocalDiscreteFunctionType>>;
   using PerThreadScalarLocalFuncs = XT::Common::PerThreadValue<std::vector<std::unique_ptr<LocalDiscreteFunctionType>>>;
@@ -107,8 +106,8 @@ struct CellModelSolver
       const double gamma = 0.025, // phase field mobility coefficient
       const double epsilon = 0.21, // phase field parameter
       const double In = 1., // interaction parameter
-      const PfieldLinearSolverType pfield_solver_type = PfieldLinearSolverType::schur_fgmres_gmres,
-      const PfieldMassMatrixSolverType pfield_mass_matrix_solver_type = PfieldMassMatrixSolverType::sparse_lu,
+      const CellModelLinearSolverType pfield_solver_type = CellModelLinearSolverType::schur_fgmres_gmres,
+      const CellModelMassMatrixSolverType pfield_mass_matrix_solver_type = CellModelMassMatrixSolverType::sparse_lu,
       const std::string& ofield_solver_type = "schur",
       const double outer_reduction = 1e-10,
       const int outer_restart = 100,
@@ -124,10 +123,6 @@ struct CellModelSolver
   bool linear() const;
 
   bool finished() const;
-
-  void setup_direct_ofield_solver();
-
-  void fill_S_ofield() const;
 
   //******************************************************************************************************************
   //********************************* Solve methods for whole system of equations ************************************
@@ -473,16 +468,6 @@ struct CellModelSolver
   // Copies low-dimensional vec to given entries of high-dimensional vec.
   void copy_ld_to_hd_vec(const std::vector<size_t> dofs, const VectorType& ld_vec, VectorType& hd_vec);
 
-  //******************************************************************************************************************
-  //*******************************************  Linear solvers ******************************************************
-  //******************************************************************************************************************
-
-  VectorType solve_ofield_linear_system(const VectorType& rhs, const size_t cell) const;
-
-  VectorType ofield_apply_direct_solver(const VectorType& rhs, const size_t /*cell*/) const;
-
-  VectorType ofield_apply_schur_solver(const VectorType& rhs, const size_t cell) const;
-
   //***************************************************************************************************************
   //*********************************************  Helper methods  ************************************************
   //***************************************************************************************************************
@@ -498,10 +483,6 @@ struct CellModelSolver
 
   // get number of cells from testcase name
   static size_t get_num_cells(const std::string& testcase);
-
-  // creates sparsity pattern of orientation field system matrix
-  static XT::LA::SparsityPatternDefault create_ofield_pattern(const size_t n,
-                                                              const XT::LA::SparsityPatternDefault& submatrix_pattern);
 
   // creates sparsity pattern of stokes system matrix
   static XT::LA::SparsityPatternDefault create_stokes_pattern(const SpaceInterface<PGV, d, 1, R>& u_space,
@@ -618,12 +599,6 @@ struct CellModelSolver
   PhiDirichletConstraintsType phi_dirichlet_constraints_;
   // Sparsity pattern of one block of orientation field system matrix
   XT::LA::SparsityPatternDefault ofield_submatrix_pattern_;
-  // Orientation field system matrix S = (M/dt+A B; C D)
-  std::shared_ptr<MatrixType> S_ofield_;
-  mutable MatrixViewType S_ofield_00_;
-  mutable MatrixViewType S_ofield_01_;
-  mutable MatrixViewType S_ofield_10_;
-  mutable MatrixViewType S_ofield_11_;
   // Orientation field mass matrix
   MatrixType M_ofield_;
   MatrixType A_ofield_;
@@ -635,37 +610,21 @@ struct CellModelSolver
   mutable MatrixType C_ofield_nonlinear_part_;
   // Linear part of ofield schur matrix M/dt + A - 1/kappa C
   MatrixType S_schur_ofield_linear_part_;
-  mutable MatrixType S_schur_ofield_;
   // Matrix operators for orientation field matrices
   std::shared_ptr<MatrixOperator<MatrixType, PGV, d>> M_ofield_op_;
   mutable std::shared_ptr<MatrixOperator<MatrixType, PGV, d>> A_ofield_op_;
   mutable std::shared_ptr<MatrixOperator<MatrixType, PGV, d>> C_ofield_linear_part_op_;
   mutable std::shared_ptr<MatrixOperator<MatrixType, PGV, d>> C_ofield_nonlinear_part_op_;
   OfieldMatrixLinearPartOperator<VectorType, MatrixType, CellModelSolver> ofield_jac_linear_op_;
-  MatrixToLinearOperator<EigenVectorType, MatrixType> ofield_schur_op_;
+  OfieldLinearSolver ofield_solver_;
   // finite element vector rhs = (f; g) for ofield system and views on P and Pnat parts f and g
   VectorType ofield_rhs_vector_;
   VectorViewType ofield_f_vector_;
   VectorViewType ofield_g_vector_;
-  mutable std::vector<EigenVectorType> P_eigen_;
-  mutable EigenVectorType P_tmp_eigen_;
-  mutable EigenVectorType P_tmp_eigen2_;
-  // Vectors for orientation field Newton scheme
-  // TODO: do we need all these vectors? Do we need the same vectors for pfield or can we use the same ones for both?
-  // mutable std::vector<EigenVectorType> ofield_old_result_;
-  // VectorType ofield_residual_;
-  // Eigen column major matrix backend, needed for direct solvers
-  mutable ColMajorBackendType S_colmajor_;
-  mutable ColMajorBackendType M_ofield_colmajor_;
-  mutable ColMajorBackendType S_ofield_colmajor_;
-  mutable ColMajorBackendType S_schur_ofield_colmajor_;
   // Linear solvers and linear operators needed for solvers
+  mutable ColMajorBackendType S_colmajor_;
   std::shared_ptr<LUSolverType> stokes_solver_;
   // mutable std::shared_ptr<SolverType> ofield_solver_;
-  mutable std::shared_ptr<OfieldDirectSolverType> ofield_direct_solver_;
-  mutable std::shared_ptr<LUSolverType> ofield_mass_matrix_solver_;
-  IdentityPreconditioner<EigenVectorType> identity_prec_;
-  mutable std::shared_ptr<OfieldSchurSolverType> ofield_schur_solver_;
   VectorType ofield_tmp_vec_;
   VectorType ofield_tmp_vec2_;
   // Indices for restricted operator in DEIM context

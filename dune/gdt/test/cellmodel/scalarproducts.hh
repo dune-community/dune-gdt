@@ -121,6 +121,62 @@ private:
 };
 
 
+template <class VectorType, class MatrixType>
+class OfieldScalarProduct : public ScalarProduct<VectorType>
+{
+public:
+  //! export types
+  typedef VectorType domain_type;
+  typedef typename VectorType::field_type field_type;
+  typedef typename FieldTraits<field_type>::real_type real_type;
+  using ConstVectorViewType = XT::LA::ConstVectorView<VectorType>;
+
+  OfieldScalarProduct(const MatrixType& M)
+    : M_(M)
+    , size_P_(M_.rows())
+    , tmp_vec_(size_P_, 0., 0)
+    , tmp_vec2_(size_P_, 0., 0)
+  {}
+
+  virtual field_type dot(const VectorType& x, const VectorType& y) override final
+  {
+    const ConstVectorViewType y_P(y, 0, size_P_);
+    const ConstVectorViewType y_Pnat(y, size_P_, 2 * size_P_);
+    auto& x_P = tmp_vec_;
+    for (size_t ii = 0; ii < size_P_; ++ii)
+      x_P[ii] = x[ii];
+    M_.mv(x_P, tmp_vec2_);
+    field_type ret = y_P.dot(tmp_vec2_);
+    auto& x_Pnat = tmp_vec_;
+    for (size_t ii = 0; ii < size_P_; ++ii)
+      x_Pnat[ii] = x[size_P_ + ii];
+    M_.mv(x_Pnat, tmp_vec2_);
+    ret += y_Pnat.dot(tmp_vec2_);
+    return ret;
+  }
+
+  /*! \brief Norm of a right-hand side vector.
+     The vector must be consistent on the interior+border partition
+   */
+  virtual real_type norm(const VectorType& x) override final
+  {
+    return std::sqrt(dot(x, x));
+  }
+
+  //! Category of the scalar product (see SolverCategory::Category)
+  virtual SolverCategory::Category category() const override final
+  {
+    return SolverCategory::sequential;
+  }
+
+private:
+  const MatrixType& M_;
+  const size_t size_P_;
+  mutable VectorType tmp_vec_;
+  mutable VectorType tmp_vec2_;
+};
+
+
 } // namespace Dune
 
 #endif // DUNE_GDT_TEST_CELLMODEL_SCALARPRODUCTS_HH

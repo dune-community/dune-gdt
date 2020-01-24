@@ -34,6 +34,197 @@
 namespace Dune {
 
 
+bool is_schur_solver(const CellModelLinearSolverType solver_type)
+{
+  return (solver_type == CellModelLinearSolverType::schur_gmres
+          || solver_type == CellModelLinearSolverType::schur_fgmres_gmres
+          || solver_type == CellModelLinearSolverType::schur_fgmres_bicgstab);
+}
+
+
+CellModelLinearSolverWrapper::CellModelLinearSolverWrapper(
+    std::shared_ptr<LinearOperatorType> linear_operator,
+    std::shared_ptr<Dune::ScalarProduct<EigenVectorType>> scalar_product,
+    const MatrixType& M,
+    const CellModelLinearSolverType solver_type,
+    const CellModelMassMatrixSolverType mass_matrix_solver_type,
+    const size_t system_matrix_size,
+    const XT::LA::SparsityPatternDefault& system_matrix_pattern,
+    const size_t num_cells,
+    const double outer_reduction,
+    const int outer_restart,
+    const int outer_verbose,
+    const double inner_reduction,
+    const int inner_maxit,
+    const int inner_verbose)
+  : linear_operator_(linear_operator)
+  , scalar_product_(scalar_product)
+  , M_(M)
+  , solver_type_(solver_type)
+  , mass_matrix_solver_type_(mass_matrix_solver_type)
+  , S_(is_schur_solver(solver_type_)
+           ? std::make_shared<MatrixType>(0, 0)
+           : std::make_shared<MatrixType>(system_matrix_size, system_matrix_size, system_matrix_pattern, 0))
+  , S_colmajor_(solver_type_ == CellModelLinearSolverType::direct ? std::make_shared<ColMajorBackendType>(S_->backend())
+                                                                  : nullptr)
+  , mass_matrix_lu_solver_(mass_matrix_solver_type_ == CellModelMassMatrixSolverType::sparse_lu
+                               ? std::make_shared<LUSolverType>()
+                               : nullptr)
+  , mass_matrix_cg_solver_(
+        mass_matrix_solver_type_ == CellModelMassMatrixSolverType::cg ? std::make_shared<CGSolverType>() : nullptr)
+  , mass_matrix_cg_incomplete_cholesky_solver_(mass_matrix_solver_type_
+                                                       == CellModelMassMatrixSolverType::cg_incomplete_cholesky
+                                                   ? std::make_shared<CGIncompleteCholeskySolverType>()
+                                                   : nullptr)
+  , direct_solver_(solver_type_ == CellModelLinearSolverType::direct ? std::make_shared<LUSolverType>() : nullptr)
+  , identity_preconditioner_(std::make_shared<IdentityPreconditionerType>(SolverCategory::Category::sequential))
+  , preconditioner_solver_(
+        create_preconditioner_solver(linear_operator_, *scalar_product_, inner_reduction, inner_verbose, inner_maxit))
+  , preconditioner_(std::make_shared<IterativeSolverPreconditionerType>(preconditioner_solver_,
+                                                                        SolverCategory::Category::sequential))
+  , outer_solver_(
+        create_iterative_solver(linear_operator_, *scalar_product_, outer_reduction, outer_restart, outer_verbose))
+  , previous_update_(num_cells, EigenVectorType(system_matrix_size, 0.))
+{
+  if (direct_solver_) {
+    S_colmajor_->makeCompressed();
+    direct_solver_->analyzePattern(*S_colmajor_);
+  }
+}
+
+void CellModelLinearSolverWrapper::setup()
+{
+  if (mass_matrix_lu_solver_)
+    mass_matrix_lu_solver_->compute(M_.backend());
+  if (mass_matrix_cg_solver_)
+    mass_matrix_cg_solver_->compute(M_.backend());
+  if (mass_matrix_cg_incomplete_cholesky_solver_)
+    mass_matrix_cg_incomplete_cholesky_solver_->compute(M_.backend());
+}
+
+void CellModelLinearSolverWrapper::set_params(const XT::Common::Parameter& param)
+{
+  linear_operator_->set_params(param);
+}
+
+void CellModelLinearSolverWrapper::prepare(const double dt, const size_t cell, const bool restricted)
+{
+  linear_operator_->prepare(dt, cell, restricted);
+}
+
+CellModelLinearSolverWrapper::MatrixType& CellModelLinearSolverWrapper::system_matrix()
+{
+  return *S_;
+}
+
+// Calling this method will result in ret = M^{-1} rhs.
+// Note: Writing rhs_mu.backend() = solver->solve(rhs_mu.backend()) gives wrong results for CG solver, ret may not be
+// the same vector as rhs!
+void CellModelLinearSolverWrapper::apply_inverse_mass_matrix(const EigenVectorType& rhs,
+                                                             EigenVectorType& ret,
+                                                             const EigenVectorType* initial_guess) const
+{
+  if (mass_matrix_solver_type_ == CellModelMassMatrixSolverType::sparse_lu)
+    ret.backend() = mass_matrix_lu_solver_->solve(rhs.backend());
+  else if (mass_matrix_solver_type_ == CellModelMassMatrixSolverType::cg) {
+    if (initial_guess)
+      ret.backend() = mass_matrix_cg_solver_->solveWithGuess(rhs.backend(), initial_guess->backend());
+    else
+      ret.backend() = mass_matrix_cg_solver_->solve(rhs.backend());
+  } else if (mass_matrix_solver_type_ == CellModelMassMatrixSolverType::cg_incomplete_cholesky) {
+    if (initial_guess)
+      ret.backend() =
+          mass_matrix_cg_incomplete_cholesky_solver_->solveWithGuess(rhs.backend(), initial_guess->backend());
+    else
+      mass_matrix_cg_incomplete_cholesky_solver_->solve(rhs.backend());
+  } else {
+    DUNE_THROW(Dune::NotImplemented, "Unknown mass matrix solver type!");
+  }
+}
+
+CellModelLinearSolverWrapper::VectorType
+CellModelLinearSolverWrapper::apply_system_matrix_solver(const VectorType& rhs, const size_t cell) const
+{
+  auto rhs_eig = XT::Common::convert_to<EigenVectorType>(rhs);
+  EigenVectorType update(rhs.size());
+  Dune::InverseOperatorResult res;
+  switch (solver_type_) {
+    case CellModelLinearSolverType::direct:
+      *S_colmajor_ = S_->backend();
+      direct_solver_->factorize(*S_colmajor_);
+      update.backend() = direct_solver_->solve(rhs_eig.backend());
+      return XT::Common::convert_to<VectorType>(update);
+    case CellModelLinearSolverType::gmres:
+    case CellModelLinearSolverType::fgmres_gmres:
+    case CellModelLinearSolverType::fgmres_bicgstab:
+      outer_solver_->apply(previous_update_[cell], rhs_eig, res);
+      update = previous_update_[cell];
+    case CellModelLinearSolverType::schur_gmres:
+    case CellModelLinearSolverType::schur_fgmres_bicgstab:
+    case CellModelLinearSolverType::schur_fgmres_gmres:
+      DUNE_THROW(Dune::NotImplemented, "Unknown solver type for system matrix!");
+  }
+  return XT::Common::convert_to<VectorType>(update);
+}
+
+void CellModelLinearSolverWrapper::apply_outer_solver(EigenVectorType& ret, EigenVectorType& rhs) const
+{
+  Dune::InverseOperatorResult res;
+  outer_solver_->apply(ret, rhs, res);
+}
+
+std::shared_ptr<CellModelLinearSolverWrapper::IterativeSolverType>
+CellModelLinearSolverWrapper::create_preconditioner_solver(std::shared_ptr<DuneLinearOperatorType> linear_op,
+                                                           ScalarProductType& scalar_product,
+                                                           const R inner_reduction,
+                                                           const int inner_verbose,
+                                                           const int inner_maxit)
+{
+  switch (solver_type_) {
+    case CellModelLinearSolverType::fgmres_gmres:
+    case CellModelLinearSolverType::schur_fgmres_gmres:
+      return std::make_shared<RestartedGMResSolverType>(*linear_op,
+                                                        scalar_product,
+                                                        *identity_preconditioner_,
+                                                        inner_reduction,
+                                                        10000, // do not restart
+                                                        inner_maxit,
+                                                        inner_verbose);
+    case CellModelLinearSolverType::fgmres_bicgstab:
+    case CellModelLinearSolverType::schur_fgmres_bicgstab:
+      return std::make_shared<BiCGSTABSolverType>(
+          *linear_op, scalar_product, *identity_preconditioner_, inner_reduction, inner_maxit, inner_verbose);
+    case CellModelLinearSolverType::direct:
+    case CellModelLinearSolverType::gmres:
+    case CellModelLinearSolverType::schur_gmres:
+      return nullptr;
+  }
+}
+
+std::shared_ptr<CellModelLinearSolverWrapper::IterativeSolverType>
+CellModelLinearSolverWrapper::create_iterative_solver(std::shared_ptr<DuneLinearOperatorType> linear_op,
+                                                      ScalarProductType& scalar_product,
+                                                      const R outer_reduction,
+                                                      const size_t outer_restart,
+                                                      const int outer_verbose)
+{
+  switch (solver_type_) {
+    case CellModelLinearSolverType::gmres:
+    case CellModelLinearSolverType::schur_gmres:
+      return std::make_shared<RestartedGMResSolverType>(
+          *linear_op, scalar_product, *identity_preconditioner_, outer_reduction, outer_restart, 10000, outer_verbose);
+    case CellModelLinearSolverType::fgmres_gmres:
+    case CellModelLinearSolverType::fgmres_bicgstab:
+    case CellModelLinearSolverType::schur_fgmres_gmres:
+    case CellModelLinearSolverType::schur_fgmres_bicgstab:
+      return std::make_shared<FGMResSolverType>(
+          *linear_op, scalar_product, *preconditioner_, outer_reduction, outer_restart, 10000, outer_verbose);
+    case CellModelLinearSolverType::direct:
+      return nullptr;
+  }
+}
+
+
 PfieldLinearSolver::PfieldLinearSolver(const double gamma,
                                        const double epsilon,
                                        const double Be,
@@ -44,8 +235,8 @@ PfieldLinearSolver::PfieldLinearSolver(const double gamma,
                                        const MatrixType& G,
                                        const MatrixType& M_nonlin,
                                        const MatrixType& A_boundary,
-                                       const PfieldLinearSolverType solver_type,
-                                       const PfieldMassMatrixSolverType mass_matrix_solver_type,
+                                       const CellModelLinearSolverType solver_type,
+                                       const CellModelMassMatrixSolverType mass_matrix_solver_type,
                                        const std::set<size_t>& phi_dirichlet_dofs,
                                        const XT::LA::SparsityPatternDefault& submatrix_pattern,
                                        const size_t num_cells,
@@ -65,67 +256,44 @@ PfieldLinearSolver::PfieldLinearSolver(const double gamma,
   , G_(G)
   , M_nonlin_(M_nonlin)
   , A_boundary_(A_boundary)
-  , solver_type_(solver_type)
-  , mass_matrix_solver_type_(mass_matrix_solver_type)
+  , is_schur_solver_(is_schur_solver(solver_type))
   , size_phi_(M_.rows())
   , phi_dirichlet_dofs_(phi_dirichlet_dofs)
-  , is_schur_solver_(solver_type_ == PfieldLinearSolverType::schur_gmres
-                     || solver_type_ == PfieldLinearSolverType::schur_fgmres_gmres
-                     || solver_type_ == PfieldLinearSolverType::schur_fgmres_bicgstab)
-  , S_(is_schur_solver_ ? std::make_shared<MatrixType>(0, 0)
-                        : std::make_shared<MatrixType>(
-                              3 * size_phi_, 3 * size_phi_, system_matrix_pattern(size_phi_, submatrix_pattern), 0))
-  , S_colmajor_(solver_type_ == PfieldLinearSolverType::direct ? std::make_shared<ColMajorBackendType>(S_->backend())
-                                                               : nullptr)
-  , S_00_(*S_, 0, size_phi_, 0, size_phi_)
-  , S_01_(*S_, 0, size_phi_, size_phi_, 2 * size_phi_)
-  , S_10_(*S_, size_phi_, 2 * size_phi_, 0, size_phi_)
-  , S_11_(*S_, size_phi_, 2 * size_phi_, size_phi_, 2 * size_phi_)
-  , S_12_(*S_, size_phi_, 2 * size_phi_, 2 * size_phi_, 3 * size_phi_)
-  , S_20_(*S_, 2 * size_phi_, 3 * size_phi_, 0, size_phi_)
-  , S_22_(*S_, 2 * size_phi_, 3 * size_phi_, 2 * size_phi_, 3 * size_phi_)
-  , mass_matrix_lu_solver_(
-        mass_matrix_solver_type_ == PfieldMassMatrixSolverType::sparse_lu ? std::make_shared<LUSolverType>() : nullptr)
-  , mass_matrix_cg_solver_(mass_matrix_solver_type_ == PfieldMassMatrixSolverType::cg ? std::make_shared<CGSolverType>()
-                                                                                      : nullptr)
-  , mass_matrix_cg_incomplete_cholesky_solver_(mass_matrix_solver_type_
-                                                       == PfieldMassMatrixSolverType::cg_incomplete_cholesky
-                                                   ? std::make_shared<CGIncompleteCholeskySolverType>()
-                                                   : nullptr)
-  , direct_solver_(solver_type_ == PfieldLinearSolverType::direct ? std::make_shared<LUSolverType>() : nullptr)
-  , linear_operator_(create_linear_operator())
-  , scalar_product_(create_scalar_product())
-  , identity_preconditioner_(std::make_shared<IdentityPreconditionerType>(SolverCategory::Category::sequential))
-  , preconditioner_solver_(
-        create_preconditioner_solver(linear_operator_, *scalar_product_, inner_reduction, inner_verbose, inner_maxit))
-  , preconditioner_(std::make_shared<IterativeSolverPreconditionerType>(preconditioner_solver_,
-                                                                        SolverCategory::Category::sequential))
-  , outer_solver_(
-        create_iterative_solver(linear_operator_, *scalar_product_, outer_reduction, outer_restart, outer_verbose))
+  , wrapper_(create_linear_operator(),
+             create_scalar_product(),
+             M_,
+             solver_type,
+             mass_matrix_solver_type,
+             3 * size_phi_,
+             system_matrix_pattern(submatrix_pattern),
+             num_cells,
+             outer_reduction,
+             outer_restart,
+             outer_verbose,
+             inner_reduction,
+             inner_maxit,
+             inner_verbose)
+  , S_00_(wrapper_.system_matrix(), 0, size_phi_, 0, size_phi_)
+  , S_01_(wrapper_.system_matrix(), 0, size_phi_, size_phi_, 2 * size_phi_)
+  , S_10_(wrapper_.system_matrix(), size_phi_, 2 * size_phi_, 0, size_phi_)
+  , S_11_(wrapper_.system_matrix(), size_phi_, 2 * size_phi_, size_phi_, 2 * size_phi_)
+  , S_12_(wrapper_.system_matrix(), size_phi_, 2 * size_phi_, 2 * size_phi_, 3 * size_phi_)
+  , S_20_(wrapper_.system_matrix(), 2 * size_phi_, 3 * size_phi_, 0, size_phi_)
+  , S_22_(wrapper_.system_matrix(), 2 * size_phi_, 3 * size_phi_, 2 * size_phi_, 3 * size_phi_)
   , phi_tmp_eigen_(size_phi_, 0., 0)
   , phi_tmp_eigen2_(size_phi_, 0., 0)
   , phi_tmp_eigen3_(size_phi_, 0., 0)
   , phi_tmp_eigen4_(size_phi_, 0., 0)
-  , last_pfield_update_(3 * size_phi_, 0., 0)
-  , last_phi_update_(num_cells, EigenVectorType(size_phi_, 0., 0))
+  , previous_phi_update_(num_cells, EigenVectorType(size_phi_, 0., 0))
+{}
+
+void PfieldLinearSolver::setup()
 {
-  if (direct_solver_)
-    direct_solver_->analyzePattern(*S_colmajor_);
   if (!is_schur_solver_) {
     S_11_ = M_;
     S_22_ = M_;
   }
-}
-
-// Has to be called after mass matrix is assembled
-void PfieldLinearSolver::setup()
-{
-  if (mass_matrix_lu_solver_)
-    mass_matrix_lu_solver_->compute(M_.backend());
-  if (mass_matrix_cg_solver_)
-    mass_matrix_cg_solver_->compute(M_.backend());
-  if (mass_matrix_cg_incomplete_cholesky_solver_)
-    mass_matrix_cg_incomplete_cholesky_solver_->compute(M_.backend());
+  wrapper_.setup();
 }
 
 void PfieldLinearSolver::set_params(const XT::Common::Parameter& param)
@@ -134,28 +302,31 @@ void PfieldLinearSolver::set_params(const XT::Common::Parameter& param)
   epsilon_ = param.get("epsilon")[0];
   Be_ = param.get("Be")[0];
   Ca_ = param.get("Ca")[0];
-  linear_operator_->set_params(param);
+  wrapper_.set_params(param);
 }
 
 void PfieldLinearSolver::prepare(const double dt, const size_t cell, const bool restricted)
 {
   dt_ = dt;
-  linear_operator_->prepare(dt_, cell, restricted);
+  wrapper_.prepare(dt_, cell, restricted);
 }
 
 PfieldLinearSolver::VectorType PfieldLinearSolver::apply(const VectorType& rhs, const size_t cell) const
 {
-  if (is_schur_solver_)
+  if (is_schur_solver_) {
     return apply_schur_solver(rhs, cell);
-  else
-    return apply_system_matrix_solver(rhs, cell);
+  } else {
+    fill_S();
+    return wrapper_.apply_system_matrix_solver(rhs, cell);
+  }
 }
 
 // creates sparsity pattern of phasefield system matrix
 XT::LA::SparsityPatternDefault
-PfieldLinearSolver::system_matrix_pattern(const size_t n, const XT::LA::SparsityPatternDefault& submatrix_pattern)
+PfieldLinearSolver::system_matrix_pattern(const XT::LA::SparsityPatternDefault& submatrix_pattern)
 {
   // Use same pattern for all submatrices
+  const size_t n = submatrix_pattern.size();
   XT::LA::SparsityPatternDefault pattern(3 * n);
   for (size_t ii = 0; ii < n; ++ii)
     for (const auto& jj : submatrix_pattern.inner(ii)) {
@@ -178,23 +349,9 @@ void PfieldLinearSolver::apply_inverse_mass_matrix(const EigenVectorType& rhs,
                                                    EigenVectorType& ret,
                                                    const EigenVectorType* initial_guess) const
 {
-  if (mass_matrix_solver_type_ == PfieldMassMatrixSolverType::sparse_lu)
-    ret.backend() = mass_matrix_lu_solver_->solve(rhs.backend());
-  else if (mass_matrix_solver_type_ == PfieldMassMatrixSolverType::cg) {
-    if (initial_guess)
-      ret.backend() = mass_matrix_cg_solver_->solveWithGuess(rhs.backend(), initial_guess->backend());
-    else
-      ret.backend() = mass_matrix_cg_solver_->solve(rhs.backend());
-  } else if (mass_matrix_solver_type_ == PfieldMassMatrixSolverType::cg_incomplete_cholesky) {
-    if (initial_guess)
-      ret.backend() =
-          mass_matrix_cg_incomplete_cholesky_solver_->solveWithGuess(rhs.backend(), initial_guess->backend());
-    else
-      mass_matrix_cg_incomplete_cholesky_solver_->solve(rhs.backend());
-  } else {
-    DUNE_THROW(Dune::NotImplemented, "Unknown mass matrix solver type!");
-  }
+  wrapper_.apply_inverse_mass_matrix(rhs, ret, initial_guess);
 }
+
 
 const std::set<size_t>& PfieldLinearSolver::dirichlet_dofs() const
 {
@@ -220,35 +377,6 @@ void PfieldLinearSolver::fill_S() const
     S_00_.unit_row(DoF);
     S_01_.clear_row(DoF);
   }
-  if (!is_schur_solver_) {
-    *S_colmajor_ = S_->backend();
-    S_colmajor_->makeCompressed();
-  }
-}
-
-PfieldLinearSolver::VectorType PfieldLinearSolver::apply_system_matrix_solver(const VectorType& rhs,
-                                                                              const size_t /*cell*/) const
-{
-  fill_S();
-  auto rhs_eig = XT::Common::convert_to<EigenVectorType>(rhs);
-  EigenVectorType update(rhs.size());
-  Dune::InverseOperatorResult res;
-  switch (solver_type_) {
-    case PfieldLinearSolverType::direct:
-      direct_solver_->factorize(*S_colmajor_);
-      update.backend() = direct_solver_->solve(rhs_eig.backend());
-      return XT::Common::convert_to<VectorType>(update);
-    case PfieldLinearSolverType::gmres:
-    case PfieldLinearSolverType::fgmres_gmres:
-    case PfieldLinearSolverType::fgmres_bicgstab:
-      outer_solver_->apply(last_pfield_update_, rhs_eig, res);
-      update = last_pfield_update_;
-    case PfieldLinearSolverType::schur_gmres:
-    case PfieldLinearSolverType::schur_fgmres_bicgstab:
-    case PfieldLinearSolverType::schur_fgmres_gmres:
-      DUNE_THROW(Dune::NotImplemented, "Unknown solver type for system matrix!");
-  }
-  return XT::Common::convert_to<VectorType>(update);
 }
 
 PfieldLinearSolver::VectorType PfieldLinearSolver::apply_schur_solver(const VectorType& rhs, const size_t cell) const
@@ -286,9 +414,8 @@ PfieldLinearSolver::VectorType PfieldLinearSolver::apply_schur_solver(const Vect
     rhs_phi[DoF] = 0.;
   rhs_phi += r0;
   // now solve for phi
-  Dune::InverseOperatorResult res;
-  outer_solver_->apply(last_phi_update_[cell], rhs_phi, res);
-  const auto& phi = last_phi_update_[cell];
+  wrapper_.apply_outer_solver(previous_phi_update_[cell], rhs_phi);
+  const auto& phi = previous_phi_update_[cell];
   ret_phi = phi;
   // store C^{-1} A phi in phi_tmp_eigen2_
   M_ell_.mv(phi, phi_tmp_eigen2_);
@@ -325,7 +452,7 @@ std::shared_ptr<PfieldLinearSolver::LinearOperatorType> PfieldLinearSolver::crea
     return std::make_shared<SchurMatrixLinearOperatorType>(
         M_, D_, M_ell_, G_, M_nonlin_, A_boundary_, *this, gamma_, epsilon_, Be_, Ca_);
   } else {
-    return std::make_shared<SystemMatrixLinearOperatorType>(*S_);
+    return std::make_shared<SystemMatrixLinearOperatorType>(wrapper_.system_matrix());
   }
 }
 
@@ -337,55 +464,166 @@ std::shared_ptr<Dune::ScalarProduct<PfieldLinearSolver::EigenVectorType>> Pfield
     return std::make_shared<PfieldScalarProductType>(M_);
 }
 
-std::shared_ptr<PfieldLinearSolver::IterativeSolverType>
-PfieldLinearSolver::create_preconditioner_solver(std::shared_ptr<DuneLinearOperatorType> linear_op,
-                                                 ScalarProductType& scalar_product,
-                                                 const R inner_reduction,
-                                                 const int inner_verbose,
-                                                 const int inner_maxit)
+
+OfieldLinearSolver::OfieldLinearSolver(const double kappa,
+                                       const MatrixType& M,
+                                       const MatrixType& A,
+                                       const MatrixType& C_linear_part,
+                                       const MatrixType& C_nonlinear_part,
+                                       const MatrixType& S_schur_linear_part,
+                                       const CellModelLinearSolverType solver_type,
+                                       const CellModelMassMatrixSolverType mass_matrix_solver_type,
+                                       const XT::LA::SparsityPatternDefault& submatrix_pattern,
+                                       const size_t num_cells,
+                                       const double outer_reduction,
+                                       const int outer_restart,
+                                       const int outer_verbose,
+                                       const double inner_reduction,
+                                       const int inner_maxit,
+                                       const int inner_verbose)
+  : kappa_(kappa)
+  , M_(M)
+  , A_(A)
+  , C_linear_part_(C_linear_part)
+  , C_nonlinear_part_(C_nonlinear_part)
+  , S_schur_linear_part_(S_schur_linear_part)
+  , is_schur_solver_(is_schur_solver(solver_type))
+  , size_P_(M_.rows())
+  , S_schur_(is_schur_solver_ ? std::make_shared<MatrixType>(size_P_, size_P_) : nullptr)
+  , wrapper_(create_linear_operator(),
+             create_scalar_product(),
+             M_,
+             solver_type,
+             mass_matrix_solver_type,
+             2 * size_P_,
+             system_matrix_pattern(submatrix_pattern),
+             num_cells,
+             outer_reduction,
+             outer_restart,
+             outer_verbose,
+             inner_reduction,
+             inner_maxit,
+             inner_verbose)
+  , S_00_(wrapper_.system_matrix(), 0, size_P_, 0, size_P_)
+  , S_01_(wrapper_.system_matrix(), 0, size_P_, size_P_, 2 * size_P_)
+  , S_10_(wrapper_.system_matrix(), size_P_, 2 * size_P_, 0, size_P_)
+  , S_11_(wrapper_.system_matrix(), size_P_, 2 * size_P_, size_P_, 2 * size_P_)
+  , P_tmp_eigen_(size_P_, 0., 0)
+  , P_tmp_eigen2_(size_P_, 0., 0)
+  , previous_P_update_(num_cells, EigenVectorType(size_P_, 0., 0))
+{}
+
+void OfieldLinearSolver::setup()
 {
-  switch (solver_type_) {
-    case PfieldLinearSolverType::fgmres_gmres:
-    case PfieldLinearSolverType::schur_fgmres_gmres:
-      return std::make_shared<RestartedGMResSolverType>(*linear_op,
-                                                        scalar_product,
-                                                        *identity_preconditioner_,
-                                                        inner_reduction,
-                                                        10000, // do not restart
-                                                        inner_maxit,
-                                                        inner_verbose);
-    case PfieldLinearSolverType::fgmres_bicgstab:
-    case PfieldLinearSolverType::schur_fgmres_bicgstab:
-      return std::make_shared<BiCGSTABSolverType>(
-          *linear_op, scalar_product, *identity_preconditioner_, inner_reduction, inner_maxit, inner_verbose);
-    case PfieldLinearSolverType::direct:
-    case PfieldLinearSolverType::gmres:
-    case PfieldLinearSolverType::schur_gmres:
-      return nullptr;
+  if (!is_schur_solver_)
+    S_11_ = M_;
+  wrapper_.setup();
+}
+
+void OfieldLinearSolver::set_params(const XT::Common::Parameter& param)
+{
+  kappa_ = param.get("kappa")[0];
+  wrapper_.set_params(param);
+}
+
+void OfieldLinearSolver::prepare(const double dt, const size_t cell, const bool restricted)
+{
+  dt_ = dt;
+  wrapper_.prepare(dt_, cell, restricted);
+}
+
+OfieldLinearSolver::VectorType OfieldLinearSolver::apply(const VectorType& rhs, const size_t cell) const
+{
+  if (is_schur_solver_) {
+    return apply_schur_solver(rhs, cell);
+  } else {
+    fill_S();
+    return wrapper_.apply_system_matrix_solver(rhs, cell);
   }
 }
 
-std::shared_ptr<PfieldLinearSolver::IterativeSolverType>
-PfieldLinearSolver::create_iterative_solver(std::shared_ptr<DuneLinearOperatorType> linear_op,
-                                            ScalarProductType& scalar_product,
-                                            const R outer_reduction,
-                                            const size_t outer_restart,
-                                            const int outer_verbose)
+// creates sparsity pattern of phasefield system matrix
+XT::LA::SparsityPatternDefault
+OfieldLinearSolver::system_matrix_pattern(const XT::LA::SparsityPatternDefault& submatrix_pattern)
 {
-  switch (solver_type_) {
-    case PfieldLinearSolverType::gmres:
-    case PfieldLinearSolverType::schur_gmres:
-      return std::make_shared<RestartedGMResSolverType>(
-          *linear_op, scalar_product, *identity_preconditioner_, outer_reduction, outer_restart, 10000, outer_verbose);
-    case PfieldLinearSolverType::fgmres_gmres:
-    case PfieldLinearSolverType::fgmres_bicgstab:
-    case PfieldLinearSolverType::schur_fgmres_gmres:
-    case PfieldLinearSolverType::schur_fgmres_bicgstab:
-      return std::make_shared<FGMResSolverType>(
-          *linear_op, scalar_product, *preconditioner_, outer_reduction, outer_restart, 10000, outer_verbose);
-    case PfieldLinearSolverType::direct:
-      return nullptr;
-  }
+  const size_t n = submatrix_pattern.size();
+  XT::LA::SparsityPatternDefault pattern(2 * n);
+  for (size_t ii = 0; ii < n; ++ii)
+    for (const auto& jj : submatrix_pattern.inner(ii)) {
+      pattern.insert(ii, jj);
+      pattern.insert(ii, n + jj);
+      pattern.insert(n + ii, jj);
+      pattern.insert(n + ii, n + jj);
+    }
+  pattern.sort();
+  return pattern;
+}
+
+// Calling this method will result in ret = M^{-1} rhs.
+// Note: Writing rhs_mu.backend() = solver->solve(rhs_mu.backend()) gives wrong results for CG solver, ret may not be
+// the same vector as rhs!
+void OfieldLinearSolver::apply_inverse_mass_matrix(const EigenVectorType& rhs,
+                                                   EigenVectorType& ret,
+                                                   const EigenVectorType* initial_guess) const
+{
+  wrapper_.apply_inverse_mass_matrix(rhs, ret, initial_guess);
+}
+
+OfieldLinearSolver::MatrixType& OfieldLinearSolver::schur_matrix()
+{
+  assert(is_schur_solver_);
+  return *S_schur_;
+}
+
+void OfieldLinearSolver::fill_S() const
+{
+  S_00_ = M_;
+  S_00_.axpy(dt_, A_);
+  S_01_ = M_;
+  S_01_ *= dt_ / kappa_;
+  S_10_ = C_linear_part_;
+  S_10_ += C_nonlinear_part_;
+}
+
+OfieldLinearSolver::VectorType OfieldLinearSolver::apply_schur_solver(const VectorType& rhs, const size_t cell) const
+{
+  VectorType ret(2 * size_P_, 0., 0);
+  VectorViewType ret_P(ret, 0., size_P_);
+  VectorViewType ret_Pnat(ret, size_P_, 2 * size_P_);
+  ConstVectorViewType rhs_P(rhs, 0, size_P_);
+  ConstVectorViewType rhs_Pnat(rhs, size_P_, 2 * size_P_);
+  // compute P^{n+1} first
+  P_tmp_eigen_ = rhs_P;
+  P_tmp_eigen_.axpy(-dt_ / kappa_, rhs_Pnat);
+  wrapper_.apply_outer_solver(previous_P_update_[cell], P_tmp_eigen_);
+  const auto& P = previous_P_update_[cell];
+  ret_P = P;
+  // compute P^{natural,n+1}
+  P_tmp_eigen_ = rhs_Pnat;
+  C_linear_part_.mv(P, P_tmp_eigen2_);
+  P_tmp_eigen_ -= P_tmp_eigen2_;
+  C_linear_part_.mv(P, P_tmp_eigen2_);
+  P_tmp_eigen_ -= P_tmp_eigen2_;
+  apply_inverse_mass_matrix(P_tmp_eigen_, P_tmp_eigen2_);
+  ret_Pnat = P_tmp_eigen2_;
+  // return
+  return ret;
+}
+
+std::shared_ptr<OfieldLinearSolver::LinearOperatorType> OfieldLinearSolver::create_linear_operator()
+{
+  if (is_schur_solver_)
+    return std::make_shared<SchurMatrixLinearOperatorType>(*S_schur_);
+  else
+    return std::make_shared<SystemMatrixLinearOperatorType>(wrapper_.system_matrix());
+}
+
+std::shared_ptr<Dune::ScalarProduct<OfieldLinearSolver::EigenVectorType>> OfieldLinearSolver::create_scalar_product()
+{
+  if (is_schur_solver_)
+    return std::make_shared<PScalarProductType>(M_);
+  else
+    return std::make_shared<OfieldScalarProductType>(M_);
 }
 
 
