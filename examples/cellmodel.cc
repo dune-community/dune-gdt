@@ -82,7 +82,14 @@ int main(int argc, char* argv[])
     const double inner_gmres_reduction = DXTC_CONFIG_GET("inner_gmres_reduction", 1e-3);
     const int inner_gmres_maxit = DXTC_CONFIG_GET("inner_gmres_maxit", 10);
     const int gmres_verbose = DXTC_CONFIG_GET("gmres_verbose", 0);
-    // const std::string pfield_solver_type = DXTC_CONFIG_GET("pfield_solver_type", "custom");
+    const CellModelLinearSolverType pfield_solver_type =
+        string_to_solver_type(DXTC_CONFIG_GET("pfield_solver_type", "schur_gmres"));
+    const CellModelMassMatrixSolverType pfield_mass_matrix_solver_type =
+        string_to_mass_matrix_solver_type(DXTC_CONFIG_GET("pfield_mass_matrix_solver_type", "sparse_lu"));
+    const CellModelLinearSolverType ofield_solver_type =
+        string_to_solver_type(DXTC_CONFIG_GET("ofield_solver_type", "schur_gmres"));
+    const CellModelMassMatrixSolverType ofield_mass_matrix_solver_type =
+        string_to_mass_matrix_solver_type(DXTC_CONFIG_GET("ofield_mass_matrix_solver_type", "sparse_lu"));
 
     CellModelSolver model_solver(testcase,
                                  t_end,
@@ -101,9 +108,10 @@ int main(int argc, char* argv[])
                                  gamma,
                                  epsilon,
                                  In,
-                                 CellModelLinearSolverType::schur_fgmres_gmres,
-                                 CellModelMassMatrixSolverType::sparse_lu,
-                                 "schur",
+                                 pfield_solver_type,
+                                 pfield_mass_matrix_solver_type,
+                                 ofield_solver_type,
+                                 ofield_mass_matrix_solver_type,
                                  gmres_reduction,
                                  gmres_restart,
                                  gmres_verbose,

@@ -108,7 +108,8 @@ struct CellModelSolver
       const double In = 1., // interaction parameter
       const CellModelLinearSolverType pfield_solver_type = CellModelLinearSolverType::schur_fgmres_gmres,
       const CellModelMassMatrixSolverType pfield_mass_matrix_solver_type = CellModelMassMatrixSolverType::sparse_lu,
-      const std::string& ofield_solver_type = "schur",
+      const CellModelLinearSolverType ofield_solver_type = CellModelLinearSolverType::schur_fgmres_gmres,
+      const CellModelMassMatrixSolverType ofield_mass_matrix_solver_type = CellModelMassMatrixSolverType::sparse_lu,
       const double outer_reduction = 1e-10,
       const int outer_restart = 100,
       const int outer_verbose = 0,
@@ -538,7 +539,6 @@ struct CellModelSolver
   double Ca_;
   double epsilon_;
   double In_;
-  std::string ofield_solver_type_;
   const double vol_domain_;
   const size_t num_cells_;
   const bool linearize_;
@@ -624,7 +624,6 @@ struct CellModelSolver
   // Linear solvers and linear operators needed for solvers
   mutable ColMajorBackendType S_colmajor_;
   std::shared_ptr<LUSolverType> stokes_solver_;
-  // mutable std::shared_ptr<SolverType> ofield_solver_;
   VectorType ofield_tmp_vec_;
   VectorType ofield_tmp_vec2_;
   // Indices for restricted operator in DEIM context

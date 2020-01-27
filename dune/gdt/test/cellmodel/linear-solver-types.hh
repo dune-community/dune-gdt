@@ -10,6 +10,8 @@
 #ifndef DUNE_GDT_TEST_CELLMODEL_LINEAR_SOLVER_TYPES_HH
 #define DUNE_GDT_TEST_CELLMODEL_LINEAR_SOLVER_TYPES_HH
 
+#include <string>
+
 enum class CellModelLinearSolverType
 {
   direct,
@@ -27,5 +29,9 @@ enum class CellModelMassMatrixSolverType
   cg,
   cg_incomplete_cholesky
 };
+
+CellModelLinearSolverType string_to_solver_type(const std::string& type_string);
+
+CellModelMassMatrixSolverType string_to_mass_matrix_solver_type(const std::string& type_string);
 
 #endif // DUNE_GDT_TEST_CELLMODEL_LINEAR_SOLVER_TYPES_HH

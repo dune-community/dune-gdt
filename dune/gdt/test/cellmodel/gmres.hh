@@ -1,8 +1,8 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 
-#ifndef DUNE_GDT_TEST_CELLMODEL_FGMRES
-#define DUNE_GDT_TEST_CELLMODEL_FGMRES
+#ifndef DUNE_GDT_TEST_CELLMODEL_GMRES
+#define DUNE_GDT_TEST_CELLMODEL_GMRES
 
 #include <array>
 #include <cmath>
@@ -43,7 +43,7 @@ namespace Dune {
  */
 
 template <class X, class Y = X, class F = Y>
-class FGMResSolver : public IterativeSolver<X, Y>
+class GMResSolver : public IterativeSolver<X, Y>
 {
 public:
   using typename IterativeSolver<X, Y>::domain_type;
@@ -61,18 +61,18 @@ private:
 
 public:
   /*!
-     \brief Set up FGMResSolver solver.
+     \brief Set up GMResSolver solver.
 
      \copydoc LoopSolver::LoopSolver(L&,P&,double,int,int)
      \param restart number of GMRes cycles before restart
    */
-  FGMResSolver(LinearOperator<X, Y>& op,
-               Preconditioner<X, Y>& prec,
-               scalar_real_type reduction,
-               int restart,
-               int maxit,
-               int verbose,
-               size_t vector_size)
+  GMResSolver(LinearOperator<X, Y>& op,
+              Preconditioner<X, Y>& prec,
+              scalar_real_type reduction,
+              int restart,
+              int maxit,
+              int verbose,
+              size_t vector_size)
     : IterativeSolver<X, Y>::IterativeSolver(op, prec, reduction, maxit, verbose)
     , _restart(restart)
     , _s(_restart + 1)
@@ -82,23 +82,22 @@ public:
     , _w(vector_size)
     , _H(_restart + 1, _s)
     , _v(_restart + 1, _b2)
-    , _z(_restart + 1, _b2)
   {}
 
   /*!
-     \brief Set up FGMResSolver solver.
+     \brief Set up GMResSolver solver.
 
      \copydoc LoopSolver::LoopSolver(L&,S&,P&,double,int,int)
      \param restart number of GMRes cycles before restart
    */
-  FGMResSolver(LinearOperator<X, Y>& op,
-               ScalarProduct<X>& sp,
-               Preconditioner<X, Y>& prec,
-               scalar_real_type reduction,
-               int restart,
-               int maxit,
-               int verbose,
-               size_t vector_size)
+  GMResSolver(LinearOperator<X, Y>& op,
+              ScalarProduct<X>& sp,
+              Preconditioner<X, Y>& prec,
+              scalar_real_type reduction,
+              int restart,
+              int maxit,
+              int verbose,
+              size_t vector_size)
     : IterativeSolver<X, Y>::IterativeSolver(op, sp, prec, reduction, maxit, verbose)
     , _restart(restart)
     , _s(_restart + 1)
@@ -108,7 +107,6 @@ public:
     , _w(vector_size)
     , _H(_restart + 1, _s)
     , _v(_restart + 1, _b2)
-    , _z(_restart + 1, _b2)
   {}
 
   /*!
@@ -116,7 +114,7 @@ public:
 
      \copydoc InverseOperator::apply(X&,Y&,InverseOperatorResult&)
 
-     \note Currently, the FGMResSolver aborts when it detects a
+     \note Currently, the GMResSolver aborts when it detects a
            breakdown.
    */
   virtual void apply(X& x, Y& b, InverseOperatorResult& res)
@@ -129,7 +127,7 @@ public:
 
      \copydoc InverseOperator::apply(X&,Y&,double,InverseOperatorResult&)
 
-     \note Currently, the FGMResSolver aborts when it detects a
+     \note Currently, the GMResSolver aborts when it detects a
            breakdown.
    */
   virtual void apply(X& x, Y& b, double reduction, InverseOperatorResult& res)
@@ -139,6 +137,7 @@ public:
     const int m = _restart;
     real_type norm, norm_old = 0.0, norm_0;
     int j = 1;
+
     // need copy of rhs if GMRes has to be restarted
     _b2 = b;
 
@@ -152,14 +151,16 @@ public:
 
     // calculate defect and overwrite rhs with it
     _op->applyscaleadd(-1.0, x, b); // b -= Ax
-    _v[0] = b;
-    norm_0 = _sp->norm(_v[0]); // beta
+    // calculate preconditioned defect
+    _v[0] = 0.0;
+    _prec->apply(_v[0], b); // r = W^-1 b
+    norm_0 = _sp->norm(_v[0]);
     norm = norm_0;
     norm_old = norm;
 
     // print header
     if (_verbose > 0) {
-      std::cout << "=== FGMResSolver" << std::endl;
+      std::cout << "=== GMResSolver" << std::endl;
       if (_verbose > 1) {
         this->printHeader(std::cout);
         this->printOutput(std::cout, 0, norm_0);
@@ -183,22 +184,23 @@ public:
 
       for (i = 0; i < m && j <= _maxit && res.converged != true; i++, j++) {
         _w = 0.0;
+        // use v[i+1] as temporary vector
+        _v[i + 1] = 0.0;
         // do Arnoldi algorithm
-        _prec->apply(_z[i], _v[i]);
-        _op->apply(_z[i], _w);
-        _z[i + 1] = _z[i]; // initial guess for preconditioner in next step
+        _op->apply(_v[i], _v[i + 1]);
+        _prec->apply(_w, _v[i + 1]);
         for (int k = 0; k < i + 1; k++) {
-          // notice that _sp->dot(_v[k],_w) = _v[k]\adjoint _w
+          // notice that _sp->dot(v[k],w) = v[k]\adjoint w
           // so one has to pay attention to the order
           // in the scalar product for the complex case
           // doing the modified Gram-Schmidt algorithm
           _H[k][i] = _sp->dot(_v[k], _w);
-          // _w -= H[k][i] * _v[k]
+          // w -= H[k][i] * v[k]
           _w.axpy(-_H[k][i], _v[k]);
         }
         _H[i + 1][i] = _sp->norm(_w);
         if (all_true(abs(_H[i + 1][i]) < EPSILON))
-          DUNE_THROW(SolverAbort, "breakdown in GMRes - |_w| == 0.0 after " << j << " iterations");
+          DUNE_THROW(SolverAbort, "breakdown in GMRes - |w| == 0.0 after " << j << " iterations");
 
         // normalize new vector
         _v[i + 1] = _w;
@@ -232,7 +234,7 @@ public:
 
       // calculate update vector
       _w = 0.0;
-      update(_w, i, _H, _s, _z);
+      update(_w, i, _H, _s, _v);
       // and current iterate
       x += _w;
 
@@ -248,7 +250,8 @@ public:
         // calculate new defect
         _op->applyscaleadd(-1.0, x, b); // b -= Ax;
         // calculate preconditioned defect
-        _v[0] = b;
+        _v[0] = 0.0;
+        _prec->apply(_v[0], b);
         norm = _sp->norm(_v[0]);
         norm_old = norm;
       }
@@ -280,7 +283,7 @@ private:
               int i,
               const std::vector<std::vector<field_type, fAlloc>>& H,
               const std::vector<field_type, fAlloc>& s,
-              const std::vector<X>& z)
+              const std::vector<X>& v)
   {
     // solution vector of the upper triangular system
     std::vector<field_type, fAlloc> y(s);
@@ -293,8 +296,8 @@ private:
       y[a] = rhs / H[a][a];
 
       // compute update on the fly
-      // w += y[a]*z[a]
-      w.axpy(y[a], z[a]);
+      // w += y[a]*v[a]
+      w.axpy(y[a], v[a]);
     }
   }
 
@@ -373,10 +376,9 @@ private:
   Y _w;
   std::vector<std::vector<field_type, fAlloc>> _H;
   std::vector<F> _v;
-  std::vector<F> _z;
 };
 
 
 } // namespace Dune
 
-#endif // DUNE_GDT_TEST_CELLMODEL_FGMRES
+#endif // DUNE_GDT_TEST_CELLMODEL_GMRES

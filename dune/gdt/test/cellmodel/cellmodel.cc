@@ -131,7 +131,8 @@ CellModelSolver::CellModelSolver(const std::string testcase,
                                  const double In, // interaction parameter
                                  const CellModelLinearSolverType pfield_solver_type,
                                  const CellModelMassMatrixSolverType pfield_mass_matrix_solver_type,
-                                 const std::string& ofield_solver_type,
+                                 const CellModelLinearSolverType ofield_solver_type,
+                                 const CellModelMassMatrixSolverType ofield_mass_matrix_solver_type,
                                  const double outer_reduction,
                                  const int outer_restart,
                                  const int outer_verbose,
@@ -159,7 +160,6 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   , Ca_(Ca)
   , epsilon_(epsilon)
   , In_(In)
-  , ofield_solver_type_(ofield_solver_type)
   , vol_domain_((upper_right_[0] - lower_left_[0]) * (upper_right_[1] - lower_left_[1]))
   , num_cells_(get_num_cells(testcase))
   , linearize_(linearize)
@@ -215,8 +215,8 @@ CellModelSolver::CellModelSolver(const std::string testcase,
                    C_ofield_linear_part_,
                    C_ofield_nonlinear_part_,
                    S_schur_ofield_linear_part_,
-                   pfield_solver_type,
-                   pfield_mass_matrix_solver_type,
+                   ofield_solver_type,
+                   ofield_mass_matrix_solver_type,
                    ofield_submatrix_pattern_,
                    num_cells_,
                    outer_reduction,
@@ -1647,9 +1647,11 @@ void CellModelSolver::assemble_ofield_linear_jacobian(const double dt, const siz
   C_ofield_linear_part_op_->append(
       LocalElementIntegralBilinearForm<E, d>(LocalElementProductScalarWeightIntegrand<E, d>(c1_Pa_inv_phi)));
   C_ofield_linear_part_op_->assemble(use_tbb_);
-  S_schur_ofield_linear_part_.backend() = M_ofield_.backend();
-  S_schur_ofield_linear_part_.axpy(dt, A_ofield_);
-  S_schur_ofield_linear_part_.axpy(-dt / kappa_, C_ofield_linear_part_);
+  if (ofield_solver_.is_schur_solver()) {
+    S_schur_ofield_linear_part_.backend() = M_ofield_.backend();
+    S_schur_ofield_linear_part_.axpy(dt, A_ofield_);
+    S_schur_ofield_linear_part_.axpy(-dt / kappa_, C_ofield_linear_part_);
+  }
 
   // nonlinear part is equal to linearized part in first iteration
   if (linearize_)
@@ -1663,8 +1665,11 @@ void CellModelSolver::assemble_ofield_nonlinear_jacobian(const VectorType& y, co
 {
   fill_tmp_ofield(cell, y, restricted);
   assemble_C_ofield_nonlinear_part(cell, restricted);
-  ofield_solver_.schur_matrix() = S_schur_ofield_linear_part_;
-  ofield_solver_.schur_matrix().axpy(-dt_ / kappa_, C_ofield_nonlinear_part_);
+  if (ofield_solver_.is_schur_solver()) {
+    ofield_solver_.schur_matrix() = S_schur_ofield_linear_part_;
+    ofield_solver_.schur_matrix().axpy(-dt_ / kappa_, C_ofield_nonlinear_part_);
+  }
+  ofield_solver_.prepare(dt_, cell, restricted);
 }
 
 void CellModelSolver::assemble_C_ofield_nonlinear_part(const size_t cell, const bool restricted)

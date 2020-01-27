@@ -18,7 +18,6 @@
 #include <dune/xt/la/container/common.hh>
 #include <dune/xt/la/container/eigen.hh>
 #include <dune/xt/la/container/matrix-view.hh>
-#include <dune/xt/la/container/vector-view.hh>
 
 #include <Eigen/IterativeLinearSolvers>
 #include <Eigen/SparseLU>
@@ -33,7 +32,7 @@ template <class X, class Y, class F>
 class FGMResSolver;
 
 template <class X, class Y, class F>
-class RestartedGMResSolver;
+class GMResSolver;
 
 template <class X>
 class BiCGSTABSolver;
@@ -91,7 +90,7 @@ public:
                                  Eigen::Lower | Eigen::Upper,
                                  Eigen::IncompleteCholesky<R, Eigen::Lower | Eigen::Upper>>;
   using FGMResSolverType = Dune::FGMResSolver<EigenVectorType, EigenVectorType, EigenVectorType>;
-  using RestartedGMResSolverType = Dune::RestartedGMResSolver<EigenVectorType>;
+  using GMResSolverType = Dune::GMResSolver<EigenVectorType, EigenVectorType, EigenVectorType>;
   using BiCGSTABSolverType = Dune::BiCGSTABSolver<EigenVectorType>;
   using DuneLinearOperatorType = Dune::LinearOperator<EigenVectorType, EigenVectorType>;
   using LinearOperatorType = LinearOperatorWrapper<EigenVectorType>;
@@ -105,10 +104,9 @@ public:
   CellModelLinearSolverWrapper(std::shared_ptr<LinearOperatorType>,
                                std::shared_ptr<ScalarProductType>,
                                const MatrixType& M,
+                               MatrixType& S_,
                                const CellModelLinearSolverType solver_type,
                                const CellModelMassMatrixSolverType mass_matrix_solver_type,
-                               const size_t system_matrix_size,
-                               const XT::LA::SparsityPatternDefault& submatrix_pattern,
                                const size_t num_cells,
                                const double outer_reduction = 1e-10,
                                const int outer_restart = 100,
@@ -117,14 +115,15 @@ public:
                                const int inner_maxit = 10,
                                const int inner_verbose = 0);
 
+  static std::shared_ptr<MatrixType>
+  create_system_matrix(const bool is_schur_solver, const size_t size, const XT::LA::SparsityPatternDefault& pattern);
+
   // Has to be called after mass matrix is assembled.
   void setup();
 
   void set_params(const XT::Common::Parameter& param);
 
   void prepare(const double dt, const size_t cell, const bool restricted);
-
-  MatrixType& system_matrix();
 
   // Calling this method will result in ret = M^{-1} rhs.
   // Note: Writing rhs_mu.backend() = solver->solve(rhs_mu.backend()) gives wrong results for CG solver, ret may not be
@@ -142,20 +141,24 @@ private:
                                                                     ScalarProductType& scalar_product,
                                                                     const R inner_reduction,
                                                                     const int inner_verbose,
-                                                                    const int inner_maxit);
+                                                                    const int inner_maxit,
+                                                                    const size_t vector_size);
 
   std::shared_ptr<IterativeSolverType> create_iterative_solver(std::shared_ptr<DuneLinearOperatorType> linear_op,
                                                                ScalarProductType& scalar_product,
                                                                const R outer_reduction,
                                                                const size_t outer_restart,
-                                                               const int outer_verbose);
+                                                               const int outer_verbose,
+                                                               const size_t vector_size);
+
 
   std::shared_ptr<LinearOperatorType> linear_operator_;
   std::shared_ptr<ScalarProductType> scalar_product_;
   const MatrixType& M_;
+  MatrixType& S_;
   const CellModelLinearSolverType solver_type_;
   const CellModelMassMatrixSolverType mass_matrix_solver_type_;
-  std::shared_ptr<MatrixType> S_;
+  const bool is_schur_solver_;
   std::shared_ptr<ColMajorBackendType> S_colmajor_;
   std::shared_ptr<LUSolverType> mass_matrix_lu_solver_;
   std::shared_ptr<CGSolverType> mass_matrix_cg_solver_;
@@ -185,8 +188,6 @@ public:
   using PhiScalarProductType = MassMatrixScalarProduct<EigenVectorType, MatrixType>;
   using PfieldScalarProductType = PfieldScalarProduct<EigenVectorType, MatrixType>;
   using MatrixViewType = XT::LA::MatrixView<MatrixType>;
-  using VectorViewType = XT::LA::VectorView<VectorType>;
-  using ConstVectorViewType = XT::LA::ConstVectorView<VectorType>;
 
   PfieldLinearSolver(const double gamma,
                      const double epsilon,
@@ -218,6 +219,8 @@ public:
   void prepare(const double dt, const size_t cell, const bool restricted = false);
 
   VectorType apply(const VectorType& rhs, const size_t cell) const;
+
+  bool is_schur_solver() const;
 
   // creates sparsity pattern of phasefield system matrix
   static XT::LA::SparsityPatternDefault system_matrix_pattern(const XT::LA::SparsityPatternDefault& submatrix_pattern);
@@ -253,6 +256,7 @@ private:
   const MatrixType& A_boundary_;
   const bool is_schur_solver_;
   const size_t size_phi_;
+  std::shared_ptr<MatrixType> S_;
   const std::set<size_t>& phi_dirichlet_dofs_;
   CellModelLinearSolverWrapper wrapper_;
   mutable MatrixViewType S_00_;
@@ -286,8 +290,6 @@ public:
   using PScalarProductType = MassMatrixScalarProduct<EigenVectorType, MatrixType>;
   using OfieldScalarProductType = OfieldScalarProduct<EigenVectorType, MatrixType>;
   using MatrixViewType = XT::LA::MatrixView<MatrixType>;
-  using VectorViewType = XT::LA::VectorView<VectorType>;
-  using ConstVectorViewType = XT::LA::ConstVectorView<VectorType>;
 
   OfieldLinearSolver(const double kappa,
                      const MatrixType& M,
@@ -314,6 +316,8 @@ public:
   void prepare(const double dt, const size_t cell, const bool restricted = false);
 
   VectorType apply(const VectorType& rhs, const size_t cell) const;
+
+  bool is_schur_solver() const;
 
   // creates sparsity pattern of phasefield system matrix
   static XT::LA::SparsityPatternDefault system_matrix_pattern(const XT::LA::SparsityPatternDefault& submatrix_pattern);
@@ -347,6 +351,7 @@ private:
   const MatrixType& S_schur_linear_part_;
   const bool is_schur_solver_;
   const size_t size_P_;
+  std::shared_ptr<MatrixType> S_;
   std::shared_ptr<MatrixType> S_schur_;
   CellModelLinearSolverWrapper wrapper_;
   mutable MatrixViewType S_00_;

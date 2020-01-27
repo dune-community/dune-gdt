@@ -15,6 +15,7 @@
 #include <dune/gdt/test/cellmodel/cellmodel.hh>
 
 using namespace boost::python;
+using namespace Dune;
 
 #include <dune/xt/common/disable_warnings.hh>
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(visualize_overloads, CellModelSolver::visualize, 3, 6)
@@ -48,7 +49,6 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(apply_stokes_jacobian_overloads, CellMode
 
 BOOST_PYTHON_MODULE(cellmodel)
 {
-  using namespace Dune;
 
   // Boost.Python cannot handle more than about 14 arguments in the constructor by default
   // TODO: Find a way to increase that limit in boost or change constructor.
