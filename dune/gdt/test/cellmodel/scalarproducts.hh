@@ -33,7 +33,7 @@ public:
      It is assumed that the vectors are consistent on the interior+border
      partition.
    */
-  virtual field_type dot(const VectorType& x, const VectorType& y) override final
+  virtual field_type dot(const VectorType& x, const VectorType& y) const override final
   {
     M_.mv(x, tmp_vec_);
     return tmp_vec_.dot(y);
@@ -42,7 +42,7 @@ public:
   /*! \brief Norm of a right-hand side vector.
      The vector must be consistent on the interior+border partition
    */
-  virtual real_type norm(const VectorType& x) override final
+  virtual real_type norm(const VectorType& x) const override final
   {
     return std::sqrt(dot(x, x));
   }
@@ -76,7 +76,7 @@ public:
     , tmp_vec2_(size_phi_, 0., 0)
   {}
 
-  virtual field_type dot(const VectorType& x, const VectorType& y) override final
+  virtual field_type dot(const VectorType& x, const VectorType& y) const override final
   {
     const ConstVectorViewType y_phi(y, 0, size_phi_);
     const ConstVectorViewType y_phinat(y, size_phi_, 2 * size_phi_);
@@ -102,7 +102,7 @@ public:
   /*! \brief Norm of a right-hand side vector.
      The vector must be consistent on the interior+border partition
    */
-  virtual real_type norm(const VectorType& x) override final
+  virtual real_type norm(const VectorType& x) const override final
   {
     return std::sqrt(dot(x, x));
   }
@@ -138,7 +138,7 @@ public:
     , tmp_vec2_(size_P_, 0., 0)
   {}
 
-  virtual field_type dot(const VectorType& x, const VectorType& y) override final
+  virtual field_type dot(const VectorType& x, const VectorType& y) const override final
   {
     const ConstVectorViewType y_P(y, 0, size_P_);
     const ConstVectorViewType y_Pnat(y, size_P_, 2 * size_P_);
@@ -158,7 +158,7 @@ public:
   /*! \brief Norm of a right-hand side vector.
      The vector must be consistent on the interior+border partition
    */
-  virtual real_type norm(const VectorType& x) override final
+  virtual real_type norm(const VectorType& x) const override final
   {
     return std::sqrt(dot(x, x));
   }
