@@ -174,12 +174,15 @@ public:
                 const auto source_grad_element = local_source_element->jacobian(point_in_reference_element, param)[0];
                 const auto source_grad_neighbor =
                     local_source_neighbor->jacobian(point_in_reference_neighbor, param)[0];
+                // df_value_* is of type FieldVector<F, 1>
                 const auto df_value_element = local_df_element->evaluate(point_in_reference_element, param);
                 const auto df_value_neighbor = local_df_neighbor->evaluate(point_in_reference_neighbor, param);
+                // dt_value_* is of type FieldMatrix<F, d, d>
                 const auto dt_value_element = local_dt_element->evaluate(point_in_reference_element, param);
                 const auto dt_value_neighbor = local_dt_neighbor->evaluate(point_in_reference_neighbor, param);
-                const auto diffusion_element = dt_value_element * df_value_element;
-                const auto diffusion_neighbor = dt_value_neighbor * df_value_neighbor;
+                // use df_value_*[0] to avoid confusion with matrix-vector multiplication
+                const auto diffusion_element = dt_value_element * df_value_element[0];
+                const auto diffusion_neighbor = dt_value_neighbor * df_value_neighbor[0];
                 // compute penalty factor (see Epshteyn, Riviere, 2007)
                 const F sigma = LocalEllipticIpdgIntegrands::internal::inner_sigma(max_polorder);
                 const double beta = LocalEllipticIpdgIntegrands::internal::default_beta(d);
@@ -249,7 +252,7 @@ public:
               const auto source_grad_element = local_source_element->jacobian(point_in_reference_element, param)[0];
               const auto df_value_element = local_df_element->evaluate(point_in_reference_element, param);
               const auto dt_value_element = local_dt_element->evaluate(point_in_reference_element, param);
-              const auto diffusion_element = dt_value_element * df_value_element;
+              const auto diffusion_element = dt_value_element * df_value_element[0];
               // compute penalty (see Epshteyn, Riviere, 2007)
               const F sigma = LocalEllipticIpdgIntegrands::internal::boundary_sigma(max_polorder);
               const double beta = LocalEllipticIpdgIntegrands::internal::default_beta(d);

@@ -85,7 +85,8 @@ public:
         const auto local_uu = quadrature_point.position();
         const auto uu = state_interval.geometry().global(local_uu);
         const auto df = local_flux.jacobian(x, uu, param);
-        ret += state_interval.geometry().integrationElement(local_uu) * quadrature_point.weight() * min_max(n * df, 0.);
+        ret +=
+            state_interval.geometry().integrationElement(local_uu) * quadrature_point.weight() * min_max(n * df[0], 0.);
       }
       return ret;
     };
