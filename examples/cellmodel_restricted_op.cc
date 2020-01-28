@@ -16,6 +16,7 @@
 
 int main(int argc, char* argv[])
 {
+  using namespace Dune;
   try {
     MPIHelper::instance(argc, argv);
     if (argc > 1)
@@ -71,6 +72,16 @@ int main(int argc, char* argv[])
     // output
     std::string filename = config.get("output.filename", "cellmodel") + (linearize ? "_linearized" : "");
 
+
+    const double gmres_reduction = 1e-10;
+    const int gmres_restart = 50;
+    const double inner_gmres_reduction = 1e-3;
+    const int inner_gmres_maxit = 10;
+    const int gmres_verbose = 0;
+    const CellModelLinearSolverType solver_type = CellModelLinearSolverType::schur_fgmres_gmres;
+    const CellModelMassMatrixSolverType mass_matrix_solver_type = CellModelMassMatrixSolverType::sparse_lu;
+
+
     CellModelSolver model_solver(testcase,
                                  t_end,
                                  num_elements_x,
@@ -88,8 +99,16 @@ int main(int argc, char* argv[])
                                  gamma,
                                  epsilon,
                                  In,
-                                 "custom",
-                                 "schur",
+                                 solver_type,
+                                 mass_matrix_solver_type,
+                                 solver_type,
+                                 mass_matrix_solver_type,
+                                 gmres_reduction,
+                                 gmres_restart,
+                                 gmres_verbose,
+                                 inner_gmres_reduction,
+                                 inner_gmres_maxit,
+                                 gmres_verbose,
                                  linearize);
     CellModelSolver model_solver2(testcase,
                                   t_end,
@@ -108,8 +127,16 @@ int main(int argc, char* argv[])
                                   gamma,
                                   epsilon,
                                   In,
-                                  "custom",
-                                  "schur",
+                                  solver_type,
+                                  mass_matrix_solver_type,
+                                  solver_type,
+                                  mass_matrix_solver_type,
+                                  gmres_reduction,
+                                  gmres_restart,
+                                  gmres_verbose,
+                                  inner_gmres_reduction,
+                                  inner_gmres_maxit,
+                                  gmres_verbose,
                                   linearize);
 
     const size_t pfield_size = model_solver.pfield_vec(0).size();

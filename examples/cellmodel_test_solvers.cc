@@ -16,6 +16,7 @@
 
 int main(int argc, char* argv[])
 {
+  using namespace Dune;
   try {
     MPIHelper::instance(argc, argv);
     if (argc > 1)
@@ -76,9 +77,19 @@ int main(int argc, char* argv[])
 
     // GMRES options
     const double gmres_reduction = DXTC_CONFIG_GET("gmres_reduction", 1e-10);
-    const int direct_gmres_restart = DXTC_CONFIG_GET("direct_gmres_restart", 100);
-    const int custom_gmres_restart = DXTC_CONFIG_GET("custom_gmres_restart", 40);
+    const int gmres_restart = DXTC_CONFIG_GET("gmres_restart", 100);
+    const double inner_gmres_reduction = DXTC_CONFIG_GET("inner_gmres_reduction", 1e-3);
+    const int inner_gmres_maxit = DXTC_CONFIG_GET("inner_gmres_maxit", 10);
     const int gmres_verbose = DXTC_CONFIG_GET("gmres_verbose", 0);
+    const CellModelLinearSolverType pfield_solver_type =
+        string_to_solver_type(DXTC_CONFIG_GET("pfield_solver_type", "schur_fgmres_gmres"));
+    const CellModelMassMatrixSolverType pfield_mass_matrix_solver_type =
+        string_to_mass_matrix_solver_type(DXTC_CONFIG_GET("pfield_mass_matrix_solver_type", "sparse_lu"));
+    const CellModelLinearSolverType ofield_solver_type =
+        string_to_solver_type(DXTC_CONFIG_GET("ofield_solver_type", "schur_fgmres_gmres"));
+    const CellModelMassMatrixSolverType ofield_mass_matrix_solver_type =
+        string_to_mass_matrix_solver_type(DXTC_CONFIG_GET("ofield_mass_matrix_solver_type", "sparse_lu"));
+
 
     CellModelSolver model_solver(testcase,
                                  t_end,
@@ -97,10 +108,15 @@ int main(int argc, char* argv[])
                                  gamma,
                                  epsilon,
                                  In,
-                                 "custom",
-                                 "schur",
+                                 CellModelLinearSolverType::schur_fgmres_gmres,
+                                 CellModelMassMatrixSolverType::sparse_lu,
+                                 CellModelLinearSolverType::schur_fgmres_gmres,
+                                 CellModelMassMatrixSolverType::sparse_lu,
                                  gmres_reduction,
-                                 custom_gmres_restart,
+                                 gmres_restart,
+                                 gmres_verbose,
+                                 inner_gmres_reduction,
+                                 inner_gmres_maxit,
                                  gmres_verbose,
                                  linearize);
     CellModelSolver model_solver2(testcase,
@@ -120,60 +136,33 @@ int main(int argc, char* argv[])
                                   gamma,
                                   epsilon,
                                   In,
-                                  "direct",
-                                  "schur",
+                                  pfield_solver_type,
+                                  pfield_mass_matrix_solver_type,
+                                  ofield_solver_type,
+                                  ofield_mass_matrix_solver_type,
                                   gmres_reduction,
-                                  direct_gmres_restart,
+                                  gmres_restart,
+                                  gmres_verbose,
+                                  inner_gmres_reduction,
+                                  inner_gmres_maxit,
                                   gmres_verbose,
                                   linearize);
-
-    // CellModelSolver model_solver3(testcase,
-    //                               t_end,
-    //                               num_elements_x,
-    //                               num_elements_y,
-    //                               false,
-    //                               Be,
-    //                               Ca,
-    //                               Pa,
-    //                               Re,
-    //                               Fa,
-    //                               xi,
-    //                               kappa,
-    //                               c_1,
-    //                               beta,
-    //                               gamma,
-    //                               epsilon,
-    //                               In,
-    //                               "custom",
-    //                               "direct",
-    //                               linearize);
-
-
     std::chrono::duration<double> ref_time(0.);
-    std::chrono::duration<double> pfield_direct_time(0.);
-    std::chrono::duration<double> ofield_direct_time(0.);
+    std::chrono::duration<double> time(0.);
     auto begin = std::chrono::steady_clock::now();
     const auto result1 = model_solver.solve(dt, false, write_step, filename, subsampling);
     ref_time = std::chrono::steady_clock::now() - begin;
     begin = std::chrono::steady_clock::now();
     const auto result2 = model_solver2.solve(dt, false, write_step, filename, subsampling);
-    pfield_direct_time = std::chrono::steady_clock::now() - begin;
-    // begin = std::chrono::steady_clock::now();
-    // const auto result3 = model_solver3.solve(dt, false, write_step, filename, subsampling);
-    // ofield_direct_time = std::chrono::steady_clock::now() - begin;
-    std::cout << "Timings: ref =  " << ref_time.count() << "  vs. pfield direct = " << pfield_direct_time.count()
-              << " vs. ofield direct " << ofield_direct_time.count() << std::endl;
+    time = std::chrono::steady_clock::now() - begin;
+    std::cout << "Timings: ref =  " << ref_time.count() << "  vs. tested solvers = " << time.count() << std::endl;
     for (size_t ii = 0; ii < result1.size(); ++ii) {
       for (size_t jj = 0; jj < result1[ii].size(); ++jj) {
         for (size_t kk = 0; kk < result1[ii][jj].size(); ++kk) {
           if (XT::Common::FloatCmp::ne(result1[ii][jj][kk], result2[ii][jj][kk], 1e-8, 1e-8))
-            std::cout << "Entries (" << ii << ", " << jj << ", " << kk << ") with different pfield solvers differ by "
+            std::cout << "Entries (" << ii << ", " << jj << ", " << kk << ") with different solvers differ by "
                       << std::abs(result1[ii][jj][kk] - result2[ii][jj][kk]) << ", " << result1[ii][jj][kk] << " vs. "
                       << result1[ii][jj][kk] << std::endl;
-          // if (XT::Common::FloatCmp::ne(result1[ii][jj][kk], result3[ii][jj][kk], 1e-8, 1e-8))
-          // std::cout << "Entries (" << ii << ", " << jj << ", " << kk << ") with different ofield solvers differ by "
-          // << std::abs(result1[ii][jj][kk] - result2[ii][jj][kk]) << ", " << result1[ii][jj][kk] << " vs. "
-          // << result1[ii][jj][kk] << std::endl;
         } // kk
       } // jj
     } // ii
