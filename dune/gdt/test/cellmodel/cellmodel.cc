@@ -195,6 +195,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   , p_basis_integrated_vector_(size_p_)
   , u_dirichlet_constraints_(make_dirichlet_constraints(u_space_, boundary_info_))
   , phi_dirichlet_constraints_(make_dirichlet_constraints(phi_space_, boundary_info_))
+  , phi_shift_(DXTC_CONFIG_GET("phi_dirichlet_shift", 1.))
   , ofield_submatrix_pattern_(make_element_sparsity_pattern(u_space_, u_space_, grid_view_))
   , M_ofield_(size_u_, size_u_, ofield_submatrix_pattern_, num_mutexes_ofield_)
   , A_ofield_(size_u_, size_u_, ofield_submatrix_pattern_, num_mutexes_ofield_)
@@ -254,6 +255,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
                           M_ell_pfield_,
                           A_boundary_pfield_,
                           phi_dirichlet_constraints_,
+                          phi_shift_,
                           gamma_,
                           epsilon_,
                           Be_,
@@ -271,6 +273,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
                    pfield_solver_type,
                    pfield_mass_matrix_solver_type,
                    phi_dirichlet_constraints_.dirichlet_DoFs(),
+                   phi_shift_,
                    pfield_submatrix_pattern_,
                    num_cells_,
                    outer_reduction,
@@ -280,9 +283,9 @@ CellModelSolver::CellModelSolver(const std::string testcase,
                    inner_maxit,
                    inner_verbose)
   , pfield_rhs_vector_(3 * size_phi_, 0., num_mutexes_pfield_)
-  , pfield_g_vector_(pfield_rhs_vector_, 0, size_phi_)
-  , pfield_h_vector_(pfield_rhs_vector_, size_phi_, 2 * size_phi_)
-  , pfield_f_vector_(pfield_rhs_vector_, 2 * size_phi_, 3 * size_phi_)
+  , pfield_r0_vector_(pfield_rhs_vector_, 0, size_phi_)
+  , pfield_r1_vector_(pfield_rhs_vector_, size_phi_, 2 * size_phi_)
+  , pfield_r2_vector_(pfield_rhs_vector_, 2 * size_phi_, 3 * size_phi_)
   , pfield_deim_input_dofs_(num_cells_)
   , phinat_deim_input_dofs_begin_(num_cells_)
   , mu_deim_input_dofs_begin_(num_cells_)
@@ -296,6 +299,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   , pfield_tmp_vec_(3 * size_phi_, 0., 0)
   , pfield_tmp_vec2_(3 * size_phi_, 0., 0)
   , phi_tmp_vec_(size_phi_, 0., 0)
+  , phi_tmp_vec2_(size_phi_, 0., 0)
   , u_tmp_vec_(size_u_, 0., 0)
   , u_tmp_(u_space_)
   , u_tmp_local_(std::make_shared<PerThreadVectorLocalFunc>())
@@ -325,14 +329,16 @@ CellModelSolver::CellModelSolver(const std::string testcase,
     phi_initial_funcs.emplace_back(std::make_shared<XT::Functions::GenericFunction<d>>(
         50,
         /*evaluate=*/
-        [r, epsilon](const auto& x, const auto& /*param*/) { return std::tanh(r(x) / (std::sqrt(2.) * epsilon)); },
+        [r, epsilon, phi_shift = phi_shift_](const auto& x, const auto& /*param*/) {
+          return std::tanh(r(x) / (std::sqrt(2.) * epsilon)) + phi_shift;
+        },
         /*name=*/"phi_initial"));
     mu_initial_funcs.emplace_back(std::make_shared<const XT::Functions::GenericFunction<d>>(
         50,
         /*evaluate=*/
-        [& phi_in = phi_initial_funcs[0], epsilon](const auto& x, const auto& param) {
+        [& phi_in = phi_initial_funcs[0], epsilon, phi_shift = phi_shift_](const auto& x, const auto& param) {
           // TODO: add approximation of laplacian term
-          const auto phi = phi_in->evaluate(x, param);
+          const auto phi = phi_in->evaluate(x, param) - phi_shift;
           return 1. / epsilon * (std::pow(phi, 3) - phi);
         },
         /*name=*/"mu_initial"));
@@ -343,13 +349,13 @@ CellModelSolver::CellModelSolver(const std::string testcase,
     P_initial_funcs.emplace_back(std::make_shared<const XT::Functions::GenericFunction<d, d>>(
         50,
         /*evaluate=*/
-        [& phi_in = phi_initial_funcs[0]](const auto& x, const auto& param) {
+        [& phi_in = phi_initial_funcs[0], phi_shift = phi_shift_](const auto& x, const auto& param) {
           // auto rand1 = ((std::rand() % 2000) - 1000) / 20000.;
           // auto rand2 = ((std::rand() % 2000) - 1000) / 20000.;
           // auto ret = FieldVector<double, d>({1. + rand1, 0. +
           // rand2});
           auto ret = FieldVector<double, d>({1., 0.});
-          ret *= (phi_in->evaluate(x, param) + 1.) / 2.;
+          ret *= (phi_in->evaluate(x, param) - phi_shift + 1.) / 2.;
           return ret;
         },
         /*name=*/"P_initial"));
@@ -364,57 +370,65 @@ CellModelSolver::CellModelSolver(const std::string testcase,
     const XT::Functions::GenericFunction<d> phi1_initial(
         50,
         /*evaluate=*/
-        [r = r1, epsilon](const auto& x, const auto& /*param*/) { return std::tanh(r(x) / (std::sqrt(2.) * epsilon)); },
+        [r = r1, epsilon, phi_shift = phi_shift_](const auto& x, const auto& /*param*/) {
+          return std::tanh(r(x) / (std::sqrt(2.) * epsilon)) + phi_shift;
+        },
         /*name=*/"phi1_initial");
-    const XT::Functions::GenericFunction<d> mu1_initial(50,
-                                                        /*evaluate=*/
-                                                        [phi1_initial, epsilon](const auto& x, const auto& param) {
-                                                          // TODO: add approximation of laplacian term
-                                                          const auto phi = phi1_initial.evaluate(x, param);
-                                                          return 1. / epsilon * (std::pow(phi, 3) - phi);
-                                                        },
-                                                        /*name=*/"mu1_initial");
+    const XT::Functions::GenericFunction<d> mu1_initial(
+        50,
+        /*evaluate=*/
+        [phi1_initial, epsilon, phi_shift = phi_shift_](const auto& x, const auto& param) {
+          // TODO: add approximation of laplacian term
+          const auto phi = phi1_initial.evaluate(x, param) - phi_shift;
+          return 1. / epsilon * (std::pow(phi, 3) - phi);
+        },
+        /*name=*/"mu1_initial");
     const XT::Functions::GenericFunction<d> phi2_initial(
         50,
         /*evaluate=*/
-        [r = r2, epsilon](const auto& x, const auto& /*param*/) { return std::tanh(r(x) / (std::sqrt(2.) * epsilon)); },
+        [r = r2, epsilon, phi_shift = phi_shift_](const auto& x, const auto& /*param*/) {
+          return std::tanh(r(x) / (std::sqrt(2.) * epsilon)) + phi_shift;
+        },
         /*name=*/"phi1_initial");
-    const XT::Functions::GenericFunction<d> mu2_initial(50,
-                                                        /*evaluate=*/
-                                                        [phi2_initial, epsilon](const auto& x, const auto& param) {
-                                                          // TODO: add approximation of laplacian term
-                                                          const auto phi = phi2_initial.evaluate(x, param);
-                                                          return 1. / epsilon * (std::pow(phi, 3) - phi);
-                                                        },
-                                                        /*name=*/"mu1_initial");
+    const XT::Functions::GenericFunction<d> mu2_initial(
+        50,
+        /*evaluate=*/
+        [phi2_initial, epsilon, phi_shift = phi_shift_](const auto& x, const auto& param) {
+          // TODO: add approximation of laplacian term
+          const auto phi = phi2_initial.evaluate(x, param) - phi_shift;
+          return 1. / epsilon * (std::pow(phi, 3) - phi);
+        },
+        /*name=*/"mu1_initial");
 
     // initial condition for P is (1,0) + \delta where \delta(x) is vector-valued with random entries following an
     // uniform distribution on the interval [-0.05, 0.05]; restrict to cytoplasm by multiplying with (\phi + 1)/2
     std::srand(1); // set seed for std::rand to 1
-    const XT::Functions::GenericFunction<d, d> P1_initial(50,
-                                                          /*evaluate=*/
-                                                          [phi1_initial](const auto& x, const auto& param) {
-                                                            // auto rand1 = ((std::rand() % 2000) - 1000) / 20000.;
-                                                            // auto rand2 = ((std::rand() % 2000) - 1000) / 20000.;
-                                                            // auto ret = FieldVector<double, d>({1. + rand1, 0. +
-                                                            // rand2});
-                                                            auto ret = FieldVector<double, d>({1., 0.});
-                                                            ret *= (phi1_initial.evaluate(x, param) + 1.) / 2.;
-                                                            return ret;
-                                                          },
-                                                          /*name=*/"P_initial");
-    const XT::Functions::GenericFunction<d, d> P2_initial(50,
-                                                          /*evaluate=*/
-                                                          [phi2_initial](const auto& x, const auto& param) {
-                                                            // auto rand1 = ((std::rand() % 2000) - 1000) / 20000.;
-                                                            // auto rand2 = ((std::rand() % 2000) - 1000) / 20000.;
-                                                            // auto ret = FieldVector<double, d>({1. + rand1, 0. +
-                                                            // rand2});
-                                                            auto ret = FieldVector<double, d>({1., 0.});
-                                                            ret *= (phi2_initial.evaluate(x, param) + 1.) / 2.;
-                                                            return ret;
-                                                          },
-                                                          /*name=*/"P_initial");
+    const XT::Functions::GenericFunction<d, d> P1_initial(
+        50,
+        /*evaluate=*/
+        [phi1_initial, phi_shift = phi_shift_](const auto& x, const auto& param) {
+          // auto rand1 = ((std::rand() % 2000) - 1000) / 20000.;
+          // auto rand2 = ((std::rand() % 2000) - 1000) / 20000.;
+          // auto ret = FieldVector<double, d>({1. + rand1, 0. +
+          // rand2});
+          auto ret = FieldVector<double, d>({1., 0.});
+          ret *= (phi1_initial.evaluate(x, param) + phi_shift + 1.) / 2.;
+          return ret;
+        },
+        /*name=*/"P_initial");
+    const XT::Functions::GenericFunction<d, d> P2_initial(
+        50,
+        /*evaluate=*/
+        [phi2_initial, phi_shift = phi_shift_](const auto& x, const auto& param) {
+          // auto rand1 = ((std::rand() % 2000) - 1000) / 20000.;
+          // auto rand2 = ((std::rand() % 2000) - 1000) / 20000.;
+          // auto ret = FieldVector<double, d>({1. + rand1, 0. +
+          // rand2});
+          auto ret = FieldVector<double, d>({1., 0.});
+          ret *= (phi2_initial.evaluate(x, param) + phi_shift + 1.) / 2.;
+          return ret;
+        },
+        /*name=*/"P_initial");
 
     const XT::Functions::ConstantFunction<d, d> u_initial(0.);
   } else {
@@ -427,7 +441,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
 
   // On the non-periodic boundaries, use Dirichlet boundary conditions u = 0 and \phi = -1, Neumann boundary
   // conditions for the other variables
-  const XT::Functions::ConstantFunction<d> minus_one(-1.);
+  const XT::Functions::ConstantFunction<d> phi_boundary_value(-1. + phi_shift_);
   XT::Grid::AllDirichletBoundaryInfo<PI> all_dirichlet_boundary_info;
   default_interpolation(*u_initial_func, u_);
   // create system and temporary vectors, DiscreteFunctions, etc.
@@ -449,7 +463,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
     phinat_tmp_.emplace_back(phi_space_);
     mu_tmp_.emplace_back(phi_space_);
     default_interpolation(*phi_initial_funcs[kk], phi_[kk]);
-    boundary_interpolation(minus_one, phi_[kk], all_dirichlet_boundary_info, XT::Grid::DirichletBoundary{});
+    boundary_interpolation(phi_boundary_value, phi_[kk], all_dirichlet_boundary_info, XT::Grid::DirichletBoundary{});
     default_interpolation(*mu_initial_funcs[kk], mu_[kk]);
     default_interpolation(*P_initial_funcs[kk], P_[kk]);
   }
@@ -730,7 +744,9 @@ CellModelSolver::VectorType CellModelSolver::apply_stokes_product_operator(const
 void CellModelSolver::visualize_pfield(const std::string& filename, const VectorType& vec, const bool subsampling) const
 {
   auto vtk_writer = phi_[0].create_vtkwriter(phi_space_.grid_view(), subsampling);
-  const ConstVectorViewType phi_vec(vec, 0, size_phi_);
+  VectorType phi_vec(size_phi_);
+  for (size_t ii = 0; ii < size_phi_; ++ii)
+    phi_vec[ii] = vec[ii] - phi_shift_;
   const ConstVectorViewType phinat_vec(vec, size_phi_, 2 * size_phi_);
   const ConstVectorViewType mu_vec(vec, 2 * size_phi_, 3 * size_phi_);
   const auto phi_func = make_discrete_function(phi_space_, phi_vec, "phi");
@@ -782,16 +798,17 @@ void CellModelSolver::visualize(const std::string& prefix,
   if (vtu) {
     u_.add_to_vtkwriter(*vtk_writer);
     p_.add_to_vtkwriter(*vtk_writer);
+    VectorType phi_vec(size_phi_, 0.);
     for (size_t kk = 0; kk < num_cells_; ++kk) {
-      // std::cout << "phi l2_norm: " << l2_norm(phi_[kk].space().grid_view(), phi_[kk]) << std::endl;
-      // std::cout << "phinat l2_norm: " << l2_norm(phinat_[kk].space().grid_view(), phinat_[kk]) << std::endl;
-      // std::cout << "mu l2_norm: " << l2_norm(mu_[kk].space().grid_view(), mu_[kk]) << std::endl;
+      for (size_t ii = 0; ii < size_phi_; ++ii)
+        phi_vec[ii] = phi_[kk].dofs().vector()[ii] - phi_shift_;
+      const auto phi_func = make_discrete_function(phi_space_, phi_vec, "phi_" + XT::Common::to_string(kk));
       P_[kk].add_to_vtkwriter(*vtk_writer);
       Pnat_[kk].add_to_vtkwriter(*vtk_writer);
-      phi_[kk].add_to_vtkwriter(*vtk_writer);
+      phi_func.add_to_vtkwriter(*vtk_writer);
       phinat_[kk].add_to_vtkwriter(*vtk_writer);
       mu_[kk].add_to_vtkwriter(*vtk_writer);
-      phi_[kk].add_gradient_to_vtkwriter(*vtk_writer);
+      phi_func.add_gradient_to_vtkwriter(*vtk_writer);
       phinat_[kk].add_gradient_to_vtkwriter(*vtk_writer);
       mu_[kk].add_gradient_to_vtkwriter(*vtk_writer);
     }
@@ -1343,7 +1360,7 @@ CellModelSolver::apply_pfield_jacobian(const VectorType& source, const size_t ce
   VectorViewType range_phi(full_range, 0, size_phi_);
   VectorViewType range_phinat(full_range, size_phi_, 2 * size_phi_);
   VectorViewType range_mu(full_range, 2 * size_phi_, 3 * size_phi_);
-  const ConstVectorViewType source_phi(source, 0, size_phi_);
+  const ConstVectorViewType source_phi_shifted(source, 0, size_phi_);
   const ConstVectorViewType source_phinat(source, size_phi_, 2 * size_phi_);
   const ConstVectorViewType source_mu(source, 2 * size_phi_, 3 * size_phi_);
   // linear part
@@ -1351,6 +1368,7 @@ CellModelSolver::apply_pfield_jacobian(const VectorType& source, const size_t ce
   // nonlinear_part
   auto& tmp_vec = phi_tmp_vec_;
   const auto mv = mv_func<ConstVectorViewType, VectorType>(restricted);
+  const auto mv2 = mv_func<VectorType, VectorType>(restricted);
   const auto axpy = axpy_func<VectorViewType, VectorType>(restricted);
   const auto scal = scal_func<VectorType>(restricted);
   const auto add = add_func<VectorViewType, VectorType>(restricted);
@@ -1360,13 +1378,15 @@ CellModelSolver::apply_pfield_jacobian(const VectorType& source, const size_t ce
   mv(M_pfield_, source_mu, tmp_vec, phinat_output_dofs);
   axpy(range_phinat, 1. / Ca_, tmp_vec, phinat_output_dofs);
   // apply missing parts of A
-  mv(M_nonlin_pfield_, source_phi, tmp_vec, mu_output_dofs);
+  auto& source_phi = phi_tmp_vec2_;
+  source_phi = source_phi_shifted;
+  source_phi -= phi_shift_;
+  mv2(M_nonlin_pfield_, source_phi, tmp_vec, mu_output_dofs);
   scal(tmp_vec, 1. / epsilon_, mu_output_dofs);
   add(range_mu, tmp_vec, mu_output_dofs);
   // apply G
-  mv(G_pfield_, source_phi, tmp_vec, phinat_output_dofs);
+  mv2(G_pfield_, source_phi, tmp_vec, phinat_output_dofs);
   add(range_phinat, tmp_vec, phinat_output_dofs);
-
   if (restricted)
     for (size_t ii = 0; ii < output_dofs.size(); ++ii)
       range.set_entry(ii, full_range.get_entry(output_dofs[ii]));
@@ -1538,12 +1558,14 @@ void CellModelSolver::assemble_pfield_rhs(const double /*dt*/, const size_t cell
 {
   const auto& phi_output_dofs = phi_deim_output_dofs_[cell];
   const auto& phinat_output_dofs = phinat_deim_output_dofs_[cell];
-  auto f_functional = make_vector_functional(phi_space_, pfield_f_vector_);
-  auto h_functional = make_vector_functional(phi_space_, pfield_h_vector_);
-  // calculate f
+  const auto& mu_output_dofs = mu_deim_output_dofs_[cell];
+  auto r1_functional = make_vector_functional(phi_space_, pfield_r1_vector_);
+  auto r2_functional = make_vector_functional(phi_space_, pfield_r2_vector_);
+  // calculate r2
+  const auto scal = scal_func<VectorViewType>(restricted);
   if (linearize_)
-    pfield_f_vector_ *= 0.;
-  XT::Functions::GenericGridFunction<E, 1, 1> f_pf(
+    scal(pfield_r2_vector_, 0., mu_output_dofs);
+  XT::Functions::GenericGridFunction<E, 1, 1> r0_pf(
       /*order = */ 3 * phi_space_.max_polorder(),
       /*post_bind_func*/
       [cell, this](const E& element) { this->bind_phi(cell, element); },
@@ -1553,22 +1575,23 @@ void CellModelSolver::assemble_pfield_rhs(const double /*dt*/, const size_t cell
         const R phi_n = this->eval_phi(cell, x_local, param);
         return two_epsilon_inv * std::pow(phi_n, 3);
       });
-  f_functional.append(LocalElementIntegralFunctional<E, 1>(
-      local_binary_to_unary_element_integrand(LocalElementProductScalarWeightIntegrand<E, 1>(), f_pf)));
+  r2_functional.append(LocalElementIntegralFunctional<E, 1>(
+      local_binary_to_unary_element_integrand(LocalElementProductScalarWeightIntegrand<E, 1>(), r0_pf)));
   if (linearize_)
-    h_functional.append(f_functional);
-  // handling of dirichlet boundary conditions is not necessary as these are applied during computaton of the residual
+    r1_functional.append(r2_functional);
 
   // calculate g
-  const auto mv = mv_func<VectorViewType>(restricted);
-  mv(M_pfield_, phi_[cell].dofs().vector(), pfield_g_vector_, phi_output_dofs);
+  const auto mv = mv_func<VectorType, VectorViewType>(restricted);
+  auto& phi_n = phi_tmp_vec2_;
+  phi_n = phi_[cell].dofs().vector();
+  phi_n -= phi_shift_;
+  mv(M_pfield_, phi_n, pfield_r0_vector_, phi_output_dofs);
   for (const auto& DoF : phi_dirichlet_constraints_.dirichlet_DoFs())
-    pfield_g_vector_[DoF] = -1.;
+    pfield_r0_vector_[DoF] = -1. + phi_shift_;
 
   // calculate h
-  const auto scal = scal_func<VectorViewType>(restricted);
-  scal(pfield_h_vector_, 0., phinat_output_dofs);
-  XT::Functions::GenericGridFunction<E, 1, 1> h_pf(
+  scal(pfield_r1_vector_, 0., phinat_output_dofs);
+  XT::Functions::GenericGridFunction<E, 1, 1> r1_pf(
       /*order = */ 3 * phi_space_.max_polorder(),
       /*post_bind_func*/
       [cell, this](const E& element) {
@@ -1595,13 +1618,13 @@ void CellModelSolver::assemble_pfield_rhs(const double /*dt*/, const size_t cell
         }
         return ret;
       });
-  h_functional.append(LocalElementIntegralFunctional<E, 1>(
-      local_binary_to_unary_element_integrand(LocalElementProductScalarWeightIntegrand<E, 1>(1.), h_pf)));
+  r1_functional.append(LocalElementIntegralFunctional<E, 1>(
+      local_binary_to_unary_element_integrand(LocalElementProductScalarWeightIntegrand<E, 1>(1.), r1_pf)));
   // assemble rhs
   if (!restricted)
-    h_functional.assemble(use_tbb_);
+    r1_functional.assemble(use_tbb_);
   else
-    h_functional.assemble_range(pfield_deim_entities_[cell]);
+    r1_functional.assemble_range(pfield_deim_entities_[cell]);
 }
 
 // assembles linear part of orientation field jacobian and stores in S_ofield_
@@ -2000,7 +2023,7 @@ CellModelSolver::R
 CellModelSolver::eval_phi(const size_t cell, const DomainType& x_local, const XT::Common::Parameter& param)
 {
   auto& phi_local_cell = (**phi_tmp_local_)[cell];
-  return phi_local_cell->evaluate(x_local, param)[0];
+  return phi_local_cell->evaluate(x_local, param)[0] - phi_shift_;
 }
 
 CellModelSolver::DomainRetType

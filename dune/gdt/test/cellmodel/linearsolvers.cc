@@ -263,6 +263,7 @@ PfieldLinearSolver::PfieldLinearSolver(const double gamma,
                                        const CellModelLinearSolverType solver_type,
                                        const CellModelMassMatrixSolverType mass_matrix_solver_type,
                                        const std::set<size_t>& phi_dirichlet_dofs,
+                                       const double phi_shift,
                                        const XT::LA::SparsityPatternDefault& submatrix_pattern,
                                        const size_t num_cells,
                                        const double outer_reduction,
@@ -286,6 +287,7 @@ PfieldLinearSolver::PfieldLinearSolver(const double gamma,
   , S_(CellModelLinearSolverWrapper::create_system_matrix(
         is_schur_solver_, 3 * size_phi_, system_matrix_pattern(submatrix_pattern)))
   , phi_dirichlet_dofs_(phi_dirichlet_dofs)
+  , phi_shift_(phi_shift)
   , wrapper_(create_linear_operator(),
              create_scalar_product(),
              M_,
@@ -387,6 +389,11 @@ void PfieldLinearSolver::apply_inverse_mass_matrix(const EigenVectorType& rhs,
 const std::set<size_t>& PfieldLinearSolver::dirichlet_dofs() const
 {
   return phi_dirichlet_dofs_;
+}
+
+PfieldLinearSolver::R PfieldLinearSolver::dirichlet_shift() const
+{
+  return phi_shift_;
 }
 
 void PfieldLinearSolver::fill_S() const
@@ -491,10 +498,11 @@ std::shared_ptr<PfieldLinearSolver::LinearOperatorType> PfieldLinearSolver::crea
 
 std::shared_ptr<Dune::ScalarProduct<PfieldLinearSolver::EigenVectorType>> PfieldLinearSolver::create_scalar_product()
 {
-  if (is_schur_solver_)
-    return std::make_shared<PhiScalarProductType>(M_);
-  else
-    return std::make_shared<PfieldScalarProductType>(M_);
+  return std::make_shared<Dune::ScalarProduct<EigenVectorType>>();
+  // if (is_schur_solver_)
+  // return std::make_shared<PhiScalarProductType>(M_);
+  // else
+  // return std::make_shared<PfieldScalarProductType>(M_);
 }
 
 
@@ -661,10 +669,11 @@ std::shared_ptr<OfieldLinearSolver::LinearOperatorType> OfieldLinearSolver::crea
 
 std::shared_ptr<Dune::ScalarProduct<OfieldLinearSolver::EigenVectorType>> OfieldLinearSolver::create_scalar_product()
 {
-  if (is_schur_solver_)
-    return std::make_shared<PScalarProductType>(M_);
-  else
-    return std::make_shared<OfieldScalarProductType>(M_);
+  return std::make_shared<Dune::ScalarProduct<EigenVectorType>>();
+  // if (is_schur_solver_)
+  // return std::make_shared<PScalarProductType>(M_);
+  // else
+  // return std::make_shared<OfieldScalarProductType>(M_);
 }
 
 

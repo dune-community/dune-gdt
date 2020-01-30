@@ -223,7 +223,6 @@ public:
     G_.mv(x, tmp_vec2_);
     tmp_vec2_ -= tmp_vec_;
     // apply -dt E H^{-1}
-    // tmp_vec_.backend() = M_inv_.solve(tmp_vec2_.backend());
     solver_.apply_inverse_mass_matrix(tmp_vec2_, tmp_vec_, &last_E_result_);
     last_E_result_ = tmp_vec_.backend();
     M_ell_.mv(tmp_vec_, tmp_vec2_);
@@ -325,6 +324,7 @@ public:
                                  const Matrix& M_ell,
                                  const Matrix& A_boundary,
                                  const Dirichlet& dirichlet,
+                                 const Field phi_shift,
                                  const double gamma,
                                  const double eps,
                                  const double Be,
@@ -335,6 +335,7 @@ public:
     , M_ell_(M_ell)
     , A_boundary_(A_boundary)
     , dirichlet_(dirichlet)
+    , phi_shift_(phi_shift)
     , gamma_(gamma)
     , epsilon_(eps)
     , Be_(Be)
@@ -361,13 +362,13 @@ public:
     const auto& mu_begin = cellmodel_solver_->mu_deim_input_dofs_begin_[cell_];
     if (!restricted_) {
       for (size_t ii = 0; ii < size_phi_; ++ii) {
-        x_phi_[ii] = x[ii];
+        x_phi_[ii] = x[ii] - phi_shift_;
         x_phinat_[ii] = x[size_phi_ + ii];
         x_mu_[ii] = x[2 * size_phi_ + ii];
       }
     } else {
       for (size_t ii = 0; ii < phinat_begin; ++ii)
-        x_phi_[input_dofs[ii]] = x[input_dofs[ii]];
+        x_phi_[input_dofs[ii]] = x[input_dofs[ii]] - phi_shift_;
       for (size_t ii = phinat_begin; ii < mu_begin; ++ii)
         x_phinat_[input_dofs[ii] - size_phi_] = x[input_dofs[ii]];
       for (size_t ii = mu_begin; ii < input_dofs.size(); ++ii)
@@ -384,7 +385,7 @@ public:
     mv(M_ell_, x_phinat_, tmp_vec_, phi_dofs);
     axpy(y_phi_, dt_ * gamma_, tmp_vec_, phi_dofs);
     for (const auto& DoF : dirichlet_.dirichlet_DoFs())
-      y_phi_[DoF] = x_phi_[DoF];
+      y_phi_[DoF] = x[DoF];
     // second row
     const auto& phinat_dofs = cellmodel_solver_->phinat_deim_output_dofs_[cell_];
     mv(M_, x_phinat_, y_phinat_, phinat_dofs);
@@ -435,6 +436,7 @@ private:
   const Matrix& M_ell_;
   const Matrix& A_boundary_;
   const Dirichlet& dirichlet_;
+  const Field phi_shift_;
   double gamma_;
   double epsilon_;
   double Be_;

@@ -72,7 +72,6 @@ int main(int argc, char* argv[])
     // output
     std::string filename = config.get("output.filename", "cellmodel") + (linearize ? "_linearized" : "");
 
-
     const double gmres_reduction = 1e-10;
     const int gmres_restart = 50;
     const double inner_gmres_reduction = 1e-3;
@@ -80,7 +79,6 @@ int main(int argc, char* argv[])
     const int gmres_verbose = 0;
     const CellModelLinearSolverType solver_type = CellModelLinearSolverType::schur_fgmres_gmres;
     const CellModelMassMatrixSolverType mass_matrix_solver_type = CellModelMassMatrixSolverType::sparse_lu;
-
 
     CellModelSolver model_solver(testcase,
                                  t_end,

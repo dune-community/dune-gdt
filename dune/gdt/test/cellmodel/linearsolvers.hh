@@ -202,6 +202,7 @@ public:
                      const CellModelLinearSolverType solver_type,
                      const CellModelMassMatrixSolverType mass_matrix_solver_type,
                      const std::set<size_t>& phi_dirichlet_dofs,
+                     const double phi_shift,
                      const XT::LA::SparsityPatternDefault& submatrix_pattern,
                      const size_t num_cells,
                      const double outer_reduction = 1e-10,
@@ -234,6 +235,8 @@ public:
 
   const std::set<size_t>& dirichlet_dofs() const;
 
+  R dirichlet_shift() const;
+
 private:
   void fill_S() const;
 
@@ -258,6 +261,7 @@ private:
   const size_t size_phi_;
   std::shared_ptr<MatrixType> S_;
   const std::set<size_t>& phi_dirichlet_dofs_;
+  const R phi_shift_;
   CellModelLinearSolverWrapper wrapper_;
   mutable MatrixViewType S_00_;
   mutable MatrixViewType S_01_;

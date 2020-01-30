@@ -597,6 +597,9 @@ struct CellModelSolver
   const XT::Grid::AllDirichletBoundaryInfo<PI> boundary_info_;
   DirichletConstraints<PI, SpaceInterface<PGV, d, 1, R>> u_dirichlet_constraints_;
   PhiDirichletConstraintsType phi_dirichlet_constraints_;
+  // phi is shifted by this value, i.e., instead of solving for phi, we are solving for phi + phi_shift.
+  // Set to 1 by default to get 0 on the boundary instead of -1.
+  R phi_shift_;
   // Sparsity pattern of one block of orientation field system matrix
   XT::LA::SparsityPatternDefault ofield_submatrix_pattern_;
   // Orientation field mass matrix
@@ -657,11 +660,11 @@ struct CellModelSolver
   PfieldMatrixLinearPartOperator<VectorType, MatrixType, PhiDirichletConstraintsType, CellModelSolver>
       pfield_jac_linear_op_;
   PfieldLinearSolver pfield_solver_;
-  // Phase field rhs vector (g h f)
+  // Phase field rhs vector (r0 r1 r2)
   VectorType pfield_rhs_vector_;
-  VectorViewType pfield_g_vector_;
-  VectorViewType pfield_h_vector_;
-  VectorViewType pfield_f_vector_;
+  VectorViewType pfield_r0_vector_;
+  VectorViewType pfield_r1_vector_;
+  VectorViewType pfield_r2_vector_;
   mutable EigenVectorType phi_tmp_eigen_;
   mutable EigenVectorType phi_tmp_eigen2_;
   mutable EigenVectorType phi_tmp_eigen3_;
@@ -688,6 +691,7 @@ struct CellModelSolver
   mutable EigenVectorType pfield_tmp_eigen_;
   VectorType pfield_tmp_vec2_;
   VectorType phi_tmp_vec_;
+  VectorType phi_tmp_vec2_;
   VectorType u_tmp_vec_;
   mutable VectorDiscreteFunctionType u_tmp_;
   mutable std::vector<VectorDiscreteFunctionType> P_tmp_;
