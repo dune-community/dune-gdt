@@ -16,17 +16,19 @@
 namespace Dune {
 
 
-template <class VectorType>
-class LinearOperatorWrapper : public Dune::LinearOperator<VectorType, VectorType>
+template <class MatrixType, class VectorType>
+class LinearOperatorWrapper : public Dune::AssembledLinearOperator<MatrixType, VectorType, VectorType>
 {
-  using BaseType = Dune::LinearOperator<VectorType, VectorType>;
+  using BaseType = Dune::AssembledLinearOperator<MatrixType, VectorType, VectorType>;
 
 public:
+  using Matrix = MatrixType;
   using Vector = VectorType;
   using Field = typename VectorType::ScalarType;
 
-  LinearOperatorWrapper(const size_t vector_length)
-    : tmp_vec_(vector_length, 0.)
+  LinearOperatorWrapper(const MatrixType& M, const size_t vector_length)
+    : M_(M)
+    , tmp_vec_(vector_length, 0.)
   {}
 
   using BaseType::apply;
@@ -42,6 +44,11 @@ public:
 
   virtual void prepare(const double /*dt*/, const size_t /*cell*/, const bool /*restricted*/ = false) {}
 
+  virtual const Matrix& getmat() const override
+  {
+    return M_;
+  }
+
   //! Category of the linear operator (see SolverCategory::Category)
   SolverCategory::Category category() const override
   {
@@ -49,14 +56,15 @@ public:
   }
 
 private:
+  const MatrixType& M_;
   mutable VectorType tmp_vec_;
 };
 
 
 template <class VectorType, class MatrixType, class CellModelSolverType>
-class OfieldMatrixLinearPartOperator : public LinearOperatorWrapper<VectorType>
+class OfieldMatrixLinearPartOperator : public LinearOperatorWrapper<MatrixType, VectorType>
 {
-  using BaseType = LinearOperatorWrapper<VectorType>;
+  using BaseType = LinearOperatorWrapper<MatrixType, VectorType>;
 
 public:
   using Vector = VectorType;
@@ -70,7 +78,7 @@ public:
                                  const Matrix& C_lin,
                                  const double kappa,
                                  const CellModelSolverType* cellmodel_solver)
-    : BaseType(2 * M.rows())
+    : BaseType(M, 2 * M.rows())
     , M_(M)
     , A_(A)
     , C_lin_(C_lin)
@@ -143,6 +151,12 @@ public:
     restricted_ = restricted;
   }
 
+  virtual const Matrix& getmat() const override final
+  {
+    DUNE_THROW(Dune::NotImplemented, "");
+    return M_;
+  }
+
 private:
   const Matrix& M_;
   const Matrix& A_;
@@ -162,9 +176,9 @@ private:
 };
 
 template <class VectorType, class MatrixType, class SolverType>
-class PfieldPhiMatrixOperator : public LinearOperatorWrapper<VectorType>
+class PfieldPhiMatrixOperator : public LinearOperatorWrapper<MatrixType, VectorType>
 {
-  using BaseType = LinearOperatorWrapper<VectorType>;
+  using BaseType = LinearOperatorWrapper<MatrixType, VectorType>;
 
 public:
   using Vector = VectorType;
@@ -184,7 +198,7 @@ public:
                           const double epsilon,
                           const double Be,
                           const double Ca)
-    : BaseType(M.rows())
+    : BaseType(M, M.rows())
     , M_(M)
     , D_(D)
     , M_ell_(M_ell)
@@ -254,6 +268,12 @@ public:
     A_.axpy(-epsilon_, A_boundary_);
   }
 
+  virtual const Matrix& getmat() const override final
+  {
+    DUNE_THROW(Dune::NotImplemented, "");
+    return M_;
+  }
+
 private:
   const Matrix& M_;
   const Matrix& D_;
@@ -277,9 +297,9 @@ private:
 };
 
 template <class VectorType, class MatrixType>
-class MatrixToLinearOperator : public LinearOperatorWrapper<VectorType>
+class MatrixToLinearOperator : public LinearOperatorWrapper<MatrixType, VectorType>
 {
-  using BaseType = LinearOperatorWrapper<VectorType>;
+  using BaseType = LinearOperatorWrapper<MatrixType, VectorType>;
 
 public:
   using Vector = VectorType;
@@ -289,7 +309,7 @@ public:
   // Matrix dimensions are
   // A: m x m, B1, B2: m x n, C: n x n
   MatrixToLinearOperator(const Matrix& M)
-    : BaseType(M.rows())
+    : BaseType(M, M.rows())
     , M_(M)
   {}
 
@@ -307,9 +327,9 @@ private:
 };
 
 template <class VectorType, class MatrixType, class DirichletConstraintsType, class CellModelSolverType>
-class PfieldMatrixLinearPartOperator : public LinearOperatorWrapper<VectorType>
+class PfieldMatrixLinearPartOperator : public LinearOperatorWrapper<MatrixType, VectorType>
 {
-  using BaseType = LinearOperatorWrapper<VectorType>;
+  using BaseType = LinearOperatorWrapper<MatrixType, VectorType>;
 
 public:
   using Vector = VectorType;
@@ -325,17 +345,19 @@ public:
                                  const Matrix& A_boundary,
                                  const Dirichlet& dirichlet,
                                  const Field phi_shift,
+                                 const Field phinat_scale_factor,
                                  const double gamma,
                                  const double eps,
                                  const double Be,
                                  const CellModelSolverType* cellmodel_solver)
-    : BaseType(3 * M.rows())
+    : BaseType(M, 3 * M.rows())
     , M_(M)
     , D_(D)
     , M_ell_(M_ell)
     , A_boundary_(A_boundary)
     , dirichlet_(dirichlet)
     , phi_shift_(phi_shift)
+    , phinat_scale_factor_(phinat_scale_factor)
     , gamma_(gamma)
     , epsilon_(eps)
     , Be_(Be)
@@ -356,19 +378,24 @@ public:
    */
   void apply(const Vector& x, Vector& y) const override final
   {
+    apply(x, y, true);
+  }
+
+  void apply(const Vector& x, Vector& y, const bool apply_shift) const
+  {
     // copy to temporary vectors (we do not use vector views to improve performance of mv)
     const auto& input_dofs = cellmodel_solver_->pfield_deim_input_dofs_[cell_];
     const auto& phinat_begin = cellmodel_solver_->phinat_deim_input_dofs_begin_[cell_];
     const auto& mu_begin = cellmodel_solver_->mu_deim_input_dofs_begin_[cell_];
     if (!restricted_) {
       for (size_t ii = 0; ii < size_phi_; ++ii) {
-        x_phi_[ii] = x[ii] - phi_shift_;
+        x_phi_[ii] = x[ii] - phi_shift_ * apply_shift;
         x_phinat_[ii] = x[size_phi_ + ii];
         x_mu_[ii] = x[2 * size_phi_ + ii];
       }
     } else {
       for (size_t ii = 0; ii < phinat_begin; ++ii)
-        x_phi_[input_dofs[ii]] = x[input_dofs[ii]] - phi_shift_;
+        x_phi_[input_dofs[ii]] = x[input_dofs[ii]] - phi_shift_ * apply_shift;
       for (size_t ii = phinat_begin; ii < mu_begin; ++ii)
         x_phinat_[input_dofs[ii] - size_phi_] = x[input_dofs[ii]];
       for (size_t ii = mu_begin; ii < input_dofs.size(); ++ii)
@@ -377,18 +404,20 @@ public:
     // apply matrices
     const auto mv = cellmodel_solver_->template mv_func<Vector>(restricted_);
     const auto axpy = cellmodel_solver_->template axpy_func<Vector>(restricted_);
+    const auto scal = cellmodel_solver_->template scal_func<Vector>(restricted_);
     // first row
     const auto& phi_dofs = cellmodel_solver_->phi_deim_output_dofs_[cell_];
     mv(M_, x_phi_, y_phi_, phi_dofs);
     mv(D_, x_phi_, tmp_vec_, phi_dofs);
     axpy(y_phi_, dt_, tmp_vec_, phi_dofs);
     mv(M_ell_, x_phinat_, tmp_vec_, phi_dofs);
-    axpy(y_phi_, dt_ * gamma_, tmp_vec_, phi_dofs);
+    axpy(y_phi_, dt_ * gamma_ / phinat_scale_factor_, tmp_vec_, phi_dofs);
     for (const auto& DoF : dirichlet_.dirichlet_DoFs())
       y_phi_[DoF] = x[DoF];
     // second row
     const auto& phinat_dofs = cellmodel_solver_->phinat_deim_output_dofs_[cell_];
     mv(M_, x_phinat_, y_phinat_, phinat_dofs);
+    scal(y_phinat_, 1. / phinat_scale_factor_, phinat_dofs);
     mv(M_ell_, x_mu_, tmp_vec_, phinat_dofs);
     axpy(y_phinat_, 1. / Be_, tmp_vec_, phinat_dofs);
     // third row
@@ -430,6 +459,12 @@ public:
     restricted_ = restricted;
   }
 
+  virtual const Matrix& getmat() const override final
+  {
+    DUNE_THROW(Dune::NotImplemented, "");
+    return M_;
+  }
+
 private:
   const Matrix& M_;
   const Matrix& D_;
@@ -437,6 +472,7 @@ private:
   const Matrix& A_boundary_;
   const Dirichlet& dirichlet_;
   const Field phi_shift_;
+  const Field phinat_scale_factor_;
   double gamma_;
   double epsilon_;
   double Be_;

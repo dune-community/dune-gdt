@@ -13,6 +13,8 @@
 #include <vector>
 #include <memory>
 
+#include <dune/istl/paamg/fastamg.hh>
+
 #include <dune/xt/common/parameter.hh>
 
 #include <dune/xt/la/container/common.hh>
@@ -40,7 +42,7 @@ class BiCGSTABSolver;
 template <class X, class Y>
 class LinearOperator;
 
-template <class X>
+template <class M, class X>
 class LinearOperatorWrapper;
 
 template <class X>
@@ -93,11 +95,12 @@ public:
   using GMResSolverType = Dune::GMResSolver<EigenVectorType, EigenVectorType, EigenVectorType>;
   using BiCGSTABSolverType = Dune::BiCGSTABSolver<EigenVectorType>;
   using DuneLinearOperatorType = Dune::LinearOperator<EigenVectorType, EigenVectorType>;
-  using LinearOperatorType = LinearOperatorWrapper<EigenVectorType>;
+  using LinearOperatorType = LinearOperatorWrapper<MatrixType, EigenVectorType>;
   using ScalarProductType = Dune::ScalarProduct<EigenVectorType>;
   using IterativeSolverType = Dune::IterativeSolver<EigenVectorType, EigenVectorType>;
   using SystemMatrixLinearOperatorType = MatrixToLinearOperator<EigenVectorType, MatrixType>;
   using PreconditionerType = Dune::Preconditioner<EigenVectorType, EigenVectorType>;
+  // using AMGPreconditionerType = Dune::Amg::FastAMG<SystemMatrixLinearOperatorType,EigenVectorType>;
   using IdentityPreconditionerType = IdentityPreconditioner<EigenVectorType>;
   using IterativeSolverPreconditionerType = IterativeSolverPreconditioner<EigenVectorType>;
 
@@ -144,6 +147,8 @@ private:
                                                                     const int inner_maxit,
                                                                     const size_t vector_size);
 
+  std::shared_ptr<PreconditionerType> create_preconditioner(std::shared_ptr<DuneLinearOperatorType> linear_op);
+
   std::shared_ptr<IterativeSolverType> create_iterative_solver(std::shared_ptr<DuneLinearOperatorType> linear_op,
                                                                ScalarProductType& scalar_product,
                                                                const R outer_reduction,
@@ -166,7 +171,7 @@ private:
   std::shared_ptr<LUSolverType> direct_solver_;
   std::shared_ptr<IdentityPreconditionerType> identity_preconditioner_;
   std::shared_ptr<IterativeSolverType> preconditioner_solver_;
-  std::shared_ptr<IterativeSolverPreconditionerType> preconditioner_;
+  std::shared_ptr<PreconditionerType> preconditioner_;
   std::shared_ptr<IterativeSolverType> outer_solver_;
   mutable std::vector<EigenVectorType> previous_update_;
 }; // class CellModelLinearSolverWrapper<...>
@@ -203,6 +208,7 @@ public:
                      const CellModelMassMatrixSolverType mass_matrix_solver_type,
                      const std::set<size_t>& phi_dirichlet_dofs,
                      const double phi_shift,
+                     const double phinat_scale_factor,
                      const XT::LA::SparsityPatternDefault& submatrix_pattern,
                      const size_t num_cells,
                      const double outer_reduction = 1e-10,
@@ -262,6 +268,7 @@ private:
   std::shared_ptr<MatrixType> S_;
   const std::set<size_t>& phi_dirichlet_dofs_;
   const R phi_shift_;
+  const R phinat_scale_factor_;
   CellModelLinearSolverWrapper wrapper_;
   mutable MatrixViewType S_00_;
   mutable MatrixViewType S_01_;

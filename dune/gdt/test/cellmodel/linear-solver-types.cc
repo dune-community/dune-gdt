@@ -23,6 +23,8 @@ CellModelLinearSolverType string_to_solver_type(const std::string& type_string)
     return CellModelLinearSolverType::fgmres_gmres;
   else if (type_string == "fgmres_bicgstab")
     return CellModelLinearSolverType::fgmres_bicgstab;
+  else if (type_string == "fgmres_amg")
+    return CellModelLinearSolverType::fgmres_amg;
   else if (type_string == "schur_gmres")
     return CellModelLinearSolverType::schur_gmres;
   else if (type_string == "schur_fgmres_gmres")

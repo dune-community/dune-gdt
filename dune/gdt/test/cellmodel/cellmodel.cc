@@ -15,7 +15,6 @@
 
 #include <dune/xt/la/container/common.hh>
 #include <dune/xt/la/container/eigen.hh>
-#include <dune/xt/la/container/matrix-market.hh>
 #include <dune/xt/la/container/matrix-view.hh>
 #include <dune/xt/la/container/vector-view.hh>
 #include <dune/xt/la/solver.hh>
@@ -196,6 +195,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   , u_dirichlet_constraints_(make_dirichlet_constraints(u_space_, boundary_info_))
   , phi_dirichlet_constraints_(make_dirichlet_constraints(phi_space_, boundary_info_))
   , phi_shift_(DXTC_CONFIG_GET("phi_dirichlet_shift", 1.))
+  , phinat_scale_factor_(DXTC_CONFIG_GET("phinat_scale_factor", 1.))
   , ofield_submatrix_pattern_(make_element_sparsity_pattern(u_space_, u_space_, grid_view_))
   , M_ofield_(size_u_, size_u_, ofield_submatrix_pattern_, num_mutexes_ofield_)
   , A_ofield_(size_u_, size_u_, ofield_submatrix_pattern_, num_mutexes_ofield_)
@@ -256,6 +256,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
                           A_boundary_pfield_,
                           phi_dirichlet_constraints_,
                           phi_shift_,
+                          phinat_scale_factor_,
                           gamma_,
                           epsilon_,
                           Be_,
@@ -274,6 +275,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
                    pfield_mass_matrix_solver_type,
                    phi_dirichlet_constraints_.dirichlet_DoFs(),
                    phi_shift_,
+                   phinat_scale_factor_,
                    pfield_submatrix_pattern_,
                    num_cells_,
                    outer_reduction,
@@ -1246,13 +1248,11 @@ CellModelSolver::VectorType CellModelSolver::apply_inverse_ofield_operator(const
         y_n_plus_1 = y_n + update * lambda;
         residual = apply_ofield_operator(y_n_plus_1, cell);
         candidate_res = ofield_residual_norm(residual, l2_norm_P, l2_norm_Pnat);
-        // std::cout << "Candidate res: " << candidate_res << std::endl;
         lambda /= 2;
         k += 1;
       }
       y_n = y_n_plus_1;
       res_norm = candidate_res;
-      // std::cout << "Current res: " << candidate_res << std::endl;
       iter += 1;
     } // while (true)
     return y_n;
@@ -1280,6 +1280,7 @@ CellModelSolver::VectorType CellModelSolver::apply_inverse_pfield_operator(const
     auto begin = std::chrono::steady_clock::now();
     auto residual = apply_pfield_operator(y_guess, cell, false);
     auto res_norm = pfield_residual_norm(residual, l2_norm_phi, l2_norm_phinat, l2_norm_mu);
+    std::cout << "Newton: Initial Residual: " << res_norm << std::endl;
     std::chrono::duration<double> time = std::chrono::steady_clock::now() - begin;
     // std::cout << "Computing residual took: " << time.count() << " s!" << std::endl;
 
@@ -1307,31 +1308,32 @@ CellModelSolver::VectorType CellModelSolver::apply_inverse_pfield_operator(const
                                                                           << "(" << Re_ << ", " << 1. / Fa_inv_ << ", "
                                                                           << xi_ << ")" << std::endl);
 
-      // apply damping
-      size_t k = 0;
-      auto candidate_res = 2 * res_norm; // any number such that we enter the while loop at least once
-      double lambda = 1;
-
-      // revert jacobian back to linear part to correctly calculate linear part of residual
-      // revert_pfield_jacobian_to_linear();
-
-      // backtracking line search
-      const double gamma = 0.001;
-      while (candidate_res > (1 - gamma * lambda) * res_norm) {
-        DUNE_THROW_IF(k >= max_dampening_iter,
-                      Exceptions::operator_error,
-                      "max iterations reached when trying to compute automatic dampening!\n|residual|_l2 = "
-                          << res_norm << "\nl = " << iter << "\n");
-        x_n_plus_1 = x_n + update * lambda;
-        residual = apply_pfield_operator(x_n_plus_1, cell, false);
-        candidate_res = pfield_residual_norm(residual, l2_norm_phi, l2_norm_phinat, l2_norm_mu);
-        // std::cout << "Candidate res: " << candidate_res << std::endl;
-        lambda /= 2;
-        k += 1;
+      if (iter > 10) {
+        // apply damping via backtracking line search
+        size_t k = 0;
+        auto candidate_res = 2 * res_norm; // any number such that we enter the while loop at least once
+        double lambda = 1;
+        const double gamma = 0.001;
+        while (candidate_res > (1 - gamma * lambda) * res_norm) {
+          DUNE_THROW_IF(k >= max_dampening_iter,
+                        Exceptions::operator_error,
+                        "max iterations reached when trying to compute automatic dampening!\n|residual|_l2 = "
+                            << res_norm << "\nl = " << iter << "\n");
+          x_n_plus_1 = x_n + update * lambda;
+          residual = apply_pfield_operator(x_n_plus_1, cell, false);
+          candidate_res = pfield_residual_norm(residual, l2_norm_phi, l2_norm_phinat, l2_norm_mu);
+          // std::cout << "Candidate res: " << candidate_res << std::endl;
+          lambda /= 2;
+          k += 1;
+        }
+        x_n = x_n_plus_1;
+        res_norm = candidate_res;
+      } else {
+        x_n += update;
+        residual = apply_pfield_operator(x_n, cell, false);
+        res_norm = pfield_residual_norm(residual, l2_norm_phi, l2_norm_phinat, l2_norm_mu);
       }
-      x_n = x_n_plus_1;
-      res_norm = candidate_res;
-      // std::cout << "Current res: " << candidate_res << std::endl;
+      std::cout << "Newton: Iter " << iter << " Current residual: " << res_norm << std::endl;
       iter += 1;
     } // while (true)
     return x_n;
@@ -1360,15 +1362,14 @@ CellModelSolver::apply_pfield_jacobian(const VectorType& source, const size_t ce
   VectorViewType range_phi(full_range, 0, size_phi_);
   VectorViewType range_phinat(full_range, size_phi_, 2 * size_phi_);
   VectorViewType range_mu(full_range, 2 * size_phi_, 3 * size_phi_);
-  const ConstVectorViewType source_phi_shifted(source, 0, size_phi_);
+  const ConstVectorViewType source_phi(source, 0, size_phi_);
   const ConstVectorViewType source_phinat(source, size_phi_, 2 * size_phi_);
   const ConstVectorViewType source_mu(source, 2 * size_phi_, 3 * size_phi_);
   // linear part
-  pfield_jac_linear_op_.apply(source, full_range);
+  pfield_jac_linear_op_.apply(source, full_range, false);
   // nonlinear_part
   auto& tmp_vec = phi_tmp_vec_;
   const auto mv = mv_func<ConstVectorViewType, VectorType>(restricted);
-  const auto mv2 = mv_func<VectorType, VectorType>(restricted);
   const auto axpy = axpy_func<VectorViewType, VectorType>(restricted);
   const auto scal = scal_func<VectorType>(restricted);
   const auto add = add_func<VectorViewType, VectorType>(restricted);
@@ -1378,14 +1379,11 @@ CellModelSolver::apply_pfield_jacobian(const VectorType& source, const size_t ce
   mv(M_pfield_, source_mu, tmp_vec, phinat_output_dofs);
   axpy(range_phinat, 1. / Ca_, tmp_vec, phinat_output_dofs);
   // apply missing parts of A
-  auto& source_phi = phi_tmp_vec2_;
-  source_phi = source_phi_shifted;
-  source_phi -= phi_shift_;
-  mv2(M_nonlin_pfield_, source_phi, tmp_vec, mu_output_dofs);
+  mv(M_nonlin_pfield_, source_phi, tmp_vec, mu_output_dofs);
   scal(tmp_vec, 1. / epsilon_, mu_output_dofs);
   add(range_mu, tmp_vec, mu_output_dofs);
   // apply G
-  mv2(G_pfield_, source_phi, tmp_vec, phinat_output_dofs);
+  mv(G_pfield_, source_phi, tmp_vec, phinat_output_dofs);
   add(range_phinat, tmp_vec, phinat_output_dofs);
   if (restricted)
     for (size_t ii = 0; ii < output_dofs.size(); ++ii)
@@ -1924,8 +1922,6 @@ void CellModelSolver::assemble_nonlinear_part_of_pfield_residual(VectorType& res
     nonlinear_res1_functional.assemble(use_tbb_);
   else
     nonlinear_res1_functional.walk_range(pfield_deim_entities_[cell]);
-  // high-dimensional operation, TODO: replace
-  // phi_dirichlet_constraints_.apply(res2_vec);
 }
 
 //******************************************************************************************************************
@@ -2219,17 +2215,18 @@ double CellModelSolver::pfield_residual_norm(const VectorType& residual,
                                              double l2_ref_phinat,
                                              double l2_ref_mu) const
 {
-  l2_ref_phi = l2_ref_phi < 1. ? 1. : l2_ref_phi;
-  l2_ref_phinat = l2_ref_phinat < 1. ? 1. : l2_ref_phinat;
-  l2_ref_mu = l2_ref_mu < 1. ? 1. : l2_ref_mu;
-  ConstVectorViewType res0_vec(residual, 0, size_phi_);
-  ConstVectorViewType res1_vec(residual, size_phi_, 2 * size_phi_);
-  ConstVectorViewType res2_vec(residual, 2 * size_phi_, 3 * size_phi_);
-  const auto res0 = make_discrete_function(phi_space_, res0_vec);
-  const auto res1 = make_discrete_function(phi_space_, res1_vec);
-  const auto res2 = make_discrete_function(phi_space_, res2_vec);
-  return l2_norm(grid_view_, res0) / l2_ref_phi + l2_norm(grid_view_, res1) / l2_ref_phinat
-         + l2_norm(grid_view_, res2) / l2_ref_mu;
+  return residual.l2_norm();
+  // l2_ref_phi = l2_ref_phi < 1. ? 1. : l2_ref_phi;
+  // l2_ref_phinat = l2_ref_phinat < 1. ? 1. : l2_ref_phinat;
+  // l2_ref_mu = l2_ref_mu < 1. ? 1. : l2_ref_mu;
+  // ConstVectorViewType res0_vec(residual, 0, size_phi_);
+  // ConstVectorViewType res1_vec(residual, size_phi_, 2 * size_phi_);
+  // ConstVectorViewType res2_vec(residual, 2 * size_phi_, 3 * size_phi_);
+  // const auto res0 = make_discrete_function(phi_space_, res0_vec);
+  // const auto res1 = make_discrete_function(phi_space_, res1_vec);
+  // const auto res2 = make_discrete_function(phi_space_, res2_vec);
+  // return l2_norm(grid_view_, res0) / l2_ref_phi + l2_norm(grid_view_, res1) / l2_ref_phinat
+  //        + l2_norm(grid_view_, res2) / l2_ref_mu;
 }
 
 CellModelSolver::R

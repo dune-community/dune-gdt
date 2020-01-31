@@ -600,6 +600,7 @@ struct CellModelSolver
   // phi is shifted by this value, i.e., instead of solving for phi, we are solving for phi + phi_shift.
   // Set to 1 by default to get 0 on the boundary instead of -1.
   R phi_shift_;
+  R phinat_scale_factor_;
   // Sparsity pattern of one block of orientation field system matrix
   XT::LA::SparsityPatternDefault ofield_submatrix_pattern_;
   // Orientation field mass matrix

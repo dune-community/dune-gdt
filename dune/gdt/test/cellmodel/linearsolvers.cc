@@ -15,9 +15,12 @@
 
 #include <dune/istl/operators.hh>
 #include <dune/istl/solvers.hh>
+#include <dune/istl/paamg/fastamg.hh>
+#include <dune/istl/paamg/aggregates.hh>
 
 #include <dune/xt/la/container/common.hh>
 #include <dune/xt/la/container/eigen.hh>
+#include <dune/xt/la/container/matrix-market.hh>
 #include <dune/xt/la/container/matrix-view.hh>
 #include <dune/xt/la/container/vector-view.hh>
 #include <dune/xt/la/solver/istl/preconditioners.hh>
@@ -83,8 +86,7 @@ CellModelLinearSolverWrapper::CellModelLinearSolverWrapper(
                                                         inner_verbose,
                                                         inner_maxit,
                                                         is_schur_solver_ ? M_.rows() : S_.rows()))
-  , preconditioner_(std::make_shared<IterativeSolverPreconditionerType>(preconditioner_solver_,
-                                                                        SolverCategory::Category::sequential))
+  , preconditioner_(create_preconditioner(linear_operator_))
   , outer_solver_(create_iterative_solver(linear_operator_,
                                           *scalar_product_,
                                           outer_reduction,
@@ -165,6 +167,7 @@ CellModelLinearSolverWrapper::apply_system_matrix_solver(const VectorType& rhs, 
     case CellModelLinearSolverType::gmres:
     case CellModelLinearSolverType::fgmres_gmres:
     case CellModelLinearSolverType::fgmres_bicgstab:
+    case CellModelLinearSolverType::fgmres_amg:
       outer_solver_->apply(previous_update_[cell], rhs_eig, res);
       update = previous_update_[cell];
       break;
@@ -179,6 +182,8 @@ CellModelLinearSolverWrapper::apply_system_matrix_solver(const VectorType& rhs, 
 void CellModelLinearSolverWrapper::apply_outer_solver(EigenVectorType& ret, EigenVectorType& rhs) const
 {
   Dune::InverseOperatorResult res;
+  // if (solver_type_ == CellModelLinearSolverType::fgmres_amg)
+  // dynamic_cast<AMGPreconditionerType*>(preconditioner_.get())->recalculateHierarchy();
   outer_solver_->apply(ret, rhs, res);
 }
 
@@ -208,7 +213,31 @@ CellModelLinearSolverWrapper::create_preconditioner_solver(std::shared_ptr<DuneL
     case CellModelLinearSolverType::direct:
     case CellModelLinearSolverType::gmres:
     case CellModelLinearSolverType::schur_gmres:
+    case CellModelLinearSolverType::fgmres_amg:
       return nullptr;
+  }
+}
+
+std::shared_ptr<CellModelLinearSolverWrapper::PreconditionerType>
+CellModelLinearSolverWrapper::create_preconditioner(std::shared_ptr<DuneLinearOperatorType> linear_op)
+{
+  if (solver_type_ == CellModelLinearSolverType::fgmres_amg) {
+    //  typedef Dune::Amg::AggregationCriterion<Dune::Amg::UnSymmetricCriterion<MatrixType,Dune::Amg::FirstDiagonal>>
+    //  CriterionBase; typedef Dune::Amg::CoarsenCriterion<CriterionBase> Criterion; int N=100; int coarsenTarget=1200;
+    //  int ml=10;
+    //  Criterion criterion(15,coarsenTarget);
+    //  criterion.setDefaultValuesAnisotropic(2, 2);
+    //  criterion.setAlpha(.67);
+    //  criterion.setBeta(1.0e-4);
+    //  criterion.setMaxLevel(ml);
+    //  criterion.setSkipIsolated(false);
+    //  Dune::Amg::Parameters parms;
+    //  return std::make_shared<AMGPreconditionerType>(*linear_op, criterion, parms, false);
+    return std::make_shared<IterativeSolverPreconditionerType>(preconditioner_solver_,
+                                                               SolverCategory::Category::sequential);
+  } else {
+    return std::make_shared<IterativeSolverPreconditionerType>(preconditioner_solver_,
+                                                               SolverCategory::Category::sequential);
   }
 }
 
@@ -234,6 +263,7 @@ CellModelLinearSolverWrapper::create_iterative_solver(std::shared_ptr<DuneLinear
                                                vector_size);
     case CellModelLinearSolverType::fgmres_gmres:
     case CellModelLinearSolverType::fgmres_bicgstab:
+    case CellModelLinearSolverType::fgmres_amg:
     case CellModelLinearSolverType::schur_fgmres_gmres:
     case CellModelLinearSolverType::schur_fgmres_bicgstab:
       return std::make_shared<FGMResSolverType>(*linear_op,
@@ -264,6 +294,7 @@ PfieldLinearSolver::PfieldLinearSolver(const double gamma,
                                        const CellModelMassMatrixSolverType mass_matrix_solver_type,
                                        const std::set<size_t>& phi_dirichlet_dofs,
                                        const double phi_shift,
+                                       const double phinat_scale_factor,
                                        const XT::LA::SparsityPatternDefault& submatrix_pattern,
                                        const size_t num_cells,
                                        const double outer_reduction,
@@ -288,6 +319,7 @@ PfieldLinearSolver::PfieldLinearSolver(const double gamma,
         is_schur_solver_, 3 * size_phi_, system_matrix_pattern(submatrix_pattern)))
   , phi_dirichlet_dofs_(phi_dirichlet_dofs)
   , phi_shift_(phi_shift)
+  , phinat_scale_factor_(phinat_scale_factor)
   , wrapper_(create_linear_operator(),
              create_scalar_product(),
              M_,
@@ -318,7 +350,7 @@ PfieldLinearSolver::PfieldLinearSolver(const double gamma,
 void PfieldLinearSolver::setup()
 {
   if (!is_schur_solver_) {
-    S_11_ = M_;
+    S_11_ = M_ / phinat_scale_factor_;
     S_22_ = M_;
   }
   wrapper_.setup();
@@ -401,7 +433,7 @@ void PfieldLinearSolver::fill_S() const
   S_00_ = M_;
   S_00_.axpy(dt_, D_);
   S_01_ = M_ell_;
-  S_01_ *= gamma_ * dt_;
+  S_01_ *= gamma_ * dt_ / phinat_scale_factor_;
   S_10_ = G_;
   S_12_ = M_ell_;
   S_12_ *= 1. / Be_;
@@ -415,6 +447,8 @@ void PfieldLinearSolver::fill_S() const
     S_00_.unit_row(DoF);
     S_01_.clear_row(DoF);
   }
+  static size_t ii = 0;
+  XT::LA::write_matrix_market(*S_, "pfield_jacobian" + XT::Common::to_string(ii++) + ".mtx");
 }
 
 PfieldLinearSolver::VectorType PfieldLinearSolver::apply_schur_solver(const VectorType& rhs, const size_t cell) const
