@@ -305,6 +305,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   , phi_tmp_vec_(size_phi_, 0., 0)
   , phi_tmp_vec2_(size_phi_, 0., 0)
   , u_tmp_vec_(size_u_, 0., 0)
+  , P_tmp_vec_(size_P_, 0., 0)
   , u_tmp_(u_space_)
   , u_tmp_local_(std::make_shared<PerThreadVectorLocalFunc>())
   , P_tmp_local_(std::make_shared<PerThreadVectorLocalFuncs>(num_cells_))
@@ -1418,7 +1419,7 @@ CellModelSolver::apply_ofield_jacobian(const VectorType& source, const size_t ce
   // linear part
   ofield_jac_linear_op_.apply(source, full_range);
   // nonlinear_part
-  auto& tmp_vec = u_tmp_vec_;
+  auto& tmp_vec = P_tmp_vec_;
   const auto mv = mv_func<ConstVectorViewType, VectorType>(restricted);
   const auto add = add_func<VectorViewType, VectorType>(restricted);
   mv(C_ofield_nonlinear_part_, source_P, tmp_vec, Pnat_output_dofs);

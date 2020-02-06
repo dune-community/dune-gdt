@@ -696,6 +696,7 @@ struct CellModelSolver
   VectorType phi_tmp_vec_;
   VectorType phi_tmp_vec2_;
   VectorType u_tmp_vec_;
+  VectorType P_tmp_vec_;
   mutable VectorDiscreteFunctionType u_tmp_;
   mutable std::vector<VectorDiscreteFunctionType> P_tmp_;
   mutable std::vector<VectorDiscreteFunctionType> Pnat_tmp_;
