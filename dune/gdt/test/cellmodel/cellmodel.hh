@@ -49,8 +49,8 @@ class FGMResSolver;
 
 struct CellModelSolver
 {
-  // using G = ALU_2D_SIMPLEX_CONFORMING;
-  using G = YASP_2D_EQUIDISTANT_OFFSET;
+  using G = ALU_2D_SIMPLEX_CONFORMING;
+  // using G = YASP_2D_EQUIDISTANT_OFFSET;
   static const constexpr size_t d = G::dimension;
   using GV = typename G::LeafGridView;
   using PGV = XT::Grid::PeriodicGridView<GV>;
@@ -117,7 +117,7 @@ struct CellModelSolver
       const int inner_maxit = 10,
       const int inner_verbose = 0,
       const bool linearize = false,
-      const double pol_order = 2);
+      const double pol_order = 1);
 
   size_t num_cells() const;
 
@@ -548,10 +548,12 @@ struct CellModelSolver
   const PGV grid_view_;
   // Finite element function spaces
   const ContinuousLagrangeSpace<PGV, d, R> u_space_;
+  const ContinuousLagrangeSpace<PGV, d, R> P_space_;
   const ContinuousLagrangeSpace<PGV, 1, R> p_space_;
   const ContinuousLagrangeSpace<PGV, 1, R> phi_space_;
   // Size of finite element vectors
   const size_t size_u_;
+  const size_t size_P_;
   const size_t size_p_;
   const size_t size_phi_;
   const size_t num_mutexes_u_;

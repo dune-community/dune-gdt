@@ -166,17 +166,19 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   , grid_(XT::Grid::make_cube_grid<G>(lower_left_, upper_right_, {num_elements_x, num_elements_y}, 1))
   , nonperiodic_grid_view_(grid_.leaf_view())
   , grid_view_(nonperiodic_grid_view_, std::bitset<d>(get_periodic_directions(testcase)))
-  , u_space_(make_continuous_lagrange_space<d>(grid_view_, pol_order))
-  , p_space_(make_continuous_lagrange_space<1>(grid_view_, pol_order - 1))
+  , u_space_(make_continuous_lagrange_space<d>(grid_view_, 2))
+  , P_space_(make_continuous_lagrange_space<d>(grid_view_, pol_order))
+  , p_space_(make_continuous_lagrange_space<1>(grid_view_, 1))
   , phi_space_(make_continuous_lagrange_space<1>(grid_view_, pol_order))
   , size_u_(u_space_.mapper().size())
+  , size_P_(P_space_.mapper().size())
   , size_p_(p_space_.mapper().size())
   , size_phi_(phi_space_.mapper().size())
   , num_mutexes_u_(use_tbb ? 0 : size_u_ / 100)
-  , num_mutexes_ofield_(use_tbb ? 0 : size_u_ / 100)
+  , num_mutexes_ofield_(use_tbb ? 0 : size_P_ / 100)
   , num_mutexes_pfield_(use_tbb ? 0 : size_phi_ / 100)
   , stokes_vector_(size_u_ + size_p_, 0., 0)
-  , ofield_vectors_(num_cells_, VectorType(2 * size_u_, 0., 0))
+  , ofield_vectors_(num_cells_, VectorType(2 * size_P_, 0., 0))
   , pfield_vectors_(num_cells_, VectorType(3 * size_phi_, 0., 0))
   , u_view_(stokes_vector_, 0, size_u_)
   , p_view_(stokes_vector_, size_u_, size_u_ + size_p_)
@@ -196,19 +198,19 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   , phi_dirichlet_constraints_(make_dirichlet_constraints(phi_space_, boundary_info_))
   , phi_shift_(DXTC_CONFIG_GET("phi_dirichlet_shift", 1.))
   , phinat_scale_factor_(DXTC_CONFIG_GET("phinat_scale_factor", 1.))
-  , ofield_submatrix_pattern_(make_element_sparsity_pattern(u_space_, u_space_, grid_view_))
-  , M_ofield_(size_u_, size_u_, ofield_submatrix_pattern_, num_mutexes_ofield_)
-  , A_ofield_(size_u_, size_u_, ofield_submatrix_pattern_, num_mutexes_ofield_)
-  , C_ofield_elliptic_part_(size_u_, size_u_, ofield_submatrix_pattern_, num_mutexes_ofield_)
-  , C_ofield_linear_part_(size_u_, size_u_, ofield_submatrix_pattern_, num_mutexes_ofield_)
-  , C_ofield_nonlinear_part_(size_u_, size_u_, ofield_submatrix_pattern_, num_mutexes_ofield_)
-  , S_schur_ofield_linear_part_(size_u_, size_u_, ofield_submatrix_pattern_, 0)
-  , M_ofield_op_(std::make_shared<MatrixOperator<MatrixType, PGV, d>>(grid_view_, u_space_, u_space_, M_ofield_))
-  , A_ofield_op_(std::make_shared<MatrixOperator<MatrixType, PGV, d>>(grid_view_, u_space_, u_space_, A_ofield_))
+  , ofield_submatrix_pattern_(make_element_sparsity_pattern(P_space_, P_space_, grid_view_))
+  , M_ofield_(size_P_, size_P_, ofield_submatrix_pattern_, num_mutexes_ofield_)
+  , A_ofield_(size_P_, size_P_, ofield_submatrix_pattern_, num_mutexes_ofield_)
+  , C_ofield_elliptic_part_(size_P_, size_P_, ofield_submatrix_pattern_, num_mutexes_ofield_)
+  , C_ofield_linear_part_(size_P_, size_P_, ofield_submatrix_pattern_, num_mutexes_ofield_)
+  , C_ofield_nonlinear_part_(size_P_, size_P_, ofield_submatrix_pattern_, num_mutexes_ofield_)
+  , S_schur_ofield_linear_part_(size_P_, size_P_, ofield_submatrix_pattern_, 0)
+  , M_ofield_op_(std::make_shared<MatrixOperator<MatrixType, PGV, d>>(grid_view_, P_space_, P_space_, M_ofield_))
+  , A_ofield_op_(std::make_shared<MatrixOperator<MatrixType, PGV, d>>(grid_view_, P_space_, P_space_, A_ofield_))
   , C_ofield_linear_part_op_(
-        std::make_shared<MatrixOperator<MatrixType, PGV, d>>(grid_view_, u_space_, u_space_, C_ofield_linear_part_))
+        std::make_shared<MatrixOperator<MatrixType, PGV, d>>(grid_view_, P_space_, P_space_, C_ofield_linear_part_))
   , C_ofield_nonlinear_part_op_(
-        std::make_shared<MatrixOperator<MatrixType, PGV, d>>(grid_view_, u_space_, u_space_, C_ofield_nonlinear_part_))
+        std::make_shared<MatrixOperator<MatrixType, PGV, d>>(grid_view_, P_space_, P_space_, C_ofield_nonlinear_part_))
   , ofield_jac_linear_op_(M_ofield_, A_ofield_, C_ofield_linear_part_, kappa_, this)
   , ofield_solver_(kappa_,
                    M_ofield_,
@@ -226,12 +228,12 @@ CellModelSolver::CellModelSolver(const std::string testcase,
                    inner_reduction,
                    inner_maxit,
                    inner_verbose)
-  , ofield_rhs_vector_(2 * size_u_, 0., num_mutexes_ofield_)
-  , ofield_f_vector_(ofield_rhs_vector_, 0, size_u_)
-  , ofield_g_vector_(ofield_rhs_vector_, size_u_, 2 * size_u_)
+  , ofield_rhs_vector_(2 * size_P_, 0., num_mutexes_ofield_)
+  , ofield_f_vector_(ofield_rhs_vector_, 0, size_P_)
+  , ofield_g_vector_(ofield_rhs_vector_, size_P_, 2 * size_P_)
   , stokes_solver_(std::make_shared<LUSolverType>())
-  , ofield_tmp_vec_(2 * size_u_, 0., 0)
-  , ofield_tmp_vec2_(2 * size_u_, 0., 0)
+  , ofield_tmp_vec_(2 * size_P_, 0., 0)
+  , ofield_tmp_vec2_(2 * size_P_, 0., 0)
   , ofield_deim_input_dofs_(num_cells_)
   , Pnat_deim_input_dofs_begin_(num_cells_)
   , ofield_deim_output_dofs_(num_cells_)
@@ -321,11 +323,12 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   std::vector<std::shared_ptr<const XT::Functions::FunctionInterface<d>>> mu_initial_funcs;
   std::vector<std::shared_ptr<const XT::Functions::FunctionInterface<d, d>>> P_initial_funcs;
 
-  if (testcase == "single_cell") {
+  // interpolate initial and boundary values
+  if (testcase == "single_cell" || testcase == "channel") {
     // Initially, cell is circular with Radius R=5 and placed in the center of the domain
-    // \Omega = [0, 160] \times [0, 40].
+    // \Omega = [0, 30]^2
     // Initial condition for \phi thus is \tanh(\frac{r}{\sqrt{2}\epsilon}) with r the signed distance function to the
-    // membrane, i.e. r(x) = 5 - |(80, 20) - x|.
+    // membrane, i.e. r(x) = 5 - |(15, 15) - x|.
     FieldVector<double, d> center{upper_right_[0] / 2., upper_right_[1] / 2.};
     auto r = [center](const auto& xr) { return 5.0 - (center - xr).two_norm(); };
     phi_initial_funcs.emplace_back(std::make_shared<XT::Functions::GenericFunction<d>>(
@@ -362,8 +365,6 @@ CellModelSolver::CellModelSolver(const std::string testcase,
         },
         /*name=*/"P_initial"));
     u_initial_func = std::make_shared<const XT::Functions::ConstantFunction<d, d>>(0.);
-
-    // interpolate initial and boundary values
   } else if (testcase == "two_cells") {
     FieldVector<double, d> center1{15, 15};
     FieldVector<double, d> center2{35, 35};
@@ -448,19 +449,19 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   default_interpolation(*u_initial_func, u_);
   // create system and temporary vectors, DiscreteFunctions, etc.
   for (size_t kk = 0; kk < num_cells_; kk++) {
-    P_view_.emplace_back(ofield_vectors_[kk], 0, size_u_);
-    Pnat_view_.emplace_back(ofield_vectors_[kk], size_u_, 2 * size_u_);
+    P_view_.emplace_back(ofield_vectors_[kk], 0, size_P_);
+    Pnat_view_.emplace_back(ofield_vectors_[kk], size_P_, 2 * size_P_);
     phi_view_.emplace_back(pfield_vectors_[kk], 0, size_phi_);
     phinat_view_.emplace_back(pfield_vectors_[kk], size_phi_, 2 * size_phi_);
     mu_view_.emplace_back(pfield_vectors_[kk], 2 * size_phi_, 3 * size_phi_);
     const auto kk_str = XT::Common::to_string(kk);
-    P_.emplace_back(make_discrete_function(u_space_, P_view_[kk], "P_" + kk_str));
-    Pnat_.emplace_back(make_discrete_function(u_space_, Pnat_view_[kk], "Pnat_" + kk_str));
+    P_.emplace_back(make_discrete_function(P_space_, P_view_[kk], "P_" + kk_str));
+    Pnat_.emplace_back(make_discrete_function(P_space_, Pnat_view_[kk], "Pnat_" + kk_str));
     phi_.emplace_back(make_discrete_function(phi_space_, phi_view_[kk], "phi_" + kk_str));
     phinat_.emplace_back(make_discrete_function(phi_space_, phinat_view_[kk], "phinat_" + kk_str));
     mu_.emplace_back(make_discrete_function(phi_space_, mu_view_[kk], "mu_" + kk_str));
-    P_tmp_.emplace_back(u_space_);
-    Pnat_tmp_.emplace_back(u_space_);
+    P_tmp_.emplace_back(P_space_);
+    Pnat_tmp_.emplace_back(P_space_);
     phi_tmp_.emplace_back(phi_space_);
     phinat_tmp_.emplace_back(phi_space_);
     mu_tmp_.emplace_back(phi_space_);
@@ -526,7 +527,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   // calculate M_{ij} as \int \psi_i phi_j
   M_ofield_op_->append(LocalElementIntegralBilinearForm<E, d>(LocalElementProductScalarWeightIntegrand<E, d>(1.)));
   C_ofield_elliptic_part_ *= 0.;
-  MatrixOperator<MatrixType, PGV, d> ofield_elliptic_op(grid_view_, u_space_, u_space_, C_ofield_elliptic_part_);
+  MatrixOperator<MatrixType, PGV, d> ofield_elliptic_op(grid_view_, P_space_, P_space_, C_ofield_elliptic_part_);
   ofield_elliptic_op.append(LocalElementIntegralBilinearForm<E, d>(LocalLaplaceIntegrand<E, d>(-1. / Pa_)));
   M_ofield_op_->append(ofield_elliptic_op);
   M_ofield_op_->assemble(use_tbb_);
@@ -713,11 +714,11 @@ CellModelSolver::VectorType CellModelSolver::apply_pfield_product_operator(const
 // To calculate the sum of the squared L2 products of P and Pnat, calculate the inner product of the result with vec.
 CellModelSolver::VectorType CellModelSolver::apply_ofield_product_operator(const VectorType& vec) const
 {
-  VectorType ret(2 * size_u_);
-  ConstVectorViewType P_view(vec, 0, size_u_);
-  ConstVectorViewType Pnat_view(vec, size_u_, 2 * size_u_);
-  VectorViewType P_ret_view(ret, 0, size_u_);
-  VectorViewType Pnat_ret_view(ret, size_u_, 2 * size_u_);
+  VectorType ret(2 * size_P_);
+  ConstVectorViewType P_view(vec, 0, size_P_);
+  ConstVectorViewType Pnat_view(vec, size_P_, 2 * size_P_);
+  VectorViewType P_ret_view(ret, 0, size_P_);
+  VectorViewType Pnat_ret_view(ret, size_P_, 2 * size_P_);
   M_ofield_.mv(P_view, P_ret_view);
   M_ofield_.mv(Pnat_view, Pnat_ret_view);
   return ret;
@@ -763,11 +764,11 @@ void CellModelSolver::visualize_pfield(const std::string& filename, const Vector
 // Visualizes given vector as orientation field finite element vector
 void CellModelSolver::visualize_ofield(const std::string& filename, const VectorType& vec, const bool subsampling) const
 {
-  auto vtk_writer = P_[0].create_vtkwriter(u_space_.grid_view(), subsampling);
-  const ConstVectorViewType P_vec(vec, 0, size_u_);
-  const ConstVectorViewType Pnat_vec(vec, size_u_, 2 * size_u_);
-  const auto P_func = make_discrete_function(u_space_, P_vec, "P");
-  const auto Pnat_func = make_discrete_function(u_space_, Pnat_vec, "Pnat");
+  auto vtk_writer = P_[0].create_vtkwriter(P_space_.grid_view(), subsampling);
+  const ConstVectorViewType P_vec(vec, 0, size_P_);
+  const ConstVectorViewType Pnat_vec(vec, size_P_, 2 * size_P_);
+  const auto P_func = make_discrete_function(P_space_, P_vec, "P");
+  const auto Pnat_func = make_discrete_function(P_space_, Pnat_vec, "Pnat");
   P_func.add_to_vtkwriter(*vtk_writer);
   Pnat_func.add_to_vtkwriter(*vtk_writer);
   P_[0].write_visualization(*vtk_writer, filename);
@@ -845,7 +846,7 @@ void CellModelSolver::set_stokes_vec(const VectorType& stokes_vec)
 void CellModelSolver::set_ofield_vec(const size_t cell, const VectorType& ofield_vec)
 {
   DUNE_THROW_IF(cell >= num_cells_, XT::Common::Exceptions::wrong_input_given, "Invalid cell index");
-  DUNE_THROW_IF(ofield_vec.size() != 2 * size_u_, XT::Common::Exceptions::wrong_input_given, "Invalid vector size!");
+  DUNE_THROW_IF(ofield_vec.size() != 2 * size_P_, XT::Common::Exceptions::wrong_input_given, "Invalid vector size!");
   ofield_vectors_[cell] = ofield_vec;
 }
 
@@ -935,13 +936,13 @@ void CellModelSolver::compute_restricted_ofield_dofs(const std::vector<size_t>& 
     P_output_dofs.clear();
     Pnat_output_dofs.clear();
     for (const auto& dof : unique_output_dofs) {
-      if (dof < size_u_)
+      if (dof < size_P_)
         P_output_dofs.push_back(dof);
       else
         Pnat_output_dofs.push_back(dof);
     }
     for (auto& dof : Pnat_output_dofs)
-      dof -= size_u_;
+      dof -= size_P_;
     // get input dofs corresponding to output dofs
     auto& input_dofs = ofield_deim_input_dofs_[cell];
     input_dofs.clear();
@@ -953,14 +954,14 @@ void CellModelSolver::compute_restricted_ofield_dofs(const std::vector<size_t>& 
     std::sort(input_dofs.begin(), input_dofs.end());
     input_dofs.erase(std::unique(input_dofs.begin(), input_dofs.end()), input_dofs.end());
     Pnat_deim_input_dofs_begin_[cell] =
-        std::lower_bound(input_dofs.begin(), input_dofs.end(), size_u_) - input_dofs.begin();
+        std::lower_bound(input_dofs.begin(), input_dofs.end(), size_P_) - input_dofs.begin();
     // store all entities that contain an output dof
-    const auto& mapper = u_space_.mapper();
+    const auto& mapper = P_space_.mapper();
     DynamicVector<size_t> global_indices;
     ofield_deim_entities_[cell].clear();
     for (const auto& entity : Dune::elements(grid_view_)) {
       mapper.global_indices(entity, global_indices);
-      maybe_add_entity(entity, global_indices, *ofield_deim_output_dofs_[cell], ofield_deim_entities_[cell], size_u_);
+      maybe_add_entity(entity, global_indices, *ofield_deim_output_dofs_[cell], ofield_deim_entities_[cell], size_P_);
     } // entities
   } // if (not already computed)
 } // void compute_restricted_pfield_dofs(...)
@@ -1044,10 +1045,10 @@ void CellModelSolver::assemble_nonlinear_part_of_ofield_residual(VectorType& res
                                                                  const bool restricted)
 {
   // nonlinear part
-  VectorViewType res1_vec(residual, size_u_, 2 * size_u_);
-  auto nonlinear_res_functional = make_vector_functional(u_space_, res1_vec);
+  VectorViewType res1_vec(residual, size_P_, 2 * size_P_);
+  auto nonlinear_res_functional = make_vector_functional(P_space_, res1_vec);
   XT::Functions::GenericGridFunction<E, d, 1> nonlinear_res_pf(
-      /*order = */ 3 * u_space_.max_polorder(),
+      /*order = */ 3 * P_space_.max_polorder(),
       /*post_bind_func*/
       [cell, this](const E& element) { this->bind_P(cell, element); },
       /*evaluate_func*/
@@ -1105,7 +1106,7 @@ void CellModelSolver::update_ofield_parameters(const double Pa)
     Pa_ = Pa;
     last_ofield_Pa_ = Pa_;
     C_ofield_elliptic_part_ *= 0.;
-    MatrixOperator<MatrixType, PGV, d> ofield_elliptic_op(grid_view_, u_space_, u_space_, C_ofield_elliptic_part_);
+    MatrixOperator<MatrixType, PGV, d> ofield_elliptic_op(grid_view_, P_space_, P_space_, C_ofield_elliptic_part_);
     ofield_elliptic_op.append(LocalElementIntegralBilinearForm<E, d>(LocalLaplaceIntegrand<E, d>(-1. / Pa_)));
     ofield_elliptic_op.assemble(use_tbb_);
   }
@@ -1410,10 +1411,10 @@ CellModelSolver::apply_ofield_jacobian(const VectorType& source, const size_t ce
   const auto& output_dofs = *ofield_deim_output_dofs_[cell];
   const auto& Pnat_output_dofs = Pnat_deim_output_dofs_[cell];
   VectorType& full_range = restricted ? ofield_tmp_vec_ : range;
-  VectorViewType range_P(full_range, 0, size_u_);
-  VectorViewType range_Pnat(full_range, size_u_, 2 * size_u_);
-  const ConstVectorViewType source_P(source, 0, size_u_);
-  const ConstVectorViewType source_Pnat(source, size_u_, 2 * size_u_);
+  VectorViewType range_P(full_range, 0, size_P_);
+  VectorViewType range_Pnat(full_range, size_P_, 2 * size_P_);
+  const ConstVectorViewType source_P(source, 0, size_P_);
+  const ConstVectorViewType source_Pnat(source, size_P_, 2 * size_P_);
   // linear part
   ofield_jac_linear_op_.apply(source, full_range);
   // nonlinear_part
@@ -1519,10 +1520,10 @@ void CellModelSolver::assemble_stokes_rhs()
 // Computes orientation field rhs using currently stored values of variables and stores in ofield_rhs_vector_
 void CellModelSolver::assemble_ofield_rhs(const double /*dt*/, const size_t cell)
 {
-  auto g_functional = make_vector_functional(u_space_, ofield_g_vector_);
+  auto g_functional = make_vector_functional(P_space_, ofield_g_vector_);
   ofield_g_vector_ *= 0.;
   XT::Functions::GenericGridFunction<E, d> g(
-      /*order = */ 3 * u_space_.max_polorder(),
+      /*order = */ linearize_ ? 3 * P_space_.max_polorder() : phi_space_.max_polorder(),
       /*post_bind_func*/
       [cell, this](const E& element) {
         this->bind_phi(cell, element);
@@ -1590,7 +1591,8 @@ void CellModelSolver::assemble_pfield_rhs(const double /*dt*/, const size_t cell
   // calculate h
   scal(pfield_r1_vector_, 0., phinat_output_dofs);
   XT::Functions::GenericGridFunction<E, 1, 1> r1_pf(
-      /*order = */ 3 * phi_space_.max_polorder(),
+      /*order = */ linearize_ ? std::max(3 * phi_space_.max_polorder(), 2 * P_space_.max_polorder())
+                              : 2 * P_space_.max_polorder(),
       /*post_bind_func*/
       [cell, this](const E& element) {
         this->bind_P(cell, element);
@@ -1631,7 +1633,7 @@ void CellModelSolver::assemble_ofield_linear_jacobian(const double dt, const siz
   // calculate A
   // Omega - xi D = (1-xi)/2 \nabla u^T - (1+xi)/2 \nabla u
   XT::Functions::GenericGridFunction<E, d, d> Omega_minus_xi_D_transposed(
-      /*order = */ std::max(u_space_.max_polorder() - 1, 0),
+      /*order = */ u_space_.max_polorder(),
       /*post_bind_func*/
       [this](const E& element) { this->bind_u(element); },
       /*evaluate_func*/
@@ -1657,7 +1659,7 @@ void CellModelSolver::assemble_ofield_linear_jacobian(const double dt, const siz
   C_ofield_linear_part_op_->clear();
   C_ofield_linear_part_ = C_ofield_elliptic_part_;
   XT::Functions::GenericGridFunction<E, 1, 1> c1_Pa_inv_phi(
-      /*order = */ u_space_.max_polorder(),
+      /*order = */ phi_space_.max_polorder(),
       /*post_bind_func*/
       [cell, this](const E& element) { this->bind_phi(cell, element); },
       /*evaluate_func*/
@@ -1696,7 +1698,7 @@ void CellModelSolver::assemble_ofield_nonlinear_jacobian(const VectorType& y, co
 void CellModelSolver::assemble_C_ofield_nonlinear_part(const size_t cell, const bool restricted)
 {
   XT::Functions::GenericGridFunction<E, 1, 1> c1_Pa_P2(
-      /*order = */ 2. * u_space_.max_polorder(),
+      /*order = */ 2. * P_space_.max_polorder(),
       /*post_bind_func*/
       [cell, this](const E& element) { this->bind_P(cell, element); },
       /*evaluate_func*/
@@ -1804,7 +1806,7 @@ void CellModelSolver::assemble_G_pfield(const size_t cell, const bool restricted
   const auto& phinat_output_dofs = phinat_deim_output_dofs_[cell];
   set_mat_to_zero(G_pfield_, restricted, pfield_submatrix_pattern_, phinat_output_dofs);
   XT::Functions::GenericGridFunction<E, 1, 1> G_prefactor(
-      /*order = */ 2 * phi_space_.max_polorder(),
+      /*order = */ num_cells_ > 1 ? 2 * phi_space_.max_polorder() + 20 : 2 * phi_space_.max_polorder(),
       /*post_bind_func*/
       [cell, this](const E& element) {
         this->bind_phi(cell, element);
@@ -1861,7 +1863,7 @@ void CellModelSolver::assemble_nonlinear_part_of_pfield_residual(VectorType& res
   auto nonlinear_res1_functional = make_vector_functional(phi_space_, res1_vec);
   auto nonlinear_res2_functional = make_vector_functional(phi_space_, res2_vec);
   XT::Functions::GenericGridFunction<E, 1, 1> nonlinear_res_pf1(
-      /*order = */ 3 * phi_space_.max_polorder(),
+      /*order = */ num_cells_ > 1 ? 3 * phi_space_.max_polorder() + 20 : 3 * phi_space_.max_polorder(),
       /*post_bind_func*/
       [cell, this](const E& element) {
         this->bind_phi(cell, element);
@@ -2079,9 +2081,7 @@ void CellModelSolver::copy_ld_to_hd_vec(const std::vector<size_t> dofs, const Ve
 XT::Common::FieldVector<CellModelSolver::R, CellModelSolver::d>
 CellModelSolver::get_lower_left(const std::string& testcase)
 {
-  if (testcase == "single_cell")
-    return {{0., 0.}};
-  else if (testcase == "two_cells")
+  if (testcase == "single_cell" || testcase == "two_cells" || testcase == "channel")
     return {{0., 0.}};
   else
     DUNE_THROW(Dune::NotImplemented, "Unknown testcase");
@@ -2093,6 +2093,8 @@ XT::Common::FieldVector<CellModelSolver::R, CellModelSolver::d>
 CellModelSolver::get_upper_right(const std::string& testcase)
 {
   if (testcase == "single_cell")
+    return {{30., 30.}};
+  else if (testcase == "channel")
     return {{160., 40.}};
   else if (testcase == "two_cells")
     return {{50., 50.}};
@@ -2169,7 +2171,7 @@ void CellModelSolver::maybe_add_entity(const E& entity,
 void CellModelSolver::fill_tmp_ofield(const size_t cell, const VectorType& source, const bool restricted) const
 {
   if (!restricted) {
-    ConstVectorViewType P_vec(source, 0, size_u_);
+    ConstVectorViewType P_vec(source, 0, size_P_);
     P_tmp_[cell].dofs().vector() = P_vec;
   } else {
     const auto& input_dofs = ofield_deim_input_dofs_[cell];
@@ -2201,10 +2203,10 @@ double CellModelSolver::ofield_residual_norm(const VectorType& residual, double 
 {
   l2_ref_P = l2_ref_P < 1. ? 1. : l2_ref_P;
   l2_ref_Pnat = l2_ref_Pnat < 1. ? 1. : l2_ref_Pnat;
-  ConstVectorViewType res0_vec(residual, 0, size_u_);
-  ConstVectorViewType res1_vec(residual, size_u_, 2 * size_u_);
-  const auto res0 = make_discrete_function(u_space_, res0_vec);
-  const auto res1 = make_discrete_function(u_space_, res1_vec);
+  ConstVectorViewType res0_vec(residual, 0, size_P_);
+  ConstVectorViewType res1_vec(residual, size_P_, 2 * size_P_);
+  const auto res0 = make_discrete_function(P_space_, res0_vec);
+  const auto res1 = make_discrete_function(P_space_, res1_vec);
   return l2_norm(grid_view_, res0) / l2_ref_P + l2_norm(grid_view_, res1) / l2_ref_Pnat;
 }
 

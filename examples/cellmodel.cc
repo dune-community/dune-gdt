@@ -43,6 +43,7 @@ int main(int argc, char* argv[])
     double t_end = config.template get<double>("fem.t_end", 340.);
     double dt = config.template get<double>("fem.dt", 0.005);
     const bool linearize = config.template get<bool>("problem.linearize", false);
+    const size_t pol_order = config.template get<size_t>("fem.degree", 1);
     std::cout << "linearize: " << linearize << std::endl;
 
     // problem parameters
@@ -74,7 +75,7 @@ int main(int argc, char* argv[])
 
     // output
     std::string filename = config.get("output.filename", "cellmodel") + (linearize ? "_linearized" : "");
-    bool subsampling = config.get<bool>("output.subsampling", true);
+    bool subsampling = config.get<bool>("output.subsampling", false);
     // a negative value of write step is interpreted as "write all steps"
     double write_step = config.template get<double>("output.write_step", -1.);
     const double gmres_reduction = DXTC_CONFIG_GET("gmres_reduction", 1e-10);
@@ -118,7 +119,8 @@ int main(int argc, char* argv[])
                                  inner_gmres_reduction,
                                  inner_gmres_maxit,
                                  gmres_verbose,
-                                 linearize);
+                                 linearize,
+                                 pol_order);
 #if 1
     auto begin = std::chrono::steady_clock::now();
     auto result = model_solver.solve(dt, true, write_step, filename, subsampling);
