@@ -23,6 +23,7 @@
 
 #include <Eigen/IterativeLinearSolvers>
 #include <Eigen/SparseLU>
+#include <Eigen/SparseCholesky>
 
 #include "linear-solver-types.hh"
 
@@ -86,6 +87,7 @@ public:
   using ColMajorBackendType = ::Eigen::SparseMatrix<R, ::Eigen::ColMajor>;
   using RowMajorBackendType = typename MatrixType::BackendType;
   using LUSolverType = ::Eigen::SparseLU<ColMajorBackendType>;
+  using LDLTSolverType = ::Eigen::SimplicialLDLT<ColMajorBackendType>;
   using CGSolverType = ::Eigen::ConjugateGradient<RowMajorBackendType, Eigen::Lower | Eigen::Upper>;
   using CGIncompleteCholeskySolverType =
       ::Eigen::ConjugateGradient<RowMajorBackendType,
@@ -111,7 +113,7 @@ public:
                                const CellModelLinearSolverType solver_type,
                                const CellModelMassMatrixSolverType mass_matrix_solver_type,
                                const size_t num_cells,
-                               const double outer_reduction = 1e-10,
+                               const double outer_reduction = 1e-13,
                                const int outer_restart = 100,
                                const int outer_verbose = 0,
                                const double inner_reduction = 1e-3,
@@ -166,6 +168,7 @@ private:
   const bool is_schur_solver_;
   std::shared_ptr<ColMajorBackendType> S_colmajor_;
   std::shared_ptr<LUSolverType> mass_matrix_lu_solver_;
+  std::shared_ptr<LDLTSolverType> mass_matrix_ldlt_solver_;
   std::shared_ptr<CGSolverType> mass_matrix_cg_solver_;
   std::shared_ptr<CGIncompleteCholeskySolverType> mass_matrix_cg_incomplete_cholesky_solver_;
   std::shared_ptr<LUSolverType> direct_solver_;
@@ -307,7 +310,6 @@ public:
                      const MatrixType& A,
                      const MatrixType& C_linear,
                      const MatrixType& C_nonlinear,
-                     const MatrixType& S_schur_linear,
                      const CellModelLinearSolverType solver_type,
                      const CellModelMassMatrixSolverType mass_matrix_solver_type,
                      const XT::LA::SparsityPatternDefault& submatrix_pattern,
@@ -359,7 +361,6 @@ private:
   const MatrixType& A_;
   const MatrixType& C_linear_part_;
   const MatrixType& C_nonlinear_part_;
-  const MatrixType& S_schur_linear_part_;
   const bool is_schur_solver_;
   const size_t size_P_;
   std::shared_ptr<MatrixType> S_;

@@ -107,10 +107,12 @@ struct CellModelSolver
       const double epsilon = 0.21, // phase field parameter
       const double In = 1., // interaction parameter
       const CellModelLinearSolverType pfield_solver_type = CellModelLinearSolverType::schur_fgmres_gmres,
+      // const CellModelLinearSolverType pfield_solver_type = CellModelLinearSolverType::fgmres_gmres,
       const CellModelMassMatrixSolverType pfield_mass_matrix_solver_type = CellModelMassMatrixSolverType::sparse_lu,
       const CellModelLinearSolverType ofield_solver_type = CellModelLinearSolverType::schur_fgmres_gmres,
+      // const CellModelLinearSolverType ofield_solver_type = CellModelLinearSolverType::fgmres_gmres,
       const CellModelMassMatrixSolverType ofield_mass_matrix_solver_type = CellModelMassMatrixSolverType::sparse_lu,
-      const double outer_reduction = 1e-10,
+      const double outer_reduction = 1e-14,
       const int outer_restart = 100,
       const int outer_verbose = 0,
       const double inner_reduction = 1e-3,

@@ -38,7 +38,9 @@ CellModelLinearSolverType string_to_solver_type(const std::string& type_string)
 
 CellModelMassMatrixSolverType string_to_mass_matrix_solver_type(const std::string& type_string)
 {
-  if (type_string == "sparse_lu")
+  if (type_string == "sparse_ldlt")
+    return CellModelMassMatrixSolverType::sparse_ldlt;
+  else if (type_string == "sparse_lu")
     return CellModelMassMatrixSolverType::sparse_lu;
   else if (type_string == "cg")
     return CellModelMassMatrixSolverType::cg;

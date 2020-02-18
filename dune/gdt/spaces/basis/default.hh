@@ -114,9 +114,15 @@ private:
   protected:
     void post_bind(const ElementType& elemnt) override final
     {
-      current_local_fe_ = XT::Common::ConstStorageProvider<LocalFiniteElementInterface<D, d, R, r, rC>>(
-          self_.local_finite_elements_.get(elemnt.type(), self_.fe_order_));
-      size_ = current_local_fe_.access().size();
+      auto&& new_geometry_type = elemnt.type();
+      if (geometry_type_ != new_geometry_type) {
+        geometry_type_ = new_geometry_type;
+        current_local_fe_ = XT::Common::ConstStorageProvider<LocalFiniteElementInterface<D, d, R, r, rC>>(
+            self_.local_finite_elements_.get(geometry_type_, self_.fe_order_));
+        size_ = current_local_fe_.access().size();
+        order_ = current_local_fe_.access().basis().order();
+        eval_cache_.clear();
+      }
     }
 
   public:
@@ -129,7 +135,7 @@ private:
     int order(const XT::Common::Parameter& /*param*/ = {}) const override final
     {
       DUNE_THROW_IF(!current_local_fe_.valid(), Exceptions::not_bound_to_an_element_yet, "");
-      return current_local_fe_.access().basis().order();
+      return order_;
     }
 
     using BaseType::evaluate;
@@ -141,7 +147,13 @@ private:
     {
       DUNE_THROW_IF(!current_local_fe_.valid(), Exceptions::not_bound_to_an_element_yet, "");
       this->assert_inside_reference_element(point_in_reference_element);
-      current_local_fe_.access().basis().evaluate(point_in_reference_element, result);
+      const auto it = eval_cache_.find(point_in_reference_element);
+      if (it != eval_cache_.end())
+        result = it->second;
+      else {
+        current_local_fe_.access().basis().evaluate(point_in_reference_element, result);
+        eval_cache_[point_in_reference_element] = result;
+      }
     }
 
     void jacobians(const DomainType& point_in_reference_element,
@@ -205,6 +217,9 @@ private:
     const DefaultGlobalBasis<GV, r, rC, R>& self_;
     XT::Common::ConstStorageProvider<LocalFiniteElementInterface<D, d, R, r, rC>> current_local_fe_;
     size_t size_;
+    int order_;
+    Dune::GeometryType geometry_type_;
+    mutable std::map<DomainType, std::vector<RangeType>, XT::Common::FieldVectorLess> eval_cache_;
   }; // class LocalizedDefaultGlobalBasis
 
   const GridViewType& grid_view_;

@@ -72,6 +72,9 @@ CellModelLinearSolverWrapper::CellModelLinearSolverWrapper(
   , mass_matrix_lu_solver_(mass_matrix_solver_type_ == CellModelMassMatrixSolverType::sparse_lu
                                ? std::make_shared<LUSolverType>()
                                : nullptr)
+  , mass_matrix_ldlt_solver_(mass_matrix_solver_type_ == CellModelMassMatrixSolverType::sparse_ldlt
+                                 ? std::make_shared<LDLTSolverType>()
+                                 : nullptr)
   , mass_matrix_cg_solver_(
         mass_matrix_solver_type_ == CellModelMassMatrixSolverType::cg ? std::make_shared<CGSolverType>() : nullptr)
   , mass_matrix_cg_incomplete_cholesky_solver_(mass_matrix_solver_type_
@@ -111,6 +114,8 @@ void CellModelLinearSolverWrapper::setup()
 {
   if (mass_matrix_lu_solver_)
     mass_matrix_lu_solver_->compute(M_.backend());
+  if (mass_matrix_ldlt_solver_)
+    mass_matrix_ldlt_solver_->compute(M_.backend());
   if (mass_matrix_cg_solver_)
     mass_matrix_cg_solver_->compute(M_.backend());
   if (mass_matrix_cg_incomplete_cholesky_solver_)
@@ -134,7 +139,9 @@ void CellModelLinearSolverWrapper::apply_inverse_mass_matrix(const EigenVectorTy
                                                              EigenVectorType& ret,
                                                              const EigenVectorType* initial_guess) const
 {
-  if (mass_matrix_solver_type_ == CellModelMassMatrixSolverType::sparse_lu)
+  if (mass_matrix_solver_type_ == CellModelMassMatrixSolverType::sparse_ldlt)
+    ret.backend() = mass_matrix_ldlt_solver_->solve(rhs.backend());
+  else if (mass_matrix_solver_type_ == CellModelMassMatrixSolverType::sparse_lu)
     ret.backend() = mass_matrix_lu_solver_->solve(rhs.backend());
   else if (mass_matrix_solver_type_ == CellModelMassMatrixSolverType::cg) {
     if (initial_guess)
@@ -545,7 +552,6 @@ OfieldLinearSolver::OfieldLinearSolver(const double kappa,
                                        const MatrixType& A,
                                        const MatrixType& C_linear_part,
                                        const MatrixType& C_nonlinear_part,
-                                       const MatrixType& S_schur_linear_part,
                                        const CellModelLinearSolverType solver_type,
                                        const CellModelMassMatrixSolverType mass_matrix_solver_type,
                                        const XT::LA::SparsityPatternDefault& submatrix_pattern,
@@ -561,7 +567,6 @@ OfieldLinearSolver::OfieldLinearSolver(const double kappa,
   , A_(A)
   , C_linear_part_(C_linear_part)
   , C_nonlinear_part_(C_nonlinear_part)
-  , S_schur_linear_part_(S_schur_linear_part)
   , is_schur_solver_(is_schur_solver_type(solver_type))
   , size_P_(M_.rows())
   , S_(CellModelLinearSolverWrapper::create_system_matrix(

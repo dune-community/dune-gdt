@@ -26,6 +26,7 @@ enum class CellModelLinearSolverType
 
 enum class CellModelMassMatrixSolverType
 {
+  sparse_ldlt,
   sparse_lu,
   cg,
   cg_incomplete_cholesky

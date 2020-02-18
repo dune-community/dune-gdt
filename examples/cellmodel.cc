@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
     double t_end = config.template get<double>("fem.t_end", 340.);
     double dt = config.template get<double>("fem.dt", 0.005);
     const bool linearize = config.template get<bool>("problem.linearize", false);
-    const size_t pol_order = config.template get<size_t>("fem.degree", 1);
+    const size_t pol_order = config.template get<size_t>("fem.degree", 1, 0, 0);
     std::cout << "linearize: " << linearize << std::endl;
 
     // problem parameters
@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
     bool subsampling = config.get<bool>("output.subsampling", false);
     // a negative value of write step is interpreted as "write all steps"
     double write_step = config.template get<double>("output.write_step", -1.);
-    const double gmres_reduction = DXTC_CONFIG_GET("gmres_reduction", 1e-10);
+    const double gmres_reduction = DXTC_CONFIG_GET("gmres_reduction", 1e-13);
     const int gmres_restart = DXTC_CONFIG_GET("gmres_restart", 100);
     const double inner_gmres_reduction = DXTC_CONFIG_GET("inner_gmres_reduction", 1e-3);
     const int inner_gmres_maxit = DXTC_CONFIG_GET("inner_gmres_maxit", 10);

@@ -107,7 +107,8 @@ int main(int argc, char* argv[])
                                  inner_gmres_reduction,
                                  inner_gmres_maxit,
                                  gmres_verbose,
-                                 linearize);
+                                 linearize,
+                                 1);
     CellModelSolver model_solver2(testcase,
                                   t_end,
                                   num_elements_x,
@@ -135,7 +136,8 @@ int main(int argc, char* argv[])
                                   inner_gmres_reduction,
                                   inner_gmres_maxit,
                                   gmres_verbose,
-                                  linearize);
+                                  linearize,
+                                  1);
 
     const size_t pfield_size = model_solver.pfield_vec(0).size();
     const size_t ofield_size = model_solver.ofield_vec(0).size();
