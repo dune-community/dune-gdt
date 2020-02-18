@@ -68,7 +68,7 @@ public:
 
   int order(const LocalBasisType& basis, const XT::Common::Parameter& param = {}) const override final
   {
-    return order_(basis, this->parse_parameter(param));
+    return order_(basis, param);
   }
 
   using BaseType::evaluate;
@@ -83,7 +83,7 @@ public:
     if (result.size() < size)
       result.resize(size);
     // evaluate
-    evaluate_(basis, point_in_reference_element, result, this->parse_parameter(param));
+    evaluate_(basis, point_in_reference_element, result, param);
     // check
     DUNE_THROW_IF(result.size() < size,
                   Exceptions::integrand_error,
@@ -157,7 +157,7 @@ public:
                     const LocalAnsatzBasisType& ansatz_basis,
                     const XT::Common::Parameter& param = {}) const override final
   {
-    return order_(test_basis, ansatz_basis, this->parse_parameter(param));
+    return order_(test_basis, ansatz_basis, param);
   }
 
   using BaseType::evaluate;
@@ -174,7 +174,7 @@ public:
     if (result.rows() < rows || result.cols() < cols)
       result.resize(rows, cols);
     // evaluate
-    evaluate_(test_basis, ansatz_basis, point_in_reference_element, result, this->parse_parameter(param));
+    evaluate_(test_basis, ansatz_basis, point_in_reference_element, result, param);
     // check
     DUNE_THROW_IF(result.rows() < rows || result.cols() < cols,
                   Exceptions::integrand_error,
@@ -241,7 +241,7 @@ public:
                     const LocalBasisType& outside_basis,
                     const XT::Common::Parameter& param = {}) const override final
   {
-    return order_(inside_basis, outside_basis, this->parse_parameter(param));
+    return order_(inside_basis, outside_basis, param);
   }
 
   using BaseType::evaluate;
@@ -257,7 +257,7 @@ public:
     if (result.rows() < rows || result.cols() < cols)
       result.resize(rows, cols);
     // evaluate
-    evaluate_(inside_basis, outside_basis, point_in_reference_intersection, result, this->parse_parameter(param));
+    evaluate_(inside_basis, outside_basis, point_in_reference_intersection, result, param);
     // check
     DUNE_THROW_IF(result.rows() < rows || result.cols() < cols,
                   Exceptions::integrand_error,
