@@ -141,7 +141,7 @@ public:
       // make sense as a global basis. This does not matter, however, since we only need to be able to restore that
       // same basis later on to make sense of the DoF information.
       auto element_basis = this->basis().localize();
-      element_restriction_FE_data = element_basis->default_data(element.geometry().type());
+      element_restriction_FE_data = element_basis->default_data(element.type());
       element_basis->restore(element, element_restriction_FE_data);
       auto lhs = LocalElementIntegralBilinearForm<E, r, rC, R, R>(LocalElementProductIntegrand<E, r, R, R>())
                      .apply2(*element_basis, *element_basis);

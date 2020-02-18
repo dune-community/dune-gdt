@@ -73,7 +73,7 @@ struct ProductIntegrandTest : public IntegrandTest<G>
     scalar_integrand.bind(element);
     const auto integrand_order = scalar_integrand.order(*scalar_test_, *scalar_ansatz_);
     DynamicMatrix<D> result(2, 2, 0.);
-    for (const auto& quadrature_point : Dune::QuadratureRules<D, d>::rule(element.geometry().type(), integrand_order)) {
+    for (const auto& quadrature_point : Dune::QuadratureRules<D, d>::rule(element.type(), integrand_order)) {
       const auto& x = quadrature_point.position();
       scalar_integrand.evaluate(*scalar_test_, *scalar_ansatz_, x, result);
       DynamicMatrix<D> expected_result{{std::pow(x[0] * x[1], 2), std::pow(x[0] * x[1], 3)},
@@ -97,7 +97,7 @@ struct ProductIntegrandTest : public IntegrandTest<G>
     integrand.bind(element);
     const auto integrand_order = integrand.order(*vector_test_, *vector_ansatz_);
     DynamicMatrix<D> result(2, 2, 0.);
-    for (const auto& quadrature_point : Dune::QuadratureRules<D, d>::rule(element.geometry().type(), integrand_order)) {
+    for (const auto& quadrature_point : Dune::QuadratureRules<D, d>::rule(element.type(), integrand_order)) {
       const auto& x = quadrature_point.position();
       integrand.evaluate(*vector_test_, *vector_ansatz_, x, result);
       DynamicMatrix<D> expected_result{{std::pow(x[0], 2) + 2 * x[0] * x[1] + 5 * x[1],

@@ -130,13 +130,13 @@ public:
     DynamicVector<size_t> global_DoF_indices(range_space_.mapper().max_local_size());
     // walk the grid
     for (auto&& element : elements(assembly_grid_view_)) {
-      const auto& lagrange_points = cg_space.finite_elements().get(element.geometry().type(), order).lagrange_points();
-      DUNE_THROW_IF(range_space_.finite_elements().get(element.geometry().type(), order).lagrange_points().size()
+      const auto& lagrange_points = cg_space.finite_elements().get(element.type(), order).lagrange_points();
+      DUNE_THROW_IF(range_space_.finite_elements().get(element.type(), order).lagrange_points().size()
                         != lagrange_points.size(),
                     Exceptions::operator_error,
                     "This should not happen, the Lagrange points should coincide for Lagrange spaces of same order!\n"
-                        << "range_space_.finite_element(element.geometry().type(), order).lagrange_points().size() = "
-                        << range_space_.finite_elements().get(element.geometry().type(), order).lagrange_points().size()
+                        << "range_space_.finite_element(element.type(), order).lagrange_points().size() = "
+                        << range_space_.finite_elements().get(element.type(), order).lagrange_points().size()
                         << "\nlagrange_points.size() = " << lagrange_points.size());
       cg_space.mapper().global_indices(element, global_lagrange_point_indices);
       range_space_.mapper().global_indices(element, global_DoF_indices);

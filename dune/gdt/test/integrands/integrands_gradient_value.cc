@@ -79,7 +79,7 @@ struct GradientValueIntegrandTest : public IntegrandTest<G>
     DynamicMatrix<D> result(2, 2, 0.);
     DynamicMatrix<D> result2(2, 2, 0.);
     for (const auto& quadrature_point :
-         Dune::QuadratureRules<D, d>::rule(element.geometry().type(), std::max(integrand_order, integrand_order2))) {
+         Dune::QuadratureRules<D, d>::rule(element.type(), std::max(integrand_order, integrand_order2))) {
       const auto& x = quadrature_point.position();
       scalar_integrand.evaluate(*scalar_test_, *scalar_ansatz_, x, result);
       scalar_integrand2.evaluate(*scalar_test_, *scalar_ansatz_, x, result2);
@@ -116,7 +116,7 @@ struct GradientValueIntegrandTest : public IntegrandTest<G>
     DynamicMatrix<D> result(2, 2, 0.);
     DynamicMatrix<D> result2(2, 2, 0.);
     for (const auto& quadrature_point :
-         Dune::QuadratureRules<D, d>::rule(element.geometry().type(), std::max(integrand_order, integrand_order2))) {
+         Dune::QuadratureRules<D, d>::rule(element.type(), std::max(integrand_order, integrand_order2))) {
       const auto& x = quadrature_point.position();
       integrand.evaluate(*vector_test_, *vector_ansatz_, x, result);
       integrand2.evaluate(*vector_test_, *vector_ansatz_, x, result2);

@@ -111,12 +111,12 @@ public:
 
   size_t local_size(const ElementType& element) const override final
   {
-    return local_coefficients(element.geometry().type()).size();
+    return local_coefficients(element.type()).size();
   }
 
   size_t global_index(const ElementType& element, const size_t local_index) const override final
   {
-    const auto& coeffs = local_coefficients(element.geometry().type());
+    const auto& coeffs = local_coefficients(element.type());
     if (local_index >= coeffs.size())
       DUNE_THROW(Exceptions::mapper_error,
                  "local_size(element) = " << coeffs.size() << "\n   local_index = " << local_index);
@@ -130,8 +130,7 @@ public:
     // not the same in all elements sharing the subentity.
 #ifndef NDEBUG
     if (d >= 2 && fe_order_ >= 3)
-      assert(element.geometry().type() == Dune::GeometryTypes::cube(d)
-             && "Not implemented for this element, see comment above!");
+      assert(element.type() == Dune::GeometryTypes::cube(d) && "Not implemented for this element, see comment above!");
 #endif
     return mapper_.subIndex(element, local_key.subEntity(), local_key.codim()) + local_key.index();
   } // ... mapToGlobal(...)
@@ -140,7 +139,7 @@ public:
 
   void global_indices(const ElementType& element, DynamicVector<size_t>& indices) const override final
   {
-    const auto& coeffs = local_coefficients(element.geometry().type());
+    const auto& coeffs = local_coefficients(element.type());
     const auto local_sz = coeffs.size();
     assert(local_sz <= max_local_size_);
     if (indices.size() < local_sz)

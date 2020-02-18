@@ -129,7 +129,7 @@ public:
         const auto& local_keys_assosiated_with_intersection = intersection_to_local_key_map[intersection_index];
         if (local_keys_assosiated_with_intersection.size() > 0) {
           const auto intersection_fe =
-              make_local_orthonormal_finite_element<D, d - 1, F>(intersection.geometry().type(), rt_fe.order());
+              make_local_orthonormal_finite_element<D, d - 1, F>(intersection.type(), rt_fe.order());
           const auto& intersection_Pk_basis = intersection_fe->basis();
           DUNE_THROW_IF(intersection_Pk_basis.size() != local_keys_assosiated_with_intersection.size(),
                         Exceptions::interpolation_error,
@@ -154,7 +154,7 @@ public:
                            std::max(local_source_element->order(param),
                                     std::max(intersection_Pk_basis.order(), local_source_neighbor->order(param))));
               for (auto&& quadrature_point : QuadratureRules<D, d - 1>::rule(
-                       intersection.geometry().type(), 2 * std::max(max_polorder, rt_basis->order()))) {
+                       intersection.type(), 2 * std::max(max_polorder, rt_basis->order()))) {
                 const auto point_on_reference_intersection = quadrature_point.position();
                 const auto point_in_reference_element =
                     intersection.geometryInInside().global(point_on_reference_intersection);
@@ -235,8 +235,8 @@ public:
             there_are_intersection_dofs_to_determine = true;
             // do a face quadrature
             const int max_polorder = std::max(intersection_Pk_basis.order(), local_source_element->order(param));
-            for (auto&& quadrature_point : QuadratureRules<D, d - 1>::rule(
-                     intersection.geometry().type(), 2 * std::max(max_polorder, rt_basis->order()))) {
+            for (auto&& quadrature_point :
+                 QuadratureRules<D, d - 1>::rule(intersection.type(), 2 * std::max(max_polorder, rt_basis->order()))) {
               const auto point_on_reference_intersection = quadrature_point.position();
               const auto point_in_reference_element =
                   intersection.geometryInInside().global(point_on_reference_intersection);

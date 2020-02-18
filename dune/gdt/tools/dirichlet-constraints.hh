@@ -86,7 +86,7 @@ public:
   {
     std::set<size_t> local_DoFs;
     basis_->bind(element);
-    const auto& reference_element = ReferenceElements<double, d>::general(element.geometry().type());
+    const auto& reference_element = ReferenceElements<double, d>::general(element.type());
     const auto local_key_indices = basis_->finite_element().coefficients().local_key_indices();
     const auto intersection_it_end = space_->grid_view().iend(element);
     for (auto intersection_it = space_->grid_view().ibegin(element); intersection_it != intersection_it_end;

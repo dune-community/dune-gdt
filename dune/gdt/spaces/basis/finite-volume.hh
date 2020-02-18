@@ -113,7 +113,7 @@ private:
     void post_bind(const ElementType& elemnt) override final
     {
       current_local_fe_ = XT::Common::ConstStorageProvider<LocalFiniteElementInterface<D, d, R, r, 1>>(
-          self_.local_finite_elements_.get(elemnt.geometry().type(), 0));
+          self_.local_finite_elements_.get(elemnt.type(), 0));
     }
 
   public:
