@@ -184,7 +184,7 @@ protected:
     // unique indices for codim 0  entities, which cannot be achieved by the grid layers index set for mixed grids)
     fe_data_.resize(element_indices_.size());
     for (auto&& entity : elements(grid_view_)) {
-      const auto geometry_type = entity.geometry().type();
+      const auto geometry_type = entity.type();
       const auto& finite_element = local_finite_elements_->get(geometry_type, order_);
       const auto& coeffs = finite_element.coefficients();
       const auto element_index = element_indices_.global_index(entity, 0);

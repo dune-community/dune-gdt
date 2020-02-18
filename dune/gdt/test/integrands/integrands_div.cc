@@ -70,7 +70,7 @@ struct DivIntegrandTest : public IntegrandTest<G>
     DynamicMatrix<D> test_div_result(2, 2, 0.);
     DynamicMatrix<D> ansatz_div_result(2, 2, 0.);
     for (const auto& quadrature_point : Dune::QuadratureRules<D, d>::rule(
-             element.geometry().type(), std::max(test_div_integrand_order, ansatz_div_integrand_order))) {
+             element.type(), std::max(test_div_integrand_order, ansatz_div_integrand_order))) {
       const auto& x = quadrature_point.position();
       test_div_integrand.evaluate(*vector_test_, *scalar_ansatz_, x, test_div_result);
       ansatz_div_integrand.evaluate(*scalar_test_, *vector_ansatz_, x, ansatz_div_result);

@@ -113,7 +113,7 @@ std::pair<V, F> compute_local_indicators(const DiscreteFunction<V, GV>& u_h,
                   // - approximate minimum eigenvalue of the diffusion over the element (evaluate at some points)
                   double min_EV = std::numeric_limits<double>::max();
                   for (auto&& quadrature_point :
-                       QuadratureRules<double, d>::rule(element.geometry().type(), d_el->order() + over_integrate)) {
+                       QuadratureRules<double, d>::rule(element.type(), d_el->order() + over_integrate)) {
                     auto diff = d_el->evaluate(quadrature_point.position());
                     auto eigen_solver =
                         XT::LA::make_eigen_solver(diff,

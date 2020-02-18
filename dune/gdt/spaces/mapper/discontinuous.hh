@@ -86,7 +86,7 @@ public:
 
   size_t local_size(const ElementType& element) const override final
   {
-    return local_coefficients(element.geometry().type()).size();
+    return local_coefficients(element.type()).size();
   }
 
   size_t global_index(const ElementType& element, const size_t local_index) const override final

@@ -128,7 +128,7 @@ public:
     const auto u_order = u_->order(param);
     const auto local_basis_order = basis.order(param);
     const auto integrand_order = local_flux_->order(param) * u_order + std::max(local_basis_order - 1, 0);
-    for (const auto& quadrature_point : QuadratureRules<D, d>::rule(element().geometry().type(), integrand_order)) {
+    for (const auto& quadrature_point : QuadratureRules<D, d>::rule(element().type(), integrand_order)) {
       // prepare
       const auto point_in_reference_element = quadrature_point.position();
       const auto integration_factor = element().geometry().integrationElement(point_in_reference_element);
@@ -300,8 +300,7 @@ public:
     const auto v_order = v_->order(param);
     const auto integrand_order = std::max(inside_basis.order(param), outside_basis.order(param))
                                  + std::max(inside_flux_order * u_order, outside_flux_order * v_order);
-    for (const auto& quadrature_point :
-         QuadratureRules<D, d - 1>::rule(intersection().geometry().type(), integrand_order)) {
+    for (const auto& quadrature_point : QuadratureRules<D, d - 1>::rule(intersection().type(), integrand_order)) {
       // prepare
       const auto point_in_reference_intersection = quadrature_point.position();
       const auto integration_factor = intersection().geometry().integrationElement(point_in_reference_intersection);
@@ -458,8 +457,7 @@ public:
     inside_local_dofs_.resize(inside_basis.size(param));
     inside_local_dofs_ *= 0.;
     const auto integrand_order = inside_basis.order(param) + numerical_flux_order_ * u_->order(param);
-    for (const auto& quadrature_point :
-         QuadratureRules<D, d - 1>::rule(intersection().geometry().type(), integrand_order)) {
+    for (const auto& quadrature_point : QuadratureRules<D, d - 1>::rule(intersection().type(), integrand_order)) {
       // prepare
       const auto point_in_reference_intersection = quadrature_point.position();
       const auto integration_factor = intersection().geometry().integrationElement(point_in_reference_intersection);
@@ -594,8 +592,7 @@ public:
     inside_local_dofs_.resize(inside_basis.size(param));
     inside_local_dofs_ *= 0.;
     const auto integrand_order = inside_basis.order(param) + local_flux_->order(param) * u_->order(param);
-    for (const auto& quadrature_point :
-         QuadratureRules<D, d - 1>::rule(intersection().geometry().type(), integrand_order)) {
+    for (const auto& quadrature_point : QuadratureRules<D, d - 1>::rule(intersection().type(), integrand_order)) {
       // prepare
       const auto point_in_reference_intersection = quadrature_point.position();
       const auto integration_factor = intersection().geometry().integrationElement(point_in_reference_intersection);
@@ -762,8 +759,7 @@ public:
         const auto neighbor = intersection.outside();
         v_->bind(neighbor);
         const auto integration_order = std::pow(std::max(u_->order(param), v_->order(param)), 2);
-        for (auto&& quadrature_point :
-             QuadratureRules<D, d - 1>::rule(intersection.geometry().type(), integration_order)) {
+        for (auto&& quadrature_point : QuadratureRules<D, d - 1>::rule(intersection.type(), integration_order)) {
           const auto point_in_reference_intersection = quadrature_point.position();
           const auto point_in_reference_element =
               intersection.geometryInInside().global(point_in_reference_intersection);

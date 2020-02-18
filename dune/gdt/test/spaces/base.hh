@@ -77,7 +77,7 @@ struct SpaceTestBase : public ::testing::Test
     ASSERT_NE(space, nullptr);
     ASSERT_TRUE(space->is_lagrangian()) << "Do not call this test otherwise!";
     for (auto&& element : elements(*grid_view))
-      EXPECT_EQ(r * numLagrangePoints(element.geometry().type().id(), d, p), space->basis().localize(element)->size());
+      EXPECT_EQ(r * numLagrangePoints(element.type().id(), d, p), space->basis().localize(element)->size());
   }
 
   void basis_of_lagrange_space_exists_on_each_element_with_correct_order()
@@ -106,7 +106,7 @@ struct SpaceTestBase : public ::testing::Test
     ASSERT_TRUE(space->is_lagrangian()) << "Do not call this test otherwise!";
     for (auto&& element : elements(*grid_view)) {
       const auto basis = space->basis().localize(element);
-      const auto lagrange_points = space->finite_elements().get(element.geometry().type(), p).lagrange_points();
+      const auto lagrange_points = space->finite_elements().get(element.type(), p).lagrange_points();
       EXPECT_EQ(lagrange_points.size(), basis->size() / r);
       for (size_t ii = 0; ii < lagrange_points.size(); ++ii) {
         const auto values = basis->evaluate_set(lagrange_points[ii]);
@@ -131,10 +131,10 @@ struct SpaceTestBase : public ::testing::Test
     ASSERT_NE(space, nullptr);
     ASSERT_TRUE(space->is_lagrangian()) << "Do not call this test otherwise!";
     for (auto&& element : elements(*grid_view)) {
-      const auto& reference_element = ReferenceElements<D, d>::general(element.geometry().type());
+      const auto& reference_element = ReferenceElements<D, d>::general(element.type());
       const auto basis = space->basis().localize(element);
       const double h = 1e-6;
-      for (const auto& quadrature_point : QuadratureRules<D, d>::rule(element.geometry().type(), basis->order())) {
+      for (const auto& quadrature_point : QuadratureRules<D, d>::rule(element.type(), basis->order())) {
         const auto& xx = quadrature_point.position();
         const auto& J_inv_T = element.geometry().jacobianInverseTransposed(xx);
         const auto jacobians = basis->jacobians_of_set(xx);
@@ -185,7 +185,7 @@ struct SpaceTestBase : public ::testing::Test
     ASSERT_NE(space, nullptr);
     ASSERT_TRUE(space->is_lagrangian()) << "Do not call this test otherwise!";
     for (auto&& element : elements(*grid_view))
-      EXPECT_EQ(r * numLagrangePoints(element.geometry().type().id(), d, p), space->mapper().local_size(element));
+      EXPECT_EQ(r * numLagrangePoints(element.type().id(), d, p), space->mapper().local_size(element));
   }
 
   void mapper_reports_correct_max_num_DoFs()

@@ -82,7 +82,7 @@ public:
     result *= 0;
     // loop over all quadrature points
     const auto integrand_order = integrand_->order(basis, param) + over_integrate_;
-    for (auto&& quadrature_point : QuadratureRules<D, d>::rule(element.geometry().type(), integrand_order)) {
+    for (auto&& quadrature_point : QuadratureRules<D, d>::rule(element.type(), integrand_order)) {
       const auto point_in_reference_element = quadrature_point.position();
       // integration factors
       const auto integration_factor = element.geometry().integrationElement(point_in_reference_element);
@@ -165,8 +165,7 @@ public:
     result *= 0;
     // loop over all quadrature points
     const auto integrand_order = integrand_->order(inside_basis, outside_basis, param) + over_integrate_;
-    for (const auto& quadrature_point :
-         QuadratureRules<D, d - 1>::rule(intersection.geometry().type(), integrand_order)) {
+    for (const auto& quadrature_point : QuadratureRules<D, d - 1>::rule(intersection.type(), integrand_order)) {
       const auto point_in_reference_intersection = quadrature_point.position();
       // integration factors
       const auto integration_factor = intersection.geometry().integrationElement(point_in_reference_intersection);
