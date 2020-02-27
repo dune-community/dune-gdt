@@ -86,11 +86,11 @@ int main(int argc, char* argv[])
     const CellModelLinearSolverType pfield_solver_type =
         string_to_solver_type(DXTC_CONFIG_GET("pfield_solver_type", "schur_gmres"));
     const CellModelMassMatrixSolverType pfield_mass_matrix_solver_type =
-        string_to_mass_matrix_solver_type(DXTC_CONFIG_GET("pfield_mass_matrix_solver_type", "sparse_lu"));
+        string_to_mass_matrix_solver_type(DXTC_CONFIG_GET("pfield_mass_matrix_solver_type", "sparse_ldlt"));
     const CellModelLinearSolverType ofield_solver_type =
         string_to_solver_type(DXTC_CONFIG_GET("ofield_solver_type", "schur_gmres"));
     const CellModelMassMatrixSolverType ofield_mass_matrix_solver_type =
-        string_to_mass_matrix_solver_type(DXTC_CONFIG_GET("ofield_mass_matrix_solver_type", "sparse_lu"));
+        string_to_mass_matrix_solver_type(DXTC_CONFIG_GET("ofield_mass_matrix_solver_type", "sparse_ldlt"));
 
     CellModelSolver model_solver(testcase,
                                  t_end,

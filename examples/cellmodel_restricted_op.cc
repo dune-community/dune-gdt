@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
     const int inner_gmres_maxit = 10;
     const int gmres_verbose = 0;
     const CellModelLinearSolverType solver_type = CellModelLinearSolverType::schur_fgmres_gmres;
-    const CellModelMassMatrixSolverType mass_matrix_solver_type = CellModelMassMatrixSolverType::sparse_lu;
+    const CellModelMassMatrixSolverType mass_matrix_solver_type = CellModelMassMatrixSolverType::sparse_ldlt;
 
     CellModelSolver model_solver(testcase,
                                  t_end,
