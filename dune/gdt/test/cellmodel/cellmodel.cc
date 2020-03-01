@@ -113,6 +113,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
                                  const double t_end,
                                  const unsigned int num_elements_x,
                                  const unsigned int num_elements_y,
+                                 const double pol_order,
                                  const bool use_tbb,
                                  const double Be, // bending capillary number, ratio of viscous forces to bending forces
                                  const double Ca, // capillary number, ratio of viscous forces to surface tension forces
@@ -138,8 +139,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
                                  const double inner_reduction,
                                  const int inner_maxit,
                                  const int inner_verbose,
-                                 const bool linearize,
-                                 const double pol_order)
+                                 const bool linearize)
   : lower_left_(get_lower_left(testcase))
   , upper_right_(get_upper_right(testcase))
   , t_end_(t_end)

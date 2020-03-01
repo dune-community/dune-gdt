@@ -49,8 +49,8 @@ class FGMResSolver;
 
 struct CellModelSolver
 {
-  using G = ALU_2D_SIMPLEX_CONFORMING;
-  // using G = YASP_2D_EQUIDISTANT_OFFSET;
+  // using G = ALU_2D_SIMPLEX_CONFORMING;
+  using G = YASP_2D_EQUIDISTANT_OFFSET;
   static const constexpr size_t d = G::dimension;
   using GV = typename G::LeafGridView;
   using PGV = XT::Grid::PeriodicGridView<GV>;
@@ -93,6 +93,7 @@ struct CellModelSolver
       const double t_end = 1.,
       const unsigned int num_elements_x = 50,
       const unsigned int num_elements_y = 50,
+      const double pol_order = 2,
       const bool use_tbb = true,
       const double Be = 0.3, // bending capillary number, ratio of viscous forces to bending forces
       const double Ca = 0.1, // capillary number, ratio of viscous forces to surface tension forces
@@ -118,8 +119,7 @@ struct CellModelSolver
       const double inner_reduction = 1e-3,
       const int inner_maxit = 10,
       const int inner_verbose = 0,
-      const bool linearize = false,
-      const double pol_order = 1);
+      const bool linearize = false);
 
   size_t num_cells() const;
 

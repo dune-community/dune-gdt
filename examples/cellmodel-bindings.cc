@@ -57,6 +57,7 @@ BOOST_PYTHON_MODULE(cellmodel)
                                         const double,
                                         const unsigned int,
                                         const unsigned int,
+                                        const size_t,
                                         const bool,
                                         const double,
                                         const double,
@@ -65,10 +66,6 @@ BOOST_PYTHON_MODULE(cellmodel)
                                         const double,
                                         const double,
                                         const double,
-                                        const double,
-                                        // const double,
-                                        // const double,
-                                        // const double,
                                         const double>>())
       .def("visualize", &CellModelSolver::visualize, visualize_overloads())
       .def("visualize_pfield", &CellModelSolver::visualize_pfield, visualize_pfield_overloads())

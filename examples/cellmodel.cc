@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
     double t_end = config.template get<double>("fem.t_end", 340.);
     double dt = config.template get<double>("fem.dt", 0.005);
     const bool linearize = config.template get<bool>("problem.linearize", false);
-    const size_t pol_order = config.template get<size_t>("fem.degree", 1, 0, 0);
+    const size_t pol_order = config.template get<size_t>("fem.degree", 2, 0, 0);
     std::cout << "linearize: " << linearize << std::endl;
 
     // problem parameters
@@ -96,6 +96,7 @@ int main(int argc, char* argv[])
                                  t_end,
                                  num_elements_x,
                                  num_elements_y,
+                                 pol_order,
                                  num_threads > 1,
                                  Be,
                                  Ca,
@@ -119,97 +120,12 @@ int main(int argc, char* argv[])
                                  inner_gmres_reduction,
                                  inner_gmres_maxit,
                                  gmres_verbose,
-                                 linearize,
-                                 pol_order);
-#if 1
+                                 linearize);
+
     auto begin = std::chrono::steady_clock::now();
     auto result = model_solver.solve(dt, true, write_step, filename, subsampling);
     const std::chrono::duration<double> time = std::chrono::steady_clock::now() - begin;
     std::cout << "Solving took: " << time.count() << " s." << std::endl;
-    for (const auto& vec1 : result[0])
-      std::cout << &vec1 << std::endl;
-
-#else
-    // save/visualize initial solution
-    model_solver.visualize(filename, 0, 0., subsampling);
-
-    // implicit Euler timestepping
-    double t = 0;
-    assert(Dune::XT::Common::FloatCmp::ge(t_end, t));
-    double next_save_time = t + write_step > t_end ? t_end : t + write_step;
-    size_t save_step_counter = 1;
-
-    // auto stokes_vec = model_solver.stokes_vec();
-    // auto pfield_vec = model_solver.pfield_vec(0);
-    // auto ofield_vec = model_solver.ofield_vec(0);
-
-
-    const size_t num_cells = model_solver.num_cells_;
-    std::vector<std::vector<typename CellModelSolver::VectorType>> ret(1 + 2 * num_cells);
-    for (size_t kk = 0; kk < num_cells; ++kk) {
-      ret[kk].push_back(model_solver.pfield_vec(kk));
-      ret[num_cells + kk].push_back(model_solver.ofield_vec(kk));
-    }
-    ret[2 * num_cells].push_back(model_solver.stokes_vec());
-
-    while (Dune::XT::Common::FloatCmp::lt(t, t_end)) {
-      double max_dt = dt;
-      // match saving times and t_end exactly
-      if (Dune::XT::Common::FloatCmp::gt(t + dt, t_end))
-        max_dt = t_end - t;
-      double actual_dt = std::min(dt, max_dt);
-
-      // do a timestep
-      std::cout << "Current time: " << t << std::endl;
-      for (size_t kk = 0; kk < num_cells; ++kk) {
-        // model_solver.set_pfield_vec(kk, pfield_vec);
-        // model_solver.set_ofield_vec(kk, ofield_vec);
-        // model_solver.set_stokes_vec(stokes_vec);
-        // model_solver.prepare_pfield_op(dt, kk);
-        // pfield_vec = model_solver.apply_inverse_pfield_op_with_param(pfield_vec, kk, Be, Ca, Pa);
-        // std::cout << "Pfield " << kk << " done" << std::endl;
-        // model_solver.set_pfield_vec(kk, pfield_vec);
-        // model_solver.set_ofield_vec(kk, ofield_vec);
-        // model_solver.set_stokes_vec(stokes_vec);
-        // model_solver.prepare_ofield_op(dt, kk);
-        // ofield_vec = model_solver.apply_inverse_ofield_op_with_param(ofield_vec, kk, Pa);
-        // model_solver.set_pfield_vec(kk, pfield_vec);
-        // model_solver.set_ofield_vec(kk, ofield_vec);
-        // std::cout << "Ofield " << kk << " done" << std::endl;
-        model_solver.set_pfield_vec(kk, ret[kk].back());
-        model_solver.prepare_pfield_op(dt, kk);
-        ret[kk].push_back(model_solver.apply_inverse_pfield_op_with_param(ret[kk].back(), kk, Be, Ca, Pa));
-        std::cout << "Pfield " << kk << " done" << std::endl;
-        model_solver.set_pfield_vec(kk, ret[kk].back());
-        model_solver.prepare_ofield_op(dt, kk);
-        ret[num_cells + kk].push_back(
-            model_solver.apply_inverse_ofield_op_with_param(ret[kk + num_cells].back(), kk, Pa));
-        model_solver.set_ofield_vec(kk, ret[num_cells + kk].back());
-        std::cout << "Ofield " << kk << " done" << std::endl;
-      }
-
-      // stokes system
-      model_solver.prepare_stokes_op();
-      ret[2 * num_cells].push_back(model_solver.apply_inverse_stokes_op());
-      model_solver.set_stokes_vec(ret[2 * num_cells].back());
-      std::cout << "Stokes done" << std::endl;
-
-      t += actual_dt;
-
-      // check if data should be written in this timestep (and write)
-      //  if (write_step < 0. || Dune::XT::Common::FloatCmp::ge(t, next_save_time)) {
-      //    model_solver.visualize(filename, save_step_counter, t, subsampling);
-      //    next_save_time += write_step;
-      //    ++save_step_counter;
-      //  }
-    } // while (t < t_end)
-    for (size_t ii = 0; ii < ret[0].size(); ++ii) {
-      model_solver.set_pfield_vec(0, ret[0][ii]);
-      model_solver.set_ofield_vec(0, ret[num_cells][ii]);
-      model_solver.set_stokes_vec(ret[2 * num_cells][ii]);
-      model_solver.visualize(filename, ii, ii, subsampling);
-    }
-#endif
   } catch (Exception& e) {
     std::cerr << "\nDUNE reported error: " << e.what() << std::endl;
     return EXIT_FAILURE;
