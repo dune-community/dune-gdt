@@ -998,11 +998,13 @@ void CellModelSolver::compute_restricted_stokes_dofs(const std::vector<size_t>& 
     const auto& phi_mapper = phi_space_.mapper();
     const auto& P_mapper = p_space_.mapper();
     for (const auto& entity : stokes_deim_entities_) {
+      global_indices.resize(phi_mapper.local_size(entity));
       phi_mapper.global_indices(entity, global_indices);
       input_dofs[0].insert(input_dofs[0].end(), global_indices.begin(), global_indices.end());
       for (auto& index : global_indices)
         index += size_phi_;
       input_dofs[0].insert(input_dofs[0].end(), global_indices.begin(), global_indices.end());
+      global_indices.resize(P_mapper.local_size(entity));
       P_mapper.global_indices(entity, global_indices);
       input_dofs[1].insert(input_dofs[1].end(), global_indices.begin(), global_indices.end());
       for (auto& index : global_indices)
@@ -1047,6 +1049,7 @@ void CellModelSolver::compute_restricted_ofield_dofs(const std::vector<size_t>& 
     DynamicVector<size_t> global_indices;
     ofield_deim_entities_[cell].clear();
     for (const auto& entity : Dune::elements(grid_view_)) {
+      global_indices.resize(P_mapper.local_size(entity));
       P_mapper.global_indices(entity, global_indices);
       maybe_add_entity(entity, global_indices, unique_output_dofs, ofield_deim_entities_[cell], size_P_);
     } // entities
@@ -1064,8 +1067,10 @@ void CellModelSolver::compute_restricted_ofield_dofs(const std::vector<size_t>& 
     const auto& phi_mapper = phi_space_.mapper();
     const auto& u_mapper = u_space_.mapper();
     for (const auto& entity : ofield_deim_entities_[cell]) {
+      global_indices.resize(phi_mapper.local_size(entity));
       phi_mapper.global_indices(entity, global_indices);
       input_dofs[0].insert(input_dofs[0].end(), global_indices.begin(), global_indices.end());
+      global_indices.resize(u_mapper.local_size(entity));
       u_mapper.global_indices(entity, global_indices);
       input_dofs[2].insert(input_dofs[2].end(), global_indices.begin(), global_indices.end());
     } // entities
@@ -1121,6 +1126,7 @@ void CellModelSolver::compute_restricted_pfield_dofs(const std::vector<size_t>& 
     DynamicVector<size_t> global_indices;
     pfield_deim_entities_[cell].clear();
     for (const auto& entity : Dune::elements(grid_view_)) {
+      global_indices.resize(phi_mapper.local_size(entity));
       phi_mapper.global_indices(entity, global_indices);
       maybe_add_entity(entity, global_indices, unique_output_dofs, pfield_deim_entities_[cell], size_phi_);
     } // entities
@@ -1138,8 +1144,10 @@ void CellModelSolver::compute_restricted_pfield_dofs(const std::vector<size_t>& 
     const auto& P_mapper = P_space_.mapper();
     const auto& u_mapper = u_space_.mapper();
     for (const auto& entity : pfield_deim_entities_[cell]) {
+      global_indices.resize(P_mapper.local_size(entity));
       P_mapper.global_indices(entity, global_indices);
       input_dofs[1].insert(input_dofs[1].end(), global_indices.begin(), global_indices.end());
+      global_indices.resize(u_mapper.local_size(entity));
       u_mapper.global_indices(entity, global_indices);
       input_dofs[2].insert(input_dofs[2].end(), global_indices.begin(), global_indices.end());
     } // entities
@@ -1160,14 +1168,14 @@ void CellModelSolver::compute_restricted_pfield_dofs(const std::vector<size_t>& 
 //*********************************************** Apply operators **************************************************
 //******************************************************************************************************************
 
-CellModelSolver::VectorType CellModelSolver::apply_stokes_operator(VectorType y, const bool restricted)
+CellModelSolver::VectorType CellModelSolver::apply_stokes_operator(const VectorType& y, const bool restricted)
 {
   return apply_stokes_helper(y, restricted, false);
 }
 
 // Applies stokes operator (applies the F if Stokes equation is F(y) = 0)
 CellModelSolver::VectorType
-CellModelSolver::apply_stokes_helper(VectorType y, const bool restricted, const bool jacobian)
+CellModelSolver::apply_stokes_helper(const VectorType& y, const bool restricted, const bool jacobian)
 {
   const auto& output_dofs = *stokes_deim_output_dofs_;
   const auto& unique_output_dofs = stokes_deim_unique_output_dofs_;
@@ -1272,17 +1280,23 @@ CellModelSolver::apply_ofield_helper(const VectorType& y, const size_t cell, con
   }
 }
 
-void CellModelSolver::update_ofield_parameters(const double Pa)
+void CellModelSolver::update_ofield_parameters(const double Pa, const size_t cell, const bool restricted)
 {
+  DUNE_THROW_IF(
+      cell != 0, Dune::NotImplemented, "This may not work for several cells, check before removing this line!");
   // Pa may have been set to a new value already (via update_pfield_parameters)
   if (XT::Common::FloatCmp::ne(Pa, last_ofield_Pa_)) {
     std::cout << "Ofield params updated, old Pa = " << last_ofield_Pa_ << ", new Pa = " << Pa << std::endl;
     Pa_ = Pa;
     last_ofield_Pa_ = Pa_;
-    C_ofield_elliptic_part_ *= 0.;
+    const auto& P_output_dofs = P_deim_output_dofs_[cell];
+    set_mat_to_zero(C_ofield_elliptic_part_, restricted, ofield_submatrix_pattern_, P_output_dofs);
     MatrixOperator<MatrixType, PGV, d> ofield_elliptic_op(grid_view_, P_space_, P_space_, C_ofield_elliptic_part_);
     ofield_elliptic_op.append(LocalElementIntegralBilinearForm<E, d>(LocalLaplaceIntegrand<E, d>(-1. / Pa_)));
-    ofield_elliptic_op.assemble(use_tbb_);
+    if (!restricted)
+      ofield_elliptic_op.assemble(use_tbb_);
+    else
+      ofield_elliptic_op.assemble_range(ofield_deim_entities_[cell]);
   }
 }
 
@@ -1307,7 +1321,7 @@ CellModelSolver::apply_pfield_helper(const VectorType& y, const size_t cell, con
   else
     source = y;
   // linear part
-  pfield_jac_linear_op_.apply(source, residual);
+  pfield_jac_linear_op_.apply(source, residual, !jacobian);
   if (!jacobian) {
     // subtract rhs
     const auto sub = sub_func<VectorType>(restricted);
@@ -1354,8 +1368,11 @@ CellModelSolver::apply_pfield_helper(const VectorType& y, const size_t cell, con
   }
 }
 
-void CellModelSolver::update_pfield_parameters(const double Be, const double Ca, const double Pa)
+void CellModelSolver::update_pfield_parameters(
+    const double Be, const double Ca, const double Pa, const size_t cell, const bool restricted)
 {
+  DUNE_THROW_IF(
+      cell != 0, Dune::NotImplemented, "This may not work for several cells, check before removing this line!");
   if (XT::Common::FloatCmp::ne(Be, Be_) || XT::Common::FloatCmp::ne(Ca, Ca_)
       || XT::Common::FloatCmp::ne(Pa, last_pfield_Pa_)) {
     std::cout << "Pfield params updated, old (Be, Ca, Pa) = " << Be_ << ", " << Ca_ << ", " << last_pfield_Pa_
@@ -1365,8 +1382,8 @@ void CellModelSolver::update_pfield_parameters(const double Be, const double Ca,
     Pa_ = Pa;
     last_pfield_Pa_ = Pa_;
     XT::Common::Parameter param({{"gamma", {gamma_}}, {"epsilon", {epsilon_}}, {"Be", {Be_}}, {"Ca", {Ca_}}});
-    pfield_jac_linear_op_.set_params(param);
-    pfield_solver_.set_params(param);
+    pfield_jac_linear_op_.set_params(param, restricted);
+    pfield_solver_.set_params(param, restricted);
   }
 }
 
@@ -2351,6 +2368,7 @@ void CellModelSolver::maybe_add_entity_stokes(const E& entity,
                                               const MapperInterface<PGV>& u_mapper,
                                               const MapperInterface<PGV>& p_mapper)
 {
+  global_indices.resize(u_mapper.local_size(entity));
   u_mapper.global_indices(entity, global_indices);
   for (const auto& dof : u_output_dofs) {
     for (size_t jj = 0; jj < global_indices.size(); ++jj) {
@@ -2360,6 +2378,7 @@ void CellModelSolver::maybe_add_entity_stokes(const E& entity,
       }
     } // jj
   } // dof
+  global_indices.resize(p_mapper.local_size(entity));
   p_mapper.global_indices(entity, global_indices);
   for (const auto& dof : p_output_dofs) {
     for (size_t jj = 0; jj < global_indices.size(); ++jj) {

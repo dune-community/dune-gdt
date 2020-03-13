@@ -126,7 +126,7 @@ public:
   // Has to be called after mass matrix is assembled.
   void setup();
 
-  void set_params(const XT::Common::Parameter& param);
+  void set_params(const XT::Common::Parameter& param, const bool restricted = false);
 
   void prepare(const double dt, const size_t cell, const bool restricted);
 
@@ -224,7 +224,7 @@ public:
   // Has to be called after mass matrix is assembled.
   void setup();
 
-  void set_params(const XT::Common::Parameter& param);
+  void set_params(const XT::Common::Parameter& param, const bool restricted = false);
 
   void prepare(const double dt, const size_t cell, const bool restricted = false);
 
@@ -324,7 +324,7 @@ public:
   // Has to be called after mass matrix is assembled.
   void setup();
 
-  void set_params(const XT::Common::Parameter& param);
+  void set_params(const XT::Common::Parameter& param, const bool restricted = false);
 
   void prepare(const double dt, const size_t cell, const bool restricted = false);
 

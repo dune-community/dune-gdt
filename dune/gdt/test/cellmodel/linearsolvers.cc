@@ -122,9 +122,9 @@ void CellModelLinearSolverWrapper::setup()
     mass_matrix_cg_incomplete_cholesky_solver_->compute(M_.backend());
 }
 
-void CellModelLinearSolverWrapper::set_params(const XT::Common::Parameter& param)
+void CellModelLinearSolverWrapper::set_params(const XT::Common::Parameter& param, const bool restricted)
 {
-  linear_operator_->set_params(param);
+  linear_operator_->set_params(param, restricted);
 }
 
 void CellModelLinearSolverWrapper::prepare(const double dt, const size_t cell, const bool restricted)
@@ -363,13 +363,13 @@ void PfieldLinearSolver::setup()
   wrapper_.setup();
 }
 
-void PfieldLinearSolver::set_params(const XT::Common::Parameter& param)
+void PfieldLinearSolver::set_params(const XT::Common::Parameter& param, const bool restricted)
 {
   gamma_ = param.get("gamma")[0];
   epsilon_ = param.get("epsilon")[0];
   Be_ = param.get("Be")[0];
   Ca_ = param.get("Ca")[0];
-  wrapper_.set_params(param);
+  wrapper_.set_params(param, restricted);
 }
 
 void PfieldLinearSolver::prepare(const double dt, const size_t cell, const bool restricted)
@@ -601,10 +601,10 @@ void OfieldLinearSolver::setup()
   wrapper_.setup();
 }
 
-void OfieldLinearSolver::set_params(const XT::Common::Parameter& param)
+void OfieldLinearSolver::set_params(const XT::Common::Parameter& param, const bool restricted)
 {
   kappa_ = param.get("kappa")[0];
-  wrapper_.set_params(param);
+  wrapper_.set_params(param, restricted);
 }
 
 void OfieldLinearSolver::prepare(const double dt, const size_t cell, const bool restricted)

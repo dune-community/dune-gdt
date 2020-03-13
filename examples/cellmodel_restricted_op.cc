@@ -176,12 +176,24 @@ int main(int argc, char* argv[])
       entry += double_distrib(rng);
     for (auto& entry : ofield_state)
       entry += double_distrib(rng);
-    std::chrono::duration<double> restricted_prep_time(0.);
-    std::chrono::duration<double> restricted_apply_time(0.);
-    std::chrono::duration<double> restricted_jac_time(0.);
-    std::chrono::duration<double> prep_time(0.);
-    std::chrono::duration<double> apply_time(0.);
-    std::chrono::duration<double> jac_time(0.);
+    std::chrono::duration<double> pfield_restricted_prep_time(0.);
+    std::chrono::duration<double> pfield_restricted_apply_time(0.);
+    std::chrono::duration<double> pfield_restricted_jac_time(0.);
+    std::chrono::duration<double> pfield_prep_time(0.);
+    std::chrono::duration<double> pfield_apply_time(0.);
+    std::chrono::duration<double> pfield_jac_time(0.);
+    std::chrono::duration<double> ofield_restricted_prep_time(0.);
+    std::chrono::duration<double> ofield_restricted_apply_time(0.);
+    std::chrono::duration<double> ofield_restricted_jac_time(0.);
+    std::chrono::duration<double> ofield_prep_time(0.);
+    std::chrono::duration<double> ofield_apply_time(0.);
+    std::chrono::duration<double> ofield_jac_time(0.);
+    std::chrono::duration<double> stokes_restricted_prep_time(0.);
+    std::chrono::duration<double> stokes_restricted_apply_time(0.);
+    std::chrono::duration<double> stokes_restricted_jac_time(0.);
+    std::chrono::duration<double> stokes_prep_time(0.);
+    std::chrono::duration<double> stokes_apply_time(0.);
+    std::chrono::duration<double> stokes_jac_time(0.);
     for (size_t run = 0; run < 10; ++run) {
       std::cout << "Pfield run " << run << std::endl;
       // std::cout << "Output_dofs: (";
@@ -194,7 +206,7 @@ int main(int argc, char* argv[])
         auto begin = std::chrono::steady_clock::now();
         model_solver.prepare_pfield_operator(dt, kk, true);
         model_solver.set_pfield_jacobian_state(pfield_state, kk, true);
-        restricted_prep_time += std::chrono::steady_clock::now() - begin;
+        pfield_restricted_prep_time += std::chrono::steady_clock::now() - begin;
         const auto& pfield_input_dofs = model_solver.pfield_deim_input_dofs(kk)[0];
         const size_t num_input_dofs = pfield_input_dofs.size();
         VectorType restricted_source(num_input_dofs, 0.);
@@ -202,20 +214,20 @@ int main(int argc, char* argv[])
           restricted_source[ii] = pfield_source[pfield_input_dofs[ii]];
         begin = std::chrono::steady_clock::now();
         auto restricted_result = model_solver.apply_pfield_operator(restricted_source, kk, true);
-        restricted_apply_time += std::chrono::steady_clock::now() - begin;
+        pfield_restricted_apply_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
         auto restricted_jac_result = model_solver.apply_pfield_jacobian(restricted_source, kk, true);
-        restricted_jac_time += std::chrono::steady_clock::now() - begin;
+        pfield_restricted_jac_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
         model_solver2.prepare_pfield_operator(dt, kk, false);
         model_solver2.set_pfield_jacobian_state(pfield_state, kk, false);
-        prep_time += std::chrono::steady_clock::now() - begin;
+        pfield_prep_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
         auto result = model_solver2.apply_pfield_operator(pfield_source, kk, false);
-        apply_time += std::chrono::steady_clock::now() - begin;
+        pfield_apply_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
         auto jac_result = model_solver2.apply_pfield_jacobian(pfield_source, kk, false);
-        jac_time += std::chrono::steady_clock::now() - begin;
+        pfield_jac_time += std::chrono::steady_clock::now() - begin;
         // There are differences of about 1e-13, caused by the different mv methods in assemble_pfield_rhs (mv from
         // Eigen vs mv_restricted);
         const double apply_tol = 1e-12;
@@ -241,7 +253,7 @@ int main(int argc, char* argv[])
         auto begin = std::chrono::steady_clock::now();
         model_solver.prepare_ofield_operator(dt, kk, true);
         model_solver.set_ofield_jacobian_state(ofield_state, kk, true);
-        restricted_prep_time += std::chrono::steady_clock::now() - begin;
+        ofield_restricted_prep_time += std::chrono::steady_clock::now() - begin;
         const auto& ofield_input_dofs = model_solver.ofield_deim_input_dofs(kk)[1];
         const size_t num_input_dofs = ofield_input_dofs.size();
         VectorType restricted_source(num_input_dofs, 0.);
@@ -249,20 +261,20 @@ int main(int argc, char* argv[])
           restricted_source[ii] = ofield_source[ofield_input_dofs[ii]];
         begin = std::chrono::steady_clock::now();
         auto restricted_result = model_solver.apply_ofield_operator(restricted_source, kk, true);
-        restricted_apply_time += std::chrono::steady_clock::now() - begin;
+        ofield_restricted_apply_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
         auto restricted_jac_result = model_solver.apply_ofield_jacobian(restricted_source, kk, true);
-        restricted_jac_time += std::chrono::steady_clock::now() - begin;
+        ofield_restricted_jac_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
         model_solver2.prepare_ofield_operator(dt, kk, false);
         model_solver2.set_ofield_jacobian_state(ofield_state, kk, false);
-        prep_time += std::chrono::steady_clock::now() - begin;
+        ofield_prep_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
         auto result = model_solver2.apply_ofield_operator(ofield_source, kk, false);
-        apply_time += std::chrono::steady_clock::now() - begin;
+        ofield_apply_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
         auto jac_result = model_solver2.apply_ofield_jacobian(ofield_source, kk, false);
-        jac_time += std::chrono::steady_clock::now() - begin;
+        ofield_jac_time += std::chrono::steady_clock::now() - begin;
         // There are differences of about 1e-13, caused by the different mv methods in assemble_ofield_rhs (mv from
         // Eigen vs mv_restricted);
         const double apply_tol = 1e-12;
@@ -286,7 +298,7 @@ int main(int argc, char* argv[])
       model_solver.compute_restricted_stokes_dofs(stokes_output_dofs);
       auto begin = std::chrono::steady_clock::now();
       model_solver.prepare_stokes_operator(true);
-      restricted_prep_time += std::chrono::steady_clock::now() - begin;
+      stokes_restricted_prep_time += std::chrono::steady_clock::now() - begin;
       const auto& stokes_input_dofs = model_solver.stokes_deim_input_dofs()[2];
       const size_t num_input_dofs = stokes_input_dofs.size();
       VectorType restricted_source(num_input_dofs, 0.);
@@ -294,19 +306,19 @@ int main(int argc, char* argv[])
         restricted_source[ii] = stokes_source[stokes_input_dofs[ii]];
       begin = std::chrono::steady_clock::now();
       auto restricted_result = model_solver.apply_stokes_operator(restricted_source, true);
-      restricted_apply_time += std::chrono::steady_clock::now() - begin;
+      stokes_restricted_apply_time += std::chrono::steady_clock::now() - begin;
       begin = std::chrono::steady_clock::now();
       auto restricted_jac_result = model_solver.apply_stokes_jacobian(restricted_source, true);
-      restricted_jac_time += std::chrono::steady_clock::now() - begin;
+      stokes_restricted_jac_time += std::chrono::steady_clock::now() - begin;
       begin = std::chrono::steady_clock::now();
       model_solver2.prepare_stokes_operator(false);
-      prep_time += std::chrono::steady_clock::now() - begin;
+      stokes_prep_time += std::chrono::steady_clock::now() - begin;
       begin = std::chrono::steady_clock::now();
       auto result = model_solver2.apply_stokes_operator(stokes_source, false);
-      apply_time += std::chrono::steady_clock::now() - begin;
+      stokes_apply_time += std::chrono::steady_clock::now() - begin;
       begin = std::chrono::steady_clock::now();
       auto jac_result = model_solver2.apply_stokes_jacobian(stokes_source, false);
-      jac_time += std::chrono::steady_clock::now() - begin;
+      stokes_jac_time += std::chrono::steady_clock::now() - begin;
       // There are differences of about 1e-13, caused by the different mv methods in assemble_stokes_rhs (mv from
       // Eigen vs mv_restricted);
       const double apply_tol = 1e-12;
@@ -321,9 +333,21 @@ int main(int argc, char* argv[])
                     << jac_result[stokes_output_dofs[ii]] << ", " << restricted_jac_result[ii] << std::endl;
       } // ii
     } // runs
-    std::cout << "prep: " << prep_time.count() << "  vs. " << restricted_prep_time.count() << std::endl;
-    std::cout << "apply: " << apply_time.count() << "  vs. " << restricted_apply_time.count() << std::endl;
-    std::cout << "jac: " << jac_time.count() << "  vs. " << restricted_jac_time.count() << std::endl;
+    std::cout << "Pfield:" << std::endl;
+    std::cout << "prep: " << pfield_prep_time.count() << "  vs. " << pfield_restricted_prep_time.count() << std::endl;
+    std::cout << "apply: " << pfield_apply_time.count() << "  vs. " << pfield_restricted_apply_time.count()
+              << std::endl;
+    std::cout << "jac: " << pfield_jac_time.count() << "  vs. " << pfield_restricted_jac_time.count() << std::endl;
+    std::cout << "Ofield:" << std::endl;
+    std::cout << "prep: " << ofield_prep_time.count() << "  vs. " << ofield_restricted_prep_time.count() << std::endl;
+    std::cout << "apply: " << ofield_apply_time.count() << "  vs. " << ofield_restricted_apply_time.count()
+              << std::endl;
+    std::cout << "jac: " << ofield_jac_time.count() << "  vs. " << ofield_restricted_jac_time.count() << std::endl;
+    std::cout << "Stokes:" << std::endl;
+    std::cout << "prep: " << stokes_prep_time.count() << "  vs. " << stokes_restricted_prep_time.count() << std::endl;
+    std::cout << "apply: " << stokes_apply_time.count() << "  vs. " << stokes_restricted_apply_time.count()
+              << std::endl;
+    std::cout << "jac: " << stokes_jac_time.count() << "  vs. " << stokes_restricted_jac_time.count() << std::endl;
   } catch (Exception& e) {
     std::cerr << "\nDUNE reported error: " << e.what() << std::endl;
     return EXIT_FAILURE;

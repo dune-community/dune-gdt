@@ -40,7 +40,7 @@ public:
     y.axpy(alpha, Sx);
   }
 
-  virtual void set_params(const XT::Common::Parameter& /*param*/) {}
+  virtual void set_params(const XT::Common::Parameter& /*param*/, const bool /*restricted*/ = false) {}
 
   virtual void prepare(const double /*dt*/, const size_t /*cell*/, const bool /*restricted*/ = false) {}
 
@@ -245,7 +245,7 @@ public:
       y[DoF] = x[DoF];
   }
 
-  void set_params(const XT::Common::Parameter& param) override final
+  void set_params(const XT::Common::Parameter& param, const bool /*restricted*/ = false) override final
   {
     gamma_ = param.get("gamma")[0];
     epsilon_ = param.get("epsilon")[0];
@@ -445,7 +445,7 @@ public:
     } // if (!restricted)
   }
 
-  void set_params(const XT::Common::Parameter& param) override final
+  void set_params(const XT::Common::Parameter& param, const bool /*restricted*/ = false) override final
   {
     gamma_ = param.get("gamma")[0];
     epsilon_ = param.get("epsilon")[0];

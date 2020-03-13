@@ -216,15 +216,20 @@ BOOST_PYTHON_MODULE(vectors)
   // Vectors
   VectorExporter<Dune::XT::LA::CommonDenseVector<double>>::export_("CommonDenseVector");
 
+  // from iterable python object to the respective C++ class, allows to call e.g. a C++ function
+  // void cpp_function(std::vector<double> vec)
+  // with a python list
   iterable_converter().from_python<std::vector<double>>();
   iterable_converter().from_python<std::vector<size_t>>();
+  iterable_converter().from_python<std::vector<std::vector<size_t>>>();
+  // the other way around, allows to return vectors from C++ functions to python
+  std_vector_to_python_converter<double>();
+  std_vector_to_python_converter<size_t>();
+  std_vector_to_python_converter<std::vector<size_t>>();
 
   class_<std::vector<std::vector<Dune::XT::LA::CommonDenseVector<double>>>>("std_vec_of_std_vec_of_la_vecs")
       .def(vector_indexing_suite<std::vector<std::vector<Dune::XT::LA::CommonDenseVector<double>>>>());
 
   class_<std::vector<Dune::XT::LA::CommonDenseVector<double>>>("std_vec_of_la_vecs")
       .def(vector_indexing_suite<std::vector<Dune::XT::LA::CommonDenseVector<double>>>());
-
-  std_vector_to_python_converter<double>();
-  std_vector_to_python_converter<size_t>();
 }

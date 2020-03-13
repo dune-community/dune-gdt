@@ -237,10 +237,10 @@ struct CellModelSolver
   //******************************************************************************************************************
 
   // Applies stokes operator (applies the F if Stokes equation is F(y) = 0)
-  VectorType apply_stokes_operator(VectorType y, const bool restricted = false);
+  VectorType apply_stokes_operator(const VectorType& y, const bool restricted = false);
 
   // Applies either stokes operator (if jacobian is false) or stokes jacobian
-  VectorType apply_stokes_helper(VectorType y, const bool restricted, const bool jacobian);
+  VectorType apply_stokes_helper(const VectorType& y, const bool restricted, const bool jacobian);
 
   void assemble_nonlinear_part_of_ofield_residual(VectorType& residual, const size_t cell, const bool restricted);
 
@@ -250,7 +250,7 @@ struct CellModelSolver
   // Applies either ofield operator or ofield_jacobian (if jacobian is true)
   VectorType apply_ofield_helper(const VectorType& y, const size_t cell, const bool restricted, const bool jacobian);
 
-  void update_ofield_parameters(const double Pa);
+  void update_ofield_parameters(const double Pa, const size_t cell, const bool restricted = false);
 
   // Applies cell-th phase field operator (applies F if phase field equation is F(y) = 0)
   VectorType apply_pfield_operator(const VectorType& y, const size_t cell, const bool restricted = false);
@@ -258,7 +258,8 @@ struct CellModelSolver
   // Applies either pfield operator or pfield_jacobian (if jacobian is true)
   VectorType apply_pfield_helper(const VectorType& y, const size_t cell, const bool restricted, const bool jacobian);
 
-  void update_pfield_parameters(const double Be, const double Ca, const double Pa);
+  void update_pfield_parameters(
+      const double Be, const double Ca, const double Pa, const size_t cell_index, const bool restricted = false);
 
   //******************************************************************************************************************
   //******************************************* Apply inverse operators **********************************************
