@@ -141,6 +141,7 @@ int main(int argc, char* argv[])
 
     const size_t pfield_size = model_solver.pfield_vec(0).size();
     const size_t ofield_size = model_solver.ofield_vec(0).size();
+    const size_t stokes_size = model_solver.stokes_vec().size();
     // choose all dofs
     // const size_t num_output_dofs = model_solver.pfield_vec(0).size();
     // std::vector<size_t> pfield_output_dofs(max_output_dofs);
@@ -150,21 +151,26 @@ int main(int argc, char* argv[])
     const size_t num_output_dofs = 50;
     std::vector<size_t> pfield_output_dofs(num_output_dofs);
     std::vector<size_t> ofield_output_dofs(num_output_dofs);
+    std::vector<size_t> stokes_output_dofs(num_output_dofs);
     std::random_device dev;
     std::mt19937 rng(dev());
     std::uniform_int_distribution<typename std::mt19937::result_type> pfield_distrib(0, pfield_size - 1);
     std::uniform_int_distribution<typename std::mt19937::result_type> ofield_distrib(0, ofield_size - 1);
+    std::uniform_int_distribution<typename std::mt19937::result_type> stokes_distrib(0, stokes_size - 1);
     std::uniform_real_distribution<double> double_distrib(-1., 1.);
     using VectorType = typename CellModelSolver::VectorType;
     const size_t num_cells = model_solver.num_cells();
     auto pfield_source = model_solver.pfield_vec(0);
     auto ofield_source = model_solver.ofield_vec(0);
+    auto stokes_source = model_solver.stokes_vec();
     auto pfield_state = model_solver.pfield_vec(0);
     auto ofield_state = model_solver.ofield_vec(0);
     // ensure source_vectors are non-zero to avoid masking errors
     for (auto& entry : pfield_source)
       entry += double_distrib(rng);
     for (auto& entry : ofield_source)
+      entry += double_distrib(rng);
+    for (auto& entry : stokes_source)
       entry += double_distrib(rng);
     for (auto& entry : pfield_state)
       entry += double_distrib(rng);
@@ -189,7 +195,7 @@ int main(int argc, char* argv[])
         model_solver.prepare_pfield_operator(dt, kk, true);
         model_solver.set_pfield_jacobian_state(pfield_state, kk, true);
         restricted_prep_time += std::chrono::steady_clock::now() - begin;
-        const auto& pfield_input_dofs = model_solver.pfield_deim_input_dofs(kk);
+        const auto& pfield_input_dofs = model_solver.pfield_deim_input_dofs(kk)[0];
         const size_t num_input_dofs = pfield_input_dofs.size();
         VectorType restricted_source(num_input_dofs, 0.);
         for (size_t ii = 0; ii < num_input_dofs; ++ii)
@@ -198,10 +204,10 @@ int main(int argc, char* argv[])
         auto restricted_result = model_solver.apply_pfield_operator(restricted_source, kk, true);
         restricted_apply_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
-        auto restricted_jac_result = model_solver.apply_pfield_jacobian(pfield_source, kk, true);
+        auto restricted_jac_result = model_solver.apply_pfield_jacobian(restricted_source, kk, true);
         restricted_jac_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
-        model_solver2.prepare_pfield_operator(dt, kk);
+        model_solver2.prepare_pfield_operator(dt, kk, false);
         model_solver2.set_pfield_jacobian_state(pfield_state, kk, false);
         prep_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
@@ -236,7 +242,7 @@ int main(int argc, char* argv[])
         model_solver.prepare_ofield_operator(dt, kk, true);
         model_solver.set_ofield_jacobian_state(ofield_state, kk, true);
         restricted_prep_time += std::chrono::steady_clock::now() - begin;
-        const auto& ofield_input_dofs = model_solver.ofield_deim_input_dofs(kk);
+        const auto& ofield_input_dofs = model_solver.ofield_deim_input_dofs(kk)[1];
         const size_t num_input_dofs = ofield_input_dofs.size();
         VectorType restricted_source(num_input_dofs, 0.);
         for (size_t ii = 0; ii < num_input_dofs; ++ii)
@@ -245,10 +251,10 @@ int main(int argc, char* argv[])
         auto restricted_result = model_solver.apply_ofield_operator(restricted_source, kk, true);
         restricted_apply_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
-        auto restricted_jac_result = model_solver.apply_ofield_jacobian(ofield_source, kk, true);
+        auto restricted_jac_result = model_solver.apply_ofield_jacobian(restricted_source, kk, true);
         restricted_jac_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
-        model_solver2.prepare_ofield_operator(dt, kk);
+        model_solver2.prepare_ofield_operator(dt, kk, false);
         model_solver2.set_ofield_jacobian_state(ofield_state, kk, false);
         prep_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
@@ -271,6 +277,49 @@ int main(int argc, char* argv[])
                       << jac_result[ofield_output_dofs[ii]] << ", " << restricted_jac_result[ii] << std::endl;
         } // ii
       } // kk
+      std::cout << "Stokes run " << run << std::endl;
+      // std::cout << "Stokes output_dofs: (";
+      for (size_t ii = 0; ii < num_output_dofs; ++ii) {
+        stokes_output_dofs[ii] = stokes_distrib(rng);
+        // std::cout << ofield_output_dofs[ii] << (ii == num_output_dofs - 1 ? ")\n" : ", ");
+      }
+      model_solver.compute_restricted_stokes_dofs(stokes_output_dofs);
+      auto begin = std::chrono::steady_clock::now();
+      model_solver.prepare_stokes_operator(true);
+      restricted_prep_time += std::chrono::steady_clock::now() - begin;
+      const auto& stokes_input_dofs = model_solver.stokes_deim_input_dofs()[2];
+      const size_t num_input_dofs = stokes_input_dofs.size();
+      VectorType restricted_source(num_input_dofs, 0.);
+      for (size_t ii = 0; ii < num_input_dofs; ++ii)
+        restricted_source[ii] = stokes_source[stokes_input_dofs[ii]];
+      begin = std::chrono::steady_clock::now();
+      auto restricted_result = model_solver.apply_stokes_operator(restricted_source, true);
+      restricted_apply_time += std::chrono::steady_clock::now() - begin;
+      begin = std::chrono::steady_clock::now();
+      auto restricted_jac_result = model_solver.apply_stokes_jacobian(restricted_source, true);
+      restricted_jac_time += std::chrono::steady_clock::now() - begin;
+      begin = std::chrono::steady_clock::now();
+      model_solver2.prepare_stokes_operator(false);
+      prep_time += std::chrono::steady_clock::now() - begin;
+      begin = std::chrono::steady_clock::now();
+      auto result = model_solver2.apply_stokes_operator(stokes_source, false);
+      apply_time += std::chrono::steady_clock::now() - begin;
+      begin = std::chrono::steady_clock::now();
+      auto jac_result = model_solver2.apply_stokes_jacobian(stokes_source, false);
+      jac_time += std::chrono::steady_clock::now() - begin;
+      // There are differences of about 1e-13, caused by the different mv methods in assemble_stokes_rhs (mv from
+      // Eigen vs mv_restricted);
+      const double apply_tol = 1e-12;
+      // For apply_stokes_jacobian, the differences are smaller
+      const double jac_tol = 1e-14;
+      for (size_t ii = 0; ii < num_output_dofs; ++ii) {
+        if (XT::Common::FloatCmp::ne(restricted_result[ii], result[stokes_output_dofs[ii]], apply_tol, apply_tol))
+          std::cout << "Failed apply restricted: " << ii << ", " << stokes_output_dofs[ii] << ", "
+                    << result[stokes_output_dofs[ii]] << ", " << restricted_result[ii] << std::endl;
+        if (XT::Common::FloatCmp::ne(restricted_jac_result[ii], jac_result[stokes_output_dofs[ii]], jac_tol, jac_tol))
+          std::cout << "Failed apply restricted jacobian: " << ii << ", " << stokes_output_dofs[ii] << ", "
+                    << jac_result[stokes_output_dofs[ii]] << ", " << restricted_jac_result[ii] << std::endl;
+      } // ii
     } // runs
     std::cout << "prep: " << prep_time.count() << "  vs. " << restricted_prep_time.count() << std::endl;
     std::cout << "apply: " << apply_time.count() << "  vs. " << restricted_apply_time.count() << std::endl;

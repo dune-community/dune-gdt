@@ -194,6 +194,8 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   , stokes_f_vector_(stokes_rhs_vector_, 0, size_u_)
   , stokes_g_vector_(stokes_rhs_vector_, size_u_, size_u_ + size_p_)
   , p_basis_integrated_vector_(size_p_)
+  , stokes_tmp_vec_(size_u_ + size_p_)
+  , stokes_tmp_vec2_(size_u_ + size_p_)
   , u_dirichlet_constraints_(make_dirichlet_constraints(u_space_, boundary_info_))
   , phi_dirichlet_constraints_(make_dirichlet_constraints(phi_space_, boundary_info_))
   , phi_shift_(DXTC_CONFIG_GET("phi_dirichlet_shift", 1.))
@@ -842,6 +844,16 @@ void CellModelSolver::set_stokes_vec(const VectorType& stokes_vec)
   stokes_vector_ = stokes_vec;
 }
 
+// Sets given dofs of stokes vector to values
+void CellModelSolver::set_stokes_vec_dofs(const VectorType& values, const std::vector<size_t>& dofs)
+{
+  DUNE_THROW_IF(values.size() != dofs.size(),
+                XT::Common::Exceptions::wrong_input_given,
+                "Size of values does not match size of dofs");
+  for (size_t ii = 0; ii < dofs.size(); ++ii)
+    stokes_vector_.set_entry(dofs[ii], values[ii]);
+}
+
 // Sets orientation field vector belonging to cell to pfield_vec
 void CellModelSolver::set_ofield_vec(const size_t cell, const VectorType& ofield_vec)
 {
@@ -850,12 +862,34 @@ void CellModelSolver::set_ofield_vec(const size_t cell, const VectorType& ofield
   ofield_vectors_[cell] = ofield_vec;
 }
 
+// Sets given dofs of orientation field vector belonging to cell to values
+void CellModelSolver::set_ofield_vec_dofs(const size_t cell, const VectorType& values, const std::vector<size_t>& dofs)
+{
+  DUNE_THROW_IF(cell >= num_cells_, XT::Common::Exceptions::wrong_input_given, "Invalid cell index");
+  DUNE_THROW_IF(values.size() != dofs.size(),
+                XT::Common::Exceptions::wrong_input_given,
+                "Size of values does not match size of dofs");
+  for (size_t ii = 0; ii < dofs.size(); ++ii)
+    ofield_vectors_[cell].set_entry(dofs[ii], values[ii]);
+}
+
 // Sets phasefield vector belonging to cell to pfield_vec
 void CellModelSolver::set_pfield_vec(const size_t cell, const VectorType& pfield_vec)
 {
   DUNE_THROW_IF(cell >= num_cells_, XT::Common::Exceptions::wrong_input_given, "Invalid cell index");
   DUNE_THROW_IF(pfield_vec.size() != 3 * size_phi_, XT::Common::Exceptions::wrong_input_given, "Invalid vector size!");
   pfield_vectors_[cell] = pfield_vec;
+}
+
+// Sets given dofs of phasefield vector belonging to cell to values
+void CellModelSolver::set_pfield_vec_dofs(const size_t cell, const VectorType& values, const std::vector<size_t>& dofs)
+{
+  DUNE_THROW_IF(cell >= num_cells_, XT::Common::Exceptions::wrong_input_given, "Invalid cell index");
+  DUNE_THROW_IF(values.size() != dofs.size(),
+                XT::Common::Exceptions::wrong_input_given,
+                "Size of values does not match size of dofs");
+  for (size_t ii = 0; ii < dofs.size(); ++ii)
+    pfield_vectors_[cell].set_entry(dofs[ii], values[ii]);
 }
 
 // Get stokes finite element vector
@@ -881,7 +915,7 @@ const CellModelSolver::VectorType& CellModelSolver::pfield_vec(const size_t cell
 //****** the values of other variables, so cannot be computed once and for all in the constructor )       **********
 //******************************************************************************************************************
 
-void CellModelSolver::prepare_stokes_operator()
+void CellModelSolver::prepare_stokes_operator(const bool restricted)
 {
   u_tmp_.dofs().vector() = u_.dofs().vector();
   for (size_t kk = 0; kk < num_cells_; kk++) {
@@ -890,7 +924,7 @@ void CellModelSolver::prepare_stokes_operator()
     P_tmp_[kk].dofs().vector() = P_[kk].dofs().vector();
     Pnat_tmp_[kk].dofs().vector() = Pnat_[kk].dofs().vector();
   }
-  assemble_stokes_rhs();
+  assemble_stokes_rhs(restricted);
 }
 
 void CellModelSolver::prepare_ofield_operator(const double dt, const size_t cell, const bool restricted)
@@ -900,8 +934,8 @@ void CellModelSolver::prepare_ofield_operator(const double dt, const size_t cell
   phi_tmp_[cell].dofs().vector() = phi_[cell].dofs().vector();
   dt_ = dt;
   ofield_jac_linear_op_.prepare(dt, cell, restricted);
-  assemble_ofield_rhs(dt, cell);
-  assemble_ofield_linear_jacobian(dt, cell);
+  assemble_ofield_rhs(dt, cell, restricted);
+  assemble_ofield_linear_jacobian(dt, cell, restricted);
 }
 
 void CellModelSolver::prepare_pfield_operator(const double dt, const size_t cell, const bool restricted)
@@ -918,6 +952,71 @@ void CellModelSolver::prepare_pfield_operator(const double dt, const size_t cell
   dt_ = dt;
 }
 
+void CellModelSolver::compute_restricted_stokes_dofs(const std::vector<size_t>& output_dofs)
+{
+  if (!stokes_deim_output_dofs_ || *stokes_deim_output_dofs_ != output_dofs) {
+    const auto& pattern = create_stokes_pattern(u_space_, p_space_);
+    // We need to keep the original output_dofs which is unordered and may contain duplicates, as the restricted
+    // operator will return exactly these dofs. For computations, however, we often need unique dofs.
+    stokes_deim_output_dofs_ = std::make_shared<std::vector<size_t>>(output_dofs);
+    auto& unique_output_dofs = stokes_deim_unique_output_dofs_;
+    unique_output_dofs = output_dofs;
+    std::sort(unique_output_dofs.begin(), unique_output_dofs.end());
+    unique_output_dofs.erase(std::unique(unique_output_dofs.begin(), unique_output_dofs.end()),
+                             unique_output_dofs.end());
+    // sort output into dofs belonging to u and p
+    auto& u_output_dofs = u_deim_output_dofs_;
+    auto& p_output_dofs = p_deim_output_dofs_;
+    u_output_dofs.clear();
+    p_output_dofs.clear();
+    for (const auto& dof : unique_output_dofs) {
+      if (dof < size_u_)
+        u_output_dofs.push_back(dof);
+      else
+        p_output_dofs.push_back(dof);
+    }
+    for (auto& dof : p_output_dofs)
+      dof -= size_u_;
+    // store all entities that contain an output dof
+    const auto& u_mapper = u_space_.mapper();
+    const auto& p_mapper = p_space_.mapper();
+    DynamicVector<size_t> global_indices;
+    stokes_deim_entities_.clear();
+    for (const auto& entity : Dune::elements(grid_view_))
+      maybe_add_entity_stokes(
+          entity, global_indices, u_output_dofs, p_output_dofs, stokes_deim_entities_, u_mapper, p_mapper);
+    // get input dofs corresponding to output dofs
+    auto& input_dofs = stokes_deim_input_dofs_;
+    input_dofs.clear();
+    input_dofs.resize(3);
+    // stokes input dofs can be taken from system matrix pattern
+    for (const auto& dof : unique_output_dofs) {
+      const auto& new_input_dofs = pattern.inner(dof);
+      input_dofs[2].insert(input_dofs[2].end(), new_input_dofs.begin(), new_input_dofs.end());
+    }
+    // add phi, phinat, P and Pnat input dofs for all input entities
+    const auto& phi_mapper = phi_space_.mapper();
+    const auto& P_mapper = p_space_.mapper();
+    for (const auto& entity : stokes_deim_entities_) {
+      phi_mapper.global_indices(entity, global_indices);
+      input_dofs[0].insert(input_dofs[0].end(), global_indices.begin(), global_indices.end());
+      for (auto& index : global_indices)
+        index += size_phi_;
+      input_dofs[0].insert(input_dofs[0].end(), global_indices.begin(), global_indices.end());
+      P_mapper.global_indices(entity, global_indices);
+      input_dofs[1].insert(input_dofs[1].end(), global_indices.begin(), global_indices.end());
+      for (auto& index : global_indices)
+        index += size_P_;
+      input_dofs[1].insert(input_dofs[1].end(), global_indices.begin(), global_indices.end());
+    } // entities
+    // sort and remove duplicate entries
+    for (size_t ii = 0; ii < 3; ++ii) {
+      std::sort(input_dofs[ii].begin(), input_dofs[ii].end());
+      input_dofs[ii].erase(std::unique(input_dofs[ii].begin(), input_dofs[ii].end()), input_dofs[ii].end());
+    }
+  } // if (not already computed)
+} // void compute_restricted_stokes_dofs(...)
+
 void CellModelSolver::compute_restricted_ofield_dofs(const std::vector<size_t>& output_dofs, const size_t cell)
 {
   if (!ofield_deim_output_dofs_[cell] || *ofield_deim_output_dofs_[cell] != output_dofs) {
@@ -930,7 +1029,7 @@ void CellModelSolver::compute_restricted_ofield_dofs(const std::vector<size_t>& 
     std::sort(unique_output_dofs.begin(), unique_output_dofs.end());
     unique_output_dofs.erase(std::unique(unique_output_dofs.begin(), unique_output_dofs.end()),
                              unique_output_dofs.end());
-    // sort output into dofs belonging to phi, phinat and mu
+    // sort output into dofs belonging to P and Pnat
     auto& P_output_dofs = P_deim_output_dofs_[cell];
     auto& Pnat_output_dofs = Pnat_deim_output_dofs_[cell];
     P_output_dofs.clear();
@@ -943,28 +1042,43 @@ void CellModelSolver::compute_restricted_ofield_dofs(const std::vector<size_t>& 
     }
     for (auto& dof : Pnat_output_dofs)
       dof -= size_P_;
-    // get input dofs corresponding to output dofs
-    auto& input_dofs = ofield_deim_input_dofs_[cell];
-    input_dofs.clear();
-    for (const auto& dof : unique_output_dofs) {
-      const auto& new_input_dofs = pattern.inner(dof);
-      input_dofs.insert(input_dofs.end(), new_input_dofs.begin(), new_input_dofs.end());
-    }
-    // sort and remove duplicate entries
-    std::sort(input_dofs.begin(), input_dofs.end());
-    input_dofs.erase(std::unique(input_dofs.begin(), input_dofs.end()), input_dofs.end());
-    Pnat_deim_input_dofs_begin_[cell] =
-        std::lower_bound(input_dofs.begin(), input_dofs.end(), size_P_) - input_dofs.begin();
     // store all entities that contain an output dof
-    const auto& mapper = P_space_.mapper();
+    const auto& P_mapper = P_space_.mapper();
     DynamicVector<size_t> global_indices;
     ofield_deim_entities_[cell].clear();
     for (const auto& entity : Dune::elements(grid_view_)) {
-      mapper.global_indices(entity, global_indices);
-      maybe_add_entity(entity, global_indices, *ofield_deim_output_dofs_[cell], ofield_deim_entities_[cell], size_P_);
+      P_mapper.global_indices(entity, global_indices);
+      maybe_add_entity(entity, global_indices, unique_output_dofs, ofield_deim_entities_[cell], size_P_);
     } // entities
+
+    // get input dofs corresponding to output dofs
+    auto& input_dofs = ofield_deim_input_dofs_[cell];
+    input_dofs.clear();
+    input_dofs.resize(3);
+    // ofield input dofs can be taken from system matrix pattern
+    for (const auto& dof : unique_output_dofs) {
+      const auto& new_input_dofs = pattern.inner(dof);
+      input_dofs[1].insert(input_dofs[1].end(), new_input_dofs.begin(), new_input_dofs.end());
+    }
+    // add phi and u input dofs for all input entities
+    const auto& phi_mapper = phi_space_.mapper();
+    const auto& u_mapper = u_space_.mapper();
+    for (const auto& entity : ofield_deim_entities_[cell]) {
+      phi_mapper.global_indices(entity, global_indices);
+      input_dofs[0].insert(input_dofs[0].end(), global_indices.begin(), global_indices.end());
+      u_mapper.global_indices(entity, global_indices);
+      input_dofs[2].insert(input_dofs[2].end(), global_indices.begin(), global_indices.end());
+    } // entities
+
+    // sort and remove duplicate entries
+    for (size_t ii = 0; ii < 3; ++ii) {
+      std::sort(input_dofs[ii].begin(), input_dofs[ii].end());
+      input_dofs[ii].erase(std::unique(input_dofs[ii].begin(), input_dofs[ii].end()), input_dofs[ii].end());
+    }
+    Pnat_deim_input_dofs_begin_[cell] =
+        std::lower_bound(input_dofs[1].begin(), input_dofs[1].end(), size_P_) - input_dofs[1].begin();
   } // if (not already computed)
-} // void compute_restricted_pfield_dofs(...)
+} // void compute_restricted_ofield_dofs(...)
 
 void CellModelSolver::compute_restricted_pfield_dofs(const std::vector<size_t>& output_dofs, const size_t cell)
 {
@@ -1002,28 +1116,43 @@ void CellModelSolver::compute_restricted_pfield_dofs(const std::vector<size_t>& 
     for (const auto& dof : phinat_output_dofs)
       if (std::find(mu_output_dofs.begin(), mu_output_dofs.end(), dof) != mu_output_dofs.end())
         phinat_mu_output_dofs.push_back(dof);
-    // get input dofs corresponding to output dofs
-    auto& input_dofs = pfield_deim_input_dofs_[cell];
-    input_dofs.clear();
-    for (const auto& dof : unique_output_dofs) {
-      const auto& new_input_dofs = pattern.inner(dof);
-      input_dofs.insert(input_dofs.end(), new_input_dofs.begin(), new_input_dofs.end());
-    }
-    // sort and remove duplicate entries
-    std::sort(input_dofs.begin(), input_dofs.end());
-    input_dofs.erase(std::unique(input_dofs.begin(), input_dofs.end()), input_dofs.end());
-    phinat_deim_input_dofs_begin_[cell] =
-        std::lower_bound(input_dofs.begin(), input_dofs.end(), size_phi_) - input_dofs.begin();
-    mu_deim_input_dofs_begin_[cell] =
-        std::lower_bound(input_dofs.begin(), input_dofs.end(), 2 * size_phi_) - input_dofs.begin();
     // store all entities that contain an output dof
-    const auto& mapper = phi_space_.mapper();
+    const auto& phi_mapper = phi_space_.mapper();
     DynamicVector<size_t> global_indices;
     pfield_deim_entities_[cell].clear();
     for (const auto& entity : Dune::elements(grid_view_)) {
-      mapper.global_indices(entity, global_indices);
-      maybe_add_entity(entity, global_indices, *pfield_deim_output_dofs_[cell], pfield_deim_entities_[cell], size_phi_);
+      phi_mapper.global_indices(entity, global_indices);
+      maybe_add_entity(entity, global_indices, unique_output_dofs, pfield_deim_entities_[cell], size_phi_);
     } // entities
+
+    // get input dofs corresponding to output dofs
+    auto& input_dofs = pfield_deim_input_dofs_[cell];
+    input_dofs.clear();
+    input_dofs.resize(3);
+    // pfield input dofs can be taken from system matrix pattern
+    for (const auto& dof : unique_output_dofs) {
+      const auto& new_input_dofs = pattern.inner(dof);
+      input_dofs[0].insert(input_dofs[0].end(), new_input_dofs.begin(), new_input_dofs.end());
+    }
+    // add P and u input dofs for all input entities
+    const auto& P_mapper = P_space_.mapper();
+    const auto& u_mapper = u_space_.mapper();
+    for (const auto& entity : pfield_deim_entities_[cell]) {
+      P_mapper.global_indices(entity, global_indices);
+      input_dofs[1].insert(input_dofs[1].end(), global_indices.begin(), global_indices.end());
+      u_mapper.global_indices(entity, global_indices);
+      input_dofs[2].insert(input_dofs[2].end(), global_indices.begin(), global_indices.end());
+    } // entities
+
+    // sort and remove duplicate entries
+    for (size_t ii = 0; ii < 3; ++ii) {
+      std::sort(input_dofs[ii].begin(), input_dofs[ii].end());
+      input_dofs[ii].erase(std::unique(input_dofs[ii].begin(), input_dofs[ii].end()), input_dofs[ii].end());
+    }
+    phinat_deim_input_dofs_begin_[cell] =
+        std::lower_bound(input_dofs[0].begin(), input_dofs[0].end(), size_phi_) - input_dofs[0].begin();
+    mu_deim_input_dofs_begin_[cell] =
+        std::lower_bound(input_dofs[0].begin(), input_dofs[0].end(), 2 * size_phi_) - input_dofs[0].begin();
   } // if (not already computed)
 } // void compute_restricted_pfield_dofs(...)
 
@@ -1031,13 +1160,39 @@ void CellModelSolver::compute_restricted_pfield_dofs(const std::vector<size_t>& 
 //*********************************************** Apply operators **************************************************
 //******************************************************************************************************************
 
-// Applies stokes operator (applies the F if Stokes equation is F(y) = 0)
-CellModelSolver::VectorType CellModelSolver::apply_stokes_operator(VectorType y, const bool /*restricted*/) const
+CellModelSolver::VectorType CellModelSolver::apply_stokes_operator(VectorType y, const bool restricted)
 {
-  VectorType ret(size_u_ + size_p_, 0.);
-  S_stokes_.mv(y, ret);
-  ret -= stokes_rhs_vector_;
-  return ret;
+  return apply_stokes_helper(y, restricted, false);
+}
+
+// Applies stokes operator (applies the F if Stokes equation is F(y) = 0)
+CellModelSolver::VectorType
+CellModelSolver::apply_stokes_helper(VectorType y, const bool restricted, const bool jacobian)
+{
+  const auto& output_dofs = *stokes_deim_output_dofs_;
+  const auto& unique_output_dofs = stokes_deim_unique_output_dofs_;
+  const auto& input_dofs = stokes_deim_input_dofs_[2];
+  auto& source = stokes_tmp_vec_;
+  auto& residual = stokes_tmp_vec2_;
+  // copy values to high-dimensional vector
+  if (restricted)
+    copy_ld_to_hd_vec(input_dofs, y, source);
+  else
+    source = y;
+  const auto mv = mv_func<VectorType, VectorType>(restricted);
+  mv(S_stokes_, source, residual, unique_output_dofs);
+  if (!jacobian) {
+    const auto sub = sub_func<VectorType, EigenVectorType>(restricted);
+    sub(residual, stokes_rhs_vector_, unique_output_dofs);
+  }
+  if (restricted) {
+    VectorType ret(output_dofs.size());
+    for (size_t ii = 0; ii < output_dofs.size(); ++ii)
+      ret[ii] = residual[output_dofs[ii]];
+    return ret;
+  } else {
+    return residual;
+  }
 }
 
 void CellModelSolver::assemble_nonlinear_part_of_ofield_residual(VectorType& residual,
@@ -1070,9 +1225,16 @@ void CellModelSolver::assemble_nonlinear_part_of_ofield_residual(VectorType& res
 CellModelSolver::VectorType
 CellModelSolver::apply_ofield_operator(const VectorType& y, const size_t cell, const bool restricted)
 {
+  return apply_ofield_helper(y, cell, restricted, false);
+}
+
+CellModelSolver::VectorType
+CellModelSolver::apply_ofield_helper(const VectorType& y, const size_t cell, const bool restricted, const bool jacobian)
+{
+
   const auto& output_dofs = *ofield_deim_output_dofs_[cell];
   const auto& unique_output_dofs = ofield_deim_unique_output_dofs_[cell];
-  const auto& input_dofs = ofield_deim_input_dofs_[cell];
+  const auto& input_dofs = ofield_deim_input_dofs_[cell][1];
   auto& source = ofield_tmp_vec_;
   auto& residual = ofield_tmp_vec2_;
   // copy values to high-dimensional vector
@@ -1082,12 +1244,24 @@ CellModelSolver::apply_ofield_operator(const VectorType& y, const size_t cell, c
     source = y;
   // linear part
   ofield_jac_linear_op_.apply(source, residual);
-  // subtract rhs
-  const auto sub = sub_func<VectorType>(restricted);
-  sub(residual, ofield_rhs_vector_, unique_output_dofs);
+  if (!jacobian) {
+    // subtract rhs
+    const auto sub = sub_func<VectorType>(restricted);
+    sub(residual, ofield_rhs_vector_, unique_output_dofs);
+  }
   // nonlinear part
-  fill_tmp_ofield(cell, source, restricted);
-  assemble_nonlinear_part_of_ofield_residual(residual, cell, restricted);
+  if (jacobian) {
+    const auto& Pnat_output_dofs = Pnat_deim_output_dofs_[cell];
+    VectorViewType range_Pnat(residual, size_P_, 2 * size_P_);
+    const ConstVectorViewType source_P(source, 0, size_P_);
+    const auto mv = mv_func<ConstVectorViewType, VectorType>(restricted);
+    const auto add = add_func<VectorViewType, VectorType>(restricted);
+    mv(C_ofield_nonlinear_part_, source_P, P_tmp_vec_, Pnat_output_dofs);
+    add(range_Pnat, P_tmp_vec_, Pnat_output_dofs);
+  } else {
+    fill_tmp_ofield(cell, source, restricted);
+    assemble_nonlinear_part_of_ofield_residual(residual, cell, restricted);
+  }
   if (restricted) {
     VectorType ret(output_dofs.size());
     for (size_t ii = 0; ii < output_dofs.size(); ++ii)
@@ -1116,9 +1290,15 @@ void CellModelSolver::update_ofield_parameters(const double Pa)
 CellModelSolver::VectorType
 CellModelSolver::apply_pfield_operator(const VectorType& y, const size_t cell, const bool restricted)
 {
+  return apply_pfield_helper(y, cell, restricted, false);
+}
+
+CellModelSolver::VectorType
+CellModelSolver::apply_pfield_helper(const VectorType& y, const size_t cell, const bool restricted, const bool jacobian)
+{
   const auto& output_dofs = *pfield_deim_output_dofs_[cell];
   const auto& unique_output_dofs = pfield_deim_unique_output_dofs_[cell];
-  const auto& input_dofs = pfield_deim_input_dofs_[cell];
+  const auto& input_dofs = pfield_deim_input_dofs_[cell][0];
   auto& source = pfield_tmp_vec_;
   auto& residual = pfield_tmp_vec2_;
   // copy values to high-dimensional vector
@@ -1128,12 +1308,42 @@ CellModelSolver::apply_pfield_operator(const VectorType& y, const size_t cell, c
     source = y;
   // linear part
   pfield_jac_linear_op_.apply(source, residual);
-  // subtract rhs
-  const auto sub = sub_func<VectorType>(restricted);
-  sub(residual, pfield_rhs_vector_, unique_output_dofs);
+  if (!jacobian) {
+    // subtract rhs
+    const auto sub = sub_func<VectorType>(restricted);
+    sub(residual, pfield_rhs_vector_, unique_output_dofs);
+  }
   // nonlinear part
-  fill_tmp_pfield(cell, source, restricted);
-  assemble_nonlinear_part_of_pfield_residual(residual, cell, restricted);
+  if (jacobian) {
+    const auto& output_dofs = *pfield_deim_output_dofs_[cell];
+    const auto& phinat_output_dofs = phinat_deim_output_dofs_[cell];
+    const auto& mu_output_dofs = mu_deim_output_dofs_[cell];
+    VectorViewType range_phinat(residual, size_phi_, 2 * size_phi_);
+    VectorViewType range_mu(residual, 2 * size_phi_, 3 * size_phi_);
+    const ConstVectorViewType source_phi(source, 0, size_phi_);
+    const ConstVectorViewType source_mu(source, 2 * size_phi_, 3 * size_phi_);
+    // nonlinear_part
+    auto& tmp_vec = phi_tmp_vec_;
+    const auto mv = mv_func<ConstVectorViewType, VectorType>(restricted);
+    const auto vector_axpy = vector_axpy_func<VectorViewType, VectorType>(restricted);
+    const auto scal = scal_func<VectorType>(restricted);
+    const auto add = add_func<VectorViewType, VectorType>(restricted);
+    // apply missing parts of J (including the linear 1./Ca_ part)
+    mv(M_nonlin_pfield_, source_mu, tmp_vec, phinat_output_dofs);
+    vector_axpy(range_phinat, 1. / (Be_ * std::pow(epsilon_, 2)), tmp_vec, phinat_output_dofs);
+    mv(M_pfield_, source_mu, tmp_vec, phinat_output_dofs);
+    vector_axpy(range_phinat, 1. / Ca_, tmp_vec, phinat_output_dofs);
+    // apply missing parts of A
+    mv(M_nonlin_pfield_, source_phi, tmp_vec, mu_output_dofs);
+    scal(tmp_vec, 1. / epsilon_, mu_output_dofs);
+    add(range_mu, tmp_vec, mu_output_dofs);
+    // apply G
+    mv(G_pfield_, source_phi, tmp_vec, phinat_output_dofs);
+    add(range_phinat, tmp_vec, phinat_output_dofs);
+  } else {
+    fill_tmp_pfield(cell, source, restricted);
+    assemble_nonlinear_part_of_pfield_residual(residual, cell, restricted);
+  }
   if (restricted) {
     VectorType ret(output_dofs.size());
     for (size_t ii = 0; ii < output_dofs.size(); ++ii)
@@ -1353,43 +1563,9 @@ void CellModelSolver::set_pfield_jacobian_state(const VectorType& source, const 
 // Currently takes a full-dimensional vector, but only applies the rows that are in pfield_output_dofs
 // As the rows are sparse, there shouldn't be too much performance impact of applying to the whole vector
 CellModelSolver::VectorType
-CellModelSolver::apply_pfield_jacobian(const VectorType& source, const size_t cell, const bool restricted)
+CellModelSolver::apply_pfield_jacobian(const VectorType& y, const size_t cell, const bool restricted)
 {
-  VectorType range(source.size(), 0.);
-  const auto& output_dofs = *pfield_deim_output_dofs_[cell];
-  const auto& phinat_output_dofs = phinat_deim_output_dofs_[cell];
-  const auto& mu_output_dofs = mu_deim_output_dofs_[cell];
-  VectorType& full_range = restricted ? pfield_tmp_vec_ : range;
-  VectorViewType range_phi(full_range, 0, size_phi_);
-  VectorViewType range_phinat(full_range, size_phi_, 2 * size_phi_);
-  VectorViewType range_mu(full_range, 2 * size_phi_, 3 * size_phi_);
-  const ConstVectorViewType source_phi(source, 0, size_phi_);
-  const ConstVectorViewType source_phinat(source, size_phi_, 2 * size_phi_);
-  const ConstVectorViewType source_mu(source, 2 * size_phi_, 3 * size_phi_);
-  // linear part
-  pfield_jac_linear_op_.apply(source, full_range, false);
-  // nonlinear_part
-  auto& tmp_vec = phi_tmp_vec_;
-  const auto mv = mv_func<ConstVectorViewType, VectorType>(restricted);
-  const auto axpy = axpy_func<VectorViewType, VectorType>(restricted);
-  const auto scal = scal_func<VectorType>(restricted);
-  const auto add = add_func<VectorViewType, VectorType>(restricted);
-  // apply missing parts of J (including the linear 1./Ca_ part)
-  mv(M_nonlin_pfield_, source_mu, tmp_vec, phinat_output_dofs);
-  axpy(range_phinat, 1. / (Be_ * std::pow(epsilon_, 2)), tmp_vec, phinat_output_dofs);
-  mv(M_pfield_, source_mu, tmp_vec, phinat_output_dofs);
-  axpy(range_phinat, 1. / Ca_, tmp_vec, phinat_output_dofs);
-  // apply missing parts of A
-  mv(M_nonlin_pfield_, source_phi, tmp_vec, mu_output_dofs);
-  scal(tmp_vec, 1. / epsilon_, mu_output_dofs);
-  add(range_mu, tmp_vec, mu_output_dofs);
-  // apply G
-  mv(G_pfield_, source_phi, tmp_vec, phinat_output_dofs);
-  add(range_phinat, tmp_vec, phinat_output_dofs);
-  if (restricted)
-    for (size_t ii = 0; ii < output_dofs.size(); ++ii)
-      range.set_entry(ii, full_range.get_entry(output_dofs[ii]));
-  return range;
+  return apply_pfield_helper(y, cell, restricted, true);
 }
 
 CellModelSolver::VectorType CellModelSolver::apply_inverse_pfield_jacobian(const VectorType& rhs, const size_t cell)
@@ -1405,28 +1581,9 @@ void CellModelSolver::set_ofield_jacobian_state(const VectorType& source, const 
 // Currently takes a full-dimensional vector, but only applies the rows that are in pfield_output_dofs
 // As the rows are sparse, there shouldn't be too much performance impact of applying to the whole vector
 CellModelSolver::VectorType
-CellModelSolver::apply_ofield_jacobian(const VectorType& source, const size_t cell, const bool restricted)
+CellModelSolver::apply_ofield_jacobian(const VectorType& y, const size_t cell, const bool restricted)
 {
-  VectorType range(source.size(), 0.);
-  const auto& output_dofs = *ofield_deim_output_dofs_[cell];
-  const auto& Pnat_output_dofs = Pnat_deim_output_dofs_[cell];
-  VectorType& full_range = restricted ? ofield_tmp_vec_ : range;
-  VectorViewType range_P(full_range, 0, size_P_);
-  VectorViewType range_Pnat(full_range, size_P_, 2 * size_P_);
-  const ConstVectorViewType source_P(source, 0, size_P_);
-  const ConstVectorViewType source_Pnat(source, size_P_, 2 * size_P_);
-  // linear part
-  ofield_jac_linear_op_.apply(source, full_range);
-  // nonlinear_part
-  auto& tmp_vec = P_tmp_vec_;
-  const auto mv = mv_func<ConstVectorViewType, VectorType>(restricted);
-  const auto add = add_func<VectorViewType, VectorType>(restricted);
-  mv(C_ofield_nonlinear_part_, source_P, tmp_vec, Pnat_output_dofs);
-  add(range_Pnat, tmp_vec, Pnat_output_dofs);
-  if (restricted)
-    for (size_t ii = 0; ii < output_dofs.size(); ++ii)
-      range.set_entry(ii, full_range.get_entry(output_dofs[ii]));
-  return range;
+  return apply_ofield_helper(y, cell, restricted, true);
 }
 
 CellModelSolver::VectorType CellModelSolver::apply_inverse_ofield_jacobian(const VectorType& rhs, const size_t cell)
@@ -1434,11 +1591,9 @@ CellModelSolver::VectorType CellModelSolver::apply_inverse_ofield_jacobian(const
   return ofield_solver_.apply(rhs, cell);
 }
 
-CellModelSolver::VectorType CellModelSolver::apply_stokes_jacobian(const VectorType& source, const bool /*restricted*/)
+CellModelSolver::VectorType CellModelSolver::apply_stokes_jacobian(const VectorType& y, const bool restricted)
 {
-  VectorType range(source.size());
-  S_stokes_.mv(source, range);
-  return range;
+  return apply_stokes_helper(y, restricted, true);
 }
 
 CellModelSolver::VectorType CellModelSolver::apply_inverse_stokes_jacobian(const VectorType& rhs)
@@ -1453,7 +1608,7 @@ CellModelSolver::VectorType CellModelSolver::apply_inverse_stokes_jacobian(const
 //******************************************************************************************************************
 
 // Computes stokes rhs using currently stored values of variables and stores in stokes_rhs_vector_
-void CellModelSolver::assemble_stokes_rhs()
+void CellModelSolver::assemble_stokes_rhs(const bool restricted)
 {
   auto f_functional = make_vector_functional(u_space_, stokes_f_vector_);
   // calculate rhs f as \int ff v and the integrated pressure space basis \int q_i
@@ -1511,17 +1666,26 @@ void CellModelSolver::assemble_stokes_rhs()
           this->bind_Pnat(kk, element);
         } // kk
       }));
-  stokes_f_vector_ *= 0.;
-  f_functional.assemble(use_tbb_);
+  const auto scal = scal_func<EigenVectorViewType>(restricted);
+  const auto& u_output_dofs = u_deim_output_dofs_;
+  scal(stokes_f_vector_, 0., u_output_dofs);
+  if (!restricted)
+    f_functional.assemble(use_tbb_);
+  else
+    f_functional.assemble_range(stokes_deim_entities_);
   // apply dirichlet constraints for u.
+  // TODO: add restricted version
   u_dirichlet_constraints_.apply(stokes_f_vector_);
 }
 
 // Computes orientation field rhs using currently stored values of variables and stores in ofield_rhs_vector_
-void CellModelSolver::assemble_ofield_rhs(const double /*dt*/, const size_t cell)
+void CellModelSolver::assemble_ofield_rhs(const double /*dt*/, const size_t cell, const bool restricted)
 {
+  const auto& P_output_dofs = P_deim_output_dofs_[cell];
+  const auto& Pnat_output_dofs = Pnat_deim_output_dofs_[cell];
   auto g_functional = make_vector_functional(P_space_, ofield_g_vector_);
-  ofield_g_vector_ *= 0.;
+  const auto scal = scal_func<VectorViewType>(restricted);
+  scal(ofield_g_vector_, 0., Pnat_output_dofs);
   XT::Functions::GenericGridFunction<E, d> g(
       /*order = */ linearize_ ? 3 * P_space_.max_polorder() : phi_space_.max_polorder(),
       /*post_bind_func*/
@@ -1548,8 +1712,12 @@ void CellModelSolver::assemble_ofield_rhs(const double /*dt*/, const size_t cell
       });
   g_functional.append(LocalElementIntegralFunctional<E, d>(
       local_binary_to_unary_element_integrand(LocalElementProductScalarWeightIntegrand<E, d>(), g)));
-  g_functional.assemble(use_tbb_);
-  M_ofield_.mv(P_[cell].dofs().vector(), ofield_f_vector_);
+  const auto mv = mv_func<VectorViewType, VectorViewType>(restricted);
+  mv(M_ofield_, P_[cell].dofs().vector(), ofield_f_vector_, P_output_dofs);
+  if (!restricted)
+    g_functional.assemble(use_tbb_);
+  else
+    g_functional.assemble_range(ofield_deim_entities_[cell]);
 }
 
 // Computes phase field rhs using currently stored values of variables and stores in pfield_rhs_vector_
@@ -1628,8 +1796,10 @@ void CellModelSolver::assemble_pfield_rhs(const double /*dt*/, const size_t cell
 }
 
 // assembles linear part of orientation field jacobian and stores in S_ofield_
-void CellModelSolver::assemble_ofield_linear_jacobian(const double dt, const size_t cell)
+void CellModelSolver::assemble_ofield_linear_jacobian(const double dt, const size_t cell, const bool restricted)
 {
+  const auto& P_output_dofs = P_deim_output_dofs_[cell];
+  const auto& Pnat_output_dofs = Pnat_deim_output_dofs_[cell];
   // calculate A
   // Omega - xi D = (1-xi)/2 \nabla u^T - (1+xi)/2 \nabla u
   XT::Functions::GenericGridFunction<E, d, d> Omega_minus_xi_D_transposed(
@@ -1648,16 +1818,17 @@ void CellModelSolver::assemble_ofield_linear_jacobian(const double dt, const siz
         ret -= grad_u_T;
         return ret;
       });
-  A_ofield_.set_to_zero();
+  set_mat_to_zero(A_ofield_, restricted, ofield_submatrix_pattern_, P_output_dofs);
   A_ofield_op_->clear();
   A_ofield_op_->append(
       LocalElementIntegralBilinearForm<E, d>(LocalElementProductIntegrand<E, d>(Omega_minus_xi_D_transposed)));
   A_ofield_op_->append(LocalElementIntegralBilinearForm<E, d>(LocalElementGradientValueIntegrand<E, d>(u_)));
-  A_ofield_op_->assemble(use_tbb_);
+  C_ofield_linear_part_op_->clear();
+  C_ofield_linear_part_op_->append(*A_ofield_op_);
 
   // calculate linear part S_10 = C
-  C_ofield_linear_part_op_->clear();
-  C_ofield_linear_part_ = C_ofield_elliptic_part_;
+  // TODO: add restricted version
+  C_ofield_linear_part_.backend() = C_ofield_elliptic_part_.backend();
   XT::Functions::GenericGridFunction<E, 1, 1> c1_Pa_inv_phi(
       /*order = */ phi_space_.max_polorder(),
       /*post_bind_func*/
@@ -1669,8 +1840,12 @@ void CellModelSolver::assemble_ofield_linear_jacobian(const double dt, const siz
       });
   C_ofield_linear_part_op_->append(
       LocalElementIntegralBilinearForm<E, d>(LocalElementProductScalarWeightIntegrand<E, d>(c1_Pa_inv_phi)));
-  C_ofield_linear_part_op_->assemble(use_tbb_);
-  if (ofield_solver_.is_schur_solver()) {
+  if (!restricted)
+    C_ofield_linear_part_op_->assemble(use_tbb_);
+  else
+    C_ofield_linear_part_op_->assemble_range(ofield_deim_entities_[cell]);
+  // In the restricted case, we cannot use the solver anyway
+  if (ofield_solver_.is_schur_solver() && !restricted) {
     S_schur_ofield_linear_part_.backend() = M_ofield_.backend();
     S_schur_ofield_linear_part_.axpy(dt, A_ofield_);
     S_schur_ofield_linear_part_.axpy(-dt / kappa_, C_ofield_linear_part_);
@@ -1678,7 +1853,7 @@ void CellModelSolver::assemble_ofield_linear_jacobian(const double dt, const siz
 
   // nonlinear part is equal to linearized part in first iteration
   if (linearize_)
-    assemble_ofield_nonlinear_jacobian(ofield_vec(cell), cell);
+    assemble_ofield_nonlinear_jacobian(ofield_vec(cell), cell, restricted);
 }
 
 // assembles nonlinear part of orientation field jacobian and adds to S_ofield_
@@ -1688,10 +1863,12 @@ void CellModelSolver::assemble_ofield_nonlinear_jacobian(const VectorType& y, co
 {
   fill_tmp_ofield(cell, y, restricted);
   assemble_C_ofield_nonlinear_part(cell, restricted);
-  if (ofield_solver_.is_schur_solver()) {
+  if (ofield_solver_.is_schur_solver() && !restricted) {
     ofield_solver_.schur_matrix() = S_schur_ofield_linear_part_;
     ofield_solver_.schur_matrix().axpy(-dt_ / kappa_, C_ofield_nonlinear_part_);
   }
+  // this actually prepares the linear operator contained in the ofield_solver, so we also need it in the restricted
+  // case
   ofield_solver_.prepare(dt_, cell, restricted);
 }
 
@@ -1930,21 +2107,19 @@ void CellModelSolver::assemble_nonlinear_part_of_pfield_residual(VectorType& res
 //******************************************* DEIM related methods *************************************************
 //******************************************************************************************************************
 
-// Dofs needed for evaluation of output_dofs provided in
-std::vector<size_t> CellModelSolver::pfield_deim_input_dofs(const size_t cell) const
+const std::vector<std::vector<size_t>>& CellModelSolver::stokes_deim_input_dofs() const
 {
-  return pfield_deim_input_dofs_[cell];
+  return stokes_deim_input_dofs_;
 }
 
-size_t CellModelSolver::pfield_deim_input_dofs_size(const size_t cell) const
-{
-  return pfield_deim_input_dofs_[cell].size();
-}
-
-// Dofs needed for evaluation of output_dofs provided in
-std::vector<size_t> CellModelSolver::ofield_deim_input_dofs(const size_t cell) const
+const std::vector<std::vector<size_t>>& CellModelSolver::ofield_deim_input_dofs(const size_t cell) const
 {
   return ofield_deim_input_dofs_[cell];
+}
+
+const std::vector<std::vector<size_t>>& CellModelSolver::pfield_deim_input_dofs(const size_t cell) const
+{
+  return pfield_deim_input_dofs_[cell];
 }
 
 // private:
@@ -2167,6 +2342,35 @@ void CellModelSolver::maybe_add_entity(const E& entity,
   } // dof
 }
 
+// appends entity to input_entities if one of its global_indices is in output_dofs
+void CellModelSolver::maybe_add_entity_stokes(const E& entity,
+                                              DynamicVector<size_t>& global_indices,
+                                              const std::vector<size_t>& u_output_dofs,
+                                              const std::vector<size_t>& p_output_dofs,
+                                              std::vector<E>& stokes_deim_entities,
+                                              const MapperInterface<PGV>& u_mapper,
+                                              const MapperInterface<PGV>& p_mapper)
+{
+  u_mapper.global_indices(entity, global_indices);
+  for (const auto& dof : u_output_dofs) {
+    for (size_t jj = 0; jj < global_indices.size(); ++jj) {
+      if (global_indices[jj] == dof) {
+        stokes_deim_entities.push_back(entity);
+        return;
+      }
+    } // jj
+  } // dof
+  p_mapper.global_indices(entity, global_indices);
+  for (const auto& dof : p_output_dofs) {
+    for (size_t jj = 0; jj < global_indices.size(); ++jj) {
+      if (global_indices[jj] == dof) {
+        stokes_deim_entities.push_back(entity);
+        return;
+      }
+    } // jj
+  } // dof
+}
+
 // sets temporary orientation field discrete functions to source values
 void CellModelSolver::fill_tmp_ofield(const size_t cell, const VectorType& source, const bool restricted) const
 {
@@ -2174,7 +2378,7 @@ void CellModelSolver::fill_tmp_ofield(const size_t cell, const VectorType& sourc
     ConstVectorViewType P_vec(source, 0, size_P_);
     P_tmp_[cell].dofs().vector() = P_vec;
   } else {
-    const auto& input_dofs = ofield_deim_input_dofs_[cell];
+    const auto& input_dofs = ofield_deim_input_dofs_[cell][1];
     for (size_t ii = 0; ii < Pnat_deim_input_dofs_begin_[cell]; ++ii)
       P_tmp_[cell].dofs().vector().set_entry(input_dofs[ii], source[input_dofs[ii]]);
   }
@@ -2189,7 +2393,7 @@ void CellModelSolver::fill_tmp_pfield(const size_t cell, const VectorType& sourc
     phi_tmp_[cell].dofs().vector() = phi_vec;
     mu_tmp_[cell].dofs().vector() = mu_vec;
   } else {
-    const auto& input_dofs = pfield_deim_input_dofs_[cell];
+    const auto& input_dofs = pfield_deim_input_dofs_[cell][0];
     for (size_t ii = 0; ii < phinat_deim_input_dofs_begin_[cell]; ++ii)
       phi_tmp_[cell].dofs().vector().set_entry(input_dofs[ii], source[input_dofs[ii]]);
     for (size_t ii = mu_deim_input_dofs_begin_[cell]; ii < input_dofs.size(); ++ii)

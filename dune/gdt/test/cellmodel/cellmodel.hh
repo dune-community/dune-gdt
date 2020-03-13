@@ -191,11 +191,20 @@ struct CellModelSolver
   // Sets stokes vector to stokes_vec
   void set_stokes_vec(const VectorType& stokes_vec);
 
+  // Sets given dofs of stokes vector to values
+  void set_stokes_vec_dofs(const VectorType& values, const std::vector<size_t>& dofs);
+
   // Sets orientation field vector belonging to cell to pfield_vec
   void set_ofield_vec(const size_t cell, const VectorType& ofield_vec);
 
+  // Sets given dofs of orientation field vector belonging to cell to values
+  void set_ofield_vec_dofs(const size_t cell, const VectorType& values, const std::vector<size_t>& dofs);
+
   // Sets phasefield vector belonging to cell to pfield_vec
   void set_pfield_vec(const size_t cell, const VectorType& pfield_vec);
+
+  // Sets given dofs of phasefield vector belonging to cell to pfield_vec
+  void set_pfield_vec_dofs(const size_t cell, const VectorType& values, const std::vector<size_t>& dofs);
 
   // Get stokes finite element vector
   const VectorType& stokes_vec();
@@ -211,11 +220,13 @@ struct CellModelSolver
   //****** the values of other variables, so cannot be computed once and for all in the constructor )       **********
   //******************************************************************************************************************
 
-  void prepare_stokes_operator();
+  void prepare_stokes_operator(const bool restricted = false);
 
   void prepare_ofield_operator(const double dt, const size_t cell, const bool restricted = false);
 
   void prepare_pfield_operator(const double dt, const size_t cell, const bool restricted = false);
+
+  void compute_restricted_stokes_dofs(const std::vector<size_t>& output_dofs);
 
   void compute_restricted_ofield_dofs(const std::vector<size_t>& output_dofs, const size_t cell);
 
@@ -226,17 +237,26 @@ struct CellModelSolver
   //******************************************************************************************************************
 
   // Applies stokes operator (applies the F if Stokes equation is F(y) = 0)
-  VectorType apply_stokes_operator(VectorType y, const bool /*restricted*/ = false) const;
+  VectorType apply_stokes_operator(VectorType y, const bool restricted = false);
+
+  // Applies either stokes operator (if jacobian is false) or stokes jacobian
+  VectorType apply_stokes_helper(VectorType y, const bool restricted, const bool jacobian);
 
   void assemble_nonlinear_part_of_ofield_residual(VectorType& residual, const size_t cell, const bool restricted);
 
   // Applies cell-th orientation field operator (applies F if the orientation field equation is F(y) = 0)
   VectorType apply_ofield_operator(const VectorType& y, const size_t cell, const bool restricted = false);
 
+  // Applies either ofield operator or ofield_jacobian (if jacobian is true)
+  VectorType apply_ofield_helper(const VectorType& y, const size_t cell, const bool restricted, const bool jacobian);
+
   void update_ofield_parameters(const double Pa);
 
   // Applies cell-th phase field operator (applies F if phase field equation is F(y) = 0)
   VectorType apply_pfield_operator(const VectorType& y, const size_t cell, const bool restricted = false);
+
+  // Applies either pfield operator or pfield_jacobian (if jacobian is true)
+  VectorType apply_pfield_helper(const VectorType& y, const size_t cell, const bool restricted, const bool jacobian);
 
   void update_pfield_parameters(const double Be, const double Ca, const double Pa);
 
@@ -284,16 +304,16 @@ struct CellModelSolver
   //******************************************************************************************************************
 
   // Computes stokes rhs using currently stored values of variables and stores in stokes_rhs_vector_
-  void assemble_stokes_rhs();
+  void assemble_stokes_rhs(const bool restricted);
 
   // Computes orientation field rhs using currently stored values of variables and stores in ofield_rhs_vector_
-  void assemble_ofield_rhs(const double /*dt*/, const size_t cell);
+  void assemble_ofield_rhs(const double /*dt*/, const size_t cell, const bool restricted);
 
   // Computes phase field rhs using currently stored values of variables and stores in pfield_rhs_vector_
   void assemble_pfield_rhs(const double /*dt*/, const size_t cell, const bool restricted);
 
   // assembles linear part of orientation field jacobian and stores in S_ofield_
-  void assemble_ofield_linear_jacobian(const double dt, const size_t cell);
+  void assemble_ofield_linear_jacobian(const double dt, const size_t cell, const bool restricted);
 
   // assembles nonlinear part of orientation field jacobian and adds to S_ofield_
   // if assemble_ofield_linear_jacobian has been called first, S_ofield now contains the whole orientation field
@@ -328,13 +348,14 @@ struct CellModelSolver
   //******************************************* DEIM related methods *************************************************
   //******************************************************************************************************************
 
-  // Dofs needed for evaluation of output_dofs provided in
-  std::vector<size_t> pfield_deim_input_dofs(const size_t cell) const;
+  // Dofs needed for evaluation of output_dofs computed in compute_restricted_stokes_dofs()
+  const std::vector<std::vector<size_t>>& stokes_deim_input_dofs() const;
 
-  size_t pfield_deim_input_dofs_size(const size_t cell) const;
+  // Dofs needed for evaluation of output_dofs computed in compute_restricted_ofield_dofs()
+  const std::vector<std::vector<size_t>>& ofield_deim_input_dofs(const size_t cell) const;
 
-  // Dofs needed for evaluation of output_dofs provided in
-  std::vector<size_t> ofield_deim_input_dofs(const size_t cell) const;
+  // Dofs needed for evaluation of output_dofs computed in compute_restricted_pfield_dofs()
+  const std::vector<std::vector<size_t>>& pfield_deim_input_dofs(const size_t cell) const;
 
   // private:
   //******************************************************************************************************************
@@ -388,9 +409,12 @@ struct CellModelSolver
     } else {
       return [](const MatrixType& mat, const VecType1& source, VecType2& range, const std::vector<size_t>& rows) {
         for (const auto& row : rows) {
+          assert(range.size() > row);
           range[row] = 0.;
-          for (typename MatrixType::BackendType::InnerIterator it(mat.backend(), row); it; ++it)
+          for (typename MatrixType::BackendType::InnerIterator it(mat.backend(), row); it; ++it) {
+            assert(source.size() > XT::Common::numeric_cast<size_t>(it.col()));
             range[row] += it.value() * source[it.col()];
+          }
         }
       };
     } // if (restricted)
@@ -455,7 +479,7 @@ struct CellModelSolver
   // Computes lhs += alpha * rhs;
   template <class VecType1, class VecType2 = VecType1>
   std::function<void(VecType1&, const R, const VecType2&, const std::vector<size_t>&)>
-  axpy_func(const bool restricted) const
+  vector_axpy_func(const bool restricted) const
   {
     if (!restricted) {
       return
@@ -497,6 +521,16 @@ struct CellModelSolver
                         const std::vector<size_t>& output_dofs,
                         std::vector<E>& input_entities,
                         const size_t subvector_size) const;
+
+  // appends entity to input_entities if one of its global_indices is in output_dofs
+  void maybe_add_entity_stokes(const E& entity,
+                               DynamicVector<size_t>& global_indices,
+                               const std::vector<size_t>& u_output_dofs,
+                               const std::vector<size_t>& p_output_dofs,
+                               std::vector<E>& stokes_deim_entities,
+                               const MapperInterface<PGV>& u_mapper,
+                               const MapperInterface<PGV>& p_mapper);
+
 
   // sets temporary orientation field discrete functions to source values
   void fill_tmp_ofield(const size_t cell, const VectorType& source, const bool restricted = false) const;
@@ -595,8 +629,21 @@ struct CellModelSolver
   EigenVectorType stokes_rhs_vector_;
   EigenVectorViewType stokes_f_vector_;
   EigenVectorViewType stokes_g_vector_;
+  // Indices for restricted operator in DEIM context
+  std::vector<std::vector<size_t>> stokes_deim_input_dofs_;
+  // output dofs that were computed by the DEIM algorithm
+  std::shared_ptr<std::vector<size_t>> stokes_deim_output_dofs_;
+  std::vector<size_t> stokes_deim_unique_output_dofs_;
+  // output dofs for the respective variables, shifted to range [0, size_phi)
+  std::vector<size_t> u_deim_output_dofs_;
+  std::vector<size_t> p_deim_output_dofs_;
+  // Entities that we have to walk over to calculate values at output dofs
+  std::vector<E> stokes_deim_entities_;
   // vector containing integrals of pressure basis functions (for normalizing such that \int p = 0)
   VectorType p_basis_integrated_vector_;
+  // stokes tmp vectors
+  VectorType stokes_tmp_vec_;
+  VectorType stokes_tmp_vec2_;
   // Dirichlet constraints
   const XT::Grid::AllDirichletBoundaryInfo<PI> boundary_info_;
   DirichletConstraints<PI, SpaceInterface<PGV, d, 1, R>> u_dirichlet_constraints_;
@@ -635,7 +682,7 @@ struct CellModelSolver
   VectorType ofield_tmp_vec_;
   VectorType ofield_tmp_vec2_;
   // Indices for restricted operator in DEIM context
-  std::vector<std::vector<size_t>> ofield_deim_input_dofs_;
+  std::vector<std::vector<std::vector<size_t>>> ofield_deim_input_dofs_;
   std::vector<size_t> Pnat_deim_input_dofs_begin_;
   // output dofs that were computed by the DEIM algorithm
   std::vector<std::shared_ptr<std::vector<size_t>>> ofield_deim_output_dofs_;
@@ -675,7 +722,7 @@ struct CellModelSolver
   mutable EigenVectorType phi_tmp_eigen3_;
   mutable EigenVectorType phi_tmp_eigen4_;
   // Indices for restricted operator in DEIM context
-  std::vector<std::vector<size_t>> pfield_deim_input_dofs_;
+  std::vector<std::vector<std::vector<size_t>>> pfield_deim_input_dofs_;
   // phinat_deim_input_dofs_begin_[cell] contains index of first phinat input dof in pfield_deim_input_dofs_[cell]
   // vector
   std::vector<size_t> phinat_deim_input_dofs_begin_;

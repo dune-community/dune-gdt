@@ -98,7 +98,7 @@ public:
    */
   void apply(const Vector& x, Vector& y) const override final
   {
-    const auto& input_dofs = cellmodel_solver_->ofield_deim_input_dofs_[cell_];
+    const auto& input_dofs = cellmodel_solver_->ofield_deim_input_dofs_[cell_][1];
     const auto& Pnat_begin = cellmodel_solver_->Pnat_deim_input_dofs_begin_[cell_];
     // copy to temporary vectors (we do not use vector views to improve performance of mv)
     if (!restricted_) {
@@ -114,7 +114,7 @@ public:
     }
     // apply matrices
     const auto mv = cellmodel_solver_->template mv_func<Vector>(restricted_);
-    const auto axpy = cellmodel_solver_->template axpy_func<Vector>(restricted_);
+    const auto axpy = cellmodel_solver_->template vector_axpy_func<Vector>(restricted_);
     const auto add = cellmodel_solver_->template add_func<Vector>(restricted_);
     // M+dtA
     const auto& P_dofs = cellmodel_solver_->P_deim_output_dofs_[cell_];
@@ -384,7 +384,7 @@ public:
   void apply(const Vector& x, Vector& y, const bool apply_shift) const
   {
     // copy to temporary vectors (we do not use vector views to improve performance of mv)
-    const auto& input_dofs = cellmodel_solver_->pfield_deim_input_dofs_[cell_];
+    const auto& input_dofs = cellmodel_solver_->pfield_deim_input_dofs_[cell_][0];
     const auto& phinat_begin = cellmodel_solver_->phinat_deim_input_dofs_begin_[cell_];
     const auto& mu_begin = cellmodel_solver_->mu_deim_input_dofs_begin_[cell_];
     if (!restricted_) {
@@ -403,7 +403,7 @@ public:
     } // if (!restricted)
     // apply matrices
     const auto mv = cellmodel_solver_->template mv_func<Vector>(restricted_);
-    const auto axpy = cellmodel_solver_->template axpy_func<Vector>(restricted_);
+    const auto axpy = cellmodel_solver_->template vector_axpy_func<Vector>(restricted_);
     const auto scal = cellmodel_solver_->template scal_func<Vector>(restricted_);
     // first row
     const auto& phi_dofs = cellmodel_solver_->phi_deim_output_dofs_[cell_];
