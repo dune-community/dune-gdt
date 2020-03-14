@@ -102,7 +102,109 @@ public:
 
 
 /**
- * Interface for local bilinear forms associated with grid intersections.
+ * Interface for local bilinear forms associated with inner grid intersections, applied to test and ansatz bases on
+ * either side.
+ *
+ * \note Regarding SMP: the bilinear form is copied for each thread, so
+ *       - no shared mutable state between copies to be thread safe, but
+ *       - local mutable state is ok.
+ */
+template <class Intersection,
+          size_t test_range_dim = 1,
+          size_t test_range_dim_cols = 1,
+          class TestRangeField = double,
+          class Field = double,
+          size_t ansatz_range_dim = test_range_dim,
+          size_t ansatz_range_dim_cols = test_range_dim_cols,
+          class AnsatzRangeField = TestRangeField>
+class LocalCouplingIntersectionBilinearFormInterface : public XT::Common::ParametricInterface
+{
+  static_assert(XT::Grid::is_intersection<Intersection>::value, "");
+
+  using ThisType = LocalCouplingIntersectionBilinearFormInterface<Intersection,
+                                                                  test_range_dim,
+                                                                  test_range_dim_cols,
+                                                                  TestRangeField,
+                                                                  Field,
+                                                                  ansatz_range_dim,
+                                                                  ansatz_range_dim_cols,
+                                                                  AnsatzRangeField>;
+
+public:
+  using IntersectionType = Intersection;
+  using ElementType = XT::Grid::extract_inside_element_t<Intersection>;
+
+  using I = Intersection;
+  using E = ElementType;
+  using D = typename ElementType::Geometry::ctype;
+  static const constexpr size_t d = E::dimension;
+  using F = Field;
+
+  using TR = TestRangeField;
+  static const constexpr size_t t_r = test_range_dim;
+  static const constexpr size_t t_rC = test_range_dim_cols;
+
+  using AR = AnsatzRangeField;
+  static const constexpr size_t a_r = ansatz_range_dim;
+  static const constexpr size_t a_rC = ansatz_range_dim_cols;
+
+  using LocalTestBasisType = XT::Functions::ElementFunctionSetInterface<E, t_r, t_rC, TR>;
+  using LocalAnsatzBasisType = XT::Functions::ElementFunctionSetInterface<E, a_r, a_rC, AR>;
+
+  LocalCouplingIntersectionBilinearFormInterface(const XT::Common::ParameterType& param_type = {})
+    : XT::Common::ParametricInterface(param_type)
+  {}
+
+  virtual ~LocalCouplingIntersectionBilinearFormInterface() = default;
+
+  virtual std::unique_ptr<ThisType> copy() const = 0;
+
+  /**
+   * Computes the application of this bilinear form for all combinations of functions from all bases.
+   */
+  virtual void apply2(const IntersectionType& intersection,
+                      const LocalTestBasisType& test_basis_inside,
+                      const LocalAnsatzBasisType& ansatz_basis_inside,
+                      const LocalTestBasisType& test_basis_outside,
+                      const LocalAnsatzBasisType& ansatz_basis_outside,
+                      DynamicMatrix<F>& result_in_in,
+                      DynamicMatrix<F>& result_in_out,
+                      DynamicMatrix<F>& result_out_in,
+                      DynamicMatrix<F>& result_out_out,
+                      const XT::Common::Parameter& param = {}) const = 0;
+
+  /**
+   * This method is provided for convenience and should not be used within library code.
+   */
+  virtual std::array<DynamicMatrix<F>, 4> apply2(const IntersectionType& intersection,
+                                                 const LocalTestBasisType& test_basis_inside,
+                                                 const LocalAnsatzBasisType& ansatz_basis_inside,
+                                                 const LocalTestBasisType& test_basis_outside,
+                                                 const LocalAnsatzBasisType& ansatz_basis_outside,
+                                                 const XT::Common::Parameter& param = {}) const
+  {
+    DynamicMatrix<F> result_in_in(test_basis_inside.size(param), ansatz_basis_inside.size(param), 0);
+    DynamicMatrix<F> result_in_out(test_basis_inside.size(param), ansatz_basis_outside.size(param), 0);
+    DynamicMatrix<F> result_out_in(test_basis_outside.size(param), ansatz_basis_inside.size(param), 0);
+    DynamicMatrix<F> result_out_out(test_basis_outside.size(param), ansatz_basis_outside.size(param), 0);
+    this->apply2(intersection,
+                 test_basis_inside,
+                 ansatz_basis_inside,
+                 test_basis_outside,
+                 ansatz_basis_outside,
+                 result_in_in,
+                 result_in_out,
+                 result_out_in,
+                 result_out_out,
+                 param);
+    return {result_in_in, result_in_out, result_out_in, result_out_out};
+  } // ... apply2(...)
+}; // class LocalCouplingIntersectionBilinearFormInterface
+
+
+/**
+ * Interface for local bilinear forms associated with grid intersections, applied to test and ansatz bases on only one
+ * side of the intersection.
  *
  * \note Regarding SMP: the bilinear form is copied for each thread, so
  *       - no shared mutable state between copies to be thread safe, but
@@ -159,66 +261,21 @@ public:
   virtual std::unique_ptr<ThisType> copy() const = 0;
 
   /**
-   * Computes the application of this bilinear form for all combinations of functions from the bases.
+   * Flag to document which element the bases are expected to be bound to.
    */
-  virtual void apply2(const IntersectionType& intersection,
-                      const LocalTestBasisType& test_basis_inside,
-                      const LocalAnsatzBasisType& ansatz_basis_inside,
-                      const LocalTestBasisType& test_basis_outside,
-                      const LocalAnsatzBasisType& ansatz_basis_outside,
-                      DynamicMatrix<F>& result_in_in,
-                      DynamicMatrix<F>& result_in_out,
-                      DynamicMatrix<F>& result_out_in,
-                      DynamicMatrix<F>& result_out_out,
-                      const XT::Common::Parameter& param = {}) const = 0;
+  virtual bool inside() const
+  {
+    return true;
+  }
 
   /**
-   * Variant which consideres the intersection only from the inside.
+   * Computes the application of this bilinear form for all combinations of functions from the bases.
    */
   virtual void apply2(const IntersectionType& intersection,
                       const LocalTestBasisType& test_basis,
                       const LocalAnsatzBasisType& ansatz_basis,
                       DynamicMatrix<F>& result,
-                      const XT::Common::Parameter& param = {}) const
-  {
-    this->apply2(intersection,
-                 test_basis,
-                 ansatz_basis,
-                 test_basis,
-                 ansatz_basis,
-                 result,
-                 unused_result_,
-                 unused_result_,
-                 unused_result_,
-                 param);
-  }
-
-  /**
-   * This method is provided for convenience and should not be used within library code.
-   */
-  virtual std::array<DynamicMatrix<F>, 4> apply2(const IntersectionType& intersection,
-                                                 const LocalTestBasisType& test_basis_inside,
-                                                 const LocalAnsatzBasisType& ansatz_basis_inside,
-                                                 const LocalTestBasisType& test_basis_outside,
-                                                 const LocalAnsatzBasisType& ansatz_basis_outside,
-                                                 const XT::Common::Parameter& param = {}) const
-  {
-    DynamicMatrix<F> result_in_in(test_basis_inside.size(param), ansatz_basis_inside.size(param), 0);
-    DynamicMatrix<F> result_in_out(test_basis_inside.size(param), ansatz_basis_outside.size(param), 0);
-    DynamicMatrix<F> result_out_in(test_basis_outside.size(param), ansatz_basis_inside.size(param), 0);
-    DynamicMatrix<F> result_out_out(test_basis_outside.size(param), ansatz_basis_outside.size(param), 0);
-    this->apply2(intersection,
-                 test_basis_inside,
-                 ansatz_basis_inside,
-                 test_basis_outside,
-                 ansatz_basis_outside,
-                 result_in_in,
-                 result_in_out,
-                 result_out_in,
-                 result_out_out,
-                 param);
-    return {result_in_in, result_in_out, result_out_in, result_out_out};
-  } // ... apply2(...)
+                      const XT::Common::Parameter& param = {}) const = 0;
 
   /**
    * This method is provided for convenience and should not be used within library code.

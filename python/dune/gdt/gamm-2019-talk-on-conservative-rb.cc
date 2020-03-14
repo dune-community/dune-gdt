@@ -80,12 +80,12 @@ std::unique_ptr<M> assemble_SWIPDG_matrix(const DG& space,
   auto op = make_matrix_operator<M>(space, Stencil::element_and_intersection);
   op.append(LocalElementIntegralBilinearForm<E>(LocalEllipticIntegrand<E>(diffusion_factor, diffusion_tensor)));
   op.append(
-      LocalIntersectionIntegralBilinearForm<I>(
+      LocalCouplingIntersectionIntegralBilinearForm<I>(
           LocalEllipticIpdgIntegrands::Inner<I, double, LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor>(
               diffusion_factor, diffusion_tensor)),
       {},
       XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
-  op.append(LocalIntersectionIntegralBilinearForm<I>(
+  op.append(LocalCouplingIntersectionIntegralBilinearForm<I>(
                 LocalEllipticIpdgIntegrands::
                     DirichletBoundaryLhs<I, double, LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor>(
                         diffusion_factor, diffusion_tensor)),
@@ -127,14 +127,14 @@ std::unique_ptr<M> assemble_DG_product_matrix(const DG& space,
 {
   auto op = make_matrix_operator<M>(space, Stencil::element_and_intersection);
   op.append(LocalElementIntegralBilinearForm<E>(LocalEllipticIntegrand<E>(diffusion_factor, diffusion_tensor)));
-  op.append(LocalIntersectionIntegralBilinearForm<I>(
+  op.append(LocalCouplingIntersectionIntegralBilinearForm<I>(
                 LocalEllipticIpdgIntegrands::
                     InnerOnlyPenalty<I, double, LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor>(
                         diffusion_factor, diffusion_tensor)),
             {},
             XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
   op.append(
-      LocalIntersectionIntegralBilinearForm<I>(
+      LocalCouplingIntersectionIntegralBilinearForm<I>(
           LocalEllipticIpdgIntegrands::
               DirichletBoundaryLhsOnlyPenalty<I, double, LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor>(
                   diffusion_factor, diffusion_tensor)),

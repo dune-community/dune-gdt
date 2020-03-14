@@ -50,7 +50,7 @@ public:
 
   LocalElementIntegralBilinearForm(const IntegrandType& integrand, const int over_integrate = 0)
     : BaseType(integrand.parameter_type())
-    , integrand_(integrand.copy())
+    , integrand_(integrand.copy_as_binary_element_integrand())
     , over_integrate_(over_integrate)
   {}
 
@@ -59,13 +59,13 @@ public:
                                    const XT::Common::ParameterType& param_type = {},
                                    const int over_integrate = 0)
     : BaseType(param_type)
-    , integrand_(GenericIntegrand(order_function, evaluate_function).copy())
+    , integrand_(GenericIntegrand(order_function, evaluate_function).copy_as_binary_element_integrand())
     , over_integrate_(over_integrate)
   {}
 
   LocalElementIntegralBilinearForm(const ThisType& other)
     : BaseType(other.parameter_type())
-    , integrand_(other.integrand_->copy())
+    , integrand_(other.integrand_->copy_as_binary_element_integrand())
     , over_integrate_(other.over_integrate_)
   {}
 
@@ -119,7 +119,7 @@ private:
 
 
 /**
- * For an explanation of the template arguments \sa LocalIntersectionBilinearFormInterface
+ * For an explanation of the template arguments \sa LocalCouplingIntersectionBilinearFormInterface
  */
 template <class I,
           size_t t_r = 1,
@@ -129,11 +129,11 @@ template <class I,
           size_t a_r = t_r,
           size_t a_rC = t_rC,
           class AR = TR>
-class LocalIntersectionIntegralBilinearForm
-  : public LocalIntersectionBilinearFormInterface<I, t_r, t_rC, TR, F, a_r, a_rC, AR>
+class LocalCouplingIntersectionIntegralBilinearForm
+  : public LocalCouplingIntersectionBilinearFormInterface<I, t_r, t_rC, TR, F, a_r, a_rC, AR>
 {
-  using ThisType = LocalIntersectionIntegralBilinearForm<I, t_r, t_rC, TR, F, a_r, a_rC, AR>;
-  using BaseType = LocalIntersectionBilinearFormInterface<I, t_r, t_rC, TR, F, a_r, a_rC, AR>;
+  using ThisType = LocalCouplingIntersectionIntegralBilinearForm<I, t_r, t_rC, TR, F, a_r, a_rC, AR>;
+  using BaseType = LocalCouplingIntersectionBilinearFormInterface<I, t_r, t_rC, TR, F, a_r, a_rC, AR>;
 
 public:
   using BaseType::d;
@@ -144,19 +144,19 @@ public:
 
   using IntegrandType = LocalQuaternaryIntersectionIntegrandInterface<I, t_r, t_rC, TR, F, a_r, a_rC, AR>;
 
-  LocalIntersectionIntegralBilinearForm(const IntegrandType& integrand, const int over_integrate = 0)
+  LocalCouplingIntersectionIntegralBilinearForm(const IntegrandType& integrand, const int over_integrate = 0)
     : BaseType(integrand.parameter_type())
-    , integrand_(integrand.copy())
+    , integrand_(integrand.copy_as_quaternary_intersection_integrand())
     , over_integrate_(over_integrate)
   {}
 
-  LocalIntersectionIntegralBilinearForm(const ThisType& other)
+  LocalCouplingIntersectionIntegralBilinearForm(const ThisType& other)
     : BaseType(other.parameter_type())
-    , integrand_(other.integrand_->copy())
+    , integrand_(other.integrand_->copy_as_quaternary_intersection_integrand())
     , over_integrate_(other.over_integrate_)
   {}
 
-  LocalIntersectionIntegralBilinearForm(ThisType&& source) = default;
+  LocalCouplingIntersectionIntegralBilinearForm(ThisType&& source) = default;
 
   std::unique_ptr<BaseType> copy() const override final
   {
@@ -244,6 +244,98 @@ private:
   mutable DynamicMatrix<F> integrand_values_in_out_;
   mutable DynamicMatrix<F> integrand_values_out_in_;
   mutable DynamicMatrix<F> integrand_values_out_out_;
+}; // class LocalCouplingIntersectionIntegralBilinearForm
+
+
+/**
+ * For an explanation of the template arguments \sa LocalIntersectionBilinearFormInterface
+ */
+template <class I,
+          size_t t_r = 1,
+          size_t t_rC = 1,
+          class TR = double,
+          class F = double,
+          size_t a_r = t_r,
+          size_t a_rC = t_rC,
+          class AR = TR>
+class LocalIntersectionIntegralBilinearForm
+  : public LocalIntersectionBilinearFormInterface<I, t_r, t_rC, TR, F, a_r, a_rC, AR>
+{
+  using ThisType = LocalIntersectionIntegralBilinearForm<I, t_r, t_rC, TR, F, a_r, a_rC, AR>;
+  using BaseType = LocalIntersectionBilinearFormInterface<I, t_r, t_rC, TR, F, a_r, a_rC, AR>;
+
+public:
+  using BaseType::d;
+  using typename BaseType::D;
+  using typename BaseType::IntersectionType;
+  using typename BaseType::LocalAnsatzBasisType;
+  using typename BaseType::LocalTestBasisType;
+
+  using IntegrandType = LocalBinaryIntersectionIntegrandInterface<I, t_r, t_rC, TR, F, a_r, a_rC, AR>;
+
+  LocalIntersectionIntegralBilinearForm(const IntegrandType& integrand, const int over_integrate = 0)
+    : BaseType(integrand.parameter_type())
+    , integrand_(integrand.copy_as_binary_intersection_integrand())
+    , over_integrate_(over_integrate)
+  {}
+
+  LocalIntersectionIntegralBilinearForm(const ThisType& other)
+    : BaseType(other.parameter_type())
+    , integrand_(other.integrand_->copy_as_binary_intersection_integrand())
+    , over_integrate_(other.over_integrate_)
+  {}
+
+  LocalIntersectionIntegralBilinearForm(ThisType&& source) = default;
+
+  std::unique_ptr<BaseType> copy() const override final
+  {
+    return std::make_unique<ThisType>(*this);
+  }
+
+  virtual bool inside() const override final
+  {
+    return integrand_->inside();
+  }
+
+  using BaseType::apply2;
+
+  void apply2(const IntersectionType& intersection,
+              const LocalTestBasisType& test_basis,
+              const LocalAnsatzBasisType& ansatz_basis,
+              DynamicMatrix<F>& result,
+              const XT::Common::Parameter& param = {}) const override final
+  {
+    // prepare integand
+    integrand_->bind(intersection);
+    // prepare storage
+    const size_t rows = test_basis.size(param);
+    const size_t cols = ansatz_basis.size(param);
+    if (result.rows() < rows || result.cols() < cols)
+      result.resize(rows, cols);
+    result *= 0;
+    // loop over all quadrature points
+    const size_t integrand_order = integrand_->order(test_basis, ansatz_basis) + over_integrate_;
+    for (const auto& quadrature_point : QuadratureRules<D, d - 1>::rule(
+             intersection.geometry().type(), XT::Common::numeric_cast<int>(integrand_order))) {
+      const auto point_in_reference_intersection = quadrature_point.position();
+      // integration factors
+      const auto integration_factor = intersection.geometry().integrationElement(point_in_reference_intersection);
+      const auto quadrature_weight = quadrature_point.weight();
+      // evaluate the integrand
+      integrand_->evaluate(test_basis, ansatz_basis, point_in_reference_intersection, integrand_values_, param);
+      assert(integrand_values_.rows() >= rows && "This must not happen!");
+      assert(integrand_values_.cols() >= cols && "This must not happen!");
+      // compute integral
+      for (size_t ii = 0; ii < rows; ++ii)
+        for (size_t jj = 0; jj < cols; ++jj)
+          result[ii][jj] += integrand_values_[ii][jj] * integration_factor * quadrature_weight;
+    }
+  } // ... apply2(...)
+
+private:
+  mutable std::unique_ptr<IntegrandType> integrand_;
+  const int over_integrate_;
+  mutable DynamicMatrix<F> integrand_values_;
 }; // class LocalIntersectionIntegralBilinearForm
 
 

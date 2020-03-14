@@ -309,6 +309,30 @@ public:
     return *this;
   }
 
+  ThisType&
+  append(const LocalCouplingIntersectionBilinearFormInterface<I, r_r, r_rC, F, F, s_r, s_rC, F>& local_bilinear_form,
+         const XT::Common::Parameter& param = {},
+         const IntersectionFilterType& filter = ApplyOnAllIntersections())
+  {
+    using LocalAssemblerType = LocalCouplingIntersectionBilinearFormAssembler<MatrixType,
+                                                                              AssemblyGridViewType,
+                                                                              r_r,
+                                                                              r_rC,
+                                                                              F,
+                                                                              RGV,
+                                                                              SGV,
+                                                                              s_r,
+                                                                              s_rC,
+                                                                              F>;
+    this->append(new LocalAssemblerType(this->range_space(),
+                                        this->source_space(),
+                                        local_bilinear_form,
+                                        MatrixStorage::access(),
+                                        param + XT::Common::Parameter("matrixoperator.scaling", scaling)),
+                 filter);
+    return *this;
+  } // ... append(...)
+
   ThisType& append(const LocalIntersectionBilinearFormInterface<I, r_r, r_rC, F, F, s_r, s_rC, F>& local_bilinear_form,
                    const XT::Common::Parameter& param = {},
                    const IntersectionFilterType& filter = ApplyOnAllIntersections())

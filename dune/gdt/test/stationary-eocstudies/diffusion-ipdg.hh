@@ -267,12 +267,12 @@ protected:
     // - volume term
     lhs_op->append(LocalElementIntegralBilinearForm<E>(LocalLaplaceIntegrand<E>(this->diffusion())));
     // - inner faces
-    lhs_op->append(LocalIntersectionIntegralBilinearForm<I>(
+    lhs_op->append(LocalCouplingIntersectionIntegralBilinearForm<I>(
                        LocalLaplaceIPDGIntegrands::InnerCoupling<I>(1., this->diffusion(), this->diffusion())),
                    {},
                    XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
     lhs_op->append(
-        LocalIntersectionIntegralBilinearForm<I>(LocalIPDGIntegrands::InnerPenalty<I>(
+        LocalCouplingIntersectionIntegralBilinearForm<I>(LocalIPDGIntegrands::InnerPenalty<I>(
             8, this->diffusion(), [](const auto& intersection) { return intersection.geometry().volume(); })),
         {},
         XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
@@ -283,7 +283,7 @@ protected:
         {},
         XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(this->boundary_info(), new XT::Grid::DirichletBoundary()));
     lhs_op->append(
-        LocalIntersectionIntegralBilinearForm<I>(LocalIPDGIntegrands::BoundaryPenalty<I>(
+        LocalIntersectionIntegralBilinearForm<I>(LocalIPDGIntegrands::Penalty<I>(
             14, this->diffusion(), [](const auto& intersection) { return intersection.geometry().volume(); })),
         {},
         XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(this->boundary_info(), new XT::Grid::DirichletBoundary()));

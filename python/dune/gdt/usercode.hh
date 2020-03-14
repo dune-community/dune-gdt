@@ -496,9 +496,9 @@ std::unique_ptr<M> assemble_local_system_matrix(const XT::Functions::GridFunctio
       subdomain_operator.append(LocalElementIntegralBilinearForm<E>(LocalLaplaceIntegrand<E>(diffusion)));
       if (!subdomain_space->continuous(0)) {
         subdomain_operator.append(
-            LocalIntersectionIntegralBilinearForm<I>(LocalLaplaceIPDGIntegrands::InnerCoupling<I>(
-                                                         /*symmetric=*/1., diffusion, weight)
-                                                     + LocalIPDGIntegrands::InnerPenalty<I>(penalty, weight)),
+            LocalCouplingIntersectionIntegralBilinearForm<I>(LocalLaplaceIPDGIntegrands::InnerCoupling<I>(
+                                                                 /*symmetric=*/1., diffusion, weight)
+                                                             + LocalIPDGIntegrands::InnerPenalty<I>(penalty, weight)),
             {},
             XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
       }
@@ -644,7 +644,7 @@ assemble_coupling_matrices(const XT::Functions::GridFunctionInterface<E>& diffus
             using MacroI = std::decay_t<decltype(macro_intersection)>;
             using CouplingI = typename DomainDecomposition::DdGridType::GlueType::Intersection;
             using I = CouplingIntersectionWithCorrectNormal<CouplingI, MacroI>;
-            const LocalIntersectionIntegralBilinearForm<I> intersection_bilinear_form(
+            const LocalCouplingIntersectionIntegralBilinearForm<I> intersection_bilinear_form(
                 LocalLaplaceIPDGIntegrands::InnerCoupling<I>(
                     /*symmetric=*/1., diffusion, weight)
                 + LocalIPDGIntegrands::InnerPenalty<I>(penalty, weight));
@@ -814,7 +814,7 @@ std::unique_ptr<M> assemble_inner_penalty_semi_product(const double& penalty,
       auto subdomain_operator = make_matrix_operator<M>(*subdomain_space, Stencil::element_and_intersection);
       if (!subdomain_space->continuous(0)) {
         subdomain_operator.append(
-            LocalIntersectionIntegralBilinearForm<I>(LocalIPDGIntegrands::InnerPenalty<I>(penalty, weight)),
+            LocalCouplingIntersectionIntegralBilinearForm<I>(LocalIPDGIntegrands::InnerPenalty<I>(penalty, weight)),
             {},
             XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
         subdomain_operator.assemble();
@@ -926,7 +926,7 @@ assemble_coupling_penalty_semi_product(const double& penalty,
             using MacroI = std::decay_t<decltype(macro_intersection)>;
             using CouplingI = typename DomainDecomposition::DdGridType::GlueType::Intersection;
             using I = CouplingIntersectionWithCorrectNormal<CouplingI, MacroI>;
-            const LocalIntersectionIntegralBilinearForm<I> intersection_bilinear_form(
+            const LocalCouplingIntersectionIntegralBilinearForm<I> intersection_bilinear_form(
                 LocalIPDGIntegrands::InnerPenalty<I>(penalty, weight));
             for (auto coupling_intersection_it = coupling.template ibegin<0>();
                  coupling_intersection_it != coupling_intersection_it_end;
