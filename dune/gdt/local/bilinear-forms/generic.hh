@@ -79,9 +79,9 @@ private:
 
 
 /**
- * See also LocalIntersectionBilinearFormInterface for a description of the template arguments.
+ * See also LocalCouplingIntersectionBilinearFormInterface for a description of the template arguments.
  *
- * \sa LocalIntersectionBilinearFormInterface
+ * \sa LocalCouplingIntersectionBilinearFormInterface
  */
 template <class I,
           size_t t_r = 1,
@@ -91,11 +91,11 @@ template <class I,
           size_t a_r = t_r,
           size_t a_rC = t_rC,
           class AR = TR>
-class GenericLocalIntersectionBilinearForm
-  : public LocalIntersectionBilinearFormInterface<I, t_r, t_rC, TR, F, a_r, a_rC, AR>
+class GenericLocalCouplingIntersectionBilinearForm
+  : public LocalCouplingIntersectionBilinearFormInterface<I, t_r, t_rC, TR, F, a_r, a_rC, AR>
 {
-  using ThisType = GenericLocalIntersectionBilinearForm;
-  using BaseType = LocalIntersectionBilinearFormInterface<I, t_r, t_rC, TR, F, a_r, a_rC, AR>;
+  using ThisType = GenericLocalCouplingIntersectionBilinearForm;
+  using BaseType = LocalCouplingIntersectionBilinearFormInterface<I, t_r, t_rC, TR, F, a_r, a_rC, AR>;
 
 public:
   using typename BaseType::IntersectionType;
@@ -113,12 +113,13 @@ public:
                                                  DynamicMatrix<F>& /*result_out_out*/,
                                                  const XT::Common::Parameter& /*param*/)>;
 
-  GenericLocalIntersectionBilinearForm(GenericFunctionType func, const XT::Common::ParameterType& param_type = {})
+  GenericLocalCouplingIntersectionBilinearForm(GenericFunctionType func,
+                                               const XT::Common::ParameterType& param_type = {})
     : BaseType(param_type)
     , func_(func)
   {}
 
-  GenericLocalIntersectionBilinearForm(ThisType&& source) = default;
+  GenericLocalCouplingIntersectionBilinearForm(ThisType&& source) = default;
 
   std::unique_ptr<BaseType> copy() const override final
   {
@@ -167,7 +168,7 @@ public:
 
 private:
   const GenericFunctionType func_;
-}; // class GenericLocalIntersectionBilinearForm
+}; // class GenericLocalCouplingIntersectionBilinearForm
 
 
 } // namespace GDT

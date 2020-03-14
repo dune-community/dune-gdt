@@ -222,9 +222,10 @@ int main(int argc, char* argv[])
       // assemble
       auto lhs_op = make_matrix_operator<M>(dg_space, Stencil::element_and_intersection);
       lhs_op.append(LocalElementIntegralBilinearForm<E>(LocalEllipticIntegrand<E>(df, dt)));
-      lhs_op.append(LocalIntersectionIntegralBilinearForm<I>(LocalEllipticIpdgIntegrands::Inner<I, F, ipdg>(df, dt)),
-                    {},
-                    XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
+      lhs_op.append(
+          LocalCouplingIntersectionIntegralBilinearForm<I>(LocalEllipticIpdgIntegrands::Inner<I, F, ipdg>(df, dt)),
+          {},
+          XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
       lhs_op.append(
           LocalIntersectionIntegralBilinearForm<I>(
               LocalEllipticIpdgIntegrands::DirichletBoundaryLhs<I, F, ipdg>(df, dt)),
