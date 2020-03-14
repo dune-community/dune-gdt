@@ -126,24 +126,30 @@ public:
   virtual std::unique_ptr<ThisType> copy() const = 0;
 
   /**
-   * Computes the application of this functional for each combination of basis functions.
+   * Flag to document which element the basis is expected to be bound to.
+   */
+  virtual bool inside() const
+  {
+    return true;
+  }
+
+  /**
+   * Computes the application of this functional for each basis function.
    */
   virtual void apply(const IntersectionType& intersection,
-                     const LocalBasisType& inside_basis,
-                     const LocalBasisType& outside_basis,
-                     DynamicMatrix<F>& result,
+                     const LocalBasisType& test_basis,
+                     DynamicVector<F>& result,
                      const XT::Common::Parameter& param = {}) const = 0;
 
   /**
    * This method is provided for convenience and should not be used within library code.
    */
-  virtual DynamicMatrix<F> apply(const IntersectionType& intersection,
-                                 const LocalBasisType& inside_basis,
-                                 const LocalBasisType& outside_basis,
+  virtual DynamicVector<F> apply(const IntersectionType& intersection,
+                                 const LocalBasisType& test_basis,
                                  const XT::Common::Parameter& param = {}) const
   {
-    DynamicMatrix<F> ret(inside_basis.size(param), outside_basis.size(param), 0);
-    this->apply(intersection, inside_basis, outside_basis, ret, param);
+    DynamicVector<F> ret(test_basis.size(param), 0);
+    this->apply(intersection, test_basis, ret, param);
     return ret;
   }
 }; // class LocalIntersectionFunctionalInterface
