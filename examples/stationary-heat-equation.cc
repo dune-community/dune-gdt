@@ -97,8 +97,7 @@ int main(int argc, char* argv[])
         LocalEllipticIntegrand<E>(lambda.as_grid_function<E>(), kappa.as_grid_function<E>())));
 
     auto rhs_func = make_vector_functional<V>(space);
-    rhs_func.append(LocalElementIntegralFunctional<E>(
-        local_binary_to_unary_element_integrand(LocalProductIntegrand<E>(), force.as_grid_function<E>())));
+    rhs_func.append(LocalElementIntegralFunctional<E>(LocalProductIntegrand<E>().with_ansatz(force)));
 
     auto dirichlet_constraints = make_dirichlet_constraints(space, boundary_info);
 

@@ -100,8 +100,7 @@ std::unique_ptr<V>
 assemble_L2_vector(const DG& space, const XT::Functions::GridFunctionInterface<E>& force, const bool parallel)
 {
   auto func = make_vector_functional<V>(space);
-  func.append(LocalElementIntegralFunctional<E>(
-      local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E>(), force)));
+  func.append(LocalElementIntegralFunctional<E>(LocalElementProductIntegrand<E>().with_ansatz(force)));
   func.assemble(parallel);
   return std::move(std::make_unique<V>(std::move(func.vector())));
 } // ... assemble_L2_vector(...)

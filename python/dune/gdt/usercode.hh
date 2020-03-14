@@ -531,8 +531,7 @@ std::unique_ptr<V> assemble_local_rhs(const XT::Functions::GridFunctionInterface
       auto subdomain_space = make_subdomain_space(subdomain_grid_view, space_type);
       // create functional
       auto subdomain_functional = make_vector_functional<V>(*subdomain_space);
-      const LocalElementIntegralFunctional<E> element_functional(
-          local_binary_to_unary_element_integrand(LocalProductIntegrand<E>(), force));
+      const LocalElementIntegralFunctional<E> element_functional(LocalProductIntegrand<E>().with_ansatz(force));
       subdomain_functional.append(element_functional);
       subdomain_functional.assemble();
       subdomain_vector = std::make_unique<V>(subdomain_functional.vector());
