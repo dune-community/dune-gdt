@@ -23,4 +23,4 @@ def make_discrete_function(space, vector, name="dune.gdt.discretefunction"):
             return factory(space, vector, name)
         except:
             continue
-    raise TypeError('no matching factory for space \'{}\''.format(space))
+    raise TypeError(f'no matching factory for space \'{space}\' and vector \'{vector}\'')
