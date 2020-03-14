@@ -63,9 +63,9 @@ public:
     if (rC > 1)
       class_name += "x" + XT::Common::to_string(rC);
     class_name += "_" + XT::LA::bindings::container_name<V>::value();
-    class_name = XT::Common::to_camel_case(class_name);
+    auto ClassName = XT::Common::to_camel_case(class_name);
     const std::string default_name = "dune.gdt.discretefunction";
-    bound_type c(m, XT::Common::to_camel_case(class_name).c_str(), XT::Common::to_camel_case(class_name).c_str());
+    bound_type c(m, XT::Common::to_camel_case(ClassName).c_str(), XT::Common::to_camel_case(ClassName).c_str());
     c.def(py::init<const S&, V&, const std::string&>(),
           "space"_a,
           "vector"_a,
