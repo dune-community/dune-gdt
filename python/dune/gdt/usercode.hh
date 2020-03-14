@@ -184,12 +184,28 @@ private:
   using GV = typename DdGridType::LocalViewType;
 
 public:
-  DomainDecomposition(const std::array<unsigned int, d> num_macro_elements_per_dim,
+  DomainDecomposition(const std::array<unsigned int, d> num_subdomains,
                       const size_t num_refinements_per_subdomain,
                       const XT::Common::FieldVector<double, d> ll,
                       const XT::Common::FieldVector<double, d> ur)
-    : macro_grid_(XT::Grid::make_cube_grid<G>(ll, ur, num_macro_elements_per_dim))
+    : macro_grid_(XT::Grid::make_cube_grid<G>(ll, ur, num_subdomains))
     , dd_grid(macro_grid_, num_refinements_per_subdomain, false, true)
+    , vtk_writer_(dd_grid)
+    , local_spaces_(dd_grid.num_subdomains(), nullptr)
+    , local_discrete_functions_(dd_grid.num_subdomains(), nullptr)
+  {
+    DUNE_THROW_IF(XT::Common::FloatCmp::lt(ll, XT::Common::FieldVector<double, d>(0.)),
+                  XT::Common::Exceptions::wrong_input_given,
+                  "The GridGlue is known to fail for negative coordinates!");
+  }
+
+  DomainDecomposition(const std::array<unsigned int, d> num_subdomains,
+                      const std::array<unsigned int, d> num_elements_per_subdomains,
+                      const size_t num_refinements_per_subdomain,
+                      const XT::Common::FieldVector<double, d> ll,
+                      const XT::Common::FieldVector<double, d> ur)
+    : macro_grid_(XT::Grid::make_cube_grid<G>(ll, ur, num_subdomains))
+    , dd_grid(macro_grid_, num_elements_per_subdomains, num_refinements_per_subdomain, false, true)
     , vtk_writer_(dd_grid)
     , local_spaces_(dd_grid.num_subdomains(), nullptr)
     , local_discrete_functions_(dd_grid.num_subdomains(), nullptr)
@@ -699,19 +715,19 @@ assemble_coupling_matrices(const XT::Functions::GridFunctionInterface<E>& diffus
 } // ... assemble_coupling_matrices(...)
 
 
-std::unique_ptr<M> assemble_boundary_matrix(const XT::Functions::GridFunctionInterface<E>& diffusion,
-                                            const double& penalty,
-                                            const XT::Functions::GridFunctionInterface<E>& weight,
-                                            DomainDecomposition& domain_decomposition,
-                                            const size_t ss,
-                                            const std::string space_type)
+std::unique_ptr<M> assemble_dirichlet_boundary_matrix(
+    const XT::Functions::GridFunctionInterface<E>& diffusion,
+    const double& penalty,
+    const XT::Functions::GridFunctionInterface<E>& weight,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GV>>& macro_boundary_info,
+    DomainDecomposition& domain_decomposition,
+    const size_t ss,
+    const std::string space_type)
 {
   DUNE_THROW_IF(ss >= domain_decomposition.dd_grid.num_subdomains(),
                 XT::Common::Exceptions::index_out_of_range,
                 "ss = " << ss << "\n   domain_decomposition.dd_grid.num_subdomains() = "
                         << domain_decomposition.dd_grid.num_subdomains());
-  using MGV = typename DomainDecomposition::DdGridType::MacroGridViewType;
-  const XT::Grid::AllDirichletBoundaryInfo<XT::Grid::extract_intersection_t<MGV>> macro_boundary_info;
   std::unique_ptr<M> subdomain_matrix;
   for (auto&& macro_element : elements(domain_decomposition.dd_grid.macro_grid_view())) {
     if (domain_decomposition.dd_grid.subdomain(macro_element) == ss) {
@@ -719,6 +735,7 @@ std::unique_ptr<M> assemble_boundary_matrix(const XT::Functions::GridFunctionInt
       auto subdomain_grid_view = domain_decomposition.dd_grid.local_grid(macro_element).leaf_view();
       using I = typename GV::Intersection;
       auto subdomain_space = make_subdomain_space(subdomain_grid_view, space_type);
+      using MGV = typename DomainDecomposition::DdGridType::MacroGridViewType;
       const MacroGridBasedBoundaryInfo<MGV, GV> subdomain_boundary_info(
           domain_decomposition.dd_grid.macro_grid_view(), macro_element, macro_boundary_info);
       // create operator
@@ -735,11 +752,104 @@ std::unique_ptr<M> assemble_boundary_matrix(const XT::Functions::GridFunctionInt
     }
   }
   return std::move(subdomain_matrix);
-} // ... assemble_boundary_matrix(...)
+} // ... assemble_dirichlet_boundary_matrix(...)
 
 
-std::unique_ptr<M>
-assemble_l2_product(DomainDecomposition& domain_decomposition, const size_t ss, const std::string space_type)
+std::unique_ptr<M> assemble_boundary_matrix(const XT::Functions::GridFunctionInterface<E>& diffusion,
+                                            const double& penalty,
+                                            const XT::Functions::GridFunctionInterface<E>& weight,
+                                            DomainDecomposition& domain_decomposition,
+                                            const size_t ss,
+                                            const std::string space_type)
+{
+  const XT::Grid::AllDirichletBoundaryInfo<XT::Grid::extract_intersection_t<GV>> macro_boundary_info;
+  return assemble_dirichlet_boundary_matrix(
+      diffusion, penalty, weight, macro_boundary_info, domain_decomposition, ss, space_type);
+}
+
+
+std::unique_ptr<V> assemble_dirichlet_boundary_vector(
+    const XT::Functions::GridFunctionInterface<E>& diffusion,
+    const XT::Functions::GridFunctionInterface<E>& dirichlet_data,
+    const double& penalty,
+    const XT::Functions::GridFunctionInterface<E>& weight,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GV>>& macro_boundary_info,
+    DomainDecomposition& domain_decomposition,
+    const size_t ss,
+    const std::string space_type)
+{
+  DUNE_THROW_IF(ss >= domain_decomposition.dd_grid.num_subdomains(),
+                XT::Common::Exceptions::index_out_of_range,
+                "ss = " << ss << "\n   domain_decomposition.dd_grid.num_subdomains() = "
+                        << domain_decomposition.dd_grid.num_subdomains());
+  std::unique_ptr<V> subdomain_vector;
+  for (auto&& macro_element : elements(domain_decomposition.dd_grid.macro_grid_view())) {
+    if (domain_decomposition.dd_grid.subdomain(macro_element) == ss) {
+      // this is the subdomain we are interested in, create space
+      auto subdomain_grid_view = domain_decomposition.dd_grid.local_grid(macro_element).leaf_view();
+      using I = typename GV::Intersection;
+      auto subdomain_space = make_subdomain_space(subdomain_grid_view, space_type);
+      using MGV = typename DomainDecomposition::DdGridType::MacroGridViewType;
+      const MacroGridBasedBoundaryInfo<MGV, GV> subdomain_boundary_info(
+          domain_decomposition.dd_grid.macro_grid_view(), macro_element, macro_boundary_info);
+      // create functional
+      auto subdomain_functional = make_vector_functional<V>(*subdomain_space);
+      subdomain_functional.append(
+          LocalIntersectionIntegralFunctional<I>(
+              LocalLaplaceIPDGIntegrands::DirichletCoupling<I>(/*symmetry=*/1., diffusion, dirichlet_data)
+              + LocalIPDGIntegrands::BoundaryPenalty<I>(penalty, weight).with_ansatz(dirichlet_data)),
+          {},
+          XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(subdomain_boundary_info,
+                                                             new XT::Grid::DirichletBoundary()));
+      subdomain_functional.assemble();
+      subdomain_vector = std::make_unique<V>(subdomain_functional.vector());
+      break;
+    }
+  }
+  return std::move(subdomain_vector);
+} // ... assemble_dirichlet_boundary_vector(...)
+
+
+std::unique_ptr<V> assemble_neumann_boundary_vector(
+    const XT::Functions::GridFunctionInterface<E>& neumann_data,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GV>>& macro_boundary_info,
+    DomainDecomposition& domain_decomposition,
+    const size_t ss,
+    const std::string space_type)
+{
+  DUNE_THROW_IF(ss >= domain_decomposition.dd_grid.num_subdomains(),
+                XT::Common::Exceptions::index_out_of_range,
+                "ss = " << ss << "\n   domain_decomposition.dd_grid.num_subdomains() = "
+                        << domain_decomposition.dd_grid.num_subdomains());
+  std::unique_ptr<V> subdomain_vector;
+  for (auto&& macro_element : elements(domain_decomposition.dd_grid.macro_grid_view())) {
+    if (domain_decomposition.dd_grid.subdomain(macro_element) == ss) {
+      // this is the subdomain we are interested in, create space
+      auto subdomain_grid_view = domain_decomposition.dd_grid.local_grid(macro_element).leaf_view();
+      using I = typename GV::Intersection;
+      auto subdomain_space = make_subdomain_space(subdomain_grid_view, space_type);
+      using MGV = typename DomainDecomposition::DdGridType::MacroGridViewType;
+      const MacroGridBasedBoundaryInfo<MGV, GV> subdomain_boundary_info(
+          domain_decomposition.dd_grid.macro_grid_view(), macro_element, macro_boundary_info);
+      // create functional
+      auto subdomain_functional = make_vector_functional<V>(*subdomain_space);
+      subdomain_functional.append(
+          LocalIntersectionIntegralFunctional<I>(LocalProductIntegrand<I>().with_ansatz(neumann_data)),
+          {},
+          XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(subdomain_boundary_info, new XT::Grid::NeumannBoundary()));
+      subdomain_functional.assemble();
+      subdomain_vector = std::make_unique<V>(subdomain_functional.vector());
+      break;
+    }
+  }
+  return std::move(subdomain_vector);
+} // ... assemble_neumann_boundary_vector(...)
+
+
+std::unique_ptr<M> assemble_weighted_l2_matrix(const XT::Functions::GridFunctionInterface<E>& weight,
+                                               DomainDecomposition& domain_decomposition,
+                                               const size_t ss,
+                                               const std::string space_type)
 {
   DUNE_THROW_IF(ss >= domain_decomposition.dd_grid.num_subdomains(),
                 XT::Common::Exceptions::index_out_of_range,
@@ -754,14 +864,21 @@ assemble_l2_product(DomainDecomposition& domain_decomposition, const size_t ss, 
       auto subdomain_space = make_subdomain_space(subdomain_grid_view, space_type);
       // create operator
       auto subdomain_operator = make_matrix_operator<M>(*subdomain_space, Stencil::element_and_intersection);
-      subdomain_operator.append(LocalElementIntegralBilinearForm<E>(LocalProductIntegrand<E>()));
+      subdomain_operator.append(LocalElementIntegralBilinearForm<E>(LocalProductIntegrand<E>(weight)));
       subdomain_operator.assemble();
       subdomain_matrix = std::make_unique<M>(subdomain_operator.matrix());
       break;
     }
   }
   return std::move(subdomain_matrix);
-} // ... assemble_l2_product(...)
+} // ... assemble_weighted_l2_matrix(...)
+
+
+std::unique_ptr<M>
+assemble_l2_product(DomainDecomposition& domain_decomposition, const size_t ss, const std::string space_type)
+{
+  return assemble_weighted_l2_matrix(XT::Functions::ConstantGridFunction<E>(1.), domain_decomposition, ss, space_type);
+}
 
 
 std::unique_ptr<M> assemble_h1_semi_product(const XT::Functions::GridFunctionInterface<E>& weight,

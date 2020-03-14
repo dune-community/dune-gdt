@@ -29,15 +29,73 @@ PYBIND11_MODULE(usercode, m)
   py::module::import("dune.xt.functions");
   py::module::import("dune.gdt.discretefunction");
 
+  py::class_<GDT::SpaceInterface<GV>> bind_space(m, "Space", "Space");
+  bind_space.def_property_readonly("dimDomain", [](GDT::SpaceInterface<GV>& /*self*/) { return d; });
+  bind_space.def_property_readonly("type", [](GDT::SpaceInterface<GV>& self) {
+    std::stringstream ss;
+    ss << self.type();
+    return ss.str();
+  });
+  bind_space.def_property_readonly("num_DoFs", [](GDT::SpaceInterface<GV>& self) { return self.mapper().size(); });
+
+  m.def("make_subdomain_space",
+        [](DomainDecomposition& dd, const size_t ss, const std::string& space_type) {
+          std::unique_ptr<GDT::SpaceInterface<GV>> subdomain_space;
+          bool found_subdomain = false;
+          for (auto&& macro_element : elements(dd.dd_grid.macro_grid_view())) {
+            if (dd.dd_grid.subdomain(macro_element) == ss) {
+              // this is the subdomain we are interested in, create space
+              found_subdomain = true;
+              auto subdomain_grid_view = dd.dd_grid.local_grid(macro_element).leaf_view();
+              subdomain_space = make_subdomain_space(subdomain_grid_view, space_type);
+              break;
+            }
+          }
+          DUNE_THROW_IF(!found_subdomain, InvalidStateException, "ss = " << ss);
+          return std::move(subdomain_space);
+        },
+        "dd"_a,
+        "ss"_a,
+        "space_type"_a);
+  m.def("compute_interpolation_points",
+        [](GDT::SpaceInterface<GV>& space) {
+          DUNE_THROW_IF(!space.is_lagrangian(), XT::Common::Exceptions::wrong_input_given, "");
+          const auto& global_basis = space.basis();
+          auto basis = global_basis.localize();
+          DynamicVector<size_t> global_DoF_indices(space.mapper().max_local_size());
+          auto points = std::make_unique<XT::LA::CommonDenseMatrix<double>>(space.mapper().size(), d, 0.);
+          for (auto&& element : elements(space.grid_view())) {
+            basis->bind(element);
+            space.mapper().global_indices(element, global_DoF_indices);
+            auto local_lagrange_points = basis->finite_element().lagrange_points();
+            for (size_t ii = 0; ii < basis->size(); ++ii) {
+              auto global_point = element.geometry().global(local_lagrange_points[ii]);
+              for (size_t jj = 0; jj < d; ++jj)
+                points->set_entry(global_DoF_indices[ii], jj, global_point[jj]);
+            }
+          }
+          return std::move(points);
+        },
+        "space"_a);
+
   py::class_<DomainDecomposition> bind_domain_decomposition(m, "DomainDecomposition", "DomainDecomposition");
-  bind_domain_decomposition.def(py::init([](const std::array<unsigned int, d> num_macro_elements_per_dim,
+  bind_domain_decomposition.def(py::init([](const std::array<unsigned int, d> num_subdomains,
                                             const size_t num_refinements_per_subdomain,
                                             const FieldVector<double, d> ll,
                                             const FieldVector<double, d> ur) {
-                                  return new DomainDecomposition(
-                                      num_macro_elements_per_dim, num_refinements_per_subdomain, ll, ur);
+                                  return new DomainDecomposition(num_subdomains, num_refinements_per_subdomain, ll, ur);
                                 }),
-                                "num_macro_elements_per_dim"_a,
+                                "num_subdomains"_a,
+                                "num_refinements_per_subdomain"_a,
+                                "lower_left"_a,
+                                "upper_right"_a);
+  bind_domain_decomposition.def(py::init([](const std::array<unsigned int, d> num_subdomains,
+                                            const std::array<unsigned int, d> num_elements_per_subdomain,
+                                            const FieldVector<double, d> ll,
+                                            const FieldVector<double, d> ur) {
+                                  return new DomainDecomposition(num_subdomains, num_elements_per_subdomain, 0, ll, ur);
+                                }),
+                                "num_subdomains"_a,
                                 "num_refinements_per_subdomain"_a,
                                 "lower_left"_a,
                                 "upper_right"_a);
@@ -259,6 +317,26 @@ PYBIND11_MODULE(usercode, m)
         "nn"_a,
         "space_type"_a);
 
+  m.def("assemble_dirichlet_boundary_matrix",
+        [](XT::Functions::GridFunctionInterface<E>& diffusion,
+           const double& penalty,
+           XT::Functions::GridFunctionInterface<E>& weight,
+           const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GV>>& macro_boundary_info,
+           DomainDecomposition& domain_decomposition,
+           const size_t ss,
+           const std::string space_type) {
+          return std::move(assemble_dirichlet_boundary_matrix(
+              diffusion, penalty, weight, macro_boundary_info, domain_decomposition, ss, space_type));
+        },
+        py::call_guard<py::gil_scoped_release>(),
+        "diffusion"_a,
+        "penalty"_a,
+        "weight"_a,
+        "macro_boundary_info"_a,
+        "domain_decomposition"_a,
+        "ss"_a,
+        "space_type"_a);
+
   m.def("assemble_boundary_matrix",
         [](XT::Functions::GridFunctionInterface<E>& diffusion,
            const double& penalty,
@@ -271,6 +349,57 @@ PYBIND11_MODULE(usercode, m)
         py::call_guard<py::gil_scoped_release>(),
         "diffusion"_a,
         "penalty"_a,
+        "weight"_a,
+        "domain_decomposition"_a,
+        "ss"_a,
+        "space_type"_a);
+
+  m.def("assemble_dirichlet_boundary_vector",
+        [](XT::Functions::GridFunctionInterface<E>& diffusion,
+           XT::Functions::GridFunctionInterface<E>& dirichlet_data,
+           const double& penalty,
+           XT::Functions::GridFunctionInterface<E>& weight,
+           const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GV>>& macro_boundary_info,
+           DomainDecomposition& domain_decomposition,
+           const size_t ss,
+           const std::string space_type) {
+          return std::move(assemble_dirichlet_boundary_vector(
+              diffusion, dirichlet_data, penalty, weight, macro_boundary_info, domain_decomposition, ss, space_type));
+        },
+        py::call_guard<py::gil_scoped_release>(),
+        "diffusion"_a,
+        "dirichlet_data"_a,
+        "penalty"_a,
+        "weight"_a,
+        "macro_boundary_info"_a,
+        "domain_decomposition"_a,
+        "ss"_a,
+        "space_type"_a);
+
+  m.def("assemble_neumann_boundary_vector",
+        [](XT::Functions::GridFunctionInterface<E>& neumann_data,
+           const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GV>>& macro_boundary_info,
+           DomainDecomposition& domain_decomposition,
+           const size_t ss,
+           const std::string space_type) {
+          return std::move(assemble_neumann_boundary_vector(
+              neumann_data, macro_boundary_info, domain_decomposition, ss, space_type));
+        },
+        py::call_guard<py::gil_scoped_release>(),
+        "neumann_data"_a,
+        "macro_boundary_info"_a,
+        "domain_decomposition"_a,
+        "ss"_a,
+        "space_type"_a);
+
+  m.def("assemble_weighted_l2_matrix",
+        [](const XT::Functions::GridFunctionInterface<E>& weight,
+           DomainDecomposition& domain_decomposition,
+           const size_t ss,
+           const std::string space_type) {
+          return std::move(assemble_weighted_l2_matrix(weight, domain_decomposition, ss, space_type));
+        },
+        py::call_guard<py::gil_scoped_release>(),
         "weight"_a,
         "domain_decomposition"_a,
         "ss"_a,
