@@ -287,8 +287,7 @@ protected:
         XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(this->boundary_info(), new XT::Grid::DirichletBoundary()));
     // define rhs functional
     auto rhs_func = make_vector_functional<V>(space);
-    rhs_func.append(LocalElementIntegralFunctional<E>(
-        local_binary_to_unary_element_integrand(LocalProductIntegrand<E>(), this->force())));
+    rhs_func.append(LocalElementIntegralFunctional<E>(LocalProductIntegrand<E>().with_ansatz(this->force())));
     // ... add Dirichlet here
     // (if we add something here, the oswald interpolation in compute() needs to be adapted accordingly!)
     // ... add Neumann here

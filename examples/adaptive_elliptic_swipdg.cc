@@ -232,8 +232,7 @@ int main(int argc, char* argv[])
           {},
           XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(boundary_info, new XT::Grid::DirichletBoundary()));
       auto rhs_func = make_vector_functional<V>(dg_space);
-      rhs_func.append(
-          LocalElementIntegralFunctional<E>(local_binary_to_unary_element_integrand(LocalProductIntegrand<E>(), f)));
+      rhs_func.append(LocalElementIntegralFunctional<E>(LocalProductIntegrand<E>().with_ansatz(f)));
       // ... add Dirichlet here
       // (if we add something here, the oswald interpolation needs to be adapted accordingly!)
       // ... add Neumann here
