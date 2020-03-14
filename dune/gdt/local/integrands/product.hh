@@ -32,6 +32,7 @@ namespace GDT {
  * in the ansatz basis and psi in the test basis.
  *
  * \note Note that f can also be given as a scalar value or omitted.
+ *
  * \note Applying f to the ansatz basis can be done by passing f^T (the transposed of f)
  *
  * \sa local_binary_to_unary_element_integrand
@@ -63,7 +64,7 @@ public:
 
   LocalElementProductIntegrand(ThisType&& source) = default;
 
-  std::unique_ptr<BaseType> copy() const override final
+  std::unique_ptr<BaseType> copy_as_binary_element_integrand() const override final
   {
     return std::make_unique<ThisType>(*this);
   }
@@ -120,9 +121,10 @@ private:
  * \note Note that f can also be given as a scalar value or omitted.
  */
 template <class I, size_t r = 1, class TR = double, class F = double, class AR = TR>
-class LocalIntersectionProductIntegrand : public LocalQuaternaryIntersectionIntegrandInterface<I, r, 1, TR, F, r, 1, AR>
+class LocalCouplingIntersectionProductIntegrand
+  : public LocalQuaternaryIntersectionIntegrandInterface<I, r, 1, TR, F, r, 1, AR>
 {
-  using ThisType = LocalIntersectionProductIntegrand;
+  using ThisType = LocalCouplingIntersectionProductIntegrand;
   using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I, r, 1, TR, F, r, 1, AR>;
 
 public:
@@ -135,23 +137,23 @@ public:
 
   using GridFunctionType = XT::Functions::GridFunctionInterface<E, r, r, F>;
 
-  LocalIntersectionProductIntegrand(XT::Functions::GridFunction<E, r, r, F> weight = {1.})
+  LocalCouplingIntersectionProductIntegrand(XT::Functions::GridFunction<E, r, r, F> weight = {1.})
     : BaseType()
     , weight_(weight)
     , local_weight_in_(weight_.local_function())
     , local_weight_out_(weight_.local_function())
   {}
 
-  LocalIntersectionProductIntegrand(const ThisType& other)
+  LocalCouplingIntersectionProductIntegrand(const ThisType& other)
     : BaseType(other.parameter_type())
     , weight_(other.weight_)
     , local_weight_in_(weight_.local_function())
     , local_weight_out_(weight_.local_function())
   {}
 
-  LocalIntersectionProductIntegrand(ThisType&& source) = default;
+  LocalCouplingIntersectionProductIntegrand(ThisType&& source) = default;
 
-  std::unique_ptr<BaseType> copy() const override final
+  std::unique_ptr<BaseType> copy_as_quaternary_intersection_integrand() const override final
   {
     return std::make_unique<ThisType>(*this);
   }
@@ -240,6 +242,115 @@ private:
   mutable std::vector<typename LocalTestBasisType::RangeType> test_basis_out_values_;
   mutable std::vector<typename LocalAnsatzBasisType::RangeType> ansatz_basis_in_values_;
   mutable std::vector<typename LocalAnsatzBasisType::RangeType> ansatz_basis_out_values_;
+}; // class LocalCouplingIntersectionProductIntegrand
+
+
+/**
+ * Given an inducing function f, computes `<f> * phi * psi` for all combinations of phi and psi in the bases, where
+ * `<f>` denotes the average of f evaluated on the inside and evaluated on the outside.
+ *
+ * \note Note that f can also be given as a scalar value or omitted.
+ */
+template <class I, size_t r = 1, class TR = double, class F = double, class AR = TR>
+class LocalIntersectionProductIntegrand : public LocalBinaryIntersectionIntegrandInterface<I, r, 1, TR, F, r, 1, AR>
+{
+  using ThisType = LocalIntersectionProductIntegrand;
+  using BaseType = LocalBinaryIntersectionIntegrandInterface<I, r, 1, TR, F, r, 1, AR>;
+
+public:
+  using BaseType::d;
+  using typename BaseType::DomainType;
+  using typename BaseType::E;
+  using typename BaseType::IntersectionType;
+  using typename BaseType::LocalAnsatzBasisType;
+  using typename BaseType::LocalTestBasisType;
+
+  using GridFunctionType = XT::Functions::GridFunctionInterface<E, r, r, F>;
+
+  LocalIntersectionProductIntegrand(XT::Functions::GridFunction<E, r, r, F> weight = {1.}, bool use_inside_bases = true)
+    : BaseType()
+    , weight_(weight)
+    , local_weight_(weight_.local_function())
+    , inside_(use_inside_bases)
+  {}
+
+  LocalIntersectionProductIntegrand(const ThisType& other)
+    : BaseType(other.parameter_type())
+    , weight_(other.weight_)
+    , local_weight_(weight_.local_function())
+    , inside_(other.inside_)
+  {}
+
+  LocalIntersectionProductIntegrand(ThisType&& source) = default;
+
+  std::unique_ptr<BaseType> copy_as_binary_intersection_integrand() const override final
+  {
+    return std::make_unique<ThisType>(*this);
+  }
+
+protected:
+  void post_bind(const IntersectionType& intersct) override final
+  {
+    if (inside_)
+      local_weight_->bind(intersct.inside());
+    else {
+      DUNE_THROW_IF(!intersct.neighbor(), Exceptions::integrand_error, "");
+      local_weight_->bind(intersct.outside());
+    }
+  } // ... post_bind(...)
+
+public:
+  bool inside() const override final
+  {
+    return inside_;
+  }
+
+  int order(const LocalTestBasisType& test_basis,
+            const LocalAnsatzBasisType& ansatz_basis,
+            const XT::Common::Parameter& param = {}) const override final
+  {
+    return local_weight_->order(param) + test_basis.order(param) + ansatz_basis.order(param);
+  }
+
+  using BaseType::evaluate;
+
+  void evaluate(const LocalTestBasisType& test_basis,
+                const LocalAnsatzBasisType& ansatz_basis,
+                const DomainType& point_in_reference_intersection,
+                DynamicMatrix<F>& result,
+                const XT::Common::Parameter& param = {}) const override final
+  {
+    // prepare sotrage
+    this->ensure_size_and_clear_results(test_basis, ansatz_basis, result, param);
+    // evaluate
+    typename XT::Functions::GridFunction<E, r, r, F>::LocalFunctionType::RangeReturnType weight;
+    if (inside_) {
+      const auto point_in_inside_reference_element =
+          this->intersection().geometryInInside().global(point_in_reference_intersection);
+      test_basis.evaluate(point_in_inside_reference_element, test_basis_values_, param);
+      ansatz_basis.evaluate(point_in_inside_reference_element, ansatz_basis_values_, param);
+      weight = local_weight_->evaluate(point_in_inside_reference_element, param);
+    } else {
+      const auto point_in_outside_reference_element =
+          this->intersection().geometryInOutside().global(point_in_reference_intersection);
+      test_basis.evaluate(point_in_outside_reference_element, test_basis_values_, param);
+      ansatz_basis.evaluate(point_in_outside_reference_element, ansatz_basis_values_, param);
+      weight = local_weight_->evaluate(point_in_outside_reference_element, param);
+    }
+    // compute integrand
+    const size_t rows = test_basis.size(param);
+    const size_t cols = ansatz_basis.size(param);
+    for (size_t ii = 0; ii < rows; ++ii)
+      for (size_t jj = 0; jj < cols; ++jj)
+        result[ii][jj] = (weight * ansatz_basis_values_[jj]) * test_basis_values_[ii];
+  } // ... evaluate(...)
+
+private:
+  XT::Functions::GridFunction<E, r, r, F> weight_;
+  std::unique_ptr<typename XT::Functions::GridFunction<E, r, r, F>::LocalFunctionType> local_weight_;
+  const bool inside_;
+  mutable std::vector<typename LocalTestBasisType::RangeType> test_basis_values_;
+  mutable std::vector<typename LocalAnsatzBasisType::RangeType> ansatz_basis_values_;
 }; // class LocalIntersectionProductIntegrand
 
 

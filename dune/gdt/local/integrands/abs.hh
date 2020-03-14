@@ -30,7 +30,7 @@ public:
   using typename BaseType::DomainType;
   using typename BaseType::LocalBasisType;
 
-  std::unique_ptr<BaseType> copy() const
+  std::unique_ptr<BaseType> copy_as_unary_element_integrand() const
   {
     return std::make_unique<ThisType>();
   }
