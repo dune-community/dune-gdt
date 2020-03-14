@@ -52,7 +52,7 @@ public:
 
   LocalLaplaceIntegrand(ThisType&& source) = default;
 
-  std::unique_ptr<BaseType> copy() const override final
+  std::unique_ptr<BaseType> copy_as_binary_element_integrand() const override final
   {
     return std::make_unique<ThisType>(*this);
   }

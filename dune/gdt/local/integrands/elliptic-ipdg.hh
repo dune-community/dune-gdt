@@ -81,7 +81,7 @@ public:
 
   InnerCoupling(ThisType&& source) = default;
 
-  std::unique_ptr<BaseType> copy() const override final
+  std::unique_ptr<BaseType> copy_as_quaternary_intersection_integrand() const override final
   {
     return std::make_unique<ThisType>(*this);
   }
@@ -253,7 +253,7 @@ public:
 
   DirichletCoupling(ThisType&& source) = default;
 
-  std::unique_ptr<BaseType> copy() const override final
+  std::unique_ptr<BaseType> copy_as_quaternary_intersection_integrand() const override final
   {
     return std::make_unique<ThisType>(*this);
   }
@@ -558,7 +558,7 @@ public:
 
   Inner(ThisType&& source) = default;
 
-  std::unique_ptr<BaseType> copy() const override final
+  std::unique_ptr<BaseType> copy_as_quaternary_intersection_integrand() const override final
   {
     return std::make_unique<ThisType>(*this);
   }
@@ -1008,7 +1008,7 @@ private:
  */
 template <class I, class F = double, Method method = default_method>
 class DXT_DEPRECATED_MSG(
-    "Use LocalLaplaceIPDGIntegrands::DirichletCoupling + LocalIPDGIntegrands::boundaryPenalty instead (10.08.2019)!")
+    "Use LocalLaplaceIPDGIntegrands::DirichletCoupling + LocalIPDGIntegrands::Penalty instead (10.08.2019)!")
     DirichletBoundaryLhs : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
 {
   using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>;
@@ -1047,7 +1047,7 @@ public:
 
   DirichletBoundaryLhs(ThisType&& source) = default;
 
-  std::unique_ptr<BaseType> copy() const override final
+  std::unique_ptr<BaseType> copy_as_quaternary_intersection_integrand() const override final
   {
     return std::make_unique<ThisType>(*this);
   }
@@ -1492,7 +1492,7 @@ public:
 
   InnerOnlyPenalty(ThisType&& source) = default;
 
-  std::unique_ptr<BaseType> copy() const override final
+  std::unique_ptr<BaseType> copy_as_quaternary_intersection_integrand() const override final
   {
     return std::make_unique<ThisType>(*this);
   }
@@ -1901,8 +1901,8 @@ private:
  * \sa [Epshteyn, Riviere, 2007] for the meaning of beta
  */
 template <class I, class F = double, Method method = default_method>
-class DXT_DEPRECATED_MSG("Use LocalIPDGIntegrands::BoundaryPenalty instead (05.08.2019)!")
-    DirichletBoundaryLhsOnlyPenalty : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
+class DXT_DEPRECATED_MSG("Use LocalIPDGIntegrands::Penalty instead (05.08.2019)!") DirichletBoundaryLhsOnlyPenalty
+  : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
 {
   using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>;
   using ThisType = DirichletBoundaryLhsOnlyPenalty<I, F, method>;
@@ -1940,7 +1940,7 @@ public:
 
   DirichletBoundaryLhsOnlyPenalty(ThisType&& source) = default;
 
-  std::unique_ptr<BaseType> copy() const override final
+  std::unique_ptr<BaseType> copy_as_quaternary_intersection_integrand() const override final
   {
     return std::make_unique<ThisType>(*this);
   }

@@ -19,6 +19,7 @@
 #include <dune/xt/grid/bound-object.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/functions/interfaces/element-functions.hh>
+#include <dune/xt/functions/grid-function.hh>
 
 #include <dune/gdt/exceptions.hh>
 
@@ -26,18 +27,32 @@ namespace Dune {
 namespace GDT {
 
 
-// forwards (required for operator+, include are below)
-template <class E, size_t r, size_t rC, class R, class F>
-class LocalUnaryElementIntegrandSum;
+// forwards (required for operator+), includes are below
+// template <class E, size_t r, size_t rC, class R, class F>
+// class LocalUnaryElementIntegrandSum;
 
-template <class E, size_t t_r, size_t t_RC, class TF, class F, size_t a_r, size_t a_rC, class AF>
-class LocalBinaryElementIntegrandSum;
+// template <class E, size_t t_r, size_t t_RC, class TF, class F, size_t a_r, size_t a_rC, class AF>
+// class LocalBinaryElementIntegrandSum;
 
 template <class I, size_t r, size_t rC, class R, class F>
+class LocalUnaryIntersectionIntegrandSum;
+
+template <class I, size_t t_r, size_t t_rC, class TF, class F, size_t a_r, size_t a_rC, class AF>
 class LocalBinaryIntersectionIntegrandSum;
 
 template <class I, size_t t_r, size_t t_rC, class TF, class F, size_t a_r, size_t a_rC, class AF>
+class LocalUnaryAndBinaryIntersectionIntegrandSum;
+
+template <class I, size_t t_r, size_t t_rC, class TF, class F, size_t a_r, size_t a_rC, class AF>
 class LocalQuaternaryIntersectionIntegrandSum;
+
+
+// forwards (required for with_ansatz), includes are below
+template <class E, size_t t_r, size_t t_rC, class TF, class F, size_t a_r, size_t a_rC, class AF>
+class LocalBinaryToUnaryElementIntegrand;
+
+template <class I, size_t t_r, size_t t_rC, class TF, class F, size_t a_r, size_t a_rC, class AF>
+class LocalBinaryToUnaryIntersectionIntegrand;
 
 
 /**
@@ -81,7 +96,7 @@ public:
 
   virtual ~LocalUnaryElementIntegrandInterface() = default;
 
-  virtual std::unique_ptr<ThisType> copy() const = 0;
+  virtual std::unique_ptr<ThisType> copy_as_unary_element_integrand() const = 0;
 
   /**
    * Returns the polynomial order of the integrand, given the basis.
@@ -172,7 +187,13 @@ public:
 
   virtual ~LocalBinaryElementIntegrandInterface() = default;
 
-  virtual std::unique_ptr<ThisType> copy() const = 0;
+  template <class... Args>
+  LocalBinaryToUnaryElementIntegrand<E, t_r, t_rC, TR, F, a_r, a_rC, AR> with_ansatz(Args&&... args) const
+  {
+    return LocalBinaryToUnaryElementIntegrand<E, t_r, t_rC, TR, F, a_r, a_rC, AR>(*this, std::forward<Args>(args)...);
+  }
+
+  virtual std::unique_ptr<ThisType> copy_as_binary_element_integrand() const = 0;
 
   /**
    * Returns the polynomial order of the integrand, given the bases.
@@ -208,12 +229,85 @@ public:
     evaluate(test_basis, ansatz_basis, point_in_reference_element, result, param);
     return result;
   }
+
+protected:
+  void ensure_size_and_clear_results(const LocalTestBasisType& test_basis,
+                                     const LocalAnsatzBasisType& ansatz_basis,
+                                     DynamicMatrix<F>& result,
+                                     const XT::Common::Parameter& param) const
+  {
+    const size_t rows = test_basis.size(param);
+    const size_t cols = ansatz_basis.size(param);
+    if (result.rows() < rows || result.cols() < cols)
+      result.resize(rows, cols);
+    result *= 0;
+  } // ... ensure_size_and_clear_results(...)
 }; // class LocalBinaryElementIntegrandInterface
 
 
+template <class I,
+          size_t t_r = 1,
+          size_t t_rC = 1,
+          class TR = double,
+          class F_ = double,
+          size_t a_r = t_r,
+          size_t a_rC = t_rC,
+          class AR = TR>
+class LocalUnaryAndBinaryElementIntegrandInterface
+  : public LocalUnaryElementIntegrandInterface<I, t_r, t_rC, TR, F_>
+  , public LocalBinaryElementIntegrandInterface<I, t_r, t_rC, TR, F_, a_r, a_rC, AR>
+{
+
+  using ThisType = LocalUnaryAndBinaryElementIntegrandInterface<I, t_r, t_rC, TR, F_, a_r, a_rC, AR>;
+
+protected:
+  using UnaryBaseType = LocalUnaryElementIntegrandInterface<I, t_r, t_rC, TR, F_>;
+  using BinaryBaseType = LocalBinaryElementIntegrandInterface<I, t_r, t_rC, TR, F_, a_r, a_rC, AR>;
+
+public:
+  /// \name Members and typedefs required for disambiuation.
+  /// \{
+
+  using typename UnaryBaseType::D;
+  using typename UnaryBaseType::DomainType;
+  using typename UnaryBaseType::E;
+  using typename UnaryBaseType::ElementType;
+  using typename UnaryBaseType::F;
+  using UnaryBaseType::d;
+
+  /// \}
+
+  LocalUnaryAndBinaryElementIntegrandInterface(const XT::Common::ParameterType& param_type = {})
+    : UnaryBaseType(param_type)
+    , BinaryBaseType(param_type)
+  {}
+
+  virtual ~LocalUnaryAndBinaryElementIntegrandInterface() = default;
+
+  virtual std::unique_ptr<ThisType> copy_as_unary_and_binary_element_integrand() const = 0;
+
+  //  using UnaryBaseType::operator+;
+  //  using BinaryBaseType::operator+;
+
+  //  LocalUnaryAndBinaryElementIntegrandSum<I, t_r, t_rC, TR, F, a_r, a_rC, AR> operator+(const ThisType& other) const
+  //  {
+  //    return LocalUnaryAndBinaryElementIntegrandSum<I, t_r, t_rC, TR, F, a_r, a_rC, AR>(*this, other);
+  //  }
+
+  /// \name Methods required for disambiuation.
+  /// \{
+
+  using UnaryBaseType::is_parametric;
+  using UnaryBaseType::parameter_type;
+  using UnaryBaseType::parse_parameter;
+
+  /// \}
+}; // class LocalUnaryAndBinaryElementIntegrandInterface
+
+
 /**
- * Interface for integrands in integrals over grid intersections, which depend on two arguments (usually the bases on
- * the inside and outside the in an integral-based functional).
+ * Interface for integrands in integrals over grid intersections, which depend on one argument (usually the test basis
+ * on the inside of the intersection in an integral-based functional).
  *
  * \note Regarding SMP: the integrand is copied for each thread, so
  *       - no shared mutable state between copies to be thread safe, but
@@ -224,14 +318,13 @@ template <class Intersection,
           size_t range_dim_cols = 1,
           class RangeField = double,
           class Field = double>
-class LocalBinaryIntersectionIntegrandInterface
-  : public XT::Common::ParametricInterface
-  , public XT::Grid::IntersectionBoundObject<Intersection>
+class LocalUnaryIntersectionIntegrandInterface
+  : virtual public XT::Common::ParametricInterface
+  , virtual public XT::Grid::IntersectionBoundObject<Intersection>
 {
   static_assert(XT::Grid::is_intersection<Intersection>::value, "");
 
-  using ThisType =
-      LocalBinaryIntersectionIntegrandInterface<Intersection, range_dim, range_dim_cols, RangeField, Field>;
+  using ThisType = LocalUnaryIntersectionIntegrandInterface<Intersection, range_dim, range_dim_cols, RangeField, Field>;
 
 public:
   using typename XT::Grid::IntersectionBoundObject<Intersection>::IntersectionType;
@@ -250,21 +343,159 @@ public:
   using DomainType = FieldVector<D, d - 1>;
   using LocalBasisType = XT::Functions::ElementFunctionSetInterface<E, r, rC, RF>;
 
-  LocalBinaryIntersectionIntegrandInterface(const XT::Common::ParameterType& param_type = {})
+  LocalUnaryIntersectionIntegrandInterface(const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type)
   {}
 
-  virtual ~LocalBinaryIntersectionIntegrandInterface() = default;
+  virtual ~LocalUnaryIntersectionIntegrandInterface() = default;
 
-  virtual std::unique_ptr<ThisType> copy() const = 0;
+  virtual std::unique_ptr<ThisType> copy_as_unary_intersection_integrand() const = 0;
+
+  LocalUnaryIntersectionIntegrandSum<I, r, rC, RF, F> operator+(const ThisType& other) const
+  {
+    return LocalUnaryIntersectionIntegrandSum<I, r, rC, RF, F>(*this, other);
+  }
+
+  /**
+   * Flag to document which element the basis is expected to be bound to.
+   */
+  virtual bool inside() const
+  {
+    return true;
+  }
 
   /**
    * Returns the polynomial order of the integrand, given the bases.
    *
    * \note Will throw Exceptions::not_bound_to_an_element_yet error if not bound yet!
    **/
-  virtual int order(const LocalBasisType& inside_basis,
-                    const LocalBasisType& outside_basis,
+  virtual int order(const LocalBasisType& basis, const XT::Common::Parameter& param = {}) const = 0;
+
+  /**
+   * Computes the evaluation of this integrand at the given point for each basis function.
+   *
+   * \note Will throw Exceptions::not_bound_to_an_element_yet error if not bound yet!
+   **/
+  virtual void evaluate(const LocalBasisType& basis,
+                        const DomainType& point_in_reference_intersection,
+                        DynamicVector<F>& result,
+                        const XT::Common::Parameter& param = {}) const = 0;
+
+  /**
+   * This method is provided for convenience and should not be used within library code.
+   *
+   * \note Will throw Exceptions::not_bound_to_an_element_yet error if not bound yet!
+   **/
+  virtual DynamicVector<F> evaluate(const LocalBasisType& basis,
+                                    const DomainType& point_in_reference_intersection,
+                                    const XT::Common::Parameter& param = {}) const
+  {
+    DynamicVector<F> result(basis.size(param), 0);
+    evaluate(basis, point_in_reference_intersection, result, param);
+    return result;
+  }
+
+protected:
+  void ensure_size_and_clear_results(const LocalBasisType& basis,
+                                     DynamicVector<F>& result,
+                                     const XT::Common::Parameter& param) const
+  {
+    const size_t size = basis.size(param);
+    if (result.size() < size)
+      result.resize(size);
+    result *= 0;
+  }
+}; // class LocalUnaryIntersectionIntegrandInterface
+
+
+/**
+ * Interface for integrands in integrals over grid intersections, which depend on two arguments (usually the test and
+ * ansatz bases on the inside of the intersection in an integral-based functional).
+ *
+ * \note Regarding SMP: the integrand is copied for each thread, so
+ *       - no shared mutable state between copies to be thread safe, but
+ *       - local mutable state is ok.
+ */
+template <class Intersection,
+          size_t test_range_dim = 1,
+          size_t test_range_dim_cols = 1,
+          class TestRangeField = double,
+          class Field = double,
+          size_t ansatz_range_dim = test_range_dim,
+          size_t ansatz_range_dim_cols = test_range_dim_cols,
+          class AnsatzRangeField = TestRangeField>
+class LocalBinaryIntersectionIntegrandInterface
+  : virtual public XT::Common::ParametricInterface
+  , virtual public XT::Grid::IntersectionBoundObject<Intersection>
+{
+  static_assert(XT::Grid::is_intersection<Intersection>::value, "");
+
+  using ThisType = LocalBinaryIntersectionIntegrandInterface<Intersection,
+                                                             test_range_dim,
+                                                             test_range_dim_cols,
+                                                             TestRangeField,
+                                                             Field,
+                                                             ansatz_range_dim,
+                                                             ansatz_range_dim_cols,
+                                                             AnsatzRangeField>;
+
+public:
+  using typename XT::Grid::IntersectionBoundObject<Intersection>::IntersectionType;
+  using ElementType = XT::Grid::extract_inside_element_t<Intersection>;
+
+  using I = Intersection;
+  using E = ElementType;
+  using D = typename ElementType::Geometry::ctype;
+  static const constexpr size_t d = E::dimension;
+  using F = Field;
+
+  using TR = TestRangeField;
+  static const constexpr size_t t_r = test_range_dim;
+  static const constexpr size_t t_rC = test_range_dim_cols;
+
+  using AR = AnsatzRangeField;
+  static const constexpr size_t a_r = ansatz_range_dim;
+  static const constexpr size_t a_rC = ansatz_range_dim_cols;
+
+  using DomainType = FieldVector<D, d - 1>;
+  using LocalTestBasisType = XT::Functions::ElementFunctionSetInterface<E, t_r, t_rC, TR>;
+  using LocalAnsatzBasisType = XT::Functions::ElementFunctionSetInterface<E, a_r, a_rC, AR>;
+
+  LocalBinaryIntersectionIntegrandInterface(const XT::Common::ParameterType& param_type = {})
+    : XT::Common::ParametricInterface(param_type)
+  {}
+
+  virtual ~LocalBinaryIntersectionIntegrandInterface() = default;
+
+  template <class... Args>
+  LocalBinaryToUnaryIntersectionIntegrand<I, t_r, t_rC, TR, F, a_r, a_rC, AR> with_ansatz(Args&&... args) const
+  {
+    return LocalBinaryToUnaryIntersectionIntegrand<I, t_r, t_rC, TR, F, a_r, a_rC, AR>(*this,
+                                                                                       std::forward<Args>(args)...);
+  }
+
+  virtual std::unique_ptr<ThisType> copy_as_binary_intersection_integrand() const = 0;
+
+  LocalBinaryIntersectionIntegrandSum<I, t_r, t_rC, TR, F, a_r, a_rC, AR> operator+(const ThisType& other) const
+  {
+    return LocalBinaryIntersectionIntegrandSum<I, t_r, t_rC, TR, F, a_r, a_rC, AR>(*this, other);
+  }
+
+  /**
+   * Flag to document which element the bases are expected to be bound to.
+   */
+  virtual bool inside() const
+  {
+    return true;
+  }
+
+  /**
+   * Returns the polynomial order of the integrand, given the bases.
+   *
+   * \note Will throw Exceptions::not_bound_to_an_element_yet error if not bound yet!
+   **/
+  virtual int order(const LocalTestBasisType& test_basis,
+                    const LocalAnsatzBasisType& ansatz_basis,
                     const XT::Common::Parameter& param = {}) const = 0;
 
   /**
@@ -272,9 +503,9 @@ public:
    *
    * \note Will throw Exceptions::not_bound_to_an_element_yet error if not bound yet!
    **/
-  virtual void evaluate(const LocalBasisType& inside_basis,
-                        const LocalBasisType& outside_basis,
-                        const DomainType& point_in_reference_element,
+  virtual void evaluate(const LocalTestBasisType& test_basis,
+                        const LocalAnsatzBasisType& ansatz_basis,
+                        const DomainType& point_in_reference_intersection,
                         DynamicMatrix<F>& result,
                         const XT::Common::Parameter& param = {}) const = 0;
 
@@ -283,16 +514,95 @@ public:
    *
    * \note Will throw Exceptions::not_bound_to_an_element_yet error if not bound yet!
    **/
-  virtual DynamicMatrix<F> evaluate(const LocalBasisType& inside_basis,
-                                    const LocalBasisType& outside_basis,
-                                    const DomainType& point_in_reference_element,
+  virtual DynamicMatrix<F> evaluate(const LocalTestBasisType& test_basis,
+                                    const LocalAnsatzBasisType& ansatz_basis,
+                                    const DomainType& point_in_reference_intersection,
                                     const XT::Common::Parameter& param = {}) const
   {
-    DynamicMatrix<F> result(inside_basis.size(param), outside_basis.size(param), 0);
-    evaluate(inside_basis, inside_basis, point_in_reference_element, result, param);
+    DynamicMatrix<F> result(test_basis.size(param), ansatz_basis.size(param), 0);
+    evaluate(test_basis, ansatz_basis, point_in_reference_intersection, result, param);
     return result;
   }
+
+protected:
+  void ensure_size_and_clear_results(const LocalTestBasisType& test_basis,
+                                     const LocalAnsatzBasisType& ansatz_basis,
+                                     DynamicMatrix<F>& result,
+                                     const XT::Common::Parameter& param) const
+  {
+    const size_t rows = test_basis.size(param);
+    const size_t cols = ansatz_basis.size(param);
+    if (result.rows() < rows || result.cols() < cols)
+      result.resize(rows, cols);
+    result *= 0;
+  } // ... ensure_size_and_clear_results(...)
 }; // class LocalBinaryIntersectionIntegrandInterface
+
+
+/**
+ * \attention We do not handle the case when the parametric nature of the integrand as a unary one differs from the
+ *            integrand as a binary one!
+ */
+template <class I,
+          size_t t_r = 1,
+          size_t t_rC = 1,
+          class TR = double,
+          class F_ = double,
+          size_t a_r = t_r,
+          size_t a_rC = t_rC,
+          class AR = TR>
+class LocalUnaryAndBinaryIntersectionIntegrandInterface
+  : public LocalUnaryIntersectionIntegrandInterface<I, t_r, t_rC, TR, F_>
+  , public LocalBinaryIntersectionIntegrandInterface<I, t_r, t_rC, TR, F_, a_r, a_rC, AR>
+{
+
+  using ThisType = LocalUnaryAndBinaryIntersectionIntegrandInterface<I, t_r, t_rC, TR, F_, a_r, a_rC, AR>;
+
+protected:
+  using UnaryBaseType = LocalUnaryIntersectionIntegrandInterface<I, t_r, t_rC, TR, F_>;
+  using BinaryBaseType = LocalBinaryIntersectionIntegrandInterface<I, t_r, t_rC, TR, F_, a_r, a_rC, AR>;
+
+public:
+  /// \name Members and typedefs required for disambiuation.
+  /// \{
+
+  using typename UnaryBaseType::D;
+  using typename UnaryBaseType::DomainType;
+  using typename UnaryBaseType::E;
+  using typename UnaryBaseType::ElementType;
+  using typename UnaryBaseType::F;
+  using typename UnaryBaseType::IntersectionType;
+  using UnaryBaseType::d;
+
+  /// \}
+
+  LocalUnaryAndBinaryIntersectionIntegrandInterface(const XT::Common::ParameterType& param_type = {})
+    : UnaryBaseType(param_type)
+    , BinaryBaseType(param_type)
+  {}
+
+  virtual ~LocalUnaryAndBinaryIntersectionIntegrandInterface() = default;
+
+  virtual std::unique_ptr<ThisType> copy_as_unary_and_binary_intersection_integrand() const = 0;
+
+  using UnaryBaseType::operator+;
+  using BinaryBaseType::operator+;
+
+  LocalUnaryAndBinaryIntersectionIntegrandSum<I, t_r, t_rC, TR, F, a_r, a_rC, AR> operator+(const ThisType& other) const
+  {
+    return LocalUnaryAndBinaryIntersectionIntegrandSum<I, t_r, t_rC, TR, F, a_r, a_rC, AR>(*this, other);
+  }
+
+  /// \name Methods required for disambiuation.
+  /// \{
+
+  using UnaryBaseType::bind;
+  using UnaryBaseType::intersection;
+  using UnaryBaseType::parameter_type;
+  using UnaryBaseType::parse_parameter;
+
+  /// \}
+}; // class LocalUnaryAndBinaryIntersectionIntegrandInterface
 
 
 template <class Intersection,
@@ -346,7 +656,7 @@ public:
 
   virtual ~LocalQuaternaryIntersectionIntegrandInterface() = default;
 
-  virtual std::unique_ptr<ThisType> copy() const = 0;
+  virtual std::unique_ptr<ThisType> copy_as_quaternary_intersection_integrand() const = 0;
 
   LocalQuaternaryIntersectionIntegrandSum<I, t_r, t_rC, TR, F, a_r, a_rC, AR> operator+(const ThisType& other) const
   {

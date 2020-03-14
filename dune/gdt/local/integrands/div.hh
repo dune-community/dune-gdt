@@ -72,8 +72,6 @@ protected:
  * bases.
  *
  * \note Note that f can also be given as a scalar value or omitted.
- *
- * \sa local_binary_to_unary_element_integrand
  */
 template <class E, class TR = double, class F = double, class AR = TR>
 class LocalElementAnsatzValueTestDivProductIntegrand
@@ -123,7 +121,7 @@ public:
 
   LocalElementAnsatzValueTestDivProductIntegrand(ThisType&& source) = default;
 
-  std::unique_ptr<BaseType> copy() const override final
+  std::unique_ptr<BaseType> copy_as_binary_element_integrand() const override final
   {
     return std::make_unique<ThisType>(*this);
   }
@@ -218,7 +216,7 @@ public:
 
   LocalElementAnsatzDivTestValueProductIntegrand(ThisType&& source) = default;
 
-  std::unique_ptr<BaseType> copy() const override final
+  std::unique_ptr<BaseType> copy_as_binary_element_integrand() const override final
   {
     return std::make_unique<ThisType>(*this);
   }

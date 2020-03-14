@@ -93,7 +93,7 @@ public:
 
   InnerPenalty(ThisType&& source) = default;
 
-  std::unique_ptr<BaseType> copy() const override final
+  std::unique_ptr<BaseType> copy_as_quaternary_intersection_integrand() const override final
   {
     return std::make_unique<ThisType>(*this);
   }
@@ -193,9 +193,9 @@ private:
 
 
 template <class I>
-class BoundaryPenalty : public LocalQuaternaryIntersectionIntegrandInterface<I>
+class BoundaryPenalty : public LocalBinaryIntersectionIntegrandInterface<I>
 {
-  using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I>;
+  using BaseType = LocalBinaryIntersectionIntegrandInterface<I>;
   using ThisType = BoundaryPenalty<I>;
 
 public:
@@ -228,7 +228,7 @@ public:
 
   BoundaryPenalty(ThisType&& source) = default;
 
-  std::unique_ptr<BaseType> copy() const override final
+  std::unique_ptr<BaseType> copy_as_binary_intersection_integrand() const override final
   {
     return std::make_unique<ThisType>(*this);
   }
@@ -240,54 +240,48 @@ protected:
   }
 
 public:
-  int order(const LocalTestBasisType& test_basis_inside,
-            const LocalAnsatzBasisType& ansatz_basis_inside,
-            const LocalTestBasisType& /*test_basis_outside*/,
-            const LocalAnsatzBasisType& /*ansatz_basis_outside*/,
-            const XT::Common::Parameter& param = {}) const override final
+  bool inside() const override final
   {
-    return local_weight_->order(param) + test_basis_inside.order(param) + ansatz_basis_inside.order(param);
+    return true; // We expect the bases to be bound to the inside (see evaluate).
   }
 
-  void evaluate(const LocalTestBasisType& test_basis_inside,
-                const LocalAnsatzBasisType& ansatz_basis_inside,
-                const LocalTestBasisType& test_basis_outside,
-                const LocalAnsatzBasisType& ansatz_basis_outside,
+  int order(const LocalTestBasisType& test_basis,
+            const LocalAnsatzBasisType& ansatz_basis,
+            const XT::Common::Parameter& param = {}) const override final
+  {
+    return local_weight_->order(param) + test_basis.order(param) + ansatz_basis.order(param);
+  }
+
+  using BaseType::evaluate;
+
+  void evaluate(const LocalTestBasisType& test_basis,
+                const LocalAnsatzBasisType& ansatz_basis,
                 const DomainType& point_in_reference_intersection,
-                DynamicMatrix<F>& result_in_in,
-                DynamicMatrix<F>& result_in_out,
-                DynamicMatrix<F>& result_out_in,
-                DynamicMatrix<F>& result_out_out,
+                DynamicMatrix<F>& result,
                 const XT::Common::Parameter& param = {}) const override final
   {
     // Prepare sotrage, ...
-    this->ensure_size_and_clear_results(test_basis_inside,
-                                        ansatz_basis_inside,
-                                        test_basis_outside,
-                                        ansatz_basis_outside,
-                                        result_in_in,
-                                        result_in_out,
-                                        result_out_in,
-                                        result_out_out,
-                                        param);
+    const size_t rows = test_basis.size(param);
+    const size_t cols = ansatz_basis.size(param);
+    if (result.rows() < rows || result.cols() < cols)
+      result.resize(rows, cols);
+    result *= 0;
     // evaluate ...
     const auto point_in_inside_reference_element =
         this->intersection().geometryInInside().global(point_in_reference_intersection);
     const auto normal = this->intersection().unitOuterNormal(point_in_reference_intersection);
     // ... basis functions ...
-    test_basis_inside.evaluate(point_in_inside_reference_element, test_basis_values_, param);
-    ansatz_basis_inside.evaluate(point_in_inside_reference_element, ansatz_basis_values_, param);
+    test_basis.evaluate(point_in_inside_reference_element, test_basis_values_, param);
+    ansatz_basis.evaluate(point_in_inside_reference_element, ansatz_basis_values_, param);
     // ... and data functions, ....
     const auto weight = local_weight_->evaluate(point_in_inside_reference_element, param);
     // compute the weighted penalty ...
     const auto h = intersection_diameter_(this->intersection());
     const auto penalty = (penalty_ * (normal * (weight * normal))) / h;
     // and finally compute integrand.
-    const size_t rows = test_basis_inside.size(param);
-    const size_t cols = ansatz_basis_inside.size(param);
     for (size_t ii = 0; ii < rows; ++ii)
       for (size_t jj = 0; jj < cols; ++jj)
-        result_in_in[ii][jj] += penalty * ansatz_basis_values_[jj] * test_basis_values_[ii];
+        result[ii][jj] += penalty * ansatz_basis_values_[jj] * test_basis_values_[ii];
   } // ... evaluate(...)
 
 private:
