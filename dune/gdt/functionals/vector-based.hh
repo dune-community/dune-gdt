@@ -160,10 +160,11 @@ public:
   using typename FunctionalBaseType::SourceVectorType;
 
   using typename WalkerBaseType::ElementType;
+  using typename WalkerBaseType::IntersectionType;
   using ElementFilterType = XT::Grid::ElementFilter<AssemblyGridViewType>;
   using IntersectionFilterType = XT::Grid::IntersectionFilter<AssemblyGridViewType>;
   using ApplyOnAllElements = XT::Grid::ApplyOn::AllElements<AssemblyGridViewType>;
-  using ApplyOnAllIntersection = XT::Grid::ApplyOn::AllIntersections<AssemblyGridViewType>;
+  using ApplyOnAllIntersections = XT::Grid::ApplyOn::AllIntersections<AssemblyGridViewType>;
 
   /**
    * \name Ctors which accept an existing vector into which to assemble.
@@ -232,7 +233,23 @@ public:
         local_functional, param, XT::Grid::ApplyOn::GenericFilteredElements<AssemblyGridViewType>(filter_lambda));
   }
 
-  // similar append for LocalIntersectionFunctionalInterface ...
+  ThisType& append(const LocalIntersectionFunctionalInterface<IntersectionType, r, rC, F, DofFieldType>& local_functional,
+                   const XT::Common::Parameter& param = {},
+                   const IntersectionFilterType& filter = ApplyOnAllIntersections())
+  {
+    LocalIntersectionFunctionalAssembler<V, AssemblyGridViewType, r, rC, F, GV> tmp(
+        this->source_space(), local_functional, VectorStorage::access(), param);
+    this->append(tmp, filter);
+    return *this;
+  }
+
+  ThisType& append(const LocalIntersectionFunctionalInterface<IntersectionType, r, rC, F, DofFieldType>& local_functional,
+                   const XT::Common::Parameter& param,
+                   std::function<bool(const AssemblyGridViewType&, const IntersectionType&)> filter_lambda)
+  {
+    return append(
+        local_functional, param, XT::Grid::ApplyOn::GenericFilteredIntersections<AssemblyGridViewType>(filter_lambda));
+  }
 
   void assemble(const bool use_tbb = false) override final
   {

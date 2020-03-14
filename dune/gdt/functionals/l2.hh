@@ -67,10 +67,8 @@ public:
                            const ElementFilterType& filter = ApplyOnAllElements())
     : BaseType(assembly_grid_view, source_spc, vec)
   {
-    this->append(LocalFunctionalType(local_binary_to_unary_element_integrand(inducing_function, LocalIntegrandType(1)),
-                                     over_integrate),
-                 param,
-                 filter);
+    this->append(
+        LocalFunctionalType(LocalIntegrandType(1).with_ansatz(inducing_function), over_integrate), param, filter);
   }
 
   L2VolumeVectorFunctional(AssemblyGridView assembly_grid_view,
@@ -81,10 +79,8 @@ public:
                            const ElementFilterType& filter = ApplyOnAllElements())
     : BaseType(assembly_grid_view, source_spc)
   {
-    this->append(LocalFunctionalType(local_binary_to_unary_element_integrand(inducing_function, LocalIntegrandType(1)),
-                                     over_integrate),
-                 param,
-                 filter);
+    this->append(
+        LocalFunctionalType(LocalIntegrandType(1).with_ansatz(inducing_function), over_integrate), param, filter);
   }
 }; // class L2VolumeVectorFunctional
 
