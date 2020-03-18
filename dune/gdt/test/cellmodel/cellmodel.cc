@@ -235,12 +235,12 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   , stokes_solver_(std::make_shared<LUSolverType>())
   , ofield_tmp_vec_(2 * size_P_, 0., 0)
   , ofield_tmp_vec2_(2 * size_P_, 0., 0)
-  , ofield_deim_input_dofs_(num_cells_)
-  , Pnat_deim_input_dofs_begin_(num_cells_)
-  , ofield_deim_output_dofs_(num_cells_)
-  , ofield_deim_unique_output_dofs_(num_cells_)
-  , P_deim_output_dofs_(num_cells_)
-  , Pnat_deim_output_dofs_(num_cells_)
+  , ofield_deim_source_dofs_(num_cells_)
+  , Pnat_deim_source_dofs_begin_(num_cells_)
+  , ofield_deim_range_dofs_(num_cells_)
+  , ofield_deim_unique_range_dofs_(num_cells_)
+  , P_deim_range_dofs_(num_cells_)
+  , Pnat_deim_range_dofs_(num_cells_)
   , ofield_deim_entities_(num_cells_)
   , pfield_submatrix_pattern_(make_element_sparsity_pattern(phi_space_, phi_space_, grid_view_))
   , M_pfield_(size_phi_, size_phi_, pfield_submatrix_pattern_, num_mutexes_pfield_)
@@ -291,15 +291,15 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   , pfield_r0_vector_(pfield_rhs_vector_, 0, size_phi_)
   , pfield_r1_vector_(pfield_rhs_vector_, size_phi_, 2 * size_phi_)
   , pfield_r2_vector_(pfield_rhs_vector_, 2 * size_phi_, 3 * size_phi_)
-  , pfield_deim_input_dofs_(num_cells_)
-  , phinat_deim_input_dofs_begin_(num_cells_)
-  , mu_deim_input_dofs_begin_(num_cells_)
-  , pfield_deim_output_dofs_(num_cells_)
-  , pfield_deim_unique_output_dofs_(num_cells_)
-  , phi_deim_output_dofs_(num_cells_)
-  , phinat_deim_output_dofs_(num_cells_)
-  , mu_deim_output_dofs_(num_cells_)
-  , both_mu_and_phi_deim_output_dofs_(num_cells_)
+  , pfield_deim_source_dofs_(num_cells_)
+  , phinat_deim_source_dofs_begin_(num_cells_)
+  , mu_deim_source_dofs_begin_(num_cells_)
+  , pfield_deim_range_dofs_(num_cells_)
+  , pfield_deim_unique_range_dofs_(num_cells_)
+  , phi_deim_range_dofs_(num_cells_)
+  , phinat_deim_range_dofs_(num_cells_)
+  , mu_deim_range_dofs_(num_cells_)
+  , both_mu_and_phi_deim_range_dofs_(num_cells_)
   , pfield_deim_entities_(num_cells_)
   , pfield_tmp_vec_(3 * size_phi_, 0., 0)
   , pfield_tmp_vec2_(3 * size_phi_, 0., 0)
@@ -845,7 +845,7 @@ void CellModelSolver::set_stokes_vec(const VectorType& stokes_vec)
 }
 
 // Sets given dofs of stokes vector to values
-void CellModelSolver::set_stokes_vec_dofs(const VectorType& values, const std::vector<size_t>& dofs)
+void CellModelSolver::set_stokes_vec_dofs(const std::vector<R>& values, const std::vector<size_t>& dofs)
 {
   DUNE_THROW_IF(values.size() != dofs.size(),
                 XT::Common::Exceptions::wrong_input_given,
@@ -863,7 +863,9 @@ void CellModelSolver::set_ofield_vec(const size_t cell, const VectorType& ofield
 }
 
 // Sets given dofs of orientation field vector belonging to cell to values
-void CellModelSolver::set_ofield_vec_dofs(const size_t cell, const VectorType& values, const std::vector<size_t>& dofs)
+void CellModelSolver::set_ofield_vec_dofs(const size_t cell,
+                                          const std::vector<R>& values,
+                                          const std::vector<size_t>& dofs)
 {
   DUNE_THROW_IF(cell >= num_cells_, XT::Common::Exceptions::wrong_input_given, "Invalid cell index");
   DUNE_THROW_IF(values.size() != dofs.size(),
@@ -882,7 +884,9 @@ void CellModelSolver::set_pfield_vec(const size_t cell, const VectorType& pfield
 }
 
 // Sets given dofs of phasefield vector belonging to cell to values
-void CellModelSolver::set_pfield_vec_dofs(const size_t cell, const VectorType& values, const std::vector<size_t>& dofs)
+void CellModelSolver::set_pfield_vec_dofs(const size_t cell,
+                                          const std::vector<R>& values,
+                                          const std::vector<size_t>& dofs)
 {
   DUNE_THROW_IF(cell >= num_cells_, XT::Common::Exceptions::wrong_input_given, "Invalid cell index");
   DUNE_THROW_IF(values.size() != dofs.size(),
@@ -952,217 +956,295 @@ void CellModelSolver::prepare_pfield_operator(const double dt, const size_t cell
   dt_ = dt;
 }
 
-void CellModelSolver::compute_restricted_stokes_dofs(const std::vector<size_t>& output_dofs)
+void CellModelSolver::compute_restricted_stokes_dofs(const std::vector<size_t>& range_dofs)
 {
-  if (!stokes_deim_output_dofs_ || *stokes_deim_output_dofs_ != output_dofs) {
-    const auto& pattern = create_stokes_pattern(u_space_, p_space_);
-    // We need to keep the original output_dofs which is unordered and may contain duplicates, as the restricted
+  if (!stokes_deim_range_dofs_ || *stokes_deim_range_dofs_ != range_dofs) {
+    // We need to keep the original range_dofs which is unordered and may contain duplicates, as the restricted
     // operator will return exactly these dofs. For computations, however, we often need unique dofs.
-    stokes_deim_output_dofs_ = std::make_shared<std::vector<size_t>>(output_dofs);
-    auto& unique_output_dofs = stokes_deim_unique_output_dofs_;
-    unique_output_dofs = output_dofs;
-    std::sort(unique_output_dofs.begin(), unique_output_dofs.end());
-    unique_output_dofs.erase(std::unique(unique_output_dofs.begin(), unique_output_dofs.end()),
-                             unique_output_dofs.end());
+    stokes_deim_range_dofs_ = std::make_shared<std::vector<size_t>>(range_dofs);
+    auto& unique_range_dofs = stokes_deim_unique_range_dofs_;
+    get_unique_deim_dofs(unique_range_dofs, range_dofs, size_u_ + size_p_);
     // sort output into dofs belonging to u and p
-    auto& u_output_dofs = u_deim_output_dofs_;
-    auto& p_output_dofs = p_deim_output_dofs_;
-    u_output_dofs.clear();
-    p_output_dofs.clear();
-    for (const auto& dof : unique_output_dofs) {
+    auto& u_range_dofs = u_deim_range_dofs_;
+    auto& p_range_dofs = p_deim_range_dofs_;
+    u_range_dofs.clear();
+    p_range_dofs.clear();
+    for (const auto& dof : unique_range_dofs) {
       if (dof < size_u_)
-        u_output_dofs.push_back(dof);
+        u_range_dofs.push_back(dof);
       else
-        p_output_dofs.push_back(dof);
+        p_range_dofs.push_back(dof);
     }
-    for (auto& dof : p_output_dofs)
-      dof -= size_u_;
-    // store all entities that contain an output dof
+    subtract_from_dofs(p_range_dofs, size_u_);
+    // store all entities that contain an range dof
     const auto& u_mapper = u_space_.mapper();
     const auto& p_mapper = p_space_.mapper();
     DynamicVector<size_t> global_indices;
     stokes_deim_entities_.clear();
     for (const auto& entity : Dune::elements(grid_view_))
       maybe_add_entity_stokes(
-          entity, global_indices, u_output_dofs, p_output_dofs, stokes_deim_entities_, u_mapper, p_mapper);
-    // get input dofs corresponding to output dofs
-    auto& input_dofs = stokes_deim_input_dofs_;
-    input_dofs.clear();
-    input_dofs.resize(3);
-    // stokes input dofs can be taken from system matrix pattern
-    for (const auto& dof : unique_output_dofs) {
-      const auto& new_input_dofs = pattern.inner(dof);
-      input_dofs[2].insert(input_dofs[2].end(), new_input_dofs.begin(), new_input_dofs.end());
-    }
-    // add phi, phinat, P and Pnat input dofs for all input entities
+          entity, global_indices, u_range_dofs, p_range_dofs, stokes_deim_entities_, u_mapper, p_mapper);
+    // get source dofs corresponding to range dofs
+    auto& source_dofs = stokes_deim_source_dofs_;
+    source_dofs.clear();
+    source_dofs.resize(3);
+    get_deim_source_dofs(source_dofs[2], create_stokes_pattern(u_space_, p_space_), unique_range_dofs);
+    // add phi, phinat, P and Pnat source dofs for all input entities
     const auto& phi_mapper = phi_space_.mapper();
     const auto& P_mapper = p_space_.mapper();
     for (const auto& entity : stokes_deim_entities_) {
       global_indices.resize(phi_mapper.local_size(entity));
       phi_mapper.global_indices(entity, global_indices);
-      input_dofs[0].insert(input_dofs[0].end(), global_indices.begin(), global_indices.end());
+      source_dofs[0].insert(source_dofs[0].end(), global_indices.begin(), global_indices.end());
       for (auto& index : global_indices)
         index += size_phi_;
-      input_dofs[0].insert(input_dofs[0].end(), global_indices.begin(), global_indices.end());
+      source_dofs[0].insert(source_dofs[0].end(), global_indices.begin(), global_indices.end());
       global_indices.resize(P_mapper.local_size(entity));
       P_mapper.global_indices(entity, global_indices);
-      input_dofs[1].insert(input_dofs[1].end(), global_indices.begin(), global_indices.end());
+      source_dofs[1].insert(source_dofs[1].end(), global_indices.begin(), global_indices.end());
       for (auto& index : global_indices)
         index += size_P_;
-      input_dofs[1].insert(input_dofs[1].end(), global_indices.begin(), global_indices.end());
+      source_dofs[1].insert(source_dofs[1].end(), global_indices.begin(), global_indices.end());
     } // entities
     // sort and remove duplicate entries
-    for (size_t ii = 0; ii < 3; ++ii) {
-      std::sort(input_dofs[ii].begin(), input_dofs[ii].end());
-      input_dofs[ii].erase(std::unique(input_dofs[ii].begin(), input_dofs[ii].end()), input_dofs[ii].end());
-    }
+    sort_and_remove_duplicates_in_deim_source_dofs(source_dofs);
   } // if (not already computed)
 } // void compute_restricted_stokes_dofs(...)
 
-void CellModelSolver::compute_restricted_ofield_dofs(const std::vector<size_t>& output_dofs, const size_t cell)
+void CellModelSolver::compute_restricted_ofield_dofs(const std::vector<size_t>& range_dofs, const size_t cell)
 {
-  if (!ofield_deim_output_dofs_[cell] || *ofield_deim_output_dofs_[cell] != output_dofs) {
-    const auto& pattern = ofield_solver_.system_matrix_pattern(ofield_submatrix_pattern_);
-    // We need to keep the original output_dofs which is unordered and may contain duplicates, as the restricted
+  if (!ofield_deim_range_dofs_[cell] || *ofield_deim_range_dofs_[cell] != range_dofs) {
+    // We need to keep the original range_dofs which is unordered and may contain duplicates, as the restricted
     // operator will return exactly these dofs. For computations, however, we often need unique dofs.
-    ofield_deim_output_dofs_[cell] = std::make_shared<std::vector<size_t>>(output_dofs);
-    auto& unique_output_dofs = ofield_deim_unique_output_dofs_[cell];
-    unique_output_dofs = output_dofs;
-    std::sort(unique_output_dofs.begin(), unique_output_dofs.end());
-    unique_output_dofs.erase(std::unique(unique_output_dofs.begin(), unique_output_dofs.end()),
-                             unique_output_dofs.end());
+    ofield_deim_range_dofs_[cell] = std::make_shared<std::vector<size_t>>(range_dofs);
+    auto& unique_range_dofs = ofield_deim_unique_range_dofs_[cell];
+    get_unique_deim_dofs(unique_range_dofs, range_dofs, 2 * size_P_);
     // sort output into dofs belonging to P and Pnat
-    auto& P_output_dofs = P_deim_output_dofs_[cell];
-    auto& Pnat_output_dofs = Pnat_deim_output_dofs_[cell];
-    P_output_dofs.clear();
-    Pnat_output_dofs.clear();
-    for (const auto& dof : unique_output_dofs) {
+    auto& P_range_dofs = P_deim_range_dofs_[cell];
+    auto& Pnat_range_dofs = Pnat_deim_range_dofs_[cell];
+    P_range_dofs.clear();
+    Pnat_range_dofs.clear();
+    for (const auto& dof : unique_range_dofs) {
       if (dof < size_P_)
-        P_output_dofs.push_back(dof);
+        P_range_dofs.push_back(dof);
       else
-        Pnat_output_dofs.push_back(dof);
+        Pnat_range_dofs.push_back(dof);
     }
-    for (auto& dof : Pnat_output_dofs)
-      dof -= size_P_;
-    // store all entities that contain an output dof
+    subtract_from_dofs(Pnat_range_dofs, size_P_);
+    // store all entities that contain a range dof
     const auto& P_mapper = P_space_.mapper();
-    DynamicVector<size_t> global_indices;
-    ofield_deim_entities_[cell].clear();
-    for (const auto& entity : Dune::elements(grid_view_)) {
-      global_indices.resize(P_mapper.local_size(entity));
-      P_mapper.global_indices(entity, global_indices);
-      maybe_add_entity(entity, global_indices, unique_output_dofs, ofield_deim_entities_[cell], size_P_);
-    } // entities
+    get_deim_entities(P_mapper, ofield_deim_entities_[cell], unique_range_dofs, size_P_);
 
-    // get input dofs corresponding to output dofs
-    auto& input_dofs = ofield_deim_input_dofs_[cell];
-    input_dofs.clear();
-    input_dofs.resize(3);
-    // ofield input dofs can be taken from system matrix pattern
-    for (const auto& dof : unique_output_dofs) {
-      const auto& new_input_dofs = pattern.inner(dof);
-      input_dofs[1].insert(input_dofs[1].end(), new_input_dofs.begin(), new_input_dofs.end());
-    }
-    // add phi and u input dofs for all input entities
+    // get source dofs corresponding to range dofs from system matrix pattern
+    auto& source_dofs = ofield_deim_source_dofs_[cell];
+    source_dofs.clear();
+    source_dofs.resize(3);
+    get_deim_source_dofs(
+        source_dofs[1], ofield_solver_.system_matrix_pattern(ofield_submatrix_pattern_), unique_range_dofs);
+
+    // add phi and u source dofs for all input entities
+    DynamicVector<size_t> global_indices;
     const auto& phi_mapper = phi_space_.mapper();
     const auto& u_mapper = u_space_.mapper();
     for (const auto& entity : ofield_deim_entities_[cell]) {
       global_indices.resize(phi_mapper.local_size(entity));
       phi_mapper.global_indices(entity, global_indices);
-      input_dofs[0].insert(input_dofs[0].end(), global_indices.begin(), global_indices.end());
+      source_dofs[0].insert(source_dofs[0].end(), global_indices.begin(), global_indices.end());
       global_indices.resize(u_mapper.local_size(entity));
       u_mapper.global_indices(entity, global_indices);
-      input_dofs[2].insert(input_dofs[2].end(), global_indices.begin(), global_indices.end());
+      source_dofs[2].insert(source_dofs[2].end(), global_indices.begin(), global_indices.end());
     } // entities
 
     // sort and remove duplicate entries
-    for (size_t ii = 0; ii < 3; ++ii) {
-      std::sort(input_dofs[ii].begin(), input_dofs[ii].end());
-      input_dofs[ii].erase(std::unique(input_dofs[ii].begin(), input_dofs[ii].end()), input_dofs[ii].end());
-    }
-    Pnat_deim_input_dofs_begin_[cell] =
-        std::lower_bound(input_dofs[1].begin(), input_dofs[1].end(), size_P_) - input_dofs[1].begin();
+    sort_and_remove_duplicates_in_deim_source_dofs(source_dofs);
+
+    Pnat_deim_source_dofs_begin_[cell] =
+        std::lower_bound(source_dofs[1].begin(), source_dofs[1].end(), size_P_) - source_dofs[1].begin();
   } // if (not already computed)
 } // void compute_restricted_ofield_dofs(...)
 
-void CellModelSolver::compute_restricted_pfield_dofs(const std::vector<size_t>& output_dofs, const size_t cell)
+void CellModelSolver::compute_restricted_pfield_dofs(const std::vector<size_t>& range_dofs, const size_t cell)
 {
-  if (!pfield_deim_output_dofs_[cell] || *pfield_deim_output_dofs_[cell] != output_dofs) {
-    const auto& pattern = pfield_solver_.system_matrix_pattern(pfield_submatrix_pattern_);
-    // We need to keep the original output_dofs which is unordered and may contain duplicates, as the restricted
+  if (!pfield_deim_range_dofs_[cell] || *pfield_deim_range_dofs_[cell] != range_dofs) {
+    // We need to keep the original range_dofs which is unordered and may contain duplicates, as the restricted
     // operator will return exactly these dofs. For computations, however, we often need unique dofs.
-    pfield_deim_output_dofs_[cell] = std::make_shared<std::vector<size_t>>(output_dofs);
-    auto& unique_output_dofs = pfield_deim_unique_output_dofs_[cell];
-    unique_output_dofs = output_dofs;
-    std::sort(unique_output_dofs.begin(), unique_output_dofs.end());
-    unique_output_dofs.erase(std::unique(unique_output_dofs.begin(), unique_output_dofs.end()),
-                             unique_output_dofs.end());
+    pfield_deim_range_dofs_[cell] = std::make_shared<std::vector<size_t>>(range_dofs);
+    auto& unique_range_dofs = pfield_deim_unique_range_dofs_[cell];
+    get_unique_deim_dofs(unique_range_dofs, range_dofs, 3 * size_phi_);
     // sort output into dofs belonging to phi, phinat and mu
-    auto& phi_output_dofs = phi_deim_output_dofs_[cell];
-    auto& phinat_output_dofs = phinat_deim_output_dofs_[cell];
-    auto& mu_output_dofs = mu_deim_output_dofs_[cell];
-    auto& phinat_mu_output_dofs = both_mu_and_phi_deim_output_dofs_[cell];
-    phi_output_dofs.clear();
-    phinat_output_dofs.clear();
-    mu_output_dofs.clear();
-    phinat_mu_output_dofs.clear();
-    for (const auto& dof : unique_output_dofs) {
+    auto& phi_range_dofs = phi_deim_range_dofs_[cell];
+    auto& phinat_range_dofs = phinat_deim_range_dofs_[cell];
+    auto& mu_range_dofs = mu_deim_range_dofs_[cell];
+    auto& phinat_mu_range_dofs = both_mu_and_phi_deim_range_dofs_[cell];
+    phi_range_dofs.clear();
+    phinat_range_dofs.clear();
+    mu_range_dofs.clear();
+    for (const auto& dof : unique_range_dofs) {
       if (dof < size_phi_)
-        phi_output_dofs.push_back(dof);
+        phi_range_dofs.push_back(dof);
       else if (dof < 2 * size_phi_)
-        phinat_output_dofs.push_back(dof);
+        phinat_range_dofs.push_back(dof);
       else
-        mu_output_dofs.push_back(dof);
+        mu_range_dofs.push_back(dof);
     }
-    for (auto& dof : phinat_output_dofs)
-      dof -= size_phi_;
-    for (auto& dof : mu_output_dofs)
-      dof -= 2 * size_phi_;
-    for (const auto& dof : phinat_output_dofs)
-      if (std::find(mu_output_dofs.begin(), mu_output_dofs.end(), dof) != mu_output_dofs.end())
-        phinat_mu_output_dofs.push_back(dof);
-    // store all entities that contain an output dof
-    const auto& phi_mapper = phi_space_.mapper();
-    DynamicVector<size_t> global_indices;
-    pfield_deim_entities_[cell].clear();
-    for (const auto& entity : Dune::elements(grid_view_)) {
-      global_indices.resize(phi_mapper.local_size(entity));
-      phi_mapper.global_indices(entity, global_indices);
-      maybe_add_entity(entity, global_indices, unique_output_dofs, pfield_deim_entities_[cell], size_phi_);
-    } // entities
+    subtract_from_dofs(phinat_range_dofs, size_phi_);
+    subtract_from_dofs(mu_range_dofs, 2 * size_phi_);
+    // get dofs that are both in phinat and mu dofs
+    phinat_mu_range_dofs.clear();
+    for (const auto& dof : phinat_range_dofs)
+      if (std::find(mu_range_dofs.begin(), mu_range_dofs.end(), dof) != mu_range_dofs.end())
+        phinat_mu_range_dofs.push_back(dof);
+    // store all entities that contain a range dof
+    get_deim_entities(phi_space_.mapper(), pfield_deim_entities_[cell], unique_range_dofs, size_phi_);
 
-    // get input dofs corresponding to output dofs
-    auto& input_dofs = pfield_deim_input_dofs_[cell];
-    input_dofs.clear();
-    input_dofs.resize(3);
-    // pfield input dofs can be taken from system matrix pattern
-    for (const auto& dof : unique_output_dofs) {
-      const auto& new_input_dofs = pattern.inner(dof);
-      input_dofs[0].insert(input_dofs[0].end(), new_input_dofs.begin(), new_input_dofs.end());
-    }
-    // add P and u input dofs for all input entities
+    // get source dofs corresponding to range dofs
+    auto& source_dofs = pfield_deim_source_dofs_[cell];
+    source_dofs.clear();
+    source_dofs.resize(3);
+    get_deim_source_dofs(
+        source_dofs[0], pfield_solver_.system_matrix_pattern(pfield_submatrix_pattern_), unique_range_dofs);
+
+    // add P and u source dofs for all input entities
+    DynamicVector<size_t> global_indices;
     const auto& P_mapper = P_space_.mapper();
     const auto& u_mapper = u_space_.mapper();
     for (const auto& entity : pfield_deim_entities_[cell]) {
       global_indices.resize(P_mapper.local_size(entity));
       P_mapper.global_indices(entity, global_indices);
-      input_dofs[1].insert(input_dofs[1].end(), global_indices.begin(), global_indices.end());
+      source_dofs[1].insert(source_dofs[1].end(), global_indices.begin(), global_indices.end());
       global_indices.resize(u_mapper.local_size(entity));
       u_mapper.global_indices(entity, global_indices);
-      input_dofs[2].insert(input_dofs[2].end(), global_indices.begin(), global_indices.end());
+      source_dofs[2].insert(source_dofs[2].end(), global_indices.begin(), global_indices.end());
     } // entities
 
     // sort and remove duplicate entries
-    for (size_t ii = 0; ii < 3; ++ii) {
-      std::sort(input_dofs[ii].begin(), input_dofs[ii].end());
-      input_dofs[ii].erase(std::unique(input_dofs[ii].begin(), input_dofs[ii].end()), input_dofs[ii].end());
-    }
-    phinat_deim_input_dofs_begin_[cell] =
-        std::lower_bound(input_dofs[0].begin(), input_dofs[0].end(), size_phi_) - input_dofs[0].begin();
-    mu_deim_input_dofs_begin_[cell] =
-        std::lower_bound(input_dofs[0].begin(), input_dofs[0].end(), 2 * size_phi_) - input_dofs[0].begin();
+    sort_and_remove_duplicates_in_deim_source_dofs(source_dofs);
+
+    phinat_deim_source_dofs_begin_[cell] =
+        std::lower_bound(source_dofs[0].begin(), source_dofs[0].end(), size_phi_) - source_dofs[0].begin();
+    mu_deim_source_dofs_begin_[cell] =
+        std::lower_bound(source_dofs[0].begin(), source_dofs[0].end(), 2 * size_phi_) - source_dofs[0].begin();
   } // if (not already computed)
 } // void compute_restricted_pfield_dofs(...)
+
+// appends entity to input_entities if one of its global_indices is in range_dofs
+void CellModelSolver::maybe_add_entity(const E& entity,
+                                       DynamicVector<size_t>& global_indices,
+                                       const std::vector<size_t>& range_dofs,
+                                       std::vector<E>& input_entities,
+                                       const MapperInterface<PGV>& mapper,
+                                       const size_t subvector_size) const
+{
+  global_indices.resize(mapper.local_size(entity));
+  mapper.global_indices(entity, global_indices);
+  for (const auto& output_dof : range_dofs) {
+    const size_t dof = output_dof % subvector_size;
+    for (size_t jj = 0; jj < global_indices.size(); ++jj) {
+      if (global_indices[jj] == dof) {
+        input_entities.push_back(entity);
+        return;
+      }
+    } // jj
+  } // dof
+}
+
+// appends entity to input_entities if one of its global_indices is in range_dofs
+void CellModelSolver::maybe_add_entity_stokes(const E& entity,
+                                              DynamicVector<size_t>& global_indices,
+                                              const std::vector<size_t>& u_range_dofs,
+                                              const std::vector<size_t>& p_range_dofs,
+                                              std::vector<E>& stokes_deim_entities,
+                                              const MapperInterface<PGV>& u_mapper,
+                                              const MapperInterface<PGV>& p_mapper)
+{
+  global_indices.resize(u_mapper.local_size(entity));
+  u_mapper.global_indices(entity, global_indices);
+  for (const auto& dof : u_range_dofs) {
+    for (size_t jj = 0; jj < global_indices.size(); ++jj) {
+      if (global_indices[jj] == dof) {
+        stokes_deim_entities.push_back(entity);
+        return;
+      }
+    } // jj
+  } // dof
+  global_indices.resize(p_mapper.local_size(entity));
+  p_mapper.global_indices(entity, global_indices);
+  for (const auto& dof : p_range_dofs) {
+    for (size_t jj = 0; jj < global_indices.size(); ++jj) {
+      if (global_indices[jj] == dof) {
+        stokes_deim_entities.push_back(entity);
+        return;
+      }
+    } // jj
+  } // dof
+}
+
+void CellModelSolver::subtract_from_dofs(std::vector<size_t>& dofs, const size_t size) const
+{
+  for (auto& dof : dofs) {
+    assert(dof >= size);
+    dof -= size;
+  }
+}
+
+void CellModelSolver::get_deim_entities(const MapperInterface<PGV>& mapper,
+                                        std::vector<E>& deim_entities,
+                                        const std::vector<size_t>& unique_range_dofs,
+                                        const size_t subvector_size) const
+{
+  DynamicVector<size_t> global_indices;
+  deim_entities.clear();
+  for (const auto& entity : Dune::elements(grid_view_)) {
+    maybe_add_entity(entity, global_indices, unique_range_dofs, deim_entities, mapper, subvector_size);
+  } // entities
+}
+
+void CellModelSolver::get_unique_deim_dofs(std::vector<size_t>& unique_range_dofs,
+                                           const std::vector<size_t>& range_dofs,
+                                           const size_t max_dof_value) const
+{
+  unique_range_dofs = range_dofs;
+  std::sort(unique_range_dofs.begin(), unique_range_dofs.end());
+  unique_range_dofs.erase(std::unique(unique_range_dofs.begin(), unique_range_dofs.end()), unique_range_dofs.end());
+  // check that all dofs are valid
+  DUNE_THROW_IF(!std::transform_reduce(unique_range_dofs.begin(),
+                                       unique_range_dofs.end(),
+                                       true,
+                                       [](const bool& a, const bool& b) { return a && b; },
+                                       [size = max_dof_value](const size_t& a) { return a < size; }),
+                Dune::XT::Common::Exceptions::wrong_input_given,
+                "At least one of the given output DoFs is too large!");
+}
+
+void CellModelSolver::get_deim_source_dofs(std::vector<size_t>& source_dofs,
+                                           const XT::LA::SparsityPatternDefault& pattern,
+                                           const std::vector<size_t>& unique_range_dofs) const
+{
+  for (const auto& dof : unique_range_dofs) {
+    const auto& new_source_dofs = pattern.inner(dof);
+    source_dofs.insert(source_dofs.end(), new_source_dofs.begin(), new_source_dofs.end());
+  }
+}
+
+void CellModelSolver::sort_and_remove_duplicates_in_deim_source_dofs(
+    std::vector<std::vector<size_t>>& source_dofs) const
+{
+  // check that source_dofs has entries for pfield, ofield and stokes
+  assert(source_dofs.size() == 3);
+  std::vector<size_t> sizes{3 * size_phi_, 2 * size_P_, size_u_ + size_p_};
+  for (size_t ii = 0; ii < 3; ++ii) {
+    std::sort(source_dofs[ii].begin(), source_dofs[ii].end());
+    source_dofs[ii].erase(std::unique(source_dofs[ii].begin(), source_dofs[ii].end()), source_dofs[ii].end());
+    // check that dofs are valid
+    DUNE_THROW_IF(!std::transform_reduce(source_dofs[ii].begin(),
+                                         source_dofs[ii].end(),
+                                         true,
+                                         [](const bool& a, const bool& b) { return a && b; },
+                                         [size = sizes[ii]](const size_t& a) { return a < size; }),
+                  Dune::XT::Common::Exceptions::wrong_input_given,
+                  "At least one of the given output DoFs is too large!");
+  }
+}
 
 //******************************************************************************************************************
 //*********************************************** Apply operators **************************************************
@@ -1177,26 +1259,26 @@ CellModelSolver::VectorType CellModelSolver::apply_stokes_operator(const VectorT
 CellModelSolver::VectorType
 CellModelSolver::apply_stokes_helper(const VectorType& y, const bool restricted, const bool jacobian)
 {
-  const auto& output_dofs = *stokes_deim_output_dofs_;
-  const auto& unique_output_dofs = stokes_deim_unique_output_dofs_;
-  const auto& input_dofs = stokes_deim_input_dofs_[2];
+  const auto& range_dofs = *stokes_deim_range_dofs_;
+  const auto& unique_range_dofs = stokes_deim_unique_range_dofs_;
+  const auto& source_dofs = stokes_deim_source_dofs_[2];
   auto& source = stokes_tmp_vec_;
   auto& residual = stokes_tmp_vec2_;
   // copy values to high-dimensional vector
   if (restricted)
-    copy_ld_to_hd_vec(input_dofs, y, source);
+    copy_ld_to_hd_vec(source_dofs, y, source);
   else
     source = y;
   const auto mv = mv_func<VectorType, VectorType>(restricted);
-  mv(S_stokes_, source, residual, unique_output_dofs);
+  mv(S_stokes_, source, residual, unique_range_dofs);
   if (!jacobian) {
     const auto sub = sub_func<VectorType, EigenVectorType>(restricted);
-    sub(residual, stokes_rhs_vector_, unique_output_dofs);
+    sub(residual, stokes_rhs_vector_, unique_range_dofs);
   }
   if (restricted) {
-    VectorType ret(output_dofs.size());
-    for (size_t ii = 0; ii < output_dofs.size(); ++ii)
-      ret[ii] = residual[output_dofs[ii]];
+    VectorType ret(range_dofs.size());
+    for (size_t ii = 0; ii < range_dofs.size(); ++ii)
+      ret[ii] = residual[range_dofs[ii]];
     return ret;
   } else {
     return residual;
@@ -1240,14 +1322,14 @@ CellModelSolver::VectorType
 CellModelSolver::apply_ofield_helper(const VectorType& y, const size_t cell, const bool restricted, const bool jacobian)
 {
 
-  const auto& output_dofs = *ofield_deim_output_dofs_[cell];
-  const auto& unique_output_dofs = ofield_deim_unique_output_dofs_[cell];
-  const auto& input_dofs = ofield_deim_input_dofs_[cell][1];
+  const auto& range_dofs = *ofield_deim_range_dofs_[cell];
+  const auto& unique_range_dofs = ofield_deim_unique_range_dofs_[cell];
+  const auto& source_dofs = ofield_deim_source_dofs_[cell][1];
   auto& source = ofield_tmp_vec_;
   auto& residual = ofield_tmp_vec2_;
   // copy values to high-dimensional vector
   if (restricted)
-    copy_ld_to_hd_vec(input_dofs, y, source);
+    copy_ld_to_hd_vec(source_dofs, y, source);
   else
     source = y;
   // linear part
@@ -1255,25 +1337,25 @@ CellModelSolver::apply_ofield_helper(const VectorType& y, const size_t cell, con
   if (!jacobian) {
     // subtract rhs
     const auto sub = sub_func<VectorType>(restricted);
-    sub(residual, ofield_rhs_vector_, unique_output_dofs);
+    sub(residual, ofield_rhs_vector_, unique_range_dofs);
   }
   // nonlinear part
   if (jacobian) {
-    const auto& Pnat_output_dofs = Pnat_deim_output_dofs_[cell];
+    const auto& Pnat_range_dofs = Pnat_deim_range_dofs_[cell];
     VectorViewType range_Pnat(residual, size_P_, 2 * size_P_);
     const ConstVectorViewType source_P(source, 0, size_P_);
     const auto mv = mv_func<ConstVectorViewType, VectorType>(restricted);
     const auto add = add_func<VectorViewType, VectorType>(restricted);
-    mv(C_ofield_nonlinear_part_, source_P, P_tmp_vec_, Pnat_output_dofs);
-    add(range_Pnat, P_tmp_vec_, Pnat_output_dofs);
+    mv(C_ofield_nonlinear_part_, source_P, P_tmp_vec_, Pnat_range_dofs);
+    add(range_Pnat, P_tmp_vec_, Pnat_range_dofs);
   } else {
     fill_tmp_ofield(cell, source, restricted);
     assemble_nonlinear_part_of_ofield_residual(residual, cell, restricted);
   }
   if (restricted) {
-    VectorType ret(output_dofs.size());
-    for (size_t ii = 0; ii < output_dofs.size(); ++ii)
-      ret[ii] = residual[output_dofs[ii]];
+    VectorType ret(range_dofs.size());
+    for (size_t ii = 0; ii < range_dofs.size(); ++ii)
+      ret[ii] = residual[range_dofs[ii]];
     return ret;
   } else {
     return residual;
@@ -1289,8 +1371,8 @@ void CellModelSolver::update_ofield_parameters(const double Pa, const size_t cel
     std::cout << "Ofield params updated, old Pa = " << last_ofield_Pa_ << ", new Pa = " << Pa << std::endl;
     Pa_ = Pa;
     last_ofield_Pa_ = Pa_;
-    const auto& P_output_dofs = P_deim_output_dofs_[cell];
-    set_mat_to_zero(C_ofield_elliptic_part_, restricted, ofield_submatrix_pattern_, P_output_dofs);
+    const auto& P_range_dofs = P_deim_range_dofs_[cell];
+    set_mat_to_zero(C_ofield_elliptic_part_, restricted, ofield_submatrix_pattern_, P_range_dofs);
     MatrixOperator<MatrixType, PGV, d> ofield_elliptic_op(grid_view_, P_space_, P_space_, C_ofield_elliptic_part_);
     ofield_elliptic_op.append(LocalElementIntegralBilinearForm<E, d>(LocalLaplaceIntegrand<E, d>(-1. / Pa_)));
     if (!restricted)
@@ -1310,14 +1392,14 @@ CellModelSolver::apply_pfield_operator(const VectorType& y, const size_t cell, c
 CellModelSolver::VectorType
 CellModelSolver::apply_pfield_helper(const VectorType& y, const size_t cell, const bool restricted, const bool jacobian)
 {
-  const auto& output_dofs = *pfield_deim_output_dofs_[cell];
-  const auto& unique_output_dofs = pfield_deim_unique_output_dofs_[cell];
-  const auto& input_dofs = pfield_deim_input_dofs_[cell][0];
+  const auto& range_dofs = *pfield_deim_range_dofs_[cell];
+  const auto& unique_range_dofs = pfield_deim_unique_range_dofs_[cell];
+  const auto& source_dofs = pfield_deim_source_dofs_[cell][0];
   auto& source = pfield_tmp_vec_;
   auto& residual = pfield_tmp_vec2_;
   // copy values to high-dimensional vector
   if (restricted)
-    copy_ld_to_hd_vec(input_dofs, y, source);
+    copy_ld_to_hd_vec(source_dofs, y, source);
   else
     source = y;
   // linear part
@@ -1325,13 +1407,12 @@ CellModelSolver::apply_pfield_helper(const VectorType& y, const size_t cell, con
   if (!jacobian) {
     // subtract rhs
     const auto sub = sub_func<VectorType>(restricted);
-    sub(residual, pfield_rhs_vector_, unique_output_dofs);
+    sub(residual, pfield_rhs_vector_, unique_range_dofs);
   }
   // nonlinear part
   if (jacobian) {
-    const auto& output_dofs = *pfield_deim_output_dofs_[cell];
-    const auto& phinat_output_dofs = phinat_deim_output_dofs_[cell];
-    const auto& mu_output_dofs = mu_deim_output_dofs_[cell];
+    const auto& phinat_range_dofs = phinat_deim_range_dofs_[cell];
+    const auto& mu_range_dofs = mu_deim_range_dofs_[cell];
     VectorViewType range_phinat(residual, size_phi_, 2 * size_phi_);
     VectorViewType range_mu(residual, 2 * size_phi_, 3 * size_phi_);
     const ConstVectorViewType source_phi(source, 0, size_phi_);
@@ -1343,25 +1424,25 @@ CellModelSolver::apply_pfield_helper(const VectorType& y, const size_t cell, con
     const auto scal = scal_func<VectorType>(restricted);
     const auto add = add_func<VectorViewType, VectorType>(restricted);
     // apply missing parts of J (including the linear 1./Ca_ part)
-    mv(M_nonlin_pfield_, source_mu, tmp_vec, phinat_output_dofs);
-    vector_axpy(range_phinat, 1. / (Be_ * std::pow(epsilon_, 2)), tmp_vec, phinat_output_dofs);
-    mv(M_pfield_, source_mu, tmp_vec, phinat_output_dofs);
-    vector_axpy(range_phinat, 1. / Ca_, tmp_vec, phinat_output_dofs);
+    mv(M_nonlin_pfield_, source_mu, tmp_vec, phinat_range_dofs);
+    vector_axpy(range_phinat, 1. / (Be_ * std::pow(epsilon_, 2)), tmp_vec, phinat_range_dofs);
+    mv(M_pfield_, source_mu, tmp_vec, phinat_range_dofs);
+    vector_axpy(range_phinat, 1. / Ca_, tmp_vec, phinat_range_dofs);
     // apply missing parts of A
-    mv(M_nonlin_pfield_, source_phi, tmp_vec, mu_output_dofs);
-    scal(tmp_vec, 1. / epsilon_, mu_output_dofs);
-    add(range_mu, tmp_vec, mu_output_dofs);
+    mv(M_nonlin_pfield_, source_phi, tmp_vec, mu_range_dofs);
+    scal(tmp_vec, 1. / epsilon_, mu_range_dofs);
+    add(range_mu, tmp_vec, mu_range_dofs);
     // apply G
-    mv(G_pfield_, source_phi, tmp_vec, phinat_output_dofs);
-    add(range_phinat, tmp_vec, phinat_output_dofs);
+    mv(G_pfield_, source_phi, tmp_vec, phinat_range_dofs);
+    add(range_phinat, tmp_vec, phinat_range_dofs);
   } else {
     fill_tmp_pfield(cell, source, restricted);
     assemble_nonlinear_part_of_pfield_residual(residual, cell, restricted);
   }
   if (restricted) {
-    VectorType ret(output_dofs.size());
-    for (size_t ii = 0; ii < output_dofs.size(); ++ii)
-      ret[ii] = residual[output_dofs[ii]];
+    VectorType ret(range_dofs.size());
+    for (size_t ii = 0; ii < range_dofs.size(); ++ii)
+      ret[ii] = residual[range_dofs[ii]];
     return ret;
   } else {
     return residual;
@@ -1577,8 +1658,16 @@ void CellModelSolver::set_pfield_jacobian_state(const VectorType& source, const 
   assemble_pfield_nonlinear_jacobian(source, cell, restricted);
 }
 
-// Currently takes a full-dimensional vector, but only applies the rows that are in pfield_output_dofs
-// As the rows are sparse, there shouldn't be too much performance impact of applying to the whole vector
+void CellModelSolver::set_pfield_jacobian_state_dofs(const std::vector<R>& source, const size_t cell)
+{
+  const size_t expected_size = pfield_deim_source_dofs_[cell][0].size();
+  DUNE_THROW_IF(source.size() != expected_size,
+                Dune::XT::Common::Exceptions::wrong_input_given,
+                "Source has incorrect size " + XT::Common::to_string(source.size()) + ", should be "
+                    + XT::Common::to_string(expected_size) + "!");
+  assemble_pfield_nonlinear_jacobian(XT::Common::convert_to<VectorType>(source), cell, true);
+}
+
 CellModelSolver::VectorType
 CellModelSolver::apply_pfield_jacobian(const VectorType& y, const size_t cell, const bool restricted)
 {
@@ -1595,8 +1684,16 @@ void CellModelSolver::set_ofield_jacobian_state(const VectorType& source, const 
   assemble_ofield_nonlinear_jacobian(source, cell, restricted);
 }
 
-// Currently takes a full-dimensional vector, but only applies the rows that are in pfield_output_dofs
-// As the rows are sparse, there shouldn't be too much performance impact of applying to the whole vector
+void CellModelSolver::set_ofield_jacobian_state_dofs(const std::vector<R>& source, const size_t cell)
+{
+  const size_t expected_size = ofield_deim_source_dofs_[cell][1].size();
+  DUNE_THROW_IF(source.size() != expected_size,
+                Dune::XT::Common::Exceptions::wrong_input_given,
+                "Source has incorrect size " + XT::Common::to_string(source.size()) + ", should be "
+                    + XT::Common::to_string(expected_size) + "!");
+  assemble_ofield_nonlinear_jacobian(XT::Common::convert_to<VectorType>(source), cell, true);
+}
+
 CellModelSolver::VectorType
 CellModelSolver::apply_ofield_jacobian(const VectorType& y, const size_t cell, const bool restricted)
 {
@@ -1684,8 +1781,8 @@ void CellModelSolver::assemble_stokes_rhs(const bool restricted)
         } // kk
       }));
   const auto scal = scal_func<EigenVectorViewType>(restricted);
-  const auto& u_output_dofs = u_deim_output_dofs_;
-  scal(stokes_f_vector_, 0., u_output_dofs);
+  const auto& u_range_dofs = u_deim_range_dofs_;
+  scal(stokes_f_vector_, 0., u_range_dofs);
   if (!restricted)
     f_functional.assemble(use_tbb_);
   else
@@ -1698,11 +1795,11 @@ void CellModelSolver::assemble_stokes_rhs(const bool restricted)
 // Computes orientation field rhs using currently stored values of variables and stores in ofield_rhs_vector_
 void CellModelSolver::assemble_ofield_rhs(const double /*dt*/, const size_t cell, const bool restricted)
 {
-  const auto& P_output_dofs = P_deim_output_dofs_[cell];
-  const auto& Pnat_output_dofs = Pnat_deim_output_dofs_[cell];
+  const auto& P_range_dofs = P_deim_range_dofs_[cell];
+  const auto& Pnat_range_dofs = Pnat_deim_range_dofs_[cell];
   auto g_functional = make_vector_functional(P_space_, ofield_g_vector_);
   const auto scal = scal_func<VectorViewType>(restricted);
-  scal(ofield_g_vector_, 0., Pnat_output_dofs);
+  scal(ofield_g_vector_, 0., Pnat_range_dofs);
   XT::Functions::GenericGridFunction<E, d> g(
       /*order = */ linearize_ ? 3 * P_space_.max_polorder() : phi_space_.max_polorder(),
       /*post_bind_func*/
@@ -1730,7 +1827,7 @@ void CellModelSolver::assemble_ofield_rhs(const double /*dt*/, const size_t cell
   g_functional.append(LocalElementIntegralFunctional<E, d>(
       local_binary_to_unary_element_integrand(LocalElementProductScalarWeightIntegrand<E, d>(), g)));
   const auto mv = mv_func<VectorViewType, VectorViewType>(restricted);
-  mv(M_ofield_, P_[cell].dofs().vector(), ofield_f_vector_, P_output_dofs);
+  mv(M_ofield_, P_[cell].dofs().vector(), ofield_f_vector_, P_range_dofs);
   if (!restricted)
     g_functional.assemble(use_tbb_);
   else
@@ -1740,15 +1837,15 @@ void CellModelSolver::assemble_ofield_rhs(const double /*dt*/, const size_t cell
 // Computes phase field rhs using currently stored values of variables and stores in pfield_rhs_vector_
 void CellModelSolver::assemble_pfield_rhs(const double /*dt*/, const size_t cell, const bool restricted)
 {
-  const auto& phi_output_dofs = phi_deim_output_dofs_[cell];
-  const auto& phinat_output_dofs = phinat_deim_output_dofs_[cell];
-  const auto& mu_output_dofs = mu_deim_output_dofs_[cell];
+  const auto& phi_range_dofs = phi_deim_range_dofs_[cell];
+  const auto& phinat_range_dofs = phinat_deim_range_dofs_[cell];
+  const auto& mu_range_dofs = mu_deim_range_dofs_[cell];
   auto r1_functional = make_vector_functional(phi_space_, pfield_r1_vector_);
   auto r2_functional = make_vector_functional(phi_space_, pfield_r2_vector_);
   // calculate r2
   const auto scal = scal_func<VectorViewType>(restricted);
   if (linearize_)
-    scal(pfield_r2_vector_, 0., mu_output_dofs);
+    scal(pfield_r2_vector_, 0., mu_range_dofs);
   XT::Functions::GenericGridFunction<E, 1, 1> r0_pf(
       /*order = */ 3 * phi_space_.max_polorder(),
       /*post_bind_func*/
@@ -1769,12 +1866,12 @@ void CellModelSolver::assemble_pfield_rhs(const double /*dt*/, const size_t cell
   auto& phi_n = phi_tmp_vec2_;
   phi_n = phi_[cell].dofs().vector();
   phi_n -= phi_shift_;
-  mv(M_pfield_, phi_n, pfield_r0_vector_, phi_output_dofs);
+  mv(M_pfield_, phi_n, pfield_r0_vector_, phi_range_dofs);
   for (const auto& DoF : phi_dirichlet_constraints_.dirichlet_DoFs())
     pfield_r0_vector_[DoF] = -1. + phi_shift_;
 
   // calculate h
-  scal(pfield_r1_vector_, 0., phinat_output_dofs);
+  scal(pfield_r1_vector_, 0., phinat_range_dofs);
   XT::Functions::GenericGridFunction<E, 1, 1> r1_pf(
       /*order = */ linearize_ ? std::max(3 * phi_space_.max_polorder(), 2 * P_space_.max_polorder())
                               : 2 * P_space_.max_polorder(),
@@ -1815,8 +1912,7 @@ void CellModelSolver::assemble_pfield_rhs(const double /*dt*/, const size_t cell
 // assembles linear part of orientation field jacobian and stores in S_ofield_
 void CellModelSolver::assemble_ofield_linear_jacobian(const double dt, const size_t cell, const bool restricted)
 {
-  const auto& P_output_dofs = P_deim_output_dofs_[cell];
-  const auto& Pnat_output_dofs = Pnat_deim_output_dofs_[cell];
+  const auto& P_range_dofs = P_deim_range_dofs_[cell];
   // calculate A
   // Omega - xi D = (1-xi)/2 \nabla u^T - (1+xi)/2 \nabla u
   XT::Functions::GenericGridFunction<E, d, d> Omega_minus_xi_D_transposed(
@@ -1835,7 +1931,7 @@ void CellModelSolver::assemble_ofield_linear_jacobian(const double dt, const siz
         ret -= grad_u_T;
         return ret;
       });
-  set_mat_to_zero(A_ofield_, restricted, ofield_submatrix_pattern_, P_output_dofs);
+  set_mat_to_zero(A_ofield_, restricted, ofield_submatrix_pattern_, P_range_dofs);
   A_ofield_op_->clear();
   A_ofield_op_->append(
       LocalElementIntegralBilinearForm<E, d>(LocalElementProductIntegrand<E, d>(Omega_minus_xi_D_transposed)));
@@ -1900,7 +1996,7 @@ void CellModelSolver::assemble_C_ofield_nonlinear_part(const size_t cell, const 
         const auto P_n = this->eval_P(cell, x_local, param);
         return factor * P_n.two_norm2();
       });
-  set_mat_to_zero(C_ofield_nonlinear_part_, restricted, ofield_submatrix_pattern_, Pnat_deim_output_dofs_[cell]);
+  set_mat_to_zero(C_ofield_nonlinear_part_, restricted, ofield_submatrix_pattern_, Pnat_deim_range_dofs_[cell]);
   C_ofield_nonlinear_part_op_->clear();
   C_ofield_nonlinear_part_op_->append(
       LocalElementIntegralBilinearForm<E, d>(LocalElementProductScalarWeightIntegrand<E, d>(c1_Pa_P2)));
@@ -1938,8 +2034,8 @@ void CellModelSolver::set_mat_to_zero(MatrixType& mat,
 
 void CellModelSolver::assemble_D_pfield(const size_t cell, const bool restricted)
 {
-  const auto& phi_output_dofs = phi_deim_output_dofs_[cell];
-  set_mat_to_zero(D_pfield_, restricted, pfield_submatrix_pattern_, phi_output_dofs);
+  const auto& phi_range_dofs = phi_deim_range_dofs_[cell];
+  set_mat_to_zero(D_pfield_, restricted, pfield_submatrix_pattern_, phi_range_dofs);
   XT::Functions::GenericGridFunction<E, d, 1> minus_u(
       /*order = */ u_space_.max_polorder(),
       /*post_bind_func*/
@@ -1971,11 +2067,11 @@ void CellModelSolver::assemble_pfield_nonlinear_jacobian(const VectorType& y, co
 // stores matrix with entries \int (3 phi^2 - 1) varphi_i varphi_j in M_nonlin_pfield_
 void CellModelSolver::assemble_M_nonlin_pfield(const size_t cell, const bool restricted)
 {
-  const auto& phinat_output_dofs = phinat_deim_output_dofs_[cell];
-  const auto& mu_output_dofs = mu_deim_output_dofs_[cell];
-  set_mat_to_zero(M_nonlin_pfield_, restricted, pfield_submatrix_pattern_, mu_output_dofs);
+  const auto& phinat_range_dofs = phinat_deim_range_dofs_[cell];
+  const auto& mu_range_dofs = mu_deim_range_dofs_[cell];
+  set_mat_to_zero(M_nonlin_pfield_, restricted, pfield_submatrix_pattern_, mu_range_dofs);
   if (restricted)
-    set_mat_to_zero(M_nonlin_pfield_, restricted, pfield_submatrix_pattern_, phinat_output_dofs);
+    set_mat_to_zero(M_nonlin_pfield_, restricted, pfield_submatrix_pattern_, phinat_range_dofs);
   XT::Functions::GenericGridFunction<E, 1, 1> M_nonlin_prefactor(
       /*order = */ 2 * phi_space_.max_polorder(),
       /*post_bind_func*/
@@ -1997,8 +2093,8 @@ void CellModelSolver::assemble_M_nonlin_pfield(const size_t cell, const bool res
 // stores nonlinear part of block G of the phase field jacobian matrix in G_pfield_nonlinear_part_
 void CellModelSolver::assemble_G_pfield(const size_t cell, const bool restricted)
 {
-  const auto& phinat_output_dofs = phinat_deim_output_dofs_[cell];
-  set_mat_to_zero(G_pfield_, restricted, pfield_submatrix_pattern_, phinat_output_dofs);
+  const auto& phinat_range_dofs = phinat_deim_range_dofs_[cell];
+  set_mat_to_zero(G_pfield_, restricted, pfield_submatrix_pattern_, phinat_range_dofs);
   XT::Functions::GenericGridFunction<E, 1, 1> G_prefactor(
       /*order = */ num_cells_ > 1 ? 2 * phi_space_.max_polorder() + 20 : 2 * phi_space_.max_polorder(),
       /*post_bind_func*/
@@ -2124,19 +2220,19 @@ void CellModelSolver::assemble_nonlinear_part_of_pfield_residual(VectorType& res
 //******************************************* DEIM related methods *************************************************
 //******************************************************************************************************************
 
-const std::vector<std::vector<size_t>>& CellModelSolver::stokes_deim_input_dofs() const
+const std::vector<std::vector<size_t>>& CellModelSolver::stokes_deim_source_dofs() const
 {
-  return stokes_deim_input_dofs_;
+  return stokes_deim_source_dofs_;
 }
 
-const std::vector<std::vector<size_t>>& CellModelSolver::ofield_deim_input_dofs(const size_t cell) const
+const std::vector<std::vector<size_t>>& CellModelSolver::ofield_deim_source_dofs(const size_t cell) const
 {
-  return ofield_deim_input_dofs_[cell];
+  return ofield_deim_source_dofs_[cell];
 }
 
-const std::vector<std::vector<size_t>>& CellModelSolver::pfield_deim_input_dofs(const size_t cell) const
+const std::vector<std::vector<size_t>>& CellModelSolver::pfield_deim_source_dofs(const size_t cell) const
 {
-  return pfield_deim_input_dofs_[cell];
+  return pfield_deim_source_dofs_[cell];
 }
 
 // private:
@@ -2341,55 +2437,6 @@ XT::LA::SparsityPatternDefault CellModelSolver::create_stokes_pattern(const Spac
   return pattern;
 }
 
-// appends entity to input_entities if one of its global_indices is in output_dofs
-void CellModelSolver::maybe_add_entity(const E& entity,
-                                       const DynamicVector<size_t>& global_indices,
-                                       const std::vector<size_t>& output_dofs,
-                                       std::vector<E>& input_entities,
-                                       const size_t subvector_size) const
-{
-  for (const auto& output_dof : output_dofs) {
-    const size_t dof = output_dof % subvector_size;
-    for (size_t jj = 0; jj < global_indices.size(); ++jj) {
-      if (global_indices[jj] == dof) {
-        input_entities.push_back(entity);
-        return;
-      }
-    } // jj
-  } // dof
-}
-
-// appends entity to input_entities if one of its global_indices is in output_dofs
-void CellModelSolver::maybe_add_entity_stokes(const E& entity,
-                                              DynamicVector<size_t>& global_indices,
-                                              const std::vector<size_t>& u_output_dofs,
-                                              const std::vector<size_t>& p_output_dofs,
-                                              std::vector<E>& stokes_deim_entities,
-                                              const MapperInterface<PGV>& u_mapper,
-                                              const MapperInterface<PGV>& p_mapper)
-{
-  global_indices.resize(u_mapper.local_size(entity));
-  u_mapper.global_indices(entity, global_indices);
-  for (const auto& dof : u_output_dofs) {
-    for (size_t jj = 0; jj < global_indices.size(); ++jj) {
-      if (global_indices[jj] == dof) {
-        stokes_deim_entities.push_back(entity);
-        return;
-      }
-    } // jj
-  } // dof
-  global_indices.resize(p_mapper.local_size(entity));
-  p_mapper.global_indices(entity, global_indices);
-  for (const auto& dof : p_output_dofs) {
-    for (size_t jj = 0; jj < global_indices.size(); ++jj) {
-      if (global_indices[jj] == dof) {
-        stokes_deim_entities.push_back(entity);
-        return;
-      }
-    } // jj
-  } // dof
-}
-
 // sets temporary orientation field discrete functions to source values
 void CellModelSolver::fill_tmp_ofield(const size_t cell, const VectorType& source, const bool restricted) const
 {
@@ -2397,9 +2444,18 @@ void CellModelSolver::fill_tmp_ofield(const size_t cell, const VectorType& sourc
     ConstVectorViewType P_vec(source, 0, size_P_);
     P_tmp_[cell].dofs().vector() = P_vec;
   } else {
-    const auto& input_dofs = ofield_deim_input_dofs_[cell][1];
-    for (size_t ii = 0; ii < Pnat_deim_input_dofs_begin_[cell]; ++ii)
-      P_tmp_[cell].dofs().vector().set_entry(input_dofs[ii], source[input_dofs[ii]]);
+    const auto& source_dofs = ofield_deim_source_dofs_[cell][1];
+    const size_t Pnat_begin = Pnat_deim_source_dofs_begin_[cell];
+    auto& P_vec = P_tmp_[cell].dofs().vector();
+    if (source.size() == 2 * size_P_) {
+      for (size_t ii = 0; ii < Pnat_begin; ++ii)
+        P_vec.set_entry(source_dofs[ii], source[source_dofs[ii]]);
+    } else {
+      DUNE_THROW_IF(
+          source.size() != source_dofs.size(), XT::Common::Exceptions::wrong_input_given, "Source has wrong size!");
+      for (size_t ii = 0; ii < Pnat_begin; ++ii)
+        P_vec.set_entry(source_dofs[ii], source[ii]);
+    }
   }
 }
 
@@ -2412,11 +2468,24 @@ void CellModelSolver::fill_tmp_pfield(const size_t cell, const VectorType& sourc
     phi_tmp_[cell].dofs().vector() = phi_vec;
     mu_tmp_[cell].dofs().vector() = mu_vec;
   } else {
-    const auto& input_dofs = pfield_deim_input_dofs_[cell][0];
-    for (size_t ii = 0; ii < phinat_deim_input_dofs_begin_[cell]; ++ii)
-      phi_tmp_[cell].dofs().vector().set_entry(input_dofs[ii], source[input_dofs[ii]]);
-    for (size_t ii = mu_deim_input_dofs_begin_[cell]; ii < input_dofs.size(); ++ii)
-      mu_tmp_[cell].dofs().vector().set_entry(input_dofs[ii] - 2 * size_phi_, source[input_dofs[ii]]);
+    const auto& source_dofs = pfield_deim_source_dofs_[cell][0];
+    const size_t phinat_begin = phinat_deim_source_dofs_begin_[cell];
+    const size_t mu_begin = mu_deim_source_dofs_begin_[cell];
+    auto& phi_vec = phi_tmp_[cell].dofs().vector();
+    auto& mu_vec = mu_tmp_[cell].dofs().vector();
+    if (source.size() == 3 * size_phi_) {
+      for (size_t ii = 0; ii < phinat_begin; ++ii)
+        phi_vec.set_entry(source_dofs[ii], source[source_dofs[ii]]);
+      for (size_t ii = mu_begin; ii < source_dofs.size(); ++ii)
+        mu_vec.set_entry(source_dofs[ii] - 2 * size_phi_, source[source_dofs[ii]]);
+    } else {
+      DUNE_THROW_IF(
+          source.size() != source_dofs.size(), XT::Common::Exceptions::wrong_input_given, "Source has wrong size!");
+      for (size_t ii = 0; ii < phinat_deim_source_dofs_begin_[cell]; ++ii)
+        phi_vec.set_entry(source_dofs[ii], source[ii]);
+      for (size_t ii = mu_deim_source_dofs_begin_[cell]; ii < source_dofs.size(); ++ii)
+        mu_vec.set_entry(source_dofs[ii] - 2 * size_phi_, source[ii]);
+    }
   }
 }
 

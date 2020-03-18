@@ -98,8 +98,8 @@ public:
    */
   void apply(const Vector& x, Vector& y) const override final
   {
-    const auto& input_dofs = cellmodel_solver_->ofield_deim_input_dofs_[cell_][1];
-    const auto& Pnat_begin = cellmodel_solver_->Pnat_deim_input_dofs_begin_[cell_];
+    const auto& source_dofs = cellmodel_solver_->ofield_deim_source_dofs_[cell_][1];
+    const auto& Pnat_begin = cellmodel_solver_->Pnat_deim_source_dofs_begin_[cell_];
     // copy to temporary vectors (we do not use vector views to improve performance of mv)
     if (!restricted_) {
       for (size_t ii = 0; ii < size_P_; ++ii) {
@@ -108,21 +108,21 @@ public:
       }
     } else {
       for (size_t ii = 0; ii < Pnat_begin; ++ii)
-        x_P_[input_dofs[ii]] = x[input_dofs[ii]];
-      for (size_t ii = Pnat_begin; ii < input_dofs.size(); ++ii)
-        x_Pnat_[input_dofs[ii] - size_P_] = x[input_dofs[ii]];
+        x_P_[source_dofs[ii]] = x[source_dofs[ii]];
+      for (size_t ii = Pnat_begin; ii < source_dofs.size(); ++ii)
+        x_Pnat_[source_dofs[ii] - size_P_] = x[source_dofs[ii]];
     }
     // apply matrices
     const auto mv = cellmodel_solver_->template mv_func<Vector>(restricted_);
     const auto axpy = cellmodel_solver_->template vector_axpy_func<Vector>(restricted_);
     const auto add = cellmodel_solver_->template add_func<Vector>(restricted_);
     // M+dtA
-    const auto& P_dofs = cellmodel_solver_->P_deim_output_dofs_[cell_];
+    const auto& P_dofs = cellmodel_solver_->P_deim_range_dofs_[cell_];
     mv(M_, x_P_, y_P_, P_dofs);
     mv(A_, x_P_, tmp_vec_, P_dofs);
     axpy(y_P_, dt_, tmp_vec_, P_dofs);
     // dt B and D
-    const auto& Pnat_dofs = cellmodel_solver_->Pnat_deim_output_dofs_[cell_];
+    const auto& Pnat_dofs = cellmodel_solver_->Pnat_deim_range_dofs_[cell_];
     mv(M_, x_Pnat_, y_Pnat_, P_dofs);
     if (restricted_)
       mv(M_, x_Pnat_, y_Pnat_, Pnat_dofs);
@@ -384,9 +384,9 @@ public:
   void apply(const Vector& x, Vector& y, const bool apply_shift) const
   {
     // copy to temporary vectors (we do not use vector views to improve performance of mv)
-    const auto& input_dofs = cellmodel_solver_->pfield_deim_input_dofs_[cell_][0];
-    const auto& phinat_begin = cellmodel_solver_->phinat_deim_input_dofs_begin_[cell_];
-    const auto& mu_begin = cellmodel_solver_->mu_deim_input_dofs_begin_[cell_];
+    const auto& source_dofs = cellmodel_solver_->pfield_deim_source_dofs_[cell_][0];
+    const auto& phinat_begin = cellmodel_solver_->phinat_deim_source_dofs_begin_[cell_];
+    const auto& mu_begin = cellmodel_solver_->mu_deim_source_dofs_begin_[cell_];
     if (!restricted_) {
       for (size_t ii = 0; ii < size_phi_; ++ii) {
         x_phi_[ii] = x[ii] - phi_shift_ * apply_shift;
@@ -395,18 +395,18 @@ public:
       }
     } else {
       for (size_t ii = 0; ii < phinat_begin; ++ii)
-        x_phi_[input_dofs[ii]] = x[input_dofs[ii]] - phi_shift_ * apply_shift;
+        x_phi_[source_dofs[ii]] = x[source_dofs[ii]] - phi_shift_ * apply_shift;
       for (size_t ii = phinat_begin; ii < mu_begin; ++ii)
-        x_phinat_[input_dofs[ii] - size_phi_] = x[input_dofs[ii]];
-      for (size_t ii = mu_begin; ii < input_dofs.size(); ++ii)
-        x_mu_[input_dofs[ii] - 2 * size_phi_] = x[input_dofs[ii]];
+        x_phinat_[source_dofs[ii] - size_phi_] = x[source_dofs[ii]];
+      for (size_t ii = mu_begin; ii < source_dofs.size(); ++ii)
+        x_mu_[source_dofs[ii] - 2 * size_phi_] = x[source_dofs[ii]];
     } // if (!restricted)
     // apply matrices
     const auto mv = cellmodel_solver_->template mv_func<Vector>(restricted_);
     const auto axpy = cellmodel_solver_->template vector_axpy_func<Vector>(restricted_);
     const auto scal = cellmodel_solver_->template scal_func<Vector>(restricted_);
     // first row
-    const auto& phi_dofs = cellmodel_solver_->phi_deim_output_dofs_[cell_];
+    const auto& phi_dofs = cellmodel_solver_->phi_deim_range_dofs_[cell_];
     mv(M_, x_phi_, y_phi_, phi_dofs);
     mv(D_, x_phi_, tmp_vec_, phi_dofs);
     axpy(y_phi_, dt_, tmp_vec_, phi_dofs);
@@ -415,13 +415,13 @@ public:
     for (const auto& DoF : dirichlet_.dirichlet_DoFs())
       y_phi_[DoF] = x[DoF];
     // second row
-    const auto& phinat_dofs = cellmodel_solver_->phinat_deim_output_dofs_[cell_];
+    const auto& phinat_dofs = cellmodel_solver_->phinat_deim_range_dofs_[cell_];
     mv(M_, x_phinat_, y_phinat_, phinat_dofs);
     scal(y_phinat_, 1. / phinat_scale_factor_, phinat_dofs);
     mv(M_ell_, x_mu_, tmp_vec_, phinat_dofs);
     axpy(y_phinat_, 1. / Be_, tmp_vec_, phinat_dofs);
     // third row
-    const auto& mu_dofs = cellmodel_solver_->mu_deim_output_dofs_[cell_];
+    const auto& mu_dofs = cellmodel_solver_->mu_deim_range_dofs_[cell_];
     mv(M_, x_mu_, y_mu_, mu_dofs);
     mv(M_ell_, x_phi_, tmp_vec_, mu_dofs);
     axpy(y_mu_, epsilon_, tmp_vec_, mu_dofs);

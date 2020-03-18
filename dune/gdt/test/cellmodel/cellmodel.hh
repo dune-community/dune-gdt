@@ -192,19 +192,19 @@ struct CellModelSolver
   void set_stokes_vec(const VectorType& stokes_vec);
 
   // Sets given dofs of stokes vector to values
-  void set_stokes_vec_dofs(const VectorType& values, const std::vector<size_t>& dofs);
+  void set_stokes_vec_dofs(const std::vector<R>& values, const std::vector<size_t>& dofs);
 
   // Sets orientation field vector belonging to cell to pfield_vec
   void set_ofield_vec(const size_t cell, const VectorType& ofield_vec);
 
   // Sets given dofs of orientation field vector belonging to cell to values
-  void set_ofield_vec_dofs(const size_t cell, const VectorType& values, const std::vector<size_t>& dofs);
+  void set_ofield_vec_dofs(const size_t cell, const std::vector<R>& values, const std::vector<size_t>& dofs);
 
   // Sets phasefield vector belonging to cell to pfield_vec
   void set_pfield_vec(const size_t cell, const VectorType& pfield_vec);
 
   // Sets given dofs of phasefield vector belonging to cell to pfield_vec
-  void set_pfield_vec_dofs(const size_t cell, const VectorType& values, const std::vector<size_t>& dofs);
+  void set_pfield_vec_dofs(const size_t cell, const std::vector<R>& values, const std::vector<size_t>& dofs);
 
   // Get stokes finite element vector
   const VectorType& stokes_vec();
@@ -226,11 +226,46 @@ struct CellModelSolver
 
   void prepare_pfield_operator(const double dt, const size_t cell, const bool restricted = false);
 
-  void compute_restricted_stokes_dofs(const std::vector<size_t>& output_dofs);
+  void compute_restricted_stokes_dofs(const std::vector<size_t>& range_dofs);
 
-  void compute_restricted_ofield_dofs(const std::vector<size_t>& output_dofs, const size_t cell);
+  void compute_restricted_ofield_dofs(const std::vector<size_t>& range_dofs, const size_t cell);
 
-  void compute_restricted_pfield_dofs(const std::vector<size_t>& output_dofs, const size_t cell);
+  void compute_restricted_pfield_dofs(const std::vector<size_t>& range_dofs, const size_t cell);
+
+  // appends entity to input_entities if one of its global_indices is in range_dofs
+  void maybe_add_entity(const E& entity,
+                        DynamicVector<size_t>& global_indices,
+                        const std::vector<size_t>& range_dofs,
+                        std::vector<E>& input_entities,
+                        const MapperInterface<PGV>& mapper,
+                        const size_t subvector_size) const;
+
+  // appends entity to input_entities if one of its global_indices is in range_dofs
+  void maybe_add_entity_stokes(const E& entity,
+                               DynamicVector<size_t>& global_indices,
+                               const std::vector<size_t>& u_range_dofs,
+                               const std::vector<size_t>& p_range_dofs,
+                               std::vector<E>& stokes_deim_entities,
+                               const MapperInterface<PGV>& u_mapper,
+                               const MapperInterface<PGV>& p_mapper);
+
+
+  void subtract_from_dofs(std::vector<size_t>& dofs, const size_t size) const;
+
+  void get_deim_entities(const MapperInterface<PGV>& mapper,
+                         std::vector<E>& deim_entities,
+                         const std::vector<size_t>& unique_range_dofs,
+                         const size_t subvector_size) const;
+
+  void get_unique_deim_dofs(std::vector<size_t>& unique_range_dofs,
+                            const std::vector<size_t>& range_dofs,
+                            const size_t max_dof_value) const;
+
+  void get_deim_source_dofs(std::vector<size_t>& source_dofs,
+                            const XT::LA::SparsityPatternDefault& pattern,
+                            const std::vector<size_t>& unique_range_dofs) const;
+
+  void sort_and_remove_duplicates_in_deim_source_dofs(std::vector<std::vector<size_t>>& source_dofs) const;
 
   //******************************************************************************************************************
   //*********************************************** Apply operators **************************************************
@@ -282,7 +317,9 @@ struct CellModelSolver
 
   void set_pfield_jacobian_state(const VectorType& source, const size_t cell, const bool restricted = false);
 
-  // Currently takes a full-dimensional vector, but only applies the rows that are in pfield_output_dofs
+  void set_pfield_jacobian_state_dofs(const std::vector<R>& source, const size_t cell);
+
+  // Currently takes a full-dimensional vector, but only applies the rows that are in pfield_range_dofs
   // As the rows are sparse, there shouldn't be too much performance impact of applying to the whole vector
   VectorType apply_pfield_jacobian(const VectorType& source, const size_t cell, const bool restricted = false);
 
@@ -290,7 +327,9 @@ struct CellModelSolver
 
   void set_ofield_jacobian_state(const VectorType& source, const size_t cell, const bool restricted = false);
 
-  // Currently takes a full-dimensional vector, but only applies the rows that are in pfield_output_dofs
+  void set_ofield_jacobian_state_dofs(const std::vector<R>& source, const size_t cell);
+
+  // Currently takes a full-dimensional vector, but only applies the rows that are in pfield_range_dofs
   // As the rows are sparse, there shouldn't be too much performance impact of applying to the whole vector
   VectorType apply_ofield_jacobian(const VectorType& source, const size_t cell, const bool restricted = false);
 
@@ -349,14 +388,14 @@ struct CellModelSolver
   //******************************************* DEIM related methods *************************************************
   //******************************************************************************************************************
 
-  // Dofs needed for evaluation of output_dofs computed in compute_restricted_stokes_dofs()
-  const std::vector<std::vector<size_t>>& stokes_deim_input_dofs() const;
+  // Dofs needed for evaluation of range_dofs computed in compute_restricted_stokes_dofs()
+  const std::vector<std::vector<size_t>>& stokes_deim_source_dofs() const;
 
-  // Dofs needed for evaluation of output_dofs computed in compute_restricted_ofield_dofs()
-  const std::vector<std::vector<size_t>>& ofield_deim_input_dofs(const size_t cell) const;
+  // Dofs needed for evaluation of range_dofs computed in compute_restricted_ofield_dofs()
+  const std::vector<std::vector<size_t>>& ofield_deim_source_dofs(const size_t cell) const;
 
-  // Dofs needed for evaluation of output_dofs computed in compute_restricted_pfield_dofs()
-  const std::vector<std::vector<size_t>>& pfield_deim_input_dofs(const size_t cell) const;
+  // Dofs needed for evaluation of range_dofs computed in compute_restricted_pfield_dofs()
+  const std::vector<std::vector<size_t>>& pfield_deim_source_dofs(const size_t cell) const;
 
   // private:
   //******************************************************************************************************************
@@ -516,23 +555,6 @@ struct CellModelSolver
   static XT::LA::SparsityPatternDefault create_stokes_pattern(const SpaceInterface<PGV, d, 1, R>& u_space,
                                                               const SpaceInterface<PGV, 1, 1, R>& p_space);
 
-  // appends entity to input_entities if one of its global_indices is in output_dofs
-  void maybe_add_entity(const E& entity,
-                        const DynamicVector<size_t>& global_indices,
-                        const std::vector<size_t>& output_dofs,
-                        std::vector<E>& input_entities,
-                        const size_t subvector_size) const;
-
-  // appends entity to input_entities if one of its global_indices is in output_dofs
-  void maybe_add_entity_stokes(const E& entity,
-                               DynamicVector<size_t>& global_indices,
-                               const std::vector<size_t>& u_output_dofs,
-                               const std::vector<size_t>& p_output_dofs,
-                               std::vector<E>& stokes_deim_entities,
-                               const MapperInterface<PGV>& u_mapper,
-                               const MapperInterface<PGV>& p_mapper);
-
-
   // sets temporary orientation field discrete functions to source values
   void fill_tmp_ofield(const size_t cell, const VectorType& source, const bool restricted = false) const;
 
@@ -631,14 +653,14 @@ struct CellModelSolver
   EigenVectorViewType stokes_f_vector_;
   EigenVectorViewType stokes_g_vector_;
   // Indices for restricted operator in DEIM context
-  std::vector<std::vector<size_t>> stokes_deim_input_dofs_;
-  // output dofs that were computed by the DEIM algorithm
-  std::shared_ptr<std::vector<size_t>> stokes_deim_output_dofs_;
-  std::vector<size_t> stokes_deim_unique_output_dofs_;
-  // output dofs for the respective variables, shifted to range [0, size_phi)
-  std::vector<size_t> u_deim_output_dofs_;
-  std::vector<size_t> p_deim_output_dofs_;
-  // Entities that we have to walk over to calculate values at output dofs
+  std::vector<std::vector<size_t>> stokes_deim_source_dofs_;
+  // range dofs that were computed by the DEIM algorithm
+  std::shared_ptr<std::vector<size_t>> stokes_deim_range_dofs_;
+  std::vector<size_t> stokes_deim_unique_range_dofs_;
+  // range dofs for the respective variables, shifted to range [0, size_phi)
+  std::vector<size_t> u_deim_range_dofs_;
+  std::vector<size_t> p_deim_range_dofs_;
+  // Entities that we have to walk over to calculate values at range dofs
   std::vector<E> stokes_deim_entities_;
   // vector containing integrals of pressure basis functions (for normalizing such that \int p = 0)
   VectorType p_basis_integrated_vector_;
@@ -683,15 +705,15 @@ struct CellModelSolver
   VectorType ofield_tmp_vec_;
   VectorType ofield_tmp_vec2_;
   // Indices for restricted operator in DEIM context
-  std::vector<std::vector<std::vector<size_t>>> ofield_deim_input_dofs_;
-  std::vector<size_t> Pnat_deim_input_dofs_begin_;
-  // output dofs that were computed by the DEIM algorithm
-  std::vector<std::shared_ptr<std::vector<size_t>>> ofield_deim_output_dofs_;
-  std::vector<std::vector<size_t>> ofield_deim_unique_output_dofs_;
-  // output dofs for the respective variables, shifted to range [0, size_phi)
-  std::vector<std::vector<size_t>> P_deim_output_dofs_;
-  std::vector<std::vector<size_t>> Pnat_deim_output_dofs_;
-  // Entities that we have to walk over to calculate values at output dofs
+  std::vector<std::vector<std::vector<size_t>>> ofield_deim_source_dofs_;
+  std::vector<size_t> Pnat_deim_source_dofs_begin_;
+  // range dofs that were computed by the DEIM algorithm
+  std::vector<std::shared_ptr<std::vector<size_t>>> ofield_deim_range_dofs_;
+  std::vector<std::vector<size_t>> ofield_deim_unique_range_dofs_;
+  // range dofs for the respective variables, shifted to range [0, size_phi)
+  std::vector<std::vector<size_t>> P_deim_range_dofs_;
+  std::vector<std::vector<size_t>> Pnat_deim_range_dofs_;
+  // Entities that we have to walk over to calculate values at range dofs
   std::vector<std::vector<E>> ofield_deim_entities_;
   // DiscreteFunctions and vectors to be used in (nonlinear) calculations where a source vector is provided
   // Sparsity pattern of one block of phase field system matrix
@@ -723,21 +745,21 @@ struct CellModelSolver
   mutable EigenVectorType phi_tmp_eigen3_;
   mutable EigenVectorType phi_tmp_eigen4_;
   // Indices for restricted operator in DEIM context
-  std::vector<std::vector<std::vector<size_t>>> pfield_deim_input_dofs_;
-  // phinat_deim_input_dofs_begin_[cell] contains index of first phinat input dof in pfield_deim_input_dofs_[cell]
+  std::vector<std::vector<std::vector<size_t>>> pfield_deim_source_dofs_;
+  // phinat_deim_source_dofs_begin_[cell] contains index of first phinat source dof in pfield_deim_source_dofs_[cell]
   // vector
-  std::vector<size_t> phinat_deim_input_dofs_begin_;
-  std::vector<size_t> mu_deim_input_dofs_begin_;
-  // output dofs that were computed by the DEIM algorithm
-  std::vector<std::shared_ptr<std::vector<size_t>>> pfield_deim_output_dofs_;
-  std::vector<std::vector<size_t>> pfield_deim_unique_output_dofs_;
-  // output dofs for the respective variables, shifted to range [0, size_phi)
-  std::vector<std::vector<size_t>> phi_deim_output_dofs_;
-  std::vector<std::vector<size_t>> phinat_deim_output_dofs_;
-  std::vector<std::vector<size_t>> mu_deim_output_dofs_;
-  // Indices that are both in phinat and mu output dofs
-  std::vector<std::vector<size_t>> both_mu_and_phi_deim_output_dofs_;
-  // Entities that we have to walk over to calculate values at output dofs
+  std::vector<size_t> phinat_deim_source_dofs_begin_;
+  std::vector<size_t> mu_deim_source_dofs_begin_;
+  // range dofs that were computed by the DEIM algorithm
+  std::vector<std::shared_ptr<std::vector<size_t>>> pfield_deim_range_dofs_;
+  std::vector<std::vector<size_t>> pfield_deim_unique_range_dofs_;
+  // range dofs for the respective variables, shifted to range [0, size_phi)
+  std::vector<std::vector<size_t>> phi_deim_range_dofs_;
+  std::vector<std::vector<size_t>> phinat_deim_range_dofs_;
+  std::vector<std::vector<size_t>> mu_deim_range_dofs_;
+  // Indices that are both in phinat and mu range dofs
+  std::vector<std::vector<size_t>> both_mu_and_phi_deim_range_dofs_;
+  // Entities that we have to walk over to calculate values at range dofs
   std::vector<std::vector<E>> pfield_deim_entities_;
   // DiscreteFunctions and vectors to be used in (nonlinear) calculations where a source vector is provided
   VectorType pfield_tmp_vec_;

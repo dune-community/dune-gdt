@@ -107,6 +107,8 @@ BOOST_PYTHON_MODULE(cellmodel)
       .def("set_ofield_jacobian_state",
            &CellModelSolver::set_ofield_jacobian_state,
            set_ofield_jacobian_state_overloads())
+      .def("set_pfield_jacobian_state_dofs", &CellModelSolver::set_pfield_jacobian_state_dofs)
+      .def("set_ofield_jacobian_state_dofs", &CellModelSolver::set_ofield_jacobian_state_dofs)
       .def("apply_pfield_jacobian", &CellModelSolver::apply_pfield_jacobian, apply_pfield_jacobian_overloads())
       .def("apply_ofield_jacobian", &CellModelSolver::apply_ofield_jacobian, apply_ofield_jacobian_overloads())
       .def("apply_stokes_jacobian", &CellModelSolver::apply_stokes_jacobian, apply_stokes_jacobian_overloads())
@@ -130,13 +132,13 @@ BOOST_PYTHON_MODULE(cellmodel)
       .def("compute_restricted_pfield_dofs", &CellModelSolver::compute_restricted_pfield_dofs)
       .def("compute_restricted_ofield_dofs", &CellModelSolver::compute_restricted_ofield_dofs)
       .def("compute_restricted_stokes_dofs", &CellModelSolver::compute_restricted_stokes_dofs)
-      .def("pfield_deim_input_dofs",
-           &CellModelSolver::pfield_deim_input_dofs,
+      .def("pfield_deim_source_dofs",
+           &CellModelSolver::pfield_deim_source_dofs,
            boost::python::return_value_policy<boost::python::return_by_value>())
-      .def("ofield_deim_input_dofs",
-           &CellModelSolver::ofield_deim_input_dofs,
+      .def("ofield_deim_source_dofs",
+           &CellModelSolver::ofield_deim_source_dofs,
            boost::python::return_value_policy<boost::python::return_by_value>())
-      .def("stokes_deim_input_dofs",
-           &CellModelSolver::stokes_deim_input_dofs,
+      .def("stokes_deim_source_dofs",
+           &CellModelSolver::stokes_deim_source_dofs,
            boost::python::return_value_policy<boost::python::return_by_value>());
 }

@@ -207,11 +207,11 @@ int main(int argc, char* argv[])
         model_solver.prepare_pfield_operator(dt, kk, true);
         model_solver.set_pfield_jacobian_state(pfield_state, kk, true);
         pfield_restricted_prep_time += std::chrono::steady_clock::now() - begin;
-        const auto& pfield_input_dofs = model_solver.pfield_deim_input_dofs(kk)[0];
-        const size_t num_input_dofs = pfield_input_dofs.size();
-        VectorType restricted_source(num_input_dofs, 0.);
-        for (size_t ii = 0; ii < num_input_dofs; ++ii)
-          restricted_source[ii] = pfield_source[pfield_input_dofs[ii]];
+        const auto& pfield_source_dofs = model_solver.pfield_deim_source_dofs(kk)[0];
+        const size_t num_source_dofs = pfield_source_dofs.size();
+        VectorType restricted_source(num_source_dofs, 0.);
+        for (size_t ii = 0; ii < num_source_dofs; ++ii)
+          restricted_source[ii] = pfield_source[pfield_source_dofs[ii]];
         begin = std::chrono::steady_clock::now();
         auto restricted_result = model_solver.apply_pfield_operator(restricted_source, kk, true);
         pfield_restricted_apply_time += std::chrono::steady_clock::now() - begin;
@@ -254,11 +254,11 @@ int main(int argc, char* argv[])
         model_solver.prepare_ofield_operator(dt, kk, true);
         model_solver.set_ofield_jacobian_state(ofield_state, kk, true);
         ofield_restricted_prep_time += std::chrono::steady_clock::now() - begin;
-        const auto& ofield_input_dofs = model_solver.ofield_deim_input_dofs(kk)[1];
-        const size_t num_input_dofs = ofield_input_dofs.size();
-        VectorType restricted_source(num_input_dofs, 0.);
-        for (size_t ii = 0; ii < num_input_dofs; ++ii)
-          restricted_source[ii] = ofield_source[ofield_input_dofs[ii]];
+        const auto& ofield_source_dofs = model_solver.ofield_deim_source_dofs(kk)[1];
+        const size_t num_source_dofs = ofield_source_dofs.size();
+        VectorType restricted_source(num_source_dofs, 0.);
+        for (size_t ii = 0; ii < num_source_dofs; ++ii)
+          restricted_source[ii] = ofield_source[ofield_source_dofs[ii]];
         begin = std::chrono::steady_clock::now();
         auto restricted_result = model_solver.apply_ofield_operator(restricted_source, kk, true);
         ofield_restricted_apply_time += std::chrono::steady_clock::now() - begin;
@@ -299,11 +299,11 @@ int main(int argc, char* argv[])
       auto begin = std::chrono::steady_clock::now();
       model_solver.prepare_stokes_operator(true);
       stokes_restricted_prep_time += std::chrono::steady_clock::now() - begin;
-      const auto& stokes_input_dofs = model_solver.stokes_deim_input_dofs()[2];
-      const size_t num_input_dofs = stokes_input_dofs.size();
-      VectorType restricted_source(num_input_dofs, 0.);
-      for (size_t ii = 0; ii < num_input_dofs; ++ii)
-        restricted_source[ii] = stokes_source[stokes_input_dofs[ii]];
+      const auto& stokes_source_dofs = model_solver.stokes_deim_source_dofs()[2];
+      const size_t num_source_dofs = stokes_source_dofs.size();
+      VectorType restricted_source(num_source_dofs, 0.);
+      for (size_t ii = 0; ii < num_source_dofs; ++ii)
+        restricted_source[ii] = stokes_source[stokes_source_dofs[ii]];
       begin = std::chrono::steady_clock::now();
       auto restricted_result = model_solver.apply_stokes_operator(restricted_source, true);
       stokes_restricted_apply_time += std::chrono::steady_clock::now() - begin;
