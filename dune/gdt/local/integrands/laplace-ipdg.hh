@@ -32,8 +32,8 @@ namespace LocalLaplaceIPDGIntegrands {
 template <class I>
 class InnerCoupling : public LocalQuaternaryIntersectionIntegrandInterface<I>
 {
+  using ThisType = InnerCoupling;
   using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I>;
-  using ThisType = InnerCoupling<I>;
 
 public:
   using BaseType::d;
@@ -213,8 +213,8 @@ private:
 template <class I>
 class DirichletCoupling : public LocalUnaryAndBinaryIntersectionIntegrandInterface<I>
 {
+  using ThisType = DirichletCoupling;
   using BaseType = LocalUnaryAndBinaryIntersectionIntegrandInterface<I>;
-  using ThisType = DirichletCoupling<I>;
 
 public:
   using BaseType::d;

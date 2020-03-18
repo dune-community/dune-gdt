@@ -255,7 +255,7 @@ compute_estimate(const GP& grid,
         // - approximate minimum eigenvalue of the diffusion over the element (evaluate at some points)
         double min_EV = std::numeric_limits<double>::max();
         for (auto&& quadrature_point :
-             QuadratureRules<double, d>::rule(element.geometry().type(), dfh->order() + over_integrate)) {
+             QuadratureRules<double, d>::rule(element.type(), dfh->order() + over_integrate)) {
           auto diff = dfh->evaluate(quadrature_point.position());
           auto eigen_solver =
               XT::LA::make_eigen_solver(diff,
@@ -308,8 +308,7 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
   py::module::import("dune.xt.la");
   py::module::import("dune.xt.grid");
   py::module::import("dune.xt.functions");
-
-  Dune::XT::Common::bindings::add_initialization(m, "dune.gdt", "gamm_2019_talk_on_conservative_rb");
+  py::module::import("dune.gdt.discretefunction");
 
   m.def("visualize",
         [](GP& grid, XT::Functions::FunctionInterface<d>& func, const std::string& filename) {

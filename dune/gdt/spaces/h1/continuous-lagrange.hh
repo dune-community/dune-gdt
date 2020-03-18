@@ -61,7 +61,7 @@ public:
   using typename BaseType::MapperType;
 
 private:
-  using MapperImplementation = ContinuousMapper<GridViewType, LocalFiniteElementFamilyType, r>;
+  using MapperImplementation = ContinuousMapper<GridViewType, LocalFiniteElementFamilyType>;
   using GlobalBasisImplementation = DefaultGlobalBasis<GridViewType, r, 1, R>;
 
 public:
@@ -75,7 +75,21 @@ public:
     this->update_after_adapt();
   }
 
-  ContinuousLagrangeSpace(const ThisType&) = default;
+  ContinuousLagrangeSpace(const ThisType& other)
+    : grid_view_(other.grid_view_)
+    , fe_order_(other.fe_order_)
+    , local_finite_elements_(std::make_unique<LocalLagrangeFiniteElementFamily<D, d, R, r>>())
+    , mapper_(nullptr)
+    , basis_(nullptr)
+  {
+    this->update_after_adapt();
+  }
+
+  BaseType* copy() const override final
+  {
+    return new ThisType(*this);
+  }
+
   ContinuousLagrangeSpace(ThisType&&) = default;
 
   ThisType& operator=(const ThisType&) = delete;

@@ -36,7 +36,7 @@ template <class E,
           class AR = TR>
 class LocalElementIntegralBilinearForm : public LocalElementBilinearFormInterface<E, t_r, t_rC, TR, F, a_r, a_rC, AR>
 {
-  using ThisType = LocalElementIntegralBilinearForm<E, t_r, t_rC, TR, F, a_r, a_rC, AR>;
+  using ThisType = LocalElementIntegralBilinearForm;
   using BaseType = LocalElementBilinearFormInterface<E, t_r, t_rC, TR, F, a_r, a_rC, AR>;
 
 public:
@@ -55,7 +55,7 @@ public:
   {}
 
   LocalElementIntegralBilinearForm(typename GenericIntegrand::GenericOrderFunctionType order_function,
-                                   typename GenericIntegrand::GenericEvalauteFunctionType evaluate_function,
+                                   typename GenericIntegrand::GenericEvaluateFunctionType evaluate_function,
                                    const XT::Common::ParameterType& param_type = {},
                                    const int over_integrate = 0)
     : BaseType(param_type)
@@ -95,7 +95,7 @@ public:
     result *= 0;
     // loop over all quadrature points
     const auto integrand_order = integrand_->order(test_basis, ansatz_basis) + over_integrate_;
-    for (const auto& quadrature_point : QuadratureRules<D, d>::rule(element.geometry().type(), integrand_order)) {
+    for (const auto& quadrature_point : QuadratureRules<D, d>::rule(element.type(), integrand_order)) {
       const auto point_in_reference_element = quadrature_point.position();
       // integration factors
       const auto integration_factor = element.geometry().integrationElement(point_in_reference_element);
@@ -132,7 +132,7 @@ template <class I,
 class LocalCouplingIntersectionIntegralBilinearForm
   : public LocalCouplingIntersectionBilinearFormInterface<I, t_r, t_rC, TR, F, a_r, a_rC, AR>
 {
-  using ThisType = LocalCouplingIntersectionIntegralBilinearForm<I, t_r, t_rC, TR, F, a_r, a_rC, AR>;
+  using ThisType = LocalCouplingIntersectionIntegralBilinearForm;
   using BaseType = LocalCouplingIntersectionBilinearFormInterface<I, t_r, t_rC, TR, F, a_r, a_rC, AR>;
 
 public:
@@ -196,8 +196,8 @@ public:
     const size_t integrand_order =
         integrand_->order(test_basis_inside, ansatz_basis_inside, test_basis_outside, ansatz_basis_outside)
         + over_integrate_;
-    for (const auto& quadrature_point : QuadratureRules<D, d - 1>::rule(
-             intersection.geometry().type(), XT::Common::numeric_cast<int>(integrand_order))) {
+    for (const auto& quadrature_point :
+         QuadratureRules<D, d - 1>::rule(intersection.type(), XT::Common::numeric_cast<int>(integrand_order))) {
       const auto point_in_reference_intersection = quadrature_point.position();
       // integration factors
       const auto integration_factor = intersection.geometry().integrationElement(point_in_reference_intersection);
@@ -261,7 +261,7 @@ template <class I,
 class LocalIntersectionIntegralBilinearForm
   : public LocalIntersectionBilinearFormInterface<I, t_r, t_rC, TR, F, a_r, a_rC, AR>
 {
-  using ThisType = LocalIntersectionIntegralBilinearForm<I, t_r, t_rC, TR, F, a_r, a_rC, AR>;
+  using ThisType = LocalIntersectionIntegralBilinearForm;
   using BaseType = LocalIntersectionBilinearFormInterface<I, t_r, t_rC, TR, F, a_r, a_rC, AR>;
 
 public:

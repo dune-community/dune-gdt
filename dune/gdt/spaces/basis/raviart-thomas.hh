@@ -37,7 +37,7 @@ namespace GDT {
 template <class GL, class R = double>
 class RaviartThomasGlobalBasis : public GlobalBasisInterface<GL, GL::dimension, 1, R>
 {
-  using ThisType = RaviartThomasGlobalBasis<GL, R>;
+  using ThisType = RaviartThomasGlobalBasis;
   using BaseType = GlobalBasisInterface<GL, GL::dimension, 1, R>;
 
 public:
@@ -126,7 +126,7 @@ private:
     void post_bind(const ElementType& elemnt) override final
     {
       current_local_fe_ = XT::Common::ConstStorageProvider<LocalFiniteElementInterface<D, d, R, d>>(
-          self_.local_finite_elements_.get(elemnt.geometry().type(), self_.order_));
+          self_.local_finite_elements_.get(elemnt.type(), self_.order_));
       if (set_data_in_post_bind_)
         current_fe_data_ = self_.fe_data_.at(self_.element_indices_.global_index(elemnt, 0));
     }
@@ -244,8 +244,8 @@ private:
         const auto intersection_index = intersection.indexInInside();
         const auto& local_keys_assosiated_with_intersection = intersection_to_local_key_map[intersection_index];
         if (local_keys_assosiated_with_intersection.size() > 0) {
-          const auto intersection_fe = make_local_orthonormal_finite_element<D, d - 1, R>(
-              intersection.geometry().type(), finite_element().order());
+          const auto intersection_fe =
+              make_local_orthonormal_finite_element<D, d - 1, R>(intersection.type(), finite_element().order());
           const auto& intersection_Pk_basis = intersection_fe->basis();
           DUNE_THROW_IF(intersection_Pk_basis.size() != local_keys_assosiated_with_intersection.size(),
                         Exceptions::interpolation_error,
@@ -257,7 +257,7 @@ private:
           XT::LA::CommonDenseVector<R> rhs(intersection_Pk_basis.size(), 0);
           // do a face quadrature
           for (auto&& quadrature_point :
-               QuadratureRules<D, d - 1>::rule(intersection.geometry().type(),
+               QuadratureRules<D, d - 1>::rule(intersection.type(),
                                                std::max(this->order() + intersection_Pk_basis.order(),
                                                         element_function_order + intersection_Pk_basis.order()))) {
             const auto point_on_reference_intersection = quadrature_point.position();
@@ -304,8 +304,8 @@ private:
         DUNE_THROW_IF(this->order() < 1,
                       Exceptions::interpolation_error,
                       "DoFs associated with the element only make sense for orders >= 1!");
-        const auto element_fe = make_local_orthonormal_finite_element<D, d, R, d>(this->element().geometry().type(),
-                                                                                  finite_element().order() - 1);
+        const auto element_fe =
+            make_local_orthonormal_finite_element<D, d, R, d>(this->element().type(), finite_element().order() - 1);
         const auto& element_Pkminus1_basis = element_fe->basis();
         DUNE_THROW_IF(element_Pkminus1_basis.size() != local_keys_assosiated_with_element.size(),
                       Exceptions::interpolation_error,
@@ -316,7 +316,7 @@ private:
         XT::LA::CommonDenseVector<R> rhs(element_Pkminus1_basis.size(), 0);
         // do a volume quadrature
         for (auto&& quadrature_point :
-             QuadratureRules<D, d>::rule(this->element().geometry().type(),
+             QuadratureRules<D, d>::rule(this->element().type(),
                                          std::max(this->order() + element_Pkminus1_basis.order(),
                                                   element_function_order + element_Pkminus1_basis.order()))) {
           const auto point_in_reference_element = quadrature_point.position();

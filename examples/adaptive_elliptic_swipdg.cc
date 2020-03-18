@@ -113,7 +113,7 @@ std::pair<V, F> compute_local_indicators(const DiscreteFunction<V, GV>& u_h,
                   // - approximate minimum eigenvalue of the diffusion over the element (evaluate at some points)
                   double min_EV = std::numeric_limits<double>::max();
                   for (auto&& quadrature_point :
-                       QuadratureRules<double, d>::rule(element.geometry().type(), d_el->order() + over_integrate)) {
+                       QuadratureRules<double, d>::rule(element.type(), d_el->order() + over_integrate)) {
                     auto diff = d_el->evaluate(quadrature_point.position());
                     auto eigen_solver =
                         XT::LA::make_eigen_solver(diff,
@@ -197,8 +197,9 @@ int main(int argc, char* argv[])
 
     // problem
     const Test::ESV2007DiffusionProblem<GV> problem;
-    const auto& df = problem.diffusion_factor.as_grid_function<E>();
-    const auto& dt = problem.diffusion_tensor.as_grid_function<E>();
+    const XT::Functions::ConstantFunction<d> diff_factor(1.);
+    const auto& df = diff_factor.as_grid_function<E>();
+    const auto& dt = problem.diffusion.as_grid_function<E>();
     const auto& f = problem.force.as_grid_function<E>();
     const auto& boundary_info = problem.boundary_info;
 

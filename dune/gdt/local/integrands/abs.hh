@@ -23,7 +23,7 @@ template <class E, size_t r = 1, size_t rC = 1, class R = double, class F = doub
 class LocalElementAbsIntegrand : public LocalUnaryElementIntegrandInterface<E, r, rC, R, F>
 {
   static_assert(rC == 1, "");
-  using ThisType = LocalElementAbsIntegrand<E, r, rC, R, F>;
+  using ThisType = LocalElementAbsIntegrand;
   using BaseType = LocalUnaryElementIntegrandInterface<E, r, rC, R, F>;
 
 public:

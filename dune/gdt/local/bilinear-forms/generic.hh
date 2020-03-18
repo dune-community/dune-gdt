@@ -34,7 +34,7 @@ template <class E,
           class AR = TR>
 class GenericLocalElementBilinearForm : public LocalElementBilinearFormInterface<E, t_r, t_rC, TR, F, a_r, a_rC, AR>
 {
-  using ThisType = GenericLocalElementBilinearForm<E, t_r, t_rC, TR, F, a_r, a_rC, AR>;
+  using ThisType = GenericLocalElementBilinearForm;
   using BaseType = LocalElementBilinearFormInterface<E, t_r, t_rC, TR, F, a_r, a_rC, AR>;
 
 public:
@@ -94,7 +94,7 @@ template <class I,
 class GenericLocalCouplingIntersectionBilinearForm
   : public LocalCouplingIntersectionBilinearFormInterface<I, t_r, t_rC, TR, F, a_r, a_rC, AR>
 {
-  using ThisType = GenericLocalCouplingIntersectionBilinearForm<I, t_r, t_rC, TR, F, a_r, a_rC, AR>;
+  using ThisType = GenericLocalCouplingIntersectionBilinearForm;
   using BaseType = LocalCouplingIntersectionBilinearFormInterface<I, t_r, t_rC, TR, F, a_r, a_rC, AR>;
 
 public:

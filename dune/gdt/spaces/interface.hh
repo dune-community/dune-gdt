@@ -48,6 +48,7 @@ template <class GridView, size_t range_dim = 1, size_t range_dim_columns = 1, cl
 class SpaceInterface
 {
   static_assert(XT::Grid::is_view<GridView>::value, "");
+  using ThisType = SpaceInterface;
 
 public:
   using GridViewType = GridView;
@@ -72,6 +73,8 @@ public:
     : dof_communicator_(nullptr)
     , adapted_(false)
   {}
+
+  virtual ThisType* copy() const = 0;
 
   virtual ~SpaceInterface() = default;
 
@@ -138,7 +141,7 @@ public:
       // make sense as a global basis. This does not matter, however, since we only need to be able to restore that
       // same basis later on to make sense of the DoF information.
       auto element_basis = this->basis().localize();
-      element_restriction_FE_data = element_basis->default_data(element.geometry().type());
+      element_restriction_FE_data = element_basis->default_data(element.type());
       element_basis->restore(element, element_restriction_FE_data);
       auto lhs = LocalElementIntegralBilinearForm<E, r, rC, R, R>(LocalProductIntegrand<E, r, R, R>())
                      .apply2(*element_basis, *element_basis);

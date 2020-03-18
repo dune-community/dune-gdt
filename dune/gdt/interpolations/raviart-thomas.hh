@@ -59,7 +59,7 @@ raviart_thomas_interpolation(
       const auto& local_keys_assosiated_with_intersection = intersection_to_local_key_map[intersection_index];
       if (local_keys_assosiated_with_intersection.size() > 0) {
         const auto intersection_fe =
-            make_local_orthonormal_finite_element<D, d - 1, R>(intersection.geometry().type(), rt_fe.order());
+            make_local_orthonormal_finite_element<D, d - 1, R>(intersection.type(), rt_fe.order());
         const auto& intersection_Pk_basis = intersection_fe->basis();
         DUNE_THROW_IF(intersection_Pk_basis.size() != local_keys_assosiated_with_intersection.size(),
                       Exceptions::interpolation_error,
@@ -78,7 +78,7 @@ raviart_thomas_interpolation(
             local_source_neighbor->bind(neighbor);
             // do a face quadrature, average source
             for (auto&& quadrature_point : QuadratureRules<D, d - 1>::rule(
-                     intersection.geometry().type(),
+                     intersection.type(),
                      std::max(rt_basis->order() + intersection_Pk_basis.order(),
                               std::max(local_source_element->order(), local_source_neighbor->order())
                                   + intersection_Pk_basis.order()))) {
@@ -122,7 +122,7 @@ raviart_thomas_interpolation(
           there_are_intersection_dofs_to_determine = true;
           // do a face quadrature
           for (auto&& quadrature_point : QuadratureRules<D, d - 1>::rule(
-                   intersection.geometry().type(),
+                   intersection.type(),
                    std::max(rt_basis->order() + intersection_Pk_basis.order(),
                             local_source_element->order() + intersection_Pk_basis.order()))) {
             const auto point_on_reference_intersection = quadrature_point.position();
@@ -172,8 +172,7 @@ raviart_thomas_interpolation(
       DUNE_THROW_IF(rt_basis->order() < 1,
                     Exceptions::interpolation_error,
                     "DoFs associated with the element only make sense for orders >= 1!");
-      const auto element_fe =
-          make_local_orthonormal_finite_element<D, d, R, d>(element.geometry().type(), rt_fe.order() - 1);
+      const auto element_fe = make_local_orthonormal_finite_element<D, d, R, d>(element.type(), rt_fe.order() - 1);
       const auto& element_Pkminus1_basis = element_fe->basis();
       DUNE_THROW_IF(element_Pkminus1_basis.size() != local_keys_assosiated_with_element.size(),
                     Exceptions::interpolation_error,
@@ -184,7 +183,7 @@ raviart_thomas_interpolation(
       XT::LA::CommonDenseVector<R> rhs(element_Pkminus1_basis.size(), 0);
       // do a volume quadrature
       for (auto&& quadrature_point :
-           QuadratureRules<D, d>::rule(element.geometry().type(),
+           QuadratureRules<D, d>::rule(element.type(),
                                        std::max(rt_basis->order() + element_Pkminus1_basis.order(),
                                                 local_source_element->order() + element_Pkminus1_basis.order()))) {
         const auto point_in_reference_element = quadrature_point.position();

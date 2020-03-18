@@ -9,7 +9,7 @@
 //   René Fritze     (2018)
 //   Tobias Leibner  (2018)
 
-#include <dune/xt/common/test/main.hxx> // <- this one has to come first (includes the config.h)!
+#include <dune/xt/test/main.hxx> // <- this one has to come first (includes the config.h)!
 
 #include <algorithm>
 #include <memory>
@@ -71,7 +71,7 @@ struct RtSpace : public ::testing::Test
     ASSERT_NE(grid_view(), nullptr);
     ASSERT_NE(space, nullptr);
     for (auto&& element : elements(*grid_view())) {
-      const auto& reference_element = Dune::ReferenceElements<D, d>::general(element.geometry().type());
+      const auto& reference_element = Dune::ReferenceElements<D, d>::general(element.type());
       EXPECT_EQ(reference_element.size(1), space->basis().localize(element)->size());
     }
   }
@@ -89,7 +89,7 @@ struct RtSpace : public ::testing::Test
     ASSERT_NE(grid_view(), nullptr);
     ASSERT_NE(space, nullptr);
     for (auto&& element : elements(*grid_view())) {
-      const auto& reference_element = Dune::ReferenceElements<D, d>::general(element.geometry().type());
+      const auto& reference_element = Dune::ReferenceElements<D, d>::general(element.type());
       EXPECT_EQ(reference_element.size(1), space->mapper().local_size(element));
     }
   }
@@ -143,7 +143,7 @@ struct RtSpace : public ::testing::Test
       const auto global_DoF_indices = space->mapper().global_indices(element);
       EXPECT_LE(space->mapper().local_size(element), global_DoF_indices.size());
       const auto intersection_to_local_DoF_indices_map =
-          space->finite_elements().get(element.geometry().type(), p).coefficients().local_key_indices(1);
+          space->finite_elements().get(element.type(), p).coefficients().local_key_indices(1);
       EXPECT_EQ(intersection_to_local_DoF_indices_map.size(), space->mapper().local_size(element));
       for (auto&& intersection : intersections(*grid_view(), element)) {
         const auto local_intersection_index = intersection.indexInInside();
@@ -180,9 +180,9 @@ struct RtSpace : public ::testing::Test
     ASSERT_NE(grid_view(), nullptr);
     ASSERT_NE(space, nullptr);
     for (auto&& element : elements(*grid_view())) {
-      const auto& reference_element = Dune::ReferenceElements<D, d>::general(element.geometry().type());
+      const auto& reference_element = Dune::ReferenceElements<D, d>::general(element.type());
       const auto intersection_to_local_DoF_indices_map =
-          space->finite_elements().get(element.geometry().type(), p).coefficients().local_key_indices(1);
+          space->finite_elements().get(element.type(), p).coefficients().local_key_indices(1);
       EXPECT_EQ(reference_element.size(1), intersection_to_local_DoF_indices_map.size());
       for (const auto& DoF_indices_per_intersection : intersection_to_local_DoF_indices_map)
         EXPECT_EQ(1, DoF_indices_per_intersection.size());
@@ -197,7 +197,7 @@ struct RtSpace : public ::testing::Test
     for (auto&& element : elements(*grid_view())) {
       const auto basis = space->basis().localize(element);
       const auto intersection_to_local_DoF_indices_map =
-          space->finite_elements().get(element.geometry().type(), p).coefficients().local_key_indices(1);
+          space->finite_elements().get(element.type(), p).coefficients().local_key_indices(1);
       for (auto&& intersection : intersections(*grid_view(), element)) {
         const auto xx_in_element_coordinates = intersection.geometry().center();
         const auto xx_in_reference_element_coordinates = element.geometry().local(xx_in_element_coordinates);
@@ -228,10 +228,10 @@ struct RtSpace : public ::testing::Test
     ASSERT_NE(space, nullptr);
     ASSERT_TRUE(false) << "continue here";
     //    for (auto&& element : elements(*grid_view())) {
-    //      const auto& reference_element = Dune::ReferenceElements<D, d>::general(element.geometry().type());
+    //      const auto& reference_element = Dune::ReferenceElements<D, d>::general(element.type());
     //      const auto basis = space->base_function_set(element);
     //      const double h = 1e-6;
-    //      for (const auto& quadrature_point : Dune::QuadratureRules<D, d>::rule(element.geometry().type(),
+    //      for (const auto& quadrature_point : Dune::QuadratureRules<D, d>::rule(element.type(),
     //      basis->order())) {
     //        const auto& xx = quadrature_point.position();
     //        const auto& J_inv_T = element.geometry().jacobianInverseTransposed(xx);
@@ -398,14 +398,15 @@ struct RtSpaceOnCubicLeafView : public RtSpace<typename Dune::XT::Grid::GridProv
 {
   using GridProviderType = Dune::XT::Grid::GridProvider<G>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;
+  using BaseType = RtSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, p>;
+  using BaseType::d;
+  using typename BaseType::D;
 
   std::shared_ptr<GridProviderType> grid_provider;
   std::shared_ptr<LeafGridViewType> leaf_view;
 
   RtSpaceOnCubicLeafView()
   {
-    using D = typename G::ctype;
-    static const constexpr size_t d = G::dimension;
     Dune::FieldVector<D, d> lower_left(-1.5); //  (i) negative coordinates and not the same as the reference element
     Dune::FieldVector<D, d> upper_right(-1.);
     std::array<unsigned int, d> num_elements; // (ii) at least 3 elements to have fully inner ones
@@ -495,14 +496,15 @@ struct RtSpaceOnMixedLeafView : public RtSpace<typename Dune::XT::Grid::GridProv
 {
   using GridProviderType = Dune::XT::Grid::GridProvider<G>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;
+  using BaseType = RtSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, p>;
+  using BaseType::d;
+  using typename BaseType::D;
 
   std::shared_ptr<GridProviderType> grid_provider;
   std::shared_ptr<LeafGridViewType> leaf_view;
 
   RtSpaceOnMixedLeafView()
   {
-    using D = typename G::ctype;
-    static const constexpr size_t d = G::dimension;
     switch (d) {
       case 1: {
         // cannot use ASSERT_... in a ctor

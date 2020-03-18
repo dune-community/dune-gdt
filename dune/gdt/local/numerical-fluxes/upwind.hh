@@ -66,7 +66,7 @@ public:
   {
     this->compute_entity_coords(x);
     const auto df = local_flux_inside_->jacobian(x_in_inside_coords_, (u + v) / 2., param);
-    if (n * df > 0)
+    if (n * df[0] > 0)
       return local_flux_inside_->evaluate(x_in_inside_coords_, u, param) * n;
     else
       return local_flux_outside_->evaluate(x_in_outside_coords_, v, param) * n;

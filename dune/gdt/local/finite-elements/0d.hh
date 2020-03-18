@@ -26,16 +26,18 @@ namespace GDT {
  * \sa LocalFiniteElementBasisInterface
  * \sa Local0dFiniteElement
  */
-template <class D, class R>
-class Local0dFiniteElementBasis : public LocalFiniteElementBasisInterface<D, 0, R, 1>
+template <class D, class R, size_t r = 1>
+class Local0dFiniteElementBasis : public LocalFiniteElementBasisInterface<D, 0, R, r>
 {
-  using ThisType = Local0dFiniteElementBasis<D, R>;
-  using BaseType = LocalFiniteElementBasisInterface<D, 0, R, 1>;
+  using ThisType = Local0dFiniteElementBasis;
+  using BaseType = LocalFiniteElementBasisInterface<D, 0, R, r>;
 
 public:
   using typename BaseType::DerivativeRangeType;
   using typename BaseType::DomainType;
   using typename BaseType::RangeType;
+
+  static_assert(r == 1, "Not yet implemented for r > 1");
 
   Local0dFiniteElementBasis()
     : geometry_type_(GeometryTypes::simplex(0))
@@ -93,15 +95,17 @@ private:
  * \sa LocalFiniteElementInterpolationInterface
  * \sa Local0dFiniteElement
  */
-template <class D, class R>
-class Local0dFiniteElementInterpolation : public LocalFiniteElementInterpolationInterface<D, 0, R, 1>
+template <class D, class R, size_t r = 1>
+class Local0dFiniteElementInterpolation : public LocalFiniteElementInterpolationInterface<D, 0, R, r>
 {
-  using ThisType = Local0dFiniteElementInterpolation<D, R>;
-  using BaseType = LocalFiniteElementInterpolationInterface<D, 0, R, 1>;
+  using ThisType = Local0dFiniteElementInterpolation;
+  using BaseType = LocalFiniteElementInterpolationInterface<D, 0, R, r>;
 
 public:
   using typename BaseType::DomainType;
   using typename BaseType::RangeType;
+
+  static_assert(r == 1, "Not yet implemented for r > 1");
 
   Local0dFiniteElementInterpolation()
     : geometry_type_(GeometryTypes::simplex(0))
@@ -149,14 +153,17 @@ private:
 template <class D>
 class Local0dFiniteElementCoefficients : public LocalFiniteElementCoefficientsInterface<D, 0>
 {
-  using ThisType = Local0dFiniteElementCoefficients<D>;
+  using ThisType = Local0dFiniteElementCoefficients;
   using BaseType = LocalFiniteElementCoefficientsInterface<D, 0>;
 
 public:
-  Local0dFiniteElementCoefficients()
+  Local0dFiniteElementCoefficients(const size_t r = 1)
     : geometry_type_(GeometryTypes::simplex(0))
-    , local_key_(0, 0, 0)
-  {}
+    , local_keys_(r)
+  {
+    for (unsigned int ii = 0; ii < r; ++ii)
+      local_keys_[ii] = LocalKey(0, 0, ii);
+  }
 
   Local0dFiniteElementCoefficients(const ThisType& other) = default;
 
@@ -172,18 +179,20 @@ public:
 
   size_t size() const override final
   {
-    return 1;
+    return local_keys_.size();
   }
 
   const LocalKey& local_key(const size_t ii) const override final
   {
-    DUNE_THROW_IF(ii > 0, Exceptions::finite_element_error, "ii = " << ii << "\n   size() = 1");
-    return local_key_;
+    DUNE_THROW_IF(ii > local_keys_.size(),
+                  Exceptions::finite_element_error,
+                  "ii = " << ii << "\n   size() = " << local_keys_.size());
+    return local_keys_[ii];
   }
 
 private:
   const GeometryType geometry_type_;
-  const LocalKey local_key_;
+  std::vector<LocalKey> local_keys_;
 }; // class Local0dFiniteElementCoefficients
 
 
@@ -197,17 +206,17 @@ private:
  * \sa Local0dFiniteElementInterpolation
  * \sa Local0dFiniteElementCoefficients
  */
-template <class D, class R>
-class Local0dFiniteElement : public LocalFiniteElementDefault<D, 0, R, 1>
+template <class D, class R, size_t r = 1>
+class Local0dFiniteElement : public LocalFiniteElementDefault<D, 0, R, r>
 {
-  using BaseType = LocalFiniteElementDefault<D, 0, R, 1>;
+  using BaseType = LocalFiniteElementDefault<D, 0, R, r>;
 
 public:
   Local0dFiniteElement()
     : BaseType(0,
-               new Local0dFiniteElementBasis<D, R>(),
-               new Local0dFiniteElementCoefficients<D>(),
-               new Local0dFiniteElementInterpolation<D, R>(),
+               new Local0dFiniteElementBasis<D, R, r>(),
+               new Local0dFiniteElementCoefficients<D>(r),
+               new Local0dFiniteElementInterpolation<D, R, r>(),
                {ReferenceElements<D, 0>::simplex().position(0, 0)})
   {}
 }; // class Local0dFiniteElement

@@ -25,7 +25,7 @@
 #  define DUNE_XT_COMMON_TEST_MAIN_ENABLE_DEBUG_LOGGING 1
 #endif
 
-#include <dune/xt/common/test/main.hxx> // <- this one has to come first (includes the config.h)!
+#include <dune/xt/test/main.hxx> // <- this one has to come first (includes the config.h)!
 
 
 GTEST_TEST(empty, main) {}

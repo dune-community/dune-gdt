@@ -24,7 +24,7 @@ class LocalElementIdentityIntegrand : public LocalUnaryElementIntegrandInterface
 {
   static_assert(r == 1, "");
   static_assert(rC == 1, "");
-  using ThisType = LocalElementIdentityIntegrand<E, r, rC, R, F>;
+  using ThisType = LocalElementIdentityIntegrand;
   using BaseType = LocalUnaryElementIntegrandInterface<E, r, rC, R, F>;
 
 public:

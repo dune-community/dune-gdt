@@ -14,7 +14,7 @@
 #include <functional>
 #include <tuple>
 
-#include <dune/xt/common/matrix.hh>
+#include <dune/xt/common/fmatrix.hh>
 #include <dune/xt/common/math.hh>
 #include <dune/xt/la/eigen-solver.hh>
 
@@ -96,6 +96,8 @@ public:
   {
     return std::make_unique<ThisType>(*this);
   }
+
+  NumericalVijayasundaramFlux(const ThisType& other) = default;
 
   using BaseType::apply;
 

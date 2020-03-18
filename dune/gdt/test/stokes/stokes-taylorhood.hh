@@ -10,9 +10,9 @@
 #ifndef DUNE_GDT_TEST_STOKES_STOKES_TAYLORHOOD_HH
 #define DUNE_GDT_TEST_STOKES_STOKES_TAYLORHOOD_HH
 
-#include <dune/xt/common/test/common.hh>
-#include <dune/xt/common/test/float_cmp.hh>
-#include <dune/xt/common/test/gtest/gtest.h>
+#include <dune/xt/test/common.hh>
+#include <dune/xt/test/common/float_cmp.hh>
+#include <dune/xt/test/gtest/gtest.h>
 
 #include <dune/xt/la/algorithms/cholesky.hh>
 #include <dune/xt/la/container/istl.hh>
@@ -31,7 +31,7 @@
 #include <dune/gdt/local/bilinear-forms/integrals.hh>
 #include <dune/gdt/local/integrands/conversion.hh>
 #include <dune/gdt/local/integrands/div.hh>
-#include <dune/gdt/local/integrands/elliptic.hh>
+#include <dune/gdt/local/integrands/laplace.hh>
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/local/functionals/integrals.hh>
 #include <dune/gdt/norms.hh>
@@ -59,16 +59,15 @@ struct StokesDirichletProblem
   using ScalarGridFunction = XT::Functions::GridFunctionInterface<E, 1, 1>;
   using VectorGridFunction = XT::Functions::GridFunctionInterface<E, d, 1>;
   using DomainType = typename ScalarGridFunction::LocalFunctionType::DomainType;
+  using DiffusionTensor = XT::Functions::GridFunctionInterface<E, d, d, RangeField>;
 
-  StokesDirichletProblem(std::shared_ptr<const ScalarGridFunction> diffusion_factor_in = default_diffusion_factor(),
+  StokesDirichletProblem(std::shared_ptr<const DiffusionTensor> diffusion_in = default_diffusion,
                          std::shared_ptr<const VectorGridFunction> rhs_f_in = default_rhs_f(),
                          std::shared_ptr<const VectorGridFunction> rhs_g_in = default_rhs_g(),
                          std::shared_ptr<const VectorGridFunction> dirichlet_in = default_dirichlet_values(),
                          std::shared_ptr<const VectorGridFunction> reference_sol_u = nullptr,
                          std::shared_ptr<const ScalarGridFunction> reference_sol_p = nullptr)
-    : diffusion_factor_(diffusion_factor_in)
-    , diffusion_tensor_(std::make_shared<const XT::Functions::ConstantGridFunction<E, d, d>>(
-          XT::LA::eye_matrix<FieldMatrix<double, d, d>>(d, d)))
+    : diffusion_(diffusion_in)
     , rhs_f_(rhs_f_in)
     , rhs_g_(rhs_g_in)
     , dirichlet_(dirichlet_in)
@@ -79,9 +78,10 @@ struct StokesDirichletProblem
     , grid_view_(grid_.leaf_view())
   {}
 
-  static std::shared_ptr<const ScalarGridFunction> default_diffusion_factor()
+  static std::shared_ptr<const DiffusionTensor> default_diffusion()
   {
-    return std::make_shared<const XT::Functions::ConstantGridFunction<E, 1, 1>>(1., "default diffusion factor");
+    return std::make_shared<const XT::Functions::ConstantGridFunction<E, d, d>>(
+        XT::LA::eye_matrix<FieldMatrix<double, d, d>>(d, d), "isotropic_diffusion");
   }
 
   static std::shared_ptr<const VectorGridFunction> default_rhs_f()
@@ -104,14 +104,9 @@ struct StokesDirichletProblem
     return grid_view_;
   } // ... make_initial_grid(...)
 
-  const ScalarGridFunction& diffusion_factor()
+  const XT::Functions::GridFunctionInterface<E, d, d>& diffusion()
   {
-    return *diffusion_factor_;
-  } // ... make_initial_grid(...)
-
-  const XT::Functions::GridFunctionInterface<E, d, d>& diffusion_tensor()
-  {
-    return *diffusion_tensor_;
+    return *diffusion_;
   } // ... make_initial_grid(...)
 
   const VectorGridFunction& rhs_f()
@@ -146,8 +141,7 @@ struct StokesDirichletProblem
     return boundary_info_;
   } // ... make_initial_grid(...)
 
-  std::shared_ptr<const ScalarGridFunction> diffusion_factor_;
-  std::shared_ptr<const XT::Functions::GridFunctionInterface<E, d, d, RangeField>> diffusion_tensor_;
+  std::shared_ptr<const DiffusionTensor> diffusion_;
   std::shared_ptr<const VectorGridFunction> rhs_f_;
   std::shared_ptr<const VectorGridFunction> rhs_g_;
   std::shared_ptr<const VectorGridFunction> dirichlet_;
@@ -205,7 +199,7 @@ public:
     }
   }
 
-  void run()
+  void run(const int velocity_order, const double expected_error_u, const double expected_error_p)
   {
     const auto& grid_view = problem_.grid_view();
     // Setup spaces and matrices and vectors
@@ -214,8 +208,8 @@ public:
     // \int (div u) q = \int gg q
     // System is [A B; B^T C] [u; p] = [f; g]
     // Dimensions are: A: n x n, B: n x m, C: m x m, u: n, f: n, p: m, g: m
-    const VelocitySpace velocity_space(grid_view, 2);
-    const PressureSpace pressure_space(grid_view, 1);
+    const VelocitySpace velocity_space(grid_view, velocity_order);
+    const PressureSpace pressure_space(grid_view, velocity_order - 1);
     const size_t m = velocity_space.mapper().size();
     const size_t n = pressure_space.mapper().size();
     auto pattern_A = make_element_sparsity_pattern(velocity_space, velocity_space, grid_view);
@@ -226,9 +220,8 @@ public:
     MatrixOperator<Matrix, GV, d> A_operator(grid_view, velocity_space, velocity_space, A);
     MatrixOperator<Matrix, GV, 1, 1, d> B_operator(grid_view, pressure_space, velocity_space, B);
     // calculate A_{ij} as \int \nabla v_i \nabla v_j
-    A_operator.append(LocalElementIntegralBilinearForm<E, d>(
-        LocalEllipticIntegrand<E, d>(problem_.diffusion_factor(), problem_.diffusion_tensor())));
-    // calculate B_{ij} as \int \nabla p_i div(v_j)
+    A_operator.append(LocalElementIntegralBilinearForm<E, d>(LocalLaplaceIntegrand<E, d>(problem_.diffusion())));
+    // calculate B_{ij} as \int -\nabla p_i div(v_j)
     B_operator.append(LocalElementIntegralBilinearForm<E, d, 1, RangeField, RangeField, 1>(
         LocalElementAnsatzValueTestDivProductIntegrand<E>(-1.)));
     // calculate rhs f as \int ff v and the integrated pressure space basis \int q_i
@@ -282,7 +275,7 @@ public:
     C.set_entry(dof_index, dof_index, 1.);
 
     // now solve the system
-    XT::LA::SaddlePointSolver<double> solver(A, B, B, C);
+    XT::LA::SaddlePointSolver<Vector, Matrix> solver(A, B, B, C);
     Vector solution_u(m), solution_p(n);
     // solve both by direct solver and by schurcomplement (where the schur complement is inverted by CG and the inner
     // solves with A are using a direct method)
@@ -293,31 +286,39 @@ public:
       const auto actual_u_vector = solution_u + dirichlet_vector;
       // ensure int_\Omega p = 0
       auto p_integral = p_basis_integrated_vector * solution_p;
+      auto p_ref_integral = p_basis_integrated_vector * reference_solution_p_vector;
       auto p_correction = p_basis_integrated_vector;
       auto p_correction_func = make_discrete_function(pressure_space, p_correction);
-      auto vol_domain = 4.;
+      auto p_ref_correction = reference_solution_p_vector;
+      auto p_ref_correction_func = make_discrete_function(pressure_space, p_ref_correction);
+      const auto vol_domain = 4.;
       XT::Functions::ConstantGridFunction<E> const_p_integral_func(p_integral / vol_domain);
+      XT::Functions::ConstantGridFunction<E> const_p_ref_integral_func(p_ref_integral / vol_domain);
       default_interpolation(const_p_integral_func, p_correction_func);
+      default_interpolation(const_p_ref_integral_func, p_ref_correction_func);
       const auto actual_p_vector = solution_p - p_correction;
+      const auto actual_p_ref_vector = reference_solution_p_vector - p_ref_correction;
       // calculate difference to reference solution
       const auto u_diff_vector = actual_u_vector - reference_solution_u_vector;
-      const auto p_diff_vector = actual_p_vector - reference_solution_p_vector;
+      const auto p_diff_vector = actual_p_vector - actual_p_ref_vector;
 
       auto sol_u_func = make_discrete_function(velocity_space, actual_u_vector);
       auto sol_p_func = make_discrete_function(pressure_space, actual_p_vector);
       auto p_diff = make_discrete_function(pressure_space, p_diff_vector);
       auto u_diff = make_discrete_function(velocity_space, u_diff_vector);
-      bool visualize = false;
+      auto actual_p_ref = make_discrete_function(pressure_space, actual_p_ref_vector);
+      bool visualize = true;
+      std::string grid_name = XT::Common::Typename<G>::value();
       if (visualize) {
-        sol_u_func.visualize("solution_u_" + type);
-        sol_p_func.visualize("solution_p_" + type);
-        reference_solution_u.visualize("u_ref");
-        reference_solution_p.visualize("p_ref");
-        u_diff.visualize("u_error_" + type);
-        p_diff.visualize("p_error_" + type);
+        sol_u_func.visualize("solution_u_" + type + "_" + grid_name);
+        sol_p_func.visualize("solution_p_" + type + "_" + grid_name);
+        reference_solution_u.visualize("u_ref_" + grid_name);
+        actual_p_ref.visualize("p_ref_" + grid_name);
+        u_diff.visualize("u_error_" + type + "_" + grid_name);
+        p_diff.visualize("p_error_" + type + "_" + grid_name);
       }
-      DXTC_EXPECT_FLOAT_LE(l2_norm(problem_.grid_view(), u_diff), 2.29e-06);
-      DXTC_EXPECT_FLOAT_LE(l2_norm(problem_.grid_view(), p_diff), 2.22e-05);
+      DXTC_EXPECT_FLOAT_LE(l2_norm(problem_.grid_view(), u_diff), expected_error_u);
+      DXTC_EXPECT_FLOAT_LE(l2_norm(problem_.grid_view(), p_diff), expected_error_p);
     }
   } // run
 
@@ -337,7 +338,7 @@ class StokesTestcase1 : public StokesDirichletTest<G>
 
 public:
   StokesTestcase1()
-    : BaseType(ProblemType(ProblemType::default_diffusion_factor(),
+    : BaseType(ProblemType(ProblemType::default_diffusion(),
                            ProblemType::default_rhs_f(),
                            ProblemType::default_rhs_g(),
                            dirichlet(),

@@ -95,7 +95,7 @@ protected:
 
   virtual const FF& force() const = 0;
 
-  virtual std::vector<std::string> norms() const override
+  std::vector<std::string> norms() const override
   {
     auto nrms = BaseType::norms();
     nrms.push_back("eta_NC");
@@ -147,7 +147,7 @@ protected:
         oswald_interpolation_operator.assemble(/*parallel=*/true);
         const auto h1_interpolation = oswald_interpolation_operator.apply(solution);
         self.current_data_["norm"][norm_id] =
-            elliptic_norm(current_space.grid_view(), one, diffusion(), solution - h1_interpolation);
+            elliptic_norm(current_space.grid_view(), diffusion(), solution - h1_interpolation);
       } else if (norm_id == "eta_R") {
         norm_it = remaining_norms.erase(norm_it); // ... or here ...
         // compute estimate
@@ -158,42 +158,41 @@ protected:
         double eta_R_2 = 0.;
         std::mutex eta_R_2_mutex;
         auto walker = XT::Grid::make_walker(current_space.grid_view());
-        walker.append([]() {},
-                      [&](const auto& element) {
-                        auto local_df = this->diffusion().local_function();
-                        local_df->bind(element);
-                        auto local_force = this->force().local_function();
-                        local_force->bind(element);
-                        auto local_flux = flux_reconstruction.local_function();
-                        local_flux->bind(element);
-                        auto flux_divergence = XT::Functions::divergence(*local_flux);
-                        flux_divergence.bind(element);
-                        // approximate minimum eigenvalue of the diffusion over the element ...
-                        double min_EV = std::numeric_limits<double>::max();
-                        // ... which we do by evaluating at some quadrature points
-                        for (auto&& quadrature_point :
-                             QuadratureRules<double, d>::rule(element.geometry().type(), local_df->order() + 3)) {
-                          auto diff = local_df->evaluate(quadrature_point.position());
-                          auto eigen_solver = XT::LA::make_eigen_solver(
-                              diff,
-                              {{"type", XT::LA::EigenSolverOptions<decltype(diff)>::types().at(0)},
-                               {"assert_positive_eigenvalues", "1e-15"}});
-                          min_EV = std::min(min_EV, eigen_solver.min_eigenvalues(1).at(0));
-                        }
-                        DUNE_THROW_IF(!(min_EV > 0.),
-                                      Exceptions::integrand_error,
-                                      "The minimum eigenvalue of a positiv definite matrix must not be negative!"
-                                          << "\n\nmin_EV = " << min_EV);
-                        auto L2_norm_2 =
-                            LocalElementIntegralBilinearForm<E>(LocalProductIntegrand<E>(),
-                                                                /*over_integrate=*/3)
-                                .apply2(*local_force - flux_divergence, *local_force - flux_divergence)[0][0];
-                        const auto h = XT::Grid::diameter(element);
-                        const auto C_P = 1. / (M_PIl * M_PIl); // Poincare constant (known for simplices/cubes)
-                        std::lock_guard<std::mutex> lock(eta_R_2_mutex);
-                        eta_R_2 += (C_P * h * h * L2_norm_2) / min_EV;
-                      },
-                      []() {});
+        walker.append(
+            []() {},
+            [&](const auto& element) {
+              auto local_df = this->diffusion().local_function();
+              local_df->bind(element);
+              auto local_force = this->force().local_function();
+              local_force->bind(element);
+              auto local_flux = flux_reconstruction.local_function();
+              local_flux->bind(element);
+              auto flux_divergence = XT::Functions::divergence(*local_flux);
+              flux_divergence.bind(element);
+              // approximate minimum eigenvalue of the diffusion over the element ...
+              double min_EV = std::numeric_limits<double>::max();
+              // ... which we do by evaluating at some quadrature points
+              for (auto&& quadrature_point : QuadratureRules<double, d>::rule(element.type(), local_df->order() + 3)) {
+                auto diff = local_df->evaluate(quadrature_point.position());
+                auto eigen_solver =
+                    XT::LA::make_eigen_solver(diff,
+                                              {{"type", XT::LA::EigenSolverOptions<decltype(diff)>::types().at(0)},
+                                               {"assert_positive_eigenvalues", "1e-15"}});
+                min_EV = std::min(min_EV, eigen_solver.min_eigenvalues(1).at(0));
+              }
+              DUNE_THROW_IF(!(min_EV > 0.),
+                            Exceptions::integrand_error,
+                            "The minimum eigenvalue of a positiv definite matrix must not be negative!"
+                                << "\n\nmin_EV = " << min_EV);
+              auto L2_norm_2 = LocalElementIntegralBilinearForm<E>(LocalProductIntegrand<E>(),
+                                                                   /*over_integrate=*/3)
+                                   .apply2(*local_force - flux_divergence, *local_force - flux_divergence)[0][0];
+              const auto h = XT::Grid::diameter(element);
+              const auto C_P = 1. / (M_PIl * M_PIl); // Poincare constant (known for simplices/cubes)
+              std::lock_guard<std::mutex> lock(eta_R_2_mutex);
+              eta_R_2 += (C_P * h * h * L2_norm_2) / min_EV;
+            },
+            []() {});
         walker.walk(/*parallel=*/true);
         self.current_data_["norm"][norm_id] = std::sqrt(eta_R_2);
       } else if (norm_id == "eta_DF") {
@@ -240,7 +239,7 @@ protected:
     return BaseType::compute(refinement_level, remaining_norms, remaining_estimates, remaining_quantities);
   } // ... compute(...)
 
-  virtual std::unique_ptr<S> make_space(const GP& current_grid) override
+  std::unique_ptr<S> make_space(const GP& current_grid) override
   {
     if (space_type_ == "fv")
       return std::make_unique<FiniteVolumeSpace<GV>>(current_grid.leaf_view());
@@ -256,9 +255,8 @@ protected:
     }
   } // ... make_space(...)
 
-  virtual std::unique_ptr<O> make_residual_operator(const S& space) override
+  std::unique_ptr<O> make_residual_operator(const S& space) override
   {
-    const auto& one = one_.template as_grid_function<E>();
     // define lhs operator (has to be a pointer to allow the residual operator to manage the memory in the end)
     auto lhs_op = std::make_unique<MatrixOperator<M, GV>>(make_matrix_operator<M>(
         space,

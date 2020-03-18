@@ -28,14 +28,19 @@ namespace GDT {
 
 
 /**
- * Given an inducing function f, computes `f(x) * phi(x) * psi(x)` for all combinations of phi and psi in the bases.
+ * Given an inducing function f (may be matrix-valued), computes `(f(x) * psi(x)) * phi(x)` for all combinations of phi
+ * in the ansatz basis and psi in the test basis.
  *
  * \note Note that f can also be given as a scalar value or omitted.
+ *
+ * \note Applying f to the ansatz basis can be done by passing f^T (the transposed of f)
+ *
+ * \sa local_binary_to_unary_element_integrand
  */
 template <class E, size_t r = 1, class TR = double, class F = double, class AR = TR>
 class LocalElementProductIntegrand : public LocalBinaryElementIntegrandInterface<E, r, 1, TR, F, r, 1, AR>
 {
-  using ThisType = LocalElementProductIntegrand<E, r, TR, F, AR>;
+  using ThisType = LocalElementProductIntegrand;
   using BaseType = LocalBinaryElementIntegrandInterface<E, r, 1, TR, F, r, 1, AR>;
 
 public:
@@ -119,7 +124,7 @@ template <class I, size_t r = 1, class TR = double, class F = double, class AR =
 class LocalCouplingIntersectionProductIntegrand
   : public LocalQuaternaryIntersectionIntegrandInterface<I, r, 1, TR, F, r, 1, AR>
 {
-  using ThisType = LocalCouplingIntersectionProductIntegrand<I, r, TR, F, AR>;
+  using ThisType = LocalCouplingIntersectionProductIntegrand;
   using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I, r, 1, TR, F, r, 1, AR>;
 
 public:
@@ -249,7 +254,7 @@ private:
 template <class I, size_t r = 1, class TR = double, class F = double, class AR = TR>
 class LocalIntersectionProductIntegrand : public LocalBinaryIntersectionIntegrandInterface<I, r, 1, TR, F, r, 1, AR>
 {
-  using ThisType = LocalIntersectionProductIntegrand<I, r, TR, F, AR>;
+  using ThisType = LocalIntersectionProductIntegrand;
   using BaseType = LocalBinaryIntersectionIntegrandInterface<I, r, 1, TR, F, r, 1, AR>;
 
 public:

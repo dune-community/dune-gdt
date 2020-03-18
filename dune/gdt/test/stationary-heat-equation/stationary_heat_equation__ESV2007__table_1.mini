@@ -30,7 +30,7 @@ use_tbb = false
 
 [NearlyESV2007Table1ButWithCubicGridTest.columns_1_to_5.results]
 target.h      = [3.54e-01 1.77e-01 8.84e-02]
-norm.H_1_semi = [2.77e-01 1.39e-01 6.98e-02]
-norm.eta_NC   = [1.11e-02 3.62e-03 1.25e-03]
+norm.H_1_semi = [2.52e-01 1.26e-01 6.30e-02]
+norm.eta_NC   = [1.58e-02 4.40e-03 1.15e-03]
 norm.eta_R    = [8.85e-02 2.22e-02 5.56e-03]
-norm.eta_DF  = [4.42e-01 2.23e-01 1.12e-01]
+norm.eta_DF  = [3.51e-01 1.77e-01 8.90e-02]

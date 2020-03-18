@@ -40,7 +40,7 @@ namespace GDT {
 template <class V, class GV, size_t r = 1, size_t rC = 1, class F = double, class AssemblyGridView = GV>
 class L2VolumeVectorFunctional : public VectorBasedFunctional<V, GV, r, rC, F, AssemblyGridView>
 {
-  using ThisType = L2VolumeVectorFunctional<V, GV, r, rC, F, AssemblyGridView>;
+  using ThisType = L2VolumeVectorFunctional;
   using BaseType = VectorBasedFunctional<V, GV, r, rC, F, AssemblyGridView>;
 
 public:

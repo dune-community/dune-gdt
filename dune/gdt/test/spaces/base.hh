@@ -25,7 +25,7 @@
 
 #include <dune/localfunctions/lagrange/equidistantpoints.hh>
 
-#include <dune/xt/common/test/gtest/gtest.h>
+#include <dune/xt/test/gtest/gtest.h>
 #include <dune/xt/common/float_cmp.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
 #include <dune/xt/grid/grids.hh>
@@ -49,6 +49,7 @@ struct SpaceTestBase : public ::testing::Test
   using R = typename SpaceType::R;
   static const constexpr size_t r = SpaceType::r;
   static const constexpr size_t rC = SpaceType::rC;
+  static constexpr double default_tolerance = p > 2 ? (d > 3 ? 1e-7 : (d == 3 ? 1e-10 : 1e-13)) : 1e-15;
 
   using GlobalBasisType = typename SpaceType::GlobalBasisType;
   using MapperType = typename SpaceType::MapperType;
@@ -76,7 +77,7 @@ struct SpaceTestBase : public ::testing::Test
     ASSERT_NE(space, nullptr);
     ASSERT_TRUE(space->is_lagrangian()) << "Do not call this test otherwise!";
     for (auto&& element : elements(*grid_view))
-      EXPECT_EQ(r * numLagrangePoints(element.geometry().type().id(), d, p), space->basis().localize(element)->size());
+      EXPECT_EQ(r * numLagrangePoints(element.type().id(), d, p), space->basis().localize(element)->size());
   }
 
   void basis_of_lagrange_space_exists_on_each_element_with_correct_order()
@@ -98,14 +99,14 @@ struct SpaceTestBase : public ::testing::Test
                 space->finite_elements().get(geometry_type, p).lagrange_points().size());
   }
 
-  void basis_is_lagrange_basis(const double& tolerance = 1e-15)
+  void basis_is_lagrange_basis(const double tolerance = default_tolerance)
   {
     ASSERT_NE(grid_view, nullptr);
     ASSERT_NE(space, nullptr);
     ASSERT_TRUE(space->is_lagrangian()) << "Do not call this test otherwise!";
     for (auto&& element : elements(*grid_view)) {
       const auto basis = space->basis().localize(element);
-      const auto lagrange_points = space->finite_elements().get(element.geometry().type(), p).lagrange_points();
+      const auto lagrange_points = space->finite_elements().get(element.type(), p).lagrange_points();
       EXPECT_EQ(lagrange_points.size(), basis->size() / r);
       for (size_t ii = 0; ii < lagrange_points.size(); ++ii) {
         const auto values = basis->evaluate_set(lagrange_points[ii]);
@@ -130,10 +131,10 @@ struct SpaceTestBase : public ::testing::Test
     ASSERT_NE(space, nullptr);
     ASSERT_TRUE(space->is_lagrangian()) << "Do not call this test otherwise!";
     for (auto&& element : elements(*grid_view)) {
-      const auto& reference_element = ReferenceElements<D, d>::general(element.geometry().type());
+      const auto& reference_element = ReferenceElements<D, d>::general(element.type());
       const auto basis = space->basis().localize(element);
       const double h = 1e-6;
-      for (const auto& quadrature_point : QuadratureRules<D, d>::rule(element.geometry().type(), basis->order())) {
+      for (const auto& quadrature_point : QuadratureRules<D, d>::rule(element.type(), basis->order())) {
         const auto& xx = quadrature_point.position();
         const auto& J_inv_T = element.geometry().jacobianInverseTransposed(xx);
         const auto jacobians = basis->jacobians_of_set(xx);
@@ -184,7 +185,7 @@ struct SpaceTestBase : public ::testing::Test
     ASSERT_NE(space, nullptr);
     ASSERT_TRUE(space->is_lagrangian()) << "Do not call this test otherwise!";
     for (auto&& element : elements(*grid_view))
-      EXPECT_EQ(r * numLagrangePoints(element.geometry().type().id(), d, p), space->mapper().local_size(element));
+      EXPECT_EQ(r * numLagrangePoints(element.type().id(), d, p), space->mapper().local_size(element));
   }
 
   void mapper_reports_correct_max_num_DoFs()
@@ -226,7 +227,7 @@ struct SpaceTestBase : public ::testing::Test
       EXPECT_EQ(1, map_to_global.count(global_index));
   } // ... mapper_of_discontinuous_space_maps_correctly(...)
 
-  void local_interpolation_seems_to_be_correct()
+  void local_interpolation_seems_to_be_correct(const double tolerance = default_tolerance)
   {
     ASSERT_NE(grid_view, nullptr);
     ASSERT_NE(space, nullptr);
@@ -240,7 +241,7 @@ struct SpaceTestBase : public ::testing::Test
             [&](const auto& x) { return shape_functions.evaluate(x)[ii]; }, shape_functions.order());
         ASSERT_GE(dofs.size(), shape_functions.size());
         for (size_t jj = 0; jj < shape_functions.size(); ++jj)
-          EXPECT_TRUE(XT::Common::FloatCmp::eq(ii == jj ? 1. : 0., dofs[jj]))
+          EXPECT_TRUE(XT::Common::FloatCmp::eq(ii == jj ? 1. : 0., dofs[jj], tolerance, tolerance))
               << "\nii == jj ? 1. : 0. = " << (ii == jj ? 1. : 0.) << "\ndofs[jj] = " << dofs[jj];
       }
     }

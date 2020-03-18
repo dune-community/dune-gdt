@@ -24,7 +24,7 @@ namespace GDT {
 template <class E, size_t r = 1, size_t rC = 1, class R = double, class F = double>
 class GenericLocalUnaryElementIntegrand : public LocalUnaryElementIntegrandInterface<E, r, rC, R, F>
 {
-  using ThisType = GenericLocalUnaryElementIntegrand<E, r, rC, R, F>;
+  using ThisType = GenericLocalUnaryElementIntegrand;
   using BaseType = LocalUnaryElementIntegrandInterface<E, r, rC, R, F>;
 
 public:
@@ -33,31 +33,40 @@ public:
 
   using GenericOrderFunctionType =
       std::function<int(const LocalBasisType& /*basis*/, const XT::Common::Parameter& /*param*/)>;
-  using GenericEvalauteFunctionType = std::function<void(const LocalBasisType& /*basis*/,
+  using GenericEvaluateFunctionType = std::function<void(const LocalBasisType& /*basis*/,
                                                          const DomainType& /*point_in_reference_element*/,
                                                          DynamicVector<F>& /*result*/,
                                                          const XT::Common::Parameter& /*param*/)>;
+  using GenericPostBindFunctionType = std::function<void(const E& /*ele*/)>;
 
   GenericLocalUnaryElementIntegrand(GenericOrderFunctionType order_function,
-                                    GenericEvalauteFunctionType evaluate_function,
+                                    GenericEvaluateFunctionType evaluate_function,
+                                    GenericPostBindFunctionType post_bind_function = [](const E&) {},
                                     const XT::Common::ParameterType& param_type = {})
     : BaseType(param_type)
     , order_(order_function)
     , evaluate_(evaluate_function)
+    , post_bind_(post_bind_function)
   {}
 
   GenericLocalUnaryElementIntegrand(const ThisType& other)
     : BaseType(other.parameter_type())
     , order_(other.order_)
     , evaluate_(other.evaluate_)
+    , post_bind_(other.post_bind_)
   {}
 
-  std::unique_ptr<BaseType> copy_as_unary_element_integrand() const
+  std::unique_ptr<BaseType> copy_as_unary_element_integrand() const override final
   {
     return std::make_unique<ThisType>(*this);
   }
 
-  int order(const LocalBasisType& basis, const XT::Common::Parameter& param = {}) const
+  void post_bind(const E& ele) override final
+  {
+    post_bind_(ele);
+  }
+
+  int order(const LocalBasisType& basis, const XT::Common::Parameter& param = {}) const override final
   {
     return order_(basis, this->parse_parameter(param));
   }
@@ -67,7 +76,7 @@ public:
   void evaluate(const LocalBasisType& basis,
                 const DomainType& point_in_reference_element,
                 DynamicVector<F>& result,
-                const XT::Common::Parameter& param = {}) const
+                const XT::Common::Parameter& param = {}) const override final
   {
     // prepare storage
     const size_t size = basis.size(param);
@@ -83,7 +92,8 @@ public:
 
 private:
   const GenericOrderFunctionType order_;
-  const GenericEvalauteFunctionType evaluate_;
+  const GenericEvaluateFunctionType evaluate_;
+  const GenericPostBindFunctionType post_bind_;
 }; // class GenericLocalUnaryElementIntegrand
 
 
@@ -98,7 +108,7 @@ template <class E,
 class GenericLocalBinaryElementIntegrand
   : public LocalBinaryElementIntegrandInterface<E, t_r, t_rC, TF, F, a_r, a_rC, AF>
 {
-  using ThisType = GenericLocalBinaryElementIntegrand<E, t_r, t_rC, TF, F, a_r, a_rC, AF>;
+  using ThisType = GenericLocalBinaryElementIntegrand;
   using BaseType = LocalBinaryElementIntegrandInterface<E, t_r, t_rC, TF, F, a_r, a_rC, AF>;
 
 public:
@@ -109,34 +119,43 @@ public:
   using GenericOrderFunctionType = std::function<int(const LocalTestBasisType& /*test_basis*/,
                                                      const LocalAnsatzBasisType& /*ansatz_basis*/,
                                                      const XT::Common::Parameter& /*param*/)>;
-  using GenericEvalauteFunctionType = std::function<void(const LocalTestBasisType& /*test_basis*/,
+  using GenericEvaluateFunctionType = std::function<void(const LocalTestBasisType& /*test_basis*/,
                                                          const LocalAnsatzBasisType& /*ansatz_basis*/,
                                                          const DomainType& /*point_in_reference_element*/,
                                                          DynamicMatrix<F>& /*result*/,
                                                          const XT::Common::Parameter& /*param*/)>;
+  using GenericPostBindFunctionType = std::function<void(const E& /*ele*/)>;
 
   GenericLocalBinaryElementIntegrand(GenericOrderFunctionType order_function,
-                                     GenericEvalauteFunctionType evaluate_function,
+                                     GenericEvaluateFunctionType evaluate_function,
+                                     GenericPostBindFunctionType post_bind_function = [](const E&) {},
                                      const XT::Common::ParameterType& param_type = {})
     : BaseType(param_type)
     , order_(order_function)
     , evaluate_(evaluate_function)
+    , post_bind_(post_bind_function)
   {}
 
   GenericLocalBinaryElementIntegrand(const ThisType& other)
     : BaseType(other.parameter_type())
     , order_(other.order_)
     , evaluate_(other.evaluate_)
+    , post_bind_(other.post_bind_)
   {}
 
-  std::unique_ptr<BaseType> copy_as_binary_element_integrand() const
+  std::unique_ptr<BaseType> copy_as_binary_element_integrand() const override final
   {
     return std::make_unique<ThisType>(*this);
   }
 
+  void post_bind(const E& ele) override final
+  {
+    post_bind_(ele);
+  }
+
   int order(const LocalTestBasisType& test_basis,
             const LocalAnsatzBasisType& ansatz_basis,
-            const XT::Common::Parameter& param = {}) const
+            const XT::Common::Parameter& param = {}) const override final
   {
     return order_(test_basis, ansatz_basis, this->parse_parameter(param));
   }
@@ -147,7 +166,7 @@ public:
                 const LocalAnsatzBasisType& ansatz_basis,
                 const DomainType& point_in_reference_element,
                 DynamicMatrix<F>& result,
-                const XT::Common::Parameter& param = {}) const
+                const XT::Common::Parameter& param = {}) const override final
   {
     // prepare storage
     const size_t rows = test_basis.size(param);
@@ -166,7 +185,8 @@ public:
 
 private:
   const GenericOrderFunctionType order_;
-  const GenericEvalauteFunctionType evaluate_;
+  const GenericEvaluateFunctionType evaluate_;
+  const GenericPostBindFunctionType post_bind_;
 }; // class GenericLocalBinaryElementIntegrand
 
 
@@ -181,8 +201,8 @@ template <class I,
 class GenericLocalBinaryIntersectionIntegrand
   : public LocalBinaryIntersectionIntegrandInterface<I, t_r, t_rC, TF, F, a_r, a_rC, AF>
 {
+  using ThisType = GenericLocalBinaryIntersectionIntegrand;
   using BaseType = LocalBinaryIntersectionIntegrandInterface<I, t_r, t_rC, TF, F, a_r, a_rC, AF>;
-  using ThisType = GenericLocalBinaryIntersectionIntegrand<I, t_r, t_rC, TF, F, a_r, a_rC, AF>;
 
 public:
   using typename BaseType::DomainType;
@@ -192,19 +212,22 @@ public:
   using GenericOrderFunctionType = std::function<int(const LocalTestBasisType& /*test_basis*/,
                                                      const LocalAnsatzBasisType& /*ansatz_basis*/,
                                                      const XT::Common::Parameter& /*param*/)>;
-  using GenericEvalauteFunctionType = std::function<void(const LocalTestBasisType& /*test_basis*/,
+  using GenericEvaluateFunctionType = std::function<void(const LocalTestBasisType& /*test_basis*/,
                                                          const LocalAnsatzBasisType& /*ansatz_basis*/,
                                                          const DomainType& /*point_in_reference_intersection*/,
                                                          DynamicMatrix<F>& /*result*/,
                                                          const XT::Common::Parameter& /*param*/)>;
+  using GenericPostBindFunctionType = std::function<void(const I& /*ele*/)>;
 
   GenericLocalBinaryIntersectionIntegrand(GenericOrderFunctionType order_function,
-                                          GenericEvalauteFunctionType evaluate_function,
+                                          GenericEvaluateFunctionType evaluate_function,
+                                          GenericPostBindFunctionType post_bind_function = [](const I&) {},
                                           bool use_inside_bases = true,
                                           const XT::Common::ParameterType& param_type = {})
     : BaseType(param_type)
     , order_(order_function)
     , evaluate_(evaluate_function)
+    , post_bind_(post_bind_function)
     , inside_(use_inside_bases)
   {}
 
@@ -212,12 +235,18 @@ public:
     : BaseType(other.parameter_type())
     , order_(other.order_)
     , evaluate_(other.evaluate_)
+    , post_bind_(other.post_bind_)
     , inside_(other.inside_)
   {}
 
   std::unique_ptr<BaseType> copy_as_binary_intersection_integrand() const override final
   {
     return std::make_unique<ThisType>(*this);
+  }
+
+  void post_bind(const I& intersect) override final
+  {
+    post_bind_(intersect);
   }
 
   bool inside() const override final
@@ -256,7 +285,8 @@ public:
 
 private:
   const GenericOrderFunctionType order_;
-  const GenericEvalauteFunctionType evaluate_;
+  const GenericEvaluateFunctionType evaluate_;
+  const GenericPostBindFunctionType post_bind_;
   const bool inside_;
 }; // class GenericLocalBinaryIntersectionIntegrand
 

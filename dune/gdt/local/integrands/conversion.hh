@@ -41,7 +41,7 @@ template <class E,
           class AF = TF>
 class LocalBinaryToUnaryElementIntegrand : public LocalUnaryElementIntegrandInterface<E, t_r, t_rC, TF, F>
 {
-  using ThisType = LocalBinaryToUnaryElementIntegrand<E, t_r, t_rC, TF, F, a_r, a_rC, AF>;
+  using ThisType = LocalBinaryToUnaryElementIntegrand;
   using BaseType = LocalUnaryElementIntegrandInterface<E, t_r, t_rC, TF, F>;
 
 public:

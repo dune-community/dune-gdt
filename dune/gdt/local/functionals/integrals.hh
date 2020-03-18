@@ -26,7 +26,7 @@ namespace GDT {
 template <class E, size_t r = 1, size_t rC = 1, class R = double, class F = R>
 class LocalElementIntegralFunctional : public LocalElementFunctionalInterface<E, r, rC, R, F>
 {
-  using ThisType = LocalElementIntegralFunctional<E, r, rC, R, F>;
+  using ThisType = LocalElementIntegralFunctional;
   using BaseType = LocalElementFunctionalInterface<E, r, rC, R, F>;
 
 public:
@@ -43,11 +43,14 @@ public:
   {}
 
   LocalElementIntegralFunctional(typename GenericIntegrand::GenericOrderFunctionType order_function,
-                                 typename GenericIntegrand::GenericEvalauteFunctionType evaluate_function,
+                                 typename GenericIntegrand::GenericEvaluateFunctionType evaluate_function,
+                                 typename GenericIntegrand::GenericPostBindFunctionType post_bind_function =
+                                     [](const E&) {},
                                  const XT::Common::ParameterType& param_type = {},
                                  const int over_integrate = 0)
     : BaseType(param_type)
-    , integrand_(GenericIntegrand(order_function, evaluate_function).copy_as_unary_element_integrand())
+    , integrand_(
+          GenericIntegrand(order_function, evaluate_function, post_bind_function).copy_as_unary_element_integrand())
     , over_integrate_(over_integrate)
   {}
 
@@ -80,7 +83,7 @@ public:
     result *= 0;
     // loop over all quadrature points
     const auto integrand_order = integrand_->order(basis, param) + over_integrate_;
-    for (auto&& quadrature_point : QuadratureRules<D, d>::rule(element.geometry().type(), integrand_order)) {
+    for (auto&& quadrature_point : QuadratureRules<D, d>::rule(element.type(), integrand_order)) {
       const auto point_in_reference_element = quadrature_point.position();
       // integration factors
       const auto integration_factor = element.geometry().integrationElement(point_in_reference_element);
@@ -104,7 +107,7 @@ private:
 template <class I, size_t r = 1, size_t rC = 1, class R = double, class F = R>
 class LocalIntersectionIntegralFunctional : public LocalIntersectionFunctionalInterface<I, r, rC, R, F>
 {
-  using ThisType = LocalIntersectionIntegralFunctional<I, r, rC, R, F>;
+  using ThisType = LocalIntersectionIntegralFunctional;
   using BaseType = LocalIntersectionFunctionalInterface<I, r, rC, R, F>;
 
 public:
@@ -122,7 +125,7 @@ public:
   {}
 
   //  LocalIntersectionIntegralFunctional(typename GenericIntegrand::GenericOrderFunctionType order_function,
-  //                                      typename GenericIntegrand::GenericEvalauteFunctionType evaluate_function,
+  //                                      typename GenericIntegrand::GenericEvaluateFunctionType evaluate_function,
   //                                      const XT::Common::ParameterType& param_type = {},
   //                                      const int over_integrate = 0)
   //    : BaseType(param_type)
@@ -164,8 +167,7 @@ public:
     result *= 0;
     // loop over all quadrature points
     const auto integrand_order = integrand_->order(test_basis, param) + over_integrate_;
-    for (const auto& quadrature_point :
-         QuadratureRules<D, d - 1>::rule(intersection.geometry().type(), integrand_order)) {
+    for (const auto& quadrature_point : QuadratureRules<D, d - 1>::rule(intersection.type(), integrand_order)) {
       const auto point_in_reference_intersection = quadrature_point.position();
       // integration factors
       const auto integration_factor = intersection.geometry().integrationElement(point_in_reference_intersection);

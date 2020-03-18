@@ -12,8 +12,8 @@
 
 #include <dune/xt/common/fvector.hh>
 #include <dune/xt/common/string.hh>
-#include <dune/xt/common/test/gtest/gtest.h>
-#include <dune/xt/common/test/common.hh>
+#include <dune/xt/test/gtest/gtest.h>
+#include <dune/xt/test/common.hh>
 
 #include <dune/xt/la/container/istl.hh>
 
@@ -33,7 +33,7 @@
 #include <dune/gdt/local/bilinear-forms/integrals.hh>
 #include <dune/gdt/local/functionals/integrals.hh>
 #include <dune/gdt/local/integrands/abs.hh>
-#include <dune/gdt/local/integrands/elliptic.hh>
+#include <dune/gdt/local/integrands/laplace.hh>
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/operators/localizable-operator.hh>
 #include <dune/gdt/operators/oswald-interpolation.hh>
@@ -81,7 +81,7 @@ struct OswaldInterpolationOperatorOnLeafViewTest : public ::testing::Test
     for (auto&& element : elements(space->grid_view())) {
       local_source->bind(element);
       local_source->dofs().assign_from(space->finite_elements()
-                                           .get(element.geometry().type(), 1)
+                                           .get(element.type(), 1)
                                            .interpolation()
                                            .interpolate(
                                                [&](const auto& x_local) {
@@ -162,13 +162,13 @@ struct OswaldInterpolationOperatorOnLeafViewTest : public ::testing::Test
                   .apply(intersection, *difference_inside, *difference_outside)[0][0];
           // associate intersection corners with global vertex IDs
           auto local_vertex_indicators_inside = vertex_indicators.local_discrete_function(inside_element);
-          const auto& inside_reference_element = ReferenceElements<D, d>::general(inside_element.geometry().type());
+          const auto& inside_reference_element = ReferenceElements<D, d>::general(inside_element.type());
           for (auto&& ii : XT::Common::value_range(inside_reference_element.size(intersection.indexInInside(), 1, d))) {
             const auto vertex_index_inside = inside_reference_element.subEntity(intersection.indexInInside(), 1, ii, d);
             local_vertex_indicators_inside->dofs()[vertex_index_inside] += intersection_diameter * l2_jump_norm2;
           }
           auto local_vertex_indicators_outside = vertex_indicators.local_discrete_function(outside_element);
-          const auto& outside_reference_element = ReferenceElements<D, d>::general(outside_element.geometry().type());
+          const auto& outside_reference_element = ReferenceElements<D, d>::general(outside_element.type());
           for (auto&& ii :
                XT::Common::value_range(outside_reference_element.size(intersection.indexInOutside(), 1, d))) {
             const auto vertex_index_outside =
@@ -207,7 +207,7 @@ struct OswaldInterpolationOperatorOnLeafViewTest : public ::testing::Test
                   .apply(intersection, *difference_inside, *difference_inside)[0][0];
           // associate intersection corners with global vertex IDs
           auto local_vertex_indicators_inside = vertex_indicators.local_discrete_function(inside_element);
-          const auto& inside_reference_element = ReferenceElements<D, d>::general(inside_element.geometry().type());
+          const auto& inside_reference_element = ReferenceElements<D, d>::general(inside_element.type());
           for (auto&& ii : XT::Common::value_range(inside_reference_element.size(intersection.indexInInside(), 1, d))) {
             const auto vertex_index_inside = inside_reference_element.subEntity(intersection.indexInInside(), 1, ii, d);
             local_vertex_indicators_inside->dofs()[vertex_index_inside] += intersection_diameter * l2_jump_norm2;
@@ -253,7 +253,7 @@ struct OswaldInterpolationOperatorOnLeafViewTest : public ::testing::Test
                     auto local_difference = difference.local_function();
                     local_difference->bind(element);
                     auto local_indicator = h1_element_indicators.local_discrete_function(element);
-                    local_indicator->dofs()[0] += LocalElementIntegralBilinearForm<E>(LocalEllipticIntegrand<E>(1.))
+                    local_indicator->dofs()[0] += LocalElementIntegralBilinearForm<E>(LocalLaplaceIntegrand<E>(1.))
                                                       .apply2(*local_difference, *local_difference)[0][0];
                   },
                   []() {});
@@ -297,13 +297,13 @@ struct OswaldInterpolationOperatorOnLeafViewTest : public ::testing::Test
                   .apply(intersection, *difference_inside, *difference_outside)[0][0];
           // associate intersection corners with global vertex IDs
           auto local_vertex_indicators_inside = vertex_indicators.local_discrete_function(inside_element);
-          const auto& inside_reference_element = ReferenceElements<D, d>::general(inside_element.geometry().type());
+          const auto& inside_reference_element = ReferenceElements<D, d>::general(inside_element.type());
           for (auto&& ii : XT::Common::value_range(inside_reference_element.size(intersection.indexInInside(), 1, d))) {
             const auto vertex_index_inside = inside_reference_element.subEntity(intersection.indexInInside(), 1, ii, d);
             local_vertex_indicators_inside->dofs()[vertex_index_inside] += l2_jump_norm2 / intersection_diameter;
           }
           auto local_vertex_indicators_outside = vertex_indicators.local_discrete_function(outside_element);
-          const auto& outside_reference_element = ReferenceElements<D, d>::general(outside_element.geometry().type());
+          const auto& outside_reference_element = ReferenceElements<D, d>::general(outside_element.type());
           for (auto&& ii :
                XT::Common::value_range(outside_reference_element.size(intersection.indexInOutside(), 1, d))) {
             const auto vertex_index_outside =
@@ -342,7 +342,7 @@ struct OswaldInterpolationOperatorOnLeafViewTest : public ::testing::Test
                   .apply(intersection, *difference_inside, *difference_inside)[0][0];
           // associate intersection corners with global vertex IDs
           auto local_vertex_indicators_inside = vertex_indicators.local_discrete_function(inside_element);
-          const auto& inside_reference_element = ReferenceElements<D, d>::general(inside_element.geometry().type());
+          const auto& inside_reference_element = ReferenceElements<D, d>::general(inside_element.type());
           for (auto&& ii : XT::Common::value_range(inside_reference_element.size(intersection.indexInInside(), 1, d))) {
             const auto vertex_index_inside = inside_reference_element.subEntity(intersection.indexInInside(), 1, ii, d);
             local_vertex_indicators_inside->dofs()[vertex_index_inside] += l2_jump_norm2 / intersection_diameter;
@@ -376,6 +376,8 @@ template <class G>
 struct OswaldInterpolationOperatorOnCubicLeafViewTest : public OswaldInterpolationOperatorOnLeafViewTest<G>
 {
   using BaseType = OswaldInterpolationOperatorOnLeafViewTest<G>;
+  using BaseType::d;
+  using typename BaseType::D;
   using typename BaseType::E;
   using typename BaseType::GV;
   using typename BaseType::M;
@@ -385,8 +387,6 @@ struct OswaldInterpolationOperatorOnCubicLeafViewTest : public OswaldInterpolati
 
   std::shared_ptr<XT::Grid::GridProvider<G>> make_grid() override final
   {
-    using D = typename G::ctype;
-    static const constexpr size_t d = G::dimension;
     FieldVector<D, d> lower_left(0.);
     auto upper_right = XT::Common::from_string<FieldVector<double, d>>("[3 1 1 1]");
     std::array<unsigned int, d> num_elements;
@@ -406,7 +406,7 @@ struct OswaldInterpolationOperatorOnCubicLeafViewTest : public OswaldInterpolati
       local_expected_range_for_cubic_grids->bind(element);
       local_expected_range_for_cubic_grids->dofs().assign_from(
           self.space->finite_elements()
-              .get(element.geometry().type(), 1)
+              .get(element.type(), 1)
               .interpolation()
               .interpolate(
                   [&](const auto& x_local) {

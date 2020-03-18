@@ -28,7 +28,7 @@ namespace GDT {
 template <class D, size_t d, class R, size_t r, size_t rC = 1>
 class LocalFiniteElementDefault : public LocalFiniteElementInterface<D, d, R, r, rC>
 {
-  using ThisType = LocalFiniteElementDefault<D, d, R, r, rC>;
+  using ThisType = LocalFiniteElementDefault;
   using BaseType = LocalFiniteElementInterface<D, d, R, r, rC>;
 
 public:
@@ -150,7 +150,7 @@ private:
 template <class D, size_t d, class R = double, size_t r = 1, size_t rC = 1>
 class ThreadSafeDefaultLocalFiniteElementFamily : public LocalFiniteElementFamilyInterface<D, d, R, r, rC>
 {
-  using ThisType = ThreadSafeDefaultLocalFiniteElementFamily<D, d, R, r, rC>;
+  using ThisType = ThreadSafeDefaultLocalFiniteElementFamily;
   using BaseType = LocalFiniteElementFamilyInterface<D, d, R, r, rC>;
 
 public:
@@ -182,17 +182,15 @@ public:
       // the FE needs to be created, we need to lock
       std::lock_guard<std::mutex> DXTC_UNUSED(guard){mutex_};
       // and to check again if someone else created the FE while we were waiting to acquire the lock
-      if (fes_.count(key) == 0) {
-        auto dings = factory_(geometry_type, order);
-        fes_.insert(std::make_pair(key, std::shared_ptr<LocalFiniteElementType>(dings.release())));
-      }
+      if (fes_.count(key) == 0)
+        fes_[key] = factory_(geometry_type, order);
     }
     return *fes_.at(key);
   } // ... get(...)
 
 private:
   const std::function<std::unique_ptr<LocalFiniteElementType>(const GeometryType&, const int&)> factory_;
-  mutable std::map<std::pair<GeometryType, int>, std::shared_ptr<LocalFiniteElementType>> fes_;
+  mutable std::map<std::pair<GeometryType, int>, std::unique_ptr<LocalFiniteElementType>> fes_;
   mutable std::mutex mutex_;
 }; // class ThreadSafeDefaultLocalFiniteElementFamily
 
@@ -200,7 +198,7 @@ private:
 template <class D, size_t d, class R, size_t r = 1>
 class LocalL2FiniteElementInterpolation : public LocalFiniteElementInterpolationInterface<D, d, R, r, 1>
 {
-  using ThisType = LocalL2FiniteElementInterpolation<D, d, R, r>;
+  using ThisType = LocalL2FiniteElementInterpolation;
   using BaseType = LocalFiniteElementInterpolationInterface<D, d, R, r, 1>;
 
 public:

@@ -41,7 +41,7 @@ class IpdgFluxReconstructionOperator : public OperatorInterface<M, SGV, 1, 1, RG
 {
   static_assert(XT::Grid::is_view<AssemblyGridView>::value, "");
   using BaseType = OperatorInterface<M, SGV, 1, 1, RGV::dimension, 1, RGV>;
-  using ThisType = IpdgFluxReconstructionOperator<M, AssemblyGridView, ipdg, SGV, RGV>;
+  using ThisType = IpdgFluxReconstructionOperator;
 
 public:
   using typename BaseType::F;
@@ -129,7 +129,7 @@ public:
         const auto& local_keys_assosiated_with_intersection = intersection_to_local_key_map[intersection_index];
         if (local_keys_assosiated_with_intersection.size() > 0) {
           const auto intersection_fe =
-              make_local_orthonormal_finite_element<D, d - 1, F>(intersection.geometry().type(), rt_fe.order());
+              make_local_orthonormal_finite_element<D, d - 1, F>(intersection.type(), rt_fe.order());
           const auto& intersection_Pk_basis = intersection_fe->basis();
           DUNE_THROW_IF(intersection_Pk_basis.size() != local_keys_assosiated_with_intersection.size(),
                         Exceptions::interpolation_error,
@@ -154,7 +154,7 @@ public:
                            std::max(local_source_element->order(param),
                                     std::max(intersection_Pk_basis.order(), local_source_neighbor->order(param))));
               for (auto&& quadrature_point : QuadratureRules<D, d - 1>::rule(
-                       intersection.geometry().type(), 2 * std::max(max_polorder, rt_basis->order()))) {
+                       intersection.type(), 2 * std::max(max_polorder, rt_basis->order()))) {
                 const auto point_on_reference_intersection = quadrature_point.position();
                 const auto point_in_reference_element =
                     intersection.geometryInInside().global(point_on_reference_intersection);
@@ -174,12 +174,15 @@ public:
                 const auto source_grad_element = local_source_element->jacobian(point_in_reference_element, param)[0];
                 const auto source_grad_neighbor =
                     local_source_neighbor->jacobian(point_in_reference_neighbor, param)[0];
+                // df_value_* is of type FieldVector<F, 1>
                 const auto df_value_element = local_df_element->evaluate(point_in_reference_element, param);
                 const auto df_value_neighbor = local_df_neighbor->evaluate(point_in_reference_neighbor, param);
+                // dt_value_* is of type FieldMatrix<F, d, d>
                 const auto dt_value_element = local_dt_element->evaluate(point_in_reference_element, param);
                 const auto dt_value_neighbor = local_dt_neighbor->evaluate(point_in_reference_neighbor, param);
-                const auto diffusion_element = dt_value_element * df_value_element;
-                const auto diffusion_neighbor = dt_value_neighbor * df_value_neighbor;
+                // use df_value_*[0] to avoid confusion with matrix-vector multiplication
+                const auto diffusion_element = dt_value_element * df_value_element[0];
+                const auto diffusion_neighbor = dt_value_neighbor * df_value_neighbor[0];
                 // compute penalty factor (see Epshteyn, Riviere, 2007)
                 const F sigma = LocalEllipticIpdgIntegrands::internal::inner_sigma(max_polorder);
                 const double beta = LocalEllipticIpdgIntegrands::internal::default_beta(d);
@@ -232,8 +235,8 @@ public:
             there_are_intersection_dofs_to_determine = true;
             // do a face quadrature
             const int max_polorder = std::max(intersection_Pk_basis.order(), local_source_element->order(param));
-            for (auto&& quadrature_point : QuadratureRules<D, d - 1>::rule(
-                     intersection.geometry().type(), 2 * std::max(max_polorder, rt_basis->order()))) {
+            for (auto&& quadrature_point :
+                 QuadratureRules<D, d - 1>::rule(intersection.type(), 2 * std::max(max_polorder, rt_basis->order()))) {
               const auto point_on_reference_intersection = quadrature_point.position();
               const auto point_in_reference_element =
                   intersection.geometryInInside().global(point_on_reference_intersection);
@@ -249,7 +252,7 @@ public:
               const auto source_grad_element = local_source_element->jacobian(point_in_reference_element, param)[0];
               const auto df_value_element = local_df_element->evaluate(point_in_reference_element, param);
               const auto dt_value_element = local_dt_element->evaluate(point_in_reference_element, param);
-              const auto diffusion_element = dt_value_element * df_value_element;
+              const auto diffusion_element = dt_value_element * df_value_element[0];
               // compute penalty (see Epshteyn, Riviere, 2007)
               const F sigma = LocalEllipticIpdgIntegrands::internal::boundary_sigma(max_polorder);
               const double beta = LocalEllipticIpdgIntegrands::internal::default_beta(d);

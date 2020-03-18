@@ -31,7 +31,7 @@ namespace GDT {
 template <class GV, size_t r = 1, size_t rC = 1, class R = double>
 class DefaultGlobalBasis : public GlobalBasisInterface<GV, r, rC, R>
 {
-  using ThisType = DefaultGlobalBasis<GV, r, rC, R>;
+  using ThisType = DefaultGlobalBasis;
   using BaseType = GlobalBasisInterface<GV, r, rC, R>;
 
 public:
@@ -115,7 +115,7 @@ private:
     void post_bind(const ElementType& elemnt) override final
     {
       current_local_fe_ = XT::Common::ConstStorageProvider<LocalFiniteElementInterface<D, d, R, r, rC>>(
-          self_.local_finite_elements_.get(elemnt.geometry().type(), self_.fe_order_));
+          self_.local_finite_elements_.get(elemnt.type(), self_.fe_order_));
     }
 
   public:

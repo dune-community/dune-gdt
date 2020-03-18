@@ -58,8 +58,8 @@ static std::function<double(const Intersection&)> default_boundary_intersection_
 template <class I>
 class InnerPenalty : public LocalQuaternaryIntersectionIntegrandInterface<I>
 {
+  using ThisType = InnerPenalty;
   using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I>;
-  using ThisType = InnerPenalty<I>;
 
 public:
   using BaseType::d;
@@ -195,8 +195,8 @@ private:
 template <class I>
 class BoundaryPenalty : public LocalBinaryIntersectionIntegrandInterface<I>
 {
+  using ThisType = BoundaryPenalty;
   using BaseType = LocalBinaryIntersectionIntegrandInterface<I>;
-  using ThisType = BoundaryPenalty<I>;
 
 public:
   using BaseType::d;
