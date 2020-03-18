@@ -212,8 +212,8 @@ public:
   using GenericOrderFunctionType = std::function<int(const LocalTestBasisType& /*test_basis*/,
                                                      const LocalAnsatzBasisType& /*ansatz_basis*/,
                                                      const XT::Common::Parameter& /*param*/)>;
-  using GenericEvaluateFunctionType = std::function<void(const LocalBasisType& /*inside_basis*/,
-                                                         const LocalBasisType& /*outside_basis*/,
+  using GenericEvaluateFunctionType = std::function<void(const LocalTestBasisType& /*test_basis*/,
+                                                         const LocalAnsatzBasisType& /*ansatz_basis*/,
                                                          const DomainType& /*point_in_reference_intersection*/,
                                                          DynamicMatrix<F>& /*result*/,
                                                          const XT::Common::Parameter& /*param*/)>;
