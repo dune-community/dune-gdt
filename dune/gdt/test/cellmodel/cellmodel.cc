@@ -1976,13 +1976,13 @@ void CellModelSolver::assemble_ofield_nonlinear_jacobian(const VectorType& y, co
 {
   fill_tmp_ofield(cell, y, restricted);
   assemble_C_ofield_nonlinear_part(cell, restricted);
-  if (ofield_solver_.is_schur_solver() && !restricted) {
-    ofield_solver_.schur_matrix() = S_schur_ofield_linear_part_;
-    ofield_solver_.schur_matrix().axpy(-dt_ / kappa_, C_ofield_nonlinear_part_);
+  if (!restricted) {
+    if (ofield_solver_.is_schur_solver()) {
+      ofield_solver_.schur_matrix() = S_schur_ofield_linear_part_;
+      ofield_solver_.schur_matrix().axpy(-dt_ / kappa_, C_ofield_nonlinear_part_);
+    }
+    ofield_solver_.prepare(dt_, cell, restricted);
   }
-  // this actually prepares the linear operator contained in the ofield_solver, so we also need it in the restricted
-  // case
-  ofield_solver_.prepare(dt_, cell, restricted);
 }
 
 void CellModelSolver::assemble_C_ofield_nonlinear_part(const size_t cell, const bool restricted)
@@ -2061,7 +2061,8 @@ void CellModelSolver::assemble_pfield_nonlinear_jacobian(const VectorType& y, co
   fill_tmp_pfield(cell, y, restricted);
   assemble_M_nonlin_pfield(cell, restricted);
   assemble_G_pfield(cell, restricted);
-  pfield_solver_.prepare(dt_, cell, restricted);
+  if (!restricted)
+    pfield_solver_.prepare(dt_, cell, restricted);
 }
 
 // stores matrix with entries \int (3 phi^2 - 1) varphi_i varphi_j in M_nonlin_pfield_

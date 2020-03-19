@@ -13,6 +13,7 @@
 
 #include <chrono>
 #include <random>
+#include <thread>
 
 int main(int argc, char* argv[])
 {
@@ -148,7 +149,7 @@ int main(int argc, char* argv[])
     // for (size_t ii = 0; ii < max_output_dofs; ++ii)
     // pfield_output_dofs[ii] = ii;
     // choose 50 random dofs
-    const size_t num_output_dofs = 50;
+    const size_t num_output_dofs = 20;
     std::vector<size_t> pfield_output_dofs(num_output_dofs);
     std::vector<size_t> ofield_output_dofs(num_output_dofs);
     std::vector<size_t> stokes_output_dofs(num_output_dofs);
@@ -203,6 +204,8 @@ int main(int argc, char* argv[])
       }
       for (size_t kk = 0; kk < num_cells; ++kk) {
         model_solver.compute_restricted_pfield_dofs(pfield_output_dofs, kk);
+        std::cout << "Restricted start" << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(2));
         auto begin = std::chrono::steady_clock::now();
         model_solver.prepare_pfield_operator(dt, kk, true);
         model_solver.set_pfield_jacobian_state(pfield_state, kk, true);
@@ -218,6 +221,8 @@ int main(int argc, char* argv[])
         begin = std::chrono::steady_clock::now();
         auto restricted_jac_result = model_solver.apply_pfield_jacobian(restricted_source, kk, true);
         pfield_restricted_jac_time += std::chrono::steady_clock::now() - begin;
+        std::cout << "Restricted end" << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(2));
         begin = std::chrono::steady_clock::now();
         model_solver2.prepare_pfield_operator(dt, kk, false);
         model_solver2.set_pfield_jacobian_state(pfield_state, kk, false);
