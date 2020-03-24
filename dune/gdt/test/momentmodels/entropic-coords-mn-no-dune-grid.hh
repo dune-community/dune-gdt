@@ -426,7 +426,7 @@ struct HyperbolicEntropicCoordsMnNoDuneGridDiscretization
         quad_order == size_t(-1) ? MomentBasis::default_quad_order() : quad_order,
         quad_refinements == size_t(-1) ? MomentBasis::default_quad_refinements() : quad_refinements);
     const std::unique_ptr<ProblemType> problem_ptr =
-        XT::Common::make_unique<ProblemType>(*basis_functions, grid_view, grid_config);
+        std::make_unique<ProblemType>(*basis_functions, grid_view, grid_config);
     const auto& problem = *problem_ptr;
     const auto initial_values_u = problem.initial_values();
     const auto boundary_values_u = problem.boundary_values();

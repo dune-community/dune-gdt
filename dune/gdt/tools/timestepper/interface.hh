@@ -188,12 +188,16 @@ public:
                                const bool visualize,
                                const bool write_discrete,
                                const bool write_exact,
+                               const bool reset_begin_time,
                                const std::string prefix,
                                DiscreteSolutionType& sol,
                                const VisualizerType& visualizer,
                                const StringifierType& stringifier,
                                const GridFunctionType& exact_solution)
   {
+    if (reset_begin_time)
+      begin_time_ = std::chrono::steady_clock::now();
+
     RangeFieldType dt = initial_dt;
     RangeFieldType t = current_time();
     assert(Dune::XT::Common::FloatCmp::ge(t_end, t));
@@ -271,6 +275,7 @@ public:
                                const bool visualize = false,
                                const bool write_discrete = false,
                                const bool write_exact = false,
+                               const bool reset_begin_time = true,
                                const std::string prefix = "solution",
                                const VisualizerType& visualizer = default_visualizer(),
                                const StringifierType& stringifier = vector_stringifier(),
@@ -284,6 +289,7 @@ public:
                  visualize,
                  write_discrete,
                  write_exact,
+                 reset_begin_time,
                  prefix,
                  *solution_,
                  visualizer,
@@ -295,7 +301,8 @@ public:
   virtual RangeFieldType solve(const RangeFieldType t_end,
                                const RangeFieldType initial_dt,
                                const size_t num_save_steps,
-                               DiscreteSolutionType& sol)
+                               DiscreteSolutionType& sol,
+                               const bool reset_begin_time = false)
   {
     return solve(t_end,
                  initial_dt,
@@ -305,6 +312,7 @@ public:
                  false,
                  false,
                  false,
+                 reset_begin_time,
                  "",
                  sol,
                  default_visualizer(),
@@ -457,10 +465,29 @@ public:
       write_to_textfile(exact_sol, grid_view, prefix + "_exact", step, t, stringifier);
   }
 
-private:
+  void write_timings(const std::string& prefix)
+  {
+    const std::string filename = prefix + "_timings.txt";
+    std::ofstream timings_file(filename);
+    timings_file << "step t dt walltime" << std::endl;
+    timings_file << std::setprecision(15);
+    for (size_t ii = 0; ii < dts_.size(); ++ii) {
+      timings_file << ii + 1 << " " << XT::Common::to_string(times_[ii], 15) << " "
+                   << XT::Common::to_string(dts_[ii], 15) << " " << XT::Common::to_string(wall_times_[ii], 15)
+                   << std::endl;
+    }
+    timings_file.close();
+  }
+
+
+protected:
   RangeFieldType t_;
   DiscreteFunctionType* u_n_;
   DiscreteSolutionType* solution_;
+  std::chrono::time_point<std::chrono::steady_clock> begin_time_;
+  std::vector<double> dts_;
+  std::vector<double> times_;
+  std::vector<double> wall_times_;
 }; // class TimeStepperInterface
 
 

@@ -66,9 +66,9 @@ public:
   using BaseType::default_grid_cfg;
 
   KineticTransportEquationBase(const MomentBasis& basis_functions,
+                               const RangeFieldType psi_vac = 5e-7,
                                const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
-                               const XT::Common::Configuration& boundary_cfg = default_boundary_cfg(),
-                               const RangeFieldType psi_vac = 5e-9)
+                               const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
     : BaseType(basis_functions)
     , grid_cfg_(grid_cfg)
     , boundary_cfg_(boundary_cfg)
@@ -235,12 +235,6 @@ public:
   virtual RangeFieldType psi_vac() const
   {
     return psi_vac_;
-  }
-
-  // correct for 1d on interval [-1, 1], override else
-  virtual RangeFieldType rho_vac() const
-  {
-    return psi_vac_ * 2;
   }
 
 protected:

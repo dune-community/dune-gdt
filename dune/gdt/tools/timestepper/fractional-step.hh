@@ -65,8 +65,13 @@ public:
   {
     auto& t = current_time();
     const RangeFieldType actual_dt = std::min(dt, max_dt);
-    const auto dt_1 = first_stepper_.solve(t + actual_dt, dt, -1, 0, false);
-    const auto dt_2 = second_stepper_.solve(t + actual_dt, dt_1, -1, 0, false);
+    this->times_.push_back(t);
+    auto time = std::chrono::steady_clock::now();
+    std::chrono::duration<double> wall_time = time - this->begin_time_;
+    this->wall_times_.push_back(wall_time.count());
+    this->dts_.push_back(actual_dt);
+    const auto dt_1 = first_stepper_.solve(t + actual_dt, dt, -1, 0, false, false, false, false, false);
+    const auto dt_2 = second_stepper_.solve(t + actual_dt, dt_1, -1, 0, false, false, false, false, false);
     t += actual_dt;
     return dt_2;
   } // ... step(...)
@@ -117,9 +122,15 @@ public:
   {
     auto& t = current_time();
     const RangeFieldType actual_dt = std::min(dt, max_dt);
-    first_stepper_.solve(t + actual_dt / 2, actual_dt / 2, static_cast<size_t>(-1), 0, false);
-    second_stepper_.solve(t + actual_dt, actual_dt, static_cast<size_t>(-1), 0, false);
-    first_stepper_.solve(t + actual_dt, actual_dt / 2, static_cast<size_t>(-1), 0, false);
+    this->times_.push_back(t);
+    auto time = std::chrono::steady_clock::now();
+    std::chrono::duration<double> wall_time = time - this->begin_time_;
+    this->wall_times_.push_back(wall_time.count());
+    this->dts_.push_back(actual_dt);
+    first_stepper_.solve(
+        t + actual_dt / 2, actual_dt / 2, static_cast<size_t>(-1), 0, false, false, false, false, false);
+    second_stepper_.solve(t + actual_dt, actual_dt, static_cast<size_t>(-1), 0, false, false, false, false, false);
+    first_stepper_.solve(t + actual_dt, actual_dt / 2, static_cast<size_t>(-1), 0, false, false, false, false, false);
     t += actual_dt;
     return dt;
   } // ... step(...)

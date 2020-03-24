@@ -33,9 +33,10 @@ public:
   using BaseType::default_boundary_cfg;
 
   ShadowPn(const MomentBasis& basis_functions,
+           const RangeFieldType psi_vac = 1e-6 / (4 * M_PI),
            const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
            const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_cfg, boundary_cfg, 1e-8 / (4 * M_PI))
+    : BaseType(basis_functions, psi_vac, grid_cfg, boundary_cfg)
   {}
 
   static std::string static_id()
@@ -115,6 +116,7 @@ class ShadowMn : public ShadowPn<XT::Grid::extract_entity_t<GV>, MomentBasis>
 
 public:
   using typename BaseType::FluxType;
+  using typename BaseType::RangeFieldType;
   using ActualFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
 
   using BaseType::default_boundary_cfg;
@@ -122,9 +124,10 @@ public:
 
   ShadowMn(const MomentBasis& basis_functions,
            const GV& grid_view,
+           const RangeFieldType psi_vac = 1e-6 / (4 * M_PI),
            const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
            const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_cfg, boundary_cfg)
+    : BaseType(basis_functions, psi_vac, grid_cfg, boundary_cfg)
     , grid_view_(grid_view)
   {}
 

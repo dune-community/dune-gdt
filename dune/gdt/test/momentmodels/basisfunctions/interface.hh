@@ -356,7 +356,14 @@ public:
     }
   }
 
-  virtual bool adjust_alpha_to_ensure_min_density(RangeType& /*alpha*/, const RangeFieldType /*psi_min*/) const
+  virtual bool needs_rho_for_min_density() const
+  {
+    return false;
+  }
+
+  virtual bool adjust_alpha_to_ensure_min_density(RangeType& /*alpha*/,
+                                                  const RangeFieldType /*rho_min*/,
+                                                  const RangeFieldType /*rho*/) const
   {
     return false;
   }

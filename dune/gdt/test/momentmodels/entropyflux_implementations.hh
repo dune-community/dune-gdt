@@ -237,7 +237,7 @@ public:
 
   virtual void jacobian_with_alpha(const DomainType& alpha, DynamicDerivativeRangeType& result) const
   {
-    thread_local auto H = XT::Common::make_unique<MatrixType>();
+    thread_local auto H = std::make_unique<MatrixType>();
     calculate_hessian(alpha, M_, *H);
     for (size_t dd = 0; dd < dimFlux; ++dd)
       row_jacobian(dd, M_, *H, result[dd], dd > 0);
@@ -346,22 +346,22 @@ public:
     std::fill(H.begin(), H.end(), 0.);
     const size_t num_quad_points = quad_weights_.size();
     // matrix is symmetric, we only use lower triangular part
+    RangeFieldType factor_ll, factor_ll_ii;
     for (size_t ll = 0; ll < num_quad_points; ++ll) {
-      auto factor_ll = eta_ast_twoprime_vals[ll] * quad_weights_[ll];
+      factor_ll = eta_ast_twoprime_vals[ll] * quad_weights_[ll];
       const auto* basis_ll = &(M.get_entry_ref(ll, 0.));
       for (size_t ii = 0; ii < basis_dimRange; ++ii) {
         auto* H_row = &(H[ii][0]);
-        const auto factor_ll_ii = basis_ll[ii] * factor_ll;
-        for (size_t kk = 0; kk <= ii; ++kk) {
+        factor_ll_ii = basis_ll[ii] * factor_ll;
+        for (size_t kk = 0; kk <= ii; ++kk)
           H_row[kk] += basis_ll[kk] * factor_ll_ii;
-        } // kk
       } // ii
     } // ll
   } // void calculate_hessian(...)
 
   void apply_inverse_hessian(const QuadratureWeightsType& eta_ast_twoprime_vals, DomainType& u) const
   {
-    thread_local auto H = XT::Common::make_unique<MatrixType>();
+    thread_local auto H = std::make_unique<MatrixType>();
     calculate_hessian(eta_ast_twoprime_vals, M_, *H);
     XT::LA::cholesky(*H);
     thread_local DomainType tmp_vec;
@@ -560,10 +560,9 @@ public:
         QuadratureWeightsType(quad_points_.size()));
     auto& vals_left = reconstructed_values[0];
     auto& vals_right = reconstructed_values[1];
-    if (slope_type == SlopeLimiterType::no_slope) {
-      for (size_t ll = 0; ll < quad_points_.size(); ++ll)
-        vals_left[ll] = vals_right[ll] = (*ansatz_distribution_values[1])[ll];
-    } else {
+    // compute reconstructed values
+    static constexpr bool reconstruct = (slope_type != SlopeLimiterType::no_slope);
+    if constexpr (reconstruct) {
       const auto slope_func =
           (slope_type == SlopeLimiterType::minmod) ? XT::Common::minmod<RangeFieldType> : superbee<RangeFieldType>;
       for (size_t ll = 0; ll < quad_points_.size(); ++ll) {
@@ -581,10 +580,15 @@ public:
     auto& right_flux_value = flux_values[coord];
     std::fill(right_flux_value.begin(), right_flux_value.end(), 0.);
     std::fill(left_flux_value.begin(), left_flux_value.end(), 0.);
+    RangeFieldType factor;
     for (size_t ll = 0; ll < quad_points_.size(); ++ll) {
       const auto position = quad_points_[ll][dd];
-      RangeFieldType factor = position > 0. ? vals_right[ll] : vals_left[ll];
-      factor *= quad_weights_[ll] * position;
+      if constexpr (reconstruct) {
+        factor = position > 0. ? vals_right[ll] : vals_left[ll];
+        factor *= quad_weights_[ll] * position;
+      } else {
+        factor = (*ansatz_distribution_values[1])[ll] * quad_weights_[ll] * position;
+      }
       auto& val = position > 0. ? right_flux_value : left_flux_value;
       const auto* basis_ll = &(M_.get_entry_ref(ll, 0.));
       for (size_t ii = 0; ii < basis_dimRange; ++ii)
@@ -659,6 +663,15 @@ public:
     work_vec.resize(quad_points_.size());
     return work_vec;
   }
+
+  BasisValuesMatrixType& P_k_mat() const
+  {
+    thread_local BasisValuesMatrixType P_k(M_.backend(), false, 0., 0);
+    if (P_k.rows() != quad_points_.size())
+      P_k.resize(quad_points_.size(), matrix_num_cols);
+    return P_k;
+  }
+
 
   void resize_quad_weights_type(QuadratureWeightsType& weights) const
   {
@@ -950,6 +963,7 @@ public:
   }
 
   using BaseType::get_alpha;
+  using BaseType::P_k_mat;
 
   virtual std::unique_ptr<AlphaReturnType>
   get_alpha(const DomainType& u, const DomainType& alpha_in, const bool regularize) const override final
@@ -975,7 +989,7 @@ public:
     tau_prime =
         rescale ? std::min(tau_ / ((1 + dim_factor * phi.two_norm()) * density + dim_factor * tau_), tau_) : tau_;
 
-    thread_local auto T_k = XT::Common::make_unique<MatrixType>();
+    thread_local auto T_k = std::make_unique<MatrixType>();
 
     const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
     const auto r_max = r_sequence.back();
@@ -993,13 +1007,13 @@ public:
       // calculate T_k u
       VectorType v_k = v;
       // calculate values of basis p = S_k m
-      thread_local BasisValuesMatrixType P_k(M_.backend(), false, 0., 0);
+      auto& P_k = P_k_mat();
       std::copy_n(M_.data(), M_.rows() * M_.cols(), P_k.data());
       // calculate f_0
       RangeFieldType f_k = get_eta_ast_integrated(beta_in, P_k);
       f_k -= beta_in * v_k;
 
-      thread_local auto H = XT::Common::make_unique<MatrixType>(0.);
+      thread_local auto H = std::make_unique<MatrixType>(0.);
 
       int backtracking_failed = 0;
       for (size_t kk = 0; kk < k_max_; ++kk) {
@@ -1218,7 +1232,7 @@ public:
       RangeFieldType f_k = get_eta_ast_integrated(alpha_k, M_);
       f_k -= alpha_k * v_k;
 
-      thread_local auto H = XT::Common::make_unique<MatrixType>(0.);
+      thread_local auto H = std::make_unique<MatrixType>(0.);
 
       int backtracking_failed = 0;
       for (size_t kk = 0; kk < k_max_; ++kk) {
@@ -1473,7 +1487,7 @@ public:
 
   virtual void jacobian_with_alpha(const BlockVectorType& alpha, DynamicDerivativeRangeType& result) const
   {
-    thread_local auto H = XT::Common::make_unique<BlockMatrixType>();
+    thread_local auto H = std::make_unique<BlockMatrixType>();
     calculate_hessian(alpha, M_, *H);
     for (size_t dd = 0; dd < dimFlux; ++dd)
       row_jacobian(dd, M_, *H, result[dd], dd > 0);
@@ -1543,7 +1557,7 @@ public:
     auto g_k = std::make_unique<BlockVectorType>();
     auto beta_out = std::make_unique<BlockVectorType>();
     auto v = std::make_unique<BlockVectorType>();
-    thread_local auto T_k = XT::Common::make_unique<BlockMatrixType>();
+    thread_local auto T_k = std::make_unique<BlockMatrixType>();
     auto beta_in = std::make_unique<BlockVectorType>(*alpha_initial);
 
     const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
@@ -1570,7 +1584,7 @@ public:
       // calculate f_0
       RangeFieldType f_k = get_eta_ast_integrated(*beta_in, P_k) - *beta_in * *v_k;
 
-      thread_local auto H = XT::Common::make_unique<BlockMatrixType>(0.);
+      thread_local auto H = std::make_unique<BlockMatrixType>(0.);
 
       int backtracking_failed = 0;
       for (size_t kk = 0; kk < k_max_; ++kk) {
@@ -1798,7 +1812,7 @@ public:
 
   void apply_inverse_hessian(const QuadratureWeightsType& eta_ast_twoprime_vals, DomainType& u) const
   {
-    thread_local auto H = XT::Common::make_unique<BlockMatrixType>();
+    thread_local auto H = std::make_unique<BlockMatrixType>();
     calculate_hessian(eta_ast_twoprime_vals, M_, *H);
     for (size_t jj = 0; jj < num_blocks; ++jj)
       XT::LA::cholesky(H->block(jj));
@@ -2056,18 +2070,21 @@ public:
     const auto& psi_entity = *ansatz_distribution_values[1];
     const auto& psi_right = (*ansatz_distribution_values[2]);
     constexpr bool reconstruct = (slope_type != SlopeLimiterType::no_slope);
+    RangeFieldType factor, slope;
     for (size_t jj = 0; jj < num_blocks; ++jj) {
       // calculate fluxes
       const auto offset = block_size * jj;
       if (quad_signs_[jj][dd] == 0) {
         // in this case, we have to decide which flux_value to use for each quadrature point individually
         for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
-          const RangeFieldType slope =
-              reconstruct ? slope_func(psi_entity[jj][ll] - psi_left[jj][ll], psi_right[jj][ll] - psi_entity[jj][ll])
-                          : 0.;
           const auto position = quad_points_[jj][ll][dd];
-          RangeFieldType factor = position > 0 ? psi_entity[jj][ll] + 0.5 * slope : psi_entity[jj][ll] - 0.5 * slope;
-          factor *= quad_weights_[jj][ll] * position;
+          if constexpr (reconstruct) {
+            slope = slope_func(psi_entity[jj][ll] - psi_left[jj][ll], psi_right[jj][ll] - psi_entity[jj][ll]);
+            factor = position > 0 ? psi_entity[jj][ll] + 0.5 * slope : psi_entity[jj][ll] - 0.5 * slope;
+            factor *= quad_weights_[jj][ll] * position;
+          } else {
+            factor = psi_entity[jj][ll] * quad_weights_[jj][ll] * position;
+          }
           auto& val = position > 0. ? right_flux_value : left_flux_value;
           for (size_t ii = 0; ii < block_size; ++ii)
             val[offset + ii] += M_[jj].get_entry(ll, ii) * factor;
@@ -2077,11 +2094,12 @@ public:
         auto& flux_val = quad_signs_[jj][dd] > 0 ? right_flux_value : left_flux_value;
         const double sign_factor = quad_signs_[jj][dd] > 0 ? 0.5 : -0.5;
         for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
-          const RangeFieldType slope =
-              reconstruct ? slope_func(psi_entity[jj][ll] - psi_left[jj][ll], psi_right[jj][ll] - psi_entity[jj][ll])
-                          : 0.;
-          RangeFieldType factor =
-              (psi_entity[jj][ll] + sign_factor * slope) * quad_weights_[jj][ll] * quad_points_[jj][ll][dd];
+          if constexpr (reconstruct) {
+            slope = slope_func(psi_entity[jj][ll] - psi_left[jj][ll], psi_right[jj][ll] - psi_entity[jj][ll]);
+            factor = (psi_entity[jj][ll] + sign_factor * slope) * quad_weights_[jj][ll] * quad_points_[jj][ll][dd];
+          } else {
+            factor = psi_entity[jj][ll] * quad_weights_[jj][ll] * quad_points_[jj][ll][dd];
+          }
           for (size_t ii = 0; ii < block_size; ++ii)
             flux_val[offset + ii] += M_[jj].get_entry(ll, ii) * factor;
         } // ll
@@ -3097,7 +3115,7 @@ public:
       const size_t num_quad_points = quad_weights_[jj].size();
       const auto& non_reconstructed_values = (*ansatz_distribution_values[1])[jj];
       // reconstruct densities
-      if (slope_type == SlopeLimiterType::no_slope) {
+      if constexpr (slope_type == SlopeLimiterType::no_slope) {
         for (size_t ll = 0; ll < num_quad_points; ++ll)
           outside_vals[ll] = non_reconstructed_values[ll];
       } else {
@@ -5180,16 +5198,19 @@ public:
     const auto& psi_entity = *ansatz_distribution_values[1];
     const auto& psi_right = (*ansatz_distribution_values[2]);
     constexpr bool reconstruct = (slope_type != SlopeLimiterType::no_slope);
+    RangeFieldType factor, slope;
     for (size_t jj = 0; jj < num_intervals; ++jj) {
       // calculate fluxes
       if (quad_signs_[jj] == 0) {
         // in this case, we have to decide which flux_value to use for each quadrature point individually
         for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
-          const RangeFieldType slope =
-              reconstruct ? slope_func(psi_entity[jj][ll] - psi_left[jj][ll], psi_right[jj][ll] - psi_entity[jj][ll])
-                          : 0.;
           const auto position = quad_points_[jj][ll];
-          RangeFieldType factor = position > 0 ? psi_entity[jj][ll] + 0.5 * slope : psi_entity[jj][ll] - 0.5 * slope;
+          if constexpr (reconstruct) {
+            slope = slope_func(psi_entity[jj][ll] - psi_left[jj][ll], psi_right[jj][ll] - psi_entity[jj][ll]);
+            factor = position > 0 ? psi_entity[jj][ll] + 0.5 * slope : psi_entity[jj][ll] - 0.5 * slope;
+          } else {
+            factor = psi_entity[jj][ll];
+          }
           factor *= quad_weights_[jj][ll] * position;
           auto& flux_val = position > 0. ? right_flux_value : left_flux_value;
           for (size_t ii = 0; ii < 2; ++ii)
@@ -5200,11 +5221,12 @@ public:
         auto& flux_val = quad_signs_[jj] > 0 ? right_flux_value : left_flux_value;
         const double sign_factor = quad_signs_[jj] > 0 ? 0.5 : -0.5;
         for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
-          const RangeFieldType slope =
-              reconstruct ? slope_func(psi_entity[jj][ll] - psi_left[jj][ll], psi_right[jj][ll] - psi_entity[jj][ll])
-                          : 0.;
-          RangeFieldType factor =
-              (psi_entity[jj][ll] + sign_factor * slope) * quad_weights_[jj][ll] * quad_points_[jj][ll];
+          if constexpr (reconstruct) {
+            slope = slope_func(psi_entity[jj][ll] - psi_left[jj][ll], psi_right[jj][ll] - psi_entity[jj][ll]);
+            factor = (psi_entity[jj][ll] + sign_factor * slope) * quad_weights_[jj][ll] * quad_points_[jj][ll];
+          } else {
+            factor = psi_entity[jj][ll] * quad_weights_[jj][ll] * quad_points_[jj][ll];
+          }
           for (size_t ii = 0; ii < 2; ++ii)
             flux_val[jj + ii] += M_[jj][ll][ii] * factor;
         } // ll

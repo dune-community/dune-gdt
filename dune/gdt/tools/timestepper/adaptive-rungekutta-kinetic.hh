@@ -52,6 +52,7 @@ namespace GDT {
  * \tparam method Adaptive Runge-Kutta method that is used (default is AdaptiveRungeKuttaMethods::dormand_prince)
  */
 template <class OperatorImp,
+          class MinDensitySetterType,
           class DiscreteFunctionImp,
           class EntropyFluxImp,
           TimeStepperMethods method = TimeStepperMethods::dormand_prince>
@@ -108,11 +109,14 @@ public:
    * \param c Coefficients for time steps (only provide if you use AdaptiveRungeKuttaMethods::other)
    */
   KineticAdaptiveRungeKuttaTimeStepper(const OperatorType& op,
+                                       const MinDensitySetterType& min_density_setter,
                                        const EntropyFluxType& entropy_flux,
                                        DiscreteFunctionType& initial_values,
+                                       const bool use_first_same_as_last_property = true,
                                        const RangeFieldType r = 1.0,
+                                       const RangeFieldType atol = 1e-3,
+                                       const RangeFieldType rtol = 1e-2,
                                        const double t_0 = 0.0,
-                                       const RangeFieldType tol = 1e-3,
                                        const RangeFieldType scale_factor_min = 0.2,
                                        const RangeFieldType scale_factor_max = 5,
                                        const MatrixType& A = ButcherArrayProviderType::A(),
@@ -120,11 +124,13 @@ public:
                                        const VectorType& b_2 = ButcherArrayProviderType::b_2(),
                                        const VectorType& c = ButcherArrayProviderType::c())
     : BaseType(t_0, initial_values)
+    , min_density_setter_(min_density_setter)
+    , use_first_same_as_last_property_(use_first_same_as_last_property)
     , op_(op)
     , entropy_flux_(entropy_flux)
     , r_(r)
-    , atol_(tol)
-    , rtol_(tol)
+    , atol_(atol)
+    , rtol_(rtol)
     , scale_factor_min_(scale_factor_min)
     , scale_factor_max_(scale_factor_max)
     , alpha_tmp_(BaseType::current_solution())
@@ -156,7 +162,7 @@ public:
     for (size_t ii = 0; ii < num_stages_; ++ii) {
       stages_k_.emplace_back(current_solution());
     }
-  } // constructor AdaptiveRungeKuttaTimeStepper
+  } // constructor KineticAdaptiveRungeKuttaTimeStepper
 
   using BaseType::current_solution;
   using BaseType::current_time;
@@ -170,6 +176,7 @@ public:
                                const bool visualize,
                                const bool write_discrete,
                                const bool write_exact,
+                               const bool reset_begin_time,
                                const std::string prefix,
                                typename BaseType::DiscreteSolutionType& sol,
                                const typename BaseType::VisualizerType& visualizer,
@@ -184,15 +191,59 @@ public:
                                      visualize,
                                      write_discrete,
                                      write_exact,
+                                     reset_begin_time,
                                      prefix,
                                      sol,
                                      visualizer,
                                      stringifier,
                                      exact_solution);
     // in a fractional step scheme, we cannot use last_stage_of_previous_step
-    last_stage_of_previous_step_ = nullptr;
+    if (!use_first_same_as_last_property_)
+      last_stage_of_previous_step_ = nullptr;
     return ret;
   }
+
+  bool regularize_if_needed(const bool consider_regularization,
+                            typename std::vector<RangeFieldType>::const_iterator& r_it,
+                            const std::vector<RangeFieldType>& r_sequence)
+  {
+    const auto& reg_indicators = op_.reg_indicators();
+    auto& alpha_n = current_solution();
+    if (consider_regularization
+        && std::any_of(reg_indicators.begin(), reg_indicators.end(), [](const bool& a) { return a; })) {
+      const auto& grid_view = alpha_n.space().grid_view();
+      const auto local_alpha = alpha_n.local_discrete_function();
+      const auto& basis_functions = entropy_flux_.basis_functions();
+      const auto alpha_one = basis_functions.alpha_one();
+      XT::Common::FieldVector<RangeFieldType, dimRange> local_alpha_vec;
+      if (++r_it == r_sequence.end())
+        DUNE_THROW(Dune::InvalidStateException, "Fully regularized, still fails!");
+      const auto r = *r_it;
+      for (auto&& entity : Dune::elements(grid_view)) {
+        const auto entity_index = grid_view.indexSet().index(entity);
+        if (reg_indicators[entity_index]) {
+          local_alpha->bind(entity);
+          for (size_t jj = 0; jj < dimRange; ++jj)
+            local_alpha_vec[jj] = local_alpha->dofs().get_entry(jj);
+          std::cout << "Regularized on entity " << entity_index << " with r = " << r << "and alpha "
+                    << XT::Common::to_string(local_alpha_vec) << std::endl;
+          const auto old_density = basis_functions.density(entropy_flux_.get_u(local_alpha_vec));
+          const auto alpha_iso = basis_functions.alpha_iso(old_density);
+          for (size_t jj = 0; jj < dimRange; ++jj)
+            local_alpha_vec[jj] = (1 - r) * local_alpha_vec[jj] + r * alpha_iso[jj];
+          const auto reg_density = basis_functions.density(entropy_flux_.get_u(local_alpha_vec));
+          const auto factor = std::log(old_density / reg_density);
+          for (size_t jj = 0; jj < dimRange; ++jj) {
+            local_alpha_vec[jj] += alpha_one[jj] * factor;
+            local_alpha->dofs().set_entry(jj, local_alpha_vec[jj]);
+          }
+        }
+      }
+      last_stage_of_previous_step_ = nullptr;
+      return true;
+    }
+    return false;
+  } // void regularize_if_needed(...)
 
   RangeFieldType step(const RangeFieldType dt, const RangeFieldType max_dt) override final
   {
@@ -205,6 +256,12 @@ public:
     auto& t = current_time();
     auto& alpha_n = current_solution();
 
+    // store statistics
+    this->times_.push_back(t);
+    auto time = std::chrono::steady_clock::now();
+    std::chrono::duration<double> wall_time = time - this->begin_time_;
+    this->wall_times_.push_back(wall_time.count());
+
     while (mixed_error > 1.) {
       bool skip_error_computation = false;
       actual_dt *= time_step_scale_factor;
@@ -214,8 +271,8 @@ public:
         first_stage_to_compute = 1;
       }
 
-      bool consider_regularization = actual_dt < 1e-5 ? true : false;
-      for (size_t ii = first_stage_to_compute; ii < num_stages_; ++ii) {
+      bool consider_regularization = false;
+      for (size_t ii = first_stage_to_compute; ii < num_stages_ - 1; ++ii) {
         stages_k_[ii].dofs().vector() *= 0.;
         alpha_tmp_.dofs().vector() = alpha_n.dofs().vector();
         for (size_t jj = 0; jj < ii; ++jj)
@@ -223,46 +280,20 @@ public:
         try {
           op_.apply(alpha_tmp_.dofs().vector(),
                     stages_k_[ii].dofs().vector(),
-                    XT::Common::Parameter(
-                        {{"t", {t + actual_dt * c_[ii]}}, {"reg", {static_cast<double>(consider_regularization)}}}));
-          const auto& reg_indicators = op_.reg_indicators();
-          if (consider_regularization
-              && std::any_of(reg_indicators.begin(), reg_indicators.end(), [](const bool& a) { return a; })) {
-            const auto& grid_view = alpha_n.space().grid_view();
-            const auto local_alpha = alpha_n.local_discrete_function();
-            const auto& basis_functions = entropy_flux_.basis_functions();
-            const auto alpha_one = basis_functions.alpha_one();
-            XT::Common::FieldVector<RangeFieldType, dimRange> local_alpha_vec;
-            if (++r_it == r_sequence.end())
-              DUNE_THROW(Dune::InvalidStateException, "Fully regularized, still fails!");
-            const auto r = *r_it;
-            for (auto&& entity : Dune::elements(grid_view)) {
-              const auto entity_index = grid_view.indexSet().index(entity);
-              if (reg_indicators[entity_index]) {
-                // std::cout << "Regularized on entity " << entity_index << " with r = " << r << std::endl;
-                local_alpha->bind(entity);
-                for (size_t jj = 0; jj < dimRange; ++jj)
-                  local_alpha_vec[jj] = local_alpha->dofs().get_entry(jj);
-                const auto old_density = basis_functions.density(entropy_flux_.get_u(local_alpha_vec));
-                const auto alpha_iso = basis_functions.alpha_iso(old_density);
-                for (size_t jj = 0; jj < dimRange; ++jj)
-                  local_alpha_vec[jj] = (1 - r) * local_alpha_vec[jj] + r * alpha_iso[jj];
-                const auto reg_density = basis_functions.density(entropy_flux_.get_u(local_alpha_vec));
-                const auto factor = std::log(old_density / reg_density);
-                for (size_t jj = 0; jj < dimRange; ++jj) {
-                  local_alpha_vec[jj] += alpha_one[jj] * factor;
-                  local_alpha->dofs().set_entry(jj, local_alpha_vec[jj]);
-                }
-              }
-            }
-            last_stage_of_previous_step_ = nullptr;
-            DUNE_THROW(Dune::MathError, "Regularization done!");
+                    XT::Common::Parameter({{"t", {t + actual_dt * c_[ii]}},
+                                           {"reg", {static_cast<double>(consider_regularization)}},
+                                           {"dt", {actual_dt}}}));
+          if (regularize_if_needed(consider_regularization, r_it, r_sequence)) {
+            mixed_error = 1e10;
+            skip_error_computation = true;
+            time_step_scale_factor = 0.9;
+            break;
           }
         } catch (const Dune::MathError& e) {
           mixed_error = 1e10;
           skip_error_computation = true;
           time_step_scale_factor = 0.5;
-          // std::cout << "MathError! " << e.what() << std::endl;
+          std::cout << "MathError! " << e.what() << std::endl;
           break;
 #if HAVE_TBB
         } catch (const tbb::captured_exception& e) {
@@ -273,16 +304,50 @@ public:
           break;
 #endif
         }
-      }
+      } // stages
 
       if (!skip_error_computation) {
-        // calculate two approximations of alpha at timestep n+1.
-        alpha_tmp_.dofs().vector() = alpha_n.dofs().vector();
+        // compute alpha^{n+1}
         alpha_np1_.dofs().vector() = alpha_n.dofs().vector();
-        for (size_t ii = 0; ii < num_stages_; ++ii) {
+        for (size_t ii = 0; ii < num_stages_ - 1; ++ii)
           alpha_np1_.dofs().vector().axpy(actual_dt * r_ * b_1_[ii], stages_k_[ii].dofs().vector());
-          alpha_tmp_.dofs().vector().axpy(actual_dt * r_ * b_2_[ii], stages_k_[ii].dofs().vector());
+
+        // ensure min density
+        min_density_setter_.apply(alpha_np1_.dofs().vector(), alpha_np1_.dofs().vector());
+
+        // calculate last stage
+        stages_k_[num_stages_ - 1].dofs().vector() *= 0.;
+        try {
+          op_.apply(alpha_np1_.dofs().vector(),
+                    stages_k_[num_stages_ - 1].dofs().vector(),
+                    XT::Common::Parameter({{"t", {t + actual_dt * c_[num_stages_ - 1]}},
+                                           {"reg", {static_cast<double>(consider_regularization)}},
+                                           {"dt", {actual_dt}}}));
+          if (regularize_if_needed(consider_regularization, r_it, r_sequence)) {
+            mixed_error = 1e10;
+            time_step_scale_factor = 0.9;
+            continue;
+          }
+        } catch (const Dune::MathError& e) {
+          mixed_error = 1e10;
+          time_step_scale_factor = 0.5;
+          std::cout << "MathError! " << e.what() << std::endl;
+          continue;
+#if HAVE_TBB
+        } catch (const tbb::captured_exception& e) {
+          mixed_error = 1e10;
+          time_step_scale_factor = 0.5;
+          continue;
+#endif
         }
+
+        // calculate second approximations of alpha at timestep n+1.
+        alpha_tmp_.dofs().vector() = alpha_n.dofs().vector();
+        for (size_t ii = 0; ii < num_stages_; ++ii)
+          alpha_tmp_.dofs().vector().axpy(actual_dt * r_ * b_2_[ii], stages_k_[ii].dofs().vector());
+
+        // ensure min density, if this is not done for alpha_tmp_, the error will be estimated too high.
+        min_density_setter_.apply(alpha_tmp_.dofs().vector(), alpha_tmp_.dofs().vector());
 
         // calculate error
         const auto* alpha_tmp_data =
@@ -302,13 +367,14 @@ public:
         // scale dt to get the estimated optimal time step length
         time_step_scale_factor =
             std::min(std::max(0.8 * std::pow(1. / mixed_error, 1. / (q + 1.)), scale_factor_min_), scale_factor_max_);
-      }
+      } // if (!skip_error_computation)
     } // while (mixed_error > 1.)
 
     alpha_n.dofs().vector() = alpha_np1_.dofs().vector();
+    this->dts_.push_back(actual_dt);
 
     if (!last_stage_of_previous_step_)
-      last_stage_of_previous_step_ = Dune::XT::Common::make_unique<DiscreteFunctionType>(alpha_n);
+      last_stage_of_previous_step_ = std::make_unique<DiscreteFunctionType>(alpha_n);
     last_stage_of_previous_step_->dofs().vector() = stages_k_[num_stages_ - 1].dofs().vector();
 
     t += actual_dt;
@@ -317,6 +383,8 @@ public:
   } // ... step(...)
 
 private:
+  const MinDensitySetterType min_density_setter_;
+  const bool use_first_same_as_last_property_;
   const OperatorType& op_;
   const EntropyFluxType& entropy_flux_;
   const RangeFieldType r_;

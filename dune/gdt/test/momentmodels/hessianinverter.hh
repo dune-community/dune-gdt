@@ -92,7 +92,12 @@ public:
           DUNE_THROW(Dune::MathError, "Hessian");
     } catch (const Dune::MathError& e) {
       if (param_.has_key("reg") && param_.get("reg")[0]) {
-        reg_indicators_[entity_index] = true;
+        for (size_t ii = 0; ii < dimRange; ++ii)
+          Hinv_u_[ii] = local_u_dofs.get_entry(ii);
+        const auto rho = analytical_flux_.basis_functions().density(analytical_flux_.get_u(Hinv_u_));
+        const double dt = param_.get("dt")[0];
+        if ((rho < 1e-7 && dt < 1e-4) || dt < 1e-7)
+          reg_indicators_[entity_index] = true;
         return;
       } else
         throw e;

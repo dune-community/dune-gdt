@@ -53,10 +53,11 @@ public:
   using BaseType::default_boundary_cfg;
 
   SourceBeamPn(const MomentBasis& basis_functions,
+               const RangeFieldType psi_vac = 5e-7,
                const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                const XT::Common::Configuration& boundary_cfg = default_boundary_cfg(),
                const bool is_mn_model = false)
-    : BaseType(basis_functions, grid_cfg, boundary_cfg)
+    : BaseType(basis_functions, psi_vac, grid_cfg, boundary_cfg)
     , is_mn_model_(is_mn_model)
   {}
 
@@ -372,6 +373,7 @@ class SourceBeamMn : public SourceBeamPn<XT::Grid::extract_entity_t<GV>, MomentB
 
 public:
   using typename BaseType::FluxType;
+  using typename BaseType::RangeFieldType;
   using typename BaseType::RangeReturnType;
   using ActualFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
 
@@ -380,9 +382,10 @@ public:
 
   SourceBeamMn(const MomentBasis& basis_functions,
                const GV& grid_view,
+               const RangeFieldType& psi_vac = 5e-7,
                const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_cfg, boundary_cfg, true)
+    : BaseType(basis_functions, psi_vac, grid_cfg, boundary_cfg, true)
     , grid_view_(grid_view)
   {}
 

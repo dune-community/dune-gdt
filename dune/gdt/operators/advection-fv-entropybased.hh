@@ -116,9 +116,9 @@ public:
     VectorType u_update = range;
     VectorType rhs_update = range;
     u_update *= 0.;
-    advection_op_.apply(source, u_update, param);
+    advection_op_.apply(range, u_update, param);
     u_update *= -1.;
-    rhs_op_.apply(source, rhs_update, param);
+    rhs_op_.apply(range, rhs_update, param);
     u_update += rhs_update;
     std::fill(reg_indicators_.begin(), reg_indicators_.end(), false);
     inverse_hessian_operator_.apply_inverse_hessian(source, u_update, reg_indicators_, range, param);
@@ -134,7 +134,7 @@ public:
   const RhsOperatorType& rhs_op_;
   const InverseHessianOperatorType& inverse_hessian_operator_;
   mutable std::vector<bool> reg_indicators_;
-}; // class EntropicCoordinatesOperator<...>
+}; // class EntropicCoordinatesCombinedOperator<...>
 
 
 template <class AdvectionOperatorImp, class EntropySolverImp>

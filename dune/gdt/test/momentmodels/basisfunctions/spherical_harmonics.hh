@@ -167,6 +167,23 @@ public:
     return ret;
   }
 
+  virtual bool needs_rho_for_min_density() const override final
+  {
+    return true;
+  }
+
+  virtual bool adjust_alpha_to_ensure_min_density(RangeType& alpha,
+                                                  const RangeFieldType rho_min,
+                                                  const RangeFieldType rho) const override final
+  {
+    if (rho < rho_min) {
+      alpha = this->alpha_iso(rho_min);
+      return true;
+    }
+    return false;
+  }
+
+
 private:
   static RangeFieldType A_lm(const int l, const int m)
   {
@@ -439,6 +456,22 @@ public:
   DynamicRangeType integrate_dirac_at(const DomainType& dirac_position) const
   {
     return evaluate(dirac_position);
+  }
+
+  virtual bool needs_rho_for_min_density() const override final
+  {
+    return true;
+  }
+
+  virtual bool adjust_alpha_to_ensure_min_density(RangeType& alpha,
+                                                  const RangeFieldType rho_min,
+                                                  const RangeFieldType rho) const override final
+  {
+    if (rho < rho_min) {
+      alpha = this->alpha_iso(rho_min);
+      return true;
+    }
+    return false;
   }
 
 private:
