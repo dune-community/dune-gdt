@@ -226,8 +226,9 @@ struct HyperbolicPnDiscretization
     std::shared_ptr<const MomentBasis> basis_functions = std::make_shared<const MomentBasis>(
         quad_order == size_t(-1) ? MomentBasis::default_quad_order() : quad_order,
         quad_refinements == size_t(-1) ? MomentBasis::default_quad_refinements() : quad_refinements);
+    const RangeFieldType psi_vac = DXTC_CONFIG_GET("psi_vac", 1e-8 / basis_functions->unit_ball_volume());
     const std::unique_ptr<ProblemType> problem_ptr =
-        XT::Common::make_unique<ProblemType>(*basis_functions, grid_config);
+        std::make_unique<ProblemType>(*basis_functions, psi_vac, grid_config);
     const auto& problem = *problem_ptr;
     const auto initial_values = problem.initial_values();
     const auto boundary_values = problem.boundary_values();
@@ -340,6 +341,7 @@ struct HyperbolicPnDiscretization
                       true,
                       true,
                       false,
+                      true,
                       filename,
                       *basis_functions->visualizer(),
                       basis_functions->stringifier());

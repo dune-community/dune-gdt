@@ -244,8 +244,16 @@ public:
   {
     const RangeFieldType actual_dt = std::min(dt, max_dt);
     auto& t = current_time();
-    auto& u_n = current_solution();
+
+    // store statistics
+    this->times_.push_back(t);
+    auto time = std::chrono::steady_clock::now();
+    std::chrono::duration<double> wall_time = time - this->begin_time_;
+    this->wall_times_.push_back(wall_time.count());
+    this->dts_.push_back(actual_dt);
+
     // calculate stages
+    auto& u_n = current_solution();
     for (size_t ii = 0; ii < num_stages_; ++ii) {
       u_i_.dofs().vector() = u_n.dofs().vector();
       for (size_t jj = 0; jj < ii; ++jj)

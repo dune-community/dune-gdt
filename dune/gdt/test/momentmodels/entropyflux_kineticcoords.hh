@@ -172,6 +172,11 @@ public:
     implementation_->get_u((*eta_ast_prime_evaluations_)[entity_index], u);
   }
 
+  const StateType& get_precomputed_u(const size_t entity_index)
+  {
+    return u_[entity_index];
+  }
+
   StateType get_alpha(const StateType& u) const
   {
     const auto alpha = implementation_->get_alpha(u)->first;
@@ -214,7 +219,7 @@ public:
     implementation_->apply_inverse_hessian((*eta_ast_twoprime_evaluations_)[entity_index], u);
   }
 
-  void store_evaluations(const size_t entity_index, StateType& alpha, const RangeFieldType psi_min, bool check = true)
+  void store_evaluations(const size_t entity_index, StateType& alpha, const RangeFieldType rho_min, bool check = true)
   {
     implementation_->store_exp_evaluations(exp_evaluations_[entity_index], alpha);
     if (entropy != EntropyType::MaxwellBoltzmann) {
@@ -224,21 +229,17 @@ public:
     }
     set_eta_ast_pointers();
     // check for inf and nan and very low densities
+    u_[entity_index] = get_u(entity_index);
+    const auto& u = u_[entity_index];
     if (check) {
-      const auto u = get_u(entity_index);
       const double* u_ptr = &(u[0]);
       const auto val = XT::Common::reduce(u_ptr, u_ptr + basis_dimRange, 0.);
       if (std::isnan(val) || std::isinf(val))
         DUNE_THROW(Dune::MathError, "inf or nan in u!");
-      const auto rho = basis_functions().density(u);
-      const auto& rho_min = psi_min;
-      if (rho < rho_min) {
-        alpha = basis_functions().alpha_iso(rho_min);
+      const bool changed = basis_functions().adjust_alpha_to_ensure_min_density(
+          alpha, rho_min, basis_functions().needs_rho_for_min_density() ? basis_functions().density(u) : 0.);
+      if (changed)
         store_evaluations(entity_index, alpha, rho_min, false);
-      }
-      // const bool changed = basis_functions().adjust_alpha_to_ensure_min_density(alpha, psi_min);
-      // if (changed)
-      // store_evaluations(entity_index, alpha, psi_min, false);
     }
   }
 
@@ -275,6 +276,7 @@ public:
   void prepare_storage(const GridViewType& grid_view)
   {
     const auto num_entities = grid_view.size(0);
+    u_.resize(num_entities);
     exp_evaluations_.resize(num_entities);
     if (entropy != EntropyType::MaxwellBoltzmann) {
       eta_ast_prime_storage_.resize(num_entities);
@@ -340,6 +342,7 @@ private:
   std::vector<QuadratureWeightsType> eta_ast_twoprime_storage_;
   std::vector<QuadratureWeightsType>* eta_ast_prime_evaluations_;
   std::vector<QuadratureWeightsType>* eta_ast_twoprime_evaluations_;
+  std::vector<StateType> u_;
   BoundaryQuadratureWeightsType boundary_distribution_evaluations_;
 };
 

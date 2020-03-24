@@ -118,28 +118,6 @@ public:
         u[ii] = u_iso_min[ii];
   }
 
-  bool adjust_alpha_to_ensure_min_density(RangeType& alpha, const RangeFieldType psi_min) const override final
-  {
-    bool changed = false;
-    const RangeFieldType alpha_min = std::log(psi_min);
-    const RangeFieldType alpha_min_eps = alpha_min + std::abs(alpha_min) * 1e-14;
-    if (std::max(alpha[0], alpha[1]) < alpha_min_eps) {
-      alpha[0] = alpha_min;
-      changed = true;
-    }
-    for (size_t ii = 1; ii < dimRange - 1; ++ii) {
-      if (alpha[ii] < alpha_min_eps && alpha[ii - 1] < alpha_min_eps && alpha[ii + 1] < alpha_min_eps) {
-        alpha[ii] = alpha_min;
-        changed = true;
-      }
-    }
-    if (std::max(alpha[dimRange - 2], alpha[dimRange - 1]) < alpha_min_eps) {
-      alpha[dimRange - 1] = alpha_min;
-      changed = true;
-    }
-    return changed;
-  }
-
   std::string short_id() const override final
   {
     return "hf";
@@ -417,6 +395,30 @@ public:
     return ret;
   }
 
+  bool adjust_alpha_to_ensure_min_density(RangeType& alpha,
+                                          const RangeFieldType rho_min,
+                                          const RangeFieldType /*rho*/) const override final
+  {
+    bool changed = false;
+    const RangeFieldType alpha_min = std::log(rho_min / 2);
+    const RangeFieldType neighbor_min = std::log(5e-8);
+    if (alpha[0] < alpha_min && alpha[1] < neighbor_min) {
+      alpha[0] = alpha_min;
+      changed = true;
+    }
+    for (size_t ii = 1; ii < dimRange - 1; ++ii) {
+      if (alpha[ii] < alpha_min && alpha[ii - 1] < neighbor_min && alpha[ii + 1] < neighbor_min) {
+        alpha[ii] = alpha_min;
+        changed = true;
+      }
+    }
+    if (alpha[dimRange - 1] < alpha_min && alpha[dimRange - 2] < neighbor_min) {
+      alpha[dimRange - 1] = alpha_min;
+      changed = true;
+    }
+    return changed;
+  }
+
   std::array<int, dimDomain> has_fixed_sign(const size_t index) const override final
   {
     return BaseType::interval_has_fixed_sign(index, num_intervals);
@@ -597,6 +599,22 @@ public:
         ret[vertices[ii]->index()] += val[ii] * factor;
     }
     return ret;
+  }
+
+  virtual bool needs_rho_for_min_density() const override final
+  {
+    return true;
+  }
+
+  virtual bool adjust_alpha_to_ensure_min_density(RangeType& alpha,
+                                                  const RangeFieldType rho_min,
+                                                  const RangeFieldType rho) const override final
+  {
+    if (rho < rho_min) {
+      alpha = this->alpha_iso(rho_min);
+      return true;
+    }
+    return false;
   }
 
   std::array<int, dimDomain> has_fixed_sign(const size_t index) const override final

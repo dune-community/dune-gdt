@@ -85,8 +85,9 @@ struct HyperbolicMnDiscretization
     std::shared_ptr<const MomentBasis> basis_functions = std::make_shared<const MomentBasis>(
         quad_order == size_t(-1) ? MomentBasis::default_quad_order() : quad_order,
         quad_refinements == size_t(-1) ? MomentBasis::default_quad_refinements() : quad_refinements);
+    const RangeFieldType psi_vac = DXTC_CONFIG_GET("psi_vac", 1e-8 / basis_functions->unit_ball_volume());
     const std::unique_ptr<ProblemType> problem_ptr =
-        XT::Common::make_unique<ProblemType>(*basis_functions, grid_view, grid_config);
+        std::make_unique<ProblemType>(*basis_functions, grid_view, psi_vac, grid_config);
     const auto& problem = *problem_ptr;
     const auto initial_values = problem.initial_values();
     const auto boundary_values = problem.boundary_values();
@@ -98,7 +99,7 @@ struct HyperbolicMnDiscretization
     // using, so for the tests we disable this cache to get reproducible results.
     if (disable_thread_cache)
       dynamic_cast<EntropyFluxType*>(analytical_flux.get())->disable_thread_cache();
-    const RangeFieldType CFL = problem.CFL();
+    const RangeFieldType CFL = DXTC_CONFIG.get("timestepper.CFL", problem.CFL());
 
     // ***************** project initial values to discrete function *********************
     // create a discrete function for the solution
@@ -124,10 +125,9 @@ struct HyperbolicMnDiscretization
     using FvOperatorType = EntropyBasedMomentFvOperator<
         std::conditional_t<TestCaseType::reconstruction, ReconstructionAdvectionOperatorType, AdvectionOperatorType>,
         EntropySolverType>;
+    constexpr TimeStepperMethods time_stepper_type = TimeStepperMethods::explicit_rungekutta_second_order_ssp;
     using OperatorTimeStepperType =
-        ExplicitRungeKuttaTimeStepper<FvOperatorType,
-                                      DiscreteFunctionType,
-                                      TimeStepperMethods::explicit_rungekutta_second_order_ssp>;
+        ExplicitRungeKuttaTimeStepper<FvOperatorType, DiscreteFunctionType, time_stepper_type>;
     using RhsTimeStepperType = KineticIsotropicTimeStepper<DiscreteFunctionType, MomentBasis>;
     using TimeStepperType = StrangSplittingTimeStepper<RhsTimeStepperType, OperatorTimeStepperType>;
 
@@ -173,9 +173,13 @@ struct HyperbolicMnDiscretization
     if (!filename.empty())
       filename += "_";
     filename += ProblemType::static_id();
+    filename +=
+        (time_stepper_type == TimeStepperMethods::explicit_rungekutta_second_order_ssp)
+            ? "_ssp2_"
+            : (time_stepper_type == TimeStepperMethods::explicit_rungekutta_third_order_ssp ? "_ssp3_" : "unknown");
     filename += "_grid_" + grid_config["num_elements"];
     filename += "_tend_" + XT::Common::to_string(t_end);
-    filename += "_quad_" + XT::Common::to_string(quad_order);
+    filename += "_quad_" + XT::Common::to_string(quad_refinements) + "x" + XT::Common::to_string(quad_order);
     filename += MomentBasis::entropy == EntropyType::MaxwellBoltzmann ? "_MaxwellBoltzmann_" : "_BoseEinstein_";
     filename += TestCaseType::reconstruction ? "_ord2" : "_ord1";
     filename += "_" + basis_functions->mn_name();
@@ -205,6 +209,7 @@ struct HyperbolicMnDiscretization
                       true,
                       true,
                       false,
+                      true,
                       filename,
                       *basis_functions->visualizer(),
                       basis_functions->stringifier());
@@ -212,6 +217,7 @@ struct HyperbolicMnDiscretization
     std::chrono::duration<double> time_diff = end_time - begin_time;
     if (grid_view.comm().rank() == 0)
       std::cout << "Solving took: " << XT::Common::to_string(time_diff.count(), 15) << " s" << std::endl;
+    timestepper.write_timings(filename);
 
     auto ret = std::make_pair(FieldVector<double, 3>(0.), int(0));
     double& l1norm = ret.first[0];
@@ -245,14 +251,15 @@ struct HyperbolicMnTest
   {
     auto norms = HyperbolicMnDiscretization<TestCaseType>::run(
                      DXTC_CONFIG.get("num_save_steps", 1),
-                     0,
-                     TestCaseType::quad_order,
-                     TestCaseType::quad_refinements,
+                     DXTC_CONFIG.get("num_output_steps", 0),
+                     DXTC_CONFIG.get("quad_order", TestCaseType::quad_order),
+                     DXTC_CONFIG.get("quad_refinements", TestCaseType::quad_refinements),
                      DXTC_CONFIG.get("grid_size", ""),
-                     2,
+                     DXTC_CONFIG.get("overlap_size", 2),
                      DXTC_CONFIG.get("t_end", TestCaseType::t_end),
-                     "test",
-                     Dune::GDT::is_full_moment_basis<typename TestCaseType::MomentBasis>::value)
+                     DXTC_CONFIG.get("filename", "test"),
+                     DXTC_CONFIG.get("disable_thread_cache",
+                                     Dune::GDT::is_full_moment_basis<typename TestCaseType::MomentBasis>::value))
                      .first;
     const double l1norm = norms[0];
     const double l2norm = norms[1];

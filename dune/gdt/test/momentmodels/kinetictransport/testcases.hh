@@ -30,46 +30,53 @@ namespace GDT {
 
 
 // choose Quadrature suitable for MomentBasisImp
-template <class MomentBasisImp>
+template <class MomentBasisImp, bool needs_high_order = false>
 struct QuadratureChooser;
 
 template <size_t order, EntropyType entropy>
-struct QuadratureChooser<LegendreMomentBasis<double, double, order, 1, entropy>>
+struct QuadratureChooser<LegendreMomentBasis<double, double, order, 1, entropy>, false>
 {
   static constexpr size_t quad_order = 54;
   static constexpr size_t quad_refinements = 1;
 };
 
+template <size_t order, EntropyType entropy>
+struct QuadratureChooser<LegendreMomentBasis<double, double, order, 1, entropy>, true>
+{
+  static constexpr size_t quad_order = 197;
+  static constexpr size_t quad_refinements = 1;
+};
+
 template <size_t dimRange, EntropyType entropy>
-struct QuadratureChooser<HatFunctionMomentBasis<double, 1, double, dimRange, 1, 1, entropy>>
+struct QuadratureChooser<HatFunctionMomentBasis<double, 1, double, dimRange, 1, 1, entropy>, false>
 {
   static constexpr size_t quad_order = 15;
   static constexpr size_t quad_refinements = 0;
 };
 
 template <size_t dimRange, EntropyType entropy>
-struct QuadratureChooser<PartialMomentBasis<double, 1, double, dimRange, 1, 1, 1, entropy>>
+struct QuadratureChooser<PartialMomentBasis<double, 1, double, dimRange, 1, 1, 1, entropy>, false>
 {
   static constexpr size_t quad_order = 15;
   static constexpr size_t quad_refinements = 0;
 };
 
 template <size_t order, EntropyType entropy>
-struct QuadratureChooser<RealSphericalHarmonicsMomentBasis<double, double, order, 3, false, entropy>>
+struct QuadratureChooser<RealSphericalHarmonicsMomentBasis<double, double, order, 3, false, entropy>, false>
 {
   static constexpr size_t quad_order = 2 * order + 8;
   static constexpr size_t quad_refinements = 0;
 };
 
 template <size_t refinements, EntropyType entropy>
-struct QuadratureChooser<HatFunctionMomentBasis<double, 3, double, refinements, 1, 3, entropy>>
+struct QuadratureChooser<HatFunctionMomentBasis<double, 3, double, refinements, 1, 3, entropy>, false>
 {
   static constexpr size_t quad_order = refinements == 0 ? 18 /*fekete rule number 7*/ : 9 /*fekete rule number 3*/;
   static constexpr size_t quad_refinements = 0;
 };
 
 template <size_t refinements, EntropyType entropy>
-struct QuadratureChooser<PartialMomentBasis<double, 3, double, refinements, 1, 3, 1, entropy>>
+struct QuadratureChooser<PartialMomentBasis<double, 3, double, refinements, 1, 3, 1, entropy>, false>
 {
   static constexpr size_t quad_order = refinements == 0 ? 18 /*fekete rule number 7*/ : 9 /*fekete rule number 3*/;
   static constexpr size_t quad_refinements = 0;
@@ -285,9 +292,9 @@ struct SourceBeamMnExpectedResults
 template <bool reconstruct>
 struct SourceBeamMnExpectedResults<LegendreMomentBasis<double, double, 7>, reconstruct, false>
 {
-  static constexpr double l1norm = reconstruct ? 0.28535354296013105 : 0.28535354295945792;
-  static constexpr double l2norm = reconstruct ? 0.37115145999473981 : 0.36265752973701221;
-  static constexpr double linfnorm = reconstruct ? 0.78506610334488358 : 0.78315544039143314;
+  static constexpr double l1norm = reconstruct ? 0.33140413352826437 : 0.33140413352331233;
+  static constexpr double l2norm = reconstruct ? 0.45584403677576046 : 0.44485862483138167;
+  static constexpr double linfnorm = reconstruct ? 0.99172278911390399 : 0.98931014397841888;
   static constexpr double tol = 1e-5;
 };
 
@@ -378,7 +385,8 @@ struct SourceBeamMnTestCase : public SourceBeamPnTestCase<GridImp, MomentBasisIm
   using typename BaseType::GridViewType;
   using ProblemType = SourceBeamMn<GridViewType, MomentBasisImp>;
   using ExpectedResultsType = SourceBeamMnExpectedResults<MomentBasisImp, reconstruct, kinetic_scheme>;
-  using QuadratureChooserType = QuadratureChooser<MomentBasisImp>;
+  using QuadratureChooserType =
+      QuadratureChooser<MomentBasisImp, Dune::GDT::is_full_moment_basis<MomentBasisImp>::value>;
   static constexpr size_t quad_order = QuadratureChooserType::quad_order;
   static constexpr size_t quad_refinements = QuadratureChooserType::quad_refinements;
   using RealizabilityLimiterChooserType =

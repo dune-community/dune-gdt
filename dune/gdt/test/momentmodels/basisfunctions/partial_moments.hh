@@ -301,24 +301,44 @@ public:
     return DynamicRangeType();
   } // ... evaluate(...)
 
-  bool adjust_alpha_to_ensure_min_density(RangeType& alpha, const RangeFieldType psi_min) const override final
+  bool adjust_alpha_to_ensure_min_density(RangeType& /*alpha*/,
+                                          const RangeFieldType /*rho_min*/,
+                                          const RangeFieldType /*rho*/) const override final
   {
+    return false;
+#if 0
     bool changed = false;
-    const auto alpha_min = std::log(psi_min);
+    const RangeFieldType local_rho_min = rho_min/num_intervals;
+    const auto alpha_min = std::log(rho_min/2);
+    // std::cout << alpha_min << std::endl;
+    RangeFieldType local_rho;
     for (size_t ii = 0; ii < num_intervals; ++ii) {
       auto& alpha_0 = alpha[2 * ii];
       auto& alpha_1 = alpha[2 * ii + 1];
-      const auto mu_i = partitioning_[ii];
-      const auto mu_ip1 = partitioning_[ii + 1];
-      const auto alpha_left = alpha_0 + mu_i * alpha_1;
-      const auto alpha_right = alpha_0 + mu_ip1 * alpha_1;
-      const auto max_alpha = std::max(alpha_left, alpha_right);
-      if (max_alpha < alpha_min) {
+      if (XT::Common::FloatCmp::eq(alpha_1, 0., 1e-14)) {
+        local_rho = std::exp(alpha_0) * 2./num_intervals;
+      } else {
+        const auto mu_i = partitioning_[ii];
+        const auto mu_ip1 = partitioning_[ii + 1];
+        const auto alpha_left = alpha_0 + mu_i * alpha_1;
+        const auto alpha_right = alpha_0 + mu_ip1 * alpha_1;
+        const auto ln_alpha_1 = std::log(alpha_1);
+        const auto exp_left = std::exp(alpha_left - ln_alpha_1);
+        const auto exp_right = std::exp(alpha_right - ln_alpha_1);
+        const auto exp_max = std::max(exp_left, exp_right);
+        // we cannot compute exp_left - exp_right in all cases due to cancellation
+        if (exp_max > 0.1)
+          // In this case we simply assume the density is large enough
+          local_rho = 1e10;
+        else
+          local_rho = exp_right - exp_left;
+      }
+      if (local_rho < local_rho_min) {
         alpha_0 = alpha_min;
         alpha_1 = 0.;
         changed = true;
       }
-#if 0
+#  if 0
       const bool min_is_left = alpha_left < alpha_right;
       const auto alpha_min_ii = min_is_left ? alpha_left : alpha_right;
       const auto alpha_max_ii = min_is_left ? alpha_right : alpha_left;
@@ -340,23 +360,24 @@ public:
             continue;
           }
           // get positive slope
-#  if 0
+#    if 0
         // Set minimum to alpha_min, leave max alpha unchanged
         alpha_1 = (alpha_max_ii - alpha_min_ii) / h;
-#  else
+#    else
           // Set minimum to alpha_min, leave rho unchanged
           alpha_1 = -1. / h * boost::math::lambert_wm1(-h * psi_min / rho_ii * std::exp(-h * psi_min / rho_ii))
                     - psi_min / rho_ii;
-#  endif
+#    endif
           if (!min_is_left)
             alpha_1 *= -1.; // slope has to be negative in this case
           alpha_0 = alpha_min - (min_is_left ? mu_i : mu_ip1) * alpha_1;
           changed = true;
         }
       }
-#endif
+#  endif
     } // ii
     return changed;
+#endif
   }
 
   // returns matrix with entries <h_i h_j>
@@ -598,6 +619,34 @@ public:
                  "not defined for this basis!");
     return evaluate(v, face_indices[0]);
   } // ... evaluate(...)
+
+  bool adjust_alpha_to_ensure_min_density(RangeType& alpha,
+                                          const RangeFieldType psi_min,
+                                          const RangeFieldType /*rho*/) const override final
+  {
+    return false;
+#if 0
+    bool changed = false;
+    const auto alpha_min = std::log(psi_min);
+    DomainType alpha_1;
+    for (size_t ii = 0; ii < num_blocks; ++ii) {
+      const auto& vertices = triangulation_.faces()[ii]->vertices();
+      auto& alpha_0 = alpha[block_size * ii];
+      for (size_t jj = 0; jj < dimDomain; ++ii)
+        alpha_1[jj] = alpha[block_size * ii + jj + 1];
+      auto max_alpha = alpha_0;
+      for (auto&& vertex : vertices)
+        max_alpha = std::max(max_alpha, alpha_0 + vertex->position() * alpha_1);
+      if (max_alpha < alpha_min) {
+        alpha_0 = alpha_min;
+        for (size_t jj = 0; jj < dimDomain; ++ii)
+          alpha[block_size * ii + jj + 1] = 0.;
+        changed = true;
+      }
+    } // ii
+    return changed;
+#endif
+  }
 
   RangeFieldType unit_ball_volume() const override final
   {

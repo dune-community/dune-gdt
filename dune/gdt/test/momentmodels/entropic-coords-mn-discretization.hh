@@ -49,8 +49,8 @@ struct HyperbolicEntropicCoordsMnDiscretization
   // returns: (l1norm, l2norm, linfnorm, MPI rank)
   static std::pair<Dune::FieldVector<double, 3>, int> run(size_t num_save_steps = 1,
                                                           size_t num_output_steps = 0,
-                                                          size_t quad_order = size_t(-1),
-                                                          size_t quad_refinements = size_t(-1),
+                                                          size_t quad_order = TestCaseType::quad_order,
+                                                          size_t quad_refinements = TestCaseType::quad_refinements,
                                                           std::string grid_size = "",
                                                           size_t overlap_size = 2,
                                                           double t_end = 0.,
@@ -67,7 +67,7 @@ struct HyperbolicEntropicCoordsMnDiscretization
     using SpaceType = typename TestCaseType::SpaceType;
     using AdvectionSourceSpaceType = typename TestCaseType::AdvectionSourceSpaceType;
     using GV = typename TestCaseType::GridViewType;
-    //    using E = XT::Grid::extract_entity_t<GV>;
+    // using E = XT::Grid::extract_entity_t<GV>;
     using I = XT::Grid::extract_intersection_t<GV>;
     using ProblemType = typename TestCaseType::ProblemType;
     using RangeFieldType = typename MomentBasis::RangeFieldType;
@@ -80,7 +80,6 @@ struct HyperbolicEntropicCoordsMnDiscretization
     using DomainType = FieldVector<RangeFieldType, dimDomain>;
     using RangeType = FieldVector<RangeFieldType, dimRange>;
     using DynamicRangeType = DynamicVector<RangeFieldType>;
-    //        static const RangeFieldType scale_factor = 1e2;
 
     //******************* create grid and FV space ***************************************
     auto grid_config = ProblemType::default_grid_cfg();
@@ -95,11 +94,11 @@ struct HyperbolicEntropicCoordsMnDiscretization
     const AdvectionSourceSpaceType advection_source_space(grid_view);
 
     //******************* create EquationType object ***************************************
-    std::shared_ptr<const MomentBasis> basis_functions = std::make_shared<const MomentBasis>(
-        quad_order == size_t(-1) ? MomentBasis::default_quad_order() : quad_order,
-        quad_refinements == size_t(-1) ? MomentBasis::default_quad_refinements() : quad_refinements);
+    std::shared_ptr<const MomentBasis> basis_functions =
+        std::make_shared<const MomentBasis>(quad_order, quad_refinements);
+    const RangeFieldType psi_vac = DXTC_CONFIG_GET("psi_vac", 1e-6 / basis_functions->unit_ball_volume());
     const std::unique_ptr<ProblemType> problem_ptr =
-        XT::Common::make_unique<ProblemType>(*basis_functions, grid_view, grid_config);
+        std::make_unique<ProblemType>(*basis_functions, grid_view, psi_vac, grid_config);
     const auto& problem = *problem_ptr;
     const auto initial_values_u = problem.initial_values();
     const auto boundary_values_u = problem.boundary_values();
@@ -113,22 +112,21 @@ struct HyperbolicEntropicCoordsMnDiscretization
     auto flux = problem.flux();
     auto* entropy_flux = dynamic_cast<OldEntropyFluxType*>(flux.get());
     auto analytical_flux = std::make_unique<EntropyFluxType>(*entropy_flux);
-    const RangeFieldType CFL = problem.CFL();
 
     // calculate boundary values for alpha
-    std::map<DomainType, RangeType, XT::Common::FieldVectorFloatLess> alpha_boundary_vals;
-    for (const auto& element : Dune::elements(grid_view))
-      for (const auto& intersection : Dune::intersections(grid_view, element))
-        if (intersection.boundary()) {
-          const auto x = intersection.geometry().center();
-          const auto u = boundary_values_u->evaluate(x);
-          alpha_boundary_vals.insert(std::make_pair(x, analytical_flux->get_alpha(u)));
-        }
-    GenericFunctionType boundary_values_alpha(
-        1, [&](const DomainType& x, DynamicRangeType& ret, const XT::Common::Parameter&) {
-          ret = alpha_boundary_vals[x];
-        });
-
+    // std::map<DomainType, RangeType, XT::Common::FieldVectorFloatLess> alpha_boundary_vals;
+    // for (const auto& element : Dune::elements(grid_view))
+    //   for (const auto& intersection : Dune::intersections(grid_view, element))
+    //     if (intersection.boundary()) {
+    //       const auto x = intersection.geometry().center();
+    //       const auto u = boundary_values_u->evaluate(x);
+    //       alpha_boundary_vals.insert(std::make_pair(x, analytical_flux->get_alpha(u)));
+    //       std::cout << XT::Common::to_string(alpha_boundary_vals[x]) << std::endl;
+    //     }
+    // GenericFunctionType boundary_values_alpha(
+    //     1, [&](const DomainType& x, DynamicRangeType& ret, const XT::Common::Parameter&) {
+    //       ret = alpha_boundary_vals[x];
+    //     });
 
     // ***************** project initial values to discrete function *********************
     // create a discrete function for the solution
@@ -136,14 +134,6 @@ struct HyperbolicEntropicCoordsMnDiscretization
     DiscreteFunctionType alpha(fv_space, "alpha_initial");
     // project initial values
     default_interpolation(*initial_values_u, u, grid_view);
-
-    // convert initial values to alpha
-    // using EntropySolverType = EntropySolver<MomentBasis, SpaceType, MatrixType>;
-    // EntropySolverType entropy_solver(*entropy_flux,
-    //                                  fv_space,
-    //                                  problem.psi_vac() * basis_functions->unit_ball_volume() / 10,
-    //                                  filename);
-    // entropy_solver.apply(u.dofs().vector(), alpha.dofs().vector(), {});
 
     const auto u_local_func = u.local_discrete_function();
     const auto alpha_local_func = alpha.local_discrete_function();
@@ -158,57 +148,45 @@ struct HyperbolicEntropicCoordsMnDiscretization
         alpha_local_func->dofs().set_entry(ii, alpha_local[ii]);
     }
 
+    // enforce min acceptable density for initial values
+    const double min_acceptable_density = problem.psi_vac() * basis_functions->unit_ball_volume() / 10;
+    // const double min_acceptable_density = problem.psi_vac();
+    using DensityOperatorType = DensityEvaluator<MomentBasis, SpaceType, slope, MatrixType>;
+    using MinDensitySetterType = MinDensitySetter<MomentBasis, SpaceType, slope, MatrixType>;
+    DensityOperatorType density_operator(*analytical_flux, fv_space, boundary_distribution, min_acceptable_density);
+    MinDensitySetterType min_density_setter(*analytical_flux, fv_space, min_acceptable_density);
+    min_density_setter.apply(alpha.dofs().vector(), alpha.dofs().vector());
+
+    // calculate boundary evaluations (needed for reconstruction)
+    for (const auto& element : Dune::elements(grid_view)) {
+      const auto entity_index = grid_view.indexSet().index(element);
+      for (const auto& intersection : Dune::intersections(grid_view, element)) {
+        if (intersection.boundary()) {
+          analytical_flux->store_boundary_evaluations(
+              boundary_distribution(intersection.geometry().center()), entity_index, intersection.indexInInside());
+        }
+      }
+    }
+
     // ******************** choose flux and rhs operator and timestepper ******************************************
 
     using AdvectionOperatorType = AdvectionFvOperator<MatrixType, GV, dimRange>;
     using HessianInverterType = EntropicHessianInverter<MomentBasis, SpaceType, slope, MatrixType>;
-#if 0
-    using ReconstructionOperatorType = PointwiseLinearReconstructionNoCharOperator<
-                                                                             GV,
-                                                                             BoundaryValueType,
-        EntropyFluxType,
-                                                                             VectorType,
-                                                                             RangeType>;
-#else
     using ReconstructionOperatorType =
         PointwiseLinearKineticReconstructionOperator<GV, EntropyFluxType, VectorType, RangeType>;
-#endif
     using ReconstructionAdvectionOperatorType =
         AdvectionWithPointwiseReconstructionOperator<AdvectionOperatorType, ReconstructionOperatorType>;
-    using NonEntropicAdvectionOperatorType = ReconstructionAdvectionOperatorType;
-    //    using FvOperatorType = EntropicCoordinatesOperator<
-    //        NonEntropicAdvectionOperatorType,
-    //        HessianInverterType>;
-    using NonEntropicRhsOperatorType = LocalizableOperator<MatrixType, GV, dimRange>;
-    //    using RhsOperatorType = EntropicCoordinatesOperator<NonEntropicRhsOperatorType, HessianInverterType>;
-    using DensityOperatorType = DensityEvaluator<MomentBasis, SpaceType, slope, MatrixType>;
-    using CombinedOperatorType = EntropicCoordinatesCombinedOperator<DensityOperatorType,
-                                                                     NonEntropicAdvectionOperatorType,
-                                                                     NonEntropicRhsOperatorType,
-                                                                     HessianInverterType>;
+    using FvOperatorType = ReconstructionAdvectionOperatorType;
+    using RhsOperatorType = LocalizableOperator<MatrixType, GV, dimRange>;
+    using CombinedOperatorType =
+        EntropicCoordinatesCombinedOperator<DensityOperatorType, FvOperatorType, RhsOperatorType, HessianInverterType>;
 
-    //    using OperatorTimeStepperType =
-    //        ExplicitRungeKuttaTimeStepper<FvOperatorType,
-    //                                      DiscreteFunctionType,
-    //                                      TimeStepperMethods::explicit_euler>;
-    //    using RhsTimeStepperType =
-    //        ExplicitRungeKuttaTimeStepper<RhsOperatorType,
-    //                                      DiscreteFunctionType,
-    //                                      TimeStepperMethods::explicit_euler>;
-
-    //    using OperatorTimeStepperType =
-    //        KineticAdaptiveRungeKuttaTimeStepper<FvOperatorType,
-    //                                      DiscreteFunctionType>;
-    //    using RhsTimeStepperType =
-    //        KineticAdaptiveRungeKuttaTimeStepper<RhsOperatorType,
-    //                                      DiscreteFunctionType>;
-
-    //    using TimeStepperType = FractionalTimeStepper<OperatorTimeStepperType, RhsTimeStepperType>;
-
+    constexpr TimeStepperMethods time_stepper_type = TimeStepperMethods::bogacki_shampine;
     using TimeStepperType = KineticAdaptiveRungeKuttaTimeStepper<CombinedOperatorType,
+                                                                 MinDensitySetterType,
                                                                  DiscreteFunctionType,
                                                                  EntropyFluxType,
-                                                                 TimeStepperMethods::bogacki_shampine>;
+                                                                 time_stepper_type>;
 
     // *************** Calculate dx and initial dt **************************************
     Dune::XT::Grid::Dimensions<GV> dimensions(grid_view);
@@ -217,7 +195,6 @@ struct HyperbolicEntropicCoordsMnDiscretization
       dx /= std::sqrt(2);
     if (dimDomain == 3)
       dx /= std::sqrt(3);
-    RangeFieldType dt = CFL * dx;
 
     // *********************** create operators and timesteppers ************************************
     NumericalKineticFlux<GV, MomentBasis, EntropyFluxType> numerical_flux(*analytical_flux, *basis_functions);
@@ -227,12 +204,6 @@ struct HyperbolicEntropicCoordsMnDiscretization
     using BoundaryOperator =
         LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator<I, VectorType, GV, dimRange>;
     using LambdaType = typename BoundaryOperator::LambdaType;
-
-    // calculate boundary kinetic fluxes
-    // apply density_operator first to store boundary_evaluations
-    const double min_acceptable_density = problem.psi_vac() / 10;
-    DensityOperatorType density_operator(*analytical_flux, fv_space, boundary_distribution, min_acceptable_density);
-    density_operator.apply(alpha.dofs().vector(), alpha.dofs().vector());
 
     // store boundary fluxes
     std::map<DomainType, DynamicRangeType, XT::Common::FieldVectorFloatLess> boundary_fluxes;
@@ -261,27 +232,36 @@ struct HyperbolicEntropicCoordsMnDiscretization
     XT::Grid::ApplyOn::NonPeriodicBoundaryIntersections<GV> filter;
     advection_operator.append(boundary_lambda, {}, filter);
 
+
+    // create remaining operators
     ReconstructionOperatorType reconstruction_operator(fv_space, *analytical_flux);
     ReconstructionAdvectionOperatorType reconstruction_advection_operator(advection_operator, reconstruction_operator);
+    auto& fv_operator = reconstruction_advection_operator;
 
+    const double atol = DXTC_CONFIG.get("timestepper.atol", 1e-3);
+    const double rtol = DXTC_CONFIG.get("timestepper.rtol", 1e-3);
     if (XT::Common::is_zero(t_end))
       t_end = problem.t_end();
 
     if (!filename.empty())
       filename += "_";
+    filename += ProblemType::static_id();
     if (TestCaseType::reconstruction && slope == SlopeLimiterType::minmod)
       filename += "minmod_";
     else if (TestCaseType::reconstruction && slope == SlopeLimiterType::superbee)
       filename += "superbee_";
-    filename += ProblemType::static_id();
+    filename += (time_stepper_type == TimeStepperMethods::bogacki_shampine)
+                    ? "_rk23_"
+                    : (time_stepper_type == TimeStepperMethods::dormand_prince ? "_rk45_" : "unknown");
     filename += "_grid_" + grid_config["num_elements"];
     filename += "_tend_" + XT::Common::to_string(t_end);
-    filename += "_quad_" + XT::Common::to_string(quad_order);
+    filename += "_quad_" + XT::Common::to_string(quad_refinements) + "x" + XT::Common::to_string(quad_order);
+    filename += "_atol_" + XT::Common::to_string(atol);
+    filename += "_rtol_" + XT::Common::to_string(rtol);
     filename += TestCaseType::reconstruction ? "_ord2" : "_ord1";
     filename += "_" + basis_functions->mn_name();
 
     HessianInverterType hessian_inverter(*analytical_flux, fv_space);
-    auto& non_entropic_advection_operator = reconstruction_advection_operator;
 
     static const RangeType u_iso = basis_functions->u_iso();
     static const RangeType basis_integrated = basis_functions->integrated();
@@ -294,7 +274,7 @@ struct HyperbolicEntropicCoordsMnDiscretization
                         const Dune::XT::Common::Parameter& /*param*/) {
       const auto& element = local_range.element();
       const auto center = element.geometry().center();
-      const auto u_elem = analytical_flux->get_u(fv_space.grid_view().indexSet().index(element));
+      const auto& u_elem = analytical_flux->get_precomputed_u(fv_space.grid_view().indexSet().index(element));
       const auto sigma_a_value = sigma_a->evaluate(center)[0];
       const auto sigma_s_value = sigma_s->evaluate(center)[0];
       const auto sigma_t_value = sigma_a_value + sigma_s_value;
@@ -307,17 +287,12 @@ struct HyperbolicEntropicCoordsMnDiscretization
       for (size_t ii = 0; ii < dimRange; ++ii)
         range_dofs[ii] += ret[ii];
     };
-    NonEntropicRhsOperatorType non_entropic_rhs_operator(grid_view, fv_space, fv_space);
-    non_entropic_rhs_operator.append(GenericLocalElementOperator<VectorType, GV, dimRange>(rhs_func));
-    //    RhsOperatorType rhs_operator(non_entropic_rhs_operator, hessian_inverter);
-    CombinedOperatorType combined_operator(
-        density_operator, non_entropic_advection_operator, non_entropic_rhs_operator, hessian_inverter);
+    RhsOperatorType rhs_operator(grid_view, fv_space, fv_space);
+    rhs_operator.append(GenericLocalElementOperator<VectorType, GV, dimRange>(rhs_func));
+    CombinedOperatorType combined_operator(density_operator, fv_operator, rhs_operator, hessian_inverter);
 
     // ******************************** do the time steps ***********************************************************
-    //    OperatorTimeStepperType timestepper_op(fv_operator, alpha, -1.0);
-    //    RhsTimeStepperType timestepper_rhs(rhs_operator, alpha, 1.0);
-    //    TimeStepperType timestepper(timestepper_op, timestepper_rhs);
-    TimeStepperType timestepper(combined_operator, *analytical_flux, alpha, 1.);
+    TimeStepperType timestepper(combined_operator, min_density_setter, *analytical_flux, alpha, true, 1., atol, rtol);
 
     auto begin_time = std::chrono::steady_clock::now();
     auto visualizer = std::make_unique<XT::Functions::GenericVisualizer<dimRange, 1, double>>(
@@ -332,14 +307,18 @@ struct HyperbolicEntropicCoordsMnDiscretization
     //       return ret;
     //     });
 
+    // The hessian has entries in the order of psi_min, the inverse thus scales with 1/psi_min, and thus the timestep
+    // should be psi_min to get an update of order 1
+    double initial_dt = 1e-14; // std::min(dt, min_acceptable_density);
     timestepper.solve(t_end,
-                      dt,
+                      initial_dt,
                       num_save_steps,
                       num_output_steps,
                       false,
                       true,
                       true,
                       false,
+                      true,
                       filename,
                       *visualizer,
                       basis_functions->stringifier());
@@ -347,6 +326,7 @@ struct HyperbolicEntropicCoordsMnDiscretization
     std::chrono::duration<double> time_diff = end_time - begin_time;
     if (grid_view.comm().rank() == 0)
       std::cout << "Solving took: " << XT::Common::to_string(time_diff.count(), 15) << " s" << std::endl;
+    timestepper.write_timings(filename);
 
     auto ret = std::make_pair(FieldVector<double, 3>(0.), int(0));
     double& l1norm = ret.first[0];
@@ -380,13 +360,13 @@ struct HyperbolicEntropicCoordsMnTest
   {
     auto norms = HyperbolicEntropicCoordsMnDiscretization<TestCaseType>::run(
                      DXTC_CONFIG.get("num_save_steps", 1),
-                     0,
-                     TestCaseType::quad_order,
-                     TestCaseType::quad_refinements,
+                     DXTC_CONFIG.get("num_output_steps", 0),
+                     DXTC_CONFIG.get("quad_order", TestCaseType::quad_order),
+                     DXTC_CONFIG.get("quad_refinements", TestCaseType::quad_refinements),
                      DXTC_CONFIG.get("grid_size", ""),
-                     2,
+                     DXTC_CONFIG.get("overlap_size", 2),
                      DXTC_CONFIG.get("t_end", TestCaseType::t_end),
-                     "test_kinetic_alpha",
+                     DXTC_CONFIG.get("filename", "kinetic"),
                      Dune::GDT::is_full_moment_basis<typename TestCaseType::MomentBasis>::value)
                      .first;
     const double l1norm = norms[0];

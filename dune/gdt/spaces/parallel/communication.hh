@@ -71,7 +71,8 @@ public:
   template <class GV, size_t r, size_t rD, class R>
   static bool prepare(const SpaceInterface<GV, r, rD, R>& space, Type& communicator)
   {
-    GDT::GenericParallelHelper<GV, r, rD, R>(space, 1).setup_parallel_indexset(communicator);
+    if (communicator.communicator().size() > 1)
+      GDT::GenericParallelHelper<GV, r, rD, R>(space, 1).setup_parallel_indexset(communicator);
     return true;
   } // ... prepare(...)
 

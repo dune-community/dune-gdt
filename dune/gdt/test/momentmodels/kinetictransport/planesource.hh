@@ -37,9 +37,10 @@ public:
   using typename BaseType::ScalarFunctionType;
 
   PlaneSourcePn(const MomentBasis& basis_functions,
+                const RangeFieldType psi_vac = 5e-7,
                 const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                 const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_cfg, boundary_cfg)
+    : BaseType(basis_functions, psi_vac, grid_cfg, boundary_cfg)
   {}
 
   static std::string static_id()
@@ -117,6 +118,7 @@ class PlaneSourceMn : public PlaneSourcePn<XT::Grid::extract_entity_t<GV>, Momen
 
 public:
   using typename BaseType::FluxType;
+  using typename BaseType::RangeFieldType;
   using typename BaseType::RangeReturnType;
   using ActualFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
 
@@ -125,9 +127,10 @@ public:
 
   PlaneSourceMn(const MomentBasis& basis_functions,
                 const GV& grid_view,
+                const RangeFieldType psi_vac = 5e-7,
                 const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                 const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_cfg, boundary_cfg)
+    : BaseType(basis_functions, psi_vac, grid_cfg, boundary_cfg)
     , grid_view_(grid_view)
   {}
 

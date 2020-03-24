@@ -70,6 +70,36 @@ struct AdaptiveButcherArrayProvider<RangeFieldType, TimeStepperMethods::adaptive
   }
 };
 
+// Euler-Heun (adaptive RK12)
+template <class RangeFieldType>
+class AdaptiveButcherArrayProvider<RangeFieldType, TimeStepperMethods::euler_heun>
+{
+public:
+  static Dune::DynamicMatrix<RangeFieldType> A()
+  {
+    return Dune::XT::Common::from_string<Dune::DynamicMatrix<RangeFieldType>>("[0 0; 0.5 0]");
+  }
+
+  static Dune::DynamicVector<RangeFieldType> b_1()
+  {
+    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>("[0.5 0.5]");
+  }
+
+  static Dune::DynamicVector<RangeFieldType> b_2()
+  {
+    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>("[1 0]");
+  }
+
+  static Dune::DynamicVector<RangeFieldType> c()
+  {
+    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>("[0 1]");
+  }
+
+  // lower one of the two orders
+  static constexpr size_t q = 1;
+};
+
+
 // Bogacki-Shampine (adaptive RK23)
 template <class RangeFieldType>
 class AdaptiveButcherArrayProvider<RangeFieldType, TimeStepperMethods::bogacki_shampine>
@@ -364,7 +394,7 @@ public:
       }
     } // while (mixed_error > tol_)
     if (!last_stage_of_previous_step_)
-      last_stage_of_previous_step_ = Dune::XT::Common::make_unique<DiscreteFunctionType>(u_n);
+      last_stage_of_previous_step_ = std::make_unique<DiscreteFunctionType>(u_n);
     last_stage_of_previous_step_->dofs().vector() = stages_k_[num_stages_ - 1].dofs().vector();
 
 #if 0
