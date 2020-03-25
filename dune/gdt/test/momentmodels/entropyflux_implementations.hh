@@ -528,15 +528,14 @@ public:
                                                const size_t dd) const
 
   {
-    thread_local FieldVector<QuadratureWeightsType, 2> eta_ast_prime_vals;
-    eta_ast_prime_vals[0].resize(quad_points_.size());
-    eta_ast_prime_vals[1].resize(quad_points_.size());
-    evaluate_eta_ast_prime(alpha_i, M_, eta_ast_prime_vals[0]);
-    evaluate_eta_ast_prime(alpha_j, M_, eta_ast_prime_vals[1]);
+    auto& eta_ast_prime_vals_i = working_storage();
+    auto& eta_ast_prime_vals_j = working_storage2();
+    evaluate_eta_ast_prime(alpha_i, M_, eta_ast_prime_vals_i);
+    evaluate_eta_ast_prime(alpha_j, M_, eta_ast_prime_vals_j);
     DomainType ret(0);
     for (size_t ll = 0; ll < quad_points_.size(); ++ll) {
       const auto position = quad_points_[ll][dd];
-      RangeFieldType factor = position * n_ij[dd] > 0. ? eta_ast_prime_vals[0][ll] : eta_ast_prime_vals[1][ll];
+      RangeFieldType factor = position * n_ij[dd] > 0. ? eta_ast_prime_vals_i[ll] : eta_ast_prime_vals_j[ll];
       factor *= quad_weights_[ll] * position;
       const auto* basis_ll = &(M_.get_entry_ref(ll, 0.));
       for (size_t ii = 0; ii < basis_dimRange; ++ii)
@@ -556,10 +555,8 @@ public:
                                       const size_t dd) const
   {
     // get left and right reconstructed values for each quadrature point v_i
-    thread_local XT::Common::FieldVector<QuadratureWeightsType, 2> reconstructed_values(
-        QuadratureWeightsType(quad_points_.size()));
-    auto& vals_left = reconstructed_values[0];
-    auto& vals_right = reconstructed_values[1];
+    auto& vals_left = working_storage();
+    auto& vals_right = working_storage2();
     // compute reconstructed values
     static constexpr bool reconstruct = (slope_type != SlopeLimiterType::no_slope);
     if constexpr (reconstruct) {
@@ -664,6 +661,14 @@ public:
     return work_vec;
   }
 
+  // temporary vectors to store inner products and exponentials
+  QuadratureWeightsType& working_storage2() const
+  {
+    thread_local QuadratureWeightsType work_vec;
+    work_vec.resize(quad_points_.size());
+    return work_vec;
+  }
+
   BasisValuesMatrixType& P_k_mat() const
   {
     thread_local BasisValuesMatrixType P_k(M_.backend(), false, 0., 0);
@@ -671,7 +676,6 @@ public:
       P_k.resize(quad_points_.size(), matrix_num_cols);
     return P_k;
   }
-
 
   void resize_quad_weights_type(QuadratureWeightsType& weights) const
   {
@@ -1123,7 +1127,7 @@ public:
     calculate_hessian(beta_in, P_k, H);
     XT::LA::cholesky(H);
     const auto& L = H;
-    thread_local std::unique_ptr<MatrixType> tmp_mat = std::make_unique<MatrixType>();
+    thread_local auto tmp_mat = std::make_unique<MatrixType>();
     *tmp_mat = T_k;
     rightmultiply(T_k, *tmp_mat, L);
     L.mtv(beta_in, beta_out);

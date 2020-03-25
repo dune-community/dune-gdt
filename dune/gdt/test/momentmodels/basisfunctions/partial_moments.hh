@@ -620,8 +620,8 @@ public:
     return evaluate(v, face_indices[0]);
   } // ... evaluate(...)
 
-  bool adjust_alpha_to_ensure_min_density(RangeType& alpha,
-                                          const RangeFieldType psi_min,
+  bool adjust_alpha_to_ensure_min_density(RangeType& /*alpha*/,
+                                          const RangeFieldType /*rho_min*/,
                                           const RangeFieldType /*rho*/) const override final
   {
     return false;
