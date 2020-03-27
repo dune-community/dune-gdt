@@ -331,7 +331,6 @@ public:
     ret = implementation_->evaluate_kinetic_flux_with_alphas(alpha_i, alpha_j, n_ij, dd);
   } // StateType evaluate_kinetic_flux(...)
 
-
   // Returns alpha(u), starting from alpha_iso. To get better performance when calculating several alphas, use
   // Localfunction's get_alpha
   std::unique_ptr<AlphaReturnType> get_alpha(const StateType& u, const bool regularize) const
@@ -341,6 +340,21 @@ public:
     auto alpha_iso = implementation_->get_isotropic_alpha(density);
     return implementation_->get_alpha(u, *alpha_iso, regularize);
   }
+
+  std::unique_ptr<AlphaReturnType> get_alpha(const E& entity, const StateType& u, const bool regularize) const
+  {
+    thread_local const auto local_func = derived_local_function();
+    local_func->bind(entity);
+    return local_func->get_alpha(u, regularize);
+  }
+
+  StateType evaluate_kinetic_outflow(const typename AlphaReturnType::first_type& alpha_i,
+                                     const DomainType& n_ij,
+                                     const size_t dd) const
+
+  {
+    return implementation_->evaluate_kinetic_outflow(alpha_i, n_ij, dd);
+  } // DomainType evaluate_kinetic_outflow(...)
 
   const MomentBasis& basis_functions() const
   {

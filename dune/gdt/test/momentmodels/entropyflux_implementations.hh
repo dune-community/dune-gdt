@@ -545,6 +545,25 @@ public:
     return ret;
   } // DomainType evaluate_kinetic_flux_with_alphas(...)
 
+  DomainType evaluate_kinetic_outflow(const DomainType& alpha_i, const FluxDomainType& n_ij, const size_t dd) const
+
+  {
+    auto& eta_ast_prime_vals_i = working_storage();
+    evaluate_eta_ast_prime(alpha_i, M_, eta_ast_prime_vals_i);
+    DomainType ret(0);
+    for (size_t ll = 0; ll < quad_points_.size(); ++ll) {
+      const auto position = quad_points_[ll][dd];
+      if (position * n_ij[dd] > 0.) {
+        RangeFieldType factor = eta_ast_prime_vals_i[ll] * quad_weights_[ll] * position;
+        const auto* basis_ll = &(M_.get_entry_ref(ll, 0.));
+        for (size_t ii = 0; ii < basis_dimRange; ++ii)
+          ret[ii] += basis_ll[ii] * factor;
+      }
+    } // ll
+    ret *= n_ij[dd];
+    return ret;
+  } // DomainType evaluate_kinetic_outflow(...)
+
   // Calculates left and right kinetic flux with reconstructed densities. Ansatz distribution values contains
   // evaluations of the ansatz distribution at each quadrature point for a stencil of three entities. The distributions
   // are reconstructed pointwise for each quadrature point and the resulting (part of) the kinetic flux is <
@@ -2051,6 +2070,46 @@ public:
     return ret;
   } // DomainType evaluate_kinetic_flux(...)
 
+  // DomainType evaluate_kinetic_outflow(const DomainType& alpha,
+  //                                     const FluxDomainType& n_ij,
+  //                                     const size_t dd) const
+  // {
+  //   return evaluate_kinetic_outflow(alpha, n_ij, dd);
+  // } // DomainType evaluate_kinetic_outflow(...)
+
+  DomainType evaluate_kinetic_outflow(const BlockVectorType& alpha_i, const FluxDomainType& n_ij, const size_t dd) const
+  {
+    // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
+    auto& eta_ast_prime_vals = working_storage();
+    evaluate_eta_ast_prime(alpha_i, M_, eta_ast_prime_vals);
+    DomainType ret(0);
+    for (size_t jj = 0; jj < num_blocks; ++jj) {
+      const auto offset = block_size * jj;
+      if (quad_signs_[jj][dd] == 0) {
+        // in this case, we have to decide which eta_ast_prime_vals to use for each quadrature point individually
+        for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
+          const auto position = quad_points_[jj][ll][dd];
+          if (position * n_ij[dd] > 0.) {
+            RangeFieldType factor = eta_ast_prime_vals[jj][ll] * quad_weights_[jj][ll] * position;
+            for (size_t ii = 0; ii < block_size; ++ii)
+              ret[offset + ii] += M_[jj].get_entry(ll, ii) * factor;
+          }
+        } // ll
+      } else {
+        // all quadrature points have the same sign
+        if (quad_signs_[jj][dd] * n_ij[dd] > 0.) {
+          for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
+            const RangeFieldType factor = eta_ast_prime_vals[jj][ll] * quad_weights_[jj][ll] * quad_points_[jj][ll][dd];
+            for (size_t ii = 0; ii < block_size; ++ii)
+              ret[offset + ii] += M_[jj].get_entry(ll, ii) * factor;
+          } // ll
+        }
+      } // quad_sign
+    } // jj
+    ret *= n_ij[dd];
+    return ret;
+  } // DomainType evaluate_kinetic_outflow(...)
+
   // Calculates left and right kinetic flux with reconstructed densities. Ansatz distribution values contains
   // evaluations of the ansatz distribution at each quadrature point for a stencil of three entities. The distributions
   // are reconstructed pointwise for each quadrature point and the resulting (part of) the kinetic flux is <
@@ -3085,6 +3144,37 @@ public:
     ret *= n_ij[dd];
     return ret;
   } // DomainType evaluate_kinetic_flux(...)
+
+  DomainType evaluate_kinetic_outflow(const DomainType& alpha_i, const FluxDomainType& n_ij, const size_t dd) const
+  {
+    return evaluate_kinetic_outflow(XT::LA::convert_to<VectorType>(alpha_i), n_ij, dd);
+  }
+
+  DomainType evaluate_kinetic_outflow(const VectorType& alpha_i, const FluxDomainType& n_ij, const size_t dd) const
+  {
+    auto& eta_ast_prime_vals = working_storage();
+    evaluate_eta_ast_prime(alpha_i, eta_ast_prime_vals);
+    // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
+    DomainType ret(0);
+    const auto& faces = basis_functions_.triangulation().faces();
+    LocalVectorType local_ret;
+    for (size_t jj = 0; jj < num_faces_; ++jj) {
+      const bool positive_dir = v_positive_[jj][dd];
+      if ((n_ij[dd] > 0. && positive_dir) || (n_ij[dd] < 0. && !positive_dir)) {
+        local_ret *= 0.;
+        const auto& vertices = faces[jj]->vertices();
+        for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
+          RangeFieldType factor = eta_ast_prime_vals[jj][ll] * quad_weights_[jj][ll] * quad_points_[jj][ll][dd];
+          for (size_t ii = 0; ii < 3; ++ii)
+            local_ret[ii] += M_[jj][ll][ii] * factor;
+        } // ll (quad points)
+        for (size_t ii = 0; ii < 3; ++ii)
+          ret[vertices[ii]->index()] += local_ret[ii];
+      }
+    } // jj (faces)
+    ret *= n_ij[dd];
+    return ret;
+  } // DomainType evaluate_kinetic_outflow(...)
 
   // Calculates left and right kinetic flux with reconstructed densities. Ansatz distribution values contains
   // evaluations of the ansatz distribution at each quadrature point for a stencil of three entities. The distributions
@@ -4474,6 +4564,26 @@ public:
     return ret;
   } // DomainType evaluate_kinetic_flux(...)
 
+  DomainType evaluate_kinetic_outflow(const VectorType& alpha_i, const FluxDomainType& n_ij, const size_t dd) const
+  {
+    auto& eta_ast_prime_vals = working_storage();
+    evaluate_eta_ast_prime(alpha_i, eta_ast_prime_vals);
+    // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
+    DomainType ret(0);
+    const size_t first_positive = dimRange / 2;
+    if (n_ij[dd] < 0.) {
+      for (size_t ll = 0; ll < first_positive; ++ll)
+        ret[ll] = eta_ast_prime_vals[ll] * grid_points_[ll];
+    } else {
+      for (size_t ll = first_positive; ll < dimRange; ++ll)
+        ret[ll] = second_exp_vals[ll] * grid_points_[ll];
+    }
+    ret *= n_ij[dd] * interval_length;
+    ret[0] *= 0.5;
+    ret[dimRange - 1] *= 0.5;
+    return ret;
+  } // DomainType evaluate_kinetic_outflow(...)
+
   // Calculates left and right kinetic flux with reconstructed densities. Ansatz distribution values contains
   // evaluations of the ansatz distribution at each quadrature point for a stencil of three entities. The distributions
   // are reconstructed pointwise for each quadrature point and the resulting (part of) the kinetic flux is
@@ -5172,6 +5282,27 @@ public:
         factor *= quad_weights_[jj][ll] * position;
         for (size_t ii = 0; ii < 2; ++ii)
           ret[jj + ii] += M_[jj][ll][ii] * factor;
+      } // ll (quad points)
+    } // jj (faces)
+    ret *= n_ij[dd];
+    return ret;
+  } // DomainType evaluate_kinetic_flux(...)
+
+  DomainType evaluate_kinetic_outflow(const VectorType& alpha_i, const FluxDomainType& n_ij, const size_t dd) const
+  {
+    assert(dd == 0);
+    auto& eta_ast_prime_vals = working_storage();
+    evaluate_eta_ast_prime(alpha_i, eta_ast_prime_vals);
+    // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
+    DomainType ret(0);
+    for (size_t jj = 0; jj < num_intervals; ++jj) {
+      for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
+        const auto position = quad_points_[jj][ll];
+        if (position * n_ij[dd] > 0.) {
+          const RangeFieldType factor = eta_ast_prime_vals[jj][ll] * quad_weights_[jj][ll] * position;
+          for (size_t ii = 0; ii < 2; ++ii)
+            ret[jj + ii] += M_[jj][ll][ii] * factor;
+        }
       } // ll (quad points)
     } // jj (faces)
     ret *= n_ij[dd];

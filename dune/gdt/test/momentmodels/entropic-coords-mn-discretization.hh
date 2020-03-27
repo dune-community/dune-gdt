@@ -137,13 +137,15 @@ struct HyperbolicEntropicCoordsMnDiscretization
 
     const auto u_local_func = u.local_discrete_function();
     const auto alpha_local_func = alpha.local_discrete_function();
+    const auto entropy_local_func = entropy_flux->derived_local_function();
     XT::Common::FieldVector<RangeFieldType, dimRange> u_local;
     for (auto&& element : Dune::elements(grid_view)) {
       u_local_func->bind(element);
       alpha_local_func->bind(element);
+      entropy_local_func->bind(element);
       for (size_t ii = 0; ii < dimRange; ++ii)
         u_local[ii] = u_local_func->dofs().get_entry(ii);
-      const auto alpha_local = analytical_flux->get_alpha(u_local);
+      const auto alpha_local = entropy_local_func->get_alpha(u_local, false)->first;
       for (size_t ii = 0; ii < dimRange; ++ii)
         alpha_local_func->dofs().set_entry(ii, alpha_local[ii]);
     }
@@ -309,7 +311,7 @@ struct HyperbolicEntropicCoordsMnDiscretization
 
     // The hessian has entries in the order of psi_min, the inverse thus scales with 1/psi_min, and thus the timestep
     // should be psi_min to get an update of order 1
-    double initial_dt = 1e-14; // std::min(dt, min_acceptable_density);
+    double initial_dt = dx / 100.; // std::min(dt, min_acceptable_density);
     timestepper.solve(t_end,
                       initial_dt,
                       num_save_steps,
