@@ -201,10 +201,12 @@ public:
   using typename BaseType::SourceSpaceType;
   using typename BaseType::SourceType;
 
+  using D = typename IntersectionType::ctype;
   using StateDomainType = FieldVector<typename SGV::ctype, SGV::dimension>;
   using DynamicStateType = typename CouplingOperatorType::DynamicStateType;
-  using LambdaType = std::function<void(const DynamicStateType& /*u*/,
-                                        const StateDomainType& /*n*/,
+  using LambdaType = std::function<void(const IntersectionType& /*intersection*/,
+                                        const FieldVector<D, d - 1>& /*xx_in_reference_intersection_coordinates*/,
+                                        const DynamicStateType& /*u*/,
                                         DynamicStateType& /*g*/,
                                         const XT::Common::Parameter& /*param*/)>;
 
@@ -286,8 +288,8 @@ public:
     local_sources_[0]->evaluate(source_is_elementwise_constant_ ? CouplingOperatorType::static_x
                                                                 : intersection().geometryInInside().center(),
                                 u_);
-    const auto normal = intersection().centerUnitOuterNormal();
-    numerical_boundary_flux_(u_, normal, g_, param);
+    numerical_boundary_flux_(
+        intersection(), intersection().geometry().local(intersection().geometry().center()), u_, g_, param);
     auto& local_range_inside_dofs = local_range_inside.dofs();
     const auto factor = intersection().geometry().volume() / intersection().inside().geometry().volume();
     for (size_t ii = 0; ii < m; ++ii)
