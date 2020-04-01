@@ -2090,7 +2090,7 @@ public:
         for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
           const auto position = quad_points_[jj][ll][dd];
           if (position * n_ij[dd] > 0.) {
-            RangeFieldType factor = eta_ast_prime_vals[jj][ll] * quad_weights_[jj][ll] * position;
+            const RangeFieldType factor = eta_ast_prime_vals[jj][ll] * quad_weights_[jj][ll] * position;
             for (size_t ii = 0; ii < block_size; ++ii)
               ret[offset + ii] += M_[jj].get_entry(ll, ii) * factor;
           }
@@ -2855,11 +2855,9 @@ public:
     for (size_t jj = 0; jj < num_faces_; ++jj) {
       const auto& vertices = faces[jj]->vertices();
       std::fill(local_u.begin(), local_u.end(), 0.);
-      for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
-        const auto factor = eta_ast_prime_vals[jj][ll] * quad_weights_[jj][ll];
-        for (size_t ii = 0; ii < 3; ++ii)
-          local_u[ii] += M_[jj][ll][ii] * factor;
-      } // ll (quad points)
+      const auto num_quad_points = quad_weights_[jj].size();
+      for (size_t ll = 0; ll < num_quad_points; ++ll)
+        local_u.axpy(eta_ast_prime_vals[jj][ll] * quad_weights_[jj][ll], M_[jj][ll]);
       for (size_t ii = 0; ii < 3; ++ii)
         u.add_to_entry(vertices[ii]->index(), local_u[ii]);
     } // jj (faces)
@@ -2886,12 +2884,12 @@ public:
     for (size_t jj = 0; jj < num_faces_; ++jj) {
       H_local *= 0.;
       const auto& vertices = faces[jj]->vertices();
-      for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
+      const auto num_quad_points = quad_weights_[jj].size();
+      for (size_t ll = 0; ll < num_quad_points; ++ll) {
         const auto& basis_ll = M[jj][ll];
         const auto factor = eta_ast_twoprime_vals[jj][ll] * quad_weights_[jj][ll];
         for (size_t ii = 0; ii < 3; ++ii)
-          for (size_t kk = 0; kk < 3; ++kk)
-            H_local[ii][kk] += basis_ll[ii] * basis_ll[kk] * factor;
+          H_local[ii].axpy(factor * basis_ll[ii], basis_ll);
       } // ll (quad points)
       for (size_t ii = 0; ii < 3; ++ii)
         for (size_t kk = 0; kk < 3; ++kk)
@@ -3134,7 +3132,7 @@ public:
       local_ret *= 0.;
       const auto& vertices = faces[jj]->vertices();
       for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
-        RangeFieldType factor = eta_ast_prime[ll] * quad_weights_[jj][ll] * quad_points_[jj][ll][dd];
+        const RangeFieldType factor = eta_ast_prime[ll] * quad_weights_[jj][ll] * quad_points_[jj][ll][dd];
         for (size_t ii = 0; ii < 3; ++ii)
           local_ret[ii] += M_[jj][ll][ii] * factor;
       } // ll (quad points)
@@ -3164,7 +3162,7 @@ public:
         local_ret *= 0.;
         const auto& vertices = faces[jj]->vertices();
         for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
-          RangeFieldType factor = eta_ast_prime_vals[jj][ll] * quad_weights_[jj][ll] * quad_points_[jj][ll][dd];
+          const RangeFieldType factor = eta_ast_prime_vals[jj][ll] * quad_weights_[jj][ll] * quad_points_[jj][ll][dd];
           for (size_t ii = 0; ii < 3; ++ii)
             local_ret[ii] += M_[jj][ll][ii] * factor;
         } // ll (quad points)
@@ -3193,39 +3191,29 @@ public:
     auto& right_flux_value = flux_values[coord];
     std::fill(right_flux_value.begin(), right_flux_value.end(), 0.);
     std::fill(left_flux_value.begin(), left_flux_value.end(), 0.);
-    thread_local XT::Common::FieldVector<std::vector<RangeFieldType>, 2> reconstructed_values(
-        std::vector<RangeFieldType>(quad_points_[0].size()));
     const auto& faces = basis_functions_.triangulation().faces();
     const auto slope_func =
         (slope_type == SlopeLimiterType::minmod) ? XT::Common::minmod<RangeFieldType> : superbee<RangeFieldType>;
-    auto& vals_left = reconstructed_values[0];
-    auto& vals_right = reconstructed_values[1];
     thread_local LocalVectorType face_flux(0.);
     for (size_t jj = 0; jj < num_faces_; ++jj) {
       face_flux *= 0.;
       const bool positive_dir = v_positive_[jj][dd];
-      auto& outside_vals = positive_dir ? vals_right : vals_left;
+      const auto sign = positive_dir ? 1. : -1.;
       const auto& vertices = faces[jj]->vertices();
       const size_t num_quad_points = quad_weights_[jj].size();
       const auto& non_reconstructed_values = (*ansatz_distribution_values[1])[jj];
-      // reconstruct densities
-      if constexpr (slope_type == SlopeLimiterType::no_slope) {
-        for (size_t ll = 0; ll < num_quad_points; ++ll)
-          outside_vals[ll] = non_reconstructed_values[ll];
-      } else {
-        const auto sign = positive_dir ? 1. : -1.;
-        for (size_t ll = 0; ll < num_quad_points; ++ll) {
+      // calculate fluxes
+      const auto& basis = M_[jj];
+      const auto& weights = quad_weights_[jj];
+      const auto& points = quad_points_[jj];
+      for (size_t ll = 0; ll < num_quad_points; ++ll) {
+        if constexpr (slope_type == SlopeLimiterType::no_slope) {
+          face_flux.axpy(non_reconstructed_values[ll] * weights[ll] * points[ll][dd], basis[ll]);
+        } else {
           const auto slope = slope_func(non_reconstructed_values[ll] - (*ansatz_distribution_values[0])[jj][ll],
                                         (*ansatz_distribution_values[2])[jj][ll] - non_reconstructed_values[ll]);
-          outside_vals[ll] = non_reconstructed_values[ll] + sign * 0.5 * slope;
-        } // ll (quad points)
-      }
-      // calculate fluxes
-      for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
-        RangeFieldType factor = outside_vals[ll] * quad_weights_[jj][ll] * quad_points_[jj][ll][dd];
-        const auto& basis_ll = M_[jj][ll];
-        for (size_t ii = 0; ii < 3; ++ii)
-          face_flux[ii] += basis_ll[ii] * factor;
+          face_flux.axpy((non_reconstructed_values[ll] + sign * 0.5 * slope) * weights[ll] * points[ll][dd], basis[ll]);
+        }
       } // ll (quad points)
       auto& val = positive_dir ? right_flux_value : left_flux_value;
       for (size_t ii = 0; ii < 3; ++ii)
@@ -3311,8 +3299,12 @@ public:
       const auto& vertices = faces[jj]->vertices();
       for (size_t ii = 0; ii < 3; ++ii)
         local_alpha[ii] = alpha.get_entry(vertices[ii]->index());
-      for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll)
-        scalar_products[jj][ll] = local_alpha * M_[jj][ll];
+      const auto num_quad_points = quad_weights_[jj].size();
+      auto& scalar_prods_jj = scalar_products[jj];
+      const auto& basis = M_[jj];
+      for (size_t ll = 0; ll < num_quad_points; ++ll)
+        scalar_prods_jj[ll] =
+            local_alpha[0] * basis[ll][0] + local_alpha[1] * basis[ll][1] + local_alpha[2] * basis[ll][2];
     } // jj
   }
 
@@ -3893,8 +3885,8 @@ public:
         } else {
           RangeFieldType update = 1.;
           RangeFieldType result = 0.;
-          RangeFieldType base = alpha_k[nn - 1] - alpha_k[nn];
-          RangeFieldType factor = (v_points_[nn] - v_points_[nn - 1]) * std::exp(alpha_k[nn]);
+          const RangeFieldType base = alpha_k[nn - 1] - alpha_k[nn];
+          const RangeFieldType factor = (v_points_[nn] - v_points_[nn - 1]) * std::exp(alpha_k[nn]);
           size_t ll = 2;
           auto pow_frac = 1. / 6.;
           while (ll <= max_taylor_order_ - 1 && XT::Common::FloatCmp::ne(update, 0.)) {
@@ -3930,7 +3922,7 @@ public:
         } else {
           RangeFieldType update = 1.;
           RangeFieldType result = 0.;
-          RangeFieldType base = alpha_k[nn + 1] - alpha_k[nn];
+          const RangeFieldType base = alpha_k[nn + 1] - alpha_k[nn];
           size_t ll = 3;
           auto pow_frac = 2. / 6.;
           while (ll <= max_taylor_order_ && XT::Common::FloatCmp::ne(update, 0.)) {
@@ -3980,7 +3972,7 @@ public:
           RangeFieldType update = 1.;
           RangeFieldType result = 0.;
           RangeFieldType base = alpha_k[nn - 1] - alpha_k[nn];
-          RangeFieldType factor = (v_points_[nn] - v_points_[nn - 1]) * std::exp(alpha_k[nn]);
+          const RangeFieldType factor = (v_points_[nn] - v_points_[nn - 1]) * std::exp(alpha_k[nn]);
           size_t ll = 0;
           auto pow_frac = 1. / 24.;
           while (ll < 2 || (ll <= max_taylor_order_ - 4 && XT::Common::FloatCmp::ne(update, 0.))) {

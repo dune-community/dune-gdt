@@ -240,11 +240,12 @@ public:
     for (size_t ii = 0; ii < dimRange; ++ii)
       alpha_tmp_[ii] = local_alpha_dofs.get_entry(ii);
     thread_local std::bitset<dimRange> changed_local_indices;
+    static FieldVector<RangeFieldType, dimRange> dummy_u;
     const bool changed = basis_functions.adjust_alpha_to_ensure_min_density(
         alpha_tmp_,
         min_acceptable_density_,
-        basis_functions.needs_rho_for_min_density() ? basis_functions.density(analytical_flux_.get_u(alpha_tmp_)) : 0.,
-        analytical_flux_.get_u(alpha_tmp_),
+        // partial moments do not need u for this
+        GDT::is_partial_moment_basis<MomentBasis>::value ? dummy_u : analytical_flux_.get_u(alpha_tmp_),
         changed_local_indices);
     if (changed) {
       mutex_->lock();
@@ -321,8 +322,6 @@ public:
   void apply(const VectorType& alpha, VectorType& range, const XT::Common::Parameter& param = {}) const override final
   {
     static std::vector<size_t> dummy;
-    // LocalMinDensitySetterType local_min_density_setter(
-    //     space_, alpha, range, analytical_flux_, min_acceptable_density_, param);
     LocalMinDensitySetterType local_min_density_setter(
         space_, alpha, range, analytical_flux_, min_acceptable_density_, param, dummy);
     auto walker = XT::Grid::Walker<typename SpaceType::GridViewType>(space_.grid_view());

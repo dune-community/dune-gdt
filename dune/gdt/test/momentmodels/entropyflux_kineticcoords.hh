@@ -219,7 +219,8 @@ public:
     implementation_->apply_inverse_hessian((*eta_ast_twoprime_evaluations_)[entity_index], u);
   }
 
-  void store_evaluations(const size_t entity_index, StateType& alpha, const RangeFieldType rho_min, bool check = true)
+  void
+  store_evaluations(const size_t entity_index, StateType& alpha, const RangeFieldType /*rho_min*/, bool check = true)
   {
     implementation_->store_exp_evaluations(exp_evaluations_[entity_index], alpha);
     if (entropy != EntropyType::MaxwellBoltzmann) {

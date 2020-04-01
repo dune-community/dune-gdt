@@ -301,16 +301,10 @@ public:
     return DynamicRangeType();
   } // ... evaluate(...)
 
-  virtual bool needs_rho_for_min_density() const override final
-  {
-    return true;
-  }
-
-  bool adjust_alpha_to_ensure_min_density(RangeType& alpha,
-                                          const RangeFieldType rho_min,
-                                          const RangeFieldType rho,
-                                          const RangeType& u,
-                                          std::bitset<dimRange>& changed_indices) const override final
+  bool adjust_alpha_to_ensure_min_density(RangeType& /*alpha*/,
+                                          const RangeFieldType /*rho_min*/,
+                                          const RangeType& /*u*/,
+                                          std::bitset<dimRange>& /*changed_indices*/) const override final
   {
 #if 1
     return false;
@@ -661,9 +655,8 @@ public:
 
   bool adjust_alpha_to_ensure_min_density(RangeType& /*alpha*/,
                                           const RangeFieldType /*rho_min*/,
-                                          const RangeFieldType /*rho*/,
-                                          const RangeType& u,
-                                          std::bitset<dimRange>& changed_indices) const override final
+                                          const RangeType& /*u*/,
+                                          std::bitset<dimRange>& /*changed_indices*/) const override final
   {
 #if 1
     return false;
