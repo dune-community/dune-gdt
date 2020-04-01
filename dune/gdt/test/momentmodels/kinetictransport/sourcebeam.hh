@@ -102,7 +102,7 @@ public:
       else
         return [this](const DomainType& v) {
           const RangeFieldType val = std::exp(-1e5 * std::pow(v[0] - 1., 2)) / helper_base::denominator();
-          return (val > this->psi_vac_) ? val : this->psi_vac_;
+          return val + psi_vac_;
         };
     };
   }
@@ -271,7 +271,7 @@ protected:
     } // ... get_left_boundary_values(...)
 
     static DynamicRangeType get_kinetic_boundary_flux(const MomentBasisImp& basis_functions,
-                                                      const RangeFieldType& /*psi_vac*/,
+                                                      const RangeFieldType& psi_vac,
                                                       const bool is_mn_model,
                                                       const DomainType& x,
                                                       const RangeFieldType& n,
@@ -284,24 +284,32 @@ protected:
         DynamicRangeType ret(dimRange, 0.);
         const auto& partitioning = basis_functions.partitioning();
         for (size_t nn = 0; nn < dimRange; ++nn) {
-          const auto vn = partitioning[nn];
+          const auto& vn = partitioning[nn];
           if (nn < dimRange - 1) {
-            const auto vnp = partitioning[nn + 1];
+            const auto& vnp = partitioning[nn + 1];
             if (vnp > 0.) {
               const auto left_limit = vn > 0. ? vn : 0.;
               ret[nn] +=
                   1. / ((vn - vnp) * denominator()) * (integral_3(left_limit, vnp) - vnp * integral_2(left_limit, vnp));
+              +psi_vac / 6. * std::pow(vnp - left_limit, 2) * (vnp + 2. * left_limit) / (vnp - vn);
             } // if (vnp > 0.)
           } // if (nn < dimRange -1)
           if (vn > 0.) {
             if (nn > 0) {
-              const auto vnm = partitioning[nn - 1];
+              const auto& vnm = partitioning[nn - 1];
               const auto left_limit = vnm > 0. ? vnm : 0.;
               ret[nn] +=
-                  1. / ((vn - vnm) * denominator()) * (integral_2(left_limit, vn) - vnm * integral_1(left_limit, vn));
+                  1. / ((vn - vnm) * denominator()) * (integral_3(left_limit, vn) - vnm * integral_2(left_limit, vn));
+              +psi_vac / 6.
+                  * (3 * std::pow(vn, 2) * vnm - 3 * vnm * std::pow(left_limit, 3) - 2 * std::pow(vn, 3)
+                     + 2 * std::pow(left_limit, 3))
+                  / (vnm - vn);
             } // if (nn > 0)
           } // if (vn > 0.)
         } // nn
+        // unit outer normal
+        assert(XT::Common::FloatCmp::eq(n, -1.));
+        ret *= n;
         return ret;
       } else {
         return problem.kinetic_boundary_flux_from_quadrature(x, n, dd);
@@ -334,7 +342,7 @@ protected:
     }
 
     static DynamicRangeType get_kinetic_boundary_flux(const MomentBasisImp& basis_functions,
-                                                      const RangeFieldType& /*psi_vac*/,
+                                                      const RangeFieldType& psi_vac,
                                                       const bool is_mn_model,
                                                       const DomainType& x,
                                                       const RangeFieldType& n,
@@ -347,12 +355,18 @@ protected:
         const auto& partitioning = basis_functions.partitioning();
         DynamicRangeType ret(dimRange, 0.);
         for (size_t ii = 0; ii < dimRange / 2; ++ii) {
-          if (partitioning[ii + 1] > 0.) {
-            const auto left_limit = partitioning[ii] > 0. ? partitioning[ii] : 0.;
-            ret[2 * ii] = integral_2(left_limit, partitioning[ii + 1]) / denominator();
-            ret[2 * ii + 1] = integral_3(left_limit, partitioning[ii + 1]) / denominator();
+          const auto& mu_i = partitioning[ii];
+          const auto& mu_ip1 = partitioning[ii + 1];
+          if (mu_ip1 > 0.) {
+            const auto left_limit = mu_i > 0. ? mu_i : 0.;
+            ret[2 * ii] = integral_2(left_limit, mu_ip1) / denominator()
+                          + 0.5 * psi_vac * (std::pow(mu_ip1, 2) - std::pow(left_limit, 2));
+            ret[2 * ii + 1] = integral_3(left_limit, partitioning[ii + 1]) / denominator()
+                              + 1. / 3. * psi_vac * (std::pow(mu_ip1, 3) - std::pow(left_limit, 3));
           }
         } // ii
+        assert(XT::Common::FloatCmp::eq(n, -1.));
+        ret *= n;
         return ret;
       } else {
         return problem.kinetic_boundary_flux_from_quadrature(x, n, dd);

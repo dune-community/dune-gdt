@@ -234,12 +234,18 @@ public:
     if (check) {
       const double* u_ptr = &(u[0]);
       const auto val = XT::Common::reduce(u_ptr, u_ptr + basis_dimRange, 0.);
-      if (std::isnan(val) || std::isinf(val))
+      if (std::isnan(val) || std::isinf(val)) {
+        std::cout << entity_index << ", " << XT::Common::to_string(alpha) << ", " << XT::Common::to_string(u)
+                  << std::endl;
         DUNE_THROW(Dune::MathError, "inf or nan in u!");
-      const bool changed = basis_functions().adjust_alpha_to_ensure_min_density(
-          alpha, rho_min, basis_functions().needs_rho_for_min_density() ? basis_functions().density(u) : 0.);
-      if (changed)
-        store_evaluations(entity_index, alpha, rho_min, false);
+      }
+      // thread_local std::bitset<basis_dimRange> changed_indices;
+      // const bool changed = basis_functions().adjust_alpha_to_ensure_min_density(
+      //     alpha, rho_min, basis_functions().needs_rho_for_min_density() ? basis_functions().density(u) : 0., u,
+      //     changed_indices);
+      //     // alpha, rho_min, basis_functions().needs_rho_for_min_density() ? basis_functions().density(u) : 0., u);
+      // if (changed)
+      //   store_evaluations(entity_index, alpha, rho_min, false);
     }
   }
 

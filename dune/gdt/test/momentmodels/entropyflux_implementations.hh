@@ -554,7 +554,7 @@ public:
     for (size_t ll = 0; ll < quad_points_.size(); ++ll) {
       const auto position = quad_points_[ll][dd];
       if (position * n_ij[dd] > 0.) {
-        RangeFieldType factor = eta_ast_prime_vals_i[ll] * quad_weights_[ll] * position;
+        const RangeFieldType factor = eta_ast_prime_vals_i[ll] * quad_weights_[ll] * position;
         const auto* basis_ll = &(M_.get_entry_ref(ll, 0.));
         for (size_t ii = 0; ii < basis_dimRange; ++ii)
           ret[ii] += basis_ll[ii] * factor;

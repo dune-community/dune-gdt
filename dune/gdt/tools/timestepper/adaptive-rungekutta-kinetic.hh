@@ -271,6 +271,7 @@ public:
         first_stage_to_compute = 1;
       }
 
+      // bool consider_regularization = actual_dt < 1e-13;
       bool consider_regularization = false;
       for (size_t ii = first_stage_to_compute; ii < num_stages_ - 1; ++ii) {
         stages_k_[ii].dofs().vector() *= 0.;
@@ -313,7 +314,9 @@ public:
           alpha_np1_.dofs().vector().axpy(actual_dt * r_ * b_1_[ii], stages_k_[ii].dofs().vector());
 
         // ensure min density
-        min_density_setter_.apply(alpha_np1_.dofs().vector(), alpha_np1_.dofs().vector());
+        std::vector<size_t> changed_indices, changed_indices2;
+        // min_density_setter_.apply(alpha_np1_.dofs().vector(), alpha_np1_.dofs().vector());
+        min_density_setter_.apply_and_store(alpha_np1_.dofs().vector(), alpha_np1_.dofs().vector(), changed_indices);
 
         // calculate last stage
         stages_k_[num_stages_ - 1].dofs().vector() *= 0.;
@@ -347,7 +350,10 @@ public:
           alpha_tmp_.dofs().vector().axpy(actual_dt * r_ * b_2_[ii], stages_k_[ii].dofs().vector());
 
         // ensure min density, if this is not done for alpha_tmp_, the error will be estimated too high.
-        min_density_setter_.apply(alpha_tmp_.dofs().vector(), alpha_tmp_.dofs().vector());
+        // min_density_setter_.apply(alpha_tmp_.dofs().vector(), alpha_tmp_.dofs().vector());
+        min_density_setter_.apply_and_store(alpha_tmp_.dofs().vector(), alpha_tmp_.dofs().vector(), changed_indices2);
+        min_density_setter_.set_indices(
+            changed_indices, alpha_np1_.dofs().vector(), changed_indices2, alpha_tmp_.dofs().vector());
 
         // calculate error
         const auto* alpha_tmp_data =
@@ -364,6 +370,9 @@ public:
                                          [atol = atol_, rtol = rtol_](const auto& a, const auto& b) {
                                            return std::abs(a - b) / (atol + std::max(std::abs(a), std::abs(b)) * rtol);
                                          });
+        std::cout << mixed_error << std::endl;
+        // std::cout << XT::Common::to_string(changed_indices) << std::endl;
+        // std::cout << XT::Common::to_string(changed_indices2) << std::endl;
         // scale dt to get the estimated optimal time step length
         time_step_scale_factor =
             std::min(std::max(0.8 * std::pow(1. / mixed_error, 1. / (q + 1.)), scale_factor_min_), scale_factor_max_);

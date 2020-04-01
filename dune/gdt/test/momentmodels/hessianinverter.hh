@@ -80,10 +80,15 @@ public:
   void apply_local(const EntityType& entity) override final
   {
     local_u_update_->bind(entity);
+    local_alpha_->bind(entity);
     local_range_->bind(entity);
     const auto& local_u_dofs = local_u_update_->dofs();
-    for (size_t ii = 0; ii < dimRange; ++ii)
+    const auto& local_alpha_dofs = local_alpha_->dofs();
+    XT::Common::FieldVector<RangeFieldType, dimRange> alpha;
+    for (size_t ii = 0; ii < dimRange; ++ii) {
       Hinv_u_[ii] = local_u_dofs.get_entry(ii);
+      alpha[ii] = local_alpha_dofs.get_entry(ii);
+    }
     const auto entity_index = space_.grid_view().indexSet().index(entity);
     try {
       analytical_flux_.apply_inverse_hessian(entity_index, Hinv_u_);
@@ -91,13 +96,22 @@ public:
         if (std::isnan(entry) || std::isinf(entry))
           DUNE_THROW(Dune::MathError, "Hessian");
     } catch (const Dune::MathError& e) {
+      std::cout << "Caught error" << std::endl;
+      std::cout << entity.geometry().center() << std::endl;
+      std::cout << "ALpha is " << std::endl;
+      std::cout << XT::Common::to_string(alpha) << std::endl;
+      std::cout << "corresponding u is " << std::endl;
+      std::cout << XT::Common::to_string(analytical_flux_.get_u(alpha)) << std::endl;
       if (param_.has_key("reg") && param_.get("reg")[0]) {
+        std::cout << "reg considered" << std::endl;
         for (size_t ii = 0; ii < dimRange; ++ii)
           Hinv_u_[ii] = local_u_dofs.get_entry(ii);
         const auto rho = analytical_flux_.basis_functions().density(analytical_flux_.get_u(Hinv_u_));
         const double dt = param_.get("dt")[0];
-        if ((rho < 1e-7 && dt < 1e-4) || dt < 1e-7)
+        if ((rho < 1e-7 && dt < 1e-4) || dt < 1e-7) {
+          std::cout << "reg indicator set" << std::endl;
           reg_indicators_[entity_index] = true;
+        }
         return;
       } else
         throw e;

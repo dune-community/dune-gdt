@@ -52,10 +52,10 @@ public:
   static StringifierType stringifier()
   {
     return [](const RangeType& val) {
-      RangeFieldType psi(0);
+      RangeFieldType rho(0);
       for (const auto& entry : val)
-        psi += entry;
-      return XT::Common::to_string(psi, 15);
+        rho += entry;
+      return XT::Common::to_string(rho, 15);
     };
   } // ... stringifier()
 
@@ -395,25 +395,44 @@ public:
     return ret;
   }
 
+  virtual bool needs_rho_for_min_density() const override final
+  {
+    return true;
+  }
+
   bool adjust_alpha_to_ensure_min_density(RangeType& alpha,
                                           const RangeFieldType rho_min,
-                                          const RangeFieldType /*rho*/) const override final
+                                          const RangeFieldType rho,
+                                          const RangeType& u,
+                                          std::bitset<dimRange>& changed_indices) const override final
   {
+    // return false;
     bool changed = false;
+    changed_indices.reset();
+    // check if the density is too small
+    if (rho < rho_min) {
+      alpha = this->alpha_iso(rho_min);
+      changed_indices.set();
+      return true;
+    }
+    // now check if the density around a grid_point is smaller than allowed
     const RangeFieldType alpha_min = std::log(rho_min / 2);
-    const RangeFieldType neighbor_min = std::log(5e-8);
+    const RangeFieldType neighbor_min = std::log(rho_min * 10);
     if (alpha[0] < alpha_min && alpha[1] < neighbor_min) {
       alpha[0] = alpha_min;
+      changed_indices.set(0);
       changed = true;
     }
     for (size_t ii = 1; ii < dimRange - 1; ++ii) {
       if (alpha[ii] < alpha_min && alpha[ii - 1] < neighbor_min && alpha[ii + 1] < neighbor_min) {
         alpha[ii] = alpha_min;
+        changed_indices.set(ii);
         changed = true;
       }
     }
     if (alpha[dimRange - 1] < alpha_min && alpha[dimRange - 2] < neighbor_min) {
       alpha[dimRange - 1] = alpha_min;
+      changed_indices.set(dimRange - 1);
       changed = true;
     }
     return changed;
@@ -608,10 +627,15 @@ public:
 
   virtual bool adjust_alpha_to_ensure_min_density(RangeType& alpha,
                                                   const RangeFieldType rho_min,
-                                                  const RangeFieldType rho) const override final
+                                                  const RangeFieldType rho,
+                                                  // const RangeType& u) const override final
+                                                  const RangeType& u,
+                                                  std::bitset<dimRange>& changed_indices) const override final
   {
+    changed_indices.reset();
     if (rho < rho_min) {
       alpha = this->alpha_iso(rho_min);
+      changed_indices.set();
       return true;
     }
     return false;
