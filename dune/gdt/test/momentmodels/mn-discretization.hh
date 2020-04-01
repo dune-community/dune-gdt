@@ -193,8 +193,7 @@ struct HyperbolicMnDiscretization
           const auto alpha_entity = entropy_flux->get_alpha(entity, u, true)->first;
           const auto outflux =
               entropy_flux->evaluate_kinetic_outflow(alpha_entity, intersection.centerUnitOuterNormal(), dd);
-          g -= outflux;
-          g *= -1;
+          g += outflux;
         };
 
     XT::Grid::ApplyOn::NonPeriodicBoundaryIntersections<GV> filter;
@@ -214,12 +213,15 @@ struct HyperbolicMnDiscretization
     filename += ProblemType::static_id();
     filename +=
         (time_stepper_type == TimeStepperMethods::explicit_rungekutta_second_order_ssp)
-            ? "_ssp2_"
-            : (time_stepper_type == TimeStepperMethods::explicit_rungekutta_third_order_ssp ? "_ssp3_" : "unknown");
+            ? "_ssp2"
+            : (time_stepper_type == TimeStepperMethods::explicit_rungekutta_third_order_ssp ? "_ssp3" : "_unknown");
     filename += "_grid_" + grid_config["num_elements"];
+    filename += "_dt_" + XT::Common::to_string(dt);
     filename += "_tend_" + XT::Common::to_string(t_end);
     filename += "_quad_" + XT::Common::to_string(quad_refinements) + "x" + XT::Common::to_string(quad_order);
-    filename += MomentBasis::entropy == EntropyType::MaxwellBoltzmann ? "_MaxwellBoltzmann_" : "_BoseEinstein_";
+    filename += "_threads_" + DXTC_CONFIG.get("threading.max_count", "1") + "x"
+                + DXTC_CONFIG.get("threading.partition_factor", "1");
+    filename += MomentBasis::entropy == EntropyType::MaxwellBoltzmann ? "_MaxwellBoltzmann" : "_BoseEinstein";
     filename += TestCaseType::reconstruction ? "_ord2" : "_ord1";
     filename += "_" + basis_functions->mn_name();
 
@@ -296,7 +298,7 @@ struct HyperbolicMnTest
                      DXTC_CONFIG.get("grid_size", ""),
                      DXTC_CONFIG.get("overlap_size", 2),
                      DXTC_CONFIG.get("t_end", TestCaseType::t_end),
-                     DXTC_CONFIG.get("filename", "test"),
+                     DXTC_CONFIG.get("filename", "timings"),
                      DXTC_CONFIG.get("disable_thread_cache",
                                      Dune::GDT::is_full_moment_basis<typename TestCaseType::MomentBasis>::value))
                      .first;

@@ -196,7 +196,8 @@ public:
                                  VectorType& range_dofs,
                                  EntropyFluxType& analytical_flux,
                                  const RangeFieldType min_acceptable_density,
-                                 const XT::Common::Parameter& param)
+                                 const XT::Common::Parameter& param,
+                                 std::vector<size_t>& changed_indices)
     : space_(space)
     , alpha_(space_, alpha_dofs, "alpha")
     , range_(space_, range_dofs, "regularized alpha")
@@ -206,6 +207,8 @@ public:
     , min_acceptable_density_(min_acceptable_density)
     , param_(param)
     , index_set_(space_.grid_view().indexSet())
+    , changed_indices_(changed_indices)
+    , mutex_(std::make_shared<std::mutex>())
   {}
 
   explicit LocalMinDensitySetter(LocalMinDensitySetter& other)
@@ -219,6 +222,8 @@ public:
     , min_acceptable_density_(other.min_acceptable_density_)
     , param_(other.param_)
     , index_set_(space_.grid_view().indexSet())
+    , changed_indices_(other.changed_indices_)
+    , mutex_(other.mutex_)
   {}
 
   XT::Grid::ElementFunctor<GridViewType>* copy() override final
@@ -234,10 +239,20 @@ public:
     const auto& local_alpha_dofs = local_alpha_->dofs();
     for (size_t ii = 0; ii < dimRange; ++ii)
       alpha_tmp_[ii] = local_alpha_dofs.get_entry(ii);
-    basis_functions.adjust_alpha_to_ensure_min_density(
+    thread_local std::bitset<dimRange> changed_local_indices;
+    const bool changed = basis_functions.adjust_alpha_to_ensure_min_density(
         alpha_tmp_,
         min_acceptable_density_,
-        basis_functions.needs_rho_for_min_density() ? basis_functions.density(analytical_flux_.get_u(alpha_tmp_)) : 0.);
+        basis_functions.needs_rho_for_min_density() ? basis_functions.density(analytical_flux_.get_u(alpha_tmp_)) : 0.,
+        analytical_flux_.get_u(alpha_tmp_),
+        changed_local_indices);
+    if (changed) {
+      mutex_->lock();
+      for (size_t ii = 0; ii < dimRange; ++ii)
+        if (changed_local_indices.test(ii))
+          changed_indices_.push_back(space_.mapper().global_index(entity, ii));
+      mutex_->unlock();
+    }
     auto& local_range_dofs = local_range_->dofs();
     for (size_t ii = 0; ii < dimRange; ++ii)
       local_range_dofs.set_entry(ii, alpha_tmp_[ii]);
@@ -254,6 +269,8 @@ private:
   const XT::Common::Parameter& param_;
   const typename SpaceType::GridViewType::IndexSet& index_set_;
   XT::Common::FieldVector<RangeFieldType, dimRange> alpha_tmp_;
+  std::vector<size_t>& changed_indices_;
+  std::shared_ptr<std::mutex> mutex_;
 }; // class LocalMinDensitySetter<...>
 
 template <class MomentBasisImp,
@@ -274,6 +291,7 @@ public:
   using EntropyFluxType = EntropyBasedFluxEntropyCoordsFunction<typename SpaceType::GridViewType, MomentBasis, slope>;
   using RangeFieldType = typename MomentBasis::RangeFieldType;
   using LocalMinDensitySetterType = LocalMinDensitySetter<SpaceType, VectorType, MomentBasis, slope>;
+  using EntityType = typename LocalMinDensitySetterType::EntityType;
 
   MinDensitySetter(EntropyFluxType& analytical_flux,
                    const SpaceType& space,
@@ -302,12 +320,38 @@ public:
 
   void apply(const VectorType& alpha, VectorType& range, const XT::Common::Parameter& param = {}) const override final
   {
+    static std::vector<size_t> dummy;
+    // LocalMinDensitySetterType local_min_density_setter(
+    //     space_, alpha, range, analytical_flux_, min_acceptable_density_, param);
     LocalMinDensitySetterType local_min_density_setter(
-        space_, alpha, range, analytical_flux_, min_acceptable_density_, param);
+        space_, alpha, range, analytical_flux_, min_acceptable_density_, param, dummy);
     auto walker = XT::Grid::Walker<typename SpaceType::GridViewType>(space_.grid_view());
     walker.append(local_min_density_setter);
     walker.walk(true);
   } // void apply(...)
+
+  void apply_and_store(const VectorType& alpha,
+                       VectorType& range,
+                       std::vector<size_t>& changed_indices,
+                       const XT::Common::Parameter& param = {}) const
+  {
+    LocalMinDensitySetterType local_min_density_setter(
+        space_, alpha, range, analytical_flux_, min_acceptable_density_, param, changed_indices);
+    auto walker = XT::Grid::Walker<typename SpaceType::GridViewType>(space_.grid_view());
+    walker.append(local_min_density_setter);
+    walker.walk(true);
+  } // void apply(...)
+
+  void set_indices(const std::vector<size_t>& indices1,
+                   VectorType& vec1,
+                   const std::vector<size_t>& indices2,
+                   VectorType& vec2) const
+  {
+    for (auto&& index : indices1)
+      vec2.set_entry(index, vec1.get_entry(index));
+    for (auto&& index : indices2)
+      vec1.set_entry(index, vec2.get_entry(index));
+  }
 
 private:
   EntropyFluxType& analytical_flux_;

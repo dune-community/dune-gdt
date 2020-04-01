@@ -10,7 +10,6 @@
 
 #include <chrono>
 
-#include <dune/xt/common/parallel/threadmanager.hh>
 #include <dune/xt/common/string.hh>
 #include <dune/xt/test/gtest/gtest.h>
 
@@ -54,8 +53,7 @@ struct HyperbolicEntropicCoordsMnDiscretization
                                                           std::string grid_size = "",
                                                           size_t overlap_size = 2,
                                                           double t_end = 0.,
-                                                          std::string filename = "",
-                                                          bool /*disable_thread_cache*/ = false)
+                                                          std::string filename = "")
   {
     using namespace Dune;
     using namespace Dune::GDT;
@@ -137,15 +135,15 @@ struct HyperbolicEntropicCoordsMnDiscretization
 
     const auto u_local_func = u.local_discrete_function();
     const auto alpha_local_func = alpha.local_discrete_function();
-    const auto entropy_local_func = entropy_flux->derived_local_function();
+    const auto entropy_flux_local_func = entropy_flux->derived_local_function();
     XT::Common::FieldVector<RangeFieldType, dimRange> u_local;
     for (auto&& element : Dune::elements(grid_view)) {
       u_local_func->bind(element);
       alpha_local_func->bind(element);
-      entropy_local_func->bind(element);
+      entropy_flux_local_func->bind(element);
       for (size_t ii = 0; ii < dimRange; ++ii)
         u_local[ii] = u_local_func->dofs().get_entry(ii);
-      const auto alpha_local = entropy_local_func->get_alpha(u_local, false)->first;
+      const auto alpha_local = entropy_flux_local_func->get_alpha(u_local, false)->first;
       for (size_t ii = 0; ii < dimRange; ++ii)
         alpha_local_func->dofs().set_entry(ii, alpha_local[ii]);
     }
@@ -214,8 +212,11 @@ struct HyperbolicEntropicCoordsMnDiscretization
         if (intersection.boundary()) {
           const auto x = intersection.geometry().center();
           const auto dd = intersection.indexInInside() / 2;
-          const DynamicRangeType boundary_flux =
-              problem.kinetic_boundary_flux(x, intersection.centerUnitOuterNormal()[dd], dd);
+          const auto n = intersection.centerUnitOuterNormal()[dd];
+          DynamicRangeType boundary_flux = problem.kinetic_boundary_flux(x, n, dd);
+          // The boundary_flux calculates <psi b (v[dd]*n)>, we only want to have <psi b v[dd]> because the
+          // multiplication with n is done in entropy_flux->evaluate_kinetic_flux(..)
+          boundary_flux *= n;
           boundary_fluxes.insert(std::make_pair(x, boundary_flux));
         }
     GenericFunctionType boundary_kinetic_fluxes(
@@ -249,17 +250,19 @@ struct HyperbolicEntropicCoordsMnDiscretization
       filename += "_";
     filename += ProblemType::static_id();
     if (TestCaseType::reconstruction && slope == SlopeLimiterType::minmod)
-      filename += "minmod_";
+      filename += "_minmod_";
     else if (TestCaseType::reconstruction && slope == SlopeLimiterType::superbee)
-      filename += "superbee_";
+      filename += "_superbee_";
     filename += (time_stepper_type == TimeStepperMethods::bogacki_shampine)
-                    ? "_rk23_"
-                    : (time_stepper_type == TimeStepperMethods::dormand_prince ? "_rk45_" : "unknown");
+                    ? "rk23"
+                    : (time_stepper_type == TimeStepperMethods::dormand_prince ? "rk45" : "unknown");
     filename += "_grid_" + grid_config["num_elements"];
     filename += "_tend_" + XT::Common::to_string(t_end);
     filename += "_quad_" + XT::Common::to_string(quad_refinements) + "x" + XT::Common::to_string(quad_order);
     filename += "_atol_" + XT::Common::to_string(atol);
     filename += "_rtol_" + XT::Common::to_string(rtol);
+    filename += "_threads_" + DXTC_CONFIG.get("threading.max_count", "1") + "x"
+                + DXTC_CONFIG.get("threading.partition_factor", "1");
     filename += TestCaseType::reconstruction ? "_ord2" : "_ord1";
     filename += "_" + basis_functions->mn_name();
 
@@ -301,6 +304,10 @@ struct HyperbolicEntropicCoordsMnDiscretization
         1, [&basis_functions, &analytical_flux](const int /*comp*/, const auto& val) {
           return basis_functions->density(analytical_flux->get_u(val));
         });
+    const auto u_stringifier = basis_functions->stringifier();
+    const auto stringifier = [&u_stringifier, &analytical_flux](const RangeType& val) {
+      return u_stringifier(analytical_flux->get_u(val));
+    };
     // auto visualizer = std::make_unique<XT::Functions::GenericVisualizer<dimRange, 1, double>>(
     //     1, [](const int /*comp*/, const auto& val) {
     //       double ret = 0.;
@@ -323,7 +330,7 @@ struct HyperbolicEntropicCoordsMnDiscretization
                       true,
                       filename,
                       *visualizer,
-                      basis_functions->stringifier());
+                      stringifier);
     auto end_time = std::chrono::steady_clock::now();
     std::chrono::duration<double> time_diff = end_time - begin_time;
     if (grid_view.comm().rank() == 0)
@@ -368,8 +375,7 @@ struct HyperbolicEntropicCoordsMnTest
                      DXTC_CONFIG.get("grid_size", ""),
                      DXTC_CONFIG.get("overlap_size", 2),
                      DXTC_CONFIG.get("t_end", TestCaseType::t_end),
-                     DXTC_CONFIG.get("filename", "kinetic"),
-                     Dune::GDT::is_full_moment_basis<typename TestCaseType::MomentBasis>::value)
+                     DXTC_CONFIG.get("filename", "timings_kinetic"))
                      .first;
     const double l1norm = norms[0];
     const double l2norm = norms[1];

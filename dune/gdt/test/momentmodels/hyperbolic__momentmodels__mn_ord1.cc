@@ -8,7 +8,7 @@
 // This one has to come first (includes the config.h)!
 #include <dune/xt/test/main.hxx>
 
-#define USE_LP_POSITIVITY_LIMITER 1
+#define USE_LP_POSITIVITY_LIMITER 0
 
 #include <dune/gdt/test/momentmodels/kinetictransport/testcases.hh>
 #include <dune/gdt/test/momentmodels/mn-discretization.hh>
@@ -18,27 +18,26 @@ using Yasp2 = Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>;
 using Yasp3 = Dune::YaspGrid<3, Dune::EquidistantOffsetCoordinates<double, 3>>;
 
 using YaspGridTestCasesOrd1 = testing::Types<
-#if HAVE_CLP
-    Dune::GDT::PlaneSourceMnTestCase<Yasp1, Dune::GDT::LegendreMomentBasis<double, double, 7>, false>,
-    Dune::GDT::SourceBeamMnTestCase<Yasp1, Dune::GDT::LegendreMomentBasis<double, double, 7>, false>,
-#endif
-    Dune::GDT::PlaneSourceMnTestCase<Yasp1, Dune::GDT::HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, false>,
-    Dune::GDT::SourceBeamMnTestCase<Yasp1, Dune::GDT::HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, false>,
-    Dune::GDT::PlaneSourceMnTestCase<Yasp1, Dune::GDT::PartialMomentBasis<double, 1, double, 8, 1, 1>, false>,
-    Dune::GDT::SourceBeamMnTestCase<Yasp1, Dune::GDT::PartialMomentBasis<double, 1, double, 8, 1, 1>, false>
-#if !DXT_DISABLE_LARGE_TESTS
-    ,
-#  if HAVE_CLP
-    Dune::GDT::PointSourceMnTestCase<Yasp3, Dune::GDT::RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, false>,
-    Dune::GDT::CheckerboardMnTestCase<Yasp3, Dune::GDT::RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, false>,
-    Dune::GDT::ShadowMnTestCase<Yasp3, Dune::GDT::RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, false>,
-#  endif
-    Dune::GDT::PointSourceMnTestCase<Yasp3, Dune::GDT::HatFunctionMomentBasis<double, 3, double, 0, 1, 3>, false>
-#  if HAVE_QHULL
-    ,
-    Dune::GDT::PointSourceMnTestCase<Yasp3, Dune::GDT::PartialMomentBasis<double, 3, double, 0, 1, 3>, false>
-#  endif
-#endif
+    // Dune::GDT::PlaneSourceMnTestCase<Yasp1, Dune::GDT::LegendreMomentBasis<double, double, 1>, false, false>,
+    // Dune::GDT::PlaneSourceMnTestCase<Yasp1, Dune::GDT::LegendreMomentBasis<double, double, 10>, false, false>,
+    Dune::GDT::SourceBeamMnTestCase<Yasp1, Dune::GDT::LegendreMomentBasis<double, double, 20>, false, false>
+    // Dune::GDT::PlaneSourceMnTestCase<Yasp1, Dune::GDT::LegendreMomentBasis<double, double, 30>, false, false>,
+    // Dune::GDT::PlaneSourceMnTestCase<Yasp1, Dune::GDT::LegendreMomentBasis<double, double, 40>, false, false>,
+    // Dune::GDT::PlaneSourceMnTestCase<Yasp1, Dune::GDT::LegendreMomentBasis<double, double, 50>, false, false>,
+    // Dune::GDT::PlaneSourceMnTestCase<Yasp1, Dune::GDT::HatFunctionMomentBasis<double, 1, double, 2, 1, 1>, false,
+    // false>, Dune::GDT::PlaneSourceMnTestCase<Yasp1, Dune::GDT::HatFunctionMomentBasis<double, 1, double, 10, 1, 1>,
+    // false, false>, Dune::GDT::PlaneSourceMnTestCase<Yasp1, Dune::GDT::HatFunctionMomentBasis<double, 1, double, 20,
+    // 1, 1>, false, false>, Dune::GDT::PlaneSourceMnTestCase<Yasp1, Dune::GDT::HatFunctionMomentBasis<double, 1,
+    // double, 30, 1, 1>, false, false>, Dune::GDT::PlaneSourceMnTestCase<Yasp1,
+    // Dune::GDT::HatFunctionMomentBasis<double, 1, double, 40, 1, 1>, false, false>,
+    // Dune::GDT::PlaneSourceMnTestCase<Yasp1, Dune::GDT::HatFunctionMomentBasis<double, 1, double, 50, 1, 1>, false,
+    // false>, Dune::GDT::SourceBeamMnTestCase<Yasp1, Dune::GDT::PartialMomentBasis<double, 1, double, 50, 1, 1>, false,
+    // false> Dune::GDT::PlaneSourceMnTestCase<Yasp1, Dune::GDT::PartialMomentBasis<double, 1, double, 10, 1, 1>, false,
+    // false>, Dune::GDT::PlaneSourceMnTestCase<Yasp1, Dune::GDT::PartialMomentBasis<double, 1, double, 20, 1, 1>,
+    // false, false>, Dune::GDT::PlaneSourceMnTestCase<Yasp1, Dune::GDT::PartialMomentBasis<double, 1, double, 30, 1,
+    // 1>, false, false>, Dune::GDT::PlaneSourceMnTestCase<Yasp1, Dune::GDT::PartialMomentBasis<double, 1, double, 40,
+    // 1, 1>, false, false>, Dune::GDT::PlaneSourceMnTestCase<Yasp1, Dune::GDT::PartialMomentBasis<double, 1, double,
+    // 50, 1, 1>, false, false>
     >;
 
 TYPED_TEST_CASE(HyperbolicMnTest, YaspGridTestCasesOrd1);

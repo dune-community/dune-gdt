@@ -54,7 +54,7 @@ public:
     grid_config["type"] = XT::Grid::cube_gridprovider_default_config()["type"];
     grid_config["lower_left"] = "[-1 -1 -1]";
     grid_config["upper_right"] = "[1 1 1]";
-    grid_config["num_elements"] = "[10 10 10]";
+    grid_config["num_elements"] = "[30 30 30]";
     grid_config["overlap_size"] = "[1 1 1]";
     return grid_config;
   }

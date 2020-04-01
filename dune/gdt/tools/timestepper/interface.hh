@@ -262,6 +262,11 @@ public:
         next_output_time += output_interval;
       }
     } // while (t < t_end)
+    times_.push_back(t);
+    const auto time = std::chrono::steady_clock::now();
+    std::chrono::duration<double> wall_time = time - this->begin_time_;
+    wall_times_.push_back(wall_time.count());
+    dts_.push_back(dt);
 
     return dt;
   } // ... solve(...)

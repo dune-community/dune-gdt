@@ -195,7 +195,7 @@ public:
         const auto b = basis_functions_.evaluate(v, jj);
         if (v[dd] * n < 0) {
           const RangeFieldType psi = boundary_density(v);
-          ret += b * psi * v[dd] * quadratures[jj][ll].weight();
+          ret += b * psi * (v[dd] * n) * quadratures[jj][ll].weight();
         }
       } // ll
     } // jj
