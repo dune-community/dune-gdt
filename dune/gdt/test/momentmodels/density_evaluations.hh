@@ -93,7 +93,6 @@ public:
     auto& local_range_dofs = local_range_->dofs();
     for (size_t ii = 0; ii < dimRange; ++ii)
       local_range_dofs.set_entry(ii, alpha_tmp_[ii]);
-    analytical_flux_.set_eta_ast_pointers();
   } // void apply_local(...)
 
 private:
@@ -206,7 +205,6 @@ public:
     , analytical_flux_(analytical_flux)
     , min_acceptable_density_(min_acceptable_density)
     , param_(param)
-    , index_set_(space_.grid_view().indexSet())
     , changed_indices_(changed_indices)
     , mutex_(std::make_shared<std::mutex>())
   {}
@@ -221,7 +219,6 @@ public:
     , analytical_flux_(other.analytical_flux_)
     , min_acceptable_density_(other.min_acceptable_density_)
     , param_(other.param_)
-    , index_set_(space_.grid_view().indexSet())
     , changed_indices_(other.changed_indices_)
     , mutex_(other.mutex_)
   {}
@@ -239,18 +236,17 @@ public:
     const auto& local_alpha_dofs = local_alpha_->dofs();
     for (size_t ii = 0; ii < dimRange; ++ii)
       alpha_tmp_[ii] = local_alpha_dofs.get_entry(ii);
-    thread_local std::bitset<dimRange> changed_local_indices;
     static FieldVector<RangeFieldType, dimRange> dummy_u;
     const bool changed = basis_functions.adjust_alpha_to_ensure_min_density(
         alpha_tmp_,
         min_acceptable_density_,
         // partial moments do not need u for this
         GDT::is_partial_moment_basis<MomentBasis>::value ? dummy_u : analytical_flux_.get_u(alpha_tmp_),
-        changed_local_indices);
+        changed_local_indices_);
     if (changed) {
       mutex_->lock();
       for (size_t ii = 0; ii < dimRange; ++ii)
-        if (changed_local_indices.test(ii))
+        if (changed_local_indices_[ii])
           changed_indices_.push_back(space_.mapper().global_index(entity, ii));
       mutex_->unlock();
     }
@@ -268,8 +264,8 @@ private:
   EntropyFluxType& analytical_flux_;
   const RangeFieldType min_acceptable_density_;
   const XT::Common::Parameter& param_;
-  const typename SpaceType::GridViewType::IndexSet& index_set_;
   XT::Common::FieldVector<RangeFieldType, dimRange> alpha_tmp_;
+  std::bitset<dimRange> changed_local_indices_;
   std::vector<size_t>& changed_indices_;
   std::shared_ptr<std::mutex> mutex_;
 }; // class LocalMinDensitySetter<...>

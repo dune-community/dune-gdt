@@ -223,12 +223,11 @@ public:
   store_evaluations(const size_t entity_index, StateType& alpha, const RangeFieldType /*rho_min*/, bool check = true)
   {
     implementation_->store_exp_evaluations(exp_evaluations_[entity_index], alpha);
-    if (entropy != EntropyType::MaxwellBoltzmann) {
+    if constexpr (entropy != EntropyType::MaxwellBoltzmann) {
       implementation_->store_eta_ast_prime_vals(exp_evaluations_[entity_index], eta_ast_prime_storage_[entity_index]);
       implementation_->store_eta_ast_twoprime_vals(exp_evaluations_[entity_index],
                                                    eta_ast_twoprime_storage_[entity_index]);
     }
-    set_eta_ast_pointers();
     // check for inf and nan and very low densities
     u_[entity_index] = get_u(entity_index);
     const auto& u = u_[entity_index];
@@ -252,7 +251,7 @@ public:
 
   void set_eta_ast_pointers()
   {
-    if (entropy == EntropyType::MaxwellBoltzmann) {
+    if constexpr (entropy == EntropyType::MaxwellBoltzmann) {
       eta_ast_prime_evaluations_ = &exp_evaluations_;
       eta_ast_twoprime_evaluations_ = &exp_evaluations_;
     } else {
@@ -285,7 +284,7 @@ public:
     const auto num_entities = grid_view.size(0);
     u_.resize(num_entities);
     exp_evaluations_.resize(num_entities);
-    if (entropy != EntropyType::MaxwellBoltzmann) {
+    if constexpr (entropy != EntropyType::MaxwellBoltzmann) {
       eta_ast_prime_storage_.resize(num_entities);
       eta_ast_twoprime_storage_.resize(num_entities);
     }
@@ -293,7 +292,7 @@ public:
     for (auto&& entity : Dune::elements(grid_view)) {
       const auto entity_index = grid_view.indexSet().index(entity);
       implementation_->resize_quad_weights_type(exp_evaluations_[entity_index]);
-      if (entropy != EntropyType::MaxwellBoltzmann) {
+      if constexpr (entropy != EntropyType::MaxwellBoltzmann) {
         implementation_->resize_quad_weights_type(eta_ast_prime_storage_[entity_index]);
         implementation_->resize_quad_weights_type(eta_ast_twoprime_storage_[entity_index]);
       }
@@ -305,6 +304,7 @@ public:
         }
       } // intersections
     } // entities
+    set_eta_ast_pointers();
   } // void prepare_storage(...)
 
   std::vector<QuadratureWeightsType>& eta_ast_prime_evaluations()
