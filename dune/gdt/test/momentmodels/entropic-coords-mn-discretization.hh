@@ -42,6 +42,74 @@
 
 #include "pn-discretization.hh"
 
+template <class GV, class ProblemType, class MapType, class EntropyFluxType>
+class BoundaryFluxesFunctor : public Dune::XT::Grid::IntersectionFunctor<GV>
+{
+  using BaseType = typename Dune::XT::Grid::IntersectionFunctor<GV>;
+  using IndexSetType = typename GV::IndexSet;
+
+public:
+  using typename BaseType::E;
+  using typename BaseType::I;
+
+  BoundaryFluxesFunctor(const ProblemType& problem,
+                        MapType& boundary_fluxes_map,
+                        EntropyFluxType& analytical_flux,
+                        const IndexSetType& index_set)
+    : problem_(problem)
+    , analytical_flux_(analytical_flux)
+    , index_set_(index_set)
+    , boundary_distribution_(problem.boundary_distribution())
+    , boundary_fluxes_map_(boundary_fluxes_map)
+    , mutex_(std::make_shared<std::mutex>())
+  {}
+
+  BoundaryFluxesFunctor(const BoundaryFluxesFunctor& other)
+    : BaseType(other)
+    , problem_(other.problem_)
+    , analytical_flux_(other.analytical_flux_)
+    , index_set_(other.index_set_)
+    , boundary_distribution_(other.boundary_distribution_)
+    , boundary_fluxes_map_(other.boundary_fluxes_map_)
+    , mutex_(other.mutex_)
+  {}
+
+  Dune::XT::Grid::IntersectionFunctor<GV>* copy() override final
+  {
+    return new BoundaryFluxesFunctor(*this);
+  }
+
+  virtual void
+  apply_local(const I& intersection, const E& /*inside_element*/, const E& /*outside_element*/) override final
+  {
+    if (intersection.boundary()) {
+      // store boundary fluxes
+      const auto x = intersection.geometry().center();
+      const auto dd = intersection.indexInInside() / 2;
+      const auto n = intersection.centerUnitOuterNormal()[dd];
+      auto boundary_flux = problem_.kinetic_boundary_flux(x, n, dd);
+      // The boundary_flux calculates <psi b (v[dd]*n)>, we only want to have <psi b v[dd]> because the
+      // multiplication with n is done in entropy_flux->evaluate_kinetic_flux(..)
+      boundary_flux *= n;
+      mutex_->lock();
+      boundary_fluxes_map_.insert(std::make_pair(x, boundary_flux));
+      mutex_->unlock();
+      // store boundary evaluations
+      analytical_flux_.store_boundary_evaluations(
+          boundary_distribution_(x), index_set_.index(intersection.inside()), intersection.indexInInside());
+    }
+  }
+
+private:
+  const ProblemType& problem_;
+  EntropyFluxType& analytical_flux_;
+  const IndexSetType& index_set_;
+  const typename ProblemType::BoundaryDistributionType boundary_distribution_;
+  MapType& boundary_fluxes_map_;
+  std::shared_ptr<std::mutex> mutex_;
+};
+
+
 template <class TestCaseType>
 struct HyperbolicEntropicCoordsMnDiscretization
 {
@@ -160,17 +228,6 @@ struct HyperbolicEntropicCoordsMnDiscretization
     MinDensitySetterType min_density_setter(*analytical_flux, fv_space, min_acceptable_density);
     min_density_setter.apply(alpha.dofs().vector(), alpha.dofs().vector());
 
-    // calculate boundary evaluations (needed for reconstruction)
-    for (const auto& element : Dune::elements(grid_view)) {
-      const auto entity_index = grid_view.indexSet().index(element);
-      for (const auto& intersection : Dune::intersections(grid_view, element)) {
-        if (intersection.boundary()) {
-          analytical_flux->store_boundary_evaluations(
-              boundary_distribution(intersection.geometry().center()), entity_index, intersection.indexInInside());
-        }
-      }
-    }
-
     // ******************** choose flux and rhs operator and timestepper ******************************************
 
     using AdvectionOperatorType = AdvectionFvOperator<MatrixType, GV, dimRange>;
@@ -213,22 +270,16 @@ struct HyperbolicEntropicCoordsMnDiscretization
     using LambdaType = typename BoundaryOperator::LambdaType;
 
     // store boundary fluxes
-    std::map<DomainType, DynamicRangeType, XT::Common::FieldVectorFloatLess> boundary_fluxes;
-    for (const auto& element : Dune::elements(grid_view))
-      for (const auto& intersection : Dune::intersections(grid_view, element))
-        if (intersection.boundary()) {
-          const auto x = intersection.geometry().center();
-          const auto dd = intersection.indexInInside() / 2;
-          const auto n = intersection.centerUnitOuterNormal()[dd];
-          DynamicRangeType boundary_flux = problem.kinetic_boundary_flux(x, n, dd);
-          // The boundary_flux calculates <psi b (v[dd]*n)>, we only want to have <psi b v[dd]> because the
-          // multiplication with n is done in entropy_flux->evaluate_kinetic_flux(..)
-          boundary_flux *= n;
-          boundary_fluxes.insert(std::make_pair(x, boundary_flux));
-        }
+    using BoundaryFluxesMapType = std::map<DomainType, DynamicRangeType, XT::Common::FieldVectorFloatLess>;
+    BoundaryFluxesMapType boundary_fluxes;
+    BoundaryFluxesFunctor<GV, ProblemType, BoundaryFluxesMapType, EntropyFluxType> boundary_flux_functor(
+        problem, boundary_fluxes, *analytical_flux, fv_space.grid_view().indexSet());
+    auto walker = XT::Grid::Walker<GV>(fv_space.grid_view());
+    XT::Grid::ApplyOn::NonPeriodicBoundaryIntersections<GV> boundary_intersection_filter;
+    walker.append(boundary_flux_functor, boundary_intersection_filter);
+    walker.walk(true);
     GenericFunctionType boundary_kinetic_fluxes(
         1, [&](const DomainType& x, DynamicRangeType& ret, const XT::Common::Parameter&) { ret = boundary_fluxes[x]; });
-
     LambdaType boundary_lambda =
         [&](const I& intersection,
             const FieldVector<RangeFieldType, dimDomain - 1>& xx_in_reference_intersection_coordinates,
@@ -239,9 +290,7 @@ struct HyperbolicEntropicCoordsMnDiscretization
           boundary_kinetic_fluxes.evaluate(
               intersection.geometry().global(xx_in_reference_intersection_coordinates), v, param);
         };
-    XT::Grid::ApplyOn::NonPeriodicBoundaryIntersections<GV> filter;
-    advection_operator.append(boundary_lambda, {}, filter);
-
+    advection_operator.append(boundary_lambda, {}, boundary_intersection_filter);
 
     // create remaining operators
     ReconstructionOperatorType reconstruction_operator(fv_space, *analytical_flux);
