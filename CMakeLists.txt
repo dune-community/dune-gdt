@@ -31,8 +31,7 @@ include(DuneMacros)
 
 # dune-xt-common
 find_package(dune-xt REQUIRED)
-find_package(dune-pybindxi REQUIRED)
-list(APPEND CMAKE_MODULE_PATH "${dune-xt_MODULE_PATH}" "${dune-pybindxi_MODULE_PATH}")
+list(APPEND CMAKE_MODULE_PATH "${dune-xt_MODULE_PATH}")
 include(DuneUtils)
 
 # start a dune project with information from dune.module
