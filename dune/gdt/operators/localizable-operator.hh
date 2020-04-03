@@ -303,12 +303,15 @@ public:
 
   LocalizableOperator(const AGV& assembly_grid_view,
                       const SourceSpaceType& source_space,
-                      const RangeSpaceType& range_space)
+                      const RangeSpaceType& range_space,
+                      const bool linear = true,
+                      const bool use_tbb = false)
     : BaseType()
     , assembly_grid_view_(assembly_grid_view)
     , source_space_(source_space)
     , range_space_(range_space)
     , linear_(true)
+    , use_tbb_(use_tbb)
   {}
 
   LocalizableOperator(ThisType&& source) = default;
@@ -373,7 +376,7 @@ public:
       localizable_op.append(*local_op, param, filter);
     }
     // and apply it in a grid walk
-    localizable_op.assemble(/*use_tbb=*/true);
+    localizable_op.assemble(use_tbb_);
     DUNE_THROW_IF(!range.valid(), Exceptions::operator_error, "range contains inf or nan!");
   } // ... apply(...)
 
@@ -433,6 +436,7 @@ protected:
   const SourceSpaceType& source_space_;
   const RangeSpaceType& range_space_;
   bool linear_;
+  const bool use_tbb_;
   std::list<std::pair<std::unique_ptr<LocalElementOperatorType>, std::unique_ptr<XT::Grid::ElementFilter<AGV>>>>
       local_element_operators_;
   std::list<

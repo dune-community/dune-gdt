@@ -109,6 +109,7 @@ struct HyperbolicEntropicCoordsMnDiscretization
     using OldEntropyFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
     auto flux = problem.flux();
     auto* entropy_flux = dynamic_cast<OldEntropyFluxType*>(flux.get());
+    // entropy_flux->disable_thread_cache();
     auto analytical_flux = std::make_unique<EntropyFluxType>(*entropy_flux);
 
     // calculate boundary values for alpha
@@ -129,7 +130,10 @@ struct HyperbolicEntropicCoordsMnDiscretization
     // ***************** project initial values to discrete function *********************
     // create a discrete function for the solution
     DiscreteFunctionType u(fv_space, "u_initial");
-    DiscreteFunctionType alpha(fv_space, "alpha_initial");
+    // No mutexes needed because the only operator that would need synchronisation is the advection operator which will
+    // not be parallelised.
+    VectorType alpha_vec(fv_space.mapper().size(), 0., 0);
+    DiscreteFunctionType alpha(fv_space, alpha_vec, "alpha_initial");
     // project initial values
     default_interpolation(*initial_values_u, u, grid_view);
 
@@ -182,6 +186,7 @@ struct HyperbolicEntropicCoordsMnDiscretization
         EntropicCoordinatesCombinedOperator<DensityOperatorType, FvOperatorType, RhsOperatorType, HessianInverterType>;
 
     constexpr TimeStepperMethods time_stepper_type = TimeStepperMethods::bogacki_shampine;
+    // constexpr TimeStepperMethods time_stepper_type = TimeStepperMethods::dormand_prince;
     using TimeStepperType = KineticAdaptiveRungeKuttaTimeStepper<CombinedOperatorType,
                                                                  MinDensitySetterType,
                                                                  DiscreteFunctionType,
@@ -198,7 +203,10 @@ struct HyperbolicEntropicCoordsMnDiscretization
 
     // *********************** create operators and timesteppers ************************************
     NumericalKineticFlux<GV, MomentBasis, EntropyFluxType> numerical_flux(*analytical_flux, *basis_functions);
-    AdvectionOperatorType advection_operator(grid_view, numerical_flux, advection_source_space, fv_space);
+    // do not use parallelisation here, as the advection operator does almost no work (allows to use alpha_vec without
+    // mutexes)
+    AdvectionOperatorType advection_operator(
+        grid_view, numerical_flux, advection_source_space, fv_space, /*use_tbb*/ false);
 
     // boundary treatment
     using BoundaryOperator =
@@ -273,6 +281,7 @@ struct HyperbolicEntropicCoordsMnDiscretization
     const auto sigma_a = problem.sigma_a();
     const auto sigma_s = problem.sigma_s();
     const auto Q = problem.Q();
+    static std::mutex mutex;
     auto rhs_func = [&](const auto& /*source*/,
                         const auto& /*local_source*/,
                         auto& local_range,
@@ -292,7 +301,7 @@ struct HyperbolicEntropicCoordsMnDiscretization
       for (size_t ii = 0; ii < dimRange; ++ii)
         range_dofs[ii] += ret[ii];
     };
-    RhsOperatorType rhs_operator(grid_view, fv_space, fv_space);
+    RhsOperatorType rhs_operator(grid_view, fv_space, fv_space, false, true);
     rhs_operator.append(GenericLocalElementOperator<VectorType, GV, dimRange>(rhs_func));
     CombinedOperatorType combined_operator(density_operator, fv_operator, rhs_operator, hessian_inverter);
 

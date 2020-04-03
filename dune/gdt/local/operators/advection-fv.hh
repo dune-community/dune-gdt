@@ -128,10 +128,12 @@ public:
              LocalOutsideRangeType& local_range_outside,
              const XT::Common::Parameter& param = {}) const override final
   {
+#ifndef NDEBUG
     DUNE_THROW_IF((local_range_inside.space().type() != SpaceType::finite_volume)
                       || (local_range_outside.space().type() != SpaceType::finite_volume),
                   Exceptions::operator_error,
                   "Use LocalAdvectionDgCouplingOperator instead!");
+#endif
     local_sources_[0]->evaluate(
         source_is_elementwise_constant_ ? static_x : intersection().geometryInInside().center(), u_, param);
     local_sources_[1]->evaluate(
@@ -147,8 +149,8 @@ public:
     auto& local_range_outside_dofs = local_range_outside.dofs();
     for (size_t ii = 0; ii < m; ++ii) {
       const auto g_ii = g_[ii] * h_intersection;
-      local_range_inside_dofs[ii] += g_ii * hinv_inside_element;
-      local_range_outside_dofs[ii] -= g_ii * hinv_outside_element;
+      local_range_inside_dofs.add_to_entry(ii, g_ii * hinv_inside_element);
+      local_range_outside_dofs.add_to_entry(ii, -g_ii * hinv_outside_element);
     }
   } // ... apply(...)
 
@@ -293,7 +295,7 @@ public:
     auto& local_range_inside_dofs = local_range_inside.dofs();
     const auto factor = intersection().geometry().volume() / intersection().inside().geometry().volume();
     for (size_t ii = 0; ii < m; ++ii)
-      local_range_inside_dofs[ii] += g_[ii] * factor;
+      local_range_inside_dofs.add_to_entry(ii, g_[ii] * factor);
   } // ... apply(...)
 
 private:
@@ -435,7 +437,7 @@ public:
     auto& local_range_inside_dofs = local_range_inside.dofs();
     const auto factor = intersection().geometry().volume() / intersection().inside().geometry().volume();
     for (size_t ii = 0; ii < m; ++ii)
-      local_range_inside_dofs[ii] += g_[ii] * factor;
+      local_range_inside_dofs.add_to_entry(ii, g_[ii] * factor);
   } // ... apply(...)
 
 protected:

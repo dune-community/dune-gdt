@@ -158,7 +158,7 @@ public:
   static const size_t r = rangeDim;
   static const size_t rC = rangeDimCols;
   static const size_t d_flux = fluxDim;
-  static const EntropyType entropy = entrpy;
+  static constexpr EntropyType entropy = entrpy;
   using D = DomainFieldImp;
   using R = RangeFieldImp;
 
@@ -329,7 +329,7 @@ public:
   virtual DynamicRangeType alpha_iso(const RangeFieldType rho = 1.) const
   {
     const auto scale_factor = rho / density(integrated());
-    if (entropy == EntropyType::MaxwellBoltzmann)
+    if constexpr (entropy == EntropyType::MaxwellBoltzmann)
       return alpha_one() * std::log(scale_factor);
     else
       return alpha_one() * std::log(scale_factor / (scale_factor + 1));
@@ -522,9 +522,9 @@ protected:
                                    const size_t v_index,
                                    const bool reflecting = false) const
   {
-    size_t num_threads =
+    const size_t num_threads =
         std::min(XT::Common::threadManager().max_threads(), XT::Data::merged_quadrature(quadratures).size());
-    auto decomposition = create_decomposition(quadratures, num_threads);
+    const auto decomposition = create_decomposition(quadratures, num_threads);
     std::vector<std::thread> threads(num_threads);
     // Launch a group of threads
     std::vector<MatrixType> local_matrices(num_threads, MatrixType(matrix.N(), matrix.M(), 0.));
@@ -576,9 +576,9 @@ protected:
 
   virtual DynamicRangeType integrated_initializer(const QuadraturesType& quadratures) const
   {
-    size_t num_threads =
+    const size_t num_threads =
         std::min(XT::Common::threadManager().max_threads(), XT::Data::merged_quadrature(quadratures).size());
-    auto decomposition = create_decomposition(quadratures, num_threads);
+    const auto decomposition = create_decomposition(quadratures, num_threads);
     std::vector<std::thread> threads(num_threads);
     std::vector<DynamicRangeType> local_vectors(num_threads, DynamicRangeType(dimRange, 0.));
     for (size_t ii = 0; ii < num_threads; ++ii)
