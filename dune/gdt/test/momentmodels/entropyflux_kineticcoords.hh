@@ -229,8 +229,8 @@ public:
                                                    eta_ast_twoprime_storage_[entity_index]);
     }
     // check for inf and nan and very low densities
-    u_[entity_index] = get_u(entity_index);
-    const auto& u = u_[entity_index];
+    auto& u = u_[entity_index];
+    u = get_u(entity_index);
     if (check) {
       const double* u_ptr = &(u[0]);
       const auto val = XT::Common::reduce(u_ptr, u_ptr + basis_dimRange, 0.);
@@ -246,7 +246,7 @@ public:
       //     // alpha, rho_min, basis_functions().needs_rho_for_min_density() ? basis_functions().density(u) : 0., u);
       // if (changed)
       //   store_evaluations(entity_index, alpha, rho_min, false);
-    }
+    } // if (check)
   }
 
   void set_eta_ast_pointers()

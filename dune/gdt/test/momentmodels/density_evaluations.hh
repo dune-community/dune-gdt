@@ -84,12 +84,12 @@ public:
   void apply_local(const EntityType& entity) override final
   {
     local_alpha_->bind(entity);
-    local_range_->bind(entity);
     const auto entity_index = index_set_.index(entity);
     const auto& local_alpha_dofs = local_alpha_->dofs();
     for (size_t ii = 0; ii < dimRange; ++ii)
       alpha_tmp_[ii] = local_alpha_dofs.get_entry(ii);
     analytical_flux_.store_evaluations(entity_index, alpha_tmp_, min_acceptable_density_);
+    local_range_->bind(entity);
     auto& local_range_dofs = local_range_->dofs();
     for (size_t ii = 0; ii < dimRange; ++ii)
       local_range_dofs.set_entry(ii, alpha_tmp_[ii]);
