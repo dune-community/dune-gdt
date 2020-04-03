@@ -275,7 +275,7 @@ public:
   {
     auto& eta_ast_prime_vals = working_storage();
     evaluate_eta_ast_prime(beta_in, M, eta_ast_prime_vals);
-    return std::inner_product(
+    return XT::Common::transform_reduce(
         quad_weights_.begin(), quad_weights_.end(), eta_ast_prime_vals.begin(), RangeFieldType(0.));
   }
 
@@ -284,7 +284,8 @@ public:
   {
     auto& eta_ast_vals = working_storage();
     evaluate_eta_ast(beta_in, M, eta_ast_vals);
-    return std::inner_product(quad_weights_.begin(), quad_weights_.end(), eta_ast_vals.begin(), RangeFieldType(0.));
+    return XT::Common::transform_reduce(
+        quad_weights_.begin(), quad_weights_.end(), eta_ast_vals.begin(), RangeFieldType(0.));
   }
 
   // returns < b \eta_{\ast}^{\prime}(\alpha^T b(v)) >
@@ -740,7 +741,7 @@ public:
     const size_t num_quad_points = quad_points_.size();
     for (size_t ll = 0; ll < num_quad_points; ++ll) {
       const auto* basis_ll = &(M.get_entry_ref(ll, 0.));
-      scalar_products[ll] = std::inner_product(beta_in.begin(), beta_in.end(), basis_ll, 0.);
+      scalar_products[ll] = XT::Common::transform_reduce(beta_in.begin(), beta_in.end(), basis_ll, 0.);
     }
 #endif
   }
@@ -1741,7 +1742,7 @@ public:
     evaluate_eta_ast_prime(beta_in, M, eta_ast_prime_vals);
     RangeFieldType ret(0.);
     for (size_t jj = 0; jj < num_blocks; ++jj)
-      ret += std::inner_product(
+      ret += XT::Common::transform_reduce(
           quad_weights_[jj].begin(), quad_weights_[jj].end(), eta_ast_prime_vals[jj].begin(), RangeFieldType(0.));
     return ret;
   }
@@ -1753,7 +1754,7 @@ public:
     evaluate_eta_ast(beta_in, M, eta_ast_vals);
     RangeFieldType ret(0.);
     for (size_t jj = 0; jj < num_blocks; ++jj)
-      ret += std::inner_product(
+      ret += XT::Common::transform_reduce(
           quad_weights_[jj].begin(), quad_weights_[jj].end(), eta_ast_vals[jj].begin(), RangeFieldType(0.));
     return ret;
   }
@@ -2084,24 +2085,29 @@ public:
     evaluate_eta_ast_prime(alpha_i, M_, eta_ast_prime_vals);
     DomainType ret(0);
     for (size_t jj = 0; jj < num_blocks; ++jj) {
+      const auto& eta_ast_vals = eta_ast_prime_vals[jj];
+      const auto& weights = quad_weights_[jj];
+      const auto& points = quad_points_[jj];
+      const auto& basis = M_[jj];
+      const auto num_quad_points = weights.size();
       const auto offset = block_size * jj;
       if (quad_signs_[jj][dd] == 0) {
         // in this case, we have to decide which eta_ast_prime_vals to use for each quadrature point individually
-        for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
-          const auto position = quad_points_[jj][ll][dd];
+        for (size_t ll = 0; ll < num_quad_points; ++ll) {
+          const auto position = points[ll][dd];
           if (position * n_ij[dd] > 0.) {
-            const RangeFieldType factor = eta_ast_prime_vals[jj][ll] * quad_weights_[jj][ll] * position;
+            const RangeFieldType factor = eta_ast_vals[ll] * weights[ll] * position;
             for (size_t ii = 0; ii < block_size; ++ii)
-              ret[offset + ii] += M_[jj].get_entry(ll, ii) * factor;
+              ret[offset + ii] += basis.get_entry(ll, ii) * factor;
           }
         } // ll
       } else {
         // all quadrature points have the same sign
         if (quad_signs_[jj][dd] * n_ij[dd] > 0.) {
-          for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
-            const RangeFieldType factor = eta_ast_prime_vals[jj][ll] * quad_weights_[jj][ll] * quad_points_[jj][ll][dd];
+          for (size_t ll = 0; ll < num_quad_points; ++ll) {
+            const RangeFieldType factor = eta_ast_vals[ll] * weights[ll] * points[ll][dd];
             for (size_t ii = 0; ii < block_size; ++ii)
-              ret[offset + ii] += M_[jj].get_entry(ll, ii) * factor;
+              ret[offset + ii] += basis.get_entry(ll, ii) * factor;
           } // ll
         }
       } // quad_sign
@@ -2136,35 +2142,42 @@ public:
     RangeFieldType factor, slope;
     for (size_t jj = 0; jj < num_blocks; ++jj) {
       // calculate fluxes
+      const auto& weights = quad_weights_[jj];
+      const auto& points = quad_points_[jj];
+      const auto& basis = M_[jj];
+      const auto& psi_e = psi_entity[jj];
+      const auto& psi_l = psi_left[jj];
+      const auto& psi_r = psi_right[jj];
+      const auto num_quad_points = weights.size();
       const auto offset = block_size * jj;
       if (quad_signs_[jj][dd] == 0) {
         // in this case, we have to decide which flux_value to use for each quadrature point individually
-        for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
-          const auto position = quad_points_[jj][ll][dd];
+        for (size_t ll = 0; ll < num_quad_points; ++ll) {
+          const auto position = points[ll][dd];
           if constexpr (reconstruct) {
-            slope = slope_func(psi_entity[jj][ll] - psi_left[jj][ll], psi_right[jj][ll] - psi_entity[jj][ll]);
-            factor = position > 0 ? psi_entity[jj][ll] + 0.5 * slope : psi_entity[jj][ll] - 0.5 * slope;
-            factor *= quad_weights_[jj][ll] * position;
+            slope = slope_func(psi_e[ll] - psi_l[ll], psi_r[ll] - psi_e[ll]);
+            factor = position > 0 ? psi_e[ll] + 0.5 * slope : psi_e[ll] - 0.5 * slope;
+            factor *= weights[ll] * position;
           } else {
-            factor = psi_entity[jj][ll] * quad_weights_[jj][ll] * position;
+            factor = psi_e[ll] * weights[ll] * position;
           }
           auto& val = position > 0. ? right_flux_value : left_flux_value;
           for (size_t ii = 0; ii < block_size; ++ii)
-            val[offset + ii] += M_[jj].get_entry(ll, ii) * factor;
+            val[offset + ii] += basis.get_entry(ll, ii) * factor;
         } // ll
       } else {
         // all quadrature points have the same sign
         auto& flux_val = quad_signs_[jj][dd] > 0 ? right_flux_value : left_flux_value;
         const double sign_factor = quad_signs_[jj][dd] > 0 ? 0.5 : -0.5;
-        for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
+        for (size_t ll = 0; ll < num_quad_points; ++ll) {
           if constexpr (reconstruct) {
-            slope = slope_func(psi_entity[jj][ll] - psi_left[jj][ll], psi_right[jj][ll] - psi_entity[jj][ll]);
-            factor = (psi_entity[jj][ll] + sign_factor * slope) * quad_weights_[jj][ll] * quad_points_[jj][ll][dd];
+            slope = slope_func(psi_e[ll] - psi_l[ll], psi_r[ll] - psi_e[ll]);
+            factor = (psi_e[ll] + sign_factor * slope) * weights[ll] * points[ll][dd];
           } else {
-            factor = psi_entity[jj][ll] * quad_weights_[jj][ll] * quad_points_[jj][ll][dd];
+            factor = psi_e[ll] * weights[ll] * points[ll][dd];
           }
           for (size_t ii = 0; ii < block_size; ++ii)
-            flux_val[offset + ii] += M_[jj].get_entry(ll, ii) * factor;
+            flux_val[offset + ii] += basis.get_entry(ll, ii) * factor;
         } // ll
       } // quad_sign
     } // jj
@@ -2289,7 +2302,7 @@ public:
     const size_t num_quad_points = quad_points_[jj].size();
     for (size_t ll = 0; ll < num_quad_points; ++ll) {
       const auto* basis_ll = &(M.get_entry_ref(ll, 0.));
-      scalar_products[ll] = std::inner_product(beta_in.begin(), beta_in.end(), basis_ll, 0.);
+      scalar_products[ll] = XT::Common::transform_reduce(beta_in.begin(), beta_in.end(), basis_ll, 0.);
     } // ll
   }
 
@@ -2801,7 +2814,7 @@ public:
     evaluate_eta_ast_prime(alpha, eta_ast_prime_vals);
     RangeFieldType ret(0.);
     for (size_t jj = 0; jj < num_faces_; ++jj)
-      ret += std::inner_product(
+      ret += XT::Common::transform_reduce(
           quad_weights_[jj].begin(), quad_weights_[jj].end(), eta_ast_prime_vals[jj].begin(), RangeFieldType(0.));
     return ret;
   }
@@ -2819,7 +2832,7 @@ public:
     evaluate_eta_ast(alpha, eta_ast_vals);
     RangeFieldType ret(0.);
     for (size_t jj = 0; jj < num_faces_; ++jj)
-      ret += std::inner_product(
+      ret += XT::Common::transform_reduce(
           quad_weights_[jj].begin(), quad_weights_[jj].end(), eta_ast_vals[jj].begin(), RangeFieldType(0.));
     return ret;
   }
@@ -4983,7 +4996,7 @@ public:
     evaluate_eta_ast_prime(alpha, eta_ast_prime_vals);
     RangeFieldType ret(0.);
     for (size_t jj = 0; jj < num_intervals; ++jj)
-      ret += std::inner_product(
+      ret += XT::Common::transform_reduce(
           quad_weights_[jj].begin(), quad_weights_[jj].end(), eta_ast_prime_vals[jj].begin(), RangeFieldType(0.));
     return ret;
   }
@@ -4995,7 +5008,7 @@ public:
     evaluate_eta_ast(alpha, eta_ast_vals);
     RangeFieldType ret(0.);
     for (size_t jj = 0; jj < num_intervals; ++jj)
-      ret += std::inner_product(
+      ret += XT::Common::transform_reduce(
           quad_weights_[jj].begin(), quad_weights_[jj].end(), eta_ast_vals[jj].begin(), RangeFieldType(0.));
     return ret;
   }

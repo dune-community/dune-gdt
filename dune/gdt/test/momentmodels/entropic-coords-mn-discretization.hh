@@ -130,9 +130,8 @@ struct HyperbolicEntropicCoordsMnDiscretization
     // ***************** project initial values to discrete function *********************
     // create a discrete function for the solution
     DiscreteFunctionType u(fv_space, "u_initial");
-    // No mutexes needed because the only operator that would need synchronisation is the advection operator which will
-    // not be parallelised.
-    VectorType alpha_vec(fv_space.mapper().size(), 0., 0);
+    // The only operator that needs synchronisation is the advection operator
+    VectorType alpha_vec(fv_space.mapper().size(), 0., DXTC_CONFIG_GET("num_alpha_mutexes", 1));
     DiscreteFunctionType alpha(fv_space, alpha_vec, "alpha_initial");
     // project initial values
     default_interpolation(*initial_values_u, u, grid_view);
@@ -206,7 +205,7 @@ struct HyperbolicEntropicCoordsMnDiscretization
     // do not use parallelisation here, as the advection operator does almost no work (allows to use alpha_vec without
     // mutexes)
     AdvectionOperatorType advection_operator(
-        grid_view, numerical_flux, advection_source_space, fv_space, /*use_tbb*/ false);
+        grid_view, numerical_flux, advection_source_space, fv_space, /*use_tbb*/ true);
 
     // boundary treatment
     using BoundaryOperator =
@@ -299,7 +298,7 @@ struct HyperbolicEntropicCoordsMnDiscretization
       ret.axpy(Q_value, basis_integrated);
       auto& range_dofs = local_range.dofs();
       for (size_t ii = 0; ii < dimRange; ++ii)
-        range_dofs[ii] += ret[ii];
+        range_dofs.add_to_entry(ii, ret[ii]);
     };
     RhsOperatorType rhs_operator(grid_view, fv_space, fv_space, false, true);
     rhs_operator.append(GenericLocalElementOperator<VectorType, GV, dimRange>(rhs_func));

@@ -153,7 +153,7 @@ public:
             range, grid_view, analytical_flux_, param);
     auto walker = XT::Grid::Walker<GV>(grid_view);
     walker.append(local_reconstruction_operator);
-    walker.walk(false);
+    walker.walk(true);
   } // void apply(...)
 
 private:
