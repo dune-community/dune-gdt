@@ -35,6 +35,53 @@
 
 #include "pn-discretization.hh"
 
+template <class GV, class ProblemType, class MapType>
+class BoundaryFluxesFunctor : public Dune::XT::Grid::IntersectionFunctor<GV>
+{
+  using BaseType = typename Dune::XT::Grid::IntersectionFunctor<GV>;
+  using IndexSetType = typename GV::IndexSet;
+
+public:
+  using typename BaseType::E;
+  using typename BaseType::I;
+
+  BoundaryFluxesFunctor(const ProblemType& problem, MapType& boundary_fluxes_map)
+    : problem_(problem)
+    , boundary_fluxes_map_(boundary_fluxes_map)
+    , mutex_(std::make_shared<std::mutex>())
+  {}
+
+  BoundaryFluxesFunctor(const BoundaryFluxesFunctor& other)
+    : BaseType(other)
+    , problem_(other.problem_)
+    , boundary_fluxes_map_(other.boundary_fluxes_map_)
+    , mutex_(other.mutex_)
+  {}
+
+  Dune::XT::Grid::IntersectionFunctor<GV>* copy() override final
+  {
+    return new BoundaryFluxesFunctor(*this);
+  }
+
+  virtual void
+  apply_local(const I& intersection, const E& /*inside_element*/, const E& /*outside_element*/) override final
+  {
+    // store boundary fluxes
+    const auto x = intersection.geometry().center();
+    const auto dd = intersection.indexInInside() / 2;
+    const auto n = intersection.centerUnitOuterNormal()[dd];
+    auto boundary_flux = problem_.kinetic_boundary_flux(x, n, dd);
+    mutex_->lock();
+    boundary_fluxes_map_.insert(std::make_pair(x, boundary_flux));
+    mutex_->unlock();
+  }
+
+private:
+  const ProblemType& problem_;
+  MapType& boundary_fluxes_map_;
+  std::shared_ptr<std::mutex> mutex_;
+};
+
 template <class TestCaseType>
 struct HyperbolicMnDiscretization
 {
@@ -162,21 +209,17 @@ struct HyperbolicMnDiscretization
     //       param);
     //     };
 
-    // store boundary influx fluxes
-    std::map<DomainType, DynamicRangeType, XT::Common::FieldVectorFloatLess> boundary_fluxes;
-    for (const auto& element : Dune::elements(grid_view))
-      for (const auto& intersection : Dune::intersections(grid_view, element))
-        if (intersection.boundary()) {
-          const auto x = intersection.geometry().center();
-          const auto dd = intersection.indexInInside() / 2;
-          const DynamicRangeType boundary_flux =
-              problem.kinetic_boundary_flux(x, intersection.centerUnitOuterNormal()[dd], dd);
-          boundary_fluxes.insert(std::make_pair(x, boundary_flux));
-        }
+    // store boundary fluxes
+    using BoundaryFluxesMapType = std::map<DomainType, DynamicRangeType, XT::Common::FieldVectorFloatLess>;
+    BoundaryFluxesMapType boundary_fluxes;
+    BoundaryFluxesFunctor<GV, ProblemType, BoundaryFluxesMapType> boundary_flux_functor(problem, boundary_fluxes);
+    auto walker = XT::Grid::Walker<GV>(fv_space.grid_view());
+    XT::Grid::ApplyOn::NonPeriodicBoundaryIntersections<GV> boundary_intersection_filter;
+    walker.append(boundary_flux_functor, boundary_intersection_filter);
+    walker.walk(true);
     using GenericFunctionType = XT::Functions::GenericFunction<dimDomain, dimRange, 1, RangeFieldType>;
     GenericFunctionType boundary_kinetic_fluxes(
         1, [&](const DomainType& x, DynamicRangeType& ret, const XT::Common::Parameter&) { ret = boundary_fluxes[x]; });
-
     LambdaType boundary_lambda =
         [&boundary_kinetic_fluxes,
          &entropy_flux](const I& intersection,
@@ -195,9 +238,7 @@ struct HyperbolicMnDiscretization
               entropy_flux->evaluate_kinetic_outflow(alpha_entity, intersection.centerUnitOuterNormal(), dd);
           g += outflux;
         };
-
-    XT::Grid::ApplyOn::NonPeriodicBoundaryIntersections<GV> filter;
-    advection_operator.append(boundary_lambda, {}, filter);
+    advection_operator.append(boundary_lambda, {}, boundary_intersection_filter);
 
     constexpr double epsilon = 1e-11;
     auto slope = TestCaseType::RealizabilityLimiterChooserType::template make_slope<EigenvectorWrapperType>(
