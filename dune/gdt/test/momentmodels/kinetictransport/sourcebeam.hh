@@ -290,8 +290,8 @@ protected:
             if (vnp > 0.) {
               const auto left_limit = vn > 0. ? vn : 0.;
               ret[nn] +=
-                  1. / ((vn - vnp) * denominator()) * (integral_3(left_limit, vnp) - vnp * integral_2(left_limit, vnp));
-              +psi_vac / 6. * std::pow(vnp - left_limit, 2) * (vnp + 2. * left_limit) / (vnp - vn);
+                  1. / ((vn - vnp) * denominator()) * (integral_3(left_limit, vnp) - vnp * integral_2(left_limit, vnp))
+                  + psi_vac / 6. * std::pow(vnp - left_limit, 2) * (vnp + 2. * left_limit) / (vnp - vn);
             } // if (vnp > 0.)
           } // if (nn < dimRange -1)
           if (vn > 0.) {
@@ -299,11 +299,11 @@ protected:
               const auto& vnm = partitioning[nn - 1];
               const auto left_limit = vnm > 0. ? vnm : 0.;
               ret[nn] +=
-                  1. / ((vn - vnm) * denominator()) * (integral_3(left_limit, vn) - vnm * integral_2(left_limit, vn));
-              +psi_vac / 6.
-                  * (3 * std::pow(vn, 2) * vnm - 3 * vnm * std::pow(left_limit, 3) - 2 * std::pow(vn, 3)
-                     + 2 * std::pow(left_limit, 3))
-                  / (vnm - vn);
+                  1. / ((vn - vnm) * denominator()) * (integral_3(left_limit, vn) - vnm * integral_2(left_limit, vn))
+                  + psi_vac / 6.
+                        * (3 * std::pow(vn, 2) * vnm - 3 * vnm * std::pow(left_limit, 3) - 2 * std::pow(vn, 3)
+                           + 2 * std::pow(left_limit, 3))
+                        / (vnm - vn);
             } // if (nn > 0)
           } // if (vn > 0.)
         } // nn

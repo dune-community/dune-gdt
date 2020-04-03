@@ -310,7 +310,7 @@ public:
     , assembly_grid_view_(assembly_grid_view)
     , source_space_(source_space)
     , range_space_(range_space)
-    , linear_(true)
+    , linear_(linear)
     , use_tbb_(use_tbb)
   {}
 

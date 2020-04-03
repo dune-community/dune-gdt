@@ -82,22 +82,20 @@ public:
   virtual void
   apply_local(const I& intersection, const E& /*inside_element*/, const E& /*outside_element*/) override final
   {
-    if (intersection.boundary()) {
-      // store boundary fluxes
-      const auto x = intersection.geometry().center();
-      const auto dd = intersection.indexInInside() / 2;
-      const auto n = intersection.centerUnitOuterNormal()[dd];
-      auto boundary_flux = problem_.kinetic_boundary_flux(x, n, dd);
-      // The boundary_flux calculates <psi b (v[dd]*n)>, we only want to have <psi b v[dd]> because the
-      // multiplication with n is done in entropy_flux->evaluate_kinetic_flux(..)
-      boundary_flux *= n;
-      mutex_->lock();
-      boundary_fluxes_map_.insert(std::make_pair(x, boundary_flux));
-      mutex_->unlock();
-      // store boundary evaluations
-      analytical_flux_.store_boundary_evaluations(
-          boundary_distribution_(x), index_set_.index(intersection.inside()), intersection.indexInInside());
-    }
+    // store boundary fluxes
+    const auto x = intersection.geometry().center();
+    const auto dd = intersection.indexInInside() / 2;
+    const auto n = intersection.centerUnitOuterNormal()[dd];
+    auto boundary_flux = problem_.kinetic_boundary_flux(x, n, dd);
+    // The boundary_flux calculates <psi b (v[dd]*n)>, we only want to have <psi b v[dd]> because the
+    // multiplication with n is done in entropy_flux->evaluate_kinetic_flux(..)
+    boundary_flux *= n;
+    mutex_->lock();
+    boundary_fluxes_map_.insert(std::make_pair(x, boundary_flux));
+    mutex_->unlock();
+    // store boundary evaluations
+    analytical_flux_.store_boundary_evaluations(
+        boundary_distribution_(x), index_set_.index(intersection.inside()), intersection.indexInInside());
   }
 
 private:
