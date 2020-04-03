@@ -653,33 +653,60 @@ public:
     return evaluate(v, face_indices[0]);
   } // ... evaluate(...)
 
-  bool adjust_alpha_to_ensure_min_density(RangeType& /*alpha*/,
-                                          const RangeFieldType /*rho_min*/,
-                                          const RangeType& /*u*/,
-                                          std::bitset<dimRange>& /*changed_indices*/) const override final
+  using BaseType::density;
+
+  bool adjust_alpha_to_ensure_min_density(RangeType& alpha,
+                                          const RangeFieldType rho_min,
+                                          const RangeType& u,
+                                          std::bitset<dimRange>& changed_indices) const override final
   {
 #if 1
     return false;
 #else
     bool changed = false;
-    const auto alpha_min = std::log(psi_min);
-    DomainType alpha_1;
-    for (size_t ii = 0; ii < num_blocks; ++ii) {
-      const auto& vertices = triangulation_.faces()[ii]->vertices();
-      auto& alpha_0 = alpha[block_size * ii];
-      for (size_t jj = 0; jj < dimDomain; ++ii)
-        alpha_1[jj] = alpha[block_size * ii + jj + 1];
-      auto max_alpha = alpha_0;
-      for (auto&& vertex : vertices)
-        max_alpha = std::max(max_alpha, alpha_0 + vertex->position() * alpha_1);
-      if (max_alpha < alpha_min) {
-        alpha_0 = alpha_min;
-        for (size_t jj = 0; jj < dimDomain; ++ii)
-          alpha[block_size * ii + jj + 1] = 0.;
+    changed_indices.reset();
+    const auto rho_min_block = rho_min / num_blocks;
+    for (size_t jj = 0; jj < num_blocks; ++jj) {
+      const auto offset = block_size * jj;
+      const auto block_density = u[offset];
+      if (block_density < rho_min_block) {
+        alpha[offset] = rho_min_block;
+        changed_indices.set(offset);
         changed = true;
+        for (size_t ii = 1; ii < block_size; ++ii) {
+          alpha[offset + ii] = 0;
+          changed_indices.set(offset + ii);
+        } // ii
       }
-    } // ii
+    } // jj
     return changed;
+//
+//    if (density(u) < rho_min) {
+//      alpha = this->alpha_iso(rho_min);
+//      changed_indices.set();
+//      return true;
+//    }
+//    return false;
+//
+// bool changed = false;
+// const auto alpha_min = std::log(psi_min);
+// DomainType alpha_1;
+// for (size_t ii = 0; ii < num_blocks; ++ii) {
+//   const auto& vertices = triangulation_.faces()[ii]->vertices();
+//   auto& alpha_0 = alpha[block_size * ii];
+//   for (size_t jj = 0; jj < dimDomain; ++ii)
+//     alpha_1[jj] = alpha[block_size * ii + jj + 1];
+//   auto max_alpha = alpha_0;
+//   for (auto&& vertex : vertices)
+//     max_alpha = std::max(max_alpha, alpha_0 + vertex->position() * alpha_1);
+//   if (max_alpha < alpha_min) {
+//     alpha_0 = alpha_min;
+//     for (size_t jj = 0; jj < dimDomain; ++ii)
+//       alpha[block_size * ii + jj + 1] = 0.;
+//     changed = true;
+//   }
+// } // ii
+// return changed;
 #endif
   }
 

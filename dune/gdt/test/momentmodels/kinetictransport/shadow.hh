@@ -21,6 +21,7 @@ class ShadowPn : public KineticTransportEquationBase<E, MomentBasisImp>
   using BaseType = KineticTransportEquationBase<E, MomentBasisImp>;
 
 public:
+  using typename BaseType::BoundaryDistributionType;
   using typename BaseType::BoundaryValueType;
   using typename BaseType::ConstantScalarFunctionType;
   using typename BaseType::DomainType;
@@ -101,6 +102,16 @@ public:
           return ret;
         });
   } // ... boundary_values()
+
+  BoundaryDistributionType boundary_distribution() const override final
+  {
+    return [this](const DomainType& x) -> std::function<RangeFieldType(const DomainType&)> {
+      if (XT::Common::FloatCmp::eq(x[0], 0.))
+        return [this](const DomainType& /*v*/) { return 2. / (4 * M_PI); };
+      else
+        return [this](const DomainType& /*v*/) { return psi_vac_; };
+    };
+  }
 
 protected:
   using BaseType::basis_functions_;
