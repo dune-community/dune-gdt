@@ -65,7 +65,6 @@ public:
   {
     auto& t = current_time();
     const RangeFieldType actual_dt = std::min(dt, max_dt);
-    auto time = std::chrono::steady_clock::now();
     this->dts_.push_back(actual_dt);
     const auto dt_1 = first_stepper_.solve(t + actual_dt, dt, -1, 0, false, false, false, false, false);
     const auto dt_2 = second_stepper_.solve(t + actual_dt, dt_1, -1, 0, false, false, false, false, false);

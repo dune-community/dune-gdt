@@ -343,9 +343,9 @@ public:
 
   std::unique_ptr<AlphaReturnType> get_alpha(const E& entity, const StateType& u, const bool regularize) const
   {
-    thread_local const auto local_func = derived_local_function();
-    local_func->bind(entity);
-    return local_func->get_alpha(u, regularize);
+    Localfunction local_func(index_set_, entity_caches_, false, use_entity_cache_, mutexes_, *implementation_);
+    local_func.bind(entity);
+    return local_func.get_alpha(u, regularize);
   }
 
   StateType evaluate_kinetic_outflow(const typename AlphaReturnType::first_type& alpha_i,

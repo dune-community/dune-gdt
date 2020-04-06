@@ -322,8 +322,8 @@ template <bool reconstruct>
 struct SourceBeamMnExpectedResults<HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, reconstruct, false>
 {
   static constexpr double l1norm = reconstruct ? 0.33140398330545301 : 0.33140398330533227;
-  static constexpr double l2norm = reconstruct ? 0.45584140597017353 : 0.44485191601010715;
-  static constexpr double linfnorm = reconstruct ? 0.99172197084890834 : 0.98930925210045084;
+  static constexpr double l2norm = reconstruct ? 0.45584720190770234 : 0.44485579793742464;
+  static constexpr double linfnorm = reconstruct ? 0.99189071404683948 : 0.98932976789219895;
   static constexpr double tol = 1e-9;
 };
 
@@ -352,8 +352,8 @@ template <bool reconstruct>
 struct SourceBeamMnExpectedResults<PartialMomentBasis<double, 1, double, 8, 1, 1>, reconstruct, false>
 {
   static constexpr double l1norm = reconstruct ? 0.33140398337368543 : 0.3314039833756291;
-  static constexpr double l2norm = reconstruct ? 0.45583354074069732 : 0.44484887610818585;
-  static constexpr double linfnorm = reconstruct ? 0.99172184304625632 : 0.98930905293056492;
+  static constexpr double l2norm = reconstruct ? 0.45584458867916888 : 0.4448563187696582;
+  static constexpr double linfnorm = reconstruct ? 0.9920525088272123 : 0.98934901825356536;
   static constexpr double tol = 1e-9;
 };
 
@@ -873,9 +873,9 @@ struct ShadowMnExpectedResults
 template <bool reconstruct>
 struct ShadowMnExpectedResults<RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, reconstruct, false>
 {
-  static constexpr double l1norm = reconstruct ? 0. : 0.59248402251960053;
-  static constexpr double l2norm = reconstruct ? 0. : 0.097644561106262767;
-  static constexpr double linfnorm = reconstruct ? 0. : 0.016480889201743513;
+  static constexpr double l1norm = reconstruct ? 0. : 0.5924840195577018;
+  static constexpr double l2norm = reconstruct ? 0. : 0.097644560618143542;
+  static constexpr double linfnorm = reconstruct ? 0. : 0.016480889119342663;
   static constexpr double tol = 1e-9;
 };
 

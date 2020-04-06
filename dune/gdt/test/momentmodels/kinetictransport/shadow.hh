@@ -104,7 +104,7 @@ public:
   {
     return [this](const DomainType& x) -> std::function<RangeFieldType(const DomainType&)> {
       if (XT::Common::FloatCmp::eq(x[0], 0.))
-        return [this](const DomainType& /*v*/) { return 2. / (4 * M_PI); };
+        return [](const DomainType& /*v*/) { return 2. / (4 * M_PI); };
       else
         return [this](const DomainType& /*v*/) { return psi_vac_; };
     };
