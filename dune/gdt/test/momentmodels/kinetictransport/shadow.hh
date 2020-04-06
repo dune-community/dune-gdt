@@ -31,13 +31,10 @@ public:
   using typename BaseType::RangeFieldType;
   using typename BaseType::ScalarFunctionType;
 
-  using BaseType::default_boundary_cfg;
-
   ShadowPn(const MomentBasis& basis_functions,
            const RangeFieldType psi_vac = 1e-6 / (4 * M_PI),
-           const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
-           const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, psi_vac, grid_cfg, boundary_cfg)
+           const XT::Common::Configuration& grid_cfg = default_grid_cfg())
+    : BaseType(basis_functions, psi_vac, grid_cfg)
   {}
 
   static std::string static_id()
@@ -130,16 +127,18 @@ public:
   using typename BaseType::RangeFieldType;
   using ActualFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
 
-  using BaseType::default_boundary_cfg;
   using BaseType::default_grid_cfg;
 
   ShadowMn(const MomentBasis& basis_functions,
            const GV& grid_view,
            const RangeFieldType psi_vac = 1e-6 / (4 * M_PI),
            const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
-           const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, psi_vac, grid_cfg, boundary_cfg)
+           const bool disable_realizability_check = false,
+           const RangeFieldType tau = 1e-9)
+    : BaseType(basis_functions, psi_vac, grid_cfg)
     , grid_view_(grid_view)
+    , disable_realizability_check_(disable_realizability_check)
+    , tau_(tau)
   {}
 
   static std::string static_id()
@@ -149,12 +148,14 @@ public:
 
   std::unique_ptr<FluxType> flux() const override
   {
-    return std::make_unique<ActualFluxType>(grid_view_, basis_functions_);
+    return std::make_unique<ActualFluxType>(grid_view_, basis_functions_, tau_, disable_realizability_check_);
   }
 
 protected:
   using BaseType::basis_functions_;
   const GV& grid_view_;
+  const bool disable_realizability_check_;
+  const RangeFieldType tau_;
 }; // class ShadowMn<...>
 
 

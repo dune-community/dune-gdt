@@ -63,13 +63,6 @@ public:
     return grid_config;
   }
 
-  static XT::Common::Configuration default_boundary_cfg()
-  {
-    XT::Common::Configuration boundary_config;
-    boundary_config["type"] = "dirichlet";
-    return boundary_config;
-  }
-
   virtual std::unique_ptr<FluxType> flux() const = 0;
 
   virtual std::unique_ptr<InitialValueType> initial_values() const = 0;
@@ -87,8 +80,6 @@ public:
   virtual std::unique_ptr<ScalarFunctionType> Q() const = 0;
 
   virtual XT::Common::Configuration grid_config() const = 0;
-
-  virtual XT::Common::Configuration boundary_config() const = 0;
 
   static std::string static_id()
   {
