@@ -256,12 +256,6 @@ public:
     auto& t = current_time();
     auto& alpha_n = current_solution();
 
-    // store statistics
-    this->times_.push_back(t);
-    auto time = std::chrono::steady_clock::now();
-    std::chrono::duration<double> wall_time = time - this->begin_time_;
-    this->wall_times_.push_back(wall_time.count());
-
     while (mixed_error > 1.) {
       bool skip_error_computation = false;
       actual_dt *= time_step_scale_factor;
