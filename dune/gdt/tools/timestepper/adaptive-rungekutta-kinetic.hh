@@ -150,14 +150,13 @@ public:
     assert(b_1_.size() == A_.rows());
     assert(b_2_.size() == A_.rows());
     assert(c_.size() == A_.rows());
-#ifndef NDEBUG
     for (size_t ii = 0; ii < A_.rows(); ++ii) {
       for (size_t jj = ii; jj < A_.cols(); ++jj) {
-        assert(Dune::XT::Common::FloatCmp::eq(A_[ii][jj], 0.0)
-               && "A has to be a lower triangular matrix with 0 on the main diagonal");
+        DUNE_THROW_IF(XT::Common::FloatCmp::ne(A_[ii][jj], 0.0),
+                      XT::Common::Exceptions::wrong_input_given,
+                      "A has to be a lower triangular matrix with 0 on the main diagonal");
       }
     }
-#endif // NDEBUG
     // store as many discrete functions as needed for intermediate stages
     for (size_t ii = 0; ii < num_stages_; ++ii) {
       stages_k_.emplace_back(current_solution());
