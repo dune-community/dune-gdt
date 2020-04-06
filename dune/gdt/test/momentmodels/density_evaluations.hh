@@ -237,18 +237,18 @@ public:
     for (size_t ii = 0; ii < dimRange; ++ii)
       alpha_tmp_[ii] = local_alpha_dofs.get_entry(ii);
     static FieldVector<RangeFieldType, dimRange> dummy_u;
-    const bool changed = basis_functions.adjust_alpha_to_ensure_min_density(
-        alpha_tmp_,
-        min_acceptable_density_,
-        // partial moments do not need u for this
-        GDT::is_partial_moment_basis<MomentBasis>::value ? dummy_u : analytical_flux_.get_u(alpha_tmp_),
-        changed_local_indices_);
-    if (changed) {
-      mutex_->lock();
-      for (size_t ii = 0; ii < dimRange; ++ii)
-        if (changed_local_indices_[ii])
-          changed_indices_.push_back(space_.mapper().global_index(entity, ii));
-      mutex_->unlock();
+    static const bool adjust =
+        DXTC_CONFIG_GET("adjust_alpha", GDT::is_partial_moment_basis<MomentBasis>::value ? 0 : 1);
+    if (adjust) {
+      const bool changed = basis_functions.adjust_alpha_to_ensure_min_density(
+          alpha_tmp_, min_acceptable_density_, analytical_flux_.get_u(alpha_tmp_), changed_local_indices_);
+      if (changed) {
+        mutex_->lock();
+        for (size_t ii = 0; ii < dimRange; ++ii)
+          if (changed_local_indices_[ii])
+            changed_indices_.push_back(space_.mapper().global_index(entity, ii));
+        mutex_->unlock();
+      }
     }
     auto& local_range_dofs = local_range_->dofs();
     for (size_t ii = 0; ii < dimRange; ++ii)

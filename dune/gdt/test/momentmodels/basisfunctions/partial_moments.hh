@@ -306,13 +306,9 @@ public:
                                           const RangeType& /*u*/,
                                           std::bitset<dimRange>& /*changed_indices*/) const override final
   {
-#if 1
-    return false;
-#else
     changed_indices.reset();
     if (rho < rho_min) {
       alpha = this->alpha_iso(rho_min);
-      std::cout << "alpha: " << XT::Common::to_string(alpha, 3) << std::endl;
       changed_indices.set();
       return true;
     } else {
@@ -332,85 +328,6 @@ public:
       } // ii
       return changed;
     }
-#endif
-    // bool changed = false;
-    // const RangeFieldType local_rho_min = rho_min/num_intervals;
-    // const auto alpha_min = std::log(rho_min/2);
-    // // std::cout << alpha_min << std::endl;
-    // RangeFieldType local_rho;
-    // for (size_t ii = 0; ii < num_intervals; ++ii) {
-    //   auto& alpha_0 = alpha[2 * ii];
-    //   auto& alpha_1 = alpha[2 * ii + 1];
-    //   if (XT::Common::FloatCmp::eq(alpha_1, 0., 1e-6, 1e-6)) {
-    //     local_rho = std::exp(alpha_0) * 2./num_intervals;
-    //   } else {
-    //     const auto mu_i = partitioning_[ii];
-    //     const auto mu_ip1 = partitioning_[ii + 1];
-    //     const auto alpha_left = alpha_0 + mu_i * alpha_1;
-    //     const auto alpha_right = alpha_0 + mu_ip1 * alpha_1;
-    //     const auto exp_left = std::exp(alpha_left);
-    //     const auto exp_right = std::exp(alpha_right);
-    //     const auto exp_max = std::max(exp_left, exp_right);
-    //     // we cannot compute exp_left - exp_right in all cases due to cancellation
-    //     if (exp_max > 0.1) {
-    //       // In this case we simply assume the density is large enough
-    //       local_rho = 1e10;
-    //     } else {
-    //       local_rho = (exp_right - exp_left)/alpha_1;
-    //     }
-    //   }
-    //   if (local_rho < local_rho_min) {
-    //     // std::cout << XT::Common::to_string(alpha_0, 6)
-    //   	    //<< ", " << XT::Common::to_string(alpha_1, 6)
-    //   	    // << ", " << XT::Common::to_string(exp_right, 15)
-    //   	    // << ", " << XT::Common::to_string(exp_left,15)
-    //   	    //<< ", " << XT::Common::to_string(local_rho, 15) << std::endl;
-    //     alpha_0 = alpha_min;
-    //     alpha_1 = 0.;
-    //     changed = true;
-    //   }
-    // } // ii
-    // return changed;
-    //}
-#if 0
-      const bool min_is_left = alpha_left < alpha_right;
-      const auto alpha_min_ii = min_is_left ? alpha_left : alpha_right;
-      const auto alpha_max_ii = min_is_left ? alpha_right : alpha_left;
-      if (alpha_min_ii < alpha_min) {
-        if (XT::Common::FloatCmp::le(alpha_max_ii, alpha_min)) {
-          alpha_0 = alpha_min;
-          alpha_1 = 0.;
-          changed = true;
-        } else {
-          // We know that alpha_1 != 0 because alpha_max_ii > alpha_min and alpha_min_ii < alpha_min
-          const auto rho_ii = -(std::exp(alpha_0 + mu_i * alpha_1) - std::exp(alpha_0 + mu_ip1 * alpha_1)) / alpha_1;
-          if (std::isnan(rho_ii) || std::isinf(rho_ii))
-            DUNE_THROW(Dune::MathError, "Inf or nan in rho!");
-          const auto h = (mu_ip1 - mu_i);
-          if (XT::Common::FloatCmp::le(rho_ii, psi_min * h)) {
-            alpha_0 = alpha_min;
-            alpha_1 = 0.;
-            changed = true;
-            continue;
-          }
-          // get positive slope
-#  if 0
-        // Set minimum to alpha_min, leave max alpha unchanged
-        alpha_1 = (alpha_max_ii - alpha_min_ii) / h;
-#  else
-          // Set minimum to alpha_min, leave rho unchanged
-          alpha_1 = -1. / h * boost::math::lambert_wm1(-h * psi_min / rho_ii * std::exp(-h * psi_min / rho_ii))
-                    - psi_min / rho_ii;
-#  endif
-          if (!min_is_left)
-            alpha_1 *= -1.; // slope has to be negative in this case
-          alpha_0 = alpha_min - (min_is_left ? mu_i : mu_ip1) * alpha_1;
-          changed = true;
-        }
-      }
-    } // ii
-    return changed;
-#endif
   }
 
   // returns matrix with entries <h_i h_j>
@@ -660,9 +577,6 @@ public:
                                           const RangeType& u,
                                           std::bitset<dimRange>& changed_indices) const override final
   {
-#if 1
-    return false;
-#else
     bool changed = false;
     changed_indices.reset();
     const auto rho_min_block = rho_min / num_blocks;
@@ -670,7 +584,7 @@ public:
       const auto offset = block_size * jj;
       const auto block_density = u[offset];
       if (block_density < rho_min_block) {
-        alpha[offset] = rho_min_block;
+        alpha[offset] = std::log(rho_min_block);
         changed_indices.set(offset);
         changed = true;
         for (size_t ii = 1; ii < block_size; ++ii) {
@@ -680,34 +594,6 @@ public:
       }
     } // jj
     return changed;
-//
-//    if (density(u) < rho_min) {
-//      alpha = this->alpha_iso(rho_min);
-//      changed_indices.set();
-//      return true;
-//    }
-//    return false;
-//
-// bool changed = false;
-// const auto alpha_min = std::log(psi_min);
-// DomainType alpha_1;
-// for (size_t ii = 0; ii < num_blocks; ++ii) {
-//   const auto& vertices = triangulation_.faces()[ii]->vertices();
-//   auto& alpha_0 = alpha[block_size * ii];
-//   for (size_t jj = 0; jj < dimDomain; ++ii)
-//     alpha_1[jj] = alpha[block_size * ii + jj + 1];
-//   auto max_alpha = alpha_0;
-//   for (auto&& vertex : vertices)
-//     max_alpha = std::max(max_alpha, alpha_0 + vertex->position() * alpha_1);
-//   if (max_alpha < alpha_min) {
-//     alpha_0 = alpha_min;
-//     for (size_t jj = 0; jj < dimDomain; ++ii)
-//       alpha[block_size * ii + jj + 1] = 0.;
-//     changed = true;
-//   }
-// } // ii
-// return changed;
-#endif
   }
 
   RangeFieldType unit_ball_volume() const override final
