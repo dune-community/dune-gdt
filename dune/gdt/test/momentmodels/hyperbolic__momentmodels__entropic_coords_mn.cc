@@ -10,7 +10,6 @@
 
 #include <dune/gdt/test/momentmodels/kinetictransport/testcases.hh>
 #include <dune/gdt/test/momentmodels/entropic-coords-mn-discretization.hh>
-#include <dune/gdt/test/momentmodels/entropic-coords-mn-no-dune-grid.hh>
 
 using Yasp1 = Dune::YaspGrid<1, Dune::EquidistantOffsetCoordinates<double, 1>>;
 using Yasp2 = Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>;

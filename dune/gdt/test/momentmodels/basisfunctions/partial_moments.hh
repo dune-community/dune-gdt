@@ -301,6 +301,8 @@ public:
     return DynamicRangeType();
   } // ... evaluate(...)
 
+  using BaseType::density;
+
   bool adjust_alpha_to_ensure_min_density(RangeType& alpha,
                                           const RangeFieldType rho_min,
                                           const RangeType& u,
