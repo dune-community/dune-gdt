@@ -257,8 +257,6 @@ struct HyperbolicEntropicCoordsMnDiscretization
 
     // *********************** create operators and timesteppers ************************************
     NumericalKineticFlux<GV, MomentBasis, EntropyFluxType> numerical_flux(*analytical_flux, *basis_functions);
-    // do not use parallelisation here, as the advection operator does almost no work (allows to use alpha_vec without
-    // mutexes)
     AdvectionOperatorType advection_operator(
         grid_view, numerical_flux, advection_source_space, fv_space, /*use_tbb*/ true);
 

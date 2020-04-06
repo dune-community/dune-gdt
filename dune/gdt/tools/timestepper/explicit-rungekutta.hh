@@ -245,11 +245,6 @@ public:
     const RangeFieldType actual_dt = std::min(dt, max_dt);
     auto& t = current_time();
 
-    // store statistics
-    this->times_.push_back(t);
-    auto time = std::chrono::steady_clock::now();
-    std::chrono::duration<double> wall_time = time - this->begin_time_;
-    this->wall_times_.push_back(wall_time.count());
     this->dts_.push_back(actual_dt);
 
     // calculate stages
