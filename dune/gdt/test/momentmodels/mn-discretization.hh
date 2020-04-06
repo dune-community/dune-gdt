@@ -153,7 +153,8 @@ struct HyperbolicMnDiscretization
 
     // ***************** project initial values to discrete function *********************
     // create a discrete function for the solution
-    DiscreteFunctionType u(fv_space, "solution");
+    VectorType u_vec(fv_space.mapper().size(), 0., DXTC_CONFIG_GET("num_u_mutexes", 1));
+    DiscreteFunctionType u(fv_space, u_vec, "rho");
     // project initial values
     default_interpolation(*initial_values, u, grid_view);
 
@@ -192,7 +193,7 @@ struct HyperbolicMnDiscretization
 
     // *********************** create operators and timesteppers ************************************
     NumericalKineticFlux<GV, MomentBasis> numerical_flux(*analytical_flux, *basis_functions);
-    AdvectionOperatorType advection_operator(grid_view, numerical_flux, advection_source_space, fv_space);
+    AdvectionOperatorType advection_operator(grid_view, numerical_flux, advection_source_space, fv_space, true);
 
     // boundary treatment
     using BoundaryOperator =

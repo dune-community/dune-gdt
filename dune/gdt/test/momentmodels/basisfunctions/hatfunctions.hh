@@ -402,8 +402,6 @@ public:
                                           const RangeType& u,
                                           std::bitset<dimRange>& changed_indices) const override final
   {
-    // return false;
-    bool changed = false;
     changed_indices.reset();
     // check if the density is too small
     if (density(u) < rho_min) {
@@ -412,6 +410,7 @@ public:
       return true;
     }
     // now check if the density around a grid_point is smaller than allowed
+    bool changed = false;
     const RangeFieldType alpha_min = std::log(rho_min / 2);
     const RangeFieldType neighbor_min = std::log(rho_min * 10);
     if (alpha[0] < alpha_min && alpha[1] < neighbor_min) {
@@ -623,13 +622,29 @@ public:
                                                   const RangeType& u,
                                                   std::bitset<dimRange>& changed_indices) const override final
   {
-    changed_indices.reset();
     if (density(u) < rho_min) {
       alpha = this->alpha_iso(rho_min);
       changed_indices.set();
       return true;
+    } else {
+      // now check if the density around a grid_point is smaller than allowed
+      bool changed = false;
+      const RangeFieldType alpha_min = std::log(rho_min / (4 * M_PI));
+      const RangeFieldType neighbor_min = std::log(rho_min * 10);
+      for (const auto& vertex : triangulation_.vertices()) {
+        const auto index = vertex->index();
+        const auto& neighbors = triangulation_.neighbors(*vertex);
+        double alpha_neighbor = -1e10;
+        for (const auto& neighbor_index : neighbors)
+          alpha_neighbor = std::max(alpha_neighbor, alpha[neighbor_index]);
+        if (alpha[index] < alpha_min && alpha_neighbor < neighbor_min) {
+          alpha[index] = alpha_min;
+          changed_indices.set(index);
+          changed = true;
+        }
+      }
+      return changed;
     }
-    return false;
   }
 
   std::array<int, dimDomain> has_fixed_sign(const size_t index) const override final
