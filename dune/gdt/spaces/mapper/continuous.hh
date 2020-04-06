@@ -128,10 +128,9 @@ public:
     // one element and index 1 in the other element. Fixing this could be done by assigning an orientation to the edge
     // by looking at the (indices of the) vertices of the edge and reordering the local indices if the orientation is
     // not the same in all elements sharing the subentity.
-#ifndef NDEBUG
-    if (d >= 2 && fe_order_ >= 3)
-      assert(element.type() == Dune::GeometryTypes::cube(d) && "Not implemented for this element, see comment above!");
-#endif
+    DEBUG_THROW_IF(d >= 2 && fe_order_ >= 3 && element.type() != Dune::GeometryTypes::cube(d),
+                   Dune::NotImplemented,
+                   "Not implemented for this element, see comment above!");
     return mapper_.subIndex(element, local_key.subEntity(), local_key.codim()) + local_key.index();
   } // ... mapToGlobal(...)
 

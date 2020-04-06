@@ -128,12 +128,10 @@ public:
              LocalOutsideRangeType& local_range_outside,
              const XT::Common::Parameter& param = {}) const override final
   {
-#ifndef NDEBUG
-    DUNE_THROW_IF((local_range_inside.space().type() != SpaceType::finite_volume)
-                      || (local_range_outside.space().type() != SpaceType::finite_volume),
-                  Exceptions::operator_error,
-                  "Use LocalAdvectionDgCouplingOperator instead!");
-#endif
+    DEBUG_THROW_IF((local_range_inside.space().type() != SpaceType::finite_volume)
+                       || (local_range_outside.space().type() != SpaceType::finite_volume),
+                   Exceptions::operator_error,
+                   "Use LocalAdvectionDgCouplingOperator instead!");
     local_sources_[0]->evaluate(
         source_is_elementwise_constant_ ? static_x : intersection().geometryInInside().center(), u_, param);
     local_sources_[1]->evaluate(
