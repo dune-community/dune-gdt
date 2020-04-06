@@ -136,7 +136,7 @@ struct HyperbolicMnDiscretization
         quad_refinements == size_t(-1) ? MomentBasis::default_quad_refinements() : quad_refinements);
     const RangeFieldType psi_vac = DXTC_CONFIG_GET("psi_vac", 1e-8 / basis_functions->unit_ball_volume());
     const std::unique_ptr<ProblemType> problem_ptr =
-        std::make_unique<ProblemType>(*basis_functions, grid_view, psi_vac, grid_config);
+        std::make_unique<ProblemType>(*basis_functions, grid_view, psi_vac, grid_config, false);
     const auto& problem = *problem_ptr;
     const auto initial_values = problem.initial_values();
     const auto boundary_values = problem.boundary_values();
