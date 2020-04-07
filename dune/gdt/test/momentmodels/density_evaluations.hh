@@ -88,7 +88,7 @@ public:
     const auto& local_alpha_dofs = local_alpha_->dofs();
     for (size_t ii = 0; ii < dimRange; ++ii)
       alpha_tmp_[ii] = local_alpha_dofs.get_entry(ii);
-    analytical_flux_.store_evaluations(entity_index, alpha_tmp_, min_acceptable_density_);
+    analytical_flux_.store_evaluations(entity.geometry().center(), entity_index, alpha_tmp_, min_acceptable_density_);
     local_range_->bind(entity);
     auto& local_range_dofs = local_range_->dofs();
     for (size_t ii = 0; ii < dimRange; ++ii)
@@ -236,7 +236,6 @@ public:
     const auto& local_alpha_dofs = local_alpha_->dofs();
     for (size_t ii = 0; ii < dimRange; ++ii)
       alpha_tmp_[ii] = local_alpha_dofs.get_entry(ii);
-    static FieldVector<RangeFieldType, dimRange> dummy_u;
     static const bool adjust =
         DXTC_CONFIG_GET("adjust_alpha", GDT::is_partial_moment_basis<MomentBasis>::value ? 0 : 1);
     if (adjust) {
@@ -347,6 +346,13 @@ public:
     for (auto&& index : indices2)
       vec1.set_entry(index, vec2.get_entry(index));
   }
+
+  void set_indices(const std::vector<size_t>& indices, VectorType& range, const VectorType& source) const
+  {
+    for (auto&& index : indices)
+      range.set_entry(index, source.get_entry(index));
+  }
+
 
 private:
   EntropyFluxType& analytical_flux_;

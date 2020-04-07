@@ -219,8 +219,11 @@ public:
     implementation_->apply_inverse_hessian((*eta_ast_twoprime_evaluations_)[entity_index], u);
   }
 
-  void
-  store_evaluations(const size_t entity_index, StateType& alpha, const RangeFieldType /*rho_min*/, bool check = true)
+  void store_evaluations(const DomainType& entity_center,
+                         size_t entity_index,
+                         StateType& alpha,
+                         const RangeFieldType /*rho_min*/,
+                         bool check = true)
   {
     implementation_->store_exp_evaluations(exp_evaluations_[entity_index], alpha);
     if constexpr (entropy != EntropyType::MaxwellBoltzmann) {
@@ -235,8 +238,8 @@ public:
       const double* u_ptr = &(u[0]);
       const auto val = XT::Common::reduce(u_ptr, u_ptr + basis_dimRange, 0.);
       if (std::isnan(val) || std::isinf(val)) {
-        std::cout << entity_index << ", " << XT::Common::to_string(alpha) << ", " << XT::Common::to_string(u)
-                  << std::endl;
+        std::cout << XT::Common::to_string(entity_center) << ", " << entity_index << ", "
+                  << XT::Common::to_string(alpha) << ", " << XT::Common::to_string(u) << std::endl;
         DUNE_THROW(Dune::MathError, "inf or nan in u!");
       }
       // thread_local std::bitset<basis_dimRange> changed_indices;
