@@ -112,7 +112,7 @@ public:
                                        const MinDensitySetterType& min_density_setter,
                                        const EntropyFluxType& entropy_flux,
                                        DiscreteFunctionType& initial_values,
-                                       const bool use_first_same_as_last_property = true,
+                                       const bool /*use_first_same_as_last_property*/ = true,
                                        const RangeFieldType r = 1.0,
                                        const RangeFieldType atol = 1e-3,
                                        const RangeFieldType rtol = 1e-2,
@@ -125,7 +125,6 @@ public:
                                        const VectorType& c = ButcherArrayProviderType::c())
     : BaseType(t_0, initial_values)
     , min_density_setter_(min_density_setter)
-    , use_first_same_as_last_property_(use_first_same_as_last_property)
     , op_(op)
     , entropy_flux_(entropy_flux)
     , r_(r)
@@ -166,41 +165,6 @@ public:
   using BaseType::current_solution;
   using BaseType::current_time;
   using BaseType::solve;
-
-  virtual RangeFieldType solve(const RangeFieldType t_end,
-                               const RangeFieldType initial_dt,
-                               const size_t num_save_steps,
-                               const size_t num_output_steps,
-                               const bool save_solution,
-                               const bool visualize,
-                               const bool write_discrete,
-                               const bool write_exact,
-                               const bool reset_begin_time,
-                               const std::string prefix,
-                               typename BaseType::DiscreteSolutionType& sol,
-                               const typename BaseType::VisualizerType& visualizer,
-                               const typename BaseType::StringifierType& stringifier,
-                               const typename BaseType::GridFunctionType& exact_solution) override final
-  {
-    const auto ret = BaseType::solve(t_end,
-                                     initial_dt,
-                                     num_save_steps,
-                                     num_output_steps,
-                                     save_solution,
-                                     visualize,
-                                     write_discrete,
-                                     write_exact,
-                                     reset_begin_time,
-                                     prefix,
-                                     sol,
-                                     visualizer,
-                                     stringifier,
-                                     exact_solution);
-    // in a fractional step scheme, we cannot use last_stage_of_previous_step
-    if (!use_first_same_as_last_property_)
-      last_stage_of_previous_step_ = nullptr;
-    return ret;
-  }
 
   bool regularize_if_needed(const bool consider_regularization,
                             typename std::vector<RangeFieldType>::const_iterator& r_it,
@@ -259,13 +223,14 @@ public:
       bool skip_error_computation = false;
       actual_dt *= time_step_scale_factor;
       size_t first_stage_to_compute = 0;
-      if (last_stage_of_previous_step_) {
+      if (first_same_as_last_ && last_stage_of_previous_step_) {
         stages_k_[0].dofs().vector() = last_stage_of_previous_step_->dofs().vector();
         first_stage_to_compute = 1;
       }
 
       // bool consider_regularization = actual_dt < 1e-13;
       bool consider_regularization = false;
+      first_same_as_last_ = true;
       for (size_t ii = first_stage_to_compute; ii < num_stages_ - 1; ++ii) {
         stages_k_[ii].dofs().vector() *= 0.;
         alpha_tmp_.dofs().vector() = alpha_n.dofs().vector();
@@ -306,11 +271,6 @@ public:
         for (size_t ii = 0; ii < num_stages_ - 1; ++ii)
           alpha_np1_.dofs().vector().axpy(actual_dt * r_ * b_1_[ii], stages_k_[ii].dofs().vector());
 
-        // ensure min density
-        std::vector<size_t> changed_indices, changed_indices2;
-        // min_density_setter_.apply(alpha_np1_.dofs().vector(), alpha_np1_.dofs().vector());
-        min_density_setter_.apply_and_store(alpha_np1_.dofs().vector(), alpha_np1_.dofs().vector(), changed_indices);
-
         // calculate last stage
         stages_k_[num_stages_ - 1].dofs().vector() *= 0.;
         try {
@@ -344,9 +304,10 @@ public:
 
         // ensure min density, if this is not done for alpha_tmp_, the error will be estimated too high.
         // min_density_setter_.apply(alpha_tmp_.dofs().vector(), alpha_tmp_.dofs().vector());
-        min_density_setter_.apply_and_store(alpha_tmp_.dofs().vector(), alpha_tmp_.dofs().vector(), changed_indices2);
-        min_density_setter_.set_indices(
-            changed_indices, alpha_np1_.dofs().vector(), changed_indices2, alpha_tmp_.dofs().vector());
+        // min_density_setter_.apply_and_store(alpha_tmp_.dofs().vector(), alpha_tmp_.dofs().vector(),
+        // changed_indices2); min_density_setter_.set_indices(
+        //    changed_indices, alpha_np1_.dofs().vector(), changed_indices2, alpha_tmp_.dofs().vector());
+        // min_density_setter_.set_indices(changed_indices, alpha_tmp_.dofs().vector(), alpha_np1_.dofs().vector());
 
         // calculate error
         const auto* alpha_tmp_data =
@@ -369,6 +330,16 @@ public:
         // scale dt to get the estimated optimal time step length
         time_step_scale_factor =
             std::min(std::max(0.8 * std::pow(1. / mixed_error, 1. / (q + 1.)), scale_factor_min_), scale_factor_max_);
+
+        // ensure min density
+        std::vector<size_t> changed_indices;
+        min_density_setter_.apply_and_store(alpha_np1_.dofs().vector(), alpha_np1_.dofs().vector(), changed_indices);
+        if (changed_indices.size()) {
+          // If we do not set the same indices for alpha_tmp_, the error will be estimated too high.
+          // min_density_setter_.set_indices(changed_indices, alpha_tmp_.dofs().vector(), alpha_np1_.dofs().vector());
+          // we cannot use the first-same-as-last property for the next time step if indices have changed
+          first_same_as_last_ = false;
+        }
       } // if (!skip_error_computation)
     } // while (mixed_error > 1.)
 
@@ -386,7 +357,6 @@ public:
 
 private:
   const MinDensitySetterType min_density_setter_;
-  const bool use_first_same_as_last_property_;
   const OperatorType& op_;
   const EntropyFluxType& entropy_flux_;
   const RangeFieldType r_;
@@ -404,6 +374,7 @@ private:
   std::vector<DiscreteFunctionType> stages_k_;
   const size_t num_stages_;
   std::unique_ptr<DiscreteFunctionType> last_stage_of_previous_step_;
+  bool first_same_as_last_;
 }; // class KineticAdaptiveRungeKuttaTimeStepper
 
 
