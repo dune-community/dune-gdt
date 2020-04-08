@@ -218,13 +218,14 @@ struct HyperbolicEntropicCoordsMnDiscretization
     }
 
     // enforce min acceptable density for initial values
-    const double min_acceptable_density = problem.psi_vac() * basis_functions->unit_ball_volume() / 10;
+    const double min_acceptable_density =
+        DXTC_CONFIG_GET("rho_min", problem.psi_vac() * basis_functions->unit_ball_volume() / 10);
     // const double min_acceptable_density = problem.psi_vac();
     using DensityOperatorType = DensityEvaluator<MomentBasis, SpaceType, slope, MatrixType>;
     using MinDensitySetterType = MinDensitySetter<MomentBasis, SpaceType, slope, MatrixType>;
     DensityOperatorType density_operator(*analytical_flux, fv_space, boundary_distribution, min_acceptable_density);
     MinDensitySetterType min_density_setter(*analytical_flux, fv_space, min_acceptable_density);
-    min_density_setter.apply(alpha.dofs().vector(), alpha.dofs().vector());
+    // min_density_setter.apply(alpha.dofs().vector(), alpha.dofs().vector());
 
     // ******************** choose flux and rhs operator and timestepper ******************************************
 
