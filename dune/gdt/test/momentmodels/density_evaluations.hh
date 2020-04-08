@@ -195,7 +195,7 @@ public:
                                  VectorType& range_dofs,
                                  EntropyFluxType& analytical_flux,
                                  const RangeFieldType min_acceptable_density,
-                                 const XT::Common::Parameter& param,
+                                 const double dt,
                                  std::vector<size_t>& changed_indices)
     : space_(space)
     , alpha_(space_, alpha_dofs, "alpha")
@@ -204,7 +204,7 @@ public:
     , local_range_(range_.local_discrete_function())
     , analytical_flux_(analytical_flux)
     , min_acceptable_density_(min_acceptable_density)
-    , param_(param)
+    , dt_(dt)
     , changed_indices_(changed_indices)
     , mutex_(std::make_shared<std::mutex>())
   {}
@@ -218,7 +218,7 @@ public:
     , local_range_(range_.local_discrete_function())
     , analytical_flux_(other.analytical_flux_)
     , min_acceptable_density_(other.min_acceptable_density_)
-    , param_(other.param_)
+    , dt_(other.dt_)
     , changed_indices_(other.changed_indices_)
     , mutex_(other.mutex_)
   {}
@@ -238,7 +238,8 @@ public:
       alpha_tmp_[ii] = local_alpha_dofs.get_entry(ii);
     static const bool adjust =
         DXTC_CONFIG_GET("adjust_alpha", GDT::is_partial_moment_basis<MomentBasis>::value ? 0 : 1);
-    if (adjust) {
+    static const double adjust_dt = DXTC_CONFIG_GET("adjust_dt", 1.0e-3);
+    if (adjust && dt_ < adjust_dt) {
       const bool changed = basis_functions.adjust_alpha_to_ensure_min_density(
           alpha_tmp_, min_acceptable_density_, analytical_flux_.get_u(alpha_tmp_), changed_local_indices_);
       if (changed) {
@@ -262,7 +263,7 @@ private:
   std::unique_ptr<typename DiscreteFunctionType::LocalDiscreteFunctionType> local_range_;
   EntropyFluxType& analytical_flux_;
   const RangeFieldType min_acceptable_density_;
-  const XT::Common::Parameter& param_;
+  const RangeFieldType dt_;
   XT::Common::FieldVector<RangeFieldType, dimRange> alpha_tmp_;
   std::bitset<dimRange> changed_local_indices_;
   std::vector<size_t>& changed_indices_;
@@ -318,7 +319,7 @@ public:
   {
     static std::vector<size_t> dummy;
     LocalMinDensitySetterType local_min_density_setter(
-        space_, alpha, range, analytical_flux_, min_acceptable_density_, param, dummy);
+        space_, alpha, range, analytical_flux_, min_acceptable_density_, param.get("dt")[0], dummy);
     auto walker = XT::Grid::Walker<typename SpaceType::GridViewType>(space_.grid_view());
     walker.append(local_min_density_setter);
     walker.walk(true);
@@ -327,10 +328,10 @@ public:
   void apply_and_store(const VectorType& alpha,
                        VectorType& range,
                        std::vector<size_t>& changed_indices,
-                       const XT::Common::Parameter& param = {}) const
+                       const double dt) const
   {
     LocalMinDensitySetterType local_min_density_setter(
-        space_, alpha, range, analytical_flux_, min_acceptable_density_, param, changed_indices);
+        space_, alpha, range, analytical_flux_, min_acceptable_density_, dt, changed_indices);
     auto walker = XT::Grid::Walker<typename SpaceType::GridViewType>(space_.grid_view());
     walker.append(local_min_density_setter);
     walker.walk(true);

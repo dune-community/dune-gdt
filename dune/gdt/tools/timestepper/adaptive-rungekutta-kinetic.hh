@@ -218,19 +218,17 @@ public:
 
     auto& t = current_time();
     auto& alpha_n = current_solution();
-
+    size_t first_stage_to_compute = 0;
+    if (first_same_as_last_ && last_stage_of_previous_step_) {
+      stages_k_[0].dofs().vector() = last_stage_of_previous_step_->dofs().vector();
+      first_stage_to_compute = 1;
+    }
+    first_same_as_last_ = true;
     while (mixed_error > 1.) {
       bool skip_error_computation = false;
       actual_dt *= time_step_scale_factor;
-      size_t first_stage_to_compute = 0;
-      if (first_same_as_last_ && last_stage_of_previous_step_) {
-        stages_k_[0].dofs().vector() = last_stage_of_previous_step_->dofs().vector();
-        first_stage_to_compute = 1;
-      }
-
       // bool consider_regularization = actual_dt < 1e-13;
       bool consider_regularization = false;
-      first_same_as_last_ = true;
       for (size_t ii = first_stage_to_compute; ii < num_stages_ - 1; ++ii) {
         stages_k_[ii].dofs().vector() *= 0.;
         alpha_tmp_.dofs().vector() = alpha_n.dofs().vector();
@@ -259,7 +257,7 @@ public:
           mixed_error = 1e10;
           skip_error_computation = true;
           time_step_scale_factor = 0.5;
-          // std::cout << "TBB error! " << e.what() << std::endl;
+          std::cout << "TBB error! " << e.what() << std::endl;
           break;
 #endif
         }
@@ -333,8 +331,9 @@ public:
 
         // ensure min density
         std::vector<size_t> changed_indices;
-        min_density_setter_.apply_and_store(alpha_np1_.dofs().vector(), alpha_np1_.dofs().vector(), changed_indices);
-        if (changed_indices.size()) {
+        min_density_setter_.apply_and_store(
+            alpha_np1_.dofs().vector(), alpha_np1_.dofs().vector(), changed_indices, actual_dt);
+        if (changed_indices.size() && !(mixed_error > 1.)) {
           // If we do not set the same indices for alpha_tmp_, the error will be estimated too high.
           // min_density_setter_.set_indices(changed_indices, alpha_tmp_.dofs().vector(), alpha_np1_.dofs().vector());
           // we cannot use the first-same-as-last property for the next time step if indices have changed

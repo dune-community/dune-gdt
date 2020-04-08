@@ -253,14 +253,16 @@ protected:
       std::fill(ret.begin(), ret.end(), 0.);
       for (size_t nn = 0; nn < dimRange; ++nn) {
         const auto& partitioning = basis_functions.partitioning();
-        const auto vn = partitioning[nn];
+        const auto mu_n = partitioning[nn];
         if (nn < dimRange - 1) {
-          const auto vnp = partitioning[nn + 1];
-          ret[nn] += 1. / ((vn - vnp) * denominator()) * (integral_2(vn, vnp) - vnp * integral_1(vn, vnp));
+          const auto mu_np1 = partitioning[nn + 1];
+          ret[nn] +=
+              1. / ((mu_n - mu_np1) * denominator()) * (integral_2(mu_n, mu_np1) - mu_np1 * integral_1(mu_n, mu_np1));
         }
         if (nn > 0) {
-          const auto vnm = partitioning[nn - 1];
-          ret[nn] += 1. / ((vn - vnm) * denominator()) * (integral_2(vnm, vn) - vnm * integral_1(vnm, vn));
+          const auto mu_nm1 = partitioning[nn - 1];
+          ret[nn] +=
+              1. / ((mu_n - mu_nm1) * denominator()) * (integral_2(mu_nm1, mu_n) - mu_nm1 * integral_1(mu_nm1, mu_n));
         }
       }
       // add small vacuum concentration to move away from realizable boundary
@@ -281,28 +283,29 @@ protected:
         DynamicRangeType ret(dimRange, 0.);
         const auto& partitioning = basis_functions.partitioning();
         for (size_t nn = 0; nn < dimRange; ++nn) {
-          const auto& vn = partitioning[nn];
+          const auto& mu_n = partitioning[nn];
           if (nn < dimRange - 1) {
-            const auto& vnp = partitioning[nn + 1];
-            if (vnp > 0.) {
-              const auto left_limit = vn > 0. ? vn : 0.;
+            const auto& mu_np1 = partitioning[nn + 1];
+            if (mu_np1 > 0.) {
+              const auto left_limit = mu_n > 0. ? mu_n : 0.;
               ret[nn] +=
-                  1. / ((vn - vnp) * denominator()) * (integral_3(left_limit, vnp) - vnp * integral_2(left_limit, vnp))
-                  + psi_vac / 6. * std::pow(vnp - left_limit, 2) * (vnp + 2. * left_limit) / (vnp - vn);
-            } // if (vnp > 0.)
+                  1. / ((mu_n - mu_np1) * denominator())
+                      * (integral_3(left_limit, mu_np1) - mu_np1 * integral_2(left_limit, mu_np1))
+                  + psi_vac / 6. * std::pow(mu_np1 - left_limit, 2) * (mu_np1 + 2. * left_limit) / (mu_np1 - mu_n);
+            } // if (mu_np1 > 0.)
           } // if (nn < dimRange -1)
-          if (vn > 0.) {
+          if (mu_n > 0.) {
             if (nn > 0) {
-              const auto& vnm = partitioning[nn - 1];
-              const auto left_limit = vnm > 0. ? vnm : 0.;
-              ret[nn] +=
-                  1. / ((vn - vnm) * denominator()) * (integral_3(left_limit, vn) - vnm * integral_2(left_limit, vn))
-                  + psi_vac / 6.
-                        * (3 * std::pow(vn, 2) * vnm - 3 * vnm * std::pow(left_limit, 3) - 2 * std::pow(vn, 3)
-                           + 2 * std::pow(left_limit, 3))
-                        / (vnm - vn);
+              const auto& mu_nm1 = partitioning[nn - 1];
+              const auto left_limit = mu_nm1 > 0. ? mu_nm1 : 0.;
+              ret[nn] += 1. / ((mu_n - mu_nm1) * denominator())
+                             * (integral_3(left_limit, mu_n) - mu_nm1 * integral_2(left_limit, mu_n))
+                         + psi_vac / 6.
+                               * (3 * std::pow(mu_n, 2) * mu_nm1 - 3 * mu_nm1 * std::pow(left_limit, 2)
+                                  - 2 * std::pow(mu_n, 3) + 2 * std::pow(left_limit, 3))
+                               / (mu_nm1 - mu_n);
             } // if (nn > 0)
-          } // if (vn > 0.)
+          } // if (mu_n > 0.)
         } // nn
         // unit outer normal
         assert(XT::Common::FloatCmp::eq(n, -1.));
