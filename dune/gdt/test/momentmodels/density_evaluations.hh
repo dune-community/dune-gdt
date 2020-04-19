@@ -236,8 +236,7 @@ public:
     const auto& local_alpha_dofs = local_alpha_->dofs();
     for (size_t ii = 0; ii < dimRange; ++ii)
       alpha_tmp_[ii] = local_alpha_dofs.get_entry(ii);
-    static const bool adjust =
-        DXTC_CONFIG_GET("adjust_alpha", GDT::is_partial_moment_basis<MomentBasis>::value ? 0 : 1);
+    static const bool adjust = DXTC_CONFIG_GET("adjust_alpha", 0);
     static const double adjust_dt = DXTC_CONFIG_GET("adjust_dt", 1.0e-3);
     if (adjust && dt_ < adjust_dt) {
       const bool changed = basis_functions.adjust_alpha_to_ensure_min_density(
