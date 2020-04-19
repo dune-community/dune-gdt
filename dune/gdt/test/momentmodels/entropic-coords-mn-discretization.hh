@@ -162,7 +162,7 @@ struct HyperbolicEntropicCoordsMnDiscretization
         std::make_shared<const MomentBasis>(quad_order, quad_refinements);
     const RangeFieldType psi_vac = DXTC_CONFIG_GET("psi_vac", 1e-6 / basis_functions->unit_ball_volume());
     const std::unique_ptr<ProblemType> problem_ptr =
-        std::make_unique<ProblemType>(*basis_functions, grid_view, psi_vac, grid_config, true);
+        std::make_unique<ProblemType>(*basis_functions, grid_view, psi_vac, grid_config, true, 1e-09);
     const auto& problem = *problem_ptr;
     const auto initial_values_u = problem.initial_values();
     const auto boundary_values_u = problem.boundary_values();
@@ -314,6 +314,8 @@ struct HyperbolicEntropicCoordsMnDiscretization
     filename += "_quad_" + XT::Common::to_string(quad_refinements) + "x" + XT::Common::to_string(quad_order);
     filename += "_atol_" + XT::Common::to_string(atol);
     filename += "_rtol_" + XT::Common::to_string(rtol);
+    filename += "_adjust_"
+                + XT::Common::to_string(DXTC_CONFIG_GET("adjust_alpha", 0) ? DXTC_CONFIG_GET("adjust_dt", 1e-3) : 0.);
     filename += "_threads_" + DXTC_CONFIG.get("threading.max_count", "1") + "x"
                 + DXTC_CONFIG.get("threading.partition_factor", "1");
     filename += TestCaseType::reconstruction ? "_ord2" : "_ord1";
@@ -378,8 +380,8 @@ struct HyperbolicEntropicCoordsMnDiscretization
                       num_save_steps,
                       num_output_steps,
                       false,
-                      true,
-                      true,
+                      DXTC_CONFIG_GET("visualize", true),
+                      DXTC_CONFIG_GET("write_txt", true),
                       false,
                       true,
                       filename,
