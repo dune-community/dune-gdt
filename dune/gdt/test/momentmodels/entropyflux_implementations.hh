@@ -3678,6 +3678,14 @@ public:
     return ret;
   } // DomainType evaluate_kinetic_flux(...)
 
+  DomainType
+  evaluate_kinetic_outflow(const DomainType& /*alpha_i*/, const FluxDomainType& /*n_ij*/, const size_t /*dd*/) const
+
+  {
+    DUNE_THROW(Dune::NotImplemented, "");
+    return DomainType(0.);
+  } // DomainType evaluate_kinetic_outflow(...)
+
 
   // ============================================================================================
   // ============ Evaluations of ansatz distribution, moments, hessian etc. =====================
