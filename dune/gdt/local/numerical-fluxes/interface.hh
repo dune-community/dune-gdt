@@ -65,7 +65,7 @@ public:
 
   NumericalFluxInterface(const XIndependentFluxType& func, const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type + func.parameter_type())
-    , flux_(FluxWrapperType(func))
+    , flux_(static_cast<std::unique_ptr<const FluxType>&&>(std::make_unique<const FluxWrapperType>(func)))
     , local_flux_inside_(flux_.access().local_function())
     , local_flux_outside_(flux_.access().local_function())
   {}
@@ -73,7 +73,8 @@ public:
   NumericalFluxInterface(std::unique_ptr<const XIndependentFluxType>&& func_ptr,
                          const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type + func_ptr->parameter_type())
-    , flux_(FluxWrapperType(std::move(func_ptr)))
+    , flux_(
+          static_cast<std::unique_ptr<const FluxType>&&>(std::make_unique<const FluxWrapperType>(std::move(func_ptr))))
     , local_flux_inside_(flux_.access().local_function())
     , local_flux_outside_(flux_.access().local_function())
   {}
