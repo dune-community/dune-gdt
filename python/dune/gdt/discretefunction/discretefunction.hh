@@ -12,23 +12,21 @@
 #ifndef PYTHON_DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BINDINGS_HH
 #define PYTHON_DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BINDINGS_HH
 
-#if HAVE_DUNE_PYBINDXI
+#include <dune/pybindxi/pybind11.h>
 
-#  include <dune/pybindxi/pybind11.h>
+#include <python/dune/xt/common/exceptions.bindings.hh>
+#include <python/dune/xt/la/container.bindings.hh>
+#include <python/dune/xt/grid/grids.bindings.hh>
+#include <python/dune/xt/functions/gridfunction-interface.hh>
 
-#  include <python/dune/xt/common/exceptions.bindings.hh>
-#  include <python/dune/xt/la/container.bindings.hh>
-#  include <python/dune/xt/grid/grids.bindings.hh>
-#  include <python/dune/xt/functions/gridfunction-interface.hh>
+#include <dune/xt/common/python.hh>
+#include <dune/xt/common/string.hh>
+#include <dune/xt/la/container.hh>
+#include <dune/xt/grid/grids.hh>
+#include <dune/xt/grid/type_traits.hh>
+#include <dune/xt/functions/interfaces/grid-function.hh>
 
-#  include <dune/xt/common/python.hh>
-#  include <dune/xt/common/string.hh>
-#  include <dune/xt/la/container.hh>
-#  include <dune/xt/grid/grids.hh>
-#  include <dune/xt/grid/type_traits.hh>
-#  include <dune/xt/functions/interfaces/grid-function.hh>
-
-#  include <dune/gdt/discretefunction/default.hh>
+#include <dune/gdt/discretefunction/default.hh>
 
 namespace Dune {
 namespace GDT {
@@ -159,7 +157,5 @@ struct DiscreteFunction_for_all_vectors_and_grids<boost::tuples::null_type, Grid
 } // namespace GDT
 } // namespace Dune
 
-
-#endif // HAVE_DUNE_PYBINDXI
 
 #endif // PYTHON_DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BINDINGS_HH
