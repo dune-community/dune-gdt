@@ -255,13 +255,13 @@ template <class AGV,
           class RGV,
           class RV>
 std::enable_if_t<XT::Grid::is_layer<AGV>::value,
-                 LocalizableOperatorBase<AGV, SV, s_r, s_rC, SF, SGV, r_r, r_rC, RF, RGV, RV>>
+                 LocalizableDiscreteOperatorApplicator<AGV, SV, s_r, s_rC, SF, SGV, r_r, r_rC, RF, RGV, RV>>
 make_localizable_operator(
     AGV assembly_grid_view,
     const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<SGV>, s_r, s_rC, SF>& source,
     DiscreteFunction<RV, RGV, r_r, r_rC, RF>& range)
 {
-  return LocalizableOperatorBase<AGV, SV, s_r, s_rC, SF, SGV, r_r, r_rC, RF, RGV, RV>(
+  return LocalizableDiscreteOperatorApplicator<AGV, SV, s_r, s_rC, SF, SGV, r_r, r_rC, RF, RGV, RV>(
       assembly_grid_view, source, range);
 }
 
