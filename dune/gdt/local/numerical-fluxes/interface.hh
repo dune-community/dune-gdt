@@ -56,23 +56,24 @@ public:
     , local_flux_outside_(flux_.access().local_function())
   {}
 
-  NumericalFluxInterface(FluxType*&& flx_ptr, const XT::Common::ParameterType& param_type = {})
+  NumericalFluxInterface(std::unique_ptr<const FluxType>&& flx_ptr, const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type + flx_ptr->parameter_type())
-    , flux_(flx_ptr)
+    , flux_(std::move(flx_ptr))
     , local_flux_inside_(flux_.access().local_function())
     , local_flux_outside_(flux_.access().local_function())
   {}
 
   NumericalFluxInterface(const XIndependentFluxType& func, const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type + func.parameter_type())
-    , flux_(new FluxWrapperType(func))
+    , flux_(FluxWrapperType(func))
     , local_flux_inside_(flux_.access().local_function())
     , local_flux_outside_(flux_.access().local_function())
   {}
 
-  NumericalFluxInterface(XIndependentFluxType*&& func_ptr, const XT::Common::ParameterType& param_type = {})
+  NumericalFluxInterface(std::unique_ptr<const XIndependentFluxType>&& func_ptr,
+                         const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type + func_ptr->parameter_type())
-    , flux_(new FluxWrapperType(func_ptr))
+    , flux_(FluxWrapperType(std::move(func_ptr)))
     , local_flux_inside_(flux_.access().local_function())
     , local_flux_outside_(flux_.access().local_function())
   {}
@@ -220,7 +221,7 @@ public:
 
   template <class... Args>
   explicit ThisNumericalFluxIsNotAvailableForTheseDimensions(Args&&... /*args*/)
-    : BaseType(new XT::Functions::ConstantFunction<m, d, m, R>(0.))
+    : BaseType(std::make_unique<const XT::Functions::ConstantFunction<m, d, m, R>>(0.))
   {
     DUNE_THROW(Exceptions::numerical_flux_error, "d = " << d << "\n   m = " << m);
   }

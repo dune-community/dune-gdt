@@ -328,7 +328,6 @@ struct HyperbolicEntropicCoordsMnDiscretization
     const auto sigma_a = problem.sigma_a();
     const auto sigma_s = problem.sigma_s();
     const auto Q = problem.Q();
-    static std::mutex mutex;
     auto rhs_func = [&](const auto& /*source*/,
                         const auto& /*local_source*/,
                         auto& local_range,

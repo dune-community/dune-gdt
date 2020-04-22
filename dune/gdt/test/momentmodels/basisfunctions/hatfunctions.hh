@@ -618,15 +618,10 @@ public:
   using BaseType::density;
 
   virtual bool adjust_alpha_to_ensure_min_density(RangeType& alpha,
-                                                  const RangeFieldType rho_min,
-                                                  const RangeType& u,
+                                                  const RangeFieldType /*rho_min*/,
+                                                  const RangeType& /*u*/,
                                                   std::bitset<dimRange>& changed_indices) const override final
   {
-    // if (density(u) < rho_min) {
-    //  alpha = this->alpha_iso(rho_min);
-    //  changed_indices.set();
-    //  return true;
-    //} else {
     bool changed = false;
     static const double min_alpha_entry = DXTC_CONFIG_GET("min_alpha_entry", -1000.);
     for (size_t ii = 0; ii < dimRange; ++ii) {
@@ -637,6 +632,12 @@ public:
       }
     }
     return changed;
+    // // check if density is too low
+    // if (density(u) < rho_min) {
+    //  alpha = this->alpha_iso(rho_min);
+    //  changed_indices.set();
+    //  return true;
+    //} else {
     // // now check if the density around a grid_point is smaller than allowed
     // bool changed = false;
     // const RangeFieldType alpha_min = std::log(rho_min / (4 * M_PI));
