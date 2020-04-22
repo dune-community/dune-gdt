@@ -225,7 +225,7 @@ struct HyperbolicMnDiscretization
         [&boundary_kinetic_fluxes,
          &entropy_flux](const I& intersection,
                         const FieldVector<RangeFieldType, dimDomain - 1>& xx_in_reference_intersection_coordinates,
-                        const DynamicRangeType& u,
+                        const DynamicRangeType& u_in,
                         DynamicRangeType& g,
                         const XT::Common::Parameter& param) {
           // influx
@@ -234,7 +234,7 @@ struct HyperbolicMnDiscretization
           // outflux
           const auto& entity = intersection.inside();
           const auto dd = intersection.indexInInside() / 2;
-          const auto alpha_entity = entropy_flux->get_alpha(entity, u, true)->first;
+          const auto alpha_entity = entropy_flux->get_alpha(entity, u_in, true)->first;
           const auto outflux =
               entropy_flux->evaluate_kinetic_outflow(alpha_entity, intersection.centerUnitOuterNormal(), dd);
           g += outflux;
