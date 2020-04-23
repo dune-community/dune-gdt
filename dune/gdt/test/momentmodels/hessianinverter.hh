@@ -84,7 +84,7 @@ public:
    *  entity is marked for regularization instead.
    *  \note Evaluations of the ansatz densities have to be stored in
    *  analytical_flux_ (by calling store_evaluations on the analytical flux before using this function, see
-   *  density_evaluations.hh).
+   *  density_evaluator.hh).
    *  \note Regularization is poorly tested and probably does not really work, a lot of tuning is
    *  still missing (when do we want to use regularization, and when is it better to simply reduce the timestep?).
    */

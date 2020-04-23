@@ -47,7 +47,7 @@ public:
                                  EntropyFluxType& analytical_flux,
                                  const RangeFieldType min_acceptable_density,
                                  const double dt,
-                                 bool& changed)
+                                 std::atomic<bool>& changed)
     : space_(space)
     , alpha_(space_, alpha_dofs, "alpha")
     , range_(space_, range_dofs, "regularized alpha")
@@ -77,6 +77,15 @@ public:
     return new LocalMinDensitySetter(*this);
   }
 
+  /** \short Modifies alpha to ensure that the density is larger than min_acceptable_density (or to improve stability,
+   * in some cases)
+   *
+   * The actual modification is dependent on the basis function, so consider the adjust_alpha_to_ensure_min_density
+   * method for the respective basis function class. Currently only really useful for the Hatfunction basis. Needs some
+   * more investigation. Unused by default at the moment, to enable add -adjust_alpha 1 to the command line.
+   * Modifications are only applied if the current timestep is lesser than adjust_dt, which is 1e-3 by default and can
+   * be modified on the command line via -adjust_dt dt (e.g., -adjust_dt 1e-4)
+   */
   void apply_local(const EntityType& entity) override final
   {
     local_alpha_->bind(entity);
@@ -160,7 +169,7 @@ public:
   {
     std::atomic<bool> changed = false;
     LocalMinDensitySetterType local_min_density_setter(
-        space_, alpha, range, analytical_flux_, min_acceptable_density_, param.get("dt")[0]), changed);
+        space_, alpha, range, analytical_flux_, min_acceptable_density_, param.get("dt")[0], changed);
     auto walker = XT::Grid::Walker<typename SpaceType::GridViewType>(space_.grid_view());
     walker.append(local_min_density_setter);
     walker.walk(true);
