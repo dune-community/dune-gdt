@@ -138,6 +138,10 @@ public:
     return std::make_unique<Localfunction>(*implementation_);
   }
 
+  /**
+   * Fluxes have been precomputed during the reconstruction (even if no reconstruction is used, the fluxes are computed
+   * there, see calculate_reconstructed_fluxes) and are provided as input, so not much to do here.
+   */
   template <class StateTp, class RetType>
   void evaluate_kinetic_flux(const E& /*inside_entity*/,
                              const E& /*outside_entity*/,
@@ -185,6 +189,11 @@ public:
     return ret;
   }
 
+  /**
+   * Computes reconstructed fluxes (kinetic fluxes with simple linear reconstruction of the ansatz density).
+   * If no reconstruction is requested (slope == SlopeType::no_slope), the fluxes are still computed but without density
+   * reconstruction.
+   */
   template <class FluxesMapType>
   void calculate_reconstructed_fluxes(const FieldVector<size_t, 3>& entity_indices,
                                       const FieldVector<bool, 3>& boundary_direction,
@@ -199,19 +208,6 @@ public:
         densities_stencil[ii] = &(*eta_ast_prime_evaluations_)[entity_indices[ii]];
     implementation_->template calculate_reconstructed_fluxes<slope, FluxesMapType>(
         densities_stencil, precomputed_fluxes, dd);
-  }
-
-  void apply_kinetic_flux_with_kinetic_reconstruction(const RangeFieldType& h_inv,
-                                                      const QuadratureWeightsType& densities_left,
-                                                      const QuadratureWeightsType& densities_entity,
-                                                      const QuadratureWeightsType& densities_right,
-                                                      StateType* u_left,
-                                                      StateType* u_entity,
-                                                      StateType* u_right,
-                                                      const size_t dd) const
-  {
-    implementation_->template apply_kinetic_flux_with_kinetic_reconstruction<slope>(
-        h_inv, densities_left, densities_entity, densities_right, u_left, u_entity, u_right, dd);
   }
 
   void apply_inverse_hessian(const size_t entity_index, StateType& u) const

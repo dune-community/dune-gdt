@@ -2183,64 +2183,6 @@ public:
     } // jj
   } // void calculate_reconstructed_fluxes(...)
 
-  template <SlopeLimiterType slope_type>
-  void apply_kinetic_flux_with_kinetic_reconstruction(const RangeFieldType& h_inv,
-                                                      const QuadratureWeightsType& psi_left,
-                                                      const QuadratureWeightsType& psi_entity,
-                                                      const QuadratureWeightsType& psi_right,
-                                                      DomainType* const u_left,
-                                                      DomainType* const u_entity,
-                                                      DomainType* const u_right,
-                                                      const size_t dd) const
-  {
-    static const auto slope_func =
-        (slope_type == SlopeLimiterType::minmod) ? XT::Common::minmod<RangeFieldType> : superbee<RangeFieldType>;
-    constexpr bool reconstruct = (slope_type != SlopeLimiterType::no_slope);
-    for (size_t jj = 0; jj < num_blocks; ++jj) {
-      const auto offset = block_size * jj;
-      if (quad_signs_[jj][dd] == 0) {
-        // in this case, we have to decide which flux_value to use for each quadrature point individually
-        for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
-          const auto position = quad_points_[jj][ll][dd];
-          DomainType* const lhs_u = position < 0. ? u_left : u_entity;
-          DomainType* const rhs_u = position < 0. ? u_entity : u_right;
-          const RangeFieldType slope =
-              reconstruct ? slope_func(psi_entity[jj][ll] - psi_left[jj][ll], psi_right[jj][ll] - psi_entity[jj][ll])
-                          : 0.;
-          RangeFieldType factor = position > 0 ? psi_entity[jj][ll] + 0.5 * slope : psi_entity[jj][ll] - 0.5 * slope;
-          factor *= quad_weights_[jj][ll] * position * h_inv;
-          for (size_t ii = 0; ii < block_size; ++ii) {
-            const auto flux = M_[jj].get_entry(ll, ii) * factor;
-            if (lhs_u)
-              (*lhs_u)[offset + ii] -= flux;
-            if (rhs_u)
-              (*rhs_u)[offset + ii] += flux;
-          } // ii
-        } // ll
-      } else {
-        // all quadrature points have the same sign
-        const bool negative_sign = quad_signs_[jj][dd] < 0;
-        const double sign_factor = negative_sign ? -0.5 : 0.5;
-        DomainType* const lhs_u = negative_sign ? u_left : u_entity;
-        DomainType* const rhs_u = negative_sign ? u_entity : u_right;
-        for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
-          const RangeFieldType slope =
-              reconstruct ? slope_func(psi_entity[jj][ll] - psi_left[jj][ll], psi_right[jj][ll] - psi_entity[jj][ll])
-                          : 0.;
-          const RangeFieldType factor =
-              (psi_entity[jj][ll] + sign_factor * slope) * quad_weights_[jj][ll] * quad_points_[jj][ll][dd] * h_inv;
-          for (size_t ii = 0; ii < block_size; ++ii) {
-            const auto flux = M_[jj].get_entry(ll, ii) * factor;
-            if (lhs_u)
-              (*lhs_u)[offset + ii] -= flux;
-            if (rhs_u)
-              (*rhs_u)[offset + ii] += flux;
-          } // ii
-        } // ll
-      } // quad_sign
-    } // jj
-  } // void apply_kinetic_flux_with_kinetic_reconstruction(...)
-
   // ============================================================================================
   // ================================== Helper functions ========================================
   // ============================================================================================
@@ -4803,43 +4745,6 @@ public:
     right_flux_value[dimRange - 1] *= 0.5;
   } // void calculate_reconstructed_fluxes(...)
 
-  template <SlopeLimiterType slope_type>
-  void apply_kinetic_flux_with_kinetic_reconstruction(const RangeFieldType& h_inv,
-                                                      const QuadratureWeightsType& psi_left,
-                                                      const QuadratureWeightsType& psi_entity,
-                                                      const QuadratureWeightsType& psi_right,
-                                                      VectorType* u_left,
-                                                      VectorType* u_entity,
-                                                      VectorType* u_right,
-                                                      const size_t /*dd*/) const
-  {
-    // get slope limiter and psi values
-    static const auto slope_func =
-        (slope_type == SlopeLimiterType::minmod) ? XT::Common::minmod<RangeFieldType> : superbee<RangeFieldType>;
-    constexpr bool reconstruct = (slope_type != SlopeLimiterType::no_slope);
-    // reconstruct densities
-    const size_t first_positive = dimRange / 2;
-    for (size_t ll = 0; ll < first_positive; ++ll) {
-      const RangeFieldType weight = (ll == 0) ? interval_length / 2. : interval_length;
-      const RangeFieldType slope =
-          reconstruct ? slope_func(psi_entity[ll] - psi_left[ll], psi_right[ll] - psi_entity[ll]) : 0.;
-      const RangeFieldType flux_left = (psi_entity[ll] - 0.5 * slope) * grid_points_[ll] * weight * h_inv;
-      if (u_left)
-        (*u_left)[ll] -= flux_left;
-      (*u_entity)[ll] += flux_left;
-    }
-    for (size_t ll = first_positive; ll < dimRange; ++ll) {
-      const RangeFieldType weight = (ll == dimRange - 1) ? interval_length / 2. : interval_length;
-      const RangeFieldType slope =
-          reconstruct ? slope_func(psi_entity[ll] - psi_left[ll], psi_right[ll] - psi_entity[ll]) : 0.;
-      const RangeFieldType flux_right = (psi_entity[ll] + 0.5 * slope) * grid_points_[ll] * weight * h_inv;
-      (*u_entity)[ll] -= flux_right;
-      if (u_right)
-        (*u_right)[ll] += flux_right;
-    }
-  }
-
-
   // ============================================================================================
   // ================================== Helper functions ========================================
   // ============================================================================================
@@ -5546,63 +5451,6 @@ public:
       } // quad_sign
     } // jj
   } // void calculate_reconstructed_fluxes(...)
-
-  template <SlopeLimiterType slope_type>
-  void apply_kinetic_flux_with_kinetic_reconstruction(const RangeFieldType& h_inv,
-                                                      const QuadratureWeightsType& psi_left,
-                                                      const QuadratureWeightsType& psi_entity,
-                                                      const QuadratureWeightsType& psi_right,
-                                                      DomainType* const u_left,
-                                                      DomainType* const u_entity,
-                                                      DomainType* const u_right,
-                                                      const size_t /*dd*/) const
-  {
-    static const auto slope_func =
-        (slope_type == SlopeLimiterType::minmod) ? XT::Common::minmod<RangeFieldType> : superbee<RangeFieldType>;
-    constexpr bool reconstruct = (slope_type != SlopeLimiterType::no_slope);
-    for (size_t jj = 0; jj < num_intervals; ++jj) {
-      if (quad_signs_[jj] == 0) {
-        // in this case, we have to decide which flux_value to use for each quadrature point individually
-        for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
-          const auto position = quad_points_[jj][ll];
-          DomainType* const lhs_u = position < 0. ? u_left : u_entity;
-          DomainType* const rhs_u = position < 0. ? u_entity : u_right;
-          const RangeFieldType slope =
-              reconstruct ? slope_func(psi_entity[jj][ll] - psi_left[jj][ll], psi_right[jj][ll] - psi_entity[jj][ll])
-                          : 0.;
-          RangeFieldType factor = position > 0 ? psi_entity[jj][ll] + 0.5 * slope : psi_entity[jj][ll] - 0.5 * slope;
-          factor *= quad_weights_[jj][ll] * position * h_inv;
-          for (size_t ii = 0; ii < 2; ++ii) {
-            const auto flux = M_[jj][ll][ii] * factor;
-            if (lhs_u)
-              (*lhs_u)[jj + ii] -= flux;
-            if (rhs_u)
-              (*rhs_u)[jj + ii] += flux;
-          } // ii
-        } // ll
-      } else {
-        // all quadrature points have the same sign
-        const bool negative_sign = quad_signs_[jj] < 0;
-        const double sign_factor = negative_sign ? -0.5 : 0.5;
-        DomainType* const lhs_u = negative_sign ? u_left : u_entity;
-        DomainType* const rhs_u = negative_sign ? u_entity : u_right;
-        for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
-          const RangeFieldType slope =
-              reconstruct ? slope_func(psi_entity[jj][ll] - psi_left[jj][ll], psi_right[jj][ll] - psi_entity[jj][ll])
-                          : 0.;
-          const RangeFieldType factor =
-              (psi_entity[jj][ll] + sign_factor * slope) * quad_weights_[jj][ll] * quad_points_[jj][ll] * h_inv;
-          for (size_t ii = 0; ii < 2; ++ii) {
-            const auto flux = M_[jj][ll][ii] * factor;
-            if (lhs_u)
-              (*lhs_u)[jj + ii] -= flux;
-            if (rhs_u)
-              (*rhs_u)[jj + ii] += flux;
-          } // ii
-        } // ll
-      } // quad_sign
-    } // jj
-  } // void apply_kinetic_flux_with_kinetic_reconstruction(...)
 
 
   // ============================================================================================

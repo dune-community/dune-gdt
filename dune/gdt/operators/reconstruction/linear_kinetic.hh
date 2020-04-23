@@ -104,7 +104,7 @@ private:
   } // void fill_stencils(...)
 
   ReconstructedFunctionType& reconstructed_function_;
-  const GV grid_view_;
+  const GV& grid_view_;
   const IndexSetType& index_set_;
   const AnalyticalFluxType& analytical_flux_;
   const XT::Common::Parameter& param_;
