@@ -70,36 +70,6 @@ struct AdaptiveButcherArrayProvider<RangeFieldType, TimeStepperMethods::adaptive
   }
 };
 
-// Euler-Heun (adaptive RK12)
-template <class RangeFieldType>
-class AdaptiveButcherArrayProvider<RangeFieldType, TimeStepperMethods::euler_heun>
-{
-public:
-  static Dune::DynamicMatrix<RangeFieldType> A()
-  {
-    return Dune::XT::Common::from_string<Dune::DynamicMatrix<RangeFieldType>>("[0 0; 0.5 0]");
-  }
-
-  static Dune::DynamicVector<RangeFieldType> b_1()
-  {
-    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>("[0.5 0.5]");
-  }
-
-  static Dune::DynamicVector<RangeFieldType> b_2()
-  {
-    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>("[1 0]");
-  }
-
-  static Dune::DynamicVector<RangeFieldType> c()
-  {
-    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>("[0 1]");
-  }
-
-  // lower one of the two orders
-  static constexpr size_t q = 1;
-};
-
-
 // Bogacki-Shampine (adaptive RK23)
 template <class RangeFieldType>
 class AdaptiveButcherArrayProvider<RangeFieldType, TimeStepperMethods::bogacki_shampine>
@@ -395,30 +365,6 @@ public:
     if (!last_stage_of_previous_step_)
       last_stage_of_previous_step_ = std::make_unique<DiscreteFunctionType>(u_n);
     last_stage_of_previous_step_->dofs().vector() = stages_k_[num_stages_ - 1].dofs().vector();
-
-#if 0
-    const auto u_local_func = u_n.local_discrete_function();
-    for (auto&& element : Dune::elements(u_n.space().grid_view())) {
-      u_local_func->bind(element);
-      for (size_t ii = 0; ii < BaseType::dimRange; ++ii) {
-//        constexpr double min_val = -100.;
-        constexpr double max_val = 1000.;
-        const auto entry_ii = u_local_func->dofs().get_entry(ii);
-        if (std::abs(entry_ii) > max_val) {
-//          std::cout << "limited from " << u_local_func->dofs().get_entry(ii) << " to " << min_val << " in entity " << element.geometry().center() << std::endl;
-//          std::cout << "Entries are: ";
-//          for (size_t jj = 0; jj < BaseType::dimRange; ++jj) {
-//            std::cout << u_local_func->dofs().get_entry(jj) << " ";
-//          }
-//          std::cout << std::endl;
-          last_stage_of_previous_step_ = nullptr;
-//          u_local_func->dofs().set_entry(ii, min_val);
-          std::cout << "Replacing " << entry_ii << " by " << std::copysign(max_val, entry_ii) << std::endl;
-          u_local_func->dofs().set_entry(ii, std::copysign(max_val, entry_ii));
-        }
-      } // ii
-    } // elements
-#endif
 
     t += actual_dt;
 

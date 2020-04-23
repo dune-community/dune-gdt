@@ -358,8 +358,7 @@ public:
 
   virtual bool adjust_alpha_to_ensure_min_density(RangeType& /*alpha*/,
                                                   const RangeFieldType /*rho_min*/,
-                                                  const RangeType& /*u*/,
-                                                  std::bitset<dimRange>& /*changed_indices*/) const
+                                                  const RangeType& /*u*/) const
   {
     return false;
   }

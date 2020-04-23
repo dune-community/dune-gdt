@@ -17,7 +17,6 @@ namespace GDT {
 
 enum class TimeStepperMethods
 {
-  euler_heun,
   bogacki_shampine,
   dormand_prince,
   adaptive_rungekutta_other,
