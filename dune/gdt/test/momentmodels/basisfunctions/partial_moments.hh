@@ -305,13 +305,10 @@ public:
 
   bool adjust_alpha_to_ensure_min_density(RangeType& alpha,
                                           const RangeFieldType rho_min,
-                                          const RangeType& u,
-                                          std::bitset<dimRange>& changed_indices) const override final
+                                          const RangeType& u) const override final
   {
-    changed_indices.reset();
     if (density(u) < rho_min) {
       alpha = this->alpha_iso(rho_min);
-      changed_indices.set();
       return true;
     } else {
       bool changed = false;
@@ -323,8 +320,6 @@ public:
         if (u[2 * ii] < u_min) {
           alpha_0 = alpha_min;
           alpha_1 = 0.;
-          changed_indices.set(2 * ii);
-          changed_indices.set(2 * ii + 1);
           changed = true;
         }
       } // ii
@@ -576,23 +571,18 @@ public:
 
   bool adjust_alpha_to_ensure_min_density(RangeType& alpha,
                                           const RangeFieldType rho_min,
-                                          const RangeType& u,
-                                          std::bitset<dimRange>& changed_indices) const override final
+                                          const RangeType& u) const override final
   {
     bool changed = false;
-    changed_indices.reset();
     const auto rho_min_block = rho_min / num_blocks;
     for (size_t jj = 0; jj < num_blocks; ++jj) {
       const auto offset = block_size * jj;
       const auto block_density = u[offset];
       if (block_density < rho_min_block) {
         alpha[offset] = std::log(rho_min_block);
-        changed_indices.set(offset);
         changed = true;
-        for (size_t ii = 1; ii < block_size; ++ii) {
+        for (size_t ii = 1; ii < block_size; ++ii)
           alpha[offset + ii] = 0;
-          changed_indices.set(offset + ii);
-        } // ii
       }
     } // jj
     return changed;

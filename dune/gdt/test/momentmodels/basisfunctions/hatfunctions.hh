@@ -399,14 +399,11 @@ public:
 
   bool adjust_alpha_to_ensure_min_density(RangeType& alpha,
                                           const RangeFieldType rho_min,
-                                          const RangeType& u,
-                                          std::bitset<dimRange>& changed_indices) const override final
+                                          const RangeType& u) const override final
   {
-    changed_indices.reset();
     // check if the density is too small
     if (density(u) < rho_min) {
       alpha = this->alpha_iso(rho_min);
-      changed_indices.set();
       return true;
     }
     // now check if the density around a grid_point is smaller than allowed
@@ -415,19 +412,16 @@ public:
     const RangeFieldType neighbor_min = std::log(rho_min * 10);
     if (alpha[0] < alpha_min && alpha[1] < neighbor_min) {
       alpha[0] = alpha_min;
-      changed_indices.set(0);
       changed = true;
     }
     for (size_t ii = 1; ii < dimRange - 1; ++ii) {
       if (alpha[ii] < alpha_min && alpha[ii - 1] < neighbor_min && alpha[ii + 1] < neighbor_min) {
         alpha[ii] = alpha_min;
-        changed_indices.set(ii);
         changed = true;
       }
     }
     if (alpha[dimRange - 1] < alpha_min && alpha[dimRange - 2] < neighbor_min) {
       alpha[dimRange - 1] = alpha_min;
-      changed_indices.set(dimRange - 1);
       changed = true;
     }
     return changed;
@@ -619,15 +613,13 @@ public:
 
   virtual bool adjust_alpha_to_ensure_min_density(RangeType& alpha,
                                                   const RangeFieldType /*rho_min*/,
-                                                  const RangeType& /*u*/,
-                                                  std::bitset<dimRange>& changed_indices) const override final
+                                                  const RangeType& /*u*/) const override final
   {
     bool changed = false;
     static const double min_alpha_entry = DXTC_CONFIG_GET("min_alpha_entry", -1000.);
     for (size_t ii = 0; ii < dimRange; ++ii) {
       if (alpha[ii] < min_alpha_entry) {
         alpha[ii] = min_alpha_entry;
-        changed_indices.set(ii);
         changed = true;
       }
     }
@@ -635,7 +627,6 @@ public:
     // // check if density is too low
     // if (density(u) < rho_min) {
     //  alpha = this->alpha_iso(rho_min);
-    //  changed_indices.set();
     //  return true;
     //} else {
     // // now check if the density around a grid_point is smaller than allowed
@@ -650,7 +641,6 @@ public:
     //     alpha_neighbor = std::max(alpha_neighbor, alpha[neighbor_index]);
     //   if (alpha[index] < alpha_min && alpha_neighbor < neighbor_min) {
     //     alpha[index] = alpha_min;
-    //     changed_indices.set(index);
     //     changed = true;
     //   }
     // }

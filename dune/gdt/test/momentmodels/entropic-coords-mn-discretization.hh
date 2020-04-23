@@ -32,7 +32,8 @@
 #include <dune/gdt/test/momentmodels/entropyflux.hh>
 #include <dune/gdt/test/momentmodels/entropysolver.hh>
 #include <dune/gdt/test/momentmodels/hessianinverter.hh>
-#include <dune/gdt/test/momentmodels/density_evaluations.hh>
+#include <dune/gdt/test/momentmodels/density_evaluator.hh>
+#include <dune/gdt/test/momentmodels/min_density_setter.hh>
 #include <dune/gdt/tools/timestepper/adaptive-rungekutta-kinetic.hh>
 #include <dune/gdt/tools/timestepper/explicit-rungekutta.hh>
 #include <dune/gdt/tools/timestepper/fractional-step.hh>
@@ -220,12 +221,10 @@ struct HyperbolicEntropicCoordsMnDiscretization
     // enforce min acceptable density for initial values
     const double min_acceptable_density =
         DXTC_CONFIG_GET("rho_min", problem.psi_vac() * basis_functions->unit_ball_volume() / 10);
-    // const double min_acceptable_density = problem.psi_vac();
     using DensityOperatorType = DensityEvaluator<MomentBasis, SpaceType, slope, MatrixType>;
     using MinDensitySetterType = MinDensitySetter<MomentBasis, SpaceType, slope, MatrixType>;
     DensityOperatorType density_operator(*analytical_flux, fv_space, boundary_distribution, min_acceptable_density);
     MinDensitySetterType min_density_setter(*analytical_flux, fv_space, min_acceptable_density);
-    // min_density_setter.apply(alpha.dofs().vector(), alpha.dofs().vector());
 
     // ******************** choose flux and rhs operator and timestepper ******************************************
 

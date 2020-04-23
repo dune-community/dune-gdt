@@ -89,13 +89,10 @@ public:
 
   virtual bool adjust_alpha_to_ensure_min_density(RangeType& alpha,
                                                   const RangeFieldType rho_min,
-                                                  const RangeType& u,
-                                                  std::bitset<dimRange>& changed_indices) const override final
+                                                  const RangeType& u) const override final
   {
-    changed_indices.reset();
     if (density(u) < rho_min) {
       alpha = this->alpha_iso(rho_min);
-      changed_indices.set();
       return true;
     }
     return false;

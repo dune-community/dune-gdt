@@ -27,29 +27,12 @@ namespace Dune {
 namespace GDT {
 
 
-/** \brief Time stepper using adaptive Runge Kutta methods
+/** \brief Specialization of AdaptiveRungeKuttaTimestepper for coordinate-transformed minimum entropy moment models
  *
- * Timestepper using adaptive Runge Kutta methods to solve equations of the form u_t = r * L(u, t) where u is a
- * discrete function, L an operator acting on u and \alpha a scalar factor (e.g. -1).
- * The specific Runge Kutta method can be chosen as the third template argument. If your desired Runge Kutta method is
- * not contained in AdaptiveRungeKuttaMethods, choose AdaptiveRungeKuttaMethods::other and
- * supply a DynamicMatrix< RangeFieldType > A and vectors b_1, b_2 (DynamicVector< RangeFieldType >) and c
- * (DynamicVector< RangeFieldType >) in the constructor. Here, A, b_1, b_2 and c form the butcher tableau (see
- * https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods#Embedded_methods, A is composed of the coefficients
- * a_{ij}, b_1 of b_j, b_2 of b_j^* and c of c_j). The default is the Dormand-Prince RK45 method.
- * In each time step, the error is estimated using the difference between the two solutions obtained using either b_1 or
- * b_2. If the estimated error is higher than a specified tolerance tol, the calculation is repeated with a smaller
- * time step. The tolerance tol and the error estimate are also used to estimate the optimal time step length for the
- * next time step via dt_new = dt_old*min(max(0.9*(tol/error)^(1/5), scale_factor_min), scale_factor_max_);
- *
- * Notation: For an s-stage method,
- * \mathbf{u}^{n+1} = \mathbf{u}^n + dt \sum_{i=0}^{s-1} b_i \mathbf{k}_i
- * \mathbf{k}_i = L(\mathbf{u}_i, t^n + dt c_i)
- * \mathbf{u}_i = \mathbf{u}^n + dt \sum_{j=0}^{i-1} a_{ij} \mathbf{k}_j,
- *
- * \tparam OperatorImp Type of operator L
- * \tparam DiscreteFunctionImp Type of initial values and solution at a fixed time
- * \tparam method Adaptive Runge-Kutta method that is used (default is AdaptiveRungeKuttaMethods::dormand_prince)
+ * Specializations include:
+ *  - catches exceptions that are thrown and tries again with reduced timestep instead of aborting
+ *  - a step to ensure a minimum density or apply other regularization
+ *  - isotropic regularization (unfinished and not really tested, do not use unless you know what you are doing)
  */
 template <class OperatorImp,
           class MinDensitySetterType,
@@ -94,20 +77,6 @@ public:
     return u;
   }
 
-  /**
-   * \brief Constructor for AdaptiveRungeKuttaTimeStepper time stepper
-   * \param op Operator L
-   * \param initial_values Discrete function containing initial values for u at time t_0.
-   * \param r Scalar factor (see above, default is 1)
-   * \param t_0 Initial time (default is 0)
-   * \param tol Error tolerance for the adaptive scheme (default is 1e-4)
-   * \param scale_factor_min Minimum allowed factor for time step scaling (default is 0.2).
-   * \param scale_factor_max Maximum allowed factor for time step scaling (default is 5).
-   * \param A Coefficient matrix (only provide if you use AdaptiveRungeKuttaMethods::other)
-   * \param b_1 First set of coefficients (only provide if you use AdaptiveRungeKuttaMethods::other)
-   * \param b_2 Second set of coefficients (only provide if you use AdaptiveRungeKuttaMethods::other)
-   * \param c Coefficients for time steps (only provide if you use AdaptiveRungeKuttaMethods::other)
-   */
   KineticAdaptiveRungeKuttaTimeStepper(const OperatorType& op,
                                        const MinDensitySetterType& min_density_setter,
                                        const EntropyFluxType& entropy_flux,
@@ -320,12 +289,10 @@ public:
         time_step_scale_factor =
             std::min(std::max(0.8 * std::pow(1. / mixed_error, 1. / (q + 1.)), scale_factor_min_), scale_factor_max_);
 
-        // ensure min density
-        std::vector<size_t> changed_indices;
-        min_density_setter_.apply_and_store(
-            alpha_np1_.dofs().vector(), alpha_np1_.dofs().vector(), changed_indices, actual_dt);
-        if (changed_indices.size() && !(mixed_error > 1.)) {
-          // we cannot use the first-same-as-last property for the next time step if indices have changed
+        // maybe adjust alpha to enforce a minimum density or avoid problems with matrix conditions
+        if (!(mixed_error > 1.)
+            && min_density_setter_.apply(alpha_np1_.dofs().vector(), alpha_np1_.dofs().vector(), actual_dt)) {
+          // we cannot use the first-same-as-last property for the next time step if we changed alpha
           first_same_as_last_ = false;
         }
       } // if (!skip_error_computation)
