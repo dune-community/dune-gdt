@@ -165,14 +165,15 @@ struct MomentApproximation
         (dimDomain == 1 && quad_refinements_or_intervals < min_quad_refinements_or_intervals)
             ? std::ceil(std::log2(min_quad_refinements_or_intervals / quad_refinements_or_intervals))
             : 0.;
-    std::function<RangeFieldType(const DomainType&, const bool)> psi;
+    std::function<RangeFieldType(const DomainType&, const std::array<int, dimDomain>&)> psi;
     if (testcase == "Heaviside") {
       if (dimDomain != 1)
         DUNE_THROW(InvalidStateException,
                    "This is a 1-dimensional test, but the basis functions are " + XT::Common::to_string(dimDomain)
                        + "-dimensional!");
-      psi = [](const DomainType& v, const bool left) {
-        return v[0] < 0 || (XT::Common::is_zero(v[0]) && left) ? RangeFieldType(5e-9) : RangeFieldType(1);
+      psi = [](const DomainType& v, const std::array<int, dimDomain>& fixed_sign) {
+        return v[0] < 0 || (XT::Common::is_zero(v[0]) && fixed_sign[0] == -1) ? RangeFieldType(5e-9)
+                                                                              : RangeFieldType(1);
       };
     } else if (testcase == "Gauss1d") {
       tau = 1e-12;
@@ -182,7 +183,7 @@ struct MomentApproximation
                        + "-dimensional!");
       const RangeFieldType sigma = 0.5;
       const RangeFieldType mu = 0.;
-      psi = [sigma, mu](const DomainType& v, const bool) {
+      psi = [sigma, mu](const DomainType& v, const std::array<int, dimDomain>&) {
         return 1. / std::sqrt(2. * M_PI * std::pow(sigma, 2))
                * std::exp(std::pow(v[0] - mu, 2) / (-2 * std::pow(sigma, 2)));
       };
@@ -193,7 +194,7 @@ struct MomentApproximation
                        + "-dimensional!");
       const RangeFieldType factor = 1e3;
       const RangeFieldType norm = std::sqrt(M_PI / factor);
-      psi = [factor, norm](const DomainType& v, const bool) {
+      psi = [factor, norm](const DomainType& v, const std::array<int, dimDomain>&) {
         return RangeFieldType(std::max(
             (std::exp(-factor * std::pow(v[0] - 0.5, 2)) + std::exp(-factor * std::pow(v[0] + 1, 2))) / norm, 5e-9));
       };
@@ -205,7 +206,7 @@ struct MomentApproximation
                        + "-dimensional!");
       const RangeFieldType sigma = 0.5;
       const RangeFieldType mu = 1.;
-      psi = [sigma, mu](const DomainType& v, const bool) {
+      psi = [sigma, mu](const DomainType& v, const std::array<int, dimDomain>&) {
         return 1. / (2. * M_PI * std::pow(sigma, 2) * (1. - std::exp(-2 / std::pow(sigma, 2))))
                * std::exp((std::pow(v[0] - mu, 2) + std::pow(v[1], 2) + std::pow(v[2], 2)) / (-2 * std::pow(sigma, 2)));
       };
@@ -214,7 +215,7 @@ struct MomentApproximation
         DUNE_THROW(InvalidStateException,
                    "This is a 3-dimensional test, but the basis functions are " + XT::Common::to_string(dimDomain)
                        + "-dimensional!");
-      psi = [](const DomainType& v, const bool) {
+      psi = [](const DomainType& v, const std::array<int, dimDomain>&) {
         if (v[0] > 0 && std::abs(v[1]) < 0.5 && std::abs(v[2]) < 0.5)
           return RangeFieldType(1);
         else
@@ -229,7 +230,7 @@ struct MomentApproximation
       const RangeFieldType norm = M_PI / factor;
       const FieldVector<RangeFieldType, 3> center1{{1., 0., 0.}};
       const FieldVector<RangeFieldType, 3> center2{{0., 1., 0.}};
-      psi = [factor, norm, center1, center2](const DomainType& v, const bool) {
+      psi = [factor, norm, center1, center2](const DomainType& v, const std::array<int, dimDomain>&) {
         return std::max((std::exp(-factor * (v - center1).two_norm2()) + std::exp(-factor * (v - center2).two_norm2()))
                             / norm,
                         1e-8 / (4 * M_PI));
@@ -258,7 +259,7 @@ struct MomentApproximation
     std::cout << "Creating basis functions took: " << time.count() << " s!" << std::endl;
 
     begin = std::chrono::steady_clock::now();
-    const auto u = basis_functions->get_moment_vector(psi);
+    const auto u = basis_functions->get_u(psi);
     time = std::chrono::steady_clock::now() - begin;
     std::cout << "Calculating u took: " << time.count() << " s!" << std::endl;
     using MnFluxType = EntropyBasedFluxFunction<GridViewType, MomentBasisType>;
@@ -332,15 +333,17 @@ struct MomentApproximation
       }
       mn_file << XT::Common::to_string(psi_mn, 15) << std::endl;
       pn_file << XT::Common::to_string(psi_pn, 15) << std::endl;
-      l1norm += std::abs(psi(v, basis_functions->is_negative(it))) * weight;
-      l2norm += std::pow(psi(v, basis_functions->is_negative(it)), 2) * weight;
-      linfnorm = std::max(std::abs(psi(v, basis_functions->is_negative(it))), linfnorm);
-      l1error_mn += std::abs(psi_mn - psi(v, basis_functions->is_negative(it))) * weight;
-      l2error_mn += std::pow(psi_mn - psi(v, basis_functions->is_negative(it)), 2) * weight;
-      linferror_mn = std::max(std::abs(psi_mn - psi(v, basis_functions->is_negative(it))), linferror_mn);
-      l1error_pn += std::abs(psi_pn - psi(v, basis_functions->is_negative(it))) * weight;
-      l2error_pn += std::pow(psi_pn - psi(v, basis_functions->is_negative(it)), 2) * weight;
-      linferror_pn = std::max(std::abs(psi_pn - psi(v, basis_functions->is_negative(it))), linferror_pn);
+      l1norm += std::abs(psi(v, basis_functions->has_fixed_sign(it.first_index()))) * weight;
+      l2norm += std::pow(psi(v, basis_functions->has_fixed_sign(it.first_index())), 2) * weight;
+      linfnorm = std::max(std::abs(psi(v, basis_functions->has_fixed_sign(it.first_index()))), linfnorm);
+      l1error_mn += std::abs(psi_mn - psi(v, basis_functions->has_fixed_sign(it.first_index()))) * weight;
+      l2error_mn += std::pow(psi_mn - psi(v, basis_functions->has_fixed_sign(it.first_index())), 2) * weight;
+      linferror_mn =
+          std::max(std::abs(psi_mn - psi(v, basis_functions->has_fixed_sign(it.first_index()))), linferror_mn);
+      l1error_pn += std::abs(psi_pn - psi(v, basis_functions->has_fixed_sign(it.first_index()))) * weight;
+      l2error_pn += std::pow(psi_pn - psi(v, basis_functions->has_fixed_sign(it.first_index())), 2) * weight;
+      linferror_pn =
+          std::max(std::abs(psi_pn - psi(v, basis_functions->has_fixed_sign(it.first_index()))), linferror_pn);
     }
     time = std::chrono::steady_clock::now() - begin;
     std::cout << "Calculating errors took: " << time.count() << " s!" << std::endl;
