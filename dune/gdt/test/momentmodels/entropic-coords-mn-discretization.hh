@@ -179,21 +179,6 @@ struct HyperbolicEntropicCoordsMnDiscretization
     // entropy_flux->disable_thread_cache();
     auto analytical_flux = std::make_unique<EntropyFluxType>(*entropy_flux);
 
-    // calculate boundary values for alpha
-    // std::map<DomainType, RangeType, XT::Common::FieldVectorFloatLess> alpha_boundary_vals;
-    // for (const auto& element : Dune::elements(grid_view))
-    //   for (const auto& intersection : Dune::intersections(grid_view, element))
-    //     if (intersection.boundary()) {
-    //       const auto x = intersection.geometry().center();
-    //       const auto u = boundary_values_u->evaluate(x);
-    //       alpha_boundary_vals.insert(std::make_pair(x, analytical_flux->get_alpha(u)));
-    //       std::cout << XT::Common::to_string(alpha_boundary_vals[x]) << std::endl;
-    //     }
-    // GenericFunctionType boundary_values_alpha(
-    //     1, [&](const DomainType& x, DynamicRangeType& ret, const XT::Common::Parameter&) {
-    //       ret = alpha_boundary_vals[x];
-    //     });
-
     // ***************** project initial values to discrete function *********************
     // create a discrete function for the solution
     DiscreteFunctionType u(fv_space, "u_initial");
@@ -362,13 +347,6 @@ struct HyperbolicEntropicCoordsMnDiscretization
     const auto stringifier = [&u_stringifier, &analytical_flux](const RangeType& val) {
       return u_stringifier(analytical_flux->get_u(val));
     };
-    // auto visualizer = std::make_unique<XT::Functions::GenericVisualizer<dimRange, 1, double>>(
-    //     1, [](const int /*comp*/, const auto& val) {
-    //       double ret = 0.;
-    //       for (const auto& entry : val)
-    //         ret = std::max(std::abs(entry), ret);
-    //       return ret;
-    //     });
 
     // The hessian has entries in the order of psi_min, the inverse thus scales with 1/psi_min, and thus the timestep
     // should be psi_min to get an update of order 1
