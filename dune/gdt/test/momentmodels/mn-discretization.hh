@@ -163,9 +163,6 @@ struct HyperbolicMnDiscretization
     using AdvectionOperatorType = AdvectionFvOperator<MatrixType, GV, dimRange>;
     using EigenvectorWrapperType = typename EigenvectorWrapperChooser<MomentBasis, AnalyticalFluxType>::type;
     using EntropySolverType = EntropySolver<MomentBasis, SpaceType, MatrixType>;
-    //    using ReconstructionOperatorType =
-    //        LinearReconstructionOperator<AnalyticalFluxType, BoundaryValueType, GV, MatrixType,
-    //        EigenvectorWrapperType>;
     using ReconstructionOperatorType = PointwiseLinearReconstructionOperator<AnalyticalFluxType,
                                                                              BoundaryValueType,
                                                                              GV,
@@ -200,15 +197,6 @@ struct HyperbolicMnDiscretization
         // LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator<I, VectorType, GV, dimRange>;
         LocalAdvectionFvBoundaryTreatmentByCustomNumericalFluxOperator<I, VectorType, GV, dimRange>;
     using LambdaType = typename BoundaryOperator::LambdaType;
-    // using DynamicStateType = typename BoundaryOperator::DynamicStateType;
-    // LambdaType boundary_lambda =
-    //     [&boundary_values](const I& intersection,
-    //                        const FieldVector<RangeFieldType, dimDomain - 1>&
-    //                        xx_in_reference_intersection_coordinates, const AnalyticalFluxType& /*flux*/, const
-    //                        DynamicStateType& /*u*/, DynamicStateType& v, const XT::Common::Parameter& param) {
-    //       boundary_values->evaluate(intersection.geometry().global(xx_in_reference_intersection_coordinates), v,
-    //       param);
-    //     };
 
     // store boundary fluxes
     using BoundaryFluxesMapType = std::map<DomainType, DynamicRangeType, XT::Common::FieldVectorFloatLess>;
