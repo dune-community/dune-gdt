@@ -219,7 +219,7 @@ public:
     implementation_->apply_inverse_hessian((*eta_ast_twoprime_evaluations_)[entity_index], u);
   }
 
-  void store_evaluations(const DomainType& entity_center,
+  void store_evaluations(const DomainType& /*entity_center*/,
                          size_t entity_index,
                          StateType& alpha,
                          const RangeFieldType /*rho_min*/,
@@ -238,17 +238,10 @@ public:
       const double* u_ptr = &(u[0]);
       const auto val = XT::Common::reduce(u_ptr, u_ptr + basis_dimRange, 0.);
       if (std::isnan(val) || std::isinf(val)) {
-        std::cout << XT::Common::to_string(entity_center) << ", " << entity_index << ", "
-                  << XT::Common::to_string(alpha) << ", " << XT::Common::to_string(u) << std::endl;
+        // std::cout << XT::Common::to_string(entity_center) << ", " << entity_index << ", "
+        //           << XT::Common::to_string(alpha) << ", " << XT::Common::to_string(u) << std::endl;
         DUNE_THROW(Dune::MathError, "inf or nan in u!");
       }
-      // thread_local std::bitset<basis_dimRange> changed_indices;
-      // const bool changed = basis_functions().adjust_alpha_to_ensure_min_density(
-      //     alpha, rho_min, basis_functions().needs_rho_for_min_density() ? basis_functions().density(u) : 0., u,
-      //     changed_indices);
-      //     // alpha, rho_min, basis_functions().needs_rho_for_min_density() ? basis_functions().density(u) : 0., u);
-      // if (changed)
-      //   store_evaluations(entity_index, alpha, rho_min, false);
     } // if (check)
   }
 
