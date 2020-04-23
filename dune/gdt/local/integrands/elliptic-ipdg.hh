@@ -10,17 +10,17 @@
 //   René Milk       (2017)
 //   Tobias Leibner  (2014)
 
-#warning This header is deprecated, use and include <dune/gdt/local/integrands/laplace-ipdg.hh> instead!
+//#warning This header is deprecated, use and include <dune/gdt/local/integrands/laplace-ipdg.hh> instead!
 
 #ifndef DUNE_GDT_LOCAL_INTEGRANDS_ELLIPTIC_IPDG_HH
-#  define DUNE_GDT_LOCAL_INTEGRANDS_ELLIPTIC_IPDG_HH
+#define DUNE_GDT_LOCAL_INTEGRANDS_ELLIPTIC_IPDG_HH
 
-#  include <dune/xt/common/deprecated.hh>
-#  include <dune/xt/functions/grid-function.hh>
-#  include <dune/xt/functions/interfaces/grid-function.hh>
+#include <dune/xt/common/deprecated.hh>
+#include <dune/xt/functions/grid-function.hh>
+#include <dune/xt/functions/interfaces/grid-function.hh>
 
-#  include "interfaces.hh"
-#  include "ipdg.hh"
+#include "interfaces.hh"
+#include "ipdg.hh"
 
 namespace Dune {
 namespace GDT {
@@ -344,7 +344,8 @@ private:
 namespace LocalEllipticIpdgIntegrands {
 
 
-enum class /*DXT_DEPRECATED_MSG("Use the LocalLaplaceIPDGIntegrands instead (10.08.2019)!")*/ Method
+// enum class DXT_DEPRECATED_MSG("Use the LocalLaplaceIPDGIntegrands instead (10.08.2019)!") Method
+enum class Method
 {
   ipdg,
   nipdg,
@@ -465,14 +466,14 @@ static inline double inner_sigma(const size_t pol_order)
   else if (pol_order <= 3)
     sigma *= 38.0;
   else {
-#  ifndef NDEBUG
-#    ifndef DUNE_GDT_DISABLE_WARNINGS
+#ifndef NDEBUG
+#  ifndef DUNE_GDT_DISABLE_WARNINGS
     Dune::XT::Common::TimedLogger().get("gdt.local.integrands.elliptic-ipdg.inner").warn()
         << "a polynomial order of " << pol_order << " is untested!\n"
         << "  #define DUNE_GDT_DISABLE_WARNINGS to statically disable this warning\n"
         << "  or dynamically disable warnings of the TimedLogger() instance!" << std::endl;
-#    endif
 #  endif
+#endif
     sigma *= 50.0;
   }
   return sigma;
@@ -493,14 +494,14 @@ static inline double boundary_sigma(const size_t pol_order)
   else if (pol_order <= 3)
     sigma *= 74.0;
   else {
-#  ifndef NDEBUG
-#    ifndef DUNE_GDT_DISABLE_WARNINGS
+#ifndef NDEBUG
+#  ifndef DUNE_GDT_DISABLE_WARNINGS
     Dune::XT::Common::TimedLogger().get("gdt.local.integrands.elliptic-ipdg.boundary").warn()
         << "a polynomial order of " << pol_order << " is untested!\n"
         << "  #define DUNE_GDT_DISABLE_WARNINGS to statically disable this warning\n"
         << "  or dynamically disable warnings of the TimedLogger() instance!" << std::endl;
-#    endif
 #  endif
+#endif
     sigma *= 100.0;
   }
   return sigma;
@@ -514,8 +515,8 @@ static inline double boundary_sigma(const size_t pol_order)
  * \sa [Epshteyn, Riviere, 2007] for the meaning of beta
  */
 template <class I, class F = double, Method method = default_method>
-// class DXT_DEPRECATED_MSG(
-//    "Use LocalLaplaceIPDGIntegrands::InnerCoupling + LocalIPDGIntegrands::InnerPenalty} instead (10.08.2019)!")
+// class DXT_DEPRECATED_MSG("Use LocalLaplaceIPDGIntegrands::InnerCoupling + LocalIPDGIntegrands::InnerPenalty} instead
+// (10.08.2019)!") Inner
 class Inner : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
 {
   using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>;
@@ -1007,9 +1008,9 @@ private:
  * \sa [Epshteyn, Riviere, 2007] for the meaning of beta
  */
 template <class I, class F = double, Method method = default_method>
-class /*DXT_DEPRECATED_MSG(
-    "Use LocalLaplaceIPDGIntegrands::DirichletCoupling + LocalIPDGIntegrands::boundaryPenalty instead (10.08.2019)!")*/
-    DirichletBoundaryLhs : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
+// class DXT_DEPRECATED_MSG("Use LocalLaplaceIPDGIntegrands::DirichletCoupling + LocalIPDGIntegrands::boundaryPenalty
+// instead (10.08.2019)!") DirichletBoundaryLhs
+class DirichletBoundaryLhs : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
 {
   using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>;
   using ThisType = DirichletBoundaryLhs;
@@ -1201,7 +1202,7 @@ private:
 }; // DirichletBoundaryLhs
 
 
-#  if 0
+#if 0
 template <class DirichletImp, class DiffusionFactorImp, class DiffusionTensorImp, Method method>
 class BoundaryRHS : public LocalFaceIntegrandInterface<internal::BoundaryRHSTraits<DirichletImp,
                                                                                    DiffusionFactorImp,
@@ -1443,14 +1444,14 @@ public:
   const EllipticType elliptic_;
   const double beta_;
 }; // class BoundaryRHS
-#  endif // 0
+#endif // 0
 
 /**
  * \sa [Epshteyn, Riviere, 2007] for the meaning of beta
  */
 template <class I, class F = double, Method method = default_method>
-class /*DXT_DEPRECATED_MSG("Use LocalIPDGIntegrands::InnerPenalty instead (05.08.2019)!")*/ InnerOnlyPenalty
-  : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
+// class DXT_DEPRECATED_MSG("Use LocalIPDGIntegrands::InnerPenalty instead (05.08.2019)!") InnerOnlyPenalty
+class InnerOnlyPenalty : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
 {
   using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>;
   using ThisType = InnerOnlyPenalty;
@@ -1901,8 +1902,8 @@ private:
  * \sa [Epshteyn, Riviere, 2007] for the meaning of beta
  */
 template <class I, class F = double, Method method = default_method>
-class /*DXT_DEPRECATED_MSG("Use LocalIPDGIntegrands::BoundaryPenalty instead (05.08.2019)!")*/
-    DirichletBoundaryLhsOnlyPenalty : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
+// class DXT_DEPRECATED_MSG("Use LocalIPDGIntegrands::BoundaryPenalty instead (05.08.2019)!")
+class DirichletBoundaryLhsOnlyPenalty : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
 {
   using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>;
   using ThisType = DirichletBoundaryLhsOnlyPenalty;

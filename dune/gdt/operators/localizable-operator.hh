@@ -255,13 +255,13 @@ template <class AGV,
           class RGV,
           class RV>
 std::enable_if_t<XT::Grid::is_layer<AGV>::value,
-                 LocalizableOperatorBase<AGV, SV, s_r, s_rC, SF, SGV, r_r, r_rC, RF, RGV, RV>>
+                 LocalizableDiscreteOperatorApplicator<AGV, SV, s_r, s_rC, SF, SGV, r_r, r_rC, RF, RGV, RV>>
 make_localizable_operator(
     AGV assembly_grid_view,
     const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<SGV>, s_r, s_rC, SF>& source,
     DiscreteFunction<RV, RGV, r_r, r_rC, RF>& range)
 {
-  return LocalizableOperatorBase<AGV, SV, s_r, s_rC, SF, SGV, r_r, r_rC, RF, RGV, RV>(
+  return LocalizableDiscreteOperatorApplicator<AGV, SV, s_r, s_rC, SF, SGV, r_r, r_rC, RF, RGV, RV>(
       assembly_grid_view, source, range);
 }
 
@@ -303,12 +303,15 @@ public:
 
   LocalizableOperator(const AGV& assembly_grid_view,
                       const SourceSpaceType& source_space,
-                      const RangeSpaceType& range_space)
+                      const RangeSpaceType& range_space,
+                      const bool linear = true,
+                      const bool use_tbb = false)
     : BaseType()
     , assembly_grid_view_(assembly_grid_view)
     , source_space_(source_space)
     , range_space_(range_space)
-    , linear_(true)
+    , linear_(linear)
+    , use_tbb_(use_tbb)
   {}
 
   LocalizableOperator(ThisType&& source) = default;
@@ -373,7 +376,7 @@ public:
       localizable_op.append(*local_op, param, filter);
     }
     // and apply it in a grid walk
-    localizable_op.assemble(/*use_tbb=*/true);
+    localizable_op.assemble(use_tbb_);
     DUNE_THROW_IF(!range.valid(), Exceptions::operator_error, "range contains inf or nan!");
   } // ... apply(...)
 
@@ -433,6 +436,7 @@ protected:
   const SourceSpaceType& source_space_;
   const RangeSpaceType& range_space_;
   bool linear_;
+  const bool use_tbb_;
   std::list<std::pair<std::unique_ptr<LocalElementOperatorType>, std::unique_ptr<XT::Grid::ElementFilter<AGV>>>>
       local_element_operators_;
   std::list<

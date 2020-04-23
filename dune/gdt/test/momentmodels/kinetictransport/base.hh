@@ -62,16 +62,13 @@ public:
   using BoundaryDistributionType =
       std::function<std::function<RangeFieldType(const BasisDomainType&)>(const DomainType&)>;
 
-  using BaseType::default_boundary_cfg;
   using BaseType::default_grid_cfg;
 
   KineticTransportEquationBase(const MomentBasis& basis_functions,
-                               const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
-                               const XT::Common::Configuration& boundary_cfg = default_boundary_cfg(),
-                               const RangeFieldType psi_vac = 5e-9)
+                               const RangeFieldType psi_vac = 5e-7,
+                               const XT::Common::Configuration& grid_cfg = default_grid_cfg())
     : BaseType(basis_functions)
     , grid_cfg_(grid_cfg)
-    , boundary_cfg_(boundary_cfg)
     , psi_vac_(psi_vac)
   {}
 
@@ -195,7 +192,7 @@ public:
         const auto b = basis_functions_.evaluate(v, jj);
         if (v[dd] * n < 0) {
           const RangeFieldType psi = boundary_density(v);
-          ret += b * psi * v[dd] * quadratures[jj][ll].weight();
+          ret += b * psi * (v[dd] * n) * quadratures[jj][ll].weight();
         }
       } // ll
     } // jj
@@ -222,11 +219,6 @@ public:
     return grid_cfg_;
   }
 
-  XT::Common::Configuration boundary_config() const override
-  {
-    return boundary_cfg_;
-  }
-
   static std::string static_id()
   {
     return "kinetictransportequation";
@@ -246,7 +238,6 @@ public:
 protected:
   using BaseType::basis_functions_;
   const XT::Common::Configuration grid_cfg_;
-  const XT::Common::Configuration boundary_cfg_;
   const RangeFieldType psi_vac_;
   XT::Common::ParameterType parameter_type_;
 }; // class KineticTransportEquation<...>

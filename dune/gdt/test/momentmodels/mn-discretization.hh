@@ -35,6 +35,53 @@
 
 #include "pn-discretization.hh"
 
+template <class GV, class ProblemType, class MapType>
+class BoundaryFluxesFunctor : public Dune::XT::Grid::IntersectionFunctor<GV>
+{
+  using BaseType = typename Dune::XT::Grid::IntersectionFunctor<GV>;
+  using IndexSetType = typename GV::IndexSet;
+
+public:
+  using typename BaseType::E;
+  using typename BaseType::I;
+
+  BoundaryFluxesFunctor(const ProblemType& problem, MapType& boundary_fluxes_map)
+    : problem_(problem)
+    , boundary_fluxes_map_(boundary_fluxes_map)
+    , mutex_(std::make_shared<std::mutex>())
+  {}
+
+  BoundaryFluxesFunctor(const BoundaryFluxesFunctor& other)
+    : BaseType(other)
+    , problem_(other.problem_)
+    , boundary_fluxes_map_(other.boundary_fluxes_map_)
+    , mutex_(other.mutex_)
+  {}
+
+  Dune::XT::Grid::IntersectionFunctor<GV>* copy() override final
+  {
+    return new BoundaryFluxesFunctor(*this);
+  }
+
+  virtual void
+  apply_local(const I& intersection, const E& /*inside_element*/, const E& /*outside_element*/) override final
+  {
+    // store boundary fluxes
+    const auto x = intersection.geometry().center();
+    const auto dd = intersection.indexInInside() / 2;
+    const auto n = intersection.centerUnitOuterNormal()[dd];
+    auto boundary_flux = problem_.kinetic_boundary_flux(x, n, dd);
+    mutex_->lock();
+    boundary_fluxes_map_.insert(std::make_pair(x, boundary_flux));
+    mutex_->unlock();
+  }
+
+private:
+  const ProblemType& problem_;
+  MapType& boundary_fluxes_map_;
+  std::shared_ptr<std::mutex> mutex_;
+};
+
 template <class TestCaseType>
 struct HyperbolicMnDiscretization
 {
@@ -66,8 +113,10 @@ struct HyperbolicMnDiscretization
     static constexpr size_t dimDomain = MomentBasis::dimDomain;
     static constexpr size_t dimRange = MomentBasis::dimRange;
     static const auto la_backend = TestCaseType::la_backend;
+    using DomainType = FieldVector<RangeFieldType, dimDomain>;
     using MatrixType = typename XT::LA::Container<RangeFieldType, la_backend>::MatrixType;
     using VectorType = typename XT::LA::Container<RangeFieldType, la_backend>::VectorType;
+    using DynamicRangeType = DynamicVector<RangeFieldType>;
 
     //******************* create grid and FV space ***************************************
     auto grid_config = ProblemType::default_grid_cfg();
@@ -85,24 +134,27 @@ struct HyperbolicMnDiscretization
     std::shared_ptr<const MomentBasis> basis_functions = std::make_shared<const MomentBasis>(
         quad_order == size_t(-1) ? MomentBasis::default_quad_order() : quad_order,
         quad_refinements == size_t(-1) ? MomentBasis::default_quad_refinements() : quad_refinements);
+    const RangeFieldType psi_vac = DXTC_CONFIG_GET("psi_vac", 1e-8 / basis_functions->unit_ball_volume());
     const std::unique_ptr<ProblemType> problem_ptr =
-        XT::Common::make_unique<ProblemType>(*basis_functions, grid_view, grid_config);
+        std::make_unique<ProblemType>(*basis_functions, grid_view, psi_vac, grid_config, false);
     const auto& problem = *problem_ptr;
     const auto initial_values = problem.initial_values();
     const auto boundary_values = problem.boundary_values();
     using AnalyticalFluxType = typename ProblemType::FluxType;
     using EntropyFluxType = typename ProblemType::ActualFluxType;
     auto analytical_flux = problem.flux();
+    auto* entropy_flux = dynamic_cast<EntropyFluxType*>(analytical_flux.get());
     // for Legendre polynomials and real spherical harmonics, the results are sensitive to the initial guess in the
     // Newton algorithm. If the thread cache is enabled, the guess is different dependent on how many threads we are
     // using, so for the tests we disable this cache to get reproducible results.
     if (disable_thread_cache)
       dynamic_cast<EntropyFluxType*>(analytical_flux.get())->disable_thread_cache();
-    const RangeFieldType CFL = problem.CFL();
+    const RangeFieldType CFL = DXTC_CONFIG.get("timestepper.CFL", problem.CFL());
 
     // ***************** project initial values to discrete function *********************
     // create a discrete function for the solution
-    DiscreteFunctionType u(fv_space, "solution");
+    VectorType u_vec(fv_space.mapper().size(), 0., DXTC_CONFIG_GET("num_u_mutexes", 1));
+    DiscreteFunctionType u(fv_space, u_vec, "rho");
     // project initial values
     default_interpolation(*initial_values, u, grid_view);
 
@@ -111,9 +163,6 @@ struct HyperbolicMnDiscretization
     using AdvectionOperatorType = AdvectionFvOperator<MatrixType, GV, dimRange>;
     using EigenvectorWrapperType = typename EigenvectorWrapperChooser<MomentBasis, AnalyticalFluxType>::type;
     using EntropySolverType = EntropySolver<MomentBasis, SpaceType, MatrixType>;
-    //    using ReconstructionOperatorType =
-    //        LinearReconstructionOperator<AnalyticalFluxType, BoundaryValueType, GV, MatrixType,
-    //        EigenvectorWrapperType>;
     using ReconstructionOperatorType = PointwiseLinearReconstructionOperator<AnalyticalFluxType,
                                                                              BoundaryValueType,
                                                                              GV,
@@ -124,10 +173,9 @@ struct HyperbolicMnDiscretization
     using FvOperatorType = EntropyBasedMomentFvOperator<
         std::conditional_t<TestCaseType::reconstruction, ReconstructionAdvectionOperatorType, AdvectionOperatorType>,
         EntropySolverType>;
+    constexpr TimeStepperMethods time_stepper_type = TimeStepperMethods::explicit_rungekutta_second_order_ssp;
     using OperatorTimeStepperType =
-        ExplicitRungeKuttaTimeStepper<FvOperatorType,
-                                      DiscreteFunctionType,
-                                      TimeStepperMethods::explicit_rungekutta_second_order_ssp>;
+        ExplicitRungeKuttaTimeStepper<FvOperatorType, DiscreteFunctionType, time_stepper_type>;
     using RhsTimeStepperType = KineticIsotropicTimeStepper<DiscreteFunctionType, MomentBasis>;
     using TimeStepperType = StrangSplittingTimeStepper<RhsTimeStepperType, OperatorTimeStepperType>;
 
@@ -142,28 +190,48 @@ struct HyperbolicMnDiscretization
 
     // *********************** create operators and timesteppers ************************************
     NumericalKineticFlux<GV, MomentBasis> numerical_flux(*analytical_flux, *basis_functions);
-    AdvectionOperatorType advection_operator(grid_view, numerical_flux, advection_source_space, fv_space);
+    AdvectionOperatorType advection_operator(grid_view, numerical_flux, advection_source_space, fv_space, true);
 
     // boundary treatment
     using BoundaryOperator =
-        LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator<I, VectorType, GV, dimRange>;
+        // LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator<I, VectorType, GV, dimRange>;
+        LocalAdvectionFvBoundaryTreatmentByCustomNumericalFluxOperator<I, VectorType, GV, dimRange>;
     using LambdaType = typename BoundaryOperator::LambdaType;
-    using DynamicStateType = typename BoundaryOperator::DynamicStateType;
+
+    // store boundary fluxes
+    using BoundaryFluxesMapType = std::map<DomainType, DynamicRangeType, XT::Common::FieldVectorFloatLess>;
+    BoundaryFluxesMapType boundary_fluxes;
+    BoundaryFluxesFunctor<GV, ProblemType, BoundaryFluxesMapType> boundary_flux_functor(problem, boundary_fluxes);
+    auto walker = XT::Grid::Walker<GV>(fv_space.grid_view());
+    XT::Grid::ApplyOn::NonPeriodicBoundaryIntersections<GV> boundary_intersection_filter;
+    walker.append(boundary_flux_functor, boundary_intersection_filter);
+    walker.walk(true);
+    using GenericFunctionType = XT::Functions::GenericFunction<dimDomain, dimRange, 1, RangeFieldType>;
+    GenericFunctionType boundary_kinetic_fluxes(
+        1, [&](const DomainType& x, DynamicRangeType& ret, const XT::Common::Parameter&) { ret = boundary_fluxes[x]; });
     LambdaType boundary_lambda =
-        [&boundary_values](const I& intersection,
-                           const FieldVector<RangeFieldType, dimDomain - 1>& xx_in_reference_intersection_coordinates,
-                           const AnalyticalFluxType& /*flux*/,
-                           const DynamicStateType& /*u*/,
-                           DynamicStateType& v,
-                           const XT::Common::Parameter& param) {
-          boundary_values->evaluate(intersection.geometry().global(xx_in_reference_intersection_coordinates), v, param);
+        [&boundary_kinetic_fluxes,
+         &entropy_flux](const I& intersection,
+                        const FieldVector<RangeFieldType, dimDomain - 1>& xx_in_reference_intersection_coordinates,
+                        const DynamicRangeType& u_in,
+                        DynamicRangeType& g,
+                        const XT::Common::Parameter& param) {
+          // influx
+          boundary_kinetic_fluxes.evaluate(
+              intersection.geometry().global(xx_in_reference_intersection_coordinates), g, param);
+          // outflux
+          const auto& entity = intersection.inside();
+          const auto dd = intersection.indexInInside() / 2;
+          const auto alpha_entity = entropy_flux->get_alpha(entity, u_in, true)->first;
+          const auto outflux =
+              entropy_flux->evaluate_kinetic_outflow(alpha_entity, intersection.centerUnitOuterNormal(), dd);
+          g += outflux;
         };
-    XT::Grid::ApplyOn::NonPeriodicBoundaryIntersections<GV> filter;
-    advection_operator.append(boundary_lambda, {}, filter);
+    advection_operator.append(boundary_lambda, {}, boundary_intersection_filter);
 
     constexpr double epsilon = 1e-11;
     auto slope = TestCaseType::RealizabilityLimiterChooserType::template make_slope<EigenvectorWrapperType>(
-        *dynamic_cast<EntropyFluxType*>(analytical_flux.get()), *basis_functions, epsilon);
+        *entropy_flux, *basis_functions, epsilon);
     ReconstructionOperatorType reconstruction_operator(*analytical_flux, *boundary_values, fv_space, *slope, false);
     ReconstructionAdvectionOperatorType reconstruction_advection_operator(advection_operator, reconstruction_operator);
 
@@ -173,10 +241,17 @@ struct HyperbolicMnDiscretization
     if (!filename.empty())
       filename += "_";
     filename += ProblemType::static_id();
+    filename +=
+        (time_stepper_type == TimeStepperMethods::explicit_rungekutta_second_order_ssp)
+            ? "_ssp2"
+            : (time_stepper_type == TimeStepperMethods::explicit_rungekutta_third_order_ssp ? "_ssp3" : "_unknown");
     filename += "_grid_" + grid_config["num_elements"];
+    filename += "_dt_" + XT::Common::to_string(dt);
     filename += "_tend_" + XT::Common::to_string(t_end);
-    filename += "_quad_" + XT::Common::to_string(quad_order);
-    filename += MomentBasis::entropy == EntropyType::MaxwellBoltzmann ? "_MaxwellBoltzmann_" : "_BoseEinstein_";
+    filename += "_quad_" + XT::Common::to_string(quad_refinements) + "x" + XT::Common::to_string(quad_order);
+    filename += "_threads_" + DXTC_CONFIG.get("threading.max_count", "1") + "x"
+                + DXTC_CONFIG.get("threading.partition_factor", "1");
+    filename += MomentBasis::entropy == EntropyType::MaxwellBoltzmann ? "_MaxwellBoltzmann" : "_BoseEinstein";
     filename += TestCaseType::reconstruction ? "_ord2" : "_ord1";
     filename += "_" + basis_functions->mn_name();
 
@@ -202,9 +277,10 @@ struct HyperbolicMnDiscretization
                       num_save_steps,
                       num_output_steps,
                       false,
-                      true,
-                      true,
+                      DXTC_CONFIG_GET("visualize", true),
+                      DXTC_CONFIG_GET("write_txt", true),
                       false,
+                      true,
                       filename,
                       *basis_functions->visualizer(),
                       basis_functions->stringifier());
@@ -212,6 +288,7 @@ struct HyperbolicMnDiscretization
     std::chrono::duration<double> time_diff = end_time - begin_time;
     if (grid_view.comm().rank() == 0)
       std::cout << "Solving took: " << XT::Common::to_string(time_diff.count(), 15) << " s" << std::endl;
+    timestepper.write_timings(filename);
 
     auto ret = std::make_pair(FieldVector<double, 3>(0.), int(0));
     double& l1norm = ret.first[0];
@@ -245,14 +322,15 @@ struct HyperbolicMnTest
   {
     auto norms = HyperbolicMnDiscretization<TestCaseType>::run(
                      DXTC_CONFIG.get("num_save_steps", 1),
-                     0,
-                     TestCaseType::quad_order,
-                     TestCaseType::quad_refinements,
+                     DXTC_CONFIG.get("num_output_steps", 0),
+                     DXTC_CONFIG.get("quad_order", TestCaseType::quad_order),
+                     DXTC_CONFIG.get("quad_refinements", TestCaseType::quad_refinements),
                      DXTC_CONFIG.get("grid_size", ""),
-                     2,
+                     DXTC_CONFIG.get("overlap_size", 2),
                      DXTC_CONFIG.get("t_end", TestCaseType::t_end),
-                     "test",
-                     Dune::GDT::is_full_moment_basis<typename TestCaseType::MomentBasis>::value)
+                     DXTC_CONFIG.get("filename", "timings"),
+                     DXTC_CONFIG.get("disable_thread_cache",
+                                     Dune::GDT::is_full_moment_basis<typename TestCaseType::MomentBasis>::value))
                      .first;
     const double l1norm = norms[0];
     const double l2norm = norms[1];

@@ -33,6 +33,7 @@ class LocalPointwiseLinearKineticReconstructionOperator : public XT::Grid::Eleme
 {
   using ThisType = LocalPointwiseLinearKineticReconstructionOperator;
   using BaseType = XT::Grid::ElementFunctor<GV>;
+  using IndexSetType = typename GV::IndexSet;
   static constexpr size_t dimDomain = GV::dimension;
   static constexpr size_t dimRange = AnalyticalFluxType::state_dim;
   using EntityType = typename GV::template Codim<0>::Entity;
@@ -49,6 +50,7 @@ public:
                                                              const XT::Common::Parameter& param)
     : reconstructed_function_(reconstructed_function)
     , grid_view_(grid_view)
+    , index_set_(grid_view_.indexSet())
     , analytical_flux_(analytical_flux)
     , param_(param)
   {}
@@ -57,6 +59,7 @@ public:
     : BaseType(other)
     , reconstructed_function_(other.reconstructed_function_)
     , grid_view_(other.grid_view_)
+    , index_set_(grid_view_.indexSet())
     , analytical_flux_(other.analytical_flux_)
     , param_(other.param_)
   {}
@@ -82,7 +85,7 @@ private:
   bool fill_stencils(const EntityType& entity)
   {
     for (size_t dd = 0; dd < dimDomain; ++dd)
-      stencils_[dd][1] = grid_view_.indexSet().index(entity);
+      stencils_[dd][1] = index_set_.index(entity);
     for (const auto& intersection : Dune::intersections(grid_view_, entity)) {
       const size_t dd = intersection.indexInInside() / 2;
       const size_t index = (intersection.indexInInside() % 2) * 2;
@@ -90,7 +93,7 @@ private:
         stencils_[dd][index] = size_t(-1);
         boundary_dirs_[dd][index] = intersection.indexInInside() % 2;
       } else if (intersection.neighbor()) { // inner and periodic intersections {
-        stencils_[dd][index] = grid_view_.indexSet().index(intersection.outside());
+        stencils_[dd][index] = index_set_.index(intersection.outside());
       } else if (!intersection.neighbor() && !intersection.boundary()) { // processor boundary
         return false;
       } else {
@@ -102,6 +105,7 @@ private:
 
   ReconstructedFunctionType& reconstructed_function_;
   const GV& grid_view_;
+  const IndexSetType& index_set_;
   const AnalyticalFluxType& analytical_flux_;
   const XT::Common::Parameter& param_;
   StencilsType stencils_;

@@ -245,14 +245,13 @@ public:
     assert(b_1_.size() == A_.rows());
     assert(b_2_.size() == A_.rows());
     assert(c_.size() == A_.rows());
-#ifndef NDEBUG
     for (size_t ii = 0; ii < A_.rows(); ++ii) {
       for (size_t jj = ii; jj < A_.cols(); ++jj) {
-        assert(Dune::XT::Common::FloatCmp::eq(A_[ii][jj], 0.0)
-               && "A has to be a lower triangular matrix with 0 on the main diagonal");
+        DUNE_THROW_IF(XT::Common::FloatCmp::ne(A_[ii][jj], 0.0),
+                      XT::Common::Exceptions::wrong_input_given,
+                      "A has to be a lower triangular matrix with 0 on the main diagonal");
       }
     }
-#endif // NDEBUG
     // store as many discrete functions as needed for intermediate stages
     for (size_t ii = 0; ii < num_stages_; ++ii) {
       stages_k_.emplace_back(current_solution());
@@ -364,32 +363,8 @@ public:
       }
     } // while (mixed_error > tol_)
     if (!last_stage_of_previous_step_)
-      last_stage_of_previous_step_ = Dune::XT::Common::make_unique<DiscreteFunctionType>(u_n);
+      last_stage_of_previous_step_ = std::make_unique<DiscreteFunctionType>(u_n);
     last_stage_of_previous_step_->dofs().vector() = stages_k_[num_stages_ - 1].dofs().vector();
-
-#if 0
-    const auto u_local_func = u_n.local_discrete_function();
-    for (auto&& element : Dune::elements(u_n.space().grid_view())) {
-      u_local_func->bind(element);
-      for (size_t ii = 0; ii < BaseType::dimRange; ++ii) {
-//        constexpr double min_val = -100.;
-        constexpr double max_val = 1000.;
-        const auto entry_ii = u_local_func->dofs().get_entry(ii);
-        if (std::abs(entry_ii) > max_val) {
-//          std::cout << "limited from " << u_local_func->dofs().get_entry(ii) << " to " << min_val << " in entity " << element.geometry().center() << std::endl;
-//          std::cout << "Entries are: ";
-//          for (size_t jj = 0; jj < BaseType::dimRange; ++jj) {
-//            std::cout << u_local_func->dofs().get_entry(jj) << " ";
-//          }
-//          std::cout << std::endl;
-          last_stage_of_previous_step_ = nullptr;
-//          u_local_func->dofs().set_entry(ii, min_val);
-          std::cout << "Replacing " << entry_ii << " by " << std::copysign(max_val, entry_ii) << std::endl;
-          u_local_func->dofs().set_entry(ii, std::copysign(max_val, entry_ii));
-        }
-      } // ii
-    } // elements
-#endif
 
     t += actual_dt;
 

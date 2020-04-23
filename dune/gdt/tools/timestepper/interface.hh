@@ -199,12 +199,15 @@ public:
                                const bool with_half_steps,
                                const bool write_discrete,
                                const bool write_exact,
+                               const bool reset_begin_time,
                                const std::string prefix,
                                DiscreteSolutionType& sol,
                                const VisualizerType& visualizer,
                                const StringifierType& stringifier,
                                const GridFunctionType& exact_solution)
   {
+    if (reset_begin_time)
+      begin_time_ = std::chrono::steady_clock::now();
     RangeFieldType dt = initial_dt;
     RangeFieldType t = current_time();
     assert(Dune::XT::Common::FloatCmp::ge(t_end, t));
@@ -231,6 +234,8 @@ public:
                 stringifier,
                 visualizer);
 
+    // store initial time
+    timepoints_.push_back(t);
     while (Dune::XT::Common::FloatCmp::lt(t, t_end)) {
       RangeFieldType max_dt = dt;
       // match saving times and t_end exactly
@@ -240,6 +245,7 @@ public:
         max_dt = std::min(next_save_time - t, max_dt);
 
       // do a timestep
+      const auto walltime_before_step = std::chrono::steady_clock::now();
       if (with_half_steps) {
         const auto dt1 = step_first(dt, max_dt);
         if (save_solution && num_save_steps == size_t(-1))
@@ -248,7 +254,11 @@ public:
       } else {
         dt = step(dt, max_dt);
       }
+      const auto walltime_after_step = std::chrono::steady_clock::now();
       t = current_time();
+      timepoints_.push_back(t);
+      std::chrono::duration<double> step_time = walltime_after_step - walltime_before_step;
+      step_walltimes_.push_back(step_time.count());
 
       // augment time step counter
       ++time_step_counter;
@@ -276,6 +286,11 @@ public:
         next_output_time += output_interval;
       }
     } // while (t < t_end)
+    solve_walltime_ = std::chrono::steady_clock::now() - begin_time_;
+    // for the last time point there is no actual dt and no computation time as the step is not taken anymore, so we
+    // store the estimate for the next timestep and the time for the whole solution process
+    dts_.push_back(dt);
+    step_walltimes_.push_back(solve_walltime_.count());
 
     return dt;
   } // ... solve(...)
@@ -374,6 +389,7 @@ public:
                                const bool with_half_steps = false,
                                const bool write_discrete = false,
                                const bool write_exact = false,
+                               const bool reset_begin_time = true,
                                const std::string prefix = "solution",
                                const VisualizerType& visualizer = default_visualizer(),
                                const StringifierType& stringifier = vector_stringifier(),
@@ -388,6 +404,7 @@ public:
                  with_half_steps,
                  write_discrete,
                  write_exact,
+                 reset_begin_time,
                  prefix,
                  *solution_,
                  visualizer,
@@ -400,7 +417,8 @@ public:
                                const RangeFieldType initial_dt,
                                const size_t num_save_steps,
                                DiscreteSolutionType& sol,
-                               const bool with_half_steps = false)
+                               const bool with_half_steps = false,
+                               const bool reset_begin_time = false)
   {
     return solve(t_end,
                  initial_dt,
@@ -411,6 +429,7 @@ public:
                  with_half_steps,
                  false,
                  false,
+                 reset_begin_time,
                  "",
                  sol,
                  default_visualizer(),
@@ -570,12 +589,33 @@ public:
   }
 
 private:
+  void write_timings(const std::string& prefix)
+  {
+    const std::string filename = prefix + "_timings.txt";
+    std::ofstream timings_file(filename);
+    timings_file << "step t dt steptime" << std::endl;
+    timings_file << std::setprecision(15);
+    for (size_t ii = 0; ii < dts_.size(); ++ii) {
+      timings_file << ii + 1 << " " << XT::Common::to_string(timepoints_[ii], 15) << " "
+                   << XT::Common::to_string(dts_[ii], 15) << " " << XT::Common::to_string(step_walltimes_[ii], 15)
+                   << std::endl;
+    }
+    timings_file.close();
+  }
+
+
+protected:
   RangeFieldType t_;
   DiscreteFunctionType* u_n_;
   DiscreteSolutionType* solution_;
   static bool initial_values_evaluated;
   static double dt1_;
   static bool first_evaluated;
+  std::chrono::time_point<std::chrono::steady_clock> begin_time_;
+  std::vector<double> dts_;
+  std::vector<double> timepoints_;
+  std::vector<double> step_walltimes_;
+  std::chrono::duration<double> solve_walltime_;
 }; // class TimeStepperInterface
 
 template <class DiscreteFunctionImp>

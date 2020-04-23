@@ -215,14 +215,13 @@ public:
     assert(A_.rows() == A_.cols() && "A has to be a square matrix");
     assert(b_.size() == A_.rows());
     assert(c_.size() == A_.rows());
-#ifndef NDEBUG
     for (size_t ii = 0; ii < A_.rows(); ++ii) {
       for (size_t jj = ii; jj < A_.cols(); ++jj) {
-        assert(Dune::XT::Common::FloatCmp::eq(A_[ii][jj], 0.0)
-               && "A has to be a lower triangular matrix with 0 on the main diagonal");
+        DUNE_THROW_IF(XT::Common::FloatCmp::ne(A_[ii][jj], 0.0),
+                      XT::Common::Exceptions::wrong_input_given,
+                      "A has to be a lower triangular matrix with 0 on the main diagonal");
       }
     }
-#endif // NDEBUG
     // store as many discrete functions as needed for the stages k
     for (size_t ii = 0; ii < num_stages_; ++ii) {
       stages_k_.emplace_back(current_solution());
@@ -244,8 +243,11 @@ public:
   {
     const RangeFieldType actual_dt = std::min(dt, max_dt);
     auto& t = current_time();
-    auto& u_n = current_solution();
+
+    this->dts_.push_back(actual_dt);
+
     // calculate stages
+    auto& u_n = current_solution();
     for (size_t ii = 0; ii < num_stages_; ++ii) {
       u_i_.dofs().vector() = u_n.dofs().vector();
       for (size_t jj = 0; jj < ii; ++jj)

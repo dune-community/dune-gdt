@@ -214,21 +214,21 @@ public:
 
   void add_to_entry(const size_t ii, const ScalarType& value)
   {
-    DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
+    DEBUG_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
     assert(ii < size_);
     global_vector_.add_to_entry(global_DoF_indices_[ii], value);
   }
 
   void set_entry(const size_t ii, const ScalarType& value)
   {
-    DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
+    DEBUG_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
     assert(ii < size_);
     global_vector_.set_entry(global_DoF_indices_[ii], value);
   }
 
   ScalarType get_entry(const size_t ii) const
   {
-    DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
+    DEBUG_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
     assert(ii < size_);
     return global_vector_.get_entry(global_DoF_indices_[ii]);
   }
@@ -249,8 +249,14 @@ protected:
   }
 
 public:
+  /**
+   * \note This is not thread-safe without the mutex because operator[] is not thread-safe for the vectors from
+   *dune-xt-la. \todo The mutex here is just a quick fix, properly fix thread safety.
+   **/
   ScalarType& operator[](const size_t ii)
   {
+    static std::mutex mutex;
+    std::lock_guard<std::mutex> DUNE_UNUSED guard{mutex};
     DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
     assert(ii < size_);
     return global_vector_[global_DoF_indices_[ii]];

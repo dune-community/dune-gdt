@@ -244,6 +244,7 @@ public:
   {
     calculate_faces(initial_points);
     refine(num_refinements);
+    calculate_neighbors();
   }
 
   // Do not allow copying as the triangles hold references to the vectors in this class.
@@ -270,6 +271,16 @@ public:
   VertexVectorType& vertices()
   {
     return vertices_;
+  }
+
+  const std::vector<std::set<size_t>>& neighbors() const
+  {
+    return neighbors_;
+  }
+
+  const std::set<size_t>& neighbors(const VertexType& vertex) const
+  {
+    return neighbors_[vertex.index()];
   }
 
   // get indices of all faces that contain point
@@ -462,8 +473,24 @@ private:
     }
   }
 
+  void calculate_neighbors()
+  {
+    neighbors_.resize(vertices_.size());
+    for (const auto& face : faces_) {
+      for (const auto& vertex1 : face->vertices()) {
+        for (const auto& vertex2 : face->vertices()) {
+          if (vertex1->index() != vertex2->index()) {
+            neighbors_[vertex1->index()].insert(vertex2->index());
+            neighbors_[vertex2->index()].insert(vertex1->index());
+          }
+        }
+      }
+    }
+  }
+
   TriangleVectorType faces_;
   VertexVectorType vertices_;
+  std::vector<std::set<size_t>> neighbors_;
   VertexVectorType all_vertices_;
   std::shared_ptr<size_t> current_vertex_index_;
   std::vector<XT::Common::FieldVector<size_t, 3>> reflected_face_indices_;

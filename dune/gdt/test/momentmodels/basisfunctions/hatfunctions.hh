@@ -52,10 +52,10 @@ public:
   static StringifierType stringifier()
   {
     return [](const RangeType& val) {
-      RangeFieldType psi(0);
+      RangeFieldType rho(0);
       for (const auto& entry : val)
-        psi += entry;
-      return XT::Common::to_string(psi, 15);
+        rho += entry;
+      return XT::Common::to_string(rho, 15);
     };
   } // ... stringifier()
 
@@ -116,28 +116,6 @@ public:
     for (size_t ii = 0; ii < dimRange; ++ii)
       if (u[ii] < u_iso_min[ii])
         u[ii] = u_iso_min[ii];
-  }
-
-  bool adjust_alpha_to_ensure_min_density(RangeType& alpha, const RangeFieldType psi_min) const override final
-  {
-    bool changed = false;
-    const RangeFieldType alpha_min = std::log(psi_min);
-    const RangeFieldType alpha_min_eps = alpha_min + std::abs(alpha_min) * 1e-14;
-    if (std::max(alpha[0], alpha[1]) < alpha_min_eps) {
-      alpha[0] = alpha_min;
-      changed = true;
-    }
-    for (size_t ii = 1; ii < dimRange - 1; ++ii) {
-      if (alpha[ii] < alpha_min_eps && alpha[ii - 1] < alpha_min_eps && alpha[ii + 1] < alpha_min_eps) {
-        alpha[ii] = alpha_min;
-        changed = true;
-      }
-    }
-    if (std::max(alpha[dimRange - 2], alpha[dimRange - 1]) < alpha_min_eps) {
-      alpha[dimRange - 1] = alpha_min;
-      changed = true;
-    }
-    return changed;
   }
 
   std::string short_id() const override final
@@ -417,6 +395,38 @@ public:
     return ret;
   }
 
+  using BaseType::density;
+
+  bool adjust_alpha_to_ensure_min_density(RangeType& alpha,
+                                          const RangeFieldType rho_min,
+                                          const RangeType& u) const override final
+  {
+    // check if the density is too small
+    if (density(u) < rho_min) {
+      alpha = this->alpha_iso(rho_min);
+      return true;
+    }
+    // now check if the density around a grid_point is smaller than allowed
+    bool changed = false;
+    const RangeFieldType alpha_min = std::log(rho_min / 2);
+    const RangeFieldType neighbor_min = std::log(rho_min * 10);
+    if (alpha[0] < alpha_min && alpha[1] < neighbor_min) {
+      alpha[0] = alpha_min;
+      changed = true;
+    }
+    for (size_t ii = 1; ii < dimRange - 1; ++ii) {
+      if (alpha[ii] < alpha_min && alpha[ii - 1] < neighbor_min && alpha[ii + 1] < neighbor_min) {
+        alpha[ii] = alpha_min;
+        changed = true;
+      }
+    }
+    if (alpha[dimRange - 1] < alpha_min && alpha[dimRange - 2] < neighbor_min) {
+      alpha[dimRange - 1] = alpha_min;
+      changed = true;
+    }
+    return changed;
+  }
+
   std::array<int, dimDomain> has_fixed_sign(const size_t index) const override final
   {
     return BaseType::interval_has_fixed_sign(index, num_intervals);
@@ -597,6 +607,45 @@ public:
         ret[vertices[ii]->index()] += val[ii] * factor;
     }
     return ret;
+  }
+
+  using BaseType::density;
+
+  virtual bool adjust_alpha_to_ensure_min_density(RangeType& alpha,
+                                                  const RangeFieldType /*rho_min*/,
+                                                  const RangeType& /*u*/) const override final
+  {
+    bool changed = false;
+    static const double min_alpha_entry = DXTC_CONFIG_GET("min_alpha_entry", -1000.);
+    for (size_t ii = 0; ii < dimRange; ++ii) {
+      if (alpha[ii] < min_alpha_entry) {
+        alpha[ii] = min_alpha_entry;
+        changed = true;
+      }
+    }
+    return changed;
+    // // check if density is too low
+    // if (density(u) < rho_min) {
+    //  alpha = this->alpha_iso(rho_min);
+    //  return true;
+    //} else {
+    // // now check if the density around a grid_point is smaller than allowed
+    // bool changed = false;
+    // const RangeFieldType alpha_min = std::log(rho_min / (4 * M_PI));
+    // const RangeFieldType neighbor_min = std::log(rho_min * 1e4);
+    // for (const auto& vertex : triangulation_.vertices()) {
+    //   const auto index = vertex->index();
+    //   const auto& neighbors = triangulation_.neighbors(*vertex);
+    //   double alpha_neighbor = -1e10;
+    //   for (const auto& neighbor_index : neighbors)
+    //     alpha_neighbor = std::max(alpha_neighbor, alpha[neighbor_index]);
+    //   if (alpha[index] < alpha_min && alpha_neighbor < neighbor_min) {
+    //     alpha[index] = alpha_min;
+    //     changed = true;
+    //   }
+    // }
+    // return changed;
+    //}
   }
 
   std::array<int, dimDomain> has_fixed_sign(const size_t index) const override final

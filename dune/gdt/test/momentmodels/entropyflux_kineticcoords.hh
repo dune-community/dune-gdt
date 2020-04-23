@@ -138,6 +138,10 @@ public:
     return std::make_unique<Localfunction>(*implementation_);
   }
 
+  /**
+   * Fluxes have been precomputed during the reconstruction (even if no reconstruction is used, the fluxes are computed
+   * there, see calculate_reconstructed_fluxes) and are provided as input, so not much to do here.
+   */
   template <class StateTp, class RetType>
   void evaluate_kinetic_flux(const E& /*inside_entity*/,
                              const E& /*outside_entity*/,
@@ -172,6 +176,11 @@ public:
     implementation_->get_u((*eta_ast_prime_evaluations_)[entity_index], u);
   }
 
+  const StateType& get_precomputed_u(const size_t entity_index)
+  {
+    return u_[entity_index];
+  }
+
   StateType get_alpha(const StateType& u) const
   {
     const auto alpha = implementation_->get_alpha(u)->first;
@@ -180,6 +189,11 @@ public:
     return ret;
   }
 
+  /**
+   * Computes reconstructed fluxes (kinetic fluxes with simple linear reconstruction of the ansatz density).
+   * If no reconstruction is requested (slope == SlopeType::no_slope), the fluxes are still computed but without density
+   * reconstruction.
+   */
   template <class FluxesMapType>
   void calculate_reconstructed_fluxes(const FieldVector<size_t, 3>& entity_indices,
                                       const FieldVector<bool, 3>& boundary_direction,
@@ -196,55 +210,40 @@ public:
         densities_stencil, precomputed_fluxes, dd);
   }
 
-  void apply_kinetic_flux_with_kinetic_reconstruction(const RangeFieldType& h_inv,
-                                                      const QuadratureWeightsType& densities_left,
-                                                      const QuadratureWeightsType& densities_entity,
-                                                      const QuadratureWeightsType& densities_right,
-                                                      StateType* u_left,
-                                                      StateType* u_entity,
-                                                      StateType* u_right,
-                                                      const size_t dd) const
-  {
-    implementation_->template apply_kinetic_flux_with_kinetic_reconstruction<slope>(
-        h_inv, densities_left, densities_entity, densities_right, u_left, u_entity, u_right, dd);
-  }
-
   void apply_inverse_hessian(const size_t entity_index, StateType& u) const
   {
     implementation_->apply_inverse_hessian((*eta_ast_twoprime_evaluations_)[entity_index], u);
   }
 
-  void store_evaluations(const size_t entity_index, StateType& alpha, const RangeFieldType psi_min, bool check = true)
+  void store_evaluations(const DomainType& /*entity_center*/,
+                         size_t entity_index,
+                         StateType& alpha,
+                         const RangeFieldType /*rho_min*/,
+                         bool check = true)
   {
     implementation_->store_exp_evaluations(exp_evaluations_[entity_index], alpha);
-    if (entropy != EntropyType::MaxwellBoltzmann) {
+    if constexpr (entropy != EntropyType::MaxwellBoltzmann) {
       implementation_->store_eta_ast_prime_vals(exp_evaluations_[entity_index], eta_ast_prime_storage_[entity_index]);
       implementation_->store_eta_ast_twoprime_vals(exp_evaluations_[entity_index],
                                                    eta_ast_twoprime_storage_[entity_index]);
     }
-    set_eta_ast_pointers();
     // check for inf and nan and very low densities
+    auto& u = u_[entity_index];
+    u = get_u(entity_index);
     if (check) {
-      const auto u = get_u(entity_index);
       const double* u_ptr = &(u[0]);
       const auto val = XT::Common::reduce(u_ptr, u_ptr + basis_dimRange, 0.);
-      if (std::isnan(val) || std::isinf(val))
+      if (std::isnan(val) || std::isinf(val)) {
+        // std::cout << XT::Common::to_string(entity_center) << ", " << entity_index << ", "
+        //           << XT::Common::to_string(alpha) << ", " << XT::Common::to_string(u) << std::endl;
         DUNE_THROW(Dune::MathError, "inf or nan in u!");
-      const auto rho = basis_functions().density(u);
-      const auto& rho_min = psi_min;
-      if (rho < rho_min) {
-        alpha = basis_functions().alpha_iso(rho_min);
-        store_evaluations(entity_index, alpha, rho_min, false);
       }
-      // const bool changed = basis_functions().adjust_alpha_to_ensure_min_density(alpha, psi_min);
-      // if (changed)
-      // store_evaluations(entity_index, alpha, psi_min, false);
-    }
+    } // if (check)
   }
 
   void set_eta_ast_pointers()
   {
-    if (entropy == EntropyType::MaxwellBoltzmann) {
+    if constexpr (entropy == EntropyType::MaxwellBoltzmann) {
       eta_ast_prime_evaluations_ = &exp_evaluations_;
       eta_ast_twoprime_evaluations_ = &exp_evaluations_;
     } else {
@@ -275,8 +274,9 @@ public:
   void prepare_storage(const GridViewType& grid_view)
   {
     const auto num_entities = grid_view.size(0);
+    u_.resize(num_entities);
     exp_evaluations_.resize(num_entities);
-    if (entropy != EntropyType::MaxwellBoltzmann) {
+    if constexpr (entropy != EntropyType::MaxwellBoltzmann) {
       eta_ast_prime_storage_.resize(num_entities);
       eta_ast_twoprime_storage_.resize(num_entities);
     }
@@ -284,7 +284,7 @@ public:
     for (auto&& entity : Dune::elements(grid_view)) {
       const auto entity_index = grid_view.indexSet().index(entity);
       implementation_->resize_quad_weights_type(exp_evaluations_[entity_index]);
-      if (entropy != EntropyType::MaxwellBoltzmann) {
+      if constexpr (entropy != EntropyType::MaxwellBoltzmann) {
         implementation_->resize_quad_weights_type(eta_ast_prime_storage_[entity_index]);
         implementation_->resize_quad_weights_type(eta_ast_twoprime_storage_[entity_index]);
       }
@@ -296,6 +296,7 @@ public:
         }
       } // intersections
     } // entities
+    set_eta_ast_pointers();
   } // void prepare_storage(...)
 
   std::vector<QuadratureWeightsType>& eta_ast_prime_evaluations()
@@ -340,6 +341,7 @@ private:
   std::vector<QuadratureWeightsType> eta_ast_twoprime_storage_;
   std::vector<QuadratureWeightsType>* eta_ast_prime_evaluations_;
   std::vector<QuadratureWeightsType>* eta_ast_twoprime_evaluations_;
+  std::vector<StateType> u_;
   BoundaryQuadratureWeightsType boundary_distribution_evaluations_;
 };
 

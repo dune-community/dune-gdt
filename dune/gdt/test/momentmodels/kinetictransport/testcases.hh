@@ -11,6 +11,10 @@
 #ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_KINETICTRANSPORT_TESTCASES_HH
 #define DUNE_GDT_HYPERBOLIC_PROBLEMS_KINETICTRANSPORT_TESTCASES_HH
 
+#ifndef ENTROPY_FLUX_1D_HATFUNCTIONS_USE_TWOPOINT_QUAD
+#  define ENTROPY_FLUX_1D_HATFUNCTIONS_USE_TWOPOINT_QUAD 0
+#endif
+
 #include <dune/grid/yaspgrid.hh>
 
 #include <dune/gdt/test/momentmodels/basisfunctions.hh>
@@ -30,46 +34,53 @@ namespace GDT {
 
 
 // choose Quadrature suitable for MomentBasisImp
-template <class MomentBasisImp>
+template <class MomentBasisImp, bool needs_high_order = false>
 struct QuadratureChooser;
 
 template <size_t order, EntropyType entropy>
-struct QuadratureChooser<LegendreMomentBasis<double, double, order, 1, entropy>>
+struct QuadratureChooser<LegendreMomentBasis<double, double, order, 1, entropy>, false>
 {
   static constexpr size_t quad_order = 54;
   static constexpr size_t quad_refinements = 1;
 };
 
+template <size_t order, EntropyType entropy>
+struct QuadratureChooser<LegendreMomentBasis<double, double, order, 1, entropy>, true>
+{
+  static constexpr size_t quad_order = 197;
+  static constexpr size_t quad_refinements = 1;
+};
+
 template <size_t dimRange, EntropyType entropy>
-struct QuadratureChooser<HatFunctionMomentBasis<double, 1, double, dimRange, 1, 1, entropy>>
+struct QuadratureChooser<HatFunctionMomentBasis<double, 1, double, dimRange, 1, 1, entropy>, false>
 {
   static constexpr size_t quad_order = 15;
   static constexpr size_t quad_refinements = 0;
 };
 
 template <size_t dimRange, EntropyType entropy>
-struct QuadratureChooser<PartialMomentBasis<double, 1, double, dimRange, 1, 1, 1, entropy>>
+struct QuadratureChooser<PartialMomentBasis<double, 1, double, dimRange, 1, 1, 1, entropy>, false>
 {
   static constexpr size_t quad_order = 15;
   static constexpr size_t quad_refinements = 0;
 };
 
 template <size_t order, EntropyType entropy>
-struct QuadratureChooser<RealSphericalHarmonicsMomentBasis<double, double, order, 3, false, entropy>>
+struct QuadratureChooser<RealSphericalHarmonicsMomentBasis<double, double, order, 3, false, entropy>, false>
 {
   static constexpr size_t quad_order = 2 * order + 8;
   static constexpr size_t quad_refinements = 0;
 };
 
 template <size_t refinements, EntropyType entropy>
-struct QuadratureChooser<HatFunctionMomentBasis<double, 3, double, refinements, 1, 3, entropy>>
+struct QuadratureChooser<HatFunctionMomentBasis<double, 3, double, refinements, 1, 3, entropy>, false>
 {
   static constexpr size_t quad_order = refinements == 0 ? 18 /*fekete rule number 7*/ : 9 /*fekete rule number 3*/;
   static constexpr size_t quad_refinements = 0;
 };
 
 template <size_t refinements, EntropyType entropy>
-struct QuadratureChooser<PartialMomentBasis<double, 3, double, refinements, 1, 3, 1, entropy>>
+struct QuadratureChooser<PartialMomentBasis<double, 3, double, refinements, 1, 3, 1, entropy>, false>
 {
   static constexpr size_t quad_order = refinements == 0 ? 18 /*fekete rule number 7*/ : 9 /*fekete rule number 3*/;
   static constexpr size_t quad_refinements = 0;
@@ -285,18 +296,18 @@ struct SourceBeamMnExpectedResults
 template <bool reconstruct>
 struct SourceBeamMnExpectedResults<LegendreMomentBasis<double, double, 7>, reconstruct, false>
 {
-  static constexpr double l1norm = reconstruct ? 0.28535354296013105 : 0.28535354295945792;
-  static constexpr double l2norm = reconstruct ? 0.37115145999473981 : 0.36265752973701221;
-  static constexpr double linfnorm = reconstruct ? 0.78506610334488358 : 0.78315544039143314;
+  static constexpr double l1norm = reconstruct ? 0.33140413352826437 : 0.33140413352331233;
+  static constexpr double l2norm = reconstruct ? 0.45584403677576046 : 0.44485862483138167;
+  static constexpr double linfnorm = reconstruct ? 0.99172278911390399 : 0.98931014397841888;
   static constexpr double tol = 1e-5;
 };
 
 template <bool reconstruct>
 struct SourceBeamMnExpectedResults<LegendreMomentBasis<double, double, 7>, reconstruct, true>
 {
-  static constexpr double l1norm = reconstruct ? 216.76550985167569 : 247.26820742097911;
-  static constexpr double l2norm = reconstruct ? 325.475499289803 : 336.59743570571874;
-  static constexpr double linfnorm = reconstruct ? 1394.9770711115616 : 1226.6976877438797;
+  static constexpr double l1norm = reconstruct ? 281.4583533727274 : 315.14315000108718;
+  static constexpr double l2norm = reconstruct ? 492.69791638341587 : 513.7487323989119;
+  static constexpr double linfnorm = reconstruct ? 1824.235113480062 : 1820.2785947776988;
   static constexpr double tol = 1e-5;
 };
 
@@ -305,9 +316,9 @@ struct SourceBeamMnExpectedResults<LegendreMomentBasis<double, double, 7, 1, Ent
                                    reconstruct,
                                    kinetic_scheme>
 {
-  static constexpr double l1norm = reconstruct ? 0.28535354297901544 : 0.28535354297288812;
-  static constexpr double l2norm = reconstruct ? 0.37115153411073604 : 0.362657577171562;
-  static constexpr double linfnorm = reconstruct ? 0.78506610330723181 : 0.78315544052307973;
+  static constexpr double l1norm = reconstruct ? 0.33140345394079546 : 0.33140345394079546;
+  static constexpr double l2norm = reconstruct ? 0.45565823306344666 : 0.44485875661481289;
+  static constexpr double linfnorm = reconstruct ? 0.99174447979648128 : 0.98932327362145023;
   static constexpr double tol = 1e-5;
 };
 
@@ -315,8 +326,8 @@ template <bool reconstruct>
 struct SourceBeamMnExpectedResults<HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, reconstruct, false>
 {
   static constexpr double l1norm = reconstruct ? 0.33140398330545301 : 0.33140398330533227;
-  static constexpr double l2norm = reconstruct ? 0.45584140597017353 : 0.44485191601010715;
-  static constexpr double linfnorm = reconstruct ? 0.99172197084890834 : 0.98930925210045084;
+  static constexpr double l2norm = reconstruct ? 0.45584720248386457 : 0.44485579849030238;
+  static constexpr double linfnorm = reconstruct ? 0.99189071629259207 : 0.98932976933249273;
   static constexpr double tol = 1e-9;
 };
 
@@ -326,8 +337,8 @@ struct SourceBeamMnExpectedResults<HatFunctionMomentBasis<double, 1, double, 8, 
                                    false>
 {
   static constexpr double l1norm = reconstruct ? 0.33140398337940113 : 0.33140398338096477;
-  static constexpr double l2norm = reconstruct ? 0.45580284843165519 : 0.44483205570831974;
-  static constexpr double linfnorm = reconstruct ? 0.99172119511603896 : 0.98930804287194951;
+  static constexpr double l2norm = reconstruct ? 0.4558229712844557 : 0.44484856259183148;
+  static constexpr double linfnorm = reconstruct ? 0.99209909979171496 : 0.98940443754535934;
   static constexpr double tol = 1e-9;
 };
 
@@ -335,9 +346,15 @@ struct SourceBeamMnExpectedResults<HatFunctionMomentBasis<double, 1, double, 8, 
 template <bool reconstruct>
 struct SourceBeamMnExpectedResults<HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, reconstruct, true>
 {
-  static constexpr double l1norm = reconstruct ? 370.76478524539908 : 367.97988291905477;
-  static constexpr double l2norm = reconstruct ? 235.80101143166397 : 235.54814675091959;
-  static constexpr double linfnorm = reconstruct ? 204.97005941074255 : 208.81734247459028;
+#if ENTROPY_FLUX_1D_HATFUNCTIONS_USE_TWOPOINT_QUAD
+  static constexpr double l1norm = reconstruct ? 0. : 262.65239771422245;
+  static constexpr double l2norm = reconstruct ? 0. : 164.0046368320788;
+  static constexpr double linfnorm = reconstruct ? 0. : 117.29539648827911;
+#else
+  static constexpr double l1norm = reconstruct ? 293.37213961841047 : 293.65215317219764;
+  static constexpr double l2norm = reconstruct ? 184.80977076714944 : 186.15575659185149;
+  static constexpr double linfnorm = reconstruct ? 167.62308114606901 : 171.23335702135512;
+#endif
   static constexpr double tol = 1e-5;
 };
 
@@ -345,8 +362,8 @@ template <bool reconstruct>
 struct SourceBeamMnExpectedResults<PartialMomentBasis<double, 1, double, 8, 1, 1>, reconstruct, false>
 {
   static constexpr double l1norm = reconstruct ? 0.33140398337368543 : 0.3314039833756291;
-  static constexpr double l2norm = reconstruct ? 0.45583354074069732 : 0.44484887610818585;
-  static constexpr double linfnorm = reconstruct ? 0.99172184304625632 : 0.98930905293056492;
+  static constexpr double l2norm = reconstruct ? 0.45584458867916888 : 0.4448563187696582;
+  static constexpr double linfnorm = reconstruct ? 0.9920525088272123 : 0.98934901825356536;
   static constexpr double tol = 1e-9;
 };
 
@@ -356,17 +373,17 @@ struct SourceBeamMnExpectedResults<PartialMomentBasis<double, 1, double, 8, 1, 1
                                    false>
 {
   static constexpr double l1norm = reconstruct ? 0.33140398337969496 : 0.33140398335992233;
-  static constexpr double l2norm = reconstruct ? 0.45580154156528901 : 0.44483189012485808;
-  static constexpr double linfnorm = reconstruct ? 0.99172111701075782 : 0.98930792103242149;
+  static constexpr double l2norm = reconstruct ? 0.45582324958962384 : 0.4448499671785881;
+  static constexpr double linfnorm = reconstruct ? 0.99211880756458037 : 0.98941453515342592;
   static constexpr double tol = 1e-9;
 };
 
 template <bool reconstruct>
 struct SourceBeamMnExpectedResults<PartialMomentBasis<double, 1, double, 8, 1, 1>, reconstruct, true>
 {
-  static constexpr double l1norm = reconstruct ? 252.40945947384103 : 270.73818617869767;
-  static constexpr double l2norm = reconstruct ? 185.69342039466258 : 202.75707060254086;
-  static constexpr double linfnorm = reconstruct ? 253.82813439550381 : 260.82664383444336;
+  static constexpr double l1norm = reconstruct ? 205.71817305290159 : 222.04295463732129;
+  static constexpr double l2norm = reconstruct ? 157.69546917388564 : 172.42507406330125;
+  static constexpr double linfnorm = reconstruct ? 231.95094711654104 : 235.44527043811087;
   static constexpr double tol = 1e-5;
 };
 
@@ -378,7 +395,8 @@ struct SourceBeamMnTestCase : public SourceBeamPnTestCase<GridImp, MomentBasisIm
   using typename BaseType::GridViewType;
   using ProblemType = SourceBeamMn<GridViewType, MomentBasisImp>;
   using ExpectedResultsType = SourceBeamMnExpectedResults<MomentBasisImp, reconstruct, kinetic_scheme>;
-  using QuadratureChooserType = QuadratureChooser<MomentBasisImp>;
+  using QuadratureChooserType =
+      QuadratureChooser<MomentBasisImp, Dune::GDT::is_full_moment_basis<MomentBasisImp>::value>;
   static constexpr size_t quad_order = QuadratureChooserType::quad_order;
   static constexpr size_t quad_refinements = QuadratureChooserType::quad_refinements;
   using RealizabilityLimiterChooserType =
@@ -464,9 +482,9 @@ struct PlaneSourceMnExpectedResults<LegendreMomentBasis<double, double, 7, 1, En
 template <bool reconstruct>
 struct PlaneSourceMnExpectedResults<LegendreMomentBasis<double, double, 7>, reconstruct, true>
 {
-  static constexpr double l1norm = reconstruct ? 33.831081799622474 : 31.119878976551046;
-  static constexpr double l2norm = reconstruct ? 24.726893737746675 : 23.385570207485049;
-  static constexpr double linfnorm = reconstruct ? 19.113827924512311 : 19.113827924512311;
+  static constexpr double l1norm = reconstruct ? 26.471148788911833 : 24.744488275011392;
+  static constexpr double l2norm = reconstruct ? 19.099784367386864 : 18.268495971393438;
+  static constexpr double linfnorm = reconstruct ? 14.508657738524219 : 14.508657738524219;
   static constexpr double tol = 1e-5;
 };
 
@@ -482,9 +500,15 @@ struct PlaneSourceMnExpectedResults<HatFunctionMomentBasis<double, 1, double, 8,
 template <bool reconstruct>
 struct PlaneSourceMnExpectedResults<HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, reconstruct, true>
 {
-  static constexpr double l1norm = reconstruct ? 268.44922183403418 : 246.7429359648828;
-  static constexpr double l2norm = reconstruct ? 197.15870373876999 : 186.09403264481648;
-  static constexpr double linfnorm = reconstruct ? 152.91062339609854 : 152.91062339609854;
+#if ENTROPY_FLUX_1D_HATFUNCTIONS_USE_TWOPOINT_QUAD
+  static constexpr double l1norm = reconstruct ? 0. : 193.60315478261464;
+  static constexpr double l2norm = reconstruct ? 0. : 144.0772403304718;
+  static constexpr double linfnorm = reconstruct ? 0. : 116.1662675333702;
+#else
+  static constexpr double l1norm = reconstruct ? 209.83770090042646 : 196.15223883926521;
+  static constexpr double l2norm = reconstruct ? 152.21809308736064 : 145.31986692659103;
+  static constexpr double linfnorm = reconstruct ? 116.06926190819375 : 116.06926190819375;
+#endif
   static constexpr double tol = 1e-5;
 };
 
@@ -500,9 +524,9 @@ struct PlaneSourceMnExpectedResults<PartialMomentBasis<double, 1, double, 8, 1, 
 template <bool reconstruct>
 struct PlaneSourceMnExpectedResults<PartialMomentBasis<double, 1, double, 8, 1, 1>, reconstruct, true>
 {
-  static constexpr double l1norm = reconstruct ? 144.19157186249112 : 135.86834797834712;
-  static constexpr double l2norm = reconstruct ? 104.28938402311856 : 100.2359224660796;
-  static constexpr double linfnorm = reconstruct ? 100.43705716411668 : 97.942051028247079;
+  static constexpr double l1norm = reconstruct ? 112.62265390869545 : 107.65241672868646;
+  static constexpr double l2norm = reconstruct ? 80.760659375140875 : 78.258697928599886;
+  static constexpr double linfnorm = reconstruct ? 79.036510264783786 : 76.176740282669925;
   static constexpr double tol = 1e-5;
 };
 
@@ -549,7 +573,7 @@ template <bool reconstruct>
 struct PointSourcePnExpectedResults<HatFunctionMomentBasis<double, 3, double, 0, 1, 3>, reconstruct>
 {
   static constexpr double l1norm = reconstruct ? 1.000000489200628 : 1.0000004892004557;
-  static constexpr double l2norm = reconstruct ? 2.7000542373965715 : 2.6889777333363365;
+  static constexpr double l2norm = reconstruct ? 2.7003710734919326 : 2.6889777333363365;
   static constexpr double linfnorm = reconstruct ? 10.393925182562946 : 10.395628177780834;
   // The matrices in this test case all have eigenvalues [+-0.808311035811965, 0, 0, 0, 0].
   // Thus, the eigenvectors are not unique, and the eigensolvers are extremely sensitive
@@ -701,9 +725,9 @@ struct PointSourceMnExpectedResults<
 template <bool reconstruct>
 struct PointSourceMnExpectedResults<RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, reconstruct, true>
 {
-  static constexpr double l1norm = reconstruct ? 1674.9303536689499 : 1585.7442629692846;
-  static constexpr double l2norm = reconstruct ? 619.42660595932045 : 589.95120208922344;
-  static constexpr double linfnorm = reconstruct ? 264.17153438841774 : 266.55470473305343;
+  static constexpr double l1norm = reconstruct ? 1427.311192805786 : 1383.5583338523081;
+  static constexpr double l2norm = reconstruct ? 519.38102092492329 : 505.37888652262444;
+  static constexpr double linfnorm = reconstruct ? 205.41661003195654 : 205.41658351521531;
   static constexpr double tol = 1e-5;
 };
 
@@ -737,9 +761,9 @@ struct PointSourceMnExpectedResults<HatFunctionMomentBasis<double, 3, double, 0,
 template <bool reconstruct>
 struct PointSourceMnExpectedResults<HatFunctionMomentBasis<double, 3, double, 0, 1, 3>, reconstruct, true>
 {
-  static constexpr double l1norm = reconstruct ? 818.82859531773954 : 781.26034882640101;
-  static constexpr double l2norm = reconstruct ? 301.5211798149125 : 289.24680765897313;
-  static constexpr double linfnorm = reconstruct ? 125.7102296804655 : 125.71014355518233;
+  static constexpr double l1norm = reconstruct ? 690.82958733796443 : 672.41152460703506;
+  static constexpr double l2norm = reconstruct ? 250.77535825870774 : 244.89888136374094;
+  static constexpr double linfnorm = reconstruct ? 98.079206678958528 : 98.079205189670105;
   static constexpr double tol = 1e-5;
 };
 
@@ -766,9 +790,9 @@ struct PointSourceMnExpectedResults<PartialMomentBasis<double, 3, double, 0, 1, 
 template <bool reconstruct>
 struct PointSourceMnExpectedResults<PartialMomentBasis<double, 3, double, 0, 1, 3, 1>, reconstruct, true>
 {
-  static constexpr double l1norm = reconstruct ? 1167.5985275432627 : 1126.5174600848904;
-  static constexpr double l2norm = reconstruct ? 428.15220455351266 : 415.19451310103005;
-  static constexpr double linfnorm = reconstruct ? 188.27329269742043 : 191.50091023716689;
+  static constexpr double l1norm = reconstruct ? 980.82495079874275 : 972.75278297760235;
+  static constexpr double l2norm = reconstruct ? 354.67372133124383 : 352.87905838668826;
+  static constexpr double linfnorm = reconstruct ? 145.6285651636687 : 146.39499301958497;
   static constexpr double tol = 1e-5;
 };
 
@@ -826,9 +850,9 @@ struct CheckerboardMnExpectedResults<HatFunctionMomentBasis<double, 3, double, 0
 template <bool reconstruct>
 struct CheckerboardMnExpectedResults<HatFunctionMomentBasis<double, 3, double, 0, 1, 3>, reconstruct, true>
 {
-  static constexpr double l1norm = reconstruct ? 42800.785872122993 : 0.;
-  static constexpr double l2norm = reconstruct ? 2318.9345228725633 : 0.;
-  static constexpr double linfnorm = reconstruct ? 131.24293776745421 : 0.;
+  static constexpr double l1norm = reconstruct ? 0. : 33621.567821059143;
+  static constexpr double l2norm = reconstruct ? 0. : 1819.509030380794;
+  static constexpr double linfnorm = reconstruct ? 0. : 103.50839818407947;
   static constexpr double tol = 1e-5;
 };
 
@@ -865,12 +889,20 @@ struct ShadowMnExpectedResults
 template <bool reconstruct>
 struct ShadowMnExpectedResults<RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, reconstruct, false>
 {
-  static constexpr double l1norm = reconstruct ? 0. : 0.59248402251960053;
-  static constexpr double l2norm = reconstruct ? 0. : 0.097644561106262767;
-  static constexpr double linfnorm = reconstruct ? 0. : 0.016480889201743513;
+  static constexpr double l1norm = reconstruct ? 0. : 0.5924840195577018;
+  static constexpr double l2norm = reconstruct ? 0. : 0.097644560618143542;
+  static constexpr double linfnorm = reconstruct ? 0. : 0.016480889119342663;
   static constexpr double tol = 1e-9;
 };
 
+template <bool reconstruct>
+struct ShadowMnExpectedResults<HatFunctionMomentBasis<double, 3, double, 0, 1, 3>, reconstruct, true>
+{
+  static constexpr double l1norm = reconstruct ? 0. : 20699.700338648003;
+  static constexpr double l2norm = reconstruct ? 0. : 2018.2458374236703;
+  static constexpr double linfnorm = reconstruct ? 0. : 295.47480751761935;
+  static constexpr double tol = 1e-5;
+};
 
 template <class GridImp, class MomentBasisImp, bool reconstruct, bool kinetic_scheme = false>
 struct ShadowMnTestCase : SourceBeamMnTestCase<GridImp, MomentBasisImp, reconstruct, kinetic_scheme>

@@ -83,10 +83,10 @@ public:
   static StringifierType stringifier()
   {
     return [](const DynamicRangeType& val) {
-      RangeFieldType psi(0);
+      RangeFieldType rho(0);
       for (size_t ii = 0; ii < dimRange; ii += block_size)
-        psi += val[ii];
-      return XT::Common::to_string(psi, 15);
+        rho += val[ii];
+      return XT::Common::to_string(rho, 15);
     };
   } // ... stringifier()
 
@@ -301,62 +301,30 @@ public:
     return DynamicRangeType();
   } // ... evaluate(...)
 
-  bool adjust_alpha_to_ensure_min_density(RangeType& alpha, const RangeFieldType psi_min) const override final
+  using BaseType::density;
+
+  bool adjust_alpha_to_ensure_min_density(RangeType& alpha,
+                                          const RangeFieldType rho_min,
+                                          const RangeType& u) const override final
   {
-    bool changed = false;
-    const auto alpha_min = std::log(psi_min);
-    for (size_t ii = 0; ii < num_intervals; ++ii) {
-      auto& alpha_0 = alpha[2 * ii];
-      auto& alpha_1 = alpha[2 * ii + 1];
-      const auto mu_i = partitioning_[ii];
-      const auto mu_ip1 = partitioning_[ii + 1];
-      const auto alpha_left = alpha_0 + mu_i * alpha_1;
-      const auto alpha_right = alpha_0 + mu_ip1 * alpha_1;
-      const auto max_alpha = std::max(alpha_left, alpha_right);
-      if (max_alpha < alpha_min) {
-        alpha_0 = alpha_min;
-        alpha_1 = 0.;
-        changed = true;
-      }
-#if 0
-      const bool min_is_left = alpha_left < alpha_right;
-      const auto alpha_min_ii = min_is_left ? alpha_left : alpha_right;
-      const auto alpha_max_ii = min_is_left ? alpha_right : alpha_left;
-      if (alpha_min_ii < alpha_min) {
-        if (XT::Common::FloatCmp::le(alpha_max_ii, alpha_min)) {
+    if (density(u) < rho_min) {
+      alpha = this->alpha_iso(rho_min);
+      return true;
+    } else {
+      bool changed = false;
+      const auto alpha_min = std::log(rho_min / 2);
+      const auto u_min = rho_min / num_intervals;
+      for (size_t ii = 0; ii < num_intervals; ++ii) {
+        auto& alpha_0 = alpha[2 * ii];
+        auto& alpha_1 = alpha[2 * ii + 1];
+        if (u[2 * ii] < u_min) {
           alpha_0 = alpha_min;
           alpha_1 = 0.;
           changed = true;
-        } else {
-          // We know that alpha_1 != 0 because alpha_max_ii > alpha_min and alpha_min_ii < alpha_min
-          const auto rho_ii = -(std::exp(alpha_0 + mu_i * alpha_1) - std::exp(alpha_0 + mu_ip1 * alpha_1)) / alpha_1;
-          if (std::isnan(rho_ii) || std::isinf(rho_ii))
-            DUNE_THROW(Dune::MathError, "Inf or nan in rho!");
-          const auto h = (mu_ip1 - mu_i);
-          if (XT::Common::FloatCmp::le(rho_ii, psi_min * h)) {
-            alpha_0 = alpha_min;
-            alpha_1 = 0.;
-            changed = true;
-            continue;
-          }
-          // get positive slope
-#  if 0
-        // Set minimum to alpha_min, leave max alpha unchanged
-        alpha_1 = (alpha_max_ii - alpha_min_ii) / h;
-#  else
-          // Set minimum to alpha_min, leave rho unchanged
-          alpha_1 = -1. / h * boost::math::lambert_wm1(-h * psi_min / rho_ii * std::exp(-h * psi_min / rho_ii))
-                    - psi_min / rho_ii;
-#  endif
-          if (!min_is_left)
-            alpha_1 *= -1.; // slope has to be negative in this case
-          alpha_0 = alpha_min - (min_is_left ? mu_i : mu_ip1) * alpha_1;
-          changed = true;
         }
-      }
-#endif
-    } // ii
-    return changed;
+      } // ii
+      return changed;
+    }
   }
 
   // returns matrix with entries <h_i h_j>
@@ -598,6 +566,27 @@ public:
                  "not defined for this basis!");
     return evaluate(v, face_indices[0]);
   } // ... evaluate(...)
+
+  using BaseType::density;
+
+  bool adjust_alpha_to_ensure_min_density(RangeType& alpha,
+                                          const RangeFieldType rho_min,
+                                          const RangeType& u) const override final
+  {
+    bool changed = false;
+    const auto rho_min_block = rho_min / num_blocks;
+    for (size_t jj = 0; jj < num_blocks; ++jj) {
+      const auto offset = block_size * jj;
+      const auto block_density = u[offset];
+      if (block_density < rho_min_block) {
+        alpha[offset] = std::log(rho_min_block);
+        changed = true;
+        for (size_t ii = 1; ii < block_size; ++ii)
+          alpha[offset + ii] = 0;
+      }
+    } // jj
+    return changed;
+  }
 
   RangeFieldType unit_ball_volume() const override final
   {

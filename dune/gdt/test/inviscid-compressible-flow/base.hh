@@ -192,11 +192,13 @@ protected:
                                                                 numerical_flux,
                                                                 space,
                                                                 space,
+                                                                /*use_tbb=*/false,
                                                                 /*periodicity_restriction=*/impermeable_wall_filter);
       // the actual handling of impermeable walls
       op->append(/*numerical_boundary_flux=*/
-                 [&](const auto& u, const auto& n, auto& ret, const auto& /*param*/) {
-                   ret = euler_tools.flux_at_impermeable_walls(XT::LA::convert_to<RangeType>(u), n);
+                 [&](const auto& intersection, const auto& x, const auto& u, auto& ret, const auto& /*param*/) {
+                   ret = euler_tools.flux_at_impermeable_walls(XT::LA::convert_to<RangeType>(u),
+                                                               intersection.unitOuterNormal(x));
                  },
                  {},
                  impermeable_wall_filter);
@@ -211,6 +213,7 @@ protected:
                                                                 numerical_flux,
                                                                 space,
                                                                 space,
+                                                                /*use_tbb=*/false,
                                                                 /*periodicity_restriction=*/impermeable_wall_filter);
       // the actual handling of impermeable walls, see [DF2015, p. 415, (8.66 - 8.67)]
       op->append(
@@ -258,6 +261,7 @@ protected:
           numerical_flux,
           space,
           space,
+          /*use_tbb=*/false,
           /*periodicity_restriction=*/*(inflow_outflow_filter || impermeable_wall_filter));
       // the actual handling of inflow/outflow, see [DF2015, p. 421, (8.88)]
       // (supposedly this does not work well for slow flows!)

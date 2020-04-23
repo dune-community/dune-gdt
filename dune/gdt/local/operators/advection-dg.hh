@@ -146,7 +146,7 @@ public:
       local_dofs_ = local_mass_matrices_.access().local_mass_matrix_inverse(element()) * local_dofs_;
     // add to local range
     for (size_t ii = 0; ii < basis.size(param); ++ii)
-      local_range.dofs()[ii] += local_dofs_[ii];
+      local_range.dofs().add_to_entry(ii, local_dofs_[ii]);
   } // ... apply(...)
 
 protected:
@@ -333,10 +333,10 @@ public:
           local_mass_matrices_.access().local_mass_matrix_inverse(local_range_outside.element()) * outside_local_dofs_;
     // add to local range
     for (size_t ii = 0; ii < inside_basis.size(param); ++ii)
-      local_range_inside.dofs()[ii] += inside_local_dofs_[ii];
+      local_range_inside.dofs().add_to_entry(ii, inside_local_dofs_[ii]);
     if (compute_outside_)
       for (size_t ii = 0; ii < outside_basis.size(param); ++ii)
-        local_range_outside.dofs()[ii] += outside_local_dofs_[ii];
+        local_range_outside.dofs().add_to_entry(ii, outside_local_dofs_[ii]);
   } // ... apply(...)
 
 protected:
@@ -477,7 +477,7 @@ public:
       inside_local_dofs_ = local_mass_matrices_.access().local_mass_matrix_inverse(element) * inside_local_dofs_;
     // add to local range
     for (size_t ii = 0; ii < inside_basis.size(param); ++ii)
-      local_range_inside.dofs()[ii] += inside_local_dofs_[ii];
+      local_range_inside.dofs().add_to_entry(ii, inside_local_dofs_[ii]);
   } // ... apply(...)
 
 private:
@@ -614,7 +614,7 @@ public:
       inside_local_dofs_ = local_mass_matrices_.access().local_mass_matrix_inverse(element) * inside_local_dofs_;
     // add to local range
     for (size_t ii = 0; ii < inside_basis.size(param); ++ii)
-      local_range_inside.dofs()[ii] += inside_local_dofs_[ii];
+      local_range_inside.dofs().add_to_entry(ii, inside_local_dofs_[ii]);
   } // ... apply(...)
 
 protected:
@@ -807,7 +807,7 @@ public:
       local_dofs_ = local_mass_matrices_.access().local_mass_matrix_inverse(element()) * local_dofs_;
     // add to local range
     for (size_t ii = 0; ii < basis.size(param); ++ii)
-      local_range.dofs()[ii] += local_dofs_[ii];
+      local_range.dofs().add_to_entry(ii, local_dofs_[ii]);
   } // ... apply(...)
 
 private:

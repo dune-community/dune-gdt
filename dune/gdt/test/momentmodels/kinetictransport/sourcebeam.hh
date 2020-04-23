@@ -50,13 +50,11 @@ public:
   using typename BaseType::RangeReturnType;
   using typename BaseType::ScalarFunctionType;
 
-  using BaseType::default_boundary_cfg;
-
   SourceBeamPn(const MomentBasis& basis_functions,
+               const RangeFieldType psi_vac = 5e-7,
                const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
-               const XT::Common::Configuration& boundary_cfg = default_boundary_cfg(),
                const bool is_mn_model = false)
-    : BaseType(basis_functions, grid_cfg, boundary_cfg)
+    : BaseType(basis_functions, psi_vac, grid_cfg)
     , is_mn_model_(is_mn_model)
   {}
 
@@ -101,7 +99,7 @@ public:
       else
         return [this](const DomainType& v) {
           const RangeFieldType val = std::exp(-1e5 * std::pow(v[0] - 1., 2)) / helper_base::denominator();
-          return (val > this->psi_vac_) ? val : this->psi_vac_;
+          return val + psi_vac_;
         };
     };
   }
@@ -255,14 +253,16 @@ protected:
       std::fill(ret.begin(), ret.end(), 0.);
       for (size_t nn = 0; nn < dimRange; ++nn) {
         const auto& partitioning = basis_functions.partitioning();
-        const auto vn = partitioning[nn];
+        const auto mu_n = partitioning[nn];
         if (nn < dimRange - 1) {
-          const auto vnp = partitioning[nn + 1];
-          ret[nn] += 1. / ((vn - vnp) * denominator()) * (integral_2(vn, vnp) - vnp * integral_1(vn, vnp));
+          const auto mu_np1 = partitioning[nn + 1];
+          ret[nn] +=
+              1. / ((mu_n - mu_np1) * denominator()) * (integral_2(mu_n, mu_np1) - mu_np1 * integral_1(mu_n, mu_np1));
         }
         if (nn > 0) {
-          const auto vnm = partitioning[nn - 1];
-          ret[nn] += 1. / ((vn - vnm) * denominator()) * (integral_2(vnm, vn) - vnm * integral_1(vnm, vn));
+          const auto mu_nm1 = partitioning[nn - 1];
+          ret[nn] +=
+              1. / ((mu_n - mu_nm1) * denominator()) * (integral_2(mu_nm1, mu_n) - mu_nm1 * integral_1(mu_nm1, mu_n));
         }
       }
       // add small vacuum concentration to move away from realizable boundary
@@ -270,7 +270,7 @@ protected:
     } // ... get_left_boundary_values(...)
 
     static DynamicRangeType get_kinetic_boundary_flux(const MomentBasisImp& basis_functions,
-                                                      const RangeFieldType& /*psi_vac*/,
+                                                      const RangeFieldType& psi_vac,
                                                       const bool is_mn_model,
                                                       const DomainType& x,
                                                       const RangeFieldType& n,
@@ -283,24 +283,33 @@ protected:
         DynamicRangeType ret(dimRange, 0.);
         const auto& partitioning = basis_functions.partitioning();
         for (size_t nn = 0; nn < dimRange; ++nn) {
-          const auto vn = partitioning[nn];
+          const auto& mu_n = partitioning[nn];
           if (nn < dimRange - 1) {
-            const auto vnp = partitioning[nn + 1];
-            if (vnp > 0.) {
-              const auto left_limit = vn > 0. ? vn : 0.;
+            const auto& mu_np1 = partitioning[nn + 1];
+            if (mu_np1 > 0.) {
+              const auto left_limit = mu_n > 0. ? mu_n : 0.;
               ret[nn] +=
-                  1. / ((vn - vnp) * denominator()) * (integral_3(left_limit, vnp) - vnp * integral_2(left_limit, vnp));
-            } // if (vnp > 0.)
+                  1. / ((mu_n - mu_np1) * denominator())
+                      * (integral_3(left_limit, mu_np1) - mu_np1 * integral_2(left_limit, mu_np1))
+                  + psi_vac / 6. * std::pow(mu_np1 - left_limit, 2) * (mu_np1 + 2. * left_limit) / (mu_np1 - mu_n);
+            } // if (mu_np1 > 0.)
           } // if (nn < dimRange -1)
-          if (vn > 0.) {
+          if (mu_n > 0.) {
             if (nn > 0) {
-              const auto vnm = partitioning[nn - 1];
-              const auto left_limit = vnm > 0. ? vnm : 0.;
-              ret[nn] +=
-                  1. / ((vn - vnm) * denominator()) * (integral_2(left_limit, vn) - vnm * integral_1(left_limit, vn));
+              const auto& mu_nm1 = partitioning[nn - 1];
+              const auto left_limit = mu_nm1 > 0. ? mu_nm1 : 0.;
+              ret[nn] += 1. / ((mu_n - mu_nm1) * denominator())
+                             * (integral_3(left_limit, mu_n) - mu_nm1 * integral_2(left_limit, mu_n))
+                         + psi_vac / 6.
+                               * (3 * std::pow(mu_n, 2) * mu_nm1 - 3 * mu_nm1 * std::pow(left_limit, 2)
+                                  - 2 * std::pow(mu_n, 3) + 2 * std::pow(left_limit, 3))
+                               / (mu_nm1 - mu_n);
             } // if (nn > 0)
-          } // if (vn > 0.)
+          } // if (mu_n > 0.)
         } // nn
+        // unit outer normal
+        assert(XT::Common::FloatCmp::eq(n, -1.));
+        ret *= n;
         return ret;
       } else {
         return problem.kinetic_boundary_flux_from_quadrature(x, n, dd);
@@ -333,7 +342,7 @@ protected:
     }
 
     static DynamicRangeType get_kinetic_boundary_flux(const MomentBasisImp& basis_functions,
-                                                      const RangeFieldType& /*psi_vac*/,
+                                                      const RangeFieldType& psi_vac,
                                                       const bool is_mn_model,
                                                       const DomainType& x,
                                                       const RangeFieldType& n,
@@ -346,12 +355,18 @@ protected:
         const auto& partitioning = basis_functions.partitioning();
         DynamicRangeType ret(dimRange, 0.);
         for (size_t ii = 0; ii < dimRange / 2; ++ii) {
-          if (partitioning[ii + 1] > 0.) {
-            const auto left_limit = partitioning[ii] > 0. ? partitioning[ii] : 0.;
-            ret[2 * ii] = integral_2(left_limit, partitioning[ii + 1]) / denominator();
-            ret[2 * ii + 1] = integral_3(left_limit, partitioning[ii + 1]) / denominator();
+          const auto& mu_i = partitioning[ii];
+          const auto& mu_ip1 = partitioning[ii + 1];
+          if (mu_ip1 > 0.) {
+            const auto left_limit = mu_i > 0. ? mu_i : 0.;
+            ret[2 * ii] = integral_2(left_limit, mu_ip1) / denominator()
+                          + 0.5 * psi_vac * (std::pow(mu_ip1, 2) - std::pow(left_limit, 2));
+            ret[2 * ii + 1] = integral_3(left_limit, partitioning[ii + 1]) / denominator()
+                              + 1. / 3. * psi_vac * (std::pow(mu_ip1, 3) - std::pow(left_limit, 3));
           }
         } // ii
+        assert(XT::Common::FloatCmp::eq(n, -1.));
+        ret *= n;
         return ret;
       } else {
         return problem.kinetic_boundary_flux_from_quadrature(x, n, dd);
@@ -372,18 +387,22 @@ class SourceBeamMn : public SourceBeamPn<XT::Grid::extract_entity_t<GV>, MomentB
 
 public:
   using typename BaseType::FluxType;
+  using typename BaseType::RangeFieldType;
   using typename BaseType::RangeReturnType;
   using ActualFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
 
-  using BaseType::default_boundary_cfg;
   using BaseType::default_grid_cfg;
 
   SourceBeamMn(const MomentBasis& basis_functions,
                const GV& grid_view,
+               const RangeFieldType& psi_vac = 5e-7,
                const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
-               const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_cfg, boundary_cfg, true)
+               const bool disable_realizability_check = false,
+               const RangeFieldType tau = 1e-9)
+    : BaseType(basis_functions, psi_vac, grid_cfg, true)
     , grid_view_(grid_view)
+    , disable_realizability_check_(disable_realizability_check)
+    , tau_(tau)
   {}
 
   static std::string static_id()
@@ -393,12 +412,14 @@ public:
 
   std::unique_ptr<FluxType> flux() const override
   {
-    return std::make_unique<ActualFluxType>(grid_view_, basis_functions_);
+    return std::make_unique<ActualFluxType>(grid_view_, basis_functions_, tau_, disable_realizability_check_);
   }
 
 protected:
   using BaseType::basis_functions_;
   const GV& grid_view_;
+  const bool disable_realizability_check_;
+  const RangeFieldType tau_;
 }; // class SourceBeamMn<...>
 
 
