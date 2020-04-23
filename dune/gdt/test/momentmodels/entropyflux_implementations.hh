@@ -3678,12 +3678,177 @@ public:
     return ret;
   } // DomainType evaluate_kinetic_flux(...)
 
-  DomainType
-  evaluate_kinetic_outflow(const DomainType& /*alpha_i*/, const FluxDomainType& /*n_ij*/, const size_t /*dd*/) const
+  DomainType evaluate_kinetic_outflow(const DomainType& alpha_i, const FluxDomainType& n_ij, const size_t dd) const
 
   {
-    DUNE_THROW(Dune::NotImplemented, "");
-    return DomainType(0.);
+    assert(dd == 0);
+    // calculate < (\mu * n_ij) m G_\alpha(u) >
+    DomainType ret(0);
+    for (size_t nn = 0; nn < dimRange; ++nn) {
+      if (nn > 0) {
+        if (dimRange % 2 || nn != dimRange / 2) {
+          if (n_ij[0] * (v_points_[nn - 1] + v_points_[nn]) > 0) {
+            const auto& alpha = alpha_i;
+            if (std::abs(alpha[nn] - alpha[nn - 1]) > taylor_tol_) {
+              ret[nn] += 2. * std::pow(v_points_[nn] - v_points_[nn - 1], 2) / std::pow(alpha[nn] - alpha[nn - 1], 3)
+                             * (std::exp(alpha[nn]) - std::exp(alpha[nn - 1]))
+                         + (v_points_[nn] - v_points_[nn - 1]) / std::pow(alpha[nn] - alpha[nn - 1], 2)
+                               * (v_points_[nn - 1] * (std::exp(alpha[nn]) + std::exp(alpha[nn - 1]))
+                                  - 2 * v_points_[nn] * std::exp(alpha[nn]))
+                         + v_points_[nn] * (v_points_[nn] - v_points_[nn - 1]) / (alpha[nn] - alpha[nn - 1])
+                               * std::exp(alpha[nn]);
+            } else {
+              RangeFieldType update = 1.;
+              RangeFieldType result = 0.;
+              RangeFieldType base = alpha[nn - 1] - alpha[nn];
+              size_t ll = 0;
+              auto pow_frac = 1. / 6.;
+              while (ll < 3 || (ll <= max_taylor_order_ - 3 && XT::Common::FloatCmp::ne(update, 0.))) {
+                update = pow_frac * (2 * v_points_[nn] + (ll + 1) * v_points_[nn - 1]);
+                result += update;
+                ++ll;
+                pow_frac *= base / (ll + 3);
+              } // ll
+              assert(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
+              ret[nn] += result * (v_points_[nn] - v_points_[nn - 1]) * std::exp(alpha[nn]);
+            }
+          }
+        } else { //  if (dimRange % 2 || nn != dimRange/2)
+          if (n_ij[0] < 0.) {
+            const auto& alpha_neg = alpha_i;
+            if (std::abs(alpha_neg[nn] - alpha_neg[nn - 1]) > taylor_tol_) {
+              ret[nn] += -2. * std::pow(v_points_[nn], 2)
+                         * (4. / std::pow(alpha_neg[nn - 1] - alpha_neg[nn], 3)
+                                * (std::exp((alpha_neg[nn] + alpha_neg[nn - 1]) / 2.) - std::exp(alpha_neg[nn - 1]))
+                            + 1. / std::pow(alpha_neg[nn - 1] - alpha_neg[nn], 2)
+                                  * (std::exp((alpha_neg[nn] + alpha_neg[nn - 1]) / 2.) + std::exp(alpha_neg[nn - 1])));
+
+            } else {
+              RangeFieldType update = 1.;
+              RangeFieldType result = 0.;
+              RangeFieldType base = alpha_neg[nn] - alpha_neg[nn - 1];
+              size_t ll = 2;
+              auto pow_frac = 1. / 24.;
+              while (ll <= max_taylor_order_ - 1 && XT::Common::FloatCmp::ne(update, 0.)) {
+                update = pow_frac * (ll - 1.);
+                result += update;
+                ++ll;
+                pow_frac *= base / (2. * (ll + 1));
+              } // ll
+              assert(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
+              ret[nn] += result * -2. * std::pow(v_points_[nn], 2) * std::exp(alpha_neg[nn - 1]);
+            }
+          }
+          if (n_ij[0] > 0.) {
+            const auto& alpha_pos = alpha_i;
+            if (std::abs(alpha_pos[nn] - alpha_pos[nn - 1]) > taylor_tol_) {
+              ret[nn] += 2. * std::pow(v_points_[nn], 2)
+                         * (4. / std::pow(alpha_pos[nn - 1] - alpha_pos[nn], 3)
+                                * (std::exp((alpha_pos[nn] + alpha_pos[nn - 1]) / 2.) - std::exp(alpha_pos[nn]))
+                            + 1. / std::pow(alpha_pos[nn - 1] - alpha_pos[nn], 2)
+                                  * (std::exp((alpha_pos[nn] + alpha_pos[nn - 1]) / 2.) - 3. * std::exp(alpha_pos[nn]))
+                            - 1. / (alpha_pos[nn - 1] - alpha_pos[nn]) * std::exp(alpha_pos[nn]));
+            } else {
+              RangeFieldType update = 1.;
+              RangeFieldType result = 0.;
+              RangeFieldType base = alpha_pos[nn - 1] - alpha_pos[nn];
+              auto pow_frac = 1. / 24.;
+              size_t ll = 2;
+              while (ll <= max_taylor_order_ - 1 && XT::Common::FloatCmp::ne(update, 0.)) {
+                update = pow_frac * (ll + 3);
+                result += update;
+                ++ll;
+                pow_frac *= base / (2. * (ll + 1));
+              } // ll
+              assert(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
+              ret[nn] += result * 2. * std::pow(v_points_[nn], 2) * std::exp(alpha_pos[nn]);
+            } // else (alpha_n - alpha_{n-1} != 0)
+          }
+        } // else (dimRange % 2 || nn != dimRange/2)
+      } // if (nn > 0)
+      if (nn < dimRange - 1) {
+        if (dimRange % 2 || nn != dimRange / 2 - 1) {
+          if (n_ij[0] * (v_points_[nn] + v_points_[nn + 1]) / 2. > 0.) {
+            const auto& alpha = alpha_i;
+            if (XT::Common::FloatCmp::ne(alpha[nn + 1], alpha[nn], 0., taylor_tol_)) {
+              ret[nn] += -2. * std::pow(v_points_[nn + 1] - v_points_[nn], 2) / std::pow(alpha[nn + 1] - alpha[nn], 3)
+                             * (std::exp(alpha[nn + 1]) - std::exp(alpha[nn]))
+                         + (v_points_[nn + 1] - v_points_[nn]) / std::pow(alpha[nn + 1] - alpha[nn], 2)
+                               * (v_points_[nn + 1] * (std::exp(alpha[nn + 1]) + std::exp(alpha[nn]))
+                                  - 2 * v_points_[nn] * std::exp(alpha[nn]))
+                         - v_points_[nn] * (v_points_[nn + 1] - v_points_[nn]) / (alpha[nn + 1] - alpha[nn])
+                               * std::exp(alpha[nn]);
+            } else {
+              RangeFieldType update = 1.;
+              RangeFieldType result = 0.;
+              RangeFieldType base = alpha[nn + 1] - alpha[nn];
+              size_t ll = 0;
+              auto pow_frac = 1. / 6.;
+              while (ll < 3
+                     || (ll <= max_taylor_order_ - 3 && XT::Common::FloatCmp::ne(result, result + update, 1e-16, 0.))) {
+                update = pow_frac * (2 * v_points_[nn] + (ll + 1) * v_points_[nn + 1]);
+                result += update;
+                ++ll;
+                pow_frac *= base / (ll + 3);
+              } // ll
+              ret[nn] += result * (v_points_[nn + 1] - v_points_[nn]) * std::exp(alpha[nn]);
+            }
+          }
+        } else { // if (dimRange % 2 || nn != dimRange / 2 - 1)
+          if (n_ij[0] < 0.) {
+            const auto& alpha_neg = alpha_i;
+            if (std::abs(alpha_neg[nn + 1] - alpha_neg[nn]) > taylor_tol_) {
+              ret[nn] += -2. * std::pow(v_points_[nn + 1], 2)
+                         * (-4. / std::pow(alpha_neg[nn + 1] - alpha_neg[nn], 3)
+                                * (std::exp(alpha_neg[nn]) - std::exp((alpha_neg[nn + 1] + alpha_neg[nn]) / 2.))
+                            - 1. / std::pow(alpha_neg[nn + 1] - alpha_neg[nn], 2)
+                                  * (3 * std::exp(alpha_neg[nn]) - std::exp((alpha_neg[nn + 1] + alpha_neg[nn]) / 2.))
+                            - 1. / (alpha_neg[nn + 1] - alpha_neg[nn]) * std::exp(alpha_neg[nn]));
+            } else {
+              RangeFieldType update = 1.;
+              RangeFieldType result = 0.;
+              RangeFieldType base = alpha_neg[nn + 1] - alpha_neg[nn];
+              auto pow_frac = 1. / 24.;
+              size_t ll = 2;
+              while (ll <= max_taylor_order_ - 1 && XT::Common::FloatCmp::ne(update, 0.)) {
+                update = pow_frac * (ll + 3);
+                result += update;
+                ++ll;
+                pow_frac *= base / (2. * (ll + 1));
+              } // ll
+              assert(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
+              ret[nn] += result * -2. * std::pow(v_points_[nn + 1], 2) * std::exp(alpha_neg[nn]);
+            }
+          }
+          if (n_ij[0] > 0.) {
+            const auto& alpha_pos = alpha_i;
+            if (std::abs(alpha_pos[nn + 1] - alpha_pos[nn]) > taylor_tol_) {
+              ret[nn] += 2. * std::pow(v_points_[nn + 1], 2)
+                         * (4. / std::pow(alpha_pos[nn + 1] - alpha_pos[nn], 3)
+                                * (std::exp((alpha_pos[nn + 1] + alpha_pos[nn]) / 2.) - std::exp(alpha_pos[nn + 1]))
+                            + 1. / std::pow(alpha_pos[nn + 1] - alpha_pos[nn], 2)
+                                  * (std::exp((alpha_pos[nn + 1] + alpha_pos[nn]) / 2.) + std::exp(alpha_pos[nn + 1])));
+            } else {
+              RangeFieldType update = 1.;
+              RangeFieldType result = 0.;
+              RangeFieldType base = alpha_pos[nn] - alpha_pos[nn + 1];
+              auto pow_frac = 1. / 24.;
+              size_t ll = 2;
+              while (ll <= max_taylor_order_ - 1 && XT::Common::FloatCmp::ne(update, 0.)) {
+                update = pow_frac * (ll - 1.);
+                result += update;
+                ++ll;
+                pow_frac *= base / (2. * (ll + 1));
+              } // ll
+              assert(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
+              ret[nn] += result * 2. * std::pow(v_points_[nn + 1], 2) * std::exp(alpha_pos[nn + 1]);
+            } // else (alpha_n - alpha_{n-1} != 0)
+          }
+        } // else (dimRange % 2 || nn != dimRange / 2 - 1)
+      } // if (nn < dimRange - 1)
+    } // nn
+    ret *= n_ij[0];
+    return ret;
   } // DomainType evaluate_kinetic_outflow(...)
 
 
@@ -4589,7 +4754,7 @@ public:
         ret[ll] = eta_ast_prime_vals[ll] * grid_points_[ll];
     } else {
       for (size_t ll = first_positive; ll < dimRange; ++ll)
-        ret[ll] = second_exp_vals[ll] * grid_points_[ll];
+        ret[ll] = eta_ast_prime_vals[ll] * grid_points_[ll];
     }
     ret *= n_ij[dd] * interval_length;
     ret[0] *= 0.5;

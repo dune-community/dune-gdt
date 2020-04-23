@@ -250,14 +250,14 @@ public:
           mixed_error = 1e10;
           skip_error_computation = true;
           time_step_scale_factor = 0.5;
-          std::cout << "MathError! " << e.what() << std::endl;
+          // std::cout << "MathError! " << e.what() << std::endl;
           break;
 #if HAVE_TBB
         } catch (const tbb::captured_exception& e) {
           mixed_error = 1e10;
           skip_error_computation = true;
           time_step_scale_factor = 0.5;
-          std::cout << "TBB error! " << e.what() << std::endl;
+          // std::cout << "TBB error! " << e.what() << std::endl;
           break;
 #endif
         }
@@ -285,7 +285,7 @@ public:
         } catch (const Dune::MathError& e) {
           mixed_error = 1e10;
           time_step_scale_factor = 0.5;
-          std::cout << "MathError! " << e.what() << std::endl;
+          // std::cout << "MathError! " << e.what() << std::endl;
           continue;
 #if HAVE_TBB
         } catch (const tbb::captured_exception& e) {
@@ -299,13 +299,6 @@ public:
         alpha_tmp_.dofs().vector() = alpha_n.dofs().vector();
         for (size_t ii = 0; ii < num_stages_; ++ii)
           alpha_tmp_.dofs().vector().axpy(actual_dt * r_ * b_2_[ii], stages_k_[ii].dofs().vector());
-
-        // ensure min density, if this is not done for alpha_tmp_, the error will be estimated too high.
-        // min_density_setter_.apply(alpha_tmp_.dofs().vector(), alpha_tmp_.dofs().vector());
-        // min_density_setter_.apply_and_store(alpha_tmp_.dofs().vector(), alpha_tmp_.dofs().vector(),
-        // changed_indices2); min_density_setter_.set_indices(
-        //    changed_indices, alpha_np1_.dofs().vector(), changed_indices2, alpha_tmp_.dofs().vector());
-        // min_density_setter_.set_indices(changed_indices, alpha_tmp_.dofs().vector(), alpha_np1_.dofs().vector());
 
         // calculate error
         const auto* alpha_tmp_data =
@@ -322,9 +315,7 @@ public:
                                          [atol = atol_, rtol = rtol_](const auto& a, const auto& b) {
                                            return std::abs(a - b) / (atol + std::max(std::abs(a), std::abs(b)) * rtol);
                                          });
-        std::cout << mixed_error << std::endl;
-        // std::cout << XT::Common::to_string(changed_indices) << std::endl;
-        // std::cout << XT::Common::to_string(changed_indices2) << std::endl;
+        // std::cout << mixed_error << std::endl;
         // scale dt to get the estimated optimal time step length
         time_step_scale_factor =
             std::min(std::max(0.8 * std::pow(1. / mixed_error, 1. / (q + 1.)), scale_factor_min_), scale_factor_max_);
@@ -334,8 +325,6 @@ public:
         min_density_setter_.apply_and_store(
             alpha_np1_.dofs().vector(), alpha_np1_.dofs().vector(), changed_indices, actual_dt);
         if (changed_indices.size() && !(mixed_error > 1.)) {
-          // If we do not set the same indices for alpha_tmp_, the error will be estimated too high.
-          // min_density_setter_.set_indices(changed_indices, alpha_tmp_.dofs().vector(), alpha_np1_.dofs().vector());
           // we cannot use the first-same-as-last property for the next time step if indices have changed
           first_same_as_last_ = false;
         }

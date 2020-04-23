@@ -77,6 +77,17 @@ public:
     return new LocalEntropicHessianInverter(*this);
   }
 
+  /** \short applies inverse Hessian
+   *
+   *  Returns H^{-1} u, where H is the Hessian on this entity and u is the update vector in original coordinates
+   *  If inversion fails, an error is thrown. If regularization is requested (by setting the key "reg" in param_), the
+   *  entity is marked for regularization instead.
+   *  \note Evaluations of the ansatz densities have to be stored in
+   *  analytical_flux_ (by calling store_evaluations on the analytical flux before using this function, see
+   *  density_evaluations.hh).
+   *  \note Regularization is poorly tested and probably does not really work, a lot of tuning is
+   *  still missing (when do we want to use regularization, and when is it better to simply reduce the timestep?).
+   */
   void apply_local(const EntityType& entity) override final
   {
     local_u_update_->bind(entity);
@@ -96,12 +107,6 @@ public:
         if (std::isnan(entry) || std::isinf(entry))
           DUNE_THROW(Dune::MathError, "Hessian");
     } catch (const Dune::MathError& e) {
-      std::cout << "Caught error" << std::endl;
-      std::cout << entity.geometry().center() << std::endl;
-      std::cout << "ALpha is " << std::endl;
-      std::cout << XT::Common::to_string(alpha) << std::endl;
-      std::cout << "corresponding u is " << std::endl;
-      std::cout << XT::Common::to_string(analytical_flux_.get_u(alpha)) << std::endl;
       if (param_.has_key("reg") && param_.get("reg")[0]) {
         std::cout << "reg considered" << std::endl;
         for (size_t ii = 0; ii < dimRange; ++ii)
