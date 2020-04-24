@@ -2469,10 +2469,7 @@ public:
   {
     // store basis evaluations
     const auto& triangulation = basis_functions_.triangulation();
-    QuadratureRule<RangeFieldType, 2> vertex_quadrature;
-    vertex_quadrature.emplace_back(FieldVector<RangeFieldType, 2>{0, 0}, 1. / 6.);
-    vertex_quadrature.emplace_back(FieldVector<RangeFieldType, 2>{0, 1}, 1. / 6.);
-    vertex_quadrature.emplace_back(FieldVector<RangeFieldType, 2>{1, 0}, 1. / 6.);
+    const auto vertex_quadrature = basis_functions_.vertex_quadrature();
     const auto quadratures = triangulation.quadrature_rules(0, vertex_quadrature);
     const auto& vertices = triangulation.vertices();
     for (const auto& vertex : vertices) {
