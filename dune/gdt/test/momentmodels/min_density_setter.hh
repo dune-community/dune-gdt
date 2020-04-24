@@ -175,7 +175,7 @@ public:
     walker.walk(true);
   } // void apply(...)
 
-  bool apply(const VectorType& alpha, VectorType& range, const double dt) const
+  bool apply_with_dt(const VectorType& alpha, VectorType& range, const double dt) const
   {
     std::atomic<bool> changed = false;
     LocalMinDensitySetterType local_min_density_setter(

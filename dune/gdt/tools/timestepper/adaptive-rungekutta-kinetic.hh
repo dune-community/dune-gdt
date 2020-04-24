@@ -291,7 +291,7 @@ public:
 
         // maybe adjust alpha to enforce a minimum density or avoid problems with matrix conditions
         if (!(mixed_error > 1.)
-            && min_density_setter_.apply(alpha_np1_.dofs().vector(), alpha_np1_.dofs().vector(), actual_dt)) {
+            && min_density_setter_.apply_with_dt(alpha_np1_.dofs().vector(), alpha_np1_.dofs().vector(), actual_dt)) {
           // we cannot use the first-same-as-last property for the next time step if we changed alpha
           first_same_as_last_ = false;
         }
