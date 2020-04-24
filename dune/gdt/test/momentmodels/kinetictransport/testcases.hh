@@ -818,7 +818,13 @@ struct PointSourceMnTestCase : SourceBeamMnTestCase<GridImp, MomentBasisImp, rec
 
 // CheckerboardMn
 template <class MomentBasisImp, bool reconstruct, bool kinetic_scheme = false>
-struct CheckerboardMnExpectedResults;
+struct CheckerboardMnExpectedResults
+{
+  static constexpr double l1norm = reconstruct ? 0. : 0;
+  static constexpr double l2norm = reconstruct ? 0. : 0;
+  static constexpr double linfnorm = reconstruct ? 0. : 0;
+  static constexpr double tol = 1e-15;
+};
 
 template <bool reconstruct>
 struct CheckerboardMnExpectedResults<RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, reconstruct, false>
