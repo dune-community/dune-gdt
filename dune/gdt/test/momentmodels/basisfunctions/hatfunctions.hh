@@ -519,10 +519,20 @@ public:
     : BaseType(refinements)
   {
     const QuadratureRule<RangeFieldType, 2> reference_quadrature_rule =
-        XT::Data::FeketeQuadrature<DomainFieldType>::get(quad_order);
+        (quad_order == 0) ? vertex_quadrature() : XT::Data::FeketeQuadrature<DomainFieldType>::get(quad_order);
     quadratures_ = triangulation_.quadrature_rules(quad_refinements, reference_quadrature_rule);
     assert(triangulation_.vertices().size() == dimRange);
     BaseType::initialize_base_values();
+  }
+
+  // quadrature only using vertices of triangle, only used for masslumped version
+  static QuadratureRule<RangeFieldType, 2> vertex_quadrature()
+  {
+    QuadratureRule<RangeFieldType, 2> ret;
+    ret.emplace_back(FieldVector<RangeFieldType, 2>{0, 0}, 1. / 6.);
+    ret.emplace_back(FieldVector<RangeFieldType, 2>{0, 1}, 1. / 6.);
+    ret.emplace_back(FieldVector<RangeFieldType, 2>{1, 0}, 1. / 6.);
+    return ret;
   }
 
   DynamicRangeType evaluate(const DomainType& v) const override
