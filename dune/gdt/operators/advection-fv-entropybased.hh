@@ -11,6 +11,7 @@
 #ifndef DUNE_GDT_OPERATORS_FV_ENTROPYBASED_HH
 #define DUNE_GDT_OPERATORS_FV_ENTROPYBASED_HH
 
+#include <dune/xt/common/numeric.hh>
 #include <dune/gdt/operators/interfaces.hh>
 
 namespace Dune {
@@ -254,7 +255,7 @@ public:
         const auto sigma_s_value = sigma_s_->evaluate(entity_center)[0];
         const auto sigma_t_value = sigma_a_value + sigma_s_value;
         const auto Q_value = Q_->evaluate(entity_center)[0];
-        auto density = std::reduce(psi + 1, psi + dimRange - 1, 0.);
+        auto density = XT::Common::reduce(psi + 1, psi + dimRange - 1, 0.);
         density += 0.5 * (psi[0] + psi[dimRange - 1]);
         density *= interval_length;
         for (size_t jj = 0; jj < dimRange; ++jj) {
@@ -309,7 +310,7 @@ public:
         const auto sigma_s_value = sigma_s_->evaluate(entity_center)[0];
         const auto sigma_t_value = sigma_a_value + sigma_s_value;
         const auto Q_value = Q_->evaluate(entity_center)[0];
-        const auto density = std::transform_reduce(psi, psi + dimRange, quad_weights_.begin(), 0.);
+        const auto density = XT::Common::transform_reduce(psi, psi + dimRange, quad_weights_.begin(), 0.);
         for (size_t jj = 0; jj < dimRange; ++jj) {
           range_entity[jj] += sigma_s_value * density * u_iso_[jj] + Q_value * basis_integrated_[jj]
                               - psi[jj] * quad_weights_[jj] * sigma_t_value;
