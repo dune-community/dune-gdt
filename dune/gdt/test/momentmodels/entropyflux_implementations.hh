@@ -84,12 +84,8 @@ std::enable_if_t<std::is_arithmetic<T>::value, T> superbee(const T first_slope, 
 #  define ENTROPY_FLUX_1D_HATFUNCTIONS_USE_ANALYTICAL_INTEGRALS 0
 #endif
 
-#ifndef ENTROPY_FLUX_1D_HATFUNCTIONS_USE_TWOPOINT_QUAD
-#  define ENTROPY_FLUX_1D_HATFUNCTIONS_USE_TWOPOINT_QUAD 0
-#endif
-
-#ifndef ENTROPY_FLUX_3D_HATFUNCTIONS_USE_VERTEX_QUAD
-#  define ENTROPY_FLUX_3D_HATFUNCTIONS_USE_VERTEX_QUAD 0
+#ifndef ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+#  define ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING 0
 #endif
 
 enum class SlopeLimiterType
@@ -605,9 +601,9 @@ public:
       const auto position = quad_points_[ll][dd];
       if constexpr (reconstruct) {
         factor = position > 0. ? vals_right[ll] : vals_left[ll];
-        factor *= quad_weights_[ll] * position;
+        factor *= quad_weights_[ll] * std::abs(position);
       } else {
-        factor = (*ansatz_distribution_values[1])[ll] * quad_weights_[ll] * position;
+        factor = (*ansatz_distribution_values[1])[ll] * quad_weights_[ll] * std::abs(position);
       }
       auto& val = position > 0. ? right_flux_value : left_flux_value;
       const auto* basis_ll = &(M_.get_entry_ref(ll, 0.));
@@ -2175,9 +2171,9 @@ public:
         for (size_t ll = 0; ll < num_quad_points; ++ll) {
           if constexpr (reconstruct) {
             slope = slope_func(psi_e[ll] - psi_l[ll], psi_r[ll] - psi_e[ll]);
-            factor = (psi_e[ll] + sign_factor * slope) * weights[ll] * points[ll][dd];
+            factor = (psi_e[ll] + sign_factor * slope) * weights[ll] * std::abs(points[ll][dd]);
           } else {
-            factor = psi_e[ll] * weights[ll] * points[ll][dd];
+            factor = psi_e[ll] * weights[ll] * std::abs(points[ll][dd]);
           }
           for (size_t ii = 0; ii < block_size; ++ii)
             flux_val[offset + ii] += basis.get_entry(ll, ii) * factor;
@@ -2410,7 +2406,7 @@ public:
 #endif // ENTROPY_FLUX_USE_PARTIAL_MOMENTS_SPECIALIZATION
 
 #if ENTROPY_FLUX_USE_3D_HATFUNCTIONS_SPECIALIZATION
-#  if ENTROPY_FLUX_3D_HATFUNCTIONS_USE_VERTEX_QUAD
+#  if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
 /**
  * Specialization of EntropyBasedFluxImplementation for 3D Hatfunctions
  */
@@ -2935,10 +2931,10 @@ public:
       const auto& psi_r = (*ansatz_distribution_values[2])[jj];
       // calculate fluxes
       if constexpr (slope_type == SlopeLimiterType::no_slope) {
-        val[jj] = psi * quad_weights_[jj] * quad_points_[jj][dd];
+        val[jj] = psi * quad_weights_[jj] * std::abs(quad_points_[jj][dd]);
       } else {
         const auto slope = slope_func(psi - psi_l, psi_r - psi);
-        val[jj] = (psi + sign * 0.5 * slope) * quad_weights_[jj] * quad_points_[jj][dd];
+        val[jj] = (psi + sign * 0.5 * slope) * quad_weights_[jj] * std::abs(quad_points_[jj][dd]);
       }
     } // jj
   } // void calculate_reconstructed_fluxes(...)
@@ -3013,7 +3009,7 @@ public:
   XT::LA::SparsityPatternDefault pattern_;
 };
 
-#  else // ENTROPY_FLUX_3D_HATFUNCTIONS_USE_VERTEX_QUAD
+#  else // ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
 
 /**
  * Specialization of EntropyBasedFluxImplementation for 3D Hatfunctions
@@ -3771,11 +3767,12 @@ public:
       const auto& points = quad_points_[jj];
       for (size_t ll = 0; ll < num_quad_points; ++ll) {
         if constexpr (slope_type == SlopeLimiterType::no_slope) {
-          face_flux.axpy(non_reconstructed_values[ll] * weights[ll] * points[ll][dd], basis[ll]);
+          face_flux.axpy(non_reconstructed_values[ll] * weights[ll] * std::abs(points[ll][dd]), basis[ll]);
         } else {
           const auto slope = slope_func(non_reconstructed_values[ll] - (*ansatz_distribution_values[0])[jj][ll],
                                         (*ansatz_distribution_values[2])[jj][ll] - non_reconstructed_values[ll]);
-          face_flux.axpy((non_reconstructed_values[ll] + sign * 0.5 * slope) * weights[ll] * points[ll][dd], basis[ll]);
+          face_flux.axpy((non_reconstructed_values[ll] + sign * 0.5 * slope) * weights[ll] * std::abs(points[ll][dd]),
+                         basis[ll]);
         }
       } // ll (quad points)
       auto& val = positive_dir ? right_flux_value : left_flux_value;
@@ -3895,7 +3892,7 @@ public:
   const size_t num_faces_;
   XT::LA::SparsityPatternDefault pattern_;
 };
-#  endif // ENTROPY_FLUX_3D_HATFUNCTIONS_USE_VERTEX_QUAD
+#  endif // ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
 #endif // ENTROPY_FLUX_USE_3D_HATFUNCTIONS_SPECIALIZATION
 
 #if ENTROPY_FLUX_USE_1D_HATFUNCTIONS_SPECIALIZATION
@@ -4843,7 +4840,7 @@ public:
 
 #  else // ENTROPY_FLUX_1D_HATFUNCTIONS_USE_ANALYTICAL_INTEGRALS
 
-#    if ENTROPY_FLUX_1D_HATFUNCTIONS_USE_TWOPOINT_QUAD
+#    if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
 /**
  * Specialization of EntropyBasedFluxImplementation for 1D Hatfunctions with 2 point quadrature per element
  */
@@ -5341,7 +5338,7 @@ public:
     for (size_t ll = 0; ll < first_positive; ++ll) {
       const RangeFieldType slope =
           reconstruct ? slope_func(psi_entity[ll] - psi_left[ll], psi_right[ll] - psi_entity[ll]) : 0.;
-      left_flux_value[ll] = (psi_entity[ll] - 0.5 * slope) * grid_points_[ll] * interval_length;
+      left_flux_value[ll] = (0.5 * slope - psi_entity[ll]) * grid_points_[ll] * interval_length;
       right_flux_value[ll] = 0.;
     }
     for (size_t ll = first_positive; ll < dimRange; ++ll) {
@@ -5422,7 +5419,7 @@ template <class D, class R, size_t dimRange, EntropyType entropy>
 const R EntropyBasedFluxImplementation<HatFunctionMomentBasis<D, 1, R, dimRange, 1, 1, entropy>>::interval_length =
     2. / (dimRange - 1.);
 
-#    else // ENTROPY_FLUX_1D_HATFUNCTIONS_USE_TWOPOINT_QUAD
+#    else // ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
 /**
  * Specialization of EntropyBasedFluxImplementation for 1D Hatfunctions (no change of basis, use structure)
  */
@@ -6038,7 +6035,7 @@ public:
           } else {
             factor = psi_entity[jj][ll];
           }
-          factor *= quad_weights_[jj][ll] * position;
+          factor *= quad_weights_[jj][ll] * std::abs(position);
           auto& flux_val = position > 0. ? right_flux_value : left_flux_value;
           for (size_t ii = 0; ii < 2; ++ii)
             flux_val[jj + ii] += M_[jj][ll][ii] * factor;
@@ -6050,9 +6047,10 @@ public:
         for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
           if constexpr (reconstruct) {
             slope = slope_func(psi_entity[jj][ll] - psi_left[jj][ll], psi_right[jj][ll] - psi_entity[jj][ll]);
-            factor = (psi_entity[jj][ll] + sign_factor * slope) * quad_weights_[jj][ll] * quad_points_[jj][ll];
+            factor =
+                (psi_entity[jj][ll] + sign_factor * slope) * quad_weights_[jj][ll] * std::abs(quad_points_[jj][ll]);
           } else {
-            factor = psi_entity[jj][ll] * quad_weights_[jj][ll] * quad_points_[jj][ll];
+            factor = psi_entity[jj][ll] * quad_weights_[jj][ll] * std::abs(quad_points_[jj][ll]);
           }
           for (size_t ii = 0; ii < 2; ++ii)
             flux_val[jj + ii] += M_[jj][ll][ii] * factor;
@@ -6148,7 +6146,7 @@ public:
   const size_t k_max_;
   const RangeFieldType epsilon_;
 };
-#    endif // ENTROPY_FLUX_1D_HATFUNCTIONS_USE_TWOPOINT_QUAD
+#    endif // ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
 #  endif // ENTROPY_FLUX_1D_HATFUNCTIONS_USE_ANALYTICAL_INTEGRALS
 #endif // ENTROPY_FLUX_USE_1D_HATFUNCTIONS_SPECIALIZATION
 

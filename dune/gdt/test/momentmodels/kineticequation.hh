@@ -86,6 +86,11 @@ public:
     return "kineticequationinterface";
   }
 
+  const MomentBasis& basis_functions() const
+  {
+    return basis_functions_;
+  }
+
 protected:
   const MomentBasis& basis_functions_;
 }; // class KineticEquationInterface<E, ...>

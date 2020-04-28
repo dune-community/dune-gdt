@@ -355,9 +355,9 @@ public:
              VectorType& range,
              const XT::Common::Parameter& param = {}) const
   {
-    DUNE_THROW_IF(!(this->parameter_type() <= param.type()),
-                  Exceptions::operator_error,
-                  "this->parameter_type() = " << this->parameter_type() << "\n   param.type() = " << param.type());
+    DEBUG_THROW_IF(!(this->parameter_type() <= param.type()),
+                   Exceptions::operator_error,
+                   "this->parameter_type() = " << this->parameter_type() << "\n   param.type() = " << param.type());
     range.set_all(0);
     auto range_function = make_discrete_function(this->range_space_, range);
     // set up the actual operator
@@ -377,7 +377,7 @@ public:
     }
     // and apply it in a grid walk
     localizable_op.assemble(use_tbb_);
-    DUNE_THROW_IF(!range.valid(), Exceptions::operator_error, "range contains inf or nan!");
+    DEBUG_THROW_IF(!range.valid(), Exceptions::operator_error, "range contains inf or nan!");
   } // ... apply(...)
 
   void apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& param = {}) const override
