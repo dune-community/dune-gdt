@@ -189,10 +189,10 @@ public:
     for (size_t jj = 0; jj < quadratures.size(); ++jj) {
       for (size_t ll = 0; ll < quadratures[jj].size(); ++ll) {
         const auto v = quadratures[jj][ll].position();
-        const auto b = basis_functions_.evaluate(v, jj);
         if (v[dd] * n < 0) {
+          const auto b = basis_functions_.evaluate(v, jj);
           const RangeFieldType psi = boundary_density(v);
-          ret += b * psi * (v[dd] * n) * quadratures[jj][ll].weight();
+          ret.axpy(psi * std::abs(v[dd]) * quadratures[jj][ll].weight(), b);
         }
       } // ll
     } // jj

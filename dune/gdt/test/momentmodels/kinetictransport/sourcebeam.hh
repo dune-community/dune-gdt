@@ -309,7 +309,6 @@ protected:
         } // nn
         // unit outer normal
         assert(XT::Common::FloatCmp::eq(n, -1.));
-        ret *= n;
         return ret;
       } else {
         return problem.kinetic_boundary_flux_from_quadrature(x, n, dd);
@@ -366,7 +365,6 @@ protected:
           }
         } // ii
         assert(XT::Common::FloatCmp::eq(n, -1.));
-        ret *= n;
         return ret;
       } else {
         return problem.kinetic_boundary_flux_from_quadrature(x, n, dd);

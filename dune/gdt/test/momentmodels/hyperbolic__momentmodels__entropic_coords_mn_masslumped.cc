@@ -5,8 +5,7 @@
 // Authors:
 //   Tobias Leibner  (2016)
 
-#define ENTROPY_FLUX_1D_HATFUNCTIONS_USE_TWOPOINT_QUAD 1
-#define ENTROPY_FLUX_3D_HATFUNCTIONS_USE_VERTEX_QUAD 1
+#define ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING 1
 
 // This one has to come first (includes the config.h)!
 #include <dune/xt/test/main.hxx>
@@ -19,11 +18,11 @@ using Yasp2 = Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>;
 using Yasp3 = Dune::YaspGrid<3, Dune::EquidistantOffsetCoordinates<double, 3>>;
 
 using YaspGridTestCasesAll = testing::Types<
-    // Dune::GDT::PlaneSourceMnTestCase<Yasp1, Dune::GDT::HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, false,
-    // true>, Dune::GDT::SourceBeamMnTestCase<Yasp1, Dune::GDT::HatFunctionMomentBasis<double, 1, double, 8, 1, 1>,
-    // false, true>,
+    Dune::GDT::PlaneSourceMnTestCase<Yasp1, Dune::GDT::HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, false, true>,
+    Dune::GDT::SourceBeamMnTestCase<Yasp1, Dune::GDT::HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, false, true>,
     Dune::GDT::
-        CheckerboardMnTestCase<Yasp3, Dune::GDT::HatFunctionMomentBasis<double, 3, double, 3, 1, 3>, false, true>>;
+        CheckerboardMnTestCase<Yasp3, Dune::GDT::HatFunctionMomentBasis<double, 3, double, 0, 1, 3>, false, true>,
+    Dune::GDT::ShadowMnTestCase<Yasp3, Dune::GDT::HatFunctionMomentBasis<double, 3, double, 0, 1, 3>, false, true>>;
 
 TYPED_TEST_CASE(HyperbolicEntropicCoordsMnTest, YaspGridTestCasesAll);
 TYPED_TEST(HyperbolicEntropicCoordsMnTest, check)

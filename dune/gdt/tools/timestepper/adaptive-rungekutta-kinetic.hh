@@ -135,10 +135,12 @@ public:
   using BaseType::current_time;
   using BaseType::solve;
 
-  bool regularize_if_needed(const bool consider_regularization,
-                            typename std::vector<RangeFieldType>::const_iterator& r_it,
-                            const std::vector<RangeFieldType>& r_sequence)
+  bool regularize_if_needed(const bool /*consider_regularization*/,
+                            typename std::vector<RangeFieldType>::const_iterator& /*r_it*/,
+                            const std::vector<RangeFieldType>& /*r_sequence*/)
   {
+    return false;
+#if 0
     const auto& reg_indicators = op_.reg_indicators();
     auto& alpha_n = current_solution();
     if (consider_regularization
@@ -175,14 +177,25 @@ public:
       return true;
     }
     return false;
+#endif
   } // void regularize_if_needed(...)
+
+  void set_op_param(const std::string& key, const RangeFieldType& val)
+  {
+    static std::vector<RangeFieldType> tmp_vec(1);
+    tmp_vec[0] = val;
+    op_param_.set(key, tmp_vec, true);
+  }
 
   RangeFieldType step(const RangeFieldType dt, const RangeFieldType max_dt) override final
   {
     RangeFieldType actual_dt = std::min(dt, max_dt);
+    // regularization is currently unused but may be used in the near future
+    static const bool consider_regularization = false;
+    set_op_param("dt", actual_dt);
     RangeFieldType mixed_error = std::numeric_limits<RangeFieldType>::max();
     RangeFieldType time_step_scale_factor = 1.0;
-    const std::vector<RangeFieldType> r_sequence = {0, 1e-8, 1e-6, 1e-4, 1e-3, 1e-2, 5e-2, 0.1, 0.5, 1};
+    static const std::vector<RangeFieldType> r_sequence = {0, 1e-8, 1e-6, 1e-4, 1e-3, 1e-2, 5e-2, 0.1, 0.5, 1};
     auto r_it = r_sequence.begin();
 
     auto& t = current_time();
@@ -196,19 +209,13 @@ public:
     while (mixed_error > 1.) {
       bool skip_error_computation = false;
       actual_dt *= time_step_scale_factor;
-      // bool consider_regularization = actual_dt < 1e-13;
-      bool consider_regularization = false;
       for (size_t ii = first_stage_to_compute; ii < num_stages_ - 1; ++ii) {
-        stages_k_[ii].dofs().vector() *= 0.;
+        set_op_param("t", t + actual_dt * c_[ii]), stages_k_[ii].dofs().vector() *= 0.;
         alpha_tmp_.dofs().vector() = alpha_n.dofs().vector();
         for (size_t jj = 0; jj < ii; ++jj)
-          alpha_tmp_.dofs().vector() += stages_k_[jj].dofs().vector() * (actual_dt * r_ * (A_[ii][jj]));
+          alpha_tmp_.dofs().vector().axpy(actual_dt * r_ * (A_[ii][jj]), stages_k_[jj].dofs().vector());
         try {
-          op_.apply(alpha_tmp_.dofs().vector(),
-                    stages_k_[ii].dofs().vector(),
-                    XT::Common::Parameter({{"t", {t + actual_dt * c_[ii]}},
-                                           {"reg", {static_cast<double>(consider_regularization)}},
-                                           {"dt", {actual_dt}}}));
+          op_.apply(alpha_tmp_.dofs().vector(), stages_k_[ii].dofs().vector(), op_param_);
           if (regularize_if_needed(consider_regularization, r_it, r_sequence)) {
             mixed_error = 1e10;
             skip_error_computation = true;
@@ -239,13 +246,10 @@ public:
           alpha_np1_.dofs().vector().axpy(actual_dt * r_ * b_1_[ii], stages_k_[ii].dofs().vector());
 
         // calculate last stage
+        set_op_param("t", t + actual_dt * c_[num_stages_ - 1]);
         stages_k_[num_stages_ - 1].dofs().vector() *= 0.;
         try {
-          op_.apply(alpha_np1_.dofs().vector(),
-                    stages_k_[num_stages_ - 1].dofs().vector(),
-                    XT::Common::Parameter({{"t", {t + actual_dt * c_[num_stages_ - 1]}},
-                                           {"reg", {static_cast<double>(consider_regularization)}},
-                                           {"dt", {actual_dt}}}));
+          op_.apply(alpha_np1_.dofs().vector(), stages_k_[num_stages_ - 1].dofs().vector(), op_param_);
           if (regularize_if_needed(consider_regularization, r_it, r_sequence)) {
             mixed_error = 1e10;
             time_step_scale_factor = 0.9;
@@ -330,6 +334,7 @@ private:
   const size_t num_stages_;
   std::unique_ptr<DiscreteFunctionType> last_stage_of_previous_step_;
   bool first_same_as_last_;
+  XT::Common::Parameter op_param_;
 }; // class KineticAdaptiveRungeKuttaTimeStepper
 
 
