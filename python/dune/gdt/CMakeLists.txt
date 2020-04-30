@@ -13,10 +13,12 @@
 
 file(GLOB_RECURSE header "*.hh")
 
-dune_pybindxi_add_module(usercode EXCLUDE_FROM_ALL ${header} usercode.cc)
-dune_pybindxi_add_module(gamm_2019_talk_on_conservative_rb
-                         EXCLUDE_FROM_ALL
-                         ${header}
-                         gamm-2019-talk-on-conservative-rb.cc)
+dune_pybindxi_add_module(_discretefunction EXCLUDE_FROM_ALL ${header} discretefunction/discretefunction.cc)
+dune_pybindxi_add_module(_spaces_h1_continuous_lagrange EXCLUDE_FROM_ALL ${header} spaces/h1/continuous_lagrange.cc)
+dune_pybindxi_add_module(_spaces_interface EXCLUDE_FROM_ALL ${header} spaces/interface.cc)
+# dune_pybindxi_add_module(usercode EXCLUDE_FROM_ALL ${header} usercode.cc)
+# dune_pybindxi_add_module(gamm_2019_talk_on_conservative_rb
+#                          EXCLUDE_FROM_ALL
+#                          ${header}
+#                          gamm-2019-talk-on-conservative-rb.cc)
 
-add_subdirectory(discretefunction)

@@ -9,3 +9,12 @@
 #   Felix Schindler (2017 - 2018)
 #   René Fritze     (2016, 2018)
 # ~~~
+
+from dune.xt import guarded_import
+
+for mod_name in (
+        '_discretefunction',
+        '_spaces_h1_continuous_lagrange',
+        '_spaces_interface',
+):
+    guarded_import(globals(), 'dune.gdt', mod_name)
