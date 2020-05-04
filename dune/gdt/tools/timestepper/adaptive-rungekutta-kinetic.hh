@@ -200,20 +200,22 @@ public:
 
     auto& t = current_time();
     auto& alpha_n = current_solution();
+    const auto num_dofs = alpha_n.dofs().vector().size();
     size_t first_stage_to_compute = 0;
     if (first_same_as_last_ && last_stage_of_previous_step_) {
       stages_k_[0].dofs().vector() = last_stage_of_previous_step_->dofs().vector();
       first_stage_to_compute = 1;
     }
     first_same_as_last_ = true;
-    while (mixed_error > 1.) {
+    while (!(mixed_error < 1.)) {
       bool skip_error_computation = false;
       actual_dt *= time_step_scale_factor;
       for (size_t ii = first_stage_to_compute; ii < num_stages_ - 1; ++ii) {
-        set_op_param("t", t + actual_dt * c_[ii]), stages_k_[ii].dofs().vector() *= 0.;
+        set_op_param("t", t + actual_dt * c_[ii]);
+        std::fill_n(&(stages_k_[ii].dofs().vector()[0]), num_dofs, 0.);
         alpha_tmp_.dofs().vector() = alpha_n.dofs().vector();
         for (size_t jj = 0; jj < ii; ++jj)
-          alpha_tmp_.dofs().vector().axpy(actual_dt * r_ * (A_[ii][jj]), stages_k_[jj].dofs().vector());
+          alpha_tmp_.dofs().vector().axpy(actual_dt * r_ * A_[ii][jj], stages_k_[jj].dofs().vector());
         try {
           op_.apply(alpha_tmp_.dofs().vector(), stages_k_[ii].dofs().vector(), op_param_);
           if (regularize_if_needed(consider_regularization, r_it, r_sequence)) {
@@ -247,7 +249,7 @@ public:
 
         // calculate last stage
         set_op_param("t", t + actual_dt * c_[num_stages_ - 1]);
-        stages_k_[num_stages_ - 1].dofs().vector() *= 0.;
+        std::fill_n(&(stages_k_[num_stages_ - 1].dofs().vector()[0]), num_dofs, 0.);
         try {
           op_.apply(alpha_np1_.dofs().vector(), stages_k_[num_stages_ - 1].dofs().vector(), op_param_);
           if (regularize_if_needed(consider_regularization, r_it, r_sequence)) {
@@ -273,31 +275,40 @@ public:
         for (size_t ii = 0; ii < num_stages_; ++ii)
           alpha_tmp_.dofs().vector().axpy(actual_dt * r_ * b_2_[ii], stages_k_[ii].dofs().vector());
 
-        // calculate error
         const auto* alpha_tmp_data =
             XT::Common::VectorAbstraction<typename DiscreteFunctionType::VectorType>::data(alpha_tmp_.dofs().vector());
         const auto* alpha_np1_data =
             XT::Common::VectorAbstraction<typename DiscreteFunctionType::VectorType>::data(alpha_np1_.dofs().vector());
-        mixed_error =
-            XT::Common::transform_reduce(alpha_tmp_data,
-                                         alpha_tmp_data + alpha_tmp_.dofs().vector().size(),
-                                         alpha_np1_data,
-                                         0.,
-                                         /*reduction*/ [](const auto& a, const auto& b) { return std::max(a, b); },
-                                         /*transformation*/
-                                         [atol = atol_, rtol = rtol_](const auto& a, const auto& b) {
-                                           return std::abs(a - b) / (atol + std::max(std::abs(a), std::abs(b)) * rtol);
-                                         });
-        // std::cout << mixed_error << std::endl;
-        // scale dt to get the estimated optimal time step length
-        time_step_scale_factor =
-            std::min(std::max(0.8 * std::pow(1. / mixed_error, 1. / (q + 1.)), scale_factor_min_), scale_factor_max_);
 
-        // maybe adjust alpha to enforce a minimum density or avoid problems with matrix conditions
-        if (!(mixed_error > 1.)
-            && min_density_setter_.apply_with_dt(alpha_np1_.dofs().vector(), alpha_np1_.dofs().vector(), actual_dt)) {
-          // we cannot use the first-same-as-last property for the next time step if we changed alpha
-          first_same_as_last_ = false;
+        // if b == NaN, std::max(a, b) might return a, so mixed_error might be non-NaN though there are NaNs in the
+        // vectors So check for NaNs before
+        bool nan_found = check_for_nan(alpha_tmp_data, alpha_np1_data, num_dofs);
+        if (nan_found) {
+          mixed_error = 1e10;
+          time_step_scale_factor = 0.5;
+        } else {
+          // calculate error
+          mixed_error = XT::Common::transform_reduce(
+              alpha_tmp_data,
+              alpha_tmp_data + num_dofs,
+              alpha_np1_data,
+              0.,
+              /*reduction*/ [](const auto& a, const auto& b) { return std::max(a, b); },
+              /*transformation*/
+              [atol = atol_, rtol = rtol_](const auto& a, const auto& b) {
+                return std::abs(a - b) / (atol + std::max(std::abs(a), std::abs(b)) * rtol);
+              });
+          // std::cout << mixed_error << std::endl;
+          // scale dt to get the estimated optimal time step length
+          time_step_scale_factor =
+              std::min(std::max(0.8 * std::pow(1. / mixed_error, 1. / (q + 1.)), scale_factor_min_), scale_factor_max_);
+
+          // maybe adjust alpha to enforce a minimum density or avoid problems with matrix conditions
+          if (mixed_error < 1.
+              && min_density_setter_.apply_with_dt(alpha_np1_.dofs().vector(), alpha_np1_.dofs().vector(), actual_dt)) {
+            // we cannot use the first-same-as-last property for the next time step if we changed alpha
+            first_same_as_last_ = false;
+          }
         }
       } // if (!skip_error_computation)
     } // while (mixed_error > 1.)
@@ -315,6 +326,14 @@ public:
   } // ... step(...)
 
 private:
+  bool check_for_nan(const RangeFieldType* vec1, const RangeFieldType* vec2, const size_t num_dofs)
+  {
+    for (size_t ii = 0; ii < num_dofs; ++ii)
+      if (std::isnan(vec1[ii] + vec2[ii]))
+        return true;
+    return false;
+  }
+
   const MinDensitySetterType min_density_setter_;
   const OperatorType& op_;
   const EntropyFluxType& entropy_flux_;

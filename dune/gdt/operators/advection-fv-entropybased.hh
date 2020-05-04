@@ -11,6 +11,8 @@
 #ifndef DUNE_GDT_OPERATORS_FV_ENTROPYBASED_HH
 #define DUNE_GDT_OPERATORS_FV_ENTROPYBASED_HH
 
+#include <boost/config.hpp>
+
 #include <dune/xt/common/numeric.hh>
 #include <dune/gdt/operators/interfaces.hh>
 
@@ -158,10 +160,12 @@ public:
   static constexpr size_t dimDomain = AdvectionOperatorType::SGV::dimension;
   static constexpr size_t dimRange = AdvectionOperatorType::s_r;
   static constexpr double interval_length = 2. / (dimRange - 1.);
+  static constexpr size_t first_positive_index_1d = dimRange / 2;
   using RangeFieldType = typename BaseType::FieldType;
   using ParameterFunctionType = typename ProblemType::ScalarFunctionType;
   using DomainType = FieldVector<RangeFieldType, dimDomain>;
   using BoundaryFluxesMapType = std::map<DomainType, DynamicVector<RangeFieldType>, XT::Common::FieldVectorFloatLess>;
+  using IntersectionType = XT::Grid::extract_intersection_t<typename AdvectionOperatorType::SGV>;
 
   EntropicCoordinatesMasslumpedOperator(const AdvectionOperatorType& advection_op,
                                         const ProblemType& problem,
@@ -174,6 +178,7 @@ public:
     , sigma_s_(problem.sigma_s())
     , Q_(problem.Q())
     , exp_evaluations_(source_space().mapper().size())
+    , dummy_range_(dimRange)
     , dx_(dx)
     , h_inv_(1. / dx_)
     , quad_points_(dimDomain * dimRange)
@@ -235,48 +240,30 @@ public:
     assert(source.size() < std::numeric_limits<int>::max());
     XT::Common::Mkl::exp(static_cast<int>(source.size()), source.data(), exp_evaluations_.data());
     auto* range_data = range.data();
-    std::fill(range_data, range_data + range.size(), 0.);
     const auto& grid_view = source_space().grid_view();
     const size_t num_entities = grid_view.size(0);
-    DomainType entity_center;
     if constexpr (dimDomain == 1) {
+      // left boundary flux
+      const auto& left_boundary_flux = boundary_fluxes_.at(lower_left_);
+      for (size_t jj = 0; jj < dimRange; ++jj)
+        range_data[jj] += left_boundary_flux[jj] * h_inv_;
+      // inner fluxes and rhs
       for (size_t ii = 0; ii < num_entities; ++ii) {
-        const bool left_boundary = (ii == 0);
-        const bool right_boundary = (ii == num_entities - 1);
         const auto offset = ii * dimRange;
         auto* range_entity = range_data + offset;
-        auto* range_left = range_entity - dimRange;
-        auto* range_right = range_entity + dimRange;
+        auto* range_left = (ii == 0 ? dummy_range_.data() : range_entity - dimRange);
+        auto* range_right = (ii == num_entities - 1 ? dummy_range_.data() : range_entity + dimRange);
         const auto* psi = exp_evaluations_.data() + offset;
-        const auto* boundary_flux =
-            left_boundary ? &(boundary_fluxes_.at(lower_left_)) : &(boundary_fluxes_.at(upper_right_));
-        entity_center[0] = lower_left_[0] + (ii + 0.5) * dx_;
-        const auto sigma_a_value = sigma_a_->evaluate(entity_center)[0];
-        const auto sigma_s_value = sigma_s_->evaluate(entity_center)[0];
-        const auto sigma_t_value = sigma_a_value + sigma_s_value;
-        const auto Q_value = Q_->evaluate(entity_center)[0];
-        auto density = XT::Common::reduce(psi + 1, psi + dimRange - 1, 0.);
-        density += 0.5 * (psi[0] + psi[dimRange - 1]);
-        density *= interval_length;
-        for (size_t jj = 0; jj < dimRange; ++jj) {
-          // flux
-          const auto& v = quad_points_[jj];
-          const auto weight = (jj == 0 || jj == dimRange - 1) ? interval_length / 2. : interval_length;
-          const auto flux_jj = std::abs(v) * psi[jj] * h_inv_ * weight;
-          range_entity[jj] -= flux_jj;
-          if (v > 0.) {
-            if (!right_boundary)
-              range_right[jj] += flux_jj;
-          } else if (!left_boundary) {
-            range_left[jj] += flux_jj;
-          }
-          if (left_boundary || right_boundary)
-            range_entity[jj] += (*boundary_flux)[jj] * h_inv_;
-          // rhs
-          range_entity[jj] +=
-              sigma_s_value * density * u_iso_[jj] + Q_value * basis_integrated_[jj] - psi[jj] * weight * sigma_t_value;
-        } // jj
+        // flux
+        flux_1d(range_entity, range_left, range_right, psi);
+        // rhs
+        entity_center_[0] = lower_left_[0] + (ii + 0.5) * dx_;
+        rhs_1d(range_entity, psi);
       } // entities
+      // left boundary flux
+      const auto& right_boundary_flux = boundary_fluxes_.at(upper_right_);
+      for (size_t jj = 0; jj < dimRange; ++jj)
+        range_data[(num_entities - 1) * dimRange + jj] += right_boundary_flux[jj] * h_inv_;
     } else if constexpr (dimDomain == 3) {
       for (auto&& entity : Dune::elements(grid_view)) {
         const auto entity_index = grid_view.indexSet().index(entity);
@@ -286,54 +273,124 @@ public:
         // flux
         for (auto&& intersection : Dune::intersections(grid_view, entity)) {
           const bool boundary = !intersection.neighbor();
-          const auto& outside_entity = boundary ? entity : intersection.outside();
-          const auto outside_index = grid_view.indexSet().index(outside_entity);
-          auto* range_outside = range_data + outside_index * dimRange;
-          const auto dd = intersection.indexInInside() / 2;
-          const auto& n = intersection.centerUnitOuterNormal();
-          const auto* boundary_flux = boundary ? &(boundary_fluxes_.at(intersection.geometry().center())) : nullptr;
-          for (size_t jj = 0; jj < dimRange; ++jj) {
-            const auto v_times_n = quad_points_[dd * dimRange + jj] * n[dd];
-            if (v_times_n > 0.) {
-              const auto flux_jj = v_times_n * psi[jj] * quad_weights_[jj] * h_inv_;
-              range_entity[jj] -= flux_jj;
-              if (!boundary)
-                range_outside[jj] += flux_jj;
-            } else if (boundary) {
-              range_entity[jj] += (*boundary_flux)[jj] * h_inv_;
-            }
-          } // jj
+          const auto& outside_entity = intersection.outside();
+          auto* range_outside =
+              boundary ? dummy_range_.data() : range_data + grid_view.indexSet().index(outside_entity) * dimRange;
+          flux_3d(range_entity, range_outside, psi, intersection);
         } // intersections
         // rhs
-        entity_center = entity.geometry().center();
-        const auto sigma_a_value = sigma_a_->evaluate(entity_center)[0];
-        const auto sigma_s_value = sigma_s_->evaluate(entity_center)[0];
-        const auto sigma_t_value = sigma_a_value + sigma_s_value;
-        const auto Q_value = Q_->evaluate(entity_center)[0];
-        const auto density = XT::Common::transform_reduce(psi, psi + dimRange, quad_weights_.begin(), 0.);
-        for (size_t jj = 0; jj < dimRange; ++jj) {
-          range_entity[jj] += sigma_s_value * density * u_iso_[jj] + Q_value * basis_integrated_[jj]
-                              - psi[jj] * quad_weights_[jj] * sigma_t_value;
-        } // jj
+        entity_center_ = entity.geometry().center();
+        rhs_3d(range_entity, psi);
       } // entities
     }
     // inverse Hessian
     const auto* psi = exp_evaluations_.data();
+    if constexpr (dimDomain == 1)
+      apply_inverse_hessian_1d(num_entities, range_data, psi);
+    else
+      apply_inverse_hessian_3d(num_entities, range_data, psi);
+  } // void apply(...)
+
+  void flux_1d(RangeFieldType* BOOST_RESTRICT range_entity,
+               RangeFieldType* BOOST_RESTRICT range_left,
+               RangeFieldType* BOOST_RESTRICT range_right,
+               const RangeFieldType* BOOST_RESTRICT psi) const
+  {
+    // fluxes in negative direction
+    for (size_t jj = 0; jj < first_positive_index_1d; ++jj) {
+      const auto weight = (jj == 0 ? interval_length * 0.5 : interval_length);
+      const auto flux_jj = -quad_points_[jj] * psi[jj] * h_inv_ * weight;
+      range_entity[jj] -= flux_jj;
+      range_left[jj] += flux_jj;
+    }
+    // fluxes in positive direction
+    for (size_t jj = first_positive_index_1d; jj < dimRange; ++jj) {
+      const auto weight = (jj == dimRange - 1 ? interval_length * 0.5 : interval_length);
+      const auto flux_jj = quad_points_[jj] * psi[jj] * h_inv_ * weight;
+      range_entity[jj] -= flux_jj;
+      range_right[jj] += flux_jj;
+    }
+  }
+
+  void flux_3d(RangeFieldType* BOOST_RESTRICT range_entity,
+               RangeFieldType* BOOST_RESTRICT range_outside,
+               const RangeFieldType* BOOST_RESTRICT psi,
+               const IntersectionType& intersection) const
+  {
+    const bool boundary = !intersection.neighbor();
+    const auto dd = intersection.indexInInside() / 2;
+    const auto n_dd = intersection.centerUnitOuterNormal()[dd];
+    const auto quad_offset = dd * dimRange;
+    for (size_t jj = 0; jj < dimRange; ++jj) {
+      const auto v_times_n = quad_points_[quad_offset + jj] * n_dd;
+      if (v_times_n > 0.) {
+        const auto flux_jj = psi[jj] * quad_weights_[jj] * h_inv_ * v_times_n;
+        range_entity[jj] -= flux_jj;
+        range_outside[jj] += flux_jj;
+      }
+    } // jj
+    if (boundary) {
+      const auto& boundary_flux = boundary_fluxes_.at(intersection.geometry().center());
+      for (size_t jj = 0; jj < dimRange; ++jj)
+        range_entity[jj] += boundary_flux[jj] * h_inv_;
+    }
+  }
+
+  // Note: entity_center_ has to be set to entity.geometry().center() before calling this function
+  void rhs_1d(RangeFieldType* BOOST_RESTRICT range_entity, const RangeFieldType* BOOST_RESTRICT psi) const
+  {
+    const auto sigma_a_value = sigma_a_->evaluate(entity_center_)[0];
+    const auto sigma_s_value = sigma_s_->evaluate(entity_center_)[0];
+    const auto Q_value = Q_->evaluate(entity_center_)[0];
+    auto density = XT::Common::reduce(psi + 1, psi + dimRange - 1, 0.);
+    density += 0.5 * (psi[0] + psi[dimRange - 1]);
+    density *= interval_length;
+    const auto sigma_s_factor = sigma_s_value * density;
+    const auto sigma_t_factor = (sigma_a_value + sigma_s_value) * interval_length;
+    range_entity[0] += u_iso_[0] * sigma_s_factor + basis_integrated_[0] * Q_value - psi[0] * sigma_t_factor * 0.5;
+    for (size_t jj = 1; jj < dimRange - 1; ++jj)
+      range_entity[jj] += u_iso_[jj] * sigma_s_factor + basis_integrated_[jj] * Q_value - psi[jj] * sigma_t_factor;
+    range_entity[dimRange - 1] += u_iso_[dimRange - 1] * sigma_s_factor + basis_integrated_[dimRange - 1] * Q_value
+                                  - psi[dimRange - 1] * sigma_t_factor * 0.5;
+  }
+
+  // Note: entity_center_ has to be set to entity.geometry().center() before calling this function
+  void rhs_3d(RangeFieldType* BOOST_RESTRICT range_entity, const RangeFieldType* BOOST_RESTRICT psi) const
+  {
+    const auto sigma_a_value = sigma_a_->evaluate(entity_center_)[0];
+    const auto sigma_s_value = sigma_s_->evaluate(entity_center_)[0];
+    const auto sigma_t_value = sigma_a_value + sigma_s_value;
+    const auto Q_value = Q_->evaluate(entity_center_)[0];
+    const auto density = XT::Common::transform_reduce(psi, psi + dimRange, quad_weights_.begin(), 0.);
+    const auto sigma_s_factor = sigma_s_value * density;
+    for (size_t jj = 0; jj < dimRange; ++jj)
+      range_entity[jj] +=
+          u_iso_[jj] * sigma_s_factor + basis_integrated_[jj] * Q_value - psi[jj] * quad_weights_[jj] * sigma_t_value;
+  }
+
+  static void apply_inverse_hessian_1d(const size_t num_entities,
+                                       RangeFieldType* BOOST_RESTRICT range_data,
+                                       const RangeFieldType* BOOST_RESTRICT psi)
+  {
     for (size_t ii = 0; ii < num_entities; ++ii) {
       const auto offset = ii * dimRange;
-      for (size_t jj = 0; jj < dimRange; ++jj) {
-        auto& val = range_data[offset + jj];
-        if constexpr (dimDomain == 1) {
-          const auto weight = (jj == 0 || jj == dimRange - 1) ? interval_length / 2. : interval_length;
-          val /= psi[offset + jj] * weight;
-        } else {
-          val /= psi[offset + jj] * quad_weights_[jj];
-        }
-        if (std::isnan(val) || std::isinf(val))
-          DUNE_THROW(Dune::MathError, "inf or nan in range!");
-      } // jj
+      range_data[offset] /= psi[offset] * interval_length * 0.5;
+      for (size_t jj = 1; jj < dimRange - 1; ++jj)
+        range_data[offset + jj] /= psi[offset + jj] * interval_length;
+      range_data[offset + dimRange - 1] /= psi[offset + dimRange - 1] * interval_length * 0.5;
     } // ii
-  } // void apply(...)
+  }
+
+  void apply_inverse_hessian_3d(const size_t num_entities,
+                                RangeFieldType* BOOST_RESTRICT range_data,
+                                const RangeFieldType* BOOST_RESTRICT psi) const
+  {
+    for (size_t ii = 0; ii < num_entities; ++ii) {
+      const auto offset = ii * dimRange;
+      for (size_t jj = 0; jj < dimRange; ++jj)
+        range_data[offset + jj] /= psi[offset + jj] * quad_weights_[jj];
+    } // ii
+  }
 
   const AdvectionOperatorType& advection_op_;
   DynamicVector<RangeFieldType> u_iso_;
@@ -342,6 +399,8 @@ public:
   std::unique_ptr<ParameterFunctionType> sigma_s_;
   std::unique_ptr<ParameterFunctionType> Q_;
   mutable std::vector<RangeFieldType> exp_evaluations_;
+  mutable DomainType entity_center_;
+  mutable std::vector<RangeFieldType> dummy_range_;
   const RangeFieldType dx_;
   const RangeFieldType h_inv_;
   std::vector<RangeFieldType> quad_points_;
@@ -349,7 +408,7 @@ public:
   const BoundaryFluxesMapType& boundary_fluxes_;
   const DomainType lower_left_;
   const DomainType upper_right_;
-}; // class EntropicCoordinatesMasslumpedOperator<...>
+}; // namespace Dune
 
 
 template <class AdvectionOperatorImp, class EntropySolverImp>

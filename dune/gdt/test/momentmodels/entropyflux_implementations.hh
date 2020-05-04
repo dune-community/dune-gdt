@@ -5277,7 +5277,7 @@ public:
     evaluate_eta_ast_prime(alpha_j, eta_ast_prime_vals[1]);
     // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
     DomainType ret(0);
-    const size_t first_positive = dimRange / 2;
+    constexpr size_t first_positive = dimRange / 2;
     const auto& first_exp_vals = n_ij[dd] < 0. ? eta_ast_prime_vals[0] : eta_ast_prime_vals[1];
     for (size_t ll = 0; ll < first_positive; ++ll)
       ret[ll] = first_exp_vals[ll] * grid_points_[ll];
@@ -5296,7 +5296,7 @@ public:
     evaluate_eta_ast_prime(alpha_i, eta_ast_prime_vals);
     // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
     DomainType ret(0);
-    const size_t first_positive = dimRange / 2;
+    constexpr size_t first_positive = dimRange / 2;
     if (n_ij[dd] < 0.) {
       for (size_t ll = 0; ll < first_positive; ++ll)
         ret[ll] = eta_ast_prime_vals[ll] * grid_points_[ll];
@@ -5334,7 +5334,7 @@ public:
     const auto& psi_right = (*ansatz_distribution_values[2]);
     constexpr bool reconstruct = (slope_type != SlopeLimiterType::no_slope);
     // reconstruct densities
-    const size_t first_positive = dimRange / 2;
+    constexpr size_t first_positive = dimRange / 2;
     for (size_t ll = 0; ll < first_positive; ++ll) {
       const RangeFieldType slope =
           reconstruct ? slope_func(psi_entity[ll] - psi_left[ll], psi_right[ll] - psi_entity[ll]) : 0.;
