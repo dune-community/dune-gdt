@@ -102,10 +102,10 @@ public:
 protected:
   static bool is_absorbing(const FieldVector<RangeFieldType, 2>& x)
   {
-    size_t row = XT::Common::numeric_cast<size_t>(std::floor(x[1]));
+    size_t row = static_cast<size_t>(std::floor(x[1]));
     if (row == 7)
       row = 6;
-    size_t col = XT::Common::numeric_cast<size_t>(std::floor(x[0]));
+    size_t col = static_cast<size_t>(std::floor(x[0]));
     if (col == 7)
       col = 6;
     assert(row < 7 && col < 7);
@@ -115,9 +115,9 @@ protected:
 
   static bool is_absorbing(const FieldVector<RangeFieldType, 3>& x)
   {
-    size_t plane = XT::Common::numeric_cast<size_t>(std::floor(x[2]));
-    size_t col = XT::Common::numeric_cast<size_t>(std::floor(x[0]));
-    size_t row = XT::Common::numeric_cast<size_t>(std::floor(x[1]));
+    size_t plane = static_cast<size_t>(std::floor(x[2]));
+    size_t col = static_cast<size_t>(std::floor(x[0]));
+    size_t row = static_cast<size_t>(std::floor(x[1]));
     assert(plane <= 7 && row <= 7 && col <= 7);
     if (plane == 0 || plane >= 6)
       return false;
@@ -130,16 +130,16 @@ protected:
 
   static bool is_center(const FieldVector<RangeFieldType, 2>& x)
   {
-    size_t row = XT::Common::numeric_cast<size_t>(std::floor(x[1]));
-    size_t col = XT::Common::numeric_cast<size_t>(std::floor(x[0]));
+    size_t row = static_cast<size_t>(std::floor(x[1]));
+    size_t col = static_cast<size_t>(std::floor(x[0]));
     return row == 3 && col == 3;
   }
 
   static bool is_center(const FieldVector<RangeFieldType, 3>& x)
   {
-    size_t plane = XT::Common::numeric_cast<size_t>(std::floor(x[2]));
-    size_t row = XT::Common::numeric_cast<size_t>(std::floor(x[1]));
-    size_t col = XT::Common::numeric_cast<size_t>(std::floor(x[0]));
+    size_t plane = static_cast<size_t>(std::floor(x[2]));
+    size_t row = static_cast<size_t>(std::floor(x[1]));
+    size_t col = static_cast<size_t>(std::floor(x[0]));
     return plane == 3 && row == 3 && col == 3;
   }
 }; // class CheckerboardPn<...>
