@@ -28,7 +28,7 @@ PYBIND11_MODULE(_operators_interfaces_common, m)
 
   py::module::import("dune.gdt._spaces_interface");
 
-  OperatorInterface_for_all_grids<LA::CommonDenseMatrix<double>, XT::Grid::AvailableGridTypes>::bind(m);
+  //  OperatorInterface_for_all_grids<LA::CommonDenseMatrix<double>, XT::Grid::AvailableGridTypes>::bind(m);
   // Generic linear solver missing for CommonSparseMatrix!
   //  OperatorInterface_for_all_grids<LA::CommonSparseMatrix<double>, XT::Grid::AvailableGridTypes>::bind(m);
 }

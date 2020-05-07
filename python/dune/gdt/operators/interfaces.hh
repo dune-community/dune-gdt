@@ -55,14 +55,14 @@ public:
     auto matrix_name = XT::LA::bindings::container_name<M>::value();
     //    auto vector_name = XT::LA::bindings::container_name<V>::value();
 
-    std::string class_name = class_id + "_" + grid_id + "_" + matrix_name + "_" + XT::Common::to_string(s);
+    std::string class_name = matrix_name + "_" + class_id + "_" + grid_id + "_" + XT::Common::to_string(s);
     if (sC > 1)
       class_name += "x" + XT::Common::to_string(sC);
-    class_name += "d";
-    class_name += "_to_" + XT::Common::to_string(r);
+    class_name += "d_source_space";
+    class_name += XT::Common::to_string(r);
     if (rC > 1)
       class_name += "x" + XT::Common::to_string(rC);
-    class_name += "d";
+    class_name += "d_range_space";
     const auto ClassName = XT::Common::to_camel_case(class_name);
     bound_type c(m,
                  ClassName.c_str(),
@@ -211,9 +211,17 @@ public:
 template <class M, class GridTypes = Dune::XT::Grid::AvailableGridTypes>
 struct OperatorInterface_for_all_grids
 {
+  using G = typename GridTypes::head_type;
+  static const constexpr size_t d = G::dimension;
+
   static void bind(pybind11::module& m)
   {
-    Dune::GDT::bindings::OperatorInterface<M, typename GridTypes::head_type>::bind(m);
+    Dune::GDT::bindings::OperatorInterface<M, G>::bind(m);
+    if (d > 1) {
+      Dune::GDT::bindings::OperatorInterface<M, G, d, 1, 1, 1>::bind(m);
+      Dune::GDT::bindings::OperatorInterface<M, G, 1, 1, d, 1>::bind(m);
+      Dune::GDT::bindings::OperatorInterface<M, G, d, 1, d, 1>::bind(m);
+    }
     // add your extra dimensions here
     // ...
     OperatorInterface_for_all_grids<M, typename GridTypes::tail_type>::bind(m);

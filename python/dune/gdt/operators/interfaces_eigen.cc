@@ -28,8 +28,8 @@ PYBIND11_MODULE(_operators_interfaces_eigen, m)
 
   py::module::import("dune.gdt._spaces_interface");
 
-#if HAVE_EIGEN
-  OperatorInterface_for_all_grids<LA::EigenDenseMatrix<double>, XT::Grid::AvailableGridTypes>::bind(m);
-  OperatorInterface_for_all_grids<LA::EigenRowMajorSparseMatrix<double>, XT::Grid::AvailableGridTypes>::bind(m);
-#endif
+  //#if HAVE_EIGEN
+  //  OperatorInterface_for_all_grids<LA::EigenDenseMatrix<double>, XT::Grid::AvailableGridTypes>::bind(m);
+  //  OperatorInterface_for_all_grids<LA::EigenRowMajorSparseMatrix<double>, XT::Grid::AvailableGridTypes>::bind(m);
+  //#endif
 }
