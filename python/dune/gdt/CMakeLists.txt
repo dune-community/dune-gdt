@@ -14,6 +14,7 @@
 file(GLOB_RECURSE header "*.hh")
 
 dune_pybindxi_add_module(_discretefunction EXCLUDE_FROM_ALL ${header} discretefunction/discretefunction.cc)
+dune_pybindxi_add_module(_local_integrands_binary_element_interface EXCLUDE_FROM_ALL ${header} local/integrands/binary_element_interface.cc)
 dune_pybindxi_add_module(_operators_interfaces_common EXCLUDE_FROM_ALL ${header} operators/interfaces_common.cc)
 dune_pybindxi_add_module(_operators_interfaces_eigen EXCLUDE_FROM_ALL ${header} operators/interfaces_eigen.cc)
 dune_pybindxi_add_module(_operators_interfaces_istl EXCLUDE_FROM_ALL ${header} operators/interfaces_istl.cc)

@@ -12,8 +12,9 @@
 
 from dune.xt import guarded_import
 
-for mod_name in (
+for mod_name in ( # order should not matter!
         '_discretefunction',
+        '_local_integrands_binary_element_interface',
         '_operators_interfaces_common',
         '_operators_interfaces_eigen',
         '_operators_interfaces_istl',
