@@ -80,7 +80,7 @@ private:
             },
             "unused_grid_to_select_type"_a,
             "diffusion_tensor_function"_a,
-            py::keep_alive<1, 3>());
+            py::keep_alive<0, 2>());
     }
   }; // struct add_bind<false, ...>
 
@@ -128,19 +128,19 @@ public:
           },
           "unused_grid_to_select_type"_a,
           "scalar_diffusion_function"_a,
-          py::keep_alive<1, 3>());
+          py::keep_alive<0, 2>());
     m.def(FactoryName.c_str(),
           [](const XT::Functions::GridFunctionInterface<E, 1, 1, F>& scalar_diffusion_grid_function) {
             return type(scalar_diffusion_grid_function);
           },
           "scalar_diffusion_grid_function"_a,
-          py::keep_alive<1, 2>());
+          py::keep_alive<0, 1>());
     m.def(FactoryName.c_str(),
           [](const XT::Functions::GridFunctionInterface<E, d, d, F>& diffusion_tensor_grid_function) {
             return type(diffusion_tensor_grid_function);
           },
           "diffusion_tensor_grid_function"_a,
-          py::keep_alive<1, 2>());
+          py::keep_alive<0, 1>());
 
     return c;
   } // ... bind(...)
