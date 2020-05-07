@@ -268,7 +268,6 @@ public:
   /**
    * Ctor which creates an appropriate matrix into which to assemble from a given sparsity pattern.
    */
-
   MatrixOperator(AssemblyGridViewType assembly_grid_view,
                  const SourceSpaceType& source_spc,
                  const RangeSpaceType& range_spc,
@@ -313,7 +312,7 @@ public:
                                         param + XT::Common::Parameter("matrixoperator.scaling", scaling)),
                  filter);
     return *this;
-  }
+  } // ... append(...)
 
   ThisType&
   append(const LocalCouplingIntersectionBilinearFormInterface<I, r_r, r_rC, F, F, s_r, s_rC, F>& local_bilinear_form,
@@ -371,7 +370,7 @@ public:
                      param + XT::Common::Parameter("matrixoperator.scaling", scaling)),
                  filter);
     return *this;
-  }
+  } // ... append(...)
 
   ThisType& append(const LocalIntersectionOperatorInterface<I, V, SGV, s_r, s_rC, F, r_r, r_rC>& local_operator,
                    const VectorType& source,
@@ -387,7 +386,7 @@ public:
                      param + XT::Common::Parameter("matrixoperator.scaling", scaling)),
                  filter);
     return *this;
-  }
+  } // ... append(...)
 
   /// \}
 
