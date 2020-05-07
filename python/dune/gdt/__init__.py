@@ -21,6 +21,7 @@ for mod_name in ( # order should not matter!
         '_operators_interfaces_common',
         '_operators_interfaces_eigen',
         '_operators_interfaces_istl',
+        '_operators_matrix_based',
         '_spaces_h1_continuous_lagrange',
         '_spaces_interface',
 ):
