@@ -68,6 +68,7 @@ include_dependent_binary_python_dirs()
 # do not change order here
 add_subdirectory(python)
 dxt_add_make_dependent_bindings(dune-xt)
+make_dependent_modules_sys_included()
 
 # enable headercheck
 add_definitions("-DENABLE_HEADERCHECK=1")

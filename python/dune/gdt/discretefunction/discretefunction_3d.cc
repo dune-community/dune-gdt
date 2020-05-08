@@ -9,9 +9,7 @@
 
 #include "config.h"
 
-#if HAVE_DUNE_PYBINDXI
-
-#  include "discretefunction.hh"
+#include "discretefunction.hh"
 
 
 PYBIND11_MODULE(_discretefunction_3d, m)
@@ -29,6 +27,3 @@ PYBIND11_MODULE(_discretefunction_3d, m)
   bindings::DiscreteFunction_for_all_vectors_and_grids<LA::AvailableVectorTypes<double>,
                                                        XT::Grid::Available3dGridTypes>::bind(m);
 }
-
-
-#endif // HAVE_DUNE_PYBINDXI

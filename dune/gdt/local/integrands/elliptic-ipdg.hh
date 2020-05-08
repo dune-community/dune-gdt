@@ -915,8 +915,8 @@ public:
     const auto diffusion_tensor_in = local_diffusion_tensor_in_->evaluate(point_in_inside_reference_element, param);
     const auto diffusion_factor_out = local_diffusion_factor_out_->evaluate(point_in_outside_reference_element, param);
     const auto diffusion_tensor_out = local_diffusion_tensor_out_->evaluate(point_in_outside_reference_element, param);
-    const auto diffusion_in = diffusion_tensor_in * diffusion_factor_in;
-    const auto diffusion_out = diffusion_tensor_out * diffusion_factor_out;
+    const auto diffusion_in = diffusion_tensor_in * diffusion_factor_in[0];
+    const auto diffusion_out = diffusion_tensor_out * diffusion_factor_out[0];
     // compute penalty factor (see Epshteyn, Riviere, 2007)
     const size_t max_polorder =
         std::max(test_basis_inside.order(param),
@@ -1169,7 +1169,7 @@ public:
     // ... data functions
     const auto diffusion_factor = local_diffusion_factor_->evaluate(point_in_inside_reference_element, param);
     const auto diffusion_tensor = local_diffusion_tensor_->evaluate(point_in_inside_reference_element, param);
-    const auto diffusion = diffusion_tensor * diffusion_factor;
+    const auto diffusion = diffusion_tensor * diffusion_factor[0];
     // compute penalty (see Epshteyn, Riviere, 2007)
     const size_t max_polorder = std::max(test_basis_inside.order(param), ansatz_basis_inside.order(param));
     const F sigma = internal::boundary_sigma(max_polorder);
@@ -1416,7 +1416,7 @@ public:
     const auto dirichlet_value = local_dirichlet.evaluate(local_point_entity);
     const auto diffusion_factor_value = local_diffusion_factor.evaluate(local_point_entity);
     const TensorType diffusion_tensor_value = local_diffusion_tensor.evaluate(local_point_entity);
-    const auto diffusion_value = diffusion_tensor_value * diffusion_factor_value;
+    const auto diffusion_value = diffusion_tensor_value * diffusion_factor_value[0];
     // compute penalty (see Epshteyn, Riviere, 2007)
     const size_t polorder = test_base.order();
     const F sigma = internal::boundary_sigma(polorder);
@@ -1847,8 +1847,8 @@ public:
     const auto diffusion_tensor_in = local_diffusion_tensor_in_->evaluate(point_in_inside_reference_element, param);
     const auto diffusion_factor_out = local_diffusion_factor_out_->evaluate(point_in_outside_reference_element, param);
     const auto diffusion_tensor_out = local_diffusion_tensor_out_->evaluate(point_in_outside_reference_element, param);
-    const auto diffusion_in = diffusion_tensor_in * diffusion_factor_in;
-    const auto diffusion_out = diffusion_tensor_out * diffusion_factor_out;
+    const auto diffusion_in = diffusion_tensor_in * diffusion_factor_in[0];
+    const auto diffusion_out = diffusion_tensor_out * diffusion_factor_out[0];
     // compute penalty factor (see Epshteyn, Riviere, 2007)
     const size_t max_polorder =
         std::max(test_basis_inside.order(param),
@@ -2062,7 +2062,7 @@ public:
     // ... data functions
     const auto diffusion_factor = local_diffusion_factor_->evaluate(point_in_inside_reference_element, param);
     const auto diffusion_tensor = local_diffusion_tensor_->evaluate(point_in_inside_reference_element, param);
-    const auto diffusion = diffusion_tensor * diffusion_factor;
+    const auto diffusion = diffusion_tensor * diffusion_factor[0];
     // compute penalty (see Epshteyn, Riviere, 2007)
     const size_t max_polorder = std::max(test_basis_inside.order(param), ansatz_basis_inside.order(param));
     const F sigma = internal::boundary_sigma(max_polorder);

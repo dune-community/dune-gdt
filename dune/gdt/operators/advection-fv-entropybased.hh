@@ -13,6 +13,7 @@
 
 #include <boost/config.hpp>
 
+#include <dune/xt/common/mkl.hh>
 #include <dune/xt/common/numeric.hh>
 #include <dune/gdt/operators/interfaces.hh>
 
