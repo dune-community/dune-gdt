@@ -134,7 +134,7 @@ public:
     test_basis.jacobians(point_in_reference_element, test_basis_grads_, param);
     ansatz_basis.jacobians(point_in_reference_element, ansatz_basis_grads_, param);
     const auto diffusion = local_diffusion_tensor_->evaluate(point_in_reference_element, param)
-                           * local_diffusion_factor_->evaluate(point_in_reference_element, param);
+                           * local_diffusion_factor_->evaluate(point_in_reference_element, param)[0];
     // compute elliptic evaluation
     for (size_t ii = 0; ii < rows; ++ii)
       for (size_t jj = 0; jj < cols; ++jj)
