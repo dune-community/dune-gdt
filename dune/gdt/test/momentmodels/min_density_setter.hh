@@ -169,7 +169,7 @@ public:
     static const bool adjust = DXTC_CONFIG_GET("adjust_alpha", 0);
     if (!adjust)
       return;
-    std::atomic<bool> changed = false;
+    std::atomic<bool> changed(false);
     LocalMinDensitySetterType local_min_density_setter(
         space_, alpha, range, analytical_flux_, min_acceptable_density_, param.get("dt")[0], changed);
     auto walker = XT::Grid::Walker<typename SpaceType::GridViewType>(space_.grid_view());
@@ -182,7 +182,7 @@ public:
     static const bool adjust = DXTC_CONFIG_GET("adjust_alpha", 0);
     if (!adjust)
       return false;
-    std::atomic<bool> changed = false;
+    std::atomic<bool> changed(false);
     LocalMinDensitySetterType local_min_density_setter(
         space_, alpha, range, analytical_flux_, min_acceptable_density_, dt, changed);
     auto walker = XT::Grid::Walker<typename SpaceType::GridViewType>(space_.grid_view());
