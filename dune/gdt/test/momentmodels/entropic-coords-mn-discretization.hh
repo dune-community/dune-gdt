@@ -8,6 +8,10 @@
 #ifndef DUNE_GDT_TEST_HYPERBOLIC_ENTROPIC_COORDS_MN_DISCRETIZATION_HH
 #define DUNE_GDT_TEST_HYPERBOLIC_ENTROPIC_COORDS_MN_DISCRETIZATION_HH
 
+#ifndef ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+#  define ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING 0
+#endif
+
 #include <chrono>
 
 #include <dune/xt/common/string.hh>
@@ -88,9 +92,6 @@ public:
     const auto dd = intersection.indexInInside() / 2;
     const auto n = intersection.centerUnitOuterNormal()[dd];
     auto boundary_flux = problem_.kinetic_boundary_flux(x, n, dd);
-    // The boundary_flux calculates <psi b (v[dd]*n)>, we only want to have <psi b v[dd]> because the
-    // multiplication with n is done in entropy_flux->evaluate_kinetic_flux(..)
-    boundary_flux *= n;
     mutex_->lock();
     boundary_fluxes_map_.insert(std::make_pair(x, boundary_flux));
     mutex_->unlock();
@@ -214,31 +215,48 @@ struct HyperbolicEntropicCoordsMnDiscretization
     // ******************** choose flux and rhs operator and timestepper ******************************************
 
     using AdvectionOperatorType = AdvectionFvOperator<MatrixType, GV, dimRange>;
-    using HessianInverterType = EntropicHessianInverter<MomentBasis, SpaceType, slope, MatrixType>;
     using ReconstructionOperatorType =
         PointwiseLinearKineticReconstructionOperator<GV, EntropyFluxType, VectorType, RangeType>;
     using ReconstructionAdvectionOperatorType =
         AdvectionWithPointwiseReconstructionOperator<AdvectionOperatorType, ReconstructionOperatorType>;
     using FvOperatorType = ReconstructionAdvectionOperatorType;
+#if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+    using MasslumpedOperatorType = EntropicCoordinatesMasslumpedOperator<FvOperatorType, ProblemType>;
+#else
+    using HessianInverterType = EntropicHessianInverter<MomentBasis, SpaceType, slope, MatrixType>;
     using RhsOperatorType = LocalizableOperator<MatrixType, GV, dimRange>;
     using CombinedOperatorType =
         EntropicCoordinatesCombinedOperator<DensityOperatorType, FvOperatorType, RhsOperatorType, HessianInverterType>;
+#endif
+
 
     constexpr TimeStepperMethods time_stepper_type = TimeStepperMethods::bogacki_shampine;
-    // constexpr TimeStepperMethods time_stepper_type = TimeStepperMethods::dormand_prince;
+// constexpr TimeStepperMethods time_stepper_type = TimeStepperMethods::dormand_prince;
+#if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+    using TimeStepperType = KineticAdaptiveRungeKuttaTimeStepper<MasslumpedOperatorType,
+                                                                 MinDensitySetterType,
+                                                                 DiscreteFunctionType,
+                                                                 EntropyFluxType,
+                                                                 time_stepper_type>;
+#else
     using TimeStepperType = KineticAdaptiveRungeKuttaTimeStepper<CombinedOperatorType,
                                                                  MinDensitySetterType,
                                                                  DiscreteFunctionType,
                                                                  EntropyFluxType,
                                                                  time_stepper_type>;
+#endif
 
     // *************** Calculate dx and initial dt **************************************
-    Dune::XT::Grid::Dimensions<GV> dimensions(grid_view);
-    RangeFieldType dx = dimensions.entity_width.max();
-    if (dimDomain == 2)
-      dx /= std::sqrt(2);
-    if (dimDomain == 3)
-      dx /= std::sqrt(3);
+    // Dune::XT::Grid::Dimensions<GV> dimensions(grid_view);
+    // RangeFieldType dx = dimensions.entity_width.max();
+    // if (dimDomain == 2)
+    //   dx /= std::sqrt(2);
+    // if (dimDomain == 3)
+    //   dx /= std::sqrt(3);
+    // assumes equally-sized entities
+    const auto first_entity = *grid_view.template begin<0>();
+    const auto first_intersection = *grid_view.ibegin(first_entity);
+    RangeFieldType dx = first_entity.geometry().volume() / first_intersection.geometry().volume();
 
     // *********************** create operators and timesteppers ************************************
     NumericalKineticFlux<GV, MomentBasis, EntropyFluxType> numerical_flux(*analytical_flux, *basis_functions);
@@ -305,6 +323,9 @@ struct HyperbolicEntropicCoordsMnDiscretization
     filename += TestCaseType::reconstruction ? "_ord2" : "_ord1";
     filename += "_" + basis_functions->mn_name();
 
+#if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+    MasslumpedOperatorType masslumped_operator(fv_operator, problem, dx, boundary_fluxes);
+#else
     HessianInverterType hessian_inverter(*analytical_flux, fv_space);
 
     static const RangeType u_iso = basis_functions->u_iso();
@@ -334,9 +355,14 @@ struct HyperbolicEntropicCoordsMnDiscretization
     RhsOperatorType rhs_operator(grid_view, fv_space, fv_space, false, true);
     rhs_operator.append(GenericLocalElementOperator<VectorType, GV, dimRange>(rhs_func));
     CombinedOperatorType combined_operator(density_operator, fv_operator, rhs_operator, hessian_inverter);
+#endif
 
     // ******************************** do the time steps ***********************************************************
+#if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+    TimeStepperType timestepper(masslumped_operator, min_density_setter, *analytical_flux, alpha, true, 1., atol, rtol);
+#else
     TimeStepperType timestepper(combined_operator, min_density_setter, *analytical_flux, alpha, true, 1., atol, rtol);
+#endif
 
     auto begin_time = std::chrono::steady_clock::now();
     auto visualizer = std::make_unique<XT::Functions::GenericVisualizer<dimRange, 1, double>>(
@@ -407,7 +433,11 @@ struct HyperbolicEntropicCoordsMnTest
                      DXTC_CONFIG.get("grid_size", ""),
                      DXTC_CONFIG.get("overlap_size", 2),
                      DXTC_CONFIG.get("t_end", TestCaseType::t_end),
-                     DXTC_CONFIG.get("filename", "timings_kinetic"))
+#if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+                     DXTC_CONFIG.get("filename", "masslumped"))
+#else
+                     DXTC_CONFIG.get("filename", "entropic_coords"))
+#endif
                      .first;
     const double l1norm = norms[0];
     const double l2norm = norms[1];

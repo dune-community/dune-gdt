@@ -147,13 +147,12 @@ public:
                              const E& /*outside_entity*/,
                              const StateTp& flux_i,
                              const StateTp& flux_j,
-                             const DomainType& n_ij,
-                             const size_t dd,
+                             const DomainType& /*n_ij*/,
+                             const size_t /*dd*/,
                              RetType& ret) const
   {
     ret = flux_i;
-    ret += flux_j;
-    ret *= n_ij[dd];
+    ret -= flux_j;
   } // StateType evaluate_kinetic_flux(...)
 
   const MomentBasis& basis_functions() const

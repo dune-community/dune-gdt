@@ -217,14 +217,20 @@ struct HyperbolicMnDiscretization
                         DynamicRangeType& g,
                         const XT::Common::Parameter& param) {
           // influx
+          // boundary_kinetic flux is caclulated as <(v*n_outside) b psi>, so it should have a positive sign in the
+          // timestepper update. As the advection operator is added to the timestepper with negative sign, we need to
+          // multiply by -1 here.
           boundary_kinetic_fluxes.evaluate(
               intersection.geometry().global(xx_in_reference_intersection_coordinates), g, param);
+          g *= -1.;
           // outflux
           const auto& entity = intersection.inside();
           const auto dd = intersection.indexInInside() / 2;
           const auto alpha_entity = entropy_flux->get_alpha(entity, u_in, true)->first;
           const auto outflux =
               entropy_flux->evaluate_kinetic_outflow(alpha_entity, intersection.centerUnitOuterNormal(), dd);
+          // outflux is calculated as <(v*n) b psi>, so it should have a negative sign in the timestepper update, which
+          // is why it has a positive sign here (see previous comment).
           g += outflux;
         };
     advection_operator.append(boundary_lambda, {}, boundary_intersection_filter);

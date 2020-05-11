@@ -40,17 +40,14 @@ class LocalEntropicHessianInverter : public XT::Grid::ElementFunctor<typename Sp
 
 public:
   explicit LocalEntropicHessianInverter(const SpaceType& space,
-                                        const VectorType& alpha_dofs,
                                         const VectorType& u_update_dofs,
                                         std::vector<bool>& reg_indicators,
                                         VectorType& alpha_range_dofs,
                                         const EntropyFluxType& analytical_flux,
                                         const XT::Common::Parameter& param)
     : space_(space)
-    , alpha_(space_, alpha_dofs, "alpha")
     , u_update_(space_, u_update_dofs, "u_update")
     , reg_indicators_(reg_indicators)
-    , local_alpha_(alpha_.local_discrete_function())
     , local_u_update_(u_update_.local_discrete_function())
     , range_(space_, alpha_range_dofs, "range")
     , local_range_(range_.local_discrete_function())
@@ -61,10 +58,8 @@ public:
   explicit LocalEntropicHessianInverter(LocalEntropicHessianInverter& other)
     : BaseType(other)
     , space_(other.space_)
-    , alpha_(space_, other.alpha_.dofs().vector(), "source")
     , u_update_(space_, other.u_update_.dofs().vector(), "source")
     , reg_indicators_(other.reg_indicators_)
-    , local_alpha_(alpha_.local_discrete_function())
     , local_u_update_(u_update_.local_discrete_function())
     , range_(space_, other.range_.dofs().vector(), "range")
     , local_range_(range_.local_discrete_function())
@@ -91,15 +86,10 @@ public:
   void apply_local(const EntityType& entity) override final
   {
     local_u_update_->bind(entity);
-    local_alpha_->bind(entity);
     local_range_->bind(entity);
     const auto& local_u_dofs = local_u_update_->dofs();
-    const auto& local_alpha_dofs = local_alpha_->dofs();
-    XT::Common::FieldVector<RangeFieldType, dimRange> alpha;
-    for (size_t ii = 0; ii < dimRange; ++ii) {
+    for (size_t ii = 0; ii < dimRange; ++ii)
       Hinv_u_[ii] = local_u_dofs.get_entry(ii);
-      alpha[ii] = local_alpha_dofs.get_entry(ii);
-    }
     const auto entity_index = space_.grid_view().indexSet().index(entity);
     try {
       analytical_flux_.apply_inverse_hessian(entity_index, Hinv_u_);
@@ -128,10 +118,8 @@ public:
 
 private:
   const SpaceType& space_;
-  const ConstDiscreteFunctionType alpha_;
   const ConstDiscreteFunctionType u_update_;
   std::vector<bool>& reg_indicators_;
-  std::unique_ptr<typename ConstDiscreteFunctionType::ConstLocalDiscreteFunctionType> local_alpha_;
   std::unique_ptr<typename ConstDiscreteFunctionType::ConstLocalDiscreteFunctionType> local_u_update_;
   DiscreteFunctionType range_;
   std::unique_ptr<typename DiscreteFunctionType::LocalDiscreteFunctionType> local_range_;
@@ -186,14 +174,13 @@ public:
     DUNE_THROW(Dune::NotImplemented, "Use apply_inverse_hessian!");
   } // void apply(...)
 
-  void apply_inverse_hessian(const VectorType& alpha,
-                             const VectorType& u_update,
+  void apply_inverse_hessian(const VectorType& u_update,
                              std::vector<bool>& reg_indicators,
                              VectorType& alpha_update,
                              const XT::Common::Parameter& param) const
   {
     LocalEntropicHessianInverter<SpaceType, VectorType, MomentBasis, slope> local_hessian_inverter(
-        space_, alpha, u_update, reg_indicators, alpha_update, analytical_flux_, param);
+        space_, u_update, reg_indicators, alpha_update, analytical_flux_, param);
     auto walker = XT::Grid::Walker<typename SpaceType::GridViewType>(space_.grid_view());
     walker.append(local_hessian_inverter);
     walker.walk(true);

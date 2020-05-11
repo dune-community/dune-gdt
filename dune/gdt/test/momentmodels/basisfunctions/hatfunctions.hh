@@ -11,6 +11,10 @@
 #ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_HATFUNCTIONS_HH
 #define DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_HATFUNCTIONS_HH
 
+#ifndef ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+#  define ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING 0
+#endif
+
 #include <string>
 #include <vector>
 
@@ -177,7 +181,11 @@ public:
 
   static size_t default_quad_order()
   {
+#if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+    return 0;
+#else
     return 15;
+#endif
   }
 
   using BaseType::default_quad_refinements;
@@ -198,6 +206,13 @@ public:
     : BaseType(BaseType::gauss_lobatto_quadratures(num_intervals, quad_order, quad_refinements))
     , partitioning_(BaseType::create_1d_partitioning(num_intervals))
   {
+#if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+    if (quad_order != 0) {
+      std::cerr << "Warning: you chose to use masslumping and set quad_order to a value different from zero!"
+                << std::endl;
+      std::cerr << "Warning: quad_order will be ignored!" << std::endl;
+    }
+#endif
     BaseType::initialize_base_values();
   }
 
@@ -486,7 +501,11 @@ public:
 
   static size_t default_quad_order()
   {
+#if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+    return 0;
+#else
     return refinements == 0 ? 15 : 9;
+#endif
   }
 
   using BaseType::default_quad_refinements;
@@ -518,11 +537,28 @@ public:
                          const size_t quad_refinements = default_quad_refinements())
     : BaseType(refinements)
   {
+#if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+    if (quad_order != 0) {
+      std::cerr << "Warning: you chose to use masslumping and set quad_order to a value different from zero!"
+                << std::endl;
+      std::cerr << "Warning: quad_order will be ignored!" << std::endl;
+    }
+#endif
     const QuadratureRule<RangeFieldType, 2> reference_quadrature_rule =
-        XT::Data::FeketeQuadrature<DomainFieldType>::get(quad_order);
+        (quad_order == 0) ? vertex_quadrature() : XT::Data::FeketeQuadrature<DomainFieldType>::get(quad_order);
     quadratures_ = triangulation_.quadrature_rules(quad_refinements, reference_quadrature_rule);
     assert(triangulation_.vertices().size() == dimRange);
     BaseType::initialize_base_values();
+  }
+
+  // quadrature only using vertices of triangle, only used for masslumped version
+  static QuadratureRule<RangeFieldType, 2> vertex_quadrature()
+  {
+    QuadratureRule<RangeFieldType, 2> ret;
+    ret.emplace_back(FieldVector<RangeFieldType, 2>{0, 0}, 1. / 6.);
+    ret.emplace_back(FieldVector<RangeFieldType, 2>{0, 1}, 1. / 6.);
+    ret.emplace_back(FieldVector<RangeFieldType, 2>{1, 0}, 1. / 6.);
+    return ret;
   }
 
   DynamicRangeType evaluate(const DomainType& v) const override

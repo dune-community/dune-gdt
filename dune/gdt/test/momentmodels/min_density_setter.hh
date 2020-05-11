@@ -94,9 +94,8 @@ public:
     const auto& local_alpha_dofs = local_alpha_->dofs();
     for (size_t ii = 0; ii < dimRange; ++ii)
       alpha_tmp_[ii] = local_alpha_dofs.get_entry(ii);
-    static const bool adjust = DXTC_CONFIG_GET("adjust_alpha", 0);
     static const double adjust_dt = DXTC_CONFIG_GET("adjust_dt", 1.0e-3);
-    if (adjust && dt_ < adjust_dt) {
+    if (dt_ < adjust_dt) {
       const bool changed = basis_functions.adjust_alpha_to_ensure_min_density(
           alpha_tmp_, min_acceptable_density_, analytical_flux_.get_u(alpha_tmp_));
       if (changed)
@@ -167,7 +166,10 @@ public:
 
   void apply(const VectorType& alpha, VectorType& range, const XT::Common::Parameter& param = {}) const override final
   {
-    std::atomic<bool> changed = false;
+    static const bool adjust = DXTC_CONFIG_GET("adjust_alpha", 0);
+    if (!adjust)
+      return;
+    std::atomic<bool> changed(false);
     LocalMinDensitySetterType local_min_density_setter(
         space_, alpha, range, analytical_flux_, min_acceptable_density_, param.get("dt")[0], changed);
     auto walker = XT::Grid::Walker<typename SpaceType::GridViewType>(space_.grid_view());
@@ -175,9 +177,12 @@ public:
     walker.walk(true);
   } // void apply(...)
 
-  bool apply(const VectorType& alpha, VectorType& range, const double dt) const
+  bool apply_with_dt(const VectorType& alpha, VectorType& range, const double dt) const
   {
-    std::atomic<bool> changed = false;
+    static const bool adjust = DXTC_CONFIG_GET("adjust_alpha", 0);
+    if (!adjust)
+      return false;
+    std::atomic<bool> changed(false);
     LocalMinDensitySetterType local_min_density_setter(
         space_, alpha, range, analytical_flux_, min_acceptable_density_, dt, changed);
     auto walker = XT::Grid::Walker<typename SpaceType::GridViewType>(space_.grid_view());
