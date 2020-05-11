@@ -211,6 +211,7 @@ public:
                              with_half_steps,
                              false,
                              false,
+                             false,
                              file_path_,
                              *visualizer);
     } else {
@@ -221,6 +222,7 @@ public:
                           true,
                           false,
                           with_half_steps,
+                          false,
                           false,
                           false,
                           file_path_,
@@ -449,11 +451,10 @@ public:
     grid_view_ = std::make_shared<const GridViewType>(grid_->leafGridView());
     fv_space_ = std::make_shared<const SpaceType>(*grid_view_);
 
-    problem_ = std::make_shared<const ProblemType>(
-        *basis_functions_, *grid_view_, grid_config, ProblemType::default_boundary_cfg());
+    static const RangeFieldType psi_vac = DXTC_CONFIG_GET("psi_vac", 1e-6 / basis_functions_->unit_ball_volume());
+    problem_ = std::make_shared<const ProblemType>(*basis_functions_, *grid_view_, psi_vac, grid_config);
 
-    pn_problem_ =
-        std::make_shared<const PnProblemType>(*basis_functions_, grid_config, ProblemType::default_boundary_cfg());
+    pn_problem_ = std::make_shared<const PnProblemType>(*basis_functions_, psi_vac, grid_config);
 
     // allocate a discrete function for the concentration
     u_ = std::make_shared<DiscreteFunctionType>(*fv_space_, "solution");
