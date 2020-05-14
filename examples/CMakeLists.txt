@@ -44,6 +44,7 @@ add_custom_target(examples)
 add_dependencies(examples ${examples_targets})
 
 dune_library_add_sources("boltzmann" SOURCES boltzmann-bindings.cc)
+dune_library_add_sources("coordinatetransformedmn" SOURCES coordinate-transformed-mn-bindings.cc)
 dune_library_add_sources("cellmodel"
                          SOURCES
                          cellmodel-bindings.cc

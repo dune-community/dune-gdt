@@ -45,10 +45,17 @@ if(DUNE_XT_WITH_PYTHON_BINDINGS)
                            MODULE_LIBRARIES
                            dunegdt
                            boltzmann
+                           coordinatetransformedmn
                            cellmodel
                            vectors)
 else()
-  dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune MODULE_LIBRARIES boltzmann cellmodel vectors)
+  dune_enable_all_packages(INCLUDE_DIRS
+                           ${dune-gdt_SOURCE_DIR}/dune
+                           MODULE_LIBRARIES
+                           boltzmann
+                           coordinatetransformedmn
+                           cellmodel
+                           vectors)
 endif()
 
 add_header_listing()

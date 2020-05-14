@@ -196,7 +196,7 @@ public:
    * \param b Coefficient vector (only provide if you use ExplicitRungeKuttaMethods::other)
    * \param c Coefficients for time steps (only provide if you use ExplicitRungeKuttaMethods::other)
    */
-  ExplicitRungeKuttaTimeStepper(const OperatorType& op,
+  ExplicitRungeKuttaTimeStepper(const OperatorType* op,
                                 DiscreteFunctionType& initial_values,
                                 const RangeFieldType r = 1.0,
                                 const double t_0 = 0.0,
@@ -204,7 +204,7 @@ public:
                                 const VectorType& b = ButcherArrayProviderType::b(),
                                 const VectorType& c = ButcherArrayProviderType::c())
     : BaseType(t_0, initial_values)
-    , op_(&op)
+    , op_(op)
     , r_(r)
     , u_i_(BaseType::current_solution())
     , A_(A)
@@ -223,10 +223,19 @@ public:
       }
     }
     // store as many discrete functions as needed for the stages k
-    for (size_t ii = 0; ii < num_stages_; ++ii) {
+    for (size_t ii = 0; ii < num_stages_; ++ii)
       stages_k_.emplace_back(current_solution());
-    }
   } // constructor
+
+  ExplicitRungeKuttaTimeStepper(const OperatorType& op,
+                                DiscreteFunctionType& initial_values,
+                                const RangeFieldType r = 1.0,
+                                const double t_0 = 0.0,
+                                const MatrixType& A = ButcherArrayProviderType::A(),
+                                const VectorType& b = ButcherArrayProviderType::b(),
+                                const VectorType& c = ButcherArrayProviderType::c())
+    : ExplicitRungeKuttaTimeStepper(&op, initial_values, r, t_0, A, b, c)
+  {}
 
   /**
    * \brief Constructor ignoring the tol argument for compatibility with AdaptiveRungeKuttaTimeStepper

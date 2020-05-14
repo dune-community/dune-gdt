@@ -145,13 +145,12 @@ public:
          num_save_steps_copy,
          grid_size,
          visualize_solution,
-         true,
+         silent,
          sigma_s_scattering,
          sigma_s_absorbing,
          sigma_a_scattering,
          sigma_a_absorbing,
          linear);
-    silent_ = silent;
   }
 
   double current_time() const
@@ -498,7 +497,8 @@ public:
     // create timestepper
     flux_timestepper_ = std::make_shared<FluxTimeStepperType>(*kinetic_operator_, *u_, -1.0);
     pn_flux_timestepper_ = std::make_shared<PnFluxTimeStepperType>(*pn_kinetic_operator_, *u_, -1.0);
-    rhs_timestepper_ = std::make_shared<RhsTimeStepperType>(*rhs_operator_, *u_);
+    // here, rhs_operator is still undefined, will be set in call to set_rhs_operator_parameters
+    rhs_timestepper_ = std::make_shared<RhsTimeStepperType>(nullptr, *u_);
     timestepper_ = std::make_shared<TimeStepperType>(*flux_timestepper_, *rhs_timestepper_);
     pn_timestepper_ = std::make_shared<PnTimeStepperType>(*pn_flux_timestepper_, *rhs_timestepper_);
 
@@ -619,7 +619,7 @@ private:
   bool visualize_solution_;
   std::string file_path_;
   size_t num_save_steps_;
-  size_t linear_;
+  bool linear_;
   double sigma_t_max_;
 };
 

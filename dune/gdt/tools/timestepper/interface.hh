@@ -590,7 +590,6 @@ public:
     first_evaluated = false;
   }
 
-private:
   void write_timings(const std::string& prefix)
   {
     const std::string filename = prefix + "_timings.txt";
@@ -604,7 +603,6 @@ private:
     }
     timings_file.close();
   }
-
 
 protected:
   RangeFieldType t_;
