@@ -192,7 +192,7 @@ public:
     RangeFieldType actual_dt = std::min(dt, max_dt);
     // regularization is currently unused but may be used in the near future
     static const bool consider_regularization = false;
-    set_op_param("dt", actual_dt);
+    // set_op_param("dt", actual_dt);
     RangeFieldType mixed_error = std::numeric_limits<RangeFieldType>::max();
     RangeFieldType time_step_scale_factor = 1.0;
     static const std::vector<RangeFieldType> r_sequence = {0, 1e-8, 1e-6, 1e-4, 1e-3, 1e-2, 5e-2, 0.1, 0.5, 1};
@@ -211,7 +211,7 @@ public:
       bool skip_error_computation = false;
       actual_dt *= time_step_scale_factor;
       for (size_t ii = first_stage_to_compute; ii < num_stages_ - 1; ++ii) {
-        set_op_param("t", t + actual_dt * c_[ii]);
+        // set_op_param("t", t + actual_dt * c_[ii]);
         std::fill_n(&(stages_k_[ii].dofs().vector()[0]), num_dofs, 0.);
         alpha_tmp_.dofs().vector() = alpha_n.dofs().vector();
         for (size_t jj = 0; jj < ii; ++jj)
@@ -248,7 +248,7 @@ public:
           alpha_np1_.dofs().vector().axpy(actual_dt * r_ * b_1_[ii], stages_k_[ii].dofs().vector());
 
         // calculate last stage
-        set_op_param("t", t + actual_dt * c_[num_stages_ - 1]);
+        // set_op_param("t", t + actual_dt * c_[num_stages_ - 1]);
         std::fill_n(&(stages_k_[num_stages_ - 1].dofs().vector()[0]), num_dofs, 0.);
         try {
           op_.apply(alpha_np1_.dofs().vector(), stages_k_[num_stages_ - 1].dofs().vector(), op_param_);

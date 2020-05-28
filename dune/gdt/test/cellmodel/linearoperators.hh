@@ -192,7 +192,6 @@ public:
                           const Matrix& M_ell,
                           const Matrix& G,
                           const Matrix& M_nonlin,
-                          const Matrix& A_boundary,
                           const SolverType& solver,
                           const double gamma,
                           const double epsilon,
@@ -204,7 +203,6 @@ public:
     , M_ell_(M_ell)
     , G_(G)
     , M_nonlin_(M_nonlin)
-    , A_boundary_(A_boundary)
     , solver_(solver)
     , A_(M_.backend(), 0)
     , J_(M_.backend(), 0)
@@ -241,8 +239,6 @@ public:
     last_E_result_ = tmp_vec_.backend();
     M_ell_.mv(tmp_vec_, tmp_vec2_);
     y.axpy(-dt_ * gamma_, tmp_vec2_);
-    for (const auto& DoF : solver_.dirichlet_dofs())
-      y[DoF] = x[DoF];
   }
 
   void set_params(const XT::Common::Parameter& param, const bool /*restricted*/ = false) override final
@@ -265,7 +261,6 @@ public:
     A_.backend() = M_nonlin_.backend();
     A_ *= 1. / epsilon_;
     A_.axpy(epsilon_, M_ell_);
-    A_.axpy(-epsilon_, A_boundary_);
   }
 
   virtual const Matrix& getmat() const override final
@@ -280,7 +275,6 @@ private:
   const Matrix& M_ell_;
   const Matrix& G_;
   const Matrix& M_nonlin_;
-  const Matrix& A_boundary_;
   const SolverType& solver_;
   MatrixType A_;
   MatrixType J_;
@@ -326,7 +320,7 @@ private:
   const Matrix& M_;
 };
 
-template <class VectorType, class MatrixType, class DirichletConstraintsType, class CellModelSolverType>
+template <class VectorType, class MatrixType, class CellModelSolverType>
 class PfieldMatrixLinearPartOperator : public LinearOperatorWrapper<MatrixType, VectorType>
 {
   using BaseType = LinearOperatorWrapper<MatrixType, VectorType>;
@@ -334,7 +328,6 @@ class PfieldMatrixLinearPartOperator : public LinearOperatorWrapper<MatrixType, 
 public:
   using Vector = VectorType;
   using Matrix = MatrixType;
-  using Dirichlet = DirichletConstraintsType;
   using Field = typename VectorType::ScalarType;
 
   // Matrix dimensions are
@@ -342,9 +335,6 @@ public:
   PfieldMatrixLinearPartOperator(const Matrix& M,
                                  const Matrix& D,
                                  const Matrix& M_ell,
-                                 const Matrix& A_boundary,
-                                 const Dirichlet& dirichlet,
-                                 const Field phi_shift,
                                  const Field phinat_scale_factor,
                                  const double gamma,
                                  const double eps,
@@ -354,9 +344,6 @@ public:
     , M_(M)
     , D_(D)
     , M_ell_(M_ell)
-    , A_boundary_(A_boundary)
-    , dirichlet_(dirichlet)
-    , phi_shift_(phi_shift)
     , phinat_scale_factor_(phinat_scale_factor)
     , gamma_(gamma)
     , epsilon_(eps)
@@ -378,24 +365,19 @@ public:
    */
   void apply(const Vector& x, Vector& y) const override final
   {
-    apply(x, y, true);
-  }
-
-  void apply(const Vector& x, Vector& y, const bool apply_shift) const
-  {
     // copy to temporary vectors (we do not use vector views to improve performance of mv)
     const auto& source_dofs = cellmodel_solver_->pfield_deim_source_dofs_[cell_][0];
     const auto& phinat_begin = cellmodel_solver_->phinat_deim_source_dofs_begin_[cell_];
     const auto& mu_begin = cellmodel_solver_->mu_deim_source_dofs_begin_[cell_];
     if (!restricted_) {
       for (size_t ii = 0; ii < size_phi_; ++ii) {
-        x_phi_[ii] = x[ii] - phi_shift_ * apply_shift;
+        x_phi_[ii] = x[ii];
         x_phinat_[ii] = x[size_phi_ + ii];
         x_mu_[ii] = x[2 * size_phi_ + ii];
       }
     } else {
       for (size_t ii = 0; ii < phinat_begin; ++ii)
-        x_phi_[source_dofs[ii]] = x[source_dofs[ii]] - phi_shift_ * apply_shift;
+        x_phi_[source_dofs[ii]] = x[source_dofs[ii]];
       for (size_t ii = phinat_begin; ii < mu_begin; ++ii)
         x_phinat_[source_dofs[ii] - size_phi_] = x[source_dofs[ii]];
       for (size_t ii = mu_begin; ii < source_dofs.size(); ++ii)
@@ -412,8 +394,6 @@ public:
     axpy(y_phi_, dt_, tmp_vec_, phi_dofs);
     mv(M_ell_, x_phinat_, tmp_vec_, phi_dofs);
     axpy(y_phi_, dt_ * gamma_ / phinat_scale_factor_, tmp_vec_, phi_dofs);
-    for (const auto& DoF : dirichlet_.dirichlet_DoFs())
-      y_phi_[DoF] = x[DoF];
     // second row
     const auto& phinat_dofs = cellmodel_solver_->phinat_deim_range_dofs_[cell_];
     mv(M_, x_phinat_, y_phinat_, phinat_dofs);
@@ -425,9 +405,6 @@ public:
     mv(M_, x_mu_, y_mu_, mu_dofs);
     mv(M_ell_, x_phi_, tmp_vec_, mu_dofs);
     axpy(y_mu_, epsilon_, tmp_vec_, mu_dofs);
-    mv(A_boundary_, x_phi_, tmp_vec_, mu_dofs);
-    axpy(y_mu_, -epsilon_, tmp_vec_, mu_dofs);
-    // dirichlet_.apply(y_mu_);
     // copy to result vector
     if (!restricted_) {
       for (size_t ii = 0; ii < size_phi_; ++ii) {
@@ -469,9 +446,6 @@ private:
   const Matrix& M_;
   const Matrix& D_;
   const Matrix& M_ell_;
-  const Matrix& A_boundary_;
-  const Dirichlet& dirichlet_;
-  const Field phi_shift_;
   const Field phinat_scale_factor_;
   double gamma_;
   double epsilon_;
@@ -489,6 +463,56 @@ private:
   mutable Vector y_phinat_;
   mutable Vector y_mu_;
   mutable Vector tmp_vec_;
+};
+
+
+template <class VectorType, class MatrixType>
+class Matrix2InverseOperator : public Dune::InverseOperator<VectorType, VectorType>
+{
+  using BaseType = Dune::InverseOperator<VectorType, VectorType>;
+
+public:
+  using Vector = VectorType;
+  using Field = typename VectorType::ScalarType;
+  using ColMajorMatrixType = ::Eigen::SparseMatrix<Field, ::Eigen::ColMajor>;
+  using LUSolverType = ::Eigen::SparseLU<ColMajorMatrixType>;
+  using IncompleteLUTSolverType = ::Eigen::IncompleteLUT<Field>;
+
+  Matrix2InverseOperator(const MatrixType& matrix)
+    : matrix_(matrix)
+    , solver_(std::make_shared<LUSolverType>())
+  // , solver_(std::make_shared<IncompleteLUTSolverType>())
+  {}
+
+  virtual void apply(VectorType& x, VectorType& b, InverseOperatorResult& /*res*/) override final
+  {
+    x.backend() = solver_->solve(b.backend());
+  }
+
+  virtual void apply(VectorType& x, VectorType& b, double /*reduction*/, InverseOperatorResult& res) override final
+  {
+    apply(x, b, res);
+  }
+
+  void prepare()
+  {
+    matrix_colmajor_ = matrix_.backend();
+    matrix_colmajor_.makeCompressed();
+    solver_->analyzePattern(matrix_colmajor_);
+    solver_->factorize(matrix_colmajor_);
+  }
+
+  //! Category of the solver (see SolverCategory::Category)
+  virtual SolverCategory::Category category() const override final
+  {
+    return SolverCategory::Category::sequential;
+  }
+
+private:
+  const MatrixType& matrix_;
+  ColMajorMatrixType matrix_colmajor_;
+  std::shared_ptr<LUSolverType> solver_;
+  // std::shared_ptr<IncompleteLUTSolverType> solver_;
 };
 
 

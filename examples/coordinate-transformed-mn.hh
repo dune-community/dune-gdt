@@ -17,6 +17,7 @@
 #include <chrono>
 
 #include <dune/xt/common/string.hh>
+#include <dune/xt/common/exceptions.hh>
 #include <dune/xt/test/gtest/gtest.h>
 
 #include <dune/xt/grid/information.hh>
@@ -39,6 +40,7 @@
 #include <dune/gdt/test/momentmodels/entropyflux.hh>
 #include <dune/gdt/test/momentmodels/entropysolver.hh>
 #include <dune/gdt/test/momentmodels/kinetictransport/checkerboard.hh>
+#include <dune/gdt/test/momentmodels/kinetictransport/testcases.hh>
 #include <dune/gdt/test/momentmodels/hessianinverter.hh>
 #include <dune/gdt/test/momentmodels/density_evaluator.hh>
 #include <dune/gdt/test/momentmodels/min_density_setter.hh>
@@ -52,25 +54,21 @@
 using namespace Dune;
 using namespace Dune::GDT;
 
-template <size_t dimDomain>
-class CoordinateTransformedBoltzmannSolver
+template <class ProblemType,
+          class GridType =
+              YaspGrid<ProblemType::dimDomain, EquidistantOffsetCoordinates<double, ProblemType::dimDomain>>>
+class CoordinateTransformedMnSolver
 {
-  static_assert(dimDomain == 3, "Not yet implemented for other dimensions!");
-
 public:
-  // set dimensions
-  static constexpr size_t momentOrder_or_refinements = (dimDomain == 1) ? 20 : 2;
-  // choose basis
-  using MomentBasis = HatFunctionMomentBasis<double, dimDomain, double, momentOrder_or_refinements, 1, dimDomain>;
-  //   using MomentBasis = PartialMomentBasis<double, 3, double, momentOrder_or_refinements, 1, 3, 1>;
+  static constexpr size_t dimDomain = ProblemType::dimDomain;
+
   // choose timestepper
   static constexpr TimeStepperMethods time_stepper_type = TimeStepperMethods::bogacki_shampine;
-
   static constexpr bool reconstruct = false;
+  using MomentBasis = typename ProblemType::MomentBasis;
   static constexpr size_t dimRange = MomentBasis::dimRange;
   using RangeFieldType = typename MomentBasis::RangeFieldType;
   using DomainFieldType = RangeFieldType;
-  using GridType = YaspGrid<dimDomain, EquidistantOffsetCoordinates<DomainFieldType, dimDomain>>;
   using GV = typename GridType::LeafGridView;
   using E = XT::Grid::extract_entity_t<GV>;
   using I = XT::Grid::extract_intersection_t<GV>;
@@ -81,11 +79,11 @@ public:
   using MatrixType = typename XT::LA::Container<RangeFieldType, la_backend>::MatrixType;
   using VectorType = typename Dune::XT::LA::Container<RangeFieldType, la_backend>::VectorType;
   using DiscreteFunctionType = DiscreteFunction<VectorType, GV, dimRange, 1, RangeFieldType>;
+  using ConstDiscreteFunctionType = ConstDiscreteFunction<VectorType, GV, dimRange, 1, RangeFieldType>;
   using GenericFunctionType = XT::Functions::GenericFunction<dimDomain, dimRange, 1, RangeFieldType>;
   using DomainType = FieldVector<RangeFieldType, dimDomain>;
   using RangeType = FieldVector<RangeFieldType, dimRange>;
   using DynamicRangeType = DynamicVector<RangeFieldType>;
-  using ProblemType = CheckerboardMn<GV, MomentBasis>;
   using AnalyticalFluxType = typename ProblemType::FluxType;
   static constexpr SlopeLimiterType slope = reconstruct ? SlopeLimiterType::minmod : SlopeLimiterType::no_slope;
   using EntropyFluxType = EntropyBasedFluxEntropyCoordsFunction<GV, MomentBasis, slope>;
@@ -125,31 +123,27 @@ public:
   using KineticNumericalFluxType = NumericalKineticFlux<GV, MomentBasis, EntropyFluxType>;
   using BoundaryDistributionType = typename ProblemType::BoundaryDistributionType;
   using SolutionType = typename TimeStepperType::DiscreteSolutionType;
-  using SolutionVectorsVectorType = std::vector<VectorType>;
   using ParameterFunctionType = typename ProblemType::ScalarFunctionType;
 
-  CoordinateTransformedBoltzmannSolver(const std::string output_dir = "kinetic_transformed",
-                                       const size_t num_save_steps = 10,
-                                       const size_t grid_size = 20,
-                                       const bool visualize_solution = true,
-                                       const bool silent = false,
-                                       const RangeFieldType sigma_s_scattering = 1,
-                                       const RangeFieldType sigma_s_absorbing = 0,
-                                       const RangeFieldType sigma_a_scattering = 0,
-                                       const RangeFieldType sigma_a_absorbing = 10)
+  static std::vector<double> default_parameters()
+  {
+    return (dimDomain == 3) ? std::vector<double>{1, 0, 0, 10} : std::vector<double>{1, 0, 0, 2, 10};
+  }
+
+  // The parameters vector should contain:
+  // - Sourcebeam test: (sigma_a_left, sigma_a_right, sigma_s_left, sigma_s_middle, sigma_s_right)
+  // - Checkerboard test: (sigma_s_scattering, sigma_s_absorbing, sigma_a_scattering, sigma_a_absorbing)
+  CoordinateTransformedMnSolver(const std::string output_dir = "kinetic_transformed",
+                                const size_t num_save_steps = 10,
+                                const size_t grid_size = DXTC_CONFIG_GET("grid_size", 21),
+                                const bool visualize_solution = true,
+                                const bool silent = false,
+                                const std::vector<double>& parameters = default_parameters())
   {
     auto num_save_steps_copy = num_save_steps;
     if (num_save_steps > 1e6) // hack to allow for size_t(-1) when called from the python bindings
       num_save_steps_copy = size_t(-1);
-    init(output_dir,
-         num_save_steps_copy,
-         grid_size,
-         visualize_solution,
-         silent,
-         sigma_s_scattering,
-         sigma_s_absorbing,
-         sigma_a_scattering,
-         sigma_a_absorbing);
+    init(output_dir, num_save_steps_copy, grid_size, visualize_solution, silent, parameters);
   }
 
   double current_time() const
@@ -159,7 +153,7 @@ public:
 
   double t_end() const
   {
-    return problem_->t_end();
+    return t_end_;
   }
 
   void set_current_time(const double time)
@@ -177,7 +171,8 @@ public:
     return false;
   }
 
-  SolutionVectorsVectorType solve()
+  // First vector in returned pair contains the time points, the second vector contains the solution vectors
+  std::pair<std::vector<double>, std::vector<VectorType>> solve()
   {
     if (!silent_)
       std::cout << "Solving... " << std::endl;
@@ -187,31 +182,47 @@ public:
         [&](const int /*comp*/, const auto& val) { return basis_functions_->density(analytical_flux_->get_u(val)); });
     const auto u_stringifier = basis_functions_->stringifier();
     const auto stringifier = [&](const RangeType& val) { return u_stringifier(analytical_flux_->get_u(val)); };
+    typename TimeStepperType::DiscreteSolutionType solution;
     timestepper_->solve(t_end_,
                         initial_dt_,
                         num_save_steps_,
                         silent_ ? size_t(0) : size_t(-1),
                         true,
                         visualize_solution_,
+                        false,
                         DXTC_CONFIG_GET("write_txt", false),
                         false,
                         true,
                         filename_,
+                        solution,
                         *visualizer,
-                        stringifier);
+                        stringifier,
+                        timestepper_->dummy_solution());
     auto end_time = std::chrono::steady_clock::now();
     std::chrono::duration<double> time_diff = end_time - begin_time;
     if (!silent_)
       std::cout << "Solving took: " << XT::Common::to_string(time_diff.count(), 15) << " s" << std::endl;
-    timestepper_->write_timings(filename_);
+    if (visualize_solution_)
+      timestepper_->write_timings(filename_);
 
-    std::vector<VectorType> ret;
-    for (const auto& pair : timestepper_->solution())
-      ret.push_back(pair.second.dofs().vector());
+    // const auto interval_length = t_end_ / num_intervals;
+    // for (size_t ii = 0; ii < num_intervals; ++ii) {
+    //   const auto left_boundary = ii * interval_length;
+    //   const auto right_boundary = (ii+1) * interval_length;
+    //   auto begin_it = solution.lower_bound(left_boundary);
+    //   const auto end_it = solution.upper_bound(right_boundary);
+    //   const auto num_elements_in_interval = std::distance(begin_it, end_it);
+    //   if (num_elements_in_interval > max_vectors_per_interval) {
+    std::pair<std::vector<double>, std::vector<VectorType>> ret;
+    for (auto it = solution.begin(); it != solution.end();) {
+      ret.first.push_back(it->first);
+      ret.second.push_back(it->second.dofs().vector());
+      it = solution.erase(it);
+    }
     return ret;
   }
 
-  //   SolutionVectorsVectorType next_n_timesteps(const size_t n) const
+  //   std::vector<VectorType> next_n_timesteps(const size_t n) const
   //   {
   //     if (!silent_)
   //       std::cout << "Calculating next " << XT::Common::to_string(n) << " time steps... " << std::endl;
@@ -295,17 +306,32 @@ public:
   //    return true;
   //  }
 
-  void set_parameters(const RangeFieldType sigma_s_scattering = 1,
-                      const RangeFieldType sigma_s_absorbing = 0,
-                      const RangeFieldType sigma_a_scattering = 0,
-                      const RangeFieldType sigma_a_absorbing = 10)
+  void set_parameters(const std::vector<double>& parameters)
   {
     static const RangeType u_iso = basis_functions_->u_iso();
     static const RangeType basis_integrated = basis_functions_->integrated();
-    std::shared_ptr<ParameterFunctionType> sigma_s(
-        problem_->create_parameter_function(sigma_s_absorbing, sigma_s_scattering, sigma_s_scattering));
-    std::shared_ptr<ParameterFunctionType> sigma_a(
-        problem_->create_parameter_function(sigma_a_absorbing, sigma_a_scattering, sigma_a_scattering));
+    std::shared_ptr<ParameterFunctionType> sigma_s;
+    std::shared_ptr<ParameterFunctionType> sigma_a;
+    if constexpr (dimDomain == 1) {
+      DUNE_THROW_IF(parameters.size() != 5, Dune::InvalidStateException, "Wrong parameter size!");
+      const double sigma_a_left = parameters[0];
+      const double sigma_a_right = parameters[1];
+      const double sigma_s_left = parameters[2];
+      const double sigma_s_middle = parameters[3];
+      const double sigma_s_right = parameters[4];
+      sigma_s = std::shared_ptr(problem_->create_sigma_s_function(sigma_s_left, sigma_s_middle, sigma_s_right));
+      sigma_a = std::shared_ptr(problem_->create_sigma_a_function(sigma_a_left, sigma_a_right));
+    } else {
+      DUNE_THROW_IF(parameters.size() != 4, Dune::InvalidStateException, "Wrong parameter size!");
+      const double sigma_s_scattering = parameters[0];
+      const double sigma_s_absorbing = parameters[1];
+      const double sigma_a_scattering = parameters[2];
+      const double sigma_a_absorbing = parameters[3];
+      sigma_s = std::shared_ptr(
+          problem_->create_parameter_function(sigma_s_absorbing, sigma_s_scattering, sigma_s_scattering));
+      sigma_a = std::shared_ptr(
+          problem_->create_parameter_function(sigma_a_absorbing, sigma_a_scattering, sigma_a_scattering));
+    }
     std::shared_ptr<ParameterFunctionType> Q(problem_->Q());
     auto rhs_func = [&, sigma_a, sigma_s, Q](const auto& /*source*/,
                                              const auto& /*local_source*/,
@@ -330,12 +356,9 @@ public:
     rhs_operator_->append(GenericLocalElementOperator<VectorType, GV, dimRange>(rhs_func));
   }
 
-  void create_rhs_operator(const RangeFieldType sigma_s_scattering = 1,
-                           const RangeFieldType sigma_s_absorbing = 0,
-                           const RangeFieldType sigma_a_scattering = 0,
-                           const RangeFieldType sigma_a_absorbing = 10)
+  void create_rhs_operator(const std::vector<double>& parameters)
   {
-    return set_parameters(sigma_s_scattering, sigma_s_absorbing, sigma_a_scattering, sigma_a_absorbing);
+    return set_parameters(parameters);
   }
 
   VectorType get_initial_values() const
@@ -348,19 +371,14 @@ public:
     return XT::Common::FloatCmp::ge(timestepper_->current_time(), t_end_);
   }
 
-  void init(const std::string output_dir = "boltzmann",
-            const size_t num_save_steps = 10,
-            const size_t grid_size = 50,
-            const bool visualize_solution = true,
-            const bool silent = false,
-            const double sigma_s_scattering = 1.,
-            const double sigma_s_absorbing = 0.,
-            const double sigma_a_scattering = 0.,
-            const double sigma_a_absorbing = 10.)
+  void init(const std::string output_dir,
+            const size_t num_save_steps,
+            const size_t grid_size,
+            const bool visualize_solution,
+            const bool silent,
+            const std::vector<double>& parameters)
   {
     silent_ = silent;
-    if (!silent_)
-      std::cout << "Setting problem parameters ...";
     visualize_solution_ = visualize_solution;
     filename_ = output_dir;
     num_save_steps_ = num_save_steps;
@@ -375,7 +393,9 @@ public:
     // create space
     fv_space_ = std::make_shared<const SpaceType>(*grid_view_);
 
-    basis_functions_ = std::make_shared<const MomentBasis>();
+    basis_functions_ =
+        std::make_shared<const MomentBasis>(QuadratureChooser<MomentBasis, dimDomain == 1>::quad_order,
+                                            QuadratureChooser<MomentBasis, dimDomain == 1>::quad_refinements);
     static const RangeFieldType psi_vac = DXTC_CONFIG_GET("psi_vac", 1e-6 / basis_functions_->unit_ball_volume());
     problem_ = std::make_shared<const ProblemType>(*basis_functions_, *grid_view_, psi_vac, grid_config, true, 1e-09);
 
@@ -420,7 +440,7 @@ public:
     const auto first_intersection = *grid_view_->ibegin(first_entity);
     dx_ = first_entity.geometry().volume() / first_intersection.geometry().volume();
     initial_dt_ = dx_ / 100.;
-    t_end_ = problem_->t_end();
+    t_end_ = DXTC_CONFIG_GET("t_end", problem_->t_end());
 
     // create operators
     numerical_flux_ = std::make_shared<KineticNumericalFluxType>(*analytical_flux_, *basis_functions_);
@@ -441,7 +461,7 @@ public:
     MasslumpedOperatorType masslumped_operator(fv_operator, problem, dx, boundary_fluxes);
 #else
     hessian_inverter_ = std::make_shared<HessianInverterType>(*analytical_flux_, *fv_space_);
-    create_rhs_operator(sigma_s_scattering, sigma_s_absorbing, sigma_a_scattering, sigma_a_absorbing);
+    create_rhs_operator(parameters);
     combined_operator_ =
         std::make_shared<CombinedOperatorType>(*density_operator_, *fv_operator_, *rhs_operator_, *hessian_inverter_);
 #endif
@@ -486,6 +506,26 @@ public:
         *combined_operator_, *min_density_setter_, *analytical_flux_, *alpha_, true, 1., atol_, rtol_);
 #endif
   } // void init()
+
+  VectorType u_from_alpha(const VectorType& alpha_vec) const
+  {
+    DiscreteFunctionType u(*fv_space_, "u_initial");
+    const ConstDiscreteFunctionType alpha(*fv_space_, alpha_vec, "alpha");
+    // project initial values
+    auto u_local_func = u.local_discrete_function();
+    const auto alpha_local_func = alpha.local_discrete_function();
+    XT::Common::FieldVector<RangeFieldType, dimRange> alpha_local, u_local;
+    for (auto&& element : Dune::elements(*grid_view_)) {
+      u_local_func->bind(element);
+      alpha_local_func->bind(element);
+      for (size_t ii = 0; ii < dimRange; ++ii)
+        alpha_local[ii] = alpha_local_func->dofs().get_entry(ii);
+      u_local = analytical_flux_->get_u(alpha_local);
+      for (size_t ii = 0; ii < dimRange; ++ii)
+        u_local_func->dofs().set_entry(ii, u_local[ii]);
+    }
+    return u.dofs().vector();
+  }
 
   void reset()
   {

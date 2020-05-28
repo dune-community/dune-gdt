@@ -81,7 +81,6 @@ struct CellModelSolver
   using RowMajorBackendType = typename MatrixType::BackendType;
   using LUSolverType = ::Eigen::SparseLU<ColMajorBackendType>;
   using OfieldDirectSolverType = ::Eigen::SparseLU<ColMajorBackendType>;
-  using PhiDirichletConstraintsType = DirichletConstraints<PI, SpaceInterface<PGV, 1, 1, R>>;
   using OfieldSchurSolverType = Dune::RestartedGMResSolver<EigenVectorType>;
   using PerThreadVectorLocalFunc = XT::Common::PerThreadValue<std::unique_ptr<VectorLocalDiscreteFunctionType>>;
   using PerThreadScalarLocalFuncs = XT::Common::PerThreadValue<std::vector<std::unique_ptr<LocalDiscreteFunctionType>>>;
@@ -370,7 +369,7 @@ struct CellModelSolver
                        const XT::LA::SparsityPatternDefault& pattern,
                        const std::vector<size_t>& rows);
 
-  void assemble_D_pfield(const size_t cell, const bool restricted);
+  void assemble_B_pfield(const size_t cell, const bool restricted);
 
   // assembles nonlinear part of phase field jacobian
   void assemble_pfield_nonlinear_jacobian(const VectorType& y, const size_t cell, const bool restricted = false);
@@ -378,8 +377,8 @@ struct CellModelSolver
   // stores matrix with entries \int (3 phi^2 - 1) varphi_i varphi_j in M_nonlin_pfield_
   void assemble_M_nonlin_pfield(const size_t cell, const bool restricted);
 
-  // stores nonlinear part of block G of the phase field jacobian matrix in G_pfield_nonlinear_part_
-  void assemble_G_pfield(const size_t cell, const bool restricted);
+  // stores nonlinear part of block G of the phase field jacobian matrix in Dphi_f_pfield_nonlinear_part_
+  void assemble_Dphi_f_pfield(const size_t cell, const bool restricted);
 
   // assembles nonlinear part of phasefield residual and adds to residual
   void assemble_nonlinear_part_of_pfield_residual(VectorType& residual, const size_t cell, const bool restricted);
@@ -670,7 +669,6 @@ struct CellModelSolver
   // Dirichlet constraints
   const XT::Grid::AllDirichletBoundaryInfo<PI> boundary_info_;
   DirichletConstraints<PI, SpaceInterface<PGV, d, 1, R>> u_dirichlet_constraints_;
-  PhiDirichletConstraintsType phi_dirichlet_constraints_;
   // phi is shifted by this value, i.e., instead of solving for phi, we are solving for phi + phi_shift.
   // Set to 1 by default to get 0 on the boundary instead of -1.
   R phi_shift_;
@@ -720,21 +718,22 @@ struct CellModelSolver
   const XT::LA::SparsityPatternDefault pfield_submatrix_pattern_;
   // Phase field system matrix S = (M/dt+D E 0; G H J; A 0 C)
   MatrixType M_pfield_;
-  MatrixType D_pfield_;
+  MatrixType B_pfield_;
   MatrixType M_ell_pfield_;
   MatrixType M_nonlin_pfield_;
-  MatrixType G_pfield_;
-  MatrixType A_boundary_pfield_;
+  MatrixType Dphi_f_pfield_;
   mutable ColMajorBackendType M_pfield_colmajor_;
   mutable ColMajorBackendType S_pfield_colmajor_;
   // Pfield solvers and linear operators
   // Matrix operators for phasefield matrices
-  std::shared_ptr<MatrixOperator<MatrixType, PGV, 1>> D_pfield_op_;
-  std::shared_ptr<MatrixOperator<MatrixType, PGV, 1>> G_pfield_op_;
+  std::shared_ptr<MatrixOperator<MatrixType, PGV, 1>> B_pfield_op_;
+  std::shared_ptr<MatrixOperator<MatrixType, PGV, 1>> Dphi_f_pfield_op_;
   std::shared_ptr<MatrixOperator<MatrixType, PGV, 1>> M_nonlin_pfield_op_;
-  PfieldMatrixLinearPartOperator<VectorType, MatrixType, PhiDirichletConstraintsType, CellModelSolver>
-      pfield_jac_linear_op_;
+  PfieldMatrixLinearPartOperator<VectorType, MatrixType, CellModelSolver> pfield_jac_linear_op_;
   PfieldLinearSolver pfield_solver_;
+  MatrixType pfield_preconditioner_matrix_;
+  mutable ColMajorBackendType pfield_preconditioner_matrix_colmajor_;
+  std::shared_ptr<LUSolverType> pfield_preconditioner_solver_;
   // Phase field rhs vector (r0 r1 r2)
   VectorType pfield_rhs_vector_;
   VectorViewType pfield_r0_vector_;

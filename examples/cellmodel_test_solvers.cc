@@ -152,11 +152,11 @@ int main(int argc, char* argv[])
     std::chrono::duration<double> ref_time(0.);
     std::chrono::duration<double> time(0.);
     auto begin = std::chrono::steady_clock::now();
-    const auto result1 = model_solver.solve(dt, false, write_step, filename, subsampling);
-    ref_time = std::chrono::steady_clock::now() - begin;
-    begin = std::chrono::steady_clock::now();
     const auto result2 = model_solver2.solve(dt, false, write_step, filename, subsampling);
     time = std::chrono::steady_clock::now() - begin;
+    begin = std::chrono::steady_clock::now();
+    const auto result1 = model_solver.solve(dt, false, write_step, filename, subsampling);
+    ref_time = std::chrono::steady_clock::now() - begin;
     std::cout << "Timings: ref =  " << ref_time.count() << "  vs. tested solvers = " << time.count() << std::endl;
     for (size_t ii = 0; ii < result1.size(); ++ii) {
       for (size_t jj = 0; jj < result1[ii].size(); ++jj) {

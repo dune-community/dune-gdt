@@ -46,6 +46,9 @@ class LinearOperator;
 template <class M, class X>
 class LinearOperatorWrapper;
 
+template <class X, class M>
+class Matrix2InverseOperator;
+
 template <class X>
 class ScalarProduct;
 
@@ -100,16 +103,19 @@ public:
   using LinearOperatorType = LinearOperatorWrapper<MatrixType, EigenVectorType>;
   using ScalarProductType = Dune::ScalarProduct<EigenVectorType>;
   using IterativeSolverType = Dune::IterativeSolver<EigenVectorType, EigenVectorType>;
+  using InverseOperatorType = Dune::InverseOperator<EigenVectorType, EigenVectorType>;
   using SystemMatrixLinearOperatorType = MatrixToLinearOperator<EigenVectorType, MatrixType>;
   using PreconditionerType = Dune::Preconditioner<EigenVectorType, EigenVectorType>;
   // using AMGPreconditionerType = Dune::Amg::FastAMG<SystemMatrixLinearOperatorType,EigenVectorType>;
   using IdentityPreconditionerType = IdentityPreconditioner<EigenVectorType>;
   using IterativeSolverPreconditionerType = IterativeSolverPreconditioner<EigenVectorType>;
+  using Matrix2InverseOperatorType = Matrix2InverseOperator<EigenVectorType, MatrixType>;
 
   CellModelLinearSolverWrapper(std::shared_ptr<LinearOperatorType>,
                                std::shared_ptr<ScalarProductType>,
                                const MatrixType& M,
                                MatrixType& S_,
+                               MatrixType& S_preconditioner,
                                const CellModelLinearSolverType solver_type,
                                const CellModelMassMatrixSolverType mass_matrix_solver_type,
                                const size_t num_cells,
@@ -122,6 +128,9 @@ public:
 
   static std::shared_ptr<MatrixType>
   create_system_matrix(const bool is_schur_solver, const size_t size, const XT::LA::SparsityPatternDefault& pattern);
+
+  static std::shared_ptr<MatrixType> create_preconditioner_matrix(const CellModelLinearSolverType solver_type,
+                                                                  const size_t size);
 
   // Has to be called after mass matrix is assembled.
   void setup();
@@ -142,12 +151,14 @@ public:
   void apply_outer_solver(EigenVectorType& ret, EigenVectorType& rhs) const;
 
 private:
-  std::shared_ptr<IterativeSolverType> create_preconditioner_solver(std::shared_ptr<DuneLinearOperatorType> linear_op,
-                                                                    ScalarProductType& scalar_product,
-                                                                    const R inner_reduction,
-                                                                    const int inner_verbose,
-                                                                    const int inner_maxit,
-                                                                    const size_t vector_size);
+  std::shared_ptr<InverseOperatorType>
+  create_preconditioner_inverse_op(std::shared_ptr<DuneLinearOperatorType> linear_op,
+                                   ScalarProductType& scalar_product,
+                                   MatrixType& S_preconditioner,
+                                   const R inner_reduction,
+                                   const int inner_verbose,
+                                   const int inner_maxit,
+                                   const size_t vector_size);
 
   std::shared_ptr<PreconditionerType> create_preconditioner(std::shared_ptr<DuneLinearOperatorType> linear_op);
 
@@ -163,6 +174,7 @@ private:
   std::shared_ptr<ScalarProductType> scalar_product_;
   const MatrixType& M_;
   MatrixType& S_;
+  MatrixType& S_preconditioner_;
   const CellModelLinearSolverType solver_type_;
   const CellModelMassMatrixSolverType mass_matrix_solver_type_;
   const bool is_schur_solver_;
@@ -173,7 +185,7 @@ private:
   std::shared_ptr<CGIncompleteCholeskySolverType> mass_matrix_cg_incomplete_cholesky_solver_;
   std::shared_ptr<LUSolverType> direct_solver_;
   std::shared_ptr<IdentityPreconditionerType> identity_preconditioner_;
-  std::shared_ptr<IterativeSolverType> preconditioner_solver_;
+  std::shared_ptr<InverseOperatorType> preconditioner_inverse_op_;
   std::shared_ptr<PreconditionerType> preconditioner_;
   std::shared_ptr<IterativeSolverType> outer_solver_;
   mutable std::vector<EigenVectorType> previous_update_;
@@ -206,11 +218,8 @@ public:
                      const MatrixType& D,
                      const MatrixType& G,
                      const MatrixType& M_nonlin,
-                     const MatrixType& A_boundary,
                      const CellModelLinearSolverType solver_type,
                      const CellModelMassMatrixSolverType mass_matrix_solver_type,
-                     const std::set<size_t>& phi_dirichlet_dofs,
-                     const double phi_shift,
                      const double phinat_scale_factor,
                      const XT::LA::SparsityPatternDefault& submatrix_pattern,
                      const size_t num_cells,
@@ -231,6 +240,9 @@ public:
   VectorType apply(const VectorType& rhs, const size_t cell) const;
 
   bool is_schur_solver() const;
+
+  std::shared_ptr<MatrixType> create_pfield_preconditioner_matrix(const CellModelLinearSolverType solver_type,
+                                                                  const XT::LA::SparsityPatternDefault& pattern);
 
   // creates sparsity pattern of phasefield system matrix
   static XT::LA::SparsityPatternDefault system_matrix_pattern(const XT::LA::SparsityPatternDefault& submatrix_pattern);
@@ -265,12 +277,11 @@ private:
   const MatrixType& D_;
   const MatrixType& G_;
   const MatrixType& M_nonlin_;
-  const MatrixType& A_boundary_;
+  CellModelLinearSolverType solver_type_;
   const bool is_schur_solver_;
   const size_t size_phi_;
   std::shared_ptr<MatrixType> S_;
-  const std::set<size_t>& phi_dirichlet_dofs_;
-  const R phi_shift_;
+  std::shared_ptr<MatrixType> S_preconditioner_;
   const R phinat_scale_factor_;
   CellModelLinearSolverWrapper wrapper_;
   mutable MatrixViewType S_00_;
@@ -364,6 +375,7 @@ private:
   const bool is_schur_solver_;
   const size_t size_P_;
   std::shared_ptr<MatrixType> S_;
+  std::shared_ptr<MatrixType> S_preconditioner_;
   std::shared_ptr<MatrixType> S_schur_;
   CellModelLinearSolverWrapper wrapper_;
   mutable MatrixViewType S_00_;
