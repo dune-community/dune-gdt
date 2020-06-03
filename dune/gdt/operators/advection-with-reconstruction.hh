@@ -96,10 +96,13 @@ public:
   static const size_t r = AdvectionOperatorType::s_r;
   using VectorType = typename AdvectionOperatorType::VectorType;
 
-  AdvectionWithPointwiseReconstructionOperator(const AdvectionOperatorType& advection_operator,
-                                               const ReconstructionOperatorType& reconstruction_operator)
+  AdvectionWithPointwiseReconstructionOperator(
+      const AdvectionOperatorType& advection_operator,
+      const ReconstructionOperatorType& reconstruction_operator,
+      std::shared_ptr<AdvectionOperatorType> restricted_advection_operator = nullptr)
     : advection_operator_(advection_operator)
     , reconstruction_operator_(reconstruction_operator)
+    , restricted_advection_operator_(restricted_advection_operator)
     , reconstructed_values_(source_space().grid_view().indexSet().size(0))
     , reconstructed_function_(source_space().grid_view(), reconstructed_values_)
   {}
@@ -129,8 +132,24 @@ public:
     advection_operator_.apply(reconstructed_function_, range, param);
   }
 
+  template <class ElementRange>
+  void apply_range(const VectorType& source,
+                   VectorType& range,
+                   const XT::Common::Parameter& param,
+                   const ElementRange& output_range,
+                   const ElementRange& input_range) const
+  {
+    // do reconstruction
+    reconstruction_operator_.apply_range(source, reconstructed_function_, param, input_range);
+
+    // apply advection operator
+    range *= 0.;
+    restricted_advection_operator_->apply_range(reconstructed_function_, range, param, output_range);
+  }
+
   const AdvectionOperatorType& advection_operator_;
   const ReconstructionOperatorType& reconstruction_operator_;
+  std::shared_ptr<AdvectionOperatorType> restricted_advection_operator_;
   typename ReconstructionOperatorType::ReconstructedValuesType reconstructed_values_;
   mutable typename ReconstructionOperatorType::ReconstructedFunctionType reconstructed_function_;
 }; // class AdvectionWithReconstructionOperator<...>

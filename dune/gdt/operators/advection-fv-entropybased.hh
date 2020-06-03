@@ -129,6 +129,24 @@ public:
     inverse_hessian_operator_.apply_inverse_hessian(u_update_, reg_indicators_, range, param);
   }
 
+  template <class ElementRange>
+  void apply_range(const VectorType& source,
+                   VectorType& range,
+                   const XT::Common::Parameter& param,
+                   const ElementRange& output_range,
+                   const ElementRange& input_range)
+  {
+    // TODO: replace full-dimensional copies if critical for performance of reduced model
+    density_op_.apply_range(source, range, param, input_range);
+    u_update_ = range;
+    rhs_update_ = range;
+    advection_op_.apply_range(range, u_update_, param, output_range, input_range);
+    u_update_ *= -1.;
+    rhs_op_.apply_range(range, rhs_update_, param, output_range);
+    u_update_ += rhs_update_;
+    inverse_hessian_operator_.apply_inverse_hessian_range(u_update_, reg_indicators_, range, param, output_range);
+  }
+
   const std::vector<bool>& reg_indicators() const
   {
     return reg_indicators_;

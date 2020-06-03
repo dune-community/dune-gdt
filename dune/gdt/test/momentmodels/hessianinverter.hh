@@ -186,6 +186,21 @@ public:
     walker.walk(true);
   } // void apply(...)
 
+  template <class ElementRange>
+  void apply_inverse_hessian_range(const VectorType& u_update,
+                                   std::vector<bool>& reg_indicators,
+                                   VectorType& alpha_update,
+                                   const XT::Common::Parameter& param,
+                                   const ElementRange& element_range) const
+  {
+    LocalEntropicHessianInverter<SpaceType, VectorType, MomentBasis, slope> local_hessian_inverter(
+        space_, u_update, reg_indicators, alpha_update, analytical_flux_, param);
+    auto walker = XT::Grid::Walker<typename SpaceType::GridViewType>(space_.grid_view());
+    walker.append(local_hessian_inverter);
+    walker.walk_range(element_range);
+  } // void apply(...)
+
+
 private:
   const EntropyFluxType& analytical_flux_;
   const SpaceType& space_;

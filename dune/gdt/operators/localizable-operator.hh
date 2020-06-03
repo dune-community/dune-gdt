@@ -169,6 +169,16 @@ public:
     assembled_ = true;
   }
 
+  template <class EntityRange>
+  void assemble_range(const EntityRange& element_range)
+  {
+    if (assembled_)
+      return;
+    // This clears all appended operators, which is ok, since we are done after assembling once!
+    this->walk_range(element_range);
+    assembled_ = true;
+  }
+
 protected:
   const SourceType& source_;
   RangeType& range_;
@@ -386,6 +396,45 @@ public:
     const auto source_function = make_discrete_function(this->source_space_, source);
     apply(source_function, range, param);
   } // ... apply(...)
+
+  template <class ElementRange>
+  void apply_range(const SourceFunctionInterfaceType& source_function,
+                   VectorType& range,
+                   const XT::Common::Parameter& param,
+                   const ElementRange& element_range) const
+  {
+    range.set_all(0);
+    auto range_function = make_discrete_function(this->range_space_, range);
+    // set up the actual operator
+    auto localizable_op =
+        make_localizable_operator_applicator(this->assembly_grid_view_, source_function, range_function);
+    // - element contributions
+    for (const auto& op_and_filter : local_element_operators_) {
+      const auto local_op = op_and_filter.first->with_source(source_function);
+      const auto& filter = *op_and_filter.second;
+      localizable_op.append(*local_op, param, filter);
+    }
+    // - intersection contributions
+    for (const auto& op_and_filter : local_intersection_operators_) {
+      const auto local_op = op_and_filter.first->with_source(source_function);
+      const auto& filter = *op_and_filter.second;
+      localizable_op.append(*local_op, param, filter);
+    }
+    // and apply it in a grid walk
+    localizable_op.assemble_range(element_range);
+    DEBUG_THROW_IF(!range.valid(), Exceptions::operator_error, "range contains inf or nan!");
+  } // ... apply_range(...)
+
+  template <class ElementRange>
+  void apply_range(const VectorType& source,
+                   VectorType& range,
+                   const XT::Common::Parameter& param,
+                   const ElementRange& element_range) const
+  {
+    DUNE_THROW_IF(!source.valid(), Exceptions::operator_error, "source contains inf or nan!");
+    const auto source_function = make_discrete_function(this->source_space_, source);
+    apply_range(source_function, range, param, element_range);
+  } // ... apply_range(...)
 
   std::vector<std::string> jacobian_options() const override final
   {

@@ -54,6 +54,26 @@
 using namespace Dune;
 using namespace Dune::GDT;
 
+//! struct to be used as comparison function e.g. in a std::map<Entity, EntityLess>
+template <class GV>
+struct EntityLess
+{
+  using IndexSet = typename GV::IndexSet;
+  using E = typename GV::Grid::template Codim<0>::Entity;
+
+  EntityLess(const IndexSet& index_set)
+    : index_set_(index_set)
+  {}
+
+  bool operator()(const E& a, const E& b) const
+  {
+    return index_set_.index(a) < index_set_.index(b);
+  }
+
+  const IndexSet& index_set_;
+};
+
+
 template <class ProblemType,
           class GridType =
               YaspGrid<ProblemType::dimDomain, EquidistantOffsetCoordinates<double, ProblemType::dimDomain>>>
@@ -241,57 +261,37 @@ public:
   //     return ret;
   //   }
 
-  VectorType apply_operator(const VectorType& source, const double time, const double dt) const
+  VectorType apply_operator(const VectorType& source) const
   {
     VectorType ret(source);
-    combined_operator_->apply(source, ret, {{"t", {time}}, {"dt", {dt}}});
+    static const XT::Common::Parameter unused_parameter;
+    combined_operator_->apply(source, ret, unused_parameter);
     return ret;
   }
 
-  VectorType apply_restricted_operator(const VectorType& /*source*/) const
+  VectorType apply_restricted_operator(const VectorType& source) const
   {
-    DUNE_THROW(NotImplemented, "");
-    // VectorType ret(restricted_op_output_dofs_->size(), 0.);
-    // RangeType u_entity;
-    // RangeType u_neighbor;
-    // const auto* mn_flux = dynamic_cast<const EntropyFluxType*>(flux_.get());
-
-    // double min_acceptable_density = 1e-9;
-    // size_t jj = 0;
-    // for (size_t ii = 0; ii < restricted_op_entities_->size(); ++ii) {
-    //   const auto& entity = (*restricted_op_entities_)[ii];
-    //   RangeType ret_entity(0.), local_ret(0.);
-    //   for (size_t kk = 0; kk < dimRange; ++kk)
-    //     u_entity[kk] = source[jj * dimRange + kk];
-    //   ++jj;
-    //   basis_functions_->ensure_min_density(u_entity, min_acceptable_density);
-    //   for (auto&& intersection : intersections(*grid_view_, entity)) {
-    //     const auto intersection_center = intersection.geometry().center();
-    //     if (intersection.neighbor()) {
-    //       for (size_t kk = 0; kk < dimRange; ++kk)
-    //         u_neighbor[kk] = source[jj * dimRange + kk];
-    //       basis_functions_->ensure_min_density(u_neighbor, min_acceptable_density);
-    //       ++jj;
-    //     } else if (intersection.boundary()) {
-    //       u_neighbor = boundary_values_->evaluate(intersection_center);
-    //     } else {
-    //       DUNE_THROW(MathError, "This should not happen!");
-    //     }
-    //     assert(intersection.indexInInside() >= 0);
-    //     size_t direction = static_cast<size_t>(intersection.indexInInside()) / 2;
-    //     const auto local_intersection_center = intersection.geometry().local(intersection_center);
-    //     auto n_ij = intersection.unitOuterNormal(local_intersection_center);
-    //     const auto neighbor = intersection.neighbor() ? intersection.outside() : entity;
-    //     mn_flux->evaluate_kinetic_flux(entity, neighbor, u_entity, u_neighbor, n_ij, direction, local_ret);
-    //     ret_entity += local_ret * intersection.geometry().integrationElement(local_intersection_center);
-    //   } // intersections
-    //   ret_entity /= entity.geometry().volume();
-    //   for (const auto& pair : (*restricted_op_entity_dofs_to_output_dofs_)[ii]) {
-    //     assert(ret[pair.second] == 0. && "More than one output dofs maps to same vector location!");
-    //     ret[pair.second] = ret_entity[pair.first];
-    //   }
-    // } // entities
-    // return ret;
+    static const XT::Common::Parameter unused_parameter;
+    try {
+      // copy source values to full-dimensional vector
+      const auto& input_dofs = *restricted_op_input_dofs_;
+      for (size_t kk = 0; kk < input_dofs.size(); ++kk)
+        alpha_vec_->set_entry(input_dofs[kk], source.get_entry(kk));
+      // apply restricted operator
+      combined_operator_->apply_range(*alpha_vec_,
+                                      *tmp_fulldimensional_vec_,
+                                      unused_parameter,
+                                      *restricted_op_output_entities_,
+                                      *restricted_op_input_entities_);
+      // copy output_dofs to return vector
+      const auto& output_dofs = *restricted_op_output_dofs_;
+      VectorType ret(output_dofs.size(), 0.);
+      for (size_t jj = 0; jj < output_dofs.size(); ++jj)
+        ret[jj] = (*tmp_fulldimensional_vec_)[output_dofs[jj]];
+      return ret;
+    } catch (const Dune::MathError&) {
+      return VectorType{};
+    }
   }
 
   //  bool is_realizable(const VectorType& vector) const
@@ -408,6 +408,8 @@ public:
     u_ = std::make_shared<DiscreteFunctionType>(*fv_space_, "u_initial");
     // The only operator that needs synchronisation is the advection operator
     alpha_vec_ = std::make_shared<VectorType>(fv_space_->mapper().size(), 0., DXTC_CONFIG_GET("num_alpha_mutexes", 1));
+    tmp_fulldimensional_vec_ =
+        std::make_shared<VectorType>(fv_space_->mapper().size(), 0., DXTC_CONFIG_GET("num_alpha_mutexes", 1));
     alpha_ = std::make_shared<DiscreteFunctionType>(*fv_space_, *alpha_vec_, "alpha");
     // project initial values
     const auto initial_values_u = problem_->initial_values();
@@ -447,9 +449,18 @@ public:
     advection_source_space_ = std::make_shared<AdvectionSourceSpaceType>(*grid_view_);
     advection_operator_ = std::make_shared<AdvectionOperatorType>(
         *grid_view_, *numerical_flux_, *advection_source_space_, *fv_space_, /*use_tbb*/ false);
+    outside_indices_to_ignore_ = std::make_shared<std::map<size_t, std::set<size_t>>>();
+    restricted_advection_operator_ = std::make_shared<AdvectionOperatorType>(*grid_view_,
+                                                                             *numerical_flux_,
+                                                                             *advection_source_space_,
+                                                                             *fv_space_,
+                                                                             /*use_tbb*/ false,
+                                                                             XT::Grid::ApplyOn::NoIntersections<GV>(),
+                                                                             true,
+                                                                             *outside_indices_to_ignore_);
     reconstruction_operator_ = std::make_shared<ReconstructionOperatorType>(*fv_space_, *analytical_flux_);
-    fv_operator_ =
-        std::make_shared<ReconstructionAdvectionOperatorType>(*advection_operator_, *reconstruction_operator_);
+    fv_operator_ = std::make_shared<ReconstructionAdvectionOperatorType>(
+        *advection_operator_, *reconstruction_operator_, restricted_advection_operator_);
     const double min_acceptable_density =
         DXTC_CONFIG_GET("rho_min", problem_->psi_vac() * basis_functions_->unit_ball_volume() / 10);
     boundary_distribution_ = std::make_shared<BoundaryDistributionType>(problem_->boundary_distribution());
@@ -492,6 +503,7 @@ public:
               intersection.geometry().global(xx_in_reference_intersection_coordinates), v, param);
         });
     advection_operator_->append(*boundary_lambda_, {}, boundary_intersection_filter);
+    restricted_advection_operator_->append(*boundary_lambda_, {}, boundary_intersection_filter);
     if (!silent_)
       std::cout << " done " << std::endl;
 
@@ -536,57 +548,69 @@ public:
     TimeStepperType::reset_static_variables();
   }
 
-  void prepare_restricted_operator(const std::vector<size_t>& /*output_dofs*/)
+  void
+  maybe_insert_entity(const E& entity, const std::vector<size_t>& output_dofs, DynamicVector<size_t> global_dofs_entity)
   {
-    DUNE_THROW(NotImplemented, "");
-    // if (!restricted_op_output_dofs_ || *restricted_op_output_dofs_ != output_dofs) {
-    //   restricted_op_output_dofs_ = std::make_shared<std::vector<size_t>>(output_dofs);
-    //   restricted_op_input_dofs_ = std::make_shared<std::vector<size_t>>();
-    //   restricted_op_entity_dofs_to_output_dofs_ = std::make_shared<std::vector<std::map<size_t, size_t>>>();
-    //   const auto& mapper = fv_space_->mapper();
-    //   DynamicVector<size_t> global_dofs_entity;
-    //   DynamicVector<size_t> global_dofs_neighbor;
-    //   // calculate entities corresponding to dofs in restricted operator
-    //   restricted_op_entities_ = std::make_shared<std::vector<E>>();
-    //   for (auto&& entity : elements(*grid_view_)) {
-    //     // we only want to add each entity once, but there may be several output_dofs per entity
-    //     bool entity_added = false;
-    //     mapper.global_indices(entity, global_dofs_entity);
-    //     // check if any output dof matches a dof on this entity
-    //     for (size_t ll = 0; ll < output_dofs.size(); ++ll) {
-    //       for (size_t kk = 0; kk < global_dofs_entity.size(); ++kk) {
-    //         if (global_dofs_entity[kk] == output_dofs[ll]) {
-    //           if (!entity_added) {
-    //             restricted_op_entities_->push_back(entity);
-    //             for (auto&& global_dof : global_dofs_entity)
-    //               restricted_op_input_dofs_->push_back(global_dof);
-    //             for (auto&& intersection : intersections(*grid_view_, entity)) {
-    //               if (intersection.neighbor()) {
-    //                 mapper.global_indices(intersection.outside(), global_dofs_neighbor);
-    //                 for (auto&& global_dof : global_dofs_neighbor)
-    //                   restricted_op_input_dofs_->push_back(global_dof);
-    //               }
-    //             } // intersections
-    //             restricted_op_entity_dofs_to_output_dofs_->emplace_back();
-    //             entity_added = true;
-    //           } // if (!entity_added)
-    //           restricted_op_entity_dofs_to_output_dofs_->back().insert(std::make_pair(kk, ll));
-    //         } // if (output dof found)
-    //       } // kk
-    //     } // ll
-    //   } // entities
-    // }
+    // check if any output dof matches a dof on this entity
+    fv_space_->mapper().global_indices(entity, global_dofs_entity);
+    for (size_t ll = 0; ll < output_dofs.size(); ++ll) {
+      for (size_t kk = 0; kk < global_dofs_entity.size(); ++kk) {
+        if (global_dofs_entity[kk] == output_dofs[ll]) {
+          restricted_op_output_entities_->insert(entity);
+          restricted_op_input_entities_->insert(entity);
+          for (auto&& intersection : intersections(*grid_view_, entity))
+            if (intersection.neighbor())
+              restricted_op_input_entities_->insert(intersection.outside());
+          return;
+        } // if (output dof found)
+      } // kk
+    } // ll
   }
 
-  // std::vector<size_t> restricted_op_input_dofs() const
-  // {
-  //   return *restricted_op_input_dofs_;
-  // }
+  // Mostly copied from boltzmann.hh withou
+  void prepare_restricted_operator(const std::vector<size_t>& output_dofs)
+  {
+    if (!restricted_op_output_dofs_ || *restricted_op_output_dofs_ != output_dofs) {
+      restricted_op_output_dofs_ = std::make_shared<std::vector<size_t>>(output_dofs);
+      restricted_op_input_dofs_ = std::make_shared<std::vector<size_t>>();
+      const auto& mapper = fv_space_->mapper();
+      DynamicVector<size_t> global_dofs;
+      // calculate entities corresponding to dofs in restricted operator
+      restricted_op_input_entities_ = std::make_shared<std::set<E, EntityLess<GV>>>(grid_view_->indexSet());
+      restricted_op_output_entities_ = std::make_shared<std::set<E, EntityLess<GV>>>(grid_view_->indexSet());
+      for (auto&& entity : elements(*grid_view_))
+        maybe_insert_entity(entity, output_dofs, global_dofs);
+      // find dofs corresponding to input entities
+      for (const auto& entity : *restricted_op_input_entities_) {
+        mapper.global_indices(entity, global_dofs);
+        for (const auto& global_dof : global_dofs)
+          restricted_op_input_dofs_->push_back(global_dof);
+      }
+      // if there are adjacent entities in the output_entities set, we have to make sure we do not apply the advection
+      // operator to the intersection between these entities twice
+      for (auto&& entity : *restricted_op_output_entities_) {
+        const auto inside_index = grid_view_->indexSet().index(entity);
+        (*outside_indices_to_ignore_)[inside_index] = std::set<size_t>();
+        for (auto&& intersection : intersections(*grid_view_, entity)) {
+          if (intersection.neighbor() && restricted_op_output_entities_->count(intersection.outside())) {
+            const auto outside_index = grid_view_->indexSet().index(intersection.outside());
+            if (inside_index > outside_index)
+              (*outside_indices_to_ignore_)[inside_index].insert(outside_index);
+          }
+        } // intersections
+      } // entities
+    }
+  } // ... prepare_restricted_operator(...)
 
-  // size_t restricted_op_input_dofs_size() const
-  // {
-  //   return restricted_op_input_dofs_->size();
-  // }
+  std::vector<size_t> restricted_op_input_dofs() const
+  {
+    return *restricted_op_input_dofs_;
+  }
+
+  size_t restricted_op_input_dofs_size() const
+  {
+    return restricted_op_input_dofs_->size();
+  }
 
 private:
   std::shared_ptr<const GridType> grid_;
@@ -597,10 +621,12 @@ private:
   std::shared_ptr<const AdvectionSourceSpaceType> advection_source_space_;
   std::shared_ptr<DiscreteFunctionType> u_;
   std::shared_ptr<VectorType> alpha_vec_;
+  std::shared_ptr<VectorType> tmp_fulldimensional_vec_;
   std::shared_ptr<VectorType> initial_values_alpha_;
   std::shared_ptr<DiscreteFunctionType> alpha_;
   std::shared_ptr<KineticNumericalFluxType> numerical_flux_;
   std::shared_ptr<AdvectionOperatorType> advection_operator_;
+  std::shared_ptr<AdvectionOperatorType> restricted_advection_operator_;
   std::shared_ptr<ReconstructionOperatorType> reconstruction_operator_;
   std::shared_ptr<ReconstructionAdvectionOperatorType> fv_operator_;
   std::shared_ptr<RhsOperatorType> rhs_operator_;
@@ -609,10 +635,11 @@ private:
   std::shared_ptr<DensityOperatorType> density_operator_;
   std::shared_ptr<MinDensitySetterType> min_density_setter_;
   std::shared_ptr<CombinedOperatorType> combined_operator_;
-  // std::shared_ptr<std::vector<E>> restricted_op_entities_;
-  // std::shared_ptr<std::vector<size_t>> restricted_op_input_dofs_;
-  // std::shared_ptr<std::vector<size_t>> restricted_op_output_dofs_;
-  // std::shared_ptr<std::vector<std::map<size_t, size_t>>> restricted_op_entity_dofs_to_output_dofs_;
+  std::shared_ptr<std::set<E, EntityLess<GV>>> restricted_op_input_entities_;
+  std::shared_ptr<std::set<E, EntityLess<GV>>> restricted_op_output_entities_;
+  std::shared_ptr<std::vector<size_t>> restricted_op_input_dofs_;
+  std::shared_ptr<std::vector<size_t>> restricted_op_output_dofs_;
+  std::shared_ptr<std::map<size_t, std::set<size_t>>> outside_indices_to_ignore_;
   std::shared_ptr<TimeStepperType> timestepper_;
   std::shared_ptr<AnalyticalFluxType> flux_;
   std::shared_ptr<EntropyFluxType> analytical_flux_;

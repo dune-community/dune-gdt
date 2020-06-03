@@ -70,17 +70,29 @@ public:
       const SourceSpaceType& source_space,
       const RangeSpaceType& range_space,
       const bool use_tbb = false,
-      const XT::Grid::IntersectionFilter<SGV>& periodicity_exception = XT::Grid::ApplyOn::NoIntersections<SGV>())
+      const XT::Grid::IntersectionFilter<SGV>& periodicity_exception = XT::Grid::ApplyOn::NoIntersections<SGV>(),
+      const bool restricted = false,
+      const std::map<size_t, std::set<size_t>>& outside_indices_to_ignore = {})
     : BaseType(assembly_grid_view, source_space, range_space, numerical_flux.linear(), use_tbb)
     , numerical_flux_(numerical_flux.copy())
     , periodicity_exception_(periodicity_exception.copy())
   {
-    // contributions from inner intersections
-    this->append(LocalAdvectionFvCouplingOperator<I, V, SGV, m, F, F, RGV, V>(*numerical_flux_),
-                 XT::Grid::ApplyOn::InnerIntersectionsOnce<SGV>());
-    // contributions from periodic boundaries
-    this->append(LocalAdvectionFvCouplingOperator<I, V, SGV, m, F, F, RGV, V>(*numerical_flux_),
-                 *(XT::Grid::ApplyOn::PeriodicBoundaryIntersectionsOnce<SGV>() && !(*periodicity_exception_)));
+    if (restricted) {
+      // contributions from inner intersections
+      this->append(LocalAdvectionFvCouplingOperator<I, V, SGV, m, F, F, RGV, V>(*numerical_flux_),
+                   XT::Grid::ApplyOn::InnerIntersectionsOnceMap<SGV>(outside_indices_to_ignore));
+      // contributions from periodic boundaries
+      this->append(LocalAdvectionFvCouplingOperator<I, V, SGV, m, F, F, RGV, V>(*numerical_flux_),
+                   *(XT::Grid::ApplyOn::PeriodicBoundaryIntersectionsOnceMap<SGV>(outside_indices_to_ignore)
+                     && !(*periodicity_exception_)));
+    } else {
+      // contributions from inner intersections
+      this->append(LocalAdvectionFvCouplingOperator<I, V, SGV, m, F, F, RGV, V>(*numerical_flux_),
+                   XT::Grid::ApplyOn::InnerIntersectionsOnce<SGV>());
+      // contributions from periodic boundaries
+      this->append(LocalAdvectionFvCouplingOperator<I, V, SGV, m, F, F, RGV, V>(*numerical_flux_),
+                   *(XT::Grid::ApplyOn::PeriodicBoundaryIntersectionsOnce<SGV>() && !(*periodicity_exception_)));
+    }
   }
 
   AdvectionFvOperator(ThisType&& source)
@@ -113,6 +125,11 @@ public:
                      *numerical_flux_, extrapolation, extrapolation_parameter_type),
                  filter);
     return *this;
+  }
+
+  const NumericalFluxType& numerical_flux() const
+  {
+    return *numerical_flux_;
   }
 
   /// \}
