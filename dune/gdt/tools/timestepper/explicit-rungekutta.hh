@@ -65,17 +65,17 @@ struct ButcherArrayProvider<RangeFieldType, TimeStepperMethods::explicit_euler>
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
-    return Dune::XT::Common::from_string<Dune::DynamicMatrix<RangeFieldType>>("[0]");
+    return {{0.}};
   }
 
   static Dune::DynamicVector<RangeFieldType> b()
   {
-    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>("[1]");
+    return {1.};
   }
 
   static Dune::DynamicVector<RangeFieldType> c()
   {
-    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>("[0]");
+    return {0.};
   }
 };
 
@@ -85,17 +85,17 @@ struct ButcherArrayProvider<RangeFieldType, TimeStepperMethods::explicit_rungeku
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
-    return Dune::XT::Common::from_string<Dune::DynamicMatrix<RangeFieldType>>("[0 0; 1 0]");
+    return {{0., 0.}, {1., 0.}};
   }
 
   static Dune::DynamicVector<RangeFieldType> b()
   {
-    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>("[0.5 0.5]");
+    return {0.5, 0.5};
   }
 
   static Dune::DynamicVector<RangeFieldType> c()
   {
-    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>("[0 1]");
+    return {0., 1.};
   }
 };
 
@@ -105,19 +105,17 @@ struct ButcherArrayProvider<RangeFieldType, TimeStepperMethods::explicit_rungeku
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
-    return Dune::XT::Common::from_string<Dune::DynamicMatrix<RangeFieldType>>("[0 0 0; 1 0 0; 0.25 0.25 0]");
+    return {{0., 0., 0.}, {1., 0., 0.}, {0.25, 0.25, 0.}};
   }
 
   static Dune::DynamicVector<RangeFieldType> b()
   {
-    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>(
-        "[" + Dune::XT::Common::to_string(1.0 / 6.0, 15) + " " + Dune::XT::Common::to_string(1.0 / 6.0, 15) + " "
-        + Dune::XT::Common::to_string(2.0 / 3.0, 15) + "]");
+    return {1. / 6., 1. / 6., 2. / 3.};
   }
 
   static Dune::DynamicVector<RangeFieldType> c()
   {
-    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>("[0 1 0.5]");
+    return {0., 1., 0.5};
   }
 };
 
@@ -127,20 +125,17 @@ struct ButcherArrayProvider<RangeFieldType, TimeStepperMethods::explicit_rungeku
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
-    return Dune::XT::Common::from_string<Dune::DynamicMatrix<RangeFieldType>>(
-        "[0 0 0 0; 0.5 0 0 0; 0 0.5 0 0; 0 0 1 0]");
+    return {{0., 0., 0., 0.}, {0.5, 0., 0., 0.}, {0., 0.5, 0., 0.}, {0., 0., 1., 0}};
   }
 
   static Dune::DynamicVector<RangeFieldType> b()
   {
-    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>(
-        "[" + Dune::XT::Common::to_string(1.0 / 6.0, 15) + " " + Dune::XT::Common::to_string(1.0 / 3.0, 15) + " "
-        + Dune::XT::Common::to_string(1.0 / 3.0, 15) + " " + Dune::XT::Common::to_string(1.0 / 6.0, 15) + "]");
+    return {1. / 6., 1. / 3., 1. / 3., 1. / 6.};
   }
 
   static Dune::DynamicVector<RangeFieldType> c()
   {
-    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>("[0 0.5 0.5 1]");
+    return {0., 0.5, 0.5, 1.};
   }
 };
 
