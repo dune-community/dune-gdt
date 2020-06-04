@@ -77,28 +77,22 @@ class AdaptiveButcherArrayProvider<RangeFieldType, TimeStepperMethods::bogacki_s
 public:
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
-    return Dune::XT::Common::from_string<Dune::DynamicMatrix<RangeFieldType>>(
-        "[0 0 0 0; 0.5 0 0 0; 0 0.75 0 0; " + Dune::XT::Common::to_string(2.0 / 9.0, 15) + " "
-        + Dune::XT::Common::to_string(1.0 / 3.0, 15) + " " + Dune::XT::Common::to_string(4.0 / 9.0, 15) + " 0]");
+    return {{0., 0., 0., 0.}, {1. / 2., 0., 0., 0.}, {0, 3. / 4., 0., 0.}, {2. / 9., 1. / 3., 4. / 9., 0.}};
   }
 
   static Dune::DynamicVector<RangeFieldType> b_1()
   {
-    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>(
-        "[" + Dune::XT::Common::to_string(2.0 / 9.0, 15) + " " + Dune::XT::Common::to_string(1.0 / 3.0, 15) + " "
-        + Dune::XT::Common::to_string(4.0 / 9.0, 15) + " 0]");
+    return {2. / 9., 1. / 3., 4. / 9., 0.};
   }
 
   static Dune::DynamicVector<RangeFieldType> b_2()
   {
-    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>(
-        "[" + Dune::XT::Common::to_string(7.0 / 24.0, 15) + " " + Dune::XT::Common::to_string(1.0 / 4.0, 15) + " "
-        + Dune::XT::Common::to_string(1.0 / 3.0, 15) + " " + Dune::XT::Common::to_string(1.0 / 8.0, 15) + "]");
+    return {7. / 24., 1. / 4., 1. / 3., 1. / 8.};
   }
 
   static Dune::DynamicVector<RangeFieldType> c()
   {
-    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>("[0.5 0.75 1 0]");
+    return {0, 0.5, 0.75, 1.};
   }
 
   // lower one of the two orders
@@ -112,42 +106,28 @@ class AdaptiveButcherArrayProvider<RangeFieldType, TimeStepperMethods::dormand_p
 public:
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
-    return Dune::XT::Common::from_string<Dune::DynamicMatrix<RangeFieldType>>(
-        std::string("[0 0 0 0 0 0 0;") + " 0.2 0 0 0 0 0 0;" + " 0.075 0.225 0 0 0 0 0;" + " "
-        + Dune::XT::Common::to_string(44.0 / 45.0, 15) + " " + Dune::XT::Common::to_string(-56.0 / 15.0, 15) + " "
-        + Dune::XT::Common::to_string(32.0 / 9.0, 15) + " 0 0 0 0;" + " "
-        + Dune::XT::Common::to_string(19372.0 / 6561.0, 15) + " " + Dune::XT::Common::to_string(-25360.0 / 2187.0, 15)
-        + " " + Dune::XT::Common::to_string(64448.0 / 6561.0, 15) + " "
-        + Dune::XT::Common::to_string(-212.0 / 729.0, 15) + " 0 0 0;" + " "
-        + Dune::XT::Common::to_string(9017.0 / 3168.0, 15) + " " + Dune::XT::Common::to_string(-355.0 / 33.0, 15) + " "
-        + Dune::XT::Common::to_string(46732.0 / 5247.0, 15) + " " + Dune::XT::Common::to_string(49.0 / 176.0, 15) + " "
-        + Dune::XT::Common::to_string(-5103.0 / 18656.0, 15) + " 0 0;" + " "
-        + Dune::XT::Common::to_string(35.0 / 384.0, 15) + " 0 " + Dune::XT::Common::to_string(500.0 / 1113.0, 15) + " "
-        + Dune::XT::Common::to_string(125.0 / 192.0, 15) + " " + Dune::XT::Common::to_string(-2187.0 / 6784.0, 15) + " "
-        + Dune::XT::Common::to_string(11.0 / 84.0, 15) + " 0]");
+    return {{0., 0., 0., 0., 0., 0., 0.},
+            {1. / 5., 0., 0., 0., 0., 0., 0.},
+            {3. / 40., 9. / 40., 0., 0., 0., 0., 0.},
+            {44. / 45., -56. / 15., 32. / 9., 0., 0., 0., 0.},
+            {19372. / 6561., -25360. / 2187., 64448. / 6561., -212. / 729., 0., 0., 0.},
+            {9017. / 3168., -355. / 33., 46732. / 5247., 49. / 176., -5103. / 18656., 0., 0.},
+            {35. / 384., 0., 500. / 1113., 125. / 192., -2187. / 6784., 11. / 84., 0.}};
   }
 
   static Dune::DynamicVector<RangeFieldType> b_1()
   {
-    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>(
-        "[" + Dune::XT::Common::to_string(35.0 / 384.0, 15) + " 0 " + Dune::XT::Common::to_string(500.0 / 1113.0, 15)
-        + " " + Dune::XT::Common::to_string(125.0 / 192.0, 15) + " " + Dune::XT::Common::to_string(-2187.0 / 6784.0, 15)
-        + " " + Dune::XT::Common::to_string(11.0 / 84.0, 15) + " 0]");
+    return {35. / 384., 0., 500. / 1113., 125. / 192., -2187. / 6784., 11. / 84., 0.};
   }
 
   static Dune::DynamicVector<RangeFieldType> b_2()
   {
-    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>(
-        "[" + Dune::XT::Common::to_string(5179.0 / 57600.0, 15) + " 0 "
-        + Dune::XT::Common::to_string(7571.0 / 16695.0, 15) + " " + Dune::XT::Common::to_string(393.0 / 640.0, 15) + " "
-        + Dune::XT::Common::to_string(-92097.0 / 339200.0, 15) + " " + Dune::XT::Common::to_string(187.0 / 2100.0, 15)
-        + " " + Dune::XT::Common::to_string(1.0 / 40.0, 15) + "]");
+    return {5179. / 57600., 0., 7571. / 16695., 393. / 640., -92097. / 339200., 187. / 2100., 1. / 40};
   }
 
   static Dune::DynamicVector<RangeFieldType> c()
   {
-    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>(
-        "[0 0.2 0.3 0.8 " + Dune::XT::Common::to_string(8.0 / 9.0, 15) + " 1 1]");
+    return {0., 1. / 5., 3. / 10., 4. / 5., 8. / 9., 1., 1.};
   }
 
   // lower one of the two orders
