@@ -182,6 +182,7 @@ struct VectorExporter
         .staticmethod("create_from_buffer")
         .def("__eq__", &Vec::operator==)
         .def("size", &Vec::size)
+        .def("__len__", &Vec::size)
         .def("add_to_entry", &Vec::add_to_entry)
         .def("__setitem__", &Vec::set_entry)
         .def("__getitem__", &Vec::get_entry)

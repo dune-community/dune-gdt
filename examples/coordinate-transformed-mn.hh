@@ -263,10 +263,14 @@ public:
 
   VectorType apply_operator(const VectorType& source) const
   {
-    VectorType ret(source);
-    static const XT::Common::Parameter unused_parameter;
-    combined_operator_->apply(source, ret, unused_parameter);
-    return ret;
+    try {
+      VectorType ret(source);
+      static const XT::Common::Parameter unused_parameter;
+      combined_operator_->apply(source, ret, unused_parameter);
+      return ret;
+    } catch (const Dune::MathError&) {
+      return VectorType{};
+    }
   }
 
   VectorType apply_restricted_operator(const VectorType& source) const
@@ -354,9 +358,11 @@ public:
     };
     rhs_operator_ = std::make_shared<RhsOperatorType>(*grid_view_, *fv_space_, *fv_space_, false, false);
     rhs_operator_->append(GenericLocalElementOperator<VectorType, GV, dimRange>(rhs_func));
+    combined_operator_ =
+        std::make_shared<CombinedOperatorType>(*density_operator_, *fv_operator_, *rhs_operator_, *hessian_inverter_);
   }
 
-  void create_rhs_operator(const std::vector<double>& parameters)
+  void create_combined_operator(const std::vector<double>& parameters)
   {
     return set_parameters(parameters);
   }
@@ -369,6 +375,15 @@ public:
   bool finished() const
   {
     return XT::Common::FloatCmp::ge(timestepper_->current_time(), t_end_);
+  }
+
+  void visualize(const VectorType& alpha_vec, const std::string& prefix)
+  {
+    const ConstDiscreteFunctionType alpha(*fv_space_, alpha_vec, "alpha");
+    const auto visualizer = std::make_unique<XT::Functions::GenericVisualizer<dimRange, 1, double>>(
+        1,
+        [&](const int /*comp*/, const auto& val) { return basis_functions_->density(analytical_flux_->get_u(val)); });
+    alpha.visualize(*grid_view_, prefix, false, VTK::appendedraw, {}, *visualizer);
   }
 
   void init(const std::string output_dir,
@@ -420,7 +435,6 @@ public:
       std::cout << " done " << std::endl;
       std::cout << "Transforming initial u values to alpha...";
     }
-    initial_values_alpha_ = std::make_shared<VectorType>(*alpha_vec_);
     const auto u_local_func = u_->local_discrete_function();
     const auto alpha_local_func = alpha_->local_discrete_function();
     const auto entropy_flux_local_func = entropy_flux->derived_local_function();
@@ -435,6 +449,7 @@ public:
       for (size_t ii = 0; ii < dimRange; ++ii)
         alpha_local_func->dofs().set_entry(ii, alpha_local[ii]);
     }
+    initial_values_alpha_ = std::make_shared<VectorType>(*alpha_vec_);
     if (!silent_)
       std::cout << " done " << std::endl;
 
@@ -472,9 +487,7 @@ public:
     MasslumpedOperatorType masslumped_operator(fv_operator, problem, dx, boundary_fluxes);
 #else
     hessian_inverter_ = std::make_shared<HessianInverterType>(*analytical_flux_, *fv_space_);
-    create_rhs_operator(parameters);
-    combined_operator_ =
-        std::make_shared<CombinedOperatorType>(*density_operator_, *fv_operator_, *rhs_operator_, *hessian_inverter_);
+    create_combined_operator(parameters);
 #endif
 
     // boundary treatment
@@ -610,6 +623,11 @@ public:
   size_t restricted_op_input_dofs_size() const
   {
     return restricted_op_input_dofs_->size();
+  }
+
+  double dx() const
+  {
+    return dx_;
   }
 
 private:

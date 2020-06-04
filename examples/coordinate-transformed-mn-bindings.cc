@@ -28,6 +28,7 @@
       .def("apply_operator", &SolverName::apply_operator)                                                              \
       .def("apply_restricted_operator", &SolverName::apply_restricted_operator)                                        \
       .def("current_time", &SolverName::current_time)                                                                  \
+      .def("dx", &SolverName::dx)                                                                                      \
       .def("finished", &SolverName::finished)                                                                          \
       .def("get_initial_values", &SolverName::get_initial_values)                                                      \
       .def("len_source_dofs", &SolverName::restricted_op_input_dofs_size)                                              \
@@ -40,7 +41,8 @@
       .def("solve", &SolverName::solve)                                                                                \
       .def("source_dofs", &SolverName::restricted_op_input_dofs)                                                       \
       .def("t_end", &SolverName::t_end)                                                                                \
-      .def("u_from_alpha", &SolverName::u_from_alpha)
+      .def("u_from_alpha", &SolverName::u_from_alpha)                                                                  \
+      .def("visualize", &SolverName::visualize)
 
 BOOST_PYTHON_MODULE(coordinatetransformedmn)
 {
