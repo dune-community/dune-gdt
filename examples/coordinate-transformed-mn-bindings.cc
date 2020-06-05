@@ -34,7 +34,6 @@
       .def("len_source_dofs", &SolverName::restricted_op_input_dofs_size)                                              \
       .def("linear", &SolverName::linear)                                                                              \
       .def("prepare_restricted_operator", &SolverName::prepare_restricted_operator)                                    \
-      .def("reset", &SolverName::reset)                                                                                \
       .def("set_current_solution", &SolverName::set_current_solution)                                                  \
       .def("set_current_time", &SolverName::set_current_time)                                                          \
       .def("set_parameters", &SolverName::set_parameters)                                                              \

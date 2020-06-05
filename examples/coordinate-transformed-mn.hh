@@ -360,6 +360,8 @@ public:
     rhs_operator_->append(GenericLocalElementOperator<VectorType, GV, dimRange>(rhs_func));
     combined_operator_ =
         std::make_shared<CombinedOperatorType>(*density_operator_, *fv_operator_, *rhs_operator_, *hessian_inverter_);
+    timestepper_ = std::make_shared<TimeStepperType>(
+        *combined_operator_, *min_density_setter_, *analytical_flux_, *alpha_, true, 1., atol_, rtol_);
   }
 
   void create_combined_operator(const std::vector<double>& parameters)
@@ -550,15 +552,6 @@ public:
         u_local_func->dofs().set_entry(ii, u_local[ii]);
     }
     return u.dofs().vector();
-  }
-
-  void reset()
-  {
-    *alpha_vec_ = get_initial_values();
-    alpha_ = std::make_shared<DiscreteFunctionType>(*fv_space_, *alpha_vec_, "alpha");
-    timestepper_ = std::make_shared<TimeStepperType>(
-        *combined_operator_, *min_density_setter_, *analytical_flux_, *alpha_, true, 1., atol_, rtol_);
-    TimeStepperType::reset_static_variables();
   }
 
   void
