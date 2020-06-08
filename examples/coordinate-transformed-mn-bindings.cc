@@ -31,8 +31,11 @@
       .def("dx", &SolverName::dx)                                                                                      \
       .def("finished", &SolverName::finished)                                                                          \
       .def("get_initial_values", &SolverName::get_initial_values)                                                      \
+      .def("initial_dt", &SolverName::initial_dt)                                                                      \
       .def("len_source_dofs", &SolverName::restricted_op_input_dofs_size)                                              \
       .def("linear", &SolverName::linear)                                                                              \
+      .def("next_n_steps", &SolverName::next_n_steps)                                                                  \
+      .def("num_timesteps", &SolverName::num_timesteps)                                                                \
       .def("prepare_restricted_operator", &SolverName::prepare_restricted_operator)                                    \
       .def("set_current_solution", &SolverName::set_current_solution)                                                  \
       .def("set_current_time", &SolverName::set_current_time)                                                          \

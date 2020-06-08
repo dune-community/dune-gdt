@@ -15,9 +15,11 @@
 #endif
 
 #include <chrono>
+#include <tuple>
 
 #include <dune/xt/common/string.hh>
 #include <dune/xt/common/exceptions.hh>
+#include <dune/xt/common/timings.hh>
 #include <dune/xt/test/gtest/gtest.h>
 
 #include <dune/xt/grid/information.hh>
@@ -50,6 +52,8 @@
 #include <dune/gdt/tools/timestepper/matrix-exponential-kinetic-isotropic.hh>
 
 #include <dune/gdt/test/momentmodels/kineticequation.hh>
+
+#include <boost/python/tuple.hpp>
 
 using namespace Dune;
 using namespace Dune::GDT;
@@ -191,8 +195,10 @@ public:
     return false;
   }
 
-  // First vector in returned pair contains the time points, the second vector contains the solution vectors
-  std::pair<std::vector<double>, std::vector<VectorType>> solve()
+  // First vector in returned pair contains the time points, the second vector contains the solution vectors.
+  // If do_not_save is true, no vectors are saved (returned vectors are empty). Used to determine number of timesteps in
+  // the adaptive scheme before solving again doing the HAPOD.
+  boost::python::tuple solve(const bool store_operator_evaluations = false, const bool do_not_save = false)
   {
     if (!silent_)
       std::cout << "Solving... " << std::endl;
@@ -203,14 +209,17 @@ public:
     const auto u_stringifier = basis_functions_->stringifier();
     const auto stringifier = [&](const RangeType& val) { return u_stringifier(analytical_flux_->get_u(val)); };
     typename TimeStepperType::DiscreteSolutionType solution;
+    std::vector<VectorType> nonlinear_snapshots;
+    if (store_operator_evaluations)
+      timestepper_->set_operator_evaluations(&nonlinear_snapshots);
     timestepper_->solve(t_end_,
                         initial_dt_,
                         num_save_steps_,
                         silent_ ? size_t(0) : size_t(-1),
-                        true,
-                        visualize_solution_,
+                        do_not_save ? false : true,
+                        do_not_save ? false : visualize_solution_,
                         false,
-                        DXTC_CONFIG_GET("write_txt", false),
+                        do_not_save ? false : DXTC_CONFIG_GET("write_txt", false),
                         false,
                         true,
                         filename_,
@@ -222,7 +231,7 @@ public:
     std::chrono::duration<double> time_diff = end_time - begin_time;
     if (!silent_)
       std::cout << "Solving took: " << XT::Common::to_string(time_diff.count(), 15) << " s" << std::endl;
-    if (visualize_solution_)
+    if (!do_not_save && visualize_solution_)
       timestepper_->write_timings(filename_);
 
     // const auto interval_length = t_end_ / num_intervals;
@@ -233,33 +242,44 @@ public:
     //   const auto end_it = solution.upper_bound(right_boundary);
     //   const auto num_elements_in_interval = std::distance(begin_it, end_it);
     //   if (num_elements_in_interval > max_vectors_per_interval) {
-    std::pair<std::vector<double>, std::vector<VectorType>> ret;
+    std::vector<double> times;
+    std::vector<VectorType> snapshots;
     for (auto it = solution.begin(); it != solution.end();) {
-      ret.first.push_back(it->first);
-      ret.second.push_back(it->second.dofs().vector());
+      times.push_back(it->first);
+      snapshots.push_back(it->second.dofs().vector());
       it = solution.erase(it);
     }
-    return ret;
+    return boost::python::make_tuple(times, snapshots, nonlinear_snapshots);
   }
 
-  //   std::vector<VectorType> next_n_timesteps(const size_t n) const
-  //   {
-  //     if (!silent_)
-  //       std::cout << "Calculating next " << XT::Common::to_string(n) << " time steps... " << std::endl;
-  //     DXTC_TIMINGS.start("fv.solve");
-  //     SolutionType solution;
-  //     if (linear_)
-  //       pn_timestepper_->next_n_steps(n, t_end_, dt_, !silent_, with_half_steps, solution);
-  //     else
-  //       timestepper_->next_n_steps(n, t_end_, dt_, !silent_, with_half_steps, solution);
-  //     DXTC_TIMINGS.stop("fv.solve");
-  //     if (!silent_)
-  //       std::cout << "Solving took: " << DXTC_TIMINGS.walltime("fv.solve") / 1000.0 << "s" << std::endl;
-  //     std::vector<VectorType> ret;
-  //     for (const auto& pair : solution)
-  //       ret.push_back(pair.second.dofs().vector());
-  //     return ret;
-  //   }
+  // First vector contains the time points, the second vector contains the solution vectors, third one contains the
+  // operator evaluations, the double is for the time step prediction in the last step (should be provided as initial_dt
+  // if next_n_steps is called again afterwards)
+  boost::python::tuple
+  next_n_steps(const size_t n, const double initial_dt, const bool store_operator_evaluations = false) const
+  {
+    if (!silent_)
+      std::cout << "Calculating next " << XT::Common::to_string(n) << " time steps... " << std::endl;
+    DXTC_TIMINGS.start("fv.solve");
+    typename TimeStepperType::DiscreteSolutionType solution;
+    std::vector<double> times;
+    std::vector<VectorType> snapshots;
+    std::vector<VectorType> nonlinear_snapshots;
+    if (store_operator_evaluations)
+      timestepper_->set_operator_evaluations(&nonlinear_snapshots);
+    const double next_dt = timestepper_->next_n_steps(n, t_end_, initial_dt, !silent_, false, solution);
+    DXTC_TIMINGS.stop("fv.solve");
+    if (!silent_) {
+      std::cout << "Solving took: " << DXTC_TIMINGS.walltime("fv.solve") / 1000.0 << "s" << std::endl;
+      std::cout << "Current time: " << timestepper_->current_time() << std::endl;
+    }
+    for (auto it = solution.begin(); it != solution.end();) {
+      times.push_back(it->first);
+      snapshots.push_back(it->second.dofs().vector());
+      it = solution.erase(it);
+    }
+    return boost::python::make_tuple(times, snapshots, nonlinear_snapshots, next_dt);
+  }
 
   VectorType apply_operator(const VectorType& source) const
   {
@@ -621,6 +641,16 @@ public:
   double dx() const
   {
     return dx_;
+  }
+
+  double initial_dt() const
+  {
+    return initial_dt_;
+  }
+
+  size_t num_timesteps() const
+  {
+    return timestepper_->num_timesteps();
   }
 
 private:

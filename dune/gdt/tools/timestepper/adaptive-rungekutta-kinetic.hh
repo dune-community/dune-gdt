@@ -41,19 +41,18 @@ template <class OperatorImp,
           TimeStepperMethods method = TimeStepperMethods::dormand_prince>
 class KineticAdaptiveRungeKuttaTimeStepper : public TimeStepperInterface<DiscreteFunctionImp>
 {
-  typedef TimeStepperInterface<DiscreteFunctionImp> BaseType;
-  typedef typename internal::AdaptiveButcherArrayProvider<typename BaseType::RangeFieldType, method>
-      ButcherArrayProviderType;
+  using BaseType = TimeStepperInterface<DiscreteFunctionImp>;
+  using ButcherArrayProviderType =
+      typename internal::AdaptiveButcherArrayProvider<typename BaseType::RangeFieldType, method>;
 
 public:
-  typedef OperatorImp OperatorType;
-  typedef DiscreteFunctionImp DiscreteFunctionType;
-
-  typedef typename DiscreteFunctionType::DomainFieldType DomainFieldType;
-  typedef typename DiscreteFunctionType::RangeFieldType RangeFieldType;
-  typedef typename Dune::DynamicMatrix<RangeFieldType> MatrixType;
-  typedef typename Dune::DynamicVector<RangeFieldType> VectorType;
-  typedef typename std::vector<std::pair<RangeFieldType, DiscreteFunctionType>> SolutionType;
+  using OperatorType = OperatorImp;
+  using DiscreteFunctionType = DiscreteFunctionImp;
+  using typename BaseType::DiscreteSolutionType;
+  using DomainFieldType = typename DiscreteFunctionType::DomainFieldType;
+  using RangeFieldType = typename DiscreteFunctionType::RangeFieldType;
+  using MatrixType = typename Dune::DynamicMatrix<RangeFieldType>;
+  using VectorType = typename Dune::DynamicVector<RangeFieldType>;
   static constexpr size_t q = ButcherArrayProviderType::q;
   using EntropyFluxType = EntropyFluxImp;
   using BaseType::dimRange;
@@ -109,6 +108,7 @@ public:
     , c_(c)
     , b_diff_(b_2_ - b_1_)
     , num_stages_(A_.rows())
+    , initial_values_evaluated_(false)
   {
     assert(Dune::XT::Common::FloatCmp::ge(atol_, 0.0));
     assert(Dune::XT::Common::FloatCmp::ge(rtol_, 0.0));
@@ -320,10 +320,43 @@ public:
       last_stage_of_previous_step_ = std::make_unique<DiscreteFunctionType>(alpha_n);
     last_stage_of_previous_step_->dofs().vector() = stages_k_[num_stages_ - 1].dofs().vector();
 
+    if (operator_evaluations_) {
+      for (size_t ii = first_stage_to_compute; ii < num_stages_; ++ii)
+        operator_evaluations_->push_back(stages_k_[ii].dofs().vector());
+    }
+
     t += actual_dt;
 
     return actual_dt * time_step_scale_factor;
   } // ... step(...)
+
+  RangeFieldType next_n_steps(const size_t n,
+                              const RangeFieldType t_end,
+                              const RangeFieldType initial_dt,
+                              const bool /*output_progress*/,
+                              const bool /*with_half_steps*/,
+                              DiscreteSolutionType& sol) override final
+  {
+    RangeFieldType dt = initial_dt;
+    RangeFieldType t = current_time();
+    assert(XT::Common::FloatCmp::ge(t_end - t, 0.0));
+    size_t time_step_counter = 0;
+
+    if (!initial_values_evaluated_ && XT::Common::FloatCmp::eq(t, 0.0)) {
+      sol.insert(sol.end(), std::make_pair(t, current_solution()));
+      ++time_step_counter;
+      initial_values_evaluated_ = true;
+    }
+
+    while (XT::Common::FloatCmp::lt(t, t_end) && time_step_counter < n) {
+      RangeFieldType max_dt = XT::Common::FloatCmp::ge(t + dt, t_end) ? t_end - t : dt;
+      dt = step(dt, max_dt);
+      t = current_time();
+      sol.insert(sol.end(), std::make_pair(t, current_solution()));
+      ++time_step_counter;
+    }
+    return dt;
+  } // ... next_n_steps(...)
 
 private:
   bool check_for_nan(const RangeFieldType* vec1, const RangeFieldType* vec2, const size_t num_dofs)
@@ -354,6 +387,8 @@ private:
   std::unique_ptr<DiscreteFunctionType> last_stage_of_previous_step_;
   bool first_same_as_last_;
   XT::Common::Parameter op_param_;
+  bool initial_values_evaluated_;
+  using BaseType::operator_evaluations_;
 }; // class KineticAdaptiveRungeKuttaTimeStepper
 
 
