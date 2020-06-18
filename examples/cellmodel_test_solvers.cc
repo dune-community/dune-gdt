@@ -42,8 +42,6 @@ int main(int argc, char* argv[])
     // timestepping
     double t_end = config.template get<double>("fem.t_end", 340.);
     double dt = config.template get<double>("fem.dt", 0.005);
-    const bool linearize = config.template get<bool>("problem.linearize", false);
-    std::cout << "linearize: " << linearize << std::endl;
 
     // problem parameters
     double L = config.template get<double>("problem.L", 1e-6);
@@ -70,7 +68,7 @@ int main(int argc, char* argv[])
     std::cout << "Ca: " << Ca << ", Be: " << Be << ", Pa: " << Pa << ", Fa: " << Fa << ", Re: " << Re << std::endl;
 
     // output
-    std::string filename = config.get("output.filename", "cellmodel") + (linearize ? "_linearized" : "");
+    std::string filename = config.get("output.filename", "cellmodel");
     bool subsampling = config.get<bool>("output.subsampling", true);
     // a negative value of write step is interpreted as "write all steps"
     double write_step = config.template get<double>("output.write_step", -1.);
@@ -118,8 +116,7 @@ int main(int argc, char* argv[])
                                  gmres_verbose,
                                  inner_gmres_reduction,
                                  inner_gmres_maxit,
-                                 gmres_verbose,
-                                 linearize);
+                                 gmres_verbose);
     CellModelSolver model_solver2(testcase,
                                   t_end,
                                   num_elements_x,
@@ -147,8 +144,7 @@ int main(int argc, char* argv[])
                                   gmres_verbose,
                                   inner_gmres_reduction,
                                   inner_gmres_maxit,
-                                  gmres_verbose,
-                                  linearize);
+                                  gmres_verbose);
     std::chrono::duration<double> ref_time(0.);
     std::chrono::duration<double> time(0.);
     auto begin = std::chrono::steady_clock::now();

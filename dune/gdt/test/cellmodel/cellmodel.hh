@@ -118,8 +118,7 @@ struct CellModelSolver
       const int outer_verbose = 0,
       const double inner_reduction = 1e-3,
       const int inner_maxit = 10,
-      const int inner_verbose = 0,
-      const bool linearize = false);
+      const int inner_verbose = 0);
 
   size_t num_cells() const;
 
@@ -562,12 +561,11 @@ struct CellModelSolver
 
   // error norm used in orientation field Newton iteration
   // TODO: use appropriate norm
-  double ofield_residual_norm(const VectorType& residual, double l2_ref_P, double l2_ref_Pnat) const;
+  double ofield_residual_norm(const VectorType& residual) const;
 
   // error norm used in phase field Newton iteration
   // TODO: use appropriate norm
-  double
-  pfield_residual_norm(const VectorType& residual, double l2_ref_phi, double l2_ref_phinat, double l2_ref_mu) const;
+  double pfield_residual_norm(const VectorType& residual) const;
 
   R B_func(const size_t kk, const DomainType& x_local, const XT::Common::Parameter& param);
 
@@ -599,7 +597,6 @@ struct CellModelSolver
   double In_;
   const double vol_domain_;
   const size_t num_cells_;
-  const bool linearize_;
   // Grid and grid views
   XT::Grid::GridProvider<G> grid_;
   const GV nonperiodic_grid_view_;

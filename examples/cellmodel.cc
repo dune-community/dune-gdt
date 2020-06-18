@@ -42,9 +42,6 @@ int main(int argc, char* argv[])
     // timestepping
     double t_end = config.template get<double>("fem.t_end", 340.);
     double dt = config.template get<double>("fem.dt", 0.005);
-    const bool linearize = config.template get<bool>("problem.linearize", false);
-    if (linearize)
-      DUNE_THROW(Dune::NotImplemented, "Broken atm");
     const size_t pol_order = config.template get<size_t>("fem.degree", 2, 0, 0);
 
     // problem parameters
@@ -52,9 +49,9 @@ int main(int argc, char* argv[])
     double U = config.template get<double>("problem.U", 1e-6);
     double rho = config.template get<double>("problem.rho", 1.e3);
     double eta = config.template get<double>("problem.eta", 2.e3);
-    double sigma = config.template get<double>("problem.sigma", 0.0188);
-    double b_N = config.template get<double>("problem.b_N", 1.26e-14);
-    double k = config.template get<double>("problem.k", 2.e-9);
+    // double sigma = config.template get<double>("problem.sigma", 0.0188);
+    // double b_N = config.template get<double>("problem.b_N", 1.26e-14);
+    // double k = config.template get<double>("problem.k", 2.e-9);
     double xi = config.template get<double>("problem.xi", 1.1);
     double eta_rot = config.template get<double>("problem.eta_rot", 3.3e3);
     double zeta = config.template get<double>("problem.zeta", 2.e3);
@@ -75,7 +72,7 @@ int main(int argc, char* argv[])
     std::cout << "Ca: " << Ca << ", Be: " << Be << ", Pa: " << Pa << ", Fa: " << Fa << ", Re: " << Re << std::endl;
 
     // output
-    std::string filename = config.get("output.filename", "cellmodel") + (linearize ? "_linearized" : "");
+    std::string filename = config.get("output.filename", "cellmodel");
     bool subsampling = config.get<bool>("output.subsampling", false);
     // a negative value of write step is interpreted as "write all steps"
     double write_step = config.template get<double>("output.write_step", -1.);
@@ -121,8 +118,7 @@ int main(int argc, char* argv[])
                                  gmres_verbose,
                                  inner_gmres_reduction,
                                  inner_gmres_maxit,
-                                 gmres_verbose,
-                                 linearize);
+                                 gmres_verbose);
 
     auto begin = std::chrono::steady_clock::now();
     auto result = model_solver.solve(true, write_step, filename, subsampling);

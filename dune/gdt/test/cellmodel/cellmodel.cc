@@ -13,6 +13,8 @@
 #include <dune/istl/operators.hh>
 #include <dune/istl/solvers.hh>
 
+#include <dune/xt/common/numeric.hh>
+
 #include <dune/xt/la/container/common.hh>
 #include <dune/xt/la/container/eigen.hh>
 #include <dune/xt/la/container/matrix-view.hh>
@@ -139,8 +141,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
                                  const int outer_verbose,
                                  const double inner_reduction,
                                  const int inner_maxit,
-                                 const int inner_verbose,
-                                 const bool linearize)
+                                 const int inner_verbose)
   : lower_left_(get_lower_left(testcase))
   , upper_right_(get_upper_right(testcase))
   , t_end_(t_end)
@@ -162,7 +163,6 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   , In_(In)
   , vol_domain_((upper_right_[0] - lower_left_[0]) * (upper_right_[1] - lower_left_[1]))
   , num_cells_(get_num_cells(testcase))
-  , linearize_(linearize)
   // do a global refine once, this makes simplicial grids look more symmetric
   , grid_(XT::Grid::make_cube_grid<G>(lower_left_, upper_right_, {num_elements_x, num_elements_y}, 1))
   , nonperiodic_grid_view_(grid_.leaf_view())
@@ -307,8 +307,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   std::cout << dx_ << ", " << epsilon_ << std::endl;
 
   /************************** create and project initial values*****************************************
-   ************************** we only need initial values for P and phi ********************************
-   ************************** mu_initial is only needed if linearization is used ***********************/
+   ************************** we only need initial values for P and phi *******************************/
 
   std::shared_ptr<const XT::Functions::FunctionInterface<d, d>> u_initial_func;
   std::vector<std::shared_ptr<const XT::Functions::FunctionInterface<d>>> phi_initial_funcs;
@@ -330,15 +329,6 @@ CellModelSolver::CellModelSolver(const std::string testcase,
           return std::tanh(r(x) / (std::sqrt(2.) * epsilon));
         },
         /*name=*/"phi_initial"));
-    mu_initial_funcs.emplace_back(std::make_shared<const XT::Functions::GenericFunction<d>>(
-        50,
-        /*evaluate=*/
-        [& phi_in = phi_initial_funcs[0], epsilon = epsilon_](const auto& x, const auto& param) {
-          // TODO: add approximation of laplacian term
-          const auto phi = phi_in->evaluate(x, param);
-          return 1. / epsilon * (std::pow(phi, 3) - phi);
-        },
-        /*name=*/"mu_initial"));
 
     // initial condition for P is (1,0) + \delta where \delta(x) is vector-valued with random entries following an
     // uniform distribution on the interval [-0.05, 0.05]; restrict to cytoplasm by multiplying with (\phi + 1)/2
@@ -369,31 +359,13 @@ CellModelSolver::CellModelSolver(const std::string testcase,
           return std::tanh(r(x) / (std::sqrt(2.) * epsilon));
         },
         /*name=*/"phi1_initial");
-    const XT::Functions::GenericFunction<d> mu1_initial(
-        50,
-        /*evaluate=*/
-        [phi1_initial, epsilon = epsilon_](const auto& x, const auto& param) {
-          // TODO: add approximation of laplacian term
-          const auto phi = phi1_initial.evaluate(x, param);
-          return 1. / epsilon * (std::pow(phi, 3) - phi);
-        },
-        /*name=*/"mu1_initial");
     const XT::Functions::GenericFunction<d> phi2_initial(
         50,
         /*evaluate=*/
         [r = r2, epsilon = epsilon_](const auto& x, const auto& /*param*/) {
           return std::tanh(r(x) / (std::sqrt(2.) * epsilon));
         },
-        /*name=*/"phi1_initial");
-    const XT::Functions::GenericFunction<d> mu2_initial(
-        50,
-        /*evaluate=*/
-        [phi2_initial, epsilon = epsilon_](const auto& x, const auto& param) {
-          // TODO: add approximation of laplacian term
-          const auto phi = phi2_initial.evaluate(x, param);
-          return 1. / epsilon * (std::pow(phi, 3) - phi);
-        },
-        /*name=*/"mu1_initial");
+        /*name=*/"phi2_initial");
 
     // initial condition for P is (1,0) + \delta where \delta(x) is vector-valued with random entries following an
     // uniform distribution on the interval [-0.05, 0.05]; restrict to cytoplasm by multiplying with (\phi + 1)/2
@@ -555,7 +527,7 @@ size_t CellModelSolver::num_cells() const
 
 bool CellModelSolver::linear() const
 {
-  return linearize_;
+  return false;
 }
 
 bool CellModelSolver::finished() const
@@ -1202,13 +1174,13 @@ void CellModelSolver::get_unique_deim_dofs(std::vector<size_t>& unique_range_dof
   std::sort(unique_range_dofs.begin(), unique_range_dofs.end());
   unique_range_dofs.erase(std::unique(unique_range_dofs.begin(), unique_range_dofs.end()), unique_range_dofs.end());
   // check that all dofs are valid
-  DUNE_THROW_IF(!std::transform_reduce(unique_range_dofs.begin(),
-                                       unique_range_dofs.end(),
-                                       true,
-                                       [](const bool& a, const bool& b) { return a && b; },
-                                       [size = max_dof_value](const size_t& a) { return a < size; }),
-                Dune::XT::Common::Exceptions::wrong_input_given,
-                "At least one of the given output DoFs is too large!");
+  DEBUG_THROW_IF(!XT::Common::transform_reduce(unique_range_dofs.begin(),
+                                               unique_range_dofs.end(),
+                                               true,
+                                               [](const bool& a, const bool& b) { return a && b; },
+                                               [size = max_dof_value](const size_t& a) { return a < size; }),
+                 Dune::XT::Common::Exceptions::wrong_input_given,
+                 "At least one of the given output DoFs is too large!");
 }
 
 void CellModelSolver::get_deim_source_dofs(std::vector<size_t>& source_dofs,
@@ -1231,13 +1203,13 @@ void CellModelSolver::sort_and_remove_duplicates_in_deim_source_dofs(
     std::sort(source_dofs[ii].begin(), source_dofs[ii].end());
     source_dofs[ii].erase(std::unique(source_dofs[ii].begin(), source_dofs[ii].end()), source_dofs[ii].end());
     // check that dofs are valid
-    DUNE_THROW_IF(!std::transform_reduce(source_dofs[ii].begin(),
-                                         source_dofs[ii].end(),
-                                         true,
-                                         [](const bool& a, const bool& b) { return a && b; },
-                                         [size = sizes[ii]](const size_t& a) { return a < size; }),
-                  Dune::XT::Common::Exceptions::wrong_input_given,
-                  "At least one of the given output DoFs is too large!");
+    DEBUG_THROW_IF(!XT::Common::transform_reduce(source_dofs[ii].begin(),
+                                                 source_dofs[ii].end(),
+                                                 true,
+                                                 [](const bool& a, const bool& b) { return a && b; },
+                                                 [size = sizes[ii]](const size_t& a) { return a < size; }),
+                   Dune::XT::Common::Exceptions::wrong_input_given,
+                   "At least one of the given output DoFs is too large!");
   }
 }
 
@@ -1491,157 +1463,147 @@ CellModelSolver::VectorType CellModelSolver::apply_inverse_stokes_operator() con
 // y_guess is the initial guess for the Newton iteration
 CellModelSolver::VectorType CellModelSolver::apply_inverse_ofield_operator(const VectorType& y_guess, const size_t cell)
 {
-  if (linearize_) {
-    return ofield_solver_.apply(ofield_rhs_vector_, cell);
-  } else {
+  // *********** Newton ******************************
+  const auto tol = 1e-10;
+  const auto max_iter = 200;
+  const auto max_dampening_iter = 1000;
 
-    // *********** Newton ******************************
-    const auto tol = 1e-10;
-    const auto max_iter = 200;
-    const auto max_dampening_iter = 1000;
+  // auto l2_norm_P = l2_norm(grid_view_, P_[cell]);
+  // auto l2_norm_Pnat = l2_norm(grid_view_, Pnat_[cell]);
 
-    auto l2_norm_P = l2_norm(grid_view_, P_[cell]);
-    auto l2_norm_Pnat = l2_norm(grid_view_, Pnat_[cell]);
+  // ********* compute residual *********
+  auto begin = std::chrono::steady_clock::now();
+  auto residual = apply_ofield_operator(y_guess, cell);
+  auto res_norm = ofield_residual_norm(residual);
+  std::chrono::duration<double> time = std::chrono::steady_clock::now() - begin;
+  // std::cout << "Computing residual took: " << time.count() << " s!" << std::endl;
 
-    // ********* compute residual *********
-    auto begin = std::chrono::steady_clock::now();
-    auto residual = apply_ofield_operator(y_guess, cell);
-    auto res_norm = ofield_residual_norm(residual, l2_norm_P, l2_norm_Pnat);
-    std::chrono::duration<double> time = std::chrono::steady_clock::now() - begin;
-    // std::cout << "Computing residual took: " << time.count() << " s!" << std::endl;
+  size_t iter = 0;
+  VectorType y_n = y_guess;
+  VectorType y_n_plus_1 = y_guess;
+  VectorType update;
+  while (true) {
+    if (res_norm < tol)
+      break;
 
-    size_t iter = 0;
-    VectorType y_n = y_guess;
-    VectorType y_n_plus_1 = y_guess;
-    VectorType update;
-    while (true) {
-      if (res_norm < tol)
-        break;
+    // ********** assemble nonlinear part of S = Jacobian ***********
+    begin = std::chrono::steady_clock::now();
+    assemble_ofield_nonlinear_jacobian(y_n, cell);
+    time = std::chrono::steady_clock::now() - begin;
+    // std::cout << "Assembling nonlinear part of jacobian took: " << time.count() << " s!" << std::endl;
 
-      // ********** assemble nonlinear part of S = Jacobian ***********
-      begin = std::chrono::steady_clock::now();
-      assemble_ofield_nonlinear_jacobian(y_n, cell);
-      time = std::chrono::steady_clock::now() - begin;
-      // std::cout << "Assembling nonlinear part of jacobian took: " << time.count() << " s!" << std::endl;
+    // *********** solve system *************
+    residual *= -1.;
+    update = ofield_solver_.apply(residual, cell);
 
-      // *********** solve system *************
-      residual *= -1.;
-      update = ofield_solver_.apply(residual, cell);
+    DUNE_THROW_IF(iter >= max_iter,
+                  Exceptions::operator_error,
+                  "max iterations in ofield reached!\n|residual|_l2 = " << res_norm << ", param: "
+                                                                        << "(" << Re_ << ", " << 1. / Fa_inv_ << ", "
+                                                                        << xi_ << ")" << std::endl);
 
-      DUNE_THROW_IF(iter >= max_iter,
+    // apply damping
+    size_t k = 0;
+    auto candidate_res = 2 * res_norm; // any number such that we enter the while loop at least once
+    double lambda = 1;
+
+    // revert jacobian back to linear part to correctly calculate linear part of residual
+    // revert_ofield_jacobian_to_linear();
+
+    // backtracking line search
+    const double gamma = 0.001;
+    while (candidate_res > (1 - gamma * lambda) * res_norm) {
+      DUNE_THROW_IF(k >= max_dampening_iter,
                     Exceptions::operator_error,
-                    "max iterations in ofield reached!\n|residual|_l2 = " << res_norm << ", param: "
-                                                                          << "(" << Re_ << ", " << 1. / Fa_inv_ << ", "
-                                                                          << xi_ << ")" << std::endl);
-
-      // apply damping
-      size_t k = 0;
-      auto candidate_res = 2 * res_norm; // any number such that we enter the while loop at least once
-      double lambda = 1;
-
-      // revert jacobian back to linear part to correctly calculate linear part of residual
-      // revert_ofield_jacobian_to_linear();
-
-      // backtracking line search
-      const double gamma = 0.001;
-      while (candidate_res > (1 - gamma * lambda) * res_norm) {
-        DUNE_THROW_IF(k >= max_dampening_iter,
-                      Exceptions::operator_error,
-                      "max iterations reached when trying to compute automatic dampening!\n|residual|_l2 = "
-                          << res_norm << "\nl = " << iter << "\n");
-        y_n_plus_1 = y_n + update * lambda;
-        residual = apply_ofield_operator(y_n_plus_1, cell);
-        candidate_res = ofield_residual_norm(residual, l2_norm_P, l2_norm_Pnat);
-        lambda /= 2;
-        k += 1;
-      }
-      y_n = y_n_plus_1;
-      res_norm = candidate_res;
-      iter += 1;
-    } // while (true)
-    return y_n;
-  }
+                    "max iterations reached when trying to compute automatic dampening!\n|residual|_l2 = "
+                        << res_norm << "\nl = " << iter << "\n");
+      y_n_plus_1 = y_n + update * lambda;
+      residual = apply_ofield_operator(y_n_plus_1, cell);
+      candidate_res = ofield_residual_norm(residual);
+      lambda /= 2;
+      k += 1;
+    }
+    y_n = y_n_plus_1;
+    res_norm = candidate_res;
+    iter += 1;
+  } // while (true)
+  return y_n;
 }
 
 // Applies inverse phase field operator (solves F(y) = 0)
 // y_guess is the initial guess for the Newton iteration
 CellModelSolver::VectorType CellModelSolver::apply_inverse_pfield_operator(const VectorType& y_guess, const size_t cell)
 {
-  if (linearize_) {
-    return pfield_solver_.apply(pfield_rhs_vector_, cell);
-  } else {
+  // *********** Newton ******************************
+  const auto tol = 1e-10;
+  const auto max_iter = 200;
+  const auto max_dampening_iter = 1000;
 
-    // *********** Newton ******************************
-    const auto tol = 1e-10;
-    const auto max_iter = 200;
-    const auto max_dampening_iter = 1000;
+  // const auto l2_norm_phi = l2_norm(grid_view_, phi_[cell]);
+  // const auto l2_norm_phinat = l2_norm(grid_view_, phinat_[cell]);
+  // const auto l2_norm_mu = l2_norm(grid_view_, mu_[cell]);
 
-    const auto l2_norm_phi = l2_norm(grid_view_, phi_[cell]);
-    const auto l2_norm_phinat = l2_norm(grid_view_, phinat_[cell]);
-    const auto l2_norm_mu = l2_norm(grid_view_, mu_[cell]);
+  // ********* compute residual *********
+  auto begin = std::chrono::steady_clock::now();
+  auto residual = apply_pfield_operator(y_guess, cell, false);
+  auto res_norm = pfield_residual_norm(residual);
+  std::cout << "Newton: Initial Residual: " << res_norm << std::endl;
+  std::chrono::duration<double> time = std::chrono::steady_clock::now() - begin;
+  // std::cout << "Computing residual took: " << time.count() << " s!" << std::endl;
 
-    // ********* compute residual *********
-    auto begin = std::chrono::steady_clock::now();
-    auto residual = apply_pfield_operator(y_guess, cell, false);
-    auto res_norm = pfield_residual_norm(residual, l2_norm_phi, l2_norm_phinat, l2_norm_mu);
-    std::cout << "Newton: Initial Residual: " << res_norm << std::endl;
-    std::chrono::duration<double> time = std::chrono::steady_clock::now() - begin;
-    // std::cout << "Computing residual took: " << time.count() << " s!" << std::endl;
+  size_t iter = 0;
+  VectorType x_n = y_guess;
+  VectorType x_n_plus_1 = y_guess;
+  VectorType update;
+  while (true) {
+    if (res_norm < tol)
+      break;
 
-    size_t iter = 0;
-    VectorType x_n = y_guess;
-    VectorType x_n_plus_1 = y_guess;
-    VectorType update;
-    while (true) {
-      if (res_norm < tol)
-        break;
+    // ********** assemble nonlinear part of S = Jacobian ***********
+    begin = std::chrono::steady_clock::now();
+    assemble_pfield_nonlinear_jacobian(x_n, cell, false);
+    time = std::chrono::steady_clock::now() - begin;
+    // std::cout << "Assembling nonlinear part of jacobian took: " << time.count() << " s!" << std::endl;
 
-      // ********** assemble nonlinear part of S = Jacobian ***********
-      begin = std::chrono::steady_clock::now();
-      assemble_pfield_nonlinear_jacobian(x_n, cell, false);
-      time = std::chrono::steady_clock::now() - begin;
-      // std::cout << "Assembling nonlinear part of jacobian took: " << time.count() << " s!" << std::endl;
+    // *********** solve system *************
+    residual *= -1.;
+    update = pfield_solver_.apply(residual, cell);
 
-      // *********** solve system *************
-      residual *= -1.;
-      update = pfield_solver_.apply(residual, cell);
+    DUNE_THROW_IF(iter >= max_iter,
+                  Exceptions::operator_error,
+                  "max iterations in pfield reached!\n|residual|_l2 = " << res_norm << ", param: "
+                                                                        << "(" << Re_ << ", " << 1. / Fa_inv_ << ", "
+                                                                        << xi_ << ")" << std::endl);
 
-      DUNE_THROW_IF(iter >= max_iter,
-                    Exceptions::operator_error,
-                    "max iterations in pfield reached!\n|residual|_l2 = " << res_norm << ", param: "
-                                                                          << "(" << Re_ << ", " << 1. / Fa_inv_ << ", "
-                                                                          << xi_ << ")" << std::endl);
-
-      if (iter > 10) {
-        // apply damping via backtracking line search
-        size_t k = 0;
-        auto candidate_res = 2 * res_norm; // any number such that we enter the while loop at least once
-        double lambda = 1;
-        const double gamma = 0.001;
-        while (candidate_res > (1 - gamma * lambda) * res_norm) {
-          DUNE_THROW_IF(k >= max_dampening_iter,
-                        Exceptions::operator_error,
-                        "max iterations reached when trying to compute automatic dampening!\n|residual|_l2 = "
-                            << res_norm << "\nl = " << iter << "\n");
-          x_n_plus_1 = x_n + update * lambda;
-          residual = apply_pfield_operator(x_n_plus_1, cell, false);
-          candidate_res = pfield_residual_norm(residual, l2_norm_phi, l2_norm_phinat, l2_norm_mu);
-          // std::cout << "Candidate res: " << candidate_res << std::endl;
-          lambda /= 2;
-          k += 1;
-        }
-        x_n = x_n_plus_1;
-        res_norm = candidate_res;
-      } else {
-        x_n += update;
-        residual = apply_pfield_operator(x_n, cell, false);
-        res_norm = pfield_residual_norm(residual, l2_norm_phi, l2_norm_phinat, l2_norm_mu);
+    if (iter > 10) {
+      // apply damping via backtracking line search
+      size_t k = 0;
+      auto candidate_res = 2 * res_norm; // any number such that we enter the while loop at least once
+      double lambda = 1;
+      const double gamma = 0.001;
+      while (candidate_res > (1 - gamma * lambda) * res_norm) {
+        DUNE_THROW_IF(k >= max_dampening_iter,
+                      Exceptions::operator_error,
+                      "max iterations reached when trying to compute automatic dampening!\n|residual|_l2 = "
+                          << res_norm << "\nl = " << iter << "\n");
+        x_n_plus_1 = x_n + update * lambda;
+        residual = apply_pfield_operator(x_n_plus_1, cell, false);
+        candidate_res = pfield_residual_norm(residual);
+        // std::cout << "Candidate res: " << candidate_res << std::endl;
+        lambda /= 2;
+        k += 1;
       }
-      std::cout << "Newton: Iter " << iter << " Current residual: " << res_norm << std::endl;
-      iter += 1;
-    } // while (true)
-    return x_n;
-  }
+      x_n = x_n_plus_1;
+      res_norm = candidate_res;
+    } else {
+      x_n += update;
+      residual = apply_pfield_operator(x_n, cell, false);
+      res_norm = pfield_residual_norm(residual);
+    }
+    std::cout << "Newton: Iter " << iter << " Current residual: " << res_norm << std::endl;
+    iter += 1;
+  } // while (true)
+  return x_n;
 }
 
 //******************************************************************************************************************
@@ -1796,33 +1758,21 @@ void CellModelSolver::assemble_ofield_rhs(const size_t cell, const bool restrict
   const auto& P_range_dofs = P_deim_range_dofs_[cell];
   const auto mv = mv_func<VectorViewType, VectorViewType>(restricted);
   mv(M_ofield_, P_[cell].dofs().vector(), ofield_f_vector_, P_range_dofs);
-  if (XT::Common::FloatCmp::ne(beta_, 0.) || linearize_) {
+  if (XT::Common::FloatCmp::ne(beta_, 0.)) {
     const auto& Pnat_range_dofs = Pnat_deim_range_dofs_[cell];
     auto g_functional = make_vector_functional(P_space_, ofield_g_vector_);
     const auto scal = scal_func<VectorViewType>(restricted);
     scal(ofield_g_vector_, 0., Pnat_range_dofs);
     XT::Functions::GenericGridFunction<E, d> g(
-        /*order = */ linearize_ ? 3 * P_space_.max_polorder() : phi_space_.max_polorder(),
+        /*order = */ phi_space_.max_polorder(),
         /*post_bind_func*/
-        [cell, this](const E& element) {
-          this->bind_phi(cell, element);
-          if (this->linearize_) {
-            this->bind_P(cell, element);
-          }
-        },
+        [cell, this](const E& element) { this->bind_phi(cell, element); },
         /*evaluate_func*/
-        [cell, factor1 = beta_ / Pa_, factor2 = -2. * c_1_ / Pa_, this](const DomainType& x_local,
-                                                                        const XT::Common::Parameter& param) {
+        [cell, factor = beta_ / Pa_, this](const DomainType& x_local, const XT::Common::Parameter& param) {
           // evaluate rhs terms
           const auto grad_phi = this->grad_phi(cell, x_local, param);
           auto ret = grad_phi;
-          ret *= factor1;
-          if (linearize_) {
-            const auto P_n = this->eval_P(cell, x_local, param);
-            auto ret2 = P_n;
-            ret2 *= factor2 * (P_n * P_n);
-            ret += ret2;
-          }
+          ret *= factor;
           return ret;
         });
     g_functional.append(LocalElementIntegralFunctional<E, d>(
@@ -1928,10 +1878,6 @@ void CellModelSolver::assemble_ofield_linear_jacobian(const size_t cell, const b
     S_schur_ofield_linear_part_.axpy(dt_, A_ofield_);
     S_schur_ofield_linear_part_.axpy(-dt_ / kappa_, C_ofield_linear_part_);
   }
-
-  // nonlinear part is equal to linearized part in first iteration
-  if (linearize_)
-    assemble_ofield_nonlinear_jacobian(ofield_vec(cell), cell, restricted);
 }
 
 // assembles nonlinear part of orientation field jacobian and adds to S_ofield_
@@ -1978,9 +1924,6 @@ void CellModelSolver::assemble_pfield_linear_jacobian(const size_t cell, const b
 {
   // assemble matrix S_{00} = M + dt D
   assemble_B_pfield(cell, restricted);
-  // nonlinear part is equal to linearized part in first iteration
-  // if (linearize_)
-  // assemble_pfield_nonlinear_jacobian(pfield_vec(cell), cell, restricted);
 }
 
 void CellModelSolver::set_mat_to_zero(MatrixType& mat,
@@ -2455,36 +2398,17 @@ void CellModelSolver::fill_tmp_pfield(const size_t cell, const VectorType& sourc
 
 // error norm used in orientation field Newton iteration
 // TODO: use appropriate norm
-double CellModelSolver::ofield_residual_norm(const VectorType& residual, double l2_ref_P, double l2_ref_Pnat) const
+double CellModelSolver::ofield_residual_norm(const VectorType& residual) const
 {
-  l2_ref_P = l2_ref_P < 1. ? 1. : l2_ref_P;
-  l2_ref_Pnat = l2_ref_Pnat < 1. ? 1. : l2_ref_Pnat;
-  ConstVectorViewType res0_vec(residual, 0, size_P_);
-  ConstVectorViewType res1_vec(residual, size_P_, 2 * size_P_);
-  const auto res0 = make_discrete_function(P_space_, res0_vec);
-  const auto res1 = make_discrete_function(P_space_, res1_vec);
-  return l2_norm(grid_view_, res0) / l2_ref_P + l2_norm(grid_view_, res1) / l2_ref_Pnat;
+  return residual.l2_norm();
 }
 
 // error norm used in phase field Newton iteration
 // TODO: use appropriate norm
-double CellModelSolver::pfield_residual_norm(const VectorType& residual,
-                                             double l2_ref_phi,
-                                             double l2_ref_phinat,
-                                             double l2_ref_mu) const
+double CellModelSolver::pfield_residual_norm(const VectorType& residual) const
 {
   return residual.l2_norm();
-  // l2_ref_phi = l2_ref_phi < 1. ? 1. : l2_ref_phi;
-  // l2_ref_phinat = l2_ref_phinat < 1. ? 1. : l2_ref_phinat;
-  // l2_ref_mu = l2_ref_mu < 1. ? 1. : l2_ref_mu;
-  // ConstVectorViewType res0_vec(residual, 0, size_phi_);
-  // ConstVectorViewType res1_vec(residual, size_phi_, 2 * size_phi_);
-  // ConstVectorViewType res2_vec(residual, 2 * size_phi_, 3 * size_phi_);
-  // const auto res0 = make_discrete_function(phi_space_, res0_vec);
-  // const auto res1 = make_discrete_function(phi_space_, res1_vec);
-  // const auto res2 = make_discrete_function(phi_space_, res2_vec);
-  // return l2_norm(grid_view_, res0) / l2_ref_phi + l2_norm(grid_view_, res1) / l2_ref_phinat
-  //        + l2_norm(grid_view_, res2) / l2_ref_mu;
+  // return residual.sup_norm();
 }
 
 CellModelSolver::R

@@ -43,8 +43,6 @@ int main(int argc, char* argv[])
     // timestepping
     double t_end = config.template get<double>("fem.t_end", 340.);
     double dt = config.template get<double>("fem.dt", 0.005);
-    const bool linearize = config.template get<bool>("problem.linearize", false);
-    std::cout << "linearize: " << linearize << std::endl;
 
     // problem parameters
     double L = config.template get<double>("problem.L", 1e-6);
@@ -71,7 +69,7 @@ int main(int argc, char* argv[])
     std::cout << "Ca: " << Ca << ", Be: " << Be << ", Pa: " << Pa << ", Fa: " << Fa << ", Re: " << Re << std::endl;
 
     // output
-    std::string filename = config.get("output.filename", "cellmodel") + (linearize ? "_linearized" : "");
+    std::string filename = config.get("output.filename", "cellmodel");
 
     const double gmres_reduction = 1e-10;
     const int gmres_restart = 50;
@@ -108,8 +106,7 @@ int main(int argc, char* argv[])
                                  gmres_verbose,
                                  inner_gmres_reduction,
                                  inner_gmres_maxit,
-                                 gmres_verbose,
-                                 linearize);
+                                 gmres_verbose);
     CellModelSolver model_solver2(testcase,
                                   t_end,
                                   num_elements_x,
@@ -137,8 +134,7 @@ int main(int argc, char* argv[])
                                   gmres_verbose,
                                   inner_gmres_reduction,
                                   inner_gmres_maxit,
-                                  gmres_verbose,
-                                  linearize);
+                                  gmres_verbose);
 
     const size_t pfield_size = model_solver.pfield_vec(0).size();
     const size_t ofield_size = model_solver.ofield_vec(0).size();
