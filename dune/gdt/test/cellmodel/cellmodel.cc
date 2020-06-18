@@ -311,7 +311,6 @@ CellModelSolver::CellModelSolver(const std::string testcase,
 
   std::shared_ptr<const XT::Functions::FunctionInterface<d, d>> u_initial_func;
   std::vector<std::shared_ptr<const XT::Functions::FunctionInterface<d>>> phi_initial_funcs;
-  std::vector<std::shared_ptr<const XT::Functions::FunctionInterface<d>>> mu_initial_funcs;
   std::vector<std::shared_ptr<const XT::Functions::FunctionInterface<d, d>>> P_initial_funcs;
 
   // interpolate initial and boundary values
@@ -427,7 +426,6 @@ CellModelSolver::CellModelSolver(const std::string testcase,
     phinat_tmp_.emplace_back(phi_space_);
     mu_tmp_.emplace_back(phi_space_);
     default_interpolation(*phi_initial_funcs[kk], phi_[kk]);
-    default_interpolation(*mu_initial_funcs[kk], mu_[kk]);
     default_interpolation(*P_initial_funcs[kk], P_[kk]);
   }
 
@@ -1464,7 +1462,7 @@ CellModelSolver::VectorType CellModelSolver::apply_inverse_stokes_operator() con
 CellModelSolver::VectorType CellModelSolver::apply_inverse_ofield_operator(const VectorType& y_guess, const size_t cell)
 {
   // *********** Newton ******************************
-  const auto tol = 1e-10;
+  const auto tol = 1e-12;
   const auto max_iter = 200;
   const auto max_dampening_iter = 1000;
 
@@ -1475,6 +1473,7 @@ CellModelSolver::VectorType CellModelSolver::apply_inverse_ofield_operator(const
   auto begin = std::chrono::steady_clock::now();
   auto residual = apply_ofield_operator(y_guess, cell);
   auto res_norm = ofield_residual_norm(residual);
+  std::cout << "Newton: Initial Residual: " << res_norm << std::endl;
   std::chrono::duration<double> time = std::chrono::steady_clock::now() - begin;
   // std::cout << "Computing residual took: " << time.count() << " s!" << std::endl;
 
@@ -1507,9 +1506,6 @@ CellModelSolver::VectorType CellModelSolver::apply_inverse_ofield_operator(const
     auto candidate_res = 2 * res_norm; // any number such that we enter the while loop at least once
     double lambda = 1;
 
-    // revert jacobian back to linear part to correctly calculate linear part of residual
-    // revert_ofield_jacobian_to_linear();
-
     // backtracking line search
     const double gamma = 0.001;
     while (candidate_res > (1 - gamma * lambda) * res_norm) {
@@ -1525,6 +1521,7 @@ CellModelSolver::VectorType CellModelSolver::apply_inverse_ofield_operator(const
     }
     y_n = y_n_plus_1;
     res_norm = candidate_res;
+    std::cout << "Newton: Iter " << iter << " Current residual: " << res_norm << std::endl;
     iter += 1;
   } // while (true)
   return y_n;
@@ -1535,7 +1532,7 @@ CellModelSolver::VectorType CellModelSolver::apply_inverse_ofield_operator(const
 CellModelSolver::VectorType CellModelSolver::apply_inverse_pfield_operator(const VectorType& y_guess, const size_t cell)
 {
   // *********** Newton ******************************
-  const auto tol = 1e-10;
+  const auto tol = 1e-12;
   const auto max_iter = 200;
   const auto max_dampening_iter = 1000;
 
@@ -2408,7 +2405,6 @@ double CellModelSolver::ofield_residual_norm(const VectorType& residual) const
 double CellModelSolver::pfield_residual_norm(const VectorType& residual) const
 {
   return residual.l2_norm();
-  // return residual.sup_norm();
 }
 
 CellModelSolver::R
