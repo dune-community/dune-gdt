@@ -23,12 +23,12 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(visualize_ofield_overloads, CellModelSolv
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(visualize_stokes_overloads, CellModelSolver::visualize_stokes, 2, 3)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(prepare_pfield_operator_overloads,
                                        CellModelSolver::prepare_pfield_operator,
-                                       2,
-                                       3)
+                                       1,
+                                       2)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(prepare_ofield_operator_overloads,
                                        CellModelSolver::prepare_ofield_operator,
-                                       2,
-                                       3)
+                                       1,
+                                       2)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(prepare_stokes_operator_overloads,
                                        CellModelSolver::prepare_stokes_operator,
                                        0,

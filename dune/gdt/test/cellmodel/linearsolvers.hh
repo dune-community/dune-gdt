@@ -46,7 +46,7 @@ class LinearOperator;
 template <class M, class X>
 class LinearOperatorWrapper;
 
-template <class X, class M>
+template <class X, class M, bool use_incomplete_lut>
 class Matrix2InverseOperator;
 
 template <class X>
@@ -109,7 +109,7 @@ public:
   // using AMGPreconditionerType = Dune::Amg::FastAMG<SystemMatrixLinearOperatorType,EigenVectorType>;
   using IdentityPreconditionerType = IdentityPreconditioner<EigenVectorType>;
   using IterativeSolverPreconditionerType = IterativeSolverPreconditioner<EigenVectorType>;
-  using Matrix2InverseOperatorType = Matrix2InverseOperator<EigenVectorType, MatrixType>;
+  using Matrix2InverseOperatorType = Matrix2InverseOperator<EigenVectorType, MatrixType, true>;
 
   CellModelLinearSolverWrapper(std::shared_ptr<LinearOperatorType>,
                                std::shared_ptr<ScalarProductType>,
@@ -137,7 +137,7 @@ public:
 
   void set_params(const XT::Common::Parameter& param, const bool restricted = false);
 
-  void prepare(const double dt, const size_t cell, const bool restricted);
+  void prepare(const size_t cell, const bool restricted);
 
   // Calling this method will result in ret = M^{-1} rhs.
   // Note: Writing rhs_mu.backend() = solver->solve(rhs_mu.backend()) gives wrong results for CG solver, ret may not be
@@ -213,14 +213,14 @@ public:
                      const double epsilon,
                      const double Be,
                      const double Ca,
+                     const double dt,
                      const MatrixType& M,
-                     const MatrixType& M_ell,
+                     const MatrixType& K,
                      const MatrixType& D,
                      const MatrixType& G,
                      const MatrixType& M_nonlin,
                      const CellModelLinearSolverType solver_type,
                      const CellModelMassMatrixSolverType mass_matrix_solver_type,
-                     const double phinat_scale_factor,
                      const XT::LA::SparsityPatternDefault& submatrix_pattern,
                      const size_t num_cells,
                      const double outer_reduction = 1e-10,
@@ -235,7 +235,7 @@ public:
 
   void set_params(const XT::Common::Parameter& param, const bool restricted = false);
 
-  void prepare(const double dt, const size_t cell, const bool restricted = false);
+  void prepare(const size_t cell, const bool restricted = false);
 
   VectorType apply(const VectorType& rhs, const size_t cell) const;
 
@@ -247,6 +247,10 @@ public:
   // creates sparsity pattern of phasefield system matrix
   static XT::LA::SparsityPatternDefault system_matrix_pattern(const XT::LA::SparsityPatternDefault& submatrix_pattern);
 
+  // creates sparsity pattern of phasefield preconditioner matrix
+  static XT::LA::SparsityPatternDefault
+  preconditioner_matrix_pattern(const XT::LA::SparsityPatternDefault& submatrix_pattern);
+
   // Calling this method will result in ret = M^{-1} rhs.
   // Note: Writing rhs_mu.backend() = solver->solve(rhs_mu.backend()) gives wrong results for CG solver, ret may not be
   // the same vector as rhs!
@@ -254,12 +258,8 @@ public:
                                  EigenVectorType& ret,
                                  const EigenVectorType* initial_guess = nullptr) const;
 
-  const std::set<size_t>& dirichlet_dofs() const;
-
-  R dirichlet_shift() const;
-
 private:
-  void fill_S() const;
+  void set_nonlinear_part_of_S() const;
 
   VectorType apply_schur_solver(const VectorType& rhs, const size_t cell) const;
 
@@ -267,22 +267,21 @@ private:
 
   std::shared_ptr<Dune::ScalarProduct<EigenVectorType>> create_scalar_product();
 
+  const R dt_;
   R gamma_;
   R epsilon_;
   R Be_;
   R Ca_;
-  R dt_;
   const MatrixType& M_;
-  const MatrixType& M_ell_;
-  const MatrixType& D_;
-  const MatrixType& G_;
+  const MatrixType& K_;
+  const MatrixType& B_;
+  const MatrixType& Dphi_f_;
   const MatrixType& M_nonlin_;
   CellModelLinearSolverType solver_type_;
   const bool is_schur_solver_;
   const size_t size_phi_;
   std::shared_ptr<MatrixType> S_;
   std::shared_ptr<MatrixType> S_preconditioner_;
-  const R phinat_scale_factor_;
   CellModelLinearSolverWrapper wrapper_;
   mutable MatrixViewType S_00_;
   mutable MatrixViewType S_01_;
@@ -317,6 +316,7 @@ public:
   using MatrixViewType = XT::LA::MatrixView<MatrixType>;
 
   OfieldLinearSolver(const double kappa,
+                     const double dt,
                      const MatrixType& M,
                      const MatrixType& A,
                      const MatrixType& C_linear,
@@ -337,7 +337,7 @@ public:
 
   void set_params(const XT::Common::Parameter& param, const bool restricted = false);
 
-  void prepare(const double dt, const size_t cell, const bool restricted = false);
+  void prepare(const size_t cell, const bool restricted = false);
 
   VectorType apply(const VectorType& rhs, const size_t cell) const;
 
@@ -353,12 +353,10 @@ public:
                                  EigenVectorType& ret,
                                  const EigenVectorType* initial_guess = nullptr) const;
 
-  const std::set<size_t>& dirichlet_dofs() const;
-
   MatrixType& schur_matrix();
 
 private:
-  void fill_S() const;
+  void set_nonlinear_part_of_S() const;
 
   VectorType apply_schur_solver(const VectorType& rhs, const size_t cell) const;
 
@@ -366,8 +364,8 @@ private:
 
   std::shared_ptr<Dune::ScalarProduct<EigenVectorType>> create_scalar_product();
 
+  const R dt_;
   R kappa_;
-  R dt_;
   const MatrixType& M_;
   const MatrixType& A_;
   const MatrixType& C_linear_part_;

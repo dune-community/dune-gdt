@@ -49,8 +49,8 @@ class FGMResSolver;
 
 struct CellModelSolver
 {
-  // using G = ALU_2D_SIMPLEX_CONFORMING;
-  using G = YASP_2D_EQUIDISTANT_OFFSET;
+  using G = ALU_2D_SIMPLEX_CONFORMING;
+  // using G = YASP_2D_EQUIDISTANT_OFFSET;
   static const constexpr size_t d = G::dimension;
   using GV = typename G::LeafGridView;
   using PGV = XT::Grid::PeriodicGridView<GV>;
@@ -90,6 +90,7 @@ struct CellModelSolver
   CellModelSolver(
       const std::string testcase = "single_cell",
       const double t_end = 1.,
+      const double dt = 0.01,
       const unsigned int num_elements_x = 50,
       const unsigned int num_elements_y = 50,
       const double pol_order = 2,
@@ -137,14 +138,13 @@ struct CellModelSolver
   // .vtu and .txt files. write_step: Time interval at which results should be written. If negative, all steps are
   // written. Ignored if write = false. filename: Prefix for .vtu and .txt files. Ignored if write = false. subsampling:
   // Whether to use subsampling for visualization. Ignored if write = false.
-  std::vector<std::vector<VectorType>> solve(const double dt,
-                                             const bool write,
+  std::vector<std::vector<VectorType>> solve(const bool write,
                                              const double write_step,
                                              const std::string filename = "cellmodel",
                                              const bool subsampling = true);
 
   // Like solve, but only computes and returns the next n timesteps
-  std::vector<std::vector<VectorType>> next_n_timesteps(const size_t n, const double dt);
+  std::vector<std::vector<VectorType>> next_n_timesteps(const size_t n);
 
   //******************************************************************************************************************
   //********************************* Product operators (mass matrix application) ************************************
@@ -221,9 +221,9 @@ struct CellModelSolver
 
   void prepare_stokes_operator(const bool restricted = false);
 
-  void prepare_ofield_operator(const double dt, const size_t cell, const bool restricted = false);
+  void prepare_ofield_operator(const size_t cell, const bool restricted = false);
 
-  void prepare_pfield_operator(const double dt, const size_t cell, const bool restricted = false);
+  void prepare_pfield_operator(const size_t cell, const bool restricted = false);
 
   void compute_restricted_stokes_dofs(const std::vector<size_t>& range_dofs);
 
@@ -346,13 +346,13 @@ struct CellModelSolver
   void assemble_stokes_rhs(const bool restricted);
 
   // Computes orientation field rhs using currently stored values of variables and stores in ofield_rhs_vector_
-  void assemble_ofield_rhs(const double /*dt*/, const size_t cell, const bool restricted);
+  void assemble_ofield_rhs(const size_t cell, const bool restricted);
 
   // Computes phase field rhs using currently stored values of variables and stores in pfield_rhs_vector_
-  void assemble_pfield_rhs(const double /*dt*/, const size_t cell, const bool restricted);
+  void assemble_pfield_rhs(const size_t cell, const bool restricted);
 
   // assembles linear part of orientation field jacobian and stores in S_ofield_
-  void assemble_ofield_linear_jacobian(const double dt, const size_t cell, const bool restricted);
+  void assemble_ofield_linear_jacobian(const size_t cell, const bool restricted);
 
   // assembles nonlinear part of orientation field jacobian and adds to S_ofield_
   // if assemble_ofield_linear_jacobian has been called first, S_ofield now contains the whole orientation field
@@ -362,7 +362,7 @@ struct CellModelSolver
   void assemble_C_ofield_nonlinear_part(const size_t cell, const bool restricted = false);
 
   // assembles linear part of phase field jacobian
-  void assemble_pfield_linear_jacobian(const double /*dt*/, const size_t cell, const bool restricted);
+  void assemble_pfield_linear_jacobian(const size_t cell, const bool restricted);
 
   void set_mat_to_zero(MatrixType& mat,
                        const bool restricted,
@@ -581,6 +581,7 @@ struct CellModelSolver
   XT::Common::FieldVector<R, d> lower_left_;
   XT::Common::FieldVector<R, d> upper_right_;
   const double t_end_;
+  const double dt_;
   double t_;
   const bool use_tbb_;
   const double Re_;
@@ -595,7 +596,6 @@ struct CellModelSolver
   double gamma_;
   double Be_;
   double Ca_;
-  double epsilon_;
   double In_;
   const double vol_domain_;
   const size_t num_cells_;
@@ -604,6 +604,8 @@ struct CellModelSolver
   XT::Grid::GridProvider<G> grid_;
   const GV nonperiodic_grid_view_;
   const PGV grid_view_;
+  double dx_;
+  double epsilon_;
   // Finite element function spaces
   const ContinuousLagrangeSpace<PGV, d, R> u_space_;
   const ContinuousLagrangeSpace<PGV, d, R> P_space_;
@@ -669,10 +671,7 @@ struct CellModelSolver
   // Dirichlet constraints
   const XT::Grid::AllDirichletBoundaryInfo<PI> boundary_info_;
   DirichletConstraints<PI, SpaceInterface<PGV, d, 1, R>> u_dirichlet_constraints_;
-  // phi is shifted by this value, i.e., instead of solving for phi, we are solving for phi + phi_shift.
   // Set to 1 by default to get 0 on the boundary instead of -1.
-  R phi_shift_;
-  R phinat_scale_factor_;
   // Sparsity pattern of one block of orientation field system matrix
   XT::LA::SparsityPatternDefault ofield_submatrix_pattern_;
   // Orientation field mass matrix
@@ -780,7 +779,6 @@ struct CellModelSolver
   mutable std::shared_ptr<PerThreadScalarLocalFuncs> phi_tmp_local_;
   mutable std::shared_ptr<PerThreadScalarLocalFuncs> phinat_tmp_local_;
   mutable std::shared_ptr<PerThreadScalarLocalFuncs> mu_tmp_local_;
-  double dt_;
 };
 
 

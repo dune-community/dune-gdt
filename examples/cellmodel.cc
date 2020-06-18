@@ -43,8 +43,9 @@ int main(int argc, char* argv[])
     double t_end = config.template get<double>("fem.t_end", 340.);
     double dt = config.template get<double>("fem.dt", 0.005);
     const bool linearize = config.template get<bool>("problem.linearize", false);
+    if (linearize)
+      DUNE_THROW(Dune::NotImplemented, "Broken atm");
     const size_t pol_order = config.template get<size_t>("fem.degree", 2, 0, 0);
-    std::cout << "linearize: " << linearize << std::endl;
 
     // problem parameters
     double L = config.template get<double>("problem.L", 1e-6);
@@ -84,7 +85,7 @@ int main(int argc, char* argv[])
     const int inner_gmres_maxit = DXTC_CONFIG_GET("inner_gmres_maxit", 10);
     const int gmres_verbose = DXTC_CONFIG_GET("gmres_verbose", 0);
     const CellModelLinearSolverType pfield_solver_type =
-        string_to_solver_type(DXTC_CONFIG_GET("pfield_solver_type", "schur_gmres"));
+        string_to_solver_type(DXTC_CONFIG_GET("pfield_solver_type", "gmres"));
     const CellModelMassMatrixSolverType pfield_mass_matrix_solver_type =
         string_to_mass_matrix_solver_type(DXTC_CONFIG_GET("pfield_mass_matrix_solver_type", "sparse_ldlt"));
     const CellModelLinearSolverType ofield_solver_type =
@@ -94,6 +95,7 @@ int main(int argc, char* argv[])
 
     CellModelSolver model_solver(testcase,
                                  t_end,
+                                 dt,
                                  num_elements_x,
                                  num_elements_y,
                                  pol_order,
@@ -123,7 +125,7 @@ int main(int argc, char* argv[])
                                  linearize);
 
     auto begin = std::chrono::steady_clock::now();
-    auto result = model_solver.solve(dt, true, write_step, filename, subsampling);
+    auto result = model_solver.solve(true, write_step, filename, subsampling);
     const std::chrono::duration<double> time = std::chrono::steady_clock::now() - begin;
     std::cout << "Solving took: " << time.count() << " s." << std::endl;
   } catch (Exception& e) {

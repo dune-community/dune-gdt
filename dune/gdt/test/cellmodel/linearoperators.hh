@@ -42,7 +42,7 @@ public:
 
   virtual void set_params(const XT::Common::Parameter& /*param*/, const bool /*restricted*/ = false) {}
 
-  virtual void prepare(const double /*dt*/, const size_t /*cell*/, const bool /*restricted*/ = false) {}
+  virtual void prepare(const size_t /*cell*/, const bool /*restricted*/ = false) {}
 
   virtual const Matrix& getmat() const override
   {
@@ -76,12 +76,14 @@ public:
   OfieldMatrixLinearPartOperator(const Matrix& M,
                                  const Matrix& A,
                                  const Matrix& C_lin,
+                                 const double dt,
                                  const double kappa,
                                  const CellModelSolverType* cellmodel_solver)
     : BaseType(M, 2 * M.rows())
     , M_(M)
     , A_(A)
     , C_lin_(C_lin)
+    , dt_(dt)
     , kappa_(kappa)
     , cellmodel_solver_(cellmodel_solver)
     , size_P_(M_.rows())
@@ -144,9 +146,8 @@ public:
     }
   }
 
-  void prepare(const double dt, const size_t cell, const bool restricted = false) override final
+  void prepare(const size_t cell, const bool restricted = false) override final
   {
-    dt_ = dt;
     cell_ = cell;
     restricted_ = restricted;
   }
@@ -161,9 +162,9 @@ private:
   const Matrix& M_;
   const Matrix& A_;
   const Matrix& C_lin_;
+  const double dt_;
   const double kappa_;
   const CellModelSolverType* cellmodel_solver_;
-  double dt_;
   size_t cell_;
   bool restricted_;
   const size_t size_P_;
@@ -193,6 +194,7 @@ public:
                           const Matrix& G,
                           const Matrix& M_nonlin,
                           const SolverType& solver,
+                          const double dt,
                           const double gamma,
                           const double epsilon,
                           const double Be,
@@ -206,6 +208,7 @@ public:
     , solver_(solver)
     , A_(M_.backend(), 0)
     , J_(M_.backend(), 0)
+    , dt_(dt)
     , gamma_(gamma)
     , epsilon_(epsilon)
     , Be_(Be)
@@ -249,9 +252,11 @@ public:
     Ca_ = param.get("Ca")[0];
   }
 
-  void prepare(const double dt, const size_t /*cell*/, const bool /*restricted*/) override final
+  void prepare(const size_t /*cell*/, const bool /*restricted*/) override final
   {
-    dt_ = dt;
+    DUNE_THROW(Dune::NotImplemented,
+               "This prepare has to be called after M_nonlin_changed (i.e. in each Newton iteration), currently it is "
+               "only called once before starting the Newton scheme.");
     // precompute A and J (M_nonlin_ may have changed)
     // saves three mvs in each apply, can be dropped if memory is an issue
     J_.backend() = M_nonlin_.backend();
@@ -278,11 +283,11 @@ private:
   const SolverType& solver_;
   MatrixType A_;
   MatrixType J_;
+  const double dt_;
   double gamma_;
   double epsilon_;
   double Be_;
   double Ca_;
-  double dt_;
   // vectors to store intermediate results
   mutable Vector tmp_vec_;
   mutable Vector tmp_vec2_;
@@ -335,7 +340,7 @@ public:
   PfieldMatrixLinearPartOperator(const Matrix& M,
                                  const Matrix& D,
                                  const Matrix& M_ell,
-                                 const Field phinat_scale_factor,
+                                 const double dt,
                                  const double gamma,
                                  const double eps,
                                  const double Be,
@@ -344,7 +349,7 @@ public:
     , M_(M)
     , D_(D)
     , M_ell_(M_ell)
-    , phinat_scale_factor_(phinat_scale_factor)
+    , dt_(dt)
     , gamma_(gamma)
     , epsilon_(eps)
     , Be_(Be)
@@ -393,11 +398,11 @@ public:
     mv(D_, x_phi_, tmp_vec_, phi_dofs);
     axpy(y_phi_, dt_, tmp_vec_, phi_dofs);
     mv(M_ell_, x_phinat_, tmp_vec_, phi_dofs);
-    axpy(y_phi_, dt_ * gamma_ / phinat_scale_factor_, tmp_vec_, phi_dofs);
+    axpy(y_phi_, dt_ * gamma_, tmp_vec_, phi_dofs);
     // second row
     const auto& phinat_dofs = cellmodel_solver_->phinat_deim_range_dofs_[cell_];
     mv(M_, x_phinat_, y_phinat_, phinat_dofs);
-    scal(y_phinat_, 1. / phinat_scale_factor_, phinat_dofs);
+    scal(y_phinat_, 1., phinat_dofs);
     mv(M_ell_, x_mu_, tmp_vec_, phinat_dofs);
     axpy(y_phinat_, 1. / Be_, tmp_vec_, phinat_dofs);
     // third row
@@ -429,9 +434,8 @@ public:
     Be_ = param.get("Be")[0];
   }
 
-  void prepare(const double dt, const size_t cell, const bool restricted = false) override final
+  void prepare(const size_t cell, const bool restricted = false) override final
   {
-    dt_ = dt;
     cell_ = cell;
     restricted_ = restricted;
   }
@@ -446,14 +450,13 @@ private:
   const Matrix& M_;
   const Matrix& D_;
   const Matrix& M_ell_;
-  const Field phinat_scale_factor_;
+  double dt_;
   double gamma_;
   double epsilon_;
   double Be_;
   const CellModelSolverType* cellmodel_solver_;
   size_t cell_;
   bool restricted_;
-  double dt_;
   const size_t size_phi_;
   // vectors to store intermediate results
   mutable Vector x_phi_;
@@ -466,7 +469,7 @@ private:
 };
 
 
-template <class VectorType, class MatrixType>
+template <class VectorType, class MatrixType, bool use_incomplete_lut = false>
 class Matrix2InverseOperator : public Dune::InverseOperator<VectorType, VectorType>
 {
   using BaseType = Dune::InverseOperator<VectorType, VectorType>;
@@ -477,11 +480,11 @@ public:
   using ColMajorMatrixType = ::Eigen::SparseMatrix<Field, ::Eigen::ColMajor>;
   using LUSolverType = ::Eigen::SparseLU<ColMajorMatrixType>;
   using IncompleteLUTSolverType = ::Eigen::IncompleteLUT<Field>;
+  using SolverType = std::conditional_t<use_incomplete_lut, IncompleteLUTSolverType, LUSolverType>;
 
   Matrix2InverseOperator(const MatrixType& matrix)
     : matrix_(matrix)
-    , solver_(std::make_shared<LUSolverType>())
-  // , solver_(std::make_shared<IncompleteLUTSolverType>())
+    , solver_(std::make_shared<SolverType>())
   {}
 
   virtual void apply(VectorType& x, VectorType& b, InverseOperatorResult& /*res*/) override final
@@ -511,8 +514,7 @@ public:
 private:
   const MatrixType& matrix_;
   ColMajorMatrixType matrix_colmajor_;
-  std::shared_ptr<LUSolverType> solver_;
-  // std::shared_ptr<IncompleteLUTSolverType> solver_;
+  std::shared_ptr<SolverType> solver_;
 };
 
 

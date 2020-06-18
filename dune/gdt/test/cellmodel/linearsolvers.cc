@@ -18,6 +18,8 @@
 #include <dune/istl/paamg/fastamg.hh>
 #include <dune/istl/paamg/aggregates.hh>
 
+#include <dune/xt/common/configuration.hh>
+
 #include <dune/xt/la/container/common.hh>
 #include <dune/xt/la/container/eigen.hh>
 #include <dune/xt/la/container/eye-matrix.hh>
@@ -133,8 +135,9 @@ void CellModelLinearSolverWrapper::setup()
     mass_matrix_cg_solver_->compute(M_.backend());
   if (mass_matrix_cg_incomplete_cholesky_solver_)
     mass_matrix_cg_incomplete_cholesky_solver_->compute(M_.backend());
-  if (solver_type_ == CellModelLinearSolverType::gmres)
+  if (solver_type_ == CellModelLinearSolverType::gmres) {
     dynamic_cast<Matrix2InverseOperatorType*>(preconditioner_inverse_op_.get())->prepare();
+  }
 }
 
 void CellModelLinearSolverWrapper::set_params(const XT::Common::Parameter& param, const bool restricted)
@@ -142,9 +145,9 @@ void CellModelLinearSolverWrapper::set_params(const XT::Common::Parameter& param
   linear_operator_->set_params(param, restricted);
 }
 
-void CellModelLinearSolverWrapper::prepare(const double dt, const size_t cell, const bool restricted)
+void CellModelLinearSolverWrapper::prepare(const size_t cell, const bool restricted)
 {
-  linear_operator_->prepare(dt, cell, restricted);
+  linear_operator_->prepare(cell, restricted);
 }
 
 // Calling this method will result in ret = M^{-1} rhs.
@@ -259,11 +262,10 @@ std::shared_ptr<CellModelLinearSolverWrapper::PreconditionerType>
     //  return std::make_shared<AMGPreconditionerType>(*linear_op, criterion, parms, false);
     return std::make_shared<IterativeSolverPreconditionerType>(preconditioner_inverse_op_,
                                                                SolverCategory::Category::sequential);
-  } else if (solver_type_ == CellModelLinearSolverType::gmres) {
-    return std::make_shared<InverseOperator2Preconditioner<InverseOperatorType>>(*preconditioner_inverse_op_);
+    // } else if (solver_type_ == CellModelLinearSolverType::gmres) {
+    // return std::make_shared<InverseOperator2Preconditioner<InverseOperatorType>>(*preconditioner_inverse_op_);
   } else {
-    return std::make_shared<IterativeSolverPreconditionerType>(preconditioner_inverse_op_,
-                                                               SolverCategory::Category::sequential);
+    return std::make_shared<InverseOperator2Preconditioner<InverseOperatorType>>(*preconditioner_inverse_op_);
   }
 }
 
@@ -278,14 +280,15 @@ CellModelLinearSolverWrapper::create_iterative_solver(std::shared_ptr<DuneLinear
   static const size_t maxit = 10000;
   switch (solver_type_) {
     case CellModelLinearSolverType::gmres:
-      return std::make_shared<GMResSolverType>(*linear_op,
-                                               scalar_product,
-                                               *preconditioner_,
-                                               outer_reduction,
-                                               outer_restart,
-                                               maxit,
-                                               outer_verbose,
-                                               vector_size);
+      return std::make_shared<GMResSolverType>(
+          *linear_op,
+          scalar_product,
+          DXTC_CONFIG_GET("use_identity_preconditioner", false) ? *identity_preconditioner_ : *preconditioner_,
+          outer_reduction,
+          outer_restart,
+          maxit,
+          outer_verbose,
+          vector_size);
     case CellModelLinearSolverType::schur_gmres:
       return std::make_shared<GMResSolverType>(*linear_op,
                                                scalar_product,
@@ -314,18 +317,18 @@ CellModelLinearSolverWrapper::create_iterative_solver(std::shared_ptr<DuneLinear
 }
 
 
-PfieldLinearSolver::PfieldLinearSolver(const double gamma,
+PfieldLinearSolver::PfieldLinearSolver(const double dt,
+                                       const double gamma,
                                        const double epsilon,
                                        const double Be,
                                        const double Ca,
                                        const MatrixType& M,
-                                       const MatrixType& M_ell,
-                                       const MatrixType& D,
-                                       const MatrixType& G,
+                                       const MatrixType& K,
+                                       const MatrixType& B,
+                                       const MatrixType& Dphi_f,
                                        const MatrixType& M_nonlin,
                                        const CellModelLinearSolverType solver_type,
                                        const CellModelMassMatrixSolverType mass_matrix_solver_type,
-                                       const double phinat_scale_factor,
                                        const XT::LA::SparsityPatternDefault& submatrix_pattern,
                                        const size_t num_cells,
                                        const double outer_reduction,
@@ -334,22 +337,23 @@ PfieldLinearSolver::PfieldLinearSolver(const double gamma,
                                        const double inner_reduction,
                                        const int inner_maxit,
                                        const int inner_verbose)
-  : gamma_(gamma)
+  : dt_(dt)
+  , gamma_(gamma)
   , epsilon_(epsilon)
   , Be_(Be)
   , Ca_(Ca)
   , M_(M)
-  , M_ell_(M_ell)
-  , D_(D)
-  , G_(G)
+  , K_(K)
+  , B_(B)
+  , Dphi_f_(Dphi_f)
   , M_nonlin_(M_nonlin)
   , solver_type_(solver_type)
   , is_schur_solver_(is_schur_solver_type(solver_type))
   , size_phi_(M_.rows())
   , S_(CellModelLinearSolverWrapper::create_system_matrix(
         is_schur_solver_, 3 * size_phi_, system_matrix_pattern(submatrix_pattern)))
-  , S_preconditioner_(create_pfield_preconditioner_matrix(solver_type, system_matrix_pattern(submatrix_pattern)))
-  , phinat_scale_factor_(phinat_scale_factor)
+  , S_preconditioner_(
+        create_pfield_preconditioner_matrix(solver_type, preconditioner_matrix_pattern(submatrix_pattern)))
   , wrapper_(create_linear_operator(),
              create_scalar_product(),
              M_,
@@ -381,7 +385,9 @@ PfieldLinearSolver::PfieldLinearSolver(const double gamma,
 void PfieldLinearSolver::setup()
 {
   if (!is_schur_solver_) {
-    S_11_ = M_ / phinat_scale_factor_;
+    S_01_ = K_;
+    S_01_ *= gamma_ * dt_;
+    S_11_ = M_;
     S_22_ = M_;
   }
   if (solver_type_ == CellModelLinearSolverType::gmres) {
@@ -394,11 +400,9 @@ void PfieldLinearSolver::setup()
     ret_00 = M_;
     ret_11 = M_;
     ret_22 = M_;
-    // TOOD: Remove constant here and use correct dt
-    const auto dt = 1e-3;
-    ret_01 = M_ell_ * (gamma_ * dt);
-    ret_12 = M_ * (1. / Ca_ + 2 / (Be_ * std::pow(epsilon_, 2))) + M_ell_ * 1. / Be_;
-    ret_20 = M_ * 2. / epsilon_ + M_ell_ * epsilon_;
+    ret_01 = K_ * (gamma_ * dt_);
+    ret_12 = M_ * (1. / Ca_ + 2 / (Be_ * std::pow(epsilon_, 2))) + K_ * 1. / Be_;
+    ret_20 = M_ * 2. / epsilon_ + K_ * epsilon_;
   }
   wrapper_.setup();
 }
@@ -412,10 +416,13 @@ void PfieldLinearSolver::set_params(const XT::Common::Parameter& param, const bo
   wrapper_.set_params(param, restricted);
 }
 
-void PfieldLinearSolver::prepare(const double dt, const size_t cell, const bool restricted)
+void PfieldLinearSolver::prepare(const size_t cell, const bool restricted)
 {
-  dt_ = dt;
-  wrapper_.prepare(dt_, cell, restricted);
+  if (!is_schur_solver_) {
+    S_00_ = M_;
+    S_00_.axpy(dt_, B_);
+  }
+  wrapper_.prepare(cell, restricted);
 }
 
 PfieldLinearSolver::VectorType PfieldLinearSolver::apply(const VectorType& rhs, const size_t cell) const
@@ -423,7 +430,7 @@ PfieldLinearSolver::VectorType PfieldLinearSolver::apply(const VectorType& rhs, 
   if (is_schur_solver_) {
     return apply_schur_solver(rhs, cell);
   } else {
-    fill_S();
+    set_nonlinear_part_of_S();
     return wrapper_.apply_system_matrix_solver(rhs, cell);
   }
 }
@@ -465,6 +472,24 @@ PfieldLinearSolver::system_matrix_pattern(const XT::LA::SparsityPatternDefault& 
   return pattern;
 }
 
+XT::LA::SparsityPatternDefault
+PfieldLinearSolver::preconditioner_matrix_pattern(const XT::LA::SparsityPatternDefault& submatrix_pattern)
+{
+  // Use same pattern for all submatrices
+  const size_t n = submatrix_pattern.size();
+  XT::LA::SparsityPatternDefault pattern(3 * n);
+  for (size_t ii = 0; ii < n; ++ii)
+    for (const auto& jj : submatrix_pattern.inner(ii)) {
+      pattern.insert(ii, jj); // S_{00}
+      pattern.insert(ii, n + jj); // S_{01}
+      pattern.insert(n + ii, n + jj); // S_{11}
+      pattern.insert(n + ii, 2 * n + jj); // S_{12}
+      pattern.insert(2 * n + ii, jj); // S_{20}
+      pattern.insert(2 * n + ii, 2 * n + jj); // S_{22}
+    }
+  pattern.sort();
+  return pattern;
+}
 // Calling this method will result in ret = M^{-1} rhs.
 // Note: Writing rhs_mu.backend() = solver->solve(rhs_mu.backend()) gives wrong results for CG solver, ret may not be
 // the same vector as rhs!
@@ -475,22 +500,18 @@ void PfieldLinearSolver::apply_inverse_mass_matrix(const EigenVectorType& rhs,
   wrapper_.apply_inverse_mass_matrix(rhs, ret, initial_guess);
 }
 
-void PfieldLinearSolver::fill_S() const
+void PfieldLinearSolver::set_nonlinear_part_of_S() const
 {
-  S_00_ = M_;
-  S_00_.axpy(dt_, D_);
-  S_01_ = M_ell_;
-  S_01_ *= gamma_ * dt_ / phinat_scale_factor_;
-  S_10_ = G_;
-  S_12_ = M_ell_;
+  S_10_ = Dphi_f_;
+  S_12_ = K_;
   S_12_ *= 1. / Be_;
   S_12_.axpy(1. / (Be_ * std::pow(epsilon_, 2)), M_nonlin_);
   S_12_.axpy(1. / Ca_, M_);
-  S_20_ = M_ell_;
+  S_20_ = K_;
   S_20_ *= epsilon_;
   S_20_.axpy(1. / epsilon_, M_nonlin_);
-  static size_t ii = 0;
-  XT::LA::write_matrix_market(*S_, "pfield_jacobian" + XT::Common::to_string(ii++) + ".mtx");
+  // static size_t ii = 0;
+  // XT::LA::write_matrix_market(*S_, "pfield_jacobian" + XT::Common::to_string(ii++) + ".mtx");
 }
 
 PfieldLinearSolver::VectorType PfieldLinearSolver::apply_schur_solver(const VectorType& rhs, const size_t cell) const
@@ -515,7 +536,7 @@ PfieldLinearSolver::VectorType PfieldLinearSolver::apply_schur_solver(const Vect
   rhs_phinat = r1;
   M_.mv(rhs_mu, phi_tmp_eigen_);
   rhs_phinat.axpy(-1. / Ca_, phi_tmp_eigen_);
-  M_ell_.mv(rhs_mu, phi_tmp_eigen_);
+  K_.mv(rhs_mu, phi_tmp_eigen_);
   rhs_phinat.axpy(-1. / Be_, phi_tmp_eigen_);
   M_nonlin_.mv(rhs_mu, phi_tmp_eigen_);
   rhs_phinat.axpy(-1. / (Be_ * std::pow(epsilon_, 2)), phi_tmp_eigen_);
@@ -523,7 +544,7 @@ PfieldLinearSolver::VectorType PfieldLinearSolver::apply_schur_solver(const Vect
   rhs_phinat = phi_tmp_eigen_;
   // compute rhs_phi = r0 - dt E H^{-1} (r1 - J C^{-1} r2) = r0 - dt E rhs_phinat
   auto& rhs_phi = phi_tmp_eigen2_;
-  M_ell_.mv(rhs_phinat, rhs_phi);
+  K_.mv(rhs_phinat, rhs_phi);
   rhs_phi *= -gamma_ * dt_;
   rhs_phi += r0;
   // now solve for phi
@@ -531,7 +552,7 @@ PfieldLinearSolver::VectorType PfieldLinearSolver::apply_schur_solver(const Vect
   const auto& phi = previous_phi_update_[cell];
   ret_phi = phi;
   // store C^{-1} A phi in phi_tmp_eigen2_
-  M_ell_.mv(phi, phi_tmp_eigen2_);
+  K_.mv(phi, phi_tmp_eigen2_);
   phi_tmp_eigen2_ *= epsilon_;
   M_nonlin_.mv(phi, phi_tmp_eigen_);
   phi_tmp_eigen2_.axpy(1. / epsilon_, phi_tmp_eigen_);
@@ -541,11 +562,11 @@ PfieldLinearSolver::VectorType PfieldLinearSolver::apply_schur_solver(const Vect
   ret_mu = rhs_mu;
   ret_mu -= phi_tmp_eigen2_;
   // now calculate phinat
-  // calculate H^{-1} (G - J C^{-1} A) phi
-  G_.mv(phi, phi_tmp_eigen4_);
+  // calculate H^{-1} (Dphi_f - J C^{-1} A) phi
+  Dphi_f_.mv(phi, phi_tmp_eigen4_);
   M_.mv(phi_tmp_eigen2_, phi_tmp_eigen_);
   phi_tmp_eigen4_.axpy(-1. / Ca_, phi_tmp_eigen_);
-  M_ell_.mv(phi_tmp_eigen2_, phi_tmp_eigen_);
+  K_.mv(phi_tmp_eigen2_, phi_tmp_eigen_);
   phi_tmp_eigen4_.axpy(-1. / Be_, phi_tmp_eigen_);
   M_nonlin_.mv(phi_tmp_eigen2_, phi_tmp_eigen_);
   phi_tmp_eigen4_.axpy(-1. / (Be_ * std::pow(epsilon_, 2)), phi_tmp_eigen_);
@@ -561,7 +582,7 @@ std::shared_ptr<PfieldLinearSolver::LinearOperatorType> PfieldLinearSolver::crea
 {
   if (is_schur_solver_) {
     return std::make_shared<SchurMatrixLinearOperatorType>(
-        M_, D_, M_ell_, G_, M_nonlin_, *this, gamma_, epsilon_, Be_, Ca_);
+        M_, B_, K_, Dphi_f_, M_nonlin_, *this, dt_, gamma_, epsilon_, Be_, Ca_);
   } else {
     return std::make_shared<SystemMatrixLinearOperatorType>(*S_);
   }
@@ -577,7 +598,8 @@ std::shared_ptr<Dune::ScalarProduct<PfieldLinearSolver::EigenVectorType>> Pfield
 }
 
 
-OfieldLinearSolver::OfieldLinearSolver(const double kappa,
+OfieldLinearSolver::OfieldLinearSolver(const double dt,
+                                       const double kappa,
                                        const MatrixType& M,
                                        const MatrixType& A,
                                        const MatrixType& C_linear_part,
@@ -592,7 +614,8 @@ OfieldLinearSolver::OfieldLinearSolver(const double kappa,
                                        const double inner_reduction,
                                        const int inner_maxit,
                                        const int inner_verbose)
-  : kappa_(kappa)
+  : dt_(dt)
+  , kappa_(kappa)
   , M_(M)
   , A_(A)
   , C_linear_part_(C_linear_part)
@@ -628,8 +651,11 @@ OfieldLinearSolver::OfieldLinearSolver(const double kappa,
 
 void OfieldLinearSolver::setup()
 {
-  if (!is_schur_solver_)
+  if (!is_schur_solver_) {
     S_11_ = M_;
+    S_01_ = M_;
+    S_01_ *= dt_ / kappa_;
+  }
   wrapper_.setup();
 }
 
@@ -639,10 +665,13 @@ void OfieldLinearSolver::set_params(const XT::Common::Parameter& param, const bo
   wrapper_.set_params(param, restricted);
 }
 
-void OfieldLinearSolver::prepare(const double dt, const size_t cell, const bool restricted)
+void OfieldLinearSolver::prepare(const size_t cell, const bool restricted)
 {
-  dt_ = dt;
-  wrapper_.prepare(dt_, cell, restricted);
+  if (!is_schur_solver_) {
+    S_00_ = M_;
+    S_00_.axpy(dt_, A_);
+  }
+  wrapper_.prepare(cell, restricted);
 }
 
 OfieldLinearSolver::VectorType OfieldLinearSolver::apply(const VectorType& rhs, const size_t cell) const
@@ -650,7 +679,7 @@ OfieldLinearSolver::VectorType OfieldLinearSolver::apply(const VectorType& rhs, 
   if (is_schur_solver_) {
     return apply_schur_solver(rhs, cell);
   } else {
-    fill_S();
+    set_nonlinear_part_of_S();
     return wrapper_.apply_system_matrix_solver(rhs, cell);
   }
 }
@@ -693,12 +722,8 @@ OfieldLinearSolver::MatrixType& OfieldLinearSolver::schur_matrix()
   return *S_schur_;
 }
 
-void OfieldLinearSolver::fill_S() const
+void OfieldLinearSolver::set_nonlinear_part_of_S() const
 {
-  S_00_ = M_;
-  S_00_.axpy(dt_, A_);
-  S_01_ = M_;
-  S_01_ *= dt_ / kappa_;
   S_10_ = C_linear_part_;
   S_10_ += C_nonlinear_part_;
 }
