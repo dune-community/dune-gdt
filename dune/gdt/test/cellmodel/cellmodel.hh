@@ -93,7 +93,7 @@ struct CellModelSolver
       const double dt = 0.01,
       const unsigned int num_elements_x = 50,
       const unsigned int num_elements_y = 50,
-      const double pol_order = 2,
+      const int pol_order = 1,
       const bool use_tbb = true,
       const double Be = 0.3, // bending capillary number, ratio of viscous forces to bending forces
       const double Ca = 0.1, // capillary number, ratio of viscous forces to surface tension forces
@@ -107,11 +107,9 @@ struct CellModelSolver
       const double gamma = 0.025, // phase field mobility coefficient
       const double epsilon = 0.21, // phase field parameter
       const double In = 1., // interaction parameter
-      const CellModelLinearSolverType pfield_solver_type = CellModelLinearSolverType::schur_fgmres_gmres,
-      // const CellModelLinearSolverType pfield_solver_type = CellModelLinearSolverType::fgmres_gmres,
+      const CellModelLinearSolverType pfield_solver_type = CellModelLinearSolverType::gmres,
       const CellModelMassMatrixSolverType pfield_mass_matrix_solver_type = CellModelMassMatrixSolverType::sparse_ldlt,
-      const CellModelLinearSolverType ofield_solver_type = CellModelLinearSolverType::schur_fgmres_gmres,
-      // const CellModelLinearSolverType ofield_solver_type = CellModelLinearSolverType::fgmres_gmres,
+      const CellModelLinearSolverType ofield_solver_type = CellModelLinearSolverType::schur_gmres,
       const CellModelMassMatrixSolverType ofield_mass_matrix_solver_type = CellModelMassMatrixSolverType::sparse_ldlt,
       const double outer_reduction = 1e-14,
       const int outer_restart = 100,
@@ -560,11 +558,11 @@ struct CellModelSolver
   void fill_tmp_pfield(const size_t cell, const VectorType& source, const bool restricted) const;
 
   // error norm used in orientation field Newton iteration
-  // TODO: use appropriate norm
+  // TODO: use appropriate norm (?)
   double ofield_residual_norm(const VectorType& residual) const;
 
   // error norm used in phase field Newton iteration
-  // TODO: use appropriate norm
+  // TODO: use appropriate norm (?)
   double pfield_residual_norm(const VectorType& residual) const;
 
   R B_func(const size_t kk, const DomainType& x_local, const XT::Common::Parameter& param);

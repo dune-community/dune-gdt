@@ -116,7 +116,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
                                  const double dt,
                                  const unsigned int num_elements_x,
                                  const unsigned int num_elements_y,
-                                 const double pol_order,
+                                 const int pol_order,
                                  const bool use_tbb,
                                  const double Be, // bending capillary number, ratio of viscous forces to bending forces
                                  const double Ca, // capillary number, ratio of viscous forces to surface tension forces
@@ -1440,20 +1440,8 @@ void CellModelSolver::update_pfield_parameters(
 // Applies inverse stokes operator (solves F(y) = 0)
 CellModelSolver::VectorType CellModelSolver::apply_inverse_stokes_operator() const
 {
-  // now solve the system
-  // auto begin = std::chrono::steady_clock::now();
   EigenVectorType ret(size_u_ + size_p_);
   ret.backend() = stokes_solver_->solve(stokes_rhs_vector_.backend());
-  // std::chrono::duration<double> time = std::chrono::steady_clock::now() - begin;
-  // std::cout << "Solving Stokes took: " << time.count() << " s!" << std::endl;
-
-  // ensure int_\Omega p = 0 (TODO: remove (?), not necessary as p is not used anywhere)
-  // auto p_integral = p_basis_integrated_vector_ * p_.dofs().vector();
-  // auto p_correction = make_discrete_function<VectorType>(p_space_, "p_corr");
-  // XT::Functions::ConstantGridFunction<E> const_p_integral_func(p_integral / vol_domain_);
-  // default_interpolation(const_p_integral_func, p_correction);
-  // p_ -= p_correction;
-
   return XT::Common::convert_to<VectorType>(ret);
 }
 

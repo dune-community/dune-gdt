@@ -37,12 +37,13 @@ int main(int argc, char* argv[])
     auto testcase = config.template get<std::string>("problem.testcase");
 
     // grid config
-    unsigned int num_elements_x = config.template get<unsigned int>("grid.NX", static_cast<unsigned int>(16));
-    unsigned int num_elements_y = config.template get<unsigned int>("grid.NY", static_cast<unsigned int>(4));
+    unsigned int num_elements_x = config.template get<unsigned int>("grid.NX", static_cast<unsigned int>(90));
+    unsigned int num_elements_y = config.template get<unsigned int>("grid.NY", static_cast<unsigned int>(90));
 
     // timestepping
     double t_end = config.template get<double>("fem.t_end", 340.);
     double dt = config.template get<double>("fem.dt", 0.005);
+    const int pol_order = config.template get<int>("fem.degree", 1, 0, 0);
 
     // problem parameters
     double L = config.template get<double>("problem.L", 1e-6);
@@ -76,14 +77,16 @@ int main(int argc, char* argv[])
     const double inner_gmres_reduction = 1e-3;
     const int inner_gmres_maxit = 10;
     const int gmres_verbose = 0;
-    const CellModelLinearSolverType solver_type = CellModelLinearSolverType::schur_fgmres_gmres;
+    const CellModelLinearSolverType pfield_solver_type = CellModelLinearSolverType::gmres;
+    const CellModelLinearSolverType ofield_solver_type = CellModelLinearSolverType::schur_gmres;
     const CellModelMassMatrixSolverType mass_matrix_solver_type = CellModelMassMatrixSolverType::sparse_ldlt;
 
     CellModelSolver model_solver(testcase,
                                  t_end,
+                                 dt,
                                  num_elements_x,
                                  num_elements_y,
-                                 2,
+                                 pol_order,
                                  false,
                                  Be,
                                  Ca,
@@ -97,9 +100,9 @@ int main(int argc, char* argv[])
                                  gamma,
                                  epsilon,
                                  In,
-                                 solver_type,
+                                 pfield_solver_type,
                                  mass_matrix_solver_type,
-                                 solver_type,
+                                 ofield_solver_type,
                                  mass_matrix_solver_type,
                                  gmres_reduction,
                                  gmres_restart,
@@ -109,9 +112,10 @@ int main(int argc, char* argv[])
                                  gmres_verbose);
     CellModelSolver model_solver2(testcase,
                                   t_end,
+                                  dt,
                                   num_elements_x,
                                   num_elements_y,
-                                  2,
+                                  pol_order,
                                   false,
                                   Be,
                                   Ca,
@@ -125,9 +129,9 @@ int main(int argc, char* argv[])
                                   gamma,
                                   epsilon,
                                   In,
-                                  solver_type,
+                                  pfield_solver_type,
                                   mass_matrix_solver_type,
-                                  solver_type,
+                                  ofield_solver_type,
                                   mass_matrix_solver_type,
                                   gmres_reduction,
                                   gmres_restart,
@@ -200,10 +204,9 @@ int main(int argc, char* argv[])
       }
       for (size_t kk = 0; kk < num_cells; ++kk) {
         model_solver.compute_restricted_pfield_dofs(pfield_output_dofs, kk);
-        std::cout << "Restricted start" << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(2));
         auto begin = std::chrono::steady_clock::now();
-        model_solver.prepare_pfield_operator(dt, kk, true);
+        model_solver.prepare_pfield_operator(kk, true);
         model_solver.set_pfield_jacobian_state(pfield_state, kk, true);
         pfield_restricted_prep_time += std::chrono::steady_clock::now() - begin;
         const auto& pfield_source_dofs = model_solver.pfield_deim_source_dofs(kk)[0];
@@ -217,10 +220,9 @@ int main(int argc, char* argv[])
         begin = std::chrono::steady_clock::now();
         auto restricted_jac_result = model_solver.apply_pfield_jacobian(restricted_source, kk, true);
         pfield_restricted_jac_time += std::chrono::steady_clock::now() - begin;
-        std::cout << "Restricted end" << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(2));
         begin = std::chrono::steady_clock::now();
-        model_solver2.prepare_pfield_operator(dt, kk, false);
+        model_solver2.prepare_pfield_operator(kk, false);
         model_solver2.set_pfield_jacobian_state(pfield_state, kk, false);
         pfield_prep_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
@@ -252,7 +254,7 @@ int main(int argc, char* argv[])
       for (size_t kk = 0; kk < num_cells; ++kk) {
         model_solver.compute_restricted_ofield_dofs(ofield_output_dofs, kk);
         auto begin = std::chrono::steady_clock::now();
-        model_solver.prepare_ofield_operator(dt, kk, true);
+        model_solver.prepare_ofield_operator(kk, true);
         model_solver.set_ofield_jacobian_state(ofield_state, kk, true);
         ofield_restricted_prep_time += std::chrono::steady_clock::now() - begin;
         const auto& ofield_source_dofs = model_solver.ofield_deim_source_dofs(kk)[1];
@@ -267,7 +269,7 @@ int main(int argc, char* argv[])
         auto restricted_jac_result = model_solver.apply_ofield_jacobian(restricted_source, kk, true);
         ofield_restricted_jac_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
-        model_solver2.prepare_ofield_operator(dt, kk, false);
+        model_solver2.prepare_ofield_operator(kk, false);
         model_solver2.set_ofield_jacobian_state(ofield_state, kk, false);
         ofield_prep_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
@@ -334,21 +336,62 @@ int main(int argc, char* argv[])
                     << jac_result[stokes_output_dofs[ii]] << ", " << restricted_jac_result[ii] << std::endl;
       } // ii
     } // runs
+    std::cout << "Num dofs: "
+              << "Pfield: " << pfield_size << ", Ofield: " << ofield_size << ", Stokes: " << stokes_size << std::endl;
     std::cout << "Pfield:" << std::endl;
-    std::cout << "prep: " << pfield_prep_time.count() << "  vs. " << pfield_restricted_prep_time.count() << std::endl;
+    const auto& pfield_source_dofs = model_solver.pfield_deim_source_dofs(0);
+    const size_t pfield_pfield_constrained_size = pfield_source_dofs[0].size();
+    const size_t pfield_ofield_constrained_size = pfield_source_dofs[1].size();
+    const size_t pfield_stokes_constrained_size = pfield_source_dofs[2].size();
+    std::cout << "Constrained input dofs: "
+              << "Pfield: " << pfield_pfield_constrained_size << " (factor "
+              << double(pfield_size) / double(pfield_pfield_constrained_size) << "), "
+              << "Ofield: " << pfield_ofield_constrained_size << " (factor "
+              << double(ofield_size) / double(pfield_ofield_constrained_size) << "), "
+              << "Stokes: " << pfield_stokes_constrained_size << " (factor "
+              << double(stokes_size) / double(pfield_stokes_constrained_size) << "), " << std::endl;
+    std::cout << "prep: " << pfield_prep_time.count() << "  vs. " << pfield_restricted_prep_time.count()
+              << ", factor: " << pfield_prep_time.count() / pfield_restricted_prep_time.count() << std::endl;
     std::cout << "apply: " << pfield_apply_time.count() << "  vs. " << pfield_restricted_apply_time.count()
-              << std::endl;
-    std::cout << "jac: " << pfield_jac_time.count() << "  vs. " << pfield_restricted_jac_time.count() << std::endl;
+              << ", factor: " << pfield_apply_time.count() / pfield_restricted_apply_time.count() << std::endl;
+    std::cout << "jac: " << pfield_jac_time.count() << "  vs. " << pfield_restricted_jac_time.count()
+              << ", factor: " << pfield_jac_time.count() / pfield_restricted_jac_time.count() << std::endl;
     std::cout << "Ofield:" << std::endl;
-    std::cout << "prep: " << ofield_prep_time.count() << "  vs. " << ofield_restricted_prep_time.count() << std::endl;
+    const auto& ofield_source_dofs = model_solver.ofield_deim_source_dofs(0);
+    const size_t ofield_pfield_constrained_size = ofield_source_dofs[0].size();
+    const size_t ofield_ofield_constrained_size = ofield_source_dofs[1].size();
+    const size_t ofield_stokes_constrained_size = ofield_source_dofs[2].size();
+    std::cout << "Constrained input dofs: "
+              << "Pfield: " << ofield_pfield_constrained_size << " (factor "
+              << double(pfield_size) / double(ofield_pfield_constrained_size) << "), "
+              << "Ofield: " << ofield_ofield_constrained_size << " (factor "
+              << double(ofield_size) / double(ofield_ofield_constrained_size) << "), "
+              << "Stokes: " << ofield_stokes_constrained_size << " (factor "
+              << double(stokes_size) / double(ofield_stokes_constrained_size) << "), " << std::endl;
+    std::cout << "prep: " << ofield_prep_time.count() << "  vs. " << ofield_restricted_prep_time.count()
+              << ", factor: " << ofield_prep_time.count() / ofield_restricted_prep_time.count() << std::endl;
     std::cout << "apply: " << ofield_apply_time.count() << "  vs. " << ofield_restricted_apply_time.count()
-              << std::endl;
-    std::cout << "jac: " << ofield_jac_time.count() << "  vs. " << ofield_restricted_jac_time.count() << std::endl;
+              << ", factor: " << ofield_apply_time.count() / ofield_restricted_apply_time.count() << std::endl;
+    std::cout << "jac: " << ofield_jac_time.count() << "  vs. " << ofield_restricted_jac_time.count()
+              << ", factor: " << ofield_jac_time.count() / ofield_restricted_jac_time.count() << std::endl;
     std::cout << "Stokes:" << std::endl;
-    std::cout << "prep: " << stokes_prep_time.count() << "  vs. " << stokes_restricted_prep_time.count() << std::endl;
+    const auto& stokes_source_dofs = model_solver.stokes_deim_source_dofs();
+    const size_t stokes_pfield_constrained_size = stokes_source_dofs[0].size();
+    const size_t stokes_ofield_constrained_size = stokes_source_dofs[1].size();
+    const size_t stokes_stokes_constrained_size = stokes_source_dofs[2].size();
+    std::cout << "Constrained input dofs: "
+              << "Pfield: " << stokes_pfield_constrained_size << " (factor "
+              << double(pfield_size) / double(stokes_pfield_constrained_size) << "), "
+              << "Ofield: " << stokes_ofield_constrained_size << " (factor "
+              << double(ofield_size) / double(stokes_ofield_constrained_size) << "), "
+              << "Stokes: " << stokes_stokes_constrained_size << " (factor "
+              << double(stokes_size) / double(stokes_stokes_constrained_size) << "), " << std::endl;
+    std::cout << "prep: " << stokes_prep_time.count() << "  vs. " << stokes_restricted_prep_time.count()
+              << ", factor: " << stokes_prep_time.count() / stokes_restricted_prep_time.count() << std::endl;
     std::cout << "apply: " << stokes_apply_time.count() << "  vs. " << stokes_restricted_apply_time.count()
-              << std::endl;
-    std::cout << "jac: " << stokes_jac_time.count() << "  vs. " << stokes_restricted_jac_time.count() << std::endl;
+              << ", factor: " << stokes_apply_time.count() / stokes_restricted_apply_time.count() << std::endl;
+    std::cout << "jac: " << stokes_jac_time.count() << "  vs. " << stokes_restricted_jac_time.count()
+              << ", factor: " << stokes_jac_time.count() / stokes_restricted_jac_time.count() << std::endl;
   } catch (Exception& e) {
     std::cerr << "\nDUNE reported error: " << e.what() << std::endl;
     return EXIT_FAILURE;

@@ -36,13 +36,13 @@ int main(int argc, char* argv[])
     auto testcase = config.template get<std::string>("problem.testcase");
 
     // grid config
-    unsigned int num_elements_x = config.template get<unsigned int>("grid.NX", static_cast<unsigned int>(16));
-    unsigned int num_elements_y = config.template get<unsigned int>("grid.NY", static_cast<unsigned int>(4));
+    unsigned int num_elements_x = config.template get<unsigned int>("grid.NX", static_cast<unsigned int>(90));
+    unsigned int num_elements_y = config.template get<unsigned int>("grid.NY", static_cast<unsigned int>(90));
 
     // timestepping
     double t_end = config.template get<double>("fem.t_end", 340.);
     double dt = config.template get<double>("fem.dt", 0.005);
-    const size_t pol_order = config.template get<size_t>("fem.degree", 2, 0, 0);
+    const int pol_order = config.template get<int>("fem.degree", 1, 0, 0);
 
     // problem parameters
     double L = config.template get<double>("problem.L", 1e-6);

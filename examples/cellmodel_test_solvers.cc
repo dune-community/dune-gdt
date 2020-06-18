@@ -36,12 +36,13 @@ int main(int argc, char* argv[])
     auto testcase = config.template get<std::string>("problem.testcase");
 
     // grid config
-    unsigned int num_elements_x = config.template get<unsigned int>("grid.NX", static_cast<unsigned int>(16));
-    unsigned int num_elements_y = config.template get<unsigned int>("grid.NY", static_cast<unsigned int>(4));
+    unsigned int num_elements_x = config.template get<unsigned int>("grid.NX", static_cast<unsigned int>(90));
+    unsigned int num_elements_y = config.template get<unsigned int>("grid.NY", static_cast<unsigned int>(90));
 
     // timestepping
-    double t_end = config.template get<double>("fem.t_end", 340.);
-    double dt = config.template get<double>("fem.dt", 0.005);
+    double t_end = config.template get<double>("fem.t_end", 0.1);
+    double dt = config.template get<double>("fem.dt", 0.01);
+    const int pol_order = config.template get<int>("fem.degree", 1, 0, 0);
 
     // problem parameters
     double L = config.template get<double>("problem.L", 1e-6);
@@ -80,20 +81,21 @@ int main(int argc, char* argv[])
     const int inner_gmres_maxit = DXTC_CONFIG_GET("inner_gmres_maxit", 10);
     const int gmres_verbose = DXTC_CONFIG_GET("gmres_verbose", 0);
     const CellModelLinearSolverType pfield_solver_type =
-        string_to_solver_type(DXTC_CONFIG_GET("pfield_solver_type", "schur_fgmres_gmres"));
+        string_to_solver_type(DXTC_CONFIG_GET("pfield_solver_type", "direct"));
     const CellModelMassMatrixSolverType pfield_mass_matrix_solver_type =
         string_to_mass_matrix_solver_type(DXTC_CONFIG_GET("pfield_mass_matrix_solver_type", "sparse_ldlt"));
     const CellModelLinearSolverType ofield_solver_type =
-        string_to_solver_type(DXTC_CONFIG_GET("ofield_solver_type", "schur_fgmres_gmres"));
+        string_to_solver_type(DXTC_CONFIG_GET("ofield_solver_type", "direct"));
     const CellModelMassMatrixSolverType ofield_mass_matrix_solver_type =
         string_to_mass_matrix_solver_type(DXTC_CONFIG_GET("ofield_mass_matrix_solver_type", "sparse_ldlt"));
 
 
     CellModelSolver model_solver(testcase,
                                  t_end,
+                                 dt,
                                  num_elements_x,
                                  num_elements_y,
-                                 2,
+                                 pol_order,
                                  false,
                                  Be,
                                  Ca,
@@ -107,9 +109,9 @@ int main(int argc, char* argv[])
                                  gamma,
                                  epsilon,
                                  In,
-                                 CellModelLinearSolverType::schur_fgmres_gmres,
+                                 CellModelLinearSolverType::gmres,
                                  CellModelMassMatrixSolverType::sparse_ldlt,
-                                 CellModelLinearSolverType::schur_fgmres_gmres,
+                                 CellModelLinearSolverType::schur_gmres,
                                  CellModelMassMatrixSolverType::sparse_ldlt,
                                  gmres_reduction,
                                  gmres_restart,
@@ -119,9 +121,10 @@ int main(int argc, char* argv[])
                                  gmres_verbose);
     CellModelSolver model_solver2(testcase,
                                   t_end,
+                                  dt,
                                   num_elements_x,
                                   num_elements_y,
-                                  2,
+                                  pol_order,
                                   false,
                                   Be,
                                   Ca,
@@ -148,10 +151,10 @@ int main(int argc, char* argv[])
     std::chrono::duration<double> ref_time(0.);
     std::chrono::duration<double> time(0.);
     auto begin = std::chrono::steady_clock::now();
-    const auto result2 = model_solver2.solve(dt, false, write_step, filename, subsampling);
+    const auto result2 = model_solver2.solve(false, write_step, filename, subsampling);
     time = std::chrono::steady_clock::now() - begin;
     begin = std::chrono::steady_clock::now();
-    const auto result1 = model_solver.solve(dt, false, write_step, filename, subsampling);
+    const auto result1 = model_solver.solve(false, write_step, filename, subsampling);
     ref_time = std::chrono::steady_clock::now() - begin;
     std::cout << "Timings: ref =  " << ref_time.count() << "  vs. tested solvers = " << time.count() << std::endl;
     for (size_t ii = 0; ii < result1.size(); ++ii) {

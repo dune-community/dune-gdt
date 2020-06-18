@@ -63,20 +63,20 @@ BOOST_PYTHON_MODULE(cellmodel)
   // Boost.Python cannot handle more than about 14 arguments in the constructor by default
   // TODO: Find a way to increase that limit in boost or change constructor.
   class_<CellModelSolver>("CellModelSolver",
-                          init<optional<const std::string,
-                                        const double,
-                                        const unsigned int,
-                                        const unsigned int,
-                                        const size_t,
-                                        const bool,
-                                        const double,
-                                        const double,
-                                        const double,
-                                        const double,
-                                        const double,
-                                        const double,
-                                        const double,
-                                        const double>>())
+                          init<optional<const std::string /*testcase*/,
+                                        const double /*t_end*/,
+                                        const double /*dt*/,
+                                        const unsigned int /*num_elements_x*/,
+                                        const unsigned int /*num_elements_y*/,
+                                        const int /*pol_order*/,
+                                        const bool /*use_tbb*/,
+                                        const double /*Be*/,
+                                        const double /*Ca*/,
+                                        const double /*Pa*/,
+                                        const double /*Re*/,
+                                        const double /*Fa*/,
+                                        const double /*xi*/,
+                                        const double /*kappa*/>>())
       .def("visualize", &CellModelSolver::visualize, visualize_overloads())
       .def("visualize_pfield", &CellModelSolver::visualize_pfield, visualize_pfield_overloads())
       .def("visualize_ofield", &CellModelSolver::visualize_ofield, visualize_ofield_overloads())
