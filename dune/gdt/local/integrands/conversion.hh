@@ -52,14 +52,22 @@ public:
   using LocalBinaryElementIntegrandType = LocalBinaryElementIntegrandInterface<E, t_r, t_rC, TF, F, a_r, a_rC, AF>;
 
   LocalBinaryToUnaryElementIntegrand(const LocalBinaryElementIntegrandType& local_binary_integrand,
-                                     XT::Functions::GridFunction<E, a_r, a_rC, AF> inducing_function_as_ansatz_basis)
-    : inducing_function_as_ansatz_basis_(inducing_function_as_ansatz_basis)
+                                     XT::Functions::GridFunction<E, a_r, a_rC, AF> inducing_function_as_ansatz_basis,
+                                     const std::string& logging_prefix = "")
+    : BaseType({},
+               logging_prefix.empty() ? "gdt" : "gdt.localbinarytounaryelementintegrand",
+               logging_prefix.empty() ? "LocalBinaryToUnaryElementIntegrand" : logging_prefix,
+               /*logging_disabled=*/logging_prefix.empty())
+    , inducing_function_as_ansatz_basis_(inducing_function_as_ansatz_basis)
     , local_function_(inducing_function_as_ansatz_basis_.local_function())
     , local_binary_integrand_(local_binary_integrand.copy_as_binary_element_integrand())
-  {}
+  {
+    LOG_(debug) << this->logging_id << "(local_binary_integrand=" << &local_binary_integrand
+                << ", inducing_function_as_ansatz_basis=" << &inducing_function_as_ansatz_basis << ")" << std::endl;
+  }
 
   LocalBinaryToUnaryElementIntegrand(const ThisType& other)
-    : BaseType()
+    : BaseType(other)
     , inducing_function_as_ansatz_basis_(other.inducing_function_as_ansatz_basis_)
     , local_function_(inducing_function_as_ansatz_basis_.local_function())
     , local_binary_integrand_(other.local_binary_integrand_->copy_as_binary_element_integrand())
@@ -90,6 +98,9 @@ public:
                 DynamicVector<F>& result,
                 const XT::Common::Parameter& param = {}) const override final
   {
+    LOG_(debug) << this->logging_id << ".evaluate(basis.size()=" << basis.size(param)
+                << ", point_in_reference_element=[" << point_in_reference_element << "], param=" << param
+                << "):" << std::endl;
     // prepare storage
     const auto size = basis.size(param);
     if (result.size() < size)
@@ -98,7 +109,11 @@ public:
     local_binary_integrand_->evaluate(
         basis, *local_function_, point_in_reference_element, local_binary_integrand_result_, param);
     // extract result
-    result = local_binary_integrand_result_[0];
+    LOG_(debug) << "  local_binary_integrand_result_ = [" << local_binary_integrand_result_ << "]" << std::endl;
+    assert(local_binary_integrand_result_.rows() >= size && "This must not happen!");
+    assert(local_binary_integrand_result_.cols() >= 1 && "This must not happen!");
+    for (size_t ii = 0; ii < size; ++ii)
+      result[ii] = local_binary_integrand_result_[ii][0];
   } // ... evaluate(...)
 
 private:
@@ -190,7 +205,10 @@ public:
     local_binary_integrand_->evaluate(
         test_basis, *local_function_, point_in_reference_Intersection, local_binary_integrand_result_, param);
     // extract result
-    result = local_binary_integrand_result_[0];
+    assert(local_binary_integrand_result_.rows() >= size && "This must not happen!");
+    assert(local_binary_integrand_result_.cols() >= 1 && "This must not happen!");
+    for (size_t ii = 0; ii < size; ++ii)
+      result[ii] = local_binary_integrand_result_[ii][0];
   } // ... evaluate(...)
 
 private:

@@ -50,11 +50,17 @@ public:
   using typename BaseType::LocalAnsatzBasisType;
   using typename BaseType::LocalTestBasisType;
 
-  LocalElementProductIntegrand(XT::Functions::GridFunction<E, r, r, F> weight = {1.})
-    : BaseType()
+  LocalElementProductIntegrand(XT::Functions::GridFunction<E, r, r, F> weight = {1.},
+                               const std::string& logging_prefix = "")
+    : BaseType({},
+               logging_prefix.empty() ? "gdt" : "gdt.localelementproductintegrand",
+               logging_prefix.empty() ? "LocalElementProductIntegrand" : logging_prefix,
+               /*logging_disabled=*/logging_prefix.empty())
     , weight_(weight)
     , local_weight_(weight_.local_function())
-  {}
+  {
+    LOG_(info) << this->logging_id << "(weight=" << &weight << ")" << std::endl;
+  }
 
   LocalElementProductIntegrand(const ThisType& other)
     : BaseType(other.parameter_type())
@@ -91,6 +97,9 @@ public:
                 DynamicMatrix<F>& result,
                 const XT::Common::Parameter& param = {}) const override final
   {
+    LOG_(debug) << "evaluate(test_basis.size()=" << test_basis.size(param)
+                << ", ansatz_basis.size()=" << ansatz_basis.size(param) << ", point_in_reference_element=["
+                << point_in_reference_element << "], param=" << param << ")" << std::endl;
     // prepare storage
     const size_t rows = test_basis.size(param);
     const size_t cols = ansatz_basis.size(param);
@@ -100,10 +109,13 @@ public:
     test_basis.evaluate(point_in_reference_element, test_basis_values_, param);
     ansatz_basis.evaluate(point_in_reference_element, ansatz_basis_values_, param);
     const auto weight = local_weight_->evaluate(point_in_reference_element, param);
+    LOG_(debug) << "  test_basis_values_ = " << test_basis_values_
+                << "\n  ansatz_basis_values_ = " << ansatz_basis_values_ << "\n  weight = " << weight << std::endl;
     // compute product
     for (size_t ii = 0; ii < rows; ++ii)
       for (size_t jj = 0; jj < cols; ++jj)
         result[ii][jj] = (weight * test_basis_values_[ii]) * ansatz_basis_values_[jj];
+    LOG_(debug) << "  result = " << result << std::endl;
   } // ... evaluate(...)
 
 private:

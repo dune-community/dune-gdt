@@ -16,6 +16,7 @@
 #include <dune/common/dynvector.hh>
 
 #include <dune/xt/common/parameter.hh>
+#include <dune/xt/common/timedlogging.hh>
 #include <dune/xt/grid/bound-object.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/functions/interfaces/element-functions.hh>
@@ -71,10 +72,14 @@ template <class Element,
 class LocalUnaryElementIntegrandInterface
   : public XT::Common::ParametricInterface
   , public XT::Grid::ElementBoundObject<Element>
+  , public XT::Common::WithLogger<
+        LocalUnaryElementIntegrandInterface<Element, range_dim, range_dim_cols, RangeField, Field>>
 {
   static_assert(XT::Grid::is_entity<Element>::value, "");
 
   using ThisType = LocalUnaryElementIntegrandInterface;
+  using Logger = XT::Common::WithLogger<
+      LocalUnaryElementIntegrandInterface<Element, range_dim, range_dim_cols, RangeField, Field>>;
 
 public:
   using E = Element;
@@ -90,8 +95,14 @@ public:
   using DomainType = FieldVector<D, d>;
   using LocalBasisType = XT::Functions::ElementFunctionSetInterface<E, r, rC, R>;
 
-  LocalUnaryElementIntegrandInterface(const XT::Common::ParameterType& param_type = {})
+  LocalUnaryElementIntegrandInterface(const XT::Common::ParameterType& param_type = {},
+                                      const std::string& logging_prefix = "",
+                                      const std::string& logging_id = "",
+                                      const bool logging_disabled = true)
     : XT::Common::ParametricInterface(param_type)
+    , Logger(logging_prefix.empty() ? "gdt" : logging_prefix,
+             logging_id.empty() ? "LocalUnaryElementIntegrand" : logging_id,
+             logging_disabled)
   {}
 
   virtual ~LocalUnaryElementIntegrandInterface() = default;
@@ -150,10 +161,26 @@ template <class Element,
 class LocalBinaryElementIntegrandInterface
   : public XT::Common::ParametricInterface
   , public XT::Grid::ElementBoundObject<Element>
+  , public XT::Common::WithLogger<LocalBinaryElementIntegrandInterface<Element,
+                                                                       test_range_dim,
+                                                                       test_range_dim_cols,
+                                                                       TestRangeField,
+                                                                       Field,
+                                                                       ansatz_range_dim,
+                                                                       ansatz_range_dim_cols,
+                                                                       AnsatzRangeField>>
 {
   static_assert(XT::Grid::is_entity<Element>::value, "");
 
   using ThisType = LocalBinaryElementIntegrandInterface;
+  using Logger = XT::Common::WithLogger<LocalBinaryElementIntegrandInterface<Element,
+                                                                             test_range_dim,
+                                                                             test_range_dim_cols,
+                                                                             TestRangeField,
+                                                                             Field,
+                                                                             ansatz_range_dim,
+                                                                             ansatz_range_dim_cols,
+                                                                             AnsatzRangeField>>;
 
 public:
   using E = Element;
@@ -174,8 +201,14 @@ public:
   using LocalTestBasisType = XT::Functions::ElementFunctionSetInterface<E, t_r, t_rC, TR>;
   using LocalAnsatzBasisType = XT::Functions::ElementFunctionSetInterface<E, a_r, a_rC, AR>;
 
-  LocalBinaryElementIntegrandInterface(const XT::Common::ParameterType& param_type = {})
+  LocalBinaryElementIntegrandInterface(const XT::Common::ParameterType& param_type = {},
+                                       const std::string& logging_prefix = "",
+                                       const std::string& logging_id = "",
+                                       const bool logging_disabled = true)
     : XT::Common::ParametricInterface(param_type)
+    , Logger(logging_prefix.empty() ? "gdt" : logging_prefix,
+             logging_id.empty() ? "LocalBinaryElementIntegrand" : logging_id,
+             logging_disabled)
   {}
 
   virtual ~LocalBinaryElementIntegrandInterface() = default;
@@ -730,5 +763,6 @@ protected:
 } // namespace Dune
 
 #include "combined.hh"
+#include "conversion.hh"
 
 #endif // DUNE_GDT_LOCAL_INTEGRANDS_INTERFACES_HH
