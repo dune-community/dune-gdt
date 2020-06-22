@@ -11,7 +11,7 @@
 
 #include <dune/xt/grid/grids.hh>
 
-#include "interfaces.hh"
+#include "interface_bindings.hh"
 
 
 PYBIND11_MODULE(_operators_interfaces_eigen, m)

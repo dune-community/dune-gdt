@@ -24,6 +24,8 @@
 
 #include <dune/gdt/operators/lincomb.hh>
 
+#include "interfaces.hh"
+
 namespace Dune {
 namespace GDT {
 namespace bindings {
@@ -43,6 +45,41 @@ class ConstLincombOperator
 
 public:
   using bound_type = pybind11::class_<type, base_type>;
+
+  template <class T, typename... options>
+  static void addbind_methods(pybind11::class_<T, options...>& c)
+  {
+    namespace py = pybind11;
+    using namespace pybind11::literals;
+
+    // methods from operator base, to allow for overloads
+    bindings::OperatorInterface<M, G, s, sC, r, rC>::addbind_methods(c);
+
+    // our methods
+    c.def("add",
+          [](type& self, const typename type::OperatorType& op, const typename type::FieldType& coeff) {
+            self.add(op, coeff);
+          },
+          "op"_a,
+          "coeff"_a = 1.,
+          py::keep_alive<1, 2>());
+    c.def("add",
+          [](type& self, const type& op, const typename type::FieldType& coeff) { self.add(op, coeff); },
+          "const_lincomb_op"_a,
+          "coeff"_a = 1.,
+          py::keep_alive<1, 2>());
+    c.def(
+        "op", (const typename T::OperatorType& (T::*)(const size_t) const) & T::op, "index"_a, py::keep_alive<0, 1>());
+    c.def("coeff", [](type& self, const size_t ii) { return self.coeff(ii); }, "index"_a);
+    // our operators (only if we require const variants, see interface bindings)
+    // ...
+    //    ThisType& operator*=(const FieldType& alpha)
+    //    ThisType& operator/=(const FieldType& alpha)
+    //    ThisType& operator+=(const BaseType& other)
+    //    ThisType& operator+=(const ThisType& other)
+    //    ThisType& operator-=(const BaseType& other)
+    //    ThisType& operator-=(const ThisType& other)
+  } // ... addbind_methods(...)
 
   static bound_type bind(pybind11::module& m,
                          const std::string& class_id = "const_lincomb_operator",
@@ -70,45 +107,9 @@ public:
           "range_space"_a,
           py::keep_alive<0, 2>(),
           py::keep_alive<0, 3>());
-    c.def("add",
-          [](type& self, const typename type::OperatorType& op, const typename type::FieldType& coeff) {
-            self.add(op, coeff);
-          },
-          "op"_a,
-          "coeff"_a = 1.);
-    c.def("add",
-          [](type& self, const type& op, const typename type::FieldType& coeff) { self.add(op, coeff); },
-          "const_lincomb_op"_a,
-          "coeff"_a = 1.);
     c.def_property_readonly("num_ops", &type::num_ops);
-    c.def("op", [](type& self, const size_t ii) { return self.op(ii); }, "index"_a, py::keep_alive<1, 0>());
-    c.def("coeff", [](type& self, const size_t ii) { return self.coeff(ii); }, "index"_a);
-    // operators
-    // ...
 
-    // factory
-    //    m.def(XT::Common::to_camel_case(class_id).c_str(),
-    //          [](const SS& source_space, const RS& range_space, const MT&) {
-    //            return type(source_space, range_space);
-    //          },
-    //          "source_space"_a,
-    //          "range_space"_a,
-    //          "matrix_type"_a,
-    //          py::keep_alive<0, 1>(),
-    //          py::keep_alive<0, 2>());
-    m.def(XT::Common::to_camel_case(class_id).c_str(),
-          [](const SS& source_space, const RS& range_space, const M&) { return type(source_space, range_space); },
-          "source_space"_a,
-          "range_space"_a,
-          "unsused_matrix_to_select_type"_a,
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>());
-    m.def(XT::Common::to_camel_case(matrix_name + "_" + class_id).c_str(),
-          [](const SS& source_space, const RS& range_space) { return type(source_space, range_space); },
-          "source_space"_a,
-          "range_space"_a,
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>());
+    addbind_methods(c);
 
     return c;
   } // ... bind(...)
@@ -125,6 +126,7 @@ class LincombOperator
   using V = typename type::VectorType;
   using SS = typename type::SourceSpaceType;
   using RS = typename type::RangeSpaceType;
+  using F = typename type::FieldType;
   using Mop = typename type::MatrixOperatorType;
 
 public:
@@ -156,54 +158,23 @@ public:
           "range_space"_a,
           py::keep_alive<0, 2>(),
           py::keep_alive<0, 3>());
-    c.def("add",
-          [](type& self, const typename type::OperatorType& op, const typename type::FieldType& coeff) {
-            self.add(op, coeff);
-          },
-          "op"_a,
-          "coeff"_a = 1.);
+
+    // methods from base, to allow for overloads
+    bindings::ConstLincombOperator<M, G, s, sC, r, rC>::addbind_methods(c);
+
+    // our methods
     c.def(
         "add",
         [](type& self, typename type::OperatorType& op, const typename type::FieldType& coeff) { self.add(op, coeff); },
         "op"_a,
-        "coeff"_a = 1.);
-    c.def("add",
-          [](type& self, const type& op, const typename type::FieldType& coeff) { self.add(op, coeff); },
-          "const_lincomb_op"_a,
-          "coeff"_a = 1.);
+        "coeff"_a = 1.,
+        py::keep_alive<1, 2>());
     c.def("add",
           [](type& self, type& op, const typename type::FieldType& coeff) { self.add(op, coeff); },
           "const_lincomb_op"_a,
-          "coeff"_a = 1.);
-    c.def_property_readonly("num_ops", &type::num_ops);
-    c.def("op", [](type& self, const size_t ii) { return self.op(ii); }, "index"_a, py::keep_alive<1, 0>());
-    c.def("coeff", [](type& self, const size_t ii) { return self.coeff(ii); }, "index"_a);
-    // operators
-    // ...
-
-    // factory
-    //    m.def(XT::Common::to_camel_case(class_id).c_str(),
-    //          [](const SS& source_space, const RS& range_space, const MT&) {
-    //            return type(source_space, range_space);
-    //          },
-    //          "source_space"_a,
-    //          "range_space"_a,
-    //          "matrix_type"_a,
-    //          py::keep_alive<0, 1>(),
-    //          py::keep_alive<0, 2>());
-    m.def(XT::Common::to_camel_case(class_id).c_str(),
-          [](const SS& source_space, const RS& range_space, const M&) { return type(source_space, range_space); },
-          "source_space"_a,
-          "range_space"_a,
-          "unsused_matrix_to_select_type"_a,
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>());
-    m.def(XT::Common::to_camel_case(matrix_name + "_" + class_id).c_str(),
-          [](const SS& source_space, const RS& range_space) { return type(source_space, range_space); },
-          "source_space"_a,
-          "range_space"_a,
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>());
+          "coeff"_a = 1.,
+          py::keep_alive<1, 2>());
+    c.def("op", (typename type::OperatorType & (type::*)(const size_t)) & type::op, "index"_a, py::keep_alive<0, 1>());
 
     return c;
   } // ... bind(...)

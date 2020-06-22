@@ -26,8 +26,6 @@
 
 #include <dune/gdt/operators/interfaces.hh>
 
-//#include "lincomb.hh"
-
 namespace Dune {
 namespace GDT {
 namespace bindings {
@@ -42,7 +40,10 @@ class OperatorInterface
   using V = typename type::VectorType;
   using SS = typename type::SourceSpaceType;
   using RS = typename type::RangeSpaceType;
+  using F = typename type::FieldType;
   using Mop = typename type::MatrixOperatorType;
+  using CLop = typename type::ConstLincombOperatorType;
+  using Lop = typename type::LincombOperatorType;
 
 public:
   using bound_type = pybind11::class_<type>;
@@ -178,6 +179,145 @@ public:
           "param"_a = XT::Common::Parameter(),
           py::call_guard<py::gil_scoped_release>());
     // ... induced norm?
+
+    // operators (do we need the const variants? if yes, adjust lincomb bindings accordingly)
+    // * from OperatorInterface
+    //    virtual ConstLincombOperatorType operator*(const FieldType& alpha) const
+    //    c.def("__mul__", [](const type& self, const F& alpha) { return self * alpha; }, "alpha"_a, py::is_operator());
+    //    c.def("__rmul__", [](const type& self, const F& alpha) { return self * alpha; }, "alpha"_a,
+    //    py::is_operator()); virtual LincombOperatorType operator*(const FieldType& alpha)
+    c.def("__mul__", [](type& self, const F& alpha) { return self * alpha; }, "alpha"_a, py::is_operator());
+    c.def("__rmul__", [](type& self, const F& alpha) { return self * alpha; }, "alpha"_a, py::is_operator());
+    c.def("__imul__", [](type& self, const F& alpha) { return self * alpha; }, "alpha"_a, py::is_operator());
+    //    virtual ConstLincombOperatorType operator/(const FieldType& alpha) const
+    //    c.def("__truediv__", [](const type& self, const F& alpha) { return self / alpha; }, "alpha"_a,
+    //    py::is_operator()); virtual LincombOperatorType operator/(const FieldType& alpha)
+    c.def("__truediv__", [](type& self, const F& alpha) { return self / alpha; }, "alpha"_a, py::is_operator());
+    c.def("__itruediv__", [](type& self, const F& alpha) { return self / alpha; }, "alpha"_a, py::is_operator());
+    //    virtual ConstLincombOperatorType operator+(const ConstLincombOperatorType& other) const
+    //    c.def("__add__",
+    //          [](const type& self, const CLop& other) { return self + other; },
+    //          "other_const_lincomb_operator"_a,
+    //          py::is_operator(),
+    //          py::keep_alive<0, 1>(),
+    //          py::keep_alive<0, 2>());
+    //    virtual ConstLincombOperatorType operator+(const ThisType& other) const
+    //    c.def("__add__",
+    //          [](const type& self, const type& other) { return self + other; },
+    //          "other_const_operator"_a,
+    //          py::is_operator(),
+    //          py::keep_alive<0, 1>(),
+    //          py::keep_alive<0, 2>());
+    //    virtual ConstLincombOperatorType operator+(const VectorType& vector) const
+    //    c.def("__add__",
+    //          [](const type& self, const V& other) { return self + other; },
+    //          "other_const_vector"_a,
+    //          py::is_operator(),
+    //          py::keep_alive<0, 1>(),
+    //          py::keep_alive<0, 2>());
+    //    virtual LincombOperatorType operator+(LincombOperatorType& other)
+    c.def("__add__",
+          [](type& self, Lop& other) { return self + other; },
+          "other_lincomb_operator"_a,
+          py::is_operator(),
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>());
+    c.def("__iadd__",
+          [](type& self, Lop& other) { return self + other; },
+          "other_lincomb_operator"_a,
+          py::is_operator(),
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>());
+    //    virtual LincombOperatorType operator+(ThisType& other)
+    c.def("__add__",
+          [](type& self, type& other) { return self + other; },
+          "other_operator"_a,
+          py::is_operator(),
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>());
+    c.def("__iadd__",
+          [](type& self, type& other) { return self + other; },
+          "other_operator"_a,
+          py::is_operator(),
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>());
+    //    virtual LincombOperatorType operator+(const VectorType& vector)
+    c.def("__add__",
+          [](type& self, V& other) { return self + other; },
+          "other_vector"_a,
+          py::is_operator(),
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>());
+    c.def("__iadd__",
+          [](type& self, V& other) { return self + other; },
+          "other_vector"_a,
+          py::is_operator(),
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>());
+    //    virtual ConstLincombOperatorType operator-(const ConstLincombOperatorType& other) const
+    //    c.def("__sub__",
+    //          [](const type& self, const CLop& other) { return self - other; },
+    //          "other_const_lincomb_operator"_a,
+    //          py::is_operator(),
+    //          py::keep_alive<0, 1>(),
+    //          py::keep_alive<0, 2>());
+    //    virtual ConstLincombOperatorType operator-(const ThisType& other) const
+    //    c.def("__sub__",
+    //          [](const type& self, const type& other) { return self - other; },
+    //          "other_const_operator"_a,
+    //          py::is_operator(),
+    //          py::keep_alive<0, 1>(),
+    //          py::keep_alive<0, 2>());
+    //    virtual ConstLincombOperatorType operator-(const VectorType& vector) const
+    //    c.def("__sub__",
+    //          [](const type& self, const V& other) { return self - other; },
+    //          "other_const_vector"_a,
+    //          py::is_operator(),
+    //          py::keep_alive<0, 1>(),
+    //          py::keep_alive<0, 2>());
+    //    virtual LincombOperatorType operator-(LincombOperatorType& other)
+    c.def("__sub__",
+          [](type& self, Lop& other) { return self - other; },
+          "other_lincomb_operator"_a,
+          py::is_operator(),
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>());
+    c.def("__isub__",
+          [](type& self, Lop& other) { return self - other; },
+          "other_lincomb_operator"_a,
+          py::is_operator(),
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>());
+    //    virtual LincombOperatorType operator-(ThisType& other)
+    c.def("__sub__",
+          [](type& self, type& other) { return self - other; },
+          "other_operator"_a,
+          py::is_operator(),
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>());
+    c.def("__isub__",
+          [](type& self, type& other) { return self - other; },
+          "other_operator"_a,
+          py::is_operator(),
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>());
+    //    virtual LincombOperatorType operator-(const VectorType& vector)
+    c.def("__sub__",
+          [](type& self, V& other) { return self - other; },
+          "other_vector"_a,
+          py::is_operator(),
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>());
+    c.def("__isub__",
+          [](type& self, V& other) { return self - other; },
+          "other_vector"_a,
+          py::is_operator(),
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>());
+    // others
+    //    c.def("__neg__", [](const type& self) { return self * -1; }, py::is_operator(), py::keep_alive<0, 1>());
+    c.def("__neg__", [](type& self) { return self * -1; }, py::is_operator(), py::keep_alive<0, 1>());
+
   } // ... addbind_methods(...)
 
   static bound_type bind(pybind11::module& m,
@@ -219,52 +359,5 @@ public:
 } // namespace bindings
 } // namespace GDT
 } // namespace Dune
-
-
-template <class M, class GridTypes = Dune::XT::Grid::AvailableGridTypes>
-struct OperatorInterface_for_all_grids
-{
-  using G = typename GridTypes::head_type;
-  static const constexpr size_t d = G::dimension;
-
-  static void bind(pybind11::module& m)
-  {
-    Dune::GDT::bindings::OperatorInterface<M, G>::bind(m);
-    if (d > 1) {
-      Dune::GDT::bindings::OperatorInterface<M, G, d, 1, 1, 1>::bind(m);
-      Dune::GDT::bindings::OperatorInterface<M, G, 1, 1, d, 1>::bind(m);
-      Dune::GDT::bindings::OperatorInterface<M, G, d, 1, d, 1>::bind(m);
-    }
-    // add your extra dimensions here
-    // ...
-
-    //    Dune::GDT::bindings::ConstLincombOperator<M, G>::bind(m);
-    //    if (d > 1) {
-    //      Dune::GDT::bindings::ConstLincombOperator<M, G, d, 1, 1, 1>::bind(m);
-    //      Dune::GDT::bindings::ConstLincombOperator<M, G, 1, 1, d, 1>::bind(m);
-    //      Dune::GDT::bindings::ConstLincombOperator<M, G, d, 1, d, 1>::bind(m);
-    //    }
-    //    // add your extra dimensions here
-    //    // ...
-
-    //    Dune::GDT::bindings::LincombOperator<M, G>::bind(m);
-    //    if (d > 1) {
-    //      Dune::GDT::bindings::LincombOperator<M, G, d, 1, 1, 1>::bind(m);
-    //      Dune::GDT::bindings::LincombOperator<M, G, 1, 1, d, 1>::bind(m);
-    //      Dune::GDT::bindings::LincombOperator<M, G, d, 1, d, 1>::bind(m);
-    //    }
-    //    // add your extra dimensions here
-    //    // ...
-
-    OperatorInterface_for_all_grids<M, typename GridTypes::tail_type>::bind(m);
-  }
-};
-
-template <class M>
-struct OperatorInterface_for_all_grids<M, boost::tuples::null_type>
-{
-  static void bind(pybind11::module& /*m*/) {}
-};
-
 
 #endif // PYTHON_DUNE_GDT_OPERATORS_INTERFACES_HH
