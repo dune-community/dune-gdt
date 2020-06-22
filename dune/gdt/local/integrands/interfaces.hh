@@ -97,11 +97,11 @@ public:
 
   LocalUnaryElementIntegrandInterface(const XT::Common::ParameterType& param_type = {},
                                       const std::string& logging_prefix = "",
-                                      const std::string& logging_id = "",
+                                      const std::string& logging_id_ = "",
                                       const bool logging_disabled = true)
     : XT::Common::ParametricInterface(param_type)
     , Logger(logging_prefix.empty() ? "gdt" : logging_prefix,
-             logging_id.empty() ? "LocalUnaryElementIntegrand" : logging_id,
+             logging_id_.empty() ? "LocalUnaryElementIntegrand" : logging_id_,
              logging_disabled)
   {}
 
@@ -203,11 +203,11 @@ public:
 
   LocalBinaryElementIntegrandInterface(const XT::Common::ParameterType& param_type = {},
                                        const std::string& logging_prefix = "",
-                                       const std::string& logging_id = "",
+                                       const std::string& logging_id_ = "",
                                        const bool logging_disabled = true)
     : XT::Common::ParametricInterface(param_type)
     , Logger(logging_prefix.empty() ? "gdt" : logging_prefix,
-             logging_id.empty() ? "LocalBinaryElementIntegrand" : logging_id,
+             logging_id_.empty() ? "LocalBinaryElementIntegrand" : logging_id_,
              logging_disabled)
   {}
 

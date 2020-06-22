@@ -266,7 +266,7 @@ public:
     DUNE_THROW_IF(!assembled_,
                   Exceptions::functional_error,
                   "You have to call assemble() first, or append this functional to an existing XT::Grid::Walker!");
-    return BaseType::apply(source);
+    return BaseType::apply(source, param);
   } // ... apply(...)
 
 private:
