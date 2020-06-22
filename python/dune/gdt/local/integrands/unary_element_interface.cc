@@ -21,66 +21,8 @@
 #include <python/dune/xt/common/fvector.hh>
 #include <python/dune/xt/grid/grids.bindings.hh>
 
-
-namespace Dune {
-namespace GDT {
-namespace bindings {
-
-
-template <class E, size_t r = 1, size_t rC = 1, class RF = double, class F = double>
-class LocalUnaryElementIntegrandInterface
-{
-  using G = XT::Grid::extract_grid_t<E>;
-  static const size_t d = G::dimension;
-
-public:
-  using type = GDT::LocalUnaryElementIntegrandInterface<E, r, rC, RF, F>;
-  using bound_type = pybind11::class_<type>;
-
-  static bound_type bind(pybind11::module& m,
-                         const std::string& class_id = "local_unary_element_integrand",
-                         const std::string& grid_id = XT::Grid::bindings::grid_name<G>::value(),
-                         const std::string& layer_id = "")
-  {
-    namespace py = pybind11;
-    using namespace pybind11::literals;
-
-    std::string class_name = class_id;
-    class_name += "_" + grid_id;
-    if (!layer_id.empty())
-      class_name += "_" + layer_id;
-    std::string test_string = "";
-    test_string += "_" + XT::Common::to_string(r) + "d";
-    if (rC > 1)
-      test_string += "x" + XT::Common::to_string(rC) + "d";
-    if (!std::is_same<RF, double>::value)
-      test_string += "_" + XT::Common::Typename<RF>::value(/*fail_wo_typeid=*/true);
-    test_string += "_test_basis";
-    class_name += test_string;
-    class_name += "_to_scalar";
-    if (!std::is_same<F, double>::value)
-      class_name += "_" + XT::Common::Typename<F>::value(/*fail_wo_typeid=*/true);
-    class_name += "_interface";
-    const auto ClassName = XT::Common::to_camel_case(class_name);
-    bound_type c(m, ClassName.c_str(), ClassName.c_str());
-    // static information about dims
-    // ...
-    c.def("copy_as_unary_element_integrand", [](const type& self) { return self.copy_as_unary_element_integrand(); });
-    // order/evaluate
-    // ...
-    //    c.def("__repr__", [](const type& self) {
-    //      std::stringstream ss;
-    //      ss << self;
-    //      return ss.str();
-    //    });
-    return c;
-  } // ... bind(...)
-}; // class LocalUnaryElementIntegrandInterface
-
-
-} // namespace bindings
-} // namespace GDT
-} // namespace Dune
+#include "unary_element_combined.hh"
+#include "unary_element_interface.hh"
 
 
 template <class GridTypes = Dune::XT::Grid::AvailableGridTypes>
@@ -100,6 +42,16 @@ struct LocalUnaryElementIntegrandInterface_for_all_grids
     }
     // add your extra dimensions here
     // ...
+
+    // need to bind LocalUnaryElementIntegrandSum here due to circular dep with interface
+    Dune::GDT::bindings::LocalUnaryElementIntegrandSum<E>::bind(m);
+    if (d > 1) {
+      Dune::GDT::bindings::LocalUnaryElementIntegrandSum<E, d, 1>::bind(m);
+      Dune::GDT::bindings::LocalUnaryElementIntegrandSum<E, d, d>::bind(m);
+    }
+    // add your extra dimensions here
+    // ...
+
     LocalUnaryElementIntegrandInterface_for_all_grids<typename GridTypes::tail_type>::bind(m);
   }
 };
