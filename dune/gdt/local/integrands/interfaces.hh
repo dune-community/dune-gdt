@@ -29,11 +29,11 @@ namespace GDT {
 
 
 // forwards (required for operator+), includes are below
-// template <class E, size_t r, size_t rC, class R, class F>
-// class LocalUnaryElementIntegrandSum;
+template <class E, size_t r, size_t rC, class R, class F>
+class LocalUnaryElementIntegrandSum;
 
-// template <class E, size_t t_r, size_t t_RC, class TF, class F, size_t a_r, size_t a_rC, class AF>
-// class LocalBinaryElementIntegrandSum;
+template <class E, size_t t_r, size_t t_RC, class TF, class F, size_t a_r, size_t a_rC, class AF>
+class LocalBinaryElementIntegrandSum;
 
 template <class I, size_t r, size_t rC, class R, class F>
 class LocalUnaryIntersectionIntegrandSum;
@@ -108,6 +108,11 @@ public:
   virtual ~LocalUnaryElementIntegrandInterface() = default;
 
   virtual std::unique_ptr<ThisType> copy_as_unary_element_integrand() const = 0;
+
+  LocalUnaryElementIntegrandSum<E, r, rC, R, F> operator+(const ThisType& other) const
+  {
+    return LocalUnaryElementIntegrandSum<E, r, rC, R, F>(*this, other);
+  }
 
   /**
    * Returns the polynomial order of the integrand, given the basis.
@@ -220,6 +225,11 @@ public:
   }
 
   virtual std::unique_ptr<ThisType> copy_as_binary_element_integrand() const = 0;
+
+  LocalBinaryElementIntegrandSum<E, t_r, t_rC, TR, F, a_r, a_rC, AR> operator+(const ThisType& other) const
+  {
+    return LocalBinaryElementIntegrandSum<E, t_r, t_rC, TR, F, a_r, a_rC, AR>(*this, other);
+  }
 
   /**
    * Returns the polynomial order of the integrand, given the bases.
