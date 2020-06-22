@@ -104,6 +104,16 @@ public:
           "local_element_functional"_a,
           "param"_a = XT::Common::Parameter(),
           "element_filter"_a = XT::Grid::ApplyOn::AllElements<GV>());
+    c.def("__iadd__", // function ptr signature required for the right return type
+          (type
+           & (type::*)(const LocalElementFunctionalInterface<E, s_r, 1, F, typename type::DofFieldType>&,
+                       const XT::Common::Parameter&,
+                       const XT::Grid::ElementFilter<GV>&))
+              & type::append,
+          "local_element_functional"_a,
+          "param"_a = XT::Common::Parameter(),
+          "element_filter"_a = XT::Grid::ApplyOn::AllElements<GV>(),
+          py::is_operator());
     c.def("assemble",
           [](type& self, const bool use_tbb) { self.assemble(use_tbb); },
           "parallel"_a = false,
