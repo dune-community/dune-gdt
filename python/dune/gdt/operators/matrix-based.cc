@@ -214,6 +214,16 @@ public:
           "local_element_bilinear_form"_a,
           "param"_a = XT::Common::Parameter(),
           "element_filter"_a = XT::Grid::ApplyOn::AllElements<GV>());
+    c.def("__iadd__", // function ptr signature required for the right return type
+          (type
+           & (type::*)(const LocalElementBilinearFormInterface<E, r_r, 1, F, F, s_r, 1, F>&,
+                       const XT::Common::Parameter&,
+                       const XT::Grid::ElementFilter<GV>&))
+              & type::append,
+          "local_element_bilinear_form"_a,
+          "param"_a = XT::Common::Parameter(),
+          "element_filter"_a = XT::Grid::ApplyOn::AllElements<GV>(),
+          py::is_operator());
     c.def("assemble",
           [](type& self, const bool use_tbb) { self.assemble(use_tbb); },
           "parallel"_a = false,
