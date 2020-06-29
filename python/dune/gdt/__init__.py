@@ -23,6 +23,8 @@ for mod_name in ( # order should not matter!
         '_local_bilinear_forms_element_interface',
         '_local_functionals_element_integrals',
         '_local_functionals_element_interface',
+        '_local_functionals_intersection_integrals',
+        '_local_functionals_intersection_interface',
         '_local_integrands_advection',
         '_local_integrands_binary_element_interface',
         '_local_integrands_element_product',
