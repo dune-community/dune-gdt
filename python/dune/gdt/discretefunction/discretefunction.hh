@@ -82,68 +82,22 @@ public:
           [](type& self, const std::string& filename) { return self.visualize(filename, VTK::appendedraw); },
           "filename"_a);
 
-    if (r == 1 && rC == 1) {
-      m.def(XT::Common::to_camel_case(class_id).c_str(),
-            [](const S& space, V& vector, const std::string& name) {
-              return make_discrete_function(space, vector, name);
-            },
-            "space"_a,
-            "vector"_a,
-            "name"_a = default_name,
-            py::keep_alive<0, 1>(),
-            py::keep_alive<0, 2>());
-      m.def(XT::Common::to_camel_case(class_id).c_str(),
-            [](const S& space, const MatchingVectorTag&, const std::string& name) {
-              return make_discrete_function(space, name);
-            },
-            "space"_a,
-            "vector_type"_a,
-            "name"_a = default_name,
-            py::keep_alive<0, 1>());
-    } else if (rC == 1) {
-      m.def(XT::Common::to_camel_case(class_id).c_str(),
-            [](const S& space, V& vector, const XT::Grid::bindings::Dimension<r>&, const std::string& name) {
-              return make_discrete_function(space, vector, name);
-            },
-            "space"_a,
-            "vector"_a,
-            "dim_range"_a,
-            "name"_a = default_name,
-            py::keep_alive<0, 1>(),
-            py::keep_alive<0, 2>());
-      m.def(XT::Common::to_camel_case(class_id).c_str(),
-            [](const S& space,
-               const MatchingVectorTag&,
-               const XT::Grid::bindings::Dimension<r>&,
-               const std::string& name) { return make_discrete_function(space, name); },
-            "space"_a,
-            "vector_type"_a,
-            "dim_range"_a,
-            "name"_a = default_name,
-            py::keep_alive<0, 1>());
-    }
+    m.def(
+        XT::Common::to_camel_case(class_id).c_str(),
+        [](const S& space, V& vector, const std::string& name) { return make_discrete_function(space, vector, name); },
+        "space"_a,
+        "vector"_a,
+        "name"_a = default_name,
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>());
     m.def(XT::Common::to_camel_case(class_id).c_str(),
-          [](const S& space,
-             V& vector,
-             const std::pair<XT::Grid::bindings::Dimension<r>, XT::Grid::bindings::Dimension<rC>>&,
-             const std::string& name) { return make_discrete_function(space, vector, name); },
-          "space"_a,
-          "vector"_a,
-          "dim_range"_a,
-          "name"_a = default_name,
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>());
-    m.def(XT::Common::to_camel_case(class_id).c_str(),
-          [](const S& space,
-             const MatchingVectorTag&,
-             const std::pair<XT::Grid::bindings::Dimension<r>, XT::Grid::bindings::Dimension<rC>>&,
-             const std::string& name) { return make_discrete_function(space, name); },
+          [](const S& space, const MatchingVectorTag&, const std::string& name) {
+            return make_discrete_function(space, name);
+          },
           "space"_a,
           "vector_type"_a,
-          "dim_range"_a,
           "name"_a = default_name,
           py::keep_alive<0, 1>());
-
     return c;
   } // ... bind(...)
 }; // class DiscreteFunction
