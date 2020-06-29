@@ -108,6 +108,83 @@ public:
 }; // class LocalBinaryToUnaryElementIntegrand
 
 
+template <class I,
+          size_t t_r = 1,
+          size_t t_rC = 1,
+          class TF = double,
+          class F = double,
+          size_t a_r = t_r,
+          size_t a_rC = t_rC,
+          class AF = TF>
+class LocalBinaryToUnaryIntersectionIntegrand
+{
+  using G = std::decay_t<XT::Grid::extract_grid_t<I>>;
+  using GP = XT::Grid::GridProvider<G>;
+  using E = typename I::Entity;
+  static const size_t d = G::dimension;
+
+public:
+  using type = GDT::LocalBinaryToUnaryIntersectionIntegrand<I, t_r, t_rC, TF, F, a_r, a_rC, AF>;
+  using base_type = GDT::LocalUnaryIntersectionIntegrandInterface<I, t_r, t_rC, TF, F>;
+  using bound_type = pybind11::class_<type, base_type>;
+
+  static bound_type bind(pybind11::module& m,
+                         const std::string& class_id = "local_binary_to_unary_intersection_integrand",
+                         const std::string& grid_id = XT::Grid::bindings::grid_name<G>::value(),
+                         const std::string& layer_id = "")
+  {
+    namespace py = pybind11;
+    using namespace pybind11::literals;
+
+    std::string class_name = class_id;
+    class_name += "_" + grid_id;
+    if (!layer_id.empty())
+      class_name += "_" + layer_id;
+    std::string test_string = "";
+    test_string += "_" + XT::Common::to_string(t_r) + "d";
+    if (t_rC > 1)
+      test_string += "x" + XT::Common::to_string(t_rC) + "d";
+    if (!std::is_same<TF, double>::value)
+      test_string += "_" + XT::Common::Typename<TF>::value(/*fail_wo_typeid=*/true);
+    test_string += "_test_basis";
+    std::string ansatz_string = "";
+    ansatz_string += "_" + XT::Common::to_string(a_r) + "d";
+    if (a_rC > 1)
+      ansatz_string += "x" + XT::Common::to_string(a_rC) + "d";
+    if (!std::is_same<AF, double>::value)
+      ansatz_string += "_" + XT::Common::Typename<AF>::value(/*fail_wo_typeid=*/true);
+    ansatz_string += "_ansatz_basis";
+    class_name += test_string;
+    if (!test_string.empty() && !ansatz_string.empty())
+      class_name += "_x";
+    class_name += ansatz_string;
+    class_name += "_to_scalar";
+    if (!std::is_same<F, double>::value)
+      class_name += "_" + XT::Common::Typename<F>::value(/*fail_wo_typeid=*/true);
+    const auto ClassName = XT::Common::to_camel_case(class_name);
+    bound_type c(m, ClassName.c_str(), ClassName.c_str());
+    c.def(py::init<const typename type::LocalBinaryIntersectionIntegrandType&,
+                   const XT::Functions::GridFunctionInterface<E, a_r, a_rC, AF>&>(),
+          "local_binary_integrand"_a,
+          "inducing_function_as_ansatz_basis"_a,
+          py::keep_alive<1, 2>(),
+          py::keep_alive<1, 3>());
+
+    m.def(XT::Common::to_camel_case(class_id).c_str(),
+          [](const typename type::LocalBinaryIntersectionIntegrandType& local_binary_integrand,
+             const XT::Functions::GridFunctionInterface<E, a_r, a_rC, AF>& inducing_function_as_ansatz_basis) {
+            return type(local_binary_integrand, inducing_function_as_ansatz_basis);
+          },
+          "local_binary_integrand"_a,
+          "inducing_function_as_ansatz_basis"_a,
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>());
+
+    return c;
+  } // ... bind(...)
+}; // class LocalBinaryToUnaryIntersectionIntegrand
+
+
 } // namespace bindings
 } // namespace GDT
 } // namespace Dune
