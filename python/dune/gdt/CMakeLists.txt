@@ -36,6 +36,7 @@ dune_pybindxi_add_module(_operators_interfaces_istl EXCLUDE_FROM_ALL ${header} o
 dune_pybindxi_add_module(_operators_matrix_based EXCLUDE_FROM_ALL ${header} operators/matrix-based.cc)
 dune_pybindxi_add_module(_spaces_h1_continuous_lagrange EXCLUDE_FROM_ALL ${header} spaces/h1/continuous-lagrange.cc)
 dune_pybindxi_add_module(_spaces_interface EXCLUDE_FROM_ALL ${header} spaces/interface.cc)
+dune_pybindxi_add_module(_spaces_l2_discontinuous_lagrange EXCLUDE_FROM_ALL ${header} spaces/l2/discontinuous-lagrange.cc)
 dune_pybindxi_add_module(_tools_dirichlet_constraints EXCLUDE_FROM_ALL ${header} tools/dirichlet-constraints.cc)
 dune_pybindxi_add_module(_tools_sparsity_pattern EXCLUDE_FROM_ALL ${header} tools/sparsity-pattern.cc)
 # dune_pybindxi_add_module(usercode EXCLUDE_FROM_ALL ${header} usercode.cc)
