@@ -7,6 +7,9 @@
 // Authors:
 //   Felix Schindler (2020)
 
+#ifndef PYTHON_DUNE_GDT_LOCAL_INTEGRANDS_UNARY_ELEMENT_INTERFACE_HH
+#define PYTHON_DUNE_GDT_LOCAL_INTEGRANDS_UNARY_ELEMENT_INTERFACE_HH
+
 #include <dune/pybindxi/pybind11.h>
 #include <dune/pybindxi/stl.h>
 
@@ -17,9 +20,6 @@
 #include <python/dune/xt/common/configuration.hh>
 #include <python/dune/xt/common/fvector.hh>
 #include <python/dune/xt/grid/grids.bindings.hh>
-
-#ifndef PYTHON_DUNE_GDT_LOCAL_INTEGRANDS_UNARY_ELEMENT_INTERFACE_HH
-#  define PYTHON_DUNE_GDT_LOCAL_INTEGRANDS_UNARY_ELEMENT_INTERFACE_HH
 
 namespace Dune {
 namespace GDT {
