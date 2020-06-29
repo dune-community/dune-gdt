@@ -211,19 +211,22 @@ private:
  *       * symmetry_prefactor = 1 && weight_function = diffusion => SWIPDG
  */
 template <class I>
-class DirichletCoupling : public LocalUnaryAndBinaryIntersectionIntegrandInterface<I>
+class DirichletCoupling
+  : public LocalUnaryIntersectionIntegrandInterface<I>
+  , public LocalBinaryIntersectionIntegrandInterface<I>
 {
   using ThisType = DirichletCoupling;
-  using BaseType = LocalUnaryAndBinaryIntersectionIntegrandInterface<I>;
+  using BaseUnaryType = LocalUnaryIntersectionIntegrandInterface<I>;
+  using BaseBinaryType = LocalBinaryIntersectionIntegrandInterface<I>;
 
 public:
-  using BaseType::d;
-  using typename BaseType::DomainType;
-  using typename BaseType::E;
-  using typename BaseType::F;
-  using typename BaseType::IntersectionType;
-  using typename BaseType::LocalAnsatzBasisType;
-  using typename BaseType::LocalTestBasisType;
+  using BaseBinaryType::d;
+  using typename BaseBinaryType::DomainType;
+  using typename BaseBinaryType::E;
+  using typename BaseBinaryType::F;
+  using typename BaseBinaryType::IntersectionType;
+  using typename BaseBinaryType::LocalAnsatzBasisType;
+  using typename BaseBinaryType::LocalTestBasisType;
 
   /**
    * \note dirichlet_data is only required if used as a unary integrand, i.e. for the right hand side
@@ -231,7 +234,8 @@ public:
   DirichletCoupling(const double& symmetry_prefactor,
                     XT::Functions::GridFunction<E, d, d> diffusion,
                     XT::Functions::GridFunction<E> dirichlet_data = 0.)
-    : BaseType(diffusion.parameter_type() + dirichlet_data.parameter_type())
+    : BaseUnaryType(diffusion.parameter_type() + dirichlet_data.parameter_type())
+    , BaseBinaryType(diffusion.parameter_type() + dirichlet_data.parameter_type())
     , symmetry_prefactor_(symmetry_prefactor)
     , diffusion_(diffusion)
     , dirichlet_data_(dirichlet_data)
@@ -240,7 +244,8 @@ public:
   {}
 
   DirichletCoupling(const ThisType& other)
-    : BaseType(other.parameter_type())
+    : BaseUnaryType(other)
+    , BaseBinaryType(other)
     , symmetry_prefactor_(other.symmetry_prefactor_)
     , diffusion_(other.diffusion_)
     , dirichlet_data_(other.dirichlet_data_)
@@ -249,21 +254,6 @@ public:
   {}
 
   DirichletCoupling(ThisType&& source) = default;
-
-  std::unique_ptr<typename BaseType::UnaryBaseType> copy_as_unary_intersection_integrand() const override final
-  {
-    return std::make_unique<ThisType>(*this);
-  }
-
-  std::unique_ptr<typename BaseType::BinaryBaseType> copy_as_binary_intersection_integrand() const override final
-  {
-    return std::make_unique<ThisType>(*this);
-  }
-
-  std::unique_ptr<BaseType> copy_as_unary_and_binary_intersection_integrand() const override final
-  {
-    return std::make_unique<ThisType>(*this);
-  }
 
 protected:
   void post_bind(const IntersectionType& intersection) override final
@@ -282,6 +272,11 @@ public:
   /// \name Required by LocalUnaryIntersectionIntegrandInterface.
   /// \{
 
+  std::unique_ptr<BaseUnaryType> copy_as_unary_intersection_integrand() const override final
+  {
+    return std::make_unique<ThisType>(*this);
+  }
+
   int order(const LocalTestBasisType& test_basis, const XT::Common::Parameter& param = {}) const override final
   {
     return local_dirichlet_data_->order(param) + local_diffusion_->order(param)
@@ -293,13 +288,12 @@ public:
                 DynamicVector<F>& result,
                 const XT::Common::Parameter& param = {}) const override final
   {
-    using Base = typename BaseType::UnaryBaseType;
     // Prepare sotrage, ...
-    Base::ensure_size_and_clear_results(test_basis, result, param);
+    BaseUnaryType::ensure_size_and_clear_results(test_basis, result, param);
     // evaluate ...
     const auto point_in_inside_reference_element =
-        Base::intersection().geometryInInside().global(point_in_reference_intersection);
-    const auto normal = Base::intersection().unitOuterNormal(point_in_reference_intersection);
+        BaseUnaryType::intersection().geometryInInside().global(point_in_reference_intersection);
+    const auto normal = BaseUnaryType::intersection().unitOuterNormal(point_in_reference_intersection);
     // ... basis functions and ...
     test_basis.jacobians(point_in_inside_reference_element, test_basis_grads_, param);
     // ... data functions, ...
@@ -315,6 +309,11 @@ public:
   /// \name Required by LocalBinaryIntersectionIntegrandInterface.
   /// \{
 
+  std::unique_ptr<BaseBinaryType> copy_as_binary_intersection_integrand() const override final
+  {
+    return std::make_unique<ThisType>(*this);
+  }
+
   int order(const LocalTestBasisType& test_basis,
             const LocalAnsatzBasisType& ansatz_basis,
             const XT::Common::Parameter& param = {}) const override final
@@ -328,13 +327,12 @@ public:
                 DynamicMatrix<F>& result,
                 const XT::Common::Parameter& param = {}) const override final
   {
-    using Base = typename BaseType::BinaryBaseType;
     // Prepare sotrage, ...
-    Base::ensure_size_and_clear_results(test_basis, ansatz_basis, result, param);
+    BaseBinaryType::ensure_size_and_clear_results(test_basis, ansatz_basis, result, param);
     // evaluate ...
     const auto point_in_inside_reference_element =
-        Base::intersection().geometryInInside().global(point_in_reference_intersection);
-    const auto normal = Base::intersection().unitOuterNormal(point_in_reference_intersection);
+        BaseBinaryType::intersection().geometryInInside().global(point_in_reference_intersection);
+    const auto normal = BaseBinaryType::intersection().unitOuterNormal(point_in_reference_intersection);
     // ... basis functions and ...
     test_basis.evaluate(point_in_inside_reference_element, test_basis_values_, param);
     test_basis.jacobians(point_in_inside_reference_element, test_basis_grads_, param);
