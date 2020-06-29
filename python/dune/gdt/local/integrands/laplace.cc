@@ -21,6 +21,7 @@
 #include <python/dune/xt/common/configuration.hh>
 #include <python/dune/xt/common/fvector.hh>
 #include <python/dune/xt/grid/grids.bindings.hh>
+#include <python/dune/xt/grid/traits.hh>
 
 
 namespace Dune {
@@ -40,51 +41,6 @@ public:
   using base_type = GDT::LocalBinaryElementIntegrandInterface<E, r, 1, F, F, r, 1, F>;
   using bound_type = pybind11::class_<type, base_type>;
 
-private:
-  template <bool oned = (d == 1), bool anything = true>
-  struct add_bind /*<true, anything>*/
-  {
-    static void ctor(bound_type&) {}
-
-    static void factory(pybind11::module&, const std::string&) {}
-  };
-
-  template <bool anything>
-  struct add_bind<false, anything>
-  {
-    static void ctor(bound_type& c)
-    {
-      namespace py = pybind11;
-      using namespace pybind11::literals;
-
-      c.def(py::init<const FieldMatrix<F, d, d>&>(), "constant_diffusion_tensor"_a);
-      c.def(py::init<const XT::Functions::FunctionInterface<d, d, d, F>&>(),
-            "diffusion_tensor_function"_a,
-            py::keep_alive<1, 2>());
-    }
-
-    static void factory(pybind11::module& m, const std::string& FactoryName)
-    {
-      namespace py = pybind11;
-      using namespace pybind11::literals;
-
-      m.def(FactoryName.c_str(),
-            [](const GP&, const FieldMatrix<F, d, d>& constant_diffusion_tensor) {
-              return type(constant_diffusion_tensor);
-            },
-            "grid"_a,
-            "constant_diffusion_tensor"_a);
-      m.def(FactoryName.c_str(),
-            [](const GP&, const XT::Functions::FunctionInterface<d, d, d, F>& diffusion_tensor_function) {
-              return type(diffusion_tensor_function);
-            },
-            "grid"_a,
-            "diffusion_tensor_function"_a,
-            py::keep_alive<0, 2>());
-    }
-  }; // struct add_bind<false, ...>
-
-public:
   static bound_type bind(pybind11::module& m,
                          const std::string& class_id = "local_laplace_integrand",
                          const std::string& grid_id = XT::Grid::bindings::grid_name<G>::value(),
@@ -103,44 +59,26 @@ public:
       class_name += "_" + XT::Common::Typename<F>::value(/*fail_wo_typeid=*/true);
     const auto ClassName = XT::Common::to_camel_case(class_name);
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
-    c.def(py::init<const F&>(), "constant_scalar_diffusion"_a);
-    c.def(py::init<const XT::Functions::FunctionInterface<d, 1, 1, F>&>(),
-          "scalar_diffusion_function"_a,
-          py::keep_alive<1, 2>());
-    add_bind<>::ctor(c);
-    c.def(py::init<const XT::Functions::GridFunctionInterface<E, 1, 1, F>&>(),
-          "scalar_diffusion_grid_function"_a,
-          py::keep_alive<1, 2>());
-    c.def(py::init<const XT::Functions::GridFunctionInterface<E, d, d, F>&>(),
-          "diffusion_tensor_grid_function"_a,
-          py::keep_alive<1, 2>());
+    c.def(py::init<XT::Functions::GridFunction<E, d, d, F>>(), "diffusion"_a, py::keep_alive<1, 2>());
 
-    // factories
+    // factory
     const auto FactoryName = XT::Common::to_camel_case(class_id);
-    m.def(FactoryName.c_str(),
-          [](const GP&, const F& constant_scalar_diffusion) { return type(constant_scalar_diffusion); },
-          "grid"_a,
-          "constant_scalar_diffusion"_a);
-    add_bind<>::factory(m, FactoryName);
-    m.def(FactoryName.c_str(),
-          [](const GP&, const XT::Functions::FunctionInterface<d, 1, 1, F>& scalar_diffusion_function) {
-            return type(scalar_diffusion_function);
-          },
-          "grid"_a,
-          "scalar_diffusion_function"_a,
-          py::keep_alive<0, 2>());
-    m.def(FactoryName.c_str(),
-          [](const XT::Functions::GridFunctionInterface<E, 1, 1, F>& scalar_diffusion_grid_function) {
-            return type(scalar_diffusion_grid_function);
-          },
-          "scalar_diffusion_grid_function"_a,
-          py::keep_alive<0, 1>());
-    m.def(FactoryName.c_str(),
-          [](const XT::Functions::GridFunctionInterface<E, d, d, F>& diffusion_tensor_grid_function) {
-            return type(diffusion_tensor_grid_function);
-          },
-          "diffusion_tensor_grid_function"_a,
-          py::keep_alive<0, 1>());
+    if (r == 1)
+      m.def(FactoryName.c_str(),
+            [](XT::Functions::GridFunction<E, d, d, F> diffusion, const XT::Grid::bindings::Dimension<r>&) {
+              return type(diffusion);
+            },
+            "diffusion"_a,
+            "dim_range_bases"_a = XT::Grid::bindings::Dimension<r>(),
+            py::keep_alive<0, 1>());
+    else
+      m.def(FactoryName.c_str(),
+            [](XT::Functions::GridFunction<E, d, d, F> diffusion, const XT::Grid::bindings::Dimension<r>&) {
+              return type(diffusion);
+            },
+            "diffusion"_a,
+            "dim_range_bases"_a,
+            py::keep_alive<0, 1>());
 
     return c;
   } // ... bind(...)

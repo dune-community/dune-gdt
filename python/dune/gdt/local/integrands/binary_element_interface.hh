@@ -47,101 +47,6 @@ public:
   using type = GDT::LocalBinaryElementIntegrandInterface<E, t_r, t_rC, TF, F, a_r, a_rC, AF>;
   using bound_type = pybind11::class_<type>;
 
-private:
-  template <bool square_matrix = (a_rC == a_r && a_r > 1), bool scalar = (a_rC == 1 && a_r == 1), bool anything = true>
-  struct with_ansatz /*the general vector or non-square matrix case*/
-  {
-    static void addbind(bound_type& c)
-    {
-      namespace py = pybind11;
-      using namespace pybind11::literals;
-
-      c.def("with_ansatz",
-            [](type& self, const typename XT::Functions::RangeTypeSelector<F, a_r, a_rC>::type& constant_value) {
-              return self.with_ansatz(constant_value);
-            },
-            "constant_value"_a,
-            py::keep_alive<0, 1>());
-      c.def("with_ansatz",
-            [](type& self, const XT::Functions::FunctionInterface<d, a_r, a_rC, F>& function) {
-              return self.with_ansatz(function);
-            },
-            "scalar_function"_a,
-            py::keep_alive<0, 1>(),
-            py::keep_alive<0, 2>());
-      c.def("with_ansatz",
-            [](type& self, const XT::Functions::GridFunctionInterface<E, a_r, a_rC, F>& grid_function) {
-              return self.with_ansatz(grid_function);
-            },
-            "scalar_grid_function"_a,
-            py::keep_alive<0, 1>(),
-            py::keep_alive<0, 2>());
-    }
-  }; // struct with_ansatz<true, false, ...>
-
-  template <bool anything>
-  struct with_ansatz</*square_matrix=*/true, false, anything>
-  {
-    static void addbind(bound_type& c)
-    {
-      namespace py = pybind11;
-      using namespace pybind11::literals;
-
-      // we have the scalar case ...
-      with_ansatz<false, true, anything>::addbind(c);
-
-      // .. and the tensor case
-      c.def("with_ansatz",
-            [](type& self, const FieldMatrix<F, a_r, a_rC>& square_matrix) { return self.with_ansatz(square_matrix); },
-            "square_matrix"_a,
-            py::keep_alive<0, 1>());
-      c.def("with_ansatz",
-            [](type& self, const XT::Functions::FunctionInterface<d, a_r, a_rC, F>& square_matrix_valued_function) {
-              return self.with_ansatz(square_matrix_valued_function);
-            },
-            "square_matrix_valued_function"_a,
-            py::keep_alive<0, 1>(),
-            py::keep_alive<0, 2>());
-      c.def("with_ansatz",
-            [](type& self,
-               const XT::Functions::GridFunctionInterface<E, a_r, a_rC, F>& square_matrix_valued_grid_function) {
-              return self.with_ansatz(square_matrix_valued_grid_function);
-            },
-            "square_matrix_valued_grid_function"_a,
-            py::keep_alive<0, 1>(),
-            py::keep_alive<0, 2>());
-    }
-  }; // struct with_ansatz<true, false, ...>
-
-  template <bool anything>
-  struct with_ansatz<false, /*scalar=*/true, anything>
-  {
-    static void addbind(bound_type& c)
-    {
-      namespace py = pybind11;
-      using namespace pybind11::literals;
-
-      c.def("with_ansatz",
-            [](type& self, const F& constant_scalar) { return self.with_ansatz(constant_scalar); },
-            "constant_scalar"_a,
-            py::keep_alive<0, 1>());
-      c.def("with_ansatz",
-            [](type& self, const XT::Functions::FunctionInterface<d, 1, 1, F>& scalar_function) {
-              return self.with_ansatz(scalar_function);
-            },
-            "scalar_function"_a,
-            py::keep_alive<0, 1>(),
-            py::keep_alive<0, 2>());
-      c.def("with_ansatz",
-            [](type& self, const XT::Functions::GridFunctionInterface<E, 1, 1, F>& scalar_grid_function) {
-              return self.with_ansatz(scalar_grid_function);
-            },
-            "scalar_grid_function"_a,
-            py::keep_alive<0, 1>(),
-            py::keep_alive<0, 2>());
-    }
-  }; // struct with_ansatz<true, false, ...>
-
 protected:
   template <class T, typename... options>
   static void bind_methods(pybind11::class_<T, options...>& c)
@@ -161,7 +66,13 @@ protected:
     //    });
 
     // conversion to unary
-    with_ansatz<>::addbind(c);
+    c.def("with_ansatz",
+          [](type& self, XT::Functions::GridFunction<E, a_r, a_rC, F> ansatz_function) {
+            return self.with_ansatz(ansatz_function);
+          },
+          "ansatz_function"_a,
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>());
   } // ... bind_methods(...)
 
   static std::string id(const std::string& grid_id, const std::string& layer_id)
