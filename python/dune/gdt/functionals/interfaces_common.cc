@@ -14,7 +14,7 @@
 #include "interfaces.hh"
 
 
-PYBIND11_MODULE(_functionals_interfaces_common, m)
+PYBIND11_MODULE(_functionals_interfaces_common, /*m*/)
 {
   namespace py = pybind11;
   using namespace Dune;
