@@ -30,6 +30,8 @@ dune_pybindxi_add_module(_local_integrands_binary_element_interface EXCLUDE_FROM
 dune_pybindxi_add_module(_local_integrands_binary_intersection_interface EXCLUDE_FROM_ALL ${header} local/integrands/binary_intersection_interface.cc)
 dune_pybindxi_add_module(_local_integrands_element_product EXCLUDE_FROM_ALL ${header} local/integrands/element_product.cc)
 dune_pybindxi_add_module(_local_integrands_intersection_product EXCLUDE_FROM_ALL ${header} local/integrands/intersection_product.cc)
+dune_pybindxi_add_module(_local_integrands_ipdg_boundary_penalty EXCLUDE_FROM_ALL ${header} local/integrands/ipdg_boundary_penalty.cc)
+dune_pybindxi_add_module(_local_integrands_ipdg_inner_penalty EXCLUDE_FROM_ALL ${header} local/integrands/ipdg_inner_penalty.cc)
 dune_pybindxi_add_module(_local_integrands_laplace EXCLUDE_FROM_ALL ${header} local/integrands/laplace.cc)
 dune_pybindxi_add_module(_local_integrands_quaternary_intersection_interface EXCLUDE_FROM_ALL ${header} local/integrands/quaternary_intersection_interface.cc)
 dune_pybindxi_add_module(_local_integrands_unary_element_interface EXCLUDE_FROM_ALL ${header} local/integrands/unary_element_interface.cc)
