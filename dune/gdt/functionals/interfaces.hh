@@ -44,8 +44,10 @@ template <class SourceVector,
           size_t source_dim = 1,
           size_t source_dim_cols = 1,
           class Field = double>
-class FunctionalInterface
+class FunctionalInterface : public XT::Common::ParametricInterface
 {
+  using ThisType = FunctionalInterface;
+
 public:
   static const constexpr size_t r = source_dim;
   static const constexpr size_t rC = source_dim_cols;
@@ -55,6 +57,16 @@ public:
   using SourceVectorType = SourceVector;
   using ConstSourceFunctionType = ConstDiscreteFunction<SourceVectorType, SourceGridView, r, rC, F>;
   using FieldType = Field;
+
+  explicit FunctionalInterface(const XT::Common::ParameterType param_tp = {})
+    : XT::Common::ParametricInterface(param_tp)
+  {}
+
+  FunctionalInterface(const ThisType& other)
+    : XT::Common::ParametricInterface(other)
+  {}
+
+  FunctionalInterface(ThisType&& source) = default;
 
   virtual ~FunctionalInterface() = default;
 

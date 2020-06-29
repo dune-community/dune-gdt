@@ -54,7 +54,8 @@ public:
   using typename BaseType::SourceVectorType;
 
   ConstVectorBasedFunctional(const SourceSpaceType& source_spc, const SourceVectorType& vec)
-    : source_space_(source_spc)
+    : BaseType()
+    , source_space_(source_spc)
     , vector_(vec)
   {
     if (vector_.size() != source_space_.mapper().size())
@@ -139,72 +140,69 @@ class VectorBasedFunctional
 
   using ThisType = VectorBasedFunctional;
   using VectorStorage = XT::Common::StorageProvider<V>;
-  using BaseType = ConstVectorBasedFunctional<V, GV, r, rC, F>;
-  using WalkerBaseType = XT::Grid::Walker<AssemblyGridView>;
+  using BaseFunctionalType = ConstVectorBasedFunctional<V, GV, r, rC, F>;
+  using BaseWalkerType = XT::Grid::Walker<AssemblyGridView>;
 
 public:
   using AssemblyGridViewType = AssemblyGridView;
   using DofFieldType = typename V::ScalarType;
 
-  using typename BaseType::FieldType;
-  using typename BaseType::SourceSpaceType;
-  using typename BaseType::SourceVectorType;
+  using typename BaseFunctionalType::FieldType;
+  using typename BaseFunctionalType::SourceSpaceType;
+  using typename BaseFunctionalType::SourceVectorType;
 
-  using typename WalkerBaseType::ElementType;
-  using typename WalkerBaseType::IntersectionType;
+  using typename BaseWalkerType::ElementType;
+  using typename BaseWalkerType::IntersectionType;
   using ElementFilterType = XT::Grid::ElementFilter<AssemblyGridViewType>;
   using IntersectionFilterType = XT::Grid::IntersectionFilter<AssemblyGridViewType>;
   using ApplyOnAllElements = XT::Grid::ApplyOn::AllElements<AssemblyGridViewType>;
   using ApplyOnAllIntersections = XT::Grid::ApplyOn::AllIntersections<AssemblyGridViewType>;
 
   /**
-   * \name Ctors which accepts an existing vector into which to assemble.
-   * \{
+   * \brief Ctors which accepts an existing vector into which to assemble.
    */
 
   VectorBasedFunctional(AssemblyGridViewType assembly_grid_view,
                         const SourceSpaceType& source_spc,
                         SourceVectorType& vec)
     : VectorStorage(vec)
-    , BaseType(source_spc, VectorStorage::access())
-    , WalkerBaseType(assembly_grid_view)
-    , assembled_(false)
-  {
-    // to detect assembly
-    this->append(
-        [](/*prepare nothing*/) {}, [](const auto&) { /*apply nothing*/ }, [&](/*finalize*/) { assembled_ = true; });
-  }
+    , BaseFunctionalType(source_spc, VectorStorage::access())
+    , BaseWalkerType(assembly_grid_view)
+  {}
 
   /**
-   * \}
-   * \name Ctors which creates an appropriate vector into which to assemble (which is accessible via vector()).
-   * \{
+   * \brief Ctor which creates an appropriate vector into which to assemble (which is accessible via vector()).
    */
 
   VectorBasedFunctional(AssemblyGridViewType assembly_grid_view, const SourceSpaceType& source_spc)
     : VectorStorage(new SourceVectorType(source_spc.mapper().size(), 0))
-    , BaseType(source_spc, VectorStorage::access())
-    , WalkerBaseType(assembly_grid_view)
-    , assembled_(false)
-  {
-    // to detect assembly
-    this->append(
-        [](/*prepare nothing*/) {}, [](const auto&) { /*apply nothing*/ }, [&](/*finalize*/) { assembled_ = true; });
-  }
+    , BaseFunctionalType(source_spc, VectorStorage::access())
+    , BaseWalkerType(assembly_grid_view)
+  {}
 
-  /// \}
+  VectorBasedFunctional(const ThisType&) = delete;
 
-  VectorBasedFunctional(const ThisType&) = default;
+  /**
+   * \brief Performs something like a shallow copy, as required by Dune::XT::Grid::ElementAndIntersectionFunctor, i.e.
+   *        the copied functional shares the vector.
+   */
+  VectorBasedFunctional(ThisType& other) = default;
+
   VectorBasedFunctional(ThisType&&) = default;
 
-  using BaseType::vector;
+  typename BaseWalkerType::BaseType* copy() override
+  {
+    return new ThisType(*this);
+  }
+
+  using BaseFunctionalType::vector;
 
   SourceVectorType& vector()
   {
     return VectorStorage::access();
   }
 
-  using WalkerBaseType::append;
+  using BaseWalkerType::append;
 
   ThisType& append(const LocalElementFunctionalInterface<ElementType, r, rC, F, DofFieldType>& local_functional,
                    const XT::Common::Parameter& param = {},
@@ -244,33 +242,34 @@ public:
         local_functional, param, XT::Grid::ApplyOn::GenericFilteredIntersections<AssemblyGridViewType>(filter_lambda));
   }
 
+  /// \{
+  /// \name Variants to simplify Python bindings
+
+  ThisType& append(const std::tuple<const LocalElementFunctionalInterface<ElementType, r, rC, F, DofFieldType>&,
+                                    const XT::Common::Parameter&,
+                                    const ElementFilterType&>& functional_param_filter_tuple)
+  {
+    return this->append(std::get<0>(functional_param_filter_tuple),
+                        std::get<1>(functional_param_filter_tuple),
+                        std::get<2>(functional_param_filter_tuple));
+  }
+
+  ThisType&
+  append(const std::tuple<const LocalIntersectionFunctionalInterface<IntersectionType, r, rC, F, DofFieldType>&,
+                          const XT::Common::Parameter&,
+                          const IntersectionFilterType&>& functional_param_filter_tuple)
+  {
+    return this->append(std::get<0>(functional_param_filter_tuple),
+                        std::get<1>(functional_param_filter_tuple),
+                        std::get<2>(functional_param_filter_tuple));
+  }
+
+  /// \}
+
   void assemble(const bool use_tbb = false) override final
   {
-    if (assembled_)
-      return;
-    // This clears all appended functionals, which is ok, since we are done after assembling once!
     this->walk(use_tbb);
-    assembled_ = true;
   }
-
-  void clear()
-  {
-    WalkerBaseType::clear();
-    assembled_ = false;
-  }
-
-  using BaseType::apply;
-
-  FieldType apply(const SourceVectorType& source, const XT::Common::Parameter& param = {}) const override final
-  {
-    DUNE_THROW_IF(!assembled_,
-                  Exceptions::functional_error,
-                  "You have to call assemble() first, or append this functional to an existing XT::Grid::Walker!");
-    return BaseType::apply(source, param);
-  } // ... apply(...)
-
-private:
-  bool assembled_;
 }; // class VectorBasedFunctional
 
 

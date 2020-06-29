@@ -72,8 +72,17 @@ public:
                                       << "\n   source_space_.mapper().size() = " << source_space_.mapper().size());
   } // ConstMatrixOperator(...)
 
+  ConstMatrixOperator(const ThisType& other)
+    : BaseType(other)
+    , source_space_(other.source_space_)
+    , range_space_(other.range_space_)
+    , matrix_(other.matrix_)
+    , linear_solver_(matrix_, source_space_.dof_communicator())
+  {}
+
   ConstMatrixOperator(ThisType&& source)
-    : source_space_(source.source_space_)
+    : BaseType(source)
+    , source_space_(source.source_space_)
     , range_space_(source.range_space_)
     , matrix_(source.matrix_)
     , linear_solver_(matrix_, source_space_.dof_communicator())
@@ -223,29 +232,29 @@ class MatrixOperator
 {
   using ThisType = MatrixOperator;
   using MatrixStorage = XT::Common::StorageProvider<M>;
-  using OperatorBaseType = ConstMatrixOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
-  using WalkerBaseType = XT::Grid::Walker<SGV>;
+  using BaseOperatorType = ConstMatrixOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
+  using BaseWalkerType = XT::Grid::Walker<SGV>;
 
 public:
   using AssemblyGridViewType = SGV;
 
-  using typename OperatorBaseType::F;
-  using typename OperatorBaseType::FieldType;
-  using typename OperatorBaseType::MatrixOperatorType;
-  using typename OperatorBaseType::MatrixType;
-  using typename OperatorBaseType::RangeSpaceType;
-  using typename OperatorBaseType::SourceSpaceType;
-  using typename OperatorBaseType::V;
-  using typename OperatorBaseType::VectorType;
+  using typename BaseOperatorType::F;
+  using typename BaseOperatorType::FieldType;
+  using typename BaseOperatorType::MatrixOperatorType;
+  using typename BaseOperatorType::MatrixType;
+  using typename BaseOperatorType::RangeSpaceType;
+  using typename BaseOperatorType::SourceSpaceType;
+  using typename BaseOperatorType::V;
+  using typename BaseOperatorType::VectorType;
 
-  using typename WalkerBaseType::ElementType;
+  using typename BaseWalkerType::ElementType;
   using ElementFilterType = XT::Grid::ElementFilter<SGV>;
   using IntersectionFilterType = XT::Grid::IntersectionFilter<SGV>;
   using ApplyOnAllElements = XT::Grid::ApplyOn::AllElements<SGV>;
   using ApplyOnAllIntersections = XT::Grid::ApplyOn::AllIntersections<SGV>;
 
-  using typename WalkerBaseType::E;
-  using typename WalkerBaseType::I;
+  using typename BaseWalkerType::E;
+  using typename BaseWalkerType::I;
 
   /**
    * Ctor which accept an existing matrix into which to assemble.
@@ -255,15 +264,10 @@ public:
                  const RangeSpaceType& range_spc,
                  MatrixType& mat)
     : MatrixStorage(mat)
-    , OperatorBaseType(source_spc, range_spc, MatrixStorage::access())
-    , WalkerBaseType(assembly_grid_view)
+    , BaseOperatorType(source_spc, range_spc, MatrixStorage::access())
+    , BaseWalkerType(assembly_grid_view)
     , scaling(1.)
-    , assembled_(false)
-  {
-    // to detect assembly
-    this->append(
-        [](/*prepare nothing*/) {}, [](const auto&) { /*apply nothing*/ }, [&](/*finalize*/) { assembled_ = true; });
-  }
+  {}
 
   /**
    * Ctor which creates an appropriate matrix into which to assemble from a given sparsity pattern.
@@ -273,17 +277,37 @@ public:
                  const RangeSpaceType& range_spc,
                  const XT::LA::SparsityPatternDefault& pattern)
     : MatrixStorage(new MatrixType(range_spc.mapper().size(), source_spc.mapper().size(), pattern))
-    , OperatorBaseType(source_spc, range_spc, MatrixStorage::access())
-    , WalkerBaseType(assembly_grid_view)
+    , BaseOperatorType(source_spc, range_spc, MatrixStorage::access())
+    , BaseWalkerType(assembly_grid_view)
     , scaling(1.)
-    , assembled_(false)
+  {}
+
+  MatrixOperator(const ThisType&) = delete;
+
+  /**
+   * \brief Performs something like a shallow copy, as required by Dune::XT::Grid::ElementAndIntersectionFunctor, i.e.
+   *        the copied operator shares the matrix.
+   */
+  MatrixOperator(ThisType& other) = default;
+  //    : MatrixStorage(other)
+  //    , BaseOperatorType(other)
+  //    , BaseWalkerType(other)
+  //    , scaling(other.scaling)
+  //  {}
+
+  MatrixOperator(ThisType&& source) = default;
+  //    : MatrixStorage(source)
+  //    , BaseOperatorType(source)
+  //    , BaseWalkerType(source)
+  //    , scaling(source.scaling)
+  //  {}
+
+  typename BaseWalkerType::BaseType* copy() override
   {
-    // to detect assembly
-    this->append(
-        [](/*prepare nothing*/) {}, [](const auto&) { /*apply nothing*/ }, [&](/*finalize*/) { assembled_ = true; });
+    return new ThisType(*this);
   }
 
-  using OperatorBaseType::matrix;
+  using BaseOperatorType::matrix;
 
   MatrixType& matrix()
   {
@@ -292,13 +316,7 @@ public:
 
   FieldType scaling;
 
-  void clear()
-  {
-    WalkerBaseType::clear();
-    assembled_ = false;
-  }
-
-  using WalkerBaseType::append;
+  using BaseWalkerType::append;
 
   ThisType& append(const LocalElementBilinearFormInterface<E, r_r, r_rC, F, F, s_r, s_rC, F>& local_bilinear_form,
                    const XT::Common::Parameter& param = {},
@@ -354,6 +372,39 @@ public:
   } // ... append(...)
 
   /// \{
+  /// \name Variants to simplify the Python bindings.
+
+  ThisType& append(const std::tuple<const LocalElementBilinearFormInterface<E, r_r, r_rC, F, F, s_r, s_rC, F>&,
+                                    const XT::Common::Parameter&,
+                                    const ElementFilterType&>& bilinearform_param_filter_tuple)
+  {
+    return this->append(std::get<0>(bilinearform_param_filter_tuple),
+                        std::get<1>(bilinearform_param_filter_tuple),
+                        std::get<2>(bilinearform_param_filter_tuple));
+  }
+
+  ThisType&
+  append(const std::tuple<const LocalCouplingIntersectionBilinearFormInterface<I, r_r, r_rC, F, F, s_r, s_rC, F>&,
+                          const XT::Common::Parameter&,
+                          const IntersectionFilterType&>& bilinearform_param_filter_tuple)
+  {
+    return this->append(std::get<0>(bilinearform_param_filter_tuple),
+                        std::get<1>(bilinearform_param_filter_tuple),
+                        std::get<2>(bilinearform_param_filter_tuple));
+  }
+
+  ThisType& append(const std::tuple<const LocalIntersectionBilinearFormInterface<I, r_r, r_rC, F, F, s_r, s_rC, F>&,
+                                    const XT::Common::Parameter&,
+                                    const IntersectionFilterType&>& bilinearform_param_filter_tuple)
+  {
+    return this->append(std::get<0>(bilinearform_param_filter_tuple),
+                        std::get<1>(bilinearform_param_filter_tuple),
+                        std::get<2>(bilinearform_param_filter_tuple));
+  }
+
+  /// \}
+
+  /// \{
   /// \name Variants to compute the jacobian of the appended local operator by finite differences.
 
   ThisType& append(const LocalElementOperatorInterface<V, SGV, s_r, s_rC, F, r_r, r_rC>& local_operator,
@@ -392,28 +443,9 @@ public:
 
   ThisType& assemble(const bool use_tbb = false) override final
   {
-    if (!assembled_) {
-      // This clears all appended operators, which is ok, since we are done after assembling once!
-      this->walk(use_tbb);
-      assembled_ = true;
-    }
+    this->walk(use_tbb);
     return *this;
-  } // ... assemble(...)
-
-  using OperatorBaseType::jacobian;
-
-  /// \todo Store appended local bilinear forms and append them to jacobian_op?
-  void jacobian(const VectorType& source,
-                MatrixOperatorType& jacobian_op,
-                const XT::Common::Configuration& opts,
-                const XT::Common::Parameter& param = {}) const override
-  {
-    DUNE_THROW_IF(!assembled_, Exceptions::operator_error, "This operator has to be assembled to provide a jacobian!");
-    OperatorBaseType::jacobian(source, jacobian_op, opts, param);
   }
-
-private:
-  bool assembled_;
 }; // class MatrixOperator
 
 

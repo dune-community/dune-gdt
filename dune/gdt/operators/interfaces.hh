@@ -159,6 +159,14 @@ public:
     : XT::Common::ParametricInterface(param_type)
   {}
 
+  OperatorInterface(const ThisType& other)
+    : XT::Common::ParametricInterface(other)
+  {}
+
+  OperatorInterface(ThisType&& source)
+    : XT::Common::ParametricInterface(source)
+  {}
+
   virtual ~OperatorInterface() = default;
 
   /// \name These methods have to be implemented.
