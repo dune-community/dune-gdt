@@ -27,7 +27,7 @@ class LocalUnaryElementIntegrandSum : public LocalUnaryElementIntegrandInterface
 public:
   using typename BaseType::DomainType;
   using typename BaseType::ElementType;
-  using typename BaseType::LocalBasisType;
+  using typename BaseType::LocalTestBasisType;
 
   LocalUnaryElementIntegrandSum(const BaseType& left, const BaseType& right)
     : BaseType(left.parameter_type() + right.parameter_type())
@@ -56,14 +56,14 @@ protected:
   }
 
 public:
-  int order(const LocalBasisType& basis, const XT::Common::Parameter& param = {}) const override final
+  int order(const LocalTestBasisType& basis, const XT::Common::Parameter& param = {}) const override final
   {
     return std::max(left_.access().order(basis, param), right_.access().order(basis, param));
   }
 
   using BaseType::evaluate;
 
-  void evaluate(const LocalBasisType& basis,
+  void evaluate(const LocalTestBasisType& basis,
                 const DomainType& point_in_reference_element,
                 DynamicVector<F>& result,
                 const XT::Common::Parameter& param = {}) const override final
@@ -94,7 +94,7 @@ class LocalUnaryIntersectionIntegrandSum : public LocalUnaryIntersectionIntegran
 public:
   using typename BaseType::DomainType;
   using typename BaseType::IntersectionType;
-  using typename BaseType::LocalBasisType;
+  using typename BaseType::LocalTestBasisType;
 
   LocalUnaryIntersectionIntegrandSum(const BaseType& left, const BaseType& right)
     : BaseType(left.parameter_type() + right.parameter_type())
@@ -107,7 +107,7 @@ public:
   }
 
   LocalUnaryIntersectionIntegrandSum(const ThisType& other)
-    : BaseType(other.parameter_type())
+    : BaseType(other)
     , left_(other.left_.access().copy_as_unary_intersection_integrand().release())
     , right_(other.right_.access().copy_as_unary_intersection_integrand().release())
   {}
@@ -132,14 +132,14 @@ public:
     return left_.access().inside();
   }
 
-  int order(const LocalBasisType& basis, const XT::Common::Parameter& param = {}) const override final
+  int order(const LocalTestBasisType& basis, const XT::Common::Parameter& param = {}) const override final
   {
     return std::max(left_.access().order(basis, param), right_.access().order(basis, param));
   }
 
   using BaseType::evaluate;
 
-  void evaluate(const LocalBasisType& basis,
+  void evaluate(const LocalTestBasisType& basis,
                 const DomainType& point_in_reference_intersection,
                 DynamicVector<F>& result,
                 const XT::Common::Parameter& param = {}) const override final
@@ -259,7 +259,7 @@ public:
   }
 
   LocalBinaryIntersectionIntegrandSum(const ThisType& other)
-    : BaseType(other.parameter_type())
+    : BaseType(other)
     , left_(other.left_.access().copy_as_binary_intersection_integrand().release())
     , right_(other.right_.access().copy_as_binary_intersection_integrand().release())
   {}

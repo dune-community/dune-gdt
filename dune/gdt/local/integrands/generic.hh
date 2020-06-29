@@ -29,11 +29,11 @@ class GenericLocalUnaryElementIntegrand : public LocalUnaryElementIntegrandInter
 
 public:
   using typename BaseType::DomainType;
-  using typename BaseType::LocalBasisType;
+  using typename BaseType::LocalTestBasisType;
 
   using GenericOrderFunctionType =
-      std::function<int(const LocalBasisType& /*basis*/, const XT::Common::Parameter& /*param*/)>;
-  using GenericEvaluateFunctionType = std::function<void(const LocalBasisType& /*basis*/,
+      std::function<int(const LocalTestBasisType& /*basis*/, const XT::Common::Parameter& /*param*/)>;
+  using GenericEvaluateFunctionType = std::function<void(const LocalTestBasisType& /*basis*/,
                                                          const DomainType& /*point_in_reference_element*/,
                                                          DynamicVector<F>& /*result*/,
                                                          const XT::Common::Parameter& /*param*/)>;
@@ -66,14 +66,14 @@ public:
     post_bind_(ele);
   }
 
-  int order(const LocalBasisType& basis, const XT::Common::Parameter& param = {}) const override final
+  int order(const LocalTestBasisType& basis, const XT::Common::Parameter& param = {}) const override final
   {
     return order_(basis, this->parse_parameter(param));
   }
 
   using BaseType::evaluate;
 
-  void evaluate(const LocalBasisType& basis,
+  void evaluate(const LocalTestBasisType& basis,
                 const DomainType& point_in_reference_element,
                 DynamicVector<F>& result,
                 const XT::Common::Parameter& param = {}) const override final

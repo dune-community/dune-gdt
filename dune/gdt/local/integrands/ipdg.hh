@@ -219,7 +219,7 @@ public:
   {}
 
   BoundaryPenalty(const ThisType& other)
-    : BaseType(other.parameter_type())
+    : BaseType(other)
     , penalty_(other.penalty_)
     , weight_(other.weight_)
     , intersection_diameter_(other.intersection_diameter_)

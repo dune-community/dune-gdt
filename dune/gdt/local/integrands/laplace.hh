@@ -91,7 +91,7 @@ public:
     test_basis.jacobians(point_in_reference_element, test_basis_grads_, param);
     ansatz_basis.jacobians(point_in_reference_element, ansatz_basis_grads_, param);
     const auto weight = local_weight_->evaluate(point_in_reference_element, param);
-    // compute elliptic evaluation
+    // compute integrand
     for (size_t ii = 0; ii < rows; ++ii)
       for (size_t jj = 0; jj < cols; ++jj)
         for (size_t rr = 0; rr < r; ++rr)

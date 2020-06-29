@@ -279,7 +279,8 @@ public:
 
   using GridFunctionType = XT::Functions::GridFunctionInterface<E, r, r, F>;
 
-  LocalIntersectionProductIntegrand(XT::Functions::GridFunction<E, r, r, F> weight = {1.}, bool use_inside_bases = true)
+  LocalIntersectionProductIntegrand(XT::Functions::GridFunction<E, r, r, F> weight = {1.},
+                                    const bool use_inside_bases = true)
     : BaseType()
     , weight_(weight)
     , local_weight_(weight_.local_function())
@@ -287,7 +288,7 @@ public:
   {}
 
   LocalIntersectionProductIntegrand(const ThisType& other)
-    : BaseType(other.parameter_type())
+    : BaseType(other)
     , weight_(other.weight_)
     , local_weight_(weight_.local_function())
     , inside_(other.inside_)

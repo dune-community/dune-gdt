@@ -47,7 +47,7 @@ class LocalBinaryToUnaryElementIntegrand : public LocalUnaryElementIntegrandInte
 public:
   using typename BaseType::DomainType;
   using typename BaseType::ElementType;
-  using typename BaseType::LocalBasisType;
+  using typename BaseType::LocalTestBasisType;
 
   using LocalBinaryElementIntegrandType = LocalBinaryElementIntegrandInterface<E, t_r, t_rC, TF, F, a_r, a_rC, AF>;
 
@@ -86,14 +86,14 @@ protected:
   }
 
 public:
-  int order(const LocalBasisType& basis, const XT::Common::Parameter& param = {}) const override final
+  int order(const LocalTestBasisType& basis, const XT::Common::Parameter& param = {}) const override final
   {
     return local_binary_integrand_->order(basis, *local_function_, param);
   }
 
   using BaseType::evaluate;
 
-  void evaluate(const LocalBasisType& basis,
+  void evaluate(const LocalTestBasisType& basis,
                 const DomainType& point_in_reference_element,
                 DynamicVector<F>& result,
                 const XT::Common::Parameter& param = {}) const override final
@@ -147,7 +147,7 @@ public:
   using typename BaseType::DomainType;
   using typename BaseType::E;
   using typename BaseType::IntersectionType;
-  using typename BaseType::LocalBasisType;
+  using typename BaseType::LocalTestBasisType;
 
   using LocalBinaryIntersectionIntegrandType =
       LocalBinaryIntersectionIntegrandInterface<I, t_r, t_rC, TF, F, a_r, a_rC, AF>;
@@ -161,7 +161,7 @@ public:
   {}
 
   LocalBinaryToUnaryIntersectionIntegrand(const ThisType& other)
-    : BaseType()
+    : BaseType(other)
     , inducing_function_as_ansatz_basis_(other.inducing_function_as_ansatz_basis_)
     , local_function_(inducing_function_as_ansatz_basis_.local_function())
     , local_binary_integrand_(other.local_binary_integrand_->copy_as_binary_intersection_integrand())
@@ -185,14 +185,14 @@ protected:
   }
 
 public:
-  int order(const LocalBasisType& test_basis, const XT::Common::Parameter& param = {}) const override final
+  int order(const LocalTestBasisType& test_basis, const XT::Common::Parameter& param = {}) const override final
   {
     return local_binary_integrand_->order(test_basis, *local_function_, param);
   }
 
   using BaseType::evaluate;
 
-  void evaluate(const LocalBasisType& test_basis,
+  void evaluate(const LocalTestBasisType& test_basis,
                 const DomainType& point_in_reference_Intersection,
                 DynamicVector<F>& result,
                 const XT::Common::Parameter& param = {}) const override final

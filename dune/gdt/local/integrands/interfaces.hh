@@ -93,7 +93,7 @@ public:
 
   using typename XT::Grid::ElementBoundObject<Element>::ElementType;
   using DomainType = FieldVector<D, d>;
-  using LocalBasisType = XT::Functions::ElementFunctionSetInterface<E, r, rC, R>;
+  using LocalTestBasisType = XT::Functions::ElementFunctionSetInterface<E, r, rC, R>;
 
   LocalUnaryElementIntegrandInterface(const XT::Common::ParameterType& param_type = {},
                                       const std::string& logging_prefix = "",
@@ -119,14 +119,14 @@ public:
    *
    * \note Will throw Exceptions::not_bound_to_an_element_yet error if not bound yet!
    **/
-  virtual int order(const LocalBasisType& basis, const XT::Common::Parameter& param = {}) const = 0;
+  virtual int order(const LocalTestBasisType& basis, const XT::Common::Parameter& param = {}) const = 0;
 
   /**
    * Computes the evaluation of this integrand at the given point for each function in the basis.
    *
    * \note Will throw Exceptions::not_bound_to_an_element_yet error if not bound yet!
    **/
-  virtual void evaluate(const LocalBasisType& basis,
+  virtual void evaluate(const LocalTestBasisType& basis,
                         const DomainType& point_in_reference_element,
                         DynamicVector<F>& result,
                         const XT::Common::Parameter& param = {}) const = 0;
@@ -136,7 +136,7 @@ public:
    *
    * \note Will throw Exceptions::not_bound_to_an_element_yet error if not bound yet!
    **/
-  virtual DynamicVector<F> evaluate(const LocalBasisType& basis,
+  virtual DynamicVector<F> evaluate(const LocalTestBasisType& basis,
                                     const DomainType& point_in_reference_element,
                                     const XT::Common::Parameter& param = {}) const
   {
@@ -361,6 +361,8 @@ class LocalUnaryIntersectionIntegrandInterface
   static_assert(XT::Grid::is_intersection<Intersection>::value, "");
 
   using ThisType = LocalUnaryIntersectionIntegrandInterface;
+  using BaseParametricType = XT::Common::ParametricInterface;
+  using BaseIntersectionBoundObjectType = XT::Grid::IntersectionBoundObject<Intersection>;
 
 public:
   using typename XT::Grid::IntersectionBoundObject<Intersection>::IntersectionType;
@@ -377,10 +379,16 @@ public:
   static const constexpr size_t rC = range_dim_cols;
 
   using DomainType = FieldVector<D, d - 1>;
-  using LocalBasisType = XT::Functions::ElementFunctionSetInterface<E, r, rC, RF>;
+  using LocalTestBasisType = XT::Functions::ElementFunctionSetInterface<E, r, rC, RF>;
 
   LocalUnaryIntersectionIntegrandInterface(const XT::Common::ParameterType& param_type = {})
-    : XT::Common::ParametricInterface(param_type)
+    : BaseParametricType(param_type)
+    , BaseIntersectionBoundObjectType()
+  {}
+
+  LocalUnaryIntersectionIntegrandInterface(const ThisType& other)
+    : BaseParametricType(other)
+    , BaseIntersectionBoundObjectType(other)
   {}
 
   virtual ~LocalUnaryIntersectionIntegrandInterface() = default;
@@ -405,14 +413,14 @@ public:
    *
    * \note Will throw Exceptions::not_bound_to_an_element_yet error if not bound yet!
    **/
-  virtual int order(const LocalBasisType& basis, const XT::Common::Parameter& param = {}) const = 0;
+  virtual int order(const LocalTestBasisType& basis, const XT::Common::Parameter& param = {}) const = 0;
 
   /**
    * Computes the evaluation of this integrand at the given point for each basis function.
    *
    * \note Will throw Exceptions::not_bound_to_an_element_yet error if not bound yet!
    **/
-  virtual void evaluate(const LocalBasisType& basis,
+  virtual void evaluate(const LocalTestBasisType& basis,
                         const DomainType& point_in_reference_intersection,
                         DynamicVector<F>& result,
                         const XT::Common::Parameter& param = {}) const = 0;
@@ -422,7 +430,7 @@ public:
    *
    * \note Will throw Exceptions::not_bound_to_an_element_yet error if not bound yet!
    **/
-  virtual DynamicVector<F> evaluate(const LocalBasisType& basis,
+  virtual DynamicVector<F> evaluate(const LocalTestBasisType& basis,
                                     const DomainType& point_in_reference_intersection,
                                     const XT::Common::Parameter& param = {}) const
   {
@@ -432,7 +440,7 @@ public:
   }
 
 protected:
-  void ensure_size_and_clear_results(const LocalBasisType& basis,
+  void ensure_size_and_clear_results(const LocalTestBasisType& basis,
                                      DynamicVector<F>& result,
                                      const XT::Common::Parameter& param) const
   {
@@ -467,6 +475,8 @@ class LocalBinaryIntersectionIntegrandInterface
   static_assert(XT::Grid::is_intersection<Intersection>::value, "");
 
   using ThisType = LocalBinaryIntersectionIntegrandInterface;
+  using BaseParametricType = XT::Common::ParametricInterface;
+  using BaseIntersectionBoundObjectType = XT::Grid::IntersectionBoundObject<Intersection>;
 
 public:
   using typename XT::Grid::IntersectionBoundObject<Intersection>::IntersectionType;
@@ -491,7 +501,13 @@ public:
   using LocalAnsatzBasisType = XT::Functions::ElementFunctionSetInterface<E, a_r, a_rC, AR>;
 
   LocalBinaryIntersectionIntegrandInterface(const XT::Common::ParameterType& param_type = {})
-    : XT::Common::ParametricInterface(param_type)
+    : BaseParametricType(param_type)
+    , BaseIntersectionBoundObjectType()
+  {}
+
+  LocalBinaryIntersectionIntegrandInterface(const ThisType& other)
+    : BaseParametricType(other)
+    , BaseIntersectionBoundObjectType(other)
   {}
 
   virtual ~LocalBinaryIntersectionIntegrandInterface() = default;
