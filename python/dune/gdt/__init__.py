@@ -28,6 +28,7 @@ for mod_name in ( # order should not matter!
         '_local_integrands_advection',
         '_local_integrands_binary_element_interface',
         '_local_integrands_element_product',
+        '_local_integrands_intersection_product',
         '_local_integrands_laplace',
         '_local_integrands_unary_element_interface',
         '_operators_interfaces_common',
