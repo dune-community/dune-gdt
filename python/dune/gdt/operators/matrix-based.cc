@@ -51,6 +51,7 @@ private:
   using SS = typename type::SourceSpaceType;
   using RS = typename type::RangeSpaceType;
   using E = typename type::E;
+  using I = typename type::I;
   using F = typename type::F;
 
   template <bool needs_sparsity_tag = !std::is_same<SparsityTag, void>::value, bool anything = true>
@@ -223,6 +224,32 @@ public:
           "local_element_bilinear_form"_a,
           "param"_a = XT::Common::Parameter(),
           "element_filter"_a = XT::Grid::ApplyOn::AllElements<GV>(),
+          py::is_operator());
+    c.def("__iadd__", // function ptr signature required for the right return type
+          (type
+           & (type::*)(const std::tuple<const LocalElementBilinearFormInterface<E, r_r, 1, F, F, s_r, 1, F>&,
+                                        const XT::Common::Parameter&,
+                                        const XT::Grid::ElementFilter<GV>&>&))
+              & type::append,
+          "tuple_of_localelementbilinearform_param_elementfilter"_a,
+          py::is_operator());
+    c.def("__iadd__", // function ptr signature required for the right return type
+          (type
+           & (type::*)(const LocalIntersectionBilinearFormInterface<I, r_r, 1, F, F, s_r, 1, F>&,
+                       const XT::Common::Parameter&,
+                       const XT::Grid::IntersectionFilter<GV>&))
+              & type::append,
+          "local_intersection_bilinear_form"_a,
+          "param"_a = XT::Common::Parameter(),
+          "intersection_filter"_a = XT::Grid::ApplyOn::AllIntersections<GV>(),
+          py::is_operator());
+    c.def("__iadd__", // function ptr signature required for the right return type
+          (type
+           & (type::*)(const std::tuple<const LocalIntersectionBilinearFormInterface<I, r_r, 1, F, F, s_r, 1, F>&,
+                                        const XT::Common::Parameter&,
+                                        const XT::Grid::IntersectionFilter<GV>&>&))
+              & type::append,
+          "tuple_of_localintersectionbilinearform_param_elementfilter"_a,
           py::is_operator());
     c.def("assemble",
           [](type& self, const bool use_tbb) { self.assemble(use_tbb); },
