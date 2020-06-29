@@ -23,6 +23,7 @@ dune_pybindxi_add_module(_local_bilinear_forms_element_integrals EXCLUDE_FROM_AL
 dune_pybindxi_add_module(_local_bilinear_forms_element_interface EXCLUDE_FROM_ALL ${header} local/bilinear-forms/element_interface.cc)
 dune_pybindxi_add_module(_local_functionals_element_integrals EXCLUDE_FROM_ALL ${header} local/functionals/element_integrals.cc)
 dune_pybindxi_add_module(_local_functionals_element_interface EXCLUDE_FROM_ALL ${header} local/functionals/element_interface.cc)
+dune_pybindxi_add_module(_local_integrands_advection EXCLUDE_FROM_ALL ${header} local/integrands/advection.cc)
 dune_pybindxi_add_module(_local_integrands_binary_element_interface EXCLUDE_FROM_ALL ${header} local/integrands/binary_element_interface.cc)
 dune_pybindxi_add_module(_local_integrands_element_product EXCLUDE_FROM_ALL ${header} local/integrands/element_product.cc)
 dune_pybindxi_add_module(_local_integrands_laplace EXCLUDE_FROM_ALL ${header} local/integrands/laplace.cc)
