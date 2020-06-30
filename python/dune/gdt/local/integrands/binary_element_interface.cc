@@ -21,6 +21,8 @@
 #include <python/dune/xt/common/fvector.hh>
 #include <python/dune/xt/grid/grids.bindings.hh>
 
+#include "conversion.hh"
+
 
 namespace Dune {
 namespace GDT {
@@ -44,6 +46,102 @@ public:
   using type = GDT::LocalBinaryElementIntegrandInterface<E, t_r, t_rC, TF, F, a_r, a_rC, AF>;
   using bound_type = pybind11::class_<type>;
 
+private:
+  template <bool square_matrix = (a_rC == a_r && a_r > 1), bool scalar = (a_rC == 1 && a_r == 1), bool anything = true>
+  struct with_ansatz /*the general vector or non-square matrix case*/
+  {
+    static void addbind(bound_type& c)
+    {
+      namespace py = pybind11;
+      using namespace pybind11::literals;
+
+      c.def("with_ansatz",
+            [](type& self, const typename XT::Functions::RangeTypeSelector<F, a_r, a_rC>::type& constant_value) {
+              return self.with_ansatz(constant_value);
+            },
+            "constant_value"_a,
+            py::keep_alive<0, 1>());
+      c.def("with_ansatz",
+            [](type& self, const XT::Functions::FunctionInterface<d, a_r, a_rC, F>& function) {
+              return self.with_ansatz(function);
+            },
+            "scalar_function"_a,
+            py::keep_alive<0, 1>(),
+            py::keep_alive<0, 2>());
+      c.def("with_ansatz",
+            [](type& self, const XT::Functions::GridFunctionInterface<E, a_r, a_rC, F>& grid_function) {
+              return self.with_ansatz(grid_function);
+            },
+            "scalar_grid_function"_a,
+            py::keep_alive<0, 1>(),
+            py::keep_alive<0, 2>());
+    }
+  }; // struct with_ansatz<true, false, ...>
+
+  template <bool anything>
+  struct with_ansatz</*square_matrix=*/true, false, anything>
+  {
+    static void addbind(bound_type& c)
+    {
+      namespace py = pybind11;
+      using namespace pybind11::literals;
+
+      // we have the scalar case ...
+      with_ansatz<false, true, anything>::addbind(c);
+
+      // .. and the tensor case
+      c.def("with_ansatz",
+            [](type& self, const FieldMatrix<F, a_r, a_rC>& square_matrix) { return self.with_ansatz(square_matrix); },
+            "square_matrix"_a,
+            py::keep_alive<0, 1>());
+      c.def("with_ansatz",
+            [](type& self, const XT::Functions::FunctionInterface<d, a_r, a_rC, F>& square_matrix_valued_function) {
+              return self.with_ansatz(square_matrix_valued_function);
+            },
+            "square_matrix_valued_function"_a,
+            py::keep_alive<0, 1>(),
+            py::keep_alive<0, 2>());
+      c.def("with_ansatz",
+            [](type& self,
+               const XT::Functions::GridFunctionInterface<E, a_r, a_rC, F>& square_matrix_valued_grid_function) {
+              return self.with_ansatz(square_matrix_valued_grid_function);
+            },
+            "square_matrix_valued_grid_function"_a,
+            py::keep_alive<0, 1>(),
+            py::keep_alive<0, 2>());
+    }
+  }; // struct with_ansatz<true, false, ...>
+
+  template <bool anything>
+  struct with_ansatz<false, /*scalar=*/true, anything>
+  {
+    static void addbind(bound_type& c)
+    {
+      namespace py = pybind11;
+      using namespace pybind11::literals;
+
+      c.def("with_ansatz",
+            [](type& self, const F& constant_scalar) { return self.with_ansatz(constant_scalar); },
+            "constant_scalar"_a,
+            py::keep_alive<0, 1>());
+      c.def("with_ansatz",
+            [](type& self, const XT::Functions::FunctionInterface<d, 1, 1, F>& scalar_function) {
+              return self.with_ansatz(scalar_function);
+            },
+            "scalar_function"_a,
+            py::keep_alive<0, 1>(),
+            py::keep_alive<0, 2>());
+      c.def("with_ansatz",
+            [](type& self, const XT::Functions::GridFunctionInterface<E, 1, 1, F>& scalar_grid_function) {
+              return self.with_ansatz(scalar_grid_function);
+            },
+            "scalar_grid_function"_a,
+            py::keep_alive<0, 1>(),
+            py::keep_alive<0, 2>());
+    }
+  }; // struct with_ansatz<true, false, ...>
+
+public:
   static bound_type bind(pybind11::module& m,
                          const std::string& class_id = "local_binary_element_integrand",
                          const std::string& grid_id = XT::Grid::bindings::grid_name<G>::value(),
@@ -90,6 +188,10 @@ public:
     //      ss << self;
     //      return ss.str();
     //    });
+
+    // conversion to unary
+    with_ansatz<>::addbind(c);
+
     return c;
   } // ... bind(...)
 }; // class LocalBinaryElementIntegrandInterface
@@ -124,6 +226,22 @@ struct LocalBinaryElementIntegrandInterface_for_all_grids
     }
     // add your extra dimensions here
     // ...
+
+    // we need to bind LocalBinaryToUnaryElementIntegrand here, since it requires the above interface
+    Dune::GDT::bindings::LocalBinaryToUnaryElementIntegrand<E>::bind(m);
+    if (d > 1) {
+      Dune::GDT::bindings::LocalBinaryToUnaryElementIntegrand<E, 1, 1, F, F, d, 1, F>::bind(m);
+      Dune::GDT::bindings::LocalBinaryToUnaryElementIntegrand<E, 1, 1, F, F, d, d, F>::bind(m);
+      Dune::GDT::bindings::LocalBinaryToUnaryElementIntegrand<E, d, 1, F, F, 1, 1, F>::bind(m);
+      Dune::GDT::bindings::LocalBinaryToUnaryElementIntegrand<E, d, 1, F, F, d, 1, F>::bind(m);
+      Dune::GDT::bindings::LocalBinaryToUnaryElementIntegrand<E, d, 1, F, F, d, d, F>::bind(m);
+      Dune::GDT::bindings::LocalBinaryToUnaryElementIntegrand<E, d, d, F, F, 1, 1, F>::bind(m);
+      Dune::GDT::bindings::LocalBinaryToUnaryElementIntegrand<E, d, d, F, F, d, 1, F>::bind(m);
+      Dune::GDT::bindings::LocalBinaryToUnaryElementIntegrand<E, d, d, F, F, d, d, F>::bind(m);
+    }
+    // add your extra dimensions here
+    // ...
+
     LocalBinaryElementIntegrandInterface_for_all_grids<typename GridTypes::tail_type>::bind(m);
   }
 };
@@ -146,6 +264,8 @@ PYBIND11_MODULE(_local_integrands_binary_element_interface, m)
   py::module::import("dune.xt.la");
   py::module::import("dune.xt.grid");
   py::module::import("dune.xt.functions");
+
+  py::module::import("dune.gdt._local_integrands_unary_element_interface");
 
   LocalBinaryElementIntegrandInterface_for_all_grids<XT::Grid::AvailableGridTypes>::bind(m);
 }

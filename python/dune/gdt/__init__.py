@@ -19,6 +19,7 @@ for mod_name in ( # order should not matter!
         '_local_bilinear_forms_element_interface',
         '_local_integrands_binary_element_interface',
         '_local_integrands_laplace',
+        '_local_integrands_unary_element_interface',
         '_operators_interfaces_common',
         '_operators_interfaces_eigen',
         '_operators_interfaces_istl',
