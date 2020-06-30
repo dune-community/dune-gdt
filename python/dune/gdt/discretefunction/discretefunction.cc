@@ -40,7 +40,7 @@ struct DiscreteFunction_for_all_grids<V, VT, boost::tuples::null_type>
 };
 
 
-PYBIND11_MODULE(_discretefunction, m)
+PYBIND11_MODULE(_discretefunction_discretefunction, m)
 {
   namespace py = pybind11;
   using namespace Dune;
@@ -53,6 +53,7 @@ PYBIND11_MODULE(_discretefunction, m)
   py::module::import("dune.xt.functions");
 
   py::module::import("dune.gdt._spaces_interface");
+  py::module::import("dune.gdt._discretefunction_dof_vector");
 
   DiscreteFunction_for_all_grids<LA::CommonDenseVector<double>, LA::bindings::Common, XT::Grid::AvailableGridTypes>::
       bind(m);

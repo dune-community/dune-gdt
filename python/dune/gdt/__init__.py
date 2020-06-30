@@ -13,7 +13,8 @@
 from dune.xt import guarded_import
 
 for mod_name in ( # order should not matter!
-        '_discretefunction',
+        '_discretefunction_discretefunction',
+        '_discretefunction_dof_vector',
         '_local_bilinear_forms_element_integrals',
         '_local_bilinear_forms_element_interface',
         '_local_integrands_binary_element_interface',

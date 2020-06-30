@@ -13,7 +13,8 @@
 
 file(GLOB_RECURSE header "*.hh")
 
-dune_pybindxi_add_module(_discretefunction EXCLUDE_FROM_ALL ${header} discretefunction/discretefunction.cc)
+dune_pybindxi_add_module(_discretefunction_discretefunction EXCLUDE_FROM_ALL ${header} discretefunction/discretefunction.cc)
+dune_pybindxi_add_module(_discretefunction_dof_vector EXCLUDE_FROM_ALL ${header} discretefunction/dof-vector.cc)
 dune_pybindxi_add_module(_local_bilinear_forms_element_integrals EXCLUDE_FROM_ALL ${header} local/bilinear-forms/element_integrals.cc)
 dune_pybindxi_add_module(_local_bilinear_forms_element_interface EXCLUDE_FROM_ALL ${header} local/bilinear-forms/element_interface.cc)
 dune_pybindxi_add_module(_local_integrands_binary_element_interface EXCLUDE_FROM_ALL ${header} local/integrands/binary_element_interface.cc)

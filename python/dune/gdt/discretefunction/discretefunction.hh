@@ -63,6 +63,7 @@ public:
     const auto ClassName = XT::Common::to_camel_case(class_name);
     const std::string default_name = "dune.gdt.discretefunction";
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
+
     c.def(py::init<const S&, V&, const std::string&>(),
           "space"_a,
           "vector"_a,
@@ -70,18 +71,13 @@ public:
           py::keep_alive<1, 2>(),
           py::keep_alive<1, 3>());
     c.def(py::init<const S&, const std::string&>(), "space"_a, "name"_a = default_name, py::keep_alive<1, 2>());
+
     c.def_property_readonly("space", &type::space);
-    c.def_property("dof_vector",
-                   [](const type& self) { return self.dofs().vector(); },
-                   [](type& self, const V& vec) {
-                     DUNE_THROW_IF(vec.size() != self.dofs().vector().size(),
-                                   Exceptions::discrete_function_error,
-                                   "vec.size() = " << vec.size() << "\n   self.dofs().vector().size() = "
-                                                   << self.dofs().vector().size());
-                     self.dofs().vector() = vec;
-                   },
-                   py::return_value_policy::reference_internal);
+    c.def_property("dofs", // doing this so complicated to get an actual reference instead of a copy
+                   (typename type::DofVectorType & (type::*)()) & type::dofs,
+                   (typename type::DofVectorType & (type::*)()) & type::dofs);
     c.def_property_readonly("name", &type::name);
+
     c.def("visualize",
           [](type& self, const std::string& filename) { return self.visualize(filename, VTK::appendedraw); },
           "filename"_a);
