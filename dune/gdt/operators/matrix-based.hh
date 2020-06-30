@@ -204,7 +204,7 @@ make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space, const XT::LA::Ma
  * \brief Base class for linear operators which are assembled into a matrix.
  *
  * We derive from the XT::Grid::Walker and povide custom append() methods to allow to add local element and intersection
- * operators. In contrast to the GlobalAssembler we already hold the target matrix (or create one of appropriate size
+ * operators. We already hold the target matrix (or create one of appropriate size
  * and given sparsity pattern), into which we want to assemble. The operator is assembled by walking over the given
  * assembly_grid_view, if you want to assemble an operator only on a smaller grid view, consider to append this operator
  * to another walker or provide appropriate filters.
