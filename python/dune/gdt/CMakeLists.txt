@@ -18,6 +18,7 @@ dune_pybindxi_add_module(_discretefunction_dof_vector EXCLUDE_FROM_ALL ${header}
 dune_pybindxi_add_module(_local_bilinear_forms_element_integrals EXCLUDE_FROM_ALL ${header} local/bilinear-forms/element_integrals.cc)
 dune_pybindxi_add_module(_local_bilinear_forms_element_interface EXCLUDE_FROM_ALL ${header} local/bilinear-forms/element_interface.cc)
 dune_pybindxi_add_module(_local_integrands_binary_element_interface EXCLUDE_FROM_ALL ${header} local/integrands/binary_element_interface.cc)
+dune_pybindxi_add_module(_local_integrands_element_product EXCLUDE_FROM_ALL ${header} local/integrands/element_product.cc)
 dune_pybindxi_add_module(_local_integrands_laplace EXCLUDE_FROM_ALL ${header} local/integrands/laplace.cc)
 dune_pybindxi_add_module(_local_integrands_unary_element_interface EXCLUDE_FROM_ALL ${header} local/integrands/unary_element_interface.cc)
 dune_pybindxi_add_module(_operators_interfaces_common EXCLUDE_FROM_ALL ${header} operators/interfaces_common.cc)
