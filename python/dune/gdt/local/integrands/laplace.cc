@@ -72,13 +72,13 @@ private:
             [](const GP&, const FieldMatrix<F, d, d>& constant_diffusion_tensor) {
               return type(constant_diffusion_tensor);
             },
-            "unused_grid_to_select_type"_a,
+            "grid"_a,
             "constant_diffusion_tensor"_a);
       m.def(FactoryName.c_str(),
             [](const GP&, const XT::Functions::FunctionInterface<d, d, d, F>& diffusion_tensor_function) {
               return type(diffusion_tensor_function);
             },
-            "unused_grid_to_select_type"_a,
+            "grid"_a,
             "diffusion_tensor_function"_a,
             py::keep_alive<0, 2>());
     }
@@ -119,14 +119,14 @@ public:
     const auto FactoryName = XT::Common::to_camel_case(class_id);
     m.def(FactoryName.c_str(),
           [](const GP&, const F& constant_scalar_diffusion) { return type(constant_scalar_diffusion); },
-          "unused_grid_to_select_type"_a,
+          "grid"_a,
           "constant_scalar_diffusion"_a);
     add_bind<>::factory(m, FactoryName);
     m.def(FactoryName.c_str(),
           [](const GP&, const XT::Functions::FunctionInterface<d, 1, 1, F>& scalar_diffusion_function) {
             return type(scalar_diffusion_function);
           },
-          "unused_grid_to_select_type"_a,
+          "grid"_a,
           "scalar_diffusion_function"_a,
           py::keep_alive<0, 2>());
     m.def(FactoryName.c_str(),
