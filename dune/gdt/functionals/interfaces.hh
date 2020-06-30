@@ -36,6 +36,8 @@ namespace GDT {
  * modelled by a SpaceInterface of appropriate dimensions. The functions v_h \in V_h, to which the funtional can be
  * applied, are modelled by ConstDiscreteFunction with an appropriate vector type derived from XT::LA::VectorInterface
  * (modelled by SourceVector).
+ *
+ * \TODO Add parameter dependency!
  */
 template <class SourceVector,
           class SourceGridView,
@@ -51,7 +53,7 @@ public:
 
   using SourceSpaceType = SpaceInterface<SourceGridView, r, rC, F>;
   using SourceVectorType = SourceVector;
-  using SourceType = ConstDiscreteFunction<SourceVectorType, SourceGridView, r, rC, F>;
+  using ConstSourceFunctionType = ConstDiscreteFunction<SourceVectorType, SourceGridView, r, rC, F>;
   using FieldType = Field;
 
   virtual ~FunctionalInterface() = default;
@@ -63,9 +65,14 @@ public:
 
   virtual const SourceSpaceType& source_space() const = 0;
 
-  virtual FieldType apply(const SourceType& source) const = 0;
+  virtual FieldType apply(const SourceVectorType& /*source*/, const XT::Common::Parameter& /*param*/ = {}) const = 0;
 
   /// \}
+
+  virtual FieldType apply(const ConstSourceFunctionType& source, const XT::Common::Parameter& param = {}) const
+  {
+    return this->apply(source.dofs().vector(), param);
+  }
 
   /**
    * Allows the implementation to do preparatory work (i.e., assemble the vector of a vector-based linear functional).
