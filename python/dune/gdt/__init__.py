@@ -34,5 +34,6 @@ for mod_name in ( # order should not matter!
         '_spaces_h1_continuous_lagrange',
         '_spaces_interface',
         '_tools_dirichlet_constraints',
+        '_tools_sparsity_pattern',
 ):
     guarded_import(globals(), 'dune.gdt', mod_name)
