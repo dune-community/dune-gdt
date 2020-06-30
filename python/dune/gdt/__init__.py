@@ -33,6 +33,8 @@ for mod_name in ( # order should not matter!
         '_local_integrands_ipdg_boundary_penalty',
         '_local_integrands_ipdg_inner_penalty',
         '_local_integrands_laplace',
+        '_local_integrands_laplace_ipdg_dirichlet_coupling',
+        '_local_integrands_laplace_ipdg_inner_coupling',
         '_local_integrands_quaternary_intersection_interface',
         '_local_integrands_unary_element_interface',
         '_local_integrands_unary_intersection_interface',
