@@ -24,7 +24,9 @@
 #include <python/dune/xt/common/fvector.hh>
 #include <python/dune/xt/common/parameter.hh>
 #include <python/dune/xt/grid/grids.bindings.hh>
+#include <python/dune/xt/grid/walker.hh>
 #include <python/dune/xt/la/traits.hh>
+#include <python/dune/gdt/operators/interfaces.hh>
 
 
 namespace Dune {
@@ -154,6 +156,7 @@ public:
     class_name += "_" + XT::Common::to_string(s_r) + "d_source_space";
     class_name += "_" + matrix_id + "_matrix";
     const auto ClassName = XT::Common::to_camel_case(class_name);
+
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
     c.def(py::init([](GP& grid, const SS& source_space, const RS& range_space, M& matrix) {
             return new type(grid.leaf_view(), source_space, range_space, matrix);
@@ -191,7 +194,17 @@ public:
           py::keep_alive<1, 2>(),
           py::keep_alive<1, 3>(),
           py::keep_alive<1, 4>());
-    c.def_property_readonly("matrix", [](type& self) { return self.matrix(); });
+
+    // doing this so complicated to get an actual reference instead of a copy
+    c.def_property("matrix", (const M& (type::*)() const) & type::matrix, (M & (type::*)()) & type::matrix);
+
+    // methods from walker base, to allow for overloads
+    XT::Grid::bindings::Walker<G>::addbind_methods(c);
+
+    // methods from operator base, to allow for overloads
+    bindings::OperatorInterface<M, G, s_r, 1, r_r, 1>::addbind_methods(c);
+
+    // additional methods
     c.def("clear", [](type& self) { self.clear(); });
     c.def("append",
           [](type& self,
