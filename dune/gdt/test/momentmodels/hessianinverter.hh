@@ -40,15 +40,14 @@ class LocalEntropicHessianInverter : public XT::Grid::ElementFunctor<typename Sp
 
 public:
   explicit LocalEntropicHessianInverter(const SpaceType& space,
-                                        const VectorType& alpha_dofs,
                                         const VectorType& u_update_dofs,
+                                        std::vector<bool>& reg_indicators,
                                         VectorType& alpha_range_dofs,
                                         const EntropyFluxType& analytical_flux,
                                         const XT::Common::Parameter& param)
     : space_(space)
-    , alpha_(space_, alpha_dofs, "alpha")
     , u_update_(space_, u_update_dofs, "u_update")
-    , local_alpha_(alpha_.local_discrete_function())
+    , reg_indicators_(reg_indicators)
     , local_u_update_(u_update_.local_discrete_function())
     , range_(space_, alpha_range_dofs, "range")
     , local_range_(range_.local_discrete_function())
@@ -59,9 +58,8 @@ public:
   explicit LocalEntropicHessianInverter(LocalEntropicHessianInverter& other)
     : BaseType(other)
     , space_(other.space_)
-    , alpha_(space_, other.alpha_.dofs().vector(), "source")
     , u_update_(space_, other.u_update_.dofs().vector(), "source")
-    , local_alpha_(alpha_.local_discrete_function())
+    , reg_indicators_(other.reg_indicators_)
     , local_u_update_(u_update_.local_discrete_function())
     , range_(space_, other.range_.dofs().vector(), "range")
     , local_range_(range_.local_discrete_function())
@@ -74,35 +72,61 @@ public:
     return new LocalEntropicHessianInverter(*this);
   }
 
+  /** \short applies inverse Hessian
+   *
+   *  Returns H^{-1} u, where H is the Hessian on this entity and u is the update vector in original coordinates
+   *  If inversion fails, an error is thrown. If regularization is requested (by setting the key "reg" in param_), the
+   *  entity is marked for regularization instead.
+   *  \note Evaluations of the ansatz densities have to be stored in
+   *  analytical_flux_ (by calling store_evaluations on the analytical flux before using this function, see
+   *  density_evaluator.hh).
+   *  \note Regularization is poorly tested and probably does not really work, a lot of tuning is
+   *  still missing (when do we want to use regularization, and when is it better to simply reduce the timestep?).
+   */
   void apply_local(const EntityType& entity) override final
   {
     local_u_update_->bind(entity);
     local_range_->bind(entity);
-    XT::Common::FieldVector<RangeFieldType, dimRange> u, Hinv_u;
+    const auto& local_u_dofs = local_u_update_->dofs();
     for (size_t ii = 0; ii < dimRange; ++ii)
-      u[ii] = local_u_update_->dofs().get_entry(ii);
-    analytical_flux_.apply_inverse_hessian(space_.grid_view().indexSet().index(entity), u, Hinv_u);
-    for (auto&& entry : Hinv_u)
-      if (std::isnan(entry) || std::isinf(entry)) {
-        //        std::cout << "x: " << entity.geometry().center() << "u: " << u << ", alpha: " << alpha << ", Hinv_u: "
-        //        << Hinv_u << std::endl;
-        DUNE_THROW(Dune::MathError, "Hessian");
-      }
-
+      Hinv_u_[ii] = local_u_dofs.get_entry(ii);
+    const auto entity_index = space_.grid_view().indexSet().index(entity);
+    try {
+      analytical_flux_.apply_inverse_hessian(entity_index, Hinv_u_);
+      for (auto&& entry : Hinv_u_)
+        if (std::isnan(entry) || std::isinf(entry))
+          DUNE_THROW(Dune::MathError, "Hessian");
+    } catch (const Dune::MathError& e) {
+      if (param_.has_key("reg") && param_.get("reg")[0]) {
+        std::cout << "reg considered" << std::endl;
+        for (size_t ii = 0; ii < dimRange; ++ii)
+          Hinv_u_[ii] = local_u_dofs.get_entry(ii);
+        const auto rho = analytical_flux_.basis_functions().density(analytical_flux_.get_u(Hinv_u_));
+        const double dt = param_.get("dt")[0];
+        if ((rho < 1e-7 && dt < 1e-4) || dt < 1e-7) {
+          std::cout << "reg indicator set" << std::endl;
+          reg_indicators_[entity_index] = true;
+        }
+        return;
+      } else
+        throw e;
+    }
+    auto& local_range_dofs = local_range_->dofs();
     for (size_t ii = 0; ii < dimRange; ++ii)
-      local_range_->dofs().set_entry(ii, Hinv_u[ii]);
+      local_range_dofs.set_entry(ii, Hinv_u_[ii]);
   } // void apply_local(...)
 
 private:
   const SpaceType& space_;
-  const ConstDiscreteFunctionType alpha_;
   const ConstDiscreteFunctionType u_update_;
-  std::unique_ptr<typename ConstDiscreteFunctionType::ConstLocalDiscreteFunctionType> local_alpha_;
+  std::vector<bool>& reg_indicators_;
   std::unique_ptr<typename ConstDiscreteFunctionType::ConstLocalDiscreteFunctionType> local_u_update_;
   DiscreteFunctionType range_;
   std::unique_ptr<typename DiscreteFunctionType::LocalDiscreteFunctionType> local_range_;
   const EntropyFluxType& analytical_flux_;
   const XT::Common::Parameter& param_;
+  XT::Common::FieldVector<RangeFieldType, dimRange> u_tmp_;
+  XT::Common::FieldVector<RangeFieldType, dimRange> Hinv_u_;
 }; // class LocalEntropicHessianInverter<...>
 
 template <class MomentBasisImp,
@@ -150,13 +174,13 @@ public:
     DUNE_THROW(Dune::NotImplemented, "Use apply_inverse_hessian!");
   } // void apply(...)
 
-  void apply_inverse_hessian(const VectorType& alpha,
-                             const VectorType& u_update,
+  void apply_inverse_hessian(const VectorType& u_update,
+                             std::vector<bool>& reg_indicators,
                              VectorType& alpha_update,
                              const XT::Common::Parameter& param) const
   {
     LocalEntropicHessianInverter<SpaceType, VectorType, MomentBasis, slope> local_hessian_inverter(
-        space_, alpha, u_update, alpha_update, analytical_flux_, param);
+        space_, u_update, reg_indicators, alpha_update, analytical_flux_, param);
     auto walker = XT::Grid::Walker<typename SpaceType::GridViewType>(space_.grid_view());
     walker.append(local_hessian_inverter);
     walker.walk(true);

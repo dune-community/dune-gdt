@@ -227,7 +227,7 @@ public:
     std::unique_ptr<AlphaReturnType> get_alpha(const StateType& u, const bool regularize) const
     {
       // find starting point. Candidates: alpha_iso and the entries in the two caches
-      std::lock_guard<std::mutex> DUNE_UNUSED(guard)(*mutex_);
+      std::lock_guard<std::mutex> DUNE_UNUSED guard{*mutex_};
       const auto& basis_functions = implementation_.basis_functions();
       static const auto u_iso = basis_functions.u_iso();
       const auto density = basis_functions.density(u);
@@ -313,12 +313,14 @@ public:
         index_set_, entity_caches_, use_thread_cache_, use_entity_cache_, mutexes_, *implementation_);
   }
 
-  StateType evaluate_kinetic_flux(const E& inside_entity,
-                                  const E& outside_entity,
-                                  const StateType& u_i,
-                                  const StateType& u_j,
-                                  const DomainType& n_ij,
-                                  const size_t dd) const
+  template <class StateTp, class RetType>
+  void evaluate_kinetic_flux(const E& inside_entity,
+                             const E& outside_entity,
+                             const StateTp& u_i,
+                             const StateTp& u_j,
+                             const DomainType& n_ij,
+                             const size_t dd,
+                             RetType& ret) const
   {
     // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
     const auto local_func = derived_local_function();
@@ -326,7 +328,7 @@ public:
     const auto alpha_i = local_func->get_alpha(u_i, true)->first;
     local_func->bind(outside_entity);
     const auto alpha_j = local_func->get_alpha(u_j, true)->first;
-    return implementation_->evaluate_kinetic_flux_with_alphas(alpha_i, alpha_j, n_ij, dd);
+    ret = implementation_->evaluate_kinetic_flux_with_alphas(alpha_i, alpha_j, n_ij, dd);
   } // StateType evaluate_kinetic_flux(...)
 
   // Returns alpha(u), starting from alpha_iso. To get better performance when calculating several alphas, use
@@ -338,6 +340,21 @@ public:
     auto alpha_iso = implementation_->get_isotropic_alpha(density);
     return implementation_->get_alpha(u, *alpha_iso, regularize);
   }
+
+  std::unique_ptr<AlphaReturnType> get_alpha(const E& entity, const StateType& u, const bool regularize) const
+  {
+    Localfunction local_func(index_set_, entity_caches_, false, use_entity_cache_, mutexes_, *implementation_);
+    local_func.bind(entity);
+    return local_func.get_alpha(u, regularize);
+  }
+
+  StateType evaluate_kinetic_outflow(const typename AlphaReturnType::first_type& alpha_i,
+                                     const DomainType& n_ij,
+                                     const size_t dd) const
+
+  {
+    return implementation_->evaluate_kinetic_outflow(alpha_i, n_ij, dd);
+  } // DomainType evaluate_kinetic_outflow(...)
 
   const MomentBasis& basis_functions() const
   {

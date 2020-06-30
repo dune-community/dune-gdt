@@ -21,6 +21,7 @@ class ShadowPn : public KineticTransportEquationBase<E, MomentBasisImp>
   using BaseType = KineticTransportEquationBase<E, MomentBasisImp>;
 
 public:
+  using typename BaseType::BoundaryDistributionType;
   using typename BaseType::BoundaryValueType;
   using typename BaseType::ConstantScalarFunctionType;
   using typename BaseType::DomainType;
@@ -30,12 +31,10 @@ public:
   using typename BaseType::RangeFieldType;
   using typename BaseType::ScalarFunctionType;
 
-  using BaseType::default_boundary_cfg;
-
   ShadowPn(const MomentBasis& basis_functions,
-           const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
-           const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_cfg, boundary_cfg, 1e-8 / (4 * M_PI))
+           const RangeFieldType psi_vac = 1e-6 / (4 * M_PI),
+           const XT::Common::Configuration& grid_cfg = default_grid_cfg())
+    : BaseType(basis_functions, psi_vac, grid_cfg)
   {}
 
   static std::string static_id()
@@ -82,7 +81,7 @@ public:
   // i.e. 2/(4 pi), at x = 0 and psi_vac else
   std::unique_ptr<BoundaryValueType> boundary_values() const override final
   {
-    auto basis_integrated = basis_functions_.integrated();
+    const auto basis_integrated = basis_functions_.integrated();
     const auto psi_vac = psi_vac_;
     return std::make_unique<GenericFunctionType>(
         0, [basis_integrated, psi_vac](const DomainType& x, const XT::Common::Parameter&) {
@@ -101,6 +100,16 @@ public:
         });
   } // ... boundary_values()
 
+  BoundaryDistributionType boundary_distribution() const override final
+  {
+    return [this](const DomainType& x) -> std::function<RangeFieldType(const DomainType&)> {
+      if (XT::Common::FloatCmp::eq(x[0], 0.))
+        return [](const DomainType& /*v*/) { return 2. / (4 * M_PI); };
+      else
+        return [this](const DomainType& /*v*/) { return psi_vac_; };
+    };
+  }
+
 protected:
   using BaseType::basis_functions_;
   using BaseType::grid_cfg_;
@@ -115,17 +124,21 @@ class ShadowMn : public ShadowPn<XT::Grid::extract_entity_t<GV>, MomentBasis>
 
 public:
   using typename BaseType::FluxType;
+  using typename BaseType::RangeFieldType;
   using ActualFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
 
-  using BaseType::default_boundary_cfg;
   using BaseType::default_grid_cfg;
 
   ShadowMn(const MomentBasis& basis_functions,
            const GV& grid_view,
+           const RangeFieldType psi_vac = 1e-6 / (4 * M_PI),
            const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
-           const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_cfg, boundary_cfg)
+           const bool disable_realizability_check = false,
+           const RangeFieldType tau = 1e-9)
+    : BaseType(basis_functions, psi_vac, grid_cfg)
     , grid_view_(grid_view)
+    , disable_realizability_check_(disable_realizability_check)
+    , tau_(tau)
   {}
 
   static std::string static_id()
@@ -135,12 +148,14 @@ public:
 
   std::unique_ptr<FluxType> flux() const override
   {
-    return std::make_unique<ActualFluxType>(grid_view_, basis_functions_);
+    return std::make_unique<ActualFluxType>(grid_view_, basis_functions_, tau_, disable_realizability_check_);
   }
 
 protected:
   using BaseType::basis_functions_;
   const GV& grid_view_;
+  const bool disable_realizability_check_;
+  const RangeFieldType tau_;
 }; // class ShadowMn<...>
 
 

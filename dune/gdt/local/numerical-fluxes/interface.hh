@@ -47,6 +47,7 @@ public:
   using PhysicalDomainType = typename FluxType::DomainType;
   using LocalIntersectionCoords = FieldVector<typename I::ctype, d - 1>;
   using StateType = typename FluxType::StateType;
+  using DynamicStateType = typename FluxType::DynamicStateType;
 
   NumericalFluxInterface(const FluxType& flx, const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type + flx.parameter_type())
@@ -55,23 +56,25 @@ public:
     , local_flux_outside_(flux_.access().local_function())
   {}
 
-  NumericalFluxInterface(FluxType*&& flx_ptr, const XT::Common::ParameterType& param_type = {})
+  NumericalFluxInterface(std::unique_ptr<const FluxType>&& flx_ptr, const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type + flx_ptr->parameter_type())
-    , flux_(flx_ptr)
+    , flux_(std::move(flx_ptr))
     , local_flux_inside_(flux_.access().local_function())
     , local_flux_outside_(flux_.access().local_function())
   {}
 
   NumericalFluxInterface(const XIndependentFluxType& func, const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type + func.parameter_type())
-    , flux_(new FluxWrapperType(func))
+    , flux_(static_cast<std::unique_ptr<const FluxType>&&>(std::make_unique<const FluxWrapperType>(func)))
     , local_flux_inside_(flux_.access().local_function())
     , local_flux_outside_(flux_.access().local_function())
   {}
 
-  NumericalFluxInterface(XIndependentFluxType*&& func_ptr, const XT::Common::ParameterType& param_type = {})
+  NumericalFluxInterface(std::unique_ptr<const XIndependentFluxType>&& func_ptr,
+                         const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type + func_ptr->parameter_type())
-    , flux_(new FluxWrapperType(func_ptr))
+    , flux_(
+          static_cast<std::unique_ptr<const FluxType>&&>(std::make_unique<const FluxWrapperType>(std::move(func_ptr))))
     , local_flux_inside_(flux_.access().local_function())
     , local_flux_outside_(flux_.access().local_function())
   {}
@@ -101,12 +104,29 @@ public:
     return flux_.access();
   }
 
+  // One of the two following apply methods has to be implemented by derived classes
   virtual StateType apply(const LocalIntersectionCoords& x_in_local_intersection_coords,
                           const StateType& u,
                           const StateType& v,
                           const PhysicalDomainType& n,
-                          const XT::Common::Parameter& param = {}) const = 0;
+                          const XT::Common::Parameter& param = {}) const
+  {
+    DynamicStateType ret(m, 0.);
+    apply(x_in_local_intersection_coords, u, v, n, ret, param);
+    return XT::Common::convert_to<StateType>(ret);
+  }
 
+  virtual void apply(const LocalIntersectionCoords& x_in_local_intersection_coords,
+                     const DynamicStateType& u,
+                     const DynamicStateType& v,
+                     const PhysicalDomainType& n,
+                     DynamicStateType& ret,
+                     const XT::Common::Parameter& param = {}) const
+  {
+    ret = XT::Common::convert_to<DynamicStateType>(apply(x_in_local_intersection_coords, u, v, n, param));
+  }
+
+  // Convenience apply methods
   template <class V>
   StateType apply(const LocalIntersectionCoords x_in_local_intersection_coords,
                   const StateType& u,
@@ -202,7 +222,7 @@ public:
 
   template <class... Args>
   explicit ThisNumericalFluxIsNotAvailableForTheseDimensions(Args&&... /*args*/)
-    : BaseType(new XT::Functions::ConstantFunction<m, d, m, R>(0.))
+    : BaseType(std::make_unique<const XT::Functions::ConstantFunction<m, d, m, R>>(0.))
   {
     DUNE_THROW(Exceptions::numerical_flux_error, "d = " << d << "\n   m = " << m);
   }

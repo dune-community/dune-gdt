@@ -229,7 +229,7 @@ typename std::enable_if<XT::LA::is_vector<VectorType>::value
                         std::unique_ptr<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType>>>::type
 make_l2_face_vector_functional(const FunctionType& function, const SpaceType& space, const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType>>(
+  return std::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType>>(
       over_integrate, function, space);
 }
 
@@ -242,7 +242,7 @@ typename std::
                                    const SpaceType& space,
                                    const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where)
 {
-  return Dune::XT::Common::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
+  return std::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
       where, function, space);
 }
 
@@ -256,7 +256,7 @@ typename std::
                                    const size_t over_integrate,
                                    const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where)
 {
-  return Dune::XT::Common::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
+  return std::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
       over_integrate, where, function, space);
 }
 
@@ -271,7 +271,7 @@ typename std::
                                    const GridLayerType& grid_layer,
                                    const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
+  return std::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
       over_integrate, function, space, grid_layer);
 }
 
@@ -286,7 +286,7 @@ typename std::
                                    const GridLayerType& grid_layer,
                                    const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where)
 {
-  return Dune::XT::Common::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
+  return std::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
       where, function, space, grid_layer);
 }
 
@@ -302,7 +302,7 @@ typename std::
                                    const size_t over_integrate,
                                    const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where)
 {
-  return Dune::XT::Common::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
+  return std::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
       over_integrate, where, function, space, grid_layer);
 }
 
@@ -316,7 +316,7 @@ make_l2_face_vector_functional(const FunctionType& function,
                                const SpaceType& space,
                                const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType>>(
+  return std::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType>>(
       over_integrate, function, vector, space);
 }
 
@@ -330,7 +330,7 @@ typename std::
                                    const SpaceType& space,
                                    const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where)
 {
-  return Dune::XT::Common::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
+  return std::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
       where, function, vector, space);
 }
 
@@ -345,7 +345,7 @@ typename std::
                                    const size_t over_integrate,
                                    const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where)
 {
-  return Dune::XT::Common::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
+  return std::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
       over_integrate, where, function, vector, space);
 }
 
@@ -361,7 +361,7 @@ typename std::
                                    const GridLayerType& grid_layer,
                                    const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
+  return std::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
       over_integrate, function, vector, space, grid_layer);
 }
 
@@ -377,7 +377,7 @@ typename std::
                                    const GridLayerType& grid_layer,
                                    const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where)
 {
-  return Dune::XT::Common::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
+  return std::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
       where, function, vector, space, grid_layer);
 }
 
@@ -394,7 +394,7 @@ typename std::
                                    const size_t over_integrate,
                                    const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where)
 {
-  return Dune::XT::Common::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
+  return std::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
       over_integrate, where, function, vector, space, grid_layer);
 }
 #endif // 0

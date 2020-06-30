@@ -14,6 +14,7 @@
 #include <memory>
 
 #include <dune/xt/common/float_cmp.hh>
+#include <dune/xt/common/numeric.hh>
 #include <dune/xt/common/vector_less.hh>
 
 #include <dune/xt/functions/interfaces/flux-function.hh>
@@ -48,6 +49,7 @@ public:
   static const size_t dimFlux = MomentBasis::dimFlux;
   static const size_t basis_dimRange = MomentBasis::dimRange;
   using typename BaseType::DomainType;
+  using typename BaseType::DynamicStateType;
   using typename BaseType::E;
   using typename BaseType::LocalFunctionType;
   using typename BaseType::RangeFieldType;
@@ -119,6 +121,8 @@ public:
     const ImplementationType& implementation_;
   }; // class Localfunction
 
+  using RangeReturnType = typename Localfunction::RangeReturnType;
+
   bool x_dependent() const override final
   {
     return false;
@@ -134,14 +138,21 @@ public:
     return std::make_unique<Localfunction>(*implementation_);
   }
 
-  StateType evaluate_kinetic_flux(const E& /*inside_entity*/,
-                                  const E& /*outside_entity*/,
-                                  const StateType& flux_i,
-                                  const StateType& flux_j,
-                                  const DomainType& n_ij,
-                                  const size_t dd) const
+  /**
+   * Fluxes have been precomputed during the reconstruction (even if no reconstruction is used, the fluxes are computed
+   * there, see calculate_reconstructed_fluxes) and are provided as input, so not much to do here.
+   */
+  template <class StateTp, class RetType>
+  void evaluate_kinetic_flux(const E& /*inside_entity*/,
+                             const E& /*outside_entity*/,
+                             const StateTp& flux_i,
+                             const StateTp& flux_j,
+                             const DomainType& /*n_ij*/,
+                             const size_t /*dd*/,
+                             RetType& ret) const
   {
-    return (flux_i + flux_j) * n_ij[dd];
+    ret = flux_i;
+    ret -= flux_j;
   } // StateType evaluate_kinetic_flux(...)
 
   const MomentBasis& basis_functions() const
@@ -159,6 +170,16 @@ public:
     return implementation_->get_u((*eta_ast_prime_evaluations_)[entity_index]);
   }
 
+  void get_u(const size_t entity_index, StateType& u) const
+  {
+    implementation_->get_u((*eta_ast_prime_evaluations_)[entity_index], u);
+  }
+
+  const StateType& get_precomputed_u(const size_t entity_index)
+  {
+    return u_[entity_index];
+  }
+
   StateType get_alpha(const StateType& u) const
   {
     const auto alpha = implementation_->get_alpha(u)->first;
@@ -167,6 +188,11 @@ public:
     return ret;
   }
 
+  /**
+   * Computes reconstructed fluxes (kinetic fluxes with simple linear reconstruction of the ansatz density).
+   * If no reconstruction is requested (slope == SlopeType::no_slope), the fluxes are still computed but without density
+   * reconstruction.
+   */
   template <class FluxesMapType>
   void calculate_reconstructed_fluxes(const FieldVector<size_t, 3>& entity_indices,
                                       const FieldVector<bool, 3>& boundary_direction,
@@ -183,24 +209,40 @@ public:
         densities_stencil, precomputed_fluxes, dd);
   }
 
-  void apply_inverse_hessian(const size_t entity_index, const StateType& u, StateType& Hinv_u) const
+  void apply_inverse_hessian(const size_t entity_index, StateType& u) const
   {
-    implementation_->apply_inverse_hessian((*eta_ast_twoprime_evaluations_)[entity_index], u, Hinv_u);
+    implementation_->apply_inverse_hessian((*eta_ast_twoprime_evaluations_)[entity_index], u);
   }
 
-  void store_evaluations(const size_t entity_index, const StateType& alpha)
+  void store_evaluations(const DomainType& /*entity_center*/,
+                         size_t entity_index,
+                         StateType& alpha,
+                         const RangeFieldType /*rho_min*/,
+                         bool check = true)
   {
     implementation_->store_exp_evaluations(exp_evaluations_[entity_index], alpha);
-    if (entropy != EntropyType::MaxwellBoltzmann) {
+    if constexpr (entropy != EntropyType::MaxwellBoltzmann) {
       implementation_->store_eta_ast_prime_vals(exp_evaluations_[entity_index], eta_ast_prime_storage_[entity_index]);
       implementation_->store_eta_ast_twoprime_vals(exp_evaluations_[entity_index],
                                                    eta_ast_twoprime_storage_[entity_index]);
     }
+    // check for inf and nan and very low densities
+    auto& u = u_[entity_index];
+    u = get_u(entity_index);
+    if (check) {
+      const double* u_ptr = &(u[0]);
+      const auto val = XT::Common::reduce(u_ptr, u_ptr + basis_dimRange, 0.);
+      if (std::isnan(val) || std::isinf(val)) {
+        // std::cout << XT::Common::to_string(entity_center) << ", " << entity_index << ", "
+        //           << XT::Common::to_string(alpha) << ", " << XT::Common::to_string(u) << std::endl;
+        DUNE_THROW(Dune::MathError, "inf or nan in u!");
+      }
+    } // if (check)
   }
 
   void set_eta_ast_pointers()
   {
-    if (entropy == EntropyType::MaxwellBoltzmann) {
+    if constexpr (entropy == EntropyType::MaxwellBoltzmann) {
       eta_ast_prime_evaluations_ = &exp_evaluations_;
       eta_ast_twoprime_evaluations_ = &exp_evaluations_;
     } else {
@@ -227,6 +269,34 @@ public:
   {
     return exp_evaluations_;
   }
+
+  void prepare_storage(const GridViewType& grid_view)
+  {
+    const auto num_entities = grid_view.size(0);
+    u_.resize(num_entities);
+    exp_evaluations_.resize(num_entities);
+    if constexpr (entropy != EntropyType::MaxwellBoltzmann) {
+      eta_ast_prime_storage_.resize(num_entities);
+      eta_ast_twoprime_storage_.resize(num_entities);
+    }
+    boundary_distribution_evaluations_.resize(num_entities);
+    for (auto&& entity : Dune::elements(grid_view)) {
+      const auto entity_index = grid_view.indexSet().index(entity);
+      implementation_->resize_quad_weights_type(exp_evaluations_[entity_index]);
+      if constexpr (entropy != EntropyType::MaxwellBoltzmann) {
+        implementation_->resize_quad_weights_type(eta_ast_prime_storage_[entity_index]);
+        implementation_->resize_quad_weights_type(eta_ast_twoprime_storage_[entity_index]);
+      }
+      for (auto&& intersection : Dune::intersections(grid_view, entity)) {
+        if (intersection.boundary()) {
+          const auto intersection_index = intersection.indexInInside();
+          implementation_->resize_quad_weights_type(
+              boundary_distribution_evaluations_[entity_index][intersection_index / 2][intersection_index % 2]);
+        }
+      } // intersections
+    } // entities
+    set_eta_ast_pointers();
+  } // void prepare_storage(...)
 
   std::vector<QuadratureWeightsType>& eta_ast_prime_evaluations()
   {
@@ -258,6 +328,10 @@ public:
     return boundary_distribution_evaluations_;
   }
 
+  RangeReturnType evaluate_with_alpha(const StateType& alpha) const
+  {
+    return implementation_->evaluate_with_alpha(alpha);
+  }
 
 private:
   std::shared_ptr<ImplementationType> implementation_;
@@ -266,6 +340,7 @@ private:
   std::vector<QuadratureWeightsType> eta_ast_twoprime_storage_;
   std::vector<QuadratureWeightsType>* eta_ast_prime_evaluations_;
   std::vector<QuadratureWeightsType>* eta_ast_twoprime_evaluations_;
+  std::vector<StateType> u_;
   BoundaryQuadratureWeightsType boundary_distribution_evaluations_;
 };
 

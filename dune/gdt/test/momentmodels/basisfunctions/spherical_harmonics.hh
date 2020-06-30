@@ -105,13 +105,6 @@ public:
     return ret;
   } // ... evaluate(...)
 
-  DynamicRangeType integrated() const override final
-  {
-    DynamicRangeType ret(dimRange, 0.);
-    ret[0] = std::sqrt(4. * M_PI);
-    return ret;
-  }
-
   MatrixType mass_matrix() const override
   {
     MatrixType M(dimRange, dimRange, 0);
@@ -166,6 +159,25 @@ public:
   {
     return "p" + XT::Common::to_string(order);
   }
+
+  DynamicRangeType integrated_initializer(const QuadraturesType& /*quadratures*/) const override final
+  {
+    DynamicRangeType ret(dimRange, 0.);
+    ret[0] = std::sqrt(4. * M_PI);
+    return ret;
+  }
+
+  virtual bool adjust_alpha_to_ensure_min_density(RangeType& alpha,
+                                                  const RangeFieldType rho_min,
+                                                  const RangeType& u) const override final
+  {
+    if (density(u) < rho_min) {
+      alpha = this->alpha_iso(rho_min);
+      return true;
+    }
+    return false;
+  }
+
 
 private:
   static RangeFieldType A_lm(const int l, const int m)
@@ -439,6 +451,17 @@ public:
   DynamicRangeType integrate_dirac_at(const DomainType& dirac_position) const
   {
     return evaluate(dirac_position);
+  }
+
+  virtual bool adjust_alpha_to_ensure_min_density(RangeType& alpha,
+                                                  const RangeFieldType rho_min,
+                                                  const RangeType& u) const override final
+  {
+    if (density(u) < rho_min) {
+      alpha = this->alpha_iso(rho_min);
+      return true;
+    }
+    return false;
   }
 
 private:

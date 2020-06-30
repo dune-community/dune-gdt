@@ -41,6 +41,7 @@ public:
   using typename BaseType::BasisDomainType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
+  using typename BaseType::DynamicRangeType;
   using typename BaseType::GenericFluxFunctionType;
   using typename BaseType::GenericFunctionType;
   using typename BaseType::MatrixType;
@@ -61,16 +62,13 @@ public:
   using BoundaryDistributionType =
       std::function<std::function<RangeFieldType(const BasisDomainType&)>(const DomainType&)>;
 
-  using BaseType::default_boundary_cfg;
   using BaseType::default_grid_cfg;
 
   KineticTransportEquationBase(const MomentBasis& basis_functions,
-                               const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
-                               const XT::Common::Configuration& boundary_cfg = default_boundary_cfg(),
-                               const RangeFieldType psi_vac = 5e-9)
+                               const RangeFieldType psi_vac = 5e-7,
+                               const XT::Common::Configuration& grid_cfg = default_grid_cfg())
     : BaseType(basis_functions)
     , grid_cfg_(grid_cfg)
-    , boundary_cfg_(boundary_cfg)
     , psi_vac_(psi_vac)
   {}
 
@@ -162,19 +160,19 @@ public:
   // Thus, the initial value of the n-th moment is basis_integrated * psi_vac.
   std::unique_ptr<InitialValueType> initial_values() const override
   {
-    RangeReturnType value = basis_functions_.integrated() * psi_vac_;
+    const auto value = basis_functions_.integrated() * psi_vac_;
     return std::make_unique<GenericFunctionType>(
         [](const XT::Common::Parameter&) { return 0; },
-        [value](const DomainType&, const XT::Common::Parameter&) { return value; });
+        [value](const DomainType&, DynamicRangeType& ret, const XT::Common::Parameter&) { ret = value; });
   } // ... initial_values()
 
   // Use a constant vacuum concentration basis_integrated * psi_vac as default boundary value
   std::unique_ptr<BoundaryValueType> boundary_values() const override
   {
-    RangeReturnType value = basis_functions_.integrated() * psi_vac_;
+    const auto value = basis_functions_.integrated() * psi_vac_;
     return std::make_unique<GenericFunctionType>(
         [](const XT::Common::Parameter&) { return 0; },
-        [=](const DomainType&, const XT::Common::Parameter&) { return value; });
+        [=](const DomainType&, DynamicRangeType& ret, const XT::Common::Parameter&) { ret = value; });
   } // ... boundary_values()
 
   virtual BoundaryDistributionType boundary_distribution() const
@@ -191,10 +189,10 @@ public:
     for (size_t jj = 0; jj < quadratures.size(); ++jj) {
       for (size_t ll = 0; ll < quadratures[jj].size(); ++ll) {
         const auto v = quadratures[jj][ll].position();
-        const auto b = basis_functions_.evaluate(v, jj);
         if (v[dd] * n < 0) {
+          const auto b = basis_functions_.evaluate(v, jj);
           const RangeFieldType psi = boundary_density(v);
-          ret += b * psi * v[dd] * quadratures[jj][ll].weight();
+          ret.axpy(psi * std::abs(v[dd]) * quadratures[jj][ll].weight(), b);
         }
       } // ll
     } // jj
@@ -221,17 +219,12 @@ public:
     return grid_cfg_;
   }
 
-  XT::Common::Configuration boundary_config() const override
-  {
-    return boundary_cfg_;
-  }
-
   static std::string static_id()
   {
     return "kinetictransportequation";
   }
 
-  virtual const RangeFieldType psi_vac() const
+  virtual RangeFieldType psi_vac() const
   {
     return psi_vac_;
   }
@@ -239,7 +232,6 @@ public:
 protected:
   using BaseType::basis_functions_;
   const XT::Common::Configuration grid_cfg_;
-  const XT::Common::Configuration boundary_cfg_;
   const RangeFieldType psi_vac_;
   XT::Common::ParameterType parameter_type_;
 }; // class KineticTransportEquation<...>

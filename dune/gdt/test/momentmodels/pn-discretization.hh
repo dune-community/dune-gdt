@@ -206,8 +206,9 @@ struct HyperbolicPnDiscretization
     using BoundaryValueType = typename ProblemType::BoundaryValueType;
     static constexpr size_t dimDomain = MomentBasis::dimDomain;
     static constexpr size_t dimRange = MomentBasis::dimRange;
-    using MatrixType = typename XT::LA::Container<RangeFieldType>::MatrixType;
-    using VectorType = typename XT::LA::Container<RangeFieldType>::VectorType;
+    static const auto la_backend = TestCaseType::la_backend;
+    using MatrixType = typename XT::LA::Container<RangeFieldType, la_backend>::MatrixType;
+    using VectorType = typename XT::LA::Container<RangeFieldType, la_backend>::VectorType;
 
     //******************* create grid and FV space ***************************************
     auto grid_config = ProblemType::default_grid_cfg();
@@ -225,8 +226,9 @@ struct HyperbolicPnDiscretization
     std::shared_ptr<const MomentBasis> basis_functions = std::make_shared<const MomentBasis>(
         quad_order == size_t(-1) ? MomentBasis::default_quad_order() : quad_order,
         quad_refinements == size_t(-1) ? MomentBasis::default_quad_refinements() : quad_refinements);
+    const RangeFieldType psi_vac = DXTC_CONFIG_GET("psi_vac", 1e-8 / basis_functions->unit_ball_volume());
     const std::unique_ptr<ProblemType> problem_ptr =
-        XT::Common::make_unique<ProblemType>(*basis_functions, grid_config);
+        std::make_unique<ProblemType>(*basis_functions, psi_vac, grid_config);
     const auto& problem = *problem_ptr;
     const auto initial_values = problem.initial_values();
     const auto boundary_values = problem.boundary_values();
@@ -294,14 +296,15 @@ struct HyperbolicPnDiscretization
     using BoundaryOperator =
         LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator<I, VectorType, GV, dimRange>;
     using LambdaType = typename BoundaryOperator::LambdaType;
-    using StateType = typename BoundaryOperator::StateType;
+    using DynamicStateType = typename BoundaryOperator::DynamicStateType;
     LambdaType boundary_lambda =
         [&boundary_values](const I& intersection,
                            const FieldVector<RangeFieldType, dimDomain - 1>& xx_in_reference_intersection_coordinates,
                            const AnalyticalFluxType& /*flux*/,
-                           const StateType& /*u*/,
-                           const XT::Common::Parameter& /*param*/) {
-          return boundary_values->evaluate(intersection.geometry().global(xx_in_reference_intersection_coordinates));
+                           const DynamicStateType& /*u*/,
+                           DynamicStateType& v,
+                           const XT::Common::Parameter& param) {
+          boundary_values->evaluate(intersection.geometry().global(xx_in_reference_intersection_coordinates), v, param);
         };
     XT::Grid::ApplyOn::NonPeriodicBoundaryIntersections<GV> filter;
     advection_operator.append(boundary_lambda, {}, filter);
@@ -338,6 +341,7 @@ struct HyperbolicPnDiscretization
                       true,
                       true,
                       false,
+                      true,
                       filename,
                       *basis_functions->visualizer(),
                       basis_functions->stringifier());

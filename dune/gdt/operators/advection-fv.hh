@@ -69,8 +69,9 @@ public:
       const NumericalFluxType& numerical_flux,
       const SourceSpaceType& source_space,
       const RangeSpaceType& range_space,
+      const bool use_tbb = false,
       const XT::Grid::IntersectionFilter<SGV>& periodicity_exception = XT::Grid::ApplyOn::NoIntersections<SGV>())
-    : BaseType(assembly_grid_view, source_space, range_space)
+    : BaseType(assembly_grid_view, source_space, range_space, numerical_flux.linear(), use_tbb)
     , numerical_flux_(numerical_flux.copy())
     , periodicity_exception_(periodicity_exception.copy())
   {

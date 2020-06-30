@@ -23,11 +23,11 @@ class PlaneSourcePn : public KineticTransportEquationBase<E, MomentBasisImp>
   using BaseType = KineticTransportEquationBase<E, MomentBasisImp>;
 
 public:
-  using BaseType::default_boundary_cfg;
   using BaseType::dimDomain;
   using BaseType::dimRange;
   using typename BaseType::ConstantScalarFunctionType;
   using typename BaseType::DomainType;
+  using typename BaseType::DynamicRangeType;
   using typename BaseType::GenericFunctionType;
   using typename BaseType::InitialValueType;
   using typename BaseType::MomentBasis;
@@ -36,9 +36,9 @@ public:
   using typename BaseType::ScalarFunctionType;
 
   PlaneSourcePn(const MomentBasis& basis_functions,
-                const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
-                const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_cfg, boundary_cfg)
+                const RangeFieldType psi_vac = 5e-7,
+                const XT::Common::Configuration& grid_cfg = default_grid_cfg())
+    : BaseType(basis_functions, psi_vac, grid_cfg)
   {}
 
   static std::string static_id()
@@ -66,18 +66,17 @@ public:
     const size_t num_elements = XT::Common::from_string<std::vector<size_t>>(grid_cfg_["num_elements"])[0];
     const RangeFieldType len_domain = upper_right[0] - lower_left[0];
     const RangeFieldType vol_entity = len_domain / num_elements;
-    RangeReturnType basis_integrated = basis_functions_.integrated();
+    const auto basis_integrated = basis_functions_.integrated();
     const RangeFieldType domain_center = lower_left[0] + len_domain / 2;
 
     // approximate delta function by constant value of 1/(2*vol_entity) on cells on both side of 0.
-    const auto eval_func = [=](const DomainType& x, const XT::Common::Parameter&) {
-      auto ret = basis_integrated;
+    const auto eval_func = [=](const DomainType& x, DynamicRangeType& ret, const XT::Common::Parameter&) {
+      ret = basis_integrated;
       if (XT::Common::FloatCmp::ge(x[0], domain_center - vol_entity)
           && XT::Common::FloatCmp::le(x[0], domain_center + vol_entity))
         ret *= psi_vac_ + 1. / (2. * vol_entity);
       else
         ret *= psi_vac_;
-      return ret;
     };
     return std::make_unique<GenericFunctionType>(0, eval_func);
   } // ... initial_values()
@@ -117,18 +116,22 @@ class PlaneSourceMn : public PlaneSourcePn<XT::Grid::extract_entity_t<GV>, Momen
 
 public:
   using typename BaseType::FluxType;
+  using typename BaseType::RangeFieldType;
   using typename BaseType::RangeReturnType;
   using ActualFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
 
-  using BaseType::default_boundary_cfg;
   using BaseType::default_grid_cfg;
 
   PlaneSourceMn(const MomentBasis& basis_functions,
                 const GV& grid_view,
+                const RangeFieldType psi_vac = 5e-7,
                 const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
-                const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_cfg, boundary_cfg)
+                const bool disable_realizability_check = false,
+                const RangeFieldType tau = 1e-9)
+    : BaseType(basis_functions, psi_vac, grid_cfg)
     , grid_view_(grid_view)
+    , disable_realizability_check_(disable_realizability_check)
+    , tau_(tau)
   {}
 
   static std::string static_id()
@@ -138,12 +141,14 @@ public:
 
   std::unique_ptr<FluxType> flux() const override
   {
-    return std::make_unique<ActualFluxType>(grid_view_, basis_functions_);
+    return std::make_unique<ActualFluxType>(grid_view_, basis_functions_, tau_, disable_realizability_check_);
   }
 
 protected:
   using BaseType::basis_functions_;
   const GV& grid_view_;
+  const bool disable_realizability_check_;
+  const RangeFieldType tau_;
 }; // class PlaneSourceMn<...>
 
 

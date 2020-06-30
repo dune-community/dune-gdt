@@ -18,7 +18,7 @@
 #include "usercode.hh"
 
 
-PYBIND11_MODULE(usercode, m)
+PYBIND11_MODULE(usercode, /*m*/)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;

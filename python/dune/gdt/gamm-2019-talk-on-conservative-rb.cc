@@ -92,7 +92,7 @@ std::unique_ptr<M> assemble_SWIPDG_matrix(const DG& space,
             {},
             XT::Grid::ApplyOn::BoundaryIntersections<GV>());
   op.assemble(parallel);
-  return std::move(std::make_unique<M>(std::move(op.matrix())));
+  return std::make_unique<M>(std::move(op.matrix()));
 } // ... assemble_SWIPDG_matrix(...)
 
 
@@ -102,7 +102,7 @@ assemble_L2_vector(const DG& space, const XT::Functions::GridFunctionInterface<E
   auto func = make_vector_functional<V>(space);
   func.append(LocalElementIntegralFunctional<E>(LocalElementProductIntegrand<E>().with_ansatz(force)));
   func.assemble(parallel);
-  return std::move(std::make_unique<V>(std::move(func.vector())));
+  return std::make_unique<V>(std::move(func.vector()));
 } // ... assemble_L2_vector(...)
 
 
@@ -115,7 +115,7 @@ assemble_energy_semi_product_matrix(const DG& space,
   auto op = make_matrix_operator<M>(space, Stencil::element_and_intersection);
   op.append(LocalElementIntegralBilinearForm<E>(LocalEllipticIntegrand<E>(diffusion_factor, diffusion_tensor)));
   op.assemble(parallel);
-  return std::move(std::make_unique<M>(std::move(op.matrix())));
+  return std::make_unique<M>(std::move(op.matrix()));
 } // ... assemble_energy_semi_product_matrix(...)
 
 
@@ -140,7 +140,7 @@ std::unique_ptr<M> assemble_DG_product_matrix(const DG& space,
       {},
       XT::Grid::ApplyOn::BoundaryIntersections<GV>());
   op.assemble(parallel);
-  return std::move(std::make_unique<M>(std::move(op.matrix())));
+  return std::make_unique<M>(std::move(op.matrix()));
 } // ... assemble_DG_product_matrix(...)
 
 
@@ -154,7 +154,7 @@ std::unique_ptr<V> compute_flux_reconstruction(const GP& grid,
   auto op = make_ipdg_flux_reconstruction_operator<M, LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor>(
       grid.leaf_view(), dg_space, rtn_space, diffusion_factor, diffusion_tensor);
   auto rtn_vec = op.apply(dg_vec);
-  return std::move(std::make_unique<V>(std::move(rtn_vec)));
+  return std::make_unique<V>(std::move(rtn_vec));
 }
 
 
@@ -383,7 +383,7 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
   m.def("prolong",
         [](DG& coarse_dg_space, V& coarse_pressure, DG& fine_dg_space) {
           auto fine_pressure = prolong<V>(make_discrete_function(coarse_dg_space, coarse_pressure), fine_dg_space);
-          return std::move(std::make_unique<V>(std::move(fine_pressure.dofs().vector())));
+          return std::make_unique<V>(std::move(fine_pressure.dofs().vector()));
         },
         py::call_guard<py::gil_scoped_release>(),
         "coarse_dg_space"_a,
@@ -392,7 +392,7 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
   m.def("prolong",
         [](RTN& coarse_rtn_space, V& coarse_flux, RTN& fine_rtn_space) {
           auto fine_flux = prolong<V>(make_discrete_function(coarse_rtn_space, coarse_flux), fine_rtn_space);
-          return std::move(std::make_unique<V>(std::move(fine_flux.dofs().vector())));
+          return std::make_unique<V>(std::move(fine_flux.dofs().vector()));
         },
         py::call_guard<py::gil_scoped_release>(),
         "coarse_rtn_space"_a,
@@ -403,8 +403,8 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
         [](DG& space, XT::Functions::FunctionInterface<d>& diffusion_factor, const bool parallel) {
           const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor(
               XT::Common::FieldMatrix<double, 2, d>({{1., 0.}, {0., 1.}}));
-          return std::move(assemble_SWIPDG_matrix(
-              space, diffusion_factor.as_grid_function<E>(), diffusion_tensor.as_grid_function<E>(), parallel));
+          return assemble_SWIPDG_matrix(
+              space, diffusion_factor.as_grid_function<E>(), diffusion_tensor.as_grid_function<E>(), parallel);
         },
         py::call_guard<py::gil_scoped_release>(),
         "dg_space"_a,
@@ -414,9 +414,7 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
         [](DG& space,
            XT::Functions::GridFunctionInterface<E>& diffusion_factor,
            XT::Functions::GridFunctionInterface<E, d, d>& diffusion_tensor,
-           const bool parallel) {
-          return std::move(assemble_SWIPDG_matrix(space, diffusion_factor, diffusion_tensor, parallel));
-        },
+           const bool parallel) { return assemble_SWIPDG_matrix(space, diffusion_factor, diffusion_tensor, parallel); },
         py::call_guard<py::gil_scoped_release>(),
         "dg_space"_a,
         "diffusion_factor"_a,
@@ -425,7 +423,7 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
 
   m.def("assemble_L2_vector",
         [](DG& space, XT::Functions::FunctionInterface<d>& force, const bool parallel) {
-          return std::move(assemble_L2_vector(space, force.as_grid_function<E>(), parallel));
+          return assemble_L2_vector(space, force.as_grid_function<E>(), parallel);
         },
         py::call_guard<py::gil_scoped_release>(),
         "dg_space"_a,
@@ -433,7 +431,7 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
         "parallel"_a = true);
   m.def("assemble_L2_vector",
         [](DG& space, XT::Functions::GridFunctionInterface<E>& force, const bool parallel) {
-          return std::move(assemble_L2_vector(space, force, parallel));
+          return assemble_L2_vector(space, force, parallel);
         },
         py::call_guard<py::gil_scoped_release>(),
         "dg_space"_a,
@@ -444,8 +442,8 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
         [](DG& space, XT::Functions::FunctionInterface<d>& diffusion_factor, const bool parallel) {
           const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor(
               XT::Common::FieldMatrix<double, 2, d>({{1., 0.}, {0., 1.}}));
-          return std::move(assemble_energy_semi_product_matrix(
-              space, diffusion_factor.as_grid_function<E>(), diffusion_tensor.as_grid_function<E>(), parallel));
+          return assemble_energy_semi_product_matrix(
+              space, diffusion_factor.as_grid_function<E>(), diffusion_tensor.as_grid_function<E>(), parallel);
         },
         py::call_guard<py::gil_scoped_release>(),
         "dg_space"_a,
@@ -456,7 +454,7 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
            XT::Functions::GridFunctionInterface<E>& diffusion_factor,
            XT::Functions::GridFunctionInterface<E, d, d>& diffusion_tensor,
            const bool parallel) {
-          return std::move(assemble_energy_semi_product_matrix(space, diffusion_factor, diffusion_tensor, parallel));
+          return assemble_energy_semi_product_matrix(space, diffusion_factor, diffusion_tensor, parallel);
         },
         py::call_guard<py::gil_scoped_release>(),
         "dg_space"_a,
@@ -469,8 +467,8 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
           const XT::Functions::ConstantFunction<d> diffusion_factor(1.);
           const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor(
               XT::Common::FieldMatrix<double, 2, d>({{1., 0.}, {0., 1.}}));
-          return std::move(assemble_DG_product_matrix(
-              space, diffusion_factor.as_grid_function<E>(), diffusion_tensor.as_grid_function<E>(), parallel));
+          return assemble_DG_product_matrix(
+              space, diffusion_factor.as_grid_function<E>(), diffusion_tensor.as_grid_function<E>(), parallel);
         },
         py::call_guard<py::gil_scoped_release>(),
         "dg_space"_a,
@@ -480,7 +478,7 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
            XT::Functions::GridFunctionInterface<E>& diffusion_factor,
            XT::Functions::GridFunctionInterface<E, d, d>& diffusion_tensor,
            const bool parallel) {
-          return std::move(assemble_DG_product_matrix(space, diffusion_factor, diffusion_tensor, parallel));
+          return assemble_DG_product_matrix(space, diffusion_factor, diffusion_tensor, parallel);
         },
         py::call_guard<py::gil_scoped_release>(),
         "dg_space"_a,
@@ -492,12 +490,12 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
         [](GP& grid, DG& dg_space, RTN& rtn_space, XT::Functions::FunctionInterface<d>& diffusion_factor, V& dg_vec) {
           const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor(
               XT::Common::FieldMatrix<double, 2, d>({{1., 0.}, {0., 1.}}));
-          return std::move(compute_flux_reconstruction(grid,
-                                                       dg_space,
-                                                       rtn_space,
-                                                       diffusion_factor.as_grid_function<E>(),
-                                                       diffusion_tensor.as_grid_function<E>(),
-                                                       dg_vec));
+          return compute_flux_reconstruction(grid,
+                                             dg_space,
+                                             rtn_space,
+                                             diffusion_factor.as_grid_function<E>(),
+                                             diffusion_tensor.as_grid_function<E>(),
+                                             dg_vec);
         },
         py::call_guard<py::gil_scoped_release>(),
         "grid"_a,
@@ -512,8 +510,7 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
            XT::Functions::GridFunctionInterface<E>& diffusion_factor,
            XT::Functions::GridFunctionInterface<E, d, d>& diffusion_tensor,
            V& dg_vec) {
-          return std::move(
-              compute_flux_reconstruction(grid, dg_space, rtn_space, diffusion_factor, diffusion_tensor, dg_vec));
+          return compute_flux_reconstruction(grid, dg_space, rtn_space, diffusion_factor, diffusion_tensor, dg_vec);
         },
         py::call_guard<py::gil_scoped_release>(),
         "grid"_a,
@@ -550,7 +547,7 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
                       result[ii][jj] = divergence(test_grads[ii]) * divergence(ansatz_grads[jj]);
               }));
           op.assemble(parallel);
-          return std::move(std::make_unique<M>(std::move(op.matrix())));
+          return std::make_unique<M>(std::move(op.matrix()));
         },
         py::call_guard<py::gil_scoped_release>(),
         "dg_space"_a,

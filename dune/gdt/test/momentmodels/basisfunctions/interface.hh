@@ -158,7 +158,7 @@ public:
   static const size_t r = rangeDim;
   static const size_t rC = rangeDimCols;
   static const size_t d_flux = fluxDim;
-  static const EntropyType entropy = entrpy;
+  static constexpr EntropyType entropy = entrpy;
   using D = DomainFieldImp;
   using R = RangeFieldImp;
 
@@ -214,7 +214,7 @@ public:
   }
 
   // returns <b>, where b is the basis functions vector
-  virtual DynamicRangeType integrated() const
+  virtual const DynamicRangeType& integrated() const
   {
     return integrated_;
   }
@@ -233,21 +233,30 @@ public:
     return ret;
   }
 
-  virtual DynamicRangeType get_moment_vector(const std::function<RangeFieldType(DomainType, bool)>& psi) const
+  // Get moment vector from distribution function psi. psi also takes an array of bools as argument to decide which
+  // value to use at the discontinuities. Is currently ignored in all testcases except the Heaviside test in one
+  // dimension, so we only have to test if we are on the positive or negative interval touching 0. For more general
+  // testcases, this would have to be adapted.
+  virtual DynamicRangeType get_u(const std::function<RangeFieldType(DomainType, std::array<int, dimDomain>)>& psi) const
   {
     DynamicRangeType ret(dimRange, 0.);
     const auto merged_quads = XT::Data::merged_quadrature(quadratures());
     for (auto it = merged_quads.begin(); it != merged_quads.end(); ++it) {
       const auto& quad_point = *it;
       const auto& v = quad_point.position();
-      ret += evaluate(v, it.first_index()) * psi(v, is_negative(it)) * quad_point.weight();
+      ret += evaluate(v, it.first_index()) * psi(v, has_fixed_sign(it.first_index())) * quad_point.weight();
     }
     return ret;
   }
 
-  virtual bool is_negative(const MergedQuadratureIterator& /*it*/) const
+  // Tests (per coordinate direction) whether the positions in the quadrature with index index are all negative or
+  // positive. Returns -1 if the entries are all non-positive, 1 if the entries are all non-negative, and 0 else.
+  virtual std::array<int, dimDomain> has_fixed_sign(const size_t /*index*/) const
   {
-    return false;
+    std::array<int, dimDomain> ret;
+    for (size_t dd = 0; dd < dimDomain; ++dd)
+      ret[dd] = 0;
+    return ret;
   }
 
   virtual FieldVector<MatrixType, dimFlux> flux_matrix() const
@@ -320,13 +329,18 @@ public:
   virtual DynamicRangeType alpha_iso(const RangeFieldType rho = 1.) const
   {
     const auto scale_factor = rho / density(integrated());
-    if (entropy == EntropyType::MaxwellBoltzmann)
+    if constexpr (entropy == EntropyType::MaxwellBoltzmann)
       return alpha_one() * std::log(scale_factor);
     else
       return alpha_one() * std::log(scale_factor / (scale_factor + 1));
   }
 
   virtual RangeFieldType density(const DynamicRangeType& u) const = 0;
+
+  virtual RangeFieldType density(const RangeType& u) const
+  {
+    return density(XT::Common::convert_to<DynamicRangeType>(u));
+  }
 
   virtual void ensure_min_density(DynamicRangeType& u, const RangeFieldType min_density) const
   {
@@ -342,6 +356,13 @@ public:
     }
   }
 
+  virtual bool adjust_alpha_to_ensure_min_density(RangeType& /*alpha*/,
+                                                  const RangeFieldType /*rho_min*/,
+                                                  const RangeType& /*u*/) const
+  {
+    return false;
+  }
+
   // Volume of integration domain. For the Mn models it is important that u_iso has density 1. If the basis is exactly
   // integrated, we thus use the exact unit ball volume. If the basis is only integrated by quadrature, we have to use
   // <1> as volume to get a density of 1.
@@ -350,7 +371,7 @@ public:
     return unit_ball_volume_exact();
   }
 
-  virtual DynamicRangeType u_iso() const
+  virtual const DynamicRangeType& u_iso() const
   {
     return u_iso_;
   }
@@ -445,6 +466,29 @@ protected:
     u_iso_ = integrated() / density(integrated());
   }
 
+  std::array<int, dimDomain> interval_has_fixed_sign(const size_t index, const size_t num_intervals) const
+  {
+    std::array<int, dimDomain> ret;
+    const bool odd = num_intervals % 2;
+    if (index < num_intervals / 2)
+      ret[0] = -1;
+    else if (odd && index == num_intervals / 2)
+      ret[0] = 0;
+    else
+      ret[0] = 1;
+    return ret;
+  }
+
+  // assumes that each spherical triangle is contained in one octand of the sphere
+  std::array<int, dimDomain> triangle_has_fixed_sign(const size_t index) const
+  {
+    std::array<int, dimDomain> ret;
+    const auto center = triangulation_.faces()[index]->center();
+    for (size_t dd = 0; dd < dimDomain; ++dd)
+      ret[dd] = center[dd] < 0. ? -1 : 1;
+    return ret;
+  }
+
   void
   get_pos_and_neg_quadratures(QuadraturesType& neg_quadratures, QuadraturesType& pos_quadratures, const size_t dd) const
   {
@@ -477,9 +521,9 @@ protected:
                                    const size_t v_index,
                                    const bool reflecting = false) const
   {
-    size_t num_threads =
+    const size_t num_threads =
         std::min(XT::Common::threadManager().max_threads(), XT::Data::merged_quadrature(quadratures).size());
-    auto decomposition = create_decomposition(quadratures, num_threads);
+    const auto decomposition = create_decomposition(quadratures, num_threads);
     std::vector<std::thread> threads(num_threads);
     // Launch a group of threads
     std::vector<MatrixType> local_matrices(num_threads, MatrixType(matrix.N(), matrix.M(), 0.));
@@ -531,9 +575,9 @@ protected:
 
   virtual DynamicRangeType integrated_initializer(const QuadraturesType& quadratures) const
   {
-    size_t num_threads =
+    const size_t num_threads =
         std::min(XT::Common::threadManager().max_threads(), XT::Data::merged_quadrature(quadratures).size());
-    auto decomposition = create_decomposition(quadratures, num_threads);
+    const auto decomposition = create_decomposition(quadratures, num_threads);
     std::vector<std::thread> threads(num_threads);
     std::vector<DynamicRangeType> local_vectors(num_threads, DynamicRangeType(dimRange, 0.));
     for (size_t ii = 0; ii < num_threads; ++ii)
@@ -570,6 +614,16 @@ protected:
   DynamicRangeType integrated_;
   DynamicRangeType u_iso_;
 };
+
+template <class DomainFieldImp,
+          size_t domainDim,
+          class RangeFieldImp,
+          size_t rangeDim,
+          size_t rangeDimCols,
+          size_t fluxDim,
+          EntropyType entropy>
+const size_t
+    MomentBasisInterface<DomainFieldImp, domainDim, RangeFieldImp, rangeDim, rangeDimCols, fluxDim, entropy>::dimRange;
 
 
 } // namespace GDT

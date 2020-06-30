@@ -10,17 +10,17 @@
 //   René Milk       (2017)
 //   Tobias Leibner  (2014)
 
-#warning This header is deprecated, use and include <dune/gdt/local/integrands/laplace-ipdg.hh> instead!
+//#warning This header is deprecated, use and include <dune/gdt/local/integrands/laplace-ipdg.hh> instead!
 
 #ifndef DUNE_GDT_LOCAL_INTEGRANDS_ELLIPTIC_IPDG_HH
-#  define DUNE_GDT_LOCAL_INTEGRANDS_ELLIPTIC_IPDG_HH
+#define DUNE_GDT_LOCAL_INTEGRANDS_ELLIPTIC_IPDG_HH
 
-#  include <dune/xt/common/deprecated.hh>
-#  include <dune/xt/functions/grid-function.hh>
-#  include <dune/xt/functions/interfaces/grid-function.hh>
+#include <dune/xt/common/deprecated.hh>
+#include <dune/xt/functions/grid-function.hh>
+#include <dune/xt/functions/interfaces/grid-function.hh>
 
-#  include "interfaces.hh"
-#  include "ipdg.hh"
+#include "interfaces.hh"
+#include "ipdg.hh"
 
 namespace Dune {
 namespace GDT {
@@ -344,7 +344,8 @@ private:
 namespace LocalEllipticIpdgIntegrands {
 
 
-enum class DXT_DEPRECATED_MSG("Use the LocalLaplaceIPDGIntegrands instead (10.08.2019)!") Method
+// enum class DXT_DEPRECATED_MSG("Use the LocalLaplaceIPDGIntegrands instead (10.08.2019)!") Method
+enum class Method
 {
   ipdg,
   nipdg,
@@ -444,7 +445,7 @@ namespace internal {
 /**
  * \note see Epshteyn, Riviere, 2007
  */
-DXT_DEPRECATED_MSG("Use the LocalLaplaceIPDGIntegrands instead (10.08.2019)!")
+// DXT_DEPRECATED_MSG("Use the LocalLaplaceIPDGIntegrands instead (10.08.2019)!")
 static inline double default_beta(const size_t d)
 {
   return 1.0 / (d - 1.0);
@@ -454,7 +455,7 @@ static inline double default_beta(const size_t d)
 /**
  * \note see Epshteyn, Riviere, 2007
  */
-DXT_DEPRECATED_MSG("Use the LocalLaplaceIPDGIntegrands instead (10.08.2019)!")
+// DXT_DEPRECATED_MSG("Use the LocalLaplaceIPDGIntegrands instead (10.08.2019)!")
 static inline double inner_sigma(const size_t pol_order)
 {
   double sigma = 1.0;
@@ -465,14 +466,14 @@ static inline double inner_sigma(const size_t pol_order)
   else if (pol_order <= 3)
     sigma *= 38.0;
   else {
-#  ifndef NDEBUG
-#    ifndef DUNE_GDT_DISABLE_WARNINGS
+#ifndef NDEBUG
+#  ifndef DUNE_GDT_DISABLE_WARNINGS
     Dune::XT::Common::TimedLogger().get("gdt.local.integrands.elliptic-ipdg.inner").warn()
         << "a polynomial order of " << pol_order << " is untested!\n"
         << "  #define DUNE_GDT_DISABLE_WARNINGS to statically disable this warning\n"
         << "  or dynamically disable warnings of the TimedLogger() instance!" << std::endl;
-#    endif
 #  endif
+#endif
     sigma *= 50.0;
   }
   return sigma;
@@ -482,7 +483,7 @@ static inline double inner_sigma(const size_t pol_order)
 /**
  * \note see Epshteyn, Riviere, 2007
  */
-DXT_DEPRECATED_MSG("Use the LocalLaplaceIPDGIntegrands instead (10.08.2019)!")
+// DXT_DEPRECATED_MSG("Use the LocalLaplaceIPDGIntegrands instead (10.08.2019)!")
 static inline double boundary_sigma(const size_t pol_order)
 {
   double sigma = 1.0;
@@ -493,14 +494,14 @@ static inline double boundary_sigma(const size_t pol_order)
   else if (pol_order <= 3)
     sigma *= 74.0;
   else {
-#  ifndef NDEBUG
-#    ifndef DUNE_GDT_DISABLE_WARNINGS
+#ifndef NDEBUG
+#  ifndef DUNE_GDT_DISABLE_WARNINGS
     Dune::XT::Common::TimedLogger().get("gdt.local.integrands.elliptic-ipdg.boundary").warn()
         << "a polynomial order of " << pol_order << " is untested!\n"
         << "  #define DUNE_GDT_DISABLE_WARNINGS to statically disable this warning\n"
         << "  or dynamically disable warnings of the TimedLogger() instance!" << std::endl;
-#    endif
 #  endif
+#endif
     sigma *= 100.0;
   }
   return sigma;
@@ -514,9 +515,9 @@ static inline double boundary_sigma(const size_t pol_order)
  * \sa [Epshteyn, Riviere, 2007] for the meaning of beta
  */
 template <class I, class F = double, Method method = default_method>
-class DXT_DEPRECATED_MSG(
-    "Use LocalLaplaceIPDGIntegrands::InnerCoupling + LocalIPDGIntegrands::InnerPenalty} instead (10.08.2019)!") Inner
-  : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
+// class DXT_DEPRECATED_MSG("Use LocalLaplaceIPDGIntegrands::InnerCoupling + LocalIPDGIntegrands::InnerPenalty} instead
+// (10.08.2019)!") Inner
+class Inner : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
 {
   using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>;
   using ThisType = Inner;
@@ -914,8 +915,8 @@ public:
     const auto diffusion_tensor_in = local_diffusion_tensor_in_->evaluate(point_in_inside_reference_element, param);
     const auto diffusion_factor_out = local_diffusion_factor_out_->evaluate(point_in_outside_reference_element, param);
     const auto diffusion_tensor_out = local_diffusion_tensor_out_->evaluate(point_in_outside_reference_element, param);
-    const auto diffusion_in = diffusion_tensor_in * diffusion_factor_in;
-    const auto diffusion_out = diffusion_tensor_out * diffusion_factor_out;
+    const auto diffusion_in = diffusion_tensor_in * diffusion_factor_in[0];
+    const auto diffusion_out = diffusion_tensor_out * diffusion_factor_out[0];
     // compute penalty factor (see Epshteyn, Riviere, 2007)
     const size_t max_polorder =
         std::max(test_basis_inside.order(param),
@@ -1007,9 +1008,9 @@ private:
  * \sa [Epshteyn, Riviere, 2007] for the meaning of beta
  */
 template <class I, class F = double, Method method = default_method>
-class DXT_DEPRECATED_MSG(
-    "Use LocalLaplaceIPDGIntegrands::DirichletCoupling + LocalIPDGIntegrands::Penalty instead (10.08.2019)!")
-    DirichletBoundaryLhs : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
+// class DXT_DEPRECATED_MSG("Use LocalLaplaceIPDGIntegrands::DirichletCoupling + LocalIPDGIntegrands::boundaryPenalty
+// instead (10.08.2019)!") DirichletBoundaryLhs
+class DirichletBoundaryLhs : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
 {
   using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>;
   using ThisType = DirichletBoundaryLhs;
@@ -1168,7 +1169,7 @@ public:
     // ... data functions
     const auto diffusion_factor = local_diffusion_factor_->evaluate(point_in_inside_reference_element, param);
     const auto diffusion_tensor = local_diffusion_tensor_->evaluate(point_in_inside_reference_element, param);
-    const auto diffusion = diffusion_tensor * diffusion_factor;
+    const auto diffusion = diffusion_tensor * diffusion_factor[0];
     // compute penalty (see Epshteyn, Riviere, 2007)
     const size_t max_polorder = std::max(test_basis_inside.order(param), ansatz_basis_inside.order(param));
     const F sigma = internal::boundary_sigma(max_polorder);
@@ -1201,7 +1202,7 @@ private:
 }; // DirichletBoundaryLhs
 
 
-#  if 0
+#if 0
 template <class DirichletImp, class DiffusionFactorImp, class DiffusionTensorImp, Method method>
 class BoundaryRHS : public LocalFaceIntegrandInterface<internal::BoundaryRHSTraits<DirichletImp,
                                                                                    DiffusionFactorImp,
@@ -1415,7 +1416,7 @@ public:
     const auto dirichlet_value = local_dirichlet.evaluate(local_point_entity);
     const auto diffusion_factor_value = local_diffusion_factor.evaluate(local_point_entity);
     const TensorType diffusion_tensor_value = local_diffusion_tensor.evaluate(local_point_entity);
-    const auto diffusion_value = diffusion_tensor_value * diffusion_factor_value;
+    const auto diffusion_value = diffusion_tensor_value * diffusion_factor_value[0];
     // compute penalty (see Epshteyn, Riviere, 2007)
     const size_t polorder = test_base.order();
     const F sigma = internal::boundary_sigma(polorder);
@@ -1443,14 +1444,14 @@ public:
   const EllipticType elliptic_;
   const double beta_;
 }; // class BoundaryRHS
-#  endif // 0
+#endif // 0
 
 /**
  * \sa [Epshteyn, Riviere, 2007] for the meaning of beta
  */
 template <class I, class F = double, Method method = default_method>
-class DXT_DEPRECATED_MSG("Use LocalIPDGIntegrands::InnerPenalty instead (05.08.2019)!") InnerOnlyPenalty
-  : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
+// class DXT_DEPRECATED_MSG("Use LocalIPDGIntegrands::InnerPenalty instead (05.08.2019)!") InnerOnlyPenalty
+class InnerOnlyPenalty : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
 {
   using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>;
   using ThisType = InnerOnlyPenalty;
@@ -1846,8 +1847,8 @@ public:
     const auto diffusion_tensor_in = local_diffusion_tensor_in_->evaluate(point_in_inside_reference_element, param);
     const auto diffusion_factor_out = local_diffusion_factor_out_->evaluate(point_in_outside_reference_element, param);
     const auto diffusion_tensor_out = local_diffusion_tensor_out_->evaluate(point_in_outside_reference_element, param);
-    const auto diffusion_in = diffusion_tensor_in * diffusion_factor_in;
-    const auto diffusion_out = diffusion_tensor_out * diffusion_factor_out;
+    const auto diffusion_in = diffusion_tensor_in * diffusion_factor_in[0];
+    const auto diffusion_out = diffusion_tensor_out * diffusion_factor_out[0];
     // compute penalty factor (see Epshteyn, Riviere, 2007)
     const size_t max_polorder =
         std::max(test_basis_inside.order(param),
@@ -1901,8 +1902,8 @@ private:
  * \sa [Epshteyn, Riviere, 2007] for the meaning of beta
  */
 template <class I, class F = double, Method method = default_method>
-class DXT_DEPRECATED_MSG("Use LocalIPDGIntegrands::Penalty instead (05.08.2019)!") DirichletBoundaryLhsOnlyPenalty
-  : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
+// class DXT_DEPRECATED_MSG("Use LocalIPDGIntegrands::BoundaryPenalty instead (05.08.2019)!")
+class DirichletBoundaryLhsOnlyPenalty : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
 {
   using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>;
   using ThisType = DirichletBoundaryLhsOnlyPenalty;

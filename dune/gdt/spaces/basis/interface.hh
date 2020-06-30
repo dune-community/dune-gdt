@@ -74,7 +74,7 @@ public:
     this->interpolate(element_function, order, dofs_);
     assert(dofs.size() >= sz);
     for (size_t ii = 0; ii < sz; ++ii)
-      dofs[ii] = dofs_[ii];
+      dofs.set_entry(ii, dofs_[ii]);
   } // ... interpolate(...)
 
   template <class V, class GV>
@@ -87,7 +87,7 @@ public:
     this->interpolate(element_function, dofs_);
     assert(dofs.size() >= sz);
     for (size_t ii = 0; ii < sz; ++ii)
-      dofs[ii] = dofs_[ii];
+      dofs.set_entry(ii, dofs_[ii]);
   } // ... interpolate(...)
 
   /// \}
