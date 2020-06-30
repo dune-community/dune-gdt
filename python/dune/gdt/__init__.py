@@ -15,6 +15,10 @@ from dune.xt import guarded_import
 for mod_name in ( # order should not matter!
         '_discretefunction_discretefunction',
         '_discretefunction_dof_vector',
+        '_functionals_interfaces_common',
+        '_functionals_interfaces_eigen',
+        '_functionals_interfaces_istl',
+        '_functionals_vector_based',
         '_local_bilinear_forms_element_integrals',
         '_local_bilinear_forms_element_interface',
         '_local_functionals_element_integrals',
