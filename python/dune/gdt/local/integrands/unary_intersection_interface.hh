@@ -41,8 +41,6 @@ protected:
     namespace py = pybind11;
     using namespace pybind11::literals;
 
-    c.def("copy_as_unary_intersection_integrand",
-          [](const type& self) { return self.copy_as_unary_intersection_integrand(); });
     c.def("__add__", [](type& self, type& other) { return self + other; }, "other"_a, py::is_operator());
     c.def("__iadd__", [](type& self, type& other) { return self + other; }, "other"_a, py::is_operator());
     // order/evaluate
