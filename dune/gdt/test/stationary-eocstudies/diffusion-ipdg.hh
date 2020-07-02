@@ -281,7 +281,7 @@ protected:
         {},
         XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(this->boundary_info(), new XT::Grid::DirichletBoundary()));
     lhs_op->append(
-        LocalIntersectionIntegralBilinearForm<I>(LocalIPDGIntegrands::Penalty<I>(
+        LocalIntersectionIntegralBilinearForm<I>(LocalIPDGIntegrands::BoundaryPenalty<I>(
             14, this->diffusion(), [](const auto& intersection) { return intersection.geometry().volume(); })),
         {},
         XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(this->boundary_info(), new XT::Grid::DirichletBoundary()));
