@@ -38,8 +38,12 @@ public:
   using typename BaseType::LocalTestBasisType;
 
   explicit LocalLaplaceIntegrand(
-      XT::Functions::GridFunction<E, d, d, F> diffusion = XT::LA::eye_matrix<FieldMatrix<F, d, d>>(d, d))
-    : BaseType()
+      XT::Functions::GridFunction<E, d, d, F> diffusion = XT::LA::eye_matrix<FieldMatrix<F, d, d>>(d, d),
+      const std::string& logging_prefix = "")
+    : BaseType(diffusion.parameter_type(),
+               logging_prefix.empty() ? "gdt" : "gdt.locallaplaceintegrand",
+               logging_prefix.empty() ? "LocalLaplaceIntegrand" : logging_prefix,
+               /*logging_disabled=*/logging_prefix.empty())
     , weight_(diffusion)
     , local_weight_(weight_.local_function())
   {}

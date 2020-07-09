@@ -211,6 +211,7 @@ public:
                                        const std::string& logging_id_ = "",
                                        const bool logging_disabled = true)
     : XT::Common::ParametricInterface(param_type)
+    , XT::Grid::ElementBoundObject<Element>()
     , Logger(logging_prefix.empty() ? "gdt" : logging_prefix,
              logging_id_.empty() ? "LocalBinaryElementIntegrand" : logging_id_,
              logging_disabled)
@@ -313,16 +314,19 @@ public:
 
   /// \}
 
-  LocalUnaryAndBinaryElementIntegrandInterface(const XT::Common::ParameterType& param_type = {})
-    : UnaryBaseType(param_type)
-    , BinaryBaseType(param_type)
+  LocalUnaryAndBinaryElementIntegrandInterface(const XT::Common::ParameterType& param_type = {},
+                                               const std::string& logging_prefix = "",
+                                               const std::string& logging_id_ = "",
+                                               const bool logging_disabled = true)
+    : UnaryBaseType(param_type, logging_prefix, logging_id_, logging_disabled)
+    , BinaryBaseType(param_type, logging_prefix, logging_id_, logging_disabled)
   {}
 
   virtual ~LocalUnaryAndBinaryElementIntegrandInterface() = default;
 
   virtual std::unique_ptr<ThisType> copy_as_unary_and_binary_element_integrand() const = 0;
 
-  /// \name Methods required for disambiuation.
+  /// \name Methods required for disambiguation.
   /// \{
 
   using UnaryBaseType::is_parametric;
@@ -349,12 +353,16 @@ template <class Intersection,
 class LocalUnaryIntersectionIntegrandInterface
   : virtual public XT::Common::ParametricInterface
   , virtual public XT::Grid::IntersectionBoundObject<Intersection>
+  , public XT::Common::WithLogger<
+        LocalUnaryIntersectionIntegrandInterface<Intersection, range_dim, range_dim_cols, RangeField, Field>>
 {
   static_assert(XT::Grid::is_intersection<Intersection>::value, "");
 
   using ThisType = LocalUnaryIntersectionIntegrandInterface;
   using BaseParametricType = XT::Common::ParametricInterface;
   using BaseIntersectionBoundObjectType = XT::Grid::IntersectionBoundObject<Intersection>;
+  using Logger = XT::Common::WithLogger<
+      LocalUnaryIntersectionIntegrandInterface<Intersection, range_dim, range_dim_cols, RangeField, Field>>;
 
 public:
   using typename XT::Grid::IntersectionBoundObject<Intersection>::IntersectionType;
@@ -373,15 +381,18 @@ public:
   using DomainType = FieldVector<D, d - 1>;
   using LocalTestBasisType = XT::Functions::ElementFunctionSetInterface<E, r, rC, RF>;
 
-  LocalUnaryIntersectionIntegrandInterface(const XT::Common::ParameterType& param_type = {})
+  LocalUnaryIntersectionIntegrandInterface(const XT::Common::ParameterType& param_type = {},
+                                           const std::string& logging_prefix = "",
+                                           const std::string& logging_id_ = "",
+                                           const bool logging_disabled = true)
     : BaseParametricType(param_type)
     , BaseIntersectionBoundObjectType()
+    , Logger(logging_prefix.empty() ? "gdt" : logging_prefix,
+             logging_id_.empty() ? "LocalUnaryIntersectionIntegrand" : logging_id_,
+             logging_disabled)
   {}
 
-  LocalUnaryIntersectionIntegrandInterface(const ThisType& other)
-    : BaseParametricType(other)
-    , BaseIntersectionBoundObjectType(other)
-  {}
+  LocalUnaryIntersectionIntegrandInterface(const ThisType&) = default;
 
   virtual ~LocalUnaryIntersectionIntegrandInterface() = default;
 
@@ -463,12 +474,28 @@ template <class Intersection,
 class LocalBinaryIntersectionIntegrandInterface
   : virtual public XT::Common::ParametricInterface
   , virtual public XT::Grid::IntersectionBoundObject<Intersection>
+  , public XT::Common::WithLogger<LocalBinaryIntersectionIntegrandInterface<Intersection,
+                                                                            test_range_dim,
+                                                                            test_range_dim_cols,
+                                                                            TestRangeField,
+                                                                            Field,
+                                                                            ansatz_range_dim,
+                                                                            ansatz_range_dim_cols,
+                                                                            AnsatzRangeField>>
 {
   static_assert(XT::Grid::is_intersection<Intersection>::value, "");
 
   using ThisType = LocalBinaryIntersectionIntegrandInterface;
   using BaseParametricType = XT::Common::ParametricInterface;
   using BaseIntersectionBoundObjectType = XT::Grid::IntersectionBoundObject<Intersection>;
+  using Logger = XT::Common::WithLogger<LocalBinaryIntersectionIntegrandInterface<Intersection,
+                                                                                  test_range_dim,
+                                                                                  test_range_dim_cols,
+                                                                                  TestRangeField,
+                                                                                  Field,
+                                                                                  ansatz_range_dim,
+                                                                                  ansatz_range_dim_cols,
+                                                                                  AnsatzRangeField>>;
 
 public:
   using typename XT::Grid::IntersectionBoundObject<Intersection>::IntersectionType;
@@ -492,15 +519,18 @@ public:
   using LocalTestBasisType = XT::Functions::ElementFunctionSetInterface<E, t_r, t_rC, TR>;
   using LocalAnsatzBasisType = XT::Functions::ElementFunctionSetInterface<E, a_r, a_rC, AR>;
 
-  LocalBinaryIntersectionIntegrandInterface(const XT::Common::ParameterType& param_type = {})
+  LocalBinaryIntersectionIntegrandInterface(const XT::Common::ParameterType& param_type = {},
+                                            const std::string& logging_prefix = "",
+                                            const std::string& logging_id_ = "",
+                                            const bool logging_disabled = true)
     : BaseParametricType(param_type)
     , BaseIntersectionBoundObjectType()
+    , Logger(logging_prefix.empty() ? "gdt" : logging_prefix,
+             logging_id_.empty() ? "LocalBinaryIntersectionIntegrand" : logging_id_,
+             logging_disabled)
   {}
 
-  LocalBinaryIntersectionIntegrandInterface(const ThisType& other)
-    : BaseParametricType(other)
-    , BaseIntersectionBoundObjectType(other)
-  {}
+  LocalBinaryIntersectionIntegrandInterface(const ThisType& other) = default;
 
   virtual ~LocalBinaryIntersectionIntegrandInterface() = default;
 
@@ -587,10 +617,26 @@ template <class Intersection,
 class LocalQuaternaryIntersectionIntegrandInterface
   : public XT::Common::ParametricInterface
   , public XT::Grid::IntersectionBoundObject<Intersection>
+  , public XT::Common::WithLogger<LocalQuaternaryIntersectionIntegrandInterface<Intersection,
+                                                                                test_range_dim,
+                                                                                test_range_dim_cols,
+                                                                                TestRangeField,
+                                                                                Field,
+                                                                                ansatz_range_dim,
+                                                                                ansatz_range_dim_cols,
+                                                                                AnsatzRangeField>>
 {
   static_assert(XT::Grid::is_intersection<Intersection>::value, "");
 
   using ThisType = LocalQuaternaryIntersectionIntegrandInterface;
+  using Logger = XT::Common::WithLogger<LocalQuaternaryIntersectionIntegrandInterface<Intersection,
+                                                                                      test_range_dim,
+                                                                                      test_range_dim_cols,
+                                                                                      TestRangeField,
+                                                                                      Field,
+                                                                                      ansatz_range_dim,
+                                                                                      ansatz_range_dim_cols,
+                                                                                      AnsatzRangeField>>;
 
 public:
   using typename XT::Grid::IntersectionBoundObject<Intersection>::IntersectionType;
@@ -614,8 +660,15 @@ public:
   using LocalTestBasisType = XT::Functions::ElementFunctionSetInterface<E, t_r, t_rC, TR>;
   using LocalAnsatzBasisType = XT::Functions::ElementFunctionSetInterface<E, a_r, a_rC, AR>;
 
-  LocalQuaternaryIntersectionIntegrandInterface(const XT::Common::ParameterType& param_type = {})
+  LocalQuaternaryIntersectionIntegrandInterface(const XT::Common::ParameterType& param_type = {},
+                                                const std::string& logging_prefix = "",
+                                                const std::string& logging_id_ = "",
+                                                const bool logging_disabled = true)
     : XT::Common::ParametricInterface(param_type)
+    , XT::Grid::IntersectionBoundObject<Intersection>()
+    , Logger(logging_prefix.empty() ? "gdt" : logging_prefix,
+             logging_id_.empty() ? "LocalQuaternaryIntersectionIntegrand" : logging_id_,
+             logging_disabled)
   {}
 
   virtual ~LocalQuaternaryIntersectionIntegrandInterface() = default;

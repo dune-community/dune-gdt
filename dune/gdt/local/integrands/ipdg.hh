@@ -73,8 +73,12 @@ public:
   InnerPenalty(
       const double& penalty,
       XT::Functions::GridFunction<E, d, d> weight_function = 1.,
-      const std::function<double(const I&)>& intersection_diameter = internal::default_inner_intersection_diameter<I>())
-    : BaseType(weight_function.parameter_type())
+      const std::function<double(const I&)>& intersection_diameter = internal::default_inner_intersection_diameter<I>(),
+      const std::string& logging_prefix = "")
+    : BaseType(weight_function.parameter_type(),
+               logging_prefix.empty() ? "gdt" : "gdt.localipdginnerpenaltyintegrand",
+               logging_prefix.empty() ? "LocalIPDGIntegrands::InnerPenalty" : logging_prefix,
+               /*logging_disabled=*/logging_prefix.empty())
     , penalty_(penalty)
     , weight_(weight_function)
     , intersection_diameter_(intersection_diameter)
@@ -210,8 +214,12 @@ public:
   BoundaryPenalty(const double& penalty,
                   XT::Functions::GridFunction<E, d, d> weight_function = 1.,
                   const std::function<double(const I&)>& intersection_diameter =
-                      internal::default_boundary_intersection_diameter<I>())
-    : BaseType()
+                      internal::default_boundary_intersection_diameter<I>(),
+                  const std::string& logging_prefix = "")
+    : BaseType(weight_function.parameter_type(),
+               logging_prefix.empty() ? "gdt" : "gdt.localipdgboundarypenaltyintegrand",
+               logging_prefix.empty() ? "LocalIPDGIntegrands::BoundaryPenalty" : logging_prefix,
+               /*logging_disabled=*/logging_prefix.empty())
     , penalty_(penalty)
     , weight_(weight_function)
     , intersection_diameter_(intersection_diameter)

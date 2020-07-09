@@ -30,9 +30,18 @@ public:
   using typename BaseType::DomainType;
   using typename BaseType::LocalTestBasisType;
 
+  LocalElementAbsIntegrand(const std::string& logging_prefix = "")
+    : BaseType({},
+               logging_prefix.empty() ? "gdt" : "gdt.localelementabsintegrand",
+               logging_prefix.empty() ? "LocalElementAbsIntegrand" : logging_prefix,
+               /*logging_disabled=*/logging_prefix.empty())
+  {}
+
+  LocalElementAbsIntegrand(const ThisType&) = default;
+
   std::unique_ptr<BaseType> copy_as_unary_element_integrand() const
   {
-    return std::make_unique<ThisType>();
+    return std::make_unique<ThisType>(*this);
   }
 
   int order(const LocalTestBasisType& basis, const XT::Common::Parameter& param = {}) const
