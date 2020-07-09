@@ -7,8 +7,8 @@
 // Authors:
 //   Felix Schindler (2020)
 
-#ifndef DUNE_GDT_LOCAL_INTEGRANDS_ADVECTION_HH
-#define DUNE_GDT_LOCAL_INTEGRANDS_ADVECTION_HH
+#ifndef DUNE_GDT_LOCAL_INTEGRANDS_LINEAR_ADVECTION_HH
+#define DUNE_GDT_LOCAL_INTEGRANDS_LINEAR_ADVECTION_HH
 
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/la/container/eye-matrix.hh>
@@ -21,8 +21,8 @@ namespace GDT {
 
 
 /**
- * Given a vector field v, computes `{[v(x) phi(x)] * \nabla psi(x)}` for all combinations of ansatz basis functions phi
- * and test functions psi.
+ * Given a direction v, computes `- (v phi) * \nabla psi` for all combinations of ansatz basis functions phi and test
+ * basis functions psi.
  */
 template <class E, class F = double>
 class LocalLinearAdvectionIntegrand : public LocalBinaryElementIntegrandInterface<E, 1, 1, F, F, 1, 1, F>
@@ -37,8 +37,12 @@ public:
   using typename BaseType::LocalAnsatzBasisType;
   using typename BaseType::LocalTestBasisType;
 
-  explicit LocalLinearAdvectionIntegrand(XT::Functions::GridFunction<E, d, 1, F> direction = FieldVector<F, d>(1.))
-    : BaseType()
+  explicit LocalLinearAdvectionIntegrand(XT::Functions::GridFunction<E, d, 1, F> direction = FieldVector<F, d>(1.),
+                                         const std::string& logging_prefix = "")
+    : BaseType(direction.parameter_type(),
+               logging_prefix.empty() ? "gdt" : "gdt.locallinearadvectionintegrand",
+               logging_prefix.empty() ? "LocalLinearAdvectionIntegrand" : logging_prefix,
+               /*logging_disabled=*/logging_prefix.empty())
     , direction_(direction)
     , local_direction_(direction_.local_function())
   {}
@@ -89,11 +93,11 @@ public:
     // evaluate
     test_basis.jacobians(point_in_reference_element, test_basis_grads_, param);
     ansatz_basis.evaluate(point_in_reference_element, ansatz_basis_values_, param);
-    const auto direction_value = local_direction_->evaluate(point_in_reference_element, param);
+    const auto direction = local_direction_->evaluate(point_in_reference_element, param);
     // compute integrand
     for (size_t ii = 0; ii < rows; ++ii)
       for (size_t jj = 0; jj < cols; ++jj)
-        result[ii][jj] += ansatz_basis_values_[jj] * (direction_value * test_basis_grads_[ii][0]);
+        result[ii][jj] += -1.0 * ansatz_basis_values_[jj] * (direction * test_basis_grads_[ii][0]);
   } // ... evaluate(...)
 
 private:
@@ -107,4 +111,4 @@ private:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_LOCAL_INTEGRANDS_ADVECTION_HH
+#endif // DUNE_GDT_LOCAL_INTEGRANDS_LINEAR_ADVECTION_HH

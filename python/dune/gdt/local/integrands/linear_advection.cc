@@ -17,7 +17,7 @@
 #include <dune/xt/grid/gridprovider/provider.hh>
 #include <dune/xt/functions/grid-function.hh>
 
-#include <dune/gdt/local/integrands/advection.hh>
+#include <dune/gdt/local/integrands/linear-advection.hh>
 
 #include <python/dune/xt/common/configuration.hh>
 #include <python/dune/xt/common/fvector.hh>
@@ -57,13 +57,19 @@ public:
       class_name += "_" + XT::Common::Typename<F>::value(/*fail_wo_typeid=*/true);
     const auto ClassName = XT::Common::to_camel_case(class_name);
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
-    c.def(py::init<XT::Functions::GridFunction<E, d, 1, F>>(), "direction"_a, py::keep_alive<1, 2>());
+    c.def(py::init<XT::Functions::GridFunction<E, d, 1, F>, const std::string&>(),
+          "direction"_a,
+          "logging_prefix"_a = "",
+          py::keep_alive<1, 2>());
 
     // factories
     const auto FactoryName = XT::Common::to_camel_case(class_id);
     m.def(FactoryName.c_str(),
-          [](XT::Functions::GridFunction<E, d, 1, F> direction) { return type(direction); },
+          [](XT::Functions::GridFunction<E, d, 1, F> direction, const std::string& logging_prefix) {
+            return type(direction, logging_prefix);
+          },
           "direction"_a,
+          "logging_prefix"_a = "",
           py::keep_alive<0, 1>());
 
     return c;
@@ -98,7 +104,7 @@ struct LocalLinearAdvectionIntegrand_for_all_grids<boost::tuples::null_type>
 };
 
 
-PYBIND11_MODULE(_local_integrands_advection, m)
+PYBIND11_MODULE(_local_integrands_linear_advection, m)
 {
   namespace py = pybind11;
   using namespace Dune;
