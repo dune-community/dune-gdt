@@ -61,17 +61,31 @@ public:
       class_name += "_" + XT::Common::Typename<F>::value(/*fail_wo_typeid=*/true);
     const auto ClassName = XT::Common::to_camel_case(class_name);
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
-    c.def(py::init<const double&, XT::Functions::GridFunction<E, d, d, F>>(),
+    c.def(py::init([](const double& penalty,
+                      XT::Functions::GridFunction<E, d, d, F> weight,
+                      const std::string& logging_prefix) {
+            return new type(penalty,
+                            weight,
+                            GDT::LocalIPDGIntegrands::internal::default_inner_intersection_diameter<I>(),
+                            logging_prefix);
+          }),
           "penalty"_a,
           "weight"_a,
+          "logging_prefix"_a = "",
           py::keep_alive<1, 3>());
 
     // factory
     const auto FactoryName = XT::Common::to_camel_case(class_id);
     m.def(FactoryName.c_str(),
-          [](const double& penalty, XT::Functions::GridFunction<E, d, d, F> weight) { return type(penalty, weight); },
+          [](const double& penalty, XT::Functions::GridFunction<E, d, d, F> weight, const std::string& logging_prefix) {
+            return type(penalty,
+                        weight,
+                        GDT::LocalIPDGIntegrands::internal::default_inner_intersection_diameter<I>(),
+                        logging_prefix);
+          },
           "penalty"_a,
           "weight"_a,
+          "logging_prefix"_a = "",
           py::keep_alive<0, 2>());
 
     return c;

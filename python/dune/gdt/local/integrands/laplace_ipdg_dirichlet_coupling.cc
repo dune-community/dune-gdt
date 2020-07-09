@@ -62,22 +62,49 @@ public:
       class_name += "_" + XT::Common::Typename<F>::value(/*fail_wo_typeid=*/true);
     const auto ClassName = XT::Common::to_camel_case(class_name);
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
-    c.def(py::init<const double&, XT::Functions::GridFunction<E, d, d, F>, XT::Functions::GridFunction<E>>(),
-          "penalty"_a,
+    c.def(py::init([](const double& symmetry_prefactor,
+                      XT::Functions::GridFunction<E, d, d, F> diffusion,
+                      const std::string& logging_prefix) {
+            return new type(symmetry_prefactor, diffusion, /*dirichlet_data=*/0., logging_prefix);
+          }),
+          "symmetry_prefactor"_a,
           "diffusion"_a,
-          "dirichlet_data"_a = F(0),
+          "logging_prefix"_a = "",
+          py::keep_alive<1, 3>());
+    c.def(py::init<const double&,
+                   XT::Functions::GridFunction<E, d, d, F>,
+                   XT::Functions::GridFunction<E>,
+                   const std::string&>(),
+          "symmetry_prefactor"_a,
+          "diffusion"_a,
+          "dirichlet_data"_a,
+          "logging_prefix"_a = "",
           py::keep_alive<1, 3>(),
           py::keep_alive<1, 4>());
 
     // factories
     const auto FactoryName = XT::Common::to_camel_case(class_id);
     m.def(FactoryName.c_str(),
-          [](const double& penalty,
+          [](const double& symmetry_prefactor,
              XT::Functions::GridFunction<E, d, d, F> diffusion,
-             XT::Functions::GridFunction<E> dirichlet_data) { return type(penalty, diffusion, dirichlet_data); },
-          "penalty"_a,
+             const std::string& logging_prefix) {
+            return type(symmetry_prefactor, diffusion, /*dirichlet_data=*/0., logging_prefix);
+          },
+          "symmetry_prefactor"_a,
           "diffusion"_a,
-          "dirichlet_data"_a = F(0),
+          "logging_prefix"_a = "",
+          py::keep_alive<0, 2>());
+    m.def(FactoryName.c_str(),
+          [](const double& symmetry_prefactor,
+             XT::Functions::GridFunction<E, d, d, F> diffusion,
+             XT::Functions::GridFunction<E> dirichlet_data,
+             const std::string& logging_prefix) {
+            return type(symmetry_prefactor, diffusion, dirichlet_data, logging_prefix);
+          },
+          "symmetry_prefactor"_a,
+          "diffusion"_a,
+          "dirichlet_data"_a,
+          "logging_prefix"_a = "",
           py::keep_alive<0, 2>(),
           py::keep_alive<0, 3>());
 
