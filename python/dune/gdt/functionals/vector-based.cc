@@ -49,6 +49,7 @@ public:
 private:
   using SS = typename type::SourceSpaceType;
   using E = typename type::E;
+  using I = typename type::I;
   using F = typename type::F;
 
 public:
@@ -113,6 +114,42 @@ public:
           "local_element_functional"_a,
           "param"_a = XT::Common::Parameter(),
           "element_filter"_a = XT::Grid::ApplyOn::AllElements<GV>(),
+          py::is_operator());
+    c.def(
+        "__iadd__", // function ptr signature required for the right return type
+        (type
+         & (type::*)(const std::tuple<const LocalElementFunctionalInterface<E, s_r, 1, F, typename type::DofFieldType>&,
+                                      const XT::Common::Parameter&,
+                                      const XT::Grid::ElementFilter<GV>&>&))
+            & type::append,
+        "tuple_of_localelementfunctional_param_filter"_a,
+        py::is_operator());
+    c.def("append",
+          [](type& self,
+             const LocalIntersectionFunctionalInterface<I, s_r, 1, F, typename type::DofFieldType>& local_functional,
+             const XT::Common::Parameter& param,
+             const XT::Grid::IntersectionFilter<GV>& filter) { self.append(local_functional, param, filter); },
+          "local_intersection_functional"_a,
+          "param"_a = XT::Common::Parameter(),
+          "intersection_filter"_a = XT::Grid::ApplyOn::AllIntersections<GV>());
+    c.def("__iadd__", // function ptr signature required for the right return type
+          (type
+           & (type::*)(const LocalIntersectionFunctionalInterface<I, s_r, 1, F, typename type::DofFieldType>&,
+                       const XT::Common::Parameter&,
+                       const XT::Grid::IntersectionFilter<GV>&))
+              & type::append,
+          "local_intersection_functional"_a,
+          "param"_a = XT::Common::Parameter(),
+          "intersection_filter"_a = XT::Grid::ApplyOn::AllIntersections<GV>(),
+          py::is_operator());
+    c.def("__iadd__", // function ptr signature required for the right return type
+          (type
+           & (type::*)(const std::tuple<
+                       const LocalIntersectionFunctionalInterface<I, s_r, 1, F, typename type::DofFieldType>&,
+                       const XT::Common::Parameter&,
+                       const XT::Grid::IntersectionFilter<GV>&>&))
+              & type::append,
+          "tuple_of_localintersectionfunctional_param_filter"_a,
           py::is_operator());
     c.def("assemble",
           [](type& self, const bool use_tbb) { self.assemble(use_tbb); },
