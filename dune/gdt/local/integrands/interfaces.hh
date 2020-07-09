@@ -322,14 +322,6 @@ public:
 
   virtual std::unique_ptr<ThisType> copy_as_unary_and_binary_element_integrand() const = 0;
 
-  //  using UnaryBaseType::operator+;
-  //  using BinaryBaseType::operator+;
-
-  //  LocalUnaryAndBinaryElementIntegrandSum<I, t_r, t_rC, TR, F, a_r, a_rC, AR> operator+(const ThisType& other) const
-  //  {
-  //    return LocalUnaryAndBinaryElementIntegrandSum<I, t_r, t_rC, TR, F, a_r, a_rC, AR>(*this, other);
-  //  }
-
   /// \name Methods required for disambiuation.
   /// \{
 

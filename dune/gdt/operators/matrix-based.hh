@@ -289,18 +289,8 @@ public:
    *        the copied operator shares the matrix.
    */
   MatrixOperator(ThisType& other) = default;
-  //    : MatrixStorage(other)
-  //    , BaseOperatorType(other)
-  //    , BaseWalkerType(other)
-  //    , scaling(other.scaling)
-  //  {}
 
   MatrixOperator(ThisType&& source) = default;
-  //    : MatrixStorage(source)
-  //    , BaseOperatorType(source)
-  //    , BaseWalkerType(source)
-  //    , scaling(source.scaling)
-  //  {}
 
   typename BaseWalkerType::BaseType* copy() override
   {
