@@ -91,24 +91,24 @@ public:
       result.resize(rows, cols);
     result *= 0;
     // evaluate
-    test_basis.evaluate(point_in_reference_element, test_basis_values_, param);
-    ansatz_basis.jacobians(point_in_reference_element, ansatz_basis_grads_, param);
+    test_basis.jacobians(point_in_reference_element, test_basis_grads_, param);
+    ansatz_basis.evaluate(point_in_reference_element, ansatz_basis_values_, param);
     const auto direction = local_direction_->evaluate(point_in_reference_element, param);
-    LOG_(debug) << "  test_basis_values_ = " << print(test_basis_values_, {{"oneline", "true"}})
-                << "\n  ansatz_basis_grads_ = " << print(ansatz_basis_grads_, {{"oneline", "true"}})
+    LOG_(debug) << "  test_basis_grads_ = " << print(test_basis_grads_, {{"oneline", "true"}})
+                << "\n  ansatz_basis_values_ = " << print(ansatz_basis_values_, {{"oneline", "true"}})
                 << "\n  direction = " << direction << std::endl;
     // compute integrand
     for (size_t ii = 0; ii < rows; ++ii)
       for (size_t jj = 0; jj < cols; ++jj)
-        result[ii][jj] += (direction * ansatz_basis_grads_[jj][0]) * test_basis_values_[ii];
+        result[ii][jj] += -1.0 * ansatz_basis_values_[jj] * (direction * test_basis_grads_[ii][0]);
     LOG_(debug) << "  result = " << print(result, {{"oneline", "true"}}) << std::endl;
   } // ... evaluate(...)
 
 private:
   XT::Functions::GridFunction<E, d, 1, F> direction_;
   std::unique_ptr<typename XT::Functions::GridFunction<E, d, 1, F>::LocalFunctionType> local_direction_;
-  mutable std::vector<typename LocalTestBasisType::RangeType> test_basis_values_;
-  mutable std::vector<typename LocalAnsatzBasisType::DerivativeRangeType> ansatz_basis_grads_;
+  mutable std::vector<typename LocalTestBasisType::DerivativeRangeType> test_basis_grads_;
+  mutable std::vector<typename LocalAnsatzBasisType::RangeType> ansatz_basis_values_;
 }; // class Volume
 
 
@@ -211,34 +211,35 @@ public:
     const auto normal = this->intersection().unitOuterNormal(point_in_reference_intersection);
     // ... basis functions  ...
     test_basis_inside.evaluate(point_in_inside_reference_element, test_basis_in_values_, param);
-    ansatz_basis_inside.evaluate(point_in_inside_reference_element, ansatz_basis_in_values_, param);
+    test_basis_outside.evaluate(point_in_outside_reference_element, test_basis_out_values_, param);
     ansatz_basis_outside.evaluate(point_in_outside_reference_element, ansatz_basis_out_values_, param);
     // ... data functions, ...
     const auto direction = local_direction_in_->evaluate(point_in_inside_reference_element, param);
     LOG_(debug) << "  test_basis_in_values_ = " << print(test_basis_in_values_, {{"oneline", "true"}})
-                << "\n  ansatz_basis_in_values_ = " << print(ansatz_basis_in_values_, {{"oneline", "true"}})
+                << "\n  test_basis_out_values_ = " << print(test_basis_out_values_, {{"oneline", "true"}})
                 << "\n  ansatz_basis_out_values_ = " << print(ansatz_basis_out_values_, {{"oneline", "true"}})
                 << "\n  normal = " << print(normal) << "\n  direction = " << direction << std::endl;
     // ... and finally compute the integrand.
     const size_t rows_in = test_basis_inside.size(param);
-    const size_t cols_in = ansatz_basis_inside.size(param);
+    const size_t rows_out = test_basis_outside.size(param);
     const size_t cols_out = ansatz_basis_outside.size(param);
-    for (size_t ii = 0; ii < rows_in; ++ii) {
-      for (size_t jj = 0; jj < cols_in; ++jj)
-        result_in_in[ii][jj] += -1.0 * (direction * normal) * ansatz_basis_in_values_[jj] * test_basis_in_values_[ii];
+    // nothing to do for ansatz_basis_inside ...
+    for (size_t ii = 0; ii < rows_in; ++ii)
       for (size_t jj = 0; jj < cols_out; ++jj)
-        result_out_in[ii][jj] += (direction * normal) * ansatz_basis_out_values_[jj] * test_basis_in_values_[ii];
-    }
-    // nothing to do for test_basis_outside ...
-    LOG_(debug) << "  result_in_in = " << print(result_in_in, {{"oneline", "true"}})
-                << "\n  result_out_in = " << print(result_out_in, {{"oneline", "true"}}) << std::endl;
+        result_in_out[ii][jj] += (direction * normal) * ansatz_basis_out_values_[jj] * test_basis_in_values_[ii];
+    for (size_t ii = 0; ii < rows_out; ++ii)
+      for (size_t jj = 0; jj < cols_out; ++jj)
+        result_out_out[ii][jj] +=
+            -1.0 * (direction * normal) * ansatz_basis_out_values_[jj] * test_basis_out_values_[ii];
+    LOG_(debug) << "  result_in_out = " << print(result_in_out, {{"oneline", "true"}})
+                << "\n  result_out_out = " << print(result_out_out, {{"oneline", "true"}}) << std::endl;
   } // ... evaluate(...)
 
 private:
   XT::Functions::GridFunction<E, d> direction_;
   std::unique_ptr<typename XT::Functions::GridFunctionInterface<E, d>::LocalFunctionType> local_direction_in_;
   mutable std::vector<typename LocalTestBasisType::RangeType> test_basis_in_values_;
-  mutable std::vector<typename LocalAnsatzBasisType::RangeType> ansatz_basis_in_values_;
+  mutable std::vector<typename LocalTestBasisType::RangeType> test_basis_out_values_;
   mutable std::vector<typename LocalAnsatzBasisType::RangeType> ansatz_basis_out_values_;
 }; // InnerCoupling
 
@@ -356,7 +357,7 @@ public:
     // ... and finally compute the integrand.
     const size_t size = test_basis.size(param);
     for (size_t jj = 0; jj < size; ++jj)
-      result[jj] += -1.0 * (direction * normal) * dirichlet_data * test_basis_values_[jj];
+      result[jj] += (direction * normal) * dirichlet_data * test_basis_values_[jj];
     LOG_(debug) << "  result = " << print(result) << std::endl;
   } // ... evaluate(...)
 
@@ -406,7 +407,7 @@ public:
     const size_t cols = ansatz_basis.size(param);
     for (size_t ii = 0; ii < rows; ++ii)
       for (size_t jj = 0; jj < cols; ++jj)
-        result[ii][jj] += -1.0 * (direction * normal) * ansatz_basis_values_[jj] * test_basis_values_[ii];
+        result[ii][jj] += (direction * normal) * ansatz_basis_values_[jj] * test_basis_values_[ii];
     LOG_(debug) << "  result = " << print(result, {{"oneline", "true"}}) << std::endl;
   } // ... evaluate(...)
 
