@@ -49,7 +49,7 @@ public:
   {}
 
   LocalLaplaceIntegrand(const ThisType& other)
-    : BaseType(other.parameter_type())
+    : BaseType(other)
     , weight_(other.weight_)
     , local_weight_(weight_.local_function())
   {}

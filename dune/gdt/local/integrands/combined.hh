@@ -36,7 +36,7 @@ public:
   {}
 
   LocalUnaryElementIntegrandSum(const ThisType& other)
-    : BaseType(other.parameter_type())
+    : BaseType(other)
     , left_(other.left_.access().copy_as_unary_element_integrand().release())
     , right_(other.right_.access().copy_as_unary_element_integrand().release())
   {}
@@ -180,7 +180,7 @@ public:
   {}
 
   LocalBinaryElementIntegrandSum(const ThisType& other)
-    : BaseType(other.parameter_type())
+    : BaseType(other)
     , left_(other.left_.access().copy_as_binary_element_integrand().release())
     , right_(other.right_.access().copy_as_binary_element_integrand().release())
   {}

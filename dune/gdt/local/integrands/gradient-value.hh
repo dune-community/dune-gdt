@@ -62,7 +62,7 @@ public:
   {}
 
   LocalElementGradientValueIntegrand(const ThisType& other)
-    : BaseType(other.parameter_type())
+    : BaseType(other)
     , vector_(other.vector_)
     , local_function_(vector_.local_function())
   {}

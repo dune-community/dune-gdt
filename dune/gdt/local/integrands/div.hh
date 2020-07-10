@@ -113,7 +113,7 @@ public:
   {}
 
   LocalElementAnsatzValueTestDivProductIntegrand(const ThisType& other)
-    : BaseType(other.parameter_type())
+    : BaseType(other)
     , DivBaseType()
     , inducing_function_(other.inducing_function_)
     , local_function_(inducing_function_.access().local_function())
@@ -210,7 +210,7 @@ public:
   {}
 
   LocalElementAnsatzDivTestValueProductIntegrand(const ThisType& other)
-    : BaseType(other.parameter_type())
+    : BaseType(other)
     , inducing_function_(other.inducing_function_)
     , local_function_(inducing_function_.access().local_function())
   {}

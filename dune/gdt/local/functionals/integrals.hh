@@ -55,7 +55,7 @@ public:
   {}
 
   LocalElementIntegralFunctional(const ThisType& other)
-    : BaseType(other.parameter_type())
+    : BaseType(other)
     , integrand_(other.integrand_->copy_as_unary_element_integrand())
     , over_integrate_(other.over_integrate_)
   {}
@@ -134,7 +134,7 @@ public:
   //  {}
 
   LocalIntersectionIntegralFunctional(const ThisType& other)
-    : BaseType(other.parameter_type())
+    : BaseType(other)
     , integrand_(other.integrand_->copy_as_unary_intersection_integrand())
     , over_integrate_(other.over_integrate_)
   {}

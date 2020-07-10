@@ -69,7 +69,7 @@ public:
   {}
 
   InnerCoupling(const ThisType& other)
-    : BaseType(other.parameter_type())
+    : BaseType(other)
     , symmetry_prefactor_(other.symmetry_prefactor_)
     , diffusion_(other.diffusion_)
     , weight_(other.weight_)
@@ -245,7 +245,7 @@ public:
   {}
 
   DirichletCoupling(const ThisType& other)
-    : BaseType(other.parameter_type())
+    : BaseType(other)
     , symmetry_prefactor_(other.symmetry_prefactor_)
     , diffusion_(other.diffusion_)
     , local_diffusion_(diffusion_.local_function())
@@ -547,7 +547,7 @@ public:
   {}
 
   Inner(const ThisType& other)
-    : BaseType(other.parameter_type())
+    : BaseType(other)
     , beta_(other.beta_)
     , diffusion_factor_(other.diffusion_factor_)
     , diffusion_tensor_(other.diffusion_tensor_)
@@ -1038,7 +1038,7 @@ public:
   {}
 
   DirichletBoundaryLhs(const ThisType& other)
-    : BaseType(other.parameter_type())
+    : BaseType(other)
     , beta_(other.beta_)
     , diffusion_factor_(other.diffusion_factor_)
     , diffusion_tensor_(other.diffusion_tensor_)
@@ -1481,7 +1481,7 @@ public:
   {}
 
   InnerOnlyPenalty(const ThisType& other)
-    : BaseType(other.parameter_type())
+    : BaseType(other)
     , beta_(other.beta_)
     , diffusion_factor_(other.diffusion_factor_)
     , diffusion_tensor_(other.diffusion_tensor_)
@@ -1931,7 +1931,7 @@ public:
   {}
 
   DirichletBoundaryLhsOnlyPenalty(const ThisType& other)
-    : BaseType(other.parameter_type())
+    : BaseType(other)
     , beta_(other.beta_)
     , diffusion_factor_(other.diffusion_factor_)
     , diffusion_tensor_(other.diffusion_tensor_)

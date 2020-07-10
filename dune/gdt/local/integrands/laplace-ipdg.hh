@@ -62,7 +62,7 @@ public:
   {}
 
   InnerCoupling(const ThisType& other)
-    : BaseType(other.parameter_type())
+    : BaseType(other)
     , symmetry_prefactor_(other.symmetry_prefactor_)
     , diffusion_(other.diffusion_)
     , weight_(other.weight_)

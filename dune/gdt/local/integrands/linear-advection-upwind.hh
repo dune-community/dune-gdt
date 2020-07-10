@@ -47,7 +47,7 @@ public:
   }
 
   Volume(const ThisType& other)
-    : BaseType(other.parameter_type())
+    : BaseType(other)
     , direction_(other.direction_)
     , local_direction_(direction_.local_function())
   {}
@@ -146,7 +146,7 @@ public:
   }
 
   InnerCoupling(const ThisType& other)
-    : BaseType(other.parameter_type())
+    : BaseType(other)
     , direction_(other.direction_)
     , local_direction_in_(direction_.local_function())
   {}

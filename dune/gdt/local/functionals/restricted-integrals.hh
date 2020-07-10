@@ -48,7 +48,7 @@ public:
   {}
 
   LocalIntersectionRestrictedIntegralFunctional(const ThisType& other)
-    : BaseType(other.parameter_type())
+    : BaseType(other)
     , filter_(other.filter_)
     , integrand_(other.integrand_->copy_as_unary_intersection_integrand())
     , over_integrate_(other.over_integrate_)

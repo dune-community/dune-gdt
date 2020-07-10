@@ -65,7 +65,7 @@ public:
   {}
 
   LocalSymmetrizedLaplaceIntegrand(const ThisType& other)
-    : BaseType(other.parameter_type())
+    : BaseType(other)
     , diffusion_factor_(other.diffusion_factor_)
     , local_diffusion_factor_(diffusion_factor_.access().local_function())
   {}

@@ -50,7 +50,7 @@ public:
   {}
 
   GenericLocalUnaryElementIntegrand(const ThisType& other)
-    : BaseType(other.parameter_type())
+    : BaseType(other)
     , order_(other.order_)
     , evaluate_(other.evaluate_)
     , post_bind_(other.post_bind_)
@@ -137,7 +137,7 @@ public:
   {}
 
   GenericLocalBinaryElementIntegrand(const ThisType& other)
-    : BaseType(other.parameter_type())
+    : BaseType(other)
     , order_(other.order_)
     , evaluate_(other.evaluate_)
     , post_bind_(other.post_bind_)
@@ -232,7 +232,7 @@ public:
   {}
 
   GenericLocalBinaryIntersectionIntegrand(const ThisType& other)
-    : BaseType(other.parameter_type())
+    : BaseType(other)
     , order_(other.order_)
     , evaluate_(other.evaluate_)
     , post_bind_(other.post_bind_)

@@ -63,7 +63,7 @@ public:
   }
 
   LocalElementProductIntegrand(const ThisType& other)
-    : BaseType(other.parameter_type())
+    : BaseType(other)
     , weight_(other.weight_)
     , local_weight_(weight_.local_function())
   {}
@@ -161,7 +161,7 @@ public:
   {}
 
   LocalCouplingIntersectionProductIntegrand(const ThisType& other)
-    : BaseType(other.parameter_type())
+    : BaseType(other)
     , weight_(other.weight_)
     , local_weight_in_(weight_.local_function())
     , local_weight_out_(weight_.local_function())
