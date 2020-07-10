@@ -37,7 +37,7 @@ public:
   explicit Volume(XT::Functions::GridFunction<E, d, 1, F> direction = FieldVector<F, d>(1.),
                   const std::string& logging_prefix = "")
     : BaseType(direction.parameter_type(),
-               logging_prefix.empty() ? "gdt" : "gdt.locallinearadvectionupwindvolumeintegrand",
+               logging_prefix.empty() ? "gdt" : "gdt.AdvectionUpwdVlm",
                logging_prefix.empty() ? "LocalLinearAdvectionUpwindIntegrands::Volume" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
     , direction_(direction)
@@ -62,10 +62,6 @@ public:
 protected:
   void post_bind(const ElementType& ele) override
   {
-#ifndef NDEBUG
-    if (!ele.geometry().affine())
-      std::cerr << "Warning: integration order has to be increased for non-affine geometries!" << std::endl;
-#endif
     local_direction_->bind(ele);
   }
 
@@ -83,10 +79,11 @@ public:
                 DynamicMatrix<F>& result,
                 const XT::Common::Parameter& param = {}) const override final
   {
-    LOG_(debug) << "evaluate(test_basis.size()=" << test_basis.size(param)
+    LOG_(debug) << this->logging_id << ".evaluate(test_basis.size()=" << test_basis.size(param)
                 << ", ansatz_basis.size()=" << ansatz_basis.size(param)
-                << ", point_in_reference_element=" << print(point_in_reference_element) << ", param=" << param << ")"
-                << std::endl;
+                << ",\n    point_in_{reference_element|physical_space}={" << print(point_in_reference_element) << "|"
+                << print(this->element().geometry().global(point_in_reference_element)) << "}"
+                << ",\n    param=" << param << ")" << std::endl;
     // prepare storage
     const size_t rows = test_basis.size(param);
     const size_t cols = ansatz_basis.size(param);
@@ -97,14 +94,14 @@ public:
     test_basis.evaluate(point_in_reference_element, test_basis_values_, param);
     ansatz_basis.jacobians(point_in_reference_element, ansatz_basis_grads_, param);
     const auto direction = local_direction_->evaluate(point_in_reference_element, param);
-    LOG_(debug) << "  test_basis_values_ = " << print(test_basis_values_)
-                << "\n  ansatz_basis_grads_ = " << print(ansatz_basis_grads_) << "\n  direction = " << direction
-                << std::endl;
+    LOG_(debug) << "  test_basis_values_ = " << print(test_basis_values_, {{"oneline", "true"}})
+                << "\n  ansatz_basis_grads_ = " << print(ansatz_basis_grads_, {{"oneline", "true"}})
+                << "\n  direction = " << direction << std::endl;
     // compute integrand
     for (size_t ii = 0; ii < rows; ++ii)
       for (size_t jj = 0; jj < cols; ++jj)
         result[ii][jj] += (direction * ansatz_basis_grads_[jj][0]) * test_basis_values_[ii];
-    LOG_(debug) << "  result = " << result << std::endl;
+    LOG_(debug) << "  result = " << print(result, {{"oneline", "true"}}) << std::endl;
   } // ... evaluate(...)
 
 private:
@@ -116,7 +113,7 @@ private:
 
 
 /**
- * \note Makes sense on outflow intersections, i.e. where direction*normal < 0
+ * \note Makes sense on inflow intersections, i.e. where direction*normal < 0
  * \sa LocalCouplingIntersectionRestrictedIntegralBilinearForm
  */
 template <class I>
@@ -136,7 +133,7 @@ public:
 
   InnerCoupling(XT::Functions::GridFunction<E, d> direction, const std::string& logging_prefix = "")
     : BaseType(direction.parameter_type(),
-               logging_prefix.empty() ? "gdt" : "gdt.locallinearadvectionupwindinnercouplingintegrand",
+               logging_prefix.empty() ? "gdt" : "gdt.AdvectionUpwdInn",
                logging_prefix.empty() ? "LocalLinearAdvectionUpwindIntegrands::InnerCoupling" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
     , direction_(direction)
@@ -189,11 +186,13 @@ public:
                 DynamicMatrix<F>& result_out_out,
                 const XT::Common::Parameter& param = {}) const override final
   {
-    LOG_(debug) << "evaluate(test_basis_{inside,outside}.size()={" << test_basis_inside.size(param) << ","
-                << test_basis_outside.size(param) << "}, ansatz_basis_{inside,outside}.size()={"
-                << ansatz_basis_inside.size(param) << "," << ansatz_basis_outside.size(param)
-                << "}, point_in_reference_intersection=" << print(point_in_reference_intersection)
-                << ", param=" << param << ")" << std::endl;
+    LOG_(debug) << this->logging_id << ".evaluate(test_basis_{inside|outside}.size()={" << test_basis_inside.size(param)
+                << "|" << test_basis_outside.size(param) << "},\n    ansatz_basis_{inside|outside}.size()={"
+                << ansatz_basis_inside.size(param) << "|" << ansatz_basis_outside.size(param)
+                << "},\n    point_in_{reference_intersection|physical_space}={"
+                << print(point_in_reference_intersection) << "|"
+                << print(this->intersection().geometry().global(point_in_reference_intersection))
+                << "},\n    param=" << param << ")" << std::endl;
     // Prepare sotrage, ...
     this->ensure_size_and_clear_results(test_basis_inside,
                                         ansatz_basis_inside,
@@ -216,9 +215,9 @@ public:
     ansatz_basis_outside.evaluate(point_in_outside_reference_element, ansatz_basis_out_values_, param);
     // ... data functions, ...
     const auto direction = local_direction_in_->evaluate(point_in_inside_reference_element, param);
-    LOG_(debug) << "  test_basis_in_values_ = " << print(test_basis_in_values_)
-                << "\n  ansatz_basis_in_values_ = " << print(ansatz_basis_in_values_)
-                << "\n  ansatz_basis_out_values_ = " << print(ansatz_basis_out_values_)
+    LOG_(debug) << "  test_basis_in_values_ = " << print(test_basis_in_values_, {{"oneline", "true"}})
+                << "\n  ansatz_basis_in_values_ = " << print(ansatz_basis_in_values_, {{"oneline", "true"}})
+                << "\n  ansatz_basis_out_values_ = " << print(ansatz_basis_out_values_, {{"oneline", "true"}})
                 << "\n  normal = " << print(normal) << "\n  direction = " << direction << std::endl;
     // ... and finally compute the integrand.
     const size_t rows_in = test_basis_inside.size(param);
@@ -231,8 +230,8 @@ public:
         result_out_in[ii][jj] += (direction * normal) * ansatz_basis_out_values_[jj] * test_basis_in_values_[ii];
     }
     // nothing to do for test_basis_outside ...
-    LOG_(debug) << "  result_in_in = " << result_in_in << std::endl;
-    LOG_(debug) << "  result_out_in = " << result_out_in << std::endl;
+    LOG_(debug) << "  result_in_in = " << print(result_in_in, {{"oneline", "true"}})
+                << "\n  result_out_in = " << print(result_out_in, {{"oneline", "true"}}) << std::endl;
   } // ... evaluate(...)
 
 private:
@@ -245,7 +244,7 @@ private:
 
 
 /**
- * \note Makes sense on outflow intersections, i.e. where direction*normal < 0
+ * \note Makes sense on inflow intersections, i.e. where direction*normal < 0
  * \sa LocalIntersectionRestrictedIntegralBilinearForm
  */
 template <class I>
@@ -266,6 +265,9 @@ public:
   using typename BaseBinaryType::LocalAnsatzBasisType;
   using typename BaseBinaryType::LocalTestBasisType;
 
+  using BaseUnaryType::logger;
+  using BaseUnaryType::logging_id;
+
   /**
    * \note dirichlet_data is only required if used as a unary integrand, i.e. for the right hand side
    */
@@ -273,11 +275,11 @@ public:
                     XT::Functions::GridFunction<E> dirichlet_data = 0.,
                     const std::string& logging_prefix = "")
     : BaseUnaryType(direction.parameter_type() + dirichlet_data.parameter_type(),
-                    logging_prefix.empty() ? "gdt" : "gdt.locallinearadvectionupwinddirichletcouplingintegrand",
+                    logging_prefix.empty() ? "gdt" : "gdt.AdvectionUpwdDir",
                     logging_prefix.empty() ? "LocalLinearAdvectionUpwindIntegrands::DirichletCoupling" : logging_prefix,
                     /*logging_disabled=*/logging_prefix.empty())
     , BaseBinaryType(direction.parameter_type() + dirichlet_data.parameter_type(),
-                     logging_prefix.empty() ? "gdt" : "gdt.locallinearadvectionupwinddirichletcouplingintegrand",
+                     logging_prefix.empty() ? "gdt" : "gdt.AdvectionUpwdDir",
                      logging_prefix.empty() ? "LocalLinearAdvectionUpwindIntegrands::DirichletCoupling"
                                             : logging_prefix,
                      /*logging_disabled=*/logging_prefix.empty())
@@ -333,9 +335,10 @@ public:
                 DynamicVector<F>& result,
                 const XT::Common::Parameter& param = {}) const override final
   {
-    LOG_(debug) << "evaluate(test_basis.size()=" << test_basis.size(param)
-                << ", point_in_reference_intersection=" << print(point_in_reference_intersection) << ", param=" << param
-                << ")" << std::endl;
+    LOG_(debug) << this->logging_id << ".evaluate(test_basis.size()=" << test_basis.size(param)
+                << ",\n    point_in_{reference_intersection|physical_space}={" << print(point_in_reference_intersection)
+                << "|" << print(this->intersection().geometry().global(point_in_reference_intersection))
+                << "},\n    param=" << param << ")" << std::endl;
     // Prepare sotrage, ...
     BaseUnaryType::ensure_size_and_clear_results(test_basis, result, param);
     // evaluate ...
@@ -347,13 +350,14 @@ public:
     // ... data functions, ...
     const auto direction = local_direction_->evaluate(point_in_inside_reference_element, param);
     const auto dirichlet_data = local_dirichlet_data_->evaluate(point_in_inside_reference_element, param);
-    LOG_(debug) << "  test_basis_values_ = " << print(test_basis_values_) << "\n  normal = " << print(normal)
-                << "\n  direction = " << direction << "\n  dirichlet_data = " << dirichlet_data << std::endl;
+    LOG_(debug) << "  test_basis_values_ = " << print(test_basis_values_, {{"oneline", "true"}})
+                << "\n  normal = " << print(normal) << "\n  direction = " << direction
+                << "\n  dirichlet_data = " << dirichlet_data << std::endl;
     // ... and finally compute the integrand.
     const size_t size = test_basis.size(param);
     for (size_t jj = 0; jj < size; ++jj)
       result[jj] += -1.0 * (direction * normal) * dirichlet_data * test_basis_values_[jj];
-    LOG_(debug) << "  result = " << result << std::endl;
+    LOG_(debug) << "  result = " << print(result) << std::endl;
   } // ... evaluate(...)
 
   /// \}
@@ -378,10 +382,11 @@ public:
                 DynamicMatrix<F>& result,
                 const XT::Common::Parameter& param = {}) const override final
   {
-    LOG_(debug) << "evaluate(test_basis.size()=" << test_basis.size(param)
+    LOG_(debug) << this->logging_id << ".evaluate(test_basis.size()=" << test_basis.size(param)
                 << ", ansatz_basis.size()=" << ansatz_basis.size(param)
-                << ", point_in_reference_intersection=" << print(point_in_reference_intersection) << ", param=" << param
-                << ")" << std::endl;
+                << ",\n    point_in_{reference_intersection|physical_space}={" << print(point_in_reference_intersection)
+                << "|" << print(this->intersection().geometry().global(point_in_reference_intersection))
+                << "},\n    param=" << param << ")" << std::endl;
     // Prepare sotrage, ...
     BaseBinaryType::ensure_size_and_clear_results(test_basis, ansatz_basis, result, param);
     // evaluate ...
@@ -393,16 +398,16 @@ public:
     ansatz_basis.evaluate(point_in_inside_reference_element, ansatz_basis_values_, param);
     // ... data functions, ...
     const auto direction = local_direction_->evaluate(point_in_inside_reference_element, param);
-    LOG_(debug) << "  test_basis_values_ = " << print(test_basis_values_)
-                << "\n  ansatz_basis_values_ = " << print(ansatz_basis_values_) << "\n  normal = " << print(normal)
-                << "\n  direction = " << direction << std::endl;
+    LOG_(debug) << "  test_basis_values_ = " << print(test_basis_values_, {{"oneline", "true"}})
+                << "\n  ansatz_basis_values_ = " << print(ansatz_basis_values_, {{"oneline", "true"}})
+                << "\n  normal = " << print(normal) << "\n  direction = " << direction << std::endl;
     // ... and finally compute the integrand.
     const size_t rows = test_basis.size(param);
     const size_t cols = ansatz_basis.size(param);
     for (size_t ii = 0; ii < rows; ++ii)
       for (size_t jj = 0; jj < cols; ++jj)
         result[ii][jj] += -1.0 * (direction * normal) * ansatz_basis_values_[jj] * test_basis_values_[ii];
-    LOG_(debug) << "  result = " << result << std::endl;
+    LOG_(debug) << "  result = " << print(result, {{"oneline", "true"}}) << std::endl;
   } // ... evaluate(...)
 
   /// \}
