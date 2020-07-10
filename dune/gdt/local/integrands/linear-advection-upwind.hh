@@ -103,7 +103,7 @@ public:
     // compute integrand
     for (size_t ii = 0; ii < rows; ++ii)
       for (size_t jj = 0; jj < cols; ++jj)
-        result[ii][jj] += (direction * ansatz_basis_grads_[ii][0]) * test_basis_values_[jj];
+        result[ii][jj] += (direction * ansatz_basis_grads_[jj][0]) * test_basis_values_[ii];
     LOG_(debug) << "  result = " << result << std::endl;
   } // ... evaluate(...)
 
