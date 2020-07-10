@@ -233,6 +233,16 @@ public:
               & type::append,
           "tuple_of_localelementbilinearform_param_elementfilter"_a,
           py::is_operator());
+    c.def("append",
+          [](type& self,
+             const LocalIntersectionBilinearFormInterface<I, r_r, 1, F, F, s_r, 1, F>& local_intersection_bilinear_form,
+             const XT::Common::Parameter& param,
+             const XT::Grid::IntersectionFilter<GV>& intersection_filter) {
+            self.append(local_intersection_bilinear_form, param, intersection_filter);
+          },
+          "local_intersection_bilinear_form"_a,
+          "param"_a = XT::Common::Parameter(),
+          "intersection_filter"_a = XT::Grid::ApplyOn::AllIntersections<GV>());
     c.def("__iadd__", // function ptr signature required for the right return type
           (type
            & (type::*)(const LocalIntersectionBilinearFormInterface<I, r_r, 1, F, F, s_r, 1, F>&,
@@ -251,6 +261,36 @@ public:
               & type::append,
           "tuple_of_localintersectionbilinearform_param_elementfilter"_a,
           py::is_operator());
+    c.def("append",
+          [](type& self,
+             const LocalCouplingIntersectionBilinearFormInterface<I, r_r, 1, F, F, s_r, 1, F>&
+                 local_coupling_intersection_bilinear_form,
+             const XT::Common::Parameter& param,
+             const XT::Grid::IntersectionFilter<GV>& intersection_filter) {
+            self.append(local_coupling_intersection_bilinear_form, param, intersection_filter);
+          },
+          "local_coupling_intersection_bilinear_form"_a,
+          "param"_a = XT::Common::Parameter(),
+          "intersection_filter"_a = XT::Grid::ApplyOn::AllIntersections<GV>());
+    c.def("__iadd__", // function ptr signature required for the right return type
+          (type
+           & (type::*)(const LocalCouplingIntersectionBilinearFormInterface<I, r_r, 1, F, F, s_r, 1, F>&,
+                       const XT::Common::Parameter&,
+                       const XT::Grid::IntersectionFilter<GV>&))
+              & type::append,
+          "local_coupling_intersection_bilinear_form"_a,
+          "param"_a = XT::Common::Parameter(),
+          "intersection_filter"_a = XT::Grid::ApplyOn::AllIntersections<GV>(),
+          py::is_operator());
+    c.def(
+        "__iadd__", // function ptr signature required for the right return type
+        (type
+         & (type::*)(const std::tuple<const LocalCouplingIntersectionBilinearFormInterface<I, r_r, 1, F, F, s_r, 1, F>&,
+                                      const XT::Common::Parameter&,
+                                      const XT::Grid::IntersectionFilter<GV>&>&))
+            & type::append,
+        "tuple_of_localcouplingintersectionbilinearform_param_elementfilter"_a,
+        py::is_operator());
     c.def("assemble",
           [](type& self, const bool use_tbb) { self.assemble(use_tbb); },
           "parallel"_a = false,
