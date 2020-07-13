@@ -44,7 +44,6 @@ for mod_name in ( # order should not matter!
         '_local_integrands_linear_advection',
         '_local_integrands_linear_advection_upwind_dirichlet_coupling',
         '_local_integrands_linear_advection_upwind_inner_coupling',
-        '_local_integrands_linear_advection_upwind_volume',
         '_local_integrands_quaternary_intersection_interface',
         '_local_integrands_unary_element_interface',
         '_local_integrands_unary_intersection_interface',

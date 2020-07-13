@@ -14,6 +14,8 @@
 #include <dune/xt/la/container/eye-matrix.hh>
 #include <dune/xt/functions/grid-function.hh>
 
+#include <dune/gdt/print.hh>
+
 #include "interfaces.hh"
 
 namespace Dune {
@@ -37,7 +39,7 @@ public:
   using typename BaseType::LocalAnsatzBasisType;
   using typename BaseType::LocalTestBasisType;
 
-  explicit LocalLinearAdvectionIntegrand(XT::Functions::GridFunction<E, d, 1, F> direction = FieldVector<F, d>(1.),
+  explicit LocalLinearAdvectionIntegrand(XT::Functions::GridFunction<E, d, 1, F> direction,
                                          const std::string& logging_prefix = "")
     : BaseType(direction.parameter_type(),
                logging_prefix.empty() ? "gdt" : "gdt.locallinearadvectionintegrand",
@@ -45,7 +47,9 @@ public:
                /*logging_disabled=*/logging_prefix.empty())
     , direction_(direction)
     , local_direction_(direction_.local_function())
-  {}
+  {
+    LOG_(info) << this->logging_id << "(direction=" << &direction << ")" << std::endl;
+  }
 
   LocalLinearAdvectionIntegrand(const ThisType& other)
     : BaseType(other)
@@ -63,10 +67,6 @@ public:
 protected:
   void post_bind(const ElementType& ele) override
   {
-#ifndef NDEBUG
-    if (!ele.geometry().affine())
-      std::cerr << "Warning: integration order has to be increased for non-affine geometries!" << std::endl;
-#endif
     local_direction_->bind(ele);
   }
 
@@ -84,6 +84,11 @@ public:
                 DynamicMatrix<F>& result,
                 const XT::Common::Parameter& param = {}) const override final
   {
+    LOG_(debug) << this->logging_id << ".evaluate(test_basis.size()=" << test_basis.size(param)
+                << ", ansatz_basis.size()=" << ansatz_basis.size(param)
+                << ",\n    point_in_{reference_element|physical_space}={" << print(point_in_reference_element) << "|"
+                << print(this->element().geometry().global(point_in_reference_element)) << "}"
+                << ",\n    param=" << param << ")" << std::endl;
     // prepare storage
     const size_t rows = test_basis.size(param);
     const size_t cols = ansatz_basis.size(param);
@@ -94,10 +99,14 @@ public:
     test_basis.jacobians(point_in_reference_element, test_basis_grads_, param);
     ansatz_basis.evaluate(point_in_reference_element, ansatz_basis_values_, param);
     const auto direction = local_direction_->evaluate(point_in_reference_element, param);
+    LOG_(debug) << "  test_basis_grads_ = " << print(test_basis_grads_, {{"oneline", "true"}})
+                << "\n  ansatz_basis_values_ = " << print(ansatz_basis_values_, {{"oneline", "true"}})
+                << "\n  direction = " << direction << std::endl;
     // compute integrand
     for (size_t ii = 0; ii < rows; ++ii)
       for (size_t jj = 0; jj < cols; ++jj)
         result[ii][jj] += -1.0 * ansatz_basis_values_[jj] * (direction * test_basis_grads_[ii][0]);
+    LOG_(debug) << "  result = " << print(result, {{"oneline", "true"}}) << std::endl;
   } // ... evaluate(...)
 
 private:
