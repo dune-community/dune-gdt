@@ -262,8 +262,7 @@ private:
 
 
 /**
- * Given an inducing function f, computes `<f> * phi * psi` for all combinations of phi and psi in the bases, where
- * `<f>` denotes the average of f evaluated on the inside and evaluated on the outside.
+ * Given an inducing function f, computes `f * phi * psi` for all combinations of phi and psi in the bases.
  *
  * \note Note that f can also be given as a scalar value or omitted.
  */
