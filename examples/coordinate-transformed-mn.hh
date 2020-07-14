@@ -336,7 +336,7 @@ public:
     static const RangeType basis_integrated = basis_functions_->integrated();
     std::shared_ptr<ParameterFunctionType> sigma_s;
     std::shared_ptr<ParameterFunctionType> sigma_a;
-    if constexpr (dimDomain == 1) {
+    if constexpr (std::is_same<ProblemType, SourceBeamMn<GV, MomentBasis>>::value) {
       DUNE_THROW_IF(parameters.size() != 5, Dune::InvalidStateException, "Wrong parameter size!");
       const double sigma_a_left = parameters[0];
       const double sigma_a_right = parameters[1];
@@ -345,7 +345,15 @@ public:
       const double sigma_s_right = parameters[4];
       sigma_s = std::shared_ptr(problem_->create_sigma_s_function(sigma_s_left, sigma_s_middle, sigma_s_right));
       sigma_a = std::shared_ptr(problem_->create_sigma_a_function(sigma_a_left, sigma_a_right));
-    } else {
+    } else if constexpr (std::is_same<ProblemType, PlaneSourceMn<GV, MomentBasis>>::value) {
+      DUNE_THROW_IF(parameters.size() != 4, Dune::InvalidStateException, "Wrong parameter size!");
+      const double sigma_s_left = parameters[0];
+      const double sigma_s_right = parameters[1];
+      const double sigma_a_left = parameters[2];
+      const double sigma_a_right = parameters[3];
+      sigma_s = std::shared_ptr(problem_->create_parameter_function(sigma_s_left, sigma_s_right));
+      sigma_a = std::shared_ptr(problem_->create_parameter_function(sigma_a_left, sigma_a_right));
+    } else if constexpr (std::is_same<ProblemType, CheckerboardMn<GV, MomentBasis>>::value) {
       DUNE_THROW_IF(parameters.size() != 4, Dune::InvalidStateException, "Wrong parameter size!");
       const double sigma_s_scattering = parameters[0];
       const double sigma_s_absorbing = parameters[1];
@@ -355,6 +363,8 @@ public:
           problem_->create_parameter_function(sigma_s_absorbing, sigma_s_scattering, sigma_s_scattering));
       sigma_a = std::shared_ptr(
           problem_->create_parameter_function(sigma_a_absorbing, sigma_a_scattering, sigma_a_scattering));
+    } else {
+      DUNE_THROW(Dune::NotImplemented, "");
     }
     std::shared_ptr<ParameterFunctionType> Q(problem_->Q());
     auto rhs_func = [&, sigma_a, sigma_s, Q](const auto& /*source*/,
@@ -402,10 +412,23 @@ public:
   void visualize(const VectorType& alpha_vec, const std::string& prefix)
   {
     const ConstDiscreteFunctionType alpha(*fv_space_, alpha_vec, "alpha");
-    const auto visualizer = std::make_unique<XT::Functions::GenericVisualizer<dimRange, 1, double>>(
+    const auto rho_visualizer = std::make_unique<XT::Functions::GenericVisualizer<dimRange, 1, double>>(
         1,
         [&](const int /*comp*/, const auto& val) { return basis_functions_->density(analytical_flux_->get_u(val)); });
-    alpha.visualize(*grid_view_, prefix, false, VTK::appendedraw, {}, *visualizer);
+    auto vtk_writer = alpha.create_vtkwriter(fv_space_->grid_view(), false);
+    // visualize rho
+    const auto rho_adapter =
+        std::make_shared<XT::Functions::VisualizationAdapter<GV, dimRange, 1, double>>(alpha, *rho_visualizer, "rho");
+    vtk_writer->addVertexData(rho_adapter);
+    // visualize components of alpha
+    std::vector<std::shared_ptr<XT::Functions::VisualizerInterface<dimRange, 1, double>>> comp_visualizers(dimRange);
+    for (int ii = 0; ii < static_cast<int>(dimRange); ++ii) {
+      comp_visualizers[ii] = std::make_shared<XT::Functions::ComponentVisualizer<dimRange, 1, double>>(ii);
+      const auto adapter = std::make_shared<XT::Functions::VisualizationAdapter<GV, dimRange, 1, double>>(
+          alpha, *comp_visualizers[ii], "alpha" + XT::Common::to_string(ii));
+      vtk_writer->addVertexData(adapter);
+    }
+    alpha.write_visualization(*vtk_writer, prefix);
   }
 
   void init(const std::string output_dir,

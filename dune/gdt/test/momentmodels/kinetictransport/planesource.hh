@@ -29,6 +29,7 @@ public:
   using typename BaseType::DomainType;
   using typename BaseType::DynamicRangeType;
   using typename BaseType::GenericFunctionType;
+  using typename BaseType::GenericScalarFunctionType;
   using typename BaseType::InitialValueType;
   using typename BaseType::MomentBasis;
   using typename BaseType::RangeFieldType;
@@ -100,6 +101,16 @@ public:
   {
     return std::make_unique<ConstantScalarFunctionType>(0.);
   }
+
+  // value_left and value_right are the values of the parameter on [-1.2, 0] and [0, 1.2], respectively
+  std::unique_ptr<ScalarFunctionType> create_parameter_function(const RangeFieldType value_left,
+                                                                const RangeFieldType value_right) const
+  {
+    return std::make_unique<GenericScalarFunctionType>(
+        [](const XT::Common::Parameter&) { return 0; },
+        [=](const DomainType& x, const XT::Common::Parameter&) { return x[0] < 0. ? value_left : value_right; });
+  }
+
 
 protected:
   using BaseType::basis_functions_;
