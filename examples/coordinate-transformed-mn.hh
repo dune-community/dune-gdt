@@ -151,7 +151,10 @@ public:
 
   static std::vector<double> default_parameters()
   {
-    return (dimDomain == 3) ? std::vector<double>{1, 0, 0, 10} : std::vector<double>{1, 0, 0, 2, 10};
+    if constexpr (std::is_same_v<ProblemType, SourceBeamMn<GV, MomentBasis>>)
+      return std::vector<double>{1, 0, 0, 2, 10};
+    else
+      return std::vector<double>{1, 0, 0, 10};
   }
 
   // The parameters vector should contain:
@@ -412,6 +415,20 @@ public:
   void visualize(const VectorType& alpha_vec, const std::string& prefix)
   {
     const ConstDiscreteFunctionType alpha(*fv_space_, alpha_vec, "alpha");
+    VectorType u_vec = alpha_vec;
+    DiscreteFunctionType u(*fv_space_, u_vec, "u");
+    const auto alpha_local_func = alpha.local_discrete_function();
+    auto u_local_func = u.local_discrete_function();
+    RangeType alpha_local, u_local;
+    for (auto&& element : Dune::elements(*grid_view_)) {
+      u_local_func->bind(element);
+      alpha_local_func->bind(element);
+      for (size_t ii = 0; ii < dimRange; ++ii)
+        alpha_local[ii] = alpha_local_func->dofs().get_entry(ii);
+      u_local = analytical_flux_->get_u(alpha_local);
+      for (size_t ii = 0; ii < dimRange; ++ii)
+        u_local_func->dofs().set_entry(ii, u_local[ii]);
+    }
     const auto rho_visualizer = std::make_unique<XT::Functions::GenericVisualizer<dimRange, 1, double>>(
         1,
         [&](const int /*comp*/, const auto& val) { return basis_functions_->density(analytical_flux_->get_u(val)); });
@@ -426,6 +443,12 @@ public:
       comp_visualizers[ii] = std::make_shared<XT::Functions::ComponentVisualizer<dimRange, 1, double>>(ii);
       const auto adapter = std::make_shared<XT::Functions::VisualizationAdapter<GV, dimRange, 1, double>>(
           alpha, *comp_visualizers[ii], "alpha" + XT::Common::to_string(ii));
+      vtk_writer->addVertexData(adapter);
+    }
+    // visualize components of u
+    for (int ii = 0; ii < static_cast<int>(dimRange); ++ii) {
+      const auto adapter = std::make_shared<XT::Functions::VisualizationAdapter<GV, dimRange, 1, double>>(
+          u, *comp_visualizers[ii], "u" + XT::Common::to_string(ii));
       vtk_writer->addVertexData(adapter);
     }
     alpha.write_visualization(*vtk_writer, prefix);
