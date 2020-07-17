@@ -80,13 +80,14 @@ protected:
   using O = OperatorInterface<M, GV, m>;
 
 public:
-  InstationaryEocStudy(const double T_end,
-                       const std::string timestepping,
-                       std::function<void(const DiscreteBochnerFunction<V, GV, m>&, const std::string&)> visualizer =
-                           [](const auto& /*solution*/, const auto& /*prefix*/) { /*no visualization by default*/ },
-                       const size_t num_refinements = DXTC_CONFIG_GET("num_refinements", 3),
-                       const size_t num_additional_refinements_for_reference =
-                           DXTC_CONFIG_GET("num_additional_refinements_for_reference", 2))
+  InstationaryEocStudy(
+      const double T_end,
+      const std::string timestepping,
+      std::function<void(const DiscreteBochnerFunction<V, GV, m>&, const std::string&)> visualizer =
+          [](const auto& /*solution*/, const auto& /*prefix*/) { /*no visualization by default*/ },
+      const size_t num_refinements = DXTC_CONFIG_GET("num_refinements", 3),
+      const size_t num_additional_refinements_for_reference =
+          DXTC_CONFIG_GET("num_additional_refinements_for_reference", 2))
     : T_end_(T_end)
     , timestepping_(timestepping)
     , num_refinements_(num_refinements)
