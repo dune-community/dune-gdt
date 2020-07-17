@@ -313,10 +313,10 @@ struct SourceBeamMnExpectedResults<LegendreMomentBasis<double, double, 7>, recon
 template <bool reconstruct>
 struct SourceBeamMnExpectedResults<LegendreMomentBasis<double, double, 7>, reconstruct, true>
 {
-  static constexpr double l1norm = reconstruct ? 281.53354213834325 : 315.13471927598744;
-  static constexpr double l2norm = reconstruct ? 492.8631341026487 : 513.73456040950032;
+  static constexpr double l1norm = reconstruct ? 281.49717291377885 : 315.13471927598744;
+  static constexpr double l2norm = reconstruct ? 492.78959375804538 : 513.73456040950032;
   static constexpr double linfnorm = reconstruct ? 1824.235113480062 : 1820.2785947776988;
-  static constexpr double tol = 1e-4;
+  static constexpr double tol = 1e-3;
 };
 
 template <bool reconstruct, bool kinetic_scheme>
