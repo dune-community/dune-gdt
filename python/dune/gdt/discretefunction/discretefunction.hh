@@ -98,6 +98,15 @@ public:
           "vector_type"_a,
           "name"_a = default_name,
           py::keep_alive<0, 1>());
+    if (std::is_same<MatchingVectorTag, XT::LA::bindings::Istl>::value)
+      m.def(XT::Common::to_camel_case(class_id).c_str(),
+            [](const S& space, const std::string& name, const MatchingVectorTag&) {
+              return make_discrete_function(space, name);
+            },
+            "space"_a,
+            "name"_a = default_name,
+            "vector_type"_a = XT::LA::bindings::Istl(),
+            py::keep_alive<0, 1>());
     return c;
   } // ... bind(...)
 }; // class DiscreteFunction

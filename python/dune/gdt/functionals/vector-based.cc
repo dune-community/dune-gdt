@@ -166,13 +166,22 @@ public:
           py::keep_alive<0, 1>(),
           py::keep_alive<0, 2>(),
           py::keep_alive<0, 3>());
-    m.def(FactoryName.c_str(),
-          [](GP& grid, const SS& source_space, const VectorTag&) { return type(grid.leaf_view(), source_space); },
-          "grid"_a,
-          "source_space"_a,
-          "vector_type"_a,
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>());
+    if (std::is_same<VectorTag, XT::LA::bindings::Istl>::value)
+      m.def(FactoryName.c_str(),
+            [](GP& grid, const SS& source_space, const VectorTag&) { return type(grid.leaf_view(), source_space); },
+            "grid"_a,
+            "source_space"_a,
+            "la_backend"_a = VectorTag(),
+            py::keep_alive<0, 1>(),
+            py::keep_alive<0, 2>());
+    else
+      m.def(FactoryName.c_str(),
+            [](GP& grid, const SS& source_space, const VectorTag&) { return type(grid.leaf_view(), source_space); },
+            "grid"_a,
+            "source_space"_a,
+            "la_backend"_a,
+            py::keep_alive<0, 1>(),
+            py::keep_alive<0, 2>());
     m.def(XT::Common::to_camel_case(vector_id + "_" + class_id).c_str(),
           [](GP& grid, const SS& source_space) { return type(grid.leaf_view(), source_space); },
           "grid"_a,

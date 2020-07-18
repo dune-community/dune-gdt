@@ -122,20 +122,37 @@ private:
             py::keep_alive<0, 1>(),
             py::keep_alive<0, 2>(),
             py::keep_alive<0, 3>());
-      m.def(FactoryName.c_str(),
-            [](GP& grid, const SS& source_space, const RS& range_space, const MatrixTag&) {
-              return type(grid.leaf_view(),
-                          source_space,
-                          range_space,
-                          make_element_and_intersection_sparsity_pattern(range_space, source_space, grid.leaf_view()));
-            },
-            "grid"_a,
-            "source_space"_a,
-            "range_space"_a,
-            "unused_matrixbackend_tag"_a,
-            py::keep_alive<0, 1>(),
-            py::keep_alive<0, 2>(),
-            py::keep_alive<0, 3>());
+      if (std::is_same<MatrixTag, XT::LA::bindings::Istl>::value) {
+        m.def(FactoryName.c_str(),
+              [](GP& grid,
+                 const SS& source_space,
+                 const RS& range_space,
+                 const XT::LA::SparsityPatternDefault& pattern,
+                 const MatrixTag&) { return type(grid.leaf_view(), source_space, range_space, pattern); },
+              "grid"_a,
+              "source_space"_a,
+              "range_space"_a,
+              "sparsity_pattern"_a,
+              "la_backend"_a = MatrixTag(),
+              py::keep_alive<0, 1>(),
+              py::keep_alive<0, 2>(),
+              py::keep_alive<0, 3>());
+        m.def(FactoryName.c_str(),
+              [](GP& grid, const SS& source_space, const RS& range_space, const MatrixTag&) {
+                return type(
+                    grid.leaf_view(),
+                    source_space,
+                    range_space,
+                    make_element_and_intersection_sparsity_pattern(range_space, source_space, grid.leaf_view()));
+              },
+              "grid"_a,
+              "source_space"_a,
+              "range_space"_a,
+              "la_backend"_a = MatrixTag(),
+              py::keep_alive<0, 1>(),
+              py::keep_alive<0, 2>(),
+              py::keep_alive<0, 3>());
+      }
     }
   }; // struct addbind<false, ...>
 
