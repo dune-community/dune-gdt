@@ -14,7 +14,9 @@
 #include <boost/math/special_functions/legendre.hpp>
 #include <boost/math/special_functions/spherical_harmonic.hpp>
 
-#include <dune/xt/data/coordinates.hh>
+#if HAVE_DUNE_XT_DATA
+#  include <dune/xt/data/coordinates.hh>
+#endif
 
 #include "interface.hh"
 

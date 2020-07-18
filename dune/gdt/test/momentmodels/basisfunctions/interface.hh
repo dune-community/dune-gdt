@@ -409,6 +409,7 @@ public:
                                                                               const size_t additional_refinements = 0)
   {
     QuadraturesType ret(num_intervals);
+#if HAVE_DUNE_XT_DATA
     const auto quads_per_interval = std::pow(2, additional_refinements);
     const auto quadrature_boundaries = create_1d_partitioning(num_intervals * quads_per_interval);
     // quadrature on reference interval [0, 1]
@@ -428,13 +429,21 @@ public:
         } // quad_points
       } // jj
     } // quad_cells
+#else // HAVE_DUNE_XT_DATA
+    DUNE_THROW(XT::Common::Exceptions::dependency_missing, "dune-xt-data");
+#endif
     return ret;
   }
 
   template <size_t dD = dimDomain>
   static std::enable_if_t<dD == 3, QuadraturesType> lebedev_quadrature(const size_t quad_order)
   {
+#if HAVE_DUNE_XT_DATA
     return QuadraturesType(1, XT::Data::LebedevQuadrature<DomainFieldType, true>::get(quad_order));
+#else
+    DUNE_THROW(XT::Common::Exceptions::dependency_missing, "dune-xt-data");
+    return QuadraturesType();
+#endif
   }
 
   static RangeFieldType unit_ball_volume_exact()
@@ -454,8 +463,12 @@ public:
   RangeFieldType unit_ball_volume_quad() const
   {
     RangeFieldType ret(0.);
+#if HAVE_DUNE_XT_DATA
     for (const auto& quad_point : XT::Data::merged_quadrature(quadratures_))
       ret += quad_point.weight();
+#else
+    DUNE_THROW(XT::Common::Exceptions::dependency_missing, "dune-xt-data");
+#endif
     return ret;
   }
 
@@ -508,11 +521,15 @@ protected:
   static std::vector<MergedQuadratureIterator> create_decomposition(const QuadraturesType& quadratures,
                                                                     const size_t num_threads)
   {
-    const size_t size = XT::Data::merged_quadrature(quadratures).size();
     std::vector<MergedQuadratureIterator> ret(num_threads + 1);
+#if HAVE_DUNE_XT_DATA
+    const size_t size = XT::Data::merged_quadrature(quadratures).size();
     for (size_t ii = 0; ii < num_threads; ++ii)
       ret[ii] = XT::Data::merged_quadrature(quadratures).iterator(size / num_threads * ii);
     ret[num_threads] = XT::Data::merged_quadrature(quadratures).iterator(size);
+#else
+    DUNE_THROW(XT::Common::Exceptions::dependency_missing, "dune-xt-data");
+#endif
     return ret;
   }
 
@@ -521,6 +538,7 @@ protected:
                                    const size_t v_index,
                                    const bool reflecting = false) const
   {
+#if HAVE_DUNE_XT_DATA
     const size_t num_threads =
         std::min(XT::Common::threadManager().max_threads(), XT::Data::merged_quadrature(quadratures).size());
     const auto decomposition = create_decomposition(quadratures, num_threads);
@@ -542,6 +560,9 @@ protected:
     matrix *= 0.;
     for (size_t ii = 0; ii < num_threads; ++ii)
       matrix += local_matrices[ii];
+#else
+    DUNE_THROW(XT::Common::Exceptions::dependency_missing, "dune-xt-data");
+#endif
   } // void parallel_quadrature(...)
 
   virtual void calculate_in_thread(MatrixType& local_matrix,
@@ -575,6 +596,8 @@ protected:
 
   virtual DynamicRangeType integrated_initializer(const QuadraturesType& quadratures) const
   {
+    DynamicRangeType ret(dimRange, 0.);
+#if HAVE_DUNE_XT_DATA
     const size_t num_threads =
         std::min(XT::Common::threadManager().max_threads(), XT::Data::merged_quadrature(quadratures).size());
     const auto decomposition = create_decomposition(quadratures, num_threads);
@@ -590,9 +613,11 @@ protected:
     for (size_t ii = 0; ii < num_threads; ++ii)
       threads[ii].join();
     // add local matrices
-    DynamicRangeType ret(dimRange, 0.);
     for (size_t ii = 0; ii < num_threads; ++ii)
       ret += local_vectors[ii];
+#else
+    DUNE_THROW(XT::Common::Exceptions::dependency_missing, "dune-xt-data");
+#endif
     return ret;
   }
 
