@@ -17,20 +17,8 @@ namespace Dune {
 namespace GDT {
 
 
-/// \sa XT::Common::print
-template <class T>
-XT::Common::Printer<T, false> print(const T& value, const XT::Common::Configuration& param = {})
-{
-  return XT::Common::Printer<T, false>(value, param);
-}
-
-
-/// \sa XT::Common::repr
-template <class T>
-XT::Common::Printer<T, true> repr(const T& value, const XT::Common::Configuration& param = {})
-{
-  return XT::Common::Printer<T, true>(value, param);
-}
+using XT::Common::print;
+using XT::Common::repr;
 
 
 } // namespace GDT
