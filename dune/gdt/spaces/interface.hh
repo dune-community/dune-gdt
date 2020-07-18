@@ -30,6 +30,7 @@
 #include <dune/gdt/local/functionals/integrals.hh>
 #include <dune/gdt/local/integrands/conversion.hh>
 #include <dune/gdt/local/integrands/product.hh>
+#include <dune/gdt/print.hh>
 #include <dune/gdt/spaces/basis/interface.hh>
 #include <dune/gdt/spaces/mapper/interfaces.hh>
 #include <dune/gdt/spaces/parallel/communication.hh>
@@ -253,9 +254,10 @@ public:
       std::vector<typename GlobalBasisType::LocalizedType::RangeType> father_basis_values(father_basis->size());
       DUNE_THROW_IF(father_dof_data.size() != father_basis->size(),
                     Exceptions::space_error,
-                    "element: " << element << "\nelement.level() = " << element.level() << "\nfather: " << *father
-                                << "\nfather.level() = " << father->level() << "\nfather_dof_data.size() = "
-                                << father_dof_data.size() << "\nfather_basis->size() = " << father_basis->size());
+                    "element: " << print(element) << "\nelement.level() = " << element.level()
+                                << "\nfather: " << print(*father) << "\nfather.level() = " << father->level()
+                                << "\nfather_dof_data.size() = " << father_dof_data.size()
+                                << "\nfather_basis->size() = " << father_basis->size());
       element_basis->interpolate(
           [&](const auto& point_in_element_reference_element_coordinates) {
             const auto point_in_physical_coordinates =
@@ -284,7 +286,7 @@ public:
       std::vector<typename GlobalBasisType::LocalizedType::RangeType> original_basis_values(original_basis->size());
       DUNE_THROW_IF(original_element_DoF_data.size() != original_basis->size(),
                     Exceptions::space_error,
-                    "element: " << element << "\nelement.level() = " << element.level()
+                    "element: " << print(element) << "\nelement.level() = " << element.level()
                                 << "\noriginal_element_DoF_data.size() = " << original_element_DoF_data.size()
                                 << "\noriginal_basis->size() = " << original_basis->size());
       // - interpolate the data from the father to the element (no need to map the coordinate, same geometry)
