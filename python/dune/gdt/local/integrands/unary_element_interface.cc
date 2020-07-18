@@ -35,19 +35,22 @@ struct LocalUnaryElementIntegrandInterface_for_all_grids
 
   static void bind(pybind11::module& m)
   {
-    Dune::GDT::bindings::LocalUnaryElementIntegrandInterface<E>::bind(m);
+    using Dune::GDT::bindings::LocalUnaryElementIntegrandInterface;
+    using Dune::GDT::bindings::LocalUnaryElementIntegrandSum;
+
+    LocalUnaryElementIntegrandInterface<G, E>::bind(m);
     if (d > 1) {
-      Dune::GDT::bindings::LocalUnaryElementIntegrandInterface<E, d, 1>::bind(m);
-      Dune::GDT::bindings::LocalUnaryElementIntegrandInterface<E, d, d>::bind(m);
+      LocalUnaryElementIntegrandInterface<G, E, d, 1>::bind(m);
+      LocalUnaryElementIntegrandInterface<G, E, d, d>::bind(m);
     }
     // add your extra dimensions here
     // ...
 
     // need to bind LocalUnaryElementIntegrandSum here due to circular dep with interface
-    Dune::GDT::bindings::LocalUnaryElementIntegrandSum<E>::bind(m);
+    LocalUnaryElementIntegrandSum<G, E>::bind(m);
     if (d > 1) {
-      Dune::GDT::bindings::LocalUnaryElementIntegrandSum<E, d, 1>::bind(m);
-      Dune::GDT::bindings::LocalUnaryElementIntegrandSum<E, d, d>::bind(m);
+      LocalUnaryElementIntegrandSum<G, E, d, 1>::bind(m);
+      LocalUnaryElementIntegrandSum<G, E, d, d>::bind(m);
     }
     // add your extra dimensions here
     // ...

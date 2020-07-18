@@ -74,8 +74,8 @@ private:
             "grid"_a,
             "source_space"_a,
             "range_space"_a,
-            "unused_matrixbackend_tag"_a,
-            "unused_sparsity_tag"_a,
+            "la_backend"_a,
+            "sparsity_type"_a,
             "sparsity_pattern"_a,
             py::keep_alive<0, 1>(),
             py::keep_alive<0, 2>(),
@@ -90,8 +90,8 @@ private:
             "grid"_a,
             "source_space"_a,
             "range_space"_a,
-            "unused_matrixbackend_tag"_a,
-            "unused_sparsity_tag"_a,
+            "la_backend"_a,
+            "sparsity_type"_a,
             py::keep_alive<0, 1>(),
             py::keep_alive<0, 2>(),
             py::keep_alive<0, 3>());
@@ -117,7 +117,7 @@ private:
             "grid"_a,
             "source_space"_a,
             "range_space"_a,
-            "unused_matrixbackend_tag"_a,
+            "la_backend"_a,
             "sparsity_pattern"_a,
             py::keep_alive<0, 1>(),
             py::keep_alive<0, 2>(),
@@ -159,9 +159,9 @@ private:
 public:
   static bound_type bind(pybind11::module& m,
                          const std::string& matrix_id,
-                         const std::string& class_id = "matrix_operator",
-                         const std::string& grid_id = XT::Grid::bindings::grid_name<G>::value(),
-                         const std::string& layer_id = "")
+                         const std::string& grid_id,
+                         const std::string& layer_id = "",
+                         const std::string& class_id = "matrix_operator")
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
@@ -359,11 +359,14 @@ struct MatrixOperator_for_all_grids
 
   static void bind(pybind11::module& m, const std::string& matrix_id)
   {
-    Dune::GDT::bindings::MatrixOperator<M, MT, ST, GV>::bind(m, matrix_id);
+    using Dune::GDT::bindings::MatrixOperator;
+    using Dune::XT::Grid::bindings::grid_name;
+
+    MatrixOperator<M, MT, ST, GV>::bind(m, matrix_id, grid_name<G>::value());
     if (d > 1) {
-      Dune::GDT::bindings::MatrixOperator<M, MT, ST, GV, d, 1>::bind(m, matrix_id);
-      Dune::GDT::bindings::MatrixOperator<M, MT, ST, GV, 1, d>::bind(m, matrix_id);
-      Dune::GDT::bindings::MatrixOperator<M, MT, ST, GV, d, d>::bind(m, matrix_id);
+      MatrixOperator<M, MT, ST, GV, d, 1>::bind(m, matrix_id, grid_name<G>::value());
+      MatrixOperator<M, MT, ST, GV, 1, d>::bind(m, matrix_id, grid_name<G>::value());
+      MatrixOperator<M, MT, ST, GV, d, d>::bind(m, matrix_id, grid_name<G>::value());
     }
     // add your extra dimensions here
     // ...

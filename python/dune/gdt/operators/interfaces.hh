@@ -320,9 +320,8 @@ public:
 
   } // ... addbind_methods(...)
 
-  static bound_type bind(pybind11::module& m,
-                         const std::string& class_id = "operator_interface",
-                         const std::string& grid_id = XT::Grid::bindings::grid_name<G>::value())
+  static bound_type
+  bind(pybind11::module& m, const std::string& grid_id, const std::string& class_id = "operator_interface")
   {
     namespace py = pybind11;
     using namespace pybind11::literals;

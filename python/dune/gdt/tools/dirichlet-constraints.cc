@@ -92,9 +92,9 @@ private:
 
 public:
   static bound_type bind(pybind11::module& m,
-                         const std::string& class_id = "dirichlet_constraints",
-                         const std::string& grid_id = XT::Grid::bindings::grid_name<G>::value(),
-                         const std::string& layer_id = "")
+                         const std::string& grid_id,
+                         const std::string& layer_id = "",
+                         const std::string& class_id = "dirichlet_constraints")
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
@@ -155,9 +155,12 @@ struct DirichletConstraints_for_all_grids
 
   static void bind(pybind11::module& m)
   {
-    Dune::GDT::bindings::DirichletConstraints<GV>::bind(m);
+    using Dune::GDT::bindings::DirichletConstraints;
+    using Dune::XT::Grid::bindings::grid_name;
+
+    DirichletConstraints<GV>::bind(m, grid_name<G>::value());
     if (d > 1)
-      Dune::GDT::bindings::DirichletConstraints<GV, d>::bind(m);
+      DirichletConstraints<GV, d>::bind(m, grid_name<G>::value());
     // add your extra dimensions here
     // ...
     DirichletConstraints_for_all_grids<typename GridTypes::tail_type>::bind(m);

@@ -23,9 +23,12 @@ struct SpaceInterface_for_all_grids
 
   static void bind(pybind11::module& m)
   {
-    Dune::GDT::bindings::SpaceInterface<GV>::bind(m);
+    using Dune::GDT::bindings::SpaceInterface;
+    using Dune::XT::Grid::bindings::grid_name;
+
+    SpaceInterface<GV>::bind(m, grid_name<G>::value());
     if (d > 1)
-      Dune::GDT::bindings::SpaceInterface<GV, d>::bind(m);
+      SpaceInterface<GV, d>::bind(m, grid_name<G>::value());
     // add your extra dimensions here
     // ...
     SpaceInterface_for_all_grids<typename GridTypes::tail_type>::bind(m);

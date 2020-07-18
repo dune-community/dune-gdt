@@ -29,7 +29,8 @@ namespace GDT {
 namespace bindings {
 
 
-template <class E,
+template <class G,
+          class E,
           size_t t_r = 1,
           size_t t_rC = 1,
           class TF = double,
@@ -40,7 +41,6 @@ template <class E,
 class LocalBinaryElementIntegrandInterface
 {
 protected:
-  using G = XT::Grid::extract_grid_t<E>;
   static const size_t d = G::dimension;
 
 public:
@@ -105,9 +105,9 @@ protected:
 
 public:
   static bound_type bind(pybind11::module& m,
-                         const std::string& class_id = "local_binary_element_integrand",
                          const std::string& grid_id = XT::Grid::bindings::grid_name<G>::value(),
-                         const std::string& layer_id = "")
+                         const std::string& layer_id = "",
+                         const std::string& class_id = "local_binary_element_integrand")
   {
     namespace py = pybind11;
     using namespace pybind11::literals;

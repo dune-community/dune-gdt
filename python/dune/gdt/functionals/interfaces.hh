@@ -57,8 +57,8 @@ public:
   } // ... addbind_methods(...)
 
   static bound_type bind(pybind11::module& m,
-                         const std::string& class_id = "functional_interface",
-                         const std::string& grid_id = XT::Grid::bindings::grid_name<G>::value())
+                         const std::string& grid_id = XT::Grid::bindings::grid_name<G>::value(),
+                         const std::string& class_id = "functional_interface")
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
@@ -95,9 +95,11 @@ struct FunctionalInterface_for_all_grids
 
   static void bind(pybind11::module& m)
   {
-    Dune::GDT::bindings::FunctionalInterface<V, G>::bind(m);
+    using Dune::GDT::bindings::FunctionalInterface;
+
+    FunctionalInterface<V, G>::bind(m);
     if (d > 1)
-      Dune::GDT::bindings::FunctionalInterface<V, G, d>::bind(m);
+      FunctionalInterface<V, G, d>::bind(m);
     // add your extra dimensions here
     // ...
     FunctionalInterface_for_all_grids<V, typename GridTypes::tail_type>::bind(m);

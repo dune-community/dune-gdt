@@ -36,46 +36,50 @@ struct LocalBinaryIntersectionIntegrandInterface_for_all_grids
 
   static void bind(pybind11::module& m)
   {
-    Dune::GDT::bindings::LocalBinaryIntersectionIntegrandInterface<I>::bind(m);
+    using Dune::GDT::bindings::LocalBinaryIntersectionIntegrandInterface;
+    using Dune::GDT::bindings::LocalBinaryIntersectionIntegrandSum;
+    using Dune::GDT::bindings::LocalBinaryToUnaryIntersectionIntegrand;
+
+    LocalBinaryIntersectionIntegrandInterface<G, I>::bind(m);
     if (d > 1) {
-      Dune::GDT::bindings::LocalBinaryIntersectionIntegrandInterface<I, 1, 1, F, F, d, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryIntersectionIntegrandInterface<I, 1, 1, F, F, d, d, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryIntersectionIntegrandInterface<I, d, 1, F, F, 1, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryIntersectionIntegrandInterface<I, d, 1, F, F, d, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryIntersectionIntegrandInterface<I, d, 1, F, F, d, d, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryIntersectionIntegrandInterface<I, d, d, F, F, 1, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryIntersectionIntegrandInterface<I, d, d, F, F, d, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryIntersectionIntegrandInterface<I, d, d, F, F, d, d, F>::bind(m);
+      LocalBinaryIntersectionIntegrandInterface<G, I, 1, 1, F, F, d, 1, F>::bind(m);
+      LocalBinaryIntersectionIntegrandInterface<G, I, 1, 1, F, F, d, d, F>::bind(m);
+      LocalBinaryIntersectionIntegrandInterface<G, I, d, 1, F, F, 1, 1, F>::bind(m);
+      LocalBinaryIntersectionIntegrandInterface<G, I, d, 1, F, F, d, 1, F>::bind(m);
+      LocalBinaryIntersectionIntegrandInterface<G, I, d, 1, F, F, d, d, F>::bind(m);
+      LocalBinaryIntersectionIntegrandInterface<G, I, d, d, F, F, 1, 1, F>::bind(m);
+      LocalBinaryIntersectionIntegrandInterface<G, I, d, d, F, F, d, 1, F>::bind(m);
+      LocalBinaryIntersectionIntegrandInterface<G, I, d, d, F, F, d, d, F>::bind(m);
     }
     // add your extra dimensions here
     // ...
 
     // we need to bind LocalBinaryToUnaryIntersectionIntegrand here, since it requires the above interface
-    Dune::GDT::bindings::LocalBinaryToUnaryIntersectionIntegrand<I>::bind(m);
+    LocalBinaryToUnaryIntersectionIntegrand<G, I>::bind(m);
     if (d > 1) {
-      Dune::GDT::bindings::LocalBinaryToUnaryIntersectionIntegrand<I, 1, 1, F, F, d, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryToUnaryIntersectionIntegrand<I, 1, 1, F, F, d, d, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryToUnaryIntersectionIntegrand<I, d, 1, F, F, 1, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryToUnaryIntersectionIntegrand<I, d, 1, F, F, d, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryToUnaryIntersectionIntegrand<I, d, 1, F, F, d, d, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryToUnaryIntersectionIntegrand<I, d, d, F, F, 1, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryToUnaryIntersectionIntegrand<I, d, d, F, F, d, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryToUnaryIntersectionIntegrand<I, d, d, F, F, d, d, F>::bind(m);
+      LocalBinaryToUnaryIntersectionIntegrand<G, I, 1, 1, F, F, d, 1, F>::bind(m);
+      LocalBinaryToUnaryIntersectionIntegrand<G, I, 1, 1, F, F, d, d, F>::bind(m);
+      LocalBinaryToUnaryIntersectionIntegrand<G, I, d, 1, F, F, 1, 1, F>::bind(m);
+      LocalBinaryToUnaryIntersectionIntegrand<G, I, d, 1, F, F, d, 1, F>::bind(m);
+      LocalBinaryToUnaryIntersectionIntegrand<G, I, d, 1, F, F, d, d, F>::bind(m);
+      LocalBinaryToUnaryIntersectionIntegrand<G, I, d, d, F, F, 1, 1, F>::bind(m);
+      LocalBinaryToUnaryIntersectionIntegrand<G, I, d, d, F, F, d, 1, F>::bind(m);
+      LocalBinaryToUnaryIntersectionIntegrand<G, I, d, d, F, F, d, d, F>::bind(m);
     }
     // add your extra dimensions here
     // ...
 
     // we need to bind LocalBinaryIntersectionIntegrandSum here, since it requires the above interface
-    Dune::GDT::bindings::LocalBinaryIntersectionIntegrandSum<I>::bind(m);
+    LocalBinaryIntersectionIntegrandSum<G, I>::bind(m);
     if (d > 1) {
-      Dune::GDT::bindings::LocalBinaryIntersectionIntegrandSum<I, 1, 1, F, F, d, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryIntersectionIntegrandSum<I, 1, 1, F, F, d, d, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryIntersectionIntegrandSum<I, d, 1, F, F, 1, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryIntersectionIntegrandSum<I, d, 1, F, F, d, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryIntersectionIntegrandSum<I, d, 1, F, F, d, d, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryIntersectionIntegrandSum<I, d, d, F, F, 1, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryIntersectionIntegrandSum<I, d, d, F, F, d, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryIntersectionIntegrandSum<I, d, d, F, F, d, d, F>::bind(m);
+      LocalBinaryIntersectionIntegrandSum<G, I, 1, 1, F, F, d, 1, F>::bind(m);
+      LocalBinaryIntersectionIntegrandSum<G, I, 1, 1, F, F, d, d, F>::bind(m);
+      LocalBinaryIntersectionIntegrandSum<G, I, d, 1, F, F, 1, 1, F>::bind(m);
+      LocalBinaryIntersectionIntegrandSum<G, I, d, 1, F, F, d, 1, F>::bind(m);
+      LocalBinaryIntersectionIntegrandSum<G, I, d, 1, F, F, d, d, F>::bind(m);
+      LocalBinaryIntersectionIntegrandSum<G, I, d, d, F, F, 1, 1, F>::bind(m);
+      LocalBinaryIntersectionIntegrandSum<G, I, d, d, F, F, d, 1, F>::bind(m);
+      LocalBinaryIntersectionIntegrandSum<G, I, d, d, F, F, d, d, F>::bind(m);
     }
     // add your extra dimensions here
     // ...

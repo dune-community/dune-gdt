@@ -22,19 +22,24 @@ struct OperatorInterface_for_all_grids
 
   static void bind(pybind11::module& m)
   {
-    Dune::GDT::bindings::OperatorInterface<M, G>::bind(m);
-    Dune::GDT::bindings::ConstLincombOperator<M, G>::bind(m);
-    Dune::GDT::bindings::LincombOperator<M, G>::bind(m);
+    using Dune::GDT::bindings::ConstLincombOperator;
+    using Dune::GDT::bindings::LincombOperator;
+    using Dune::GDT::bindings::OperatorInterface;
+    using Dune::XT::Grid::bindings::grid_name;
+
+    OperatorInterface<M, G>::bind(m, grid_name<G>::value());
+    ConstLincombOperator<M, G>::bind(m, grid_name<G>::value());
+    LincombOperator<M, G>::bind(m, grid_name<G>::value());
     if (d > 1) {
-      Dune::GDT::bindings::OperatorInterface<M, G, d, 1, 1, 1>::bind(m);
-      Dune::GDT::bindings::ConstLincombOperator<M, G, d, 1, 1, 1>::bind(m);
-      Dune::GDT::bindings::LincombOperator<M, G, d, 1, 1, 1>::bind(m);
-      Dune::GDT::bindings::OperatorInterface<M, G, 1, 1, d, 1>::bind(m);
-      Dune::GDT::bindings::ConstLincombOperator<M, G, 1, 1, d, 1>::bind(m);
-      Dune::GDT::bindings::LincombOperator<M, G, 1, 1, d, 1>::bind(m);
-      Dune::GDT::bindings::OperatorInterface<M, G, d, 1, d, 1>::bind(m);
-      Dune::GDT::bindings::ConstLincombOperator<M, G, d, 1, d, 1>::bind(m);
-      Dune::GDT::bindings::LincombOperator<M, G, d, 1, d, 1>::bind(m);
+      OperatorInterface<M, G, d, 1, 1, 1>::bind(m, grid_name<G>::value());
+      ConstLincombOperator<M, G, d, 1, 1, 1>::bind(m, grid_name<G>::value());
+      LincombOperator<M, G, d, 1, 1, 1>::bind(m, grid_name<G>::value());
+      OperatorInterface<M, G, 1, 1, d, 1>::bind(m, grid_name<G>::value());
+      ConstLincombOperator<M, G, 1, 1, d, 1>::bind(m, grid_name<G>::value());
+      LincombOperator<M, G, 1, 1, d, 1>::bind(m, grid_name<G>::value());
+      OperatorInterface<M, G, d, 1, d, 1>::bind(m, grid_name<G>::value());
+      ConstLincombOperator<M, G, d, 1, d, 1>::bind(m, grid_name<G>::value());
+      LincombOperator<M, G, d, 1, d, 1>::bind(m, grid_name<G>::value());
     }
     // add your extra dimensions here
     // ...

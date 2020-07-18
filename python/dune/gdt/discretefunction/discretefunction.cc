@@ -24,9 +24,11 @@ struct DiscreteFunction_for_all_grids
 
   static void bind(pybind11::module& m)
   {
-    Dune::GDT::bindings::DiscreteFunction<V, VT, GV>::bind(m);
+    using Dune::GDT::bindings::DiscreteFunction;
+
+    DiscreteFunction<V, VT, GV>::bind(m);
     if (d > 1)
-      Dune::GDT::bindings::DiscreteFunction<V, VT, GV, d>::bind(m);
+      DiscreteFunction<V, VT, GV, d>::bind(m);
     // add your extra dimensions here
     // ...
     DiscreteFunction_for_all_grids<V, VT, typename GridTypes::tail_type>::bind(m);

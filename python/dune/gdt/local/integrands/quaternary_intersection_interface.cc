@@ -36,31 +36,34 @@ struct LocalQuaternaryIntersectionIntegrandInterface_for_all_grids
 
   static void bind(pybind11::module& m)
   {
-    Dune::GDT::bindings::LocalQuaternaryIntersectionIntegrandInterface<I>::bind(m);
+    using Dune::GDT::bindings::LocalQuaternaryIntersectionIntegrandInterface;
+    using Dune::GDT::bindings::LocalQuaternaryIntersectionIntegrandSum;
+
+    LocalQuaternaryIntersectionIntegrandInterface<G, I>::bind(m);
     if (d > 1) {
-      Dune::GDT::bindings::LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, d, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, d, d, F>::bind(m);
-      Dune::GDT::bindings::LocalQuaternaryIntersectionIntegrandInterface<I, d, 1, F, F, 1, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalQuaternaryIntersectionIntegrandInterface<I, d, 1, F, F, d, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalQuaternaryIntersectionIntegrandInterface<I, d, 1, F, F, d, d, F>::bind(m);
-      Dune::GDT::bindings::LocalQuaternaryIntersectionIntegrandInterface<I, d, d, F, F, 1, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalQuaternaryIntersectionIntegrandInterface<I, d, d, F, F, d, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalQuaternaryIntersectionIntegrandInterface<I, d, d, F, F, d, d, F>::bind(m);
+      LocalQuaternaryIntersectionIntegrandInterface<G, I, 1, 1, F, F, d, 1, F>::bind(m);
+      LocalQuaternaryIntersectionIntegrandInterface<G, I, 1, 1, F, F, d, d, F>::bind(m);
+      LocalQuaternaryIntersectionIntegrandInterface<G, I, d, 1, F, F, 1, 1, F>::bind(m);
+      LocalQuaternaryIntersectionIntegrandInterface<G, I, d, 1, F, F, d, 1, F>::bind(m);
+      LocalQuaternaryIntersectionIntegrandInterface<G, I, d, 1, F, F, d, d, F>::bind(m);
+      LocalQuaternaryIntersectionIntegrandInterface<G, I, d, d, F, F, 1, 1, F>::bind(m);
+      LocalQuaternaryIntersectionIntegrandInterface<G, I, d, d, F, F, d, 1, F>::bind(m);
+      LocalQuaternaryIntersectionIntegrandInterface<G, I, d, d, F, F, d, d, F>::bind(m);
     }
     // add your extra dimensions here
     // ...
 
     // we need to bind LocalQuaternaryIntersectionIntegrandSum here, since it requires the above interface
-    Dune::GDT::bindings::LocalQuaternaryIntersectionIntegrandSum<I>::bind(m);
+    LocalQuaternaryIntersectionIntegrandSum<G, I>::bind(m);
     if (d > 1) {
-      Dune::GDT::bindings::LocalQuaternaryIntersectionIntegrandSum<I, 1, 1, F, F, d, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalQuaternaryIntersectionIntegrandSum<I, 1, 1, F, F, d, d, F>::bind(m);
-      Dune::GDT::bindings::LocalQuaternaryIntersectionIntegrandSum<I, d, 1, F, F, 1, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalQuaternaryIntersectionIntegrandSum<I, d, 1, F, F, d, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalQuaternaryIntersectionIntegrandSum<I, d, 1, F, F, d, d, F>::bind(m);
-      Dune::GDT::bindings::LocalQuaternaryIntersectionIntegrandSum<I, d, d, F, F, 1, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalQuaternaryIntersectionIntegrandSum<I, d, d, F, F, d, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalQuaternaryIntersectionIntegrandSum<I, d, d, F, F, d, d, F>::bind(m);
+      LocalQuaternaryIntersectionIntegrandSum<G, I, 1, 1, F, F, d, 1, F>::bind(m);
+      LocalQuaternaryIntersectionIntegrandSum<G, I, 1, 1, F, F, d, d, F>::bind(m);
+      LocalQuaternaryIntersectionIntegrandSum<G, I, d, 1, F, F, 1, 1, F>::bind(m);
+      LocalQuaternaryIntersectionIntegrandSum<G, I, d, 1, F, F, d, 1, F>::bind(m);
+      LocalQuaternaryIntersectionIntegrandSum<G, I, d, 1, F, F, d, d, F>::bind(m);
+      LocalQuaternaryIntersectionIntegrandSum<G, I, d, d, F, F, 1, 1, F>::bind(m);
+      LocalQuaternaryIntersectionIntegrandSum<G, I, d, d, F, F, d, 1, F>::bind(m);
+      LocalQuaternaryIntersectionIntegrandSum<G, I, d, d, F, F, d, d, F>::bind(m);
     }
     // add your extra dimensions here
     // ...

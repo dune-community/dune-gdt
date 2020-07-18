@@ -14,4 +14,3 @@ func = ConstantFunction(Dim(1), Dim(1), [1])
 op += LocalElementIntegralBilinearForm(LocalLaplaceIntegrand(GridFunction(grid, func, (Dim(d), Dim(d)))))
 del func
 op.assemble()
-

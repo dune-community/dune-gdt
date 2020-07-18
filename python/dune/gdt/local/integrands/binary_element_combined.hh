@@ -29,7 +29,8 @@ namespace GDT {
 namespace bindings {
 
 
-template <class E,
+template <class G,
+          class E,
           size_t t_r = 1,
           size_t t_rC = 1,
           class TF = double,
@@ -38,19 +39,18 @@ template <class E,
           size_t a_rC = t_rC,
           class AF = TF>
 class LocalBinaryElementIntegrandSum
-  : protected LocalBinaryElementIntegrandInterface<E, t_r, t_rC, TF, F, a_r, a_rC, AF>
+  : protected LocalBinaryElementIntegrandInterface<G, E, t_r, t_rC, TF, F, a_r, a_rC, AF>
 {
-  using BaseType = LocalBinaryElementIntegrandInterface<E, t_r, t_rC, TF, F, a_r, a_rC, AF>;
-  using typename BaseType::G;
+  using BaseType = LocalBinaryElementIntegrandInterface<G, E, t_r, t_rC, TF, F, a_r, a_rC, AF>;
 
 public:
   using type = GDT::LocalBinaryElementIntegrandSum<E, t_r, t_rC, TF, F, a_r, a_rC, AF>;
   using bound_type = pybind11::class_<type, typename BaseType::type>;
 
   static bound_type bind(pybind11::module& m,
-                         const std::string& class_id = "local_binary_element_integrand_sum",
                          const std::string& grid_id = XT::Grid::bindings::grid_name<G>::value(),
-                         const std::string& layer_id = "")
+                         const std::string& layer_id = "",
+                         const std::string& class_id = "local_binary_element_integrand_sum")
   {
     namespace py = pybind11;
     using namespace pybind11::literals;

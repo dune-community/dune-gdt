@@ -28,7 +28,8 @@ namespace GDT {
 namespace bindings {
 
 
-template <class E,
+template <class G,
+          class E,
           size_t t_r = 1,
           size_t t_rC = 1,
           class TF = double,
@@ -38,7 +39,6 @@ template <class E,
           class AF = TF>
 class LocalBinaryToUnaryElementIntegrand
 {
-  using G = std::decay_t<XT::Grid::extract_grid_t<E>>;
   using GP = XT::Grid::GridProvider<G>;
   static const size_t d = G::dimension;
 
@@ -48,9 +48,9 @@ public:
   using bound_type = pybind11::class_<type, base_type>;
 
   static bound_type bind(pybind11::module& m,
-                         const std::string& class_id = "local_binary_to_unary_element_integrand",
+                         const std::string& layer_id = "",
                          const std::string& grid_id = XT::Grid::bindings::grid_name<G>::value(),
-                         const std::string& layer_id = "")
+                         const std::string& class_id = "local_binary_to_unary_element_integrand")
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
@@ -108,7 +108,8 @@ public:
 }; // class LocalBinaryToUnaryElementIntegrand
 
 
-template <class I,
+template <class G,
+          class I,
           size_t t_r = 1,
           size_t t_rC = 1,
           class TF = double,
@@ -118,7 +119,6 @@ template <class I,
           class AF = TF>
 class LocalBinaryToUnaryIntersectionIntegrand
 {
-  using G = std::decay_t<XT::Grid::extract_grid_t<I>>;
   using GP = XT::Grid::GridProvider<G>;
   using E = typename I::Entity;
   static const size_t d = G::dimension;
@@ -129,9 +129,9 @@ public:
   using bound_type = pybind11::class_<type, base_type>;
 
   static bound_type bind(pybind11::module& m,
-                         const std::string& class_id = "local_binary_to_unary_intersection_integrand",
+                         const std::string& layer_id = "",
                          const std::string& grid_id = XT::Grid::bindings::grid_name<G>::value(),
-                         const std::string& layer_id = "")
+                         const std::string& class_id = "local_binary_to_unary_intersection_integrand")
   {
     namespace py = pybind11;
     using namespace pybind11::literals;

@@ -28,10 +28,9 @@ namespace GDT {
 namespace bindings {
 
 
-template <class I, size_t r = 1, class F = double>
+template <class G, class I, size_t r = 1, class F = double>
 class LocalIntersectionProductIntegrand
 {
-  using G = std::decay_t<XT::Grid::extract_grid_t<I>>;
   using GP = XT::Grid::GridProvider<G>;
   using E = typename I::Entity;
   static const size_t d = G::dimension;
@@ -42,9 +41,9 @@ public:
   using bound_type = pybind11::class_<type, base_type>;
 
   static bound_type bind(pybind11::module& m,
-                         const std::string& class_id = "local_intersection_product_integrand",
+                         const std::string& layer_id = "",
                          const std::string& grid_id = XT::Grid::bindings::grid_name<G>::value(),
-                         const std::string& layer_id = "")
+                         const std::string& class_id = "local_intersection_product_integrand")
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
@@ -96,9 +95,11 @@ struct LocalIntersectionProductIntegrand_for_all_grids
 
   static void bind(pybind11::module& m)
   {
-    Dune::GDT::bindings::LocalIntersectionProductIntegrand<I>::bind(m);
+    using Dune::GDT::bindings::LocalIntersectionProductIntegrand;
+
+    LocalIntersectionProductIntegrand<G, I>::bind(m);
     if (d > 1)
-      Dune::GDT::bindings::LocalIntersectionProductIntegrand<I, d>::bind(m);
+      LocalIntersectionProductIntegrand<G, I, d>::bind(m);
     // add your extra dimensions here
     // ...
     LocalIntersectionProductIntegrand_for_all_grids<typename GridTypes::tail_type>::bind(m);

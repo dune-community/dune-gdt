@@ -27,7 +27,8 @@ namespace GDT {
 namespace bindings {
 
 
-template <class E,
+template <class G,
+          class E,
           size_t t_r = 1,
           size_t t_rC = 1,
           class TF = double,
@@ -37,7 +38,6 @@ template <class E,
           class AF = TF>
 class LocalElementIntegralBilinearForm
 {
-  using G = XT::Grid::extract_grid_t<E>;
   static const size_t d = G::dimension;
 
 public:
@@ -46,9 +46,9 @@ public:
   using bound_type = pybind11::class_<type, base_type>;
 
   static bound_type bind(pybind11::module& m,
-                         const std::string& class_id = "local_element_integral_bilinear_form",
+                         const std::string& layer_id = "",
                          const std::string& grid_id = XT::Grid::bindings::grid_name<G>::value(),
-                         const std::string& layer_id = "")
+                         const std::string& class_id = "local_element_integral_bilinear_form")
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
@@ -113,16 +113,18 @@ struct LocalElementIntegralBilinearForm_for_all_grids
 
   static void bind(pybind11::module& m)
   {
-    Dune::GDT::bindings::LocalElementIntegralBilinearForm<E>::bind(m);
+    using Dune::GDT::bindings::LocalElementIntegralBilinearForm;
+
+    LocalElementIntegralBilinearForm<G, E>::bind(m);
     if (d > 1) {
-      Dune::GDT::bindings::LocalElementIntegralBilinearForm<E, 1, 1, F, F, d, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalElementIntegralBilinearForm<E, 1, 1, F, F, d, d, F>::bind(m);
-      Dune::GDT::bindings::LocalElementIntegralBilinearForm<E, d, 1, F, F, 1, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalElementIntegralBilinearForm<E, d, 1, F, F, d, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalElementIntegralBilinearForm<E, d, 1, F, F, d, d, F>::bind(m);
-      Dune::GDT::bindings::LocalElementIntegralBilinearForm<E, d, d, F, F, 1, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalElementIntegralBilinearForm<E, d, d, F, F, d, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalElementIntegralBilinearForm<E, d, d, F, F, d, d, F>::bind(m);
+      LocalElementIntegralBilinearForm<G, E, 1, 1, F, F, d, 1, F>::bind(m);
+      LocalElementIntegralBilinearForm<G, E, 1, 1, F, F, d, d, F>::bind(m);
+      LocalElementIntegralBilinearForm<G, E, d, 1, F, F, 1, 1, F>::bind(m);
+      LocalElementIntegralBilinearForm<G, E, d, 1, F, F, d, 1, F>::bind(m);
+      LocalElementIntegralBilinearForm<G, E, d, 1, F, F, d, d, F>::bind(m);
+      LocalElementIntegralBilinearForm<G, E, d, d, F, F, 1, 1, F>::bind(m);
+      LocalElementIntegralBilinearForm<G, E, d, d, F, F, d, 1, F>::bind(m);
+      LocalElementIntegralBilinearForm<G, E, d, d, F, F, d, d, F>::bind(m);
     }
     // add your extra dimensions here
     // ...

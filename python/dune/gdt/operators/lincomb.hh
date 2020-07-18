@@ -81,9 +81,8 @@ public:
     //    ThisType& operator-=(const ThisType& other)
   } // ... addbind_methods(...)
 
-  static bound_type bind(pybind11::module& m,
-                         const std::string& class_id = "const_lincomb_operator",
-                         const std::string& grid_id = XT::Grid::bindings::grid_name<G>::value())
+  static bound_type
+  bind(pybind11::module& m, const std::string& grid_id, const std::string& class_id = "const_lincomb_operator")
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
@@ -132,9 +131,8 @@ class LincombOperator
 public:
   using bound_type = pybind11::class_<type, base_type>;
 
-  static bound_type bind(pybind11::module& m,
-                         const std::string& class_id = "lincomb_operator",
-                         const std::string& grid_id = XT::Grid::bindings::grid_name<G>::value())
+  static bound_type
+  bind(pybind11::module& m, const std::string& grid_id, const std::string& class_id = "lincomb_operator")
   {
     namespace py = pybind11;
     using namespace pybind11::literals;

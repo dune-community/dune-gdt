@@ -26,11 +26,10 @@ namespace GDT {
 namespace bindings {
 
 
-template <class E, size_t r = 1, size_t rC = 1, class RF = double, class F = double>
+template <class G, class E, size_t r = 1, size_t rC = 1, class RF = double, class F = double>
 class LocalUnaryElementIntegrandInterface
 {
 protected:
-  using G = XT::Grid::extract_grid_t<E>;
   static const size_t d = G::dimension;
   using type = GDT::LocalUnaryElementIntegrandInterface<E, r, rC, RF, F>;
   using bound_type = pybind11::class_<type>;
@@ -72,9 +71,9 @@ protected:
 
 public:
   static bound_type bind(pybind11::module& m,
-                         const std::string& class_id = "local_unary_element_integrand",
-                         const std::string& grid_id = XT::Grid::bindings::grid_name<G>::value(),
-                         const std::string& layer_id = "")
+                         const std::string& layer_id = "",
+                         const std::string& grid_id = Dune::XT::Grid::bindings::grid_name<G>::value(),
+                         const std::string& class_id = "local_unary_element_integrand")
   {
     namespace py = pybind11;
     using namespace pybind11::literals;

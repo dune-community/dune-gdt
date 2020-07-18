@@ -36,7 +36,7 @@ namespace bindings {
 template <class V, class VectorTag, class GV, size_t s_r = 1>
 class VectorBasedFunctional
 {
-  using G = std::decay_t<XT::Grid::extract_grid_t<GV>>;
+  using G = XT::Grid::extract_grid_t<GV>;
   static const size_t d = G::dimension;
   using GP = XT::Grid::GridProvider<G>;
 
@@ -55,9 +55,9 @@ private:
 public:
   static bound_type bind(pybind11::module& m,
                          const std::string& vector_id,
-                         const std::string& class_id = "vector_functional",
+                         const std::string& layer_id = "",
                          const std::string& grid_id = XT::Grid::bindings::grid_name<G>::value(),
-                         const std::string& layer_id = "")
+                         const std::string& class_id = "vector_functional")
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
@@ -208,9 +208,12 @@ struct VectorBasedFunctional_for_all_grids
 
   static void bind(pybind11::module& m, const std::string& vector_id)
   {
-    Dune::GDT::bindings::VectorBasedFunctional<V, VT, GV>::bind(m, vector_id);
+    using Dune::GDT::bindings::VectorBasedFunctional;
+    using Dune::XT::Grid::bindings::grid_name;
+
+    VectorBasedFunctional<V, VT, GV>::bind(m, vector_id);
     if (d > 1)
-      Dune::GDT::bindings::VectorBasedFunctional<V, VT, GV, d>::bind(m, vector_id);
+      VectorBasedFunctional<V, VT, GV, d>::bind(m, vector_id);
     // add your extra dimensions here
     // ...
     VectorBasedFunctional_for_all_grids<V, VT, typename GridTypes::tail_type>::bind(m, vector_id);

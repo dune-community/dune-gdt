@@ -12,7 +12,7 @@
 
 from dune.xt import guarded_import
 
-for mod_name in ( # order should not matter!
+for mod_name in (     # order should not matter!
         '_discretefunction_discretefunction',
         '_discretefunction_dof_vector',
         '_functionals_interfaces_common',

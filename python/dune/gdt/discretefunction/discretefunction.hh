@@ -45,9 +45,9 @@ public:
   using bound_type = pybind11::class_<type, base_type>;
 
   static bound_type bind(pybind11::module& m,
-                         const std::string& class_id = "discrete_function",
+                         const std::string& layer_id = "",
                          const std::string& grid_id = XT::Grid::bindings::grid_name<G>::value(),
-                         const std::string& layer_id = "")
+                         const std::string& class_id = "discrete_function")
   {
     namespace py = pybind11;
     using namespace pybind11::literals;

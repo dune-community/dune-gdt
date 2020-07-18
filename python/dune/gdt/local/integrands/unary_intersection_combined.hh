@@ -29,20 +29,19 @@ namespace GDT {
 namespace bindings {
 
 
-template <class I, size_t r = 1, size_t rC = 1, class RF = double, class F = double>
-class LocalUnaryIntersectionIntegrandSum : protected LocalUnaryIntersectionIntegrandInterface<I, r, rC, RF, F>
+template <class G, class I, size_t r = 1, size_t rC = 1, class RF = double, class F = double>
+class LocalUnaryIntersectionIntegrandSum : protected LocalUnaryIntersectionIntegrandInterface<G, I, r, rC, RF, F>
 {
-  using BaseType = LocalUnaryIntersectionIntegrandInterface<I, r, rC, RF, F>;
-  using typename BaseType::G;
+  using BaseType = LocalUnaryIntersectionIntegrandInterface<G, I, r, rC, RF, F>;
 
 public:
   using type = GDT::LocalUnaryIntersectionIntegrandSum<I, r, rC, RF, F>;
   using bound_type = pybind11::class_<type, typename BaseType::type>;
 
   static bound_type bind(pybind11::module& m,
-                         const std::string& class_id = "local_unary_intersection_integrand_sum",
                          const std::string& grid_id = XT::Grid::bindings::grid_name<G>::value(),
-                         const std::string& layer_id = "")
+                         const std::string& layer_id = "",
+                         const std::string& class_id = "local_unary_intersection_integrand_sum")
   {
     namespace py = pybind11;
     using namespace pybind11::literals;

@@ -29,10 +29,9 @@ namespace GDT {
 namespace bindings {
 
 
-template <class E, class F = double>
+template <class G, class E, class F = double>
 class LocalLinearAdvectionIntegrand
 {
-  using G = std::decay_t<XT::Grid::extract_grid_t<E>>;
   static const size_t d = G::dimension;
 
 public:
@@ -41,9 +40,9 @@ public:
   using bound_type = pybind11::class_<type, base_type>;
 
   static bound_type bind(pybind11::module& m,
-                         const std::string& class_id = "local_linear_advection_integrand",
+                         const std::string& layer_id = "",
                          const std::string& grid_id = XT::Grid::bindings::grid_name<G>::value(),
-                         const std::string& layer_id = "")
+                         const std::string& class_id = "local_linear_advection_integrand")
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
@@ -92,7 +91,10 @@ struct LocalLinearAdvectionIntegrand_for_all_grids
 
   static void bind(pybind11::module& m)
   {
-    Dune::GDT::bindings::LocalLinearAdvectionIntegrand<E>::bind(m);
+    using Dune::GDT::bindings::LocalLinearAdvectionIntegrand;
+
+    LocalLinearAdvectionIntegrand<G, E>::bind(m);
+
     LocalLinearAdvectionIntegrand_for_all_grids<typename GridTypes::tail_type>::bind(m);
   }
 };

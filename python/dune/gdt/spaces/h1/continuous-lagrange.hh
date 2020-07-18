@@ -41,9 +41,8 @@ public:
   using base_type = GDT::SpaceInterface<GV, r, 1, R>;
   using bound_type = pybind11::class_<type, base_type>;
 
-  static bound_type bind(pybind11::module& m,
-                         const std::string& class_id = "continuous_lagrange_space",
-                         const std::string& grid_id = XT::Grid::bindings::grid_name<G>::value())
+  static bound_type
+  bind(pybind11::module& m, const std::string& grid_id, const std::string& class_id = "continuous_lagrange_space")
   {
     namespace py = pybind11;
     using namespace pybind11::literals;

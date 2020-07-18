@@ -29,20 +29,19 @@ namespace GDT {
 namespace bindings {
 
 
-template <class E, size_t r = 1, size_t rC = 1, class RF = double, class F = double>
-class LocalUnaryElementIntegrandSum : protected LocalUnaryElementIntegrandInterface<E, r, rC, RF, F>
+template <class G, class E, size_t r = 1, size_t rC = 1, class RF = double, class F = double>
+class LocalUnaryElementIntegrandSum : protected LocalUnaryElementIntegrandInterface<G, E, r, rC, RF, F>
 {
-  using BaseType = LocalUnaryElementIntegrandInterface<E, r, rC, RF, F>;
-  using typename BaseType::G;
+  using BaseType = LocalUnaryElementIntegrandInterface<G, E, r, rC, RF, F>;
 
 public:
   using type = GDT::LocalUnaryElementIntegrandSum<E, r, rC, RF, F>;
   using bound_type = pybind11::class_<type, typename BaseType::type>;
 
   static bound_type bind(pybind11::module& m,
-                         const std::string& class_id = "local_unary_element_integrand_sum",
-                         const std::string& grid_id = XT::Grid::bindings::grid_name<G>::value(),
-                         const std::string& layer_id = "")
+                         const std::string& layer_id = "",
+                         const std::string& grid_id = Dune::XT::Grid::bindings::grid_name<G>::value(),
+                         const std::string& class_id = "local_unary_element_integrand_sum")
   {
     namespace py = pybind11;
     using namespace pybind11::literals;

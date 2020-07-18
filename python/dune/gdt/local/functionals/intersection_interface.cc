@@ -25,10 +25,9 @@ namespace GDT {
 namespace bindings {
 
 
-template <class I, size_t r = 1, size_t rC = 1, class RF = double, class F = double>
+template <class G, class I, size_t r = 1, size_t rC = 1, class RF = double, class F = double>
 class LocalIntersectionFunctionalInterface
 {
-  using G = XT::Grid::extract_grid_t<I>;
   static const size_t d = G::dimension;
 
 public:
@@ -36,9 +35,9 @@ public:
   using bound_type = pybind11::class_<type>;
 
   static bound_type bind(pybind11::module& m,
-                         const std::string& class_id = "local_intersection_functional",
+                         const std::string& layer_id = "",
                          const std::string& grid_id = XT::Grid::bindings::grid_name<G>::value(),
-                         const std::string& layer_id = "")
+                         const std::string& class_id = "local_intersection_functional")
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
@@ -92,10 +91,13 @@ struct LocalIntersectionFunctionalInterface_for_all_grids
 
   static void bind(pybind11::module& m)
   {
-    Dune::GDT::bindings::LocalIntersectionFunctionalInterface<I>::bind(m);
+    using Dune::GDT::bindings::LocalIntersectionFunctionalInterface;
+    using Dune::XT::Grid::bindings::grid_name;
+
+    LocalIntersectionFunctionalInterface<G, I>::bind(m);
     if (d > 1) {
-      Dune::GDT::bindings::LocalIntersectionFunctionalInterface<I, d, 1, F, F>::bind(m);
-      Dune::GDT::bindings::LocalIntersectionFunctionalInterface<I, d, d, F, F>::bind(m);
+      LocalIntersectionFunctionalInterface<G, I, d, 1, F, F>::bind(m);
+      LocalIntersectionFunctionalInterface<G, I, d, d, F, F>::bind(m);
     }
     // add your extra dimensions here
     // ...

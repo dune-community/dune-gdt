@@ -28,14 +28,12 @@ namespace GDT {
 namespace bindings {
 
 
-template <class I>
+template <class G, class I>
 class LocalLinearAdvectionUpwindInnerCouplingIntegrand
 {
-  using G = XT::Grid::extract_grid_t<I>;
   using E = XT::Grid::extract_entity_t<G>;
   using GP = XT::Grid::GridProvider<G>;
   static const size_t d = G::dimension;
-  static const size_t r = 1;
 
 public:
   using type = GDT::LocalLinearAdvectionUpwindIntegrands::InnerCoupling<I>;
@@ -44,9 +42,9 @@ public:
   using F = typename type::F;
 
   static bound_type bind(pybind11::module& m,
-                         const std::string& class_id = "local_linear_advection_upwind_inner_coupling_integrand",
+                         const std::string& layer_id = "",
                          const std::string& grid_id = XT::Grid::bindings::grid_name<G>::value(),
-                         const std::string& layer_id = "")
+                         const std::string& class_id = "local_linear_advection_upwind_inner_coupling_integrand")
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
@@ -55,7 +53,7 @@ public:
     class_name += "_" + grid_id;
     if (!layer_id.empty())
       class_name += "_" + layer_id;
-    class_name += "_" + XT::Common::to_string(r) + "d_bases";
+    class_name += "_1d_bases";
     class_name += "_to_scalar";
     if (!std::is_same<F, double>::value)
       class_name += "_" + XT::Common::Typename<F>::value(/*fail_wo_typeid=*/true);
@@ -96,7 +94,9 @@ struct LocalLaplaceIPDGInnerCouplingIntegrand_for_all_grids
 
   static void bind(pybind11::module& m)
   {
-    Dune::GDT::bindings::LocalLinearAdvectionUpwindInnerCouplingIntegrand<I>::bind(m);
+    using Dune::GDT::bindings::LocalLinearAdvectionUpwindInnerCouplingIntegrand;
+
+    LocalLinearAdvectionUpwindInnerCouplingIntegrand<G, I>::bind(m);
 
     LocalLaplaceIPDGInnerCouplingIntegrand_for_all_grids<typename GridTypes::tail_type>::bind(m);
   }

@@ -28,11 +28,9 @@ namespace GDT {
 namespace bindings {
 
 
-template <class E, size_t r = 1, class F = double>
+template <class G, class E, size_t r = 1, class F = double>
 class LocalElementProductIntegrand
 {
-  using G = std::decay_t<XT::Grid::extract_grid_t<E>>;
-
 public:
   using type = GDT::LocalElementProductIntegrand<E, r, F>;
   using base_type = GDT::LocalBinaryElementIntegrandInterface<E, r, 1, F, F, r, 1, F>;
@@ -40,9 +38,9 @@ public:
 
 public:
   static bound_type bind(pybind11::module& m,
-                         const std::string& class_id = "local_element_product_integrand",
+                         const std::string& layer_id = "",
                          const std::string& grid_id = XT::Grid::bindings::grid_name<G>::value(),
-                         const std::string& layer_id = "")
+                         const std::string& class_id = "local_element_product_integrand")
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
@@ -92,9 +90,11 @@ struct LocalElementProductIntegrand_for_all_grids
 
   static void bind(pybind11::module& m)
   {
-    Dune::GDT::bindings::LocalElementProductIntegrand<E>::bind(m);
+    using Dune::GDT::bindings::LocalElementProductIntegrand;
+
+    LocalElementProductIntegrand<G, E>::bind(m);
     if (d > 1)
-      Dune::GDT::bindings::LocalElementProductIntegrand<E, d>::bind(m);
+      LocalElementProductIntegrand<G, E, d>::bind(m);
     // add your extra dimensions here
     // ...
     LocalElementProductIntegrand_for_all_grids<typename GridTypes::tail_type>::bind(m);

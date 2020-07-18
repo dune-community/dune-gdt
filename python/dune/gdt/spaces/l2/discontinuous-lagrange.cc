@@ -21,9 +21,12 @@ struct DiscontinuousLagrangeSpace_for_all_grids
 
   static void bind(pybind11::module& m)
   {
-    Dune::GDT::bindings::DiscontinuousLagrangeSpace<GV>::bind(m);
+    using Dune::GDT::bindings::DiscontinuousLagrangeSpace;
+    using Dune::XT::Grid::bindings::grid_name;
+
+    DiscontinuousLagrangeSpace<GV>::bind(m, grid_name<G>::value());
     if (d > 1)
-      Dune::GDT::bindings::DiscontinuousLagrangeSpace<GV, d>::bind(m);
+      DiscontinuousLagrangeSpace<GV, d>::bind(m, grid_name<G>::value());
     // add your extra dimensions here
     // ...
     DiscontinuousLagrangeSpace_for_all_grids<typename GridTypes::tail_type>::bind(m);

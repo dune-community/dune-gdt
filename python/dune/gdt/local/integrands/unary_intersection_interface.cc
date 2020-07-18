@@ -35,19 +35,22 @@ struct LocalUnaryIntersectionIntegrandInterface_for_all_grids
 
   static void bind(pybind11::module& m)
   {
-    Dune::GDT::bindings::LocalUnaryIntersectionIntegrandInterface<I>::bind(m);
+    using Dune::GDT::bindings::LocalUnaryIntersectionIntegrandInterface;
+    using Dune::GDT::bindings::LocalUnaryIntersectionIntegrandSum;
+
+    LocalUnaryIntersectionIntegrandInterface<G, I>::bind(m);
     if (d > 1) {
-      Dune::GDT::bindings::LocalUnaryIntersectionIntegrandInterface<I, d, 1>::bind(m);
-      Dune::GDT::bindings::LocalUnaryIntersectionIntegrandInterface<I, d, d>::bind(m);
+      LocalUnaryIntersectionIntegrandInterface<G, I, d, 1>::bind(m);
+      LocalUnaryIntersectionIntegrandInterface<G, I, d, d>::bind(m);
     }
     // add your extra dimensions here
     // ...
 
     // need to bind LocalUnaryIntersectionIntegrandSum here due to circular dep with interface
-    Dune::GDT::bindings::LocalUnaryIntersectionIntegrandSum<I>::bind(m);
+    LocalUnaryIntersectionIntegrandSum<G, I>::bind(m);
     if (d > 1) {
-      Dune::GDT::bindings::LocalUnaryIntersectionIntegrandSum<I, d, 1>::bind(m);
-      Dune::GDT::bindings::LocalUnaryIntersectionIntegrandSum<I, d, d>::bind(m);
+      LocalUnaryIntersectionIntegrandSum<G, I, d, 1>::bind(m);
+      LocalUnaryIntersectionIntegrandSum<G, I, d, d>::bind(m);
     }
     // add your extra dimensions here
     // ...

@@ -29,10 +29,9 @@ namespace GDT {
 namespace bindings {
 
 
-template <class E, size_t r = 1, class F = double>
+template <class G, class E, size_t r = 1, class F = double>
 class LocalLaplaceIntegrand
 {
-  using G = std::decay_t<XT::Grid::extract_grid_t<E>>;
   using GP = XT::Grid::GridProvider<G>;
   static const size_t d = G::dimension;
 
@@ -42,9 +41,9 @@ public:
   using bound_type = pybind11::class_<type, base_type>;
 
   static bound_type bind(pybind11::module& m,
-                         const std::string& class_id = "local_laplace_integrand",
+                         const std::string& layer_id = "",
                          const std::string& grid_id = XT::Grid::bindings::grid_name<G>::value(),
-                         const std::string& layer_id = "")
+                         const std::string& class_id = "local_laplace_integrand")
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
@@ -105,9 +104,11 @@ struct LocalLaplaceIntegrand_for_all_grids
 
   static void bind(pybind11::module& m)
   {
-    Dune::GDT::bindings::LocalLaplaceIntegrand<E>::bind(m);
+    using Dune::GDT::bindings::LocalLaplaceIntegrand;
+
+    LocalLaplaceIntegrand<G, E>::bind(m);
     if (d > 1)
-      Dune::GDT::bindings::LocalLaplaceIntegrand<E, d>::bind(m);
+      LocalLaplaceIntegrand<G, E, d>::bind(m);
     // add your extra dimensions here
     // ...
     LocalLaplaceIntegrand_for_all_grids<typename GridTypes::tail_type>::bind(m);

@@ -36,46 +36,51 @@ struct LocalBinaryElementIntegrandInterface_for_all_grids
 
   static void bind(pybind11::module& m)
   {
-    Dune::GDT::bindings::LocalBinaryElementIntegrandInterface<E>::bind(m);
+    using Dune::GDT::bindings::LocalBinaryElementIntegrandInterface;
+    using Dune::GDT::bindings::LocalBinaryElementIntegrandSum;
+    using Dune::GDT::bindings::LocalBinaryToUnaryElementIntegrand;
+    using Dune::XT::Grid::bindings::grid_name;
+
+    LocalBinaryElementIntegrandInterface<G, E>::bind(m);
     if (d > 1) {
-      Dune::GDT::bindings::LocalBinaryElementIntegrandInterface<E, 1, 1, F, F, d, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryElementIntegrandInterface<E, 1, 1, F, F, d, d, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryElementIntegrandInterface<E, d, 1, F, F, 1, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryElementIntegrandInterface<E, d, 1, F, F, d, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryElementIntegrandInterface<E, d, 1, F, F, d, d, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryElementIntegrandInterface<E, d, d, F, F, 1, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryElementIntegrandInterface<E, d, d, F, F, d, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryElementIntegrandInterface<E, d, d, F, F, d, d, F>::bind(m);
+      LocalBinaryElementIntegrandInterface<G, E, 1, 1, F, F, d, 1, F>::bind(m);
+      LocalBinaryElementIntegrandInterface<G, E, 1, 1, F, F, d, d, F>::bind(m);
+      LocalBinaryElementIntegrandInterface<G, E, d, 1, F, F, 1, 1, F>::bind(m);
+      LocalBinaryElementIntegrandInterface<G, E, d, 1, F, F, d, 1, F>::bind(m);
+      LocalBinaryElementIntegrandInterface<G, E, d, 1, F, F, d, d, F>::bind(m);
+      LocalBinaryElementIntegrandInterface<G, E, d, d, F, F, 1, 1, F>::bind(m);
+      LocalBinaryElementIntegrandInterface<G, E, d, d, F, F, d, 1, F>::bind(m);
+      LocalBinaryElementIntegrandInterface<G, E, d, d, F, F, d, d, F>::bind(m);
     }
     // add your extra dimensions here
     // ...
 
     // we need to bind LocalBinaryToUnaryElementIntegrand here, since it requires the above interface
-    Dune::GDT::bindings::LocalBinaryToUnaryElementIntegrand<E>::bind(m);
+    LocalBinaryToUnaryElementIntegrand<G, E>::bind(m);
     if (d > 1) {
-      Dune::GDT::bindings::LocalBinaryToUnaryElementIntegrand<E, 1, 1, F, F, d, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryToUnaryElementIntegrand<E, 1, 1, F, F, d, d, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryToUnaryElementIntegrand<E, d, 1, F, F, 1, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryToUnaryElementIntegrand<E, d, 1, F, F, d, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryToUnaryElementIntegrand<E, d, 1, F, F, d, d, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryToUnaryElementIntegrand<E, d, d, F, F, 1, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryToUnaryElementIntegrand<E, d, d, F, F, d, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryToUnaryElementIntegrand<E, d, d, F, F, d, d, F>::bind(m);
+      LocalBinaryToUnaryElementIntegrand<G, E, 1, 1, F, F, d, 1, F>::bind(m);
+      LocalBinaryToUnaryElementIntegrand<G, E, 1, 1, F, F, d, d, F>::bind(m);
+      LocalBinaryToUnaryElementIntegrand<G, E, d, 1, F, F, 1, 1, F>::bind(m);
+      LocalBinaryToUnaryElementIntegrand<G, E, d, 1, F, F, d, 1, F>::bind(m);
+      LocalBinaryToUnaryElementIntegrand<G, E, d, 1, F, F, d, d, F>::bind(m);
+      LocalBinaryToUnaryElementIntegrand<G, E, d, d, F, F, 1, 1, F>::bind(m);
+      LocalBinaryToUnaryElementIntegrand<G, E, d, d, F, F, d, 1, F>::bind(m);
+      LocalBinaryToUnaryElementIntegrand<G, E, d, d, F, F, d, d, F>::bind(m);
     }
     // add your extra dimensions here
     // ...
 
     // we need to bind LocalBinaryElementIntegrandSum here, since it requires the above interface
-    Dune::GDT::bindings::LocalBinaryElementIntegrandSum<E>::bind(m);
+    LocalBinaryElementIntegrandSum<G, E>::bind(m);
     if (d > 1) {
-      Dune::GDT::bindings::LocalBinaryElementIntegrandSum<E, 1, 1, F, F, d, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryElementIntegrandSum<E, 1, 1, F, F, d, d, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryElementIntegrandSum<E, d, 1, F, F, 1, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryElementIntegrandSum<E, d, 1, F, F, d, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryElementIntegrandSum<E, d, 1, F, F, d, d, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryElementIntegrandSum<E, d, d, F, F, 1, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryElementIntegrandSum<E, d, d, F, F, d, 1, F>::bind(m);
-      Dune::GDT::bindings::LocalBinaryElementIntegrandSum<E, d, d, F, F, d, d, F>::bind(m);
+      LocalBinaryElementIntegrandSum<G, E, 1, 1, F, F, d, 1, F>::bind(m);
+      LocalBinaryElementIntegrandSum<G, E, 1, 1, F, F, d, d, F>::bind(m);
+      LocalBinaryElementIntegrandSum<G, E, d, 1, F, F, 1, 1, F>::bind(m);
+      LocalBinaryElementIntegrandSum<G, E, d, 1, F, F, d, 1, F>::bind(m);
+      LocalBinaryElementIntegrandSum<G, E, d, 1, F, F, d, d, F>::bind(m);
+      LocalBinaryElementIntegrandSum<G, E, d, d, F, F, 1, 1, F>::bind(m);
+      LocalBinaryElementIntegrandSum<G, E, d, d, F, F, d, 1, F>::bind(m);
+      LocalBinaryElementIntegrandSum<G, E, d, d, F, F, d, d, F>::bind(m);
     }
     // add your extra dimensions here
     // ...

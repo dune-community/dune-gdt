@@ -20,7 +20,10 @@ struct ContinuousLagrangeSpace_for_all_grids
 
   static void bind(pybind11::module& m)
   {
-    Dune::GDT::bindings::ContinuousLagrangeSpace<GV>::bind(m);
+    using Dune::GDT::bindings::ContinuousLagrangeSpace;
+    using Dune::XT::Grid::bindings::grid_name;
+
+    ContinuousLagrangeSpace<GV>::bind(m, grid_name<G>::value());
     // add your extra dimensions here
     // ...
     ContinuousLagrangeSpace_for_all_grids<typename GridTypes::tail_type>::bind(m);

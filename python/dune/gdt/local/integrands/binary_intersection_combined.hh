@@ -29,7 +29,8 @@ namespace GDT {
 namespace bindings {
 
 
-template <class I,
+template <class G,
+          class I,
           size_t t_r = 1,
           size_t t_rC = 1,
           class TF = double,
@@ -38,19 +39,18 @@ template <class I,
           size_t a_rC = t_rC,
           class AF = TF>
 class LocalBinaryIntersectionIntegrandSum
-  : protected LocalBinaryIntersectionIntegrandInterface<I, t_r, t_rC, TF, F, a_r, a_rC, AF>
+  : protected LocalBinaryIntersectionIntegrandInterface<G, I, t_r, t_rC, TF, F, a_r, a_rC, AF>
 {
-  using BaseType = LocalBinaryIntersectionIntegrandInterface<I, t_r, t_rC, TF, F, a_r, a_rC, AF>;
-  using typename BaseType::G;
+  using BaseType = LocalBinaryIntersectionIntegrandInterface<G, I, t_r, t_rC, TF, F, a_r, a_rC, AF>;
 
 public:
   using type = GDT::LocalBinaryIntersectionIntegrandSum<I, t_r, t_rC, TF, F, a_r, a_rC, AF>;
   using bound_type = pybind11::class_<type, typename BaseType::type>;
 
   static bound_type bind(pybind11::module& m,
-                         const std::string& class_id = "local_binary_intersection_integrand_sum",
+                         const std::string& layer_id = "",
                          const std::string& grid_id = XT::Grid::bindings::grid_name<G>::value(),
-                         const std::string& layer_id = "")
+                         const std::string& class_id = "local_binary_intersection_integrand_sum")
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
