@@ -979,7 +979,7 @@ public:
                                           const size_t k_max,
                                           const RangeFieldType epsilon)
     : BaseType(
-          basis_functions, tau, disable_realizability_check, epsilon_gamma, chi, xi, r_sequence, k_0, k_max, epsilon)
+        basis_functions, tau, disable_realizability_check, epsilon_gamma, chi, xi, r_sequence, k_0, k_max, epsilon)
     , T_minus_one_(std::make_unique<MatrixType>())
   {
     XT::LA::eye_matrix(*T_minus_one_);
@@ -1208,7 +1208,7 @@ public:
                                           const size_t k_max,
                                           const RangeFieldType epsilon)
     : BaseType(
-          basis_functions, tau, disable_realizability_check, epsilon_gamma, chi, xi, r_sequence, k_0, k_max, epsilon)
+        basis_functions, tau, disable_realizability_check, epsilon_gamma, chi, xi, r_sequence, k_0, k_max, epsilon)
   {}
 
   std::unique_ptr<AlphaReturnType> get_alpha(const DomainType& u) const
@@ -1565,11 +1565,11 @@ public:
       *phi *= 1. / density;
 
     // if value has already been calculated for these values, skip computation
-    RangeFieldType tau_prime = rescale ? std::min(tau_
-                                                      / ((1 + std::sqrt(basis_dimRange) * phi->two_norm()) * density
-                                                         + std::sqrt(basis_dimRange) * tau_),
-                                                  tau_)
-                                       : tau_;
+    RangeFieldType tau_prime =
+        rescale ? std::min(
+            tau_ / ((1 + std::sqrt(basis_dimRange) * phi->two_norm()) * density + std::sqrt(basis_dimRange) * tau_),
+            tau_)
+                : tau_;
 
     // calculate moment vector for isotropic distribution
     auto u_iso = std::make_unique<BlockVectorType>(basis_functions_.u_iso());
@@ -2566,11 +2566,11 @@ public:
     DomainType alpha_one;
     basis_functions_.alpha_one(alpha_one);
 
-    RangeFieldType tau_prime = rescale ? std::min(tau_
-                                                      / ((1 + std::sqrt(basis_dimRange) * phi.two_norm()) * density
-                                                         + std::sqrt(basis_dimRange) * tau_),
-                                                  tau_)
-                                       : tau_;
+    RangeFieldType tau_prime =
+        rescale ? std::min(
+            tau_ / ((1 + std::sqrt(basis_dimRange) * phi.two_norm()) * density + std::sqrt(basis_dimRange) * tau_),
+            tau_)
+                : tau_;
 
     // calculate moment vector for isotropic distribution
     DomainType u_iso;
@@ -3222,11 +3222,9 @@ public:
     basis_functions_.alpha_one(alpha_one);
 
     RangeFieldType tau_prime =
-        rescale
-            ? std::min(
-                  tau_ / ((1 + std::sqrt(basis_dimRange) * phi.l2_norm()) * density + std::sqrt(basis_dimRange) * tau_),
-                  tau_)
-            : tau_;
+        rescale ? std::min(
+            tau_ / ((1 + std::sqrt(basis_dimRange) * phi.l2_norm()) * density + std::sqrt(basis_dimRange) * tau_), tau_)
+                : tau_;
     thread_local SparseMatrixType H(basis_dimRange, basis_dimRange, pattern_, 0);
 #    if HAVE_EIGEN
     typedef ::Eigen::SparseMatrix<RangeFieldType, ::Eigen::ColMajor> ColMajorBackendType;

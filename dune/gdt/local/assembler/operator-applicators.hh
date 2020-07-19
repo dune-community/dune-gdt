@@ -208,7 +208,7 @@ public:
 
   LocalIntersectionOperatorApplicator(const ThisType& other)
     : LocalIntersectionOperatorApplicator(
-          *other.local_operator_, other.range_inside_, other.range_outside_, other.param_)
+        *other.local_operator_, other.range_inside_, other.range_outside_, other.param_)
   {}
 
   BaseType* copy() override final
