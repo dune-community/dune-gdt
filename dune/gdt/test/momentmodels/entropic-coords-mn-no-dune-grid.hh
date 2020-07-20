@@ -204,7 +204,7 @@ struct EntropicMnOperator
                      EntropyFluxType& entropy_flux,
                      const double psi_min)
     : grid_size_(
-          std::accumulate(grid_sizes.begin(), grid_sizes.end(), 1., [](const auto& a, const auto& b) { return a * b; }))
+        std::accumulate(grid_sizes.begin(), grid_sizes.end(), 1., [](const auto& a, const auto& b) { return a * b; }))
     , grid_(grid_size_)
     , sigma_a_(grid_size_)
     , sigma_s_(grid_size_)

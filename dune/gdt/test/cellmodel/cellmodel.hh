@@ -67,6 +67,7 @@ struct CellModelSolver
   using ConstEigenVectorViewType = XT::LA::ConstVectorView<EigenVectorType>;
   using R = typename XT::Functions::GenericGridFunction<E, d>::RangeFieldType;
   using DiscreteFunctionType = DiscreteFunction<VectorType, PGV, 1, 1, R>;
+  using ConstDiscreteFunctionType = ConstDiscreteFunction<VectorType, PGV, 1, 1, R>;
   using LocalDiscreteFunctionType = typename DiscreteFunctionType::LocalFunctionType;
   using VectorDiscreteFunctionType = DiscreteFunction<VectorType, PGV, d, 1, R>;
   using VectorLocalDiscreteFunctionType = typename VectorDiscreteFunctionType::LocalFunctionType;

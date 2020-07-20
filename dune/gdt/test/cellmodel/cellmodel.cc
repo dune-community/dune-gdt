@@ -351,50 +351,52 @@ CellModelSolver::CellModelSolver(const std::string testcase,
     FieldVector<double, d> center2{35, 35};
     auto r1 = [center1](const auto& xr) { return 4.0 - (center1 - xr).two_norm(); };
     auto r2 = [center2](const auto& xr) { return 4.0 - (center2 - xr).two_norm(); };
-    const XT::Functions::GenericFunction<d> phi1_initial(
+    phi_initial_funcs.emplace_back(std::make_shared<XT::Functions::GenericFunction<d>>(
         50,
         /*evaluate=*/
         [r = r1, epsilon = epsilon_](const auto& x, const auto& /*param*/) {
           return std::tanh(r(x) / (std::sqrt(2.) * epsilon));
         },
-        /*name=*/"phi1_initial");
-    const XT::Functions::GenericFunction<d> phi2_initial(
+        /*name=*/"phi1_initial"));
+    phi_initial_funcs.emplace_back(std::make_shared<XT::Functions::GenericFunction<d>>(
         50,
         /*evaluate=*/
         [r = r2, epsilon = epsilon_](const auto& x, const auto& /*param*/) {
           return std::tanh(r(x) / (std::sqrt(2.) * epsilon));
         },
-        /*name=*/"phi2_initial");
+        /*name=*/"phi2_initial"));
 
     // initial condition for P is (1,0) + \delta where \delta(x) is vector-valued with random entries following an
     // uniform distribution on the interval [-0.05, 0.05]; restrict to cytoplasm by multiplying with (\phi + 1)/2
     std::srand(1); // set seed for std::rand to 1
-    const XT::Functions::GenericFunction<d, d> P1_initial(50,
-                                                          /*evaluate=*/
-                                                          [phi1_initial](const auto& x, const auto& param) {
-                                                            // auto rand1 = ((std::rand() % 2000) - 1000) / 20000.;
-                                                            // auto rand2 = ((std::rand() % 2000) - 1000) / 20000.;
-                                                            // auto ret = FieldVector<double, d>({1. + rand1, 0. +
-                                                            // rand2});
-                                                            auto ret = FieldVector<double, d>({1., 0.});
-                                                            ret *= (phi1_initial.evaluate(x, param) + 1.) / 2.;
-                                                            return ret;
-                                                          },
-                                                          /*name=*/"P_initial");
-    const XT::Functions::GenericFunction<d, d> P2_initial(50,
-                                                          /*evaluate=*/
-                                                          [phi2_initial](const auto& x, const auto& param) {
-                                                            // auto rand1 = ((std::rand() % 2000) - 1000) / 20000.;
-                                                            // auto rand2 = ((std::rand() % 2000) - 1000) / 20000.;
-                                                            // auto ret = FieldVector<double, d>({1. + rand1, 0. +
-                                                            // rand2});
-                                                            auto ret = FieldVector<double, d>({1., 0.});
-                                                            ret *= (phi2_initial.evaluate(x, param) + 1.) / 2.;
-                                                            return ret;
-                                                          },
-                                                          /*name=*/"P_initial");
+    P_initial_funcs.emplace_back(std::make_shared<const XT::Functions::GenericFunction<d, d>>(
+        50,
+        /*evaluate=*/
+        [& phi1_initial = phi_initial_funcs[0]](const auto& x, const auto& param) {
+          // auto rand1 = ((std::rand() % 2000) - 1000) / 20000.;
+          // auto rand2 = ((std::rand() % 2000) - 1000) / 20000.;
+          // auto ret = FieldVector<double, d>({1. + rand1, 0. +
+          // rand2});
+          auto ret = FieldVector<double, d>({1., 0.});
+          ret *= (phi1_initial->evaluate(x, param) + 1.) / 2.;
+          return ret;
+        },
+        /*name=*/"P1_initial"));
+    P_initial_funcs.emplace_back(std::make_shared<const XT::Functions::GenericFunction<d, d>>(
+        50,
+        /*evaluate=*/
+        [& phi2_initial = phi_initial_funcs[1]](const auto& x, const auto& param) {
+          // auto rand1 = ((std::rand() % 2000) - 1000) / 20000.;
+          // auto rand2 = ((std::rand() % 2000) - 1000) / 20000.;
+          // auto ret = FieldVector<double, d>({1. + rand1, 0. +
+          // rand2});
+          auto ret = FieldVector<double, d>({1., 0.});
+          ret *= (phi2_initial->evaluate(x, param) + 1.) / 2.;
+          return ret;
+        },
+        /*name=*/"P2_initial"));
 
-    const XT::Functions::ConstantFunction<d, d> u_initial(0.);
+    u_initial_func = std::make_shared<const XT::Functions::ConstantFunction<d, d>>(0.);
   } else {
     DUNE_THROW(Dune::NotImplemented, "Unknown testcase");
   }
@@ -537,13 +539,15 @@ bool CellModelSolver::finished() const
 //********************************* Solve methods for whole system of equations ************************************
 //******************************************************************************************************************
 
-// Solves whole system of equations using the values stored in stokes_vector_, ofield_vectors_ and pfield_vectors_  as
-// initial values Returns the whole trajectory, i.e., ret[i] contains the results in the i-th timestep. The first
-// num_cells_ entries of ret[i] correspond to the phasefield for each cell, the next num_cells entries are the
-// orientation field vectors, and the last one is the stokes vector. dt: Time step length. write: Whether to write
-// .vtu and .txt files. write_step: Time interval at which results should be written. If negative, all steps are
-// written. Ignored if write = false. filename: Prefix for .vtu and .txt files. Ignored if write = false. subsampling:
-// Whether to use subsampling for visualization. Ignored if write = false.
+/**
+ * Solves whole system of equations using the values stored in stokes_vector_, ofield_vectors_ and pfield_vectors_ as
+ *initial values. Returns the whole trajectory, i.e., ret[i] contains the results in the i-th timestep. The first
+ *num_cells_ entries of ret[i] correspond to the phasefield for each cell, the next num_cells entries are the
+ *orientation field vectors, and the last one is the stokes vector. dt: Time step length. write: Whether to write .vtu
+ *and .txt files. write_step: Time interval at which results should be written. If negative, all steps are  written.
+ *Ignored if write = false. filename: Prefix for .vtu and .txt files. Ignored if write = false. subsampling: Whether to
+ *use subsampling for visualization. Ignored if write = false.
+ **/
 std::vector<std::vector<CellModelSolver::VectorType>>
 CellModelSolver::solve(const bool write, const double write_step, const std::string filename, const bool subsampling)
 {
@@ -570,11 +574,11 @@ CellModelSolver::solve(const bool write, const double write_step, const std::str
     // do a timestep
     std::cout << "Current time: " << t_ << std::endl;
     for (size_t kk = 0; kk < num_cells_; ++kk) {
-      prepare_pfield_operator(dt_, kk);
+      prepare_pfield_operator(kk);
       ret[kk].push_back(apply_inverse_pfield_operator(ret[kk].back(), kk));
       set_pfield_vec(kk, ret[kk].back());
       std::cout << "Pfield " << kk << " done" << std::endl;
-      prepare_ofield_operator(dt_, kk);
+      prepare_ofield_operator(kk);
       ret[num_cells_ + kk].push_back(apply_inverse_ofield_operator(ret[num_cells_ + kk].back(), kk));
       set_ofield_vec(kk, ret[num_cells_ + kk].back());
       std::cout << "Ofield " << kk << " done" << std::endl;
@@ -766,17 +770,19 @@ void CellModelSolver::visualize(const std::string& prefix,
   if (vtu) {
     u_.add_to_vtkwriter(*vtk_writer);
     p_.add_to_vtkwriter(*vtk_writer);
-    VectorType phi_vec(size_phi_, 0.);
+    std::vector<VectorType> phi_vec(num_cells_, VectorType(size_phi_, 0.));
+    std::vector<std::shared_ptr<ConstDiscreteFunctionType>> phi_funcs(num_cells_);
     for (size_t kk = 0; kk < num_cells_; ++kk) {
       for (size_t ii = 0; ii < size_phi_; ++ii)
-        phi_vec[ii] = phi_[kk].dofs().vector()[ii];
-      const auto phi_func = make_discrete_function(phi_space_, phi_vec, "phi_" + XT::Common::to_string(kk));
+        phi_vec[kk][ii] = phi_[kk].dofs().vector()[ii];
+      phi_funcs[kk] =
+          std::make_shared<ConstDiscreteFunctionType>(phi_space_, phi_vec[kk], "phi_" + XT::Common::to_string(kk));
       P_[kk].add_to_vtkwriter(*vtk_writer);
       Pnat_[kk].add_to_vtkwriter(*vtk_writer);
-      phi_func.add_to_vtkwriter(*vtk_writer);
+      phi_funcs[kk]->add_to_vtkwriter(*vtk_writer);
       phinat_[kk].add_to_vtkwriter(*vtk_writer);
       mu_[kk].add_to_vtkwriter(*vtk_writer);
-      phi_func.add_gradient_to_vtkwriter(*vtk_writer);
+      phi_funcs[kk]->add_gradient_to_vtkwriter(*vtk_writer);
       phinat_[kk].add_gradient_to_vtkwriter(*vtk_writer);
       mu_[kk].add_gradient_to_vtkwriter(*vtk_writer);
     }
@@ -1172,11 +1178,12 @@ void CellModelSolver::get_unique_deim_dofs(std::vector<size_t>& unique_range_dof
   std::sort(unique_range_dofs.begin(), unique_range_dofs.end());
   unique_range_dofs.erase(std::unique(unique_range_dofs.begin(), unique_range_dofs.end()), unique_range_dofs.end());
   // check that all dofs are valid
-  DEBUG_THROW_IF(!XT::Common::transform_reduce(unique_range_dofs.begin(),
-                                               unique_range_dofs.end(),
-                                               true,
-                                               [](const bool& a, const bool& b) { return a && b; },
-                                               [size = max_dof_value](const size_t& a) { return a < size; }),
+  DEBUG_THROW_IF(!XT::Common::transform_reduce(
+                     unique_range_dofs.begin(),
+                     unique_range_dofs.end(),
+                     true,
+                     [](const bool& a, const bool& b) { return a && b; },
+                     [size = max_dof_value](const size_t& a) { return a < size; }),
                  Dune::XT::Common::Exceptions::wrong_input_given,
                  "At least one of the given output DoFs is too large!");
 }
@@ -1201,11 +1208,12 @@ void CellModelSolver::sort_and_remove_duplicates_in_deim_source_dofs(
     std::sort(source_dofs[ii].begin(), source_dofs[ii].end());
     source_dofs[ii].erase(std::unique(source_dofs[ii].begin(), source_dofs[ii].end()), source_dofs[ii].end());
     // check that dofs are valid
-    DEBUG_THROW_IF(!XT::Common::transform_reduce(source_dofs[ii].begin(),
-                                                 source_dofs[ii].end(),
-                                                 true,
-                                                 [](const bool& a, const bool& b) { return a && b; },
-                                                 [size = sizes[ii]](const size_t& a) { return a < size; }),
+    DEBUG_THROW_IF(!XT::Common::transform_reduce(
+                       source_dofs[ii].begin(),
+                       source_dofs[ii].end(),
+                       true,
+                       [](const bool& a, const bool& b) { return a && b; },
+                       [size = sizes[ii]](const size_t& a) { return a < size; }),
                    Dune::XT::Common::Exceptions::wrong_input_given,
                    "At least one of the given output DoFs is too large!");
   }
@@ -2286,7 +2294,7 @@ CellModelSolver::get_upper_right(const std::string& testcase)
 // get directions in which domain is periodic from testcase name
 std::string CellModelSolver::get_periodic_directions(const std::string& testcase)
 {
-  if (testcase == "single_cell")
+  if (testcase == "single_cell" || testcase == "channel")
     return "01";
   else if (testcase == "two_cells")
     return "00";
@@ -2298,7 +2306,7 @@ std::string CellModelSolver::get_periodic_directions(const std::string& testcase
 // get number of cells from testcase name
 size_t CellModelSolver::get_num_cells(const std::string& testcase)
 {
-  if (testcase == "single_cell")
+  if (testcase == "single_cell" || testcase == "channel")
     return 1;
   else if (testcase == "two_cells")
     return 2;

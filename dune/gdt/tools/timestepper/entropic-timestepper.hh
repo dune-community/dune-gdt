@@ -243,16 +243,16 @@ public:
           basis_functions.adjust_alpha_to_ensure_min_density(alpha_np1_[nn], psi_min);
         }
         // calculate error
-        mixed_error =
-            XT::Common::transform_reduce(alpha_tmp_.data(),
-                                         alpha_tmp_.data() + alpha_tmp_.num_elements(),
-                                         alpha_np1_.data(),
-                                         0.,
-                                         /*reduction*/ [](const auto& a, const auto& b) { return std::max(a, b); },
-                                         /*transformation*/
-                                         [atol = atol_, rtol = rtol_](const auto& a, const auto& b) {
-                                           return std::abs(a - b) / (atol + std::max(std::abs(a), std::abs(b)) * rtol);
-                                         });
+        mixed_error = XT::Common::transform_reduce(
+            alpha_tmp_.data(),
+            alpha_tmp_.data() + alpha_tmp_.num_elements(),
+            alpha_np1_.data(),
+            0.,
+            /*reduction*/ [](const auto& a, const auto& b) { return std::max(a, b); },
+            /*transformation*/
+            [atol = atol_, rtol = rtol_](const auto& a, const auto& b) {
+              return std::abs(a - b) / (atol + std::max(std::abs(a), std::abs(b)) * rtol);
+            });
 
         // scale dt to get the estimated optimal time step length
         time_step_scale_factor =
