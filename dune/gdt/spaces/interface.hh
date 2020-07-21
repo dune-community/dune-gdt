@@ -18,6 +18,7 @@
 
 #include <dune/grid/utility/persistentcontainer.hh>
 
+#include <dune/xt/common/timedlogging.hh>
 #include <dune/xt/la/container/vector-interface.hh>
 #include <dune/xt/la/solver.hh>
 #include <dune/xt/grid/entity.hh>
@@ -46,10 +47,11 @@ class ConstDiscreteFunction;
 
 
 template <class GridView, size_t range_dim = 1, size_t range_dim_columns = 1, class RangeField = double>
-class SpaceInterface
+class SpaceInterface : public XT::Common::WithLogger<SpaceInterface<GridView, range_dim, range_dim_columns, RangeField>>
 {
   static_assert(XT::Grid::is_view<GridView>::value, "");
   using ThisType = SpaceInterface;
+  using Logger = XT::Common::WithLogger<SpaceInterface<GridView, range_dim, range_dim_columns, RangeField>>;
 
 public:
   using GridViewType = GridView;
@@ -70,10 +72,18 @@ public:
 
   using DofCommunicatorType = typename DofCommunicationChooser<GridViewType>::Type;
 
-  SpaceInterface()
-    : dof_communicator_(nullptr)
+  SpaceInterface(const std::string& logging_prefix = "",
+                 const std::string& logging_id_ = "",
+                 const bool logging_disabled = true)
+    : Logger(
+        logging_prefix.empty() ? "gdt" : logging_prefix, logging_id_.empty() ? "Space" : logging_id_, logging_disabled)
+    , dof_communicator_(nullptr)
     , adapted_(false)
   {}
+
+  SpaceInterface(const ThisType& other) = default;
+
+  SpaceInterface(ThisType&& source) = default;
 
   virtual ThisType* copy() const = 0;
 

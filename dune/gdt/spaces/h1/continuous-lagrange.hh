@@ -65,18 +65,23 @@ private:
   using GlobalBasisImplementation = DefaultGlobalBasis<GridViewType, r, 1, R>;
 
 public:
-  ContinuousLagrangeSpace(GridViewType grd_vw, const int order)
-    : grid_view_(grd_vw)
+  ContinuousLagrangeSpace(GridViewType grd_vw, const int order, const std::string& logging_prefix = "")
+    : BaseType(logging_prefix.empty() ? "gdt" : "gdt.spaces.h1.cg",
+               logging_prefix.empty() ? "ContinuousLagrangeSpace" : logging_prefix,
+               /*logging_disabled=*/logging_prefix.empty())
+    , grid_view_(grd_vw)
     , fe_order_(order)
     , local_finite_elements_(std::make_unique<LocalLagrangeFiniteElementFamily<D, d, R, r>>())
     , mapper_(nullptr)
     , basis_(nullptr)
   {
+    LOG_(info) << this->logging_id << "(&grd_vw=" << &grd_vw << ", order=" << fe_order_ << ")" << std::endl;
     this->update_after_adapt();
   }
 
   ContinuousLagrangeSpace(const ThisType& other)
-    : grid_view_(other.grid_view_)
+    : BaseType(other)
+    , grid_view_(other.grid_view_)
     , fe_order_(other.fe_order_)
     , local_finite_elements_(std::make_unique<LocalLagrangeFiniteElementFamily<D, d, R, r>>())
     , mapper_(nullptr)
@@ -85,15 +90,16 @@ public:
     this->update_after_adapt();
   }
 
+  ContinuousLagrangeSpace(ThisType&&) = default;
+
+  ThisType& operator=(const ThisType&) = delete;
+
+  ThisType& operator=(ThisType&&) = delete;
+
   BaseType* copy() const override final
   {
     return new ThisType(*this);
   }
-
-  ContinuousLagrangeSpace(ThisType&&) = default;
-
-  ThisType& operator=(const ThisType&) = delete;
-  ThisType& operator=(ThisType&&) = delete;
 
   const GridViewType& grid_view() const override final
   {
