@@ -54,6 +54,7 @@ for mod_name in (     # order should not matter!
         '_spaces_h1_continuous_lagrange',
         '_spaces_interface',
         '_spaces_l2_discontinuous_lagrange',
+        '_tools_adaptation_helper',
         '_tools_dirichlet_constraints',
         '_tools_grid_quality_estimates',
         '_tools_sparsity_pattern',
