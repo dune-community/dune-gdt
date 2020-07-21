@@ -26,7 +26,7 @@ namespace internal {
 
 
 template <class Intersection>
-static std::function<double(const Intersection&)> default_inner_intersection_diameter()
+static std::function<double(const Intersection&)> default_intersection_diameter()
 {
   return [](const Intersection& intersection) {
     if (Intersection::dimension == 1) {
@@ -37,22 +37,7 @@ static std::function<double(const Intersection&)> default_inner_intersection_dia
     } else
       return XT::Grid::diameter(intersection);
   };
-} // ... default_inner_intersection_diameter(...)
-
-
-/**
- * \todo Get rid of this one, default_inner_intersection_diameter should be enough!
- */
-template <class Intersection>
-static std::function<double(const Intersection&)> default_boundary_intersection_diameter()
-{
-  return [](const Intersection& intersection) {
-    if (Intersection::dimension == 1)
-      return XT::Grid::diameter(intersection.inside());
-    else
-      return XT::Grid::diameter(intersection);
-  };
-} // ... default_boundary_intersection_diameter(...)
+} // ... default_intersection_diameter(...)
 
 
 } // namespace internal
@@ -76,7 +61,7 @@ public:
   InnerPenalty(
       const double& penalty,
       XT::Functions::GridFunction<E, d, d> weight_function = 1.,
-      const std::function<double(const I&)>& intersection_diameter = internal::default_inner_intersection_diameter<I>(),
+      const std::function<double(const I&)>& intersection_diameter = internal::default_intersection_diameter<I>(),
       const std::string& logging_prefix = "")
     : BaseType(weight_function.parameter_type(),
                logging_prefix.empty() ? "gdt" : "gdt.localipdginnerpenaltyintegrand",
@@ -217,7 +202,7 @@ public:
   BoundaryPenalty(const double& penalty,
                   XT::Functions::GridFunction<E, d, d> weight_function = 1.,
                   const std::function<double(const I&)>& intersection_diameter =
-                      internal::default_boundary_intersection_diameter<I>(),
+                      internal::default_intersection_diameter<I>(),
                   const std::string& logging_prefix = "")
     : BaseType(weight_function.parameter_type(),
                logging_prefix.empty() ? "gdt" : "gdt.localipdgboundarypenaltyintegrand",
