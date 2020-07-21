@@ -40,6 +40,9 @@ static std::function<double(const Intersection&)> default_inner_intersection_dia
 } // ... default_inner_intersection_diameter(...)
 
 
+/**
+ * \todo Get rid of this one, default_inner_intersection_diameter should be enough!
+ */
 template <class Intersection>
 static std::function<double(const Intersection&)> default_boundary_intersection_diameter()
 {
