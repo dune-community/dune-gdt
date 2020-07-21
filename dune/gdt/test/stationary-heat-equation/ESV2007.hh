@@ -108,8 +108,7 @@ public:
         /*symmetry_prefactor=*/1,
         /*inner_penalty=*/8,
         /*dirichlet_penalty=*/14,
-        /*inner_intersection_diameter=*/[](const auto& intersection) { return intersection.geometry().volume(); },
-        /*dirichlet_intersection_diameter=*/[](const auto& intersection) { return intersection.geometry().volume(); })
+        /*intersection_diameter=*/[](const auto& intersection) { return intersection.geometry().volume(); })
     , problem(DXTC_TEST_CONFIG_GET("setup.force_order", 2))
   {}
 

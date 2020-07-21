@@ -80,17 +80,14 @@ public:
   StationaryDiffusionIpdgEocStudy(const double& symmetry_prefactor,
                                   const double& inner_penalty,
                                   const double& dirichlet_penalty,
-                                  const std::function<double(const I&)>& inner_intersection_diameter =
-                                      LocalIPDGIntegrands::internal::default_inner_intersection_diameter<I>(),
-                                  const std::function<double(const I&)>& dirichlet_intersection_diameter =
-                                      LocalIPDGIntegrands::internal::default_boundary_intersection_diameter<I>())
+                                  const std::function<double(const I&)>& intersection_diameter =
+                                      LocalIPDGIntegrands::internal::default_intersection_diameter<I>())
     : BaseType()
     , space_type_("")
     , symmetry_prefactor_(symmetry_prefactor)
     , inner_penalty_(inner_penalty)
     , dirichlet_penalty_(dirichlet_penalty)
-    , inner_intersection_diameter_(inner_intersection_diameter)
-    , dirichlet_intersection_diameter_(dirichlet_intersection_diameter)
+    , intersection_diameter_(intersection_diameter)
   {}
 
 protected:
@@ -169,8 +166,7 @@ protected:
                                                                                    dirichlet_penalty_,
                                                                                    this->diffusion(),
                                                                                    this->weight_function(),
-                                                                                   inner_intersection_diameter_,
-                                                                                   dirichlet_intersection_diameter_);
+                                                                                   intersection_diameter_);
         auto flux_reconstruction = reconstruction_op.apply(solution);
         double eta_R_2 = 0.;
         std::mutex eta_R_2_mutex;
@@ -224,8 +220,7 @@ protected:
                                                                                    dirichlet_penalty_,
                                                                                    this->diffusion(),
                                                                                    this->weight_function(),
-                                                                                   inner_intersection_diameter_,
-                                                                                   dirichlet_intersection_diameter_);
+                                                                                   intersection_diameter_);
         auto flux_reconstruction = reconstruction_op.apply(solution);
         double eta_DF_2 = 0.;
         std::mutex eta_DF_2_mutex;
@@ -295,7 +290,7 @@ protected:
                    {},
                    XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
     lhs_op->append(LocalCouplingIntersectionIntegralBilinearForm<I>(LocalIPDGIntegrands::InnerPenalty<I>(
-                       inner_penalty_, this->weight_function(), inner_intersection_diameter_)),
+                       inner_penalty_, this->weight_function(), intersection_diameter_)),
                    {},
                    XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
     // - Dirichlet faces
@@ -306,7 +301,7 @@ protected:
         XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(this->boundary_info(), new XT::Grid::DirichletBoundary()));
     lhs_op->append(
         LocalIntersectionIntegralBilinearForm<I>(LocalIPDGIntegrands::BoundaryPenalty<I>(
-            dirichlet_penalty_, this->weight_function(), dirichlet_intersection_diameter_)),
+            dirichlet_penalty_, this->weight_function(), intersection_diameter_)),
         {},
         XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(this->boundary_info(), new XT::Grid::DirichletBoundary()));
     // define rhs functional
@@ -329,8 +324,7 @@ protected:
   const double symmetry_prefactor_;
   const double inner_penalty_;
   const double dirichlet_penalty_;
-  const std::function<double(const I&)>& inner_intersection_diameter_;
-  const std::function<double(const I&)>& dirichlet_intersection_diameter_;
+  const std::function<double(const I&)> intersection_diameter_;
 }; // class StationaryDiffusionIpdgEocStudy
 
 
