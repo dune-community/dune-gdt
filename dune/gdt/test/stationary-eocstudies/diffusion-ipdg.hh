@@ -54,9 +54,7 @@ namespace Test {
  * \todo Add treatment of nonzero Dirichlet boundary values
  * \todo Add treatment of Neumann boundary values
  */
-template <class G,
-          LocalEllipticIpdgIntegrands::Method ipdg_method = LocalEllipticIpdgIntegrands::Method::swipdg,
-          XT::LA::Backends la = XT::LA::Backends::istl_sparse>
+template <class G, XT::LA::Backends la = XT::LA::Backends::istl_sparse>
 class StationaryDiffusionIpdgEocStudy
   : public StationaryEocStudy<typename XT::Grid::Layer<G, XT::Grid::Layers::leaf, XT::Grid::Backends::view>::type,
                               1,
@@ -79,10 +77,20 @@ protected:
 public:
   using typename BaseType::E;
 
-  StationaryDiffusionIpdgEocStudy()
+  StationaryDiffusionIpdgEocStudy(const double& symmetry_prefactor,
+                                  const double& inner_penalty,
+                                  const double& dirichlet_penalty,
+                                  const std::function<double(const I&)>& inner_intersection_diameter =
+                                      LocalIPDGIntegrands::internal::default_inner_intersection_diameter<I>(),
+                                  const std::function<double(const I&)>& dirichlet_intersection_diameter =
+                                      LocalIPDGIntegrands::internal::default_boundary_intersection_diameter<I>())
     : BaseType()
     , space_type_("")
-    , one_(1.)
+    , symmetry_prefactor_(symmetry_prefactor)
+    , inner_penalty_(inner_penalty)
+    , dirichlet_penalty_(dirichlet_penalty)
+    , inner_intersection_diameter_(inner_intersection_diameter)
+    , dirichlet_intersection_diameter_(dirichlet_intersection_diameter)
   {}
 
 protected:
@@ -94,6 +102,8 @@ protected:
   virtual const FT& diffusion() const = 0;
 
   virtual const FF& force() const = 0;
+
+  virtual const FT& weight_function() const = 0;
 
   std::vector<std::string> norms() const override
   {
@@ -133,7 +143,6 @@ protected:
     }
     Timer timer;
     const auto solution = make_discrete_function(current_space, self.solve(current_space));
-    const auto& one = one_.template as_grid_function<E>();
     // only set time if this did not happen in solve()
     if (self.current_data_["quantity"].count("time to solution (s)") == 0)
       self.current_data_["quantity"]["time to solution (s)"] = timer.elapsed();
@@ -152,8 +161,16 @@ protected:
         norm_it = remaining_norms.erase(norm_it); // ... or here ...
         // compute estimate
         auto rt_space = make_raviart_thomas_space(current_space.grid_view(), current_space.max_polorder() - 1);
-        auto reconstruction_op = make_ipdg_flux_reconstruction_operator<M, ipdg_method>(
-            current_space.grid_view(), current_space, rt_space, one, diffusion());
+        auto reconstruction_op = make_laplace_ipdg_flux_reconstruction_operator<M>(current_space.grid_view(),
+                                                                                   current_space,
+                                                                                   rt_space,
+                                                                                   symmetry_prefactor_,
+                                                                                   inner_penalty_,
+                                                                                   dirichlet_penalty_,
+                                                                                   this->diffusion(),
+                                                                                   this->weight_function(),
+                                                                                   inner_intersection_diameter_,
+                                                                                   dirichlet_intersection_diameter_);
         auto flux_reconstruction = reconstruction_op.apply(solution);
         double eta_R_2 = 0.;
         std::mutex eta_R_2_mutex;
@@ -199,8 +216,16 @@ protected:
         norm_it = remaining_norms.erase(norm_it); // ... or here ...
         // compute estimate
         auto rt_space = make_raviart_thomas_space(current_space.grid_view(), current_space.max_polorder() - 1);
-        auto reconstruction_op = make_ipdg_flux_reconstruction_operator<M, ipdg_method>(
-            current_space.grid_view(), current_space, rt_space, one, diffusion());
+        auto reconstruction_op = make_laplace_ipdg_flux_reconstruction_operator<M>(current_space.grid_view(),
+                                                                                   current_space,
+                                                                                   rt_space,
+                                                                                   symmetry_prefactor_,
+                                                                                   inner_penalty_,
+                                                                                   dirichlet_penalty_,
+                                                                                   this->diffusion(),
+                                                                                   this->weight_function(),
+                                                                                   inner_intersection_diameter_,
+                                                                                   dirichlet_intersection_diameter_);
         auto flux_reconstruction = reconstruction_op.apply(solution);
         double eta_DF_2 = 0.;
         std::mutex eta_DF_2_mutex;
@@ -266,14 +291,13 @@ protected:
     lhs_op->append(LocalElementIntegralBilinearForm<E>(LocalLaplaceIntegrand<E>(this->diffusion())));
     // - inner faces
     lhs_op->append(LocalCouplingIntersectionIntegralBilinearForm<I>(
-                       LocalLaplaceIPDGIntegrands::InnerCoupling<I>(1., this->diffusion(), this->diffusion())),
+                       LocalLaplaceIPDGIntegrands::InnerCoupling<I>(1., this->diffusion(), this->weight_function())),
                    {},
                    XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
-    lhs_op->append(
-        LocalCouplingIntersectionIntegralBilinearForm<I>(LocalIPDGIntegrands::InnerPenalty<I>(
-            8, this->diffusion(), [](const auto& intersection) { return intersection.geometry().volume(); })),
-        {},
-        XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
+    lhs_op->append(LocalCouplingIntersectionIntegralBilinearForm<I>(LocalIPDGIntegrands::InnerPenalty<I>(
+                       inner_penalty_, this->weight_function(), inner_intersection_diameter_)),
+                   {},
+                   XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
     // - Dirichlet faces
     lhs_op->append(
         LocalIntersectionIntegralBilinearForm<I>(
@@ -282,7 +306,7 @@ protected:
         XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(this->boundary_info(), new XT::Grid::DirichletBoundary()));
     lhs_op->append(
         LocalIntersectionIntegralBilinearForm<I>(LocalIPDGIntegrands::BoundaryPenalty<I>(
-            14, this->diffusion(), [](const auto& intersection) { return intersection.geometry().volume(); })),
+            dirichlet_penalty_, this->weight_function(), dirichlet_intersection_diameter_)),
         {},
         XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(this->boundary_info(), new XT::Grid::DirichletBoundary()));
     // define rhs functional
@@ -302,7 +326,11 @@ protected:
   } // ... make_residual_operator(...)
 
   std::string space_type_;
-  XT::Functions::ConstantFunction<d> one_;
+  const double symmetry_prefactor_;
+  const double inner_penalty_;
+  const double dirichlet_penalty_;
+  const std::function<double(const I&)>& inner_intersection_diameter_;
+  const std::function<double(const I&)>& dirichlet_intersection_diameter_;
 }; // class StationaryDiffusionIpdgEocStudy
 
 

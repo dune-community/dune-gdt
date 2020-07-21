@@ -104,7 +104,12 @@ class ESV2007DiffusionTest : public StationaryDiffusionIpdgEocStudy<G>
 
 public:
   ESV2007DiffusionTest()
-    : BaseType()
+    : BaseType(
+        /*symmetry_prefactor=*/1,
+        /*inner_penalty=*/8,
+        /*dirichlet_penalty=*/14,
+        /*inner_intersection_diameter=*/[](const auto& intersection) { return intersection.geometry().volume(); },
+        /*dirichlet_intersection_diameter=*/[](const auto& intersection) { return intersection.geometry().volume(); })
     , problem(DXTC_TEST_CONFIG_GET("setup.force_order", 2))
   {}
 
@@ -150,6 +155,11 @@ protected:
   const FF& force() const override final
   {
     return problem.force.template as_grid_function<E>();
+  }
+
+  const FT& weight_function() const override final
+  {
+    return this->diffusion();
   }
 
   GP make_initial_grid() override final
