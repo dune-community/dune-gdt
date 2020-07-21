@@ -54,11 +54,12 @@ public:
       class_name += "_" + XT::Common::Typename<R>::value(/*fail_wo_typeid=*/true);
     const auto ClassName = XT::Common::to_camel_case(class_name);
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
-    c.def(py::init([](XT::Grid::GridProvider<G>& grid_provider, const int order) {
-            return type(grid_provider.leaf_view(), order); // Otherwise we get an error here!
+    c.def(py::init([](XT::Grid::GridProvider<G>& grid_provider, const int order, const std::string& logging_prefix) {
+            return new type(grid_provider.leaf_view(), order, logging_prefix);
           }),
           "grid_provider"_a,
-          "order"_a);
+          "order"_a,
+          "logging_prefix"_a = "");
     c.def("__repr__", [](const type& self) {
       std::stringstream ss;
       ss << self;
@@ -68,13 +69,28 @@ public:
     std::string space_type_name = class_id;
     if (!std::is_same<R, double>::value)
       space_type_name += "_" + XT::Common::Typename<R>::value(/*fail_wo_typeid=*/true);
-    m.def(XT::Common::to_camel_case(space_type_name).c_str(),
-          [c](XT::Grid::GridProvider<G>& grid, const int order, const XT::Grid::bindings::Dimension<r>&) {
-            return type(grid.leaf_view(), order); // Otherwise we get an error here!
-          },
+    if (r == 1)
+      m.def(
+          XT::Common::to_camel_case(space_type_name).c_str(),
+          [c](XT::Grid::GridProvider<G>& grid,
+              const int order,
+              const XT::Grid::bindings::Dimension<r>&,
+              const std::string& logging_prefix) { return new type(grid.leaf_view(), order, logging_prefix); },
           "grid"_a,
           "order"_a,
-          "dim_range"_a = XT::Grid::bindings::Dimension<r>());
+          "dim_range"_a = XT::Grid::bindings::Dimension<r>(),
+          "logging_prefix"_a = "");
+    else
+      m.def(
+          XT::Common::to_camel_case(space_type_name).c_str(),
+          [c](XT::Grid::GridProvider<G>& grid,
+              const int order,
+              const XT::Grid::bindings::Dimension<r>&,
+              const std::string& logging_prefix) { return new type(grid.leaf_view(), order, logging_prefix); },
+          "grid"_a,
+          "order"_a,
+          "dim_range"_a,
+          "logging_prefix"_a = "");
 
     return c;
   } // ... bind(...)
