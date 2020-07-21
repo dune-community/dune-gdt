@@ -34,7 +34,7 @@
 #include <dune/gdt/local/integrands/conversion.hh>
 #include <dune/gdt/norms.hh>
 #include <dune/gdt/operators/constant.hh>
-#include <dune/gdt/operators/ipdg-flux-reconstruction.hh>
+#include <dune/gdt/operators/laplace-ipdg-flux-reconstruction.hh>
 #include <dune/gdt/operators/lincomb.hh>
 #include <dune/gdt/operators/matrix-based.hh>
 #include <dune/gdt/operators/oswald-interpolation.hh>

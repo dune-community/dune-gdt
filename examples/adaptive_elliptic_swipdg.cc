@@ -37,10 +37,10 @@
 #include <dune/gdt/functionals/vector-based.hh>
 #include <dune/gdt/local/bilinear-forms/integrals.hh>
 #include <dune/gdt/local/functionals/integrals.hh>
-#include <dune/gdt/local/integrands/elliptic.hh>
-#include <dune/gdt/local/integrands/elliptic-ipdg.hh>
+#include <dune/gdt/local/integrands/laplace.hh>
+#include <dune/gdt/local/integrands/laplace-ipdg.hh>
 #include <dune/gdt/local/integrands/product.hh>
-#include <dune/gdt/operators/ipdg-flux-reconstruction.hh>
+#include <dune/gdt/operators/laplace-ipdg-flux-reconstruction.hh>
 #include <dune/gdt/operators/matrix-based.hh>
 #include <dune/gdt/operators/oswald-interpolation.hh>
 #include <dune/gdt/spaces/hdiv/raviart-thomas.hh>
@@ -68,13 +68,14 @@ static const LocalEllipticIpdgIntegrands::Method ipdg = LocalEllipticIpdgIntegra
 
 std::pair<V, F> compute_local_indicators(const DiscreteFunction<V, GV>& u_h,
                                          const GV& grid_view,
-                                         const XT::Functions::GridFunctionInterface<E>& df,
                                          const XT::Functions::GridFunctionInterface<E, d, d>& dt,
                                          const XT::Functions::GridFunctionInterface<E>& f,
                                          const XT::Grid::BoundaryInfo<I>& boundary_info,
                                          const int over_integrate = 3)
 {
   const auto& dg_space = u_h.space();
+  const XT::Functions::ConstantFunction<d> one(1.);
+  const auto& df = one.template as_grid_function<E>();
   auto diffusion = df * dt;
   // oswald interpolation
   auto oswald_interpolation_operator =
@@ -107,7 +108,7 @@ std::pair<V, F> compute_local_indicators(const DiscreteFunction<V, GV>& u_h,
                   d_el->bind(element);
                   // eta_NC
                   const double eta_NC_element_2 =
-                      LocalElementIntegralBilinearForm<E>(LocalEllipticIntegrand<E>(df, dt), over_integrate)
+                      LocalElementIntegralBilinearForm<E>(LocalLaplaceIntegrand<E>(dt), over_integrate)
                           .apply2(*u_h_el - *u_el, *u_h_el - *u_el)[0][0];
                   // eta_R
                   // - approximate minimum eigenvalue of the diffusion over the element (evaluate at some points)
@@ -197,18 +198,13 @@ int main(int argc, char* argv[])
 
     // problem
     const Test::ESV2007DiffusionProblem<GV> problem;
-    const XT::Functions::ConstantFunction<d> diff_factor(1.);
-    const auto& df = diff_factor.as_grid_function<E>();
-    const auto& dt = problem.diffusion.as_grid_function<E>();
-    const auto& f = problem.force.as_grid_function<E>();
-    const auto& boundary_info = problem.boundary_info;
 
     // grid
     auto grid_ptr = problem.make_initial_grid().grid_ptr();
     auto& grid = *grid_ptr;
     auto grid_view = grid.leafGridView();
 
-    // space, op and rhs
+    // space
     auto dg_space = make_discontinuous_lagrange_space(grid_view, 1);
     auto current_solution = make_discrete_function<V>(dg_space);
 
@@ -221,18 +217,20 @@ int main(int argc, char* argv[])
 
       // assemble
       auto lhs_op = make_matrix_operator<M>(dg_space, Stencil::element_and_intersection);
-      lhs_op.append(LocalElementIntegralBilinearForm<E>(LocalEllipticIntegrand<E>(df, dt)));
-      lhs_op.append(
-          LocalCouplingIntersectionIntegralBilinearForm<I>(LocalEllipticIpdgIntegrands::Inner<I, F, ipdg>(df, dt)),
-          {},
-          XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
+      lhs_op.append(LocalElementIntegralBilinearForm<E>(LocalLaplaceIntegrand<E>(problem.diffusion)));
+      lhs_op.append(LocalCouplingIntersectionIntegralBilinearForm<I>(
+                        LocalLaplaceIPDGIntegrands::InnerCoupling<I>(/*SIPDG=*/1, problem.diffusion)
+                        + LocalIPDGIntegrands::InnerPenalty<I>(/*penalty=*/16, problem.diffusion)),
+                    {},
+                    XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
       lhs_op.append(
           LocalIntersectionIntegralBilinearForm<I>(
-              LocalEllipticIpdgIntegrands::DirichletBoundaryLhs<I, F, ipdg>(df, dt)),
+              LocalIPDGIntegrands::BoundaryPenalty<I>(/*penalty=*/16, problem.diffusion)
+              + LocalLaplaceIPDGIntegrands::DirichletCoupling<I>(/*SIPDG=*/1, problem.diffusion)),
           {},
-          XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(boundary_info, new XT::Grid::DirichletBoundary()));
+          XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(problem.boundary_info, new XT::Grid::DirichletBoundary()));
       auto rhs_func = make_vector_functional<V>(dg_space);
-      rhs_func.append(LocalElementIntegralFunctional<E>(LocalProductIntegrand<E>().with_ansatz(f)));
+      rhs_func.append(LocalElementIntegralFunctional<E>(LocalProductIntegrand<E>().with_ansatz(problem.force)));
       // ... add Dirichlet here
       // (if we add something here, the oswald interpolation needs to be adapted accordingly!)
       // ... add Neumann here
@@ -245,7 +243,11 @@ int main(int argc, char* argv[])
       current_solution.visualize("solution_" + XT::Common::to_string(counter));
 
       // compute local indicators and estimate
-      const auto estimates = compute_local_indicators(current_solution, grid_view, df, dt, f, boundary_info);
+      const auto estimates = compute_local_indicators(current_solution,
+                                                      grid_view,
+                                                      problem.diffusion.template as_grid_function<E>(),
+                                                      problem.force.template as_grid_function<E>(),
+                                                      problem.boundary_info);
       const auto indicators = std::move(estimates.first);
       const auto estimate = estimates.second;
       logger.info() << "  estimated error: " << estimate << std::endl;

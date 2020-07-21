@@ -7,8 +7,8 @@
 // Authors:
 //   Felix Schindler (2019)
 
-#ifndef DUNE_GDT_OPERATORS_IPDG_FLUX_RECONSTRUCTION_HH
-#define DUNE_GDT_OPERATORS_IPDG_FLUX_RECONSTRUCTION_HH
+#ifndef DUNE_GDT_OPERATORS_LAPLACE_IPDG_FLUX_RECONSTRUCTION_HH
+#define DUNE_GDT_OPERATORS_LAPLACE_IPDG_FLUX_RECONSTRUCTION_HH
 
 #include <dune/geometry/referenceelements.hh>
 #include <dune/grid/common/rangegenerators.hh>
@@ -352,4 +352,4 @@ IpdgFluxReconstructionOperator<MatrixType, AssemblyGridViewType, ipdg, SGV, RGV>
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_OPERATORS_IPDG_FLUX_RECONSTRUCTION_HH
+#endif // DUNE_GDT_OPERATORS_LAPLACE_IPDG_FLUX_RECONSTRUCTION_HH
