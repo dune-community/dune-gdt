@@ -64,10 +64,8 @@ public:
                                         const double& dirichlet_penalty,
                                         XT::Functions::GridFunction<E, d, d> diffusion,
                                         XT::Functions::GridFunction<E, d, d> weight_function = {1.},
-                                        const std::function<double(const I&)>& inner_intersection_diameter =
-                                            LocalIPDGIntegrands::internal::default_inner_intersection_diameter<I>(),
-                                        const std::function<double(const I&)>& dirichlet_intersection_diameter =
-                                            LocalIPDGIntegrands::internal::default_boundary_intersection_diameter<I>())
+                                        const std::function<double(const I&)>& intersection_diameter =
+                                            LocalIPDGIntegrands::internal::default_intersection_diameter<I>())
     : assembly_grid_view_(assembly_grid_view)
     , source_space_(src_spc)
     , range_space_(rng_spc)
@@ -76,8 +74,7 @@ public:
     , dirichlet_penalty_(dirichlet_penalty)
     , diffusion_(diffusion)
     , weight_function_(weight_function)
-    , inner_intersection_diameter_(inner_intersection_diameter)
-    , dirichlet_intersection_diameter_(dirichlet_intersection_diameter)
+    , intersection_diameter_(intersection_diameter)
     , element_mapper_(assembly_grid_view_)
   {
     DUNE_THROW_IF(range_space_.type() != SpaceType::raviart_thomas, Exceptions::operator_error, "");
@@ -198,7 +195,7 @@ public:
                 const auto weight_minus = delta_plus / (delta_plus + delta_minus);
                 const auto weight_plus = delta_minus / (delta_plus + delta_minus);
                 const auto weight = (delta_plus * delta_minus) / (delta_plus + delta_minus); // half harmonic average
-                const auto h = inner_intersection_diameter_(intersection);
+                const auto h = intersection_diameter_(intersection);
                 const auto penalty = (inner_penalty_ * weight) / h;
                 // ... and finally compute the LHS and RHS
                 for (size_t ii = 0; ii < local_keys_assosiated_with_intersection.size(); ++ii) {
@@ -252,7 +249,7 @@ public:
               // copied from LocalIPDGIntegrands::BoundaryPenalty and LocalLaplaceIPDGIntegrands::DirichletCoupling
               const auto weight = local_weight_element->evaluate(point_in_reference_element, param);
               // compute the weighted penalty ...
-              const auto h = dirichlet_intersection_diameter_(intersection);
+              const auto h = intersection_diameter_(intersection);
               const auto penalty = (dirichlet_penalty_ * (normal * (weight * normal))) / h;
               // ... and finally compute the LHS and RHS
               for (size_t ii = 0; ii < local_keys_assosiated_with_intersection.size(); ++ii) {
@@ -309,8 +306,7 @@ private:
   const double dirichlet_penalty_;
   const XT::Functions::GridFunction<E, d, d> diffusion_;
   const XT::Functions::GridFunction<E, d, d> weight_function_;
-  const std::function<double(const I&)> inner_intersection_diameter_;
-  const std::function<double(const I&)> dirichlet_intersection_diameter_;
+  const std::function<double(const I&)> intersection_diameter_;
   const FiniteVolumeMapper<AssemblyGridViewType> element_mapper_;
 }; // class LaplaceIpdgFluxReconstructionOperator
 
@@ -325,10 +321,8 @@ LaplaceIpdgFluxReconstructionOperator<M, AGV, SGV, RGV> make_laplace_ipdg_flux_r
     const double& dirichlet_penalty,
     XT::Functions::GridFunction<XT::Grid::extract_entity_t<AGV>, RGV::dimension, RGV::dimension> diffusion,
     XT::Functions::GridFunction<XT::Grid::extract_entity_t<AGV>, RGV::dimension, RGV::dimension> weight_function = {1.},
-    const std::function<double(const XT::Grid::extract_intersection_t<AGV>&)>& inner_intersection_diameter =
-        LocalIPDGIntegrands::internal::default_inner_intersection_diameter<XT::Grid::extract_intersection_t<AGV>>(),
-    const std::function<double(const XT::Grid::extract_intersection_t<AGV>&)>& dirichlet_intersection_diameter =
-        LocalIPDGIntegrands::internal::default_boundary_intersection_diameter<XT::Grid::extract_intersection_t<AGV>>())
+    const std::function<double(const XT::Grid::extract_intersection_t<AGV>&)>& intersection_diameter =
+        LocalIPDGIntegrands::internal::default_intersection_diameter<XT::Grid::extract_intersection_t<AGV>>())
 {
   return LaplaceIpdgFluxReconstructionOperator<M, AGV, SGV, RGV>(assembly_grid_view,
                                                                  source_space,
@@ -338,8 +332,7 @@ LaplaceIpdgFluxReconstructionOperator<M, AGV, SGV, RGV> make_laplace_ipdg_flux_r
                                                                  dirichlet_penalty,
                                                                  diffusion,
                                                                  weight_function,
-                                                                 inner_intersection_diameter,
-                                                                 dirichlet_intersection_diameter);
+                                                                 intersection_diameter);
 }
 
 
