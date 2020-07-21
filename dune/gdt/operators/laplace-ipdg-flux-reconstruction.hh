@@ -21,7 +21,7 @@
 
 #include <dune/gdt/exceptions.hh>
 #include <dune/gdt/local/finite-elements/orthonormal.hh>
-#include <dune/gdt/local/integrands/elliptic-ipdg.hh>
+#include <dune/gdt/local/integrands/ipdg.hh>
 #include <dune/gdt/operators/interfaces.hh>
 #include <dune/gdt/spaces/mapper/finite-volume.hh>
 
@@ -30,18 +30,19 @@ namespace GDT {
 
 
 /**
+ * \attention Handles all boundary intersections as Dirichlet boundary intersections!
+ *
  * \todo This is just the old implementation copied over. Update analoggously to the RT interpolation!
+ *
+ * \todo Directly make use of LocalIPDGIntegrands::InnerPenalty and LocalLaplaceIPDGIntegrands::InnerCoupling, (not
+ *       clear how yet)!
  */
-template <class M,
-          class AssemblyGridView,
-          LocalEllipticIpdgIntegrands::Method ipdg = LocalEllipticIpdgIntegrands::default_method,
-          class SGV = AssemblyGridView,
-          class RGV = AssemblyGridView>
-class IpdgFluxReconstructionOperator : public OperatorInterface<M, SGV, 1, 1, RGV::dimension, 1, RGV>
+template <class M, class AssemblyGridView, class SGV = AssemblyGridView, class RGV = AssemblyGridView>
+class LaplaceIpdgFluxReconstructionOperator : public OperatorInterface<M, SGV, 1, 1, RGV::dimension, 1, RGV>
 {
   static_assert(XT::Grid::is_view<AssemblyGridView>::value, "");
   using BaseType = OperatorInterface<M, SGV, 1, 1, RGV::dimension, 1, RGV>;
-  using ThisType = IpdgFluxReconstructionOperator;
+  using ThisType = LaplaceIpdgFluxReconstructionOperator;
 
 public:
   using typename BaseType::F;
@@ -52,18 +53,31 @@ public:
   using AGV = AssemblyGridView;
   using AssemblyGridViewType = AGV;
   using E = XT::Grid::extract_entity_t<AssemblyGridViewType>;
+  using I = XT::Grid::extract_intersection_t<AssemblyGridViewType>;
   static const constexpr size_t d = RGV::dimension;
 
-  IpdgFluxReconstructionOperator(AssemblyGridViewType assembly_grid_view,
-                                 const SourceSpaceType& src_spc,
-                                 const RangeSpaceType& rng_spc,
-                                 const XT::Functions::GridFunctionInterface<E>& diffusion_factor,
-                                 const XT::Functions::GridFunctionInterface<E, d, d>& diffusion_tensor)
+  LaplaceIpdgFluxReconstructionOperator(AssemblyGridViewType assembly_grid_view,
+                                        const SourceSpaceType& src_spc,
+                                        const RangeSpaceType& rng_spc,
+                                        const double& symmetry_prefactor,
+                                        const double& inner_penalty,
+                                        const double& dirichlet_penalty,
+                                        XT::Functions::GridFunction<E, d, d> diffusion,
+                                        XT::Functions::GridFunction<E, d, d> weight_function = {1.},
+                                        const std::function<double(const I&)>& inner_intersection_diameter =
+                                            LocalIPDGIntegrands::internal::default_inner_intersection_diameter<I>(),
+                                        const std::function<double(const I&)>& dirichlet_intersection_diameter =
+                                            LocalIPDGIntegrands::internal::default_boundary_intersection_diameter<I>())
     : assembly_grid_view_(assembly_grid_view)
     , source_space_(src_spc)
     , range_space_(rng_spc)
-    , diffusion_factor_(diffusion_factor)
-    , diffusion_tensor_(diffusion_tensor)
+    , symmetry_prefactor_(symmetry_prefactor)
+    , inner_penalty_(inner_penalty)
+    , dirichlet_penalty_(dirichlet_penalty)
+    , diffusion_(diffusion)
+    , weight_function_(weight_function)
+    , inner_intersection_diameter_(inner_intersection_diameter)
+    , dirichlet_intersection_diameter_(dirichlet_intersection_diameter)
     , element_mapper_(assembly_grid_view_)
   {
     DUNE_THROW_IF(range_space_.type() != SpaceType::raviart_thomas, Exceptions::operator_error, "");
@@ -90,7 +104,6 @@ public:
   void apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& param = {}) const override final
   {
     using D = typename AssemblyGridView::ctype;
-    using I = XT::Grid::extract_intersection_t<AssemblyGridViewType>;
     // some checks
     DUNE_THROW_IF(!source.valid(), Exceptions::operator_error, "source contains inf or nan!");
     DUNE_THROW_IF(!source_space_.contains(source),
@@ -107,16 +120,16 @@ public:
     auto local_range = range_function.local_discrete_function();
     auto local_source_element = source_function.local_function();
     auto local_source_neighbor = source_function.local_function();
-    auto local_df_element = diffusion_factor_.local_function();
-    auto local_df_neighbor = diffusion_factor_.local_function();
-    auto local_dt_element = diffusion_tensor_.local_function();
-    auto local_dt_neighbor = diffusion_tensor_.local_function();
+    auto local_diffusion_element = diffusion_.local_function();
+    auto local_diffusion_neighbor = diffusion_.local_function();
+    auto local_weight_element = weight_function_.local_function();
+    auto local_weight_neighbor = weight_function_.local_function();
     auto rt_basis = range_space_.basis().localize();
     for (auto&& element : elements(assembly_grid_view_)) {
       local_range->bind(element);
       local_source_element->bind(element);
-      local_df_element->bind(element);
-      local_dt_element->bind(element);
+      local_diffusion_element->bind(element);
+      local_weight_element->bind(element);
       rt_basis->bind(element);
       const auto& rt_fe = rt_basis->finite_element();
       // prepare
@@ -146,8 +159,8 @@ public:
             if (element_mapper_.global_index(element, 0) < element_mapper_.global_index(neighbor, 0)) {
               there_are_intersection_dofs_to_determine = true;
               local_source_neighbor->bind(neighbor);
-              local_df_neighbor->bind(neighbor);
-              local_dt_neighbor->bind(neighbor);
+              local_diffusion_neighbor->bind(neighbor);
+              local_weight_neighbor->bind(neighbor);
               // do a face quadrature
               const int max_polorder =
                   std::max(intersection_Pk_basis.order(),
@@ -174,36 +187,20 @@ public:
                 const auto source_grad_element = local_source_element->jacobian(point_in_reference_element, param)[0];
                 const auto source_grad_neighbor =
                     local_source_neighbor->jacobian(point_in_reference_neighbor, param)[0];
-                // df_value_* is of type FieldVector<F, 1>
-                const auto df_value_element = local_df_element->evaluate(point_in_reference_element, param);
-                const auto df_value_neighbor = local_df_neighbor->evaluate(point_in_reference_neighbor, param);
-                // dt_value_* is of type FieldMatrix<F, d, d>
-                const auto dt_value_element = local_dt_element->evaluate(point_in_reference_element, param);
-                const auto dt_value_neighbor = local_dt_neighbor->evaluate(point_in_reference_neighbor, param);
-                // use df_value_*[0] to avoid confusion with matrix-vector multiplication
-                const auto diffusion_element = dt_value_element * df_value_element[0];
-                const auto diffusion_neighbor = dt_value_neighbor * df_value_neighbor[0];
-                // compute penalty factor (see Epshteyn, Riviere, 2007)
-                const F sigma = LocalEllipticIpdgIntegrands::internal::inner_sigma(max_polorder);
-                const double beta = LocalEllipticIpdgIntegrands::internal::default_beta(d);
-                // compute weighting (see Ern, Stephansen, Zunino 2007)
-                using IpdgHelper = typename LocalEllipticIpdgIntegrands::Inner<I, F, ipdg>::template IPDG<ipdg>;
-                const F delta_plus =
-                    IpdgHelper::delta_plus(df_value_neighbor, dt_value_neighbor, diffusion_neighbor, normal);
-                const F delta_minus =
-                    IpdgHelper::delta_minus(df_value_element, dt_value_element, diffusion_element, normal);
-                const F gamma = IpdgHelper::gamma(delta_plus, delta_minus);
-                const F penalty = IpdgHelper::penalty(df_value_element,
-                                                      dt_value_neighbor,
-                                                      df_value_neighbor,
-                                                      dt_value_element,
-                                                      normal,
-                                                      sigma,
-                                                      gamma,
-                                                      intersection.geometry().volume(),
-                                                      beta);
-                const F weight_plus = IpdgHelper::weight_plus(delta_plus, delta_minus);
-                const F weight_minus = IpdgHelper::weight_minus(delta_plus, delta_minus);
+                const auto diffusion_element = local_diffusion_element->evaluate(point_in_reference_element, param);
+                const auto diffusion_neighbor = local_diffusion_neighbor->evaluate(point_in_reference_neighbor, param);
+                // copied from LocalIPDGIntegrands::InnerPenalty and LocalLaplaceIPDGIntegrands::InnerCoupling
+                const auto weight_element = local_weight_element->evaluate(point_in_reference_element, param);
+                const auto weight_neighbor = local_weight_neighbor->evaluate(point_in_reference_neighbor, param);
+                // compute the weighted penalty ...
+                const double delta_plus = normal * (weight_neighbor * normal);
+                const double delta_minus = normal * (weight_element * normal);
+                const auto weight_minus = delta_plus / (delta_plus + delta_minus);
+                const auto weight_plus = delta_minus / (delta_plus + delta_minus);
+                const auto weight = (delta_plus * delta_minus) / (delta_plus + delta_minus); // half harmonic average
+                const auto h = inner_intersection_diameter_(intersection);
+                const auto penalty = (inner_penalty_ * weight) / h;
+                // ... and finally compute the LHS and RHS
                 for (size_t ii = 0; ii < local_keys_assosiated_with_intersection.size(); ++ii) {
                   const size_t local_key_index = local_keys_assosiated_with_intersection[ii];
                   for (size_t jj = 0; jj < intersection_Pk_basis.size(); ++jj)
@@ -216,9 +213,10 @@ public:
                 for (size_t jj = 0; jj < intersection_Pk_basis.size(); ++jj)
                   rhs[jj] += quadrature_weight * integration_factor
                              * (penalty * (source_value_element - source_value_neighbor)
-                                - normal
-                                      * (weight_minus * (diffusion_element * source_grad_element)
-                                         + weight_plus * (diffusion_neighbor * source_grad_neighbor)))
+                                - symmetry_prefactor_
+                                      * (normal
+                                         * (weight_minus * (diffusion_element * source_grad_element)
+                                            + weight_plus * (diffusion_neighbor * source_grad_neighbor))))
                              * intersection_Pk_basis_values[jj];
               }
             } else {
@@ -250,17 +248,13 @@ public:
               // ... and data functions ...
               const auto source_value_element = local_source_element->evaluate(point_in_reference_element, param);
               const auto source_grad_element = local_source_element->jacobian(point_in_reference_element, param)[0];
-              const auto df_value_element = local_df_element->evaluate(point_in_reference_element, param);
-              const auto dt_value_element = local_dt_element->evaluate(point_in_reference_element, param);
-              const auto diffusion_element = dt_value_element * df_value_element[0];
-              // compute penalty (see Epshteyn, Riviere, 2007)
-              const F sigma = LocalEllipticIpdgIntegrands::internal::boundary_sigma(max_polorder);
-              const double beta = LocalEllipticIpdgIntegrands::internal::default_beta(d);
-              // compute weighting (see Ern, Stephansen, Zunino 2007)
-              using IpdgHelper =
-                  typename LocalEllipticIpdgIntegrands::DirichletBoundaryLhs<I, F, ipdg>::template IPDG<ipdg>;
-              const F gamma = IpdgHelper::gamma(diffusion_element, normal);
-              const F penalty = IpdgHelper::penalty(sigma, gamma, intersection.geometry().volume(), beta);
+              const auto diffusion_element = local_diffusion_element->evaluate(point_in_reference_element, param);
+              // copied from LocalIPDGIntegrands::BoundaryPenalty and LocalLaplaceIPDGIntegrands::DirichletCoupling
+              const auto weight = local_weight_element->evaluate(point_in_reference_element, param);
+              // compute the weighted penalty ...
+              const auto h = dirichlet_intersection_diameter_(intersection);
+              const auto penalty = (dirichlet_penalty_ * (normal * (weight * normal))) / h;
+              // ... and finally compute the LHS and RHS
               for (size_t ii = 0; ii < local_keys_assosiated_with_intersection.size(); ++ii) {
                 const size_t local_key_index = local_keys_assosiated_with_intersection[ii];
                 for (size_t jj = 0; jj < intersection_Pk_basis.size(); ++jj)
@@ -271,7 +265,8 @@ public:
               }
               for (size_t jj = 0; jj < intersection_Pk_basis.size(); ++jj)
                 rhs[jj] += quadrature_weight * integration_factor
-                           * (penalty * source_value_element - normal * (diffusion_element * source_grad_element))
+                           * (penalty * source_value_element
+                              - symmetry_prefactor_ * (normal * (diffusion_element * source_grad_element)))
                            * intersection_Pk_basis_values[jj];
             }
           }
@@ -309,43 +304,42 @@ private:
   const AssemblyGridViewType assembly_grid_view_;
   const SourceSpaceType& source_space_;
   const RangeSpaceType& range_space_;
-  const XT::Functions::GridFunctionInterface<E>& diffusion_factor_;
-  const XT::Functions::GridFunctionInterface<E, d, d>& diffusion_tensor_;
+  const double symmetry_prefactor_;
+  const double inner_penalty_;
+  const double dirichlet_penalty_;
+  const XT::Functions::GridFunction<E, d, d> diffusion_;
+  const XT::Functions::GridFunction<E, d, d> weight_function_;
+  const std::function<double(const I&)> inner_intersection_diameter_;
+  const std::function<double(const I&)> dirichlet_intersection_diameter_;
   const FiniteVolumeMapper<AssemblyGridViewType> element_mapper_;
-}; // class IpdgFluxReconstructionOperator
+}; // class LaplaceIpdgFluxReconstructionOperator
 
 
-template <class MatrixType,
-          class AssemblyGridViewType,
-          class SGV,
-          class RGV,
-          LocalEllipticIpdgIntegrands::Method ipdg = LocalEllipticIpdgIntegrands::default_method>
-IpdgFluxReconstructionOperator<MatrixType, AssemblyGridViewType, ipdg, SGV, RGV> make_ipdg_flux_reconstruction_operator(
-    const AssemblyGridViewType& assembly_grid_view,
+template <class M, class AGV, class SGV, class RGV>
+LaplaceIpdgFluxReconstructionOperator<M, AGV, SGV, RGV> make_laplace_ipdg_flux_reconstruction_operator(
+    const AGV& assembly_grid_view,
     const SpaceInterface<SGV>& source_space,
     const SpaceInterface<RGV, RGV::dimension>& range_space,
-    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<AssemblyGridViewType>>& diffusion_factor,
-    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<AssemblyGridViewType>,
-                                               RGV::dimension,
-                                               RGV::dimension>& diffusion_tensor)
+    const double& symmetry_prefactor,
+    const double& inner_penalty,
+    const double& dirichlet_penalty,
+    XT::Functions::GridFunction<XT::Grid::extract_entity_t<AGV>, RGV::dimension, RGV::dimension> diffusion,
+    XT::Functions::GridFunction<XT::Grid::extract_entity_t<AGV>, RGV::dimension, RGV::dimension> weight_function = {1.},
+    const std::function<double(const XT::Grid::extract_intersection_t<AGV>&)>& inner_intersection_diameter =
+        LocalIPDGIntegrands::internal::default_inner_intersection_diameter<XT::Grid::extract_intersection_t<AGV>>(),
+    const std::function<double(const XT::Grid::extract_intersection_t<AGV>&)>& dirichlet_intersection_diameter =
+        LocalIPDGIntegrands::internal::default_boundary_intersection_diameter<XT::Grid::extract_intersection_t<AGV>>())
 {
-  return IpdgFluxReconstructionOperator<MatrixType, AssemblyGridViewType, ipdg, SGV, RGV>(
-      assembly_grid_view, source_space, range_space, diffusion_factor, diffusion_tensor);
-}
-
-
-template <class MatrixType, LocalEllipticIpdgIntegrands::Method ipdg, class AssemblyGridViewType, class SGV, class RGV>
-IpdgFluxReconstructionOperator<MatrixType, AssemblyGridViewType, ipdg, SGV, RGV> make_ipdg_flux_reconstruction_operator(
-    const AssemblyGridViewType& assembly_grid_view,
-    const SpaceInterface<SGV>& source_space,
-    const SpaceInterface<RGV, RGV::dimension>& range_space,
-    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<AssemblyGridViewType>>& diffusion_factor,
-    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<AssemblyGridViewType>,
-                                               RGV::dimension,
-                                               RGV::dimension>& diffusion_tensor)
-{
-  return IpdgFluxReconstructionOperator<MatrixType, AssemblyGridViewType, ipdg, SGV, RGV>(
-      assembly_grid_view, source_space, range_space, diffusion_factor, diffusion_tensor);
+  return LaplaceIpdgFluxReconstructionOperator<M, AGV, SGV, RGV>(assembly_grid_view,
+                                                                 source_space,
+                                                                 range_space,
+                                                                 symmetry_prefactor,
+                                                                 inner_penalty,
+                                                                 dirichlet_penalty,
+                                                                 diffusion,
+                                                                 weight_function,
+                                                                 inner_intersection_diameter,
+                                                                 dirichlet_intersection_diameter);
 }
 
 
