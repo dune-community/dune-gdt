@@ -68,7 +68,8 @@ private:
 
 public:
   RaviartThomasSpace(GridViewType grd_vw, const int order)
-    : grid_view_(grd_vw)
+    : BaseType()
+    , grid_view_(grd_vw)
     , order_(order)
     , local_finite_elements_(std::make_unique<const LocalRaviartThomasFiniteElementFamily<D, d, R>>())
     , element_indices_(grid_view_)
@@ -81,7 +82,8 @@ public:
   }
 
   RaviartThomasSpace(const ThisType& other)
-    : grid_view_(other.grid_view_)
+    : BaseType(other)
+    , grid_view_(other.grid_view_)
     , order_(other.order_)
     , local_finite_elements_(std::make_unique<const LocalRaviartThomasFiniteElementFamily<D, d, R>>())
     , element_indices_(grid_view_)
@@ -92,15 +94,16 @@ public:
     this->update_after_adapt();
   }
 
+  RaviartThomasSpace(ThisType&&) = default;
+
+  ThisType& operator=(const ThisType&) = delete;
+
+  ThisType& operator=(ThisType&&) = delete;
+
   BaseType* copy() const override final
   {
     return new ThisType(*this);
   }
-
-  RaviartThomasSpace(ThisType&&) = default;
-
-  ThisType& operator=(const ThisType&) = delete;
-  ThisType& operator=(ThisType&&) = delete;
 
   const GridViewType& grid_view() const override final
   {
