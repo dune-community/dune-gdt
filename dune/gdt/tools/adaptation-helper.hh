@@ -18,6 +18,7 @@
 #include <dune/grid/utility/persistentcontainer.hh>
 
 #include <dune/xt/common/memory.hh>
+#include <dune/xt/common/timedlogging.hh>
 #include <dune/xt/la/container/conversion.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
@@ -33,9 +34,10 @@ namespace GDT {
  *       this by element functors which are used in a grid walker.
  */
 template <class V, class GV, size_t r = 1, size_t rC = 1, class RF = double>
-class AdaptationHelper
+class AdaptationHelper : public XT::Common::WithLogger<AdaptationHelper<V, GV, r, rC, RF>>
 {
   using ThisType = AdaptationHelper;
+  using Logger = XT::Common::WithLogger<AdaptationHelper<V, GV, r, rC, RF>>;
 
 public:
   using DiscreteFunctionType = DiscreteFunction<V, GV, r, rC, RF>;
@@ -43,13 +45,20 @@ public:
   using G = typename GV::Grid;
   static_assert(!XT::Grid::is_yaspgrid<G>::value, "The PersistentContainer is known to segfault for YaspGrid!");
 
-  AdaptationHelper(G& grd)
-    : grid_(grd)
+  AdaptationHelper(G& grd, const std::string& logging_prefix = "")
+    : Logger(logging_prefix.empty() ? "gdt" : "gdt.tools.adaptation-helper",
+             logging_prefix.empty() ? "AdaptationHelper" : logging_prefix,
+             /*logging_disabled=*/logging_prefix.empty())
+    , grid_(grd)
     , data_(new std::remove_reference_t<decltype(*data_)>)
-  {}
+  {
+    LOG_(info) << this->logging_id << "(&grd=" << &grd << ")" << std::endl;
+  }
 
   ThisType& append(SpaceType& space, DiscreteFunctionType& discrete_function)
   {
+    LOG_(info) << this->logging_id << ".append(space=" << space << ", discrete_function=" << &discrete_function << ")"
+               << std::endl;
     data_->emplace_back(XT::Common::StorageProvider<SpaceType>(space),
                         XT::Common::StorageProvider<DiscreteFunctionType>(discrete_function),
                         PersistentContainer<G, std::pair<DynamicVector<RF>, DynamicVector<RF>>>(
@@ -60,15 +69,20 @@ public:
 
   void pre_adapt(const bool pre_adapt_grid = true)
   {
+    LOG_(info) << this->logging_id << ".pre_adapt(pre_adapt_grid=" << pre_adapt_grid << ")" << std::endl;
     auto grid_view = grid_.leafGridView();
     // * preadapt will mark elements which might vanish due to coarsening
     bool elements_may_be_coarsened = true;
-    if (pre_adapt_grid)
+    if (pre_adapt_grid) {
+      LOG_(info) << "    pre-adapting grid ..." << std::endl;
       elements_may_be_coarsened = grid_.preAdapt();
+    }
+    LOG_(info) << "    pre-adapting " << data_->size() << " spaces ..." << std::endl;
     for (auto& data : *data_) {
       auto& space = std::get<0>(data).access();
       space.pre_adapt();
     }
+    LOG_(info) << "    storing persistent leaf data ..." << std::endl;
     // * each discrete function is associated with persistent storage (see data_, keeps local DoF vectors, which can be
     //   converted to DynamicVector<RF>) to keep our data:
     //   - all kept leaf elements might change their indices and
@@ -94,6 +108,7 @@ public:
       if (element.mightVanish())
         restriction_required[element.father()] = 1;
     }
+    LOG_(info) << "    computing restrictions ..." << std::endl;
     // * now walk the grid up all coarser levels ...
     if (elements_may_be_coarsened) {
       for (int level = grid_.maxLevel() - 1; level >= 0; --level) {
@@ -119,15 +134,20 @@ public:
 
   void adapt(const bool adapt_grid = true)
   {
+    LOG_(info) << this->logging_id << ".adapt(adapt_grid=" << adapt_grid << ")" << std::endl;
     auto grid_view = grid_.leafGridView();
-    if (adapt_grid)
+    if (adapt_grid) {
+      LOG_(info) << "    adapting grid ..." << std::endl;
       grid_.adapt();
+    }
+    LOG_(info) << "    adapting persistent data ..." << std::endl;
     // * clean up data structures
     for (auto& data : *data_) {
       auto& persistent_data = std::get<2>(data);
       persistent_data.resize();
       persistent_data.shrinkToFit();
     }
+    LOG_(info) << "    adapting " << data_->size() << " spaces ..." << std::endl;
     // * update spaces and resize vectors
     for (auto& data : *data_) {
       auto& space = std::get<0>(data).access();
@@ -135,6 +155,7 @@ public:
       space.adapt();
       discrete_function.dofs().resize_after_adapt();
     }
+    LOG_(info) << "    computing prolongations ..." << std::endl;
     // * get the data back to the discrete function
     for (auto&& element : elements(grid_view)) {
       for (auto& data : *data_) {
@@ -149,15 +170,22 @@ public:
 
   void post_adapt(const bool post_adapt_grid = true, const bool clear = false)
   {
-    if (post_adapt_grid)
+    LOG_(info) << this->logging_id << ".post_adapt(post_adapt_grid=" << post_adapt_grid << ", clear=" << clear << ")"
+               << std::endl;
+    if (post_adapt_grid) {
+      LOG_(info) << "    post-adapting grid ..." << std::endl;
       grid_.postAdapt();
+    }
+    LOG_(info) << "    post-adapting " << data_->size() << " spaces ..." << std::endl;
     for (auto& data : *data_) {
       auto& space = std::get<0>(data).access();
       space.post_adapt();
     }
     if (clear) {
+      LOG_(info) << "    clearing data ..." << std::endl;
       data_->clear();
     } else {
+      LOG_(info) << "    keeping track of " << data_->size() << " spaces:" << std::endl;
       auto old_data = data_;
       data_ = std::make_shared<std::remove_reference_t<decltype(*data_)>>();
       for (auto& data : *old_data) {
