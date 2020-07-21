@@ -64,7 +64,7 @@ public:
                       const std::string& logging_prefix) {
             return new type(penalty,
                             weight,
-                            GDT::LocalIPDGIntegrands::internal::default_inner_intersection_diameter<I>(),
+                            GDT::LocalIPDGIntegrands::internal::default_intersection_diameter<I>(),
                             logging_prefix);
           }),
           "penalty"_a,
@@ -74,17 +74,16 @@ public:
 
     // factory
     const auto FactoryName = XT::Common::to_camel_case(class_id);
-    m.def(FactoryName.c_str(),
-          [](const double& penalty, XT::Functions::GridFunction<E, d, d, F> weight, const std::string& logging_prefix) {
-            return type(penalty,
-                        weight,
-                        GDT::LocalIPDGIntegrands::internal::default_inner_intersection_diameter<I>(),
-                        logging_prefix);
-          },
-          "penalty"_a,
-          "weight"_a,
-          "logging_prefix"_a = "",
-          py::keep_alive<0, 2>());
+    m.def(
+        FactoryName.c_str(),
+        [](const double& penalty, XT::Functions::GridFunction<E, d, d, F> weight, const std::string& logging_prefix) {
+          return type(
+              penalty, weight, GDT::LocalIPDGIntegrands::internal::default_intersection_diameter<I>(), logging_prefix);
+        },
+        "penalty"_a,
+        "weight"_a,
+        "logging_prefix"_a = "",
+        py::keep_alive<0, 2>());
 
     return c;
   } // ... bind(...)
