@@ -194,7 +194,7 @@ public:
     }
   } // ... post_adapt(...)
 
-private:
+protected:
   G& grid_;
   std::shared_ptr<std::list<std::tuple<XT::Common::StorageProvider<SpaceType>,
                                        XT::Common::StorageProvider<DiscreteFunctionType>,
