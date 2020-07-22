@@ -962,7 +962,7 @@ void CellModelSolver::compute_restricted_stokes_dofs(const std::vector<size_t>& 
     get_deim_source_dofs(source_dofs[2], create_stokes_pattern(u_space_, p_space_), unique_range_dofs);
     // add phi, phinat, P and Pnat source dofs for all input entities
     const auto& phi_mapper = phi_space_.mapper();
-    const auto& P_mapper = p_space_.mapper();
+    const auto& P_mapper = P_space_.mapper();
     for (const auto& entity : stokes_deim_entities_) {
       global_indices.resize(phi_mapper.local_size(entity));
       phi_mapper.global_indices(entity, global_indices);

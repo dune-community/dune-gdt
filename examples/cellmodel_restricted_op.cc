@@ -166,17 +166,6 @@ int main(int argc, char* argv[])
     auto stokes_source = model_solver.stokes_vec();
     auto pfield_state = model_solver.pfield_vec(0);
     auto ofield_state = model_solver.ofield_vec(0);
-    // ensure source_vectors are non-zero to avoid masking errors
-    for (auto& entry : pfield_source)
-      entry += double_distrib(rng);
-    for (auto& entry : ofield_source)
-      entry += double_distrib(rng);
-    for (auto& entry : stokes_source)
-      entry += double_distrib(rng);
-    for (auto& entry : pfield_state)
-      entry += double_distrib(rng);
-    for (auto& entry : ofield_state)
-      entry += double_distrib(rng);
     std::chrono::duration<double> pfield_restricted_prep_time(0.);
     std::chrono::duration<double> pfield_restricted_apply_time(0.);
     std::chrono::duration<double> pfield_restricted_jac_time(0.);
@@ -202,6 +191,42 @@ int main(int argc, char* argv[])
         pfield_output_dofs[ii] = pfield_distrib(rng);
         // std::cout << pfield_output_dofs[ii] << (ii == num_output_dofs - 1 ? ")\n" : ", ");
       }
+
+      // set ofield and stokes values
+      for (size_t kk = 0; kk < num_cells; ++kk) {
+        model_solver.compute_restricted_pfield_dofs(pfield_output_dofs, kk);
+        const auto& pfield_source_dofs = model_solver.pfield_deim_source_dofs(kk)[0];
+        const auto& pfield_ofield_source_dofs = model_solver.pfield_deim_source_dofs(kk)[1];
+        const auto& pfield_stokes_source_dofs = model_solver.pfield_deim_source_dofs(kk)[2];
+        std::vector<double> pfield_restricted_source(pfield_source_dofs.size());
+        std::vector<double> pfield_ofield_restricted_source(pfield_ofield_source_dofs.size());
+        std::vector<double> pfield_stokes_restricted_source(pfield_stokes_source_dofs.size());
+        for (size_t ll = 0; ll < pfield_source_dofs.size(); ++ll)
+          pfield_restricted_source[ll] = pfield_source[pfield_source_dofs[ll]];
+        model_solver.set_pfield_vec_dofs(kk, pfield_restricted_source, pfield_source_dofs);
+        model_solver2.set_pfield_vec(kk, pfield_source);
+        for (size_t ll = 0; ll < pfield_ofield_source_dofs.size(); ++ll)
+          pfield_ofield_restricted_source[ll] = ofield_source[pfield_ofield_source_dofs[ll]];
+        model_solver.set_ofield_vec_dofs(kk, pfield_ofield_restricted_source, pfield_ofield_source_dofs);
+        model_solver2.set_ofield_vec(kk, ofield_source);
+        for (size_t ll = 0; ll < pfield_stokes_source_dofs.size(); ++ll)
+          pfield_stokes_restricted_source[ll] = stokes_source[pfield_stokes_source_dofs[ll]];
+        model_solver.set_stokes_vec_dofs(pfield_stokes_restricted_source, pfield_stokes_source_dofs);
+        model_solver2.set_stokes_vec(stokes_source);
+      }
+
+      // change source_vectors randomly to avoid masking errors
+      for (auto& entry : pfield_source)
+        entry += double_distrib(rng);
+      for (auto& entry : ofield_source)
+        entry += double_distrib(rng);
+      for (auto& entry : stokes_source)
+        entry += double_distrib(rng);
+      for (auto& entry : pfield_state)
+        entry += double_distrib(rng);
+      for (auto& entry : ofield_state)
+        entry += double_distrib(rng);
+
       for (size_t kk = 0; kk < num_cells; ++kk) {
         model_solver.compute_restricted_pfield_dofs(pfield_output_dofs, kk);
         std::this_thread::sleep_for(std::chrono::seconds(2));
@@ -251,6 +276,41 @@ int main(int argc, char* argv[])
         ofield_output_dofs[ii] = ofield_distrib(rng);
         // std::cout << ofield_output_dofs[ii] << (ii == num_output_dofs - 1 ? ")\n" : ", ");
       }
+      // set ofield and stokes values
+      for (size_t kk = 0; kk < num_cells; ++kk) {
+        model_solver.compute_restricted_ofield_dofs(ofield_output_dofs, kk);
+        const auto& ofield_pfield_source_dofs = model_solver.ofield_deim_source_dofs(kk)[0];
+        const auto& ofield_source_dofs = model_solver.ofield_deim_source_dofs(kk)[1];
+        const auto& ofield_stokes_source_dofs = model_solver.ofield_deim_source_dofs(kk)[2];
+        std::vector<double> ofield_pfield_restricted_source(ofield_pfield_source_dofs.size());
+        std::vector<double> ofield_restricted_source(ofield_source_dofs.size());
+        std::vector<double> ofield_stokes_restricted_source(ofield_stokes_source_dofs.size());
+        for (size_t ll = 0; ll < ofield_pfield_source_dofs.size(); ++ll)
+          ofield_pfield_restricted_source[ll] = pfield_source[ofield_pfield_source_dofs[ll]];
+        model_solver.set_pfield_vec_dofs(kk, ofield_pfield_restricted_source, ofield_pfield_source_dofs);
+        model_solver2.set_pfield_vec(kk, pfield_source);
+        for (size_t ll = 0; ll < ofield_source_dofs.size(); ++ll)
+          ofield_restricted_source[ll] = ofield_source[ofield_source_dofs[ll]];
+        model_solver.set_ofield_vec_dofs(kk, ofield_restricted_source, ofield_source_dofs);
+        model_solver2.set_ofield_vec(kk, ofield_source);
+        for (size_t ll = 0; ll < ofield_stokes_source_dofs.size(); ++ll)
+          ofield_stokes_restricted_source[ll] = stokes_source[ofield_stokes_source_dofs[ll]];
+        model_solver.set_stokes_vec_dofs(ofield_stokes_restricted_source, ofield_stokes_source_dofs);
+        model_solver2.set_stokes_vec(stokes_source);
+      }
+
+      // change source_vectors randomly to avoid masking errors
+      for (auto& entry : pfield_source)
+        entry += double_distrib(rng);
+      for (auto& entry : ofield_source)
+        entry += double_distrib(rng);
+      for (auto& entry : stokes_source)
+        entry += double_distrib(rng);
+      for (auto& entry : pfield_state)
+        entry += double_distrib(rng);
+      for (auto& entry : ofield_state)
+        entry += double_distrib(rng);
+
       for (size_t kk = 0; kk < num_cells; ++kk) {
         model_solver.compute_restricted_ofield_dofs(ofield_output_dofs, kk);
         auto begin = std::chrono::steady_clock::now();
@@ -296,13 +356,40 @@ int main(int argc, char* argv[])
       // std::cout << "Stokes output_dofs: (";
       for (size_t ii = 0; ii < num_output_dofs; ++ii) {
         stokes_output_dofs[ii] = stokes_distrib(rng);
-        // std::cout << ofield_output_dofs[ii] << (ii == num_output_dofs - 1 ? ")\n" : ", ");
       }
       model_solver.compute_restricted_stokes_dofs(stokes_output_dofs);
+      const auto& stokes_pfield_source_dofs = model_solver.stokes_deim_source_dofs()[0];
+      const auto& stokes_ofield_source_dofs = model_solver.stokes_deim_source_dofs()[1];
+      const auto& stokes_source_dofs = model_solver.stokes_deim_source_dofs()[2];
+      std::vector<double> stokes_pfield_restricted_source(stokes_pfield_source_dofs.size());
+      std::vector<double> stokes_ofield_restricted_source(stokes_ofield_source_dofs.size());
+      // set pfield and ofield values
+      for (size_t kk = 0; kk < num_cells; ++kk) {
+        for (size_t ll = 0; ll < stokes_pfield_source_dofs.size(); ++ll)
+          stokes_pfield_restricted_source[ll] = pfield_source[stokes_pfield_source_dofs[ll]];
+        model_solver.set_pfield_vec_dofs(kk, stokes_pfield_restricted_source, stokes_pfield_source_dofs);
+        model_solver2.set_pfield_vec(kk, pfield_source);
+        for (size_t ll = 0; ll < stokes_ofield_source_dofs.size(); ++ll)
+          stokes_ofield_restricted_source[ll] = ofield_source[stokes_ofield_source_dofs[ll]];
+        model_solver.set_ofield_vec_dofs(kk, stokes_ofield_restricted_source, stokes_ofield_source_dofs);
+        model_solver2.set_ofield_vec(kk, ofield_source);
+      }
+
+      // change source_vectors randomly to avoid masking errors
+      for (auto& entry : pfield_source)
+        entry += double_distrib(rng);
+      for (auto& entry : ofield_source)
+        entry += double_distrib(rng);
+      for (auto& entry : stokes_source)
+        entry += double_distrib(rng);
+      for (auto& entry : pfield_state)
+        entry += double_distrib(rng);
+      for (auto& entry : ofield_state)
+        entry += double_distrib(rng);
+
       auto begin = std::chrono::steady_clock::now();
       model_solver.prepare_stokes_operator(true);
       stokes_restricted_prep_time += std::chrono::steady_clock::now() - begin;
-      const auto& stokes_source_dofs = model_solver.stokes_deim_source_dofs()[2];
       const size_t num_source_dofs = stokes_source_dofs.size();
       VectorType restricted_source(num_source_dofs, 0.);
       for (size_t ii = 0; ii < num_source_dofs; ++ii)
