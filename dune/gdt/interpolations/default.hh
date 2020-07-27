@@ -20,6 +20,7 @@
 #include <dune/xt/grid/functors/interfaces.hh>
 #include <dune/xt/grid/walker.hh>
 
+#include <dune/xt/functions/grid-function.hh>
 #include <dune/xt/functions/interfaces/grid-function.hh>
 #include <dune/xt/functions/interfaces/function.hh>
 #include <dune/xt/functions/generic/function.hh>
@@ -30,7 +31,6 @@ namespace Dune {
 namespace GDT {
 
 
-// ### Variants for GridFunctionInterface
 template <class GV, size_t r, size_t rC, class R, class V, class IGV>
 class DefaultInterpolationElementFunctor : public XT::Grid::ElementFunctor<IGV>
 {
@@ -38,13 +38,13 @@ class DefaultInterpolationElementFunctor : public XT::Grid::ElementFunctor<IGV>
 
 public:
   using typename BaseType::E;
-  using SourceType = XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, r, rC, R>;
+  using SourceType = XT::Functions::GridFunction<XT::Grid::extract_entity_t<GV>, r, rC, R>;
   using LocalSourceType = typename SourceType::LocalFunctionType;
   using TargetType = DiscreteFunction<V, GV, r, rC, R>;
   using LocalDofVectorType = typename TargetType::DofVectorType::LocalDofVectorType;
   using TargetBasisType = typename TargetType::SpaceType::GlobalBasisType::LocalizedType;
 
-  DefaultInterpolationElementFunctor(const SourceType& source, TargetType& target)
+  DefaultInterpolationElementFunctor(SourceType source, TargetType& target)
     : source_(source)
     , target_(target)
     , local_dof_vector_(target.dofs().localize())
@@ -80,18 +80,18 @@ public:
   }
 
 private:
-  const SourceType& source_;
+  const SourceType source_;
   TargetType& target_;
   LocalDofVectorType local_dof_vector_;
   std::unique_ptr<LocalSourceType> local_source_;
   std::unique_ptr<TargetBasisType> target_basis_;
-};
+}; // class DefaultInterpolationElementFunctor
+
 
 /**
  * \brief Interpolates a localizable function within a given space [most general variant].
  *
  * Simply uses interpolate() of the target spaces global basis().
- *
  *
  * \note This does not clear target.dofs().vector(). Thus, if interpolation_grid_view only covers a part of the domain
  *       of target.space().grid_view(), other contributions in target remain (which is on purpose).
@@ -113,7 +113,7 @@ default_interpolation(const XT::Functions::GridFunctionInterface<XT::Grid::extra
   auto walker = XT::Grid::Walker<GridView<IGVT>>(interpolation_grid_view);
   walker.append(functor);
   // Basis functions other than FV do not seem to be thread safe. TODO: fix
-  walker.walk(target.space().type() == SpaceType::finite_volume);
+  walker.walk(/*parallel=*/target.space().type() == SpaceType::finite_volume);
 } // ... default_interpolation(...)
 
 
