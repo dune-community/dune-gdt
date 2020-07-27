@@ -19,6 +19,7 @@ for mod_name in (     # order should not matter!
         '_functionals_interfaces_eigen',
         '_functionals_interfaces_istl',
         '_functionals_vector_based',
+        '_interpolations_default',
         '_local_bilinear_forms_coupling_intersection_integrals',
         '_local_bilinear_forms_coupling_intersection_interface',
         '_local_bilinear_forms_element_integrals',
