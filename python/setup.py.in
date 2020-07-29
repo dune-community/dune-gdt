@@ -45,5 +45,5 @@ setup(name='dune.gdt',
           'install': InstallPlatlib,
       },
       install_requires=['jinja2', 'where', 'codecov'],
-      extrast_requires={'parallel': ['bokeh', 'pymumps', 'metis']},
+      extras_requires={'parallel': ['bokeh', 'pymumps', 'metis']},
       )
