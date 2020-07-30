@@ -162,11 +162,11 @@ class LocalFlatTop2dCubeFiniteElement : public LocalFiniteElementDefault<D, 2, R
 public:
   LocalFlatTop2dCubeFiniteElement(const double& overlap = 0.5)
     : BaseType(
-        1,
-        LocalFlatTop2dCubeFiniteElementBasis<D, R>(overlap).copy(),
-        LocalLagrangeFiniteElementFactory<D, 2, R, 1>::create(Dune::GeometryTypes::cube(2), 1)->coefficients().copy(),
-        LocalL2FiniteElementInterpolation<D, 2, R, 1>(LocalFlatTop2dCubeFiniteElementBasis<D, R>(overlap)).copy(),
-        {})
+          1,
+          LocalFlatTop2dCubeFiniteElementBasis<D, R>(overlap).copy(),
+          LocalLagrangeFiniteElementFactory<D, 2, R, 1>::create(Dune::GeometryTypes::cube(2), 1)->coefficients().copy(),
+          LocalL2FiniteElementInterpolation<D, 2, R, 1>(LocalFlatTop2dCubeFiniteElementBasis<D, R>(overlap)).copy(),
+          {})
   {}
 }; // class LocalFlatTop2dCubeFiniteElement
 

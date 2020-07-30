@@ -49,12 +49,11 @@ struct InviscidCompressibleFlowEulerProblem
 
   InviscidCompressibleFlowEulerProblem()
     : euler_tools(1.4) // air or water at roughly 20 deg Cels.
-    , flux(
-          euler_tools.flux_order(),
-          [&](const auto& u, const auto& /*param*/) { return euler_tools.flux(u); },
-          "euler_flux",
-          {},
-          [&](const auto& u, const auto& /*param*/) { return euler_tools.flux_jacobian(u); })
+    , flux(euler_tools.flux_order(),
+           [&](const auto& u, const auto& /*param*/) { return euler_tools.flux(u); },
+           "euler_flux",
+           {},
+           [&](const auto& u, const auto& /*param*/) { return euler_tools.flux_jacobian(u); })
     , T_end(1.)
   {}
 
@@ -108,20 +107,19 @@ protected:
 public:
   InviscidCompressibleFlowEulerTest(const std::string timestepping, const size_t num_refinements = 2)
     : Problem(new InviscidCompressibleFlowEulerProblem<G>())
-    , BaseType(
-          this->access().T_end,
-          timestepping,
-          [&](const auto& solution, const auto& prefix) {
-            for (size_t ii = 0; ii < this->visualization_steps_; ++ii) {
-              const double time = ii * (this->T_end_ / this->visualization_steps_);
-              const auto u_t = solution.evaluate(time);
-              this->access().euler_tools.visualize(u_t,
-                                                   u_t.space().grid_view(),
-                                                   XT::Common::Test::get_unique_test_name() + "__" + prefix,
-                                                   XT::Common::to_string(ii));
-            }
-          },
-          num_refinements)
+    , BaseType(this->access().T_end,
+               timestepping,
+               [&](const auto& solution, const auto& prefix) {
+                 for (size_t ii = 0; ii < this->visualization_steps_; ++ii) {
+                   const double time = ii * (this->T_end_ / this->visualization_steps_);
+                   const auto u_t = solution.evaluate(time);
+                   this->access().euler_tools.visualize(u_t,
+                                                        u_t.space().grid_view(),
+                                                        XT::Common::Test::get_unique_test_name() + "__" + prefix,
+                                                        XT::Common::to_string(ii));
+                 }
+               },
+               num_refinements)
     , visualization_steps_(0)
     , boundary_treatment("")
   {}
@@ -137,13 +135,12 @@ protected:
     if (boundary_treatment == "inflow_from_the_left_by_heuristic_euler_treatment_impermeable_wall_right") {
       const auto& euler_tools = this->access().euler_tools;
       // TODO: Use generic interpolate once implemented?
-      return default_interpolation<V>(
-          0,
-          [&](const auto& /*xx*/, const auto& /*param*/) {
-            return euler_tools.conservative(
-                /*density=*/0.5, /*velocity=*/0., /*pressure=*/0.4);
-          },
-          space);
+      return default_interpolation<V>(0,
+                                      [&](const auto& /*xx*/, const auto& /*param*/) {
+                                        return euler_tools.conservative(
+                                            /*density=*/0.5, /*velocity=*/0., /*pressure=*/0.4);
+                                      },
+                                      space);
     } else
       return this->access().template make_initial_values<V>(space);
   } // ... make_initial_values(...)
@@ -359,7 +356,7 @@ protected:
     const auto fv_dt =
         (this->boundary_treatment == "inflow_from_the_left_by_heuristic_euler_treatment_impermeable_wall_right")
             ? estimate_dt_for_hyperbolic_system(
-                space.grid_view(), u_0, this->flux(), /*boundary_data_range=*/{{0.5, 0., 0.4}, {1.5, 0.5, 0.4}})
+                  space.grid_view(), u_0, this->flux(), /*boundary_data_range=*/{{0.5, 0., 0.4}, {1.5, 0.5, 0.4}})
             : estimate_dt_for_hyperbolic_system(space.grid_view(), u_0, this->flux());
     auto dt = fv_dt;
     if (this->space_type_ != "fv") {

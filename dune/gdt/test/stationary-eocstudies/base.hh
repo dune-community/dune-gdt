@@ -80,15 +80,14 @@ protected:
 public:
   using E = XT::Grid::extract_entity_t<GV>;
 
-  StationaryEocStudy(
-      std::function<void(const DF&, const std::string&)> visualizer =
-          [](const auto& solution, const auto& prefix) {
-            if (DXTC_TEST_CONFIG_GET("setup.visualize", false))
-              solution.visualize(prefix);
-          },
-      const size_t num_refinements = DXTC_TEST_CONFIG_GET("setup.num_refinements", 3),
-      const size_t num_additional_refinements_for_reference =
-          DXTC_TEST_CONFIG_GET("setup.num_additional_refinements_for_reference", 2))
+  StationaryEocStudy(std::function<void(const DF&, const std::string&)> visualizer =
+                         [](const auto& solution, const auto& prefix) {
+                           if (DXTC_TEST_CONFIG_GET("setup.visualize", false))
+                             solution.visualize(prefix);
+                         },
+                     const size_t num_refinements = DXTC_TEST_CONFIG_GET("setup.num_refinements", 3),
+                     const size_t num_additional_refinements_for_reference =
+                         DXTC_TEST_CONFIG_GET("setup.num_additional_refinements_for_reference", 2))
     : num_refinements_(num_refinements)
     , num_additional_refinements_for_reference_(num_additional_refinements_for_reference)
     , visualize_(visualizer)

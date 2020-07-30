@@ -72,22 +72,20 @@ public:
           py::keep_alive<1, 3>());
     c.def(py::init<const S&, const std::string&>(), "space"_a, "name"_a = default_name, py::keep_alive<1, 2>());
     c.def_property_readonly("space", &type::space);
-    c.def_property(
-        "dof_vector",
-        [](const type& self) { return self.dofs().vector(); },
-        [](type& self, const V& vec) {
-          DUNE_THROW_IF(vec.size() != self.dofs().vector().size(),
-                        Exceptions::discrete_function_error,
-                        "vec.size() = " << vec.size()
-                                        << "\n   self.dofs().vector().size() = " << self.dofs().vector().size());
-          self.dofs().vector() = vec;
-        },
-        py::return_value_policy::reference_internal);
+    c.def_property("dof_vector",
+                   [](const type& self) { return self.dofs().vector(); },
+                   [](type& self, const V& vec) {
+                     DUNE_THROW_IF(vec.size() != self.dofs().vector().size(),
+                                   Exceptions::discrete_function_error,
+                                   "vec.size() = " << vec.size() << "\n   self.dofs().vector().size() = "
+                                                   << self.dofs().vector().size());
+                     self.dofs().vector() = vec;
+                   },
+                   py::return_value_policy::reference_internal);
     c.def_property_readonly("name", &type::name);
-    c.def(
-        "visualize",
-        [](type& self, const std::string& filename) { return self.visualize(filename, VTK::appendedraw); },
-        "filename"_a);
+    c.def("visualize",
+          [](type& self, const std::string& filename) { return self.visualize(filename, VTK::appendedraw); },
+          "filename"_a);
 
     // factory
     const std::string factory_name = "make_" + class_name;
@@ -99,12 +97,11 @@ public:
         "name"_a = default_name,
         py::keep_alive<0, 1>(),
         py::keep_alive<0, 2>());
-    m.def(
-        factory_name.c_str(),
-        [](const S& space, const std::string& name) { return make_discrete_function<V>(space, name); },
-        "space"_a,
-        "name"_a = default_name,
-        py::keep_alive<0, 1>());
+    m.def(factory_name.c_str(),
+          [](const S& space, const std::string& name) { return make_discrete_function<V>(space, name); },
+          "space"_a,
+          "name"_a = default_name,
+          py::keep_alive<0, 1>());
 
     return c;
   } // ... bind(...)

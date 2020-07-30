@@ -211,15 +211,14 @@ GTEST_TEST(MPI201902TalkExamples, instationary_heat_equation)
   auto time_loop = [&](const double& T_end, const double& dt) {
     XT::LA::ListVectorArray<V> solution(cg_space.mapper().size(), /*length=*/0, /*reserve=*/std::ceil(T_end / (dt)));
     // initial values
-    solution.append(default_interpolation<V>(
-                        0,
-                        [](const auto& xx, const auto& /*param*/) {
-                          if (0.25 <= xx[0] && xx[0] <= 0.5)
-                            return 1.;
-                          else
-                            return 0.;
-                        },
-                        cg_space)
+    solution.append(default_interpolation<V>(0,
+                                             [](const auto& xx, const auto& /*param*/) {
+                                               if (0.25 <= xx[0] && xx[0] <= 0.5)
+                                                 return 1.;
+                                               else
+                                                 return 0.;
+                                             },
+                                             cg_space)
                         .dofs()
                         .vector(),
                     {"_t", 0.});
@@ -263,24 +262,22 @@ GTEST_TEST(MPI201902TalkExamples, linear_transport)
 
   auto V_h_0 = make_finite_volume_space(grid_view);
 
-  const XT::Functions::GenericFunction<1, d, 1> f(
-      1,
-      [&](const auto& w, const auto& /*param*/) { return 1. * w; },
-      "transport_to_the_right",
-      {},
-      [&](const auto& /*w*/, const auto& /*param*/) { return 1.; });
+  const XT::Functions::GenericFunction<1, d, 1> f(1,
+                                                  [&](const auto& w, const auto& /*param*/) { return 1. * w; },
+                                                  "transport_to_the_right",
+                                                  {},
+                                                  [&](const auto& /*w*/, const auto& /*param*/) { return 1.; });
   const NumericalUpwindFlux<I, d, 1> g(f);
   auto L_h = make_advection_fv_operator<M>(grid_view, g, V_h_0, V_h_0);
 
-  auto w_0 = default_interpolation<V>(
-      0,
-      [](const auto& xx, const auto& /*param*/) {
-        if (0.25 <= xx[0] && xx[0] <= 0.5)
-          return 1.;
-        else
-          return 0.;
-      },
-      V_h_0);
+  auto w_0 = default_interpolation<V>(0,
+                                      [](const auto& xx, const auto& /*param*/) {
+                                        if (0.25 <= xx[0] && xx[0] <= 0.5)
+                                          return 1.;
+                                        else
+                                          return 0.;
+                                      },
+                                      V_h_0);
 
   // explicit, the right choice
   const double T_end = 1.;
@@ -309,21 +306,19 @@ GTEST_TEST(MPI201902TalkExamples, burgers)
 
   auto V_h_0 = make_finite_volume_space(grid_view);
 
-  const XT::Functions::GenericFunction<1, d, 1> f(
-      2,
-      [&](const auto& w, const auto& /*param*/) { return 0.5 * w * w; },
-      "burgers",
-      {},
-      [&](const auto& w, const auto& /*param*/) { return w; });
+  const XT::Functions::GenericFunction<1, d, 1> f(2,
+                                                  [&](const auto& w, const auto& /*param*/) { return 0.5 * w * w; },
+                                                  "burgers",
+                                                  {},
+                                                  [&](const auto& w, const auto& /*param*/) { return w; });
   const NumericalUpwindFlux<I, d, 1> g(f);
   auto L_h = make_advection_fv_operator<M>(grid_view, g, V_h_0, V_h_0);
 
-  auto w_0 = default_interpolation<V>(
-      3,
-      [&](const auto& xx, const auto& /*mu*/) {
-        return std::exp(-std::pow(xx[0] - 0.33, 2) / (2 * std::pow(0.075, 2)));
-      },
-      V_h_0);
+  auto w_0 = default_interpolation<V>(3,
+                                      [&](const auto& xx, const auto& /*mu*/) {
+                                        return std::exp(-std::pow(xx[0] - 0.33, 2) / (2 * std::pow(0.075, 2)));
+                                      },
+                                      V_h_0);
 
   // explicit
   const double T_end = 1.;
@@ -348,27 +343,25 @@ GTEST_TEST(MPI201902TalkExamples, linear_transport__central_differences)
 
   auto V_h_0 = make_finite_volume_space(grid_view);
 
-  const XT::Functions::GenericFunction<1, d, 1> f(
-      1,
-      [&](const auto& w, const auto& /*param*/) { return 1. * w; },
-      "transport_to_the_right",
-      {},
-      [&](const auto& /*w*/, const auto& /*param*/) { return 1.; });
+  const XT::Functions::GenericFunction<1, d, 1> f(1,
+                                                  [&](const auto& w, const auto& /*param*/) { return 1. * w; },
+                                                  "transport_to_the_right",
+                                                  {},
+                                                  [&](const auto& /*w*/, const auto& /*param*/) { return 1.; });
   const GenericNumericalFlux<I, d, 1> g(
       f, [&](const auto&, const auto&, const auto& w_minus, const auto& w_plus, const auto& n, const auto& /*param*/) {
         return 0.5 * (f.evaluate(w_minus) + f.evaluate(w_plus)) * n;
       });
   auto L_h = make_advection_fv_operator<M>(grid_view, g, V_h_0, V_h_0);
 
-  auto w_0 = default_interpolation<V>(
-      0,
-      [](const auto& xx, const auto& /*param*/) {
-        if (0.25 <= xx[0] && xx[0] <= 0.5)
-          return 1.;
-        else
-          return 0.;
-      },
-      V_h_0);
+  auto w_0 = default_interpolation<V>(0,
+                                      [](const auto& xx, const auto& /*param*/) {
+                                        if (0.25 <= xx[0] && xx[0] <= 0.5)
+                                          return 1.;
+                                        else
+                                          return 0.;
+                                      },
+                                      V_h_0);
 
   // explicit, the right choice
   const double T_end = 1.;
@@ -445,22 +438,20 @@ GTEST_TEST(MPI201902TalkExamples, burgers_p1_unstable)
 
   const DiscontinuousLagrangeSpace<GV> V_h_1(grid_view, 1);
 
-  const XT::Functions::GenericFunction<1, d, 1> f(
-      2,
-      [&](const auto& w, const auto& /*param*/) { return 0.5 * w * w; },
-      "burgers",
-      {},
-      [&](const auto& w, const auto& /*param*/) { return w; });
+  const XT::Functions::GenericFunction<1, d, 1> f(2,
+                                                  [&](const auto& w, const auto& /*param*/) { return 0.5 * w * w; },
+                                                  "burgers",
+                                                  {},
+                                                  [&](const auto& w, const auto& /*param*/) { return w; });
   const NumericalUpwindFlux<I, d, 1> g(f);
   // unstable DG operator
   const AdvectionDgOperator<M, GV> L_h(grid_view, g, V_h_1, V_h_1, XT::Grid::ApplyOn::NoIntersections<GV>(), 0., 0.);
 
-  auto w_0 = default_interpolation<V>(
-      3,
-      [&](const auto& xx, const auto& /*mu*/) {
-        return std::exp(-std::pow(xx[0] - 0.33, 2) / (2 * std::pow(0.075, 2)));
-      },
-      V_h_1);
+  auto w_0 = default_interpolation<V>(3,
+                                      [&](const auto& xx, const auto& /*mu*/) {
+                                        return std::exp(-std::pow(xx[0] - 0.33, 2) / (2 * std::pow(0.075, 2)));
+                                      },
+                                      V_h_1);
 
   const double T_end = 1.;
   const double fv_dt = estimate_dt_for_hyperbolic_system(grid_view, w_0, f);
@@ -478,12 +469,11 @@ GTEST_TEST(MPI201902TalkExamples, burgers_shock_capturing)
   using GV = decltype(grid_view);
   using I = XT::Grid::extract_intersection_t<GV>;
 
-  const XT::Functions::GenericFunction<1, d, 1> f(
-      2,
-      [&](const auto& w, const auto& /*param*/) { return 0.5 * w * w; },
-      "burgers",
-      {},
-      [&](const auto& w, const auto& /*param*/) { return w; });
+  const XT::Functions::GenericFunction<1, d, 1> f(2,
+                                                  [&](const auto& w, const auto& /*param*/) { return 0.5 * w * w; },
+                                                  "burgers",
+                                                  {},
+                                                  [&](const auto& w, const auto& /*param*/) { return w; });
   const NumericalEngquistOsherFlux<I, d, 1> g(f);
 
   auto perform_simulation = [&](const int p, const std::string& prefix, const double& CFL_factor = 0.99) {
@@ -492,12 +482,11 @@ GTEST_TEST(MPI201902TalkExamples, burgers_shock_capturing)
     // stabilized DG operator
     const AdvectionDgOperator<M, GV> L_h(grid_view, g, V_h_p, V_h_p);
 
-    auto w_0 = default_interpolation<V>(
-        3,
-        [&](const auto& xx, const auto& /*mu*/) {
-          return std::exp(-std::pow(xx[0] - 0.33, 2) / (2 * std::pow(0.075, 2)));
-        },
-        V_h_p);
+    auto w_0 = default_interpolation<V>(3,
+                                        [&](const auto& xx, const auto& /*mu*/) {
+                                          return std::exp(-std::pow(xx[0] - 0.33, 2) / (2 * std::pow(0.075, 2)));
+                                        },
+                                        V_h_p);
 
     const double T_end = 1.;
     const double fv_dt = estimate_dt_for_hyperbolic_system(grid_view, w_0, f);
