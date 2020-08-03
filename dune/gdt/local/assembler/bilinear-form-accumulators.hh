@@ -14,6 +14,7 @@
 #include <memory>
 
 #include <dune/xt/common/parallel/threadstorage.hh>
+#include <dune/xt/common/timedlogging.hh>
 #include <dune/xt/la/type_traits.hh>
 #include <dune/xt/grid/functors/interfaces.hh>
 #include <dune/xt/grid/type_traits.hh>
@@ -21,6 +22,7 @@
 
 #include <dune/gdt/exceptions.hh>
 #include <dune/gdt/local/bilinear-forms/interfaces.hh>
+#include <dune/gdt/print.hh>
 
 namespace Dune {
 namespace GDT {
@@ -45,6 +47,7 @@ class LocalElementBilinearFormAccumulator
   : public XT::Grid::ElementFunctor<GV>
   , public XT::Common::ThreadResultPropagator<LocalElementBilinearFormAccumulator<GV, s_r, s_rC, SF, R, r_r, r_rC, RF>,
                                               R>
+  , public XT::Common::WithLogger<LocalElementBilinearFormAccumulator<GV, s_r, s_rC, SF, R, r_r, r_rC, RF>>
 {
   static_assert(XT::Grid::is_view<GV>::value, "");
 
@@ -53,6 +56,7 @@ class LocalElementBilinearFormAccumulator
   using Propagator =
       XT::Common::ThreadResultPropagator<LocalElementBilinearFormAccumulator<GV, s_r, s_rC, SF, R, r_r, r_rC, RF>, R>;
   friend Propagator;
+  using Logger = XT::Common::WithLogger<LocalElementBilinearFormAccumulator<GV, s_r, s_rC, SF, R, r_r, r_rC, RF>>;
 
 public:
   using E = XT::Grid::extract_entity_t<GV>;
@@ -66,9 +70,13 @@ public:
   LocalElementBilinearFormAccumulator(const LocalBilinearFormType& local_bilinear_form,
                                       const SourceType& source,
                                       const RangeType& range,
-                                      const XT::Common::Parameter& param = {})
+                                      const XT::Common::Parameter& param = {},
+                                      const std::string& logging_prefix = "")
     : BaseType()
     , Propagator(this)
+    , Logger(logging_prefix.empty() ? "gdt" : "gdt.elementbilinearformaccumulator",
+             logging_prefix.empty() ? "ElementBilinearFormAccumulator" : logging_prefix,
+             /*logging_disabled=*/logging_prefix.empty())
     , local_bilinear_form_(local_bilinear_form.copy())
     , source_(source)
     , range_(range)
@@ -76,11 +84,15 @@ public:
     , param_(param)
     , local_source_(source_.local_function())
     , local_range_(range_.local_function())
-  {}
+  {
+    LOG__(Logger, info) << Logger::logging_id << "(local_bilinear_form=" << &local_bilinear_form << ", source=" << &source
+                        << ", range=" << &range << ", param=" << param << ")";
+  }
 
   LocalElementBilinearFormAccumulator(const ThisType& other)
     : BaseType(other)
     , Propagator(other)
+    , Logger(other)
     , local_bilinear_form_(other.local_bilinear_form_->copy())
     , source_(other.source_)
     , range_(other.range_)
@@ -97,6 +109,7 @@ public:
 
   void apply_local(const ElementType& element) override final
   {
+    LOG__(Logger, debug) << Logger::logging_id << ".apply_local(element=" << print(element) << ")" << std::endl;
     local_source_->bind(element);
     local_range_->bind(element);
     DUNE_THROW_IF(
@@ -104,6 +117,8 @@ public:
     DUNE_THROW_IF(
         local_range_->size() != 1, Exceptions::assembler_error, "local_range_->size() = " << local_range_->size());
     local_bilinear_form_->apply2(*local_source_, *local_range_, bilinear_form_value_, param_);
+    LOG__(Logger, debug) << "   bilinear_form_value_[0][0] = " << bilinear_form_value_[0][0]
+                         << "\n   result_ = " << result_ << std::endl;
     result_ += bilinear_form_value_[0][0];
   } // ... apply_local(...)
 
@@ -145,10 +160,11 @@ make_local_element_bilinear_form_accumulator(
     const LocalElementBilinearFormInterface<E, s_r, s_rC, SF, R, r_r, r_rC, RF>& local_bilinear_form,
     const XT::Functions::GridFunctionInterface<E, s_r, s_rC, SF>& source,
     const XT::Functions::GridFunctionInterface<E, r_r, r_rC, RF>& range,
-    const XT::Common::Parameter& param = {})
+    const XT::Common::Parameter& param = {},
+    const std::string& logging_prefix = "")
 {
   return std::make_unique<LocalElementBilinearFormAccumulator<GridView, s_r, s_rC, SF, R, r_r, r_rC, RF>>(
-      local_bilinear_form, source, range, param);
+      local_bilinear_form, source, range, param, logging_prefix);
 }
 
 

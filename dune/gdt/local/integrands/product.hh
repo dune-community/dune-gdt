@@ -21,6 +21,8 @@
 #include <dune/xt/functions/grid-function.hh>
 #include <dune/xt/functions/interfaces/grid-function.hh>
 
+#include <dune/gdt/print.hh>
+
 #include "interfaces.hh"
 
 namespace Dune {
@@ -53,8 +55,8 @@ public:
   LocalElementProductIntegrand(XT::Functions::GridFunction<E, r, r, F> weight = {1.},
                                const std::string& logging_prefix = "")
     : BaseType({},
-               logging_prefix.empty() ? "gdt" : "gdt.localelementproductintegrand",
-               logging_prefix.empty() ? "LocalElementProductIntegrand" : logging_prefix,
+               logging_prefix.empty() ? "gdt" : "gdt.elementproductintegrand",
+               logging_prefix.empty() ? "ElementProductIntegrand" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
     , weight_(weight)
     , local_weight_(weight_.local_function())
@@ -97,9 +99,11 @@ public:
                 DynamicMatrix<F>& result,
                 const XT::Common::Parameter& param = {}) const override final
   {
-    LOG_(debug) << "evaluate(test_basis.size()=" << test_basis.size(param)
-                << ", ansatz_basis.size()=" << ansatz_basis.size(param) << ", point_in_reference_element=["
-                << point_in_reference_element << "], param=" << param << ")" << std::endl;
+    LOG_(debug) << this->logging_id << ".evaluate(test_basis.size()=" << test_basis.size(param)
+                << ", ansatz_basis.size()=" << ansatz_basis.size(param)
+                << ", point_in_{reference_element | physical_space} = {" << print(point_in_reference_element) << "|"
+                << print(this->element().geometry().global(point_in_reference_element)) << "}, param=" << param << ")"
+                << std::endl;
     // prepare storage
     const size_t rows = test_basis.size(param);
     const size_t cols = ansatz_basis.size(param);
@@ -115,7 +119,7 @@ public:
     for (size_t ii = 0; ii < rows; ++ii)
       for (size_t jj = 0; jj < cols; ++jj)
         result[ii][jj] = (weight * test_basis_values_[ii]) * ansatz_basis_values_[jj];
-    LOG_(debug) << "  result = " << result << std::endl;
+    LOG_(debug) << "  result = " << print(result, {{"oneline", "true"}}) << std::endl;
   } // ... evaluate(...)
 
 private:

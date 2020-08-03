@@ -16,6 +16,7 @@
 
 #include <dune/gdt/local/integrands/interfaces.hh>
 #include <dune/gdt/local/integrands/generic.hh>
+#include <dune/gdt/print.hh>
 
 #include "interfaces.hh"
 
@@ -48,20 +49,36 @@ public:
   using IntegrandType = LocalBinaryElementIntegrandInterface<E, t_r, t_rC, TR, F, a_r, a_rC, AR>;
   using GenericIntegrand = GenericLocalBinaryElementIntegrand<E, t_r, t_rC, TR, F, a_r, a_rC, AR>;
 
-  LocalElementIntegralBilinearForm(const IntegrandType& integrand, const int over_integrate = 0)
-    : BaseType(integrand.parameter_type())
+  LocalElementIntegralBilinearForm(const IntegrandType& integrand,
+                                   const int over_integrate = 0,
+                                   const std::string& logging_prefix = "")
+    : BaseType(integrand.parameter_type(),
+               logging_prefix.empty() ? "gdt" : "gdt.localelementintegralbilinearform",
+               logging_prefix.empty() ? "LocalElementIntegralBilinearForm" : logging_prefix,
+               /*logging_disabled=*/logging_prefix.empty())
     , integrand_(integrand.copy_as_binary_element_integrand())
     , over_integrate_(over_integrate)
-  {}
+  {
+    LOG_(info) << this->logging_id << "(integrand=" << &integrand << ", over_integrate=" << over_integrate << ")"
+               << std::endl;
+  }
 
   LocalElementIntegralBilinearForm(typename GenericIntegrand::GenericOrderFunctionType order_function,
                                    typename GenericIntegrand::GenericEvaluateFunctionType evaluate_function,
                                    const XT::Common::ParameterType& param_type = {},
-                                   const int over_integrate = 0)
-    : BaseType(param_type)
+                                   const int over_integrate = 0,
+                                   const std::string& logging_prefix = "")
+    : BaseType(param_type,
+               logging_prefix.empty() ? "gdt" : "gdt.localelementintegralbilinearform",
+               logging_prefix.empty() ? "LocalElementIntegralBilinearForm" : logging_prefix,
+               /*logging_disabled=*/logging_prefix.empty())
     , integrand_(GenericIntegrand(order_function, evaluate_function).copy_as_binary_element_integrand())
     , over_integrate_(over_integrate)
-  {}
+  {
+    LOG_(info) << this->logging_id << "(order_function=" << &order_function
+               << ", evaluate_function=" << evaluate_function << ", param_type=" << param_type
+               << ", over_integrate=" << over_integrate << ")" << std::endl;
+  }
 
   LocalElementIntegralBilinearForm(const ThisType& other)
     : BaseType(other)
@@ -83,6 +100,8 @@ public:
               DynamicMatrix<F>& result,
               const XT::Common::Parameter& param = {}) const override final
   {
+    LOG_(debug) << this->logging_id << ".apply2(test_basis.size()=" << test_basis.size(param)
+                << ", ansatz_basis.size()=" << ansatz_basis.size(param) << ", param=" << param << ")" << std::endl;
     // prepare integand
     const auto& element = ansatz_basis.element();
     assert(test_basis.element() == element && "This must not happen!");
@@ -101,6 +120,10 @@ public:
       const auto integration_factor = element.geometry().integrationElement(point_in_reference_element);
       const auto quadrature_weight = quadrature_point.weight();
       // evaluate the integrand
+      LOG_(debug) << "   point_in_{reference_element|physical_space} = {" << print(point_in_reference_element) << "|"
+                  << print(element.geometry().global(point_in_reference_element))
+                  << "},\n   integration_factor = " << integration_factor
+                  << ", quadrature_weight = " << quadrature_weight << std::endl;
       integrand_->evaluate(test_basis, ansatz_basis, point_in_reference_element, integrand_values_, param);
       assert(integrand_values_.rows() >= rows && "This must not happen!");
       assert(integrand_values_.cols() >= cols && "This must not happen!");
@@ -109,6 +132,7 @@ public:
         for (size_t jj = 0; jj < cols; ++jj)
           result[ii][jj] += integrand_values_[ii][jj] * integration_factor * quadrature_weight;
     } // loop over all quadrature points
+    LOG_(debug) << "  result = " << result << std::endl;
   } // ... apply(...)
 
 private:
@@ -144,11 +168,19 @@ public:
 
   using IntegrandType = LocalQuaternaryIntersectionIntegrandInterface<I, t_r, t_rC, TR, F, a_r, a_rC, AR>;
 
-  LocalCouplingIntersectionIntegralBilinearForm(const IntegrandType& integrand, const int over_integrate = 0)
-    : BaseType(integrand.parameter_type())
+  LocalCouplingIntersectionIntegralBilinearForm(const IntegrandType& integrand,
+                                                const int over_integrate = 0,
+                                                const std::string& logging_prefix = "")
+    : BaseType(integrand.parameter_type(),
+               logging_prefix.empty() ? "gdt" : "gdt.localcouplingintersectionintegralbilinearform",
+               logging_prefix.empty() ? "LocalCouplingIntersectionIntegralBilinearForm" : logging_prefix,
+               /*logging_disabled=*/logging_prefix.empty())
     , integrand_(integrand.copy_as_quaternary_intersection_integrand())
     , over_integrate_(over_integrate)
-  {}
+  {
+    LOG_(info) << this->logging_id << "(integrand=" << &integrand << ", over_integrate=" << over_integrate << ")"
+               << std::endl;
+  }
 
   LocalCouplingIntersectionIntegralBilinearForm(const ThisType& other)
     : BaseType(other)
@@ -273,11 +305,19 @@ public:
 
   using IntegrandType = LocalBinaryIntersectionIntegrandInterface<I, t_r, t_rC, TR, F, a_r, a_rC, AR>;
 
-  LocalIntersectionIntegralBilinearForm(const IntegrandType& integrand, const int over_integrate = 0)
-    : BaseType(integrand.parameter_type())
+  LocalIntersectionIntegralBilinearForm(const IntegrandType& integrand,
+                                        const int over_integrate = 0,
+                                        const std::string& logging_prefix = "")
+    : BaseType(integrand.parameter_type(),
+               logging_prefix.empty() ? "gdt" : "gdt.localintersectionintegralbilinearform",
+               logging_prefix.empty() ? "LocalIntersectionIntegralBilinearForm" : logging_prefix,
+               /*logging_disabled=*/logging_prefix.empty())
     , integrand_(integrand.copy_as_binary_intersection_integrand())
     , over_integrate_(over_integrate)
-  {}
+  {
+    LOG_(info) << this->logging_id << "(integrand=" << &integrand << ", over_integrate=" << over_integrate << ")"
+               << std::endl;
+  }
 
   LocalIntersectionIntegralBilinearForm(const ThisType& other)
     : BaseType(other)
