@@ -10,7 +10,11 @@
 #   René Fritze     (2016, 2018)
 # ~~~
 
+from tempfile import NamedTemporaryFile
+
 from dune.xt import guarded_import
+from dune.xt.common.vtk.plot import plot
+
 
 for mod_name in (     # order should not matter!
         '_discretefunction_discretefunction',
@@ -61,3 +65,24 @@ for mod_name in (     # order should not matter!
         '_tools_sparsity_pattern',
 ):
     guarded_import(globals(), 'dune.gdt', mod_name)
+
+
+def visualize_function(function, grid=None, subsampling=False):
+    assert function.dim_domain == 2, f'Not implemented yet for {function.dim_domain}-dimensional grids!'
+    assert function.dim_range == 1, f'Not implemented yet for {function.dim_domain}-dimensional functions!'
+    tmpfile = NamedTemporaryFile(mode='wb', delete=False, suffix='.vtu').name
+    failed = False
+    try: # discrete function
+        function.visualize(filename=tmpfile[:-4])
+        return plot(tmpfile, color_attribute_name=function.name)
+    except TypeError:
+        failed = True
+    except AttributeError:
+        failed = True
+
+    if failed:
+        from dune.xt.functions import visualize_function as visualize_xt_function
+
+        assert grid
+        return visualize_xt_function(function, grid, subsampling=subsampling)
+
