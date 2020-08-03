@@ -7,9 +7,12 @@
 // Authors:
 //   Felix Schindler (2018)
 
-#ifndef DUNE_GDT_OPERATORS_LOCALIZABLE_FUNCTIONAL_HH
-#define DUNE_GDT_OPERATORS_LOCALIZABLE_FUNCTIONAL_HH
+#ifndef DUNE_GDT_OPERATORS_LOCALIZABLE_BILINEAR_FORM_HH
+#define DUNE_GDT_OPERATORS_LOCALIZABLE_BILINEAR_FORM_HH
 
+#warning "This header is deprecated, include <dune/gdt/bilinear-form.hh> instead (03.08.2020)!"
+
+#include <dune/xt/common/deprecated.hh>
 #include <dune/xt/la/type_traits.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/grid/walker.hh>
@@ -30,7 +33,8 @@ template <class GridView,
           size_t range_range_dim = source_range_dim,
           size_t range_range_dim_cols = source_range_dim_cols,
           class RangeRangeField = SourceRangeField>
-class LocalizableBilinearFormBase : public XT::Grid::Walker<GridView>
+class DXT_DEPRECATED_MSG("Use BilinearForm instead (03.08.2020)!") LocalizableBilinearFormBase
+  : public XT::Grid::Walker<GridView>
 {
   static_assert(XT::Grid::is_view<GridView>::value, "");
 
@@ -141,10 +145,10 @@ protected:
 
 template <class GV, size_t s_r, size_t s_rC, class SR, size_t r_r, size_t r_rC, class RR>
 std::enable_if_t<XT::Grid::is_view<GV>::value, LocalizableBilinearFormBase<GV, s_r, s_rC, SR, double, r_r, r_rC, RR>>
-make_localizable_bilinear_form(
-    GV grid_view,
-    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, s_r, s_rC, SR>& source,
-    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, r_r, r_rC, RR>& range)
+    DXT_DEPRECATED_MSG("Use make_bilinear_form instead (03.08.2020)!") make_localizable_bilinear_form(
+        GV grid_view,
+        const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, s_r, s_rC, SR>& source,
+        const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, r_r, r_rC, RR>& range)
 {
   return LocalizableBilinearFormBase<GV, s_r, s_rC, SR, double, r_r, r_rC, RR>(grid_view, source, range);
 }
@@ -153,4 +157,4 @@ make_localizable_bilinear_form(
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_OPERATORS_LOCALIZABLE_FUNCTIONAL_HH
+#endif // DUNE_GDT_OPERATORS_LOCALIZABLE_BILINEAR_FORM_HH
