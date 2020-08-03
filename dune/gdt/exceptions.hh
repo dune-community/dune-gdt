@@ -42,6 +42,9 @@ class numerical_flux_error : public Exception
 class operator_error : public Exception
 {};
 
+class bilinear_form_error : public operator_error
+{};
+
 class interpolation_error : public operator_error
 {};
 
