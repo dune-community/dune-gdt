@@ -39,10 +39,10 @@
 #include <dune/gdt/local/integrands/abs.hh>
 #include <dune/gdt/local/integrands/identity.hh>
 #include <dune/gdt/local/integrands/product.hh>
+#include <dune/gdt/norms.hh>
 #include <dune/gdt/operators/constant.hh>
 #include <dune/gdt/operators/identity.hh>
 #include <dune/gdt/operators/interfaces.hh>
-#include <dune/gdt/operators/localizable-bilinear-form.hh>
 #include <dune/gdt/operators/matrix-based.hh>
 #include <dune/gdt/prolongations.hh>
 #include <dune/gdt/spaces/bochner.hh>
@@ -80,13 +80,14 @@ protected:
   using O = OperatorInterface<M, GV, m>;
 
 public:
-  InstationaryEocStudy(const double T_end,
-                       const std::string timestepping,
-                       std::function<void(const DiscreteBochnerFunction<V, GV, m>&, const std::string&)> visualizer =
-                           [](const auto& /*solution*/, const auto& /*prefix*/) { /*no visualization by default*/ },
-                       const size_t num_refinements = DXTC_CONFIG_GET("num_refinements", 3),
-                       const size_t num_additional_refinements_for_reference =
-                           DXTC_CONFIG_GET("num_additional_refinements_for_reference", 2))
+  InstationaryEocStudy(
+      const double T_end,
+      const std::string timestepping,
+      std::function<void(const DiscreteBochnerFunction<V, GV, m>&, const std::string&)> visualizer =
+          [](const auto& /*solution*/, const auto& /*prefix*/) { /*no visualization by default*/ },
+      const size_t num_refinements = DXTC_CONFIG_GET("num_refinements", 3),
+      const size_t num_additional_refinements_for_reference =
+          DXTC_CONFIG_GET("num_additional_refinements_for_reference", 2))
     : T_end_(T_end)
     , timestepping_(timestepping)
     , num_refinements_(num_refinements)
@@ -276,12 +277,7 @@ public:
             return localizable_functional.result();
           };
         } else if (spatial_norm_id == "L_2") {
-          spatial_norm = [&](const DF& func) {
-            auto localizable_product = make_localizable_bilinear_form(reference_space.grid_view(), func, func);
-            localizable_product.append(LocalElementIntegralBilinearForm<E, m>(LocalProductIntegrand<E, m>()));
-            localizable_product.assemble();
-            return std::sqrt(localizable_product.result());
-          };
+          spatial_norm = [&](const DF& func) { return l2_norm(reference_space.grid_view(), func); };
         } else
           DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
                      "I do not know how to compute the spatial norm '" << spatial_norm_id << "'!");
@@ -301,13 +297,8 @@ public:
                     make_discrete_function(reference_space, u_t.dofs().vector() - u_h_t.dofs().vector()));
               });
           auto temporal_grid_view = reference_bochner_space.temporal_space().grid_view();
-          using TE = XT::Grid::extract_entity_t<decltype(temporal_grid_view)>;
-          const auto& spatial_norm_as_temporal_grid_function = spatial_norm_function.template as_grid_function<TE>();
-          auto localizable_temporal_product = make_localizable_bilinear_form(
-              temporal_grid_view, spatial_norm_as_temporal_grid_function, spatial_norm_as_temporal_grid_function);
-          localizable_temporal_product.append(LocalElementIntegralBilinearForm<TE>(LocalProductIntegrand<TE>()));
-          localizable_temporal_product.assemble();
-          current_data_["norm"][norm_id] = localizable_temporal_product.result();
+          current_data_["norm"][norm_id] =
+              l2_norm(temporal_grid_view, spatial_norm_function.template as_grid_function(temporal_grid_view));
         } else
           DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
                      "I do not know how to compute the temporal norm '" << temporal_norm_id << "'!");
