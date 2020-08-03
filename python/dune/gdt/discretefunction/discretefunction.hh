@@ -25,7 +25,6 @@
 #include <python/dune/xt/grid/traits.hh>
 #include <python/dune/xt/la/container.bindings.hh>
 
-
 #include <dune/gdt/discretefunction/default.hh>
 
 namespace Dune {
@@ -72,15 +71,21 @@ public:
           py::keep_alive<1, 3>());
     c.def(py::init<const S&, const std::string&>(), "space"_a, "name"_a = default_name, py::keep_alive<1, 2>());
 
+    c.def_property_readonly("dim_domain", [](const type&) { return size_t(base_type::d); });
+    if (rC == 1)
+      c.def_property_readonly("dim_range", [](const type&) { return size_t(r); });
+    else
+      c.def_property_readonly("dim_range", [](const type&) { return std::make_pair(size_t(r), size_t(rC)); });
     c.def_property_readonly("space", &type::space);
     c.def_property("dofs", // doing this so complicated to get an actual reference instead of a copy
                    (typename type::DofVectorType & (type::*)()) & type::dofs,
                    (typename type::DofVectorType & (type::*)()) & type::dofs);
     c.def_property_readonly("name", &type::name);
 
-    c.def("visualize",
-          [](type& self, const std::string& filename) { return self.visualize(filename, VTK::appendedraw); },
-          "filename"_a);
+    c.def(
+        "visualize",
+        [](type& self, const std::string& filename) { return self.visualize(filename, VTK::appendedraw); },
+        "filename"_a);
 
     m.def(
         XT::Common::to_camel_case(class_id).c_str(),
@@ -90,23 +95,25 @@ public:
         "name"_a = default_name,
         py::keep_alive<0, 1>(),
         py::keep_alive<0, 2>());
-    m.def(XT::Common::to_camel_case(class_id).c_str(),
-          [](const S& space, const MatchingVectorTag&, const std::string& name) {
+    m.def(
+        XT::Common::to_camel_case(class_id).c_str(),
+        [](const S& space, const MatchingVectorTag&, const std::string& name) {
+          return make_discrete_function(space, name);
+        },
+        "space"_a,
+        "vector_type"_a,
+        "name"_a = default_name,
+        py::keep_alive<0, 1>());
+    if (std::is_same<MatchingVectorTag, XT::LA::bindings::Istl>::value)
+      m.def(
+          XT::Common::to_camel_case(class_id).c_str(),
+          [](const S& space, const std::string& name, const MatchingVectorTag&) {
             return make_discrete_function(space, name);
           },
           "space"_a,
-          "vector_type"_a,
           "name"_a = default_name,
+          "vector_type"_a = XT::LA::bindings::Istl(),
           py::keep_alive<0, 1>());
-    if (std::is_same<MatchingVectorTag, XT::LA::bindings::Istl>::value)
-      m.def(XT::Common::to_camel_case(class_id).c_str(),
-            [](const S& space, const std::string& name, const MatchingVectorTag&) {
-              return make_discrete_function(space, name);
-            },
-            "space"_a,
-            "name"_a = default_name,
-            "vector_type"_a = XT::LA::bindings::Istl(),
-            py::keep_alive<0, 1>());
     return c;
   } // ... bind(...)
 }; // class DiscreteFunction
