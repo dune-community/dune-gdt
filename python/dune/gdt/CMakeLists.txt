@@ -136,6 +136,7 @@ dune_pybindxi_add_module(_operators_interfaces_common EXCLUDE_FROM_ALL ${header}
 dune_pybindxi_add_module(_operators_interfaces_eigen EXCLUDE_FROM_ALL ${header} operators/interfaces_eigen.cc)
 dune_pybindxi_add_module(_operators_interfaces_istl EXCLUDE_FROM_ALL ${header} operators/interfaces_istl.cc)
 dune_pybindxi_add_module(_operators_matrix_based EXCLUDE_FROM_ALL ${header} operators/matrix-based.cc)
+dune_pybindxi_add_module(_prolongations EXCLUDE_FROM_ALL ${header} prolongations.cc)
 dune_pybindxi_add_module(_spaces_h1_continuous_lagrange EXCLUDE_FROM_ALL ${header} spaces/h1/continuous-lagrange.cc)
 dune_pybindxi_add_module(_spaces_interface EXCLUDE_FROM_ALL ${header} spaces/interface.cc)
 dune_pybindxi_add_module(_spaces_l2_discontinuous_lagrange
