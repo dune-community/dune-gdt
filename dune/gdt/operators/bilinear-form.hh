@@ -248,6 +248,7 @@ public:
 
   Result apply2(const bool use_tbb = false)
   {
+    this->prepare();
     XT::Grid::Walker<GV> walker(this->grid_view_);
     walker.append(*this);
     walker.walk(use_tbb);
