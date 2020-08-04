@@ -52,6 +52,7 @@ for mod_name in (     # order should not matter!
         '_local_integrands_quaternary_intersection_interface',
         '_local_integrands_unary_element_interface',
         '_local_integrands_unary_intersection_interface',
+        '_operators_bilinear_form',
         '_operators_interfaces_common',
         '_operators_interfaces_eigen',
         '_operators_interfaces_istl',
