@@ -29,7 +29,7 @@ template <class Intersection>
 static std::function<double(const Intersection&)> default_intersection_diameter()
 {
   return [](const Intersection& intersection) {
-    if (Intersection::dimension == 1) {
+    if (Intersection::Entity::dimension == 1) {
       if (intersection.neighbor())
         return 0.5 * (XT::Grid::diameter(intersection.inside()) + XT::Grid::diameter(intersection.outside()));
       else

@@ -294,6 +294,8 @@ public:
            + std::max(test_basis.order(param) - 1, 0);
   }
 
+  using BaseUnaryType::evaluate;
+
   void evaluate(const LocalTestBasisType& test_basis,
                 const DomainType& point_in_reference_intersection,
                 DynamicVector<F>& result,
@@ -331,6 +333,8 @@ public:
   {
     return local_diffusion_->order(param) + test_basis.order(param) + ansatz_basis.order(param);
   }
+
+  using BaseBinaryType::evaluate;
 
   void evaluate(const LocalTestBasisType& test_basis,
                 const LocalAnsatzBasisType& ansatz_basis,

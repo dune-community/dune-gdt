@@ -240,6 +240,8 @@ public:
     return local_dirichlet_data_->order(param) + local_direction_->order(param) + test_basis.order(param);
   }
 
+  using BaseUnaryType::evaluate;
+
   void evaluate(const LocalTestBasisType& test_basis,
                 const DomainType& point_in_reference_intersection,
                 DynamicVector<F>& result,
@@ -285,6 +287,8 @@ public:
   {
     return local_direction_->order(param) + test_basis.order(param) + ansatz_basis.order(param);
   }
+
+  using BaseBinaryType::evaluate;
 
   void evaluate(const LocalTestBasisType& test_basis,
                 const LocalAnsatzBasisType& ansatz_basis,

@@ -129,10 +129,10 @@ public:
     , bilinear_form_value_(other.bilinear_form_value_)
     , result_(other.result_)
   {
-    for (auto& element_data_ : other.element_data_) {
-      const auto& local_bilinear_form = *std::get<0>(element_data_);
-      auto& param = std::get<1>(element_data_);
-      const auto& filter = *std::get<2>(element_data_);
+    for (auto& element_data : other.element_data_) {
+      const auto& local_bilinear_form = *std::get<0>(element_data);
+      auto& param = std::get<1>(element_data);
+      const auto& filter = *std::get<2>(element_data);
       this->append(local_bilinear_form, param, filter);
     }
   } // BilinearForm(...)
