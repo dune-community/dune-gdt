@@ -42,7 +42,7 @@ class ConstLincombOperator
   using SS = typename type::SourceSpaceType;
   using RS = typename type::RangeSpaceType;
   using Mop = typename type::MatrixOperatorType;
-  using F = F;
+  using F = typename type::FieldType;
 
 public:
   using bound_type = pybind11::class_<type, base_type>;
@@ -76,12 +76,14 @@ public:
 
     // our operators, only those that are not yet present in OperatorInterface
     // (function ptr signature required for the right return type)
-    c.def("__imul__", (T & (T::*)(const F&)) & T::operator*=, py::is_operator());
-    c.def("__itruediv__", (T & (T::*)(const F&)) & T::operator/=, py::is_operator());
-    c.def("__iadd__", (T & (T::*)(const base_type&)) & T::operator+=, py::is_operator(), py::keep_alive<1, 2>());
-    c.def("__iadd__", (T & (T::*)(const type&)) & T::operator+=, py::is_operator(), py::keep_alive<1, 2>());
-    c.def("__isub__", (T & (T::*)(const base_type&)) & T::operator-=, py::is_operator(), py::keep_alive<1, 2>());
-    c.def("__isub__", (T & (T::*)(const type&)) & T::operator-=, py::is_operator(), py::keep_alive<1, 2>());
+    c.def("__imul__", (type & (type::*)(const F&)) & type::operator*=, py::is_operator());
+    c.def("__itruediv__", (type & (type::*)(const F&)) & type::operator/=, py::is_operator());
+    c.def(
+        "__iadd__", (type & (type::*)(const base_type&)) & type::operator+=, py::is_operator(), py::keep_alive<1, 2>());
+    c.def("__iadd__", (type & (type::*)(const type&)) & type::operator+=, py::is_operator(), py::keep_alive<1, 2>());
+    c.def(
+        "__isub__", (type & (type::*)(const base_type&)) & type::operator-=, py::is_operator(), py::keep_alive<1, 2>());
+    c.def("__isub__", (type & (type::*)(const type&)) & type::operator-=, py::is_operator(), py::keep_alive<1, 2>());
   } // ... addbind_methods(...)
 
   static bound_type
@@ -128,7 +130,7 @@ class LincombOperator
   using V = typename type::VectorType;
   using SS = typename type::SourceSpaceType;
   using RS = typename type::RangeSpaceType;
-  using F = F;
+  using F = typename type::FieldType;
   using Mop = typename type::MatrixOperatorType;
 
 public:
@@ -179,13 +181,13 @@ public:
     c.def("op", (typename type::OperatorType & (type::*)(const size_t)) & type::op, "index"_a, py::keep_alive<0, 1>());
     c.def("assemble",
           (typename type::OperatorType & (type::*)(const bool)) & type::assemble,
-          "parallel"_a = False,
+          "parallel"_a = false,
           py::keep_alive<0, 1>());
 
     // our operators, only those that are not yet present in OperatorInterface or ConstLincombOperator
     // (function ptr signature required for the right return type)
-    c.def("__iadd__", (type & (type::*)(const type&)) & type::operator+=, py::is_operator(), py::keep_alive<1, 2>());
-    c.def("__isub__", (type & (type::*)(const type&)) & type::operator-=, py::is_operator(), py::keep_alive<1, 2>());
+    c.def("__iadd__", (type & (type::*)(type&)) & type::operator+=, py::is_operator(), py::keep_alive<1, 2>());
+    c.def("__isub__", (type & (type::*)(type&)) & type::operator-=, py::is_operator(), py::keep_alive<1, 2>());
 
     return c;
   } // ... bind(...)

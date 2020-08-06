@@ -205,108 +205,108 @@ public:
     // * variants from OperatorInterface
     c.def(
         "__mul__",
-        [](const T& self, const F& alpha) { return std::make_unique<CLop>(self * alpha); },
+        [](const T& self, const F& alpha) { return std::make_unique<decltype(self * alpha)>(self * alpha); },
         "scalar"_a,
         py::keep_alive<0, 1>(),
         py::is_operator());
     c.def(
         "__mul__",
-        [](T& self, const F& alpha) { return std::make_unique<Lop>(self * alpha); },
+        [](T& self, const F& alpha) { return std::make_unique<decltype(self * alpha)>(self * alpha); },
         "scalar"_a,
         py::keep_alive<0, 1>(),
         py::is_operator());
     c.def(
         "__truediv__",
-        [](const T& self, const F& alpha) { return std::make_unique<CLop>(self / alpha); },
+        [](const T& self, const F& alpha) { return std::make_unique<decltype(self / alpha)>(self / alpha); },
         "scalar"_a,
         py::keep_alive<0, 1>(),
         py::is_operator());
     c.def(
         "__truediv__",
-        [](T& self, const F& alpha) { return std::make_unique<Lop>(self / alpha); },
+        [](T& self, const F& alpha) { return std::make_unique<decltype(self / alpha)>(self / alpha); },
         "scalar"_a,
         py::keep_alive<0, 1>(),
         py::is_operator());
     c.def(
         "__add__",
-        [](const T& self, const CLop& other) { return std::make_unique<CLop>(self + other); },
+        [](const T& self, const CLop& other) { return std::make_unique<decltype(self + other)>(self + other); },
         "const_lincomb_op"_a,
         py::keep_alive<0, 1>(),
         py::keep_alive<0, 2>(),
         py::is_operator());
     c.def(
         "__add__",
-        [](const T& self, const type& other) { return std::make_unique<CLop>(self + other); },
+        [](const T& self, const type& other) { return std::make_unique<decltype(self + other)>(self + other); },
         "op"_a,
         py::keep_alive<0, 1>(),
         py::keep_alive<0, 2>(),
         py::is_operator());
     c.def(
         "__add__",
-        [](const T& self, const V& vec) { return std::make_unique<CLop>(self + vec); },
+        [](const T& self, const V& vec) { return std::make_unique<decltype(self + vec)>(self + vec); },
         "vector"_a,
         py::keep_alive<0, 1>(),
         py::keep_alive<0, 2>(),
         py::is_operator());
     c.def(
         "__add__",
-        [](T& self, Lop& other) { return std::make_unique<Lop>(self + other); },
+        [](T& self, Lop& other) { return std::make_unique<decltype(self + other)>(self + other); },
         "lincomb_op"_a,
         py::keep_alive<0, 1>(),
         py::keep_alive<0, 2>(),
         py::is_operator());
     c.def(
         "__add__",
-        [](T& self, type& other) { return std::make_unique<Lop>(self + other); },
+        [](T& self, type& other) { return std::make_unique<decltype(self + other)>(self + other); },
         "op"_a,
         py::keep_alive<0, 1>(),
         py::keep_alive<0, 2>(),
         py::is_operator());
     c.def(
         "__add__",
-        [](T& self, const V& vec) { return std::make_unique<Lop>(self + vec); },
+        [](T& self, const V& vec) { return std::make_unique<decltype(self + vec)>(self + vec); },
         "vector"_a,
         py::keep_alive<0, 1>(),
         py::keep_alive<0, 2>(),
         py::is_operator());
     c.def(
         "__sub__",
-        [](const T& self, const CLop& other) { return std::make_unique<CLop>(self - other); },
+        [](const T& self, const CLop& other) { return std::make_unique<decltype(self - other)>(self - other); },
         "const_lincomb_op"_a,
         py::keep_alive<0, 1>(),
         py::keep_alive<0, 2>(),
         py::is_operator());
     c.def(
         "__sub__",
-        [](const T& self, const type& other) { return std::make_unique<CLop>(self - other); },
+        [](const T& self, const type& other) { return std::make_unique<decltype(self - other)>(self - other); },
         "op"_a,
         py::keep_alive<0, 1>(),
         py::keep_alive<0, 2>(),
         py::is_operator());
     c.def(
         "__sub__",
-        [](const T& self, const V& vec) { return std::make_unique<CLop>(self - vec); },
+        [](const T& self, const V& vec) { return std::make_unique<decltype(self - vec)>(self - vec); },
         "vector"_a,
         py::keep_alive<0, 1>(),
         py::keep_alive<0, 2>(),
         py::is_operator());
     c.def(
         "__sub__",
-        [](T& self, Lop& other) { return std::make_unique<Lop>(self - other); },
+        [](T& self, Lop& other) { return std::make_unique<decltype(self - other)>(self - other); },
         "lincomb_op"_a,
         py::keep_alive<0, 1>(),
         py::keep_alive<0, 2>(),
         py::is_operator());
     c.def(
         "__sub__",
-        [](T& self, type& other) { return std::make_unique<Lop>(self - other); },
+        [](T& self, type& other) { return std::make_unique<decltype(self - other)>(self - other); },
         "op"_a,
         py::keep_alive<0, 1>(),
         py::keep_alive<0, 2>(),
         py::is_operator());
     c.def(
         "__sub__",
-        [](T& self, const V& vec) { return std::make_unique<Lop>(self - vec); },
+        [](T& self, const V& vec) { return std::make_unique<decltype(self - vec)>(self - vec); },
         "vector"_a,
         py::keep_alive<0, 1>(),
         py::keep_alive<0, 2>(),
@@ -314,13 +314,13 @@ public:
     // * variants from OperatorInterface with interchanged arguments (at most the combinations from above!)
     c.def(
         "__rmul__",
-        [](const T& self, const F& alpha) { return std::make_unique<CLop>(self * alpha); },
+        [](const T& self, const F& alpha) { return std::make_unique<decltype(self * alpha)>(self * alpha); },
         "scalar"_a,
         py::keep_alive<0, 1>(),
         py::is_operator());
     c.def(
         "__rmul__",
-        [](T& self, const F& alpha) { return std::make_unique<Lop>(self * alpha); },
+        [](T& self, const F& alpha) { return std::make_unique<decltype(self * alpha)>(self * alpha); },
         "scalar"_a,
         py::keep_alive<0, 1>(),
         py::is_operator());
@@ -328,14 +328,14 @@ public:
     // __radd__ for other ops does not make sense, uses __add__ of the other op
     c.def(
         "__radd__",
-        [](const T& self, const V& vec) { return std::make_unique<CLop>(self + vec); },
+        [](const T& self, const V& vec) { return std::make_unique<decltype(self + vec)>(self + vec); },
         "vector"_a,
         py::keep_alive<0, 1>(),
         py::keep_alive<0, 2>(),
         py::is_operator());
     c.def(
         "__radd__",
-        [](T& self, const V& vec) { return std::make_unique<Lop>(self + vec); },
+        [](T& self, const V& vec) { return std::make_unique<decltype(self + vec)>(self + vec); },
         "vector"_a,
         py::keep_alive<0, 1>(),
         py::keep_alive<0, 2>(),
@@ -343,14 +343,14 @@ public:
     // __rsub__ for other ops does not make sense, uses __sub__ of the other op
     c.def(
         "__rsub__",
-        [](const T& self, const V& vec) { return std::make_unique<CLop>(self * -1 + vec); },
+        [](const T& self, const V& vec) { return std::make_unique<decltype(self * -1 + vec)>(self * -1 + vec); },
         "vector"_a,
         py::keep_alive<0, 1>(),
         py::keep_alive<0, 2>(),
         py::is_operator());
     c.def(
         "__rsub__",
-        [](T& self, const V& vec) { return std::make_unique<Lop>(self * -1 + vec); },
+        [](T& self, const V& vec) { return std::make_unique<decltype(self * -1 + vec)>(self * -1 + vec); },
         "vector"_a,
         py::keep_alive<0, 1>(),
         py::keep_alive<0, 2>(),
@@ -358,11 +358,14 @@ public:
     // * additional variants for Python which make sense given OperatorInterface
     c.def(
         "__neg__",
-        [](const T& self) { return std::make_unique<CLop>(self * -1); },
+        [](const T& self) { return std::make_unique<decltype(self * -1)>(self * -1); },
         py::is_operator(),
         py::keep_alive<0, 1>());
     c.def(
-        "__neg__", [](T& self) { return std::make_unique<Lop>(self * -1); }, py::is_operator(), py::keep_alive<0, 1>());
+        "__neg__",
+        [](T& self) { return std::make_unique<decltype(self * -1)>(self * -1); },
+        py::is_operator(),
+        py::keep_alive<0, 1>());
   } // ... addbind_methods(...)
 
   static bound_type
