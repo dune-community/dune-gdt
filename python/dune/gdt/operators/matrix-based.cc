@@ -62,39 +62,50 @@ private:
       namespace py = pybind11;
       using namespace pybind11::literals;
 
-      m.def(FactoryName.c_str(),
-            [](GP& grid,
-               const SS& source_space,
-               const RS& range_space,
-               const MatrixTag&,
-               const SparsityTag&,
-               const XT::LA::SparsityPatternDefault& pattern) {
-              return type(grid.leaf_view(), source_space, range_space, pattern);
-            },
-            "grid"_a,
-            "source_space"_a,
-            "range_space"_a,
-            "la_backend"_a,
-            "sparsity_type"_a,
-            "sparsity_pattern"_a,
-            py::keep_alive<0, 1>(),
-            py::keep_alive<0, 2>(),
-            py::keep_alive<0, 3>());
-      m.def(FactoryName.c_str(),
-            [](GP& grid, const SS& source_space, const RS& range_space, const MatrixTag&, const SparsityTag&) {
-              return type(grid.leaf_view(),
-                          source_space,
-                          range_space,
-                          make_element_and_intersection_sparsity_pattern(range_space, source_space, grid.leaf_view()));
-            },
-            "grid"_a,
-            "source_space"_a,
-            "range_space"_a,
-            "la_backend"_a,
-            "sparsity_type"_a,
-            py::keep_alive<0, 1>(),
-            py::keep_alive<0, 2>(),
-            py::keep_alive<0, 3>());
+      m.def(
+          FactoryName.c_str(),
+          [](GP& grid,
+             const SS& source_space,
+             const RS& range_space,
+             const MatrixTag&,
+             const SparsityTag&,
+             const XT::LA::SparsityPatternDefault& pattern,
+             const std::string& logging_prefix) {
+            return new type(grid.leaf_view(), source_space, range_space, pattern, logging_prefix);
+          },
+          "grid"_a,
+          "source_space"_a,
+          "range_space"_a,
+          "la_backend"_a,
+          "sparsity_type"_a,
+          "sparsity_pattern"_a,
+          "logging_prefix"_a = "",
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>(),
+          py::keep_alive<0, 3>());
+      m.def(
+          FactoryName.c_str(),
+          [](GP& grid,
+             const SS& source_space,
+             const RS& range_space,
+             const MatrixTag&,
+             const SparsityTag&,
+             const std::string& logging_prefix) {
+            return new type(grid.leaf_view(),
+                            source_space,
+                            range_space,
+                            make_element_and_intersection_sparsity_pattern(range_space, source_space, grid.leaf_view()),
+                            logging_prefix);
+          },
+          "grid"_a,
+          "source_space"_a,
+          "range_space"_a,
+          "la_backend"_a,
+          "sparsity_type"_a,
+          "logging_prefix"_a = "",
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>(),
+          py::keep_alive<0, 3>());
     }
   }; // struct addbind<true, ...>
 
@@ -106,52 +117,67 @@ private:
       namespace py = pybind11;
       using namespace pybind11::literals;
 
-      m.def(FactoryName.c_str(),
+      m.def(
+          FactoryName.c_str(),
+          [](GP& grid,
+             const SS& source_space,
+             const RS& range_space,
+             const MatrixTag&,
+             const XT::LA::SparsityPatternDefault& pattern,
+             const std::string& logging_prefix) {
+            return new type(grid.leaf_view(), source_space, range_space, pattern, logging_prefix);
+          },
+          "grid"_a,
+          "source_space"_a,
+          "range_space"_a,
+          "la_backend"_a,
+          "sparsity_pattern"_a,
+          "logging_prefix"_a = "",
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>(),
+          py::keep_alive<0, 3>());
+      if (std::is_same<MatrixTag, XT::LA::bindings::Istl>::value) {
+        m.def(
+            FactoryName.c_str(),
             [](GP& grid,
                const SS& source_space,
                const RS& range_space,
+               const XT::LA::SparsityPatternDefault& pattern,
                const MatrixTag&,
-               const XT::LA::SparsityPatternDefault& pattern) {
-              return type(grid.leaf_view(), source_space, range_space, pattern);
+               const std::string& logging_prefix) {
+              return new type(grid.leaf_view(), source_space, range_space, pattern, logging_prefix);
             },
             "grid"_a,
             "source_space"_a,
             "range_space"_a,
-            "la_backend"_a,
             "sparsity_pattern"_a,
+            "la_backend"_a = MatrixTag(),
+            "logging_prefix"_a = "",
             py::keep_alive<0, 1>(),
             py::keep_alive<0, 2>(),
             py::keep_alive<0, 3>());
-      if (std::is_same<MatrixTag, XT::LA::bindings::Istl>::value) {
-        m.def(FactoryName.c_str(),
-              [](GP& grid,
-                 const SS& source_space,
-                 const RS& range_space,
-                 const XT::LA::SparsityPatternDefault& pattern,
-                 const MatrixTag&) { return type(grid.leaf_view(), source_space, range_space, pattern); },
-              "grid"_a,
-              "source_space"_a,
-              "range_space"_a,
-              "sparsity_pattern"_a,
-              "la_backend"_a = MatrixTag(),
-              py::keep_alive<0, 1>(),
-              py::keep_alive<0, 2>(),
-              py::keep_alive<0, 3>());
-        m.def(FactoryName.c_str(),
-              [](GP& grid, const SS& source_space, const RS& range_space, const MatrixTag&) {
-                return type(
-                    grid.leaf_view(),
-                    source_space,
-                    range_space,
-                    make_element_and_intersection_sparsity_pattern(range_space, source_space, grid.leaf_view()));
-              },
-              "grid"_a,
-              "source_space"_a,
-              "range_space"_a,
-              "la_backend"_a = MatrixTag(),
-              py::keep_alive<0, 1>(),
-              py::keep_alive<0, 2>(),
-              py::keep_alive<0, 3>());
+        m.def(
+            FactoryName.c_str(),
+            [](GP& grid,
+               const SS& source_space,
+               const RS& range_space,
+               const MatrixTag&,
+               const std::string& logging_prefix) {
+              return new type(
+                  grid.leaf_view(),
+                  source_space,
+                  range_space,
+                  make_element_and_intersection_sparsity_pattern(range_space, source_space, grid.leaf_view()),
+                  logging_prefix);
+            },
+            "grid"_a,
+            "source_space"_a,
+            "range_space"_a,
+            "la_backend"_a = MatrixTag(),
+            "logging_prefix"_a = "",
+            py::keep_alive<0, 1>(),
+            py::keep_alive<0, 2>(),
+            py::keep_alive<0, 3>());
       }
     }
   }; // struct addbind<false, ...>
@@ -176,39 +202,46 @@ public:
     const auto ClassName = XT::Common::to_camel_case(class_name);
 
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
-    c.def(py::init([](GP& grid, const SS& source_space, const RS& range_space, M& matrix) {
-            return new type(grid.leaf_view(), source_space, range_space, matrix);
-          }),
-          "grid"_a,
-          "source_space"_a,
-          "range_space"_a,
-          "matrix"_a,
-          py::keep_alive<1, 2>(),
-          py::keep_alive<1, 3>(),
-          py::keep_alive<1, 4>(),
-          py::keep_alive<1, 5>());
     c.def(
         py::init(
-            [](GP& grid, const SS& source_space, const RS& range_space, const XT::LA::SparsityPatternDefault& pattern) {
-              return new type(grid.leaf_view(), source_space, range_space, pattern);
+            [](GP& grid, const SS& source_space, const RS& range_space, M& matrix, const std::string& logging_prefix) {
+              return new type(grid.leaf_view(), source_space, range_space, matrix, logging_prefix);
             }),
         "grid"_a,
         "source_space"_a,
         "range_space"_a,
-        "sparsity_pattern"_a,
+        "matrix"_a,
+        "logging_prefix"_a = "",
         py::keep_alive<1, 2>(),
         py::keep_alive<1, 3>(),
-        py::keep_alive<1, 4>());
-    c.def(py::init([](GP& grid, const SS& source_space, const RS& range_space) {
-            return new type(
-                grid.leaf_view(),
-                source_space,
-                range_space,
-                make_element_and_intersection_sparsity_pattern(range_space, source_space, grid.leaf_view()));
+        py::keep_alive<1, 4>(),
+        py::keep_alive<1, 5>());
+    c.def(py::init([](GP& grid,
+                      const SS& source_space,
+                      const RS& range_space,
+                      const XT::LA::SparsityPatternDefault& pattern,
+                      const std::string& logging_prefix) {
+            return new type(grid.leaf_view(), source_space, range_space, pattern, logging_prefix);
           }),
           "grid"_a,
           "source_space"_a,
           "range_space"_a,
+          "sparsity_pattern"_a,
+          "logging_prefix"_a = "",
+          py::keep_alive<1, 2>(),
+          py::keep_alive<1, 3>(),
+          py::keep_alive<1, 4>());
+    c.def(py::init([](GP& grid, const SS& source_space, const RS& range_space, const std::string& logging_prefix) {
+            return new type(grid.leaf_view(),
+                            source_space,
+                            range_space,
+                            make_element_and_intersection_sparsity_pattern(range_space, source_space, grid.leaf_view()),
+                            logging_prefix);
+          }),
+          "grid"_a,
+          "source_space"_a,
+          "range_space"_a,
+          "logging_prefix"_a = "",
           py::keep_alive<1, 2>(),
           py::keep_alive<1, 3>(),
           py::keep_alive<1, 4>());
@@ -224,14 +257,15 @@ public:
 
     // additional methods
     c.def("clear", [](type& self) { self.clear(); });
-    c.def("append",
-          [](type& self,
-             const LocalElementBilinearFormInterface<E, r_r, 1, F, F, s_r, 1, F>& local_bilinear_form,
-             const XT::Common::Parameter& param,
-             const XT::Grid::ElementFilter<GV>& filter) { self.append(local_bilinear_form, param, filter); },
-          "local_element_bilinear_form"_a,
-          "param"_a = XT::Common::Parameter(),
-          "element_filter"_a = XT::Grid::ApplyOn::AllElements<GV>());
+    c.def(
+        "append",
+        [](type& self,
+           const LocalElementBilinearFormInterface<E, r_r, 1, F, F, s_r, 1, F>& local_bilinear_form,
+           const XT::Common::Parameter& param,
+           const XT::Grid::ElementFilter<GV>& filter) { self.append(local_bilinear_form, param, filter); },
+        "local_element_bilinear_form"_a,
+        "param"_a = XT::Common::Parameter(),
+        "element_filter"_a = XT::Grid::ApplyOn::AllElements<GV>());
     c.def("__iadd__", // function ptr signature required for the right return type
           (type
            & (type::*)(const LocalElementBilinearFormInterface<E, r_r, 1, F, F, s_r, 1, F>&,
@@ -250,16 +284,17 @@ public:
               & type::append,
           "tuple_of_localelementbilinearform_param_elementfilter"_a,
           py::is_operator());
-    c.def("append",
-          [](type& self,
-             const LocalIntersectionBilinearFormInterface<I, r_r, 1, F, F, s_r, 1, F>& local_intersection_bilinear_form,
-             const XT::Common::Parameter& param,
-             const XT::Grid::IntersectionFilter<GV>& intersection_filter) {
-            self.append(local_intersection_bilinear_form, param, intersection_filter);
-          },
-          "local_intersection_bilinear_form"_a,
-          "param"_a = XT::Common::Parameter(),
-          "intersection_filter"_a = XT::Grid::ApplyOn::AllIntersections<GV>());
+    c.def(
+        "append",
+        [](type& self,
+           const LocalIntersectionBilinearFormInterface<I, r_r, 1, F, F, s_r, 1, F>& local_intersection_bilinear_form,
+           const XT::Common::Parameter& param,
+           const XT::Grid::IntersectionFilter<GV>& intersection_filter) {
+          self.append(local_intersection_bilinear_form, param, intersection_filter);
+        },
+        "local_intersection_bilinear_form"_a,
+        "param"_a = XT::Common::Parameter(),
+        "intersection_filter"_a = XT::Grid::ApplyOn::AllIntersections<GV>());
     c.def("__iadd__", // function ptr signature required for the right return type
           (type
            & (type::*)(const LocalIntersectionBilinearFormInterface<I, r_r, 1, F, F, s_r, 1, F>&,
@@ -278,17 +313,18 @@ public:
               & type::append,
           "tuple_of_localintersectionbilinearform_param_elementfilter"_a,
           py::is_operator());
-    c.def("append",
-          [](type& self,
-             const LocalCouplingIntersectionBilinearFormInterface<I, r_r, 1, F, F, s_r, 1, F>&
-                 local_coupling_intersection_bilinear_form,
-             const XT::Common::Parameter& param,
-             const XT::Grid::IntersectionFilter<GV>& intersection_filter) {
-            self.append(local_coupling_intersection_bilinear_form, param, intersection_filter);
-          },
-          "local_coupling_intersection_bilinear_form"_a,
-          "param"_a = XT::Common::Parameter(),
-          "intersection_filter"_a = XT::Grid::ApplyOn::AllIntersections<GV>());
+    c.def(
+        "append",
+        [](type& self,
+           const LocalCouplingIntersectionBilinearFormInterface<I, r_r, 1, F, F, s_r, 1, F>&
+               local_coupling_intersection_bilinear_form,
+           const XT::Common::Parameter& param,
+           const XT::Grid::IntersectionFilter<GV>& intersection_filter) {
+          self.append(local_coupling_intersection_bilinear_form, param, intersection_filter);
+        },
+        "local_coupling_intersection_bilinear_form"_a,
+        "param"_a = XT::Common::Parameter(),
+        "intersection_filter"_a = XT::Grid::ApplyOn::AllIntersections<GV>());
     c.def("__iadd__", // function ptr signature required for the right return type
           (type
            & (type::*)(const LocalCouplingIntersectionBilinearFormInterface<I, r_r, 1, F, F, s_r, 1, F>&,
@@ -308,37 +344,46 @@ public:
             & type::append,
         "tuple_of_localcouplingintersectionbilinearform_param_elementfilter"_a,
         py::is_operator());
-    c.def("assemble",
-          [](type& self, const bool use_tbb) { self.assemble(use_tbb); },
-          "parallel"_a = false,
-          py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "assemble",
+        [](type& self, const bool use_tbb) { self.assemble(use_tbb); },
+        "parallel"_a = false,
+        py::call_guard<py::gil_scoped_release>());
 
     // factories
     const auto FactoryName = XT::Common::to_camel_case(class_id);
-    m.def(FactoryName.c_str(),
-          [](GP& grid, const SS& source_space, const RS& range_space, M& matrix) {
-            return type(grid.leaf_view(), source_space, range_space, matrix);
-          },
-          "grid"_a,
-          "source_space"_a,
-          "range_space"_a,
-          "matrix"_a,
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>(),
-          py::keep_alive<0, 3>(),
-          py::keep_alive<0, 4>());
+    m.def(
+        FactoryName.c_str(),
+        [](GP& grid, const SS& source_space, const RS& range_space, M& matrix, const std::string& logging_prefix) {
+          return new type(grid.leaf_view(), source_space, range_space, matrix, logging_prefix);
+        },
+        "grid"_a,
+        "source_space"_a,
+        "range_space"_a,
+        "matrix"_a,
+        "logging_prefix"_a = "",
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>(),
+        py::keep_alive<0, 3>(),
+        py::keep_alive<0, 4>());
     addbind<>::factory(m, FactoryName);
-    m.def(XT::Common::to_camel_case(matrix_id + "_" + class_id).c_str(),
-          [](GP& grid, const SS& source_space, const RS& range_space, const XT::LA::SparsityPatternDefault& pattern) {
-            return type(grid.leaf_view(), source_space, range_space, pattern);
-          },
-          "grid"_a,
-          "source_space"_a,
-          "range_space"_a,
-          "sparsity_pattern"_a,
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>(),
-          py::keep_alive<0, 3>());
+    m.def(
+        XT::Common::to_camel_case(matrix_id + "_" + class_id).c_str(),
+        [](GP& grid,
+           const SS& source_space,
+           const RS& range_space,
+           const XT::LA::SparsityPatternDefault& pattern,
+           const std::string& logging_prefix) {
+          return new type(grid.leaf_view(), source_space, range_space, pattern, logging_prefix);
+        },
+        "grid"_a,
+        "source_space"_a,
+        "range_space"_a,
+        "sparsity_pattern"_a,
+        "logging_prefix"_a = "",
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>(),
+        py::keep_alive<0, 3>());
 
     return c;
   } // ... bind(...)

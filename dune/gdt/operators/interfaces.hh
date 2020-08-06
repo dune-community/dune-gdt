@@ -26,6 +26,7 @@
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/exceptions.hh>
+#include <dune/gdt/print.hh>
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/tools/sparsity-pattern.hh>
 
@@ -122,7 +123,18 @@ class OperatorInterface
                                                  range_dim_cols,
                                                  RangeGridView>
   , public XT::Common::ParametricInterface
+  , public XT::Common::WithLogger<OperatorInterface<Matrix,
+                                                    SourceGridView,
+                                                    source_dim,
+                                                    source_dim_cols,
+                                                    range_dim,
+                                                    range_dim_cols,
+                                                    RangeGridView>>
 {
+  using ThisType = OperatorInterface;
+  using Logger = XT::Common::WithLogger<
+      OperatorInterface<Matrix, SourceGridView, source_dim, source_dim_cols, range_dim, range_dim_cols, RangeGridView>>;
+
 public:
   using MatrixType = Matrix;
   using VectorType = XT::LA::vector_t<MatrixType>;
@@ -150,22 +162,25 @@ public:
   using RangeFunctionType = DiscreteFunction<V, RGV, r_r, r_rC, F>;
   using ConstRangeFunctionType = ConstDiscreteFunction<V, RGV, r_r, r_rC, F>;
 
-  using ThisType = OperatorInterface;
   using MatrixOperatorType = MatrixOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
   using ConstLincombOperatorType = ConstLincombOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
   using LincombOperatorType = LincombOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
 
-  explicit OperatorInterface(const XT::Common::ParameterType& param_type = {})
+  explicit OperatorInterface(const XT::Common::ParameterType& param_type = {},
+                             const std::string& logging_prefix = "",
+                             const std::string& logging_id_ = "",
+                             const bool logging_disabled = true)
     : XT::Common::ParametricInterface(param_type)
-  {}
+    , Logger(logging_prefix.empty() ? "gdt" : logging_prefix,
+             logging_id_.empty() ? "Operator" : logging_id_,
+             logging_disabled)
+  {
+    LOG_(info) << this->logging_id << "(param_type=" << param_type << ")" << std::endl;
+  }
 
-  OperatorInterface(const ThisType& other)
-    : XT::Common::ParametricInterface(other)
-  {}
+  OperatorInterface(const ThisType& other) = default;
 
-  OperatorInterface(ThisType&& source)
-    : XT::Common::ParametricInterface(source)
-  {}
+  OperatorInterface(ThisType&& source) = default;
 
   virtual ~OperatorInterface() = default;
 
@@ -182,28 +197,48 @@ public:
 
   virtual ConstLincombOperatorType operator*(const FieldType& alpha) const
   {
-    ConstLincombOperatorType ret(this->source_space(), this->range_space());
+    std::string derived_logging_prefix = "";
+    if (this->logger.debug_enabled) {
+      derived_logging_prefix = this->logging_id + "*" + XT::Common::to_string(alpha);
+      this->logger.debug() << this->logging_id << ".operator*(alpha=" << alpha << ")" << std::endl;
+    }
+    ConstLincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
     ret.add(*this, alpha);
     return ret;
   }
 
   virtual LincombOperatorType operator*(const FieldType& alpha)
   {
-    LincombOperatorType ret(this->source_space(), this->range_space());
+    std::string derived_logging_prefix = "";
+    if (this->logger.debug_enabled) {
+      derived_logging_prefix = this->logging_id + "*" + XT::Common::to_string(alpha);
+      this->logger.debug() << this->logging_id << ".operator*(alpha=" << alpha << ")" << std::endl;
+    }
+    LincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
     ret.add(*this, alpha);
     return ret;
   }
 
   virtual ConstLincombOperatorType operator/(const FieldType& alpha) const
   {
-    ConstLincombOperatorType ret(this->source_space(), this->range_space());
+    std::string derived_logging_prefix = "";
+    if (this->logger.debug_enabled) {
+      derived_logging_prefix = this->logging_id + "/" + XT::Common::to_string(alpha);
+      this->logger.debug() << this->logging_id << ".operator/(alpha=" << alpha << ")" << std::endl;
+    }
+    ConstLincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
     ret.add(*this, 1. / alpha);
     return ret;
   }
 
   virtual LincombOperatorType operator/(const FieldType& alpha)
   {
-    LincombOperatorType ret(this->source_space(), this->range_space());
+    std::string derived_logging_prefix = "";
+    if (this->logger.debug_enabled) {
+      derived_logging_prefix = this->logging_id + "/" + XT::Common::to_string(alpha);
+      this->logger.debug() << this->logging_id << ".operator/(alpha=" << alpha << ")" << std::endl;
+    }
+    LincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
     ret.add(*this, 1. / alpha);
     return ret;
   }
@@ -213,7 +248,12 @@ public:
 
   virtual ConstLincombOperatorType operator+(const ConstLincombOperatorType& other) const
   {
-    ConstLincombOperatorType ret(this->source_space(), this->range_space());
+    std::string derived_logging_prefix = "";
+    if (this->logger.debug_enabled) {
+      derived_logging_prefix = "ConstLincombOperator";
+      this->logger.debug() << this->logging_id << ".operator+(other_const_lincomb_op=" << &other << ")" << std::endl;
+    }
+    ConstLincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
     ret.add(*this, 1.);
     ret.add(other, 1.);
     return ret;
@@ -221,7 +261,12 @@ public:
 
   virtual ConstLincombOperatorType operator+(const ThisType& other) const
   {
-    ConstLincombOperatorType ret(this->source_space(), this->range_space());
+    std::string derived_logging_prefix = "";
+    if (this->logger.debug_enabled) {
+      derived_logging_prefix = "ConstLincombOperator";
+      this->logger.debug() << this->logging_id << ".operator+(other_const_op=" << &other << ")" << std::endl;
+    }
+    ConstLincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
     ret.add(*this, 1.);
     ret.add(other, 1.);
     return ret;
@@ -233,9 +278,18 @@ public:
    */
   virtual ConstLincombOperatorType operator+(const VectorType& vector) const
   {
-    ConstLincombOperatorType ret(this->source_space(), this->range_space());
+    std::string derived_logging_prefix_clop = "";
+    std::string derived_logging_prefix_cop = "";
+    if (this->logger.debug_enabled) {
+      derived_logging_prefix_clop = "ConstLincombOperator";
+      derived_logging_prefix_cop = "ConstantOperator";
+      this->logger.debug() << this->logging_id << ".operator+(vector.sup_norm()=" << vector.sup_norm() << ")"
+                           << std::endl;
+    }
+    ConstLincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix_clop);
     ret.add(*this, 1.);
-    ret.add(new ConstantOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>(this->source_space(), this->range_space(), vector),
+    ret.add(new ConstantOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>(
+                this->source_space(), this->range_space(), vector, derived_logging_prefix_cop),
             1.);
     return ret;
   }
@@ -246,7 +300,12 @@ public:
 
   virtual LincombOperatorType operator+(LincombOperatorType& other)
   {
-    LincombOperatorType ret(this->source_space(), this->range_space());
+    std::string derived_logging_prefix = "";
+    if (this->logger.debug_enabled) {
+      derived_logging_prefix = "LincombOperator";
+      this->logger.debug() << this->logging_id << ".operator+(other_lincomb_op=" << &other << ")" << std::endl;
+    }
+    LincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
     ret.add(*this, 1.);
     ret.add(other, 1.);
     return ret;
@@ -254,7 +313,12 @@ public:
 
   virtual LincombOperatorType operator+(ThisType& other)
   {
-    LincombOperatorType ret(this->source_space(), this->range_space());
+    std::string derived_logging_prefix = "";
+    if (this->logger.debug_enabled) {
+      derived_logging_prefix = "LincombOperator";
+      this->logger.debug() << this->logging_id << ".operator+(other_op=" << &other << ")" << std::endl;
+    }
+    LincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
     ret.add(*this, 1.);
     ret.add(other, 1.);
     return ret;
@@ -266,9 +330,18 @@ public:
    */
   virtual LincombOperatorType operator+(const VectorType& vector)
   {
-    LincombOperatorType ret(this->source_space(), this->range_space());
+    std::string derived_logging_prefix_lop = "";
+    std::string derived_logging_prefix_cop = "";
+    if (this->logger.debug_enabled) {
+      derived_logging_prefix_lop = "LincombOperator";
+      derived_logging_prefix_cop = "ConstantOperator";
+      this->logger.debug() << this->logging_id << ".operator+(vector.sup_norm()=" << vector.sup_norm() << ")"
+                           << std::endl;
+    }
+    LincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix_lop);
     ret.add(*this, 1.);
-    ret.add(new ConstantOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>(this->source_space(), this->range_space(), vector),
+    ret.add(new ConstantOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>(
+                this->source_space(), this->range_space(), vector, derived_logging_prefix_cop),
             1.);
     return ret;
   }
@@ -279,7 +352,12 @@ public:
 
   virtual ConstLincombOperatorType operator-(const ConstLincombOperatorType& other) const
   {
-    ConstLincombOperatorType ret(this->source_space(), this->range_space());
+    std::string derived_logging_prefix = "";
+    if (this->logger.debug_enabled) {
+      derived_logging_prefix = "ConstLincombOperator";
+      this->logger.debug() << this->logging_id << ".operator-(other_const_lincomb_op=" << &other << ")" << std::endl;
+    }
+    ConstLincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
     ret.add(*this, 1.);
     ret.add(other, -1.);
     return ret;
@@ -287,7 +365,12 @@ public:
 
   virtual ConstLincombOperatorType operator-(const ThisType& other) const
   {
-    ConstLincombOperatorType ret(this->source_space(), this->range_space());
+    std::string derived_logging_prefix = "";
+    if (this->logger.debug_enabled) {
+      derived_logging_prefix = "ConstLincombOperator";
+      this->logger.debug() << this->logging_id << ".operator-(other_op=" << &other << ")" << std::endl;
+    }
+    ConstLincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
     ret.add(*this, 1.);
     ret.add(other, -1.);
     return ret;
@@ -299,9 +382,18 @@ public:
    */
   virtual ConstLincombOperatorType operator-(const VectorType& vector) const
   {
-    ConstLincombOperatorType ret(this->source_space(), this->range_space());
+    std::string derived_logging_prefix_clop = "";
+    std::string derived_logging_prefix_cop = "";
+    if (this->logger.debug_enabled) {
+      derived_logging_prefix_clop = "ConstLincombOperator";
+      derived_logging_prefix_cop = "ConstantOperator";
+      this->logger.debug() << this->logging_id << ".operator-(vector.sup_norm()=" << vector.sup_norm() << ")"
+                           << std::endl;
+    }
+    ConstLincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix_clop);
     ret.add(*this, 1.);
-    ret.add(new ConstantOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>(this->source_space(), this->range_space(), vector),
+    ret.add(new ConstantOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>(
+                this->source_space(), this->range_space(), vector, derived_logging_prefix_cop),
             -1.);
     return ret;
   }
@@ -312,7 +404,12 @@ public:
 
   virtual LincombOperatorType operator-(LincombOperatorType& other)
   {
-    LincombOperatorType ret(this->source_space(), this->range_space());
+    std::string derived_logging_prefix = "";
+    if (this->logger.debug_enabled) {
+      derived_logging_prefix = "LincombOperator";
+      this->logger.debug() << this->logging_id << ".operator-(other_lincomb_op=" << &other << ")" << std::endl;
+    }
+    LincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
     ret.add(*this, 1.);
     ret.add(other, -1.);
     return ret;
@@ -320,7 +417,12 @@ public:
 
   virtual LincombOperatorType operator-(ThisType& other)
   {
-    LincombOperatorType ret(this->source_space(), this->range_space());
+    std::string derived_logging_prefix = "";
+    if (this->logger.debug_enabled) {
+      derived_logging_prefix = "LincombOperator";
+      this->logger.debug() << this->logging_id << ".operator-(other_op=" << &other << ")" << std::endl;
+    }
+    LincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
     ret.add(*this, 1.);
     ret.add(other, -1.);
     return ret;
@@ -332,9 +434,18 @@ public:
    */
   virtual LincombOperatorType operator-(const VectorType& vector)
   {
-    LincombOperatorType ret(this->source_space(), this->range_space());
+    std::string derived_logging_prefix_lop = "";
+    std::string derived_logging_prefix_cop = "";
+    if (this->logger.debug_enabled) {
+      derived_logging_prefix_lop = "LincombOperator";
+      derived_logging_prefix_cop = "ConstantOperator";
+      this->logger.debug() << this->logging_id << ".operator-(vector.sup_norm()=" << vector.sup_norm() << ")"
+                           << std::endl;
+    }
+    LincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix_lop);
     ret.add(*this, 1.);
-    ret.add(new ConstantOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>(this->source_space(), this->range_space(), vector),
+    ret.add(new ConstantOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>(
+                this->source_space(), this->range_space(), vector, derived_logging_prefix_cop),
             -1.);
     return ret;
   }
@@ -401,10 +512,11 @@ invert_options(some_type).get<std::string>("type") == some_type
                              const XT::Common::Configuration& opts,
                              const XT::Common::Parameter& param = {}) const
   {
+    LOG_(info) << this->logging_id << ".apply_inverse(range=" << &range << ", source=" << &source
+               << ",\n   opts=" << print(opts, {{"oneline", "true"}}) << ",\n   param=" << param << ")" << std::endl;
     DUNE_THROW_IF(!opts.has_key("type"), Exceptions::operator_error, "opts = " << opts);
     const auto type = opts.get<std::string>("type");
     const XT::Common::Configuration default_opts = this->invert_options(type);
-    auto logger = XT::Common::TimedLogger().get("gdt.operator.apply_inverse");
     if (type == "newton") {
       // some preparations
       auto residual_op = *this - range;
@@ -425,26 +537,24 @@ invert_options(some_type).get<std::string>("type") == some_type
       Timer timer;
       while (true) {
         timer.reset();
-        logger.debug() << "l = " << l << ": computing residual ... " << std::flush;
+        LOG_(debug) << "l = " << l << ": computing residual ... " << std::flush;
         residual_op.apply(source, residual, param);
         auto res = residual.l2_norm();
-        logger.debug() << "took " << timer.elapsed() << "s, |residual|_l2 = " << res << std::endl;
+        LOG_(debug) << "took " << timer.elapsed() << "s, |residual|_l2 = " << res << std::endl;
         if (res < precision) {
-          logger.debug() << "       residual below tolerance, succeeded!" << std::endl;
+          LOG_(debug) << "       residual below tolerance, succeeded!" << std::endl;
           break;
         }
         DUNE_THROW_IF(l >= max_iter,
                       Exceptions::operator_error,
                       "max iterations reached!\n|residual|_l2 = " << res << "\nopts:\n"
                                                                   << opts);
-        logger.debug() << "       computing jacobi matrix ... " << std::flush;
+        LOG_(debug) << "       computing jacobi matrix ... " << std::flush;
         timer.reset();
         jacobian_op.matrix() *= 0.;
         residual_op.jacobian(source, jacobian_op, {{"type", residual_op.jacobian_options().at(0)}}, param);
         jacobian_op.walk(/*use_tbb=*/true);
-        logger.debug() << "took " << timer.elapsed() << "s"
-                       << "\n"
-                       << "       solving for defect ... " << std::flush;
+        LOG_(debug) << "took " << timer.elapsed() << "s\n       solving for defect ... " << std::flush;
         timer.reset();
         residual *= -1.;
         update = source; // <- initial guess for the linear solver
@@ -466,10 +576,11 @@ invert_options(some_type).get<std::string>("type") == some_type
                       "could not solve linear system for defect!\nTried the following linear solvers: "
                           << tried_linear_solvers << "\nopts:\n"
                           << opts);
-        logger.debug() << "took " << timer.elapsed() << "s";
-        if (tried_linear_solvers.size() > 1)
-          logger.debug() << ", took " << tried_linear_solvers.size() << " attempts with different linear solvers";
-        logger.debug() << "\n       computing update ... " << std::flush;
+        LOG_(debug) << "took " << timer.elapsed() << "s";
+        if (tried_linear_solvers.size() > 1) {
+          LOG_(debug) << ", took " << tried_linear_solvers.size() << " attempts with different linear solvers";
+        }
+        LOG_(debug) << "\n       computing update ... " << std::flush;
         timer.reset();
         // try the automatic dampening strategy proposed in [DF2015, Sec. 8.4.4.1, p. 432]
         size_t k = 0;
@@ -488,7 +599,7 @@ invert_options(some_type).get<std::string>("type") == some_type
           k += 1;
         }
         source = candidate;
-        logger.debug() << "took " << timer.elapsed() << "s and a dampening of " << 2 * lambda << std::endl;
+        LOG_(debug) << "took " << timer.elapsed() << "s and a dampening of " << 2 * lambda << std::endl;
         l += 1;
       }
     } else

@@ -56,12 +56,21 @@ public:
   using typename BaseType::SourceSpaceType;
   using typename BaseType::VectorType;
 
-  ConstMatrixOperator(const SourceSpaceType& source_spc, const RangeSpaceType& range_spc, const MatrixType& mat)
-    : source_space_(source_spc)
+  ConstMatrixOperator(const SourceSpaceType& source_spc,
+                      const RangeSpaceType& range_spc,
+                      const MatrixType& mat,
+                      const std::string& logging_prefix = "")
+    : BaseType({},
+               logging_prefix.empty() ? "gdt" : "gdt.operators.matrix",
+               logging_prefix.empty() ? "MatrixOperator" : logging_prefix,
+               /*logging_disabled=*/logging_prefix.empty())
+    , source_space_(source_spc)
     , range_space_(range_spc)
     , matrix_(mat)
     , linear_solver_(matrix_, source_space_.dof_communicator())
   {
+    LOG_(info) << this->logging_id << "(source_space=" << &source_spc << ", range_space=" << &range_spc
+               << ", matrix=" << &mat << ")" << std::endl;
     DUNE_THROW_IF(matrix_.rows() != range_space_.mapper().size(),
                   XT::Common::Exceptions::shapes_do_not_match,
                   "matrix_.rows() = " << matrix_.rows()
@@ -193,19 +202,22 @@ template <class SGV, size_t s_r, size_t s_rC, class F, class RGV, size_t r_r, si
 ConstMatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, SGV, s_r, s_rC, r_r, r_rC, RGV>
 make_matrix_operator(const SpaceInterface<SGV, s_r, s_rC, F>& source_space,
                      const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
-                     const XT::LA::MatrixInterface<M>& matrix)
+                     const XT::LA::MatrixInterface<M>& matrix,
+                     const std::string& logging_prefix = "")
 {
   return ConstMatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, SGV, s_r, s_rC, r_r, r_rC, RGV>(
-      source_space, range_space, matrix.as_imp());
+      source_space, range_space, matrix.as_imp(), logging_prefix);
 }
 
 
 template <class GV, size_t r, size_t rC, class F, class M>
 ConstMatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC>
-make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space, const XT::LA::MatrixInterface<M>& matrix)
+make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space,
+                     const XT::LA::MatrixInterface<M>& matrix,
+                     const std::string& logging_prefix = "")
 {
   return ConstMatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC>(
-      space, space, matrix.as_imp());
+      space, space, matrix.as_imp(), logging_prefix);
 }
 
 
@@ -262,12 +274,17 @@ public:
   MatrixOperator(AssemblyGridViewType assembly_grid_view,
                  const SourceSpaceType& source_spc,
                  const RangeSpaceType& range_spc,
-                 MatrixType& mat)
+                 MatrixType& mat,
+                 const std::string& logging_prefix = "")
     : MatrixStorage(mat)
-    , BaseOperatorType(source_spc, range_spc, MatrixStorage::access())
+    , BaseOperatorType(source_spc, range_spc, MatrixStorage::access(), logging_prefix)
     , BaseWalkerType(assembly_grid_view)
     , scaling(1.)
-  {}
+  {
+    LOG__(BaseOperatorType, info) << BaseOperatorType::logging_id << "(assembly_grid_view=" << &assembly_grid_view
+                                  << ", source_space=" << &source_spc << ", range_space=" << &range_spc
+                                  << ", matrix=" << &mat << ")" << std::endl;
+  }
 
   /**
    * Ctor which creates an appropriate matrix into which to assemble from a given sparsity pattern.
@@ -275,12 +292,17 @@ public:
   MatrixOperator(AssemblyGridViewType assembly_grid_view,
                  const SourceSpaceType& source_spc,
                  const RangeSpaceType& range_spc,
-                 const XT::LA::SparsityPatternDefault& pattern)
+                 const XT::LA::SparsityPatternDefault& pattern,
+                 const std::string& logging_prefix = "")
     : MatrixStorage(new MatrixType(range_spc.mapper().size(), source_spc.mapper().size(), pattern))
-    , BaseOperatorType(source_spc, range_spc, MatrixStorage::access())
+    , BaseOperatorType(source_spc, range_spc, MatrixStorage::access(), logging_prefix)
     , BaseWalkerType(assembly_grid_view)
     , scaling(1.)
-  {}
+  {
+    LOG__(BaseOperatorType, info) << BaseOperatorType::logging_id << "(assembly_grid_view=" << &assembly_grid_view
+                                  << ", source_space=" << &source_spc << ", range_space=" << &range_spc
+                                  << ", pattern=" << &pattern << ")" << std::endl;
+  }
 
   MatrixOperator(const ThisType&) = delete;
 
@@ -447,26 +469,32 @@ MatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, SGV, s_r, s_rC
 make_matrix_operator(SGV assembly_grid_view,
                      const SpaceInterface<SGV, s_r, s_rC, F>& source_space,
                      const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
-                     XT::LA::MatrixInterface<M>& matrix)
+                     XT::LA::MatrixInterface<M>& matrix,
+                     const std::string& logging_prefix = "")
 {
   return MatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, SGV, s_r, s_rC, r_r, r_rC, RGV>(
-      assembly_grid_view, source_space, range_space, matrix.as_imp());
-}
-
-template <class GV, size_t r, size_t rC, class F, class M>
-MatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC> make_matrix_operator(
-    GV assembly_grid_view, const SpaceInterface<GV, r, rC, F>& space, XT::LA::MatrixInterface<M>& matrix)
-{
-  return MatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC>(
-      assembly_grid_view, space, space, matrix.as_imp());
+      assembly_grid_view, source_space, range_space, matrix.as_imp(), logging_prefix);
 }
 
 template <class GV, size_t r, size_t rC, class F, class M>
 MatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC>
-make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space, XT::LA::MatrixInterface<M>& matrix)
+make_matrix_operator(GV assembly_grid_view,
+                     const SpaceInterface<GV, r, rC, F>& space,
+                     XT::LA::MatrixInterface<M>& matrix,
+                     const std::string& logging_prefix = "")
 {
   return MatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC>(
-      space.grid_view(), space, space, matrix.as_imp());
+      assembly_grid_view, space, space, matrix.as_imp(), logging_prefix);
+}
+
+template <class GV, size_t r, size_t rC, class F, class M>
+MatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC>
+make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space,
+                     XT::LA::MatrixInterface<M>& matrix,
+                     const std::string& logging_prefix = "")
+{
+  return MatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC>(
+      space.grid_view(), space, space, matrix.as_imp(), logging_prefix);
 }
 
 /// \}
@@ -485,10 +513,11 @@ typename std::enable_if<XT::LA::is_matrix<MatrixType>::value,
 make_matrix_operator(SGV assembly_grid_view,
                      const SpaceInterface<SGV, s_r, s_rC, F>& source_space,
                      const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
-                     const XT::LA::SparsityPatternDefault& pattern)
+                     const XT::LA::SparsityPatternDefault& pattern,
+                     const std::string& logging_prefix = "")
 {
   return MatrixOperator<MatrixType, SGV, s_r, s_rC, r_r, r_rC, RGV>(
-      assembly_grid_view, source_space, range_space, pattern);
+      assembly_grid_view, source_space, range_space, pattern, logging_prefix);
 }
 
 /**
@@ -501,9 +530,10 @@ template <class MatrixType, class GV, size_t r, size_t rC, class F>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value, MatrixOperator<MatrixType, GV, r, rC>>::type
 make_matrix_operator(GV assembly_grid_view,
                      const SpaceInterface<GV, r, rC, F>& space,
-                     const XT::LA::SparsityPatternDefault& pattern)
+                     const XT::LA::SparsityPatternDefault& pattern,
+                     const std::string& logging_prefix = "")
 {
-  return MatrixOperator<MatrixType, GV, r, rC>(assembly_grid_view, space, space, pattern);
+  return MatrixOperator<MatrixType, GV, r, rC>(assembly_grid_view, space, space, pattern, logging_prefix);
 }
 
 /**
@@ -514,9 +544,11 @@ auto op = make_matrix_operator<MatrixType>(space, pattern);
  */
 template <class MatrixType, class GV, size_t r, size_t rC, class F>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value, MatrixOperator<MatrixType, GV, r, rC>>::type
-make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space, const XT::LA::SparsityPatternDefault& pattern)
+make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space,
+                     const XT::LA::SparsityPatternDefault& pattern,
+                     const std::string& logging_prefix = "")
 {
-  return MatrixOperator<MatrixType, GV, r, rC>(space.grid_view(), space, space, pattern);
+  return MatrixOperator<MatrixType, GV, r, rC>(space.grid_view(), space, space, pattern, logging_prefix);
 }
 
 /// \}
@@ -535,13 +567,14 @@ typename std::enable_if<XT::LA::is_matrix<MatrixType>::value,
 make_matrix_operator(SGV assembly_grid_view,
                      const SpaceInterface<SGV, s_r, s_rC, F>& source_space,
                      const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
-                     const Stencil stencil = Stencil::element_and_intersection)
+                     const Stencil stencil = Stencil::element_and_intersection,
+                     const std::string& logging_prefix = "")
 {
   return MatrixOperator<MatrixType, SGV, s_r, s_rC, r_r, r_rC, RGV>(
       assembly_grid_view,
       source_space,
       range_space,
-      make_sparsity_pattern(range_space, source_space, assembly_grid_view, stencil));
+      make_sparsity_pattern(range_space, source_space, assembly_grid_view, stencil, logging_prefix));
 }
 
 /**
@@ -554,10 +587,11 @@ template <class MatrixType, class GV, size_t r, size_t rC, class F>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value, MatrixOperator<MatrixType, GV, r, rC>>::type
 make_matrix_operator(GV assembly_grid_view,
                      const SpaceInterface<GV, r, rC, F>& space,
-                     const Stencil stencil = Stencil::element_and_intersection)
+                     const Stencil stencil = Stencil::element_and_intersection,
+                     const std::string& logging_prefix = "")
 {
   return MatrixOperator<MatrixType, GV, r, rC>(
-      assembly_grid_view, space, space, make_sparsity_pattern(space, assembly_grid_view, stencil));
+      assembly_grid_view, space, space, make_sparsity_pattern(space, assembly_grid_view, stencil), logging_prefix);
 }
 
 /**
@@ -569,9 +603,11 @@ auto op = make_matrix_operator<MatrixType>(space, stencil);
 template <class MatrixType, class GV, size_t r, size_t rC, class F>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value, MatrixOperator<MatrixType, GV, r, rC>>::type
 make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space,
-                     const Stencil stencil = Stencil::element_and_intersection)
+                     const Stencil stencil = Stencil::element_and_intersection,
+                     const std::string& logging_prefix = "")
 {
-  return MatrixOperator<MatrixType, GV, r, rC>(space.grid_view(), space, space, make_sparsity_pattern(space, stencil));
+  return MatrixOperator<MatrixType, GV, r, rC>(
+      space.grid_view(), space, space, make_sparsity_pattern(space, stencil), logging_prefix);
 }
 
 /// \}

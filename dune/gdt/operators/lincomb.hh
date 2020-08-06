@@ -42,10 +42,19 @@ public:
 
   using OperatorType = BaseType;
 
-  ConstLincombOperator(const SourceSpaceType& src_space, const RangeSpaceType& rng_space)
-    : source_space_(src_space)
+  ConstLincombOperator(const SourceSpaceType& src_space,
+                       const RangeSpaceType& rng_space,
+                       const std::string& logging_prefix = "")
+    : BaseType({},
+               logging_prefix.empty() ? "gdt" : "gdt.operators.lincomb",
+               logging_prefix.empty() ? "LincombOperator" : logging_prefix,
+               /*logging_disabled=*/logging_prefix.empty())
+    , source_space_(src_space)
     , range_space_(rng_space)
-  {}
+  {
+    LOG_(info) << this->logging_id << "(source_space=" << &src_space << ", range_space=" << &rng_space << ")"
+               << std::endl;
+  }
 
   ConstLincombOperator(const ThisType& other) = default;
 
@@ -53,12 +62,16 @@ public:
 
   void add(const OperatorType& op, const FieldType& coeff = 1.)
   {
+    this->enable_logging_like(op);
+    LOG_(debug) << this->logging_id << ".add(const_op_ref=" << &op << ", coeff=" << coeff << ")" << std::endl;
     const_ops_.emplace_back(op);
     coeffs_.emplace_back(coeff);
   }
 
   void add(OperatorType*&& op, const FieldType& coeff = 1.)
   {
+    this->enable_logging_like(*op);
+    LOG_(debug) << this->logging_id << ".add(op_ptr=" << op << ", coeff=" << coeff << ")" << std::endl;
     keep_alive_.emplace_back(std::move(op));
     const_ops_.emplace_back(*keep_alive_.back());
     coeffs_.emplace_back(coeff);
@@ -66,8 +79,13 @@ public:
 
   void add(const ThisType& op, const FieldType& coeff = 1.)
   {
+    // Check if we need to enabled logging first
+    for (size_t ii = 0; ii < op.num_ops(); ++ii)
+      this->enable_logging_like(op.const_ops_[ii].access());
+    LOG_(debug) << this->logging_id << ".add(const_lincomb_op_ref=" << &op << ", coeff=" << coeff << ")" << std::endl;
     // Only adding op itself would lead to segfaults if op is a temporary
     for (size_t ii = 0; ii < op.num_ops(); ++ii) {
+      LOG_(debug) << "  adding op=" << &(op.const_ops_[ii]) << ", coeff=" << coeff << std::endl;
       const_ops_.emplace_back(op.const_ops_[ii]);
       coeffs_.emplace_back(coeff * op.coeffs_[ii]);
     }
@@ -204,6 +222,7 @@ public:
 
   ThisType& operator*=(const FieldType& alpha)
   {
+    LOG_(debug) << this->logging_id << ".operator*=(alpha=" << alpha << ")" << std::endl;
     for (auto& coeff : coeffs_)
       coeff *= alpha;
     return *this;
@@ -211,6 +230,7 @@ public:
 
   ThisType& operator/=(const FieldType& alpha)
   {
+    LOG_(debug) << this->logging_id << ".operator/=(alpha=" << alpha << ")" << std::endl;
     for (auto& coeff : coeffs_)
       coeff /= alpha;
     return *this;
@@ -218,13 +238,19 @@ public:
 
   ThisType& operator+=(const BaseType& other)
   {
+    LOG_(debug) << this->logging_id << ".operator+=(other_op=" << &other << ")" << std::endl;
     this->add(other);
     return *this;
   }
 
   ThisType& operator+=(const ThisType& other)
   {
+    // Check if we need to enabled logging first
+    for (size_t ii = 0; ii < other.num_ops(); ++ii)
+      this->enable_logging_like(other.const_ops_[ii].access());
+    LOG_(debug) << this->logging_id << ".operator+=(other_const_lincomb_op=" << &other << ")" << std::endl;
     for (size_t ii = 0; ii < other.num_ops(); ++ii) {
+      LOG_(debug) << "  adding op=" << &(other.const_ops_[ii]) << ", coeff=" << other.coeffs_[ii] << std::endl;
       const_ops_.emplace_back(other.const_ops_[ii]);
       coeffs_.emplace_back(other.coeffs_[ii]);
     }
@@ -233,13 +259,19 @@ public:
 
   ThisType& operator-=(const BaseType& other)
   {
+    LOG_(debug) << this->logging_id << ".operator-=(other_op=" << &other << ")" << std::endl;
     this->add(other, -1.);
     return *this;
   }
 
   ThisType& operator-=(const ThisType& other)
   {
+    // Check if we need to enabled logging first
+    for (size_t ii = 0; ii < other.num_ops(); ++ii)
+      this->enable_logging_like(other.const_ops_[ii].access());
+    LOG_(debug) << this->logging_id << ".operator-=(other_const_lincomb_op=" << &other << ")" << std::endl;
     for (size_t ii = 0; ii < other.num_ops(); ++ii) {
+      LOG_(debug) << "  adding op=" << &(other.const_ops_[ii]) << ", coeff=" << -1 * other.coeffs_[ii] << std::endl;
       const_ops_.emplace_back(other.const_ops_[ii]);
       coeffs_.emplace_back(-1 * other.coeffs_[ii]);
     }
@@ -250,14 +282,14 @@ public:
 
   ConstLincombOperatorType operator*(const FieldType& alpha) const override final
   {
-    ConstLincombOperatorType ret(*this);
+    ConstLincombOperatorType ret(*this); // logging is inherited by copy ctor
     ret *= alpha;
     return ret;
   }
 
   ConstLincombOperatorType operator/(const FieldType& alpha) const override final
   {
-    ConstLincombOperatorType ret(*this);
+    ConstLincombOperatorType ret(*this); // logging is inherited by copy ctor
     ret /= alpha;
     return ret;
   }
@@ -266,22 +298,29 @@ public:
 
   ConstLincombOperatorType operator+(const ConstLincombOperatorType& other) const override final
   {
-    ConstLincombOperatorType ret(*this);
+    ConstLincombOperatorType ret(*this); // logging is inherited by copy ctor
     ret += other;
     return ret;
   }
 
   ConstLincombOperatorType operator+(const BaseType& other) const override final
   {
-    ConstLincombOperatorType ret(*this);
+    ConstLincombOperatorType ret(*this); // logging is inherited by copy ctor
     ret += other;
     return ret;
   }
 
   ConstLincombOperatorType operator+(const VectorType& vector) const override final
   {
+    std::string derived_logging_prefix = "";
+    if (this->logger.debug_enabled) {
+      derived_logging_prefix = "ConstantOperator";
+      this->logger.debug() << this->logging_id << ".operator+(vector.sup_norm()=" << vector.sup_norm() << ")"
+                           << std::endl;
+    }
     ConstLincombOperatorType ret(*this);
-    ret.add(new ConstantOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>(this->source_space(), this->range_space(), vector),
+    ret.add(new ConstantOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>(
+                this->source_space(), this->range_space(), vector, derived_logging_prefix),
             1.);
     return ret;
   }
@@ -290,22 +329,29 @@ public:
 
   ConstLincombOperatorType operator-(const ConstLincombOperatorType& other) const override final
   {
-    ConstLincombOperatorType ret(*this);
+    ConstLincombOperatorType ret(*this); // logging is inherited by copy ctor
     ret += other;
     return ret;
   }
 
   ConstLincombOperatorType operator-(const BaseType& other) const override final
   {
-    ConstLincombOperatorType ret(*this);
+    ConstLincombOperatorType ret(*this); // logging is inherited by copy ctor
     ret += other;
     return ret;
   }
 
   ConstLincombOperatorType operator-(const VectorType& vector) const override final
   {
+    std::string derived_logging_prefix = "";
+    if (this->logger.debug_enabled) {
+      derived_logging_prefix = "ConstantOperator";
+      this->logger.debug() << this->logging_id << ".operator-(vector.sup_norm()=" << vector.sup_norm() << ")"
+                           << std::endl;
+    }
     ConstLincombOperatorType ret(*this);
-    ret.add(new ConstantOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>(this->source_space(), this->range_space(), vector),
+    ret.add(new ConstantOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>(
+                this->source_space(), this->range_space(), vector, derived_logging_prefix),
             -1.);
     return ret;
   }
@@ -321,17 +367,17 @@ protected:
 
 template <class Matrix, class GV, size_t r, size_t rC, class F>
 std::enable_if_t<XT::LA::is_matrix<Matrix>::value, ConstLincombOperator<Matrix, GV, r, rC>>
-make_const_lincomb_operator(const SpaceInterface<GV, r, rC, F>& space)
+make_const_lincomb_operator(const SpaceInterface<GV, r, rC, F>& space, const std::string& logging_prefix = "")
 {
-  return ConstLincombOperator<Matrix, GV, r, rC>(space, space);
+  return ConstLincombOperator<Matrix, GV, r, rC>(space, space, logging_prefix);
 }
 
 
 template <class GV, size_t r, size_t rC, class F>
 ConstLincombOperator<typename XT::LA::Container<F>::MatrixType, GV, r, rC>
-make_const_lincomb_operator(const SpaceInterface<GV, r, rC, F>& space)
+make_const_lincomb_operator(const SpaceInterface<GV, r, rC, F>& space, const std::string& logging_prefix = "")
 {
-  return ConstLincombOperator<typename XT::LA::Container<F>::MatrixType, GV, r, rC>(space, space);
+  return ConstLincombOperator<typename XT::LA::Container<F>::MatrixType, GV, r, rC>(space, space, logging_prefix);
 }
 
 
@@ -350,9 +396,14 @@ public:
   using typename BaseType::SourceSpaceType;
   using typename BaseType::VectorType;
 
-  LincombOperator(const SourceSpaceType& src_space, const RangeSpaceType& rng_space)
-    : BaseType(src_space, rng_space)
-  {}
+  LincombOperator(const SourceSpaceType& src_space,
+                  const RangeSpaceType& rng_space,
+                  const std::string& logging_prefix = "")
+    : BaseType(src_space, rng_space, logging_prefix)
+  {
+    LOG_(info) << this->logging_id << "(source_space=" << &src_space << ", range_space=" << &rng_space << ")"
+               << std::endl;
+  }
 
   LincombOperator(ThisType& other)
     : BaseType(other)
@@ -361,35 +412,42 @@ public:
       this->ops_.emplace_back(oo);
   }
 
-  LincombOperator(ThisType&& source)
-    : BaseType(source)
-    , ops_(std::move(source.ops_))
-  {}
+  LincombOperator(ThisType&& source) = default;
 
   using BaseType::add;
 
-  void add(OperatorType& oo, const FieldType& coeff = 1.)
+  void add(OperatorType& op, const FieldType& coeff = 1.)
   {
-    ops_.emplace_back(oo);
+    this->enable_logging_like(op);
+    LOG_(debug) << this->logging_id << ".add(op_ref=" << &op << ", coeff=" << coeff << ")" << std::endl;
+    ops_.emplace_back(op);
     BaseType::add(ops_.back().access(), coeff);
   }
 
-  void add(OperatorType*&& oo, const FieldType& coeff = 1.)
+  void add(OperatorType*&& op, const FieldType& coeff = 1.)
   {
-    BaseType::add(std::move(oo), coeff);
+    this->enable_logging_like(*op);
+    LOG_(debug) << this->logging_id << ".add(op_ptr=" << op << ", coeff=" << coeff << ")" << std::endl;
+    BaseType::add(std::move(op), coeff);
     ops_.emplace_back(*this->keep_alive_.back());
   }
 
-  void add(ThisType& oo, const FieldType& coeff = 1.)
+  void add(ThisType& op, const FieldType& coeff = 1.)
   {
-    BaseType::add(oo, coeff);
-    for (size_t ii = 0; ii < oo.num_ops(); ++ii)
-      ops_.emplace_back(oo.ops_[ii]);
+    // Check if we need to enabled logging first
+    for (size_t ii = 0; ii < op.num_ops(); ++ii)
+      this->enable_logging_like(op.ops_[ii].access());
+    LOG_(debug) << this->logging_id << ".add(lincomb_op_ref=" << &op << ", coeff=" << coeff << ")" << std::endl;
+    BaseType::add(op, coeff);
+    for (size_t ii = 0; ii < op.num_ops(); ++ii) {
+      LOG_(debug) << "  adding op=" << &(op.ops_[ii]) << std::endl;
+      ops_.emplace_back(op.ops_[ii]);
+    }
   }
 
-  void add(ThisType*&& oo, const FieldType& coeff = 1.)
+  void add(ThisType*&& op, const FieldType& coeff = 1.)
   {
-    this->add(*oo, coeff);
+    this->add(*op, coeff);
   }
 
   using BaseType::op;
@@ -415,7 +473,13 @@ public:
 
   ThisType& operator+=(ThisType& other)
   {
+    // Check if we need to enabled logging first
+    for (size_t ii = 0; ii < other.num_ops(); ++ii)
+      this->enable_logging_like(other.ops_[ii].access());
+    LOG_(debug) << this->logging_id << ".operator+=(other_lincomb_op=" << &other << ")" << std::endl;
     for (size_t ii = 0; ii < other.num_ops(); ++ii) {
+      LOG_(debug) << "  adding const_op=" << &(other.const_ops_[ii]) << ", op=" << &(other.ops_[ii])
+                  << ", coeff=" << other.coeffs_[ii] << std::endl;
       this->const_ops_.emplace_back(other.const_ops_[ii]);
       ops_.emplace_back(other.ops_[ii]);
       this->coeffs_.emplace_back(other.coeffs_[ii]);
@@ -427,7 +491,13 @@ public:
 
   ThisType& operator-=(ThisType& other)
   {
+    // Check if we need to enabled logging first
+    for (size_t ii = 0; ii < other.num_ops(); ++ii)
+      this->enable_logging_like(other.ops_[ii].access());
+    LOG_(debug) << this->logging_id << ".operator-=(other_lincomb_op=" << &other << ")" << std::endl;
     for (size_t ii = 0; ii < other.num_ops(); ++ii) {
+      LOG_(debug) << "  adding const_op=" << &(other.const_ops_[ii]) << ", op=" << &(other.ops_[ii])
+                  << ", coeff=" << -1 * other.coeffs_[ii] << std::endl;
       this->const_ops_.emplace_back(other.const_ops_[ii]);
       ops_.emplace_back(other.ops_[ii]);
       this->coeffs_.emplace_back(-1 * other.coeffs_[ii]);
@@ -437,9 +507,9 @@ public:
 
   using BaseType::operator*;
 
-  LincombOperatorType operator*(const FieldType& alpha)override final
+  LincombOperatorType operator*(const FieldType& alpha) override final
   {
-    LincombOperatorType ret(*this);
+    LincombOperatorType ret(*this); // logging is inherited by copy ctor
     ret *= alpha;
     return ret;
   }
@@ -448,7 +518,7 @@ public:
 
   LincombOperatorType operator/(const FieldType& alpha) override final
   {
-    LincombOperatorType ret(*this);
+    LincombOperatorType ret(*this); // logging is inherited by copy ctor
     ret /= alpha;
     return ret;
   }
@@ -457,22 +527,29 @@ public:
 
   LincombOperatorType operator+(LincombOperatorType& other) override final
   {
-    LincombOperatorType ret(*this);
+    LincombOperatorType ret(*this); // logging is inherited by copy ctor
     ret += other;
     return ret;
   }
 
   LincombOperatorType operator+(OperatorType& other) override final
   {
-    LincombOperatorType ret(*this);
+    LincombOperatorType ret(*this); // logging is inherited by copy ctor
     ret += other;
     return ret;
   }
 
   LincombOperatorType operator+(const VectorType& vector) override final
   {
+    std::string derived_logging_prefix = "";
+    if (this->logger.debug_enabled) {
+      derived_logging_prefix = "ConstantOperator";
+      this->logger.debug() << this->logging_id << ".operator+(vector.sup_norm()=" << vector.sup_norm() << ")"
+                           << std::endl;
+    }
     LincombOperatorType ret(*this);
-    ret.add(new ConstantOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>(this->source_space(), this->range_space(), vector),
+    ret.add(new ConstantOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>(
+                this->source_space(), this->range_space(), vector, derived_logging_prefix),
             -1.);
     return ret;
   }
@@ -481,22 +558,29 @@ public:
 
   LincombOperatorType operator-(LincombOperatorType& other) override final
   {
-    LincombOperatorType ret(*this);
+    LincombOperatorType ret(*this); // logging is inherited by copy ctor
     ret -= other;
     return ret;
   }
 
   LincombOperatorType operator-(OperatorType& other) override final
   {
-    LincombOperatorType ret(*this);
+    LincombOperatorType ret(*this); // logging is inherited by copy ctor
     ret -= other;
     return ret;
   }
 
   LincombOperatorType operator-(const VectorType& vector) override final
   {
+    std::string derived_logging_prefix = "";
+    if (this->logger.debug_enabled) {
+      derived_logging_prefix = "ConstantOperator";
+      this->logger.debug() << this->logging_id << ".operator-(vector.sup_norm()=" << vector.sup_norm() << ")"
+                           << std::endl;
+    }
     LincombOperatorType ret(*this);
-    ret.add(new ConstantOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>(this->source_space(), this->range_space(), vector),
+    ret.add(new ConstantOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>(
+                this->source_space(), this->range_space(), vector, derived_logging_prefix),
             -1.);
     return ret;
   }
@@ -508,17 +592,17 @@ private:
 
 template <class Matrix, class GV, size_t r, size_t rC, class F>
 std::enable_if_t<XT::LA::is_matrix<Matrix>::value, LincombOperator<Matrix, GV, r, rC>>
-make_lincomb_operator(const SpaceInterface<GV, r, rC, F>& space)
+make_lincomb_operator(const SpaceInterface<GV, r, rC, F>& space, const std::string& logging_prefix = "")
 {
-  return LincombOperator<Matrix, GV, r, rC>(space, space);
+  return LincombOperator<Matrix, GV, r, rC>(space, space, logging_prefix);
 }
 
 
 template <class GV, size_t r, size_t rC, class F>
 LincombOperator<typename XT::LA::Container<F>::MatrixType, GV, r, rC>
-make_lincomb_operator(const SpaceInterface<GV, r, rC, F>& space)
+make_lincomb_operator(const SpaceInterface<GV, r, rC, F>& space, const std::string& logging_prefix = "")
 {
-  return LincombOperator<typename XT::LA::Container<F>::MatrixType, GV, r, rC>(space, space);
+  return LincombOperator<typename XT::LA::Container<F>::MatrixType, GV, r, rC>(space, space, logging_prefix);
 }
 
 
