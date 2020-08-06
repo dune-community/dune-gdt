@@ -42,6 +42,7 @@ class ConstLincombOperator
   using SS = typename type::SourceSpaceType;
   using RS = typename type::RangeSpaceType;
   using Mop = typename type::MatrixOperatorType;
+  using F = F;
 
 public:
   using bound_type = pybind11::class_<type, base_type>;
@@ -56,29 +57,31 @@ public:
     bindings::OperatorInterface<M, G, s, sC, r, rC>::addbind_methods(c);
 
     // our methods
-    c.def("add",
-          [](type& self, const typename type::OperatorType& op, const typename type::FieldType& coeff) {
-            self.add(op, coeff);
-          },
-          "op"_a,
-          "coeff"_a = 1.,
-          py::keep_alive<1, 2>());
-    c.def("add",
-          [](type& self, const type& op, const typename type::FieldType& coeff) { self.add(op, coeff); },
-          "const_lincomb_op"_a,
-          "coeff"_a = 1.,
-          py::keep_alive<1, 2>());
+    c.def(
+        "add",
+        [](T& self, const typename type::OperatorType& op, const F& coeff) { self.add(op, coeff); },
+        "op"_a,
+        "coeff"_a = 1.,
+        py::keep_alive<1, 2>());
+    c.def(
+        "add",
+        [](T& self, const type& op, const F& coeff) { self.add(op, coeff); },
+        "const_lincomb_op"_a,
+        "coeff"_a = 1.,
+        py::keep_alive<1, 2>());
     c.def(
         "op", (const typename T::OperatorType& (T::*)(const size_t) const) & T::op, "index"_a, py::keep_alive<0, 1>());
-    c.def("coeff", [](type& self, const size_t ii) { return self.coeff(ii); }, "index"_a);
-    // our operators (only if we require const variants, see interface bindings)
-    // ...
-    //    ThisType& operator*=(const FieldType& alpha)
-    //    ThisType& operator/=(const FieldType& alpha)
-    //    ThisType& operator+=(const BaseType& other)
-    //    ThisType& operator+=(const ThisType& other)
-    //    ThisType& operator-=(const BaseType& other)
-    //    ThisType& operator-=(const ThisType& other)
+    c.def(
+        "coeff", [](T& self, const size_t ii) { return self.coeff(ii); }, "index"_a);
+
+    // our operators, only those that are not yet present in OperatorInterface
+    // (function ptr signature required for the right return type)
+    c.def("__imul__", (T & (T::*)(const F&)) & T::operator*=, py::is_operator());
+    c.def("__itruediv__", (T & (T::*)(const F&)) & T::operator/=, py::is_operator());
+    c.def("__iadd__", (T & (T::*)(const base_type&)) & T::operator+=, py::is_operator(), py::keep_alive<1, 2>());
+    c.def("__iadd__", (T & (T::*)(const type&)) & T::operator+=, py::is_operator(), py::keep_alive<1, 2>());
+    c.def("__isub__", (T & (T::*)(const base_type&)) & T::operator-=, py::is_operator(), py::keep_alive<1, 2>());
+    c.def("__isub__", (T & (T::*)(const type&)) & T::operator-=, py::is_operator(), py::keep_alive<1, 2>());
   } // ... addbind_methods(...)
 
   static bound_type
@@ -125,7 +128,7 @@ class LincombOperator
   using V = typename type::VectorType;
   using SS = typename type::SourceSpaceType;
   using RS = typename type::RangeSpaceType;
-  using F = typename type::FieldType;
+  using F = F;
   using Mop = typename type::MatrixOperatorType;
 
 public:
@@ -163,16 +166,26 @@ public:
     // our methods
     c.def(
         "add",
-        [](type& self, typename type::OperatorType& op, const typename type::FieldType& coeff) { self.add(op, coeff); },
+        [](type& self, typename type::OperatorType& op, const F& coeff) { self.add(op, coeff); },
         "op"_a,
         "coeff"_a = 1.,
         py::keep_alive<1, 2>());
-    c.def("add",
-          [](type& self, type& op, const typename type::FieldType& coeff) { self.add(op, coeff); },
-          "const_lincomb_op"_a,
-          "coeff"_a = 1.,
-          py::keep_alive<1, 2>());
+    c.def(
+        "add",
+        [](type& self, type& op, const F& coeff) { self.add(op, coeff); },
+        "const_lincomb_op"_a,
+        "coeff"_a = 1.,
+        py::keep_alive<1, 2>());
     c.def("op", (typename type::OperatorType & (type::*)(const size_t)) & type::op, "index"_a, py::keep_alive<0, 1>());
+    c.def("assemble",
+          (typename type::OperatorType & (type::*)(const bool)) & type::assemble,
+          "parallel"_a = False,
+          py::keep_alive<0, 1>());
+
+    // our operators, only those that are not yet present in OperatorInterface or ConstLincombOperator
+    // (function ptr signature required for the right return type)
+    c.def("__iadd__", (type & (type::*)(const type&)) & type::operator+=, py::is_operator(), py::keep_alive<1, 2>());
+    c.def("__isub__", (type & (type::*)(const type&)) & type::operator-=, py::is_operator(), py::keep_alive<1, 2>());
 
     return c;
   } // ... bind(...)

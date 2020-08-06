@@ -13,6 +13,7 @@
 #define PYTHON_DUNE_GDT_OPERATORS_INTERFACES_HH
 
 #include <dune/pybindxi/pybind11.h>
+#include <dune/pybindxi/stl.h>
 
 #include <dune/xt/common/python.hh>
 #include <dune/xt/common/string.hh>
@@ -20,6 +21,7 @@
 #include <dune/xt/la/container.hh>
 #include <python/dune/xt/common/exceptions.bindings.hh>
 #include <python/dune/xt/common/parameter.hh>
+#include <python/dune/xt/common/configuration.hh>
 #include <python/dune/xt/grid/grids.bindings.hh>
 #include <python/dune/xt/grid/traits.hh>
 #include <python/dune/xt/la/container.bindings.hh>
@@ -54,270 +56,313 @@ public:
     namespace py = pybind11;
     using namespace pybind11::literals;
 
-    c.def("assemble", [](T& self, const bool parallel) { self.assemble(parallel); }, "parallel"_a = false);
-    c.def("apply",
-          [](T& self, const V& source, V& range, const XT::Common::Parameter& param) {
-            self.apply(source, range, param);
-          },
-          "source"_a,
-          "range"_a,
-          "param"_a = XT::Common::Parameter(),
-          py::call_guard<py::gil_scoped_release>());
-    c.def("apply",
-          [](T& self, const V& source, const XT::Common::Parameter& param) { return self.apply(source, param); },
-          "source"_a,
-          "param"_a = XT::Common::Parameter(),
-          py::call_guard<py::gil_scoped_release>());
-    c.def("apply2",
-          [](T& self, const V& range, const V& source, const XT::Common::Parameter& param) {
-            self.apply2(range, source, param);
-          },
-          "range"_a,
-          "source"_a,
-          "param"_a = XT::Common::Parameter(),
-          py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "assemble", [](T& self, const bool parallel) { self.assemble(parallel); }, "parallel"_a = false);
+    c.def(
+        "apply",
+        [](T& self, const V& source, V& range, const XT::Common::Parameter& param) {
+          self.apply(source, range, param);
+        },
+        "source"_a,
+        "range"_a,
+        "param"_a = XT::Common::Parameter(),
+        py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "apply",
+        [](T& self, const V& source, const XT::Common::Parameter& param) { return self.apply(source, param); },
+        "source"_a,
+        "param"_a = XT::Common::Parameter(),
+        py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "apply2",
+        [](T& self, const V& range, const V& source, const XT::Common::Parameter& param) {
+          self.apply2(range, source, param);
+        },
+        "range"_a,
+        "source"_a,
+        "param"_a = XT::Common::Parameter(),
+        py::call_guard<py::gil_scoped_release>());
     c.def("invert_options", [](T& self) { return self.invert_options(); });
-    c.def("invert_options", [](T& self, const std::string& tpe) { return self.invert_options(tpe); }, "type"_a);
-    c.def("apply_inverse",
-          [](T& self,
-             const V& range,
-             V& source,
-             const XT::Common::Configuration& opts,
-             const XT::Common::Parameter& param) { self.apply_inverse(range, source, opts, param); },
-          "range"_a,
-          "source"_a,
-          "opts"_a,
-          "param"_a = XT::Common::Parameter(),
-          py::call_guard<py::gil_scoped_release>());
-    c.def("apply_inverse",
-          [](T& self, const V& range, V& source, const std::string& tpe, const XT::Common::Parameter& param) {
-            self.apply_inverse(range, source, tpe, param);
-          },
-          "range"_a,
-          "source"_a,
-          "type"_a,
-          "param"_a = XT::Common::Parameter(),
-          py::call_guard<py::gil_scoped_release>());
-    c.def("apply_inverse",
-          [](T& self, const V& range, V& source, const XT::Common::Parameter& param) {
-            self.apply_inverse(range, source, param);
-          },
-          "range"_a,
-          "source"_a,
-          "param"_a = XT::Common::Parameter(),
-          py::call_guard<py::gil_scoped_release>());
-    c.def("apply_inverse",
-          [](T& self, const V& range, const XT::Common::Configuration& opts, const XT::Common::Parameter& param) {
-            return self.apply_inverse(range, opts, param);
-          },
-          "range"_a,
-          "opts"_a,
-          "param"_a = XT::Common::Parameter(),
-          py::call_guard<py::gil_scoped_release>());
-    c.def("apply_inverse",
-          [](T& self, const V& range, const std::string& tpe, const XT::Common::Parameter& param) {
-            return self.apply_inverse(range, tpe, param);
-          },
-          "range"_a,
-          "type"_a,
-          "param"_a = XT::Common::Parameter(),
-          py::call_guard<py::gil_scoped_release>());
-    c.def("apply_inverse",
-          [](T& self, const V& range, const XT::Common::Parameter& param) { return self.apply_inverse(range, param); },
-          "range"_a,
-          "param"_a = XT::Common::Parameter(),
-          py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "invert_options", [](T& self, const std::string& tpe) { return self.invert_options(tpe); }, "type"_a);
+    c.def(
+        "apply_inverse",
+        [](T& self,
+           const V& range,
+           V& source,
+           const XT::Common::Configuration& opts,
+           const XT::Common::Parameter& param) { self.apply_inverse(range, source, opts, param); },
+        "range"_a,
+        "source"_a,
+        "opts"_a,
+        "param"_a = XT::Common::Parameter(),
+        py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "apply_inverse",
+        [](T& self, const V& range, V& source, const std::string& tpe, const XT::Common::Parameter& param) {
+          self.apply_inverse(range, source, tpe, param);
+        },
+        "range"_a,
+        "source"_a,
+        "type"_a,
+        "param"_a = XT::Common::Parameter(),
+        py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "apply_inverse",
+        [](T& self, const V& range, V& source, const XT::Common::Parameter& param) {
+          self.apply_inverse(range, source, param);
+        },
+        "range"_a,
+        "source"_a,
+        "param"_a = XT::Common::Parameter(),
+        py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "apply_inverse",
+        [](T& self, const V& range, const XT::Common::Configuration& opts, const XT::Common::Parameter& param) {
+          return self.apply_inverse(range, opts, param);
+        },
+        "range"_a,
+        "opts"_a,
+        "param"_a = XT::Common::Parameter(),
+        py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "apply_inverse",
+        [](T& self, const V& range, const std::string& tpe, const XT::Common::Parameter& param) {
+          return self.apply_inverse(range, tpe, param);
+        },
+        "range"_a,
+        "type"_a,
+        "param"_a = XT::Common::Parameter(),
+        py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "apply_inverse",
+        [](T& self, const V& range, const XT::Common::Parameter& param) { return self.apply_inverse(range, param); },
+        "range"_a,
+        "param"_a = XT::Common::Parameter(),
+        py::call_guard<py::gil_scoped_release>());
     c.def("jacobian_options", [](T& self) { return self.jacobian_options(); });
-    c.def("jacobian_options", [](T& self, const std::string& tpe) { return self.jacobian_options(tpe); }, "type"_a);
-    c.def("jacobian",
-          [](T& self,
-             const V& source,
-             Mop& jacobian_op,
-             const XT::Common::Configuration& opts,
-             const XT::Common::Parameter& param) { self.jacobian(source, jacobian_op, opts, param); },
-          "source"_a,
-          "jacobian_op"_a,
-          "opts"_a,
-          "param"_a = XT::Common::Parameter(),
-          py::call_guard<py::gil_scoped_release>());
-    c.def("jacobian",
-          [](T& self, const V& source, Mop& jacobian_op, const std::string& tpe, const XT::Common::Parameter& param) {
-            self.jacobian(source, jacobian_op, tpe, param);
-          },
-          "source"_a,
-          "jacobian_op"_a,
-          "type"_a,
-          "param"_a = XT::Common::Parameter(),
-          py::call_guard<py::gil_scoped_release>());
-    c.def("jacobian",
-          [](T& self, const V& source, Mop& jacobian_op, const XT::Common::Parameter& param) {
-            self.jacobian(source, jacobian_op, param);
-          },
-          "source"_a,
-          "jacobian_op"_a,
-          "param"_a = XT::Common::Parameter(),
-          py::call_guard<py::gil_scoped_release>());
-    c.def("jacobian",
-          [](T& self, const V& source, const XT::Common::Configuration& opts, const XT::Common::Parameter& param) {
-            return self.jacobian(source, opts, param);
-          },
-          "source"_a,
-          "opts"_a,
-          "param"_a = XT::Common::Parameter(),
-          py::call_guard<py::gil_scoped_release>());
-    c.def("jacobian",
-          [](T& self, const V& source, const std::string& tpe, const XT::Common::Parameter& param) {
-            return self.jacobian(source, tpe, param);
-          },
-          "source"_a,
-          "type"_a,
-          "param"_a = XT::Common::Parameter(),
-          py::call_guard<py::gil_scoped_release>());
-    c.def("jacobian",
-          [](T& self, const V& source, const XT::Common::Parameter& param) { return self.jacobian(source, param); },
-          "source"_a,
-          "param"_a = XT::Common::Parameter(),
-          py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "jacobian_options", [](T& self, const std::string& tpe) { return self.jacobian_options(tpe); }, "type"_a);
+    c.def(
+        "jacobian",
+        [](T& self,
+           const V& source,
+           Mop& jacobian_op,
+           const XT::Common::Configuration& opts,
+           const XT::Common::Parameter& param) { self.jacobian(source, jacobian_op, opts, param); },
+        "source"_a,
+        "jacobian_op"_a,
+        "opts"_a,
+        "param"_a = XT::Common::Parameter(),
+        py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "jacobian",
+        [](T& self, const V& source, Mop& jacobian_op, const std::string& tpe, const XT::Common::Parameter& param) {
+          self.jacobian(source, jacobian_op, tpe, param);
+        },
+        "source"_a,
+        "jacobian_op"_a,
+        "type"_a,
+        "param"_a = XT::Common::Parameter(),
+        py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "jacobian",
+        [](T& self, const V& source, Mop& jacobian_op, const XT::Common::Parameter& param) {
+          self.jacobian(source, jacobian_op, param);
+        },
+        "source"_a,
+        "jacobian_op"_a,
+        "param"_a = XT::Common::Parameter(),
+        py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "jacobian",
+        [](T& self, const V& source, const XT::Common::Configuration& opts, const XT::Common::Parameter& param) {
+          return self.jacobian(source, opts, param);
+        },
+        "source"_a,
+        "opts"_a,
+        "param"_a = XT::Common::Parameter(),
+        py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "jacobian",
+        [](T& self, const V& source, const std::string& tpe, const XT::Common::Parameter& param) {
+          return self.jacobian(source, tpe, param);
+        },
+        "source"_a,
+        "type"_a,
+        "param"_a = XT::Common::Parameter(),
+        py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "jacobian",
+        [](T& self, const V& source, const XT::Common::Parameter& param) { return self.jacobian(source, param); },
+        "source"_a,
+        "param"_a = XT::Common::Parameter(),
+        py::call_guard<py::gil_scoped_release>());
     // ... induced norm?
 
-    // operators (do we need the const variants? if yes, adjust lincomb bindings accordingly)
-    // * from OperatorInterface
-    //    virtual ConstLincombOperatorType operator*(const FieldType& alpha) const
-    //    c.def("__mul__", [](const type& self, const F& alpha) { return self * alpha; }, "alpha"_a, py::is_operator());
-    //    c.def("__rmul__", [](const type& self, const F& alpha) { return self * alpha; }, "alpha"_a,
-    //    py::is_operator()); virtual LincombOperatorType operator*(const FieldType& alpha)
-    c.def("__mul__", [](type& self, const F& alpha) { return self * alpha; }, "alpha"_a, py::is_operator());
-    c.def("__rmul__", [](type& self, const F& alpha) { return self * alpha; }, "alpha"_a, py::is_operator());
-    c.def("__imul__", [](type& self, const F& alpha) { return self * alpha; }, "alpha"_a, py::is_operator());
-    //    virtual ConstLincombOperatorType operator/(const FieldType& alpha) const
-    //    c.def("__truediv__", [](const type& self, const F& alpha) { return self / alpha; }, "alpha"_a,
-    //    py::is_operator()); virtual LincombOperatorType operator/(const FieldType& alpha)
-    c.def("__truediv__", [](type& self, const F& alpha) { return self / alpha; }, "alpha"_a, py::is_operator());
-    c.def("__itruediv__", [](type& self, const F& alpha) { return self / alpha; }, "alpha"_a, py::is_operator());
-    //    virtual ConstLincombOperatorType operator+(const ConstLincombOperatorType& other) const
-    //    c.def("__add__",
-    //          [](const type& self, const CLop& other) { return self + other; },
-    //          "other_const_lincomb_operator"_a,
-    //          py::is_operator(),
-    //          py::keep_alive<0, 1>(),
-    //          py::keep_alive<0, 2>());
-    //    virtual ConstLincombOperatorType operator+(const ThisType& other) const
-    //    c.def("__add__",
-    //          [](const type& self, const type& other) { return self + other; },
-    //          "other_const_operator"_a,
-    //          py::is_operator(),
-    //          py::keep_alive<0, 1>(),
-    //          py::keep_alive<0, 2>());
-    //    virtual ConstLincombOperatorType operator+(const VectorType& vector) const
-    //    c.def("__add__",
-    //          [](const type& self, const V& other) { return self + other; },
-    //          "other_const_vector"_a,
-    //          py::is_operator(),
-    //          py::keep_alive<0, 1>(),
-    //          py::keep_alive<0, 2>());
-    //    virtual LincombOperatorType operator+(LincombOperatorType& other)
-    c.def("__add__",
-          [](type& self, Lop& other) { return self + other; },
-          "other_lincomb_operator"_a,
-          py::is_operator(),
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>());
-    c.def("__iadd__",
-          [](type& self, Lop& other) { return self + other; },
-          "other_lincomb_operator"_a,
-          py::is_operator(),
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>());
-    //    virtual LincombOperatorType operator+(ThisType& other)
-    c.def("__add__",
-          [](type& self, type& other) { return self + other; },
-          "other_operator"_a,
-          py::is_operator(),
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>());
-    c.def("__iadd__",
-          [](type& self, type& other) { return self + other; },
-          "other_operator"_a,
-          py::is_operator(),
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>());
-    //    virtual LincombOperatorType operator+(const VectorType& vector)
-    c.def("__add__",
-          [](type& self, V& other) { return self + other; },
-          "other_vector"_a,
-          py::is_operator(),
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>());
-    c.def("__iadd__",
-          [](type& self, V& other) { return self + other; },
-          "other_vector"_a,
-          py::is_operator(),
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>());
-    //    virtual ConstLincombOperatorType operator-(const ConstLincombOperatorType& other) const
-    //    c.def("__sub__",
-    //          [](const type& self, const CLop& other) { return self - other; },
-    //          "other_const_lincomb_operator"_a,
-    //          py::is_operator(),
-    //          py::keep_alive<0, 1>(),
-    //          py::keep_alive<0, 2>());
-    //    virtual ConstLincombOperatorType operator-(const ThisType& other) const
-    //    c.def("__sub__",
-    //          [](const type& self, const type& other) { return self - other; },
-    //          "other_const_operator"_a,
-    //          py::is_operator(),
-    //          py::keep_alive<0, 1>(),
-    //          py::keep_alive<0, 2>());
-    //    virtual ConstLincombOperatorType operator-(const VectorType& vector) const
-    //    c.def("__sub__",
-    //          [](const type& self, const V& other) { return self - other; },
-    //          "other_const_vector"_a,
-    //          py::is_operator(),
-    //          py::keep_alive<0, 1>(),
-    //          py::keep_alive<0, 2>());
-    //    virtual LincombOperatorType operator-(LincombOperatorType& other)
-    c.def("__sub__",
-          [](type& self, Lop& other) { return self - other; },
-          "other_lincomb_operator"_a,
-          py::is_operator(),
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>());
-    c.def("__isub__",
-          [](type& self, Lop& other) { return self - other; },
-          "other_lincomb_operator"_a,
-          py::is_operator(),
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>());
-    //    virtual LincombOperatorType operator-(ThisType& other)
-    c.def("__sub__",
-          [](type& self, type& other) { return self - other; },
-          "other_operator"_a,
-          py::is_operator(),
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>());
-    c.def("__isub__",
-          [](type& self, type& other) { return self - other; },
-          "other_operator"_a,
-          py::is_operator(),
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>());
-    //    virtual LincombOperatorType operator-(const VectorType& vector)
-    c.def("__sub__",
-          [](type& self, V& other) { return self - other; },
-          "other_vector"_a,
-          py::is_operator(),
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>());
-    c.def("__isub__",
-          [](type& self, V& other) { return self - other; },
-          "other_vector"_a,
-          py::is_operator(),
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>());
-    // others
-    //    c.def("__neg__", [](const type& self) { return self * -1; }, py::is_operator(), py::keep_alive<0, 1>());
-    c.def("__neg__", [](type& self) { return self * -1; }, py::is_operator(), py::keep_alive<0, 1>());
-
+    // operators. These are delicate: we need to mimic the C++ situation, e.g. som operators here, others in
+    // ConstLinccomb and Lincomb...
+    // * variants from OperatorInterface
+    c.def(
+        "__mul__",
+        [](const T& self, const F& alpha) { return std::make_unique<CLop>(self * alpha); },
+        "scalar"_a,
+        py::keep_alive<0, 1>(),
+        py::is_operator());
+    c.def(
+        "__mul__",
+        [](T& self, const F& alpha) { return std::make_unique<Lop>(self * alpha); },
+        "scalar"_a,
+        py::keep_alive<0, 1>(),
+        py::is_operator());
+    c.def(
+        "__truediv__",
+        [](const T& self, const F& alpha) { return std::make_unique<CLop>(self / alpha); },
+        "scalar"_a,
+        py::keep_alive<0, 1>(),
+        py::is_operator());
+    c.def(
+        "__truediv__",
+        [](T& self, const F& alpha) { return std::make_unique<Lop>(self / alpha); },
+        "scalar"_a,
+        py::keep_alive<0, 1>(),
+        py::is_operator());
+    c.def(
+        "__add__",
+        [](const T& self, const CLop& other) { return std::make_unique<CLop>(self + other); },
+        "const_lincomb_op"_a,
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>(),
+        py::is_operator());
+    c.def(
+        "__add__",
+        [](const T& self, const type& other) { return std::make_unique<CLop>(self + other); },
+        "op"_a,
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>(),
+        py::is_operator());
+    c.def(
+        "__add__",
+        [](const T& self, const V& vec) { return std::make_unique<CLop>(self + vec); },
+        "vector"_a,
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>(),
+        py::is_operator());
+    c.def(
+        "__add__",
+        [](T& self, Lop& other) { return std::make_unique<Lop>(self + other); },
+        "lincomb_op"_a,
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>(),
+        py::is_operator());
+    c.def(
+        "__add__",
+        [](T& self, type& other) { return std::make_unique<Lop>(self + other); },
+        "op"_a,
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>(),
+        py::is_operator());
+    c.def(
+        "__add__",
+        [](T& self, const V& vec) { return std::make_unique<Lop>(self + vec); },
+        "vector"_a,
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>(),
+        py::is_operator());
+    c.def(
+        "__sub__",
+        [](const T& self, const CLop& other) { return std::make_unique<CLop>(self - other); },
+        "const_lincomb_op"_a,
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>(),
+        py::is_operator());
+    c.def(
+        "__sub__",
+        [](const T& self, const type& other) { return std::make_unique<CLop>(self - other); },
+        "op"_a,
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>(),
+        py::is_operator());
+    c.def(
+        "__sub__",
+        [](const T& self, const V& vec) { return std::make_unique<CLop>(self - vec); },
+        "vector"_a,
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>(),
+        py::is_operator());
+    c.def(
+        "__sub__",
+        [](T& self, Lop& other) { return std::make_unique<Lop>(self - other); },
+        "lincomb_op"_a,
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>(),
+        py::is_operator());
+    c.def(
+        "__sub__",
+        [](T& self, type& other) { return std::make_unique<Lop>(self - other); },
+        "op"_a,
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>(),
+        py::is_operator());
+    c.def(
+        "__sub__",
+        [](T& self, const V& vec) { return std::make_unique<Lop>(self - vec); },
+        "vector"_a,
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>(),
+        py::is_operator());
+    // * variants from OperatorInterface with interchanged arguments (at most the combinations from above!)
+    c.def(
+        "__rmul__",
+        [](const T& self, const F& alpha) { return std::make_unique<CLop>(self * alpha); },
+        "scalar"_a,
+        py::keep_alive<0, 1>(),
+        py::is_operator());
+    c.def(
+        "__rmul__",
+        [](T& self, const F& alpha) { return std::make_unique<Lop>(self * alpha); },
+        "scalar"_a,
+        py::keep_alive<0, 1>(),
+        py::is_operator());
+    // __rtruediv__ as in scalar/operators does not make sense
+    // __radd__ for other ops does not make sense, uses __add__ of the other op
+    c.def(
+        "__radd__",
+        [](const T& self, const V& vec) { return std::make_unique<CLop>(self + vec); },
+        "vector"_a,
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>(),
+        py::is_operator());
+    c.def(
+        "__radd__",
+        [](T& self, const V& vec) { return std::make_unique<Lop>(self + vec); },
+        "vector"_a,
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>(),
+        py::is_operator());
+    // __rsub__ for other ops does not make sense, uses __sub__ of the other op
+    c.def(
+        "__rsub__",
+        [](const T& self, const V& vec) { return std::make_unique<CLop>(self * -1 + vec); },
+        "vector"_a,
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>(),
+        py::is_operator());
+    c.def(
+        "__rsub__",
+        [](T& self, const V& vec) { return std::make_unique<Lop>(self * -1 + vec); },
+        "vector"_a,
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>(),
+        py::is_operator());
+    // * additional variants for Python which make sense given OperatorInterface
+    c.def(
+        "__neg__",
+        [](const T& self) { return std::make_unique<CLop>(self * -1); },
+        py::is_operator(),
+        py::keep_alive<0, 1>());
+    c.def(
+        "__neg__", [](T& self) { return std::make_unique<Lop>(self * -1); }, py::is_operator(), py::keep_alive<0, 1>());
   } // ... addbind_methods(...)
 
   static bound_type
