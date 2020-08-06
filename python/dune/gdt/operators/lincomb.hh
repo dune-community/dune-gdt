@@ -31,13 +31,12 @@ namespace GDT {
 namespace bindings {
 
 
-template <class M, class G, size_t s = 1, size_t sC = 1, size_t r = s, size_t rC = sC>
+template <class M, class GV, size_t s = 1, size_t r = s>
 class ConstLincombOperator
 {
-  static_assert(XT::Grid::is_grid<G>::value, "");
-  using GV = typename G::LeafGridView;
-  using type = GDT::ConstLincombOperator<M, GV, s, sC, r, rC>;
-  using base_type = GDT::OperatorInterface<M, GV, s, sC, r, rC>;
+  using G = std::decay_t<XT::Grid::extract_grid_t<GV>>;
+  using type = GDT::ConstLincombOperator<M, GV, s, 1, r, 1>;
+  using base_type = GDT::OperatorInterface<M, GV, s, 1, r, 1>;
   using V = typename type::VectorType;
   using SS = typename type::SourceSpaceType;
   using RS = typename type::RangeSpaceType;
@@ -54,7 +53,7 @@ public:
     using namespace pybind11::literals;
 
     // methods from operator base, to allow for overloads
-    bindings::OperatorInterface<M, G, s, sC, r, rC>::addbind_methods(c);
+    bindings::OperatorInterface<M, GV, s, r>::addbind_methods(c);
 
     // our methods
     c.def(
@@ -74,7 +73,7 @@ public:
     c.def(
         "coeff", [](T& self, const size_t ii) { return self.coeff(ii); }, "index"_a);
 
-    // our operators, only those that are not yet present in OperatorInterface
+    // our operators
     // (function ptr signature required for the right return type)
     c.def("__imul__", (type & (type::*)(const F&)) & type::operator*=, py::is_operator());
     c.def("__itruediv__", (type & (type::*)(const F&)) & type::operator/=, py::is_operator());
@@ -95,12 +94,8 @@ public:
     auto matrix_name = XT::LA::bindings::container_name<M>::value();
 
     std::string class_name = matrix_name + "_" + class_id + "_" + grid_id + "_" + XT::Common::to_string(s);
-    if (sC > 1)
-      class_name += "x" + XT::Common::to_string(sC);
     class_name += "d_source_space";
     class_name += XT::Common::to_string(r);
-    if (rC > 1)
-      class_name += "x" + XT::Common::to_string(rC);
     class_name += "d_range_space";
     const auto ClassName = XT::Common::to_camel_case(class_name);
     bound_type c(m,
@@ -120,13 +115,12 @@ public:
 }; // class ConstLincombOperator
 
 
-template <class M, class G, size_t s = 1, size_t sC = 1, size_t r = s, size_t rC = sC>
+template <class M, class GV, size_t s = 1, size_t r = s>
 class LincombOperator
 {
-  static_assert(XT::Grid::is_grid<G>::value, "");
-  using GV = typename G::LeafGridView;
-  using type = GDT::LincombOperator<M, GV, s, sC, r, rC>;
-  using base_type = GDT::ConstLincombOperator<M, GV, s, sC, r, rC>;
+  using G = std::decay_t<XT::Grid::extract_grid_t<GV>>;
+  using type = GDT::LincombOperator<M, GV, s, 1, r, 1>;
+  using base_type = GDT::ConstLincombOperator<M, GV, s, 1, r, 1>;
   using V = typename type::VectorType;
   using SS = typename type::SourceSpaceType;
   using RS = typename type::RangeSpaceType;
@@ -145,12 +139,8 @@ public:
     auto matrix_name = XT::LA::bindings::container_name<M>::value();
 
     std::string class_name = matrix_name + "_" + class_id + "_" + grid_id + "_" + XT::Common::to_string(s);
-    if (sC > 1)
-      class_name += "x" + XT::Common::to_string(sC);
     class_name += "d_source_space";
     class_name += XT::Common::to_string(r);
-    if (rC > 1)
-      class_name += "x" + XT::Common::to_string(rC);
     class_name += "d_range_space";
     const auto ClassName = XT::Common::to_camel_case(class_name);
     bound_type c(m,
@@ -163,7 +153,7 @@ public:
           py::keep_alive<0, 3>());
 
     // methods from base, to allow for overloads
-    bindings::ConstLincombOperator<M, G, s, sC, r, rC>::addbind_methods(c);
+    bindings::ConstLincombOperator<M, GV, s, r>::addbind_methods(c);
 
     // our methods
     c.def(

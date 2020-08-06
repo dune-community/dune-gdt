@@ -10,9 +10,12 @@
 #include "config.h"
 
 #include <dune/xt/grid/grids.hh>
+#include <python/dune/xt/la/traits.hh>
 
-#include "interface_bindings.hh"
+#include "interfaces_all_grids.hh"
 
+
+/// \todo Split like istl!
 
 PYBIND11_MODULE(_operators_interfaces_eigen, /*m*/)
 {
@@ -29,7 +32,13 @@ PYBIND11_MODULE(_operators_interfaces_eigen, /*m*/)
   py::module::import("dune.gdt._spaces_interface");
 
   //#if HAVE_EIGEN
-  //  OperatorInterface_for_all_grids<LA::EigenDenseMatrix<double>, XT::Grid::AvailableGridTypes>::bind(m);
-  //  OperatorInterface_for_all_grids<LA::EigenRowMajorSparseMatrix<double>, XT::Grid::AvailableGridTypes>::bind(m);
+  //  OperatorInterface_for_all_grids<LA::EigenDenseMatrix<double>,
+  //                                  LA::bindings::Eigen,
+  //                                  LA::bindings::Dense,
+  //                                  XT::Grid::AvailableGridTypes>::bind(m, "eigen_dense");
+  //  OperatorInterface_for_all_grids<LA::EigenRowMajorSparseMatrix<double>,
+  //                                  LA::bindings::Eigen,
+  //                                  LA::bindings::Sparse,
+  //                                  XT::Grid::AvailableGridTypes>::bind(m, "eigen_sparse");
   //#endif
 }

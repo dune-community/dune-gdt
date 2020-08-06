@@ -15,9 +15,7 @@
 #include "interfaces_all_grids.hh"
 
 
-/// \todo Split like istl!
-
-PYBIND11_MODULE(_operators_interfaces_common, /*m*/)
+PYBIND11_MODULE(_operators_interfaces_istl_3d, m)
 {
   namespace py = pybind11;
   using namespace Dune;
@@ -31,13 +29,13 @@ PYBIND11_MODULE(_operators_interfaces_common, /*m*/)
 
   py::module::import("dune.gdt._spaces_interface");
 
-  //  OperatorInterface_for_all_grids<LA::CommonDenseMatrix<double>,
-  //                                  LA::bindings::Common,
-  //                                  LA::bindings::Dense,
-  //                                  XT::Grid::AvailableGridTypes>::bind(m, "common_dense");
-  //  // Generic linear solver missing for CommonSparseMatrix!
-  //  //  OperatorInterface_for_all_grids<LA::CommonSparseMatrix<double>,
-  //  //                                  LA::bindings::Common,
-  //  //                                  LA::bindings::Sparse,
-  //  //                                  XT::Grid::AvailableGridTypes>::bind(m, "common_sparse");
+  OperatorInterface_for_all_grids<LA::IstlRowMajorSparseMatrix<double>,
+                                  LA::bindings::Istl,
+                                  void,
+                                  boost::tuple<YASP_3D_EQUIDISTANT_OFFSET
+#if HAVE_DUNE_ALUGRID
+                                               ,
+                                               ALU_3D_SIMPLEX_CONFORMING
+#endif
+                                               >>::bind(m, "istl_sparse");
 }

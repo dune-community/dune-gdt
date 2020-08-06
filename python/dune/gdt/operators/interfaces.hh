@@ -33,12 +33,11 @@ namespace GDT {
 namespace bindings {
 
 
-template <class M, class G, size_t s = 1, size_t sC = 1, size_t r = s, size_t rC = sC>
+template <class M, class GV, size_t s_r = 1, size_t r_r = s_r>
 class OperatorInterface
 {
-  static_assert(XT::Grid::is_grid<G>::value, "");
-  using GV = typename G::LeafGridView;
-  using type = GDT::OperatorInterface<M, GV, s, sC, r, rC>;
+  using G = std::decay_t<XT::Grid::extract_grid_t<GV>>;
+  using type = GDT::OperatorInterface<M, GV, s_r, 1, r_r, 1>;
   using V = typename type::VectorType;
   using SS = typename type::SourceSpaceType;
   using RS = typename type::RangeSpaceType;
@@ -368,27 +367,26 @@ public:
         py::keep_alive<0, 1>());
   } // ... addbind_methods(...)
 
-  static bound_type
-  bind(pybind11::module& m, const std::string& grid_id, const std::string& class_id = "operator_interface")
+  static bound_type bind(pybind11::module& m,
+                         const std::string& matrix_id,
+                         const std::string& grid_id,
+                         const std::string& layer_id = "",
+                         const std::string& class_id = "operator_interface")
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
 
-    auto matrix_name = XT::LA::bindings::container_name<M>::value();
-    //    auto vector_name = XT::LA::bindings::container_name<V>::value();
-
-    std::string class_name = matrix_name + "_" + class_id + "_" + grid_id + "_" + XT::Common::to_string(s);
-    if (sC > 1)
-      class_name += "x" + XT::Common::to_string(sC);
-    class_name += "d_source_space";
-    class_name += XT::Common::to_string(r);
-    if (rC > 1)
-      class_name += "x" + XT::Common::to_string(rC);
-    class_name += "d_range_space";
+    std::string class_name = class_id;
+    class_name += "_" + grid_id;
+    if (!layer_id.empty())
+      class_name += "_" + layer_id;
+    class_name += "_" + XT::Common::to_string(r_r) + "d_range_space";
+    class_name += "_" + XT::Common::to_string(s_r) + "d_source_space";
+    class_name += "_" + matrix_id + "_matrix";
     const auto ClassName = XT::Common::to_camel_case(class_name);
     bound_type c(m,
                  ClassName.c_str(),
-                 (XT::Common::to_camel_case(class_id) + " (" + grid_id + ", " + matrix_name + " variant)").c_str());
+                 (XT::Common::to_camel_case(class_id) + " (" + grid_id + ", " + matrix_id + " variant)").c_str());
 
     c.def_property_readonly("linear", &type::linear);
     c.def_property_readonly("source_space",

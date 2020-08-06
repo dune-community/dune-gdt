@@ -10,11 +10,12 @@
 #include "config.h"
 
 #include <dune/xt/grid/grids.hh>
+#include <python/dune/xt/la/traits.hh>
 
-#include "interface_bindings.hh"
+#include "interfaces_all_grids.hh"
 
 
-PYBIND11_MODULE(_operators_interfaces_istl, m)
+PYBIND11_MODULE(_operators_interfaces_istl_2d, m)
 {
   namespace py = pybind11;
   using namespace Dune;
@@ -28,5 +29,8 @@ PYBIND11_MODULE(_operators_interfaces_istl, m)
 
   py::module::import("dune.gdt._spaces_interface");
 
-  OperatorInterface_for_all_grids<LA::IstlRowMajorSparseMatrix<double>, XT::Grid::AvailableGridTypes>::bind(m);
+  OperatorInterface_for_all_grids<LA::IstlRowMajorSparseMatrix<double>,
+                                  LA::bindings::Istl,
+                                  void,
+                                  boost::tuple<ONED_1D>>::bind(m, "istl_sparse");
 }

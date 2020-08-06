@@ -7,13 +7,13 @@
 // Authors:
 //   Felix Schindler (2020)
 
-#include "config.h"
+#ifndef DUNE_GDT_PYTHON_OPERATORS_MATRIX_BASED_HH
+#define DUNE_GDT_PYTHON_OPERATORS_MATRIX_BASED_HH
 
 #include <dune/pybindxi/pybind11.h>
 #include <dune/pybindxi/stl.h>
 
 #include <dune/xt/grid/type_traits.hh>
-#include <dune/xt/grid/grids.hh>
 #include <dune/xt/grid/gridprovider/provider.hh>
 #include <dune/xt/la/type_traits.hh>
 
@@ -183,11 +183,11 @@ private:
   }; // struct addbind<false, ...>
 
 public:
-  static bound_type bind(pybind11::module& m,
-                         const std::string& matrix_id,
-                         const std::string& grid_id,
-                         const std::string& layer_id = "",
-                         const std::string& class_id = "matrix_operator")
+  static bound_type bind_type(pybind11::module& m,
+                              const std::string& matrix_id,
+                              const std::string& grid_id,
+                              const std::string& layer_id = "",
+                              const std::string& class_id = "matrix_operator")
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
@@ -253,7 +253,7 @@ public:
     XT::Grid::bindings::Walker<G>::addbind_methods(c);
 
     // methods from operator base, to allow for overloads
-    bindings::OperatorInterface<M, G, s_r, 1, r_r, 1>::addbind_methods(c);
+    bindings::OperatorInterface<M, GV, s_r, r_r>::addbind_methods(c);
 
     // additional methods
     c.def("clear", [](type& self) { self.clear(); });
@@ -349,6 +349,14 @@ public:
         [](type& self, const bool use_tbb) { self.assemble(use_tbb); },
         "parallel"_a = false,
         py::call_guard<py::gil_scoped_release>());
+    return c;
+  } // ... bind_type(...)
+
+  static void
+  bind_factory(pybind11::module& m, const std::string& matrix_id, const std::string& class_id = "matrix_operator")
+  {
+    namespace py = pybind11;
+    using namespace pybind11::literals;
 
     // factories
     const auto FactoryName = XT::Common::to_camel_case(class_id);
@@ -384,9 +392,18 @@ public:
         py::keep_alive<0, 1>(),
         py::keep_alive<0, 2>(),
         py::keep_alive<0, 3>());
+  } // ... bind_factory(...)
 
+  static bound_type bind(pybind11::module& m,
+                         const std::string& matrix_id,
+                         const std::string& grid_id,
+                         const std::string& layer_id = "",
+                         const std::string& class_id = "matrix_operator")
+  {
+    auto c = bind_type(m, matrix_id, grid_id, layer_id, class_id);
+    bind_factory(m, matrix_id, class_id);
     return c;
-  } // ... bind(...)
+  }
 }; // class MatrixOperator
 
 
@@ -394,75 +411,4 @@ public:
 } // namespace GDT
 } // namespace Dune
 
-
-template <class M, class MT, class ST, class GridTypes = Dune::XT::Grid::AvailableGridTypes>
-struct MatrixOperator_for_all_grids
-{
-  using G = typename GridTypes::head_type;
-  using GV = typename G::LeafGridView;
-  static const constexpr size_t d = G::dimension;
-
-  static void bind(pybind11::module& m, const std::string& matrix_id)
-  {
-    using Dune::GDT::bindings::MatrixOperator;
-    using Dune::XT::Grid::bindings::grid_name;
-
-    MatrixOperator<M, MT, ST, GV>::bind(m, matrix_id, grid_name<G>::value());
-    if (d > 1) {
-      MatrixOperator<M, MT, ST, GV, d, 1>::bind(m, matrix_id, grid_name<G>::value());
-      MatrixOperator<M, MT, ST, GV, 1, d>::bind(m, matrix_id, grid_name<G>::value());
-      MatrixOperator<M, MT, ST, GV, d, d>::bind(m, matrix_id, grid_name<G>::value());
-    }
-    // add your extra dimensions here
-    // ...
-    MatrixOperator_for_all_grids<M, MT, ST, typename GridTypes::tail_type>::bind(m, matrix_id);
-  }
-};
-
-template <class M, class MT, class ST>
-struct MatrixOperator_for_all_grids<M, MT, ST, boost::tuples::null_type>
-{
-  static void bind(pybind11::module& /*m*/, const std::string& /*matrix_id*/) {}
-};
-
-
-PYBIND11_MODULE(_operators_matrix_based, m)
-{
-  namespace py = pybind11;
-  using namespace Dune;
-  using namespace Dune::XT;
-  using namespace Dune::GDT;
-
-  py::module::import("dune.xt.common");
-  py::module::import("dune.xt.la");
-  py::module::import("dune.xt.grid");
-  py::module::import("dune.xt.functions");
-
-  py::module::import("dune.gdt._local_bilinear_forms_element_interface");
-  py::module::import("dune.gdt._operators_interfaces_common");
-  py::module::import("dune.gdt._operators_interfaces_eigen");
-  py::module::import("dune.gdt._operators_interfaces_istl");
-  py::module::import("dune.gdt._spaces_interface");
-
-  //  MatrixOperator_for_all_grids<LA::CommonDenseMatrix<double>,
-  //                               LA::bindings::Common,
-  //                               void,
-  //                               XT::Grid::AvailableGridTypes>::bind(m, "common_dense");
-  // Generic linear solver missing for CommonSparseMatrix!
-  //  MatrixOperator_for_all_grids<LA::CommonSparseMatrix<double>, LA::bindings::Common, LA::bindings::Sparse,
-  //  XT::Grid::AvailableGridTypes>::bind(m, "common_sparse");
-  //#if HAVE_EIGEN
-  //  MatrixOperator_for_all_grids<LA::EigenDenseMatrix<double>,
-  //                               LA::bindings::Eigen,
-  //                               LA::bindings::Dense,
-  //                               XT::Grid::AvailableGridTypes>::bind(m, "eigen_dense");
-  //  MatrixOperator_for_all_grids<LA::EigenRowMajorSparseMatrix<double>,
-  //                               LA::bindings::Eigen,
-  //                               LA::bindings::Sparse,
-  //                               XT::Grid::AvailableGridTypes>::bind(m, "eigen_sparse");
-  //#endif
-  MatrixOperator_for_all_grids<LA::IstlRowMajorSparseMatrix<double>,
-                               LA::bindings::Istl,
-                               void,
-                               XT::Grid::AvailableGridTypes>::bind(m, "istl_sparse");
-}
+#endif // DUNE_GDT_PYTHON_OPERATORS_MATRIX_BASED_HH
