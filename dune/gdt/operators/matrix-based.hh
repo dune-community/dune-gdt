@@ -471,22 +471,22 @@ public:
   }
 
   ThisType&
-  operator+(const LocalCouplingIntersectionBilinearFormInterface<I, r_r, r_rC, F, F, s_r, s_rC, F>& bilinearform)
+  operator+=(const LocalCouplingIntersectionBilinearFormInterface<I, r_r, r_rC, F, F, s_r, s_rC, F>& bilinearform)
   {
     return this->append(bilinearform);
   }
 
   ThisType&
-  operator+(const std::tuple<const LocalCouplingIntersectionBilinearFormInterface<I, r_r, r_rC, F, F, s_r, s_rC, F>&,
-                             const XT::Common::Parameter&,
-                             const IntersectionFilterType&>& bilinearform_param_filter_tuple)
+  operator+=(const std::tuple<const LocalCouplingIntersectionBilinearFormInterface<I, r_r, r_rC, F, F, s_r, s_rC, F>&,
+                              const XT::Common::Parameter&,
+                              const IntersectionFilterType&>& bilinearform_param_filter_tuple)
   {
     return this->append(std::get<0>(bilinearform_param_filter_tuple),
                         std::get<1>(bilinearform_param_filter_tuple),
                         std::get<2>(bilinearform_param_filter_tuple));
   }
 
-  ThisType& operator+= (const LocalIntersectionBilinearFormInterface<I, r_r, r_rC, F, F, s_r, s_rC, F>& bilinearform)
+  ThisType& operator+=(const LocalIntersectionBilinearFormInterface<I, r_r, r_rC, F, F, s_r, s_rC, F>& bilinearform)
   {
     return this->append(bilinearform);
   }
