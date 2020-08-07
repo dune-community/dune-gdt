@@ -7,6 +7,8 @@
 // Authors:
 //   Felix Schindler (2020)
 
+#include "config.h"
+
 #include "matrix-based_factory.hh"
 
 
