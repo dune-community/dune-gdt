@@ -192,7 +192,7 @@ public:
                       << "type = " << type << "\njacobian_options() = " << jacobian_options());
     LOG__(BaseType, debug) << "   adding matrix_ * jacobian_op.scaling (matrix_.sup_norm() = " << matrix_.sup_norm()
                            << ", jacobian_op.scaling = " << jacobian_op.scaling << ")" << std::endl;
-    jacobian_op.matrix() += matrix_ * jacobian_op.scaling;
+    jacobian_op.matrix().axpy(jacobian_op.scaling, matrix_);
   } // ... jacobian(...)
 
 private:
