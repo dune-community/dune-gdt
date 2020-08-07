@@ -190,7 +190,9 @@ public:
                   Exceptions::operator_error,
                   "requested jacobian type is not one of the available ones!\n\n"
                       << "type = " << type << "\njacobian_options() = " << jacobian_options());
-    jacobian_op.matrix() += matrix_;
+    LOG__(BaseType, debug) << "   adding matrix_ * jacobian_op.scaling (matrix_.sup_norm() = " << matrix_.sup_norm()
+                           << ", jacobian_op.scaling = " << jacobian_op.scaling << ")" << std::endl;
+    jacobian_op.matrix() += matrix_ * jacobian_op.scaling;
   } // ... jacobian(...)
 
 private:
