@@ -384,39 +384,6 @@ public:
   } // ... append(...)
 
   /// \{
-  /// \name Variants to simplify the Python bindings.
-
-  ThisType& append(const std::tuple<const LocalElementBilinearFormInterface<E, r_r, r_rC, F, F, s_r, s_rC, F>&,
-                                    const XT::Common::Parameter&,
-                                    const ElementFilterType&>& bilinearform_param_filter_tuple)
-  {
-    return this->append(std::get<0>(bilinearform_param_filter_tuple),
-                        std::get<1>(bilinearform_param_filter_tuple),
-                        std::get<2>(bilinearform_param_filter_tuple));
-  }
-
-  ThisType&
-  append(const std::tuple<const LocalCouplingIntersectionBilinearFormInterface<I, r_r, r_rC, F, F, s_r, s_rC, F>&,
-                          const XT::Common::Parameter&,
-                          const IntersectionFilterType&>& bilinearform_param_filter_tuple)
-  {
-    return this->append(std::get<0>(bilinearform_param_filter_tuple),
-                        std::get<1>(bilinearform_param_filter_tuple),
-                        std::get<2>(bilinearform_param_filter_tuple));
-  }
-
-  ThisType& append(const std::tuple<const LocalIntersectionBilinearFormInterface<I, r_r, r_rC, F, F, s_r, s_rC, F>&,
-                                    const XT::Common::Parameter&,
-                                    const IntersectionFilterType&>& bilinearform_param_filter_tuple)
-  {
-    return this->append(std::get<0>(bilinearform_param_filter_tuple),
-                        std::get<1>(bilinearform_param_filter_tuple),
-                        std::get<2>(bilinearform_param_filter_tuple));
-  }
-
-  /// \}
-
-  /// \{
   /// \name Variants to compute the jacobian of the appended local operator by finite differences.
 
   ThisType& append(const LocalElementOperatorInterface<V, SGV, s_r, s_rC, F, r_r, r_rC>& local_operator,

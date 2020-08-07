@@ -274,7 +274,7 @@ public:
            & (type::*)(const std::tuple<const LocalElementBilinearFormInterface<E, r, 1, F, F, s, 1, F>&,
                                         const XT::Common::Parameter&,
                                         const XT::Grid::ElementFilter<GV>&>&))
-              & type::append,
+              & type::operator+=,
           "tuple_of_localelementbilinearform_param_elementfilter"_a,
           py::is_operator());
     c.def(
@@ -303,7 +303,7 @@ public:
            & (type::*)(const std::tuple<const LocalIntersectionBilinearFormInterface<I, r, 1, F, F, s, 1, F>&,
                                         const XT::Common::Parameter&,
                                         const XT::Grid::IntersectionFilter<GV>&>&))
-              & type::append,
+              & type::operator+=,
           "tuple_of_localintersectionbilinearform_param_elementfilter"_a,
           py::is_operator());
     c.def(
@@ -333,7 +333,7 @@ public:
            & (type::*)(const std::tuple<const LocalCouplingIntersectionBilinearFormInterface<I, r, 1, F, F, s, 1, F>&,
                                         const XT::Common::Parameter&,
                                         const XT::Grid::IntersectionFilter<GV>&>&))
-              & type::append,
+              & type::operator+=,
           "tuple_of_localcouplingintersectionbilinearform_param_elementfilter"_a,
           py::is_operator());
     c.def(
