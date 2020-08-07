@@ -85,22 +85,20 @@ public:
     c.def("__isub__", (type & (type::*)(const type&)) & type::operator-=, py::is_operator(), py::keep_alive<1, 2>());
   } // ... addbind_methods(...)
 
-  static bound_type
-  bind(pybind11::module& m, const std::string& grid_id, const std::string& class_id = "const_lincomb_operator")
+  static bound_type bind(pybind11::module& m,
+                         const std::string& matrix_id,
+                         const std::string& grid_id,
+                         const std::string& layer_id = "",
+                         const std::string& class_id = "const_lincomb_operator")
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
 
-    auto matrix_name = XT::LA::bindings::container_name<M>::value();
-
-    std::string class_name = matrix_name + "_" + class_id + "_" + grid_id + "_" + XT::Common::to_string(s);
-    class_name += "d_source_space";
-    class_name += XT::Common::to_string(r);
-    class_name += "d_range_space";
-    const auto ClassName = XT::Common::to_camel_case(class_name);
+    const auto ClassName = XT::Common::to_camel_case(
+        bindings::OperatorInterface<M, GV, s, r>::class_name(matrix_id, grid_id, layer_id, class_id));
     bound_type c(m,
                  ClassName.c_str(),
-                 (XT::Common::to_camel_case(class_id) + " (" + grid_id + ", " + matrix_name + " variant)").c_str());
+                 (XT::Common::to_camel_case(class_id) + " (" + grid_id + ", " + matrix_id + " variant)").c_str());
     c.def(py::init<const SS&, const RS&>(),
           "source_space"_a,
           "range_space"_a,
@@ -130,22 +128,20 @@ class LincombOperator
 public:
   using bound_type = pybind11::class_<type, base_type>;
 
-  static bound_type
-  bind(pybind11::module& m, const std::string& grid_id, const std::string& class_id = "lincomb_operator")
+  static bound_type bind(pybind11::module& m,
+                         const std::string& matrix_id,
+                         const std::string& grid_id,
+                         const std::string& layer_id = "",
+                         const std::string& class_id = "lincomb_operator")
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
 
-    auto matrix_name = XT::LA::bindings::container_name<M>::value();
-
-    std::string class_name = matrix_name + "_" + class_id + "_" + grid_id + "_" + XT::Common::to_string(s);
-    class_name += "d_source_space";
-    class_name += XT::Common::to_string(r);
-    class_name += "d_range_space";
-    const auto ClassName = XT::Common::to_camel_case(class_name);
+    const auto ClassName = XT::Common::to_camel_case(
+        bindings::OperatorInterface<M, GV, s, r>::class_name(matrix_id, grid_id, layer_id, class_id));
     bound_type c(m,
                  ClassName.c_str(),
-                 (XT::Common::to_camel_case(class_id) + " (" + grid_id + ", " + matrix_name + " variant)").c_str());
+                 (XT::Common::to_camel_case(class_id) + " (" + grid_id + ", " + matrix_id + " variant)").c_str());
     c.def(py::init<const SS&, const RS&>(),
           "source_space"_a,
           "range_space"_a,

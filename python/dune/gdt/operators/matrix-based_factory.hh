@@ -27,11 +27,11 @@ struct MatrixOperatorFactory_for_all_grids
     using Dune::GDT::bindings::MatrixOperator;
     using Dune::XT::Grid::bindings::grid_name;
 
-    MatrixOperator<M, MT, ST, GV>::bind_factory(m, matrix_id, grid_name<G>::value());
+    MatrixOperator<M, MT, ST, GV>::bind_factory(m, matrix_id);
     if (d > 1) {
-      MatrixOperator<M, MT, ST, GV, d, 1>::bind_factory(m, matrix_id, grid_name<G>::value());
-      MatrixOperator<M, MT, ST, GV, 1, d>::bind_factory(m, matrix_id, grid_name<G>::value());
-      MatrixOperator<M, MT, ST, GV, d, d>::bind_factory(m, matrix_id, grid_name<G>::value());
+      MatrixOperator<M, MT, ST, GV, d, 1>::bind_factory(m, matrix_id);
+      MatrixOperator<M, MT, ST, GV, 1, d>::bind_factory(m, matrix_id);
+      MatrixOperator<M, MT, ST, GV, d, d>::bind_factory(m, matrix_id);
     }
     // add your extra dimensions here
     // ...

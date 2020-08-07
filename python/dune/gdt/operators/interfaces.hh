@@ -202,12 +202,7 @@ public:
     // operators. These are delicate: we need to mimic the C++ situation, e.g. som operators here, others in
     // ConstLinccomb and Lincomb...
     // * variants from OperatorInterface
-    c.def(
-        "__mul__",
-        [](const T& self, const F& alpha) { return std::make_unique<decltype(self * alpha)>(self * alpha); },
-        "scalar"_a,
-        py::keep_alive<0, 1>(),
-        py::is_operator());
+    // NOTE: the non-const variants come first on purpose, to be tried first
     c.def(
         "__mul__",
         [](T& self, const F& alpha) { return std::make_unique<decltype(self * alpha)>(self * alpha); },
@@ -215,8 +210,8 @@ public:
         py::keep_alive<0, 1>(),
         py::is_operator());
     c.def(
-        "__truediv__",
-        [](const T& self, const F& alpha) { return std::make_unique<decltype(self / alpha)>(self / alpha); },
+        "__mul__",
+        [](const T& self, const F& alpha) { return std::make_unique<decltype(self * alpha)>(self * alpha); },
         "scalar"_a,
         py::keep_alive<0, 1>(),
         py::is_operator());
@@ -227,25 +222,10 @@ public:
         py::keep_alive<0, 1>(),
         py::is_operator());
     c.def(
-        "__add__",
-        [](const T& self, const CLop& other) { return std::make_unique<decltype(self + other)>(self + other); },
-        "const_lincomb_op"_a,
+        "__truediv__",
+        [](const T& self, const F& alpha) { return std::make_unique<decltype(self / alpha)>(self / alpha); },
+        "scalar"_a,
         py::keep_alive<0, 1>(),
-        py::keep_alive<0, 2>(),
-        py::is_operator());
-    c.def(
-        "__add__",
-        [](const T& self, const type& other) { return std::make_unique<decltype(self + other)>(self + other); },
-        "op"_a,
-        py::keep_alive<0, 1>(),
-        py::keep_alive<0, 2>(),
-        py::is_operator());
-    c.def(
-        "__add__",
-        [](const T& self, const V& vec) { return std::make_unique<decltype(self + vec)>(self + vec); },
-        "vector"_a,
-        py::keep_alive<0, 1>(),
-        py::keep_alive<0, 2>(),
         py::is_operator());
     c.def(
         "__add__",
@@ -269,22 +249,22 @@ public:
         py::keep_alive<0, 2>(),
         py::is_operator());
     c.def(
-        "__sub__",
-        [](const T& self, const CLop& other) { return std::make_unique<decltype(self - other)>(self - other); },
+        "__add__",
+        [](const T& self, const CLop& other) { return std::make_unique<decltype(self + other)>(self + other); },
         "const_lincomb_op"_a,
         py::keep_alive<0, 1>(),
         py::keep_alive<0, 2>(),
         py::is_operator());
     c.def(
-        "__sub__",
-        [](const T& self, const type& other) { return std::make_unique<decltype(self - other)>(self - other); },
+        "__add__",
+        [](const T& self, const type& other) { return std::make_unique<decltype(self + other)>(self + other); },
         "op"_a,
         py::keep_alive<0, 1>(),
         py::keep_alive<0, 2>(),
         py::is_operator());
     c.def(
-        "__sub__",
-        [](const T& self, const V& vec) { return std::make_unique<decltype(self - vec)>(self - vec); },
+        "__add__",
+        [](const T& self, const V& vec) { return std::make_unique<decltype(self + vec)>(self + vec); },
         "vector"_a,
         py::keep_alive<0, 1>(),
         py::keep_alive<0, 2>(),
@@ -310,16 +290,37 @@ public:
         py::keep_alive<0, 1>(),
         py::keep_alive<0, 2>(),
         py::is_operator());
+    c.def(
+        "__sub__",
+        [](const T& self, const CLop& other) { return std::make_unique<decltype(self - other)>(self - other); },
+        "const_lincomb_op"_a,
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>(),
+        py::is_operator());
+    c.def(
+        "__sub__",
+        [](const T& self, const type& other) { return std::make_unique<decltype(self - other)>(self - other); },
+        "op"_a,
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>(),
+        py::is_operator());
+    c.def(
+        "__sub__",
+        [](const T& self, const V& vec) { return std::make_unique<decltype(self - vec)>(self - vec); },
+        "vector"_a,
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>(),
+        py::is_operator());
     // * variants from OperatorInterface with interchanged arguments (at most the combinations from above!)
     c.def(
         "__rmul__",
-        [](const T& self, const F& alpha) { return std::make_unique<decltype(self * alpha)>(self * alpha); },
+        [](T& self, const F& alpha) { return std::make_unique<decltype(self * alpha)>(self * alpha); },
         "scalar"_a,
         py::keep_alive<0, 1>(),
         py::is_operator());
     c.def(
         "__rmul__",
-        [](T& self, const F& alpha) { return std::make_unique<decltype(self * alpha)>(self * alpha); },
+        [](const T& self, const F& alpha) { return std::make_unique<decltype(self * alpha)>(self * alpha); },
         "scalar"_a,
         py::keep_alive<0, 1>(),
         py::is_operator());
@@ -327,14 +328,14 @@ public:
     // __radd__ for other ops does not make sense, uses __add__ of the other op
     c.def(
         "__radd__",
-        [](const T& self, const V& vec) { return std::make_unique<decltype(self + vec)>(self + vec); },
+        [](T& self, const V& vec) { return std::make_unique<decltype(self + vec)>(self + vec); },
         "vector"_a,
         py::keep_alive<0, 1>(),
         py::keep_alive<0, 2>(),
         py::is_operator());
     c.def(
         "__radd__",
-        [](T& self, const V& vec) { return std::make_unique<decltype(self + vec)>(self + vec); },
+        [](const T& self, const V& vec) { return std::make_unique<decltype(self + vec)>(self + vec); },
         "vector"_a,
         py::keep_alive<0, 1>(),
         py::keep_alive<0, 2>(),
@@ -342,14 +343,14 @@ public:
     // __rsub__ for other ops does not make sense, uses __sub__ of the other op
     c.def(
         "__rsub__",
-        [](const T& self, const V& vec) { return std::make_unique<decltype(self * -1 + vec)>(self * -1 + vec); },
+        [](T& self, const V& vec) { return std::make_unique<decltype(self * -1 + vec)>(self * -1 + vec); },
         "vector"_a,
         py::keep_alive<0, 1>(),
         py::keep_alive<0, 2>(),
         py::is_operator());
     c.def(
         "__rsub__",
-        [](T& self, const V& vec) { return std::make_unique<decltype(self * -1 + vec)>(self * -1 + vec); },
+        [](const T& self, const V& vec) { return std::make_unique<decltype(self * -1 + vec)>(self * -1 + vec); },
         "vector"_a,
         py::keep_alive<0, 1>(),
         py::keep_alive<0, 2>(),
@@ -357,15 +358,30 @@ public:
     // * additional variants for Python which make sense given OperatorInterface
     c.def(
         "__neg__",
-        [](const T& self) { return std::make_unique<decltype(self * -1)>(self * -1); },
+        [](T& self) { return std::make_unique<decltype(self * -1)>(self * -1); },
         py::is_operator(),
         py::keep_alive<0, 1>());
     c.def(
         "__neg__",
-        [](T& self) { return std::make_unique<decltype(self * -1)>(self * -1); },
+        [](const T& self) { return std::make_unique<decltype(self * -1)>(self * -1); },
         py::is_operator(),
         py::keep_alive<0, 1>());
   } // ... addbind_methods(...)
+
+  static std::string class_name(const std::string& matrix_id,
+                                const std::string& grid_id,
+                                const std::string& layer_id,
+                                const std::string& class_id)
+  {
+    std::string ret = class_id;
+    ret += "_" + grid_id;
+    if (!layer_id.empty())
+      ret += "_" + layer_id;
+    ret += "_" + XT::Common::to_string(r_r) + "d_range_space";
+    ret += "_" + XT::Common::to_string(s_r) + "d_source_space";
+    ret += "_" + matrix_id + "_matrix";
+    return ret;
+  } // ... class_name(...)
 
   static bound_type bind(pybind11::module& m,
                          const std::string& matrix_id,
@@ -376,14 +392,7 @@ public:
     namespace py = pybind11;
     using namespace pybind11::literals;
 
-    std::string class_name = class_id;
-    class_name += "_" + grid_id;
-    if (!layer_id.empty())
-      class_name += "_" + layer_id;
-    class_name += "_" + XT::Common::to_string(r_r) + "d_range_space";
-    class_name += "_" + XT::Common::to_string(s_r) + "d_source_space";
-    class_name += "_" + matrix_id + "_matrix";
-    const auto ClassName = XT::Common::to_camel_case(class_name);
+    const auto ClassName = XT::Common::to_camel_case(class_name(matrix_id, grid_id, layer_id, class_id));
     bound_type c(m,
                  ClassName.c_str(),
                  (XT::Common::to_camel_case(class_id) + " (" + grid_id + ", " + matrix_id + " variant)").c_str());

@@ -34,7 +34,7 @@ namespace GDT {
 namespace bindings {
 
 
-template <class M, class MatrixTag, class SparsityTag, class GV, size_t s_r = 1, size_t r_r = s_r>
+template <class M, class MatrixTag, class SparsityTag, class GV, size_t s = 1, size_t r = s>
 class MatrixOperator
 {
   using G = std::decay_t<XT::Grid::extract_grid_t<GV>>;
@@ -42,8 +42,8 @@ class MatrixOperator
   using GP = XT::Grid::GridProvider<G>;
 
 public:
-  using type = GDT::MatrixOperator<M, GV, s_r, 1, r_r>;
-  using base_operator_type = GDT::OperatorInterface<M, GV, s_r, 1, r_r>;
+  using type = GDT::MatrixOperator<M, GV, s, 1, r>;
+  using base_operator_type = GDT::OperatorInterface<M, GV, s, 1, r>;
   using base_walker_type = XT::Grid::Walker<GV>;
   using bound_type = pybind11::class_<type, base_operator_type, base_walker_type>;
 
@@ -192,15 +192,8 @@ public:
     namespace py = pybind11;
     using namespace pybind11::literals;
 
-    std::string class_name = class_id;
-    class_name += "_" + grid_id;
-    if (!layer_id.empty())
-      class_name += "_" + layer_id;
-    class_name += "_" + XT::Common::to_string(r_r) + "d_range_space";
-    class_name += "_" + XT::Common::to_string(s_r) + "d_source_space";
-    class_name += "_" + matrix_id + "_matrix";
-    const auto ClassName = XT::Common::to_camel_case(class_name);
-
+    const auto ClassName = XT::Common::to_camel_case(
+        bindings::OperatorInterface<M, GV, s, r>::class_name(matrix_id, grid_id, layer_id, class_id));
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
     c.def(
         py::init(
@@ -253,14 +246,14 @@ public:
     XT::Grid::bindings::Walker<G>::addbind_methods(c);
 
     // methods from operator base, to allow for overloads
-    bindings::OperatorInterface<M, GV, s_r, r_r>::addbind_methods(c);
+    bindings::OperatorInterface<M, GV, s, r>::addbind_methods(c);
 
     // additional methods
     c.def("clear", [](type& self) { self.clear(); });
     c.def(
         "append",
         [](type& self,
-           const LocalElementBilinearFormInterface<E, r_r, 1, F, F, s_r, 1, F>& local_bilinear_form,
+           const LocalElementBilinearFormInterface<E, r, 1, F, F, s, 1, F>& local_bilinear_form,
            const XT::Common::Parameter& param,
            const XT::Grid::ElementFilter<GV>& filter) { self.append(local_bilinear_form, param, filter); },
         "local_element_bilinear_form"_a,
@@ -268,7 +261,7 @@ public:
         "element_filter"_a = XT::Grid::ApplyOn::AllElements<GV>());
     c.def("__iadd__", // function ptr signature required for the right return type
           (type
-           & (type::*)(const LocalElementBilinearFormInterface<E, r_r, 1, F, F, s_r, 1, F>&,
+           & (type::*)(const LocalElementBilinearFormInterface<E, r, 1, F, F, s, 1, F>&,
                        const XT::Common::Parameter&,
                        const XT::Grid::ElementFilter<GV>&))
               & type::append,
@@ -278,7 +271,7 @@ public:
           py::is_operator());
     c.def("__iadd__", // function ptr signature required for the right return type
           (type
-           & (type::*)(const std::tuple<const LocalElementBilinearFormInterface<E, r_r, 1, F, F, s_r, 1, F>&,
+           & (type::*)(const std::tuple<const LocalElementBilinearFormInterface<E, r, 1, F, F, s, 1, F>&,
                                         const XT::Common::Parameter&,
                                         const XT::Grid::ElementFilter<GV>&>&))
               & type::append,
@@ -287,7 +280,7 @@ public:
     c.def(
         "append",
         [](type& self,
-           const LocalIntersectionBilinearFormInterface<I, r_r, 1, F, F, s_r, 1, F>& local_intersection_bilinear_form,
+           const LocalIntersectionBilinearFormInterface<I, r, 1, F, F, s, 1, F>& local_intersection_bilinear_form,
            const XT::Common::Parameter& param,
            const XT::Grid::IntersectionFilter<GV>& intersection_filter) {
           self.append(local_intersection_bilinear_form, param, intersection_filter);
@@ -297,7 +290,7 @@ public:
         "intersection_filter"_a = XT::Grid::ApplyOn::AllIntersections<GV>());
     c.def("__iadd__", // function ptr signature required for the right return type
           (type
-           & (type::*)(const LocalIntersectionBilinearFormInterface<I, r_r, 1, F, F, s_r, 1, F>&,
+           & (type::*)(const LocalIntersectionBilinearFormInterface<I, r, 1, F, F, s, 1, F>&,
                        const XT::Common::Parameter&,
                        const XT::Grid::IntersectionFilter<GV>&))
               & type::append,
@@ -307,7 +300,7 @@ public:
           py::is_operator());
     c.def("__iadd__", // function ptr signature required for the right return type
           (type
-           & (type::*)(const std::tuple<const LocalIntersectionBilinearFormInterface<I, r_r, 1, F, F, s_r, 1, F>&,
+           & (type::*)(const std::tuple<const LocalIntersectionBilinearFormInterface<I, r, 1, F, F, s, 1, F>&,
                                         const XT::Common::Parameter&,
                                         const XT::Grid::IntersectionFilter<GV>&>&))
               & type::append,
@@ -316,7 +309,7 @@ public:
     c.def(
         "append",
         [](type& self,
-           const LocalCouplingIntersectionBilinearFormInterface<I, r_r, 1, F, F, s_r, 1, F>&
+           const LocalCouplingIntersectionBilinearFormInterface<I, r, 1, F, F, s, 1, F>&
                local_coupling_intersection_bilinear_form,
            const XT::Common::Parameter& param,
            const XT::Grid::IntersectionFilter<GV>& intersection_filter) {
@@ -327,7 +320,7 @@ public:
         "intersection_filter"_a = XT::Grid::ApplyOn::AllIntersections<GV>());
     c.def("__iadd__", // function ptr signature required for the right return type
           (type
-           & (type::*)(const LocalCouplingIntersectionBilinearFormInterface<I, r_r, 1, F, F, s_r, 1, F>&,
+           & (type::*)(const LocalCouplingIntersectionBilinearFormInterface<I, r, 1, F, F, s, 1, F>&,
                        const XT::Common::Parameter&,
                        const XT::Grid::IntersectionFilter<GV>&))
               & type::append,
@@ -335,15 +328,14 @@ public:
           "param"_a = XT::Common::Parameter(),
           "intersection_filter"_a = XT::Grid::ApplyOn::AllIntersections<GV>(),
           py::is_operator());
-    c.def(
-        "__iadd__", // function ptr signature required for the right return type
-        (type
-         & (type::*)(const std::tuple<const LocalCouplingIntersectionBilinearFormInterface<I, r_r, 1, F, F, s_r, 1, F>&,
-                                      const XT::Common::Parameter&,
-                                      const XT::Grid::IntersectionFilter<GV>&>&))
-            & type::append,
-        "tuple_of_localcouplingintersectionbilinearform_param_elementfilter"_a,
-        py::is_operator());
+    c.def("__iadd__", // function ptr signature required for the right return type
+          (type
+           & (type::*)(const std::tuple<const LocalCouplingIntersectionBilinearFormInterface<I, r, 1, F, F, s, 1, F>&,
+                                        const XT::Common::Parameter&,
+                                        const XT::Grid::IntersectionFilter<GV>&>&))
+              & type::append,
+          "tuple_of_localcouplingintersectionbilinearform_param_elementfilter"_a,
+          py::is_operator());
     c.def(
         "assemble",
         [](type& self, const bool use_tbb) { self.assemble(use_tbb); },
