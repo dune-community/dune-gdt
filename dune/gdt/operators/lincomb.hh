@@ -180,6 +180,10 @@ public:
                 const XT::Common::Configuration& opts,
                 const XT::Common::Parameter& param = {}) const override final
   {
+    LOG_(debug) << this->logging_id << "jacobian.(source.sup_norm()=" << source.sup_norm()
+                << ", jacobian_op.matrix().sup_norm()=" << jacobian_op.matrix().sup_norm()
+                << ",\n   opts=" << print(opts, {{"oneline", "true"}}) << ",\n   param=" << param << ")" << std::endl;
+
     // some checks
     DUNE_THROW_IF(!source.valid(), Exceptions::operator_error, "source contains inf or nan!");
     DUNE_THROW_IF(!(this->parameter_type() <= param.type()),
@@ -214,8 +218,11 @@ public:
       const auto scaling = jacobian_op.scaling;
       // add op
       jacobian_op.scaling *= this->coeff(ii);
+      LOG_(debug) << "   backing up scaling = " << scaling << ",\n   this->coeff(ii) = " << this->coeff(ii)
+                  << "\n   jacobian_op.scaling = " << jacobian_op.scaling << std::endl;
       this->op(ii).jacobian(source, jacobian_op, op_opts, param);
       // restore scaling
+      LOG_(debug) << "   restoring jacobian_op.scaling = " << scaling << std::endl;
       jacobian_op.scaling = scaling;
     }
   } // ... jacobian(...)

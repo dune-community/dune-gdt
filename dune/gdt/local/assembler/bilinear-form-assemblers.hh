@@ -16,6 +16,7 @@
 
 #include <dune/gdt/local/bilinear-forms/interfaces.hh>
 #include <dune/gdt/spaces/interface.hh>
+#include <dune/gdt/print.hh>
 
 namespace Dune {
 namespace GDT {
@@ -51,8 +52,11 @@ public:
                                     const AnsatzSpaceType& ansatz_space,
                                     const LocalBilinearFormType& local_two_form,
                                     MatrixType& global_matrix,
-                                    const XT::Common::Parameter& param = {})
-    : BaseType()
+                                    const XT::Common::Parameter& param = {},
+                                    const std::string& logging_prefix = "")
+    : BaseType(logging_prefix.empty() ? "gdt" : "gdt.assemblers.element",
+               logging_prefix.empty() ? "ElementBilinearFormAssembler" : logging_prefix,
+               /*logging_disabled=*/logging_prefix.empty())
     , test_space_(test_space.copy())
     , ansatz_space_(ansatz_space.copy())
     , local_bilinear_form_(local_two_form.copy())
@@ -65,6 +69,10 @@ public:
     , test_basis_(test_space_->basis().localize())
     , ansatz_basis_(ansatz_space_->basis().localize())
   {
+    LOG_(info) << this->logging_id << "(test_space=" << &test_space << ", ansatz_space=" << &ansatz_space
+               << ", local_two_form=" << &local_two_form
+               << ",\n   global_matrix.sup_norm()=" << global_matrix.sup_norm() << ", param=" << param << ")"
+               << std::endl;
     DUNE_THROW_IF(global_matrix_.rows() != test_space_->mapper().size(),
                   XT::Common::Exceptions::shapes_do_not_match,
                   "global_matrix_.rows() = " << global_matrix_.rows() << "\n  "
@@ -73,10 +81,13 @@ public:
                   XT::Common::Exceptions::shapes_do_not_match,
                   "global_matrix_.cols() = " << global_matrix_.cols() << "\n  "
                                              << "ansatz_space_->mapper().size()" << ansatz_space_->mapper().size());
+    LOG_(debug) << "   scaling_ = " << scaling_ << "\n   {test|ansatz}_space.mapper().max_local_size() = {"
+                << test_space_->mapper().max_local_size() << "|" << ansatz_space_->mapper().max_local_size() << "}"
+                << std::endl;
   }
 
   LocalElementBilinearFormAssembler(const ThisType& other)
-    : BaseType()
+    : BaseType(other)
     , test_space_(other.test_space_->copy())
     , ansatz_space_(other.ansatz_space_->copy())
     , local_bilinear_form_(other.local_bilinear_form_->copy())
@@ -99,10 +110,15 @@ public:
 
   void apply_local(const ElementType& element) override final
   {
+    LOG_(info) << this->logging_id << ".apply_local(element=" << print(element) << ")" << std::endl;
     // apply bilinear form
     test_basis_->bind(element);
     ansatz_basis_->bind(element);
     local_bilinear_form_->apply2(*test_basis_, *ansatz_basis_, local_matrix_, param_);
+    LOG_(debug) << "   scaling_ = " << scaling_ << ", param_ = " << param_
+                << "\n   {test|ansatz}_basis_->size(param_) = {" << test_basis_->size(param_) << "|"
+                << ansatz_basis_->size(param_) << "}"
+                << "\n   local_matrix_ = " << print(local_matrix_, {{"oneline", "true"}}) << std::endl;
     // copy local matrix to global matrix
     test_space_->mapper().global_indices(element, global_test_indices_);
     ansatz_space_->mapper().global_indices(element, global_ansatz_indices_);

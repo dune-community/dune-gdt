@@ -717,12 +717,18 @@ invert_options(some_type).get<std::string>("type") == some_type
                         const std::string& type,
                         const XT::Common::Parameter& param = {}) const
   {
+    LOG_(info) << this->logging_id << ".jacobian(source.sup_norm()=" << source.sup_norm()
+               << ", jacobian_op.matrix().sup_norm()=" << jacobian_op.matrix().sup_norm() << ",\n   type=" << type
+               << ", param=" << param << std::endl;
     return this->jacobian(source, jacobian_op, this->jacobian_options(type), param);
   }
 
   virtual void
   jacobian(const VectorType& source, MatrixOperatorType& jacobian_op, const XT::Common::Parameter& param = {}) const
   {
+    LOG_(info) << this->logging_id << ".jacobian(source.sup_norm()=" << source.sup_norm()
+               << ", jacobian_op.matrix().sup_norm()=" << jacobian_op.matrix().sup_norm() << ", param=" << param
+               << std::endl;
     return this->jacobian(source, jacobian_op, this->jacobian_options().at(0), param);
   }
 
@@ -730,11 +736,18 @@ invert_options(some_type).get<std::string>("type") == some_type
                                       const XT::Common::Configuration& opts,
                                       const XT::Common::Parameter& param = {}) const
   {
+    std::string derived_logging_prefix = "";
+    if (this->logger.info_enabled) {
+      derived_logging_prefix = this->logging_id + "_jac";
+      this->logger.info() << this->logging_id << ".jacobian(source.sup_norm()=" << source.sup_norm()
+                          << ", opts=" << print(opts, {{"oneline", "true"}}) << ", param=" << param << std::endl;
+    }
     MatrixOperatorType jacobian_op(this->source_space().grid_view(),
                                    this->source_space(),
                                    this->range_space(),
                                    make_element_and_intersection_sparsity_pattern(
-                                       this->range_space(), this->source_space(), this->source_space().grid_view()));
+                                       this->range_space(), this->source_space(), this->source_space().grid_view()),
+                                   derived_logging_prefix);
     this->jacobian(source, jacobian_op, opts, param);
     return jacobian_op;
   } // ... jacobian(...)
@@ -742,22 +755,36 @@ invert_options(some_type).get<std::string>("type") == some_type
   virtual MatrixOperatorType
   jacobian(const VectorType& source, const std::string& type, const XT::Common::Parameter& param = {}) const
   {
+    std::string derived_logging_prefix = "";
+    if (this->logger.info_enabled) {
+      derived_logging_prefix = this->logging_id + "_jac";
+      this->logger.info() << this->logging_id << ".jacobian(source.sup_norm()=" << source.sup_norm()
+                          << ", type=" << type << ", param=" << param << std::endl;
+    }
     MatrixOperatorType jacobian_op(this->source_space().grid_view(),
                                    this->source_space(),
                                    this->range_space(),
                                    make_element_and_intersection_sparsity_pattern(
-                                       this->range_space(), this->source_space(), this->source_space().grid_view()));
+                                       this->range_space(), this->source_space(), this->source_space().grid_view()),
+                                   derived_logging_prefix);
     this->jacobian(source, jacobian_op, type, param);
     return jacobian_op;
   } // ... jacobian(...)
 
   virtual MatrixOperatorType jacobian(const VectorType& source, const XT::Common::Parameter& param = {}) const
   {
+    std::string derived_logging_prefix = "";
+    if (this->logger.info_enabled) {
+      derived_logging_prefix = this->logging_id + "_jac";
+      this->logger.info() << this->logging_id << ".jacobian(source.sup_norm()=" << source.sup_norm()
+                          << ", param=" << param << std::endl;
+    }
     MatrixOperatorType jacobian_op(this->source_space().grid_view(),
                                    this->source_space(),
                                    this->range_space(),
                                    make_element_and_intersection_sparsity_pattern(
-                                       this->range_space(), this->source_space(), this->source_space().grid_view()));
+                                       this->range_space(), this->source_space(), this->source_space().grid_view()),
+                                   derived_logging_prefix);
     this->jacobian(source, jacobian_op, param);
     return jacobian_op;
   } // ... jacobian(...)

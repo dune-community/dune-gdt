@@ -69,7 +69,7 @@ public:
     , matrix_(mat)
     , linear_solver_(matrix_, source_space_.dof_communicator())
   {
-    LOG_(info) << this->logging_id << "(source_space=" << &source_spc << ", range_space=" << &range_spc
+    LOG_(info) << BaseType::logging_id << "(source_space=" << &source_spc << ", range_space=" << &range_spc
                << ", matrix=" << &mat << ")" << std::endl;
     DUNE_THROW_IF(matrix_.rows() != range_space_.mapper().size(),
                   XT::Common::Exceptions::shapes_do_not_match,
@@ -175,11 +175,14 @@ public:
 
   using BaseType::jacobian;
 
-  void jacobian(const VectorType& /*source*/,
+  void jacobian(const VectorType& source,
                 MatrixOperatorType& jacobian_op,
                 const XT::Common::Configuration& opts,
-                const XT::Common::Parameter& /*param*/ = {}) const override
+                const XT::Common::Parameter& param = {}) const override
   {
+    LOG__(BaseType, info) << BaseType::logging_id << ".jacobian(source.sup_norm()=" << source.sup_norm()
+                          << ", jacobian_op.matrix().sup_norm()=" << jacobian_op.matrix().sup_norm()
+                          << ", opts=" << print(opts, {{"oneline", "true"}}) << ", param=" << param << ")" << std::endl;
     DUNE_THROW_IF(
         !opts.has_key("type"), Exceptions::operator_error, "missing key 'type' in given opts!\n\nopts = " << opts);
     const auto type = opts.get<std::string>("type");
@@ -231,6 +234,8 @@ make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space,
  * to another walker or provide appropriate filters.
  *
  * \note See ConstMatrixOperator and OperatorInterface for a description of the template arguments.
+ *
+ * \todo Add logging to intersection and coupling intersection assemblers
  *
  * \sa OperatorInterface
  * \sa ConstMatrixOperator
@@ -334,12 +339,23 @@ public:
                    const XT::Common::Parameter& param = {},
                    const ElementFilterType& filter = ApplyOnAllElements())
   {
+    std::string derived_logging_prefix = "";
+    if (BaseOperatorType::logger.info_enabled) {
+      static size_t element_assembler_counter = 0;
+      derived_logging_prefix =
+          BaseOperatorType::logging_id + "_element_assembler_" + XT::Common::to_string(element_assembler_counter);
+      ++element_assembler_counter;
+      BaseOperatorType::logger.info() << BaseOperatorType::logging_id
+                                      << ".append(local_element_bilinear_form=" << &local_bilinear_form
+                                      << ", param=" << param << ", element_filter=" << &filter << ")" << std::endl;
+    }
     using LocalAssemblerType = LocalElementBilinearFormAssembler<M, SGV, r_r, r_rC, F, RGV, SGV, s_r, s_rC, F>;
     this->append(new LocalAssemblerType(this->range_space(),
                                         this->source_space(),
                                         local_bilinear_form,
                                         MatrixStorage::access(),
-                                        param + XT::Common::Parameter("matrixoperator.scaling", scaling)),
+                                        param + XT::Common::Parameter("matrixoperator.scaling", scaling),
+                                        derived_logging_prefix),
                  filter);
     return *this;
   } // ... append(...)
