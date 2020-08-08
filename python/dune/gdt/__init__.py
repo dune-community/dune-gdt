@@ -62,6 +62,7 @@ for mod_name in (     # order should not matter!
         '_operators_interfaces_istl_3d',
         '_operators_laplace_ipdg_flux_reconstruction',
         '_operators_matrix_based_factory',
+        '_operators_operator',
         '_prolongations',
         '_spaces_h1_continuous_lagrange',
         '_spaces_interface',

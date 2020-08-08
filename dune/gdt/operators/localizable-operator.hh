@@ -33,6 +33,8 @@ namespace GDT {
  * \todo Create LocalizableOperatorApplicator which accepts a GridFunction as source, derive
  *       LocalizableDiscreteOperatorApplicator from LocalizableOperatorApplicator.
  *
+ * \todo Update like localizable bilinearform
+ *
  * \note Most likely, you want to use LocalizableOperator.
  */
 template <class AssemblyGridView,
@@ -54,17 +56,7 @@ class LocalizableDiscreteOperatorApplicator : public XT::Grid::Walker<AssemblyGr
   static_assert(XT::Grid::is_view<RangeGridView>::value, "");
   static_assert(XT::LA::is_vector<RangeVector>::value, "");
 
-  using ThisType = LocalizableDiscreteOperatorApplicator<AssemblyGridView,
-                                                         SourceVector,
-                                                         source_range_dim,
-                                                         source_range_dim_cols,
-                                                         SourceField,
-                                                         SourceGridView,
-                                                         range_range_dim,
-                                                         range_range_dim_cols,
-                                                         RangeField,
-                                                         RangeGridView,
-                                                         RangeVector>;
+  using ThisType = LocalizableDiscreteOperatorApplicator;
   using BaseType = XT::Grid::Walker<AssemblyGridView>;
 
 public:
@@ -103,12 +95,13 @@ public:
     : BaseType(assembly_grid_view)
     , source_(src)
     , range_(rng)
-    , assembled_(false)
-  {
-    // to detect assembly
-    this->append(
-        [](/*prepare nothing*/) {}, [](const auto&) { /*apply nothing*/ }, [&](/*finalize*/) { assembled_ = true; });
-  }
+  {}
+
+  LocalizableDiscreteOperatorApplicator(const ThisType&) = delete;
+
+  LocalizableDiscreteOperatorApplicator(ThisType&) = default;
+
+  LocalizableDiscreteOperatorApplicator(ThisType&&) = default;
 
   const SourceType& source() const
   {
@@ -160,19 +153,15 @@ public:
     return *this;
   }
 
-  void assemble(const bool use_tbb = false)
+  ThisType& assemble(const bool use_tbb = false)
   {
-    if (assembled_)
-      return;
-    // This clears all appended operators, which is ok, since we are done after assembling once!
     this->walk(use_tbb);
-    assembled_ = true;
+    return *this;
   }
 
 protected:
   const SourceType& source_;
   RangeType& range_;
-  bool assembled_;
 }; // class LocalizableDiscreteOperatorApplicator
 
 
@@ -243,28 +232,6 @@ make_localizable_operator_applicator(
       assembly_grid_view, source, range);
 }
 
-template <class AGV,
-          class SV,
-          size_t s_r,
-          size_t s_rC,
-          class SF,
-          class SGV,
-          size_t r_r,
-          size_t r_rC,
-          class RF,
-          class RGV,
-          class RV>
-std::enable_if_t<XT::Grid::is_layer<AGV>::value,
-                 LocalizableDiscreteOperatorApplicator<AGV, SV, s_r, s_rC, SF, SGV, r_r, r_rC, RF, RGV, RV>>
-make_localizable_operator(
-    AGV assembly_grid_view,
-    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<SGV>, s_r, s_rC, SF>& source,
-    DiscreteFunction<RV, RGV, r_r, r_rC, RF>& range)
-{
-  return LocalizableDiscreteOperatorApplicator<AGV, SV, s_r, s_rC, SF, SGV, r_r, r_rC, RF, RGV, RV>(
-      assembly_grid_view, source, range);
-}
-
 
 /**
  * \note See OperatorInterface for a description of the template arguments.
@@ -304,13 +271,12 @@ public:
   LocalizableOperator(const AGV& assembly_grid_view,
                       const SourceSpaceType& source_space,
                       const RangeSpaceType& range_space,
-                      const bool linear = true,
                       const bool use_tbb = false)
     : BaseType()
     , assembly_grid_view_(assembly_grid_view)
     , source_space_(source_space)
     , range_space_(range_space)
-    , linear_(linear)
+    , linear_(true)
     , use_tbb_(use_tbb)
   {}
 
@@ -347,6 +313,28 @@ public:
     this->extend_parameter_type(local_operator.parameter_type());
     local_intersection_operators_.emplace_back(local_operator.copy(), filter.copy());
     return *this;
+  }
+
+  ThisType& operator+=(const LocalElementOperatorType& local_op)
+  {
+    return this->append(local_op);
+  }
+
+  ThisType&
+  operator+=(const std::tuple<const LocalElementOperatorType&, const XT::Grid::ElementFilter<AGV>&>& op_filter)
+  {
+    return this->append(std::get<0>(op_filter), std::get<1>(op_filter));
+  }
+
+  ThisType& operator+=(const LocalIntersectionOperatorType& local_op)
+  {
+    return this->append(local_op);
+  }
+
+  ThisType& operator+=(
+      const std::tuple<const LocalIntersectionOperatorType&, const XT::Grid::IntersectionFilter<AGV>&>& op_filter)
+  {
+    return this->append(std::get<0>(op_filter), std::get<1>(op_filter));
   }
 
   using BaseType::apply;
