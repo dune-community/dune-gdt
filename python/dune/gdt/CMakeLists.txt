@@ -146,6 +146,7 @@ dune_pybindxi_add_module(_spaces_l2_discontinuous_lagrange
                          EXCLUDE_FROM_ALL
                          ${header}
                          spaces/l2/discontinuous-lagrange.cc)
+dune_pybindxi_add_module(_spaces_l2_finite_volume EXCLUDE_FROM_ALL ${header} spaces/l2/finite-volume.cc)
 dune_pybindxi_add_module(_tools_adaptation_helper EXCLUDE_FROM_ALL ${header} tools/adaptation-helper.cc)
 dune_pybindxi_add_module(_tools_dirichlet_constraints EXCLUDE_FROM_ALL ${header} tools/dirichlet-constraints.cc)
 dune_pybindxi_add_module(_tools_grid_quality_estimates EXCLUDE_FROM_ALL ${header} tools/grid-quality-estimates.cc)
