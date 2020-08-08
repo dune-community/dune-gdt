@@ -17,7 +17,8 @@
 #include <dune/geometry/quadraturerules.hh>
 #include <dune/geometry/referenceelements.hh>
 
-#include <dune/localfunctions/raviartthomas.hh>
+#include <dune/localfunctions/raviartthomas/raviartthomascube.hh>
+#include <dune/localfunctions/raviartthomas/raviartthomassimplex.hh>
 
 #include <dune/xt/la/container/common/matrix/dense.hh>
 #include <dune/xt/la/container/common/vector/dense.hh>
@@ -344,7 +345,7 @@ public:
 }; // class LocalRaviartThomasFiniteElementFactory
 
 
-template <class D, size_t d, class R>
+template <class D, size_t d, class R = double>
 std::unique_ptr<LocalFiniteElementInterface<D, d, R, d, 1>>
 make_local_raviart_thomas_finite_element(const GeometryType& geometry_type, const int order)
 {
