@@ -32,7 +32,7 @@ namespace GDT {
 /**
  * \attention Handles all boundary intersections as Dirichlet boundary intersections!
  *
- * \todo This is just the old implementation copied over. Update analoggously to the RT interpolation!
+ * \todo Add volume Dofs for higher order analoggously to the RT interpolation!
  *
  * \todo Directly make use of LocalIPDGIntegrands::InnerPenalty and LocalLaplaceIPDGIntegrands::InnerCoupling, (not
  *       clear how yet)!

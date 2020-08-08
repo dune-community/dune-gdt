@@ -139,6 +139,7 @@ dune_pybindxi_add_module(_operators_interfaces_eigen EXCLUDE_FROM_ALL ${header} 
 dune_pybindxi_add_module(_operators_interfaces_istl_1d EXCLUDE_FROM_ALL ${header} operators/interfaces_istl_1d.cc)
 dune_pybindxi_add_module(_operators_interfaces_istl_2d EXCLUDE_FROM_ALL ${header} operators/interfaces_istl_2d.cc)
 dune_pybindxi_add_module(_operators_interfaces_istl_3d EXCLUDE_FROM_ALL ${header} operators/interfaces_istl_3d.cc)
+dune_pybindxi_add_module(_operators_laplace_ipdg_flux_reconstruction EXCLUDE_FROM_ALL ${header} operators/laplace_ipdg_flux_reconstruction.cc)
 dune_pybindxi_add_module(_operators_matrix_based_factory EXCLUDE_FROM_ALL ${header} operators/matrix-based_factory.cc)
 dune_pybindxi_add_module(_prolongations EXCLUDE_FROM_ALL ${header} prolongations.cc)
 dune_pybindxi_add_module(_spaces_h1_continuous_lagrange EXCLUDE_FROM_ALL ${header} spaces/h1/continuous-lagrange.cc)
