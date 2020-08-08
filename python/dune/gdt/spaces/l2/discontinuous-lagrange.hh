@@ -68,13 +68,24 @@ public:
     std::string space_type_name = class_id;
     if (!std::is_same<R, double>::value)
       space_type_name += "_" + XT::Common::Typename<R>::value(/*fail_wo_typeid=*/true);
-    m.def(XT::Common::to_camel_case(space_type_name).c_str(),
+    if (r == 1)
+      m.def(
+          XT::Common::to_camel_case(space_type_name).c_str(),
           [c](XT::Grid::GridProvider<G>& grid, const int order, const XT::Grid::bindings::Dimension<r>&) {
             return type(grid.leaf_view(), order); // Otherwise we get an error here!
           },
           "grid"_a,
           "order"_a,
           "dim_range"_a = XT::Grid::bindings::Dimension<r>());
+    else
+      m.def(
+          XT::Common::to_camel_case(space_type_name).c_str(),
+          [c](XT::Grid::GridProvider<G>& grid, const int order, const XT::Grid::bindings::Dimension<r>&) {
+            return type(grid.leaf_view(), order); // Otherwise we get an error here!
+          },
+          "grid"_a,
+          "order"_a,
+          "dim_range"_a);
 
     return c;
   } // ... bind(...)
