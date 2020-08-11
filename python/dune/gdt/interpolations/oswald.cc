@@ -56,6 +56,7 @@ public:
           boundary_info;
       auto op = make_oswald_interpolation_operator<XT::LA::IstlRowMajorSparseMatrix<double>>(
           grid_view, source.space(), target.space(), boundary_info);
+      op.assemble();
       op.apply(source.dofs().vector(), target.dofs().vector());
     };
 
