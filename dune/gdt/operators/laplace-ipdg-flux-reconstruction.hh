@@ -23,6 +23,7 @@
 #include <dune/gdt/local/finite-elements/orthonormal.hh>
 #include <dune/gdt/local/integrands/ipdg.hh>
 #include <dune/gdt/operators/interfaces.hh>
+#include <dune/gdt/print.hh>
 #include <dune/gdt/spaces/mapper/finite-volume.hh>
 
 namespace Dune {
@@ -65,8 +66,13 @@ public:
                                         XT::Functions::GridFunction<E, d, d> diffusion,
                                         XT::Functions::GridFunction<E, d, d> weight_function = {1.},
                                         const std::function<double(const I&)>& intersection_diameter =
-                                            LocalIPDGIntegrands::internal::default_intersection_diameter<I>())
-    : assembly_grid_view_(assembly_grid_view)
+                                            LocalIPDGIntegrands::internal::default_intersection_diameter<I>(),
+                                        const std::string& logging_prefix = "")
+    : BaseType({},
+               logging_prefix.empty() ? "gdt" : "gdt.operators.fluxreconstruction",
+               logging_prefix.empty() ? "LaplaceIpdgFluxReconstructionOperator" : logging_prefix,
+               /*logging_disabled=*/logging_prefix.empty())
+    , assembly_grid_view_(assembly_grid_view)
     , source_space_(src_spc)
     , range_space_(rng_spc)
     , symmetry_prefactor_(symmetry_prefactor)
@@ -80,6 +86,23 @@ public:
     DUNE_THROW_IF(range_space_.type() != SpaceType::raviart_thomas, Exceptions::operator_error, "");
     DUNE_THROW_IF(range_space_.max_polorder() != 0, Exceptions::operator_error, "Not implemented yet!");
   }
+
+  // manual copy ctor due to element_mapper_
+  LaplaceIpdgFluxReconstructionOperator(const ThisType& other)
+    : BaseType(other)
+    , assembly_grid_view_(other.assembly_grid_view_)
+    , source_space_(other.source_space_)
+    , range_space_(other.range_space_)
+    , symmetry_prefactor_(other.symmetry_prefactor_)
+    , inner_penalty_(other.inner_penalty_)
+    , dirichlet_penalty_(other.dirichlet_penalty_)
+    , diffusion_(other.diffusion_)
+    , weight_function_(other.weight_function_)
+    , intersection_diameter_(other.intersection_diameter_)
+    , element_mapper_(assembly_grid_view_)
+  {}
+
+  LaplaceIpdgFluxReconstructionOperator(ThisType&&) = default;
 
   bool linear() const override final
   {
@@ -313,7 +336,7 @@ private:
 
 template <class M, class AGV, class SGV, class RGV>
 LaplaceIpdgFluxReconstructionOperator<M, AGV, SGV, RGV> make_laplace_ipdg_flux_reconstruction_operator(
-    const AGV& assembly_grid_view,
+    AGV assembly_grid_view,
     const SpaceInterface<SGV>& source_space,
     const SpaceInterface<RGV, RGV::dimension>& range_space,
     const double& symmetry_prefactor,
