@@ -110,7 +110,9 @@ public:
           auto& grid = self.grid();
           auto grid_view = grid.leafGridView();
           for (auto&& element : elements(grid_view))
-            grid.mark(self.markers[self.marker_indices.mapper().global_index(element, size_t(0))], element);
+            grid.mark(XT::Common::numeric_cast<int>(
+                          self.markers[self.marker_indices.mapper().global_index(element, size_t(0))]),
+                      element);
         },
         py::call_guard<py::gil_scoped_release>());
     c.def(
