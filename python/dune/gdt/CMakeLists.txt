@@ -133,6 +133,10 @@ dune_pybindxi_add_module(_local_integrands_unary_intersection_interface
                          EXCLUDE_FROM_ALL
                          ${header}
                          local/integrands/unary_intersection_interface.cc)
+dune_pybindxi_add_module(_local_operators_element_indicator
+                         EXCLUDE_FROM_ALL
+                         ${header}
+                         local/operators/element_indicator.cc)
 dune_pybindxi_add_module(_local_operators_element_interface
                          EXCLUDE_FROM_ALL
                          ${header}
