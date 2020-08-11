@@ -64,7 +64,7 @@ public:
     const auto FactoryName = XT::Common::to_camel_case(class_id);
     m.def(FactoryName.c_str(),
           [](XT::Functions::GridFunction<E, r, r, F> weight, const std::string& logging_prefix) {
-            return type(weight, logging_prefix);
+            return new type(weight, logging_prefix);
           },
           "weight"_a,
           "logging_prefix"_a = "",

@@ -77,7 +77,7 @@ public:
     m.def(
         FactoryName.c_str(),
         [](const double& penalty, XT::Functions::GridFunction<E, d, d, F> weight, const std::string& logging_prefix) {
-          return type(
+          return new type(
               penalty, weight, GDT::LocalIPDGIntegrands::internal::default_intersection_diameter<I>(), logging_prefix);
         },
         "penalty"_a,

@@ -87,7 +87,7 @@ public:
     // factory
     m.def(XT::Common::to_camel_case(class_id).c_str(),
           [](const typename type::IntegrandType& binary_element_integrand, const int over_integrate) {
-            return type(binary_element_integrand, over_integrate);
+            return new type(binary_element_integrand, over_integrate);
           },
           "binary_element_integrand"_a,
           "over_integrate"_a = 0);

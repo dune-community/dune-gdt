@@ -76,7 +76,7 @@ public:
           [](const double& symmetry_prefactor,
              XT::Functions::GridFunction<E, d, d, F> diffusion,
              XT::Functions::GridFunction<E, d, d, F> weight,
-             const std::string& logging_prefix) { return type(symmetry_prefactor, diffusion, weight, logging_prefix); },
+             const std::string& logging_prefix) { return new type(symmetry_prefactor, diffusion, weight, logging_prefix); },
           "symmetry_prefactor"_a,
           "diffusion"_a,
           "weight"_a = F(1),

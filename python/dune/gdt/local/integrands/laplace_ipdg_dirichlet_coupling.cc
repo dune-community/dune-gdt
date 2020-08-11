@@ -86,7 +86,7 @@ public:
           [](const double& symmetry_prefactor,
              XT::Functions::GridFunction<E, d, d, F> diffusion,
              const std::string& logging_prefix) {
-            return type(symmetry_prefactor, diffusion, /*dirichlet_data=*/0., logging_prefix);
+            return new type(symmetry_prefactor, diffusion, /*dirichlet_data=*/0., logging_prefix);
           },
           "symmetry_prefactor"_a,
           "diffusion"_a,
@@ -97,7 +97,7 @@ public:
              XT::Functions::GridFunction<E, d, d, F> diffusion,
              XT::Functions::GridFunction<E> dirichlet_data,
              const std::string& logging_prefix) {
-            return type(symmetry_prefactor, diffusion, dirichlet_data, logging_prefix);
+            return new type(symmetry_prefactor, diffusion, dirichlet_data, logging_prefix);
           },
           "symmetry_prefactor"_a,
           "diffusion"_a,

@@ -70,7 +70,7 @@ public:
       m.def(
           XT::Common::to_camel_case(space_type_name).c_str(),
           [](XT::Grid::GridProvider<G>& grid, const XT::Grid::bindings::Dimension<r>&) {
-            return type(grid.leaf_view()); // Otherwise we get an error here!
+            return new type(grid.leaf_view()); // Otherwise we get an error here!
           },
           "grid"_a,
           "dim_range"_a = XT::Grid::bindings::Dimension<r>());
@@ -78,7 +78,7 @@ public:
       m.def(
           XT::Common::to_camel_case(space_type_name).c_str(),
           [](XT::Grid::GridProvider<G>& grid, const XT::Grid::bindings::Dimension<r>&) {
-            return type(grid.leaf_view()); // Otherwise we get an error here!
+            return new type(grid.leaf_view()); // Otherwise we get an error here!
           },
           "grid"_a,
           "dim_range"_a);

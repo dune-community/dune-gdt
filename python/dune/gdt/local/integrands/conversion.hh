@@ -95,7 +95,7 @@ public:
           [](const typename type::LocalBinaryElementIntegrandType& local_binary_integrand,
              const XT::Functions::GridFunctionInterface<E, a_r, a_rC, AF>& inducing_function_as_ansatz_basis,
              const std::string& logging_prefix) {
-            return type(local_binary_integrand, inducing_function_as_ansatz_basis, logging_prefix);
+            return new type(local_binary_integrand, inducing_function_as_ansatz_basis, logging_prefix);
           },
           "local_binary_integrand"_a,
           "inducing_function_as_ansatz_basis"_a,
@@ -173,7 +173,7 @@ public:
     m.def(XT::Common::to_camel_case(class_id).c_str(),
           [](const typename type::LocalBinaryIntersectionIntegrandType& local_binary_integrand,
              const XT::Functions::GridFunctionInterface<E, a_r, a_rC, AF>& inducing_function_as_ansatz_basis) {
-            return type(local_binary_integrand, inducing_function_as_ansatz_basis);
+            return new type(local_binary_integrand, inducing_function_as_ansatz_basis);
           },
           "local_binary_integrand"_a,
           "inducing_function_as_ansatz_basis"_a,

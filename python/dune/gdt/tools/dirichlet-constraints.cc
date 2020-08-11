@@ -131,7 +131,7 @@ public:
     // factories
     const auto FactoryName = XT::Common::to_camel_case(class_id);
     m.def(FactoryName.c_str(),
-          [](const XT::Grid::BoundaryInfo<I>& boundary_info, const S& space) { return type(boundary_info, space); },
+          [](const XT::Grid::BoundaryInfo<I>& boundary_info, const S& space) { return new type(boundary_info, space); },
           "boundary_info"_a,
           "source_space"_a,
           py::keep_alive<0, 1>());

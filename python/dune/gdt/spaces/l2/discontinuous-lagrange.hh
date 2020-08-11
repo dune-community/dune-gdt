@@ -55,7 +55,7 @@ public:
     const auto ClassName = XT::Common::to_camel_case(class_name);
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
     c.def(py::init([](XT::Grid::GridProvider<G>& grid_provider, const int order) {
-            return type(grid_provider.leaf_view(), order); // Otherwise we get an error here!
+            return new type(grid_provider.leaf_view(), order); // Otherwise we get an error here!
           }),
           "grid_provider"_a,
           "order"_a);
@@ -72,7 +72,7 @@ public:
       m.def(
           XT::Common::to_camel_case(space_type_name).c_str(),
           [](XT::Grid::GridProvider<G>& grid, const int order, const XT::Grid::bindings::Dimension<r>&) {
-            return type(grid.leaf_view(), order); // Otherwise we get an error here!
+            return new type(grid.leaf_view(), order); // Otherwise we get an error here!
           },
           "grid"_a,
           "order"_a,
@@ -81,7 +81,7 @@ public:
       m.def(
           XT::Common::to_camel_case(space_type_name).c_str(),
           [](XT::Grid::GridProvider<G>& grid, const int order, const XT::Grid::bindings::Dimension<r>&) {
-            return type(grid.leaf_view(), order); // Otherwise we get an error here!
+            return new type(grid.leaf_view(), order); // Otherwise we get an error here!
           },
           "grid"_a,
           "order"_a,

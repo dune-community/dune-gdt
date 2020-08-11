@@ -87,7 +87,7 @@ public:
     // factory
     m.def(XT::Common::to_camel_case(class_id).c_str(),
           [](const typename type::IntegrandType& quaternary_intersection_integrand, const int over_integrate) {
-            return type(quaternary_intersection_integrand, over_integrate);
+            return new type(quaternary_intersection_integrand, over_integrate);
           },
           "quaternary_intersection_integrand"_a,
           "over_integrate"_a = 0);
