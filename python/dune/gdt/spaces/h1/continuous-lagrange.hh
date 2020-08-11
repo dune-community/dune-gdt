@@ -72,10 +72,10 @@ public:
     if (r == 1)
       m.def(
           XT::Common::to_camel_case(space_type_name).c_str(),
-          [c](XT::Grid::GridProvider<G>& grid,
-              const int order,
-              const XT::Grid::bindings::Dimension<r>&,
-              const std::string& logging_prefix) { return new type(grid.leaf_view(), order, logging_prefix); },
+          [](XT::Grid::GridProvider<G>& grid,
+             const int order,
+             const XT::Grid::bindings::Dimension<r>&,
+             const std::string& logging_prefix) { return new type(grid.leaf_view(), order, logging_prefix); },
           "grid"_a,
           "order"_a,
           "dim_range"_a = XT::Grid::bindings::Dimension<r>(),
@@ -83,10 +83,10 @@ public:
     else
       m.def(
           XT::Common::to_camel_case(space_type_name).c_str(),
-          [c](XT::Grid::GridProvider<G>& grid,
-              const int order,
-              const XT::Grid::bindings::Dimension<r>&,
-              const std::string& logging_prefix) { return new type(grid.leaf_view(), order, logging_prefix); },
+          [](XT::Grid::GridProvider<G>& grid,
+             const int order,
+             const XT::Grid::bindings::Dimension<r>&,
+             const std::string& logging_prefix) { return new type(grid.leaf_view(), order, logging_prefix); },
           "grid"_a,
           "order"_a,
           "dim_range"_a,
