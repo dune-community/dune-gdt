@@ -42,12 +42,12 @@ public:
     , over_integrate_(over_integrate)
   {}
 
-  LocalElementIntegralFunctional(typename GenericIntegrand::GenericOrderFunctionType order_function,
-                                 typename GenericIntegrand::GenericEvaluateFunctionType evaluate_function,
-                                 typename GenericIntegrand::GenericPostBindFunctionType post_bind_function =
-                                     [](const E&) {},
-                                 const XT::Common::ParameterType& param_type = {},
-                                 const int over_integrate = 0)
+  LocalElementIntegralFunctional(
+      typename GenericIntegrand::GenericOrderFunctionType order_function,
+      typename GenericIntegrand::GenericEvaluateFunctionType evaluate_function,
+      typename GenericIntegrand::GenericPostBindFunctionType post_bind_function = [](const E&) {},
+      const XT::Common::ParameterType& param_type = {},
+      const int over_integrate = 0)
     : BaseType(param_type)
     , integrand_(
           GenericIntegrand(order_function, evaluate_function, post_bind_function).copy_as_unary_element_integrand())

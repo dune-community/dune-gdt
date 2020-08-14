@@ -41,11 +41,12 @@ struct LinearTransportProblem
 
   LinearTransportProblem()
     : direction(XT::Common::from_string<DomainType>("[1 0 0]"))
-    , flux(1,
-           [&](const auto& u, const auto& /*param*/) { return direction * u; },
-           "linear_transport",
-           {},
-           [&](const auto& /*u*/, const auto& /*param*/) { return direction; })
+    , flux(
+          1,
+          [&](const auto& u, const auto& /*param*/) { return direction * u; },
+          "linear_transport",
+          {},
+          [&](const auto& /*u*/, const auto& /*param*/) { return direction; })
     , T_end(1.)
   {}
 

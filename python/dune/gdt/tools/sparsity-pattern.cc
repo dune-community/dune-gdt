@@ -43,18 +43,21 @@ public:
     namespace py = pybind11;
     using namespace pybind11::literals;
 
-    m.def("make_element_sparsity_pattern",
-          [](const S& space) { return make_element_sparsity_pattern(space); },
-          "space"_a,
-          py::call_guard<py::gil_scoped_release>());
-    m.def("make_intersection_sparsity_pattern",
-          [](const S& space) { return make_intersection_sparsity_pattern(space); },
-          "space"_a,
-          py::call_guard<py::gil_scoped_release>());
-    m.def("make_element_and_intersection_sparsity_pattern",
-          [](const S& space) { return make_element_and_intersection_sparsity_pattern(space); },
-          "space"_a,
-          py::call_guard<py::gil_scoped_release>());
+    m.def(
+        "make_element_sparsity_pattern",
+        [](const S& space) { return make_element_sparsity_pattern(space); },
+        "space"_a,
+        py::call_guard<py::gil_scoped_release>());
+    m.def(
+        "make_intersection_sparsity_pattern",
+        [](const S& space) { return make_intersection_sparsity_pattern(space); },
+        "space"_a,
+        py::call_guard<py::gil_scoped_release>());
+    m.def(
+        "make_element_and_intersection_sparsity_pattern",
+        [](const S& space) { return make_element_and_intersection_sparsity_pattern(space); },
+        "space"_a,
+        py::call_guard<py::gil_scoped_release>());
   } // ... bind(...)
 }; // class make_sparsity_patterns
 

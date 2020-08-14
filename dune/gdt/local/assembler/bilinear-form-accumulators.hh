@@ -85,8 +85,8 @@ public:
     , local_source_(source_.local_function())
     , local_range_(range_.local_function())
   {
-    LOG__(Logger, info) << Logger::logging_id << "(local_bilinear_form=" << &local_bilinear_form << ", source=" << &source
-                        << ", range=" << &range << ", param=" << param << ")";
+    LOG__(Logger, info) << Logger::logging_id << "(local_bilinear_form=" << &local_bilinear_form
+                        << ", source=" << &source << ", range=" << &range << ", param=" << param << ")";
   }
 
   LocalElementBilinearFormAccumulator(const ThisType& other)

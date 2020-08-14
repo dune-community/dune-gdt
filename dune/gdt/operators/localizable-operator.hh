@@ -260,8 +260,8 @@ public:
   using I = XT::Grid::extract_intersection_t<SGV>;
 
   using typename BaseType::MatrixOperatorType;
-  using typename BaseType::RangeSpaceType;
   using typename BaseType::RangeFunctionType;
+  using typename BaseType::RangeSpaceType;
   using typename BaseType::SourceFunctionInterfaceType;
   using typename BaseType::SourceSpaceType;
   using typename BaseType::VectorType;

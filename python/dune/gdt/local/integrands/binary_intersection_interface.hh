@@ -55,8 +55,10 @@ protected:
     namespace py = pybind11;
     using namespace pybind11::literals;
 
-    c.def("__add__", [](type& self, type& other) { return self + other; }, "other"_a, py::is_operator());
-    c.def("__iadd__", [](type& self, type& other) { return self + other; }, "other"_a, py::is_operator());
+    c.def(
+        "__add__", [](type& self, type& other) { return self + other; }, "other"_a, py::is_operator());
+    c.def(
+        "__iadd__", [](type& self, type& other) { return self + other; }, "other"_a, py::is_operator());
     // order/evaluate
     // ...
     //    c.def("__repr__", [](const type& self) {
@@ -66,13 +68,14 @@ protected:
     //    });
 
     // conversion to unary
-    c.def("with_ansatz",
-          [](type& self, XT::Functions::GridFunction<E, a_r, a_rC, F> ansatz_function) {
-            return self.with_ansatz(ansatz_function);
-          },
-          "ansatz_function"_a,
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>());
+    c.def(
+        "with_ansatz",
+        [](type& self, XT::Functions::GridFunction<E, a_r, a_rC, F> ansatz_function) {
+          return self.with_ansatz(ansatz_function);
+        },
+        "ansatz_function"_a,
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>());
   } // ... bind_methods(...)
 
   static std::string id(const std::string& grid_id, const std::string& layer_id)

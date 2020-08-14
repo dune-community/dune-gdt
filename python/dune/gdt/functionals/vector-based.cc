@@ -97,14 +97,15 @@ public:
 
     // additional methods
     c.def("clear", [](type& self) { self.clear(); });
-    c.def("append",
-          [](type& self,
-             const LocalElementFunctionalInterface<E, s_r, 1, F, typename type::DofFieldType>& local_functional,
-             const XT::Common::Parameter& param,
-             const XT::Grid::ElementFilter<GV>& filter) { self.append(local_functional, param, filter); },
-          "local_element_functional"_a,
-          "param"_a = XT::Common::Parameter(),
-          "element_filter"_a = XT::Grid::ApplyOn::AllElements<GV>());
+    c.def(
+        "append",
+        [](type& self,
+           const LocalElementFunctionalInterface<E, s_r, 1, F, typename type::DofFieldType>& local_functional,
+           const XT::Common::Parameter& param,
+           const XT::Grid::ElementFilter<GV>& filter) { self.append(local_functional, param, filter); },
+        "local_element_functional"_a,
+        "param"_a = XT::Common::Parameter(),
+        "element_filter"_a = XT::Grid::ApplyOn::AllElements<GV>());
     c.def("__iadd__", // function ptr signature required for the right return type
           (type
            & (type::*)(const LocalElementFunctionalInterface<E, s_r, 1, F, typename type::DofFieldType>&,
@@ -124,14 +125,15 @@ public:
             & type::append,
         "tuple_of_localelementfunctional_param_filter"_a,
         py::is_operator());
-    c.def("append",
-          [](type& self,
-             const LocalIntersectionFunctionalInterface<I, s_r, 1, F, typename type::DofFieldType>& local_functional,
-             const XT::Common::Parameter& param,
-             const XT::Grid::IntersectionFilter<GV>& filter) { self.append(local_functional, param, filter); },
-          "local_intersection_functional"_a,
-          "param"_a = XT::Common::Parameter(),
-          "intersection_filter"_a = XT::Grid::ApplyOn::AllIntersections<GV>());
+    c.def(
+        "append",
+        [](type& self,
+           const LocalIntersectionFunctionalInterface<I, s_r, 1, F, typename type::DofFieldType>& local_functional,
+           const XT::Common::Parameter& param,
+           const XT::Grid::IntersectionFilter<GV>& filter) { self.append(local_functional, param, filter); },
+        "local_intersection_functional"_a,
+        "param"_a = XT::Common::Parameter(),
+        "intersection_filter"_a = XT::Grid::ApplyOn::AllIntersections<GV>());
     c.def("__iadd__", // function ptr signature required for the right return type
           (type
            & (type::*)(const LocalIntersectionFunctionalInterface<I, s_r, 1, F, typename type::DofFieldType>&,
@@ -151,10 +153,11 @@ public:
               & type::append,
           "tuple_of_localintersectionfunctional_param_filter"_a,
           py::is_operator());
-    c.def("assemble",
-          [](type& self, const bool use_tbb) { self.assemble(use_tbb); },
-          "parallel"_a = false,
-          py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "assemble",
+        [](type& self, const bool use_tbb) { self.assemble(use_tbb); },
+        "parallel"_a = false,
+        py::call_guard<py::gil_scoped_release>());
 
     // factories
     const auto FactoryName = XT::Common::to_camel_case(class_id);

@@ -51,14 +51,15 @@ private:
     namespace py = pybind11;
     using namespace pybind11::literals;
 
-    c.def("apply",
-          [](type& self, M& matrix, const bool only_clear, const bool ensure_symmetry) {
-            self.apply(matrix, only_clear, ensure_symmetry);
-          },
-          "matrix"_a,
-          "only_clear"_a = false,
-          "ensure_symmetry"_a = true,
-          py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "apply",
+        [](type& self, M& matrix, const bool only_clear, const bool ensure_symmetry) {
+          self.apply(matrix, only_clear, ensure_symmetry);
+        },
+        "matrix"_a,
+        "only_clear"_a = false,
+        "ensure_symmetry"_a = true,
+        py::call_guard<py::gil_scoped_release>());
   } // ... addbind_apply_matrix(...)
 
   template <class V>
@@ -67,10 +68,11 @@ private:
     namespace py = pybind11;
     using namespace pybind11::literals;
 
-    c.def("apply",
-          [](type& self, V& vector) { self.apply(vector); },
-          "vector"_a,
-          py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "apply",
+        [](type& self, V& vector) { self.apply(vector); },
+        "vector"_a,
+        py::call_guard<py::gil_scoped_release>());
   } // ... addbind_apply_vector(...)
 
   template <class M, class V>
@@ -79,15 +81,16 @@ private:
     namespace py = pybind11;
     using namespace pybind11::literals;
 
-    c.def("apply",
-          [](type& self, M& matrix, V& vector, const bool only_clear, const bool ensure_symmetry) {
-            self.apply(matrix, vector, only_clear, ensure_symmetry);
-          },
-          "matrix"_a,
-          "vector"_a,
-          "only_clear"_a = false,
-          "ensure_symmetry"_a = true,
-          py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "apply",
+        [](type& self, M& matrix, V& vector, const bool only_clear, const bool ensure_symmetry) {
+          self.apply(matrix, vector, only_clear, ensure_symmetry);
+        },
+        "matrix"_a,
+        "vector"_a,
+        "only_clear"_a = false,
+        "ensure_symmetry"_a = true,
+        py::call_guard<py::gil_scoped_release>());
   } // ... addbind_apply_matrix_and_vector(...)
 
 public:
@@ -130,11 +133,12 @@ public:
 
     // factories
     const auto FactoryName = XT::Common::to_camel_case(class_id);
-    m.def(FactoryName.c_str(),
-          [](const XT::Grid::BoundaryInfo<I>& boundary_info, const S& space) { return new type(boundary_info, space); },
-          "boundary_info"_a,
-          "source_space"_a,
-          py::keep_alive<0, 1>());
+    m.def(
+        FactoryName.c_str(),
+        [](const XT::Grid::BoundaryInfo<I>& boundary_info, const S& space) { return new type(boundary_info, space); },
+        "boundary_info"_a,
+        "source_space"_a,
+        py::keep_alive<0, 1>());
 
     return c;
   } // ... bind(...)

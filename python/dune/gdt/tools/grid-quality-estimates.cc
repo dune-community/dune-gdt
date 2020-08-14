@@ -42,10 +42,11 @@ public:
     namespace py = pybind11;
     using namespace pybind11::literals;
 
-    m.def("estimate_inverse_inequality_constant",
-          [](const S& space) { return GDT::estimate_inverse_inequality_constant(space); },
-          "space"_a,
-          py::call_guard<py::gil_scoped_release>());
+    m.def(
+        "estimate_inverse_inequality_constant",
+        [](const S& space) { return GDT::estimate_inverse_inequality_constant(space); },
+        "space"_a,
+        py::call_guard<py::gil_scoped_release>());
   } // ... bind(...)
 }; // class estimate_inverse_inequality_constant
 
@@ -61,10 +62,11 @@ public:
     namespace py = pybind11;
     using namespace pybind11::literals;
 
-    m.def("estimate_combined_inverse_trace_inequality_constant",
-          [](const S& space) { return GDT::estimate_combined_inverse_trace_inequality_constant(space); },
-          "space"_a,
-          py::call_guard<py::gil_scoped_release>());
+    m.def(
+        "estimate_combined_inverse_trace_inequality_constant",
+        [](const S& space) { return GDT::estimate_combined_inverse_trace_inequality_constant(space); },
+        "space"_a,
+        py::call_guard<py::gil_scoped_release>());
   } // ... bind(...)
 }; // class estimate_combined_inverse_trace_inequality_constant
 
@@ -81,10 +83,11 @@ public:
     namespace py = pybind11;
     using namespace pybind11::literals;
 
-    m.def("estimate_element_to_intersection_equivalence_constant",
-          [](const GP& grid) { return GDT::estimate_element_to_intersection_equivalence_constant(grid.leaf_view()); },
-          "grid_provider"_a,
-          py::call_guard<py::gil_scoped_release>());
+    m.def(
+        "estimate_element_to_intersection_equivalence_constant",
+        [](const GP& grid) { return GDT::estimate_element_to_intersection_equivalence_constant(grid.leaf_view()); },
+        "grid_provider"_a,
+        py::call_guard<py::gil_scoped_release>());
   } // ... bind(...)
 }; // class estimate_element_to_intersection_equivalence_constant
 

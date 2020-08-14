@@ -91,17 +91,18 @@ public:
           py::keep_alive<1, 2>(),
           py::keep_alive<1, 3>());
 
-    m.def(XT::Common::to_camel_case(class_id).c_str(),
-          [](const typename type::LocalBinaryElementIntegrandType& local_binary_integrand,
-             const XT::Functions::GridFunctionInterface<E, a_r, a_rC, AF>& inducing_function_as_ansatz_basis,
-             const std::string& logging_prefix) {
-            return new type(local_binary_integrand, inducing_function_as_ansatz_basis, logging_prefix);
-          },
-          "local_binary_integrand"_a,
-          "inducing_function_as_ansatz_basis"_a,
-          "logging_prefix"_a = "",
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>());
+    m.def(
+        XT::Common::to_camel_case(class_id).c_str(),
+        [](const typename type::LocalBinaryElementIntegrandType& local_binary_integrand,
+           const XT::Functions::GridFunctionInterface<E, a_r, a_rC, AF>& inducing_function_as_ansatz_basis,
+           const std::string& logging_prefix) {
+          return new type(local_binary_integrand, inducing_function_as_ansatz_basis, logging_prefix);
+        },
+        "local_binary_integrand"_a,
+        "inducing_function_as_ansatz_basis"_a,
+        "logging_prefix"_a = "",
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>());
 
     return c;
   } // ... bind(...)
@@ -170,15 +171,16 @@ public:
           py::keep_alive<1, 2>(),
           py::keep_alive<1, 3>());
 
-    m.def(XT::Common::to_camel_case(class_id).c_str(),
-          [](const typename type::LocalBinaryIntersectionIntegrandType& local_binary_integrand,
-             const XT::Functions::GridFunctionInterface<E, a_r, a_rC, AF>& inducing_function_as_ansatz_basis) {
-            return new type(local_binary_integrand, inducing_function_as_ansatz_basis);
-          },
-          "local_binary_integrand"_a,
-          "inducing_function_as_ansatz_basis"_a,
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>());
+    m.def(
+        XT::Common::to_camel_case(class_id).c_str(),
+        [](const typename type::LocalBinaryIntersectionIntegrandType& local_binary_integrand,
+           const XT::Functions::GridFunctionInterface<E, a_r, a_rC, AF>& inducing_function_as_ansatz_basis) {
+          return new type(local_binary_integrand, inducing_function_as_ansatz_basis);
+        },
+        "local_binary_integrand"_a,
+        "inducing_function_as_ansatz_basis"_a,
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>());
 
     return c;
   } // ... bind(...)

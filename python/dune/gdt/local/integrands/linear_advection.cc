@@ -63,13 +63,14 @@ public:
 
     // factories
     const auto FactoryName = XT::Common::to_camel_case(class_id);
-    m.def(FactoryName.c_str(),
-          [](XT::Functions::GridFunction<E, d, 1, F> direction, const std::string& logging_prefix) {
-            return new type(direction, logging_prefix);
-          },
-          "direction"_a,
-          "logging_prefix"_a = "",
-          py::keep_alive<0, 1>());
+    m.def(
+        FactoryName.c_str(),
+        [](XT::Functions::GridFunction<E, d, 1, F> direction, const std::string& logging_prefix) {
+          return new type(direction, logging_prefix);
+        },
+        "direction"_a,
+        "logging_prefix"_a = "",
+        py::keep_alive<0, 1>());
 
     return c;
   } // ... bind(...)

@@ -75,22 +75,24 @@ public:
 
     // factories
     const auto FactoryName = XT::Common::to_camel_case(class_id);
-    m.def(FactoryName.c_str(),
-          [](XT::Functions::GridFunction<E, d> direction, const std::string& logging_prefix) {
-            return new type(direction, /*dirichlet_data=*/0., logging_prefix);
-          },
-          "direction"_a,
-          "logging_prefix"_a = "",
-          py::keep_alive<0, 1>());
-    m.def(FactoryName.c_str(),
-          [](XT::Functions::GridFunction<E, d> direction,
-             XT::Functions::GridFunction<E> dirichlet_data,
-             const std::string& logging_prefix) { return new type(direction, dirichlet_data, logging_prefix); },
-          "direction"_a,
-          "dirichlet_data"_a,
-          "logging_prefix"_a = "",
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>());
+    m.def(
+        FactoryName.c_str(),
+        [](XT::Functions::GridFunction<E, d> direction, const std::string& logging_prefix) {
+          return new type(direction, /*dirichlet_data=*/0., logging_prefix);
+        },
+        "direction"_a,
+        "logging_prefix"_a = "",
+        py::keep_alive<0, 1>());
+    m.def(
+        FactoryName.c_str(),
+        [](XT::Functions::GridFunction<E, d> direction,
+           XT::Functions::GridFunction<E> dirichlet_data,
+           const std::string& logging_prefix) { return new type(direction, dirichlet_data, logging_prefix); },
+        "direction"_a,
+        "dirichlet_data"_a,
+        "logging_prefix"_a = "",
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>());
 
     return c;
   } // ... bind(...)

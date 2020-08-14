@@ -78,8 +78,8 @@ struct LocalElementOperatorInterface_for_all_grids
 
   static void bind(pybind11::module& m, const std::string& vector_id)
   {
-    using Dune::XT::Grid::bindings::grid_name;
     using Dune::GDT::bindings::LocalElementOperatorInterface;
+    using Dune::XT::Grid::bindings::grid_name;
 
     LocalElementOperatorInterface<V, GV, 1, 1>::bind(m, vector_id, grid_name<G>::value());
     if (d > 1) {

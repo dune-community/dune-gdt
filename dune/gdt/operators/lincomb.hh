@@ -514,7 +514,7 @@ public:
 
   using BaseType::operator*;
 
-  LincombOperatorType operator*(const FieldType& alpha) override final
+  LincombOperatorType operator*(const FieldType& alpha)override final
   {
     LincombOperatorType ret(*this); // logging is inherited by copy ctor
     ret *= alpha;

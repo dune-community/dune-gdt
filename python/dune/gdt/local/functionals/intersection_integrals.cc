@@ -67,12 +67,13 @@ public:
           "over_integrate"_a = 0);
 
     // factory
-    m.def(XT::Common::to_camel_case(class_id).c_str(),
-          [](const typename type::IntegrandType& unary_intersection_integrand, const int over_integrate) {
-            return new type(unary_intersection_integrand, over_integrate);
-          },
-          "unary_intersection_integrand"_a,
-          "over_integrate"_a = 0);
+    m.def(
+        XT::Common::to_camel_case(class_id).c_str(),
+        [](const typename type::IntegrandType& unary_intersection_integrand, const int over_integrate) {
+          return new type(unary_intersection_integrand, over_integrate);
+        },
+        "unary_intersection_integrand"_a,
+        "over_integrate"_a = 0);
 
     return c;
   } // ... bind(...)

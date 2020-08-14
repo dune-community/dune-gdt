@@ -66,14 +66,15 @@ public:
 
     // factories
     const auto FactoryName = XT::Common::to_camel_case(class_id);
-    m.def(FactoryName.c_str(),
-          [](XT::Functions::GridFunction<E, 1, 1, F> weight,
-             const bool use_inside_bases,
-             const std::string& logging_prefix) { return new type(weight, use_inside_bases, logging_prefix); },
-          "weight"_a,
-          "use_inside_bases"_a = true,
-          "logging_prefix"_a = "",
-          py::keep_alive<0, 1>());
+    m.def(
+        FactoryName.c_str(),
+        [](XT::Functions::GridFunction<E, 1, 1, F> weight,
+           const bool use_inside_bases,
+           const std::string& logging_prefix) { return new type(weight, use_inside_bases, logging_prefix); },
+        "weight"_a,
+        "use_inside_bases"_a = true,
+        "logging_prefix"_a = "",
+        py::keep_alive<0, 1>());
 
     return c;
   } // ... bind(...)

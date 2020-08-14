@@ -48,12 +48,14 @@ public:
     namespace py = pybind11;
     using namespace pybind11::literals;
 
-    c.def("assemble", [](type& self, const bool parallel) { self.assemble(parallel); }, "parallel"_a = false);
-    c.def("apply",
-          [](type& self, const V& source, const XT::Common::Parameter& param) { return self.apply(source, param); },
-          "source"_a,
-          "param"_a = XT::Common::Parameter(),
-          py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "assemble", [](type& self, const bool parallel) { self.assemble(parallel); }, "parallel"_a = false);
+    c.def(
+        "apply",
+        [](type& self, const V& source, const XT::Common::Parameter& param) { return self.apply(source, param); },
+        "source"_a,
+        "param"_a = XT::Common::Parameter(),
+        py::call_guard<py::gil_scoped_release>());
   } // ... addbind_methods(...)
 
   static bound_type bind(pybind11::module& m,

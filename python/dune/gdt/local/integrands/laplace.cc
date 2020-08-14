@@ -66,23 +66,25 @@ public:
     // factory
     const auto FactoryName = XT::Common::to_camel_case(class_id);
     if (r == 1)
-      m.def(FactoryName.c_str(),
-            [](XT::Functions::GridFunction<E, d, d, F> diffusion,
-               const XT::Grid::bindings::Dimension<r>&,
-               const std::string& logging_prefix) { return new type(diffusion, logging_prefix); },
-            "diffusion"_a,
-            "dim_range_bases"_a = XT::Grid::bindings::Dimension<r>(),
-            "logging_prefix"_a = "",
-            py::keep_alive<0, 1>());
+      m.def(
+          FactoryName.c_str(),
+          [](XT::Functions::GridFunction<E, d, d, F> diffusion,
+             const XT::Grid::bindings::Dimension<r>&,
+             const std::string& logging_prefix) { return new type(diffusion, logging_prefix); },
+          "diffusion"_a,
+          "dim_range_bases"_a = XT::Grid::bindings::Dimension<r>(),
+          "logging_prefix"_a = "",
+          py::keep_alive<0, 1>());
     else
-      m.def(FactoryName.c_str(),
-            [](XT::Functions::GridFunction<E, d, d, F> diffusion,
-               const XT::Grid::bindings::Dimension<r>&,
-               const std::string& logging_prefix) { return new type(diffusion, logging_prefix); },
-            "diffusion"_a,
-            "dim_range_bases"_a,
-            "logging_prefix"_a = "",
-            py::keep_alive<0, 1>());
+      m.def(
+          FactoryName.c_str(),
+          [](XT::Functions::GridFunction<E, d, d, F> diffusion,
+             const XT::Grid::bindings::Dimension<r>&,
+             const std::string& logging_prefix) { return new type(diffusion, logging_prefix); },
+          "diffusion"_a,
+          "dim_range_bases"_a,
+          "logging_prefix"_a = "",
+          py::keep_alive<0, 1>());
 
     return c;
   } // ... bind(...)

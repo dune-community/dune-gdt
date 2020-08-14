@@ -15,7 +15,6 @@ from tempfile import NamedTemporaryFile
 from dune.xt import guarded_import
 from dune.xt.common.vtk.plot import plot
 
-
 for mod_name in (     # order should not matter!
         '_discretefunction_discretefunction',
         '_discretefunction_dof_vector',
@@ -83,7 +82,7 @@ def visualize_function(function, grid=None, subsampling=False):
     assert function.dim_range == 1, f'Not implemented yet for {function.dim_domain}-dimensional functions!'
     tmpfile = NamedTemporaryFile(mode='wb', delete=False, suffix='.vtu').name
     failed = False
-    try: # discrete function
+    try:     # discrete function
         function.visualize(filename=tmpfile[:-4])
         return plot(tmpfile, color_attribute_name=function.name)
     except TypeError:
@@ -96,4 +95,3 @@ def visualize_function(function, grid=None, subsampling=False):
 
         assert grid
         return visualize_xt_function(function, grid, subsampling=subsampling)
-

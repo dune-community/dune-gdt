@@ -39,10 +39,11 @@ public:
                                                          const XT::Common::Parameter& /*param*/)>;
   using GenericPostBindFunctionType = std::function<void(const E& /*ele*/)>;
 
-  GenericLocalUnaryElementIntegrand(GenericOrderFunctionType order_function,
-                                    GenericEvaluateFunctionType evaluate_function,
-                                    GenericPostBindFunctionType post_bind_function = [](const E&) {},
-                                    const XT::Common::ParameterType& param_type = {})
+  GenericLocalUnaryElementIntegrand(
+      GenericOrderFunctionType order_function,
+      GenericEvaluateFunctionType evaluate_function,
+      GenericPostBindFunctionType post_bind_function = [](const E&) {},
+      const XT::Common::ParameterType& param_type = {})
     : BaseType(param_type)
     , order_(order_function)
     , evaluate_(evaluate_function)
@@ -126,10 +127,11 @@ public:
                                                          const XT::Common::Parameter& /*param*/)>;
   using GenericPostBindFunctionType = std::function<void(const E& /*ele*/)>;
 
-  GenericLocalBinaryElementIntegrand(GenericOrderFunctionType order_function,
-                                     GenericEvaluateFunctionType evaluate_function,
-                                     GenericPostBindFunctionType post_bind_function = [](const E&) {},
-                                     const XT::Common::ParameterType& param_type = {})
+  GenericLocalBinaryElementIntegrand(
+      GenericOrderFunctionType order_function,
+      GenericEvaluateFunctionType evaluate_function,
+      GenericPostBindFunctionType post_bind_function = [](const E&) {},
+      const XT::Common::ParameterType& param_type = {})
     : BaseType(param_type)
     , order_(order_function)
     , evaluate_(evaluate_function)
@@ -219,11 +221,12 @@ public:
                                                          const XT::Common::Parameter& /*param*/)>;
   using GenericPostBindFunctionType = std::function<void(const I& /*ele*/)>;
 
-  GenericLocalBinaryIntersectionIntegrand(GenericOrderFunctionType order_function,
-                                          GenericEvaluateFunctionType evaluate_function,
-                                          GenericPostBindFunctionType post_bind_function = [](const I&) {},
-                                          bool use_inside_bases = true,
-                                          const XT::Common::ParameterType& param_type = {})
+  GenericLocalBinaryIntersectionIntegrand(
+      GenericOrderFunctionType order_function,
+      GenericEvaluateFunctionType evaluate_function,
+      GenericPostBindFunctionType post_bind_function = [](const I&) {},
+      bool use_inside_bases = true,
+      const XT::Common::ParameterType& param_type = {})
     : BaseType(param_type)
     , order_(order_function)
     , evaluate_(evaluate_function)

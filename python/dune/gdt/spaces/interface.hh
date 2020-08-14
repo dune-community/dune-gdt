@@ -68,26 +68,27 @@ public:
     c.def("pre_adapt", [](type& self) { self.pre_adapt(); });
     c.def("adapt", [](type& self) { self.adapt(); });
     c.def("post_adapt", [](type& self) { return self.post_adapt(); });
-    c.def("interpolation_points",
-          [](type& self) {
-            DUNE_THROW_IF(!self.is_lagrangian(), XT::Common::Exceptions::wrong_input_given, "");
-            const auto& global_basis = self.basis();
-            auto basis = global_basis.localize();
-            DynamicVector<size_t> global_DoF_indices(self.mapper().max_local_size());
-            auto points = std::make_unique<XT::LA::CommonDenseMatrix<double>>(self.mapper().size(), size_t(d), 0.);
-            for (auto&& element : elements(self.grid_view())) {
-              basis->bind(element);
-              self.mapper().global_indices(element, global_DoF_indices);
-              auto local_lagrange_points = basis->finite_element().lagrange_points();
-              for (size_t ii = 0; ii < basis->size(); ++ii) {
-                auto global_point = element.geometry().global(local_lagrange_points[ii]);
-                for (size_t jj = 0; jj < size_t(d); ++jj)
-                  points->set_entry(global_DoF_indices[ii], jj, global_point[jj]);
-              }
+    c.def(
+        "interpolation_points",
+        [](type& self) {
+          DUNE_THROW_IF(!self.is_lagrangian(), XT::Common::Exceptions::wrong_input_given, "");
+          const auto& global_basis = self.basis();
+          auto basis = global_basis.localize();
+          DynamicVector<size_t> global_DoF_indices(self.mapper().max_local_size());
+          auto points = std::make_unique<XT::LA::CommonDenseMatrix<double>>(self.mapper().size(), size_t(d), 0.);
+          for (auto&& element : elements(self.grid_view())) {
+            basis->bind(element);
+            self.mapper().global_indices(element, global_DoF_indices);
+            auto local_lagrange_points = basis->finite_element().lagrange_points();
+            for (size_t ii = 0; ii < basis->size(); ++ii) {
+              auto global_point = element.geometry().global(local_lagrange_points[ii]);
+              for (size_t jj = 0; jj < size_t(d); ++jj)
+                points->set_entry(global_DoF_indices[ii], jj, global_point[jj]);
             }
-            return std::move(points);
-          },
-          py::call_guard<py::gil_scoped_release>());
+          }
+          return std::move(points);
+        },
+        py::call_guard<py::gil_scoped_release>());
     c.def("__repr__", [](const type& self) {
       std::stringstream ss;
       ss << self;

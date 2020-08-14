@@ -199,11 +199,11 @@ public:
   using typename BaseType::LocalAnsatzBasisType;
   using typename BaseType::LocalTestBasisType;
 
-  BoundaryPenalty(const double& penalty,
-                  XT::Functions::GridFunction<E, d, d> weight_function = 1.,
-                  const std::function<double(const I&)>& intersection_diameter =
-                      internal::default_intersection_diameter<I>(),
-                  const std::string& logging_prefix = "")
+  BoundaryPenalty(
+      const double& penalty,
+      XT::Functions::GridFunction<E, d, d> weight_function = 1.,
+      const std::function<double(const I&)>& intersection_diameter = internal::default_intersection_diameter<I>(),
+      const std::string& logging_prefix = "")
     : BaseType(weight_function.parameter_type(),
                logging_prefix.empty() ? "gdt" : "gdt.localipdgboundarypenaltyintegrand",
                logging_prefix.empty() ? "LocalIPDGIntegrands::BoundaryPenalty" : logging_prefix,

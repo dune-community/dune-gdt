@@ -310,38 +310,42 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
   py::module::import("dune.xt.functions");
   py::module::import("dune.gdt.discretefunction");
 
-  m.def("visualize",
-        [](GP& grid, XT::Functions::FunctionInterface<d>& func, const std::string& filename) {
-          func.visualize(grid.leaf_view(), filename);
-        },
-        py::call_guard<py::gil_scoped_release>(),
-        "grid"_a,
-        "scalar_function"_a,
-        "filename"_a);
-  m.def("visualize",
-        [](GP& grid, XT::Functions::FunctionInterface<d, d, d>& func, const std::string& filename) {
-          func.visualize(grid.leaf_view(), filename);
-        },
-        py::call_guard<py::gil_scoped_release>(),
-        "grid"_a,
-        "matrix_function"_a,
-        "filename"_a);
-  m.def("visualize",
-        [](GP& grid, XT::Functions::GridFunctionInterface<E>& func, const std::string& filename) {
-          func.visualize(grid.leaf_view(), filename);
-        },
-        py::call_guard<py::gil_scoped_release>(),
-        "grid"_a,
-        "scalar_function"_a,
-        "filename"_a);
-  m.def("visualize",
-        [](GP& grid, XT::Functions::GridFunctionInterface<E, d, d>& func, const std::string& filename) {
-          func.visualize(grid.leaf_view(), filename);
-        },
-        py::call_guard<py::gil_scoped_release>(),
-        "grid"_a,
-        "scalar_function"_a,
-        "filename"_a);
+  m.def(
+      "visualize",
+      [](GP& grid, XT::Functions::FunctionInterface<d>& func, const std::string& filename) {
+        func.visualize(grid.leaf_view(), filename);
+      },
+      py::call_guard<py::gil_scoped_release>(),
+      "grid"_a,
+      "scalar_function"_a,
+      "filename"_a);
+  m.def(
+      "visualize",
+      [](GP& grid, XT::Functions::FunctionInterface<d, d, d>& func, const std::string& filename) {
+        func.visualize(grid.leaf_view(), filename);
+      },
+      py::call_guard<py::gil_scoped_release>(),
+      "grid"_a,
+      "matrix_function"_a,
+      "filename"_a);
+  m.def(
+      "visualize",
+      [](GP& grid, XT::Functions::GridFunctionInterface<E>& func, const std::string& filename) {
+        func.visualize(grid.leaf_view(), filename);
+      },
+      py::call_guard<py::gil_scoped_release>(),
+      "grid"_a,
+      "scalar_function"_a,
+      "filename"_a);
+  m.def(
+      "visualize",
+      [](GP& grid, XT::Functions::GridFunctionInterface<E, d, d>& func, const std::string& filename) {
+        func.visualize(grid.leaf_view(), filename);
+      },
+      py::call_guard<py::gil_scoped_release>(),
+      "grid"_a,
+      "scalar_function"_a,
+      "filename"_a);
 
   py::class_<GP> grid_provider(m, "GridProvider", "GridProvider");
   grid_provider.def(py::init([](const FieldVector<double, d>& lower_left,
@@ -369,291 +373,310 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
   rtn_space.def_property_readonly("dimDomain", [](RTN& /*self*/) { return d; });
   rtn_space.def_property_readonly("num_DoFs", [](RTN& self) { return self.mapper().size(); });
 
-  m.def("make_discrete_function",
-        [](DG& dg_space, V& vec, const std::string& name) { return ScalarDF(dg_space, vec, name); },
-        "dg_space"_a,
-        "DoF_vector"_a,
-        "name"_a);
-  m.def("make_discrete_function",
-        [](RTN& rtn_space, V& vec, const std::string& name) { return VectorDF(rtn_space, vec, name); },
-        "rtn_space"_a,
-        "DoF_vector"_a,
-        "name"_a);
+  m.def(
+      "make_discrete_function",
+      [](DG& dg_space, V& vec, const std::string& name) { return ScalarDF(dg_space, vec, name); },
+      "dg_space"_a,
+      "DoF_vector"_a,
+      "name"_a);
+  m.def(
+      "make_discrete_function",
+      [](RTN& rtn_space, V& vec, const std::string& name) { return VectorDF(rtn_space, vec, name); },
+      "rtn_space"_a,
+      "DoF_vector"_a,
+      "name"_a);
 
-  m.def("prolong",
-        [](DG& coarse_dg_space, V& coarse_pressure, DG& fine_dg_space) {
-          auto fine_pressure = prolong<V>(make_discrete_function(coarse_dg_space, coarse_pressure), fine_dg_space);
-          return std::make_unique<V>(std::move(fine_pressure.dofs().vector()));
-        },
-        py::call_guard<py::gil_scoped_release>(),
-        "coarse_dg_space"_a,
-        "coarse_pressure"_a,
-        "fine_dg_space"_a);
-  m.def("prolong",
-        [](RTN& coarse_rtn_space, V& coarse_flux, RTN& fine_rtn_space) {
-          auto fine_flux = prolong<V>(make_discrete_function(coarse_rtn_space, coarse_flux), fine_rtn_space);
-          return std::make_unique<V>(std::move(fine_flux.dofs().vector()));
-        },
-        py::call_guard<py::gil_scoped_release>(),
-        "coarse_rtn_space"_a,
-        "coarse_flux"_a,
-        "fine_rtn_space"_a);
+  m.def(
+      "prolong",
+      [](DG& coarse_dg_space, V& coarse_pressure, DG& fine_dg_space) {
+        auto fine_pressure = prolong<V>(make_discrete_function(coarse_dg_space, coarse_pressure), fine_dg_space);
+        return std::make_unique<V>(std::move(fine_pressure.dofs().vector()));
+      },
+      py::call_guard<py::gil_scoped_release>(),
+      "coarse_dg_space"_a,
+      "coarse_pressure"_a,
+      "fine_dg_space"_a);
+  m.def(
+      "prolong",
+      [](RTN& coarse_rtn_space, V& coarse_flux, RTN& fine_rtn_space) {
+        auto fine_flux = prolong<V>(make_discrete_function(coarse_rtn_space, coarse_flux), fine_rtn_space);
+        return std::make_unique<V>(std::move(fine_flux.dofs().vector()));
+      },
+      py::call_guard<py::gil_scoped_release>(),
+      "coarse_rtn_space"_a,
+      "coarse_flux"_a,
+      "fine_rtn_space"_a);
 
-  m.def("assemble_SWIPDG_matrix",
-        [](DG& space, XT::Functions::FunctionInterface<d>& diffusion_factor, const bool parallel) {
-          const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor(
-              XT::Common::FieldMatrix<double, 2, d>({{1., 0.}, {0., 1.}}));
-          return assemble_SWIPDG_matrix(
-              space, diffusion_factor.as_grid_function<E>(), diffusion_tensor.as_grid_function<E>(), parallel);
-        },
-        py::call_guard<py::gil_scoped_release>(),
-        "dg_space"_a,
-        "diffusion_factor"_a,
-        "parallel"_a = true);
-  m.def("assemble_SWIPDG_matrix",
-        [](DG& space,
-           XT::Functions::GridFunctionInterface<E>& diffusion_factor,
-           XT::Functions::GridFunctionInterface<E, d, d>& diffusion_tensor,
-           const bool parallel) { return assemble_SWIPDG_matrix(space, diffusion_factor, diffusion_tensor, parallel); },
-        py::call_guard<py::gil_scoped_release>(),
-        "dg_space"_a,
-        "diffusion_factor"_a,
-        "diffusion_tensor"_a,
-        "parallel"_a = true);
+  m.def(
+      "assemble_SWIPDG_matrix",
+      [](DG& space, XT::Functions::FunctionInterface<d>& diffusion_factor, const bool parallel) {
+        const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor(
+            XT::Common::FieldMatrix<double, 2, d>({{1., 0.}, {0., 1.}}));
+        return assemble_SWIPDG_matrix(
+            space, diffusion_factor.as_grid_function<E>(), diffusion_tensor.as_grid_function<E>(), parallel);
+      },
+      py::call_guard<py::gil_scoped_release>(),
+      "dg_space"_a,
+      "diffusion_factor"_a,
+      "parallel"_a = true);
+  m.def(
+      "assemble_SWIPDG_matrix",
+      [](DG& space,
+         XT::Functions::GridFunctionInterface<E>& diffusion_factor,
+         XT::Functions::GridFunctionInterface<E, d, d>& diffusion_tensor,
+         const bool parallel) { return assemble_SWIPDG_matrix(space, diffusion_factor, diffusion_tensor, parallel); },
+      py::call_guard<py::gil_scoped_release>(),
+      "dg_space"_a,
+      "diffusion_factor"_a,
+      "diffusion_tensor"_a,
+      "parallel"_a = true);
 
-  m.def("assemble_L2_vector",
-        [](DG& space, XT::Functions::FunctionInterface<d>& force, const bool parallel) {
-          return assemble_L2_vector(space, force.as_grid_function<E>(), parallel);
-        },
-        py::call_guard<py::gil_scoped_release>(),
-        "dg_space"_a,
-        "force"_a,
-        "parallel"_a = true);
-  m.def("assemble_L2_vector",
-        [](DG& space, XT::Functions::GridFunctionInterface<E>& force, const bool parallel) {
-          return assemble_L2_vector(space, force, parallel);
-        },
-        py::call_guard<py::gil_scoped_release>(),
-        "dg_space"_a,
-        "force"_a,
-        "parallel"_a = true);
+  m.def(
+      "assemble_L2_vector",
+      [](DG& space, XT::Functions::FunctionInterface<d>& force, const bool parallel) {
+        return assemble_L2_vector(space, force.as_grid_function<E>(), parallel);
+      },
+      py::call_guard<py::gil_scoped_release>(),
+      "dg_space"_a,
+      "force"_a,
+      "parallel"_a = true);
+  m.def(
+      "assemble_L2_vector",
+      [](DG& space, XT::Functions::GridFunctionInterface<E>& force, const bool parallel) {
+        return assemble_L2_vector(space, force, parallel);
+      },
+      py::call_guard<py::gil_scoped_release>(),
+      "dg_space"_a,
+      "force"_a,
+      "parallel"_a = true);
 
-  m.def("assemble_energy_semi_product_matrix",
-        [](DG& space, XT::Functions::FunctionInterface<d>& diffusion_factor, const bool parallel) {
-          const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor(
-              XT::Common::FieldMatrix<double, 2, d>({{1., 0.}, {0., 1.}}));
-          return assemble_energy_semi_product_matrix(
-              space, diffusion_factor.as_grid_function<E>(), diffusion_tensor.as_grid_function<E>(), parallel);
-        },
-        py::call_guard<py::gil_scoped_release>(),
-        "dg_space"_a,
-        "diffusion_factor"_a,
-        "parallel"_a = true);
-  m.def("assemble_energy_semi_product_matrix",
-        [](DG& space,
-           XT::Functions::GridFunctionInterface<E>& diffusion_factor,
-           XT::Functions::GridFunctionInterface<E, d, d>& diffusion_tensor,
-           const bool parallel) {
-          return assemble_energy_semi_product_matrix(space, diffusion_factor, diffusion_tensor, parallel);
-        },
-        py::call_guard<py::gil_scoped_release>(),
-        "dg_space"_a,
-        "diffusion_factor"_a,
-        "diffusion_tensor"_a,
-        "parallel"_a = true);
+  m.def(
+      "assemble_energy_semi_product_matrix",
+      [](DG& space, XT::Functions::FunctionInterface<d>& diffusion_factor, const bool parallel) {
+        const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor(
+            XT::Common::FieldMatrix<double, 2, d>({{1., 0.}, {0., 1.}}));
+        return assemble_energy_semi_product_matrix(
+            space, diffusion_factor.as_grid_function<E>(), diffusion_tensor.as_grid_function<E>(), parallel);
+      },
+      py::call_guard<py::gil_scoped_release>(),
+      "dg_space"_a,
+      "diffusion_factor"_a,
+      "parallel"_a = true);
+  m.def(
+      "assemble_energy_semi_product_matrix",
+      [](DG& space,
+         XT::Functions::GridFunctionInterface<E>& diffusion_factor,
+         XT::Functions::GridFunctionInterface<E, d, d>& diffusion_tensor,
+         const bool parallel) {
+        return assemble_energy_semi_product_matrix(space, diffusion_factor, diffusion_tensor, parallel);
+      },
+      py::call_guard<py::gil_scoped_release>(),
+      "dg_space"_a,
+      "diffusion_factor"_a,
+      "diffusion_tensor"_a,
+      "parallel"_a = true);
 
-  m.def("assemble_DG_product_matrix",
-        [](DG& space, const bool parallel) {
-          const XT::Functions::ConstantFunction<d> diffusion_factor(1.);
-          const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor(
-              XT::Common::FieldMatrix<double, 2, d>({{1., 0.}, {0., 1.}}));
-          return assemble_DG_product_matrix(
-              space, diffusion_factor.as_grid_function<E>(), diffusion_tensor.as_grid_function<E>(), parallel);
-        },
-        py::call_guard<py::gil_scoped_release>(),
-        "dg_space"_a,
-        "parallel"_a = true);
-  m.def("assemble_DG_product_matrix",
-        [](DG& space,
-           XT::Functions::GridFunctionInterface<E>& diffusion_factor,
-           XT::Functions::GridFunctionInterface<E, d, d>& diffusion_tensor,
-           const bool parallel) {
-          return assemble_DG_product_matrix(space, diffusion_factor, diffusion_tensor, parallel);
-        },
-        py::call_guard<py::gil_scoped_release>(),
-        "dg_space"_a,
-        "diffusion_factor"_a,
-        "diffusion_tensor"_a,
-        "parallel"_a = true);
+  m.def(
+      "assemble_DG_product_matrix",
+      [](DG& space, const bool parallel) {
+        const XT::Functions::ConstantFunction<d> diffusion_factor(1.);
+        const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor(
+            XT::Common::FieldMatrix<double, 2, d>({{1., 0.}, {0., 1.}}));
+        return assemble_DG_product_matrix(
+            space, diffusion_factor.as_grid_function<E>(), diffusion_tensor.as_grid_function<E>(), parallel);
+      },
+      py::call_guard<py::gil_scoped_release>(),
+      "dg_space"_a,
+      "parallel"_a = true);
+  m.def(
+      "assemble_DG_product_matrix",
+      [](DG& space,
+         XT::Functions::GridFunctionInterface<E>& diffusion_factor,
+         XT::Functions::GridFunctionInterface<E, d, d>& diffusion_tensor,
+         const bool parallel) {
+        return assemble_DG_product_matrix(space, diffusion_factor, diffusion_tensor, parallel);
+      },
+      py::call_guard<py::gil_scoped_release>(),
+      "dg_space"_a,
+      "diffusion_factor"_a,
+      "diffusion_tensor"_a,
+      "parallel"_a = true);
 
-  m.def("compute_flux_reconstruction",
-        [](GP& grid, DG& dg_space, RTN& rtn_space, XT::Functions::FunctionInterface<d>& diffusion_factor, V& dg_vec) {
-          const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor(
-              XT::Common::FieldMatrix<double, 2, d>({{1., 0.}, {0., 1.}}));
-          return compute_flux_reconstruction(grid,
-                                             dg_space,
-                                             rtn_space,
-                                             diffusion_factor.as_grid_function<E>(),
-                                             diffusion_tensor.as_grid_function<E>(),
-                                             dg_vec);
-        },
-        py::call_guard<py::gil_scoped_release>(),
-        "grid"_a,
-        "dg_space"_a,
-        "rtn_space"_a,
-        "diffusion_factor"_a,
-        "dg_DoF_vector"_a);
-  m.def("compute_flux_reconstruction",
-        [](GP& grid,
-           DG& dg_space,
-           RTN& rtn_space,
-           XT::Functions::GridFunctionInterface<E>& diffusion_factor,
-           XT::Functions::GridFunctionInterface<E, d, d>& diffusion_tensor,
-           V& dg_vec) {
-          return compute_flux_reconstruction(grid, dg_space, rtn_space, diffusion_factor, diffusion_tensor, dg_vec);
-        },
-        py::call_guard<py::gil_scoped_release>(),
-        "grid"_a,
-        "dg_space"_a,
-        "rtn_space"_a,
-        "diffusion_factor"_a,
-        "diffusion_tensor"_a,
-        "dg_DoF_vector"_a);
+  m.def(
+      "compute_flux_reconstruction",
+      [](GP& grid, DG& dg_space, RTN& rtn_space, XT::Functions::FunctionInterface<d>& diffusion_factor, V& dg_vec) {
+        const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor(
+            XT::Common::FieldMatrix<double, 2, d>({{1., 0.}, {0., 1.}}));
+        return compute_flux_reconstruction(grid,
+                                           dg_space,
+                                           rtn_space,
+                                           diffusion_factor.as_grid_function<E>(),
+                                           diffusion_tensor.as_grid_function<E>(),
+                                           dg_vec);
+      },
+      py::call_guard<py::gil_scoped_release>(),
+      "grid"_a,
+      "dg_space"_a,
+      "rtn_space"_a,
+      "diffusion_factor"_a,
+      "dg_DoF_vector"_a);
+  m.def(
+      "compute_flux_reconstruction",
+      [](GP& grid,
+         DG& dg_space,
+         RTN& rtn_space,
+         XT::Functions::GridFunctionInterface<E>& diffusion_factor,
+         XT::Functions::GridFunctionInterface<E, d, d>& diffusion_tensor,
+         V& dg_vec) {
+        return compute_flux_reconstruction(grid, dg_space, rtn_space, diffusion_factor, diffusion_tensor, dg_vec);
+      },
+      py::call_guard<py::gil_scoped_release>(),
+      "grid"_a,
+      "dg_space"_a,
+      "rtn_space"_a,
+      "diffusion_factor"_a,
+      "diffusion_tensor"_a,
+      "dg_DoF_vector"_a);
 
-  m.def("assemble_Hdiv_product_matrix",
-        [](RTN& rtn_space, const bool parallel) {
-          auto op = make_matrix_operator<M>(rtn_space, Stencil::element_and_intersection);
-          op.append(LocalElementIntegralBilinearForm<E, d>(LocalElementProductIntegrand<E, d>()));
-          op.append(LocalElementIntegralBilinearForm<E, d>(
-              [](const auto& test_basis, const auto& ansatz_basis, const auto& /*param*/) {
-                return std::max(test_basis.order() - 1, 0) + std::max(ansatz_basis.order() - 1, 0);
-              },
-              [](const auto& test_basis,
-                 const auto& ansatz_basis,
-                 const auto& point_in_reference_element,
-                 auto& result,
-                 const auto& /*param*/) {
-                auto test_grads = test_basis.jacobians_of_set(point_in_reference_element);
-                auto ansatz_grads = ansatz_basis.jacobians_of_set(point_in_reference_element);
-                auto divergence = [](const auto& grad) {
-                  double div = 0.;
+  m.def(
+      "assemble_Hdiv_product_matrix",
+      [](RTN& rtn_space, const bool parallel) {
+        auto op = make_matrix_operator<M>(rtn_space, Stencil::element_and_intersection);
+        op.append(LocalElementIntegralBilinearForm<E, d>(LocalElementProductIntegrand<E, d>()));
+        op.append(LocalElementIntegralBilinearForm<E, d>(
+            [](const auto& test_basis, const auto& ansatz_basis, const auto& /*param*/) {
+              return std::max(test_basis.order() - 1, 0) + std::max(ansatz_basis.order() - 1, 0);
+            },
+            [](const auto& test_basis,
+               const auto& ansatz_basis,
+               const auto& point_in_reference_element,
+               auto& result,
+               const auto& /*param*/) {
+              auto test_grads = test_basis.jacobians_of_set(point_in_reference_element);
+              auto ansatz_grads = ansatz_basis.jacobians_of_set(point_in_reference_element);
+              auto divergence = [](const auto& grad) {
+                double div = 0.;
+                for (size_t dd = 0; dd < d; ++dd)
+                  div += grad[dd][dd];
+                return div;
+              };
+              for (size_t ii = 0; ii < test_basis.size(); ++ii)
+                for (size_t jj = 0; jj < ansatz_basis.size(); ++jj)
                   for (size_t dd = 0; dd < d; ++dd)
-                    div += grad[dd][dd];
-                  return div;
-                };
-                for (size_t ii = 0; ii < test_basis.size(); ++ii)
-                  for (size_t jj = 0; jj < ansatz_basis.size(); ++jj)
-                    for (size_t dd = 0; dd < d; ++dd)
-                      result[ii][jj] = divergence(test_grads[ii]) * divergence(ansatz_grads[jj]);
-              }));
-          op.assemble(parallel);
-          return std::make_unique<M>(std::move(op.matrix()));
-        },
-        py::call_guard<py::gil_scoped_release>(),
-        "dg_space"_a,
-        "parallel"_a = true);
+                    result[ii][jj] = divergence(test_grads[ii]) * divergence(ansatz_grads[jj]);
+            }));
+        op.assemble(parallel);
+        return std::make_unique<M>(std::move(op.matrix()));
+      },
+      py::call_guard<py::gil_scoped_release>(),
+      "dg_space"_a,
+      "parallel"_a = true);
 
-  m.def("compute_local_conservation_error",
-        [](GP& grid, VectorDF& flux, XT::Functions::FunctionInterface<d>& rhs, const bool parallel) {
-          return compute_local_conservation_error(grid, flux, rhs.as_grid_function<E>(), parallel);
-        },
-        py::call_guard<py::gil_scoped_release>(),
-        "grid"_a,
-        "flux"_a,
-        "rhs"_a,
-        "parallel"_a = true);
-  m.def("compute_local_conservation_error",
-        [](GP& grid, VectorDF& flux, XT::Functions::GridFunctionInterface<E>& rhs, const bool parallel) {
-          return compute_local_conservation_error(grid, flux, rhs, parallel);
-        },
-        py::call_guard<py::gil_scoped_release>(),
-        "grid"_a,
-        "flux"_a,
-        "rhs"_a,
-        "parallel"_a = true);
+  m.def(
+      "compute_local_conservation_error",
+      [](GP& grid, VectorDF& flux, XT::Functions::FunctionInterface<d>& rhs, const bool parallel) {
+        return compute_local_conservation_error(grid, flux, rhs.as_grid_function<E>(), parallel);
+      },
+      py::call_guard<py::gil_scoped_release>(),
+      "grid"_a,
+      "flux"_a,
+      "rhs"_a,
+      "parallel"_a = true);
+  m.def(
+      "compute_local_conservation_error",
+      [](GP& grid, VectorDF& flux, XT::Functions::GridFunctionInterface<E>& rhs, const bool parallel) {
+        return compute_local_conservation_error(grid, flux, rhs, parallel);
+      },
+      py::call_guard<py::gil_scoped_release>(),
+      "grid"_a,
+      "flux"_a,
+      "rhs"_a,
+      "parallel"_a = true);
 
-  m.def("compute_estimate",
-        [](GP& grid,
-           ScalarDF& pressure,
-           VectorDF& flux,
-           XT::Functions::FunctionInterface<d>& rhs,
-           XT::Functions::FunctionInterface<d>& diffusion_factor,
-           XT::Functions::FunctionInterface<d>& diffusion_factor_bar,
-           XT::Functions::FunctionInterface<d>& diffusion_factor_hat,
-           const double& alpha_bar,
-           const double& alpha_hat,
-           const double& gamma_bar,
-           const int over_integrate,
-           const bool& parallel) {
-          const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor(
-              XT::Common::FieldMatrix<double, 2, d>({{1., 0.}, {0., 1.}}));
-          return compute_estimate(grid,
-                                  pressure,
-                                  flux,
-                                  rhs.as_grid_function<E>(),
-                                  diffusion_factor.as_grid_function<E>(),
-                                  diffusion_factor_bar.as_grid_function<E>(),
-                                  diffusion_factor_hat.as_grid_function<E>(),
-                                  diffusion_tensor.as_grid_function<E>(),
-                                  alpha_bar,
-                                  alpha_hat,
-                                  gamma_bar,
-                                  over_integrate,
-                                  parallel);
-        },
-        py::call_guard<py::gil_scoped_release>(),
-        "grid"_a,
-        "pressure"_a,
-        "flux"_a,
-        "rhs"_a,
-        "diffusion_factor"_a,
-        "diffusion_factor_bar"_a,
-        "diffusion_factor_hat"_a,
-        "alpha_bar"_a,
-        "alpha_hat"_a,
-        "gamma_bar"_a,
-        "over_integrate"_a = 3,
-        "parallel"_a = true);
-  m.def("compute_estimate",
-        [](GP& grid,
-           ScalarDF& pressure,
-           VectorDF& flux,
-           XT::Functions::GridFunctionInterface<E>& rhs,
-           XT::Functions::GridFunctionInterface<E>& diffusion_factor,
-           XT::Functions::GridFunctionInterface<E>& diffusion_factor_bar,
-           XT::Functions::GridFunctionInterface<E>& diffusion_factor_hat,
-           XT::Functions::GridFunctionInterface<E, d, d>& diffusion_tensor,
-           const double& alpha_bar,
-           const double& alpha_hat,
-           const double& gamma_bar,
-           const int over_integrate,
-           const bool& parallel) {
-          return compute_estimate(grid,
-                                  pressure,
-                                  flux,
-                                  rhs,
-                                  diffusion_factor,
-                                  diffusion_factor_bar,
-                                  diffusion_factor_hat,
-                                  diffusion_tensor,
-                                  alpha_bar,
-                                  alpha_hat,
-                                  gamma_bar,
-                                  over_integrate,
-                                  parallel);
-        },
-        py::call_guard<py::gil_scoped_release>(),
-        "grid"_a,
-        "pressure"_a,
-        "flux"_a,
-        "rhs"_a,
-        "diffusion_factor"_a,
-        "diffusion_factor_bar"_a,
-        "diffusion_factor_hat"_a,
-        "diffusion_tensor"_a,
-        "alpha_bar"_a,
-        "alpha_hat"_a,
-        "gamma_bar"_a,
-        "over_integrate"_a = 3,
-        "parallel"_a = true);
+  m.def(
+      "compute_estimate",
+      [](GP& grid,
+         ScalarDF& pressure,
+         VectorDF& flux,
+         XT::Functions::FunctionInterface<d>& rhs,
+         XT::Functions::FunctionInterface<d>& diffusion_factor,
+         XT::Functions::FunctionInterface<d>& diffusion_factor_bar,
+         XT::Functions::FunctionInterface<d>& diffusion_factor_hat,
+         const double& alpha_bar,
+         const double& alpha_hat,
+         const double& gamma_bar,
+         const int over_integrate,
+         const bool& parallel) {
+        const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor(
+            XT::Common::FieldMatrix<double, 2, d>({{1., 0.}, {0., 1.}}));
+        return compute_estimate(grid,
+                                pressure,
+                                flux,
+                                rhs.as_grid_function<E>(),
+                                diffusion_factor.as_grid_function<E>(),
+                                diffusion_factor_bar.as_grid_function<E>(),
+                                diffusion_factor_hat.as_grid_function<E>(),
+                                diffusion_tensor.as_grid_function<E>(),
+                                alpha_bar,
+                                alpha_hat,
+                                gamma_bar,
+                                over_integrate,
+                                parallel);
+      },
+      py::call_guard<py::gil_scoped_release>(),
+      "grid"_a,
+      "pressure"_a,
+      "flux"_a,
+      "rhs"_a,
+      "diffusion_factor"_a,
+      "diffusion_factor_bar"_a,
+      "diffusion_factor_hat"_a,
+      "alpha_bar"_a,
+      "alpha_hat"_a,
+      "gamma_bar"_a,
+      "over_integrate"_a = 3,
+      "parallel"_a = true);
+  m.def(
+      "compute_estimate",
+      [](GP& grid,
+         ScalarDF& pressure,
+         VectorDF& flux,
+         XT::Functions::GridFunctionInterface<E>& rhs,
+         XT::Functions::GridFunctionInterface<E>& diffusion_factor,
+         XT::Functions::GridFunctionInterface<E>& diffusion_factor_bar,
+         XT::Functions::GridFunctionInterface<E>& diffusion_factor_hat,
+         XT::Functions::GridFunctionInterface<E, d, d>& diffusion_tensor,
+         const double& alpha_bar,
+         const double& alpha_hat,
+         const double& gamma_bar,
+         const int over_integrate,
+         const bool& parallel) {
+        return compute_estimate(grid,
+                                pressure,
+                                flux,
+                                rhs,
+                                diffusion_factor,
+                                diffusion_factor_bar,
+                                diffusion_factor_hat,
+                                diffusion_tensor,
+                                alpha_bar,
+                                alpha_hat,
+                                gamma_bar,
+                                over_integrate,
+                                parallel);
+      },
+      py::call_guard<py::gil_scoped_release>(),
+      "grid"_a,
+      "pressure"_a,
+      "flux"_a,
+      "rhs"_a,
+      "diffusion_factor"_a,
+      "diffusion_factor_bar"_a,
+      "diffusion_factor_hat"_a,
+      "diffusion_tensor"_a,
+      "alpha_bar"_a,
+      "alpha_hat"_a,
+      "gamma_bar"_a,
+      "over_integrate"_a = 3,
+      "parallel"_a = true);
 } // PYBIND11_MODULE(...)
