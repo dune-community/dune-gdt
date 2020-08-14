@@ -80,17 +80,22 @@ public:
       class_name += "_" + XT::Common::Typename<F>::value(/*fail_wo_typeid=*/true);
     const auto ClassName = XT::Common::to_camel_case(class_name);
     bound_type c(m, ClassName.c_str(), class_id.c_str());
-    c.def(py::init<const typename type::IntegrandType&, const int>(),
+    c.def(py::init<const typename type::IntegrandType&, const int, const std::string&>(),
           "binary_element_integrand"_a,
-          "over_integrate"_a = 0);
+          "over_integrate"_a = 0,
+          "logging_prefix"_a = "");
 
     // factory
-    m.def(XT::Common::to_camel_case(class_id).c_str(),
-          [](const typename type::IntegrandType& binary_element_integrand, const int over_integrate) {
-            return new type(binary_element_integrand, over_integrate);
-          },
-          "binary_element_integrand"_a,
-          "over_integrate"_a = 0);
+    m.def(
+        XT::Common::to_camel_case(class_id).c_str(),
+        [](const typename type::IntegrandType& binary_element_integrand,
+           const int over_integrate,
+           const std::string& logging_prefix) {
+          return new type(binary_element_integrand, over_integrate, logging_prefix);
+        },
+        "binary_element_integrand"_a,
+        "over_integrate"_a = 0,
+        "logging_prefix"_a = "");
 
     return c;
   } // ... bind(...)
@@ -151,6 +156,7 @@ PYBIND11_MODULE(_local_bilinear_forms_element_integrals, m)
   py::module::import("dune.xt.grid");
   py::module::import("dune.xt.functions");
   py::module::import("dune.gdt._local_bilinear_forms_element_interface");
+  py::module::import("dune.gdt._local_integrands_binary_element_interface");
 
   LocalElementIntegralBilinearForm_for_all_grids<XT::Grid::AvailableGridTypes>::bind(m);
 }

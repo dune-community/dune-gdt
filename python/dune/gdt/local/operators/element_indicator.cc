@@ -54,6 +54,7 @@ public:
     class_name += "_" + XT::Common::to_string(s_r) + "d_source";
     const auto ClassName = XT::Common::to_camel_case(class_name);
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
+    c.def(py::init<const typename type::LocalBilinearFormType&>(), "local_element_bilinear_form"_a);
     c.def(py::init<const typename type::LocalBilinearFormType&, const typename type::SourceType&>(),
           "local_element_bilinear_form"_a,
           "source"_a);
@@ -64,6 +65,12 @@ public:
            const typename type::SourceType& source) { return new type(local_element_bilinear_form, source); },
         "local_element_bilinear_form"_a,
         "source"_a);
+    m.def(
+        XT::Common::to_camel_case(class_id).c_str(),
+        [](const typename type::LocalBilinearFormType& local_element_bilinear_form) {
+          return new type(local_element_bilinear_form);
+        },
+        "local_element_bilinear_form"_a);
 
     return c;
   } // ... bind(...)
