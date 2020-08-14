@@ -53,14 +53,13 @@ public:
                                    const int over_integrate = 0,
                                    const std::string& logging_prefix = "")
     : BaseType(integrand.parameter_type(),
-               logging_prefix.empty() ? "gdt" : "gdt.localelementintegralbilinearform",
                logging_prefix.empty() ? "LocalElementIntegralBilinearForm" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
     , integrand_(integrand.copy_as_binary_element_integrand())
     , over_integrate_(over_integrate)
   {
-    LOG_(info) << this->logging_id << "(integrand=" << &integrand << ", over_integrate=" << over_integrate << ")"
-               << std::endl;
+    LOG_(info) << "LocalElementIntegralBilinearForm(this=" << this << ", integrand=" << &integrand
+               << ", over_integrate=" << over_integrate << ")" << std::endl;
   }
 
   LocalElementIntegralBilinearForm(typename GenericIntegrand::GenericOrderFunctionType order_function,
@@ -69,13 +68,12 @@ public:
                                    const int over_integrate = 0,
                                    const std::string& logging_prefix = "")
     : BaseType(param_type,
-               logging_prefix.empty() ? "gdt" : "gdt.localelementintegralbilinearform",
                logging_prefix.empty() ? "LocalElementIntegralBilinearForm" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
     , integrand_(GenericIntegrand(order_function, evaluate_function).copy_as_binary_element_integrand())
     , over_integrate_(over_integrate)
   {
-    LOG_(info) << this->logging_id << "(order_function=" << &order_function
+    LOG_(info) << "LocalElementIntegralBilinearForm(this=" << this << ", order_function=" << &order_function
                << ", evaluate_function=" << evaluate_function << ", param_type=" << param_type
                << ", over_integrate=" << over_integrate << ")" << std::endl;
   }
@@ -90,6 +88,7 @@ public:
 
   std::unique_ptr<BaseType> copy() const override final
   {
+    LOG_(debug) << "copy()" << std::endl;
     return std::make_unique<ThisType>(*this);
   }
 
@@ -100,7 +99,7 @@ public:
               DynamicMatrix<F>& result,
               const XT::Common::Parameter& param = {}) const override final
   {
-    LOG_(debug) << this->logging_id << ".apply2(test_basis.size()=" << test_basis.size(param)
+    LOG_(debug) << "apply2(test_basis.size()=" << test_basis.size(param)
                 << ", ansatz_basis.size()=" << ansatz_basis.size(param) << ", param=" << param << ")" << std::endl;
     // prepare integand
     const auto& element = ansatz_basis.element();
