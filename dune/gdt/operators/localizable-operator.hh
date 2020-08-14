@@ -261,6 +261,7 @@ public:
 
   using typename BaseType::MatrixOperatorType;
   using typename BaseType::RangeSpaceType;
+  using typename BaseType::RangeFunctionType;
   using typename BaseType::SourceFunctionInterfaceType;
   using typename BaseType::SourceSpaceType;
   using typename BaseType::VectorType;
@@ -368,12 +369,31 @@ public:
     DEBUG_THROW_IF(!range.valid(), Exceptions::operator_error, "range contains inf or nan!");
   } // ... apply(...)
 
-  void apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& param = {}) const override
+  // The respective Base::apply would not ent up in the correct apply above!
+  void apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& param = {}) const override final
   {
     DUNE_THROW_IF(!source.valid(), Exceptions::operator_error, "source contains inf or nan!");
     const auto source_function = make_discrete_function(this->source_space_, source);
     apply(source_function, range, param);
   } // ... apply(...)
+
+  // additional convenience apply methods to mathc the correct one above
+  void apply(const SourceFunctionInterfaceType& source,
+             RangeFunctionType& range,
+             const XT::Common::Parameter& param = {}) const
+  {
+    DUNE_THROW_IF(!this->range_space().contains(range),
+                  Exceptions::operator_error,
+                  "this->range_space() = " << this->range_space() << "\n   range.space() = " << range.space());
+    this->apply(source, range.dofs().vector(), param);
+  }
+
+  RangeFunctionType apply(const SourceFunctionInterfaceType& source, const XT::Common::Parameter& param = {}) const
+  {
+    RangeFunctionType ret(this->range_space());
+    this->apply(source, ret.dofs().vector(), param);
+    return ret;
+  }
 
   std::vector<std::string> jacobian_options() const override final
   {
