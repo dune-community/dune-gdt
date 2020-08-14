@@ -15,6 +15,7 @@
 
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/la/container/eye-matrix.hh>
+#include <dune/xt/grid/print.hh>
 #include <dune/xt/functions/constant.hh>
 #include <dune/xt/functions/base/combined-functions.hh>
 #include <dune/xt/functions/base/combined-grid-functions.hh>
@@ -55,13 +56,12 @@ public:
   LocalElementProductIntegrand(XT::Functions::GridFunction<E, r, r, F> weight = {1.},
                                const std::string& logging_prefix = "")
     : BaseType({},
-               logging_prefix.empty() ? "gdt" : "gdt.elementproductintegrand",
                logging_prefix.empty() ? "ElementProductIntegrand" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
     , weight_(weight)
     , local_weight_(weight_.local_function())
   {
-    LOG_(info) << this->logging_id << "(weight=" << &weight << ")" << std::endl;
+    LOG_(info) << "LocalElementProductIntegrand(this=" << this << ", weight=" << &weight << ")" << std::endl;
   }
 
   LocalElementProductIntegrand(const ThisType& other)
@@ -74,12 +74,14 @@ public:
 
   std::unique_ptr<BaseType> copy_as_binary_element_integrand() const override final
   {
+    LOG_(debug) << "copy_as_binary_element_integrand()" << std::endl;
     return std::make_unique<ThisType>(*this);
   }
 
 protected:
   void post_bind(const ElementType& ele) override final
   {
+    LOG_(debug) << "post_bind(element=" << XT::Grid::print(ele) << ")" << std::endl;
     local_weight_->bind(ele);
   }
 
@@ -88,6 +90,12 @@ public:
             const LocalAnsatzBasisType& ansatz_basis,
             const XT::Common::Parameter& param = {}) const override final
   {
+    LOG_(debug) << "order(element=" << XT::Grid::print(this->element()) << ", {test|ansatz}_basis.size()={"
+                << test_basis.size(param) << "|" << ansatz_basis.size(param) << "}, param=" << param
+                << ")\n     local_weight.order() = " << local_weight_->order(param)
+                << "\n     test_basis.order() = " << test_basis.order(param)
+                << "\n     ansatz_basis.order() = " << ansatz_basis.order(param) << "\n     returning "
+                << local_weight_->order(param) + test_basis.order(param) + ansatz_basis.order(param) << std::endl;
     return local_weight_->order(param) + test_basis.order(param) + ansatz_basis.order(param);
   }
 
@@ -99,9 +107,8 @@ public:
                 DynamicMatrix<F>& result,
                 const XT::Common::Parameter& param = {}) const override final
   {
-    LOG_(debug) << this->logging_id << ".evaluate(test_basis.size()=" << test_basis.size(param)
-                << ", ansatz_basis.size()=" << ansatz_basis.size(param)
-                << ", point_in_{reference_element | physical_space} = {" << print(point_in_reference_element) << "|"
+    LOG_(debug) << "evaluate({test|ansatz}_basis.size()={" << test_basis.size(param) << "|" << ansatz_basis.size(param)
+                << "}, point_in_{reference_element|physical_space} = {" << print(point_in_reference_element) << "|"
                 << print(this->element().geometry().global(point_in_reference_element)) << "}, param=" << param << ")"
                 << std::endl;
     // prepare storage

@@ -42,13 +42,12 @@ public:
   explicit LocalLinearAdvectionIntegrand(XT::Functions::GridFunction<E, d, 1, F> direction,
                                          const std::string& logging_prefix = "")
     : BaseType(direction.parameter_type(),
-               logging_prefix.empty() ? "gdt" : "gdt.locallinearadvectionintegrand",
                logging_prefix.empty() ? "LocalLinearAdvectionIntegrand" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
     , direction_(direction)
     , local_direction_(direction_.local_function())
   {
-    LOG_(info) << this->logging_id << "(direction=" << &direction << ")" << std::endl;
+    LOG_(info) << "LocalLinearAdvectionIntegrand(this=" << this << ", direction=" << &direction << ")" << std::endl;
   }
 
   LocalLinearAdvectionIntegrand(const ThisType& other)

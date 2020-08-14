@@ -208,14 +208,14 @@ public:
 
   LocalBinaryElementIntegrandInterface(const XT::Common::ParameterType& param_type = {},
                                        const std::string& logging_prefix = "",
-                                       const std::string& logging_id_ = "",
                                        const bool logging_disabled = true)
     : XT::Common::ParametricInterface(param_type)
     , XT::Grid::ElementBoundObject<Element>()
-    , Logger(logging_prefix.empty() ? "gdt" : logging_prefix,
-             logging_id_.empty() ? "LocalBinaryElementIntegrand" : logging_id_,
-             logging_disabled)
-  {}
+    , Logger(logging_prefix.empty() ? "LocalBinaryElementIntegrand" : logging_prefix, logging_disabled)
+  {
+    LOG_(debug) << "LocalBinaryElementIntegrandInterface(this=" << this << ", param_type=" << param_type << ")"
+                << std::endl;
+  }
 
   virtual ~LocalBinaryElementIntegrandInterface() = default;
 
