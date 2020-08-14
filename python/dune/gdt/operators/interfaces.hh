@@ -40,7 +40,9 @@ class OperatorInterface
   using type = GDT::OperatorInterface<M, GV, s_r, 1, r_r, 1>;
   using V = typename type::VectorType;
   using SS = typename type::SourceSpaceType;
+  using SF = typename type::SourceFunctionType;
   using RS = typename type::RangeSpaceType;
+  using RF = typename type::RangeFunctionType;
   using F = typename type::FieldType;
   using Mop = typename type::MatrixOperatorType;
   using CLop = typename type::ConstLincombOperatorType;
@@ -49,17 +51,16 @@ class OperatorInterface
 public:
   using bound_type = pybind11::class_<type>;
 
-  template <class T, typename... options>
-  static void addbind_methods(pybind11::class_<T, options...>& c)
+private:
+  template <class Source, class Range, class T, typename... options>
+  static void addbind_vector_or_function_methods(pybind11::class_<T, options...>& c)
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
 
     c.def(
-        "assemble", [](T& self, const bool parallel) { self.assemble(parallel); }, "parallel"_a = false);
-    c.def(
         "apply",
-        [](T& self, const V& source, V& range, const XT::Common::Parameter& param) {
+        [](T& self, const Source& source, Range& range, const XT::Common::Parameter& param) {
           self.apply(source, range, param);
         },
         "source"_a,
@@ -68,27 +69,24 @@ public:
         py::call_guard<py::gil_scoped_release>());
     c.def(
         "apply",
-        [](T& self, const V& source, const XT::Common::Parameter& param) { return self.apply(source, param); },
+        [](T& self, const Source& source, const XT::Common::Parameter& param) { return self.apply(source, param); },
         "source"_a,
         "param"_a = XT::Common::Parameter(),
         py::call_guard<py::gil_scoped_release>());
     c.def(
         "apply2",
-        [](T& self, const V& range, const V& source, const XT::Common::Parameter& param) {
+        [](T& self, const Range& range, const Source& source, const XT::Common::Parameter& param) {
           self.apply2(range, source, param);
         },
         "range"_a,
         "source"_a,
         "param"_a = XT::Common::Parameter(),
         py::call_guard<py::gil_scoped_release>());
-    c.def("invert_options", [](T& self) { return self.invert_options(); });
-    c.def(
-        "invert_options", [](T& self, const std::string& tpe) { return self.invert_options(tpe); }, "type"_a);
     c.def(
         "apply_inverse",
         [](T& self,
-           const V& range,
-           V& source,
+           const Range& range,
+           Source& source,
            const XT::Common::Configuration& opts,
            const XT::Common::Parameter& param) { self.apply_inverse(range, source, opts, param); },
         "range"_a,
@@ -98,7 +96,7 @@ public:
         py::call_guard<py::gil_scoped_release>());
     c.def(
         "apply_inverse",
-        [](T& self, const V& range, V& source, const std::string& tpe, const XT::Common::Parameter& param) {
+        [](T& self, const Range& range, Source& source, const std::string& tpe, const XT::Common::Parameter& param) {
           self.apply_inverse(range, source, tpe, param);
         },
         "range"_a,
@@ -108,7 +106,7 @@ public:
         py::call_guard<py::gil_scoped_release>());
     c.def(
         "apply_inverse",
-        [](T& self, const V& range, V& source, const XT::Common::Parameter& param) {
+        [](T& self, const Range& range, Source& source, const XT::Common::Parameter& param) {
           self.apply_inverse(range, source, param);
         },
         "range"_a,
@@ -117,7 +115,7 @@ public:
         py::call_guard<py::gil_scoped_release>());
     c.def(
         "apply_inverse",
-        [](T& self, const V& range, const XT::Common::Configuration& opts, const XT::Common::Parameter& param) {
+        [](T& self, const Range& range, const XT::Common::Configuration& opts, const XT::Common::Parameter& param) {
           return self.apply_inverse(range, opts, param);
         },
         "range"_a,
@@ -126,7 +124,7 @@ public:
         py::call_guard<py::gil_scoped_release>());
     c.def(
         "apply_inverse",
-        [](T& self, const V& range, const std::string& tpe, const XT::Common::Parameter& param) {
+        [](T& self, const Range& range, const std::string& tpe, const XT::Common::Parameter& param) {
           return self.apply_inverse(range, tpe, param);
         },
         "range"_a,
@@ -135,17 +133,16 @@ public:
         py::call_guard<py::gil_scoped_release>());
     c.def(
         "apply_inverse",
-        [](T& self, const V& range, const XT::Common::Parameter& param) { return self.apply_inverse(range, param); },
+        [](T& self, const Range& range, const XT::Common::Parameter& param) {
+          return self.apply_inverse(range, param);
+        },
         "range"_a,
         "param"_a = XT::Common::Parameter(),
         py::call_guard<py::gil_scoped_release>());
-    c.def("jacobian_options", [](T& self) { return self.jacobian_options(); });
-    c.def(
-        "jacobian_options", [](T& self, const std::string& tpe) { return self.jacobian_options(tpe); }, "type"_a);
     c.def(
         "jacobian",
         [](T& self,
-           const V& source,
+           const Source& source,
            Mop& jacobian_op,
            const XT::Common::Configuration& opts,
            const XT::Common::Parameter& param) { self.jacobian(source, jacobian_op, opts, param); },
@@ -156,9 +153,11 @@ public:
         py::call_guard<py::gil_scoped_release>());
     c.def(
         "jacobian",
-        [](T& self, const V& source, Mop& jacobian_op, const std::string& tpe, const XT::Common::Parameter& param) {
-          self.jacobian(source, jacobian_op, tpe, param);
-        },
+        [](T& self,
+           const Source& source,
+           Mop& jacobian_op,
+           const std::string& tpe,
+           const XT::Common::Parameter& param) { self.jacobian(source, jacobian_op, tpe, param); },
         "source"_a,
         "jacobian_op"_a,
         "type"_a,
@@ -166,7 +165,7 @@ public:
         py::call_guard<py::gil_scoped_release>());
     c.def(
         "jacobian",
-        [](T& self, const V& source, Mop& jacobian_op, const XT::Common::Parameter& param) {
+        [](T& self, const Source& source, Mop& jacobian_op, const XT::Common::Parameter& param) {
           self.jacobian(source, jacobian_op, param);
         },
         "source"_a,
@@ -175,7 +174,7 @@ public:
         py::call_guard<py::gil_scoped_release>());
     c.def(
         "jacobian",
-        [](T& self, const V& source, const XT::Common::Configuration& opts, const XT::Common::Parameter& param) {
+        [](T& self, const Source& source, const XT::Common::Configuration& opts, const XT::Common::Parameter& param) {
           return self.jacobian(source, opts, param);
         },
         "source"_a,
@@ -184,7 +183,7 @@ public:
         py::call_guard<py::gil_scoped_release>());
     c.def(
         "jacobian",
-        [](T& self, const V& source, const std::string& tpe, const XT::Common::Parameter& param) {
+        [](T& self, const Source& source, const std::string& tpe, const XT::Common::Parameter& param) {
           return self.jacobian(source, tpe, param);
         },
         "source"_a,
@@ -193,11 +192,35 @@ public:
         py::call_guard<py::gil_scoped_release>());
     c.def(
         "jacobian",
-        [](T& self, const V& source, const XT::Common::Parameter& param) { return self.jacobian(source, param); },
+        [](T& self, const Source& source, const XT::Common::Parameter& param) { return self.jacobian(source, param); },
         "source"_a,
         "param"_a = XT::Common::Parameter(),
         py::call_guard<py::gil_scoped_release>());
     // ... induced norm?
+  } // ... addbind_vector_or_function_methods(...)
+
+public:
+  template <class T, typename... options>
+  static void addbind_methods(pybind11::class_<T, options...>& c)
+  {
+    namespace py = pybind11;
+    using namespace pybind11::literals;
+
+    // most methods are available for vectors ...
+    addbind_vector_or_function_methods<V, V>(c);
+    // ... and discrete fucntions
+    addbind_vector_or_function_methods<SF, RF>(c);
+
+    c.def(
+        "assemble", [](T& self, const bool parallel) { self.assemble(parallel); }, "parallel"_a = false);
+
+    c.def("invert_options", [](T& self) { return self.invert_options(); });
+    c.def(
+        "invert_options", [](T& self, const std::string& tpe) { return self.invert_options(tpe); }, "type"_a);
+
+    c.def("jacobian_options", [](T& self) { return self.jacobian_options(); });
+    c.def(
+        "jacobian_options", [](T& self, const std::string& tpe) { return self.jacobian_options(tpe); }, "type"_a);
 
     // operators. These are delicate: we need to mimic the C++ situation, e.g. som operators here, others in
     // ConstLinccomb and Lincomb...
