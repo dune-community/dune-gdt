@@ -214,7 +214,7 @@ public:
                   "local_source_->size() = " << local_source_->size());
     DUNE_THROW_IF(
         local_range_->size() != 1, Exceptions::bilinear_form_error, "local_range_->size() = " << local_range_->size());
-    for (auto& element_data : element_data) {
+    for (auto& element_data : element_data_) {
       const auto& local_bilinear_form = *std::get<0>(element_data);
       auto& param = std::get<1>(element_data);
       const auto& filter = *std::get<2>(element_data);
