@@ -75,8 +75,27 @@ public:
           py::keep_alive<1, 3>(),
           py::keep_alive<1, 4>());
 
-
-    // methods
+    // methods from base, to allow for overrides
+    bindings::OperatorInterface<M, GV, s_r, r_r>::addbind_methods(c);
+    // our methods overriding/extending the ones from above
+    using SF = typename type::SourceFunctionInterfaceType;
+    using RF = typename type::RangeFunctionType;
+    c.def(
+        "apply",
+        [](type& self, const SF& source, RF& range, const XT::Common::Parameter& param) {
+          self.apply(source, range, param);
+        },
+        "source"_a,
+        "range"_a,
+        "param"_a = XT::Common::Parameter(),
+        py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "apply",
+        [](type& self, const SF& source, const XT::Common::Parameter& param) { return self.apply(source, param); },
+        "source"_a,
+        "param"_a = XT::Common::Parameter(),
+        py::call_guard<py::gil_scoped_release>());
+    // our additional methods
     c.def(
         "append",
         [](type& self, const Eop& local_op, const XT::Grid::ElementFilter<GV>& filter) {
