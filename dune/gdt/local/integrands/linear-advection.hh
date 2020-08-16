@@ -44,16 +44,16 @@ public:
     : BaseType(direction.parameter_type(),
                logging_prefix.empty() ? "LocalLinearAdvectionIntegrand" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
-    , direction_(direction)
-    , local_direction_(direction_.local_function())
+    , direction_(direction.copy_as_grid_function())
+    , local_direction_(direction_->local_function())
   {
     LOG_(info) << "LocalLinearAdvectionIntegrand(this=" << this << ", direction=" << &direction << ")" << std::endl;
   }
 
   LocalLinearAdvectionIntegrand(const ThisType& other)
     : BaseType(other)
-    , direction_(other.direction_)
-    , local_direction_(direction_.local_function())
+    , direction_(other.direction_->copy_as_grid_function())
+    , local_direction_(direction_->local_function())
   {}
 
   LocalLinearAdvectionIntegrand(ThisType&& source) = default;
@@ -109,8 +109,8 @@ public:
   } // ... evaluate(...)
 
 private:
-  XT::Functions::GridFunction<E, d, 1, F> direction_;
-  std::unique_ptr<typename XT::Functions::GridFunction<E, d, 1, F>::LocalFunctionType> local_direction_;
+  const std::unique_ptr<XT::Functions::GridFunctionInterface<E, d, 1, F>> direction_;
+  std::unique_ptr<typename XT::Functions::GridFunctionInterface<E, d, 1, F>::LocalFunctionType> local_direction_;
   mutable std::vector<typename LocalTestBasisType::DerivativeRangeType> test_basis_grads_;
   mutable std::vector<typename LocalAnsatzBasisType::RangeType> ansatz_basis_values_;
 }; // class LocalLinearAdvectionIntegrand

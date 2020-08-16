@@ -87,9 +87,7 @@ public:
                    const std::string&>(),
           "local_binary_integrand"_a,
           "inducing_function_as_ansatz_basis"_a,
-          "logging_prefix"_a = "",
-          py::keep_alive<1, 2>(),
-          py::keep_alive<1, 3>());
+          "logging_prefix"_a = "");
 
     m.def(
         XT::Common::to_camel_case(class_id).c_str(),
@@ -100,9 +98,7 @@ public:
         },
         "local_binary_integrand"_a,
         "inducing_function_as_ansatz_basis"_a,
-        "logging_prefix"_a = "",
-        py::keep_alive<0, 1>(),
-        py::keep_alive<0, 2>());
+        "logging_prefix"_a = "");
 
     return c;
   } // ... bind(...)
@@ -167,9 +163,7 @@ public:
     c.def(py::init<const typename type::LocalBinaryIntersectionIntegrandType&,
                    const XT::Functions::GridFunctionInterface<E, a_r, a_rC, AF>&>(),
           "local_binary_integrand"_a,
-          "inducing_function_as_ansatz_basis"_a,
-          py::keep_alive<1, 2>(),
-          py::keep_alive<1, 3>());
+          "inducing_function_as_ansatz_basis"_a);
 
     m.def(
         XT::Common::to_camel_case(class_id).c_str(),
@@ -178,9 +172,7 @@ public:
           return new type(local_binary_integrand, inducing_function_as_ansatz_basis);
         },
         "local_binary_integrand"_a,
-        "inducing_function_as_ansatz_basis"_a,
-        py::keep_alive<0, 1>(),
-        py::keep_alive<0, 2>());
+        "inducing_function_as_ansatz_basis"_a);
 
     return c;
   } // ... bind(...)

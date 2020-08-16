@@ -43,14 +43,14 @@ public:
     : BaseType(diffusion.parameter_type(),
                logging_prefix.empty() ? "LocalLaplaceIntegrand" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
-    , weight_(diffusion)
-    , local_weight_(weight_.local_function())
+    , weight_(diffusion.copy_as_grid_function())
+    , local_weight_(weight_->local_function())
   {}
 
   LocalLaplaceIntegrand(const ThisType& other)
     : BaseType(other)
-    , weight_(other.weight_)
-    , local_weight_(weight_.local_function())
+    , weight_(other.weight_->copy_as_grid_function())
+    , local_weight_(weight_->local_function())
   {}
 
   LocalLaplaceIntegrand(ThisType&& source) = default;
@@ -102,8 +102,8 @@ public:
   } // ... evaluate(...)
 
 private:
-  XT::Functions::GridFunction<E, d, d, F> weight_;
-  std::unique_ptr<typename XT::Functions::GridFunction<E, d, d, F>::LocalFunctionType> local_weight_;
+  const std::unique_ptr<XT::Functions::GridFunctionInterface<E, d, d, F>> weight_;
+  std::unique_ptr<typename XT::Functions::GridFunctionInterface<E, d, d, F>::LocalFunctionType> local_weight_;
   mutable std::vector<typename LocalTestBasisType::DerivativeRangeType> test_basis_grads_;
   mutable std::vector<typename LocalAnsatzBasisType::DerivativeRangeType> ansatz_basis_grads_;
 }; // class LocalLaplaceIntegrand

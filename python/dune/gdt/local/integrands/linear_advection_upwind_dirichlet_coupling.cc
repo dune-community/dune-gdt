@@ -60,39 +60,36 @@ public:
       class_name += "_" + XT::Common::Typename<F>::value(/*fail_wo_typeid=*/true);
     const auto ClassName = XT::Common::to_camel_case(class_name);
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
-    c.def(py::init([](XT::Functions::GridFunction<E, d> direction, const std::string& logging_prefix) {
+    c.def(py::init([](const XT::Functions::GridFunctionInterface<E, d>& direction, const std::string& logging_prefix) {
             return new type(direction, /*dirichlet_data=*/0., logging_prefix);
           }),
           "direction"_a,
-          "logging_prefix"_a = "",
-          py::keep_alive<1, 2>());
-    c.def(py::init<XT::Functions::GridFunction<E, d>, XT::Functions::GridFunction<E>, const std::string&>(),
-          "direction"_a,
-          "dirichlet_data"_a,
-          "logging_prefix"_a = "",
-          py::keep_alive<1, 2>(),
-          py::keep_alive<1, 3>());
+          "logging_prefix"_a = "");
+    c.def(
+        py::init([](const XT::Functions::GridFunctionInterface<E, d>& direction,
+                    const XT::Functions::GridFunctionInterface<E>& dirichlet_data,
+                    const std::string& logging_prefix) { return new type(direction, dirichlet_data, logging_prefix); }),
+        "direction"_a,
+        "dirichlet_data"_a,
+        "logging_prefix"_a = "");
 
     // factories
     const auto FactoryName = XT::Common::to_camel_case(class_id);
     m.def(
         FactoryName.c_str(),
-        [](XT::Functions::GridFunction<E, d> direction, const std::string& logging_prefix) {
+        [](const XT::Functions::GridFunctionInterface<E, d>& direction, const std::string& logging_prefix) {
           return new type(direction, /*dirichlet_data=*/0., logging_prefix);
         },
         "direction"_a,
-        "logging_prefix"_a = "",
-        py::keep_alive<0, 1>());
+        "logging_prefix"_a = "");
     m.def(
         FactoryName.c_str(),
-        [](XT::Functions::GridFunction<E, d> direction,
-           XT::Functions::GridFunction<E> dirichlet_data,
+        [](const XT::Functions::GridFunctionInterface<E, d>& direction,
+           const XT::Functions::GridFunctionInterface<E>& dirichlet_data,
            const std::string& logging_prefix) { return new type(direction, dirichlet_data, logging_prefix); },
         "direction"_a,
         "dirichlet_data"_a,
-        "logging_prefix"_a = "",
-        py::keep_alive<0, 1>(),
-        py::keep_alive<0, 2>());
+        "logging_prefix"_a = "");
 
     return c;
   } // ... bind(...)

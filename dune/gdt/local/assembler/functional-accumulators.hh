@@ -59,21 +59,23 @@ public:
     : BaseType()
     , Propagator(this)
     , local_functional_(local_functional.copy())
-    , source_(source)
+    , source_(source.copy_as_grid_function())
     , result_(0)
     , param_(param)
-    , local_source_(source_.local_function())
+    , local_source_(source_->local_function())
   {}
 
   LocalElementFunctionalAccumulator(const ThisType& other)
     : BaseType(other)
     , Propagator(other)
     , local_functional_(other.local_functional_->copy())
-    , source_(other.source_)
+    , source_(other.source_->copy_as_grid_function())
     , result_(0)
     , param_(other.param_)
-    , local_source_(source_.local_function())
+    , local_source_(source_->local_function())
   {}
+
+  LocalElementFunctionalAccumulator(ThisType&& other) = default;
 
   BaseType* copy() override final
   {
@@ -107,7 +109,7 @@ protected:
 
 private:
   const std::unique_ptr<LocalFunctionalType> local_functional_;
-  const SourceType& source_;
+  const std::unique_ptr<SourceType> source_;
   ResultType result_;
   const XT::Common::Parameter param_;
   std::unique_ptr<typename SourceType::LocalFunctionType> local_source_;

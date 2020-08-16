@@ -58,8 +58,8 @@ public:
                logging_prefix.empty() ? "gdt" : "gdt.localbinarytounaryelementintegrand",
                logging_prefix.empty() ? "LocalBinaryToUnaryElementIntegrand" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
-    , inducing_function_as_ansatz_basis_(inducing_function_as_ansatz_basis)
-    , local_function_(inducing_function_as_ansatz_basis_.local_function())
+    , inducing_function_as_ansatz_basis_(inducing_function_as_ansatz_basis.copy_as_grid_function())
+    , local_function_(inducing_function_as_ansatz_basis_->local_function())
     , local_binary_integrand_(local_binary_integrand.copy_as_binary_element_integrand())
   {
     LOG_(debug) << this->logging_id << "(local_binary_integrand=" << &local_binary_integrand
@@ -68,10 +68,12 @@ public:
 
   LocalBinaryToUnaryElementIntegrand(const ThisType& other)
     : BaseType(other)
-    , inducing_function_as_ansatz_basis_(other.inducing_function_as_ansatz_basis_)
-    , local_function_(inducing_function_as_ansatz_basis_.local_function())
+    , inducing_function_as_ansatz_basis_(other.inducing_function_as_ansatz_basis_->copy_as_grid_function())
+    , local_function_(inducing_function_as_ansatz_basis_->local_function())
     , local_binary_integrand_(other.local_binary_integrand_->copy_as_binary_element_integrand())
   {}
+
+  LocalBinaryToUnaryElementIntegrand(ThisType&&) = default;
 
   std::unique_ptr<BaseType> copy_as_unary_element_integrand() const override final
   {
@@ -117,8 +119,8 @@ public:
   } // ... evaluate(...)
 
 private:
-  const XT::Functions::GridFunction<E, a_r, a_rC, AF> inducing_function_as_ansatz_basis_;
-  std::unique_ptr<typename XT::Functions::GridFunction<E, a_r, a_rC, AF>::LocalFunctionType> local_function_;
+  const std::unique_ptr<XT::Functions::GridFunctionInterface<E, a_r, a_rC, AF>> inducing_function_as_ansatz_basis_;
+  std::unique_ptr<typename XT::Functions::GridFunctionInterface<E, a_r, a_rC, AF>::LocalFunctionType> local_function_;
   std::unique_ptr<LocalBinaryElementIntegrandType> local_binary_integrand_;
   mutable DynamicMatrix<F> local_binary_integrand_result_;
 }; // class LocalBinaryToUnaryElementIntegrand
@@ -155,17 +157,19 @@ public:
   LocalBinaryToUnaryIntersectionIntegrand(
       const LocalBinaryIntersectionIntegrandType& local_binary_integrand,
       XT::Functions::GridFunction<E, a_r, a_rC, AF> inducing_function_as_ansatz_basis)
-    : inducing_function_as_ansatz_basis_(inducing_function_as_ansatz_basis)
-    , local_function_(inducing_function_as_ansatz_basis_.local_function())
+    : inducing_function_as_ansatz_basis_(inducing_function_as_ansatz_basis.copy_as_grid_function())
+    , local_function_(inducing_function_as_ansatz_basis_->local_function())
     , local_binary_integrand_(local_binary_integrand.copy_as_binary_intersection_integrand())
   {}
 
   LocalBinaryToUnaryIntersectionIntegrand(const ThisType& other)
     : BaseType(other)
-    , inducing_function_as_ansatz_basis_(other.inducing_function_as_ansatz_basis_)
-    , local_function_(inducing_function_as_ansatz_basis_.local_function())
+    , inducing_function_as_ansatz_basis_(other.inducing_function_as_ansatz_basis_->copy_as_grid_function())
+    , local_function_(inducing_function_as_ansatz_basis_->local_function())
     , local_binary_integrand_(other.local_binary_integrand_->copy_as_binary_intersection_integrand())
   {}
+
+  LocalBinaryToUnaryIntersectionIntegrand(ThisType&&) = default;
 
   std::unique_ptr<BaseType> copy_as_unary_intersection_integrand() const override final
   {
@@ -212,8 +216,8 @@ public:
   } // ... evaluate(...)
 
 private:
-  const XT::Functions::GridFunction<E, a_r, a_rC, AF> inducing_function_as_ansatz_basis_;
-  std::unique_ptr<typename XT::Functions::GridFunction<E, a_r, a_rC, AF>::LocalFunctionType> local_function_;
+  const std::unique_ptr<XT::Functions::GridFunctionInterface<E, a_r, a_rC, AF>> inducing_function_as_ansatz_basis_;
+  std::unique_ptr<typename XT::Functions::GridFunctionInterface<E, a_r, a_rC, AF>::LocalFunctionType> local_function_;
   std::unique_ptr<LocalBinaryIntersectionIntegrandType> local_binary_integrand_;
   mutable DynamicMatrix<F> local_binary_integrand_result_;
 }; // class LocalBinaryToUnaryIntersectionIntegrand

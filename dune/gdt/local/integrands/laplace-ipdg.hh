@@ -53,23 +53,23 @@ public:
                logging_prefix.empty() ? "LocalLaplaceIPDGIntegrands::InnerCoupling" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
     , symmetry_prefactor_(symmetry_prefactor)
-    , diffusion_(diffusion)
-    , weight_(weight_function)
-    , local_diffusion_in_(diffusion_.local_function())
-    , local_diffusion_out_(diffusion_.local_function())
-    , local_weight_in_(weight_.local_function())
-    , local_weight_out_(weight_.local_function())
+    , diffusion_(diffusion.copy_as_grid_function())
+    , weight_(weight_function.copy_as_grid_function())
+    , local_diffusion_in_(diffusion_->local_function())
+    , local_diffusion_out_(diffusion_->local_function())
+    , local_weight_in_(weight_->local_function())
+    , local_weight_out_(weight_->local_function())
   {}
 
   InnerCoupling(const ThisType& other)
     : BaseType(other)
     , symmetry_prefactor_(other.symmetry_prefactor_)
-    , diffusion_(other.diffusion_)
-    , weight_(other.weight_)
-    , local_diffusion_in_(diffusion_.local_function())
-    , local_diffusion_out_(diffusion_.local_function())
-    , local_weight_in_(weight_.local_function())
-    , local_weight_out_(weight_.local_function())
+    , diffusion_(other.diffusion_->copy_as_grid_function())
+    , weight_(other.weight_->copy_as_grid_function())
+    , local_diffusion_in_(diffusion_->local_function())
+    , local_diffusion_out_(diffusion_->local_function())
+    , local_weight_in_(weight_->local_function())
+    , local_weight_out_(weight_->local_function())
   {}
 
   InnerCoupling(ThisType&& source) = default;
@@ -188,8 +188,8 @@ public:
 
 private:
   const double symmetry_prefactor_;
-  XT::Functions::GridFunction<E, d, d> diffusion_;
-  XT::Functions::GridFunction<E, d, d> weight_;
+  const std::unique_ptr<XT::Functions::GridFunctionInterface<E, d, d>> diffusion_;
+  const std::unique_ptr<XT::Functions::GridFunctionInterface<E, d, d>> weight_;
   std::unique_ptr<typename XT::Functions::GridFunctionInterface<E, d, d>::LocalFunctionType> local_diffusion_in_;
   std::unique_ptr<typename XT::Functions::GridFunctionInterface<E, d, d>::LocalFunctionType> local_diffusion_out_;
   std::unique_ptr<typename XT::Functions::GridFunctionInterface<E, d, d>::LocalFunctionType> local_weight_in_;
@@ -248,20 +248,20 @@ public:
                      logging_prefix.empty() ? "LocalLaplaceIPDGIntegrands::DirichletCoupling" : logging_prefix,
                      /*logging_disabled=*/logging_prefix.empty())
     , symmetry_prefactor_(symmetry_prefactor)
-    , diffusion_(diffusion)
-    , dirichlet_data_(dirichlet_data)
-    , local_diffusion_(diffusion_.local_function())
-    , local_dirichlet_data_(dirichlet_data_.local_function())
+    , diffusion_(diffusion.copy_as_grid_function())
+    , dirichlet_data_(dirichlet_data.copy_as_grid_function())
+    , local_diffusion_(diffusion_->local_function())
+    , local_dirichlet_data_(dirichlet_data_->local_function())
   {}
 
   DirichletCoupling(const ThisType& other)
     : BaseUnaryType(other)
     , BaseBinaryType(other)
     , symmetry_prefactor_(other.symmetry_prefactor_)
-    , diffusion_(other.diffusion_)
-    , dirichlet_data_(other.dirichlet_data_)
-    , local_diffusion_(diffusion_.local_function())
-    , local_dirichlet_data_(dirichlet_data_.local_function())
+    , diffusion_(other.diffusion_->copy_as_grid_function())
+    , dirichlet_data_(other.dirichlet_data_->copy_as_grid_function())
+    , local_diffusion_(diffusion_->local_function())
+    , local_dirichlet_data_(dirichlet_data_->local_function())
   {}
 
   DirichletCoupling(ThisType&& source) = default;
@@ -370,8 +370,8 @@ public:
 
 private:
   const double symmetry_prefactor_;
-  XT::Functions::GridFunction<E, d, d> diffusion_;
-  XT::Functions::GridFunction<E> dirichlet_data_;
+  const std::unique_ptr<XT::Functions::GridFunctionInterface<E, d, d>> diffusion_;
+  const std::unique_ptr<XT::Functions::GridFunctionInterface<E>> dirichlet_data_;
   std::unique_ptr<typename XT::Functions::GridFunctionInterface<E, d, d>::LocalFunctionType> local_diffusion_;
   std::unique_ptr<typename XT::Functions::GridFunctionInterface<E>::LocalFunctionType> local_dirichlet_data_;
   mutable std::vector<typename LocalTestBasisType::RangeType> test_basis_values_;

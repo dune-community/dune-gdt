@@ -68,19 +68,19 @@ public:
                logging_prefix.empty() ? "LocalIPDGIntegrands::InnerPenalty" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
     , penalty_(penalty)
-    , weight_(weight_function)
+    , weight_(weight_function.copy_as_grid_function())
     , intersection_diameter_(intersection_diameter)
-    , local_weight_in_(weight_.local_function())
-    , local_weight_out_(weight_.local_function())
+    , local_weight_in_(weight_->local_function())
+    , local_weight_out_(weight_->local_function())
   {}
 
   InnerPenalty(const ThisType& other)
     : BaseType(other)
     , penalty_(other.penalty_)
-    , weight_(other.weight_)
+    , weight_(other.weight_->copy_as_grid_function())
     , intersection_diameter_(other.intersection_diameter_)
-    , local_weight_in_(weight_.local_function())
-    , local_weight_out_(weight_.local_function())
+    , local_weight_in_(weight_->local_function())
+    , local_weight_out_(weight_->local_function())
   {}
 
   InnerPenalty(ThisType&& source) = default;
@@ -173,10 +173,10 @@ public:
 
 private:
   const double penalty_;
-  XT::Functions::GridFunction<E, d, d> weight_;
+  const std::unique_ptr<XT::Functions::GridFunctionInterface<E, d, d>> weight_;
   const std::function<double(const I&)> intersection_diameter_;
-  std::unique_ptr<typename XT::Functions::GridFunction<E, d, d>::LocalFunctionType> local_weight_in_;
-  std::unique_ptr<typename XT::Functions::GridFunction<E, d, d>::LocalFunctionType> local_weight_out_;
+  std::unique_ptr<typename XT::Functions::GridFunctionInterface<E, d, d>::LocalFunctionType> local_weight_in_;
+  std::unique_ptr<typename XT::Functions::GridFunctionInterface<E, d, d>::LocalFunctionType> local_weight_out_;
   mutable std::vector<typename LocalTestBasisType::RangeType> test_basis_in_values_;
   mutable std::vector<typename LocalTestBasisType::RangeType> test_basis_out_values_;
   mutable std::vector<typename LocalAnsatzBasisType::RangeType> ansatz_basis_in_values_;
@@ -209,17 +209,17 @@ public:
                logging_prefix.empty() ? "LocalIPDGIntegrands::BoundaryPenalty" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
     , penalty_(penalty)
-    , weight_(weight_function)
+    , weight_(weight_function.copy_as_grid_function())
     , intersection_diameter_(intersection_diameter)
-    , local_weight_(weight_.local_function())
+    , local_weight_(weight_->local_function())
   {}
 
   BoundaryPenalty(const ThisType& other)
     : BaseType(other)
     , penalty_(other.penalty_)
-    , weight_(other.weight_)
+    , weight_(other.weight_->copy_as_grid_function())
     , intersection_diameter_(other.intersection_diameter_)
-    , local_weight_(weight_.local_function())
+    , local_weight_(weight_->local_function())
   {}
 
   BoundaryPenalty(ThisType&& source) = default;
@@ -282,9 +282,9 @@ public:
 
 private:
   const double penalty_;
-  XT::Functions::GridFunction<E, d, d> weight_;
+  const std::unique_ptr<XT::Functions::GridFunctionInterface<E, d, d>> weight_;
   const std::function<double(const I&)> intersection_diameter_;
-  std::unique_ptr<typename XT::Functions::GridFunction<E, d, d>::LocalFunctionType> local_weight_;
+  std::unique_ptr<typename XT::Functions::GridFunctionInterface<E, d, d>::LocalFunctionType> local_weight_;
   mutable std::vector<typename LocalTestBasisType::RangeType> test_basis_values_;
   mutable std::vector<typename LocalAnsatzBasisType::RangeType> ansatz_basis_values_;
 }; // BoundaryPenalty

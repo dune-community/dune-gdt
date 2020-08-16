@@ -51,6 +51,7 @@ class ConstDiscreteFunction
         range_dim_cols,
         RangeField>
 {
+public:
   using BaseType = XT::Functions::GridFunctionInterface<
       typename internal::AssertArgumentsOfConstDiscreteFunction<Vector, GridView>::E,
       range_dim,
@@ -58,7 +59,6 @@ class ConstDiscreteFunction
       RangeField>;
   using ThisType = ConstDiscreteFunction;
 
-public:
   using ConstDofVectorType = ConstDofVector<Vector, GridView>;
   using SpaceType = SpaceInterface<GridView, range_dim, range_dim_cols, RangeField>;
   using VectorType = Vector;
@@ -77,10 +77,8 @@ public:
   {}
 
   ConstDiscreteFunction(const ThisType&) = default;
-  ConstDiscreteFunction(ThisType&&) = default;
 
-  ThisType& operator=(const ThisType&) = delete;
-  ThisType& operator=(ThisType&&) = delete;
+  ConstDiscreteFunction(ThisType&&) = default;
 
   const SpaceType& space() const
   {
@@ -104,10 +102,20 @@ public:
     return ldf;
   }
 
+  std::unique_ptr<ThisType> copy_as_discrete_function() const
+  {
+    return std::make_unique<ThisType>(*this);
+  }
+
   /**
    * \name ``These methods are required by XT::Functions::GridFunctionInterface.''
    * \{
    */
+
+  std::unique_ptr<BaseType> copy_as_grid_function() const override
+  {
+    return std::make_unique<ThisType>(*this);
+  }
 
   std::string name() const override final
   {
@@ -156,7 +164,6 @@ public:
     this->visualize_gradient(space_.grid_view(), filename, subsampling, vtk_output_type, param);
   }
 
-
 protected:
   const SpaceType& space_;
 
@@ -194,34 +201,29 @@ public:
   using DofVectorType = DofVector<Vector, GridView>;
   using LocalDiscreteFunctionType = LocalDiscreteFunction<Vector, GridView, range_dim, range_dim_cols, RangeField>;
 
-  DiscreteFunction(const SpaceType& spc, VectorType& vector, const std::string nm = "dune.gdt.discretefunction")
+  DiscreteFunction(const SpaceType& spc, VectorType& vector, const std::string nm = "DiscreteFunction")
     : VectorStorage(vector)
     , BaseType(spc, VectorStorage::access(), nm)
     , dofs_(space_.mapper(), VectorStorage::access())
   {}
 
-  DiscreteFunction(const SpaceType& spc, VectorType&& vector, const std::string nm = "dune.gdt.discretefunction")
+  DiscreteFunction(const SpaceType& spc, VectorType&& vector, const std::string nm = "DiscreteFunction")
     : VectorStorage(new VectorType(std::move(vector)))
     , BaseType(spc, VectorStorage::access(), nm)
     , dofs_(space_.mapper(), VectorStorage::access())
   {}
 
-  DiscreteFunction(const SpaceType& spc, const std::string nm = "dune.gdt.discretefunction")
+  DiscreteFunction(const SpaceType& spc, const std::string nm = "DiscreteFunction")
     : VectorStorage(new VectorType(spc.mapper().size(), 0.))
     , BaseType(spc, VectorStorage::access(), nm)
     , dofs_(space_.mapper(), VectorStorage::access())
   {}
 
-  DiscreteFunction(const ThisType& other)
-    : VectorStorage(new VectorType(other.access()))
-    , BaseType(other.space(), VectorStorage::access(), other.name())
-    , dofs_(other.space().mapper(), VectorStorage::access())
-  {}
+  DiscreteFunction(const ThisType&) = delete;
+
+  DiscreteFunction(ThisType& other) = delete;
 
   DiscreteFunction(ThisType&&) = default;
-
-  ThisType& operator=(const ThisType&) = delete;
-  ThisType& operator=(ThisType&&) = delete;
 
   using BaseType::dofs;
 
@@ -243,6 +245,14 @@ public:
     ldf->bind(grid_element);
     return ldf;
   }
+
+  using BaseType::copy_as_discrete_function;
+
+  std::unique_ptr<ThisType> copy_as_discrete_function()
+  {
+    return std::make_unique<ThisType>(*this);
+  }
+
   /**
    * \}
    */

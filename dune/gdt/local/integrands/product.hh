@@ -58,16 +58,16 @@ public:
     : BaseType({},
                logging_prefix.empty() ? "ElementProductIntegrand" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
-    , weight_(weight)
-    , local_weight_(weight_.local_function())
+    , weight_(weight.copy_as_grid_function())
+    , local_weight_(weight_->local_function())
   {
     LOG_(info) << "LocalElementProductIntegrand(this=" << this << ", weight=" << &weight << ")" << std::endl;
   }
 
   LocalElementProductIntegrand(const ThisType& other)
     : BaseType(other)
-    , weight_(other.weight_)
-    , local_weight_(weight_.local_function())
+    , weight_(other.weight_->copy_as_grid_function())
+    , local_weight_(weight_->local_function())
   {}
 
   LocalElementProductIntegrand(ThisType&& source) = default;
@@ -130,8 +130,8 @@ public:
   } // ... evaluate(...)
 
 private:
-  XT::Functions::GridFunction<E, r, r, F> weight_;
-  std::unique_ptr<typename XT::Functions::GridFunction<E, r, r, F>::LocalFunctionType> local_weight_;
+  const std::unique_ptr<XT::Functions::GridFunctionInterface<E, r, r, F>> weight_;
+  std::unique_ptr<typename XT::Functions::GridFunctionInterface<E, r, r, F>::LocalFunctionType> local_weight_;
   mutable std::vector<typename LocalTestBasisType::RangeType> test_basis_values_;
   mutable std::vector<typename LocalAnsatzBasisType::RangeType> ansatz_basis_values_;
 }; // class LocalElementProductIntegrand
@@ -166,16 +166,16 @@ public:
                logging_prefix.empty() ? "gdt" : "gdt.localcouplingintersectionproductintegrand",
                logging_prefix.empty() ? "LocalCouplingIntersectionProductIntegrand" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
-    , weight_(weight)
-    , local_weight_in_(weight_.local_function())
-    , local_weight_out_(weight_.local_function())
+    , weight_(weight.copy_as_grid_function())
+    , local_weight_in_(weight_->local_function())
+    , local_weight_out_(weight_->local_function())
   {}
 
   LocalCouplingIntersectionProductIntegrand(const ThisType& other)
     : BaseType(other)
-    , weight_(other.weight_)
-    , local_weight_in_(weight_.local_function())
-    , local_weight_out_(weight_.local_function())
+    , weight_(other.weight_->copy_as_grid_function())
+    , local_weight_in_(weight_->local_function())
+    , local_weight_out_(weight_->local_function())
   {}
 
   LocalCouplingIntersectionProductIntegrand(ThisType&& source) = default;
@@ -262,9 +262,9 @@ public:
   } // ... evaluate(...)
 
 private:
-  XT::Functions::GridFunction<E, r, r, F> weight_;
-  std::unique_ptr<typename XT::Functions::GridFunction<E, r, r, F>::LocalFunctionType> local_weight_in_;
-  std::unique_ptr<typename XT::Functions::GridFunction<E, r, r, F>::LocalFunctionType> local_weight_out_;
+  const std::unique_ptr<XT::Functions::GridFunctionInterface<E, r, r, F>> weight_;
+  std::unique_ptr<typename XT::Functions::GridFunctionInterface<E, r, r, F>::LocalFunctionType> local_weight_in_;
+  std::unique_ptr<typename XT::Functions::GridFunctionInterface<E, r, r, F>::LocalFunctionType> local_weight_out_;
   mutable std::vector<typename LocalTestBasisType::RangeType> test_basis_in_values_;
   mutable std::vector<typename LocalTestBasisType::RangeType> test_basis_out_values_;
   mutable std::vector<typename LocalAnsatzBasisType::RangeType> ansatz_basis_in_values_;
@@ -300,15 +300,15 @@ public:
                logging_prefix.empty() ? "gdt" : "gdt.localintersectionproductintegrand",
                logging_prefix.empty() ? "LocalIntersectionProductIntegrand" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
-    , weight_(weight)
-    , local_weight_(weight_.local_function())
+    , weight_(weight.copy_as_grid_function())
+    , local_weight_(weight_->local_function())
     , inside_(use_inside_bases)
   {}
 
   LocalIntersectionProductIntegrand(const ThisType& other)
     : BaseType(other)
-    , weight_(other.weight_)
-    , local_weight_(weight_.local_function())
+    , weight_(other.weight_->copy_as_grid_function())
+    , local_weight_(weight_->local_function())
     , inside_(other.inside_)
   {}
 
@@ -354,7 +354,7 @@ public:
     // prepare sotrage
     this->ensure_size_and_clear_results(test_basis, ansatz_basis, result, param);
     // evaluate
-    typename XT::Functions::GridFunction<E, r, r, F>::LocalFunctionType::RangeReturnType weight;
+    typename XT::Functions::GridFunctionInterface<E, r, r, F>::LocalFunctionType::RangeReturnType weight;
     if (inside_) {
       const auto point_in_inside_reference_element =
           this->intersection().geometryInInside().global(point_in_reference_intersection);
@@ -377,8 +377,8 @@ public:
   } // ... evaluate(...)
 
 private:
-  XT::Functions::GridFunction<E, r, r, F> weight_;
-  std::unique_ptr<typename XT::Functions::GridFunction<E, r, r, F>::LocalFunctionType> local_weight_;
+  const std::unique_ptr<XT::Functions::GridFunctionInterface<E, r, r, F>> weight_;
+  std::unique_ptr<typename XT::Functions::GridFunctionInterface<E, r, r, F>::LocalFunctionType> local_weight_;
   const bool inside_;
   mutable std::vector<typename LocalTestBasisType::RangeType> test_basis_values_;
   mutable std::vector<typename LocalAnsatzBasisType::RangeType> ansatz_basis_values_;

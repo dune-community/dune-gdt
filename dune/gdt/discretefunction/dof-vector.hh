@@ -44,6 +44,10 @@ public:
                                      << "vector_.size() = " << vector_.size());
   }
 
+  ConstDofVector(const ThisType&) = default;
+
+  ConstDofVector(ThisType&&) = default;
+
   const VectorType& vector() const
   {
     return vector_;
@@ -80,6 +84,10 @@ public:
     : BaseType(mapper, vec)
     , vector_(vec)
   {}
+
+  DofVector(const ThisType&) = default;
+
+  DofVector(ThisType&&) = default;
 
   using BaseType::vector;
 

@@ -93,19 +93,23 @@ public:
 
   LocalizableDiscreteOperatorApplicator(AssemblyGridViewType assembly_grid_view, const SourceType& src, RangeType& rng)
     : BaseType(assembly_grid_view)
-    , source_(src)
+    , source_(src.copy_as_grid_function())
     , range_(rng)
   {}
 
   LocalizableDiscreteOperatorApplicator(const ThisType&) = delete;
 
-  LocalizableDiscreteOperatorApplicator(ThisType&) = default;
+  LocalizableDiscreteOperatorApplicator(ThisType& other)
+    : BaseType(other)
+    , source_(other.source_->copy_as_grid_function())
+    , range_(other.range_)
+  {}
 
   LocalizableDiscreteOperatorApplicator(ThisType&&) = default;
 
   const SourceType& source() const
   {
-    return source_;
+    return *source_;
   }
 
   const RangeType& range() const
@@ -160,7 +164,7 @@ public:
   }
 
 protected:
-  const SourceType& source_;
+  const std::unique_ptr<SourceType> source_;
   RangeType& range_;
 }; // class LocalizableDiscreteOperatorApplicator
 
@@ -377,7 +381,7 @@ public:
     apply(source_function, range, param);
   } // ... apply(...)
 
-  // additional convenience apply methods to mathc the correct one above
+  // additional convenience apply methods to match the correct one above
   void apply(const SourceFunctionInterfaceType& source,
              RangeFunctionType& range,
              const XT::Common::Parameter& param = {}) const

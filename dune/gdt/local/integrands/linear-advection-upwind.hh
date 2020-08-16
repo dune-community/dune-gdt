@@ -45,16 +45,16 @@ public:
                logging_prefix.empty() ? "gdt" : "gdt.AdvectionUpwdInn",
                logging_prefix.empty() ? "LocalLinearAdvectionUpwindIntegrands::InnerCoupling" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
-    , direction_(direction)
-    , local_direction_in_(direction_.local_function())
+    , direction_(direction.copy_as_grid_function())
+    , local_direction_in_(direction_->local_function())
   {
     LOG_(info) << this->logging_id << "(direction=" << &direction << ")" << std::endl;
   }
 
   InnerCoupling(const ThisType& other)
     : BaseType(other)
-    , direction_(other.direction_)
-    , local_direction_in_(direction_.local_function())
+    , direction_(other.direction_->copy_as_grid_function())
+    , local_direction_in_(direction_->local_function())
   {}
 
   InnerCoupling(ThisType&& source) = default;
@@ -145,7 +145,7 @@ public:
   } // ... evaluate(...)
 
 private:
-  XT::Functions::GridFunction<E, d> direction_;
+  const std::unique_ptr<XT::Functions::GridFunctionInterface<E, d>> direction_;
   std::unique_ptr<typename XT::Functions::GridFunctionInterface<E, d>::LocalFunctionType> local_direction_in_;
   mutable std::vector<typename LocalTestBasisType::RangeType> test_basis_in_values_;
   mutable std::vector<typename LocalTestBasisType::RangeType> test_basis_out_values_;
@@ -193,10 +193,10 @@ public:
                      logging_prefix.empty() ? "LocalLinearAdvectionUpwindIntegrands::DirichletCoupling"
                                             : logging_prefix,
                      /*logging_disabled=*/logging_prefix.empty())
-    , direction_(direction)
-    , dirichlet_data_(dirichlet_data)
-    , local_direction_(direction_.local_function())
-    , local_dirichlet_data_(dirichlet_data_.local_function())
+    , direction_(direction.copy_as_grid_function())
+    , dirichlet_data_(dirichlet_data.copy_as_grid_function())
+    , local_direction_(direction_->local_function())
+    , local_dirichlet_data_(dirichlet_data_->local_function())
   {
     LOG_(info) << this->logging_id << "(direction=" << &direction << ", dirichlet_data=" << &dirichlet_data << ")"
                << std::endl;
@@ -205,10 +205,10 @@ public:
   DirichletCoupling(const ThisType& other)
     : BaseUnaryType(other)
     , BaseBinaryType(other)
-    , direction_(other.direction_)
-    , dirichlet_data_(other.dirichlet_data_)
-    , local_direction_(direction_.local_function())
-    , local_dirichlet_data_(dirichlet_data_.local_function())
+    , direction_(other.direction_->copy_as_grid_function())
+    , dirichlet_data_(other.dirichlet_data_->copy_as_grid_function())
+    , local_direction_(direction_->local_function())
+    , local_dirichlet_data_(dirichlet_data_->local_function())
   {}
 
   DirichletCoupling(ThisType&& source) = default;
@@ -327,8 +327,8 @@ public:
   /// \}
 
 private:
-  XT::Functions::GridFunction<E, d> direction_;
-  XT::Functions::GridFunction<E> dirichlet_data_;
+  const std::unique_ptr<XT::Functions::GridFunctionInterface<E, d>> direction_;
+  const std::unique_ptr<XT::Functions::GridFunctionInterface<E>> dirichlet_data_;
   std::unique_ptr<typename XT::Functions::GridFunctionInterface<E, d>::LocalFunctionType> local_direction_;
   std::unique_ptr<typename XT::Functions::GridFunctionInterface<E>::LocalFunctionType> local_dirichlet_data_;
   mutable std::vector<typename LocalTestBasisType::RangeType> test_basis_values_;

@@ -106,10 +106,10 @@ public:
              logging_prefix.empty() ? "BilinearForm" : logging_prefix,
              /*logging_disabled=*/logging_prefix.empty())
     , grid_view_(grd_vw)
-    , source_(src)
-    , range_(rng)
-    , local_source_(source_.local_function())
-    , local_range_(range_.local_function())
+    , source_(src.copy_as_grid_function())
+    , range_(rng.copy_as_grid_function())
+    , local_source_(source_->local_function())
+    , local_range_(range_->local_function())
     , bilinear_form_value_(1, 1, 0.)
     , result_(0)
   {
@@ -122,10 +122,10 @@ public:
     , Propagator(other)
     , Logger(other)
     , grid_view_(other.grid_view_)
-    , source_(other.source_)
-    , range_(other.range_)
-    , local_source_(source_.local_function())
-    , local_range_(range_.local_function())
+    , source_(other.source_->copy_as_grid_function())
+    , range_(other.range_->copy_as_grid_function())
+    , local_source_(source_->local_function())
+    , local_range_(range_->local_function())
     , bilinear_form_value_(other.bilinear_form_value_)
     , result_(other.result_)
   {
@@ -136,6 +136,8 @@ public:
       this->append(local_bilinear_form, param, filter);
     }
   } // BilinearForm(...)
+
+  BilinearForm(ThisType&&) = default;
 
   BaseType* copy() override final
   {
@@ -149,12 +151,12 @@ public:
 
   const SourceType& source() const
   {
-    return source_;
+    return *source_;
   }
 
   const RangeType& range() const
   {
-    return range_;
+    return *range_;
   }
 
   ThisType&
@@ -262,8 +264,8 @@ protected:
   }
 
   const GridViewType grid_view_;
-  XT::Functions::GridFunction<E, s_r, s_rC, SR> source_;
-  XT::Functions::GridFunction<E, r_r, r_rC, RR> range_;
+  const std::unique_ptr<XT::Functions::GridFunctionInterface<E, s_r, s_rC, SR>> source_;
+  const std::unique_ptr<XT::Functions::GridFunctionInterface<E, r_r, r_rC, RR>> range_;
   std::unique_ptr<typename SourceType::LocalFunctionType> local_source_;
   std::unique_ptr<typename RangeType::LocalFunctionType> local_range_;
   DynamicMatrix<Result> bilinear_form_value_;

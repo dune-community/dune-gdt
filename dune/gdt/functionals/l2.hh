@@ -34,6 +34,8 @@ namespace GDT {
  * See also VectorBasedFunctional for the meaning of the different ctors. Some of these will not compile (if GV and
  * AssemblyGridView do not coincide), which is intended.
  *
+ * \todo Check if we still need this!
+ *
  * \sa VectorBasedFunctional
  * \sa FunctionalInterface
  */

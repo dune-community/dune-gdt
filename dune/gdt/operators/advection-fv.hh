@@ -57,7 +57,6 @@ public:
       LocalAdvectionFvBoundaryTreatmentByCustomNumericalFluxOperator<I, V, SGV, m, F, F, RGV, V>;
   using BoundaryTreatmentByCustomExtrapolationOperatorType =
       LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator<I, V, SGV, m, F, F, RGV, V>;
-  using SourceType = XT::Functions::GridFunctionInterface<E, s_r, s_rC, F>;
 
   using typename BaseType::MatrixOperatorType;
   using typename BaseType::RangeSpaceType;

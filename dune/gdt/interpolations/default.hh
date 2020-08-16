@@ -34,6 +34,7 @@ namespace GDT {
 template <class GV, size_t r, size_t rC, class R, class V, class IGV>
 class DefaultInterpolationElementFunctor : public XT::Grid::ElementFunctor<IGV>
 {
+  using ThisType = DefaultInterpolationElementFunctor;
   using BaseType = typename XT::Grid::ElementFunctor<IGV>;
 
 public:
@@ -45,10 +46,10 @@ public:
   using TargetBasisType = typename TargetType::SpaceType::GlobalBasisType::LocalizedType;
 
   DefaultInterpolationElementFunctor(SourceType source, TargetType& target)
-    : source_(source)
+    : source_(source.copy_as_grid_function())
     , target_(target)
     , local_dof_vector_(target.dofs().localize())
-    , local_source_(source_.local_function())
+    , local_source_(source_->local_function())
     , target_basis_(target.space().basis().localize())
   {
     DUNE_THROW_IF(target_.space().type() == SpaceType::raviart_thomas,
@@ -56,14 +57,16 @@ public:
                   "Use the correct one from interpolations/raviart-thomas.hh instead!");
   }
 
-  DefaultInterpolationElementFunctor(const DefaultInterpolationElementFunctor& other)
+  DefaultInterpolationElementFunctor(const ThisType& other)
     : BaseType(other)
-    , source_(other.source_)
+    , source_(other.source_->copy_as_grid_function())
     , target_(other.target_)
     , local_dof_vector_(target_.dofs().localize())
-    , local_source_(source_.local_function())
+    , local_source_(source_->local_function())
     , target_basis_(target_.space().basis().localize())
   {}
+
+  DefaultInterpolationElementFunctor(ThisType&&) = default;
 
   XT::Grid::ElementFunctor<IGV>* copy() override final
   {
@@ -80,7 +83,7 @@ public:
   }
 
 private:
-  const SourceType source_;
+  const std::unique_ptr<XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, r, rC, R>> source_;
   TargetType& target_;
   LocalDofVectorType local_dof_vector_;
   std::unique_ptr<LocalSourceType> local_source_;

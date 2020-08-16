@@ -78,12 +78,12 @@ public:
              logging_prefix.empty() ? "ElementBilinearFormAccumulator" : logging_prefix,
              /*logging_disabled=*/logging_prefix.empty())
     , local_bilinear_form_(local_bilinear_form.copy())
-    , source_(source)
-    , range_(range)
+    , source_(source.copy_as_grid_function())
+    , range_(range.copy_as_grid_function())
     , result_(0)
     , param_(param)
-    , local_source_(source_.local_function())
-    , local_range_(range_.local_function())
+    , local_source_(source_->local_function())
+    , local_range_(range_->local_function())
   {
     LOG__(Logger, info) << Logger::logging_id << "(local_bilinear_form=" << &local_bilinear_form
                         << ", source=" << &source << ", range=" << &range << ", param=" << param << ")";
@@ -94,13 +94,15 @@ public:
     , Propagator(other)
     , Logger(other)
     , local_bilinear_form_(other.local_bilinear_form_->copy())
-    , source_(other.source_)
-    , range_(other.range_)
+    , source_(other.source_->copy_as_grid_function())
+    , range_(other.range_->copy_as_grid_function())
     , result_(0)
     , param_(other.param_)
-    , local_source_(source_.local_function())
-    , local_range_(range_.local_function())
+    , local_source_(source_->local_function())
+    , local_range_(range_->local_function())
   {}
+
+  LocalElementBilinearFormAccumulator(ThisType&&) = default;
 
   BaseType* copy() override final
   {
@@ -140,8 +142,8 @@ protected:
 
 private:
   const std::unique_ptr<LocalBilinearFormType> local_bilinear_form_;
-  const SourceType& source_;
-  const RangeType& range_;
+  const std::unique_ptr<SourceType> source_;
+  const std::unique_ptr<RangeType> range_;
   ResultType result_;
   const XT::Common::Parameter param_;
   std::unique_ptr<typename SourceType::LocalFunctionType> local_source_;

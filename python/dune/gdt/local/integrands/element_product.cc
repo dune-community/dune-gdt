@@ -58,8 +58,7 @@ public:
     c.def(py::init([](const XT::Functions::GridFunctionInterface<E, r, r, F>& weight,
                       const std::string logging_prefix) { return new type(weight, logging_prefix); }),
           "weight"_a,
-          "logging_prefix"_a = "",
-          py::keep_alive<1, 2>());
+          "logging_prefix"_a = "");
 
     // factory
     const auto FactoryName = XT::Common::to_camel_case(class_id);
@@ -69,8 +68,7 @@ public:
           return new type(weight, logging_prefix);
         },
         "weight"_a,
-        "logging_prefix"_a = "",
-        py::keep_alive<0, 1>());
+        "logging_prefix"_a = "");
 
     return c;
   } // ... bind(...)
