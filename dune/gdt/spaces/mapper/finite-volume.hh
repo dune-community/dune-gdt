@@ -14,7 +14,9 @@
 #include <dune/geometry/type.hh>
 
 #include <dune/grid/common/mcmgmapper.hh>
+#include <dune/grid/common/rangegenerators.hh>
 
+#include <dune/xt/common/numeric_cast.hh>
 #include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/exceptions.hh>
