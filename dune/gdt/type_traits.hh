@@ -27,6 +27,7 @@ enum class SpaceType
   continuous_lagrange,
   discontinuous_lagrange,
   finite_volume,
+  finite_volume_skeleton,
   raviart_thomas
 };
 
@@ -41,6 +42,8 @@ std::ostream& operator<<(std::ostream& out, const SpaceType& space_type)
     out << "discontinuous_lagrange";
   else if (space_type == SpaceType::finite_volume)
     out << "finite_volume";
+  else if (space_type == SpaceType::finite_volume_skeleton)
+    out << "finite_volume_skeleton";
   else if (space_type == SpaceType::raviart_thomas)
     out << "finite_volume";
   else
