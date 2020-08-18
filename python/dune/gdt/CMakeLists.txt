@@ -141,6 +141,10 @@ dune_pybindxi_add_module(_local_integrands_unary_intersection_interface
                          EXCLUDE_FROM_ALL
                          ${header}
                          local/integrands/unary_intersection_interface.cc)
+dune_pybindxi_add_module(_local_operators_coupling_intersection_indicator
+                         EXCLUDE_FROM_ALL
+                         ${header}
+                         local/operators/coupling_intersection_indicator.cc)
 dune_pybindxi_add_module(_local_operators_element_indicator
                          EXCLUDE_FROM_ALL
                          ${header}
@@ -149,6 +153,14 @@ dune_pybindxi_add_module(_local_operators_element_interface
                          EXCLUDE_FROM_ALL
                          ${header}
                          local/operators/element_interface.cc)
+dune_pybindxi_add_module(_local_operators_intersection_indicator
+                         EXCLUDE_FROM_ALL
+                         ${header}
+                         local/operators/intersection_indicator.cc)
+dune_pybindxi_add_module(_local_operators_intersection_interface
+                         EXCLUDE_FROM_ALL
+                         ${header}
+                         local/operators/intersection_interface.cc)
 dune_pybindxi_add_module(_operators_bilinear_form EXCLUDE_FROM_ALL ${header} operators/bilinear-form.cc)
 dune_pybindxi_add_module(_operators_interfaces_common EXCLUDE_FROM_ALL ${header} operators/interfaces_common.cc)
 dune_pybindxi_add_module(_operators_interfaces_eigen EXCLUDE_FROM_ALL ${header} operators/interfaces_eigen.cc)
