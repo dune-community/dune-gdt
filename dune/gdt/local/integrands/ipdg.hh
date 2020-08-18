@@ -12,7 +12,6 @@
 
 #include <functional>
 
-#include <dune/xt/common/memory.hh>
 #include <dune/xt/functions/grid-function.hh>
 #include <dune/xt/grid/entity.hh>
 #include <dune/xt/grid/intersection.hh>
@@ -110,6 +109,8 @@ public:
            + std::max(test_basis_inside.order(param), test_basis_outside.order(param))
            + std::max(ansatz_basis_inside.order(param), ansatz_basis_outside.order(param));
   }
+
+  using BaseType::evaluate;
 
   void evaluate(const LocalTestBasisType& test_basis_inside,
                 const LocalAnsatzBasisType& ansatz_basis_inside,
