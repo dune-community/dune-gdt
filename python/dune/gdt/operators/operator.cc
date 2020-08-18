@@ -50,6 +50,7 @@ private:
   using SS = typename type::SourceSpaceType;
   using RS = typename type::RangeSpaceType;
   using Eop = typename type::LocalElementOperatorType;
+  using Iop = typename type::LocalIntersectionOperatorType;
 
 public:
   static bound_type bind(pybind11::module& m,
@@ -111,7 +112,21 @@ public:
           (type & (type::*)(const std::tuple<const Eop&, const XT::Grid::ElementFilter<GV>&>&)) & type::operator+=,
           "tuple_of_localelementop_elementfilter"_a,
           py::is_operator());
-    /// \todo add intersection op
+    c.def(
+        "append",
+        [](type& self, const Iop& local_op, const XT::Grid::IntersectionFilter<GV>& filter) {
+          self.append(local_op, filter);
+        },
+        "local_intersection_operator"_a,
+        "intersection_filter"_a = XT::Grid::ApplyOn::AllIntersections<GV>());
+    c.def("__iadd__", // function ptr signature required for the right return type
+          (type & (type::*)(const Iop&)) & type::operator+=,
+          "local_intersection_operator"_a,
+          py::is_operator());
+    c.def("__iadd__", // function ptr signature required for the right return type
+          (type & (type::*)(const std::tuple<const Iop&, const XT::Grid::IntersectionFilter<GV>&>&)) & type::operator+=,
+          "tuple_of_localintersectionop_intersectionfilter"_a,
+          py::is_operator());
 
     // factories
     const auto FactoryName = XT::Common::to_camel_case(class_id);
@@ -198,6 +213,7 @@ PYBIND11_MODULE(_operators_operator, m)
   py::module::import("dune.xt.functions");
 
   py::module::import("dune.gdt._local_operators_element_interface");
+  py::module::import("dune.gdt._local_operators_intersection_interface");
   py::module::import("dune.gdt._operators_interfaces_common");
   py::module::import("dune.gdt._operators_interfaces_eigen");
   py::module::import("dune.gdt._operators_interfaces_istl_1d");
