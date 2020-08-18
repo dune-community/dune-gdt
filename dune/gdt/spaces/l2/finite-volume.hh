@@ -27,7 +27,7 @@ namespace Dune {
 namespace GDT {
 
 
-// forward, to allow for specialization
+// forwards, to allow for specialization
 template <class GV, size_t r = 1, size_t rC = 1, class R = double>
 class FiniteVolumeSpace
 {
