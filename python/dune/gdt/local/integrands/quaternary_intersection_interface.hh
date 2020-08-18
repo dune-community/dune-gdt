@@ -94,7 +94,6 @@ public:
     return ret;
   } // ... id(...)
 
-public:
   static bound_type bind(pybind11::module& m,
                          const std::string& layer_id = "",
                          const std::string& grid_id = XT::Grid::bindings::grid_name<G>::value(),

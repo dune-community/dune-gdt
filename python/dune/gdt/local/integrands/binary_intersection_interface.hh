@@ -48,7 +48,6 @@ public:
   using type = GDT::LocalBinaryIntersectionIntegrandInterface<I, t_r, t_rC, TF, F, a_r, a_rC, AF>;
   using bound_type = pybind11::class_<type>;
 
-protected:
   template <class T, typename... options>
   static void bind_methods(pybind11::class_<T, options...>& c)
   {
@@ -107,7 +106,6 @@ protected:
     return ret;
   } // ... id(...)
 
-public:
   static bound_type bind(pybind11::module& m,
                          const std::string& layer_id = "",
                          const std::string& grid_id = XT::Grid::bindings::grid_name<G>::value(),
