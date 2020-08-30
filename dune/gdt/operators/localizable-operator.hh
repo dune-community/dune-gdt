@@ -13,7 +13,6 @@
 
 #include <list>
 
-#include <dune/xt/common/deprecated.hh>
 #include <dune/xt/la/type_traits.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/grid/walker.hh>
@@ -187,7 +186,7 @@ template <class AssemblyGridView,
           class RangeField = SourceField,
           class RangeGridView = SourceGridView,
           class RangeVector = SourceVector>
-using LocalizableOperatorBase DXT_DEPRECATED_MSG("Use LocalizableDiscreteOperatorApplicator instead (12.09.2019)!") =
+using LocalizableOperatorBase [[deprecated("Use LocalizableDiscreteOperatorApplicator instead (12.09.2019)!")]] =
     LocalizableDiscreteOperatorApplicator<AssemblyGridView,
                                           SourceVector,
                                           source_range_dim,
