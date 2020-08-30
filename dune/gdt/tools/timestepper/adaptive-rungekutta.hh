@@ -21,6 +21,9 @@
 
 #include "interface.hh"
 
+#if HAVE_TBB && __has_include(<tbb/tbb_exception.h>)
+#  include <tbb/tbb_exception.h>
+#endif
 
 namespace Dune {
 namespace GDT {
@@ -304,7 +307,7 @@ public:
           skip_error_computation = true;
           time_step_scale_factor = 0.5;
           break;
-#if HAVE_TBB
+#if HAVE_TBB && __has_include(<tbb/tbb_exception.h>)
         } catch (const tbb::captured_exception& e) {
           mixed_error = 1e10;
           skip_error_computation = true;
