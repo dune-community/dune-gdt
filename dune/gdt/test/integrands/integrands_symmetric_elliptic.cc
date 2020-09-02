@@ -107,7 +107,7 @@ struct SymmetrizedLaplaceIntegrandTest : public IntegrandTest<G>
 
 template <class G>
 using SymmetrizedLaplaceIntegrandTest = Dune::GDT::Test::SymmetrizedLaplaceIntegrandTest<G>;
-TYPED_TEST_CASE(SymmetrizedLaplaceIntegrandTest, Grids2D);
+TYPED_TEST_SUITE(SymmetrizedLaplaceIntegrandTest, Grids2D);
 
 TYPED_TEST(SymmetrizedLaplaceIntegrandTest, is_constructable)
 {

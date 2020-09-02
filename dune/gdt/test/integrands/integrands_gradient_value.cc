@@ -183,7 +183,7 @@ struct GradientValueIntegrandTest : public IntegrandTest<G>
 
 template <class G>
 using GradientValueIntegrandTest = Dune::GDT::Test::GradientValueIntegrandTest<G>;
-TYPED_TEST_CASE(GradientValueIntegrandTest, Grids2D);
+TYPED_TEST_SUITE(GradientValueIntegrandTest, Grids2D);
 
 TYPED_TEST(GradientValueIntegrandTest, is_constructable)
 {

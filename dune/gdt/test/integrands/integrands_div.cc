@@ -134,7 +134,7 @@ struct DivIntegrandTest : public IntegrandTest<G>
 
 template <class G>
 using DivIntegrandTest = Dune::GDT::Test::DivIntegrandTest<G>;
-TYPED_TEST_CASE(DivIntegrandTest, Grids2D);
+TYPED_TEST_SUITE(DivIntegrandTest, Grids2D);
 
 TYPED_TEST(DivIntegrandTest, is_constructable)
 {

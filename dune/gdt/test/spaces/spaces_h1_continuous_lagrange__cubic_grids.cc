@@ -19,7 +19,7 @@ using namespace Dune::GDT;
 
 template <class G>
 using Order2CubicContinuousLagrangeSpace = ContinuousLagrangeSpaceOnCubicLeafViewTest<G, 1, double, 2>;
-TYPED_TEST_CASE(Order2CubicContinuousLagrangeSpace, CubicGrids);
+TYPED_TEST_SUITE(Order2CubicContinuousLagrangeSpace, CubicGrids);
 TYPED_TEST(Order2CubicContinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
@@ -64,7 +64,7 @@ TYPED_TEST(Order2CubicContinuousLagrangeSpace, local_interpolation_seems_to_be_c
 
 template <class G>
 using Order3CubicContinuousLagrangeSpace = ContinuousLagrangeSpaceOnCubicLeafViewTest<G, 1, double, 3>;
-TYPED_TEST_CASE(Order3CubicContinuousLagrangeSpace, CubicGrids);
+TYPED_TEST_SUITE(Order3CubicContinuousLagrangeSpace, CubicGrids);
 TYPED_TEST(Order3CubicContinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();

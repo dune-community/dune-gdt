@@ -32,7 +32,7 @@ using YaspGridTestCasesNoBasisChange = testing::Types<
 #endif
     >;
 
-TYPED_TEST_CASE(HyperbolicMnTest, YaspGridTestCasesNoBasisChange);
+TYPED_TEST_SUITE(HyperbolicMnTest, YaspGridTestCasesNoBasisChange);
 TYPED_TEST(HyperbolicMnTest, check)
 {
   this->run();
