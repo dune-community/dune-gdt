@@ -73,6 +73,7 @@ protected:
   using typename BaseType::I;
   using typename BaseType::M;
   using typename BaseType::O;
+  using typename BaseType::R;
   using typename BaseType::S;
   using typename BaseType::V;
 
@@ -214,7 +215,7 @@ protected:
               local_solution->bind(element);
               auto local_reconstruction = flux_reconstruction.local_function();
               local_reconstruction->bind(element);
-              auto result = XT::Grid::element_integral(
+              auto result = XT::Grid::element_integral<R, E>(
                   element,
                   [&](const auto& xx) {
                     const auto diff = local_df->evaluate(xx);
@@ -222,7 +223,9 @@ protected:
                     const auto solution_grad = local_solution->jacobian(xx)[0];
                     const auto flux_rec = local_reconstruction->evaluate(xx);
                     auto difference = diff * solution_grad + flux_rec;
-                    return (diff_inv * difference) * difference;
+                    auto tmp_vec = difference;
+                    diff_inv.mv(difference, tmp_vec);
+                    return tmp_vec * difference;
                   },
                   std::max(local_df->order() + std::max(local_solution->order() - 1, 0), local_reconstruction->order())
                       + /*over_integrate=*/3);

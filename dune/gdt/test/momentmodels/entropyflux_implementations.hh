@@ -31,6 +31,7 @@
 #include <dune/xt/common/math.hh>
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/common/parallel/threadstorage.hh>
+#include <dune/xt/common/unused.hh>
 #include <dune/xt/common/vector_less.hh>
 
 #include <dune/xt/la/algorithms/cholesky.hh>
@@ -4064,7 +4065,7 @@ public:
   DomainType evaluate_kinetic_flux_with_alphas(const VectorType& alpha_i,
                                                const VectorType& alpha_j,
                                                const FluxDomainType& n_ij,
-                                               const size_t dd) const
+                                               const size_t DXTC_DEBUG_ONLY(dd)) const
   {
     assert(dd == 0);
     // calculate < \mu m G_\alpha(u) > * n_ij
@@ -4224,8 +4225,9 @@ public:
     return ret;
   } // DomainType evaluate_kinetic_flux(...)
 
-  DomainType evaluate_kinetic_outflow(const DomainType& alpha_i, const FluxDomainType& n_ij, const size_t dd) const
-
+  DomainType evaluate_kinetic_outflow(const DomainType& alpha_i,
+                                      const FluxDomainType& n_ij,
+                                      const size_t DXTC_DEBUG_ONLY(dd)) const
   {
     assert(dd == 0);
     // calculate < (\mu * n_ij) m G_\alpha(u) >

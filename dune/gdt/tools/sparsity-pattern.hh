@@ -129,7 +129,7 @@ make_element_and_intersection_sparsity_pattern(const SpaceInterface<TGV, t_r, t_
     for (size_t ii = 0; ii < test_space.mapper().local_size(element); ++ii)
       for (size_t jj = 0; jj < ansatz_space.mapper().local_size(element); ++jj)
         pattern.insert(row_indices[ii], column_indices[jj]);
-    for (auto& intersection : intersections(grid_view, element)) {
+    for (auto&& intersection : intersections(grid_view, element)) {
       if (intersection.neighbor()) {
         const auto neighbour = intersection.outside();
         ansatz_space.mapper().global_indices(neighbour, column_indices);
