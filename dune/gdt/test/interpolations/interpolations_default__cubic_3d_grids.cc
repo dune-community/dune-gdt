@@ -28,7 +28,7 @@ using Cubic3dGrids = ::testing::Types<YASP_3D_EQUIDISTANT_OFFSET
 
 template <class G>
 using InterpolationTest = Dune::GDT::Test::DefaultInterpolationOnLeafViewTest<G>;
-TYPED_TEST_CASE(InterpolationTest, Cubic3dGrids);
+TYPED_TEST_SUITE(InterpolationTest, Cubic3dGrids);
 TYPED_TEST(InterpolationTest, interpolates_correctly)
 {
   this->interpolates_correctly(2e-13);

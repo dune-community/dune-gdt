@@ -19,7 +19,7 @@ using Cubic4dGrids = ::testing::Types<YASP_4D_EQUIDISTANT_OFFSET>;
 
 template <class G>
 using InterpolationTest = Dune::GDT::Test::DefaultInterpolationOnLeafViewTest<G>;
-TYPED_TEST_CASE(InterpolationTest, Cubic4dGrids);
+TYPED_TEST_SUITE(InterpolationTest, Cubic4dGrids);
 TYPED_TEST(InterpolationTest, interpolates_correctly)
 {
   this->interpolates_correctly(6e-13);

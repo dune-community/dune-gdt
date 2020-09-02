@@ -24,7 +24,7 @@ using YaspGridTestCasesAll = testing::Types<
         CheckerboardMnTestCase<Yasp3, Dune::GDT::HatFunctionMomentBasis<double, 3, double, 0, 1, 3>, false, true>,
     Dune::GDT::ShadowMnTestCase<Yasp3, Dune::GDT::HatFunctionMomentBasis<double, 3, double, 0, 1, 3>, false, true>>;
 
-TYPED_TEST_CASE(HyperbolicEntropicCoordsMnTest, YaspGridTestCasesAll);
+TYPED_TEST_SUITE(HyperbolicEntropicCoordsMnTest, YaspGridTestCasesAll);
 TYPED_TEST(HyperbolicEntropicCoordsMnTest, check)
 {
   this->run();

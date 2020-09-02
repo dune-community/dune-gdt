@@ -59,7 +59,7 @@ DUNE_XT_COMMON_TYPENAME(ALBERTA_2D)
 
 template <class G>
 using StokesTestSimplex = StokesTestcase1<G>;
-TYPED_TEST_CASE(StokesTestSimplex, SimplexGrids2D);
+TYPED_TEST_SUITE(StokesTestSimplex, SimplexGrids2D);
 
 TYPED_TEST(StokesTestSimplex, order2)
 {
@@ -68,7 +68,7 @@ TYPED_TEST(StokesTestSimplex, order2)
 
 template <class G>
 using StokesTestCube = StokesTestcase1<G>;
-TYPED_TEST_CASE(StokesTestCube, CubeGrids2D);
+TYPED_TEST_SUITE(StokesTestCube, CubeGrids2D);
 
 TYPED_TEST(StokesTestCube, order2)
 {

@@ -28,7 +28,7 @@ using Cubic2dGrids = ::testing::Types<YASP_2D_EQUIDISTANT_OFFSET
 
 template <class G>
 using BoundaryInterpolation = Dune::GDT::Test::BoundaryInterpolationOnLeafViewTest<G>;
-TYPED_TEST_CASE(BoundaryInterpolation, Cubic2dGrids);
+TYPED_TEST_SUITE(BoundaryInterpolation, Cubic2dGrids);
 TYPED_TEST(BoundaryInterpolation, interpolates_correctly)
 {
   this->interpolates_correctly();

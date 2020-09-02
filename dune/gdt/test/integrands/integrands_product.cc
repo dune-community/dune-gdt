@@ -150,7 +150,7 @@ struct ProductIntegrandTest : public IntegrandTest<G>
 
 template <class G>
 using ProductIntegrandTest = Dune::GDT::Test::ProductIntegrandTest<G>;
-TYPED_TEST_CASE(ProductIntegrandTest, Grids2D);
+TYPED_TEST_SUITE(ProductIntegrandTest, Grids2D);
 
 TYPED_TEST(ProductIntegrandTest, is_constructable)
 {
