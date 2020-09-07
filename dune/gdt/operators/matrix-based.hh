@@ -259,11 +259,7 @@ public:
     , WalkerBaseType(assembly_grid_view)
     , scaling(1.)
     , assembled_(false)
-  {
-    // to detect assembly
-    this->append(
-        [](/*prepare nothing*/) {}, [](const auto&) { /*apply nothing*/ }, [&](/*finalize*/) { assembled_ = true; });
-  }
+  {}
 
   /**
    * Ctor which creates an appropriate matrix into which to assemble from a given sparsity pattern.
@@ -278,11 +274,7 @@ public:
     , WalkerBaseType(assembly_grid_view)
     , scaling(1.)
     , assembled_(false)
-  {
-    // to detect assembly
-    this->append(
-        [](/*prepare nothing*/) {}, [](const auto&) { /*apply nothing*/ }, [&](/*finalize*/) { assembled_ = true; });
-  }
+  {}
 
   using OperatorBaseType::matrix;
 
@@ -388,6 +380,12 @@ public:
     DUNE_THROW_IF(!assembled_, Exceptions::operator_error, "This operator has to be assembled to provide a jacobian!");
     OperatorBaseType::jacobian(source, jacobian_op, opts, param);
   }
+
+  void finalize() override final
+  {
+    WalkerBaseType::finalize();
+    assembled_ = true;
+  } // ... finalize()
 
 private:
   bool assembled_;
