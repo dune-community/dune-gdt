@@ -30,7 +30,7 @@ public:
 template <class I, size_t d, class R>
 class NumericalUpwindFlux<I, d, 1, R> : public NumericalFluxInterface<I, d, 1, R>
 {
-  static const constexpr size_t m = 1;
+  static constexpr size_t m = 1;
   using ThisType = NumericalUpwindFlux;
   using BaseType = NumericalFluxInterface<I, d, m, R>;
 

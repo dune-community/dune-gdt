@@ -34,7 +34,7 @@ struct RtSpace : public ::testing::Test
   static_assert(p == 0, "The space cannot handle higher orders (yet)!");
   using SpaceType = Dune::GDT::RaviartThomasSpace<GridViewType, double>;
   using D = typename SpaceType::D;
-  static const constexpr size_t d = SpaceType::d;
+  static constexpr size_t d = SpaceType::d;
 
   virtual std::shared_ptr<GridViewType> grid_view() = 0;
 

@@ -36,7 +36,7 @@ raviart_thomas_interpolation(
     const GridView<IGV>& interpolation_grid_view)
 {
   using D = typename GridView<IGV>::ctype;
-  static const constexpr size_t d = GridView<IGV>::dimension;
+  static constexpr size_t d = GridView<IGV>::dimension;
   // some preparations
   const FiniteVolumeMapper<GridView<IGV>> element_mapper(interpolation_grid_view);
   auto target_function = make_discrete_function<VectorType>(target_space);

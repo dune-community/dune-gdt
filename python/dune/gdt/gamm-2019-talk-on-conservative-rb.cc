@@ -61,7 +61,7 @@ using GP = XT::Grid::GridProvider<G>;
 using GV = typename G::LeafGridView;
 using E = XT::Grid::extract_entity_t<GV>;
 using I = XT::Grid::extract_intersection_t<GV>;
-static const constexpr size_t d = G::dimension;
+static constexpr size_t d = G::dimension;
 
 using M = XT::LA::IstlRowMajorSparseMatrix<double>;
 using V = XT::LA::IstlDenseVector<double>;

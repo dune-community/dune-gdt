@@ -139,7 +139,7 @@ struct HyperbolicEntropicCoordsMnDiscretization
     using RangeFieldType = typename MomentBasis::RangeFieldType;
     static constexpr size_t dimDomain = MomentBasis::dimDomain;
     static constexpr size_t dimRange = MomentBasis::dimRange;
-    static const auto la_backend = TestCaseType::la_backend;
+    static constexpr auto la_backend = TestCaseType::la_backend;
     using MatrixType = typename XT::LA::Container<RangeFieldType, la_backend>::MatrixType;
     using VectorType = typename XT::LA::Container<RangeFieldType, la_backend>::VectorType;
     using GenericFunctionType = XT::Functions::GenericFunction<dimDomain, dimRange, 1, RangeFieldType>;
@@ -328,8 +328,8 @@ struct HyperbolicEntropicCoordsMnDiscretization
 #else
     HessianInverterType hessian_inverter(*analytical_flux, fv_space);
 
-    static const RangeType u_iso = basis_functions->u_iso();
-    static const RangeType basis_integrated = basis_functions->integrated();
+    static constexpr RangeType u_iso = basis_functions->u_iso();
+    static constexpr RangeType basis_integrated = basis_functions->integrated();
     const auto sigma_a = problem.sigma_a();
     const auto sigma_s = problem.sigma_s();
     const auto Q = problem.Q();

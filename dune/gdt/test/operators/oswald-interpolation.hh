@@ -52,7 +52,7 @@ struct OswaldInterpolationOperatorOnLeafViewTest : public ::testing::Test
 
   using GV = typename G::LeafGridView;
   using D = typename GV::ctype;
-  static const constexpr size_t d = GV::dimension;
+  static constexpr size_t d = GV::dimension;
   using E = XT::Grid::extract_entity_t<GV>;
   using I = XT::Grid::extract_intersection_t<GV>;
   using M = XT::LA::IstlRowMajorSparseMatrix<double>;

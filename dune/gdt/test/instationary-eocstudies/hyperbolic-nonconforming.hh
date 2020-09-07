@@ -50,7 +50,7 @@ class InstationaryNonconformingHyperbolicEocStudy
       la>;
 
 protected:
-  static const constexpr int m_as_int = int(ssize_t(m));
+  static constexpr int m_as_int = int(ssize_t(m));
   using BaseType::d;
   using typename BaseType::DF;
   using typename BaseType::GP;

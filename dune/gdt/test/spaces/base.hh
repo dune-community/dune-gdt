@@ -45,10 +45,10 @@ struct SpaceTestBase : public ::testing::Test
 
   using GridViewType = typename SpaceType::GridViewType;
   using D = typename SpaceType::D;
-  static const constexpr size_t d = SpaceType::d;
+  static constexpr size_t d = SpaceType::d;
   using R = typename SpaceType::R;
-  static const constexpr size_t r = SpaceType::r;
-  static const constexpr size_t rC = SpaceType::rC;
+  static constexpr size_t r = SpaceType::r;
+  static constexpr size_t rC = SpaceType::rC;
   static constexpr double default_tolerance = p > 2 ? (d > 3 ? 1e-7 : (d == 3 ? 1e-10 : 1e-13)) : 1e-15;
 
   using GlobalBasisType = typename SpaceType::GlobalBasisType;
@@ -285,7 +285,7 @@ template <class G>
 XT::Grid::GridProvider<G> make_cubic_grid()
 {
   using D = typename G::ctype;
-  static const constexpr size_t d = G::dimension;
+  static constexpr size_t d = G::dimension;
   FieldVector<D, d> lower_left(-1.5); //        (i) Negative coordinates and not the same as the reference element
   FieldVector<D, d> upper_right(-1.);
   std::array<unsigned int, d> num_elements; // (ii) at least 3 elements to have fully inner ones.
@@ -324,7 +324,7 @@ template <class G,
 XT::Grid::GridProvider<G> make_prism_grid()
 {
   using D = typename G::ctype;
-  static const constexpr size_t d = G::dimension;
+  static constexpr size_t d = G::dimension;
   GridFactory<G> factory;
   for (auto&& vertex : {XT::Common::FieldVector<D, d>({-1., -1.5, -1.5}),
                         XT::Common::FieldVector<D, d>({-1., -1., -1.5}),
@@ -355,8 +355,8 @@ template <
 XT::Grid::GridProvider<G> make_mixed_grid()
 {
   using D = typename G::ctype;
-  static const constexpr size_t d = G::dimension;
-  if (d == 2) {
+  static constexpr size_t d = G::dimension;
+  if constexpr (d == 2) {
     GridFactory<G> factory;
     for (auto&& vertex : {XT::Common::FieldVector<D, d>({-1., -1.5}),
                           XT::Common::FieldVector<D, d>({-1., -1.25}),
@@ -374,7 +374,7 @@ XT::Grid::GridProvider<G> make_mixed_grid()
     XT::Grid::GridProvider<G> grid(factory.createGrid());
     grid.global_refine(1);
     return grid;
-  } else if (d == 3) {
+  } else if constexpr (d == 3) {
     GridFactory<G> factory;
     for (auto&& vertex : {XT::Common::FieldVector<D, d>({-1., -1.5, -1.}),
                           XT::Common::FieldVector<D, d>({-1., -1.25, -1.}),

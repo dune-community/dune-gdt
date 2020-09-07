@@ -73,16 +73,16 @@ public:
   using SV = SourceVector;
   using SGV = SourceGridView;
   using E = XT::Grid::extract_entity_t<SGV>;
-  static const constexpr size_t s_r = source_range_dim;
-  static const constexpr size_t s_rC = source_range_dim_cols;
+  static constexpr size_t s_r = source_range_dim;
+  static constexpr size_t s_rC = source_range_dim_cols;
   using SF = SourceField;
   using DiscreteSourceType = ConstDiscreteFunction<SV, SGV, s_r, s_rC, SF>;
   using SourceType = XT::Functions::GridFunctionInterface<E, s_r, s_rC, SF>;
 
   using RV = RangeVector;
   using RGV = RangeGridView;
-  static const constexpr size_t r_r = range_range_dim;
-  static const constexpr size_t r_rC = range_range_dim_cols;
+  static constexpr size_t r_r = range_range_dim;
+  static constexpr size_t r_rC = range_range_dim_cols;
   using RF = RangeField;
   using RangeType = DiscreteFunction<RV, RGV, r_r, r_rC, RF>;
 

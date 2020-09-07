@@ -349,7 +349,7 @@ class PositivityLimitedSlope
 {
   using ThisType = PositivityLimitedSlope;
   using RangeFieldType = typename MomentBasis::RangeFieldType;
-  static const size_t dimRange = MomentBasis::dimRange;
+  static constexpr size_t dimRange = MomentBasis::dimRange;
   using RealizabilityBaseType = RealizabilityLimiterBase<GV, MomentBasis>;
   using typename RealizabilityBaseType::E;
   using typename RealizabilityBaseType::EntropyFluxType;
@@ -529,7 +529,7 @@ class ConvexHullRealizabilityLimitedSlope
 {
   using ThisType = ConvexHullRealizabilityLimitedSlope;
   using RangeFieldType = typename MomentBasis::RangeFieldType;
-  static const size_t dimRange = MomentBasis::dimRange;
+  static constexpr size_t dimRange = MomentBasis::dimRange;
   using RealizabilityBaseType = RealizabilityLimiterBase<GV, MomentBasis>;
   using typename RealizabilityBaseType::E;
   using typename RealizabilityBaseType::EntropyFluxType;
@@ -638,9 +638,9 @@ class DgConvexHullRealizabilityLimitedSlope
 {
   using ThisType = DgConvexHullRealizabilityLimitedSlope;
   using RangeFieldType = typename MomentBasis::RangeFieldType;
-  static const size_t dimRange = MomentBasis::dimRange;
-  static const size_t block_size = (MomentBasis::dimDomain == 1) ? 2 : 4;
-  static const size_t num_blocks = dimRange / block_size;
+  static constexpr size_t dimRange = MomentBasis::dimRange;
+  static constexpr size_t block_size = (MomentBasis::dimDomain == 1) ? 2 : 4;
+  static constexpr size_t num_blocks = dimRange / block_size;
   using RealizabilityBaseType = RealizabilityLimiterBase<GV, MomentBasis>;
   using typename RealizabilityBaseType::E;
   using typename RealizabilityBaseType::EntropyFluxType;
@@ -770,7 +770,7 @@ class LpPositivityLimitedSlope
 {
   using ThisType = LpPositivityLimitedSlope;
   using RangeFieldType = typename MomentBasis::RangeFieldType;
-  static const size_t dimRange = MomentBasis::dimRange;
+  static constexpr size_t dimRange = MomentBasis::dimRange;
   using RealizabilityBaseType = RealizabilityLimiterBase<GV, MomentBasis>;
   using typename RealizabilityBaseType::E;
   using typename RealizabilityBaseType::EntropyFluxType;

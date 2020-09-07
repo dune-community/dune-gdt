@@ -117,10 +117,10 @@ public:
   using GridViewType = GV;
   using E = XT::Grid::extract_entity_t<GridViewType>;
   using D = typename E::Geometry::ctype;
-  static const constexpr size_t d = E::dimension;
+  static constexpr size_t d = E::dimension;
   using R = RangeField;
-  static const constexpr size_t r = range_dim;
-  static const constexpr size_t rC = range_dim_columns;
+  static constexpr size_t r = range_dim;
+  static constexpr size_t rC = range_dim_columns;
 
   using ElementType = E;
   using LocalizedType = LocalizedGlobalFiniteElementInterface<E, r, rC, R>;

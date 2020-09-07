@@ -60,9 +60,9 @@ public:
   using BoundaryInfoType = XT::Grid::BoundaryInfo<IntersectionType>;
   using ElementType = typename ThisType::ElementType;
   using GridView = typename SpaceType::GridViewType;
-  static const constexpr size_t d = SpaceType::d;
-  static const constexpr size_t r = SpaceType::r;
-  static const constexpr size_t rC = SpaceType::rC;
+  static constexpr size_t d = SpaceType::d;
+  static constexpr size_t r = SpaceType::r;
+  static constexpr size_t rC = SpaceType::rC;
   using R = typename SpaceType::R;
   using SpaceInterfaceType = SpaceInterface<GridView, r, rC, R>;
 
@@ -88,10 +88,7 @@ public:
     basis_->bind(element);
     const auto& reference_element = ReferenceElements<double, d>::general(element.type());
     const auto local_key_indices = basis_->finite_element().coefficients().local_key_indices();
-    const auto intersection_it_end = space_->grid_view().iend(element);
-    for (auto intersection_it = space_->grid_view().ibegin(element); intersection_it != intersection_it_end;
-         ++intersection_it) {
-      const auto& intersection = *intersection_it;
+    for (auto&& intersection : Dune::intersections(space_->grid_view(), element)) {
       // actual dirichlet intersections + process boundaries for parallel runs
       if (boundary_info_.type(intersection) == XT::Grid::DirichletBoundary()
           || (!intersection.neighbor() && !intersection.boundary())) {

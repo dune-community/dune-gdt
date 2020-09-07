@@ -39,11 +39,11 @@ class SphericalHarmonicsMomentBasis
                                 entropy>
 {
 public:
-  static const size_t dimDomain = 3;
-  static const size_t dimRange = only_positive ? ((order + 1) * (order + 2)) / 2 : (order + 1) * (order + 1);
-  static const size_t dimRangeCols = 1;
-  static const size_t dimFlux = fluxDim;
-  static const size_t num_refinements = 0;
+  static constexpr size_t dimDomain = 3;
+  static constexpr size_t dimRange = only_positive ? ((order + 1) * (order + 2)) / 2 : (order + 1) * (order + 1);
+  static constexpr size_t dimRangeCols = 1;
+  static constexpr size_t dimFlux = fluxDim;
+  static constexpr size_t num_refinements = 0;
 
 private:
   using BaseType = MomentBasisInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, 1, dimFlux, entropy>;
@@ -321,11 +321,11 @@ class RealSphericalHarmonicsMomentBasis
                                 entropy>
 {
 public:
-  static const size_t dimDomain = 3;
-  static const size_t dimFlux = fluxDim;
-  static const size_t dimRange = only_even ? ((order + 1) * (order + 2)) / 2 : (order + 1) * (order + 1);
-  static const size_t dimRangeCols = 1;
-  static const size_t num_refinements = 0;
+  static constexpr size_t dimDomain = 3;
+  static constexpr size_t dimFlux = fluxDim;
+  static constexpr size_t dimRange = only_even ? ((order + 1) * (order + 2)) / 2 : (order + 1) * (order + 1);
+  static constexpr size_t dimRangeCols = 1;
+  static constexpr size_t num_refinements = 0;
 
 private:
   using BaseType = MomentBasisInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, 1, dimFlux, entropy>;
@@ -411,7 +411,7 @@ public:
     FieldVector<MatrixType, dimFlux> ret(MatrixType(dimRange, dimRange, 0));
     ret[0] = create_Bx();
     ret[1] = create_By();
-    if (dimFlux == 3)
+    if constexpr (dimFlux == 3)
       ret[2] = create_Bz();
     return ret;
   } // ... flux_matrix()

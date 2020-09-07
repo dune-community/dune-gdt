@@ -41,7 +41,7 @@ struct DefaultInterpolationOnLeafViewTest : public ::testing::Test
 
   using GV = typename G::LeafGridView;
   using D = typename GV::ctype;
-  static const constexpr size_t d = GV::dimension;
+  static constexpr size_t d = GV::dimension;
   using E = XT::Grid::extract_entity_t<GV>;
   using I = XT::Grid::extract_intersection_t<GV>;
   using M = XT::LA::IstlRowMajorSparseMatrix<double>;
@@ -71,9 +71,9 @@ struct DefaultInterpolationOnLeafViewTest : public ::testing::Test
           const auto x_dependent = 2 * std::pow(x[0], 2) - x[0] + 3;
           const auto xy_dependent = x_dependent + x[0] * x[1] + 0.5 * x[1] - std::pow(x[1], 2);
           const auto xyz_dependent = xy_dependent + 0.5 * std::pow(x[2], 2) + x[2] * x[0] - 3 * x[2] * x[1];
-          if (d == 1)
+          if constexpr (d == 1)
             return x_dependent;
-          else if (d == 2)
+          else if constexpr (d == 2)
             return xy_dependent;
           else
             return xyz_dependent;
@@ -87,9 +87,9 @@ struct DefaultInterpolationOnLeafViewTest : public ::testing::Test
           XT::Common::FieldMatrix<double, 1, d> jacobian;
           for (size_t ii = 0; ii < d; ++ii) {
             jacobian[0][ii] = x_dependent_jacobian[ii];
-            if (d >= 2)
+            if constexpr (d >= 2)
               jacobian[0][ii] += y_dependent_jacobian[ii];
-            if (d >= 3)
+            if constexpr (d >= 3)
               jacobian[0][ii] += z_dependent_jacobian[ii];
           }
           return jacobian;

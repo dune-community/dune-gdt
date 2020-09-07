@@ -116,8 +116,8 @@ class EntropyBasedFluxImplementationUnspecializedBase
 
 public:
   using MomentBasis = MomentBasisImp;
-  static const size_t dimFlux = MomentBasis::dimFlux;
-  static const size_t basis_dimRange = MomentBasis::dimRange;
+  static constexpr size_t dimFlux = MomentBasis::dimFlux;
+  static constexpr size_t basis_dimRange = MomentBasis::dimRange;
   using typename BaseType::DomainFieldType;
   using BasisDomainType = typename MomentBasis::DomainType;
   using FluxDomainType = FieldVector<DomainFieldType, dimFlux>;
@@ -136,7 +136,7 @@ public:
   using AlphaReturnType = std::pair<VectorType, std::pair<DomainType, RangeFieldType>>;
   using QuadraturePointsType = std::vector<BasisDomainType, boost::alignment::aligned_allocator<BasisDomainType, 64>>;
   using QuadratureWeightsType = std::vector<RangeFieldType, boost::alignment::aligned_allocator<RangeFieldType, 64>>;
-  static const EntropyType entropy = MomentBasis::entropy;
+  static constexpr EntropyType entropy = MomentBasis::entropy;
 
   explicit EntropyBasedFluxImplementationUnspecializedBase(const MomentBasis& basis_functions,
                                                            const RangeFieldType tau,
@@ -996,7 +996,7 @@ public:
 
     // rescale u such that the density <psi> is 1
     RangeFieldType density = basis_functions_.density(u);
-    static const auto alpha_one = basis_functions_.alpha_one();
+    static constexpr auto alpha_one = basis_functions_.alpha_one();
     if (!(density > 0.) || std::isinf(density))
       DUNE_THROW(Dune::MathError, "Negative, inf or NaN density!");
 
@@ -1223,7 +1223,7 @@ public:
   {
     auto ret = std::make_unique<AlphaReturnType>();
     RangeFieldType density = basis_functions_.density(u);
-    static const auto alpha_one = basis_functions_.alpha_one();
+    static constexpr auto alpha_one = basis_functions_.alpha_one();
     if (!(density > 0.) || std::isinf(density))
       DUNE_THROW(Dune::MathError, "Negative, inf or NaN density!");
 
@@ -1392,8 +1392,8 @@ public:
   using BaseType =
       typename XT::Functions::FunctionInterface<MomentBasis::dimRange, MomentBasis::dimFlux, MomentBasis::dimRange, R>;
   using ThisType = EntropyBasedFluxImplementation;
-  static const size_t dimFlux = MomentBasis::dimFlux;
-  static const size_t basis_dimRange = MomentBasis::dimRange;
+  static constexpr size_t dimFlux = MomentBasis::dimFlux;
+  static constexpr size_t basis_dimRange = MomentBasis::dimRange;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
   using typename BaseType::DynamicDerivativeRangeType;
@@ -1402,8 +1402,8 @@ public:
   using typename BaseType::RangeReturnType;
   using BasisDomainType = typename MomentBasis::DomainType;
   using FluxDomainType = FieldVector<DomainFieldType, dimFlux>;
-  static const size_t block_size = (dimFlux == 1) ? 2 : 4;
-  static const size_t num_blocks = basis_dimRange / block_size;
+  static constexpr size_t block_size = (dimFlux == 1) ? 2 : 4;
+  static constexpr size_t num_blocks = basis_dimRange / block_size;
   using BlockMatrixType = XT::Common::BlockedFieldMatrix<RangeFieldType, num_blocks, block_size>;
   using LocalMatrixType = typename BlockMatrixType::BlockType;
   using BlockVectorType = XT::Common::BlockedFieldVector<RangeFieldType, num_blocks, block_size>;
@@ -1550,7 +1550,7 @@ public:
 
     // rescale u such that the density <psi> is 1
     RangeFieldType density = basis_functions_.density(u);
-    static const auto alpha_one = std::make_unique<BlockVectorType>(basis_functions_.alpha_one());
+    static constexpr auto alpha_one = std::make_unique<BlockVectorType>(basis_functions_.alpha_one());
     auto alpha_initial = std::make_unique<BlockVectorType>(*alpha_one);
     if (rescale) {
       *alpha_initial *= -std::log(density);
@@ -2424,8 +2424,8 @@ public:
   using BaseType =
       typename XT::Functions::FunctionInterface<MomentBasis::dimRange, MomentBasis::dimFlux, MomentBasis::dimRange, R>;
   using ThisType = EntropyBasedFluxImplementation;
-  static const size_t dimFlux = MomentBasis::dimFlux;
-  static const size_t basis_dimRange = MomentBasis::dimRange;
+  static constexpr size_t dimFlux = MomentBasis::dimFlux;
+  static constexpr size_t basis_dimRange = MomentBasis::dimRange;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
   using typename BaseType::DynamicDerivativeRangeType;
@@ -3028,8 +3028,8 @@ public:
   using BaseType =
       typename XT::Functions::FunctionInterface<MomentBasis::dimRange, MomentBasis::dimFlux, MomentBasis::dimRange, R>;
   using ThisType = EntropyBasedFluxImplementation;
-  static const size_t dimFlux = MomentBasis::dimFlux;
-  static const size_t basis_dimRange = MomentBasis::dimRange;
+  static constexpr size_t dimFlux = MomentBasis::dimFlux;
+  static constexpr size_t basis_dimRange = MomentBasis::dimRange;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
   using typename BaseType::DynamicDerivativeRangeType;
@@ -3909,8 +3909,8 @@ class EntropyBasedFluxImplementation<HatFunctionMomentBasis<D, 1, R, dimRange, 1
 
 public:
   using MomentBasis = HatFunctionMomentBasis<D, 1, R, dimRange, 1, 1, entropy>;
-  static const size_t dimFlux = MomentBasis::dimFlux;
-  static const size_t basis_dimRange = dimRange;
+  static constexpr size_t dimFlux = MomentBasis::dimFlux;
+  static constexpr size_t basis_dimRange = dimRange;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
   using typename BaseType::DynamicDerivativeRangeType;
@@ -4419,7 +4419,7 @@ public:
     RangeFieldType density = basis_functions_.density(u);
     if (!(density > 0.) || std::isinf(density))
       DUNE_THROW(Dune::MathError, "Negative, inf or NaN density!");
-    static const auto alpha_one = basis_functions_.alpha_one();
+    static constexpr auto alpha_one = basis_functions_.alpha_one();
     VectorType phi = u / density;
     VectorType alpha_initial = alpha_in - alpha_one * std::log(density);
     RangeFieldType tau_prime =
@@ -4853,8 +4853,8 @@ class EntropyBasedFluxImplementation<HatFunctionMomentBasis<D, 1, R, dimRange, 1
 
 public:
   using MomentBasis = HatFunctionMomentBasis<D, 1, R, dimRange, 1, 1, entropy>;
-  static const size_t dimFlux = MomentBasis::dimFlux;
-  static const size_t basis_dimRange = dimRange;
+  static constexpr size_t dimFlux = MomentBasis::dimFlux;
+  static constexpr size_t basis_dimRange = dimRange;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
   using typename BaseType::DynamicDerivativeRangeType;
@@ -4865,9 +4865,9 @@ public:
   using FluxDomainType = FieldVector<DomainFieldType, dimFlux>;
   using VectorType = DomainType;
   using AlphaReturnType = std::pair<VectorType, std::pair<DomainType, RangeFieldType>>;
-  static const size_t num_intervals = basis_dimRange - 1;
-  static const size_t block_size = 2;
-  static const R interval_length;
+  static constexpr size_t num_intervals = basis_dimRange - 1;
+  static constexpr size_t block_size = 2;
+  static constexpr R interval_length;
   using LocalVectorType = XT::Common::FieldVector<RangeFieldType, block_size>;
   using BasisValuesMatrixType = std::vector<LocalVectorType>;
   using QuadraturePointsType = std::vector<RangeFieldType, boost::alignment::aligned_allocator<RangeFieldType, 64>>;
@@ -4963,7 +4963,7 @@ public:
     RangeFieldType density = basis_functions_.density(u);
     if (!(density > 0.) || std::isinf(density))
       DUNE_THROW(Dune::MathError, "Negative, inf or NaN density!");
-    static const auto alpha_one = basis_functions_.alpha_one();
+    static constexpr auto alpha_one = basis_functions_.alpha_one();
     VectorType phi = rescale ? u / density : u;
     VectorType alpha_initial = alpha_in;
     if (rescale)
@@ -5432,8 +5432,8 @@ class EntropyBasedFluxImplementation<HatFunctionMomentBasis<D, 1, R, dimRange, 1
 
 public:
   using MomentBasis = HatFunctionMomentBasis<D, 1, R, dimRange, 1, 1, entropy>;
-  static const size_t dimFlux = MomentBasis::dimFlux;
-  static const size_t basis_dimRange = dimRange;
+  static constexpr size_t dimFlux = MomentBasis::dimFlux;
+  static constexpr size_t basis_dimRange = dimRange;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
   using typename BaseType::DynamicDerivativeRangeType;
@@ -5444,8 +5444,8 @@ public:
   using FluxDomainType = FieldVector<DomainFieldType, dimFlux>;
   using VectorType = DomainType;
   using AlphaReturnType = std::pair<VectorType, std::pair<DomainType, RangeFieldType>>;
-  static const size_t num_intervals = dimRange - 1;
-  static const size_t block_size = 2;
+  static constexpr size_t num_intervals = dimRange - 1;
+  static constexpr size_t block_size = 2;
   using LocalVectorType = XT::Common::FieldVector<RangeFieldType, block_size>;
   using BasisValuesMatrixType = FieldVector<std::vector<LocalVectorType>, num_intervals>;
   using QuadraturePointsType = FieldVector<std::vector<RangeFieldType>, num_intervals>;
@@ -5564,7 +5564,7 @@ public:
     RangeFieldType density = basis_functions_.density(u);
     if (!(density > 0.) || std::isinf(density))
       DUNE_THROW(Dune::MathError, "Negative, inf or NaN density!");
-    static const auto alpha_one = basis_functions_.alpha_one();
+    static constexpr auto alpha_one = basis_functions_.alpha_one();
     VectorType phi = rescale ? u / density : u;
     VectorType alpha_initial = alpha_in;
     if (rescale)

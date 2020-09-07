@@ -44,8 +44,8 @@ double estimate_dt_for_hyperbolic_system(
         XT::Common::FieldVector<R, m_as_int>(std::numeric_limits<R>::min())})
 {
   using D = typename GV::ctype;
-  static const constexpr size_t d = GV::dimension;
-  static const constexpr size_t m = m_as_size_t;
+  static constexpr size_t d = GV::dimension;
+  static constexpr size_t m = m_as_size_t;
   // estimate data range
   auto data_minimum = boundary_data_range.first;
   auto data_maximum = boundary_data_range.second;

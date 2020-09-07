@@ -50,13 +50,13 @@ public:
   using E = XT::Grid::extract_entity_t<GV>;
   using ResultType = Result;
 
-  static const constexpr size_t s_r = source_range_dim;
-  static const constexpr size_t s_rC = source_range_dim_cols;
+  static constexpr size_t s_r = source_range_dim;
+  static constexpr size_t s_rC = source_range_dim_cols;
   using SR = SourceRangeField;
   using SourceType = XT::Functions::GridFunctionInterface<E, s_r, s_rC, SR>;
 
-  static const constexpr size_t r_r = range_range_dim;
-  static const constexpr size_t r_rC = range_range_dim_cols;
+  static constexpr size_t r_r = range_range_dim;
+  static constexpr size_t r_rC = range_range_dim_cols;
   using RR = RangeRangeField;
   using RangeType = XT::Functions::GridFunctionInterface<E, r_r, r_rC, RR>;
 

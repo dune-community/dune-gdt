@@ -66,7 +66,7 @@ protected:
   using BaseType =
       StationaryEocStudy<typename XT::Grid::Layer<G, XT::Grid::Layers::leaf, XT::Grid::Backends::view>::type, 1, la>;
 
-  static const size_t d = BaseType::d;
+  static constexpr size_t d = BaseType::d;
   using typename BaseType::DF;
   using typename BaseType::GP;
   using typename BaseType::GV;
