@@ -62,7 +62,7 @@ public:
     const RangeReturnType basis_integrated = basis_functions_.integrated();
     const auto psi_vac = psi_vac_;
     const auto eval_func = [basis_integrated, psi_vac](const DomainType& x, const XT::Common::Parameter&) {
-      static const auto sigma = 0.03;
+      static constexpr auto sigma = 0.03;
       static const auto first_factor = 1. / (4 * M_PI * std::pow(M_PI * sigma, 3));
       static const auto second_factor = 1. / (M_PI * std::pow(sigma, 2));
       return basis_integrated * std::max(first_factor * std::exp(-x.two_norm2() * second_factor), psi_vac);

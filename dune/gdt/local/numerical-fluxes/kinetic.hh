@@ -38,8 +38,8 @@ class NumericalKineticFlux
                                                      MomentBasis::entropy>,
                                 MomentBasis>::value,
                 "Basisfunctions have to be derived from MomentBasisInterface");
-  static const size_t d = MomentBasis::dimFlux;
-  static const size_t m = MomentBasis::r;
+  static constexpr size_t d = MomentBasis::dimFlux;
+  static constexpr size_t m = MomentBasis::r;
   using R = typename MomentBasis::R;
   using I = XT::Grid::extract_intersection_t<GV>;
   using ThisType = NumericalKineticFlux;

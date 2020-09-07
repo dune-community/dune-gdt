@@ -194,7 +194,7 @@ public:
   {
     RangeFieldType actual_dt = std::min(dt, max_dt);
     // regularization is currently unused but may be used in the near future
-    static const bool consider_regularization = false;
+    static constexpr bool consider_regularization = false;
     set_op_param("dt", actual_dt);
     RangeFieldType mixed_error = std::numeric_limits<RangeFieldType>::max();
     RangeFieldType time_step_scale_factor = 1.0;

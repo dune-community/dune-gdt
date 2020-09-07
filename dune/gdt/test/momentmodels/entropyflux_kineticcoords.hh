@@ -46,8 +46,8 @@ public:
   using GridViewType = GridViewImp;
   using MomentBasis = MomentBasisImp;
   using IndexSetType = typename GridViewType::IndexSet;
-  static const size_t dimFlux = MomentBasis::dimFlux;
-  static const size_t basis_dimRange = MomentBasis::dimRange;
+  static constexpr size_t dimFlux = MomentBasis::dimFlux;
+  static constexpr size_t basis_dimRange = MomentBasis::dimRange;
   using typename BaseType::DomainType;
   using typename BaseType::DynamicStateType;
   using typename BaseType::E;
@@ -61,7 +61,7 @@ public:
   using QuadratureWeightsType = typename ImplementationType::QuadratureWeightsType;
   using BoundaryQuadratureWeightsType =
       std::vector<XT::Common::FieldVector<XT::Common::FieldVector<QuadratureWeightsType, 2>, dimFlux>>;
-  static const EntropyType entropy = MomentBasis::entropy;
+  static constexpr EntropyType entropy = MomentBasis::entropy;
 
   explicit EntropyBasedFluxEntropyCoordsFunction(
       const MomentBasis& basis_functions,
@@ -82,7 +82,7 @@ public:
     : implementation_(other.implementation_)
   {}
 
-  static const constexpr bool available = true;
+  static constexpr bool available = true;
 
   class Localfunction : public LocalFunctionType
   {

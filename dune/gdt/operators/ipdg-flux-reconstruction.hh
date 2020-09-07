@@ -52,7 +52,7 @@ public:
   using AGV = AssemblyGridView;
   using AssemblyGridViewType = AGV;
   using E = XT::Grid::extract_entity_t<AssemblyGridViewType>;
-  static const constexpr size_t d = RGV::dimension;
+  static constexpr size_t d = RGV::dimension;
 
   IpdgFluxReconstructionOperator(AssemblyGridViewType assembly_grid_view,
                                  const SourceSpaceType& src_spc,

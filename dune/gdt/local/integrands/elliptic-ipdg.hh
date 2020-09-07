@@ -1220,7 +1220,7 @@ public:
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
   typedef typename Traits::DomainFieldType DomainFieldType;
-  static const size_t d = Traits::d;
+  static constexpr size_t d = Traits::d;
 
   BoundaryRHS(const DirichletType& dirichlet,
               const DiffusionFactorType& diffusion_factor,

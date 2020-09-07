@@ -210,7 +210,7 @@ private:
                     Exceptions::finite_element_error,
                     "geometry_type = " << geometry_type << "\nd = " << d);
       // checks
-      if (d == 2) {
+      if constexpr (d == 2) {
         if (geometry_type == GeometryTypes::cube(2))
           DUNE_THROW_IF(order != 1, Exceptions::finite_element_error, order_error(geometry_type, order));
         else

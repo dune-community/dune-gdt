@@ -29,7 +29,7 @@ namespace GDT {
 template <class G>
 struct BurgersProblem
 {
-  static const constexpr size_t d = G::dimension;
+  static constexpr size_t d = G::dimension;
   static_assert(d == 1, "Not implemented yet!");
   //  using DomainType = XT::Common::FieldVector<double, d>;
 

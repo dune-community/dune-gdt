@@ -38,8 +38,8 @@ namespace Test {
 template <class G>
 struct InviscidCompressibleFlowEulerProblem
 {
-  static const constexpr size_t d = G::dimension;
-  static const constexpr size_t m = d + 2;
+  static constexpr size_t d = G::dimension;
+  static constexpr size_t m = d + 2;
   using DomainType = XT::Common::FieldVector<double, d>;
   using RangeType = XT::Common::FieldVector<double, m>;
 

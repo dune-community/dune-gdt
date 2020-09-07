@@ -125,8 +125,8 @@ public:
   using typename BaseType::DomainFieldType;
   using typename BaseType::EntityType;
   using typename BaseType::RangeFieldType;
-  static const size_t dimDomain = DiscreteFunctionType::d;
-  static const size_t dimRange = DiscreteFunctionType::r;
+  static constexpr size_t dimDomain = DiscreteFunctionType::d;
+  static constexpr size_t dimRange = DiscreteFunctionType::r;
   using ScalarFunctionType = XT::Functions::FunctionInterface<dimDomain, 1, 1, RangeFieldType>;
 
   using BaseType::current_solution;

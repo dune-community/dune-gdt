@@ -56,16 +56,16 @@ class LocalElementBilinearFormInterface : public XT::Common::ParametricInterface
 public:
   using E = Element;
   using D = typename Element::Geometry::ctype;
-  static const constexpr size_t d = E::dimension;
+  static constexpr size_t d = E::dimension;
   using F = Field;
 
   using TR = TestRangeField;
-  static const constexpr size_t t_r = test_range_dim;
-  static const constexpr size_t t_rC = test_range_dim_cols;
+  static constexpr size_t t_r = test_range_dim;
+  static constexpr size_t t_rC = test_range_dim_cols;
 
   using AR = AnsatzRangeField;
-  static const constexpr size_t a_r = ansatz_range_dim;
-  static const constexpr size_t a_rC = ansatz_range_dim_cols;
+  static constexpr size_t a_r = ansatz_range_dim;
+  static constexpr size_t a_rC = ansatz_range_dim_cols;
 
   using ElementType = Element;
   using LocalTestBasisType = XT::Functions::ElementFunctionSetInterface<E, t_r, t_rC, TR>;
@@ -136,16 +136,16 @@ public:
   using I = Intersection;
   using E = ElementType;
   using D = typename ElementType::Geometry::ctype;
-  static const constexpr size_t d = E::dimension;
+  static constexpr size_t d = E::dimension;
   using F = Field;
 
   using TR = TestRangeField;
-  static const constexpr size_t t_r = test_range_dim;
-  static const constexpr size_t t_rC = test_range_dim_cols;
+  static constexpr size_t t_r = test_range_dim;
+  static constexpr size_t t_rC = test_range_dim_cols;
 
   using AR = AnsatzRangeField;
-  static const constexpr size_t a_r = ansatz_range_dim;
-  static const constexpr size_t a_rC = ansatz_range_dim_cols;
+  static constexpr size_t a_r = ansatz_range_dim;
+  static constexpr size_t a_rC = ansatz_range_dim_cols;
 
   using LocalTestBasisType = XT::Functions::ElementFunctionSetInterface<E, t_r, t_rC, TR>;
   using LocalAnsatzBasisType = XT::Functions::ElementFunctionSetInterface<E, a_r, a_rC, AR>;
