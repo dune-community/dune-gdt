@@ -82,8 +82,11 @@ struct DefaultInterpolationOnLeafViewTest : public ::testing::Test
         XT::Common::ParameterType{},
         [](const auto& x, const auto&) {
           const std::vector<double> x_dependent_jacobian{4 * x[0] - 1, 0, 0, 0};
-          const std::vector<double> y_dependent_jacobian{x[1], x[0] + 0.5 - 2 * x[1], 0, 0};
-          const std::vector<double> z_dependent_jacobian{x[2], -3 * x[2], x[2] + x[0] - 3 * x[1], 0};
+          std::vector<double> y_dependent_jacobian, z_dependent_jacobian;
+          if constexpr (d >= 2)
+            y_dependent_jacobian = {x[1], x[0] + 0.5 - 2 * x[1], 0, 0};
+          if constexpr (d >= 3)
+            z_dependent_jacobian = {x[2], -3 * x[2], x[2] + x[0] - 3 * x[1], 0};
           XT::Common::FieldMatrix<double, 1, d> jacobian;
           for (size_t ii = 0; ii < d; ++ii) {
             jacobian[0][ii] = x_dependent_jacobian[ii];
