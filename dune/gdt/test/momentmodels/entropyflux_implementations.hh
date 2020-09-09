@@ -996,7 +996,7 @@ public:
 
     // rescale u such that the density <psi> is 1
     RangeFieldType density = basis_functions_.density(u);
-    static constexpr auto alpha_one = basis_functions_.alpha_one();
+    static const auto alpha_one = basis_functions_.alpha_one();
     if (!(density > 0.) || std::isinf(density))
       DUNE_THROW(Dune::MathError, "Negative, inf or NaN density!");
 
@@ -1223,7 +1223,7 @@ public:
   {
     auto ret = std::make_unique<AlphaReturnType>();
     RangeFieldType density = basis_functions_.density(u);
-    static constexpr auto alpha_one = basis_functions_.alpha_one();
+    static const auto alpha_one = basis_functions_.alpha_one();
     if (!(density > 0.) || std::isinf(density))
       DUNE_THROW(Dune::MathError, "Negative, inf or NaN density!");
 
@@ -1550,7 +1550,7 @@ public:
 
     // rescale u such that the density <psi> is 1
     RangeFieldType density = basis_functions_.density(u);
-    static constexpr auto alpha_one = std::make_unique<BlockVectorType>(basis_functions_.alpha_one());
+    static const auto alpha_one = std::make_unique<BlockVectorType>(basis_functions_.alpha_one());
     auto alpha_initial = std::make_unique<BlockVectorType>(*alpha_one);
     if (rescale) {
       *alpha_initial *= -std::log(density);
@@ -4419,7 +4419,7 @@ public:
     RangeFieldType density = basis_functions_.density(u);
     if (!(density > 0.) || std::isinf(density))
       DUNE_THROW(Dune::MathError, "Negative, inf or NaN density!");
-    static constexpr auto alpha_one = basis_functions_.alpha_one();
+    static const auto alpha_one = basis_functions_.alpha_one();
     VectorType phi = u / density;
     VectorType alpha_initial = alpha_in - alpha_one * std::log(density);
     RangeFieldType tau_prime =
@@ -4867,7 +4867,7 @@ public:
   using AlphaReturnType = std::pair<VectorType, std::pair<DomainType, RangeFieldType>>;
   static constexpr size_t num_intervals = basis_dimRange - 1;
   static constexpr size_t block_size = 2;
-  static constexpr R interval_length;
+  static constexpr R interval_length = 2. / (dimRange - 1.);
   using LocalVectorType = XT::Common::FieldVector<RangeFieldType, block_size>;
   using BasisValuesMatrixType = std::vector<LocalVectorType>;
   using QuadraturePointsType = std::vector<RangeFieldType, boost::alignment::aligned_allocator<RangeFieldType, 64>>;
@@ -4963,7 +4963,7 @@ public:
     RangeFieldType density = basis_functions_.density(u);
     if (!(density > 0.) || std::isinf(density))
       DUNE_THROW(Dune::MathError, "Negative, inf or NaN density!");
-    static constexpr auto alpha_one = basis_functions_.alpha_one();
+    static const auto alpha_one = basis_functions_.alpha_one();
     VectorType phi = rescale ? u / density : u;
     VectorType alpha_initial = alpha_in;
     if (rescale)
@@ -5415,9 +5415,6 @@ public:
   const RangeFieldType epsilon_;
 };
 
-template <class D, class R, size_t dimRange, EntropyType entropy>
-const R EntropyBasedFluxImplementation<HatFunctionMomentBasis<D, 1, R, dimRange, 1, 1, entropy>>::interval_length =
-    2. / (dimRange - 1.);
 
 #    else // ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
 /**
@@ -5564,7 +5561,7 @@ public:
     RangeFieldType density = basis_functions_.density(u);
     if (!(density > 0.) || std::isinf(density))
       DUNE_THROW(Dune::MathError, "Negative, inf or NaN density!");
-    static constexpr auto alpha_one = basis_functions_.alpha_one();
+    static const auto alpha_one = basis_functions_.alpha_one();
     VectorType phi = rescale ? u / density : u;
     VectorType alpha_initial = alpha_in;
     if (rescale)

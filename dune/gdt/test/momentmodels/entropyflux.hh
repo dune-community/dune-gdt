@@ -229,7 +229,7 @@ public:
       // find starting point. Candidates: alpha_iso and the entries in the two caches
       std::lock_guard<std::mutex> DUNE_UNUSED guard{*mutex_};
       const auto& basis_functions = implementation_.basis_functions();
-      static constexpr auto u_iso = basis_functions.u_iso();
+      static const auto u_iso = basis_functions.u_iso();
       const auto density = basis_functions.density(u);
       const auto alpha_iso = basis_functions.alpha_iso(density);
       const auto u_iso_scaled = u_iso * density;

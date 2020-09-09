@@ -328,8 +328,8 @@ struct HyperbolicEntropicCoordsMnDiscretization
 #else
     HessianInverterType hessian_inverter(*analytical_flux, fv_space);
 
-    static constexpr RangeType u_iso = basis_functions->u_iso();
-    static constexpr RangeType basis_integrated = basis_functions->integrated();
+    static const RangeType u_iso = basis_functions->u_iso();
+    static const RangeType basis_integrated = basis_functions->integrated();
     const auto sigma_a = problem.sigma_a();
     const auto sigma_s = problem.sigma_s();
     const auto Q = problem.Q();
