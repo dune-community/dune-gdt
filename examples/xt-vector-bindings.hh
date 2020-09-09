@@ -153,7 +153,7 @@ struct VectorExporter
   {
     Py_buffer* buffer = PyMemoryView_GET_BUFFER(memory_view);
     ScalarType* cxx_buf = (ScalarType*)buffer->buf;
-    return std::make_shared<Vec>(vec_size, cxx_buf + buffer_pos, 0);
+    return std::make_shared<Vec>(vec_size, cxx_buf + buffer_pos, 0, true);
   }
 
   static void export_(const std::string& classname)
