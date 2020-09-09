@@ -31,6 +31,7 @@
 #include <dune/xt/common/math.hh>
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/common/parallel/threadstorage.hh>
+#include <dune/xt/common/unused.hh>
 #include <dune/xt/common/vector_less.hh>
 
 #include <dune/xt/la/algorithms/cholesky.hh>
@@ -115,8 +116,8 @@ class EntropyBasedFluxImplementationUnspecializedBase
 
 public:
   using MomentBasis = MomentBasisImp;
-  static const size_t dimFlux = MomentBasis::dimFlux;
-  static const size_t basis_dimRange = MomentBasis::dimRange;
+  static constexpr size_t dimFlux = MomentBasis::dimFlux;
+  static constexpr size_t basis_dimRange = MomentBasis::dimRange;
   using typename BaseType::DomainFieldType;
   using BasisDomainType = typename MomentBasis::DomainType;
   using FluxDomainType = FieldVector<DomainFieldType, dimFlux>;
@@ -135,7 +136,7 @@ public:
   using AlphaReturnType = std::pair<VectorType, std::pair<DomainType, RangeFieldType>>;
   using QuadraturePointsType = std::vector<BasisDomainType, boost::alignment::aligned_allocator<BasisDomainType, 64>>;
   using QuadratureWeightsType = std::vector<RangeFieldType, boost::alignment::aligned_allocator<RangeFieldType, 64>>;
-  static const EntropyType entropy = MomentBasis::entropy;
+  static constexpr EntropyType entropy = MomentBasis::entropy;
 
   explicit EntropyBasedFluxImplementationUnspecializedBase(const MomentBasis& basis_functions,
                                                            const RangeFieldType tau,
@@ -1391,8 +1392,8 @@ public:
   using BaseType =
       typename XT::Functions::FunctionInterface<MomentBasis::dimRange, MomentBasis::dimFlux, MomentBasis::dimRange, R>;
   using ThisType = EntropyBasedFluxImplementation;
-  static const size_t dimFlux = MomentBasis::dimFlux;
-  static const size_t basis_dimRange = MomentBasis::dimRange;
+  static constexpr size_t dimFlux = MomentBasis::dimFlux;
+  static constexpr size_t basis_dimRange = MomentBasis::dimRange;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
   using typename BaseType::DynamicDerivativeRangeType;
@@ -1401,8 +1402,8 @@ public:
   using typename BaseType::RangeReturnType;
   using BasisDomainType = typename MomentBasis::DomainType;
   using FluxDomainType = FieldVector<DomainFieldType, dimFlux>;
-  static const size_t block_size = (dimFlux == 1) ? 2 : 4;
-  static const size_t num_blocks = basis_dimRange / block_size;
+  static constexpr size_t block_size = (dimFlux == 1) ? 2 : 4;
+  static constexpr size_t num_blocks = basis_dimRange / block_size;
   using BlockMatrixType = XT::Common::BlockedFieldMatrix<RangeFieldType, num_blocks, block_size>;
   using LocalMatrixType = typename BlockMatrixType::BlockType;
   using BlockVectorType = XT::Common::BlockedFieldVector<RangeFieldType, num_blocks, block_size>;
@@ -2423,8 +2424,8 @@ public:
   using BaseType =
       typename XT::Functions::FunctionInterface<MomentBasis::dimRange, MomentBasis::dimFlux, MomentBasis::dimRange, R>;
   using ThisType = EntropyBasedFluxImplementation;
-  static const size_t dimFlux = MomentBasis::dimFlux;
-  static const size_t basis_dimRange = MomentBasis::dimRange;
+  static constexpr size_t dimFlux = MomentBasis::dimFlux;
+  static constexpr size_t basis_dimRange = MomentBasis::dimRange;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
   using typename BaseType::DynamicDerivativeRangeType;
@@ -3027,8 +3028,8 @@ public:
   using BaseType =
       typename XT::Functions::FunctionInterface<MomentBasis::dimRange, MomentBasis::dimFlux, MomentBasis::dimRange, R>;
   using ThisType = EntropyBasedFluxImplementation;
-  static const size_t dimFlux = MomentBasis::dimFlux;
-  static const size_t basis_dimRange = MomentBasis::dimRange;
+  static constexpr size_t dimFlux = MomentBasis::dimFlux;
+  static constexpr size_t basis_dimRange = MomentBasis::dimRange;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
   using typename BaseType::DynamicDerivativeRangeType;
@@ -3908,8 +3909,8 @@ class EntropyBasedFluxImplementation<HatFunctionMomentBasis<D, 1, R, dimRange, 1
 
 public:
   using MomentBasis = HatFunctionMomentBasis<D, 1, R, dimRange, 1, 1, entropy>;
-  static const size_t dimFlux = MomentBasis::dimFlux;
-  static const size_t basis_dimRange = dimRange;
+  static constexpr size_t dimFlux = MomentBasis::dimFlux;
+  static constexpr size_t basis_dimRange = dimRange;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
   using typename BaseType::DynamicDerivativeRangeType;
@@ -4064,7 +4065,7 @@ public:
   DomainType evaluate_kinetic_flux_with_alphas(const VectorType& alpha_i,
                                                const VectorType& alpha_j,
                                                const FluxDomainType& n_ij,
-                                               const size_t dd) const
+                                               const size_t DXTC_DEBUG_ONLY(dd)) const
   {
     assert(dd == 0);
     // calculate < \mu m G_\alpha(u) > * n_ij
@@ -4224,8 +4225,9 @@ public:
     return ret;
   } // DomainType evaluate_kinetic_flux(...)
 
-  DomainType evaluate_kinetic_outflow(const DomainType& alpha_i, const FluxDomainType& n_ij, const size_t dd) const
-
+  DomainType evaluate_kinetic_outflow(const DomainType& alpha_i,
+                                      const FluxDomainType& n_ij,
+                                      const size_t DXTC_DEBUG_ONLY(dd)) const
   {
     assert(dd == 0);
     // calculate < (\mu * n_ij) m G_\alpha(u) >
@@ -4851,8 +4853,8 @@ class EntropyBasedFluxImplementation<HatFunctionMomentBasis<D, 1, R, dimRange, 1
 
 public:
   using MomentBasis = HatFunctionMomentBasis<D, 1, R, dimRange, 1, 1, entropy>;
-  static const size_t dimFlux = MomentBasis::dimFlux;
-  static const size_t basis_dimRange = dimRange;
+  static constexpr size_t dimFlux = MomentBasis::dimFlux;
+  static constexpr size_t basis_dimRange = dimRange;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
   using typename BaseType::DynamicDerivativeRangeType;
@@ -4863,9 +4865,9 @@ public:
   using FluxDomainType = FieldVector<DomainFieldType, dimFlux>;
   using VectorType = DomainType;
   using AlphaReturnType = std::pair<VectorType, std::pair<DomainType, RangeFieldType>>;
-  static const size_t num_intervals = basis_dimRange - 1;
-  static const size_t block_size = 2;
-  static const R interval_length;
+  static constexpr size_t num_intervals = basis_dimRange - 1;
+  static constexpr size_t block_size = 2;
+  static constexpr R interval_length = 2. / (dimRange - 1.);
   using LocalVectorType = XT::Common::FieldVector<RangeFieldType, block_size>;
   using BasisValuesMatrixType = std::vector<LocalVectorType>;
   using QuadraturePointsType = std::vector<RangeFieldType, boost::alignment::aligned_allocator<RangeFieldType, 64>>;
@@ -5413,9 +5415,6 @@ public:
   const RangeFieldType epsilon_;
 };
 
-template <class D, class R, size_t dimRange, EntropyType entropy>
-const R EntropyBasedFluxImplementation<HatFunctionMomentBasis<D, 1, R, dimRange, 1, 1, entropy>>::interval_length =
-    2. / (dimRange - 1.);
 
 #    else // ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
 /**
@@ -5430,8 +5429,8 @@ class EntropyBasedFluxImplementation<HatFunctionMomentBasis<D, 1, R, dimRange, 1
 
 public:
   using MomentBasis = HatFunctionMomentBasis<D, 1, R, dimRange, 1, 1, entropy>;
-  static const size_t dimFlux = MomentBasis::dimFlux;
-  static const size_t basis_dimRange = dimRange;
+  static constexpr size_t dimFlux = MomentBasis::dimFlux;
+  static constexpr size_t basis_dimRange = dimRange;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
   using typename BaseType::DynamicDerivativeRangeType;
@@ -5442,8 +5441,8 @@ public:
   using FluxDomainType = FieldVector<DomainFieldType, dimFlux>;
   using VectorType = DomainType;
   using AlphaReturnType = std::pair<VectorType, std::pair<DomainType, RangeFieldType>>;
-  static const size_t num_intervals = dimRange - 1;
-  static const size_t block_size = 2;
+  static constexpr size_t num_intervals = dimRange - 1;
+  static constexpr size_t block_size = 2;
   using LocalVectorType = XT::Common::FieldVector<RangeFieldType, block_size>;
   using BasisValuesMatrixType = FieldVector<std::vector<LocalVectorType>, num_intervals>;
   using QuadraturePointsType = FieldVector<std::vector<RangeFieldType>, num_intervals>;

@@ -16,7 +16,6 @@
 #ifndef DUNE_GDT_LOCAL_INTEGRANDS_ELLIPTIC_HH
 #  define DUNE_GDT_LOCAL_INTEGRANDS_ELLIPTIC_HH
 
-#  include <dune/xt/common/deprecated.hh>
 #  include <dune/xt/common/memory.hh>
 #  include <dune/xt/la/container/eye-matrix.hh>
 #  include <dune/xt/functions/base/function-as-grid-function.hh>
@@ -38,7 +37,7 @@ namespace GDT {
  * `lambda(x) * {[kappa(x) (\nabla phi(x))^T] : (\nabla psi(x))^T}`, where ':' denotes the matrix scalar product.
  */
 template <class E, size_t r = 1, class F = double>
-class /*DXT_DEPRECATED_MSG("Use LocalLaplaceIntegrand instead (10.08.2019)!")*/ LocalEllipticIntegrand
+class /*[[deprecated("Use LocalLaplaceIntegrand instead (10.08.2019)!")]]*/ LocalEllipticIntegrand
   : public LocalBinaryElementIntegrandInterface<E, r, 1, F, F, r, 1, F>
 {
   using BaseType = LocalBinaryElementIntegrandInterface<E, r, 1, F, F, r, 1, F>;

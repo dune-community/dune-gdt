@@ -33,8 +33,8 @@ class LocalEntropicHessianInverter : public XT::Grid::ElementFunctor<typename Sp
   using IndexSetType = typename GridViewType::IndexSet;
   using EntropyFluxType = EntropyBasedFluxEntropyCoordsFunction<GridViewType, MomentBasis, slope>;
   using RangeFieldType = typename EntropyFluxType::RangeFieldType;
-  static const size_t dimFlux = EntropyFluxType::dimFlux;
-  static const size_t dimRange = EntropyFluxType::basis_dimRange;
+  static constexpr size_t dimFlux = EntropyFluxType::dimFlux;
+  static constexpr size_t dimRange = EntropyFluxType::basis_dimRange;
   using DiscreteFunctionType = DiscreteFunction<VectorType, GridViewType, dimRange, 1, RangeFieldType>;
   using ConstDiscreteFunctionType = ConstDiscreteFunction<VectorType, GridViewType, dimRange, 1, RangeFieldType>;
 

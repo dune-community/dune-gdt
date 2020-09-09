@@ -116,12 +116,12 @@ struct DiscreteFunction_for_all_grids
 {
   using G = typename GridTypes::head_type;
   using GV = typename G::LeafGridView;
-  static const constexpr size_t d = G::dimension;
+  static constexpr size_t d = G::dimension;
 
   static void bind(pybind11::module& m)
   {
     Dune::GDT::bindings::DiscreteFunction<V, GV>::bind(m);
-    if (d > 1)
+    if constexpr (d > 1)
       Dune::GDT::bindings::DiscreteFunction<V, GV, d>::bind(m);
     // add your extra dimensions here
     // ...

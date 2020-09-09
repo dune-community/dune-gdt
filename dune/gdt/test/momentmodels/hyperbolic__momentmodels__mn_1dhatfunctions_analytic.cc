@@ -23,7 +23,7 @@ using YaspGridTestCases1dHatAnalytic = testing::Types<
     Dune::GDT::SourceBeamMnTestCase<Yasp1, Dune::GDT::HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, true>,
     Dune::GDT::PlaneSourceMnTestCase<Yasp1, Dune::GDT::HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, true>>;
 
-TYPED_TEST_CASE(HyperbolicMnTest, YaspGridTestCases1dHatAnalytic);
+TYPED_TEST_SUITE(HyperbolicMnTest, YaspGridTestCases1dHatAnalytic);
 TYPED_TEST(HyperbolicMnTest, check)
 {
   this->run(1e-3);

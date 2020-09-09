@@ -34,7 +34,7 @@ struct FiniteVolumeSpace : public ::testing::Test
   using R = double;
   using SpaceType = Dune::GDT::FiniteVolumeSpace<GridViewType, r, 1, R>;
   using D = typename SpaceType::D;
-  static const constexpr size_t d = SpaceType::d;
+  static constexpr size_t d = SpaceType::d;
 
   virtual std::shared_ptr<GridViewType> grid_view() = 0;
 
@@ -213,7 +213,7 @@ using SimplicialGrids = ::testing::Types<ONED_1D,
 
 template <class G>
 using ScalarSimplicialFiniteVolumeSpace = FiniteVolumeSpaceOnSimplicialLeafView<G, 1>;
-TYPED_TEST_CASE(ScalarSimplicialFiniteVolumeSpace, SimplicialGrids);
+TYPED_TEST_SUITE(ScalarSimplicialFiniteVolumeSpace, SimplicialGrids);
 TYPED_TEST(ScalarSimplicialFiniteVolumeSpace, basis_exists_on_each_element_with_correct_size)
 {
   this->basis_exists_on_each_element_with_correct_size();
@@ -305,7 +305,7 @@ using CubicGrids = ::testing::Types<YASP_2D_EQUIDISTANT_OFFSET
 
 template <class G>
 using ScalarCubicFiniteVolumeSpace = FiniteVolumeSpaceOnCubicLeafView<G, 1>;
-TYPED_TEST_CASE(ScalarCubicFiniteVolumeSpace, CubicGrids);
+TYPED_TEST_SUITE(ScalarCubicFiniteVolumeSpace, CubicGrids);
 TYPED_TEST(ScalarCubicFiniteVolumeSpace, basis_exists_on_each_element_with_correct_size)
 {
   this->basis_exists_on_each_element_with_correct_size();
@@ -355,7 +355,7 @@ struct FiniteVolumeSpaceOnPrismLeafView
 
   FiniteVolumeSpaceOnPrismLeafView()
   {
-    if (d == 3) {
+    if constexpr (d == 3) {
       Dune::GridFactory<G> factory;
       for (auto&& vertex : {Dune::XT::Common::FieldVector<D, d>({-1., -1.5, -1.5}),
                             Dune::XT::Common::FieldVector<D, d>({-1., -1., -1.5}),
@@ -396,7 +396,7 @@ using PrismGrids = ::testing::Types<
 
 template <class G>
 using ScalarPrismFiniteVolumeSpace = FiniteVolumeSpaceOnPrismLeafView<G, 1>;
-TYPED_TEST_CASE(ScalarPrismFiniteVolumeSpace, PrismGrids);
+TYPED_TEST_SUITE(ScalarPrismFiniteVolumeSpace, PrismGrids);
 TYPED_TEST(ScalarPrismFiniteVolumeSpace, basis_exists_on_each_element_with_correct_size)
 {
   this->basis_exists_on_each_element_with_correct_size();
@@ -446,7 +446,7 @@ struct FiniteVolumeSpaceOnPyramidLeafView
 
   FiniteVolumeSpaceOnPyramidLeafView()
   {
-    if (d == 3) {
+    if constexpr (d == 3) {
       Dune::GridFactory<G> factory;
       for (auto&& vertex : {Dune::XT::Common::FieldVector<D, d>({0, 0, 0}),
                             Dune::XT::Common::FieldVector<D, d>({1, 0, 0}),
@@ -486,7 +486,7 @@ using PyramidGrids = ::testing::Types<
 
 template <class G>
 using ScalarPyramidFiniteVolumeSpace = FiniteVolumeSpaceOnPyramidLeafView<G, 1>;
-TYPED_TEST_CASE(ScalarPyramidFiniteVolumeSpace, PyramidGrids);
+TYPED_TEST_SUITE(ScalarPyramidFiniteVolumeSpace, PyramidGrids);
 TYPED_TEST(ScalarPyramidFiniteVolumeSpace, basis_exists_on_each_element_with_correct_size)
 {
   this->basis_exists_on_each_element_with_correct_size();
@@ -620,7 +620,7 @@ using MixedGrids = ::testing::Types<
 
 template <class G>
 using ScalarMixedFiniteVolumeSpace = FiniteVolumeSpaceOnMixedLeafView<G, 1>;
-TYPED_TEST_CASE(ScalarMixedFiniteVolumeSpace, MixedGrids);
+TYPED_TEST_SUITE(ScalarMixedFiniteVolumeSpace, MixedGrids);
 TYPED_TEST(ScalarMixedFiniteVolumeSpace, basis_exists_on_each_element_with_correct_size)
 {
   this->basis_exists_on_each_element_with_correct_size();

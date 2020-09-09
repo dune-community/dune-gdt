@@ -60,9 +60,9 @@ public:
   using EntityType = typename GridViewType::template Codim<0>::Entity;
   using DomainFieldType = typename DiscreteFunctionType::DomainFieldType;
   using RangeFieldType = typename DiscreteFunctionType::RangeFieldType;
-  static const size_t dimDomain = DiscreteFunctionType::d;
-  static const size_t dimRange = DiscreteFunctionType::r;
-  static const size_t dimRangeCols = DiscreteFunctionType::rC;
+  static constexpr size_t dimDomain = DiscreteFunctionType::d;
+  static constexpr size_t dimRange = DiscreteFunctionType::r;
+  static constexpr size_t dimRangeCols = DiscreteFunctionType::rC;
   using DomainType = typename DiscreteFunctionType::LocalFunctionType::DomainType;
   using RangeType = typename DiscreteFunctionType::LocalFunctionType::RangeType;
   using DiscreteSolutionType = typename std::map<RangeFieldType, DiscreteFunctionType, typename internal::FloatCmpLt>;

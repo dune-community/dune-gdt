@@ -19,7 +19,7 @@ using Simplicial1dGrids = ::testing::Types<ONED_1D, YASP_1D_EQUIDISTANT_OFFSET>;
 
 template <class G>
 using InterpolationTest = Dune::GDT::Test::DefaultInterpolationOnLeafViewTest<G>;
-TYPED_TEST_CASE(InterpolationTest, Simplicial1dGrids);
+TYPED_TEST_SUITE(InterpolationTest, Simplicial1dGrids);
 TYPED_TEST(InterpolationTest, interpolates_correctly)
 {
   this->interpolates_correctly();

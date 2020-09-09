@@ -19,7 +19,7 @@ using namespace Dune::GDT;
 
 template <class G>
 using Order1SimplicialContinuousLagrangeSpace = ContinuousLagrangeSpaceOnSimplicialLeafViewTest<G, 1, double, 1>;
-TYPED_TEST_CASE(Order1SimplicialContinuousLagrangeSpace, SimplicialGrids);
+TYPED_TEST_SUITE(Order1SimplicialContinuousLagrangeSpace, SimplicialGrids);
 TYPED_TEST(Order1SimplicialContinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
@@ -64,7 +64,7 @@ TYPED_TEST(Order1SimplicialContinuousLagrangeSpace, local_interpolation_seems_to
 
 template <class G>
 using Order2SimplicialContinuousLagrangeSpace = ContinuousLagrangeSpaceOnSimplicialLeafViewTest<G, 1, double, 2>;
-TYPED_TEST_CASE(Order2SimplicialContinuousLagrangeSpace, SimplicialGrids);
+TYPED_TEST_SUITE(Order2SimplicialContinuousLagrangeSpace, SimplicialGrids);
 TYPED_TEST(Order2SimplicialContinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();

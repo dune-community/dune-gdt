@@ -46,10 +46,10 @@ class LocalFiniteElementBasisInterface
 
 public:
   using D = DomainField;
-  static const constexpr size_t d = domain_dim;
+  static constexpr size_t d = domain_dim;
   using R = RangeField;
-  static const constexpr size_t r = range_dim;
-  static const constexpr size_t rC = range_dim_columns;
+  static constexpr size_t r = range_dim;
+  static constexpr size_t rC = range_dim_columns;
 
   using DomainType = FieldVector<D, d>;
   using RangeType = typename XT::Functions::RangeTypeSelector<R, r, rC>::type;
@@ -99,10 +99,10 @@ class LocalFiniteElementInterpolationInterface
 
 public:
   using D = DomainField;
-  static const constexpr size_t d = domain_dim;
+  static constexpr size_t d = domain_dim;
   using R = RangeField;
-  static const constexpr size_t r = range_dim;
-  static const constexpr size_t rC = range_dim_columns;
+  static constexpr size_t r = range_dim;
+  static constexpr size_t rC = range_dim_columns;
 
   using DomainType = FieldVector<D, d>;
   using RangeType = typename XT::Functions::RangeTypeSelector<R, r, rC>::type;
@@ -158,7 +158,7 @@ class LocalFiniteElementCoefficientsInterface
 
 public:
   using D = DomainField;
-  static const constexpr size_t d = domain_dim;
+  static constexpr size_t d = domain_dim;
 
   virtual ~LocalFiniteElementCoefficientsInterface() = default;
 
@@ -257,10 +257,10 @@ class LocalFiniteElementInterface
 {
 public:
   using D = DomainField;
-  static const constexpr size_t d = domain_dim;
+  static constexpr size_t d = domain_dim;
   using R = RangeField;
-  static const constexpr size_t r = range_dim;
-  static const constexpr size_t rC = range_dim_columns;
+  static constexpr size_t r = range_dim;
+  static constexpr size_t rC = range_dim_columns;
 
   using DomainType = FieldVector<D, d>;
   using BasisType = LocalFiniteElementBasisInterface<D, d, R, r, rC>;
@@ -346,10 +346,10 @@ class LocalFiniteElementFamilyInterface
 {
 public:
   using D = DomainField;
-  static const constexpr size_t d = domain_dim;
+  static constexpr size_t d = domain_dim;
   using R = RangeField;
-  static const constexpr size_t r = range_dim;
-  static const constexpr size_t rC = range_dim_columns;
+  static constexpr size_t r = range_dim;
+  static constexpr size_t rC = range_dim_columns;
 
   using LocalFiniteElementType = LocalFiniteElementInterface<D, d, R, r, rC>;
 

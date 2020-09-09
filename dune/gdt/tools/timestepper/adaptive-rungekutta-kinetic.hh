@@ -22,6 +22,9 @@
 
 #include "adaptive-rungekutta.hh"
 
+#if HAVE_TBB && __has_include(<tbb/tbb_exception.h>)
+#  include <tbb/tbb_exception.h>
+#endif
 
 namespace Dune {
 namespace GDT {
@@ -191,7 +194,7 @@ public:
   {
     RangeFieldType actual_dt = std::min(dt, max_dt);
     // regularization is currently unused but may be used in the near future
-    static const bool consider_regularization = false;
+    static constexpr bool consider_regularization = false;
     // set_op_param("dt", actual_dt);
     RangeFieldType mixed_error = std::numeric_limits<RangeFieldType>::max();
     RangeFieldType time_step_scale_factor = 1.0;
@@ -230,7 +233,7 @@ public:
           time_step_scale_factor = 0.5;
           // std::cout << "MathError! " << e.what() << std::endl;
           break;
-#if HAVE_TBB
+#if HAVE_TBB && __has_include(<tbb/tbb_exception.h>)
         } catch (const tbb::captured_exception& e) {
           mixed_error = 1e10;
           skip_error_computation = true;
@@ -262,7 +265,7 @@ public:
           time_step_scale_factor = 0.5;
           // std::cout << "MathError! " << e.what() << std::endl;
           continue;
-#if HAVE_TBB
+#if HAVE_TBB && __has_include(<tbb/tbb_exception.h>)
         } catch (const tbb::captured_exception& e) {
           mixed_error = 1e10;
           time_step_scale_factor = 0.5;

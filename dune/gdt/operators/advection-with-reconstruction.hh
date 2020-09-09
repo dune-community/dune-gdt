@@ -35,7 +35,7 @@ public:
   using AdvectionOperatorType = AdvectionOperatorImp;
   using ReconstructionOperatorType = ReconstructionOperatorImp;
   using GridViewType = typename AdvectionOperatorType::SourceSpaceType::GridViewType;
-  static const size_t r = AdvectionOperatorType::s_r;
+  static constexpr size_t r = AdvectionOperatorType::s_r;
   using VectorType = typename AdvectionOperatorType::VectorType;
   using ReconstructionType = DiscreteFunction<VectorType, GridViewType, r>;
 
@@ -93,7 +93,7 @@ public:
   using AdvectionOperatorType = AdvectionOperatorImp;
   using ReconstructionOperatorType = ReconstructionOperatorImp;
   using GV = typename AdvectionOperatorType::SourceSpaceType::GridViewType;
-  static const size_t r = AdvectionOperatorType::s_r;
+  static constexpr size_t r = AdvectionOperatorType::s_r;
   using VectorType = typename AdvectionOperatorType::VectorType;
 
   AdvectionWithPointwiseReconstructionOperator(

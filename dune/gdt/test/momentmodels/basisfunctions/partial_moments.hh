@@ -727,7 +727,7 @@ private:
                   return true;
                 return false;
               });
-    static const auto pair_float_cmp = [](const CoeffType& first, const CoeffType& second) {
+    static constexpr auto pair_float_cmp = [](const CoeffType& first, const CoeffType& second) {
       return XT::Common::FloatCmp::eq(first.first, second.first)
              && XT::Common::FloatCmp::eq(first.second, second.second);
     };

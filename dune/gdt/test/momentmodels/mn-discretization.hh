@@ -112,7 +112,7 @@ struct HyperbolicMnDiscretization
     using BoundaryValueType = typename ProblemType::BoundaryValueType;
     static constexpr size_t dimDomain = MomentBasis::dimDomain;
     static constexpr size_t dimRange = MomentBasis::dimRange;
-    static const auto la_backend = TestCaseType::la_backend;
+    static constexpr auto la_backend = TestCaseType::la_backend;
     using DomainType = FieldVector<RangeFieldType, dimDomain>;
     using MatrixType = typename XT::LA::Container<RangeFieldType, la_backend>::MatrixType;
     using VectorType = typename XT::LA::Container<RangeFieldType, la_backend>::VectorType;
@@ -182,9 +182,9 @@ struct HyperbolicMnDiscretization
     // *************** Calculate dx and initial dt **************************************
     Dune::XT::Grid::Dimensions<GV> dimensions(grid_view);
     RangeFieldType dx = dimensions.entity_width.max();
-    if (dimDomain == 2)
+    if constexpr (dimDomain == 2)
       dx /= std::sqrt(2);
-    if (dimDomain == 3)
+    else if constexpr (dimDomain == 3)
       dx /= std::sqrt(3);
     RangeFieldType dt = CFL * dx;
 

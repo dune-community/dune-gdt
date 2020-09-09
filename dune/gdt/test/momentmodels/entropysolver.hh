@@ -34,8 +34,8 @@ class LocalEntropySolver : public XT::Grid::ElementFunctor<typename SpaceType::G
   using EntropyFluxType = EntropyBasedFluxFunction<GridViewType, MomentBasis>;
   using RangeFieldType = typename EntropyFluxType::RangeFieldType;
   using LocalVectorType = typename EntropyFluxType::VectorType;
-  static const size_t dimFlux = EntropyFluxType::dimFlux;
-  static const size_t dimRange = EntropyFluxType::basis_dimRange;
+  static constexpr size_t dimFlux = EntropyFluxType::dimFlux;
+  static constexpr size_t dimRange = EntropyFluxType::basis_dimRange;
   using DiscreteFunctionType = DiscreteFunction<VectorType, GridViewType, dimRange, 1, RangeFieldType>;
   using ConstDiscreteFunctionType = ConstDiscreteFunction<VectorType, GridViewType, dimRange, 1, RangeFieldType>;
 

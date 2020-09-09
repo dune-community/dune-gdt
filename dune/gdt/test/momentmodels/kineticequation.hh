@@ -29,10 +29,10 @@ public:
   using MomentBasis = MomentBasisImp;
   using DomainFieldType = typename MomentBasis::DomainFieldType;
   using RangeFieldType = typename MomentBasis::RangeFieldType;
-  static const size_t dimDomain = MomentBasis::dimDomain;
-  static const size_t dimRange = MomentBasis::dimRange;
-  static const size_t dimRangeCols = MomentBasis::dimRangeCols;
-  static const size_t dimFlux = MomentBasis::dimFlux;
+  static constexpr size_t dimDomain = MomentBasis::dimDomain;
+  static constexpr size_t dimRange = MomentBasis::dimRange;
+  static constexpr size_t dimRangeCols = MomentBasis::dimRangeCols;
+  static constexpr size_t dimFlux = MomentBasis::dimFlux;
   using FluxType = XT::Functions::FluxFunctionInterface<E, dimRange, dimFlux, dimRange, RangeFieldType>;
   using GenericFluxFunctionType = XT::Functions::GenericFluxFunction<E, dimRange, dimFlux, dimRange, RangeFieldType>;
   using InitialValueType = XT::Functions::FunctionInterface<dimFlux, dimRange, 1, RangeFieldType>;

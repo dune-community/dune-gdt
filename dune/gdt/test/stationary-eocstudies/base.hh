@@ -63,9 +63,9 @@ class StationaryEocStudy
 protected:
   using GV = GridView;
   using G = typename GridView::Grid;
-  static const constexpr size_t m = m_;
+  static constexpr size_t m = m_;
   using D = double;
-  static const constexpr size_t d = G::dimension;
+  static constexpr size_t d = G::dimension;
   using R = double;
   using I = XT::Grid::extract_intersection_t<GV>;
   using DomainType = XT::Common::FieldVector<D, d>;

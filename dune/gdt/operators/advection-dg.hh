@@ -66,7 +66,7 @@ class AdvectionDgOperator : public LocalizableOperator<M, AGV, m, 1, m, 1, RGV, 
   using BaseType = LocalizableOperator<M, AGV, m, 1, m, 1, RGV, SGV>;
 
 protected:
-  static const constexpr size_t d = SGV::dimension;
+  static constexpr size_t d = SGV::dimension;
   using D = typename SGV::ctype;
 
 public:

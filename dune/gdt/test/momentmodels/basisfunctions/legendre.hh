@@ -26,9 +26,9 @@ class LegendreMomentBasis
   : public MomentBasisInterface<DomainFieldType, 1, RangeFieldType, order + 1, dimRangeCols, 1, entropy>
 {
 public:
-  static const size_t dimDomain = 1;
-  static const size_t dimRange = order + 1;
-  static const size_t num_intervals = size_t(-1);
+  static constexpr size_t dimDomain = 1;
+  static constexpr size_t dimRange = order + 1;
+  static constexpr size_t num_intervals = size_t(-1);
 
 private:
   typedef MomentBasisInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols, 1, entropy> BaseType;
@@ -80,7 +80,7 @@ public:
   {
     DynamicRangeType ret(dimRange);
     ret[0] = 1.;
-    if (dimRange > 1)
+    if constexpr (dimRange > 1)
       ret[1] = v[0];
     for (size_t ii = 2; ii < dimRange; ++ii)
       ret[ii] = ((2. * ii - 1.) * v[0] * ret[ii - 1] - (ii - 1.) * ret[ii - 2]) / ii;

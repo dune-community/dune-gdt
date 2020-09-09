@@ -50,7 +50,7 @@ public:
       std::vector<typename std::conditional_t<use_test_gradient, LocalAnsatzBasisType, LocalTestBasisType>::RangeType>;
   using BasisJacobians = std::vector<
       typename std::conditional_t<use_test_gradient, LocalTestBasisType, LocalAnsatzBasisType>::DerivativeRangeType>;
-  static const size_t vector_size = d;
+  static constexpr size_t vector_size = d;
 
   using VectorGridFunctionType = XT::Functions::GridFunction<E, vector_size, 1, F>;
   using VectorValues = typename VectorGridFunctionType::LocalFunctionType::RangeReturnType;

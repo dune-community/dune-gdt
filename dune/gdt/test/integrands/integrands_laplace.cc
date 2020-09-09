@@ -159,7 +159,7 @@ struct LaplaceIntegrandTest : public IntegrandTest<G>
 
 template <class G>
 using LaplaceIntegrandTest = Dune::GDT::Test::LaplaceIntegrandTest<G>;
-TYPED_TEST_CASE(LaplaceIntegrandTest, Grids2D);
+TYPED_TEST_SUITE(LaplaceIntegrandTest, Grids2D);
 
 TYPED_TEST(LaplaceIntegrandTest, is_constructable)
 {

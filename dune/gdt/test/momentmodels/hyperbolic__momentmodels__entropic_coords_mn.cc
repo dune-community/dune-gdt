@@ -50,7 +50,7 @@ using YaspGridTestCasesAll = testing::Types<
 #endif // !DXT_DISABLE_LARGE_TESTS
     >;
 
-TYPED_TEST_CASE(HyperbolicEntropicCoordsMnTest, YaspGridTestCasesAll);
+TYPED_TEST_SUITE(HyperbolicEntropicCoordsMnTest, YaspGridTestCasesAll);
 TYPED_TEST(HyperbolicEntropicCoordsMnTest, check)
 {
   this->run();

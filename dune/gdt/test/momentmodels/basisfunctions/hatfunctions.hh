@@ -161,10 +161,10 @@ class HatFunctionMomentBasis<DomainFieldType, 1, RangeFieldType, rangeDim, range
   : public HatFunctionMomentBasisBase<DomainFieldType, 1, RangeFieldType, rangeDim, fluxDim, entropy>
 {
 public:
-  static const size_t dimDomain = 1;
-  static const size_t dimRange = rangeDim;
-  static const size_t dimRangeCols = rangeDimCols;
-  static const size_t num_intervals = dimRange - 1;
+  static constexpr size_t dimDomain = 1;
+  static constexpr size_t dimRange = rangeDim;
+  static constexpr size_t dimRangeCols = rangeDimCols;
+  static constexpr size_t num_intervals = dimRange - 1;
 
 private:
   using BaseType = HatFunctionMomentBasisBase<DomainFieldType, 1, RangeFieldType, rangeDim, fluxDim, entropy>;

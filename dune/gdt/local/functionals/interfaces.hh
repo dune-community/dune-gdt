@@ -46,12 +46,12 @@ class LocalElementFunctionalInterface : public XT::Common::ParametricInterface
 public:
   using E = Element;
   using D = typename Element::Geometry::ctype;
-  static const constexpr size_t d = E::dimension;
+  static constexpr size_t d = E::dimension;
   using F = Field;
 
   using R = RangeField;
-  static const constexpr size_t r = range_dim;
-  static const constexpr size_t rC = range_dim_cols;
+  static constexpr size_t r = range_dim;
+  static constexpr size_t rC = range_dim_cols;
 
   using ElementType = Element;
   using LocalBasisType = XT::Functions::ElementFunctionSetInterface<E, r, rC, R>;
@@ -106,14 +106,14 @@ public:
   using IntersectionType = Intersection;
   using ElementType = typename Intersection::Entity;
   using D = typename ElementType::Geometry::ctype;
-  static const constexpr size_t d = ElementType::dimension;
+  static constexpr size_t d = ElementType::dimension;
 
   using I = IntersectionType;
   using E = ElementType;
   using F = Field;
   using R = RangeField;
-  static const constexpr size_t r = range_dim;
-  static const constexpr size_t rC = range_dim_cols;
+  static constexpr size_t r = range_dim;
+  static constexpr size_t rC = range_dim_cols;
 
   using LocalBasisType = XT::Functions::ElementFunctionSetInterface<E, r, rC, R>;
 

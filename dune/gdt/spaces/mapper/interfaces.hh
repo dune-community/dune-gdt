@@ -30,7 +30,7 @@ class MapperInterface
 public:
   using GridViewType = GV;
   using D = typename GV::ctype;
-  static const constexpr size_t d = GV::dimension;
+  static constexpr size_t d = GV::dimension;
   using ElementType = XT::Grid::extract_entity_t<GridViewType>;
 
   virtual ~MapperInterface() = default;

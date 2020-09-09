@@ -32,7 +32,7 @@ namespace Test {
 template <class G>
 struct LinearTransportProblem
 {
-  static const constexpr size_t d = G::dimension;
+  static constexpr size_t d = G::dimension;
   using DomainType = XT::Common::FieldVector<double, d>;
 
   const DomainType direction;

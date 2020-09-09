@@ -34,7 +34,7 @@ struct RtSpace : public ::testing::Test
   static_assert(p == 0, "The space cannot handle higher orders (yet)!");
   using SpaceType = Dune::GDT::RaviartThomasSpace<GridViewType, double>;
   using D = typename SpaceType::D;
-  static const constexpr size_t d = SpaceType::d;
+  static constexpr size_t d = SpaceType::d;
 
   virtual std::shared_ptr<GridViewType> grid_view() = 0;
 
@@ -350,7 +350,7 @@ using SimplicialGrids = ::testing::Types<ONED_1D,
 
 template <class G>
 using Order0SimplicialRtSpace = RtSpaceOnSimplicialLeafView<G, 0>;
-TYPED_TEST_CASE(Order0SimplicialRtSpace, SimplicialGrids);
+TYPED_TEST_SUITE(Order0SimplicialRtSpace, SimplicialGrids);
 TYPED_TEST(Order0SimplicialRtSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
@@ -448,7 +448,7 @@ using CubicGrids = ::testing::Types<YASP_2D_EQUIDISTANT_OFFSET
 
 template <class G>
 using Order0CubicRtSpace = RtSpaceOnCubicLeafView<G, 0>;
-TYPED_TEST_CASE(Order0CubicRtSpace, CubicGrids);
+TYPED_TEST_SUITE(Order0CubicRtSpace, CubicGrids);
 TYPED_TEST(Order0CubicRtSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
@@ -590,7 +590,7 @@ using MixedGrids = ::testing::Types<
 
 template <class G>
 using Order0MixedRtSpace = RtSpaceOnMixedLeafView<G, 0>;
-TYPED_TEST_CASE(Order0MixedRtSpace, MixedGrids);
+TYPED_TEST_SUITE(Order0MixedRtSpace, MixedGrids);
 TYPED_TEST(Order0MixedRtSpace, gives_correct_identification)
 {
   this->gives_correct_identification();

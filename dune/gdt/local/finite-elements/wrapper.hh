@@ -35,7 +35,7 @@ template <class Implementation, class DomainType>
 class LocalFiniteElementInterpolationLagrangepointsAccessor
 {
   DXTC_has_method_initialize_once(lagrangePoints);
-  static const constexpr bool has_lagrange_points = DXTC_has_method(lagrangePoints)<Implementation>::value;
+  static constexpr bool has_lagrange_points = DXTC_has_method(lagrangePoints)<Implementation>::value;
 
   template <bool available = has_lagrange_points, bool anything = true>
   struct lagrangian_helper // available == false
@@ -244,7 +244,7 @@ public:
 
   size_t size() const override final
   {
-    assert(imp_->size() >= 0 && imp_->size() < std::numeric_limits<size_t>::max());
+    assert(imp_->size() < std::numeric_limits<size_t>::max());
     return static_cast<size_t>(imp_->size());
   }
 
