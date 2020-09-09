@@ -119,6 +119,11 @@ struct CellModelSolver
       const int inner_maxit = 10,
       const int inner_verbose = 0);
 
+  CellModelSolver(const CellModelSolver&) = delete;
+  CellModelSolver(CellModelSolver&&) = delete;
+  CellModelSolver& operator=(const CellModelSolver&) = delete;
+  CellModelSolver& operator=(CellModelSolver&&) = delete;
+
   size_t num_cells() const;
 
   bool linear() const;

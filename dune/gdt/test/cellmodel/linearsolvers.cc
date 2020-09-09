@@ -265,7 +265,9 @@ std::shared_ptr<CellModelLinearSolverWrapper::PreconditionerType>
     // } else if (solver_type_ == CellModelLinearSolverType::gmres) {
     // return std::make_shared<InverseOperator2Preconditioner<InverseOperatorType>>(*preconditioner_inverse_op_);
   } else {
-    return std::make_shared<InverseOperator2Preconditioner<InverseOperatorType>>(*preconditioner_inverse_op_);
+    return preconditioner_inverse_op_
+               ? std::make_shared<InverseOperator2Preconditioner<InverseOperatorType>>(*preconditioner_inverse_op_)
+               : nullptr;
   }
 }
 

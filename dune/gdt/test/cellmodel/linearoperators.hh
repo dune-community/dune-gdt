@@ -100,8 +100,6 @@ public:
    */
   void apply(const Vector& x, Vector& y) const override final
   {
-    const auto& source_dofs = cellmodel_solver_->ofield_deim_source_dofs_[cell_][1];
-    const auto& Pnat_begin = cellmodel_solver_->Pnat_deim_source_dofs_begin_[cell_];
     // copy to temporary vectors (we do not use vector views to improve performance of mv)
     if (!restricted_) {
       for (size_t ii = 0; ii < size_P_; ++ii) {
@@ -109,6 +107,8 @@ public:
         x_Pnat_[ii] = x[size_P_ + ii];
       }
     } else {
+      const auto& source_dofs = cellmodel_solver_->ofield_deim_source_dofs_[cell_][1];
+      const auto& Pnat_begin = cellmodel_solver_->Pnat_deim_source_dofs_begin_[cell_];
       for (size_t ii = 0; ii < Pnat_begin; ++ii)
         x_P_[source_dofs[ii]] = x[source_dofs[ii]];
       for (size_t ii = Pnat_begin; ii < source_dofs.size(); ++ii)
@@ -371,9 +371,6 @@ public:
   void apply(const Vector& x, Vector& y) const override final
   {
     // copy to temporary vectors (we do not use vector views to improve performance of mv)
-    const auto& source_dofs = cellmodel_solver_->pfield_deim_source_dofs_[cell_][0];
-    const auto& phinat_begin = cellmodel_solver_->phinat_deim_source_dofs_begin_[cell_];
-    const auto& mu_begin = cellmodel_solver_->mu_deim_source_dofs_begin_[cell_];
     if (!restricted_) {
       for (size_t ii = 0; ii < size_phi_; ++ii) {
         x_phi_[ii] = x[ii];
@@ -381,6 +378,9 @@ public:
         x_mu_[ii] = x[2 * size_phi_ + ii];
       }
     } else {
+      const auto& source_dofs = cellmodel_solver_->pfield_deim_source_dofs_[cell_][0];
+      const auto& phinat_begin = cellmodel_solver_->phinat_deim_source_dofs_begin_[cell_];
+      const auto& mu_begin = cellmodel_solver_->mu_deim_source_dofs_begin_[cell_];
       for (size_t ii = 0; ii < phinat_begin; ++ii)
         x_phi_[source_dofs[ii]] = x[source_dofs[ii]];
       for (size_t ii = phinat_begin; ii < mu_begin; ++ii)

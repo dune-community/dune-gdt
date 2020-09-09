@@ -1232,14 +1232,12 @@ CellModelSolver::VectorType CellModelSolver::apply_stokes_operator(const VectorT
 CellModelSolver::VectorType
 CellModelSolver::apply_stokes_helper(const VectorType& y, const bool restricted, const bool jacobian)
 {
-  const auto& range_dofs = *stokes_deim_range_dofs_;
   const auto& unique_range_dofs = stokes_deim_unique_range_dofs_;
-  const auto& source_dofs = stokes_deim_source_dofs_[2];
   auto& source = stokes_tmp_vec_;
   auto& residual = stokes_tmp_vec2_;
   // copy values to high-dimensional vector
   if (restricted)
-    copy_ld_to_hd_vec(source_dofs, y, source);
+    copy_ld_to_hd_vec(stokes_deim_source_dofs_[2], y, source);
   else
     source = y;
   const auto mv = mv_func<VectorType, VectorType>(restricted);
@@ -1249,6 +1247,7 @@ CellModelSolver::apply_stokes_helper(const VectorType& y, const bool restricted,
     sub(residual, stokes_rhs_vector_, unique_range_dofs);
   }
   if (restricted) {
+    const auto& range_dofs = *stokes_deim_range_dofs_;
     VectorType ret(range_dofs.size());
     for (size_t ii = 0; ii < range_dofs.size(); ++ii)
       ret[ii] = residual[range_dofs[ii]];
@@ -1294,21 +1293,18 @@ CellModelSolver::apply_ofield_operator(const VectorType& y, const size_t cell, c
 CellModelSolver::VectorType
 CellModelSolver::apply_ofield_helper(const VectorType& y, const size_t cell, const bool restricted, const bool jacobian)
 {
-
-  const auto& range_dofs = *ofield_deim_range_dofs_[cell];
-  const auto& unique_range_dofs = ofield_deim_unique_range_dofs_[cell];
-  const auto& source_dofs = ofield_deim_source_dofs_[cell][1];
   auto& source = ofield_tmp_vec_;
   auto& residual = ofield_tmp_vec2_;
   // copy values to high-dimensional vector
   if (restricted)
-    copy_ld_to_hd_vec(source_dofs, y, source);
+    copy_ld_to_hd_vec(ofield_deim_source_dofs_[cell][1], y, source);
   else
     source = y;
   // linear part
   ofield_jac_linear_op_.apply(source, residual);
   if (!jacobian) {
     // subtract rhs
+    const auto& unique_range_dofs = ofield_deim_unique_range_dofs_[cell];
     const auto sub = sub_func<VectorType>(restricted);
     sub(residual, ofield_rhs_vector_, unique_range_dofs);
   }
@@ -1326,6 +1322,7 @@ CellModelSolver::apply_ofield_helper(const VectorType& y, const size_t cell, con
     assemble_nonlinear_part_of_ofield_residual(residual, cell, restricted);
   }
   if (restricted) {
+    const auto& range_dofs = *ofield_deim_range_dofs_[cell];
     VectorType ret(range_dofs.size());
     for (size_t ii = 0; ii < range_dofs.size(); ++ii)
       ret[ii] = residual[range_dofs[ii]];
@@ -1365,20 +1362,18 @@ CellModelSolver::apply_pfield_operator(const VectorType& y, const size_t cell, c
 CellModelSolver::VectorType
 CellModelSolver::apply_pfield_helper(const VectorType& y, const size_t cell, const bool restricted, const bool jacobian)
 {
-  const auto& range_dofs = *pfield_deim_range_dofs_[cell];
-  const auto& unique_range_dofs = pfield_deim_unique_range_dofs_[cell];
-  const auto& source_dofs = pfield_deim_source_dofs_[cell][0];
   auto& source = pfield_tmp_vec_;
   auto& residual = pfield_tmp_vec2_;
   // copy values to high-dimensional vector
   if (restricted)
-    copy_ld_to_hd_vec(source_dofs, y, source);
+    copy_ld_to_hd_vec(pfield_deim_source_dofs_[cell][0], y, source);
   else
     source = y;
   // linear part
   pfield_jac_linear_op_.apply(source, residual);
   if (!jacobian) {
     // subtract rhs
+    const auto& unique_range_dofs = pfield_deim_unique_range_dofs_[cell];
     const auto sub = sub_func<VectorType>(restricted);
     sub(residual, pfield_rhs_vector_, unique_range_dofs);
   }
@@ -1413,6 +1408,7 @@ CellModelSolver::apply_pfield_helper(const VectorType& y, const size_t cell, con
     assemble_nonlinear_part_of_pfield_residual(residual, cell, restricted);
   }
   if (restricted) {
+    const auto& range_dofs = *pfield_deim_range_dofs_[cell];
     VectorType ret(range_dofs.size());
     for (size_t ii = 0; ii < range_dofs.size(); ++ii)
       ret[ii] = residual[range_dofs[ii]];
