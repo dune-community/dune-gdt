@@ -282,7 +282,9 @@ compute_estimate(const GP& grid,
               const auto pressure_grad = p->jacobian(xx)[0];
               const auto t_val = t->evaluate(xx);
               auto difference = diff * pressure_grad + t_val;
-              return (diff_inv * difference) * difference;
+              auto diff_inv_times_diff = difference;
+              diff_inv.mv(difference, diff_inv_times_diff);
+              return diff_inv_times_diff * difference;
             },
             std::max(df->order() + std::max(p->order() - 1, 0), t->order()) + over_integrate);
         // compute indicators and estimator
