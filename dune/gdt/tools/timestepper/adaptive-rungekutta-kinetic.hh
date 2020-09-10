@@ -111,6 +111,7 @@ public:
     , c_(c)
     , b_diff_(b_2_ - b_1_)
     , num_stages_(A_.rows())
+    , first_same_as_last_(true)
     , initial_values_evaluated_(false)
   {
     assert(Dune::XT::Common::FloatCmp::ge(atol_, 0.0));
