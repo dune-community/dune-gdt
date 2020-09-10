@@ -63,7 +63,7 @@ public:
   using DynamicStateType = typename XT::Functions::RangeTypeSelector<SR, m, 1>::dynamic_type;
   using NumericalFluxType = NumericalFluxInterface<I, d, m, RR>;
   using LocalIntersectionCoords = typename NumericalFluxType::LocalIntersectionCoords;
-  static constexpr typename LocalSourceType::DomainType static_x;
+  static const typename LocalSourceType::DomainType static_x;
 
   // When using this constructor, source has to be set by a call to with_source before calling apply
   LocalAdvectionFvCouplingOperator(const NumericalFluxType& numerical_flux,
