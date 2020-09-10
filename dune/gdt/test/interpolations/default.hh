@@ -69,14 +69,15 @@ struct DefaultInterpolationOnLeafViewTest : public ::testing::Test
         [](const auto&) { return 2; },
         [](const auto& x, const auto&) {
           const auto x_dependent = 2 * std::pow(x[0], 2) - x[0] + 3;
-          const auto xy_dependent = x_dependent + x[0] * x[1] + 0.5 * x[1] - std::pow(x[1], 2);
-          const auto xyz_dependent = xy_dependent + 0.5 * std::pow(x[2], 2) + x[2] * x[0] - 3 * x[2] * x[1];
+          D xy_dependent;
+          if constexpr (d >= 2)
+            xy_dependent = x_dependent + x[0] * x[1] + 0.5 * x[1] - std::pow(x[1], 2);
           if constexpr (d == 1)
             return x_dependent;
           else if constexpr (d == 2)
             return xy_dependent;
           else
-            return xyz_dependent;
+            return xy_dependent + 0.5 * std::pow(x[2], 2) + x[2] * x[0] - 3 * x[2] * x[1];
         },
         "second order polynomial",
         XT::Common::ParameterType{},
