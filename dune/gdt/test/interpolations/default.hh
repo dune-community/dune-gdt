@@ -69,7 +69,7 @@ struct DefaultInterpolationOnLeafViewTest : public ::testing::Test
         [](const auto&) { return 2; },
         [](const auto& x, const auto&) {
           const auto x_dependent = 2 * std::pow(x[0], 2) - x[0] + 3;
-          D xy_dependent;
+          [[maybe_unused]] D xy_dependent;
           if constexpr (d >= 2)
             xy_dependent = x_dependent + x[0] * x[1] + 0.5 * x[1] - std::pow(x[1], 2);
           if constexpr (d == 1)
@@ -83,7 +83,8 @@ struct DefaultInterpolationOnLeafViewTest : public ::testing::Test
         XT::Common::ParameterType{},
         [](const auto& x, const auto&) {
           const std::vector<double> x_dependent_jacobian{4 * x[0] - 1, 0, 0, 0};
-          std::vector<double> y_dependent_jacobian, z_dependent_jacobian;
+          [[maybe_unused]] std::vector<double> y_dependent_jacobian;
+          [[maybe_unused]] std::vector<double> z_dependent_jacobian;
           if constexpr (d >= 2)
             y_dependent_jacobian = {x[1], x[0] + 0.5 - 2 * x[1], 0, 0};
           if constexpr (d >= 3)

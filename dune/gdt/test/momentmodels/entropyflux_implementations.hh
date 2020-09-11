@@ -2133,13 +2133,14 @@ public:
     auto& right_flux_value = flux_values[coord];
     std::fill(right_flux_value.begin(), right_flux_value.end(), 0.);
     std::fill(left_flux_value.begin(), left_flux_value.end(), 0.);
-    const auto slope_func =
+    [[maybe_unused]] const auto slope_func =
         (slope_type == SlopeLimiterType::minmod) ? XT::Common::minmod<RangeFieldType> : superbee<RangeFieldType>;
     const auto& psi_left = (*ansatz_distribution_values[0]);
     const auto& psi_entity = *ansatz_distribution_values[1];
     const auto& psi_right = (*ansatz_distribution_values[2]);
     constexpr bool reconstruct = (slope_type != SlopeLimiterType::no_slope);
-    RangeFieldType factor, slope;
+    RangeFieldType factor;
+    [[maybe_unused]] RangeFieldType slope;
     for (size_t jj = 0; jj < num_blocks; ++jj) {
       // calculate fluxes
       const auto& weights = quad_weights_[jj];
@@ -2168,7 +2169,7 @@ public:
       } else {
         // all quadrature points have the same sign
         auto& flux_val = quad_signs_[jj][dd] > 0 ? right_flux_value : left_flux_value;
-        const double sign_factor = quad_signs_[jj][dd] > 0 ? 0.5 : -0.5;
+        [[maybe_unused]] const double sign_factor = quad_signs_[jj][dd] > 0 ? 0.5 : -0.5;
         for (size_t ll = 0; ll < num_quad_points; ++ll) {
           if constexpr (reconstruct) {
             slope = slope_func(psi_e[ll] - psi_l[ll], psi_r[ll] - psi_e[ll]);
@@ -2921,7 +2922,7 @@ public:
     auto& right_flux_value = flux_values[coord];
     std::fill(right_flux_value.begin(), right_flux_value.end(), 0.);
     std::fill(left_flux_value.begin(), left_flux_value.end(), 0.);
-    const auto slope_func =
+    [[maybe_unused]] const auto slope_func =
         (slope_type == SlopeLimiterType::minmod) ? XT::Common::minmod<RangeFieldType> : superbee<RangeFieldType>;
     for (size_t jj = 0; jj < basis_dimRange; ++jj) {
       const bool positive_dir = v_positive_[jj][dd];
@@ -3750,7 +3751,7 @@ public:
     std::fill(right_flux_value.begin(), right_flux_value.end(), 0.);
     std::fill(left_flux_value.begin(), left_flux_value.end(), 0.);
     const auto& faces = basis_functions_.triangulation().faces();
-    const auto slope_func =
+    [[maybe_unused]] const auto slope_func =
         (slope_type == SlopeLimiterType::minmod) ? XT::Common::minmod<RangeFieldType> : superbee<RangeFieldType>;
     thread_local LocalVectorType face_flux(0.);
     for (size_t jj = 0; jj < num_faces_; ++jj) {
@@ -6012,13 +6013,14 @@ public:
     auto& right_flux_value = flux_values[coord];
     std::fill(right_flux_value.begin(), right_flux_value.end(), 0.);
     std::fill(left_flux_value.begin(), left_flux_value.end(), 0.);
-    const auto slope_func =
+    [[maybe_unused]] const auto slope_func =
         (slope_type == SlopeLimiterType::minmod) ? XT::Common::minmod<RangeFieldType> : superbee<RangeFieldType>;
     const auto& psi_left = (*ansatz_distribution_values[0]);
     const auto& psi_entity = *ansatz_distribution_values[1];
     const auto& psi_right = (*ansatz_distribution_values[2]);
     constexpr bool reconstruct = (slope_type != SlopeLimiterType::no_slope);
-    RangeFieldType factor, slope;
+    RangeFieldType factor;
+    [[maybe_unused]] RangeFieldType slope;
     for (size_t jj = 0; jj < num_intervals; ++jj) {
       // calculate fluxes
       if (quad_signs_[jj] == 0) {
@@ -6039,7 +6041,7 @@ public:
       } else {
         // all quadrature points have the same sign
         auto& flux_val = quad_signs_[jj] > 0 ? right_flux_value : left_flux_value;
-        const double sign_factor = quad_signs_[jj] > 0 ? 0.5 : -0.5;
+        [[maybe_unused]] const double sign_factor = quad_signs_[jj] > 0 ? 0.5 : -0.5;
         for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
           if constexpr (reconstruct) {
             slope = slope_func(psi_entity[jj][ll] - psi_left[jj][ll], psi_right[jj][ll] - psi_entity[jj][ll]);
