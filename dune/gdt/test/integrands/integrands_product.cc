@@ -34,34 +34,25 @@ struct ProductIntegrandTest : public IntegrandTest<G>
 
   virtual void is_constructable() override final
   {
-    ScalarIntegrandType scalar_integrand1;
-    ScalarIntegrandType scalar_integrand2(1.);
+    [[maybe_unused]] ScalarIntegrandType scalar_integrand1;
+    [[maybe_unused]] ScalarIntegrandType scalar_integrand2(1.);
     const XT::Functions::GenericGridFunction<E, 1> scalar_grid_function(
         2, [](const E&) {}, [](const DomainType& x, const XT::Common::Parameter&) { return x[0] * x[1]; });
-    ScalarIntegrandType scalar_integrand3(scalar_grid_function);
+    [[maybe_unused]] ScalarIntegrandType scalar_integrand3(scalar_grid_function);
     const XT::Functions::GenericFunction<d, 1> scalar_function(
         2, [](const DomainType& x, const XT::Common::Parameter&) { return x[0] * x[1]; });
-    ScalarIntegrandType scalar_integrand4(scalar_function);
-    DUNE_UNUSED_PARAMETER(scalar_integrand1);
-    DUNE_UNUSED_PARAMETER(scalar_integrand2);
-    DUNE_UNUSED_PARAMETER(scalar_integrand3);
-    DUNE_UNUSED_PARAMETER(scalar_integrand4);
-    VectorIntegrandType vector_integrand1;
-    VectorIntegrandType vector_integrand2(1.);
-    VectorIntegrandType vector_integrand3(scalar_grid_function);
-    VectorIntegrandType vector_integrand4(scalar_function);
+    [[maybe_unused]] ScalarIntegrandType scalar_integrand4(scalar_function);
+    [[maybe_unused]] VectorIntegrandType vector_integrand1;
+    [[maybe_unused]] VectorIntegrandType vector_integrand2(1.);
+    [[maybe_unused]] VectorIntegrandType vector_integrand3(scalar_grid_function);
+    [[maybe_unused]] VectorIntegrandType vector_integrand4(scalar_function);
     const XT::Functions::GenericGridFunction<E, 2, 2> matrix_grid_function(
         1,
         [](const E&) {},
         [](const DomainType& x, const XT::Common::Parameter&) {
           return VectorJacobianType{{x[0], x[1]}, {1., 2.}};
         });
-    VectorIntegrandType vector_integrand5(matrix_grid_function);
-    DUNE_UNUSED_PARAMETER(vector_integrand1);
-    DUNE_UNUSED_PARAMETER(vector_integrand2);
-    DUNE_UNUSED_PARAMETER(vector_integrand3);
-    DUNE_UNUSED_PARAMETER(vector_integrand4);
-    DUNE_UNUSED_PARAMETER(vector_integrand5);
+    [[maybe_unused]] VectorIntegrandType vector_integrand5(matrix_grid_function);
   }
 
   virtual void evaluates_correctly_for_scalar_bases()
