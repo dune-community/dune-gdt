@@ -22,6 +22,7 @@ for mod_name in (     # order should not matter!
         '_functionals_interfaces_eigen',
         '_functionals_interfaces_istl',
         '_functionals_vector_based',
+        '_interpolations_boundary',
         '_interpolations_default',
         '_interpolations_oswald',
         '_local_bilinear_forms_coupling_intersection_integrals',

@@ -22,6 +22,7 @@ dune_pybindxi_add_module(_functionals_interfaces_common EXCLUDE_FROM_ALL ${heade
 dune_pybindxi_add_module(_functionals_interfaces_eigen EXCLUDE_FROM_ALL ${header} functionals/interfaces_eigen.cc)
 dune_pybindxi_add_module(_functionals_interfaces_istl EXCLUDE_FROM_ALL ${header} functionals/interfaces_istl.cc)
 dune_pybindxi_add_module(_functionals_vector_based EXCLUDE_FROM_ALL ${header} functionals/vector-based.cc)
+dune_pybindxi_add_module(_interpolations_boundary EXCLUDE_FROM_ALL ${header} interpolations/boundary.cc)
 dune_pybindxi_add_module(_interpolations_default EXCLUDE_FROM_ALL ${header} interpolations/default.cc)
 dune_pybindxi_add_module(_interpolations_oswald EXCLUDE_FROM_ALL ${header} interpolations/oswald.cc)
 dune_pybindxi_add_module(_local_bilinear_forms_coupling_intersection_integrals
