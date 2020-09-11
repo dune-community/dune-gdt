@@ -61,17 +61,9 @@ public:
   GDT::FiniteVolumeSpace<GV, r, rC> marker_indices;
   XT::LA::CommonDenseVector<size_t> markers;
 
-  G& grid() // expose access for mark() below
+  G& grid() // expose access for bindings below
   {
     return this->grid_;
-  }
-
-  void post_adapt(const bool post_adapt_grid = true, const bool clear = false)
-  {
-    BaseType::post_adapt(post_adapt_grid, clear);
-    this->marker_indices.update_after_adapt();
-    this->markers.resize(this->marker_indices.mapper().size());
-    this->markers *= 0.;
   }
 
   static bound_type bind(pybind11::module& m,
@@ -127,9 +119,23 @@ public:
         py::call_guard<py::gil_scoped_release>());
     c.def(
         "post_adapt",
-        [](type& self, const bool post_adapt_grid, const bool clear) { self.post_adapt(post_adapt_grid, clear); },
+        [](type& self, const bool post_adapt_grid, const bool clear, const bool indicate_new_elements) {
+          // we need to keep track of these elements before ...
+          self.marker_indices.update_after_adapt();
+          self.markers.resize(self.marker_indices.mapper().size());
+          self.markers *= 0.;
+          if (indicate_new_elements) {
+            auto grid_view = self.grid().leafGridView();
+            for (auto&& element : elements(grid_view))
+              if (element.isNew())
+                self.markers[self.marker_indices.mapper().global_index(element, size_t(0))] = size_t(1);
+          }
+          // ... possibly cleaning up the grid
+          self.post_adapt(post_adapt_grid, clear);
+        },
         "post_adapt_grid"_a = true,
         "clear"_a = false,
+        "indicate_new_elements"_a = false,
         py::call_guard<py::gil_scoped_release>());
 
     const auto FactoryName = XT::Common::to_camel_case(class_id);
