@@ -688,8 +688,9 @@ public:
   }
 
 private:
-  void calculate_plane_coefficients_block(std::vector<XT::Common::FieldVector<RangeFieldType, block_size>>& points,
-                                          const size_t jj) const
+  void calculate_plane_coefficients_block(
+      [[maybe_unused]] std::vector<XT::Common::FieldVector<RangeFieldType, block_size>>& points,
+      [[maybe_unused]] const size_t jj) const
   {
 #if HAVE_QHULL
     orgQhull::Qhull qhull;
@@ -746,8 +747,6 @@ private:
     block_plane_coefficients.erase(coeff_to_erase_it);
     plane_coefficients_[jj] = block_plane_coefficients;
 #else // HAVE_QHULL
-    DUNE_UNUSED_PARAMETER(points);
-    DUNE_UNUSED_PARAMETER(jj);
     DUNE_THROW(Dune::NotImplemented, "You are missing Qhull!");
 #endif // HAVE_QHULL
   }

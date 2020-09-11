@@ -59,16 +59,12 @@ struct SymmetrizedLaplaceIntegrandTest : public IntegrandTest<G>
 
   virtual void is_constructable() override final
   {
-    VectorIntegrandType vector_integrand1;
-    VectorIntegrandType vector_integrand2(1.);
+    [[maybe_unused]] VectorIntegrandType vector_integrand1;
+    [[maybe_unused]] VectorIntegrandType vector_integrand2(1.);
     const XT::Functions::GenericFunction<d, 1> scalar_function(
         2, [](const DomainType& x, const XT::Common::Parameter&) { return x[0] * x[1]; });
-    VectorIntegrandType vector_integrand3(scalar_function);
-    VectorIntegrandType vector_integrand4(*diffusion_factor_);
-    DUNE_UNUSED_PARAMETER(vector_integrand1);
-    DUNE_UNUSED_PARAMETER(vector_integrand2);
-    DUNE_UNUSED_PARAMETER(vector_integrand3);
-    DUNE_UNUSED_PARAMETER(vector_integrand4);
+    [[maybe_unused]] VectorIntegrandType vector_integrand3(scalar_function);
+    [[maybe_unused]] VectorIntegrandType vector_integrand4(*diffusion_factor_);
   }
 
   virtual void evaluates_correctly()
