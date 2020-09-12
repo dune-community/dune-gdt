@@ -244,7 +244,6 @@ public:
 
   size_t size() const override final
   {
-    assert(imp_->size() < std::numeric_limits<size_t>::max());
     return static_cast<size_t>(imp_->size());
   }
 

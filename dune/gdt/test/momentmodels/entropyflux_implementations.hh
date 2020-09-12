@@ -665,7 +665,7 @@ public:
         curr_index = ll;
       }
     } // ll
-    assert(indices_to_remove.size() < std::numeric_limits<int>::max());
+    assert(indices_to_remove.size() < size_t(std::numeric_limits<int>::max()));
     // remove duplicate points, from back to front to avoid invalidating indices
     for (int ll = static_cast<int>(indices_to_remove.size()) - 1; ll >= 0; --ll) {
       quad_points.erase(quad_points.begin() + indices_to_remove[ll]);
@@ -749,7 +749,7 @@ public:
   // calculates exp(val) for all vals in values
   void apply_exponential(QuadratureWeightsType& values) const
   {
-    assert(values.size() < std::numeric_limits<int>::max());
+    assert(values.size() < size_t(std::numeric_limits<int>::max()));
     XT::Common::Mkl::exp(static_cast<int>(values.size()), values.data(), values.data());
   }
 
@@ -790,7 +790,7 @@ public:
       if (!*lp_ || reinitialize) {
         // We start with creating a model with basis_dimRange rows and num_quad_points columns */
         constexpr int num_rows = static_cast<int>(basis_dimRange);
-        assert(quad_points_.size() < std::numeric_limits<int>::max());
+        assert(quad_points_.size() < size_t(std::numeric_limits<int>::max()));
         int num_cols = static_cast<int>(quad_points_.size()); /* variables are x_1, ..., x_{num_quad_points} */
         *lp_ = std::make_unique<ClpSimplex>(false);
         auto& lp = **lp_;
@@ -898,7 +898,7 @@ public:
     // Calculate the transpose here first as this is much faster than passing the matrix to dtrsm and using CblasTrans
     thread_local auto T_k_trans = std::make_unique<MatrixType>(0.);
     copy_transposed(T_k, *T_k_trans);
-    assert(quad_points_.size() < std::numeric_limits<int>::max());
+    assert(quad_points_.size() < size_t(std::numeric_limits<int>::max()));
     XT::Common::Cblas::dtrsm(XT::Common::Cblas::row_major(),
                              XT::Common::Cblas::right(),
                              XT::Common::Cblas::upper(),
@@ -2259,7 +2259,7 @@ public:
 
   void apply_exponential(BlockQuadratureWeightsType& values) const
   {
-    assert(values.size() < std::numeric_limits<int>::max());
+    assert(values.size() < size_t(std::numeric_limits<int>::max()));
     XT::Common::Mkl::exp(static_cast<int>(values.size()), values.data(), values.data());
   }
 
@@ -2304,7 +2304,7 @@ public:
     } else {
 #  if HAVE_MKL
       thread_local LocalMatrixType T_k_trans(0.);
-      assert(num_quad_points < std::numeric_limits<int>::max());
+      assert(num_quad_points < size_t(std::numeric_limits<int>::max()));
       // Calculate the transpose here first as this is much faster than passing the matrix to dtrsm and using
       // CblasTrans
       copy_transposed(T_k, T_k_trans);
@@ -3871,7 +3871,7 @@ public:
   void apply_exponential(QuadratureWeightsType& values) const
   {
     for (size_t jj = 0; jj < num_faces_; ++jj) {
-      assert(values[jj].size() < std::numeric_limits<int>::max());
+      assert(values[jj].size() < size_t(std::numeric_limits<int>::max()));
       XT::Common::Mkl::exp(static_cast<int>(values[jj].size()), values[jj].data(), values[jj].data());
     }
   }
@@ -6081,7 +6081,7 @@ public:
   void apply_exponential(QuadratureWeightsType& values) const
   {
     for (size_t jj = 0; jj < num_intervals; ++jj) {
-      assert(values[jj].size() < std::numeric_limits<int>::max());
+      assert(values[jj].size() < size_t(std::numeric_limits<int>::max()));
       XT::Common::Mkl::exp(static_cast<int>(values[jj].size()), values[jj].data(), values[jj].data());
     }
   }

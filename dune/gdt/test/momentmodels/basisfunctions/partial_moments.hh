@@ -699,7 +699,7 @@ private:
     qhull.setOutputStream(&null_ostream);
     qhull.setErrorStream(&null_ostream);
     // calculate convex hull
-    assert(points.size() < std::numeric_limits<int>::max());
+    assert(points.size() < size_t(std::numeric_limits<int>::max()));
     qhull.runQhull(
         "Realizable set", static_cast<int>(block_size), static_cast<int>(points.size()), &(points[0][0]), "Qt T1");
     const auto facet_end = qhull.endFacet();

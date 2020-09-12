@@ -913,7 +913,7 @@ class LpConvexhullRealizabilityLimitedSlope
   using ThisType = LpConvexhullRealizabilityLimitedSlope;
   using RangeFieldType = typename MomentBasis::RangeFieldType;
   static constexpr size_t dimRange = MomentBasis::dimRange;
-  static_assert(dimRange < std::numeric_limits<int>::max(), "");
+  static_assert(dimRange < size_t(std::numeric_limits<int>::max()), "");
   static constexpr size_t num_rows = dimRange;
   using RealizabilityBaseType = RealizabilityLimiterBase<GV, MomentBasis>;
   using typename RealizabilityBaseType::E;
@@ -1004,7 +1004,6 @@ private:
   void setup_linear_program() const
   {
     // We start with creating a model with dimRange rows and num_quad_points+1 columns */
-    assert(basis_values_->size() + dimRange < std::numeric_limits<int>::max());
     size_t num_cols = basis_values_->size() + dimRange; /* variables are x_1, ..., x_{num_quad_points}, theta_1,
                                                                             ..., theta_{dimRange} */
     lp_ = std::make_unique<ClpSimplex>(false);
