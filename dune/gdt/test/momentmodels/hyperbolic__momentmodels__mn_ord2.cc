@@ -43,7 +43,7 @@ using YaspGridTestCasesOrd2 = testing::Types<
 #endif
     >;
 
-TYPED_TEST_CASE(HyperbolicMnTest, YaspGridTestCasesOrd2);
+TYPED_TEST_SUITE(HyperbolicMnTest, YaspGridTestCasesOrd2);
 TYPED_TEST(HyperbolicMnTest, check)
 {
   this->run();

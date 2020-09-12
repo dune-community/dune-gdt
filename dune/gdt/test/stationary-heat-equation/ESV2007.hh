@@ -40,7 +40,7 @@ struct ESV2007DiffusionProblem
   static_assert(XT::Grid::is_view<GV>::value, "");
   static_assert(GV::dimension == 2, "");
 
-  static const constexpr size_t d = GV::dimension;
+  static constexpr size_t d = GV::dimension;
   using E = XT::Grid::extract_entity_t<GV>;
   using I = XT::Grid::extract_intersection_t<GV>;
   using G = typename GV::Grid;

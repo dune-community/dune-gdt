@@ -54,26 +54,18 @@ struct LaplaceIntegrandTest : public IntegrandTest<G>
 
   virtual void is_constructable() override final
   {
-    ScalarIntegrandType scalar_integrand1;
-    ScalarIntegrandType scalar_integrand2(XT::LA::eye_matrix<FieldMatrix<D, d, d>>(d, d));
+    [[maybe_unused]] ScalarIntegrandType scalar_integrand1;
+    [[maybe_unused]] ScalarIntegrandType scalar_integrand2(XT::LA::eye_matrix<FieldMatrix<D, d, d>>(d, d));
     const XT::Functions::GenericFunction<d, 2, 2> matrix_function(
         1, [](const DomainType& x, const XT::Common::Parameter&) {
           return VectorJacobianType{{x[0], x[1]}, {1., 2.}};
         });
-    ScalarIntegrandType scalar_integrand3(matrix_function);
-    ScalarIntegrandType scalar_integrand4(*diffusion_tensor_);
-    DUNE_UNUSED_PARAMETER(scalar_integrand1);
-    DUNE_UNUSED_PARAMETER(scalar_integrand2);
-    DUNE_UNUSED_PARAMETER(scalar_integrand3);
-    DUNE_UNUSED_PARAMETER(scalar_integrand4);
-    VectorIntegrandType vector_integrand1;
-    VectorIntegrandType vector_integrand2(XT::LA::eye_matrix<FieldMatrix<D, d, d>>(d, d));
-    VectorIntegrandType vector_integrand3(matrix_function);
-    VectorIntegrandType vector_integrand4(*diffusion_tensor_);
-    DUNE_UNUSED_PARAMETER(vector_integrand1);
-    DUNE_UNUSED_PARAMETER(vector_integrand2);
-    DUNE_UNUSED_PARAMETER(vector_integrand3);
-    DUNE_UNUSED_PARAMETER(vector_integrand4);
+    [[maybe_unused]] ScalarIntegrandType scalar_integrand3(matrix_function);
+    [[maybe_unused]] ScalarIntegrandType scalar_integrand4(*diffusion_tensor_);
+    [[maybe_unused]] VectorIntegrandType vector_integrand1;
+    [[maybe_unused]] VectorIntegrandType vector_integrand2(XT::LA::eye_matrix<FieldMatrix<D, d, d>>(d, d));
+    [[maybe_unused]] VectorIntegrandType vector_integrand3(matrix_function);
+    [[maybe_unused]] VectorIntegrandType vector_integrand4(*diffusion_tensor_);
   }
 
   virtual void evaluates_correctly_for_scalar_bases()
@@ -159,7 +151,7 @@ struct LaplaceIntegrandTest : public IntegrandTest<G>
 
 template <class G>
 using LaplaceIntegrandTest = Dune::GDT::Test::LaplaceIntegrandTest<G>;
-TYPED_TEST_CASE(LaplaceIntegrandTest, Grids2D);
+TYPED_TEST_SUITE(LaplaceIntegrandTest, Grids2D);
 
 TYPED_TEST(LaplaceIntegrandTest, is_constructable)
 {

@@ -61,10 +61,10 @@ public:
   using GridType = typename GridView::Grid;
   using G = GridType;
   using D = typename GridViewType::ctype;
-  static const constexpr size_t d = GridViewType::dimension;
+  static constexpr size_t d = GridViewType::dimension;
   using R = RangeField;
-  static const constexpr size_t r = range_dim;
-  static const constexpr size_t rC = range_dim_columns;
+  static constexpr size_t r = range_dim;
+  static constexpr size_t rC = range_dim_columns;
 
   using GlobalBasisType = GlobalBasisInterface<GridViewType, r, rC, R>;
   using LocalFiniteElementFamilyType = LocalFiniteElementFamilyInterface<D, d, R, r, rC>;

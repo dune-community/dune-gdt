@@ -39,7 +39,7 @@ protected:
                 Jacobians& jacobians,
                 Values& values) const
   {
-    static const size_t d = DivBasis::d;
+    static constexpr size_t d = DivBasis::d;
     // prepare storage
     const size_t rows = div_basis.size(param);
     const size_t cols = second_basis.size(param);

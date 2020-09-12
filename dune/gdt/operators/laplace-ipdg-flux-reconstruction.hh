@@ -55,7 +55,6 @@ public:
   using AssemblyGridViewType = AGV;
   using E = XT::Grid::extract_entity_t<AssemblyGridViewType>;
   using I = XT::Grid::extract_intersection_t<AssemblyGridViewType>;
-  static const constexpr size_t d = RGV::dimension;
 
   LaplaceIpdgFluxReconstructionOperator(AssemblyGridViewType assembly_grid_view,
                                         const SourceSpaceType& src_spc,

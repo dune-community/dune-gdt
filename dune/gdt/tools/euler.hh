@@ -64,7 +64,7 @@ class EulerTools
   static_assert(1 <= d && d <= 3, "");
 
 public:
-  static const constexpr size_t m = d + 2;
+  static constexpr size_t m = d + 2;
 
   EulerTools(const double& gmma) // air or water at roughly 20 deg Cels.: gmma = 1.4
     : gamma_(gmma)
@@ -82,9 +82,9 @@ public:
   static std::array<size_t, d> velocity_indices()
   {
     std::array<size_t, d> indices;
-    if (d == 1) {
+    if constexpr (d == 1) {
       indices[0] = 1;
-    } else if (d == 2) {
+    } else if constexpr (d == 2) {
       indices[0] = 1;
       indices[1] = 2;
     } else {
@@ -270,14 +270,14 @@ public:
     const auto ek = 0.5 * vnorm2; // kinetic energy
     // compute
     XT::Common::FieldVector<XT::Common::FieldMatrix<R, m, m>, d> ret;
-    if (d == 1) {
+    if constexpr (d == 1) {
       auto& jacobian_f_0 = ret[0];
       jacobian_f_0[0] = {0., 1., 0.};
       jacobian_f_0[1] = {gamma_1 * ek - v[0] * v[0], (3. - gamma_) * v[0], gamma_1};
       jacobian_f_0[2] = {v[0] * (gamma_1 * vnorm2 - (gamma_ * E) / rho),
                          ((gamma_ * E) / rho) - gamma_1 * v[0] * v[0] - gamma_1 * ek,
                          gamma_ * v[0]};
-    } else if (d == 2) {
+    } else if constexpr (d == 2) {
       // f_0
       auto& jacobian_f_0 = ret[0];
       jacobian_f_0[0] = {0., 1., 0., 0.};
@@ -334,12 +334,12 @@ public:
     const auto vn = v * n;
     // compute
     XT::Common::FieldVector<R, m> ret;
-    if (d == 1) {
+    if constexpr (d == 1) {
       // in 1d, we use \lambda_1, \lambda_3, \lambda_4 from the eigendecomposition from [Kröner, 1997, p. 387]
       ret[0] = vn;
       ret[1] = vn + a;
       ret[2] = vn - a;
-    } else if (d == 2) {
+    } else if constexpr (d == 2) {
       // in 2d, we use the eigendecomposition from [Kröner, 1997, p. 387] as is
       ret[0] = vn;
       ret[1] = vn;
@@ -371,7 +371,7 @@ public:
     const auto vn = v * n;
     // compute
     XT::Common::FieldMatrix<R, m, m> eigenvectors;
-    if (d == 1) {
+    if constexpr (d == 1) {
       // in 1d, we use \lambda_1, \lambda_3, \lambda_4 from the eigendecomposition from [Kröner, 1997, p. 387]
       // this corresponds to striking row 3 and column 2 in MT
       eigenvectors[0][0] = 1.;
@@ -383,7 +383,7 @@ public:
       eigenvectors[2][0] = ek;
       eigenvectors[2][1] = rho_over_2a * (H + a * vn);
       eigenvectors[2][2] = rho_over_2a * (H - a * vn);
-    } else if (d == 2) {
+    } else if constexpr (d == 2) {
       // in 2d, we use the eigendecomposition from [Kröner, 1997, p. 387] as is
       // this corresponds to MT
       eigenvectors[0][0] = 1.;
@@ -426,7 +426,7 @@ public:
     const auto gamma_1 = gamma_ - 1.;
     // compute
     XT::Common::FieldMatrix<R, m, m> eigenvectors_inv;
-    if (d == 1) {
+    if constexpr (d == 1) {
       // in 1d, we use \lambda_1, \lambda_3, \lambda_4 from the eigendecomposition from [Kröner, 1997, p. 387]
       // this corresponds to striking row 3 and column 2 in (MT)^{-1}
       eigenvectors_inv[0][0] = 1. - (gamma_1 / 2.) * M * M;
@@ -438,7 +438,7 @@ public:
       eigenvectors_inv[2][0] = (a / rho) * ((gamma_1 / 2.) * M * M + vn / a);
       eigenvectors_inv[2][1] = (-1. / rho) * (n[0] + gamma_1 * (v[0] / a));
       eigenvectors_inv[2][2] = gamma_1 / (rho * a);
-    } else if (d == 2) {
+    } else if constexpr (d == 2) {
       // in 2d, we use the eigendecomposition from [Kröner, 1997, p. 387] as is
       // this corresponds to (MT)^{-1}
       eigenvectors_inv[0][0] = 1. - (gamma_1 / 2.) * M * M;

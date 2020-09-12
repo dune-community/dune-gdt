@@ -113,7 +113,7 @@ private:
 public:
   using LocalFunctionValuesType = typename DiscreteValuedLocalFunction::LocalFunctionValuesType;
 
-  static const bool available = true;
+  static constexpr bool available = true;
 
   DiscreteValuedGridFunction(const GV& grid_view, std::vector<LocalFunctionValuesType>& values)
     : index_set_(grid_view.indexSet())

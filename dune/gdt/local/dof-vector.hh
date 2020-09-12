@@ -268,7 +268,7 @@ public:
   ScalarType& operator[](const size_t ii)
   {
     static std::mutex mutex;
-    std::lock_guard<std::mutex> DUNE_UNUSED guard{mutex};
+    [[maybe_unused]] std::lock_guard<std::mutex> guard{mutex};
     DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
     assert(ii < size_);
     return global_vector_[global_DoF_indices_[ii]];

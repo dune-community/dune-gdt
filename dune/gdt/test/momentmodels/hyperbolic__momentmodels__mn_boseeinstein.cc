@@ -47,7 +47,7 @@ using YaspGridTestCasesAll = testing::Types<
 #endif
     >;
 
-TYPED_TEST_CASE(HyperbolicMnTest, YaspGridTestCasesAll);
+TYPED_TEST_SUITE(HyperbolicMnTest, YaspGridTestCasesAll);
 TYPED_TEST(HyperbolicMnTest, check)
 {
   this->run();

@@ -34,26 +34,18 @@ struct DivIntegrandTest : public IntegrandTest<G>
 
   virtual void is_constructable() override final
   {
-    TestDivIntegrandType test_div_integrand1;
-    TestDivIntegrandType test_div_integrand2(1.);
+    [[maybe_unused]] TestDivIntegrandType test_div_integrand1;
+    [[maybe_unused]] TestDivIntegrandType test_div_integrand2(1.);
     const XT::Functions::GenericGridFunction<E, 1> scalar_grid_function(
         2, [](const E&) {}, [](const DomainType& x, const XT::Common::Parameter&) { return x[0] * x[1]; });
-    TestDivIntegrandType test_div_integrand3(scalar_grid_function);
+    [[maybe_unused]] TestDivIntegrandType test_div_integrand3(scalar_grid_function);
     const XT::Functions::GenericFunction<d, 1> scalar_function(
         2, [](const DomainType& x, const XT::Common::Parameter&) { return x[0] * x[1]; });
-    TestDivIntegrandType test_div_integrand4(scalar_function);
-    DUNE_UNUSED_PARAMETER(test_div_integrand1);
-    DUNE_UNUSED_PARAMETER(test_div_integrand2);
-    DUNE_UNUSED_PARAMETER(test_div_integrand3);
-    DUNE_UNUSED_PARAMETER(test_div_integrand4);
-    AnsatzDivIntegrandType ansatz_div_integrand1;
-    AnsatzDivIntegrandType ansatz_div_integrand2(1.);
-    AnsatzDivIntegrandType ansatz_div_integrand3(scalar_grid_function);
-    AnsatzDivIntegrandType ansatz_div_integrand4(scalar_function);
-    DUNE_UNUSED_PARAMETER(ansatz_div_integrand1);
-    DUNE_UNUSED_PARAMETER(ansatz_div_integrand2);
-    DUNE_UNUSED_PARAMETER(ansatz_div_integrand3);
-    DUNE_UNUSED_PARAMETER(ansatz_div_integrand4);
+    [[maybe_unused]] TestDivIntegrandType test_div_integrand4(scalar_function);
+    [[maybe_unused]] AnsatzDivIntegrandType ansatz_div_integrand1;
+    [[maybe_unused]] AnsatzDivIntegrandType ansatz_div_integrand2(1.);
+    [[maybe_unused]] AnsatzDivIntegrandType ansatz_div_integrand3(scalar_grid_function);
+    [[maybe_unused]] AnsatzDivIntegrandType ansatz_div_integrand4(scalar_function);
   }
 
   virtual void evaluates_correctly()
@@ -134,7 +126,7 @@ struct DivIntegrandTest : public IntegrandTest<G>
 
 template <class G>
 using DivIntegrandTest = Dune::GDT::Test::DivIntegrandTest<G>;
-TYPED_TEST_CASE(DivIntegrandTest, Grids2D);
+TYPED_TEST_SUITE(DivIntegrandTest, Grids2D);
 
 TYPED_TEST(DivIntegrandTest, is_constructable)
 {

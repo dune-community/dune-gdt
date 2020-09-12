@@ -39,8 +39,8 @@ public:
   using GridViewType = GridView;
   using E = XT::Grid::extract_entity_t<GV>;
 
-  static const constexpr size_t r = range_dim;
-  static const constexpr size_t rC = range_dim_cols;
+  static constexpr size_t r = range_dim;
+  static constexpr size_t rC = range_dim_cols;
   using R = RangeField;
   using F = Field;
   using SourceType = XT::Functions::GridFunctionInterface<E, r, rC, R>;

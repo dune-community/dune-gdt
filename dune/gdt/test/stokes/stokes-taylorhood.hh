@@ -51,7 +51,7 @@ struct StokesDirichletProblem
   static_assert(XT::Grid::is_view<GV>::value, "");
   static_assert(GV::dimension == 2, "");
 
-  static const constexpr size_t d = GV::dimension;
+  static constexpr size_t d = GV::dimension;
   using E = XT::Grid::extract_entity_t<GV>;
   using I = XT::Grid::extract_intersection_t<GV>;
   using G = typename GV::Grid;
@@ -157,7 +157,7 @@ template <class G>
 class StokesDirichletTest : public ::testing::Test
 {
   using GV = typename G::LeafGridView;
-  static const size_t d = GV::dimension;
+  static constexpr size_t d = GV::dimension;
 
   using Matrix = XT::LA::IstlRowMajorSparseMatrix<double>;
   using DenseMatrix = XT::LA::CommonDenseMatrix<double>;
@@ -334,7 +334,7 @@ class StokesTestcase1 : public StokesDirichletTest<G>
   using DomainType = typename ProblemType::DomainType;
   using ScalarGridFunction = typename ProblemType::ScalarGridFunction;
   using VectorGridFunction = typename ProblemType::VectorGridFunction;
-  static const size_t d = ProblemType::d;
+  static constexpr size_t d = ProblemType::d;
 
 public:
   StokesTestcase1()

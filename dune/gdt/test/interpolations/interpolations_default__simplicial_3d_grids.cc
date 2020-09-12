@@ -30,7 +30,7 @@ using Simplicial3dGrids = ::testing::Types<
 
 template <class G>
 using InterpolationTest = Dune::GDT::Test::DefaultInterpolationOnLeafViewTest<G>;
-TYPED_TEST_CASE(InterpolationTest, Simplicial3dGrids);
+TYPED_TEST_SUITE(InterpolationTest, Simplicial3dGrids);
 TYPED_TEST(InterpolationTest, interpolates_correctly)
 {
   this->interpolates_correctly(3e-14);

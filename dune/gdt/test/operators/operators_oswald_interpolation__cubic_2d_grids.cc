@@ -28,7 +28,7 @@ using Cubic2dGrids = ::testing::Types<YASP_2D_EQUIDISTANT_OFFSET
 
 template <class G>
 using OswaldInterpolationOperator = Dune::GDT::Test::OswaldInterpolationOperatorOnCubicLeafViewTest<G>;
-TYPED_TEST_CASE(OswaldInterpolationOperator, Cubic2dGrids);
+TYPED_TEST_SUITE(OswaldInterpolationOperator, Cubic2dGrids);
 TYPED_TEST(OswaldInterpolationOperator, applies_correctly_on_cubic_grids)
 {
   this->applies_correctly_on_cubic_grids();

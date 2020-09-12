@@ -49,8 +49,8 @@ class FunctionalInterface : public XT::Common::ParametricInterface
   using ThisType = FunctionalInterface;
 
 public:
-  static const constexpr size_t r = source_dim;
-  static const constexpr size_t rC = source_dim_cols;
+  static constexpr size_t r = source_dim;
+  static constexpr size_t rC = source_dim_cols;
   using F = Field;
 
   using SourceSpaceType = SpaceInterface<SourceGridView, r, rC, F>;

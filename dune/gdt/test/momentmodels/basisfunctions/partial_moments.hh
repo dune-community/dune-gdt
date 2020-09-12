@@ -11,11 +11,11 @@
 #ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_PARTIALMOMENTS_HH
 #define DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_PARTIALMOMENTS_HH
 
-#include <boost/iostreams/stream.hpp>
-#include <boost/iostreams/device/null.hpp>
-// #include <boost/math/special_functions/lambert_w.hpp>
 
 #if HAVE_QHULL
+#  include <boost/iostreams/stream.hpp>
+#  include <boost/iostreams/device/null.hpp>
+//#  include <boost/math/special_functions/lambert_w.hpp>
 #  include <dune/xt/common/disable_warnings.hh>
 #  include <libqhullcpp/Qhull.h>
 #  include <libqhullcpp/QhullFacetList.h>
@@ -688,8 +688,9 @@ public:
   }
 
 private:
-  void calculate_plane_coefficients_block(std::vector<XT::Common::FieldVector<RangeFieldType, block_size>>& points,
-                                          const size_t jj) const
+  void calculate_plane_coefficients_block(
+      [[maybe_unused]] std::vector<XT::Common::FieldVector<RangeFieldType, block_size>>& points,
+      [[maybe_unused]] const size_t jj) const
   {
 #if HAVE_QHULL
     orgQhull::Qhull qhull;
@@ -698,7 +699,7 @@ private:
     qhull.setOutputStream(&null_ostream);
     qhull.setErrorStream(&null_ostream);
     // calculate convex hull
-    assert(points.size() < std::numeric_limits<int>::max());
+    assert(points.size() < size_t(std::numeric_limits<int>::max()));
     qhull.runQhull(
         "Realizable set", static_cast<int>(block_size), static_cast<int>(points.size()), &(points[0][0]), "Qt T1");
     const auto facet_end = qhull.endFacet();
@@ -727,7 +728,7 @@ private:
                   return true;
                 return false;
               });
-    static const auto pair_float_cmp = [](const CoeffType& first, const CoeffType& second) {
+    static constexpr auto pair_float_cmp = [](const CoeffType& first, const CoeffType& second) {
       return XT::Common::FloatCmp::eq(first.first, second.first)
              && XT::Common::FloatCmp::eq(first.second, second.second);
     };
@@ -746,8 +747,6 @@ private:
     block_plane_coefficients.erase(coeff_to_erase_it);
     plane_coefficients_[jj] = block_plane_coefficients;
 #else // HAVE_QHULL
-    DUNE_UNUSED_PARAMETER(points);
-    DUNE_UNUSED_PARAMETER(jj);
     DUNE_THROW(Dune::NotImplemented, "You are missing Qhull!");
 #endif // HAVE_QHULL
   }

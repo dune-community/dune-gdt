@@ -12,7 +12,7 @@
 #include <dune/gdt/test/momentmodels/hyperbolic_momentmodels_pn_base.hh>
 #include <dune/gdt/test/momentmodels/pn-discretization.hh>
 
-TYPED_TEST_CASE(HyperbolicPnTest, YaspGridTestCasesWithoutReconstruction);
+TYPED_TEST_SUITE(HyperbolicPnTest, YaspGridTestCasesWithoutReconstruction);
 TYPED_TEST(HyperbolicPnTest, check)
 {
   this->run();
@@ -22,7 +22,7 @@ template <class TestCaseType>
 struct HyperbolicPnTestWithReconstruction : public HyperbolicPnTest<TestCaseType>
 {};
 
-TYPED_TEST_CASE(HyperbolicPnTestWithReconstruction, YaspGridTestCasesWithReconstruction);
+TYPED_TEST_SUITE(HyperbolicPnTestWithReconstruction, YaspGridTestCasesWithReconstruction);
 TYPED_TEST(HyperbolicPnTestWithReconstruction, check_with_full_linear_reconstruction)
 {
   // evaluation of reconstructed function is not thread-safe at the moment

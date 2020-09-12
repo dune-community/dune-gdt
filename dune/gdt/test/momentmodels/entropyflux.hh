@@ -132,8 +132,8 @@ public:
   using GridViewType = GridViewImp;
   using MomentBasis = MomentBasisImp;
   using IndexSetType = typename GridViewType::IndexSet;
-  static const size_t dimFlux = MomentBasis::dimFlux;
-  static const size_t basis_dimRange = MomentBasis::dimRange;
+  static constexpr size_t dimFlux = MomentBasis::dimFlux;
+  static constexpr size_t basis_dimRange = MomentBasis::dimRange;
   using typename BaseType::DomainType;
   using typename BaseType::E;
   using typename BaseType::LocalFunctionType;
@@ -143,7 +143,7 @@ public:
   using AlphaReturnType = typename ImplementationType::AlphaReturnType;
   using VectorType = typename ImplementationType::VectorType;
   using LocalCacheType = EntropyLocalCache<StateType, VectorType>;
-  static const size_t cache_size = 4 * dimFlux + 2;
+  static constexpr size_t cache_size = 4 * dimFlux + 2;
 
   explicit EntropyBasedFluxFunction(
       const GridViewType& grid_view,
@@ -186,7 +186,7 @@ public:
     use_entity_cache_ = false;
   }
 
-  static const constexpr bool available = true;
+  static constexpr bool available = true;
 
   class Localfunction : public LocalFunctionType
   {
@@ -227,7 +227,7 @@ public:
     std::unique_ptr<AlphaReturnType> get_alpha(const StateType& u, const bool regularize) const
     {
       // find starting point. Candidates: alpha_iso and the entries in the two caches
-      std::lock_guard<std::mutex> DUNE_UNUSED guard{*mutex_};
+      [[maybe_unused]] std::lock_guard<std::mutex> guard{*mutex_};
       const auto& basis_functions = implementation_.basis_functions();
       static const auto u_iso = basis_functions.u_iso();
       const auto density = basis_functions.density(u);

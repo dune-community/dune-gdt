@@ -141,8 +141,8 @@ struct is_space_helper
   DXTC_has_static_member_initialize_once(rC);
   DXTC_has_typedef_initialize_once(R);
 
-  static const constexpr bool is_candidate = DXTC_has_typedef(GV)<S>::value && DXTC_has_static_member(r)<S>::value
-                                             && DXTC_has_static_member(rC)<S>::value && DXTC_has_typedef(R)<S>::value;
+  static constexpr bool is_candidate = DXTC_has_typedef(GV)<S>::value && DXTC_has_static_member(r)<S>::value
+                                       && DXTC_has_static_member(rC)<S>::value && DXTC_has_typedef(R)<S>::value;
 };
 
 

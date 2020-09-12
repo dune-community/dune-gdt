@@ -84,12 +84,12 @@ class LocalUnaryElementIntegrandInterface
 public:
   using E = Element;
   using D = typename Element::Geometry::ctype;
-  static const constexpr size_t d = E::dimension;
+  static constexpr size_t d = E::dimension;
   using F = Field;
 
   using R = RangeField;
-  static const constexpr size_t r = range_dim;
-  static const constexpr size_t rC = range_dim_cols;
+  static constexpr size_t r = range_dim;
+  static constexpr size_t rC = range_dim_cols;
 
   using typename XT::Grid::ElementBoundObject<Element>::ElementType;
   using DomainType = FieldVector<D, d>;
@@ -190,16 +190,16 @@ class LocalBinaryElementIntegrandInterface
 public:
   using E = Element;
   using D = typename Element::Geometry::ctype;
-  static const constexpr size_t d = E::dimension;
+  static constexpr size_t d = E::dimension;
   using F = Field;
 
   using TR = TestRangeField;
-  static const constexpr size_t t_r = test_range_dim;
-  static const constexpr size_t t_rC = test_range_dim_cols;
+  static constexpr size_t t_r = test_range_dim;
+  static constexpr size_t t_rC = test_range_dim_cols;
 
   using AR = AnsatzRangeField;
-  static const constexpr size_t a_r = ansatz_range_dim;
-  static const constexpr size_t a_rC = ansatz_range_dim_cols;
+  static constexpr size_t a_r = ansatz_range_dim;
+  static constexpr size_t a_rC = ansatz_range_dim_cols;
 
   using typename XT::Grid::ElementBoundObject<Element>::ElementType;
   using DomainType = FieldVector<D, d>;
@@ -371,12 +371,12 @@ public:
   using I = Intersection;
   using E = ElementType;
   using D = typename ElementType::Geometry::ctype;
-  static const constexpr size_t d = E::dimension;
+  static constexpr size_t d = E::dimension;
   using F = Field;
 
   using RF = RangeField;
-  static const constexpr size_t r = range_dim;
-  static const constexpr size_t rC = range_dim_cols;
+  static constexpr size_t r = range_dim;
+  static constexpr size_t rC = range_dim_cols;
 
   using DomainType = FieldVector<D, d - 1>;
   using LocalTestBasisType = XT::Functions::ElementFunctionSetInterface<E, r, rC, RF>;
@@ -645,16 +645,16 @@ public:
   using I = Intersection;
   using E = ElementType;
   using D = typename ElementType::Geometry::ctype;
-  static const constexpr size_t d = E::dimension;
+  static constexpr size_t d = E::dimension;
   using F = Field;
 
   using TR = TestRangeField;
-  static const constexpr size_t t_r = test_range_dim;
-  static const constexpr size_t t_rC = test_range_dim_cols;
+  static constexpr size_t t_r = test_range_dim;
+  static constexpr size_t t_rC = test_range_dim_cols;
 
   using AR = AnsatzRangeField;
-  static const constexpr size_t a_r = ansatz_range_dim;
-  static const constexpr size_t a_rC = ansatz_range_dim_cols;
+  static constexpr size_t a_r = ansatz_range_dim;
+  static constexpr size_t a_rC = ansatz_range_dim_cols;
 
   using DomainType = FieldVector<D, d - 1>;
   using LocalTestBasisType = XT::Functions::ElementFunctionSetInterface<E, t_r, t_rC, TR>;

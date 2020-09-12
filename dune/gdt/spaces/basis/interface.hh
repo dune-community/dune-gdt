@@ -68,7 +68,7 @@ public:
 
   virtual void restore(const ElementType& element, const DynamicVector<R>& data) = 0;
 
-  virtual void interpolate(const std::function<RangeType(DomainType)>& element_function,
+  virtual void interpolate(const std::function<RangeType(const DomainType&)>& element_function,
                            const int order,
                            DynamicVector<R>& dofs) const = 0;
 
@@ -83,7 +83,7 @@ public:
   }
 
   template <class V, class GV>
-  void interpolate(const std::function<RangeType(DomainType)>& element_function,
+  void interpolate(const std::function<RangeType(const DomainType&)>& element_function,
                    const int order,
                    LocalDofVector<V, GV>& dofs) const
   {
@@ -113,7 +113,7 @@ public:
   /// \name ``These methods are provided for convenience and should not be used within library code.''
   /// \{
 
-  virtual DynamicVector<R> interpolate(const std::function<RangeType(DomainType)>& local_function,
+  virtual DynamicVector<R> interpolate(const std::function<RangeType(const DomainType&)>& local_function,
                                        const int order) const
   {
     DynamicVector<R> result(this->size());
@@ -140,10 +140,10 @@ public:
   using GridViewType = GV;
   using E = XT::Grid::extract_entity_t<GridViewType>;
   using D = typename E::Geometry::ctype;
-  static const constexpr size_t d = E::dimension;
+  static constexpr size_t d = E::dimension;
   using R = RangeField;
-  static const constexpr size_t r = range_dim;
-  static const constexpr size_t rC = range_dim_columns;
+  static constexpr size_t r = range_dim;
+  static constexpr size_t rC = range_dim_columns;
 
   using ElementType = E;
   using LocalizedType = LocalizedGlobalFiniteElementInterface<E, r, rC, R>;

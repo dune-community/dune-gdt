@@ -48,7 +48,7 @@ boundary_interpolation(const XT::Functions::GridFunctionInterface<XT::Grid::extr
                        const XT::Grid::BoundaryType& target_boundary_type)
 {
   using D = typename GridView<IGV>::ctype;
-  static const constexpr int d = GridView<IGV>::dimension;
+  static constexpr int d = GridView<IGV>::dimension;
   auto local_dof_vector = target.dofs().localize();
   auto local_source = source.local_function();
   DynamicVector<R> local_dofs(target.space().mapper().max_local_size());

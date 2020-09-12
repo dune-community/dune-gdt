@@ -139,7 +139,7 @@ struct HyperbolicEntropicCoordsMnDiscretization
     using RangeFieldType = typename MomentBasis::RangeFieldType;
     static constexpr size_t dimDomain = MomentBasis::dimDomain;
     static constexpr size_t dimRange = MomentBasis::dimRange;
-    static const auto la_backend = TestCaseType::la_backend;
+    static constexpr auto la_backend = TestCaseType::la_backend;
     using MatrixType = typename XT::LA::Container<RangeFieldType, la_backend>::MatrixType;
     using VectorType = typename XT::LA::Container<RangeFieldType, la_backend>::VectorType;
     using GenericFunctionType = XT::Functions::GenericFunction<dimDomain, dimRange, 1, RangeFieldType>;

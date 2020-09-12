@@ -15,6 +15,7 @@
 #include <string>
 
 #include <dune/xt/common/math.hh>
+#include <dune/xt/common/parallel/threadmanager.hh>
 #include <dune/xt/common/string.hh>
 #include <dune/xt/common/tuple.hh>
 
@@ -150,14 +151,14 @@ template <class DomainFieldImp,
 class MomentBasisInterface
 {
 public:
-  static const size_t dimDomain = domainDim;
-  static const size_t dimRange = rangeDim;
-  static const size_t dimRangeCols = rangeDimCols;
-  static const size_t dimFlux = fluxDim;
-  static const size_t d = domainDim;
-  static const size_t r = rangeDim;
-  static const size_t rC = rangeDimCols;
-  static const size_t d_flux = fluxDim;
+  static constexpr size_t dimDomain = domainDim;
+  static constexpr size_t dimRange = rangeDim;
+  static constexpr size_t dimRangeCols = rangeDimCols;
+  static constexpr size_t dimFlux = fluxDim;
+  static constexpr size_t d = domainDim;
+  static constexpr size_t r = rangeDim;
+  static constexpr size_t rC = rangeDimCols;
+  static constexpr size_t d_flux = fluxDim;
   static constexpr EntropyType entropy = entrpy;
   using D = DomainFieldImp;
   using R = RangeFieldImp;
@@ -448,11 +449,11 @@ public:
 
   static RangeFieldType unit_ball_volume_exact()
   {
-    if (dimDomain == 1)
+    if constexpr (dimDomain == 1)
       return 2;
-    else if (dimDomain == 2)
+    else if constexpr (dimDomain == 2)
       return 2 * M_PI;
-    else if (dimDomain == 3)
+    else if constexpr (dimDomain == 3)
       return 4 * M_PI;
     else {
       DUNE_THROW(NotImplemented, "");

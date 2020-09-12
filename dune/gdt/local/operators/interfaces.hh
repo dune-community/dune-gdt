@@ -55,18 +55,18 @@ class LocalElementOperatorInterface
 public:
   using SV = SourceVector;
   using SGV = SourceGridView;
-  static const constexpr size_t s_r = source_range_dim;
-  static const constexpr size_t s_rC = source_range_dim_cols;
+  static constexpr size_t s_r = source_range_dim;
+  static constexpr size_t s_rC = source_range_dim_cols;
   using SR = SourceField;
 
   using RV = RangeVector;
   using RGV = RangeGridView;
-  static const constexpr size_t r_r = range_range_dim;
-  static const constexpr size_t r_rC = range_range_dim_cols;
+  static constexpr size_t r_r = range_range_dim;
+  static constexpr size_t r_rC = range_range_dim_cols;
   using RR = RangeField;
   using LocalRangeType = LocalDiscreteFunction<RV, RGV, r_r, r_rC, RR>;
 
-  static const constexpr size_t d = LocalRangeType::d;
+  static constexpr size_t d = LocalRangeType::d;
   using D = typename LocalRangeType::D;
   using E = typename BaseType::ElementType;
 
@@ -187,7 +187,7 @@ class LocalIntersectionOperatorInterface
   using ThisType = LocalIntersectionOperatorInterface;
 
 public:
-  static const constexpr size_t d = Intersection::Entity::dimension;
+  static constexpr size_t d = Intersection::Entity::dimension;
   using D = typename Intersection::ctype;
   using I = Intersection;
   using E = typename I::Entity;
@@ -195,8 +195,8 @@ public:
 
   using SV = SourceVector;
   using SGV = SourceGridView;
-  static const constexpr size_t s_r = source_range_dim;
-  static const constexpr size_t s_rC = source_range_dim_cols;
+  static constexpr size_t s_r = source_range_dim;
+  static constexpr size_t s_rC = source_range_dim_cols;
   using SF = SourceField;
   using SourceType = XT::Functions::GridFunctionInterface<E, s_r, s_rC, SF>;
   using LocalSourceType = typename SourceType::LocalFunctionType;
@@ -205,8 +205,8 @@ public:
 
   using IRV = InsideRangeVector;
   using IRGV = InsideRangeGridView;
-  static const constexpr size_t r_r = range_range_dim;
-  static const constexpr size_t r_rC = range_range_dim_cols;
+  static constexpr size_t r_r = range_range_dim;
+  static constexpr size_t r_rC = range_range_dim_cols;
   using RF = RangeField;
   using LocalInsideRangeType = LocalDiscreteFunction<IRV, IRGV, r_r, r_rC, RF>;
 

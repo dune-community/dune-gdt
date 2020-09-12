@@ -192,7 +192,7 @@ private:
 
     using BaseType::interpolate;
 
-    void interpolate(const std::function<RangeType(DomainType)>& element_function,
+    void interpolate(const std::function<RangeType(const DomainType&)>& element_function,
                      const int order,
                      DynamicVector<R>& dofs) const override final
     {

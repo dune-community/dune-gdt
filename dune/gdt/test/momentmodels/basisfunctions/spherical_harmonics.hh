@@ -18,6 +18,8 @@
 #  include <dune/xt/data/coordinates.hh>
 #endif
 
+#include <dune/xt/common/unused.hh>
+
 #include "interface.hh"
 
 namespace Dune {
@@ -41,11 +43,11 @@ class SphericalHarmonicsMomentBasis
                                 entropy>
 {
 public:
-  static const size_t dimDomain = 3;
-  static const size_t dimRange = only_positive ? ((order + 1) * (order + 2)) / 2 : (order + 1) * (order + 1);
-  static const size_t dimRangeCols = 1;
-  static const size_t dimFlux = fluxDim;
-  static const size_t num_refinements = 0;
+  static constexpr size_t dimDomain = 3;
+  static constexpr size_t dimRange = only_positive ? ((order + 1) * (order + 2)) / 2 : (order + 1) * (order + 1);
+  static constexpr size_t dimRangeCols = 1;
+  static constexpr size_t dimFlux = fluxDim;
+  static constexpr size_t num_refinements = 0;
 
 private:
   using BaseType = MomentBasisInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, 1, dimFlux, entropy>;
@@ -80,7 +82,7 @@ public:
   }
 
   SphericalHarmonicsMomentBasis(const size_t quad_order = default_quad_order(),
-                                const size_t DXTC_DEBUG_ONLY(quad_refinements) = default_quad_refinements())
+                                DXTC_DEBUG_ONLY const size_t quad_refinements = default_quad_refinements())
     : BaseType(XT::Data::OctantQuadratures<DomainFieldType>::get(quad_order))
   {
     assert(quad_refinements == 0 && "Refinement of the quadrature intervals not implemented for this basis!");
@@ -323,11 +325,11 @@ class RealSphericalHarmonicsMomentBasis
                                 entropy>
 {
 public:
-  static const size_t dimDomain = 3;
-  static const size_t dimFlux = fluxDim;
-  static const size_t dimRange = only_even ? ((order + 1) * (order + 2)) / 2 : (order + 1) * (order + 1);
-  static const size_t dimRangeCols = 1;
-  static const size_t num_refinements = 0;
+  static constexpr size_t dimDomain = 3;
+  static constexpr size_t dimFlux = fluxDim;
+  static constexpr size_t dimRange = only_even ? ((order + 1) * (order + 2)) / 2 : (order + 1) * (order + 1);
+  static constexpr size_t dimRangeCols = 1;
+  static constexpr size_t num_refinements = 0;
 
 private:
   using BaseType = MomentBasisInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, 1, dimFlux, entropy>;
@@ -361,7 +363,7 @@ public:
   }
 
   RealSphericalHarmonicsMomentBasis(const size_t quad_order = default_quad_order(),
-                                    const size_t DXTC_DEBUG_ONLY(quad_refinements) = default_quad_refinements())
+                                    DXTC_DEBUG_ONLY const size_t quad_refinements = default_quad_refinements())
     : BaseType(XT::Data::OctantQuadratures<DomainFieldType>::get(quad_order))
   {
     assert(quad_refinements == 0 && "Refinement of the quadrature intervals not implemented for this basis!");
@@ -413,7 +415,7 @@ public:
     FieldVector<MatrixType, dimFlux> ret(MatrixType(dimRange, dimRange, 0));
     ret[0] = create_Bx();
     ret[1] = create_By();
-    if (dimFlux == 3)
+    if constexpr (dimFlux == 3)
       ret[2] = create_Bz();
     return ret;
   } // ... flux_matrix()

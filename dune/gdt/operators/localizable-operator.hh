@@ -13,7 +13,6 @@
 
 #include <list>
 
-#include <dune/xt/common/deprecated.hh>
 #include <dune/xt/la/type_traits.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/grid/walker.hh>
@@ -66,16 +65,16 @@ public:
   using SV = SourceVector;
   using SGV = SourceGridView;
   using E = XT::Grid::extract_entity_t<SGV>;
-  static const constexpr size_t s_r = source_range_dim;
-  static const constexpr size_t s_rC = source_range_dim_cols;
+  static constexpr size_t s_r = source_range_dim;
+  static constexpr size_t s_rC = source_range_dim_cols;
   using SF = SourceField;
   using DiscreteSourceType = ConstDiscreteFunction<SV, SGV, s_r, s_rC, SF>;
   using SourceType = XT::Functions::GridFunctionInterface<E, s_r, s_rC, SF>;
 
   using RV = RangeVector;
   using RGV = RangeGridView;
-  static const constexpr size_t r_r = range_range_dim;
-  static const constexpr size_t r_rC = range_range_dim_cols;
+  static constexpr size_t r_r = range_range_dim;
+  static constexpr size_t r_rC = range_range_dim_cols;
   using RF = RangeField;
   using RangeType = DiscreteFunction<RV, RGV, r_r, r_rC, RF>;
 
@@ -180,7 +179,7 @@ template <class AssemblyGridView,
           class RangeField = SourceField,
           class RangeGridView = SourceGridView,
           class RangeVector = SourceVector>
-using LocalizableOperatorBase DXT_DEPRECATED_MSG("Use LocalizableDiscreteOperatorApplicator instead (12.09.2019)!") =
+using LocalizableOperatorBase [[deprecated("Use LocalizableDiscreteOperatorApplicator instead (12.09.2019)!")]] =
     LocalizableDiscreteOperatorApplicator<AssemblyGridView,
                                           SourceVector,
                                           source_range_dim,

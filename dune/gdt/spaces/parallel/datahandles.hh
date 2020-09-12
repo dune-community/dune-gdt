@@ -15,7 +15,6 @@
 #include "localview.hh"
 
 #include <dune/gdt/type_traits.hh>
-#include <dune/xt/common/fixed_map.hh>
 #include <dune/gdt/spaces/mapper/interfaces.hh>
 
 namespace Dune {
@@ -61,7 +60,7 @@ public:
   typedef E DataType;
 
   // Wrap the grid's communication buffer to enable sending leaf ordering sizes along with the data
-  static const bool wrap_buffer = true;
+  static constexpr bool wrap_buffer = true;
 
   // export original data type to fix up size information forwarded to standard gather / scatter functors
   typedef E OriginalDataType;
@@ -94,7 +93,7 @@ struct EntityDataCommunicationDescriptor
   typedef E DataType;
   // Data is per entity, so we don't need to send leaf ordering size and thus can avoid wrapping the
   // grid's communication buffer
-  static const bool wrap_buffer = false;
+  static constexpr bool wrap_buffer = false;
 
   template <class GV, size_t r, size_t rD, class R>
   bool contains(const SpaceInterface<GV, r, rD, R>& space, int /*dim*/, int codim) const

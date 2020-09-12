@@ -19,7 +19,7 @@ using namespace Dune::GDT;
 
 template <class G>
 using Order0ScalarMixedDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnMixedLeafViewTest<G, 1, double, 0>;
-TYPED_TEST_CASE(Order0ScalarMixedDiscontinuousLagrangeSpace, MixedGrids);
+TYPED_TEST_SUITE(Order0ScalarMixedDiscontinuousLagrangeSpace, MixedGrids);
 TYPED_TEST(Order0ScalarMixedDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
@@ -64,7 +64,7 @@ TYPED_TEST(Order0ScalarMixedDiscontinuousLagrangeSpace, local_interpolation_seem
 
 template <class G>
 using Order1ScalarMixedDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnMixedLeafViewTest<G, 1, double, 1>;
-TYPED_TEST_CASE(Order1ScalarMixedDiscontinuousLagrangeSpace, MixedGrids);
+TYPED_TEST_SUITE(Order1ScalarMixedDiscontinuousLagrangeSpace, MixedGrids);
 TYPED_TEST(Order1ScalarMixedDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
@@ -109,7 +109,7 @@ TYPED_TEST(Order1ScalarMixedDiscontinuousLagrangeSpace, local_interpolation_seem
 
 template <class G>
 using Order2ScalarMixedDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnMixedLeafViewTest<G, 1, double, 2>;
-TYPED_TEST_CASE(Order2ScalarMixedDiscontinuousLagrangeSpace, MixedGrids);
+TYPED_TEST_SUITE(Order2ScalarMixedDiscontinuousLagrangeSpace, MixedGrids);
 TYPED_TEST(Order2ScalarMixedDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();

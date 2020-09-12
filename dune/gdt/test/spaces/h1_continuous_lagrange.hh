@@ -25,7 +25,7 @@ struct ContinuousLagrangeSpaceTest
   : public SpaceTestBase<ContinuousLagrangeSpace<typename XT::Grid::GridProvider<G>::LeafGridViewType, r, R>, p>
 {
   using D = typename G::ctype;
-  static const constexpr size_t d = G::dimension;
+  static constexpr size_t d = G::dimension;
 
   XT::Grid::GridProvider<G> grid_provider;
 
