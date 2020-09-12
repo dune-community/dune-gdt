@@ -25,7 +25,6 @@
 
 #include <dune/localfunctions/common/localkey.hh>
 
-#include <dune/xt/common/unused.hh>
 #include <dune/xt/functions/type_traits.hh>
 
 #include <dune/gdt/exceptions.hh>

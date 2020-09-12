@@ -11,11 +11,11 @@
 #ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_PARTIALMOMENTS_HH
 #define DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_PARTIALMOMENTS_HH
 
-#include <boost/iostreams/stream.hpp>
-#include <boost/iostreams/device/null.hpp>
-// #include <boost/math/special_functions/lambert_w.hpp>
 
 #if HAVE_QHULL
+#  include <boost/iostreams/stream.hpp>
+#  include <boost/iostreams/device/null.hpp>
+//#  include <boost/math/special_functions/lambert_w.hpp>
 #  include <dune/xt/common/disable_warnings.hh>
 #  include <libqhullcpp/Qhull.h>
 #  include <libqhullcpp/QhullFacetList.h>
