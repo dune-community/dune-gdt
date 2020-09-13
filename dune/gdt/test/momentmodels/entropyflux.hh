@@ -227,7 +227,7 @@ public:
     std::unique_ptr<AlphaReturnType> get_alpha(const StateType& u, const bool regularize) const
     {
       // find starting point. Candidates: alpha_iso and the entries in the two caches
-      std::lock_guard<std::mutex> DUNE_UNUSED guard{*mutex_};
+      [[maybe_unused]] std::lock_guard<std::mutex> guard{*mutex_};
       const auto& basis_functions = implementation_.basis_functions();
       static const auto u_iso = basis_functions.u_iso();
       const auto density = basis_functions.density(u);

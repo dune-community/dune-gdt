@@ -51,14 +51,10 @@ struct GradientValueIntegrandTest : public IntegrandTest<G>
                                                                [](const DomainType& x, const XT::Common::Parameter&) {
                                                                  return FieldVector<D, d>{{x[0], x[0] * x[1]}};
                                                                });
-    ScalarIntegrandType scalar_integrand1(vector_grid_function);
-    ScalarIntegrandType scalar_integrand2(vector_function);
-    DUNE_UNUSED_PARAMETER(scalar_integrand1);
-    DUNE_UNUSED_PARAMETER(scalar_integrand2);
-    VectorIntegrandType vector_integrand1(vector_grid_function);
-    VectorIntegrandType vector_integrand2(vector_function);
-    DUNE_UNUSED_PARAMETER(vector_integrand1);
-    DUNE_UNUSED_PARAMETER(vector_integrand2);
+    [[maybe_unused]] ScalarIntegrandType scalar_integrand1(vector_grid_function);
+    [[maybe_unused]] ScalarIntegrandType scalar_integrand2(vector_function);
+    [[maybe_unused]] VectorIntegrandType vector_integrand1(vector_grid_function);
+    [[maybe_unused]] VectorIntegrandType vector_integrand2(vector_function);
   }
 
   virtual void evaluates_correctly_for_scalar_bases()

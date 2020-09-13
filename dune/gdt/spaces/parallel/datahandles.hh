@@ -15,7 +15,6 @@
 #include "localview.hh"
 
 #include <dune/gdt/type_traits.hh>
-#include <dune/xt/common/fixed_map.hh>
 #include <dune/gdt/spaces/mapper/interfaces.hh>
 
 namespace Dune {

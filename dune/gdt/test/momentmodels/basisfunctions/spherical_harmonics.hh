@@ -16,6 +16,8 @@
 
 #include <dune/xt/data/coordinates.hh>
 
+#include <dune/xt/common/unused.hh>
+
 #include "interface.hh"
 
 namespace Dune {
@@ -78,7 +80,7 @@ public:
   }
 
   SphericalHarmonicsMomentBasis(const size_t quad_order = default_quad_order(),
-                                const size_t DXTC_DEBUG_ONLY(quad_refinements) = default_quad_refinements())
+                                DXTC_DEBUG_ONLY const size_t quad_refinements = default_quad_refinements())
     : BaseType(XT::Data::OctantQuadratures<DomainFieldType>::get(quad_order))
   {
     assert(quad_refinements == 0 && "Refinement of the quadrature intervals not implemented for this basis!");
@@ -359,7 +361,7 @@ public:
   }
 
   RealSphericalHarmonicsMomentBasis(const size_t quad_order = default_quad_order(),
-                                    const size_t DXTC_DEBUG_ONLY(quad_refinements) = default_quad_refinements())
+                                    DXTC_DEBUG_ONLY const size_t quad_refinements = default_quad_refinements())
     : BaseType(XT::Data::OctantQuadratures<DomainFieldType>::get(quad_order))
   {
     assert(quad_refinements == 0 && "Refinement of the quadrature intervals not implemented for this basis!");

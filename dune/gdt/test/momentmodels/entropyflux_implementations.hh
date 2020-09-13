@@ -665,7 +665,7 @@ public:
         curr_index = ll;
       }
     } // ll
-    assert(indices_to_remove.size() < std::numeric_limits<int>::max());
+    assert(indices_to_remove.size() < size_t(std::numeric_limits<int>::max()));
     // remove duplicate points, from back to front to avoid invalidating indices
     for (int ll = static_cast<int>(indices_to_remove.size()) - 1; ll >= 0; --ll) {
       quad_points.erase(quad_points.begin() + indices_to_remove[ll]);
@@ -749,7 +749,7 @@ public:
   // calculates exp(val) for all vals in values
   void apply_exponential(QuadratureWeightsType& values) const
   {
-    assert(values.size() < std::numeric_limits<int>::max());
+    assert(values.size() < size_t(std::numeric_limits<int>::max()));
     XT::Common::Mkl::exp(static_cast<int>(values.size()), values.data(), values.data());
   }
 
@@ -790,7 +790,7 @@ public:
       if (!*lp_ || reinitialize) {
         // We start with creating a model with basis_dimRange rows and num_quad_points columns */
         constexpr int num_rows = static_cast<int>(basis_dimRange);
-        assert(quad_points_.size() < std::numeric_limits<int>::max());
+        assert(quad_points_.size() < size_t(std::numeric_limits<int>::max()));
         int num_cols = static_cast<int>(quad_points_.size()); /* variables are x_1, ..., x_{num_quad_points} */
         *lp_ = std::make_unique<ClpSimplex>(false);
         auto& lp = **lp_;
@@ -898,7 +898,7 @@ public:
     // Calculate the transpose here first as this is much faster than passing the matrix to dtrsm and using CblasTrans
     thread_local auto T_k_trans = std::make_unique<MatrixType>(0.);
     copy_transposed(T_k, *T_k_trans);
-    assert(quad_points_.size() < std::numeric_limits<int>::max());
+    assert(quad_points_.size() < size_t(std::numeric_limits<int>::max()));
     XT::Common::Cblas::dtrsm(XT::Common::Cblas::row_major(),
                              XT::Common::Cblas::right(),
                              XT::Common::Cblas::upper(),
@@ -2133,13 +2133,14 @@ public:
     auto& right_flux_value = flux_values[coord];
     std::fill(right_flux_value.begin(), right_flux_value.end(), 0.);
     std::fill(left_flux_value.begin(), left_flux_value.end(), 0.);
-    const auto slope_func =
+    [[maybe_unused]] const auto slope_func =
         (slope_type == SlopeLimiterType::minmod) ? XT::Common::minmod<RangeFieldType> : superbee<RangeFieldType>;
     const auto& psi_left = (*ansatz_distribution_values[0]);
     const auto& psi_entity = *ansatz_distribution_values[1];
     const auto& psi_right = (*ansatz_distribution_values[2]);
     constexpr bool reconstruct = (slope_type != SlopeLimiterType::no_slope);
-    RangeFieldType factor, slope;
+    RangeFieldType factor;
+    [[maybe_unused]] RangeFieldType slope;
     for (size_t jj = 0; jj < num_blocks; ++jj) {
       // calculate fluxes
       const auto& weights = quad_weights_[jj];
@@ -2168,7 +2169,7 @@ public:
       } else {
         // all quadrature points have the same sign
         auto& flux_val = quad_signs_[jj][dd] > 0 ? right_flux_value : left_flux_value;
-        const double sign_factor = quad_signs_[jj][dd] > 0 ? 0.5 : -0.5;
+        [[maybe_unused]] const double sign_factor = quad_signs_[jj][dd] > 0 ? 0.5 : -0.5;
         for (size_t ll = 0; ll < num_quad_points; ++ll) {
           if constexpr (reconstruct) {
             slope = slope_func(psi_e[ll] - psi_l[ll], psi_r[ll] - psi_e[ll]);
@@ -2258,7 +2259,7 @@ public:
 
   void apply_exponential(BlockQuadratureWeightsType& values) const
   {
-    assert(values.size() < std::numeric_limits<int>::max());
+    assert(values.size() < size_t(std::numeric_limits<int>::max()));
     XT::Common::Mkl::exp(static_cast<int>(values.size()), values.data(), values.data());
   }
 
@@ -2303,7 +2304,7 @@ public:
     } else {
 #  if HAVE_MKL
       thread_local LocalMatrixType T_k_trans(0.);
-      assert(num_quad_points < std::numeric_limits<int>::max());
+      assert(num_quad_points < size_t(std::numeric_limits<int>::max()));
       // Calculate the transpose here first as this is much faster than passing the matrix to dtrsm and using
       // CblasTrans
       copy_transposed(T_k, T_k_trans);
@@ -2921,7 +2922,7 @@ public:
     auto& right_flux_value = flux_values[coord];
     std::fill(right_flux_value.begin(), right_flux_value.end(), 0.);
     std::fill(left_flux_value.begin(), left_flux_value.end(), 0.);
-    const auto slope_func =
+    [[maybe_unused]] const auto slope_func =
         (slope_type == SlopeLimiterType::minmod) ? XT::Common::minmod<RangeFieldType> : superbee<RangeFieldType>;
     for (size_t jj = 0; jj < basis_dimRange; ++jj) {
       const bool positive_dir = v_positive_[jj][dd];
@@ -3750,7 +3751,7 @@ public:
     std::fill(right_flux_value.begin(), right_flux_value.end(), 0.);
     std::fill(left_flux_value.begin(), left_flux_value.end(), 0.);
     const auto& faces = basis_functions_.triangulation().faces();
-    const auto slope_func =
+    [[maybe_unused]] const auto slope_func =
         (slope_type == SlopeLimiterType::minmod) ? XT::Common::minmod<RangeFieldType> : superbee<RangeFieldType>;
     thread_local LocalVectorType face_flux(0.);
     for (size_t jj = 0; jj < num_faces_; ++jj) {
@@ -3870,7 +3871,7 @@ public:
   void apply_exponential(QuadratureWeightsType& values) const
   {
     for (size_t jj = 0; jj < num_faces_; ++jj) {
-      assert(values[jj].size() < std::numeric_limits<int>::max());
+      assert(values[jj].size() < size_t(std::numeric_limits<int>::max()));
       XT::Common::Mkl::exp(static_cast<int>(values[jj].size()), values[jj].data(), values[jj].data());
     }
   }
@@ -4065,7 +4066,7 @@ public:
   DomainType evaluate_kinetic_flux_with_alphas(const VectorType& alpha_i,
                                                const VectorType& alpha_j,
                                                const FluxDomainType& n_ij,
-                                               const size_t DXTC_DEBUG_ONLY(dd)) const
+                                               DXTC_DEBUG_ONLY const size_t dd) const
   {
     assert(dd == 0);
     // calculate < \mu m G_\alpha(u) > * n_ij
@@ -4225,9 +4226,8 @@ public:
     return ret;
   } // DomainType evaluate_kinetic_flux(...)
 
-  DomainType evaluate_kinetic_outflow(const DomainType& alpha_i,
-                                      const FluxDomainType& n_ij,
-                                      const size_t DXTC_DEBUG_ONLY(dd)) const
+  DomainType
+  evaluate_kinetic_outflow(const DomainType& alpha_i, const FluxDomainType& n_ij, DXTC_DEBUG_ONLY const size_t dd) const
   {
     assert(dd == 0);
     // calculate < (\mu * n_ij) m G_\alpha(u) >
@@ -6013,13 +6013,14 @@ public:
     auto& right_flux_value = flux_values[coord];
     std::fill(right_flux_value.begin(), right_flux_value.end(), 0.);
     std::fill(left_flux_value.begin(), left_flux_value.end(), 0.);
-    const auto slope_func =
+    [[maybe_unused]] const auto slope_func =
         (slope_type == SlopeLimiterType::minmod) ? XT::Common::minmod<RangeFieldType> : superbee<RangeFieldType>;
     const auto& psi_left = (*ansatz_distribution_values[0]);
     const auto& psi_entity = *ansatz_distribution_values[1];
     const auto& psi_right = (*ansatz_distribution_values[2]);
     constexpr bool reconstruct = (slope_type != SlopeLimiterType::no_slope);
-    RangeFieldType factor, slope;
+    RangeFieldType factor;
+    [[maybe_unused]] RangeFieldType slope;
     for (size_t jj = 0; jj < num_intervals; ++jj) {
       // calculate fluxes
       if (quad_signs_[jj] == 0) {
@@ -6040,7 +6041,7 @@ public:
       } else {
         // all quadrature points have the same sign
         auto& flux_val = quad_signs_[jj] > 0 ? right_flux_value : left_flux_value;
-        const double sign_factor = quad_signs_[jj] > 0 ? 0.5 : -0.5;
+        [[maybe_unused]] const double sign_factor = quad_signs_[jj] > 0 ? 0.5 : -0.5;
         for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
           if constexpr (reconstruct) {
             slope = slope_func(psi_entity[jj][ll] - psi_left[jj][ll], psi_right[jj][ll] - psi_entity[jj][ll]);
@@ -6080,7 +6081,7 @@ public:
   void apply_exponential(QuadratureWeightsType& values) const
   {
     for (size_t jj = 0; jj < num_intervals; ++jj) {
-      assert(values[jj].size() < std::numeric_limits<int>::max());
+      assert(values[jj].size() < size_t(std::numeric_limits<int>::max()));
       XT::Common::Mkl::exp(static_cast<int>(values[jj].size()), values[jj].data(), values[jj].data());
     }
   }

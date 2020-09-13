@@ -252,7 +252,7 @@ public:
   void apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& /*param*/) const override final
   {
     // Store evaluations of exp(alpha_i)
-    assert(source.size() < std::numeric_limits<int>::max());
+    assert(source.size() < size_t(std::numeric_limits<int>::max()));
     XT::Common::Mkl::exp(static_cast<int>(source.size()), source.data(), exp_evaluations_.data());
     auto* range_data = range.data();
     const auto& grid_view = source_space().grid_view();
