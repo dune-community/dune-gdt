@@ -202,7 +202,7 @@ protected:
                                                                    /*over_integrate=*/3)
                                    .apply2(*local_force - flux_divergence, *local_force - flux_divergence)[0][0];
               const auto h = XT::Grid::diameter(element);
-              const auto C_P = 1. / (M_PIl * M_PIl); // Poincare constant (known for simplices/cubes)
+              const auto C_P = 1. / (M_PI * M_PI); // Poincare constant (known for simplices/cubes)
               std::lock_guard<std::mutex> lock(eta_R_2_mutex);
               eta_R_2 += (C_P * h * h * L2_norm_2) / min_EV;
             },

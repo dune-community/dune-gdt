@@ -174,7 +174,7 @@ public:
       current_data_.clear();
       current_data_["target"]["h"] = grid_width;
       current_data_["quantity"]["num_grid_elements"] = grid_size;
-      current_data_["quantity"]["num_dofs"] = current_space_->mapper().size();
+      current_data_["quantity"]["num_dofs"] = static_cast<double>(current_space_->mapper().size());
     }
     const auto lfill_nicely = [&](const auto& number, const auto& len) {
       std::string ret;
@@ -346,7 +346,7 @@ public:
         }
         current_data_["quantity"][id] = relative_mass_conservation_errors.infinity_norm();
       } else if (id == "num timesteps") {
-        current_data_["quantity"][id] = solution_on_current_grid.vectors().size();
+        current_data_["quantity"][id] = static_cast<double>(solution_on_current_grid.vectors().size());
       } else if (id == "CFL") {
         DUNE_THROW_IF(this->adaptive_timestepping(), InvalidStateException, "");
         const auto time_points = this->time_points_from_vector_array(solution_on_current_grid);

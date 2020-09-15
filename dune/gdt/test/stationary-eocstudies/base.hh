@@ -162,7 +162,7 @@ public:
       current_data_.clear();
       current_data_["target"]["h"] = grid_width;
       current_data_["quantity"]["num_grid_elements"] = grid_size;
-      current_data_["quantity"]["num_dofs"] = current_space_->mapper().size();
+      current_data_["quantity"]["num_dofs"] = static_cast<double>(current_space_->mapper().size());
     }
     const auto lfill_nicely = [&](const auto& number, const auto& len) {
       std::string ret;

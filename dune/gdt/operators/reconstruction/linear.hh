@@ -203,7 +203,7 @@ public:
     for (size_t dd = 0; dd < dimDomain; ++dd) {
       for (size_t ii = 0; ii < 2; ++ii) {
         DomainType coord(0.5);
-        coord[dd] = ii;
+        coord[dd] = static_cast<RangeFieldType>(ii);
         local_reconstructed_values[coord] = u_entity + slope_functor_->slopes()[dd] * (ii - 0.5);
       } // ii
     } // dd
