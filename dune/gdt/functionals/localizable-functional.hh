@@ -72,7 +72,7 @@ public:
                    const XT::Common::Parameter& param = {},
                    const ElementFilterType& filter = ApplyOnAllElements())
   {
-    local_accumulators_.emplace_back(make_local_element_functional_accumulator<GV>(local_functional, &source_, param));
+    local_accumulators_.emplace_back(make_local_element_functional_accumulator<GV>(local_functional, *source_, param));
     this->append(*local_accumulators_.back(), filter);
     return *this;
   }
