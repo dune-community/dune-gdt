@@ -235,7 +235,7 @@ protected:
               local_solution->bind(element);
               auto local_reconstruction = flux_reconstruction.local_function();
               local_reconstruction->bind(element);
-              auto result = XT::Grid::element_integral<R, E>(
+              auto result = XT::Grid::element_integral<R>(
                   element,
                   [&](const auto& xx) {
                     const auto diff = local_df->evaluate(xx);
