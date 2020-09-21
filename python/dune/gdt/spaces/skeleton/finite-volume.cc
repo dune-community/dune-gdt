@@ -96,7 +96,7 @@ public:
 template <class GridTypes = Dune::XT::Grid::AvailableGridTypes>
 struct FiniteVolumeSkeletonSpace_for_all_grids
 {
-  using G = typename GridTypes::head_type;
+  using G = Dune::XT::Common::tuple_head_t<GridTypes>;
   using GV = typename G::LeafGridView;
   static const constexpr size_t d = G::dimension;
 
@@ -107,12 +107,12 @@ struct FiniteVolumeSkeletonSpace_for_all_grids
 
     FiniteVolumeSkeletonSpace<GV>::bind(m, grid_name<G>::value());
 
-    FiniteVolumeSkeletonSpace_for_all_grids<typename GridTypes::tail_type>::bind(m);
+    FiniteVolumeSkeletonSpace_for_all_grids<Dune::XT::Common::tuple_tail_t<GridTypes>>::bind(m);
   }
 };
 
 template <>
-struct FiniteVolumeSkeletonSpace_for_all_grids<boost::tuples::null_type>
+struct FiniteVolumeSkeletonSpace_for_all_grids<Dune::XT::Common::tuple_null_type>
 {
   static void bind(pybind11::module& /*m*/) {}
 };

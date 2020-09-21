@@ -178,7 +178,7 @@ public:
 template <class M, class MT, class GridTypes = Dune::XT::Grid::AvailableGridTypes>
 struct LaplaceIpdgFluxReconstructionOperator_for_all_grids
 {
-  using G = typename GridTypes::head_type;
+  using G = Dune::XT::Common::tuple_head_t<GridTypes>;
   using GV = typename G::LeafGridView;
 
   static void bind(pybind11::module& m, const std::string& matrix_id)
@@ -188,12 +188,13 @@ struct LaplaceIpdgFluxReconstructionOperator_for_all_grids
 
     LaplaceIpdgFluxReconstructionOperator<M, MT, GV>::bind(m, matrix_id, grid_name<G>::value());
 
-    LaplaceIpdgFluxReconstructionOperator_for_all_grids<M, MT, typename GridTypes::tail_type>::bind(m, matrix_id);
+    LaplaceIpdgFluxReconstructionOperator_for_all_grids<M, MT, Dune::XT::Common::tuple_tail_t<GridTypes>>::bind(
+        m, matrix_id);
   }
 };
 
 template <class M, class MT>
-struct LaplaceIpdgFluxReconstructionOperator_for_all_grids<M, MT, boost::tuples::null_type>
+struct LaplaceIpdgFluxReconstructionOperator_for_all_grids<M, MT, Dune::XT::Common::tuple_null_type>
 {
   static void bind(pybind11::module& /*m*/, const std::string& /*matrix_id*/) {}
 };

@@ -28,7 +28,7 @@
 template <class GridTypes = Dune::XT::Grid::AvailableGridTypes>
 struct LocalUnaryElementIntegrandInterface_for_all_grids
 {
-  using G = typename GridTypes::head_type;
+  using G = Dune::XT::Common::tuple_head_t<GridTypes>;
   using GV = typename G::LeafGridView;
   using E = Dune::XT::Grid::extract_entity_t<GV>;
   static const constexpr size_t d = G::dimension;
@@ -55,12 +55,12 @@ struct LocalUnaryElementIntegrandInterface_for_all_grids
     // add your extra dimensions here
     // ...
 
-    LocalUnaryElementIntegrandInterface_for_all_grids<typename GridTypes::tail_type>::bind(m);
+    LocalUnaryElementIntegrandInterface_for_all_grids<Dune::XT::Common::tuple_tail_t<GridTypes>>::bind(m);
   }
 };
 
 template <>
-struct LocalUnaryElementIntegrandInterface_for_all_grids<boost::tuples::null_type>
+struct LocalUnaryElementIntegrandInterface_for_all_grids<Dune::XT::Common::tuple_null_type>
 {
   static void bind(pybind11::module& /*m*/) {}
 };

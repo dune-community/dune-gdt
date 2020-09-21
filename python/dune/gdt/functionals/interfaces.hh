@@ -92,7 +92,7 @@ public:
 template <class V, class GridTypes = Dune::XT::Grid::AvailableGridTypes>
 struct FunctionalInterface_for_all_grids
 {
-  using G = typename GridTypes::head_type;
+  using G = Dune::XT::Common::tuple_head_t<GridTypes>;
   static const constexpr size_t d = G::dimension;
 
   static void bind(pybind11::module& m)
@@ -104,12 +104,12 @@ struct FunctionalInterface_for_all_grids
       FunctionalInterface<V, G, d>::bind(m);
     // add your extra dimensions here
     // ...
-    FunctionalInterface_for_all_grids<V, typename GridTypes::tail_type>::bind(m);
+    FunctionalInterface_for_all_grids<V, Dune::XT::Common::tuple_tail_t<GridTypes>>::bind(m);
   }
 };
 
 template <class V>
-struct FunctionalInterface_for_all_grids<V, boost::tuples::null_type>
+struct FunctionalInterface_for_all_grids<V, Dune::XT::Common::tuple_null_type>
 {
   static void bind(pybind11::module& /*m*/) {}
 };

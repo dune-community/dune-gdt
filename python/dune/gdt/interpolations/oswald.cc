@@ -101,7 +101,7 @@ public:
 template <class V, class VT, class GridTypes = Dune::XT::Grid::AvailableGridTypes>
 struct oswald_interpolation_for_all_grids
 {
-  using G = typename GridTypes::head_type;
+  using G = Dune::XT::Common::tuple_head_t<GridTypes>;
   using GV = typename G::LeafGridView;
   static const constexpr size_t d = G::dimension;
 
@@ -111,12 +111,12 @@ struct oswald_interpolation_for_all_grids
 
     oswald_interpolation<V, VT, GV>::bind(m);
 
-    oswald_interpolation_for_all_grids<V, VT, typename GridTypes::tail_type>::bind(m);
+    oswald_interpolation_for_all_grids<V, VT, Dune::XT::Common::tuple_tail_t<GridTypes>>::bind(m);
   }
 };
 
 template <class V, class VT>
-struct oswald_interpolation_for_all_grids<V, VT, boost::tuples::null_type>
+struct oswald_interpolation_for_all_grids<V, VT, Dune::XT::Common::tuple_null_type>
 {
   static void bind(pybind11::module& /*m*/) {}
 };

@@ -100,7 +100,7 @@ public:
 template <class GridTypes = Dune::XT::Grid::AvailableGridTypes>
 struct estimate_inverse_inequality_constant_for_all_grids
 {
-  using G = typename GridTypes::head_type;
+  using G = Dune::XT::Common::tuple_head_t<GridTypes>;
   using GV = typename G::LeafGridView;
   static const constexpr size_t d = G::dimension;
 
@@ -111,12 +111,12 @@ struct estimate_inverse_inequality_constant_for_all_grids
       Dune::GDT::bindings::estimate_inverse_inequality_constant<GV, d>::bind(m);
     // add your extra dimensions here
     // ...
-    estimate_inverse_inequality_constant_for_all_grids<typename GridTypes::tail_type>::bind(m);
+    estimate_inverse_inequality_constant_for_all_grids<Dune::XT::Common::tuple_tail_t<GridTypes>>::bind(m);
   }
 };
 
 template <>
-struct estimate_inverse_inequality_constant_for_all_grids<boost::tuples::null_type>
+struct estimate_inverse_inequality_constant_for_all_grids<Dune::XT::Common::tuple_null_type>
 {
   static void bind(pybind11::module& /*m*/) {}
 };
@@ -125,7 +125,7 @@ struct estimate_inverse_inequality_constant_for_all_grids<boost::tuples::null_ty
 template <class GridTypes = Dune::XT::Grid::AvailableGridTypes>
 struct estimate_combined_inverse_trace_inequality_constant_for_all_grids
 {
-  using G = typename GridTypes::head_type;
+  using G = Dune::XT::Common::tuple_head_t<GridTypes>;
   using GV = typename G::LeafGridView;
   static const constexpr size_t d = G::dimension;
 
@@ -136,12 +136,13 @@ struct estimate_combined_inverse_trace_inequality_constant_for_all_grids
       Dune::GDT::bindings::estimate_combined_inverse_trace_inequality_constant<GV, d>::bind(m);
     // add your extra dimensions here
     // ...
-    estimate_combined_inverse_trace_inequality_constant_for_all_grids<typename GridTypes::tail_type>::bind(m);
+    estimate_combined_inverse_trace_inequality_constant_for_all_grids<Dune::XT::Common::tuple_tail_t<GridTypes>>::bind(
+        m);
   }
 };
 
 template <>
-struct estimate_combined_inverse_trace_inequality_constant_for_all_grids<boost::tuples::null_type>
+struct estimate_combined_inverse_trace_inequality_constant_for_all_grids<Dune::XT::Common::tuple_null_type>
 {
   static void bind(pybind11::module& /*m*/) {}
 };
@@ -150,19 +151,20 @@ struct estimate_combined_inverse_trace_inequality_constant_for_all_grids<boost::
 template <class GridTypes = Dune::XT::Grid::AvailableGridTypes>
 struct estimate_element_to_intersection_equivalence_constant_for_all_grids
 {
-  using G = typename GridTypes::head_type;
+  using G = Dune::XT::Common::tuple_head_t<GridTypes>;
   using GV = typename G::LeafGridView;
 
   static void bind(pybind11::module& m)
   {
     Dune::GDT::bindings::estimate_element_to_intersection_equivalence_constant<GV>::bind(m);
 
-    estimate_element_to_intersection_equivalence_constant_for_all_grids<typename GridTypes::tail_type>::bind(m);
+    estimate_element_to_intersection_equivalence_constant_for_all_grids<
+        Dune::XT::Common::tuple_tail_t<GridTypes>>::bind(m);
   }
 };
 
 template <>
-struct estimate_element_to_intersection_equivalence_constant_for_all_grids<boost::tuples::null_type>
+struct estimate_element_to_intersection_equivalence_constant_for_all_grids<Dune::XT::Common::tuple_null_type>
 {
   static void bind(pybind11::module& /*m*/) {}
 };

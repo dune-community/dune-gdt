@@ -74,19 +74,19 @@ public:
 template <class V, class GridTypes = Dune::XT::Grid::AvailableGridTypes>
 struct DofVector_for_all_grids
 {
-  using G = typename GridTypes::head_type;
+  using G = Dune::XT::Common::tuple_head_t<GridTypes>;
   using GV = typename G::LeafGridView;
 
   static void bind(pybind11::module& m)
   {
     Dune::GDT::bindings::DofVector<V, GV>::bind(m);
 
-    DofVector_for_all_grids<V, typename GridTypes::tail_type>::bind(m);
+    DofVector_for_all_grids<V, Dune::XT::Common::tuple_tail_t<GridTypes>>::bind(m);
   }
 };
 
 template <class V>
-struct DofVector_for_all_grids<V, boost::tuples::null_type>
+struct DofVector_for_all_grids<V, Dune::XT::Common::tuple_null_type>
 {
   static void bind(pybind11::module& /*m*/) {}
 };

@@ -72,7 +72,7 @@ public:
 template <class V, class GridTypes = Dune::XT::Grid::AvailableGridTypes>
 struct LocalElementOperatorInterface_for_all_grids
 {
-  using G = typename GridTypes::head_type;
+  using G = Dune::XT::Common::tuple_head_t<GridTypes>;
   using GV = typename G::LeafGridView;
   static const constexpr size_t d = G::dimension;
 
@@ -89,12 +89,12 @@ struct LocalElementOperatorInterface_for_all_grids
     }
     // add your extra dimensions here
     // ...
-    LocalElementOperatorInterface_for_all_grids<V, typename GridTypes::tail_type>::bind(m, vector_id);
+    LocalElementOperatorInterface_for_all_grids<V, Dune::XT::Common::tuple_tail_t<GridTypes>>::bind(m, vector_id);
   }
 };
 
 template <class V>
-struct LocalElementOperatorInterface_for_all_grids<V, boost::tuples::null_type>
+struct LocalElementOperatorInterface_for_all_grids<V, Dune::XT::Common::tuple_null_type>
 {
   static void bind(pybind11::module& /*m*/, const std::string& /*vector_id*/) {}
 };

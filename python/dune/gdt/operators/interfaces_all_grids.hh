@@ -21,7 +21,7 @@
 template <class M, class MT, class ST, class GridTypes = Dune::XT::Grid::AvailableGridTypes>
 struct OperatorInterface_for_all_grids
 {
-  using G = typename GridTypes::head_type;
+  using G = Dune::XT::Common::tuple_head_t<GridTypes>;
   using GV = typename G::LeafGridView;
   static const constexpr size_t d = G::dimension;
 
@@ -56,12 +56,12 @@ struct OperatorInterface_for_all_grids
     // add your extra dimensions here
     // ...
 
-    OperatorInterface_for_all_grids<M, MT, ST, typename GridTypes::tail_type>::bind(m, matrix_id);
+    OperatorInterface_for_all_grids<M, MT, ST, Dune::XT::Common::tuple_tail_t<GridTypes>>::bind(m, matrix_id);
   }
 };
 
 template <class M, class MT, class ST>
-struct OperatorInterface_for_all_grids<M, MT, ST, boost::tuples::null_type>
+struct OperatorInterface_for_all_grids<M, MT, ST, Dune::XT::Common::tuple_null_type>
 {
   static void bind(pybind11::module& /*m*/, const std::string& /*matrix_id*/) {}
 };

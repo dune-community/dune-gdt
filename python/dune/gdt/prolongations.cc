@@ -86,7 +86,7 @@ public:
 template <class V, class VT, class GridTypes = Dune::XT::Grid::AvailableGridTypes>
 struct prolong_for_all_grids
 {
-  using G = typename GridTypes::head_type;
+  using G = Dune::XT::Common::tuple_head_t<GridTypes>;
   using GV = typename G::LeafGridView;
   static const constexpr size_t d = G::dimension;
 
@@ -99,12 +99,12 @@ struct prolong_for_all_grids
       prolong<V, VT, GV, d>::bind(m);
     // add your extra dimensions here
     // ...
-    prolong_for_all_grids<V, VT, typename GridTypes::tail_type>::bind(m);
+    prolong_for_all_grids<V, VT, Dune::XT::Common::tuple_tail_t<GridTypes>>::bind(m);
   }
 };
 
 template <class V, class VT>
-struct prolong_for_all_grids<V, VT, boost::tuples::null_type>
+struct prolong_for_all_grids<V, VT, Dune::XT::Common::tuple_null_type>
 {
   static void bind(pybind11::module& /*m*/) {}
 };
