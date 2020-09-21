@@ -279,61 +279,6 @@ protected:
 }; // class LocalBinaryElementIntegrandInterface
 
 
-template <class I,
-          size_t t_r = 1,
-          size_t t_rC = 1,
-          class TR = double,
-          class F_ = double,
-          size_t a_r = t_r,
-          size_t a_rC = t_rC,
-          class AR = TR>
-class LocalUnaryAndBinaryElementIntegrandInterface
-  : public LocalUnaryElementIntegrandInterface<I, t_r, t_rC, TR, F_>
-  , public LocalBinaryElementIntegrandInterface<I, t_r, t_rC, TR, F_, a_r, a_rC, AR>
-{
-
-  using ThisType = LocalUnaryAndBinaryElementIntegrandInterface;
-
-protected:
-  using UnaryBaseType = LocalUnaryElementIntegrandInterface<I, t_r, t_rC, TR, F_>;
-  using BinaryBaseType = LocalBinaryElementIntegrandInterface<I, t_r, t_rC, TR, F_, a_r, a_rC, AR>;
-
-public:
-  /// \name Members and typedefs required for disambiuation.
-  /// \{
-
-  using typename UnaryBaseType::D;
-  using typename UnaryBaseType::DomainType;
-  using typename UnaryBaseType::E;
-  using typename UnaryBaseType::ElementType;
-  using typename UnaryBaseType::F;
-  using UnaryBaseType::d;
-
-  /// \}
-
-  LocalUnaryAndBinaryElementIntegrandInterface(const XT::Common::ParameterType& param_type = {},
-                                               const std::string& logging_prefix = "",
-                                               const std::string& logging_id_ = "",
-                                               const bool logging_disabled = true)
-    : UnaryBaseType(param_type, logging_prefix, logging_id_, logging_disabled)
-    , BinaryBaseType(param_type, logging_prefix, logging_id_, logging_disabled)
-  {}
-
-  virtual ~LocalUnaryAndBinaryElementIntegrandInterface() = default;
-
-  virtual std::unique_ptr<ThisType> copy_as_unary_and_binary_element_integrand() const = 0;
-
-  /// \name Methods required for disambiguation.
-  /// \{
-
-  using UnaryBaseType::is_parametric;
-  using UnaryBaseType::parameter_type;
-  using UnaryBaseType::parse_parameter;
-
-  /// \}
-}; // class LocalUnaryAndBinaryElementIntegrandInterface
-
-
 /**
  * Interface for integrands in integrals over grid intersections, which depend on one argument (usually the test basis
  * on the inside of the intersection in an integral-based functional).
