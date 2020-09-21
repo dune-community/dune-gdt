@@ -107,16 +107,23 @@ public:
     return std::make_unique<ThisType>(*this);
   }
 
+  std::unique_ptr<ThisType> copy_as_grid_function() const
+  {
+    return std::unique_ptr<ThisType>(*this);
+  }
+
   /**
    * \name ``These methods are required by XT::Functions::GridFunctionInterface.''
    * \{
    */
 
-  std::unique_ptr<BaseType> copy_as_grid_function() const override
+private:
+  BaseType* copy_as_grid_function_impl() const override final
   {
-    return std::make_unique<ThisType>(*this);
+    return new ThisType(*this);
   }
 
+public:
   std::string name() const override final
   {
     return name_;
