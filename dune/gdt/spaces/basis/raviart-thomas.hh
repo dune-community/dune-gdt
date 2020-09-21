@@ -56,8 +56,7 @@ public:
                            const FiniteVolumeMapper<GL>& element_indices,
                            const std::vector<DynamicVector<R>>& fe_data,
                            const std::string& logging_prefix)
-    : BaseType(logging_prefix.empty() ? "gdt" : "gdt.spaces.rt",
-               logging_prefix.empty() ? "RtGlobalBasis" : logging_prefix,
+    : BaseType(logging_prefix.empty() ? "RtGlobalBasis" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
     , grid_view_(grid_view)
     , order_(order)
@@ -66,7 +65,7 @@ public:
     , fe_data_(fe_data)
     , max_size_(0)
   {
-    LOG_(info) << this->logging_id << "(grid_view=" << &grid_view << ", order=" << order
+    LOG_(info) << "RtGlobalBasis(grid_view=" << &grid_view << ", order=" << order
                << ", local_finite_elements=" << &local_finite_elements
                << ",\n   element_indices.size()=" << element_indices.size() << ", fe_data.size()=" << fe_data.size()
                << ")" << std::endl;
@@ -92,15 +91,15 @@ public:
   {
     std::string derived_logging_prefix = "";
     if (this->logger.info_enabled) {
-      derived_logging_prefix = this->logging_id + "_localized";
-      this->logger.info() << this->logging_id << ".localize()" << std::endl;
+      derived_logging_prefix = this->logger.prefix + "_localized";
+      this->logger.info() << "localize()" << std::endl;
     }
     return std::make_unique<LocalizedRaviartThomasGlobalBasis>(*this, derived_logging_prefix);
   }
 
   void update_after_adapt() override final
   {
-    LOG_(info) << this->logging_id << ".update_after_adapt()" << std::endl;
+    LOG_(info) << "update_after_adapt()" << std::endl;
     max_size_ = 0;
     for (const auto& gt : grid_view_.indexSet().types(0))
       max_size_ = std::max(max_size_, local_finite_elements_.get(gt, order_).size());
@@ -122,13 +121,12 @@ private:
 
     LocalizedRaviartThomasGlobalBasis(const RaviartThomasGlobalBasis<GL, R>& self,
                                       const std::string& logging_prefix = "")
-      : BaseType(logging_prefix.empty() ? "gdt" : "gdt.spaces.rt",
-                 logging_prefix.empty() ? "LocalizedRtGlobalBasis" : logging_prefix,
+      : BaseType(logging_prefix.empty() ? "LocalizedRtGlobalBasis" : logging_prefix,
                  /*logging_disabled=*/logging_prefix.empty())
       , self_(self)
       , set_data_in_post_bind_(true)
     {
-      LOG_(info) << this->logging_id << "(self=" << &self
+      LOG_(info) << "LocalizedRtGlobalBasis(self=" << &self
                  << ", self.element_indices_.size()=" << self.element_indices_.size()
                  << ", self.fe_data_.size()=" << self.fe_data_.size() << ")" << std::endl;
     }

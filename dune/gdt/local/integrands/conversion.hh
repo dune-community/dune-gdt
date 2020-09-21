@@ -55,14 +55,13 @@ public:
                                      XT::Functions::GridFunction<E, a_r, a_rC, AF> inducing_function_as_ansatz_basis,
                                      const std::string& logging_prefix = "")
     : BaseType({},
-               logging_prefix.empty() ? "gdt" : "gdt.localbinarytounaryelementintegrand",
                logging_prefix.empty() ? "LocalBinaryToUnaryElementIntegrand" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
     , inducing_function_as_ansatz_basis_(inducing_function_as_ansatz_basis.copy_as_grid_function())
     , local_function_(inducing_function_as_ansatz_basis_->local_function())
     , local_binary_integrand_(local_binary_integrand.copy_as_binary_element_integrand())
   {
-    LOG_(debug) << this->logging_id << "(local_binary_integrand=" << &local_binary_integrand
+    LOG_(debug) << "LocalBinaryToUnaryElementIntegrand(local_binary_integrand=" << &local_binary_integrand
                 << ", inducing_function_as_ansatz_basis=" << &inducing_function_as_ansatz_basis << ")" << std::endl;
   }
 
@@ -100,9 +99,8 @@ public:
                 DynamicVector<F>& result,
                 const XT::Common::Parameter& param = {}) const override final
   {
-    LOG_(debug) << this->logging_id << ".evaluate(basis.size()=" << basis.size(param)
-                << ", point_in_reference_element=[" << point_in_reference_element << "], param=" << param
-                << "):" << std::endl;
+    LOG_(debug) << "evaluate(basis.size()=" << basis.size(param) << ", point_in_reference_element=["
+                << point_in_reference_element << "], param=" << param << "):" << std::endl;
     // prepare storage
     const auto size = basis.size(param);
     if (result.size() < size)

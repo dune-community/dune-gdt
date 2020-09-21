@@ -68,7 +68,6 @@ public:
                                             LocalIPDGIntegrands::internal::default_intersection_diameter<I>(),
                                         const std::string& logging_prefix = "")
     : BaseType({},
-               logging_prefix.empty() ? "gdt" : "gdt.operators.fluxreconstruction",
                logging_prefix.empty() ? "LaplaceIpdgFluxReconstructionOperator" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
     , assembly_grid_view_(assembly_grid_view)

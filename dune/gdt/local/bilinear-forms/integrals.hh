@@ -171,14 +171,13 @@ public:
                                                 const int over_integrate = 0,
                                                 const std::string& logging_prefix = "")
     : BaseType(integrand.parameter_type(),
-               logging_prefix.empty() ? "gdt" : "gdt.localcouplingintersectionintegralbilinearform",
                logging_prefix.empty() ? "LocalCouplingIntersectionIntegralBilinearForm" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
     , integrand_(integrand.copy_as_quaternary_intersection_integrand())
     , over_integrate_(over_integrate)
   {
-    LOG_(info) << this->logging_id << "(integrand=" << &integrand << ", over_integrate=" << over_integrate << ")"
-               << std::endl;
+    LOG_(info) << "LocalCouplingIntersectionIntegralBilinearForm(integrand=" << &integrand
+               << ", over_integrate=" << over_integrate << ")" << std::endl;
   }
 
   LocalCouplingIntersectionIntegralBilinearForm(const ThisType& other)
@@ -308,14 +307,13 @@ public:
                                         const int over_integrate = 0,
                                         const std::string& logging_prefix = "")
     : BaseType(integrand.parameter_type(),
-               logging_prefix.empty() ? "gdt" : "gdt.localintersectionintegralbilinearform",
                logging_prefix.empty() ? "LocalIntersectionIntegralBilinearForm" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
     , integrand_(integrand.copy_as_binary_intersection_integrand())
     , over_integrate_(over_integrate)
   {
-    LOG_(info) << this->logging_id << "(integrand=" << &integrand << ", over_integrate=" << over_integrate << ")"
-               << std::endl;
+    LOG_(info) << "LocalIntersectionIntegralBilinearForm(integrand=" << &integrand
+               << ", over_integrate=" << over_integrate << ")" << std::endl;
   }
 
   LocalIntersectionIntegralBilinearForm(const ThisType& other)

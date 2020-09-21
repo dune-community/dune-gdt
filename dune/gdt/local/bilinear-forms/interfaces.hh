@@ -184,12 +184,9 @@ public:
 
   LocalCouplingIntersectionBilinearFormInterface(const XT::Common::ParameterType& param_type = {},
                                                  const std::string& logging_prefix = "",
-                                                 const std::string& logging_id_ = "",
                                                  const bool logging_disabled = true)
     : XT::Common::ParametricInterface(param_type)
-    , Logger(logging_prefix.empty() ? "gdt" : logging_prefix,
-             logging_id_.empty() ? "LocalCouplingIntersectionBilinearForm" : logging_id_,
-             logging_disabled)
+    , Logger(logging_prefix.empty() ? "LocalCouplingIntersectionBilinearForm" : logging_prefix, logging_disabled)
   {}
 
   LocalCouplingIntersectionBilinearFormInterface(const ThisType&) = default;
@@ -305,12 +302,9 @@ public:
 
   LocalIntersectionBilinearFormInterface(const XT::Common::ParameterType& param_type = {},
                                          const std::string& logging_prefix = "",
-                                         const std::string& logging_id_ = "",
                                          const bool logging_disabled = true)
     : XT::Common::ParametricInterface(param_type)
-    , Logger(logging_prefix.empty() ? "gdt" : logging_prefix,
-             logging_id_.empty() ? "LocalIntersectionBilinearForm" : logging_id_,
-             logging_disabled)
+    , Logger(logging_prefix.empty() ? "LocalIntersectionBilinearForm" : logging_prefix, logging_disabled)
   {}
 
   LocalIntersectionBilinearFormInterface(const ThisType&) = default;

@@ -42,13 +42,12 @@ public:
 
   InnerCoupling(XT::Functions::GridFunction<E, d> direction, const std::string& logging_prefix = "")
     : BaseType(direction.parameter_type(),
-               logging_prefix.empty() ? "gdt" : "gdt.AdvectionUpwdInn",
                logging_prefix.empty() ? "LocalLinearAdvectionUpwindIntegrands::InnerCoupling" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
     , direction_(direction.copy_as_grid_function())
     , local_direction_in_(direction_->local_function())
   {
-    LOG_(info) << this->logging_id << "(direction=" << &direction << ")" << std::endl;
+    LOG_(info) << this->logger.prefix << "(direction=" << &direction << ")" << std::endl;
   }
 
   InnerCoupling(const ThisType& other)
@@ -95,8 +94,8 @@ public:
                 DynamicMatrix<F>& result_out_out,
                 const XT::Common::Parameter& param = {}) const override final
   {
-    LOG_(debug) << this->logging_id << ".evaluate(test_basis_{inside|outside}.size()={" << test_basis_inside.size(param)
-                << "|" << test_basis_outside.size(param) << "},\n    ansatz_basis_{inside|outside}.size()={"
+    LOG_(debug) << "evaluate(test_basis_{inside|outside}.size()={" << test_basis_inside.size(param) << "|"
+                << test_basis_outside.size(param) << "},\n    ansatz_basis_{inside|outside}.size()={"
                 << ansatz_basis_inside.size(param) << "|" << ansatz_basis_outside.size(param)
                 << "},\n    point_in_{reference_intersection|physical_space}={"
                 << print(point_in_reference_intersection) << "|"
@@ -176,7 +175,7 @@ public:
   using typename BaseBinaryType::LocalTestBasisType;
 
   using BaseUnaryType::logger;
-  using BaseUnaryType::logging_id;
+  using BaseUnaryType::logger.prefix;
 
   /**
    * \note dirichlet_data is only required if used as a unary integrand, i.e. for the right hand side
@@ -185,11 +184,9 @@ public:
                     XT::Functions::GridFunction<E> dirichlet_data = 0.,
                     const std::string& logging_prefix = "")
     : BaseUnaryType(direction.parameter_type() + dirichlet_data.parameter_type(),
-                    logging_prefix.empty() ? "gdt" : "gdt.AdvectionUpwdDir",
                     logging_prefix.empty() ? "LocalLinearAdvectionUpwindIntegrands::DirichletCoupling" : logging_prefix,
                     /*logging_disabled=*/logging_prefix.empty())
     , BaseBinaryType(direction.parameter_type() + dirichlet_data.parameter_type(),
-                     logging_prefix.empty() ? "gdt" : "gdt.AdvectionUpwdDir",
                      logging_prefix.empty() ? "LocalLinearAdvectionUpwindIntegrands::DirichletCoupling"
                                             : logging_prefix,
                      /*logging_disabled=*/logging_prefix.empty())
@@ -198,8 +195,8 @@ public:
     , local_direction_(direction_->local_function())
     , local_dirichlet_data_(dirichlet_data_->local_function())
   {
-    LOG_(info) << this->logging_id << "(direction=" << &direction << ", dirichlet_data=" << &dirichlet_data << ")"
-               << std::endl;
+    LOG_(info) << "LocalLinearAdvectionUpwindIntegrands::DirichletCoupling(direction=" << &direction
+               << ", dirichlet_data=" << &dirichlet_data << ")" << std::endl;
   }
 
   DirichletCoupling(const ThisType& other)
@@ -247,7 +244,7 @@ public:
                 DynamicVector<F>& result,
                 const XT::Common::Parameter& param = {}) const override final
   {
-    LOG_(debug) << this->logging_id << ".evaluate(test_basis.size()=" << test_basis.size(param)
+    LOG_(debug) << "evaluate(test_basis.size()=" << test_basis.size(param)
                 << ",\n    point_in_{reference_intersection|physical_space}={" << print(point_in_reference_intersection)
                 << "|" << print(this->intersection().geometry().global(point_in_reference_intersection))
                 << "},\n    param=" << param << ")" << std::endl;
@@ -296,7 +293,7 @@ public:
                 DynamicMatrix<F>& result,
                 const XT::Common::Parameter& param = {}) const override final
   {
-    LOG_(debug) << this->logging_id << ".evaluate(test_basis.size()=" << test_basis.size(param)
+    LOG_(debug) << "evaluate(test_basis.size()=" << test_basis.size(param)
                 << ", ansatz_basis.size()=" << ansatz_basis.size(param)
                 << ",\n    point_in_{reference_intersection|physical_space}={" << print(point_in_reference_intersection)
                 << "|" << print(this->intersection().geometry().global(point_in_reference_intersection))

@@ -49,7 +49,6 @@ public:
                 XT::Functions::GridFunction<E, d, d> weight_function = {1.},
                 const std::string& logging_prefix = "")
     : BaseType(diffusion.parameter_type() + weight_function.parameter_type(),
-               logging_prefix.empty() ? "gdt" : "gdt.locallaplaceipdginnercouplingintegrand",
                logging_prefix.empty() ? "LocalLaplaceIPDGIntegrands::InnerCoupling" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
     , symmetry_prefactor_(symmetry_prefactor)
@@ -240,11 +239,9 @@ public:
                     XT::Functions::GridFunction<E> dirichlet_data = 0.,
                     const std::string& logging_prefix = "")
     : BaseUnaryType(diffusion.parameter_type() + dirichlet_data.parameter_type(),
-                    logging_prefix.empty() ? "gdt" : "gdt.locallaplaceipdgdirichletcouplingintegrand",
                     logging_prefix.empty() ? "LocalLaplaceIPDGIntegrands::DirichletCoupling" : logging_prefix,
                     /*logging_disabled=*/logging_prefix.empty())
     , BaseBinaryType(diffusion.parameter_type() + dirichlet_data.parameter_type(),
-                     logging_prefix.empty() ? "gdt" : "gdt.locallaplaceipdgdirichletcouplingintegrand",
                      logging_prefix.empty() ? "LocalLaplaceIPDGIntegrands::DirichletCoupling" : logging_prefix,
                      /*logging_disabled=*/logging_prefix.empty())
     , symmetry_prefactor_(symmetry_prefactor)

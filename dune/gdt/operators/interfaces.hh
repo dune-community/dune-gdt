@@ -168,14 +168,11 @@ public:
 
   explicit OperatorInterface(const XT::Common::ParameterType& param_type = {},
                              const std::string& logging_prefix = "",
-                             const std::string& logging_id_ = "",
                              const bool logging_disabled = true)
     : XT::Common::ParametricInterface(param_type)
-    , Logger(logging_prefix.empty() ? "gdt" : logging_prefix,
-             logging_id_.empty() ? "Operator" : logging_id_,
-             logging_disabled)
+    , Logger(logging_prefix.empty() ? "Operator" : logging_prefix, logging_disabled)
   {
-    LOG_(info) << this->logging_id << "(param_type=" << param_type << ")" << std::endl;
+    LOG_(info) << "Operator(param_type=" << param_type << ")" << std::endl;
   }
 
   OperatorInterface(const ThisType& other) = default;
@@ -199,8 +196,8 @@ public:
   {
     std::string derived_logging_prefix = "";
     if (this->logger.debug_enabled) {
-      derived_logging_prefix = this->logging_id + "*" + XT::Common::to_string(alpha);
-      this->logger.debug() << this->logging_id << ".operator*(alpha=" << alpha << ")" << std::endl;
+      derived_logging_prefix = this->logger.prefix + "*" + XT::Common::to_string(alpha);
+      this->logger.debug() << "operator*(alpha=" << alpha << ")" << std::endl;
     }
     ConstLincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
     ret.add(*this, alpha);
@@ -211,8 +208,8 @@ public:
   {
     std::string derived_logging_prefix = "";
     if (this->logger.debug_enabled) {
-      derived_logging_prefix = this->logging_id + "*" + XT::Common::to_string(alpha);
-      this->logger.debug() << this->logging_id << ".operator*(alpha=" << alpha << ")" << std::endl;
+      derived_logging_prefix = this->logger.prefix + "*" + XT::Common::to_string(alpha);
+      this->logger.debug() << "operator*(alpha=" << alpha << ")" << std::endl;
     }
     LincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
     ret.add(*this, alpha);
@@ -223,8 +220,8 @@ public:
   {
     std::string derived_logging_prefix = "";
     if (this->logger.debug_enabled) {
-      derived_logging_prefix = this->logging_id + "/" + XT::Common::to_string(alpha);
-      this->logger.debug() << this->logging_id << ".operator/(alpha=" << alpha << ")" << std::endl;
+      derived_logging_prefix = this->logger.prefix + "/" + XT::Common::to_string(alpha);
+      this->logger.debug() << "operator/(alpha=" << alpha << ")" << std::endl;
     }
     ConstLincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
     ret.add(*this, 1. / alpha);
@@ -235,8 +232,8 @@ public:
   {
     std::string derived_logging_prefix = "";
     if (this->logger.debug_enabled) {
-      derived_logging_prefix = this->logging_id + "/" + XT::Common::to_string(alpha);
-      this->logger.debug() << this->logging_id << ".operator/(alpha=" << alpha << ")" << std::endl;
+      derived_logging_prefix = this->logger.prefix + "/" + XT::Common::to_string(alpha);
+      this->logger.debug() << "operator/(alpha=" << alpha << ")" << std::endl;
     }
     LincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
     ret.add(*this, 1. / alpha);
@@ -251,7 +248,7 @@ public:
     std::string derived_logging_prefix = "";
     if (this->logger.debug_enabled) {
       derived_logging_prefix = "ConstLincombOperator";
-      this->logger.debug() << this->logging_id << ".operator+(other_const_lincomb_op=" << &other << ")" << std::endl;
+      this->logger.debug() << "operator+(other_const_lincomb_op=" << &other << ")" << std::endl;
     }
     ConstLincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
     ret.add(*this, 1.);
@@ -264,7 +261,7 @@ public:
     std::string derived_logging_prefix = "";
     if (this->logger.debug_enabled) {
       derived_logging_prefix = "ConstLincombOperator";
-      this->logger.debug() << this->logging_id << ".operator+(other_const_op=" << &other << ")" << std::endl;
+      this->logger.debug() << "operator+(other_const_op=" << &other << ")" << std::endl;
     }
     ConstLincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
     ret.add(*this, 1.);
@@ -283,8 +280,7 @@ public:
     if (this->logger.debug_enabled) {
       derived_logging_prefix_clop = "ConstLincombOperator";
       derived_logging_prefix_cop = "ConstantOperator";
-      this->logger.debug() << this->logging_id << ".operator+(vector.sup_norm()=" << vector.sup_norm() << ")"
-                           << std::endl;
+      this->logger.debug() << "operator+(vector.sup_norm()=" << vector.sup_norm() << ")" << std::endl;
     }
     ConstLincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix_clop);
     ret.add(*this, 1.);
@@ -303,7 +299,7 @@ public:
     std::string derived_logging_prefix = "";
     if (this->logger.debug_enabled) {
       derived_logging_prefix = "LincombOperator";
-      this->logger.debug() << this->logging_id << ".operator+(other_lincomb_op=" << &other << ")" << std::endl;
+      this->logger.debug() << "operator+(other_lincomb_op=" << &other << ")" << std::endl;
     }
     LincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
     ret.add(*this, 1.);
@@ -316,7 +312,7 @@ public:
     std::string derived_logging_prefix = "";
     if (this->logger.debug_enabled) {
       derived_logging_prefix = "LincombOperator";
-      this->logger.debug() << this->logging_id << ".operator+(other_op=" << &other << ")" << std::endl;
+      this->logger.debug() << "operator+(other_op=" << &other << ")" << std::endl;
     }
     LincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
     ret.add(*this, 1.);
@@ -335,8 +331,7 @@ public:
     if (this->logger.debug_enabled) {
       derived_logging_prefix_lop = "LincombOperator";
       derived_logging_prefix_cop = "ConstantOperator";
-      this->logger.debug() << this->logging_id << ".operator+(vector.sup_norm()=" << vector.sup_norm() << ")"
-                           << std::endl;
+      this->logger.debug() << "operator+(vector.sup_norm()=" << vector.sup_norm() << ")" << std::endl;
     }
     LincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix_lop);
     ret.add(*this, 1.);
@@ -355,7 +350,7 @@ public:
     std::string derived_logging_prefix = "";
     if (this->logger.debug_enabled) {
       derived_logging_prefix = "ConstLincombOperator";
-      this->logger.debug() << this->logging_id << ".operator-(other_const_lincomb_op=" << &other << ")" << std::endl;
+      this->logger.debug() << "operator-(other_const_lincomb_op=" << &other << ")" << std::endl;
     }
     ConstLincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
     ret.add(*this, 1.);
@@ -368,7 +363,7 @@ public:
     std::string derived_logging_prefix = "";
     if (this->logger.debug_enabled) {
       derived_logging_prefix = "ConstLincombOperator";
-      this->logger.debug() << this->logging_id << ".operator-(other_op=" << &other << ")" << std::endl;
+      this->logger.debug() << "operator-(other_op=" << &other << ")" << std::endl;
     }
     ConstLincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
     ret.add(*this, 1.);
@@ -387,8 +382,7 @@ public:
     if (this->logger.debug_enabled) {
       derived_logging_prefix_clop = "ConstLincombOperator";
       derived_logging_prefix_cop = "ConstantOperator";
-      this->logger.debug() << this->logging_id << ".operator-(vector.sup_norm()=" << vector.sup_norm() << ")"
-                           << std::endl;
+      this->logger.debug() << "operator-(vector.sup_norm()=" << vector.sup_norm() << ")" << std::endl;
     }
     ConstLincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix_clop);
     ret.add(*this, 1.);
@@ -407,7 +401,7 @@ public:
     std::string derived_logging_prefix = "";
     if (this->logger.debug_enabled) {
       derived_logging_prefix = "LincombOperator";
-      this->logger.debug() << this->logging_id << ".operator-(other_lincomb_op=" << &other << ")" << std::endl;
+      this->logger.debug() << "operator-(other_lincomb_op=" << &other << ")" << std::endl;
     }
     LincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
     ret.add(*this, 1.);
@@ -420,7 +414,7 @@ public:
     std::string derived_logging_prefix = "";
     if (this->logger.debug_enabled) {
       derived_logging_prefix = "LincombOperator";
-      this->logger.debug() << this->logging_id << ".operator-(other_op=" << &other << ")" << std::endl;
+      this->logger.debug() << "operator-(other_op=" << &other << ")" << std::endl;
     }
     LincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
     ret.add(*this, 1.);
@@ -439,8 +433,7 @@ public:
     if (this->logger.debug_enabled) {
       derived_logging_prefix_lop = "LincombOperator";
       derived_logging_prefix_cop = "ConstantOperator";
-      this->logger.debug() << this->logging_id << ".operator-(vector.sup_norm()=" << vector.sup_norm() << ")"
-                           << std::endl;
+      this->logger.debug() << "operator-(vector.sup_norm()=" << vector.sup_norm() << ")" << std::endl;
     }
     LincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix_lop);
     ret.add(*this, 1.);
@@ -512,7 +505,7 @@ invert_options(some_type).get<std::string>("type") == some_type
                              const XT::Common::Configuration& opts,
                              const XT::Common::Parameter& param = {}) const
   {
-    LOG_(info) << this->logging_id << ".apply_inverse(range=" << &range << ", source=" << &source
+    LOG_(info) << "apply_inverse(range=" << &range << ", source=" << &source
                << ",\n   opts=" << print(opts, {{"oneline", "true"}}) << ",\n   param=" << param << ")" << std::endl;
     DUNE_THROW_IF(!opts.has_key("type"), Exceptions::operator_error, "opts = " << opts);
     const auto type = opts.get<std::string>("type");
@@ -717,7 +710,7 @@ invert_options(some_type).get<std::string>("type") == some_type
                         const std::string& type,
                         const XT::Common::Parameter& param = {}) const
   {
-    LOG_(info) << this->logging_id << ".jacobian(source.sup_norm()=" << source.sup_norm()
+    LOG_(info) << "jacobian(source.sup_norm()=" << source.sup_norm()
                << ", jacobian_op.matrix().sup_norm()=" << jacobian_op.matrix().sup_norm() << ",\n   type=" << type
                << ", param=" << param << std::endl;
     return this->jacobian(source, jacobian_op, this->jacobian_options(type), param);
@@ -726,7 +719,7 @@ invert_options(some_type).get<std::string>("type") == some_type
   virtual void
   jacobian(const VectorType& source, MatrixOperatorType& jacobian_op, const XT::Common::Parameter& param = {}) const
   {
-    LOG_(info) << this->logging_id << ".jacobian(source.sup_norm()=" << source.sup_norm()
+    LOG_(info) << "jacobian(source.sup_norm()=" << source.sup_norm()
                << ", jacobian_op.matrix().sup_norm()=" << jacobian_op.matrix().sup_norm() << ", param=" << param
                << std::endl;
     return this->jacobian(source, jacobian_op, this->jacobian_options().at(0), param);
@@ -738,8 +731,8 @@ invert_options(some_type).get<std::string>("type") == some_type
   {
     std::string derived_logging_prefix = "";
     if (this->logger.info_enabled) {
-      derived_logging_prefix = this->logging_id + "_jac";
-      this->logger.info() << this->logging_id << ".jacobian(source.sup_norm()=" << source.sup_norm()
+      derived_logging_prefix = this->logger.prefix + "_jac";
+      this->logger.info() << "jacobian(source.sup_norm()=" << source.sup_norm()
                           << ", opts=" << print(opts, {{"oneline", "true"}}) << ", param=" << param << std::endl;
     }
     MatrixOperatorType jacobian_op(this->source_space().grid_view(),
@@ -757,9 +750,9 @@ invert_options(some_type).get<std::string>("type") == some_type
   {
     std::string derived_logging_prefix = "";
     if (this->logger.info_enabled) {
-      derived_logging_prefix = this->logging_id + "_jac";
-      this->logger.info() << this->logging_id << ".jacobian(source.sup_norm()=" << source.sup_norm()
-                          << ", type=" << type << ", param=" << param << std::endl;
+      derived_logging_prefix = this->logger.prefix + "_jac";
+      this->logger.info() << "jacobian(source.sup_norm()=" << source.sup_norm() << ", type=" << type
+                          << ", param=" << param << std::endl;
     }
     MatrixOperatorType jacobian_op(this->source_space().grid_view(),
                                    this->source_space(),
@@ -775,9 +768,8 @@ invert_options(some_type).get<std::string>("type") == some_type
   {
     std::string derived_logging_prefix = "";
     if (this->logger.info_enabled) {
-      derived_logging_prefix = this->logging_id + "_jac";
-      this->logger.info() << this->logging_id << ".jacobian(source.sup_norm()=" << source.sup_norm()
-                          << ", param=" << param << std::endl;
+      derived_logging_prefix = this->logger.prefix + "_jac";
+      this->logger.info() << "jacobian(source.sup_norm()=" << source.sup_norm() << ", param=" << param << std::endl;
     }
     MatrixOperatorType jacobian_op(this->source_space().grid_view(),
                                    this->source_space(),

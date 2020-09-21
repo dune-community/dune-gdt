@@ -54,8 +54,7 @@ public:
                                     MatrixType& global_matrix,
                                     const XT::Common::Parameter& param = {},
                                     const std::string& logging_prefix = "")
-    : BaseType(logging_prefix.empty() ? "gdt" : "gdt.assemblers.element",
-               logging_prefix.empty() ? "ElementBilinearFormAssembler" : logging_prefix,
+    : BaseType(logging_prefix.empty() ? "ElementBilinearFormAssembler" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
     , test_space_(test_space.copy())
     , ansatz_space_(ansatz_space.copy())
@@ -69,7 +68,7 @@ public:
     , test_basis_(test_space_->basis().localize())
     , ansatz_basis_(ansatz_space_->basis().localize())
   {
-    LOG_(info) << this->logging_id << "(test_space=" << &test_space << ", ansatz_space=" << &ansatz_space
+    LOG_(info) << "ElementBilinearFormAssembler(test_space=" << &test_space << ", ansatz_space=" << &ansatz_space
                << ", local_two_form=" << &local_two_form
                << ",\n   global_matrix.sup_norm()=" << global_matrix.sup_norm() << ", param=" << param << ")"
                << std::endl;
@@ -110,7 +109,7 @@ public:
 
   void apply_local(const ElementType& element) override final
   {
-    LOG_(info) << this->logging_id << ".apply_local(element=" << print(element) << ")" << std::endl;
+    LOG_(info) << "apply_local(element=" << print(element) << ")" << std::endl;
     // apply bilinear form
     test_basis_->bind(element);
     ansatz_basis_->bind(element);

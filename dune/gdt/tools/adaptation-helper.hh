@@ -46,19 +46,17 @@ public:
   static_assert(!XT::Grid::is_yaspgrid<G>::value, "The PersistentContainer is known to segfault for YaspGrid!");
 
   AdaptationHelper(G& grd, const std::string& logging_prefix = "")
-    : Logger(logging_prefix.empty() ? "gdt" : "gdt.tools.adaptation-helper",
-             logging_prefix.empty() ? "AdaptationHelper" : logging_prefix,
+    : Logger(logging_prefix.empty() ? "AdaptationHelper" : logging_prefix,
              /*logging_disabled=*/logging_prefix.empty())
     , grid_(grd)
     , data_(new std::remove_reference_t<decltype(*data_)>)
   {
-    LOG_(info) << this->logging_id << "(&grd=" << &grd << ")" << std::endl;
+    LOG_(info) << "AdaptationHelper(&grd=" << &grd << ")" << std::endl;
   }
 
   ThisType& append(SpaceType& space, DiscreteFunctionType& discrete_function)
   {
-    LOG_(info) << this->logging_id << ".append(space=" << space << ", discrete_function=" << &discrete_function << ")"
-               << std::endl;
+    LOG_(info) << "append(space=" << space << ", discrete_function=" << &discrete_function << ")" << std::endl;
     data_->emplace_back(XT::Common::StorageProvider<SpaceType>(space),
                         XT::Common::StorageProvider<DiscreteFunctionType>(discrete_function),
                         PersistentContainer<G, std::pair<DynamicVector<RF>, DynamicVector<RF>>>(
@@ -69,7 +67,7 @@ public:
 
   void pre_adapt(const bool pre_adapt_grid = true)
   {
-    LOG_(info) << this->logging_id << ".pre_adapt(pre_adapt_grid=" << pre_adapt_grid << ")" << std::endl;
+    LOG_(info) << "pre_adapt(pre_adapt_grid=" << pre_adapt_grid << ")" << std::endl;
     auto grid_view = grid_.leafGridView();
     // * preadapt will mark elements which might vanish due to coarsening
     bool elements_may_be_coarsened = true;
@@ -134,7 +132,7 @@ public:
 
   void adapt(const bool adapt_grid = true)
   {
-    LOG_(info) << this->logging_id << ".adapt(adapt_grid=" << adapt_grid << ")" << std::endl;
+    LOG_(info) << "adapt(adapt_grid=" << adapt_grid << ")" << std::endl;
     auto grid_view = grid_.leafGridView();
     if (adapt_grid) {
       LOG_(info) << "    adapting grid ..." << std::endl;
@@ -170,8 +168,7 @@ public:
 
   void post_adapt(const bool post_adapt_grid = true, const bool clear = false)
   {
-    LOG_(info) << this->logging_id << ".post_adapt(post_adapt_grid=" << post_adapt_grid << ", clear=" << clear << ")"
-               << std::endl;
+    LOG_(info) << "post_adapt(post_adapt_grid=" << post_adapt_grid << ", clear=" << clear << ")" << std::endl;
     if (post_adapt_grid) {
       LOG_(info) << "    post-adapting grid ..." << std::endl;
       grid_.postAdapt();

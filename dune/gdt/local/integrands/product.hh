@@ -163,7 +163,6 @@ public:
   LocalCouplingIntersectionProductIntegrand(XT::Functions::GridFunction<E, r, r, F> weight = {1.},
                                             const std::string& logging_prefix = "")
     : BaseType({},
-               logging_prefix.empty() ? "gdt" : "gdt.localcouplingintersectionproductintegrand",
                logging_prefix.empty() ? "LocalCouplingIntersectionProductIntegrand" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
     , weight_(weight.copy_as_grid_function())
@@ -297,7 +296,6 @@ public:
                                     const bool use_inside_bases = true,
                                     const std::string& logging_prefix = "")
     : BaseType({},
-               logging_prefix.empty() ? "gdt" : "gdt.localintersectionproductintegrand",
                logging_prefix.empty() ? "LocalIntersectionProductIntegrand" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
     , weight_(weight.copy_as_grid_function())

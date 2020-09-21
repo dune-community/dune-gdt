@@ -44,7 +44,6 @@ public:
         const std::string& logging_prefix = "")
     : BaseType({},
                logging_prefix.empty() ? "LocalJumpIntegrands::Inner" : logging_prefix,
-               logging_prefix.empty() ? "LocalJumpIntegrands::Inner" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
     , intersection_diameter_(intersection_diameter)
   {}
@@ -179,7 +178,6 @@ public:
                LocalIPDGIntegrands::internal::default_intersection_diameter<I>(),
            const std::string& logging_prefix = "")
     : BaseType({},
-               logging_prefix.empty() ? "LocalJumpIntegrands::Boundary" : logging_prefix,
                logging_prefix.empty() ? "LocalJumpIntegrands::Boundary" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
     , intersection_diameter_(intersection_diameter)

@@ -61,7 +61,6 @@ public:
                       const MatrixType& mat,
                       const std::string& logging_prefix = "")
     : BaseType({},
-               logging_prefix.empty() ? "gdt" : "gdt.operators.matrix",
                logging_prefix.empty() ? "MatrixOperator" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
     , source_space_(source_spc)
@@ -69,7 +68,7 @@ public:
     , matrix_(mat)
     , linear_solver_(matrix_, source_space_.dof_communicator())
   {
-    LOG_(info) << BaseType::logging_id << "(source_space=" << &source_spc << ", range_space=" << &range_spc
+    LOG_(info) << "ConstMatrixOperator(source_space=" << &source_spc << ", range_space=" << &range_spc
                << ", matrix=" << &mat << ")" << std::endl;
     DUNE_THROW_IF(matrix_.rows() != range_space_.mapper().size(),
                   XT::Common::Exceptions::shapes_do_not_match,
@@ -180,7 +179,7 @@ public:
                 const XT::Common::Configuration& opts,
                 const XT::Common::Parameter& param = {}) const override
   {
-    LOG__(BaseType, info) << BaseType::logging_id << ".jacobian(source.sup_norm()=" << source.sup_norm()
+    LOG__(BaseType, info) << BaseType::logger.prefix << ".jacobian(source.sup_norm()=" << source.sup_norm()
                           << ", jacobian_op.matrix().sup_norm()=" << jacobian_op.matrix().sup_norm()
                           << ", opts=" << print(opts, {{"oneline", "true"}}) << ", param=" << param << ")" << std::endl;
     DUNE_THROW_IF(
@@ -288,7 +287,7 @@ public:
     , BaseWalkerType(assembly_grid_view)
     , scaling(1.)
   {
-    LOG__(BaseOperatorType, info) << BaseOperatorType::logging_id << "(assembly_grid_view=" << &assembly_grid_view
+    LOG__(BaseOperatorType, info) << "MatrixOperator(assembly_grid_view=" << &assembly_grid_view
                                   << ", source_space=" << &source_spc << ", range_space=" << &range_spc
                                   << ", matrix=" << &mat << ")" << std::endl;
   }
@@ -306,7 +305,7 @@ public:
     , BaseWalkerType(assembly_grid_view)
     , scaling(1.)
   {
-    LOG__(BaseOperatorType, info) << BaseOperatorType::logging_id << "(assembly_grid_view=" << &assembly_grid_view
+    LOG__(BaseOperatorType, info) << "MatrixOperator(assembly_grid_view=" << &assembly_grid_view
                                   << ", source_space=" << &source_spc << ", range_space=" << &range_spc
                                   << ", pattern=" << &pattern << ")" << std::endl;
   }
@@ -345,9 +344,9 @@ public:
     if (BaseOperatorType::logger.info_enabled) {
       static size_t element_assembler_counter = 0;
       derived_logging_prefix =
-          BaseOperatorType::logging_id + "_element_assembler_" + XT::Common::to_string(element_assembler_counter);
+          BaseOperatorType::logger.prefix + "_element_assembler_" + XT::Common::to_string(element_assembler_counter);
       ++element_assembler_counter;
-      BaseOperatorType::logger.info() << BaseOperatorType::logging_id
+      BaseOperatorType::logger.info() << BaseOperatorType::logger.prefix
                                       << ".append(local_element_bilinear_form=" << &local_bilinear_form
                                       << ", param=" << param << ", element_filter=" << &filter << ")" << std::endl;
     }

@@ -83,7 +83,7 @@ public:
                 DynamicMatrix<F>& result,
                 const XT::Common::Parameter& param = {}) const override final
   {
-    LOG_(debug) << this->logging_id << ".evaluate(test_basis.size()=" << test_basis.size(param)
+    LOG_(debug) << "evaluate(test_basis.size()=" << test_basis.size(param)
                 << ", ansatz_basis.size()=" << ansatz_basis.size(param)
                 << ",\n    point_in_{reference_element|physical_space}={" << print(point_in_reference_element) << "|"
                 << print(this->element().geometry().global(point_in_reference_element)) << "}"

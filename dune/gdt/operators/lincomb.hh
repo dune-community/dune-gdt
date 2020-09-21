@@ -46,13 +46,12 @@ public:
                        const RangeSpaceType& rng_space,
                        const std::string& logging_prefix = "")
     : BaseType({},
-               logging_prefix.empty() ? "gdt" : "gdt.operators.lincomb",
                logging_prefix.empty() ? "LincombOperator" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
     , source_space_(src_space)
     , range_space_(rng_space)
   {
-    LOG_(info) << this->logging_id << "(source_space=" << &src_space << ", range_space=" << &rng_space << ")"
+    LOG_(info) << "ConstLincombOperator(source_space=" << &src_space << ", range_space=" << &rng_space << ")"
                << std::endl;
   }
 
@@ -62,16 +61,16 @@ public:
 
   void add(const OperatorType& op, const FieldType& coeff = 1.)
   {
-    this->enable_logging_like(op);
-    LOG_(debug) << this->logging_id << ".add(const_op_ref=" << &op << ", coeff=" << coeff << ")" << std::endl;
+    this->logger.enable_like(op.logger);
+    LOG_(debug) << "add(const_op_ref=" << &op << ", coeff=" << coeff << ")" << std::endl;
     const_ops_.emplace_back(op);
     coeffs_.emplace_back(coeff);
   }
 
   void add(OperatorType*&& op, const FieldType& coeff = 1.)
   {
-    this->enable_logging_like(*op);
-    LOG_(debug) << this->logging_id << ".add(op_ptr=" << op << ", coeff=" << coeff << ")" << std::endl;
+    this->logger.enable_like(op->logger);
+    LOG_(debug) << "add(op_ptr=" << op << ", coeff=" << coeff << ")" << std::endl;
     keep_alive_.emplace_back(std::move(op));
     const_ops_.emplace_back(*keep_alive_.back());
     coeffs_.emplace_back(coeff);
@@ -81,8 +80,8 @@ public:
   {
     // Check if we need to enabled logging first
     for (size_t ii = 0; ii < op.num_ops(); ++ii)
-      this->enable_logging_like(op.const_ops_[ii].access());
-    LOG_(debug) << this->logging_id << ".add(const_lincomb_op_ref=" << &op << ", coeff=" << coeff << ")" << std::endl;
+      this->logger.enable_like(op.const_ops_[ii].access().logger);
+    LOG_(debug) << "add(const_lincomb_op_ref=" << &op << ", coeff=" << coeff << ")" << std::endl;
     // Only adding op itself would lead to segfaults if op is a temporary
     for (size_t ii = 0; ii < op.num_ops(); ++ii) {
       LOG_(debug) << "  adding op=" << &(op.const_ops_[ii]) << ", coeff=" << coeff << std::endl;
@@ -180,7 +179,7 @@ public:
                 const XT::Common::Configuration& opts,
                 const XT::Common::Parameter& param = {}) const override final
   {
-    LOG_(debug) << this->logging_id << "jacobian.(source.sup_norm()=" << source.sup_norm()
+    LOG_(debug) << this->logger.prefix << "jacobian.(source.sup_norm()=" << source.sup_norm()
                 << ", jacobian_op.matrix().sup_norm()=" << jacobian_op.matrix().sup_norm()
                 << ",\n   opts=" << print(opts, {{"oneline", "true"}}) << ",\n   param=" << param << ")" << std::endl;
 
@@ -229,7 +228,7 @@ public:
 
   ThisType& operator*=(const FieldType& alpha)
   {
-    LOG_(debug) << this->logging_id << ".operator*=(alpha=" << alpha << ")" << std::endl;
+    LOG_(debug) << "operator*=(alpha=" << alpha << ")" << std::endl;
     for (auto& coeff : coeffs_)
       coeff *= alpha;
     return *this;
@@ -237,7 +236,7 @@ public:
 
   ThisType& operator/=(const FieldType& alpha)
   {
-    LOG_(debug) << this->logging_id << ".operator/=(alpha=" << alpha << ")" << std::endl;
+    LOG_(debug) << "operator/=(alpha=" << alpha << ")" << std::endl;
     for (auto& coeff : coeffs_)
       coeff /= alpha;
     return *this;
@@ -245,7 +244,7 @@ public:
 
   ThisType& operator+=(const BaseType& other)
   {
-    LOG_(debug) << this->logging_id << ".operator+=(other_op=" << &other << ")" << std::endl;
+    LOG_(debug) << "operator+=(other_op=" << &other << ")" << std::endl;
     this->add(other);
     return *this;
   }
@@ -254,8 +253,8 @@ public:
   {
     // Check if we need to enabled logging first
     for (size_t ii = 0; ii < other.num_ops(); ++ii)
-      this->enable_logging_like(other.const_ops_[ii].access());
-    LOG_(debug) << this->logging_id << ".operator+=(other_const_lincomb_op=" << &other << ")" << std::endl;
+      this->logger.enable_like(other.const_ops_[ii].access().logger);
+    LOG_(debug) << "operator+=(other_const_lincomb_op=" << &other << ")" << std::endl;
     for (size_t ii = 0; ii < other.num_ops(); ++ii) {
       LOG_(debug) << "  adding op=" << &(other.const_ops_[ii]) << ", coeff=" << other.coeffs_[ii] << std::endl;
       const_ops_.emplace_back(other.const_ops_[ii]);
@@ -266,7 +265,7 @@ public:
 
   ThisType& operator-=(const BaseType& other)
   {
-    LOG_(debug) << this->logging_id << ".operator-=(other_op=" << &other << ")" << std::endl;
+    LOG_(debug) << "operator-=(other_op=" << &other << ")" << std::endl;
     this->add(other, -1.);
     return *this;
   }
@@ -275,8 +274,8 @@ public:
   {
     // Check if we need to enabled logging first
     for (size_t ii = 0; ii < other.num_ops(); ++ii)
-      this->enable_logging_like(other.const_ops_[ii].access());
-    LOG_(debug) << this->logging_id << ".operator-=(other_const_lincomb_op=" << &other << ")" << std::endl;
+      this->logger.enable_like(other.const_ops_[ii].access());
+    LOG_(debug) << "operator-=(other_const_lincomb_op=" << &other << ")" << std::endl;
     for (size_t ii = 0; ii < other.num_ops(); ++ii) {
       LOG_(debug) << "  adding op=" << &(other.const_ops_[ii]) << ", coeff=" << -1 * other.coeffs_[ii] << std::endl;
       const_ops_.emplace_back(other.const_ops_[ii]);
@@ -322,8 +321,7 @@ public:
     std::string derived_logging_prefix = "";
     if (this->logger.debug_enabled) {
       derived_logging_prefix = "ConstantOperator";
-      this->logger.debug() << this->logging_id << ".operator+(vector.sup_norm()=" << vector.sup_norm() << ")"
-                           << std::endl;
+      this->logger.debug() << "operator+(vector.sup_norm()=" << vector.sup_norm() << ")" << std::endl;
     }
     ConstLincombOperatorType ret(*this);
     ret.add(new ConstantOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>(
@@ -353,8 +351,7 @@ public:
     std::string derived_logging_prefix = "";
     if (this->logger.debug_enabled) {
       derived_logging_prefix = "ConstantOperator";
-      this->logger.debug() << this->logging_id << ".operator-(vector.sup_norm()=" << vector.sup_norm() << ")"
-                           << std::endl;
+      this->logger.debug() << "operator-(vector.sup_norm()=" << vector.sup_norm() << ")" << std::endl;
     }
     ConstLincombOperatorType ret(*this);
     ret.add(new ConstantOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>(
@@ -408,8 +405,7 @@ public:
                   const std::string& logging_prefix = "")
     : BaseType(src_space, rng_space, logging_prefix)
   {
-    LOG_(info) << this->logging_id << "(source_space=" << &src_space << ", range_space=" << &rng_space << ")"
-               << std::endl;
+    LOG_(info) << "LincombOperator(source_space=" << &src_space << ", range_space=" << &rng_space << ")" << std::endl;
   }
 
   LincombOperator(ThisType& other)
@@ -425,16 +421,16 @@ public:
 
   void add(OperatorType& op, const FieldType& coeff = 1.)
   {
-    this->enable_logging_like(op);
-    LOG_(debug) << this->logging_id << ".add(op_ref=" << &op << ", coeff=" << coeff << ")" << std::endl;
+    this->logger.enable_like(op.logger);
+    LOG_(debug) << "add(op_ref=" << &op << ", coeff=" << coeff << ")" << std::endl;
     ops_.emplace_back(op);
     BaseType::add(ops_.back().access(), coeff);
   }
 
   void add(OperatorType*&& op, const FieldType& coeff = 1.)
   {
-    this->enable_logging_like(*op);
-    LOG_(debug) << this->logging_id << ".add(op_ptr=" << op << ", coeff=" << coeff << ")" << std::endl;
+    this->logger.enable_like(op->logger);
+    LOG_(debug) << "add(op_ptr=" << op << ", coeff=" << coeff << ")" << std::endl;
     BaseType::add(std::move(op), coeff);
     ops_.emplace_back(*this->keep_alive_.back());
   }
@@ -443,8 +439,8 @@ public:
   {
     // Check if we need to enabled logging first
     for (size_t ii = 0; ii < op.num_ops(); ++ii)
-      this->enable_logging_like(op.ops_[ii].access());
-    LOG_(debug) << this->logging_id << ".add(lincomb_op_ref=" << &op << ", coeff=" << coeff << ")" << std::endl;
+      this->logger.enable_like(op.ops_[ii].access().logger);
+    LOG_(debug) << "add(lincomb_op_ref=" << &op << ", coeff=" << coeff << ")" << std::endl;
     BaseType::add(op, coeff);
     for (size_t ii = 0; ii < op.num_ops(); ++ii) {
       LOG_(debug) << "  adding op=" << &(op.ops_[ii]) << std::endl;
@@ -482,8 +478,8 @@ public:
   {
     // Check if we need to enabled logging first
     for (size_t ii = 0; ii < other.num_ops(); ++ii)
-      this->enable_logging_like(other.ops_[ii].access());
-    LOG_(debug) << this->logging_id << ".operator+=(other_lincomb_op=" << &other << ")" << std::endl;
+      this->logger.enable_like(other.ops_[ii].access().logger);
+    LOG_(debug) << "operator+=(other_lincomb_op=" << &other << ")" << std::endl;
     for (size_t ii = 0; ii < other.num_ops(); ++ii) {
       LOG_(debug) << "  adding const_op=" << &(other.const_ops_[ii]) << ", op=" << &(other.ops_[ii])
                   << ", coeff=" << other.coeffs_[ii] << std::endl;
@@ -500,8 +496,8 @@ public:
   {
     // Check if we need to enabled logging first
     for (size_t ii = 0; ii < other.num_ops(); ++ii)
-      this->enable_logging_like(other.ops_[ii].access());
-    LOG_(debug) << this->logging_id << ".operator-=(other_lincomb_op=" << &other << ")" << std::endl;
+      this->logger.enable_like(other.ops_[ii].access().logger);
+    LOG_(debug) << "operator-=(other_lincomb_op=" << &other << ")" << std::endl;
     for (size_t ii = 0; ii < other.num_ops(); ++ii) {
       LOG_(debug) << "  adding const_op=" << &(other.const_ops_[ii]) << ", op=" << &(other.ops_[ii])
                   << ", coeff=" << -1 * other.coeffs_[ii] << std::endl;
@@ -551,8 +547,7 @@ public:
     std::string derived_logging_prefix = "";
     if (this->logger.debug_enabled) {
       derived_logging_prefix = "ConstantOperator";
-      this->logger.debug() << this->logging_id << ".operator+(vector.sup_norm()=" << vector.sup_norm() << ")"
-                           << std::endl;
+      this->logger.debug() << "operator+(vector.sup_norm()=" << vector.sup_norm() << ")" << std::endl;
     }
     LincombOperatorType ret(*this);
     ret.add(new ConstantOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>(
@@ -582,8 +577,7 @@ public:
     std::string derived_logging_prefix = "";
     if (this->logger.debug_enabled) {
       derived_logging_prefix = "ConstantOperator";
-      this->logger.debug() << this->logging_id << ".operator-(vector.sup_norm()=" << vector.sup_norm() << ")"
-                           << std::endl;
+      this->logger.debug() << "operator-(vector.sup_norm()=" << vector.sup_norm() << ")" << std::endl;
     }
     LincombOperatorType ret(*this);
     ret.add(new ConstantOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>(

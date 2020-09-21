@@ -32,7 +32,6 @@ public:
 
   LocalElementAbsIntegrand(const std::string& logging_prefix = "")
     : BaseType({},
-               logging_prefix.empty() ? "gdt" : "gdt.localelementabsintegrand",
                logging_prefix.empty() ? "LocalElementAbsIntegrand" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
   {}

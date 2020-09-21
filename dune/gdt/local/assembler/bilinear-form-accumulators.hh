@@ -74,8 +74,7 @@ public:
                                       const std::string& logging_prefix = "")
     : BaseType()
     , Propagator(this)
-    , Logger(logging_prefix.empty() ? "gdt" : "gdt.elementbilinearformaccumulator",
-             logging_prefix.empty() ? "ElementBilinearFormAccumulator" : logging_prefix,
+    , Logger(logging_prefix.empty() ? "ElementBilinearFormAccumulator" : logging_prefix,
              /*logging_disabled=*/logging_prefix.empty())
     , local_bilinear_form_(local_bilinear_form.copy())
     , source_(source.copy_as_grid_function())
@@ -85,7 +84,7 @@ public:
     , local_source_(source_->local_function())
     , local_range_(range_->local_function())
   {
-    LOG__(Logger, info) << Logger::logging_id << "(local_bilinear_form=" << &local_bilinear_form
+    LOG__(Logger, info) << "ElementBilinearFormAccumulator(local_bilinear_form=" << &local_bilinear_form
                         << ", source=" << &source << ", range=" << &range << ", param=" << param << ")";
   }
 
@@ -111,7 +110,7 @@ public:
 
   void apply_local(const ElementType& element) override final
   {
-    LOG__(Logger, debug) << Logger::logging_id << ".apply_local(element=" << print(element) << ")" << std::endl;
+    LOG__(Logger, debug) << Logger::logger.prefix << ".apply_local(element=" << print(element) << ")" << std::endl;
     local_source_->bind(element);
     local_range_->bind(element);
     DUNE_THROW_IF(

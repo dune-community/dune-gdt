@@ -46,14 +46,13 @@ public:
                    const VectorType& val,
                    const std::string& logging_prefix = "")
     : BaseType({},
-               logging_prefix.empty() ? "gdt" : "gdt.operators.constant",
                logging_prefix.empty() ? "ConstantOperator" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
     , source_space_(src_space)
     , range_space_(rng_space)
     , value_(val)
   {
-    LOG_(info) << this->logging_id << "(source_space=" << &src_space << ", range_space=" << &rng_space
+    LOG_(info) << "ConstantOperator(source_space=" << &src_space << ", range_space=" << &rng_space
                << ", value.sup_norm()=" << value_.access().sup_norm() << ")" << std::endl;
   }
 
@@ -62,14 +61,13 @@ public:
                    VectorType*&& val,
                    const std::string& logging_prefix = "")
     : BaseType({},
-               logging_prefix.empty() ? "gdt" : "gdt.operators.constant",
                logging_prefix.empty() ? "ConstantOperator" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
     , source_space_(src_space)
     , range_space_(rng_space)
     , value_(std::move(val))
   {
-    LOG_(info) << this->logging_id << "(source_space=" << &src_space << ", range_space=" << &rng_space
+    LOG_(info) << "ConstantOperator(source_space=" << &src_space << ", range_space=" << &rng_space
                << ", value.sup_norm()=" << value_.access().sup_norm() << ")" << std::endl;
   }
 

@@ -41,14 +41,10 @@ public:
 
   using LocalFiniteElementType = LocalFiniteElementInterface<D, d, R, r, rC>;
 
-  LocalizedGlobalFiniteElementInterface(const std::string& logging_prefix = "",
-                                        const std::string& logging_id_ = "",
-                                        const bool logging_disabled = true)
-    : Logger(logging_prefix.empty() ? "gdt" : logging_prefix,
-             logging_id_.empty() ? "LocalizedGlobalBasis" : logging_id_,
-             logging_disabled)
+  LocalizedGlobalFiniteElementInterface(const std::string& logging_prefix = "", const bool logging_disabled = true)
+    : Logger(logging_prefix.empty() ? "LocalizedGlobalBasis" : logging_prefix, logging_disabled)
   {
-    LOG_(info) << this->logging_id << "()" << std::endl;
+    LOG_(info) << "LocalizedGlobalBasis()" << std::endl;
   }
 
   LocalizedGlobalFiniteElementInterface(const ThisType&) = default;
@@ -148,14 +144,10 @@ public:
   using ElementType = E;
   using LocalizedType = LocalizedGlobalFiniteElementInterface<E, r, rC, R>;
 
-  GlobalBasisInterface(const std::string& logging_prefix = "",
-                       const std::string& logging_id_ = "",
-                       const bool logging_disabled = true)
-    : Logger(logging_prefix.empty() ? "gdt" : logging_prefix,
-             logging_id_.empty() ? "GlobalBasis" : logging_id_,
-             logging_disabled)
+  GlobalBasisInterface(const std::string& logging_prefix = "", const bool logging_disabled = true)
+    : Logger(logging_prefix.empty() ? "GlobalBasis" : logging_prefix, logging_disabled)
   {
-    LOG_(info) << this->logging_id << "()" << std::endl;
+    LOG_(info) << "GlobalBasis()" << std::endl;
   }
 
   GlobalBasisInterface(const ThisType&) = default;

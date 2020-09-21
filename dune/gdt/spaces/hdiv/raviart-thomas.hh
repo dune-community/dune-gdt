@@ -68,8 +68,7 @@ private:
 
 public:
   RaviartThomasSpace(GridViewType grd_vw, const int order, const std::string& logging_prefix = "")
-    : BaseType(logging_prefix.empty() ? "gdt" : "gdt.spaces.rt",
-               logging_prefix.empty() ? "RtSpace" : logging_prefix,
+    : BaseType(logging_prefix.empty() ? "RtSpace" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
     , grid_view_(grd_vw)
     , order_(order)
@@ -82,9 +81,9 @@ public:
              local_finite_elements_,
              element_indices_,
              fe_data_,
-             logging_prefix.empty() ? "" : logging_prefix + "_basis")
+             logging_prefix.empty() ? "" : logging_prefix + "Basis")
   {
-    LOG_(info) << this->logging_id << "(grid_view=" << &grd_vw << ", order=" << order << ")" << std::endl;
+    LOG_(info) << "RaviartThomasSpace(grid_view=" << &grd_vw << ", order=" << order << ")" << std::endl;
     DUNE_THROW_IF(order_ != 0, Exceptions::space_error, "Higher orders are not testet yet!");
     this->update_after_adapt();
     LOG_(debug) << "   element_indices_.size() = " << element_indices_.size()
@@ -158,7 +157,7 @@ public:
 protected:
   void update_after_adapt() override final
   {
-    LOG_(info) << this->logging_id << ".update_after_adapt()" << std::endl;
+    LOG_(info) << "update_after_adapt()" << std::endl;
     element_indices_.update_after_adapt();
     // check: the mapper does not work for non-conforming intersections
     if (d == 3 && grid_view_.indexSet().types(0).size() != 1)

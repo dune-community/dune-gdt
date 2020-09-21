@@ -102,8 +102,7 @@ public:
                const std::string& logging_prefix = "")
     : BaseType()
     , Propagator(this)
-    , Logger(logging_prefix.empty() ? "gdt" : "gdt.bilinearform",
-             logging_prefix.empty() ? "BilinearForm" : logging_prefix,
+    , Logger(logging_prefix.empty() ? "BilinearForm" : logging_prefix,
              /*logging_disabled=*/logging_prefix.empty())
     , grid_view_(grd_vw)
     , source_(src.copy_as_grid_function())
@@ -113,8 +112,8 @@ public:
     , bilinear_form_value_(1, 1, 0.)
     , result_(0)
   {
-    LOG__(Logger, info) << Logger::logging_id << "(grid_view=" << &grd_vw << ", src=" << &src << ", rng=" << &rng << ")"
-                        << std::endl;
+    LOG__(Logger, info) << Logger::logger.prefix << "BilinearForm(grid_view=" << &grd_vw << ", src=" << &src
+                        << ", rng=" << &rng << ")" << std::endl;
   }
 
   BilinearForm(const ThisType& other)
@@ -164,7 +163,7 @@ public:
          const XT::Common::Parameter& param = {},
          const ElementFilterType& filter = XT::Grid::ApplyOn::AllElements<GV>())
   {
-    LOG__(Logger, info) << Logger::logging_id << ".append(local_bilinear_form=" << &local_bilinear_form
+    LOG__(Logger, info) << Logger::logger.prefix << ".append(local_bilinear_form=" << &local_bilinear_form
                         << ", param=" << param << ", filter=" << &filter << ")" << std::endl;
     element_data_.emplace_back(local_bilinear_form.copy(), param, std::unique_ptr<ElementFilterType>(filter.copy()));
     return *this;

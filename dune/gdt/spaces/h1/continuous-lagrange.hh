@@ -66,8 +66,7 @@ private:
 
 public:
   ContinuousLagrangeSpace(GridViewType grd_vw, const int order, const std::string& logging_prefix = "")
-    : BaseType(logging_prefix.empty() ? "gdt" : "gdt.spaces.h1.cg",
-               logging_prefix.empty() ? "ContinuousLagrangeSpace" : logging_prefix,
+    : BaseType(logging_prefix.empty() ? "ContinuousLagrangeSpace" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
     , grid_view_(grd_vw)
     , fe_order_(order)
@@ -75,7 +74,7 @@ public:
     , mapper_(nullptr)
     , basis_(nullptr)
   {
-    LOG_(info) << this->logging_id << "(&grd_vw=" << &grd_vw << ", order=" << fe_order_ << ")" << std::endl;
+    LOG_(info) << "ContinuousLagrangeSpace(&grd_vw=" << &grd_vw << ", order=" << fe_order_ << ")" << std::endl;
     this->update_after_adapt();
   }
 

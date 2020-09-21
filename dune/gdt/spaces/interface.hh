@@ -72,11 +72,8 @@ public:
 
   using DofCommunicatorType = typename DofCommunicationChooser<GridViewType>::Type;
 
-  SpaceInterface(const std::string& logging_prefix = "",
-                 const std::string& logging_id_ = "",
-                 const bool logging_disabled = true)
-    : Logger(
-        logging_prefix.empty() ? "gdt" : logging_prefix, logging_id_.empty() ? "Space" : logging_id_, logging_disabled)
+  SpaceInterface(const std::string& logging_prefix = "", const bool logging_disabled = true)
+    : Logger(logging_prefix.empty() ? "Space" : logging_prefix, logging_disabled)
     , dof_communicator_(nullptr)
     , adapted_(false)
   {}
