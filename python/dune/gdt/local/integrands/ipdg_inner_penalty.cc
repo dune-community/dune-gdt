@@ -95,7 +95,7 @@ public:
 } // namespace Dune
 
 
-template <class GridTypes = Dune::XT::Grid::AvailableGridTypes>
+template <class GridTypes = Dune::XT::Grid::bindings::AvailableGridTypes>
 struct LocalIPDGInnerPenaltyIntegrand_for_all_grids
 {
   using G = Dune::XT::Common::tuple_head_t<GridTypes>;
@@ -131,5 +131,5 @@ PYBIND11_MODULE(_local_integrands_ipdg_inner_penalty, m)
   py::module::import("dune.xt.functions");
   py::module::import("dune.gdt._local_integrands_quaternary_intersection_interface");
 
-  LocalIPDGInnerPenaltyIntegrand_for_all_grids<XT::Grid::AvailableGridTypes>::bind(m);
+  LocalIPDGInnerPenaltyIntegrand_for_all_grids<XT::Grid::bindings::AvailableGridTypes>::bind(m);
 }

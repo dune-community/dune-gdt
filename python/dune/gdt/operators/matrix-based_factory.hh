@@ -11,11 +11,12 @@
 #define DUNE_GDT_PYTHON_OPERATORS_MATRIX_BASED_FACTORY_HH
 
 #include <dune/xt/grid/grids.hh>
+#include <python/dune/xt/grid/grids.bindings.hh>
 
 #include "matrix-based.hh"
 
 // The type itself is bound by the OperatorInterface, required as return type for jacobian
-template <class M, class MT, class ST, class GridTypes = Dune::XT::Grid::AvailableGridTypes>
+template <class M, class MT, class ST, class GridTypes = Dune::XT::Grid::bindings::AvailableGridTypes>
 struct MatrixOperatorFactory_for_all_grids
 {
   using G = Dune::XT::Common::tuple_head_t<GridTypes>;

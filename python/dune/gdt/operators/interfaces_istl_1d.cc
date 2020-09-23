@@ -10,6 +10,7 @@
 #include "config.h"
 
 #include <dune/xt/grid/grids.hh>
+#include <python/dune/xt/grid/grids.bindings.hh>
 #include <python/dune/xt/la/traits.hh>
 
 #include "interfaces_all_grids.hh"
@@ -32,5 +33,5 @@ PYBIND11_MODULE(_operators_interfaces_istl_1d, m)
   OperatorInterface_for_all_grids<LA::IstlRowMajorSparseMatrix<double>,
                                   LA::bindings::Istl,
                                   void,
-                                  boost::tuple<ONED_1D>>::bind(m, "istl_sparse");
+                                  XT::Grid::bindings::Available1dGridTypes>::bind(m, "istl_sparse");
 }

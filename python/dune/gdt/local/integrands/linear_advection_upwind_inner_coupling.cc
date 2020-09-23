@@ -84,7 +84,7 @@ public:
 } // namespace Dune
 
 
-template <class GridTypes = Dune::XT::Grid::AvailableGridTypes>
+template <class GridTypes = Dune::XT::Grid::bindings::AvailableGridTypes>
 struct LocalLaplaceIPDGInnerCouplingIntegrand_for_all_grids
 {
   using G = Dune::XT::Common::tuple_head_t<GridTypes>;
@@ -122,5 +122,5 @@ PYBIND11_MODULE(_local_integrands_linear_advection_upwind_inner_coupling, m)
   py::module::import("dune.xt.functions");
   py::module::import("dune.gdt._local_integrands_quaternary_intersection_interface");
 
-  LocalLaplaceIPDGInnerCouplingIntegrand_for_all_grids<XT::Grid::AvailableGridTypes>::bind(m);
+  LocalLaplaceIPDGInnerCouplingIntegrand_for_all_grids<XT::Grid::bindings::AvailableGridTypes>::bind(m);
 }

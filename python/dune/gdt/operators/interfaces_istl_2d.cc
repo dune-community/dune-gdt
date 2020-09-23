@@ -32,10 +32,5 @@ PYBIND11_MODULE(_operators_interfaces_istl_2d, m)
   OperatorInterface_for_all_grids<LA::IstlRowMajorSparseMatrix<double>,
                                   LA::bindings::Istl,
                                   void,
-                                  boost::tuple<YASP_2D_EQUIDISTANT_OFFSET
-#if HAVE_DUNE_ALUGRID
-                                               ,
-                                               ALU_2D_SIMPLEX_CONFORMING
-#endif
-                                               >>::bind(m, "istl_sparse");
+                                  XT::Grid::bindings::Available2dGridTypes>::bind(m, "istl_sparse");
 }

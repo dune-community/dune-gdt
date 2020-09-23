@@ -82,7 +82,7 @@ public:
 } // namespace Dune
 
 
-template <class V, class GridTypes = Dune::XT::Grid::AvailableGridTypes>
+template <class V, class GridTypes = Dune::XT::Grid::bindings::AvailableGridTypes>
 struct LocalElementBilinearFormIndicatorOperator_for_all_grids
 {
   using G = Dune::XT::Common::tuple_head_t<GridTypes>;
@@ -128,5 +128,5 @@ PYBIND11_MODULE(_local_operators_element_indicator, m)
   py::module::import("dune.gdt._local_operators_element_interface");
 
   LocalElementBilinearFormIndicatorOperator_for_all_grids<XT::LA::IstlDenseVector<double>,
-                                                          XT::Grid::AvailableGridTypes>::bind(m, "istl_dense");
+                                                          XT::Grid::bindings::AvailableGridTypes>::bind(m, "istl_dense");
 }

@@ -93,7 +93,7 @@ public:
 } // namespace Dune
 
 
-template <class GridTypes = Dune::XT::Grid::AvailableGridTypes>
+template <class GridTypes = Dune::XT::Grid::bindings::AvailableGridTypes>
 struct FiniteVolumeSkeletonSpace_for_all_grids
 {
   using G = Dune::XT::Common::tuple_head_t<GridTypes>;
@@ -132,5 +132,5 @@ PYBIND11_MODULE(_spaces_skeleton_finite_volume, m)
 
   py::module::import("dune.gdt._spaces_interface");
 
-  FiniteVolumeSkeletonSpace_for_all_grids<XT::Grid::AvailableGridTypes>::bind(m);
+  FiniteVolumeSkeletonSpace_for_all_grids<XT::Grid::bindings::AvailableGridTypes>::bind(m);
 }

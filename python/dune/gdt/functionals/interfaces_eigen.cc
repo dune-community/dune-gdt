@@ -10,6 +10,7 @@
 #include "config.h"
 
 #include <dune/xt/grid/grids.hh>
+#include <python/dune/xt/grid/grids.bindings.hh>
 
 #include "interfaces.hh"
 
@@ -29,6 +30,6 @@ PYBIND11_MODULE(_functionals_interfaces_eigen, /*m*/)
   py::module::import("dune.gdt._spaces_interface");
 
   //#if HAVE_EIGEN
-  //  FunctionalInterface_for_all_grids<LA::EigenDenseVector<double>, XT::Grid::AvailableGridTypes>::bind(m);
+  //  FunctionalInterface_for_all_grids<LA::EigenDenseVector<double>, XT::Grid::bindings::AvailableGridTypes>::bind(m);
   //#endif
 }

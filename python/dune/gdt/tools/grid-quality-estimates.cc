@@ -97,7 +97,7 @@ public:
 } // namespace Dune
 
 
-template <class GridTypes = Dune::XT::Grid::AvailableGridTypes>
+template <class GridTypes = Dune::XT::Grid::bindings::AvailableGridTypes>
 struct estimate_inverse_inequality_constant_for_all_grids
 {
   using G = Dune::XT::Common::tuple_head_t<GridTypes>;
@@ -122,7 +122,7 @@ struct estimate_inverse_inequality_constant_for_all_grids<Dune::XT::Common::tupl
 };
 
 
-template <class GridTypes = Dune::XT::Grid::AvailableGridTypes>
+template <class GridTypes = Dune::XT::Grid::bindings::AvailableGridTypes>
 struct estimate_combined_inverse_trace_inequality_constant_for_all_grids
 {
   using G = Dune::XT::Common::tuple_head_t<GridTypes>;
@@ -148,7 +148,7 @@ struct estimate_combined_inverse_trace_inequality_constant_for_all_grids<Dune::X
 };
 
 
-template <class GridTypes = Dune::XT::Grid::AvailableGridTypes>
+template <class GridTypes = Dune::XT::Grid::bindings::AvailableGridTypes>
 struct estimate_element_to_intersection_equivalence_constant_for_all_grids
 {
   using G = Dune::XT::Common::tuple_head_t<GridTypes>;

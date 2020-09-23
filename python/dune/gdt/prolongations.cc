@@ -83,7 +83,7 @@ public:
 } // namespace Dune
 
 
-template <class V, class VT, class GridTypes = Dune::XT::Grid::AvailableGridTypes>
+template <class V, class VT, class GridTypes = Dune::XT::Grid::bindings::AvailableGridTypes>
 struct prolong_for_all_grids
 {
   using G = Dune::XT::Common::tuple_head_t<GridTypes>;
@@ -129,11 +129,11 @@ PYBIND11_MODULE(_prolongations, m)
   // bindings for all but dune-istl disabled for the moment
   prolong_for_all_grids<LA::CommonDenseVector<double>,
                                       LA::bindings::Common,
-                                      XT::Grid::AvailableGridTypes>::bind(m);
+                                      XT::Grid::bindings::AvailableGridTypes>::bind(m);
 #  if HAVE_EIGEN
-  prolong_for_all_grids<LA::EigenDenseVector<double>, LA::bindings::Eigen, XT::Grid::AvailableGridTypes>::
+  prolong_for_all_grids<LA::EigenDenseVector<double>, LA::bindings::Eigen, XT::Grid::bindings::AvailableGridTypes>::
       bind(m);
 #  endif
 #endif // 0
-  prolong_for_all_grids<LA::IstlDenseVector<double>, LA::bindings::Istl, XT::Grid::AvailableGridTypes>::bind(m);
+  prolong_for_all_grids<LA::IstlDenseVector<double>, LA::bindings::Istl, XT::Grid::bindings::AvailableGridTypes>::bind(m);
 }

@@ -25,7 +25,7 @@
 #include "binary_element_interface.hh"
 
 
-template <class GridTypes = Dune::XT::Grid::AvailableGridTypes>
+template <class GridTypes = Dune::XT::Grid::bindings::AvailableGridTypes>
 struct LocalBinaryElementIntegrandInterface_for_all_grids
 {
   using G = Dune::XT::Common::tuple_head_t<GridTypes>;
@@ -110,5 +110,5 @@ PYBIND11_MODULE(_local_integrands_binary_element_interface, m)
 
   py::module::import("dune.gdt._local_integrands_unary_element_interface");
 
-  LocalBinaryElementIntegrandInterface_for_all_grids<XT::Grid::AvailableGridTypes>::bind(m);
+  LocalBinaryElementIntegrandInterface_for_all_grids<XT::Grid::bindings::AvailableGridTypes>::bind(m);
 }

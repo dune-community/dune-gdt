@@ -11,6 +11,7 @@
 
 #include <dune/xt/grid/grids.hh>
 #include <python/dune/xt/la/traits.hh>
+#include <python/dune/xt/grid/grids.bindings.hh>
 
 #include "interfaces_all_grids.hh"
 
@@ -35,10 +36,10 @@ PYBIND11_MODULE(_operators_interfaces_eigen, /*m*/)
   //  OperatorInterface_for_all_grids<LA::EigenDenseMatrix<double>,
   //                                  LA::bindings::Eigen,
   //                                  LA::bindings::Dense,
-  //                                  XT::Grid::AvailableGridTypes>::bind(m, "eigen_dense");
+  //                                  XT::Grid::bindings::AvailableGridTypes>::bind(m, "eigen_dense");
   //  OperatorInterface_for_all_grids<LA::EigenRowMajorSparseMatrix<double>,
   //                                  LA::bindings::Eigen,
   //                                  LA::bindings::Sparse,
-  //                                  XT::Grid::AvailableGridTypes>::bind(m, "eigen_sparse");
+  //                                  XT::Grid::bindings::AvailableGridTypes>::bind(m, "eigen_sparse");
   //#endif
 }

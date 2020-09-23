@@ -150,7 +150,7 @@ public:
 } // namespace Dune
 
 
-template <class GridTypes = Dune::XT::Grid::AvailableGridTypes>
+template <class GridTypes = Dune::XT::Grid::bindings::AvailableGridTypes>
 struct DirichletConstraints_for_all_grids
 {
   using G = Dune::XT::Common::tuple_head_t<GridTypes>;

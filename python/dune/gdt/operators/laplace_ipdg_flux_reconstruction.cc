@@ -175,7 +175,7 @@ public:
 } // namespace Dune
 
 
-template <class M, class MT, class GridTypes = Dune::XT::Grid::AvailableGridTypes>
+template <class M, class MT, class GridTypes = Dune::XT::Grid::bindings::AvailableGridTypes>
 struct LaplaceIpdgFluxReconstructionOperator_for_all_grids
 {
   using G = Dune::XT::Common::tuple_head_t<GridTypes>;
@@ -222,5 +222,5 @@ PYBIND11_MODULE(_operators_laplace_ipdg_flux_reconstruction, m)
   /// \todo Add other linear algebra backends, if required!
   LaplaceIpdgFluxReconstructionOperator_for_all_grids<LA::IstlRowMajorSparseMatrix<double>,
                                                       LA::bindings::Istl,
-                                                      XT::Grid::AvailableGridTypes>::bind(m, "istl_sparse");
+                                                      XT::Grid::bindings::AvailableGridTypes>::bind(m, "istl_sparse");
 }

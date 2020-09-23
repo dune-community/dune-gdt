@@ -85,7 +85,7 @@ public:
 } // namespace Dune
 
 
-template <class GridTypes = Dune::XT::Grid::AvailableGridTypes>
+template <class GridTypes = Dune::XT::Grid::bindings::AvailableGridTypes>
 struct LocalIntersectionIntegralFunctional_for_all_grids
 {
   using G = Dune::XT::Common::tuple_head_t<GridTypes>;
@@ -130,5 +130,5 @@ PYBIND11_MODULE(_local_functionals_intersection_integrals, m)
 
   py::module::import("dune.gdt._local_functionals_intersection_interface");
 
-  LocalIntersectionIntegralFunctional_for_all_grids<XT::Grid::AvailableGridTypes>::bind(m);
+  LocalIntersectionIntegralFunctional_for_all_grids<XT::Grid::bindings::AvailableGridTypes>::bind(m);
 }

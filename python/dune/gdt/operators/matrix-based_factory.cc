@@ -9,6 +9,8 @@
 
 #include "config.h"
 
+#include <python/dune/xt/grid/grids.bindings.hh>
+
 #include "matrix-based_factory.hh"
 
 
@@ -35,24 +37,24 @@ PYBIND11_MODULE(_operators_matrix_based_factory, m)
   //  MatrixOperatorFactory_for_all_grids<LA::CommonDenseMatrix<double>,
   //                               LA::bindings::Common,
   //                               LA::bindings::Dense,
-  //                               XT::Grid::AvailableGridTypes>::bind(m, "common_dense");
+  //                               XT::Grid::bindings::AvailableGridTypes>::bind(m, "common_dense");
   //  // Generic linear solver missing for CommonSparseMatrix!
   //  MatrixOperatorFactory_for_all_grids<LA::CommonSparseMatrix<double>,
   //                               LA::bindings::Common,
   //                               LA::bindings::Sparse,
-  //                               XT::Grid::AvailableGridTypes>::bind(m, "common_sparse");
+  //                               XT::Grid::bindings::AvailableGridTypes>::bind(m, "common_sparse");
   //#if HAVE_EIGEN
   //  MatrixOperatorFactory_for_all_grids<LA::EigenDenseMatrix<double>,
   //                               LA::bindings::Eigen,
   //                               LA::bindings::Dense,
-  //                               XT::Grid::AvailableGridTypes>::bind(m, "eigen_dense");
+  //                               XT::Grid::bindings::AvailableGridTypes>::bind(m, "eigen_dense");
   //  MatrixOperatorFactory_for_all_grids<LA::EigenRowMajorSparseMatrix<double>,
   //                               LA::bindings::Eigen,
   //                               LA::bindings::Sparse,
-  //                               XT::Grid::AvailableGridTypes>::bind(m, "eigen_sparse");
+  //                               XT::Grid::bindings::AvailableGridTypes>::bind(m, "eigen_sparse");
   //#endif
   MatrixOperatorFactory_for_all_grids<LA::IstlRowMajorSparseMatrix<double>,
                                       LA::bindings::Istl,
                                       void,
-                                      XT::Grid::AvailableGridTypes>::bind(m, "istl_sparse");
+                                      XT::Grid::bindings::AvailableGridTypes>::bind(m, "istl_sparse");
 }

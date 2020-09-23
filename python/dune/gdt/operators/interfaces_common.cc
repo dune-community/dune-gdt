@@ -11,6 +11,7 @@
 
 #include <dune/xt/grid/grids.hh>
 #include <python/dune/xt/la/traits.hh>
+#include <python/dune/xt/grid/grids.bindings.hh>
 
 #include "interfaces_all_grids.hh"
 
@@ -34,10 +35,10 @@ PYBIND11_MODULE(_operators_interfaces_common, /*m*/)
   //  OperatorInterface_for_all_grids<LA::CommonDenseMatrix<double>,
   //                                  LA::bindings::Common,
   //                                  LA::bindings::Dense,
-  //                                  XT::Grid::AvailableGridTypes>::bind(m, "common_dense");
+  //                                  XT::Grid::bindings::AvailableGridTypes>::bind(m, "common_dense");
   //  // Generic linear solver missing for CommonSparseMatrix!
   //  //  OperatorInterface_for_all_grids<LA::CommonSparseMatrix<double>,
   //  //                                  LA::bindings::Common,
   //  //                                  LA::bindings::Sparse,
-  //  //                                  XT::Grid::AvailableGridTypes>::bind(m, "common_sparse");
+  //  //                                  XT::Grid::bindings::AvailableGridTypes>::bind(m, "common_sparse");
 }

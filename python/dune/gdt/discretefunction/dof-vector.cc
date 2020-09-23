@@ -71,7 +71,7 @@ public:
 } // namespace Dune
 
 
-template <class V, class GridTypes = Dune::XT::Grid::AvailableGridTypes>
+template <class V, class GridTypes = Dune::XT::Grid::bindings::AvailableGridTypes>
 struct DofVector_for_all_grids
 {
   using G = Dune::XT::Common::tuple_head_t<GridTypes>;

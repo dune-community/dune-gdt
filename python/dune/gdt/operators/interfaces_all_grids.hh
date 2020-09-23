@@ -10,6 +10,8 @@
 #ifndef PYTHON_DUNE_GDT_OPERATORS_INTERFACES_BINDINGS_HH
 #define PYTHON_DUNE_GDT_OPERATORS_INTERFACES_BINDINGS_HH
 
+#include <python/dune/xt/grid/grids.bindings.hh>
+
 #include "interfaces.hh"
 #include "lincomb.hh"
 #include "matrix-based.hh"
@@ -18,7 +20,7 @@
 /**
  * We require ConstLincombOperator and LincombOperator for the numeric operators and MatrixOperator for the jacobian.
  */
-template <class M, class MT, class ST, class GridTypes = Dune::XT::Grid::AvailableGridTypes>
+template <class M, class MT, class ST, class GridTypes = Dune::XT::Grid::bindings::AvailableGridTypes>
 struct OperatorInterface_for_all_grids
 {
   using G = Dune::XT::Common::tuple_head_t<GridTypes>;

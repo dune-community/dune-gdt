@@ -69,7 +69,7 @@ public:
     if constexpr (r == 1)
       m.def(
           FactoryName.c_str(),
-          [](const GP& grid,
+          [](const GP& /*grid*/,
              const XT::Grid::bindings::Dimension<r>&,
              const bool weighted_by_intersection_diameter,
              const std::string& logging_prefix) {
@@ -109,7 +109,7 @@ public:
 } // namespace Dune
 
 
-template <class GridTypes = Dune::XT::Grid::AvailableGridTypes>
+template <class GridTypes = Dune::XT::Grid::bindings::AvailableGridTypes>
 struct LocalInnerJumpIntegrand_for_all_grids
 {
   using G = Dune::XT::Common::tuple_head_t<GridTypes>;
@@ -149,5 +149,5 @@ PYBIND11_MODULE(_local_integrands_jump_inner, m)
   py::module::import("dune.xt.functions");
   py::module::import("dune.gdt._local_integrands_quaternary_intersection_interface");
 
-  LocalInnerJumpIntegrand_for_all_grids<XT::Grid::AvailableGridTypes>::bind(m);
+  LocalInnerJumpIntegrand_for_all_grids<XT::Grid::bindings::AvailableGridTypes>::bind(m);
 }

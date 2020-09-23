@@ -10,11 +10,12 @@
 #include "config.h"
 
 #include <dune/xt/grid/grids.hh>
+#include <python/dune/xt/grid/grids.bindings.hh>
 
 #include "interface.hh"
 
 
-template <class GridTypes = Dune::XT::Grid::AvailableGridTypes>
+template <class GridTypes = Dune::XT::Grid::bindings::AvailableGridTypes>
 struct SpaceInterface_for_all_grids
 {
   using G = Dune::XT::Common::tuple_head_t<GridTypes>;
@@ -54,5 +55,5 @@ PYBIND11_MODULE(_spaces_interface, m)
   py::module::import("dune.xt.grid");
   py::module::import("dune.xt.functions");
 
-  SpaceInterface_for_all_grids<XT::Grid::AvailableGridTypes>::bind(m);
+  SpaceInterface_for_all_grids<XT::Grid::bindings::AvailableGridTypes>::bind(m);
 }

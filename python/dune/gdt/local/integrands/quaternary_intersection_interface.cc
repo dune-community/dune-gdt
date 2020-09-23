@@ -25,7 +25,7 @@
 #include "quaternary_intersection_interface.hh"
 
 
-template <class GridTypes = Dune::XT::Grid::AvailableGridTypes>
+template <class GridTypes = Dune::XT::Grid::bindings::AvailableGridTypes>
 struct LocalQuaternaryIntersectionIntegrandInterface_for_all_grids
 {
   using G = Dune::XT::Common::tuple_head_t<GridTypes>;
@@ -91,5 +91,5 @@ PYBIND11_MODULE(_local_integrands_quaternary_intersection_interface, m)
   py::module::import("dune.xt.grid");
   py::module::import("dune.xt.functions");
 
-  LocalQuaternaryIntersectionIntegrandInterface_for_all_grids<XT::Grid::AvailableGridTypes>::bind(m);
+  LocalQuaternaryIntersectionIntegrandInterface_for_all_grids<XT::Grid::bindings::AvailableGridTypes>::bind(m);
 }

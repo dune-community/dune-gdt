@@ -9,10 +9,12 @@
 
 #include "config.h"
 
+#include <python/dune/xt/grid/grids.bindings.hh>
+
 #include "discontinuous-lagrange.hh"
 
 
-template <class GridTypes = Dune::XT::Grid::AvailableGridTypes>
+template <class GridTypes = Dune::XT::Grid::bindings::AvailableGridTypes>
 struct DiscontinuousLagrangeSpace_for_all_grids
 {
   using G = Dune::XT::Common::tuple_head_t<GridTypes>;
@@ -54,5 +56,5 @@ PYBIND11_MODULE(_spaces_l2_discontinuous_lagrange, m)
 
   py::module::import("dune.gdt._spaces_interface");
 
-  DiscontinuousLagrangeSpace_for_all_grids<XT::Grid::AvailableGridTypes>::bind(m);
+  DiscontinuousLagrangeSpace_for_all_grids<XT::Grid::bindings::AvailableGridTypes>::bind(m);
 }

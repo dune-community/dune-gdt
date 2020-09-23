@@ -206,7 +206,7 @@ public:
 } // namespace Dune
 
 
-template <class V, class VT, class GridTypes = Dune::XT::Grid::AvailableGridTypes>
+template <class V, class VT, class GridTypes = Dune::XT::Grid::bindings::AvailableGridTypes>
 struct VectorBasedFunctional_for_all_grids
 {
   using G = Dune::XT::Common::tuple_head_t<GridTypes>;
@@ -254,12 +254,12 @@ PYBIND11_MODULE(_functionals_vector_based, m)
 
   //  VectorBasedFunctional_for_all_grids<LA::CommonDenseVector<double>,
   //                               LA::bindings::Common,
-  //                               XT::Grid::AvailableGridTypes>::bind(m, "common_dense");
+  //                               XT::Grid::bindings::AvailableGridTypes>::bind(m, "common_dense");
   //#if HAVE_EIGEN
   //  VectorBasedFunctional_for_all_grids<LA::EigenDenseVector<double>,
   //                               LA::bindings::Eigen,
-  //                               XT::Grid::AvailableGridTypes>::bind(m, "eigen_dense");
+  //                               XT::Grid::bindings::AvailableGridTypes>::bind(m, "eigen_dense");
   //#endif
-  VectorBasedFunctional_for_all_grids<LA::IstlDenseVector<double>, LA::bindings::Istl, XT::Grid::AvailableGridTypes>::
+  VectorBasedFunctional_for_all_grids<LA::IstlDenseVector<double>, LA::bindings::Istl, XT::Grid::bindings::AvailableGridTypes>::
       bind(m, "istl");
 }

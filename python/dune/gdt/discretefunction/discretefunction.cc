@@ -11,11 +11,12 @@
 
 #include <dune/xt/grid/grids.hh>
 #include <python/dune/xt/la/traits.hh>
+#include <python/dune/xt/grid/grids.bindings.hh>
 
 #include "discretefunction.hh"
 
 
-template <class V, class VT, class GridTypes = Dune::XT::Grid::AvailableGridTypes>
+template <class V, class VT, class GridTypes = Dune::XT::Grid::bindings::AvailableGridTypes>
 struct DiscreteFunction_for_all_grids
 {
   using G = Dune::XT::Common::tuple_head_t<GridTypes>;
@@ -57,12 +58,15 @@ PYBIND11_MODULE(_discretefunction_discretefunction, m)
   py::module::import("dune.gdt._spaces_interface");
   py::module::import("dune.gdt._discretefunction_dof_vector");
 
-  DiscreteFunction_for_all_grids<LA::CommonDenseVector<double>, LA::bindings::Common, XT::Grid::AvailableGridTypes>::
-      bind(m);
+  DiscreteFunction_for_all_grids<LA::CommonDenseVector<double>,
+                                 LA::bindings::Common,
+                                 XT::Grid::bindings::AvailableGridTypes>::bind(m);
 #if HAVE_EIGEN
-  DiscreteFunction_for_all_grids<LA::EigenDenseVector<double>, LA::bindings::Eigen, XT::Grid::AvailableGridTypes>::bind(
-      m);
+  DiscreteFunction_for_all_grids<LA::EigenDenseVector<double>,
+                                 LA::bindings::Eigen,
+                                 XT::Grid::bindings::AvailableGridTypes>::bind(m);
 #endif
-  DiscreteFunction_for_all_grids<LA::IstlDenseVector<double>, LA::bindings::Istl, XT::Grid::AvailableGridTypes>::bind(
-      m);
+  DiscreteFunction_for_all_grids<LA::IstlDenseVector<double>,
+                                 LA::bindings::Istl,
+                                 XT::Grid::bindings::AvailableGridTypes>::bind(m);
 }

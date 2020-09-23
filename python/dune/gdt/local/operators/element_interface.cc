@@ -69,7 +69,7 @@ public:
 } // namespace Dune
 
 
-template <class V, class GridTypes = Dune::XT::Grid::AvailableGridTypes>
+template <class V, class GridTypes = Dune::XT::Grid::bindings::AvailableGridTypes>
 struct LocalElementOperatorInterface_for_all_grids
 {
   using G = Dune::XT::Common::tuple_head_t<GridTypes>;
@@ -112,6 +112,6 @@ PYBIND11_MODULE(_local_operators_element_interface, m)
   py::module::import("dune.xt.grid");
   py::module::import("dune.xt.functions");
 
-  LocalElementOperatorInterface_for_all_grids<XT::LA::IstlDenseVector<double>, XT::Grid::AvailableGridTypes>::bind(
+  LocalElementOperatorInterface_for_all_grids<XT::LA::IstlDenseVector<double>, XT::Grid::bindings::AvailableGridTypes>::bind(
       m, "istl_dense");
 }

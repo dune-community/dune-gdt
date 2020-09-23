@@ -98,7 +98,7 @@ public:
 } // namespace Dune
 
 
-template <class GridTypes = Dune::XT::Grid::AvailableGridTypes>
+template <class GridTypes = Dune::XT::Grid::bindings::AvailableGridTypes>
 struct LocalIntersectionBilinearFormInterface_for_all_grids
 {
   using G = Dune::XT::Common::tuple_head_t<GridTypes>;
@@ -147,5 +147,5 @@ PYBIND11_MODULE(_local_bilinear_forms_intersection_interface, m)
   py::module::import("dune.xt.grid");
   py::module::import("dune.xt.functions");
 
-  LocalIntersectionBilinearFormInterface_for_all_grids<XT::Grid::AvailableGridTypes>::bind(m);
+  LocalIntersectionBilinearFormInterface_for_all_grids<XT::Grid::bindings::AvailableGridTypes>::bind(m);
 }
