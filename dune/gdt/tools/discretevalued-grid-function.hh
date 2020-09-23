@@ -126,11 +126,18 @@ public:
 
   DiscreteValuedGridFunction(ThisType&&) = default;
 
-  std::unique_ptr<BaseType> copy_as_grid_function() const override final
+  std::unique_ptr<ThisType> copy_as_grid_function() const
   {
-    return std::make_unique<ThisType>(*this);
+    return std::unique_ptr<ThisType>(*this);
   }
 
+private:
+  virtual BaseType* copy_as_grid_function_impl() const override final
+  {
+    return new ThisType(*this);
+  }
+
+public:
   std::unique_ptr<LocalFunctionType> local_function() const override final
   {
     return std::make_unique<DiscreteValuedLocalFunction>(values_, index_set_);
