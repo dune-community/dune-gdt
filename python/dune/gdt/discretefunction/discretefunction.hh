@@ -77,9 +77,8 @@ public:
     else
       c.def_property_readonly("dim_range", [](const type&) { return std::make_pair(size_t(r), size_t(rC)); });
     c.def_property_readonly("space", &type::space);
-    c.def_property("dofs", // doing this so complicated to get an actual reference instead of a copy
-                   (typename type::DofVectorType & (type::*)()) & type::dofs,
-                   (typename type::DofVectorType & (type::*)()) & type::dofs);
+    // doing this so complicated to get an actual reference instead of a copy
+    c.def_property_readonly("dofs", (typename type::DofVectorType & (type::*)()) & type::dofs);
     c.def_property_readonly("name", &type::name);
 
     c.def(

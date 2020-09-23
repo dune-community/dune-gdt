@@ -240,7 +240,16 @@ public:
           py::keep_alive<1, 4>());
 
     // doing this so complicated to get an actual reference instead of a copy
-    c.def_property("matrix", (const M& (type::*)() const) & type::matrix, (M & (type::*)()) & type::matrix);
+    c.def_property("matrix",
+                   /*getter=*/(const M& (type::*)() const) & type::matrix,
+                   /*setter=*/[](type& self, const M& mat) {
+                     DUNE_THROW_IF(mat.rows() != self.matrix().rows() || mat.cols() != self.matrix().cols(),
+                                   XT::Common::Exceptions::shapes_do_not_match,
+                                   "Cannot assign a matrix of size " << mat.rows() << "x" << mat.cols()
+                                                                     << " to a matrix of size " << self.matrix().rows()
+                                                                     << "x" << self.matrix().cols() << "!");
+                     self.matrix() = mat;
+                   });
 
     // methods from walker base, to allow for overloads
     XT::Grid::bindings::Walker<G>::addbind_methods(c);

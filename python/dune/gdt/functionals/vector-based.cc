@@ -87,7 +87,15 @@ public:
           py::keep_alive<1, 3>());
 
     // doing this so complicated to get an actual reference instead of a copy
-    c.def_property("vector", (const V& (type::*)() const) & type::vector, (V & (type::*)()) & type::vector);
+    c.def_property("vector",
+                   /*getter=*/(const V& (type::*)() const) & type::vector,
+                   /*setter=*/[](type& self, const V& vec) {
+                     DUNE_THROW_IF(vec.size() != self.vector().size(),
+                                   XT::Common::Exceptions::shapes_do_not_match,
+                                   "Cannot assign vector of lenght " << vec.size() << " to vector of length "
+                                                                     << self.vector().size() << "!");
+                     self.vector() = vec;
+                   });
 
     // methods from walker base, to allow for overloads
     XT::Grid::bindings::Walker<G>::addbind_methods(c);

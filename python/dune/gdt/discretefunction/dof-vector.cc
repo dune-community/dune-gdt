@@ -57,7 +57,13 @@ public:
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
 
     // doing this so complicated to get an actual reference instead of a copy
-    c.def_property("vector", (const V& (type::*)() const) & type::vector, (V & (type::*)()) & type::vector);
+    c.def_property("vector", (const V& (type::*)() const) & type::vector, [](type& self, const V& vec) {
+      DUNE_THROW_IF(vec.size() != self.vector().size(),
+                    XT::Common::Exceptions::shapes_do_not_match,
+                    "Cannot assign vector of lenght " << vec.size() << " to DoF vector of length "
+                                                      << self.vector().size() << "!");
+      self.vector() = vec;
+    });
 
     c.def("resize_after_adapt", [](type& self) { self.resize_after_adapt(); });
 
