@@ -274,7 +274,7 @@ public:
   {
     // Check if we need to enabled logging first
     for (size_t ii = 0; ii < other.num_ops(); ++ii)
-      this->logger.enable_like(other.const_ops_[ii].access());
+      this->logger.enable_like(other.const_ops_[ii].access().logger);
     LOG_(debug) << "operator-=(other_const_lincomb_op=" << &other << ")" << std::endl;
     for (size_t ii = 0; ii < other.num_ops(); ++ii) {
       LOG_(debug) << "  adding op=" << &(other.const_ops_[ii]) << ", coeff=" << -1 * other.coeffs_[ii] << std::endl;

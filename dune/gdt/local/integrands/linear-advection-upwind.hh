@@ -175,7 +175,6 @@ public:
   using typename BaseBinaryType::LocalTestBasisType;
 
   using BaseUnaryType::logger;
-  using BaseUnaryType::logger.prefix;
 
   /**
    * \note dirichlet_data is only required if used as a unary integrand, i.e. for the right hand side
