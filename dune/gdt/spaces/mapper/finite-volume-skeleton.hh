@@ -133,7 +133,7 @@ public:
         DUNE_THROW_IF(!intersection.conforming(),
                       Exceptions::mapper_error,
                       "Skeleton mapper not implemented for nonconforming intersections!");
-        auto local_index = XT::Common::numeric_cast<size_t>(intersection.indexInInside());
+        auto local_index = intersection.indexInInside();
         auto global_index = XT::Common::numeric_cast<size_t>(mapper_.index(element.template subEntity<1>(local_index)));
         global_indices_of_intersections[local_index] = global_index;
       }
