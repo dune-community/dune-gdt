@@ -132,7 +132,7 @@ public:
   }
 
 private:
-  virtual BaseType* copy_as_grid_function_impl() const override final
+  BaseType* copy_as_grid_function_impl() const override final
   {
     return new ThisType(*this);
   }
@@ -150,7 +150,7 @@ public:
 
 private:
   const IndexSetType& index_set_;
-  const std::vector<LocalFunctionValuesType>& values_;
+  std::vector<LocalFunctionValuesType>& values_;
 }; // class DiscreteValuedGridFunction
 
 

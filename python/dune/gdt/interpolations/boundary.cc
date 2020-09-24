@@ -155,6 +155,7 @@ PYBIND11_MODULE(_interpolations_boundary, m)
       bind(m);
 #  endif
 #endif // 0
-  boundary_interpolation_for_all_grids<LA::IstlDenseVector<double>, LA::bindings::Istl, XT::Grid::bindings::AvailableGridTypes>::
-      bind(m);
+  boundary_interpolation_for_all_grids<LA::IstlDenseVector<double>,
+                                       LA::bindings::Istl,
+                                       XT::Grid::bindings::AvailableGridTypes>::bind(m);
 }

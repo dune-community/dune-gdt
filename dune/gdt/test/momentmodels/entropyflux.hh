@@ -267,18 +267,18 @@ public:
       }
     }
 
-    virtual RangeReturnType evaluate(const DomainType& /*point_in_reference_element*/,
-                                     const StateType& u,
-                                     const XT::Common::Parameter& /*param*/ = {}) const override final
+    RangeReturnType evaluate(const DomainType& /*point_in_reference_element*/,
+                             const StateType& u,
+                             const XT::Common::Parameter& /*param*/ = {}) const override final
     {
       const auto alpha = get_alpha(u, true)->first;
       return implementation_.evaluate_with_alpha(alpha);
     }
 
-    virtual void jacobian(const DomainType& /*point_in_reference_element*/,
-                          const StateType& u,
-                          DynamicJacobianRangeType& result,
-                          const XT::Common::Parameter& /*param*/ = {}) const override final
+    void jacobian(const DomainType& /*point_in_reference_element*/,
+                  const StateType& u,
+                  DynamicJacobianRangeType& result,
+                  const XT::Common::Parameter& /*param*/ = {}) const override final
     {
       const auto alpha = get_alpha(u, true)->first;
       implementation_.jacobian_with_alpha(alpha, result);

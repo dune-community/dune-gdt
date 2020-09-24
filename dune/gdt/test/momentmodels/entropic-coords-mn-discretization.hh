@@ -84,8 +84,7 @@ public:
     return new BoundaryFluxesFunctor(*this);
   }
 
-  virtual void
-  apply_local(const I& intersection, const E& /*inside_element*/, const E& /*outside_element*/) override final
+  void apply_local(const I& intersection, const E& /*inside_element*/, const E& /*outside_element*/) override final
   {
     // store boundary fluxes
     const auto x = intersection.geometry().center();
@@ -352,7 +351,7 @@ struct HyperbolicEntropicCoordsMnDiscretization
       for (size_t ii = 0; ii < dimRange; ++ii)
         range_dofs.add_to_entry(ii, ret[ii]);
     };
-    RhsOperatorType rhs_operator(grid_view, fv_space, fv_space, false, true);
+    RhsOperatorType rhs_operator(grid_view, fv_space, fv_space, true);
     rhs_operator.append(GenericLocalElementOperator<VectorType, GV, dimRange>(rhs_func));
     CombinedOperatorType combined_operator(density_operator, fv_operator, rhs_operator, hessian_inverter);
 #endif

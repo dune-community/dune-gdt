@@ -53,9 +53,9 @@ public:
   using DiffusionFactorType = XT::Functions::GridFunctionInterface<E, 1, 1, F>;
   using DiffusionTensorType = XT::Functions::GridFunctionInterface<E, d, d, F>;
 
-  LocalEllipticIntegrand(
-      const F& diffusion_factor = F(1),
-      const XT::Common::FieldMatrix<F, d, d>& diffusion_tensor = XT::LA::eye_matrix<FieldMatrix<F, d, d>>(d, d))
+  LocalEllipticIntegrand(const F& diffusion_factor = F(1),
+                         const XT::Common::FieldMatrix<F, d, d>& diffusion_tensor =
+                             XT::LA::eye_matrix<FieldMatrix<F, d, d>>(d, d))
     : BaseType()
     , diffusion_factor_(new XT::Functions::FunctionAsGridFunctionWrapper<E, 1, 1, F>(
           new XT::Functions::ConstantFunction<d, 1, 1, F>(diffusion_factor)))
@@ -90,7 +90,7 @@ public:
     , local_diffusion_tensor_(diffusion_tensor_.access().local_function())
   {}
 
-  LocalEllipticIntegrand(ThisType&& source) = default;
+  LocalEllipticIntegrand(ThisType && source) = default;
 
   std::unique_ptr<BaseType> copy_as_binary_element_integrand() const override final
   {

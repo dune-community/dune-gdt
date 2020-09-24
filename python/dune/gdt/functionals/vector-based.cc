@@ -268,6 +268,7 @@ PYBIND11_MODULE(_functionals_vector_based, m)
   //                               LA::bindings::Eigen,
   //                               XT::Grid::bindings::AvailableGridTypes>::bind(m, "eigen_dense");
   //#endif
-  VectorBasedFunctional_for_all_grids<LA::IstlDenseVector<double>, LA::bindings::Istl, XT::Grid::bindings::AvailableGridTypes>::
-      bind(m, "istl");
+  VectorBasedFunctional_for_all_grids<LA::IstlDenseVector<double>,
+                                      LA::bindings::Istl,
+                                      XT::Grid::bindings::AvailableGridTypes>::bind(m, "istl");
 }

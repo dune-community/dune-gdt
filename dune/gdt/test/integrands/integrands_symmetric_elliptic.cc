@@ -32,7 +32,7 @@ struct SymmetrizedLaplaceIntegrandTest : public IntegrandTest<G>
   using typename BaseType::VectorRangeType;
   using VectorIntegrandType = LocalSymmetrizedLaplaceIntegrand<E>;
 
-  virtual void SetUp() override
+  void SetUp() override
   {
     BaseType::SetUp();
     diffusion_factor_ = std::make_shared<XT::Functions::GenericGridFunction<E, 1>>(
@@ -57,7 +57,7 @@ struct SymmetrizedLaplaceIntegrandTest : public IntegrandTest<G>
         });
   }
 
-  virtual void is_constructable() override final
+  void is_constructable() override final
   {
     [[maybe_unused]] VectorIntegrandType vector_integrand1;
     [[maybe_unused]] VectorIntegrandType vector_integrand2(1.);

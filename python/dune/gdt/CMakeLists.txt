@@ -101,14 +101,8 @@ dune_pybindxi_add_module(_local_integrands_ipdg_inner_penalty
                          EXCLUDE_FROM_ALL
                          ${header}
                          local/integrands/ipdg_inner_penalty.cc)
-dune_pybindxi_add_module(_local_integrands_jump_boundary
-                         EXCLUDE_FROM_ALL
-                         ${header}
-                         local/integrands/jump_boundary.cc)
-dune_pybindxi_add_module(_local_integrands_jump_inner
-                         EXCLUDE_FROM_ALL
-                         ${header}
-                         local/integrands/jump_inner.cc)
+dune_pybindxi_add_module(_local_integrands_jump_boundary EXCLUDE_FROM_ALL ${header} local/integrands/jump_boundary.cc)
+dune_pybindxi_add_module(_local_integrands_jump_inner EXCLUDE_FROM_ALL ${header} local/integrands/jump_inner.cc)
 dune_pybindxi_add_module(_local_integrands_laplace EXCLUDE_FROM_ALL ${header} local/integrands/laplace.cc)
 dune_pybindxi_add_module(_local_integrands_laplace_ipdg_dirichlet_coupling
                          EXCLUDE_FROM_ALL

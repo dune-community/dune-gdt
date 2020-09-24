@@ -114,6 +114,6 @@ PYBIND11_MODULE(_local_operators_intersection_interface, m)
   py::module::import("dune.xt.grid");
   py::module::import("dune.xt.functions");
 
-  LocalIntersectionOperatorInterface_for_all_grids<XT::LA::IstlDenseVector<double>, XT::Grid::bindings::AvailableGridTypes>::bind(
-      m, "istl_dense");
+  LocalIntersectionOperatorInterface_for_all_grids<XT::LA::IstlDenseVector<double>,
+                                                   XT::Grid::bindings::AvailableGridTypes>::bind(m, "istl_dense");
 }

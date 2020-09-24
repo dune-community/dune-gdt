@@ -112,7 +112,7 @@ protected:
     return nrms;
   }
 
-  virtual std::map<std::string, std::map<std::string, double>>
+  std::map<std::string, std::map<std::string, double>>
   compute(const size_t refinement_level,
           const std::vector<std::string>& actual_norms,
           const std::vector<std::pair<std::string, std::string>>& actual_estimates,

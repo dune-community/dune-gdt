@@ -239,8 +239,9 @@ raviart_thomas_interpolation(
     const RaviartThomasSpace<GV, R>& target_space)
 {
   return raviart_thomas_interpolation<VectorType>(
-      XT::Functions::GenericFunction<GV::dimension, GV::dimension, 1, R>(source_order, source_evaluate_lambda)
-          .as_grid_function(target_space.grid_view()),
+      XT::Functions::make_grid_function(
+          XT::Functions::GenericFunction<GV::dimension, GV::dimension, 1, R>(source_order, source_evaluate_lambda),
+          target_space.grid_view()),
       target_space,
       target_space.grid_view());
 }

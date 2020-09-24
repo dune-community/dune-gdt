@@ -414,8 +414,10 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
       [](DG& space, XT::Functions::FunctionInterface<d>& diffusion_factor, const bool parallel) {
         const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor(
             XT::Common::FieldMatrix<double, 2, d>({{1., 0.}, {0., 1.}}));
-        return assemble_SWIPDG_matrix(
-            space, diffusion_factor.as_grid_function<E>(), diffusion_tensor.as_grid_function<E>(), parallel);
+        return assemble_SWIPDG_matrix(space,
+                                      XT::Functions::make_grid_function<E>(diffusion_factor),
+                                      XT::Functions::make_grid_function<E>(diffusion_tensor),
+                                      parallel);
       },
       py::call_guard<py::gil_scoped_release>(),
       "dg_space"_a,
@@ -436,7 +438,7 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
   m.def(
       "assemble_L2_vector",
       [](DG& space, XT::Functions::FunctionInterface<d>& force, const bool parallel) {
-        return assemble_L2_vector(space, force.as_grid_function<E>(), parallel);
+        return assemble_L2_vector(space, XT::Functions::make_grid_function<E>(force), parallel);
       },
       py::call_guard<py::gil_scoped_release>(),
       "dg_space"_a,
@@ -457,8 +459,10 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
       [](DG& space, XT::Functions::FunctionInterface<d>& diffusion_factor, const bool parallel) {
         const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor(
             XT::Common::FieldMatrix<double, 2, d>({{1., 0.}, {0., 1.}}));
-        return assemble_energy_semi_product_matrix(
-            space, diffusion_factor.as_grid_function<E>(), diffusion_tensor.as_grid_function<E>(), parallel);
+        return assemble_energy_semi_product_matrix(space,
+                                                   XT::Functions::make_grid_function<E>(diffusion_factor),
+                                                   XT::Functions::make_grid_function<E>(diffusion_tensor),
+                                                   parallel);
       },
       py::call_guard<py::gil_scoped_release>(),
       "dg_space"_a,
@@ -484,8 +488,10 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
         const XT::Functions::ConstantFunction<d> diffusion_factor(1.);
         const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor(
             XT::Common::FieldMatrix<double, 2, d>({{1., 0.}, {0., 1.}}));
-        return assemble_DG_product_matrix(
-            space, diffusion_factor.as_grid_function<E>(), diffusion_tensor.as_grid_function<E>(), parallel);
+        return assemble_DG_product_matrix(space,
+                                          XT::Functions::make_grid_function<E>(diffusion_factor),
+                                          XT::Functions::make_grid_function<E>(diffusion_tensor),
+                                          parallel);
       },
       py::call_guard<py::gil_scoped_release>(),
       "dg_space"_a,
@@ -512,8 +518,8 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
         return compute_flux_reconstruction(grid,
                                            dg_space,
                                            rtn_space,
-                                           diffusion_factor.as_grid_function<E>(),
-                                           diffusion_tensor.as_grid_function<E>(),
+                                           XT::Functions::make_grid_function<E>(diffusion_factor),
+                                           XT::Functions::make_grid_function<E>(diffusion_tensor),
                                            dg_vec);
       },
       py::call_guard<py::gil_scoped_release>(),
@@ -577,7 +583,7 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
   m.def(
       "compute_local_conservation_error",
       [](GP& grid, VectorDF& flux, XT::Functions::FunctionInterface<d>& rhs, const bool parallel) {
-        return compute_local_conservation_error(grid, flux, rhs.as_grid_function<E>(), parallel);
+        return compute_local_conservation_error(grid, flux, XT::Functions::make_grid_function<E>(rhs), parallel);
       },
       py::call_guard<py::gil_scoped_release>(),
       "grid"_a,
@@ -614,11 +620,11 @@ PYBIND11_MODULE(gamm_2019_talk_on_conservative_rb, m)
         return compute_estimate(grid,
                                 pressure,
                                 flux,
-                                rhs.as_grid_function<E>(),
-                                diffusion_factor.as_grid_function<E>(),
-                                diffusion_factor_bar.as_grid_function<E>(),
-                                diffusion_factor_hat.as_grid_function<E>(),
-                                diffusion_tensor.as_grid_function<E>(),
+                                XT::Functions::make_grid_function<E>(rhs),
+                                XT::Functions::make_grid_function<E>(diffusion_factor),
+                                XT::Functions::make_grid_function<E>(diffusion_factor_bar),
+                                XT::Functions::make_grid_function<E>(diffusion_factor_hat),
+                                XT::Functions::make_grid_function<E>(diffusion_tensor),
                                 alpha_bar,
                                 alpha_hat,
                                 gamma_bar,

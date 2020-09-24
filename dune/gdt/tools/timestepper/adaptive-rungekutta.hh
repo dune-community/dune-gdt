@@ -245,19 +245,19 @@ public:
   using BaseType::current_time;
   using BaseType::solve;
 
-  virtual RangeFieldType solve(const RangeFieldType t_end,
-                               const RangeFieldType initial_dt,
-                               const size_t num_save_steps,
-                               const size_t num_output_steps,
-                               const bool save_solution,
-                               const bool visualize,
-                               const bool write_discrete,
-                               const bool write_exact,
-                               const std::string prefix,
-                               typename BaseType::DiscreteSolutionType& sol,
-                               const typename BaseType::VisualizerType& visualizer,
-                               const typename BaseType::StringifierType& stringifier,
-                               const typename BaseType::GridFunctionType& exact_solution) override final
+  RangeFieldType solve(const RangeFieldType t_end,
+                       const RangeFieldType initial_dt,
+                       const size_t num_save_steps,
+                       const size_t num_output_steps,
+                       const bool save_solution,
+                       const bool visualize,
+                       const bool write_discrete,
+                       const bool write_exact,
+                       const std::string prefix,
+                       typename BaseType::DiscreteSolutionType& sol,
+                       const typename BaseType::VisualizerType& visualizer,
+                       const typename BaseType::StringifierType& stringifier,
+                       const typename BaseType::GridFunctionType& exact_solution) override final
   {
     const auto ret = BaseType::solve(t_end,
                                      initial_dt,

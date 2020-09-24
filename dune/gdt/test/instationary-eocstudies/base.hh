@@ -298,7 +298,7 @@ public:
               });
           auto temporal_grid_view = reference_bochner_space.temporal_space().grid_view();
           current_data_["norm"][norm_id] =
-              l2_norm(temporal_grid_view, spatial_norm_function.template as_grid_function(temporal_grid_view));
+              l2_norm(temporal_grid_view, XT::Functions::make_grid_function(spatial_norm_function, temporal_grid_view));
         } else
           DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
                      "I do not know how to compute the temporal norm '" << temporal_norm_id << "'!");

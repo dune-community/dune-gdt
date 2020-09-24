@@ -104,7 +104,7 @@ public:
     };
   }
 
-  virtual RangeReturnType
+  RangeReturnType
   kinetic_boundary_flux(const DomainType& x, const RangeFieldType& n, const size_t dd) const override final
   {
     return helper<MomentBasis>::get_kinetic_boundary_flux(basis_functions_, psi_vac_, is_mn_model_, x, n, dd, *this);

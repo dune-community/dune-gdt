@@ -118,7 +118,7 @@ protected:
 
   const FF& diffusion_factor() const override final
   {
-    return problem.diffusion_factor.template as_grid_function<E>();
+    return XT::Functions::make_grid_function<E>(problem.diffusion_factor);
   }
 
   const FT& diffusion_tensor() const override final
@@ -128,7 +128,7 @@ protected:
 
   const FF& force() const override final
   {
-    return problem.force.template as_grid_function<E>();
+    return XT::Functions::make_grid_function<E>(problem.force);
   }
 
   GP make_initial_grid() override final

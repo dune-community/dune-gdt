@@ -89,10 +89,10 @@ public:
     return new ThisType(*this);
   }
 
-  virtual VectorType get(const E& /*entity*/,
-                         const StencilType& stencil,
-                         const EigenVectorWrapperType& /*eigenvectors*/,
-                         const size_t /*dd*/) const override final
+  VectorType get(const E& /*entity*/,
+                 const StencilType& stencil,
+                 const EigenVectorWrapperType& /*eigenvectors*/,
+                 const size_t /*dd*/) const override final
   {
     const VectorType& u_left = stencil[0];
     const VectorType& u_right = stencil[2];
@@ -117,10 +117,10 @@ public:
     return new ThisType();
   }
 
-  virtual VectorType get(const E& /*entity*/,
-                         const StencilType& stencil,
-                         const EigenVectorWrapperType& /*eigenvectors*/,
-                         const size_t /*dd*/) const override final
+  VectorType get(const E& /*entity*/,
+                 const StencilType& stencil,
+                 const EigenVectorWrapperType& /*eigenvectors*/,
+                 const size_t /*dd*/) const override final
   {
     const VectorType& u_left = stencil[0];
     const VectorType& u = stencil[1];
@@ -145,10 +145,10 @@ public:
     return new ThisType(*this);
   }
 
-  virtual VectorType get(const E& /*entity*/,
-                         const StencilType& stencil,
-                         const EigenVectorWrapperType& /*eigenvectors*/,
-                         const size_t /*dd*/) const override final
+  VectorType get(const E& /*entity*/,
+                 const StencilType& stencil,
+                 const EigenVectorWrapperType& /*eigenvectors*/,
+                 const size_t /*dd*/) const override final
   {
     const VectorType& u = stencil[1];
     const VectorType& u_right = stencil[2];
@@ -173,10 +173,10 @@ public:
     return new ThisType(*this);
   }
 
-  virtual VectorType get(const E& /*entity*/,
-                         const StencilType& /*stencil*/,
-                         const EigenVectorWrapperType& /*eigenvectors*/,
-                         const size_t /*dd*/) const override final
+  VectorType get(const E& /*entity*/,
+                 const StencilType& /*stencil*/,
+                 const EigenVectorWrapperType& /*eigenvectors*/,
+                 const size_t /*dd*/) const override final
   {
     return VectorType(0.);
   }
@@ -198,10 +198,10 @@ public:
     return new ThisType(*this);
   }
 
-  virtual VectorType get_char(const E& /*entity*/,
-                              const StencilType& stencil,
-                              const EigenVectorWrapperType& eigenvectors,
-                              const size_t dd) const override final
+  VectorType get_char(const E& /*entity*/,
+                      const StencilType& stencil,
+                      const EigenVectorWrapperType& eigenvectors,
+                      const size_t dd) const override final
   {
     const VectorType slope_left = stencil[1] - stencil[0];
     const VectorType slope_right = stencil[2] - stencil[1];
@@ -237,10 +237,10 @@ public:
     return new ThisType(*this);
   }
 
-  virtual VectorType get_char(const E& /*entity*/,
-                              const StencilType& stencil,
-                              const EigenVectorWrapperType& eigenvectors,
-                              const size_t dd) const override final
+  VectorType get_char(const E& /*entity*/,
+                      const StencilType& stencil,
+                      const EigenVectorWrapperType& eigenvectors,
+                      const size_t dd) const override final
   {
     const VectorType& u_left = stencil[0];
     const VectorType& u = stencil[1];
@@ -274,10 +274,10 @@ public:
     return new ThisType(*this);
   }
 
-  virtual VectorType get_char(const E& /*entity*/,
-                              const StencilType& stencil,
-                              const EigenVectorWrapperType& eigenvectors,
-                              const size_t dd) const override final
+  VectorType get_char(const E& /*entity*/,
+                      const StencilType& stencil,
+                      const EigenVectorWrapperType& eigenvectors,
+                      const size_t dd) const override final
   {
     const VectorType slope_left = stencil[1] - stencil[0];
     const VectorType slope_right = stencil[2] - stencil[1];
@@ -370,10 +370,10 @@ public:
     return new ThisType(*this);
   }
 
-  virtual VectorType get(const E& entity,
-                         const StencilType& stencil,
-                         const EigenVectorWrapperType& eigenvectors,
-                         const size_t dd) const override final
+  VectorType get(const E& entity,
+                 const StencilType& stencil,
+                 const EigenVectorWrapperType& eigenvectors,
+                 const size_t dd) const override final
   {
     static const VectorType zero_vector(0.);
     const VectorType& u_bar = stencil[1];
@@ -453,10 +453,10 @@ public:
     return new ThisType(*this);
   }
 
-  virtual VectorType get(const E& entity,
-                         const StencilType& stencil,
-                         const EigenVectorWrapperType& eigenvectors,
-                         const size_t dd) const override final
+  VectorType get(const E& entity,
+                 const StencilType& stencil,
+                 const EigenVectorWrapperType& eigenvectors,
+                 const size_t dd) const override final
   {
     const VectorType slope = slope_limiter_.get(entity, stencil, eigenvectors, dd);
     const VectorType& u_bar = stencil[1];
@@ -555,10 +555,10 @@ public:
     return new ThisType(*this);
   }
 
-  virtual VectorType get(const E& entity,
-                         const StencilType& stencil,
-                         const EigenVectorWrapperType& eigenvectors,
-                         const size_t dd) const override final
+  VectorType get(const E& entity,
+                 const StencilType& stencil,
+                 const EigenVectorWrapperType& eigenvectors,
+                 const size_t dd) const override final
   {
     static const VectorType zero_vector(0.);
     const VectorType& u_bar = stencil[1];
@@ -674,10 +674,10 @@ public:
     return new ThisType(*this);
   }
 
-  virtual VectorType get(const E& entity,
-                         const StencilType& stencil,
-                         const EigenVectorWrapperType& eigenvectors,
-                         const size_t dd) const override final
+  VectorType get(const E& entity,
+                 const StencilType& stencil,
+                 const EigenVectorWrapperType& eigenvectors,
+                 const size_t dd) const override final
   {
     const VectorType& u_bar = stencil[1];
     const VectorType slope = slope_limiter_.get(entity, stencil, eigenvectors, dd);
@@ -799,10 +799,10 @@ public:
     return new ThisType(*this);
   }
 
-  virtual VectorType get(const E& entity,
-                         const StencilType& stencil,
-                         const EigenVectorWrapperType& eigenvectors,
-                         const size_t dd) const override final
+  VectorType get(const E& entity,
+                 const StencilType& stencil,
+                 const EigenVectorWrapperType& eigenvectors,
+                 const size_t dd) const override final
   {
     static const VectorType zero_vector(0.);
     const VectorType& u_bar = stencil[1];
@@ -955,10 +955,10 @@ public:
     return new ThisType(*this);
   }
 
-  virtual VectorType get(const E& entity,
-                         const StencilType& stencil,
-                         const EigenVectorWrapperType& eigenvectors,
-                         const size_t dd) const override final
+  VectorType get(const E& entity,
+                 const StencilType& stencil,
+                 const EigenVectorWrapperType& eigenvectors,
+                 const size_t dd) const override final
   {
     VectorType slope_char = slope_limiter_.get_char(entity, stencil, eigenvectors, dd);
     static const VectorType zero_vector(0.);

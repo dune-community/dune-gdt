@@ -171,7 +171,7 @@ default_interpolation(const XT::Functions::GridFunctionInterface<XT::Grid::extra
 /**
  * \brief Interpolates a function within a given space [most general variant].
  *
- * Simply calls as_grid_function<>() and redirects to the appropriate default_interpolation() function.
+ * Simply calls make_grid_function and redirects to the appropriate default_interpolation() function.
  */
 template <class GV, size_t r, size_t rC, class R, class V, class IGVT>
 std::enable_if_t<std::is_same<XT::Grid::extract_entity_t<GV>, typename IGVT::Grid::template Codim<0>::Entity>::value,
@@ -180,7 +180,8 @@ default_interpolation(const XT::Functions::FunctionInterface<GridView<IGVT>::dim
                       DiscreteFunction<V, GV, r, rC, R>& target,
                       const GridView<IGVT>& interpolation_grid_view)
 {
-  default_interpolation(source.as_grid_function(interpolation_grid_view), target, interpolation_grid_view);
+  default_interpolation(
+      XT::Functions::make_grid_function(source, interpolation_grid_view), target, interpolation_grid_view);
 }
 
 
@@ -209,7 +210,7 @@ default_interpolation(const XT::Functions::FunctionInterface<GridView<IGVT>::dim
                       const GridView<IGVT>& interpolation_grid_view)
 {
   return default_interpolation<VectorType>(
-      source.as_grid_function(interpolation_grid_view), target_space, interpolation_grid_view);
+      XT::Functions::make_grid_function(source, interpolation_grid_view), target_space, interpolation_grid_view);
 }
 
 

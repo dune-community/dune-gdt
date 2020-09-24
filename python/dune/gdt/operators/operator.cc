@@ -221,6 +221,7 @@ PYBIND11_MODULE(_operators_operator, m)
   py::module::import("dune.gdt._operators_interfaces_istl_3d");
 
   /// \todo Add other la backends if required
-  Operator_for_all_grids<LA::IstlRowMajorSparseMatrix<double>, LA::bindings::Istl, XT::Grid::bindings::AvailableGridTypes>::bind(
-      m, "istl_sparse");
+  Operator_for_all_grids<LA::IstlRowMajorSparseMatrix<double>,
+                         LA::bindings::Istl,
+                         XT::Grid::bindings::AvailableGridTypes>::bind(m, "istl_sparse");
 }

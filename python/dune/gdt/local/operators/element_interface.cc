@@ -112,6 +112,6 @@ PYBIND11_MODULE(_local_operators_element_interface, m)
   py::module::import("dune.xt.grid");
   py::module::import("dune.xt.functions");
 
-  LocalElementOperatorInterface_for_all_grids<XT::LA::IstlDenseVector<double>, XT::Grid::bindings::AvailableGridTypes>::bind(
-      m, "istl_dense");
+  LocalElementOperatorInterface_for_all_grids<XT::LA::IstlDenseVector<double>,
+                                              XT::Grid::bindings::AvailableGridTypes>::bind(m, "istl_dense");
 }

@@ -63,8 +63,7 @@ public:
     return new BoundaryFluxesFunctor(*this);
   }
 
-  virtual void
-  apply_local(const I& intersection, const E& /*inside_element*/, const E& /*outside_element*/) override final
+  void apply_local(const I& intersection, const E& /*inside_element*/, const E& /*outside_element*/) override final
   {
     // store boundary fluxes
     const auto x = intersection.geometry().center();

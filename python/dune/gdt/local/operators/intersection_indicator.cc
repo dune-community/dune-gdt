@@ -128,6 +128,7 @@ PYBIND11_MODULE(_local_operators_intersection_indicator, m)
   py::module::import("dune.gdt._local_bilinear_forms_intersection_interface");
   py::module::import("dune.gdt._local_operators_intersection_interface");
 
-  LocalIntersectionBilinearFormIndicatorOperator_for_all_grids<XT::LA::IstlDenseVector<double>,
-                                                               XT::Grid::bindings::AvailableGridTypes>::bind(m, "istl_dense");
+  LocalIntersectionBilinearFormIndicatorOperator_for_all_grids<
+      XT::LA::IstlDenseVector<double>,
+      XT::Grid::bindings::AvailableGridTypes>::bind(m, "istl_dense");
 }

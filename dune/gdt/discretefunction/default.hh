@@ -257,7 +257,7 @@ public:
 
   std::unique_ptr<ThisType> copy_as_discrete_function()
   {
-    return std::make_unique<ThisType>(*this);
+    return std::make_unique<ThisType>(space_, dofs_.vector().copy());
   }
 
   /**

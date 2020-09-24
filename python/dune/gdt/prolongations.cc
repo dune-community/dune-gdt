@@ -135,5 +135,6 @@ PYBIND11_MODULE(_prolongations, m)
       bind(m);
 #  endif
 #endif // 0
-  prolong_for_all_grids<LA::IstlDenseVector<double>, LA::bindings::Istl, XT::Grid::bindings::AvailableGridTypes>::bind(m);
+  prolong_for_all_grids<LA::IstlDenseVector<double>, LA::bindings::Istl, XT::Grid::bindings::AvailableGridTypes>::bind(
+      m);
 }

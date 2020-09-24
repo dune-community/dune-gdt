@@ -15,8 +15,8 @@
 #ifndef DUNE_GDT_LOCAL_INTEGRANDS_ELLIPTIC_IPDG_HH
 #  define DUNE_GDT_LOCAL_INTEGRANDS_ELLIPTIC_IPDG_HH
 
-#include <dune/xt/functions/grid-function.hh>
-#include <dune/xt/functions/interfaces/grid-function.hh>
+#  include <dune/xt/functions/grid-function.hh>
+#  include <dune/xt/functions/interfaces/grid-function.hh>
 
 #  include "interfaces.hh"
 #  include "ipdg.hh"
@@ -79,7 +79,7 @@ public:
     , local_weight_out_(weight_.local_function())
   {}
 
-  InnerCoupling(ThisType&& source) = default;
+  InnerCoupling(ThisType && source) = default;
 
   std::unique_ptr<BaseType> copy_as_quaternary_intersection_integrand() const override final
   {
@@ -252,7 +252,7 @@ public:
     , local_diffusion_(diffusion_.local_function())
   {}
 
-  DirichletCoupling(ThisType&& source) = default;
+  DirichletCoupling(ThisType && source) = default;
 
   std::unique_ptr<BaseType> copy_as_quaternary_intersection_integrand() const override final
   {
@@ -345,15 +345,8 @@ private:
 namespace LocalEllipticIpdgIntegrands {
 
 
-enum class [[deprecated("Use the LocalLaplaceIPDGIntegrands instead (21.06.2020)!")]] Method
-{
-  ipdg,
-  nipdg,
-  sipdg,
-  swipdg,
-  swipdg_affine_factor,
-  swipdg_affine_tensor
-};
+enum class [[deprecated("Use the LocalLaplaceIPDGIntegrands instead (21.06.2020)!")]] Method{
+    ipdg, nipdg, sipdg, swipdg, swipdg_affine_factor, swipdg_affine_tensor};
 
 
 namespace internal {
@@ -445,8 +438,8 @@ namespace internal {
 /**
  * \note see Epshteyn, Riviere, 2007
  */
-[[deprecated("Use the LocalLaplaceIPDGIntegrands instead (21.06.2020)!")]]
-static inline double default_beta(const size_t d)
+[[deprecated("Use the LocalLaplaceIPDGIntegrands instead (21.06.2020)!")]] static inline double
+default_beta(const size_t d)
 {
   return 1.0 / (d - 1.0);
 }
@@ -455,9 +448,8 @@ static inline double default_beta(const size_t d)
 /**
  * \note see Epshteyn, Riviere, 2007
  */
-[[deprecated("Use the LocalLaplaceIPDGIntegrands instead (21.06.2020)!")]]
-static inline double
-    inner_sigma(const size_t pol_order)
+[[deprecated("Use the LocalLaplaceIPDGIntegrands instead (21.06.2020)!")]] static inline double
+inner_sigma(const size_t pol_order)
 {
   double sigma = 1.0;
   if (pol_order <= 1)
@@ -484,8 +476,8 @@ static inline double
 /**
  * \note see Epshteyn, Riviere, 2007
  */
-[[deprecated("Use the LocalLaplaceIPDGIntegrands instead (21.06.2020)!")]]
-static inline double boundary_sigma(const size_t pol_order)
+[[deprecated("Use the LocalLaplaceIPDGIntegrands instead (21.06.2020)!")]] static inline double
+boundary_sigma(const size_t pol_order)
 {
   double sigma = 1.0;
   if (pol_order <= 1)
@@ -558,7 +550,7 @@ public:
     , local_diffusion_tensor_out_(diffusion_tensor_.local_function())
   {}
 
-  Inner(ThisType&& source) = default;
+  Inner(ThisType && source) = default;
 
   std::unique_ptr<BaseType> copy_as_quaternary_intersection_integrand() const override final
   {
@@ -1009,9 +1001,9 @@ private:
  * \sa [Epshteyn, Riviere, 2007] for the meaning of beta
  */
 template <class I, class F = double, Method method = default_method>
-class [[deprecated(
-    "Use LocalLaplaceIPDGIntegrands::DirichletCoupling + LocalIPDGIntegrands::boundaryPenalty instead (21.06.2020)!")]]
-    DirichletBoundaryLhs : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
+class [[deprecated("Use LocalLaplaceIPDGIntegrands::DirichletCoupling + LocalIPDGIntegrands::boundaryPenalty instead "
+                   "(21.06.2020)!")]] DirichletBoundaryLhs
+  : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
 {
   using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>;
   using ThisType = DirichletBoundaryLhs;
@@ -1047,7 +1039,7 @@ public:
     , local_diffusion_tensor_(diffusion_tensor_.local_function())
   {}
 
-  DirichletBoundaryLhs(ThisType&& source) = default;
+  DirichletBoundaryLhs(ThisType && source) = default;
 
   std::unique_ptr<BaseType> copy_as_quaternary_intersection_integrand() const override final
   {
@@ -1492,7 +1484,7 @@ public:
     , local_diffusion_tensor_out_(diffusion_tensor_.local_function())
   {}
 
-  InnerOnlyPenalty(ThisType&& source) = default;
+  InnerOnlyPenalty(ThisType && source) = default;
 
   std::unique_ptr<BaseType> copy_as_quaternary_intersection_integrand() const override final
   {
@@ -1903,8 +1895,8 @@ private:
  * \sa [Epshteyn, Riviere, 2007] for the meaning of beta
  */
 template <class I, class F = double, Method method = default_method>
-class [[deprecated("Use LocalIPDGIntegrands::BoundaryPenalty instead (05.08.2019)!")]]
-    DirichletBoundaryLhsOnlyPenalty : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
+class [[deprecated("Use LocalIPDGIntegrands::BoundaryPenalty instead (05.08.2019)!")]] DirichletBoundaryLhsOnlyPenalty
+  : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
 {
   using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>;
   using ThisType = DirichletBoundaryLhsOnlyPenalty;
@@ -1940,7 +1932,7 @@ public:
     , local_diffusion_tensor_(diffusion_tensor_.local_function())
   {}
 
-  DirichletBoundaryLhsOnlyPenalty(ThisType&& source) = default;
+  DirichletBoundaryLhsOnlyPenalty(ThisType && source) = default;
 
   std::unique_ptr<BaseType> copy_as_quaternary_intersection_integrand() const override final
   {

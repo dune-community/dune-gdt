@@ -32,7 +32,7 @@ struct ProductIntegrandTest : public IntegrandTest<G>
   using ScalarIntegrandType = LocalElementProductIntegrand<E, 1>;
   using VectorIntegrandType = LocalElementProductIntegrand<E, d>;
 
-  virtual void is_constructable() override final
+  void is_constructable() override final
   {
     [[maybe_unused]] ScalarIntegrandType scalar_integrand1;
     [[maybe_unused]] ScalarIntegrandType scalar_integrand2(1.);

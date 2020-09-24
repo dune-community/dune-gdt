@@ -147,6 +147,7 @@ PYBIND11_MODULE(_interpolations_oswald, m)
       bind(m);
 #  endif
 #endif // 0
-  oswald_interpolation_for_all_grids<LA::IstlDenseVector<double>, LA::bindings::Istl, XT::Grid::bindings::AvailableGridTypes>::
-      bind(m);
+  oswald_interpolation_for_all_grids<LA::IstlDenseVector<double>,
+                                     LA::bindings::Istl,
+                                     XT::Grid::bindings::AvailableGridTypes>::bind(m);
 }

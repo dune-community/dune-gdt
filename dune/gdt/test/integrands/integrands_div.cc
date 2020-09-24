@@ -32,7 +32,7 @@ struct DivIntegrandTest : public IntegrandTest<G>
   using TestDivIntegrandType = LocalElementAnsatzValueTestDivProductIntegrand<E>;
   using AnsatzDivIntegrandType = LocalElementAnsatzDivTestValueProductIntegrand<E>;
 
-  virtual void is_constructable() override final
+  void is_constructable() override final
   {
     [[maybe_unused]] TestDivIntegrandType test_div_integrand1;
     [[maybe_unused]] TestDivIntegrandType test_div_integrand2(1.);

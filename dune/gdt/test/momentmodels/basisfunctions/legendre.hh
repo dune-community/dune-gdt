@@ -87,9 +87,9 @@ public:
     return ret;
   } // ... evaluate(...)
 
-  virtual bool adjust_alpha_to_ensure_min_density(RangeType& alpha,
-                                                  const RangeFieldType rho_min,
-                                                  const RangeType& u) const override final
+  bool adjust_alpha_to_ensure_min_density(RangeType& alpha,
+                                          const RangeFieldType rho_min,
+                                          const RangeType& u) const override final
   {
     if (density(u) < rho_min) {
       alpha = this->alpha_iso(rho_min);

@@ -148,12 +148,12 @@ protected:
 
   const FT& diffusion() const override final
   {
-    return problem.diffusion.template as_grid_function<E>();
+    return XT::Functions::make_grid_function<E>(problem.diffusion);
   }
 
   const FF& force() const override final
   {
-    return problem.force.template as_grid_function<E>();
+    return XT::Functions::make_grid_function<E>(problem.force);
   }
 
   const FT& weight_function() const override final

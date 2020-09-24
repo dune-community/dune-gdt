@@ -136,22 +136,22 @@ public:
   {
     ret = u;
   }
-  virtual void
-  apply_inverse_eigenvectors(const size_t /*dd*/, const VectorType& u, VectorType& ret) const override final
+
+  void apply_inverse_eigenvectors(const size_t /*dd*/, const VectorType& u, VectorType& ret) const override final
   {
     ret = u;
   }
 
-  virtual void compute_eigenvectors(const E& /*entity*/,
-                                    const DomainType& /*x_local*/,
-                                    const VectorType& /*u*/,
-                                    const XT::Common::Parameter& /*param*/) const override final
+  void compute_eigenvectors(const E& /*entity*/,
+                            const DomainType& /*x_local*/,
+                            const VectorType& /*u*/,
+                            const XT::Common::Parameter& /*param*/) const override final
   {}
 
-  virtual void compute_eigenvectors_impl(const E& /*entity*/,
-                                         const DomainType& /*x_local*/,
-                                         const VectorType& /*u*/,
-                                         const XT::Common::Parameter& /*param*/) const override final
+  void compute_eigenvectors_impl(const E& /*entity*/,
+                                 const DomainType& /*x_local*/,
+                                 const VectorType& /*u*/,
+                                 const XT::Common::Parameter& /*param*/) const override final
   {}
 
   const MatrixType& eigenvectors(const size_t /*dd*/) const override final
@@ -233,10 +233,10 @@ public:
 #endif
   }
 
-  virtual void compute_eigenvectors_impl(const E& entity,
-                                         const DomainType& x_local,
-                                         const VectorType& u,
-                                         const XT::Common::Parameter& param) override final
+  void compute_eigenvectors_impl(const E& entity,
+                                 const DomainType& x_local,
+                                 const VectorType& u,
+                                 const XT::Common::Parameter& param) override final
   {
     local_flux_->bind(entity);
     try {
@@ -384,10 +384,10 @@ public:
     std::fill_n(&(eigenvalues_[0][0]), dimDomain * num_blocks, std::vector<double>(block_size, 0.));
   }
 
-  virtual void compute_eigenvectors_impl(const E& entity,
-                                         const DomainType& x_local,
-                                         const VectorType& u,
-                                         const XT::Common::Parameter& param) override final
+  void compute_eigenvectors_impl(const E& entity,
+                                 const DomainType& x_local,
+                                 const VectorType& u,
+                                 const XT::Common::Parameter& param) override final
   {
     local_flux_->bind(entity);
     const FluxDomainType nonblocked_u = u.operator FluxDomainType();

@@ -647,9 +647,9 @@ public:
 
   using BaseType::density;
 
-  virtual bool adjust_alpha_to_ensure_min_density(RangeType& alpha,
-                                                  const RangeFieldType /*rho_min*/,
-                                                  const RangeType& /*u*/) const override final
+  bool adjust_alpha_to_ensure_min_density(RangeType& alpha,
+                                          const RangeFieldType /*rho_min*/,
+                                          const RangeType& /*u*/) const override final
   {
     bool changed = false;
     static const double min_alpha_entry = DXTC_CONFIG_GET("min_alpha_entry", -1000.);

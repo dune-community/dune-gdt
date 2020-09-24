@@ -138,16 +138,16 @@ public:
   using QuadratureWeightsType = std::vector<RangeFieldType, boost::alignment::aligned_allocator<RangeFieldType, 64>>;
   static constexpr EntropyType entropy = MomentBasis::entropy;
 
-  explicit EntropyBasedFluxImplementationUnspecializedBase(const MomentBasis& basis_functions,
-                                                           const RangeFieldType tau,
-                                                           const bool disable_realizability_check,
-                                                           const RangeFieldType epsilon_gamma,
-                                                           const RangeFieldType chi,
-                                                           const RangeFieldType xi,
-                                                           const std::vector<RangeFieldType> r_sequence,
-                                                           const size_t k_0,
-                                                           const size_t k_max,
-                                                           const RangeFieldType epsilon)
+  EntropyBasedFluxImplementationUnspecializedBase(const MomentBasis& basis_functions,
+                                                  const RangeFieldType tau,
+                                                  const bool disable_realizability_check,
+                                                  const RangeFieldType epsilon_gamma,
+                                                  const RangeFieldType chi,
+                                                  const RangeFieldType xi,
+                                                  const std::vector<RangeFieldType> r_sequence,
+                                                  const size_t k_0,
+                                                  const size_t k_max,
+                                                  const RangeFieldType epsilon)
     : basis_functions_(basis_functions)
     , quad_points_(XT::Data::merged_quadrature(basis_functions_.quadratures()).size())
     , quad_weights_(quad_points_.size())
@@ -193,6 +193,16 @@ public:
     }
   }
 
+  EntropyBasedFluxImplementationUnspecializedBase(const ThisType& other) = delete;
+  EntropyBasedFluxImplementationUnspecializedBase(ThisType&& other) = delete;
+  ThisType& operator=(const ThisType& other) = delete;
+  ThisType& operator=(ThisType&& other) = delete;
+
+  ThisType* copy_as_function_impl() const override
+  {
+    DUNE_THROW(Dune::NotImplemented, "");
+    return nullptr;
+  }
 
   // ============================================================================================
   // ============================= FunctionInterface methods ====================================
@@ -204,8 +214,7 @@ public:
     return 1;
   }
 
-  virtual RangeReturnType evaluate(const DomainType& u,
-                                   const XT::Common::Parameter& /*param*/ = {}) const override final
+  RangeReturnType evaluate(const DomainType& u, const XT::Common::Parameter& /*param*/ = {}) const override final
   {
     const auto alpha = get_alpha(u, *get_isotropic_alpha(u), true)->first;
     return evaluate_with_alpha(alpha);
@@ -227,9 +236,9 @@ public:
     return ret;
   } // void evaluate(...)
 
-  virtual void jacobian(const DomainType& u,
-                        DynamicDerivativeRangeType& result,
-                        const XT::Common::Parameter& /*param*/ = {}) const override final
+  void jacobian(const DomainType& u,
+                DynamicDerivativeRangeType& result,
+                const XT::Common::Parameter& /*param*/ = {}) const override final
   {
     const auto alpha = get_alpha(u, *get_isotropic_alpha(u), true)->first;
     jacobian_with_alpha(alpha, result);
@@ -969,16 +978,16 @@ public:
   using typename BaseType::RangeFieldType;
   using typename BaseType::VectorType;
 
-  explicit EntropyBasedFluxImplementation(const MomentBasis& basis_functions,
-                                          const RangeFieldType tau,
-                                          const bool disable_realizability_check,
-                                          const RangeFieldType epsilon_gamma,
-                                          const RangeFieldType chi,
-                                          const RangeFieldType xi,
-                                          const std::vector<RangeFieldType> r_sequence,
-                                          const size_t k_0,
-                                          const size_t k_max,
-                                          const RangeFieldType epsilon)
+  EntropyBasedFluxImplementation(const MomentBasis& basis_functions,
+                                 const RangeFieldType tau,
+                                 const bool disable_realizability_check,
+                                 const RangeFieldType epsilon_gamma,
+                                 const RangeFieldType chi,
+                                 const RangeFieldType xi,
+                                 const std::vector<RangeFieldType> r_sequence,
+                                 const size_t k_0,
+                                 const size_t k_max,
+                                 const RangeFieldType epsilon)
     : BaseType(
         basis_functions, tau, disable_realizability_check, epsilon_gamma, chi, xi, r_sequence, k_0, k_max, epsilon)
     , T_minus_one_(std::make_unique<MatrixType>())
@@ -986,10 +995,21 @@ public:
     XT::LA::eye_matrix(*T_minus_one_);
   }
 
+  EntropyBasedFluxImplementation(const ThisType& other) = delete;
+  EntropyBasedFluxImplementation(ThisType&& other) = delete;
+  ThisType& operator=(const ThisType& other) = delete;
+  ThisType& operator=(ThisType&& other) = delete;
+
+  ThisType* copy_as_function_impl() const override final
+  {
+    DUNE_THROW(Dune::NotImplemented, "");
+    return nullptr;
+  }
+
   using BaseType::get_alpha;
   using BaseType::P_k_mat;
 
-  virtual std::unique_ptr<AlphaReturnType>
+  std::unique_ptr<AlphaReturnType>
   get_alpha(const DomainType& u, const DomainType& alpha_in, const bool regularize) const override final
   {
     auto ret = std::make_unique<AlphaReturnType>();
@@ -1198,19 +1218,30 @@ public:
   using typename BaseType::RangeFieldType;
   using typename BaseType::VectorType;
 
-  explicit EntropyBasedFluxImplementation(const MomentBasis& basis_functions,
-                                          const RangeFieldType tau,
-                                          const bool disable_realizability_check,
-                                          const RangeFieldType epsilon_gamma,
-                                          const RangeFieldType chi,
-                                          const RangeFieldType xi,
-                                          const std::vector<RangeFieldType> r_sequence,
-                                          const size_t k_0,
-                                          const size_t k_max,
-                                          const RangeFieldType epsilon)
+  EntropyBasedFluxImplementation(const MomentBasis& basis_functions,
+                                 const RangeFieldType tau,
+                                 const bool disable_realizability_check,
+                                 const RangeFieldType epsilon_gamma,
+                                 const RangeFieldType chi,
+                                 const RangeFieldType xi,
+                                 const std::vector<RangeFieldType> r_sequence,
+                                 const size_t k_0,
+                                 const size_t k_max,
+                                 const RangeFieldType epsilon)
     : BaseType(
         basis_functions, tau, disable_realizability_check, epsilon_gamma, chi, xi, r_sequence, k_0, k_max, epsilon)
   {}
+
+  EntropyBasedFluxImplementation(const ThisType& other) = delete;
+  EntropyBasedFluxImplementation(ThisType&& other) = delete;
+  ThisType& operator=(const ThisType& other) = delete;
+  ThisType& operator=(ThisType&& other) = delete;
+
+  ThisType* copy_as_function_impl() const override final
+  {
+    DUNE_THROW(Dune::NotImplemented, "");
+    return nullptr;
+  }
 
   std::unique_ptr<AlphaReturnType> get_alpha(const DomainType& u) const
   {
@@ -1218,7 +1249,7 @@ public:
   }
 
   // returns (alpha, (actual_u, r)), where r is the regularization parameter and actual_u the regularized u
-  virtual std::unique_ptr<AlphaReturnType>
+  std::unique_ptr<AlphaReturnType>
   get_alpha(const DomainType& u, const DomainType& alpha_in, const bool regularize) const override final
   {
     auto ret = std::make_unique<AlphaReturnType>();
@@ -1418,16 +1449,16 @@ public:
   using QuadratureSignsType = std::vector<std::array<int, d>>;
   using AlphaReturnType = std::pair<BlockVectorType, std::pair<DomainType, RangeFieldType>>;
 
-  explicit EntropyBasedFluxImplementation(const MomentBasis& basis_functions,
-                                          const RangeFieldType tau,
-                                          const bool disable_realizability_check,
-                                          const RangeFieldType epsilon_gamma,
-                                          const RangeFieldType chi,
-                                          const RangeFieldType xi,
-                                          const std::vector<RangeFieldType> r_sequence,
-                                          const size_t k_0,
-                                          const size_t k_max,
-                                          const RangeFieldType epsilon)
+  EntropyBasedFluxImplementation(const MomentBasis& basis_functions,
+                                 const RangeFieldType tau,
+                                 const bool disable_realizability_check,
+                                 const RangeFieldType epsilon_gamma,
+                                 const RangeFieldType chi,
+                                 const RangeFieldType xi,
+                                 const std::vector<RangeFieldType> r_sequence,
+                                 const size_t k_0,
+                                 const size_t k_max,
+                                 const RangeFieldType epsilon)
     : basis_functions_(basis_functions)
     , quad_points_(num_blocks)
     , quad_weights_(num_blocks)
@@ -1465,6 +1496,17 @@ public:
     } // jj
   }
 
+  EntropyBasedFluxImplementation(const ThisType& other) = delete;
+  EntropyBasedFluxImplementation(ThisType&& other) = delete;
+  ThisType& operator=(const ThisType& other) = delete;
+  ThisType& operator=(ThisType&& other) = delete;
+
+  ThisType* copy_as_function_impl() const override final
+  {
+    DUNE_THROW(Dune::NotImplemented, "");
+    return nullptr;
+  }
+
   // ============================================================================================
   // ============================= FunctionInterface methods ====================================
   // ============================================================================================
@@ -1475,8 +1517,7 @@ public:
     return 1;
   }
 
-  virtual RangeReturnType evaluate(const DomainType& u,
-                                   const XT::Common::Parameter& /*param*/ = {}) const override final
+  RangeReturnType evaluate(const DomainType& u, const XT::Common::Parameter& /*param*/ = {}) const override final
   {
     const auto alpha = std::make_unique<BlockVectorType>(get_alpha(u, *get_isotropic_alpha(u), true)->first);
     return evaluate_with_alpha(*alpha);
@@ -1501,9 +1542,9 @@ public:
     return ret;
   } // void evaluate(...)
 
-  virtual void jacobian(const DomainType& u,
-                        DynamicDerivativeRangeType& result,
-                        const XT::Common::Parameter& /*param*/ = {}) const override final
+  void jacobian(const DomainType& u,
+                DynamicDerivativeRangeType& result,
+                const XT::Common::Parameter& /*param*/ = {}) const override final
   {
     const auto alpha = std::make_unique<BlockVectorType>(get_alpha(u, *get_isotropic_alpha(u), true)->first);
     jacobian_with_alpha(*alpha, result);
@@ -2442,16 +2483,16 @@ public:
   using VectorType = DomainType;
   using AlphaReturnType = std::pair<VectorType, std::pair<DomainType, RangeFieldType>>;
 
-  explicit EntropyBasedFluxImplementation(const MomentBasis& basis_functions,
-                                          const RangeFieldType tau,
-                                          const bool /*disable_realizability_check*/,
-                                          const RangeFieldType epsilon_gamma,
-                                          const RangeFieldType chi,
-                                          const RangeFieldType xi,
-                                          const std::vector<RangeFieldType> r_sequence,
-                                          const size_t k_0,
-                                          const size_t k_max,
-                                          const RangeFieldType epsilon)
+  EntropyBasedFluxImplementation(const MomentBasis& basis_functions,
+                                 const RangeFieldType tau,
+                                 const bool /*disable_realizability_check*/,
+                                 const RangeFieldType epsilon_gamma,
+                                 const RangeFieldType chi,
+                                 const RangeFieldType xi,
+                                 const std::vector<RangeFieldType> r_sequence,
+                                 const size_t k_0,
+                                 const size_t k_max,
+                                 const RangeFieldType epsilon)
     : basis_functions_(basis_functions)
     , quad_points_(basis_dimRange)
     , quad_weights_(basis_dimRange, 0.)
@@ -2489,6 +2530,17 @@ public:
     } // quadratures
   } // constructor
 
+  EntropyBasedFluxImplementation(const ThisType& other) = delete;
+  EntropyBasedFluxImplementation(ThisType&& other) = delete;
+  ThisType& operator=(const ThisType& other) = delete;
+  ThisType& operator=(ThisType&& other) = delete;
+
+  ThisType* copy_as_function_impl() const override final
+  {
+    DUNE_THROW(Dune::NotImplemented, "");
+    return nullptr;
+  }
+
   // ============================================================================================
   // ============================= FunctionInterface methods ====================================
   // ============================================================================================
@@ -2499,8 +2551,7 @@ public:
     return 1;
   }
 
-  virtual RangeReturnType evaluate(const DomainType& u,
-                                   const XT::Common::Parameter& /*param*/ = {}) const override final
+  RangeReturnType evaluate(const DomainType& u, const XT::Common::Parameter& /*param*/ = {}) const override final
   {
     const auto alpha = get_alpha(u, *get_isotropic_alpha(u), true)->first;
     return evaluate_with_alpha(alpha);
@@ -2518,9 +2569,9 @@ public:
     return ret;
   } // void evaluate(...)
 
-  virtual void jacobian(const DomainType& u,
-                        DynamicDerivativeRangeType& result,
-                        const XT::Common::Parameter& /*param*/ = {}) const override final
+  void jacobian(const DomainType& u,
+                DynamicDerivativeRangeType& result,
+                const XT::Common::Parameter& /*param*/ = {}) const override final
   {
     const auto alpha = get_alpha(u, *get_isotropic_alpha(u), true)->first;
     jacobian_with_alpha(alpha, result);
@@ -3054,16 +3105,16 @@ public:
 #    endif
   using AlphaReturnType = std::pair<VectorType, std::pair<DomainType, RangeFieldType>>;
 
-  explicit EntropyBasedFluxImplementation(const MomentBasis& basis_functions,
-                                          const RangeFieldType tau,
-                                          const bool /*disable_realizability_check*/,
-                                          const RangeFieldType epsilon_gamma,
-                                          const RangeFieldType chi,
-                                          const RangeFieldType xi,
-                                          const std::vector<RangeFieldType> r_sequence,
-                                          const size_t k_0,
-                                          const size_t k_max,
-                                          const RangeFieldType epsilon)
+  EntropyBasedFluxImplementation(const MomentBasis& basis_functions,
+                                 const RangeFieldType tau,
+                                 const bool /*disable_realizability_check*/,
+                                 const RangeFieldType epsilon_gamma,
+                                 const RangeFieldType chi,
+                                 const RangeFieldType xi,
+                                 const std::vector<RangeFieldType> r_sequence,
+                                 const size_t k_0,
+                                 const size_t k_max,
+                                 const RangeFieldType epsilon)
     : basis_functions_(basis_functions)
     , quad_points_(basis_functions_.triangulation().faces().size())
     , quad_weights_(basis_functions_.triangulation().faces().size())
@@ -3118,6 +3169,16 @@ public:
     } // jj
   } // constructor
 
+  EntropyBasedFluxImplementation(const ThisType& other) = delete;
+  EntropyBasedFluxImplementation(ThisType&& other) = delete;
+  ThisType& operator=(const ThisType& other) = delete;
+  ThisType& operator=(ThisType&& other) = delete;
+
+  ThisType* copy_as_function_impl() const override final
+  {
+    DUNE_THROW(Dune::NotImplemented, "");
+    return nullptr;
+  }
 
   // ============================================================================================
   // ============================= FunctionInterface methods ====================================
@@ -3129,8 +3190,7 @@ public:
     return 1;
   }
 
-  virtual RangeReturnType evaluate(const DomainType& u,
-                                   const XT::Common::Parameter& /*param*/ = {}) const override final
+  RangeReturnType evaluate(const DomainType& u, const XT::Common::Parameter& /*param*/ = {}) const override final
   {
     const auto alpha = get_alpha(u, *get_isotropic_alpha(u), true)->first;
     return evaluate_with_alpha(alpha);
@@ -3167,9 +3227,9 @@ public:
     return ret;
   } // void evaluate(...)
 
-  virtual void jacobian(const DomainType& u,
-                        DynamicDerivativeRangeType& result,
-                        const XT::Common::Parameter& /*param*/ = {}) const override final
+  void jacobian(const DomainType& u,
+                DynamicDerivativeRangeType& result,
+                const XT::Common::Parameter& /*param*/ = {}) const override final
   {
     const auto alpha = get_alpha(u, *get_isotropic_alpha(u), true)->first;
     jacobian_with_alpha(alpha, result);
@@ -3924,18 +3984,18 @@ public:
   using AlphaReturnType = std::pair<VectorType, std::pair<DomainType, RangeFieldType>>;
   static_assert(entropy == EntropyType::MaxwellBoltzmann, "Not implemented for other entropies");
 
-  explicit EntropyBasedFluxImplementation(const MomentBasis& basis_functions,
-                                          const RangeFieldType tau,
-                                          const bool /*disable_realizability_check*/,
-                                          const RangeFieldType epsilon_gamma,
-                                          const RangeFieldType chi,
-                                          const RangeFieldType xi,
-                                          const std::vector<RangeFieldType> r_sequence,
-                                          const size_t k_0,
-                                          const size_t k_max,
-                                          const RangeFieldType epsilon,
-                                          const RangeFieldType taylor_tol = 0.1,
-                                          const size_t max_taylor_order = 200)
+  EntropyBasedFluxImplementation(const MomentBasis& basis_functions,
+                                 const RangeFieldType tau,
+                                 const bool /*disable_realizability_check*/,
+                                 const RangeFieldType epsilon_gamma,
+                                 const RangeFieldType chi,
+                                 const RangeFieldType xi,
+                                 const std::vector<RangeFieldType> r_sequence,
+                                 const size_t k_0,
+                                 const size_t k_max,
+                                 const RangeFieldType epsilon,
+                                 const RangeFieldType taylor_tol = 0.1,
+                                 const size_t max_taylor_order = 200)
     : basis_functions_(basis_functions)
     , v_points_(basis_functions_.partitioning())
     , tau_(tau)
@@ -3950,6 +4010,16 @@ public:
     , max_taylor_order_(max_taylor_order)
   {}
 
+  EntropyBasedFluxImplementation(const ThisType& other) = delete;
+  EntropyBasedFluxImplementation(ThisType&& other) = delete;
+  ThisType& operator=(const ThisType& other) = delete;
+  ThisType& operator=(ThisType&& other) = delete;
+
+  ThisType* copy_as_function_impl() const override final
+  {
+    DUNE_THROW(Dune::NotImplemented, "");
+    return nullptr;
+  }
 
   // ============================================================================================
   // ============================= FunctionInterface methods ====================================
@@ -3961,8 +4031,7 @@ public:
     return 1;
   }
 
-  virtual RangeReturnType evaluate(const DomainType& u,
-                                   const XT::Common::Parameter& /*param*/ = {}) const override final
+  RangeReturnType evaluate(const DomainType& u, const XT::Common::Parameter& /*param*/ = {}) const override final
   {
     const auto alpha = get_alpha(u, *get_isotropic_alpha(u), true)->first;
     return evaluate_with_alpha(alpha);
@@ -4027,9 +4096,9 @@ public:
     return ret;
   } // void evaluate_with_alpha(...)
 
-  virtual void jacobian(const DomainType& u,
-                        DynamicDerivativeRangeType& result,
-                        const XT::Common::Parameter& /*param*/ = {}) const override final
+  void jacobian(const DomainType& u,
+                DynamicDerivativeRangeType& result,
+                const XT::Common::Parameter& /*param*/ = {}) const override final
   {
     const auto alpha = get_alpha(u, *get_isotropic_alpha(u), true)->first;
     jacobian_with_alpha(alpha, result);
@@ -4873,16 +4942,16 @@ public:
   using QuadraturePointsType = std::vector<RangeFieldType, boost::alignment::aligned_allocator<RangeFieldType, 64>>;
   using QuadratureWeightsType = QuadraturePointsType;
 
-  explicit EntropyBasedFluxImplementation(const MomentBasis& basis_functions,
-                                          const RangeFieldType tau,
-                                          const bool /*disable_realizability_check*/,
-                                          const RangeFieldType epsilon_gamma,
-                                          const RangeFieldType chi,
-                                          const RangeFieldType xi,
-                                          const std::vector<RangeFieldType> r_sequence,
-                                          const size_t k_0,
-                                          const size_t k_max,
-                                          const RangeFieldType epsilon)
+  EntropyBasedFluxImplementation(const MomentBasis& basis_functions,
+                                 const RangeFieldType tau,
+                                 const bool /*disable_realizability_check*/,
+                                 const RangeFieldType epsilon_gamma,
+                                 const RangeFieldType chi,
+                                 const RangeFieldType xi,
+                                 const std::vector<RangeFieldType> r_sequence,
+                                 const size_t k_0,
+                                 const size_t k_max,
+                                 const RangeFieldType epsilon)
     : basis_functions_(basis_functions)
     , grid_points_(basis_functions_.partitioning())
     , tau_(tau)
@@ -4895,6 +4964,17 @@ public:
     , epsilon_(epsilon)
   {}
 
+  EntropyBasedFluxImplementation(const ThisType& other) = delete;
+  EntropyBasedFluxImplementation(ThisType&& other) = delete;
+  ThisType& operator=(const ThisType& other) = delete;
+  ThisType& operator=(ThisType&& other) = delete;
+
+  ThisType* copy_as_function_impl() const override final
+  {
+    DUNE_THROW(Dune::NotImplemented, "");
+    return nullptr;
+  }
+
   // ============================================================================================
   // ============================= FunctionInterface methods ====================================
   // ============================================================================================
@@ -4905,8 +4985,7 @@ public:
     return 1;
   }
 
-  virtual RangeReturnType evaluate(const DomainType& u,
-                                   const XT::Common::Parameter& /*param*/ = {}) const override final
+  RangeReturnType evaluate(const DomainType& u, const XT::Common::Parameter& /*param*/ = {}) const override final
   {
     const auto alpha = get_alpha(u, *get_isotropic_alpha(u), true)->first;
     return evaluate_with_alpha(alpha);
@@ -4926,9 +5005,9 @@ public:
     return ret;
   } // void evaluate(...)
 
-  virtual void jacobian(const DomainType& u,
-                        DynamicDerivativeRangeType& result,
-                        const XT::Common::Parameter& /*param*/ = {}) const override final
+  void jacobian(const DomainType& u,
+                DynamicDerivativeRangeType& result,
+                const XT::Common::Parameter& /*param*/ = {}) const override final
   {
     const auto alpha = get_alpha(u, *get_isotropic_alpha(u), true)->first;
     jacobian_with_alpha(alpha, result);
@@ -5449,16 +5528,16 @@ public:
   using QuadratureWeightsType = QuadraturePointsType;
   using QuadratureSignsType = FieldVector<int, num_intervals>;
 
-  explicit EntropyBasedFluxImplementation(const MomentBasis& basis_functions,
-                                          const RangeFieldType tau,
-                                          const bool /*disable_realizability_check*/,
-                                          const RangeFieldType epsilon_gamma,
-                                          const RangeFieldType chi,
-                                          const RangeFieldType xi,
-                                          const std::vector<RangeFieldType> r_sequence,
-                                          const size_t k_0,
-                                          const size_t k_max,
-                                          const RangeFieldType epsilon)
+  EntropyBasedFluxImplementation(const MomentBasis& basis_functions,
+                                 const RangeFieldType tau,
+                                 const bool /*disable_realizability_check*/,
+                                 const RangeFieldType epsilon_gamma,
+                                 const RangeFieldType chi,
+                                 const RangeFieldType xi,
+                                 const std::vector<RangeFieldType> r_sequence,
+                                 const size_t k_0,
+                                 const size_t k_max,
+                                 const RangeFieldType epsilon)
     : basis_functions_(basis_functions)
     , grid_points_(basis_functions_.partitioning())
     , tau_(tau)
@@ -5486,6 +5565,16 @@ public:
     } // jj
   }
 
+  EntropyBasedFluxImplementation(const ThisType& other) = delete;
+  EntropyBasedFluxImplementation(ThisType&& other) = delete;
+  ThisType& operator=(const ThisType& other) = delete;
+  ThisType& operator=(ThisType&& other) = delete;
+
+  ThisType* copy_as_function_impl() const override final
+  {
+    DUNE_THROW(Dune::NotImplemented, "");
+    return nullptr;
+  }
 
   // ============================================================================================
   // ============================= FunctionInterface methods ====================================
@@ -5497,8 +5586,7 @@ public:
     return 1;
   }
 
-  virtual RangeReturnType evaluate(const DomainType& u,
-                                   const XT::Common::Parameter& /*param*/ = {}) const override final
+  RangeReturnType evaluate(const DomainType& u, const XT::Common::Parameter& /*param*/ = {}) const override final
   {
     const auto alpha = get_alpha(u, *get_isotropic_alpha(u), true)->first;
     return evaluate_with_alpha(alpha);
@@ -5521,9 +5609,9 @@ public:
     return ret;
   } // void evaluate(...)
 
-  virtual void jacobian(const DomainType& u,
-                        DynamicDerivativeRangeType& result,
-                        const XT::Common::Parameter& /*param*/ = {}) const override final
+  void jacobian(const DomainType& u,
+                DynamicDerivativeRangeType& result,
+                const XT::Common::Parameter& /*param*/ = {}) const override final
   {
     const auto alpha = get_alpha(u, *get_isotropic_alpha(u), true)->first;
     jacobian_with_alpha(alpha, result);

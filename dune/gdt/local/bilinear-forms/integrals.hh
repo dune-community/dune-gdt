@@ -329,7 +329,7 @@ public:
     return std::make_unique<ThisType>(*this);
   }
 
-  virtual bool inside() const override final
+  bool inside() const override final
   {
     return integrand_->inside();
   }
