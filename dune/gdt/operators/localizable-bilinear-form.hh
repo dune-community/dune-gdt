@@ -12,7 +12,6 @@
 
 #warning "This header is deprecated, include <dune/gdt/bilinear-form.hh> instead (03.08.2020)!"
 
-#include <dune/xt/common/deprecated.hh>
 #include <dune/xt/la/type_traits.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/grid/walker.hh>
@@ -144,8 +143,9 @@ protected:
 
 
 template <class GV, size_t s_r, size_t s_rC, class SR, size_t r_r, size_t r_rC, class RR>
+[[deprecated("Use make_bilinear_form instead (03.08.2020)!")]]
 std::enable_if_t<XT::Grid::is_view<GV>::value, LocalizableBilinearFormBase<GV, s_r, s_rC, SR, double, r_r, r_rC, RR>>
-    DUNE_DEPRECATED_MSG("Use make_bilinear_form instead (03.08.2020)!") make_localizable_bilinear_form(
+    make_localizable_bilinear_form(
         GV grid_view,
         const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, s_r, s_rC, SR>& source,
         const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, r_r, r_rC, RR>& range)

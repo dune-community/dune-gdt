@@ -43,7 +43,7 @@ public:
 
   using DiffusionFactorType = XT::Functions::GridFunctionInterface<E, 1, 1, F>;
 
-  LocalSymmetrizedLaplaceIntegrand(XT::Functions::GridFunctionInterface<d, 1, 1, F> diffusion_factor = F(1))
+  LocalSymmetrizedLaplaceIntegrand(XT::Functions::GridFunctionInterface<E, 1, 1, F> diffusion_factor = F(1))
     : BaseType(diffusion_factor.parameter_type())
     , diffusion_factor_(diffusion_factor.copy_as_grid_function())
     , local_diffusion_factor_(diffusion_factor_->local_function())

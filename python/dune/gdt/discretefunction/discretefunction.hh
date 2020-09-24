@@ -23,6 +23,7 @@
 #include <python/dune/xt/functions/interfaces/grid-function.hh>
 #include <python/dune/xt/grid/grids.bindings.hh>
 #include <python/dune/xt/grid/traits.hh>
+#include <python/dune/xt/la/traits.hh>
 #include <python/dune/xt/la/container.bindings.hh>
 
 #include <dune/gdt/discretefunction/default.hh>

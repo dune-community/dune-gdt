@@ -174,7 +174,7 @@ public:
 
   using GridFunctionType = XT::Functions::GridFunctionInterface<E, 1, 1, F>;
 
-  LocalElementAnsatzDivTestValueProductIntegrand(XT::Functions::GridFunction<d, 1, 1, F> inducing_function = F(1))
+  LocalElementAnsatzDivTestValueProductIntegrand(XT::Functions::GridFunction<E, 1, 1, F> inducing_function = F(1))
     : BaseType()
     , inducing_function_(inducing_function.copy_as_grid_function())
     , local_function_(inducing_function_->local_function())
