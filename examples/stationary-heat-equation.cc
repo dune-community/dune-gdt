@@ -27,6 +27,7 @@
 
 #include <dune/xt/functions/constant.hh>
 #include <dune/xt/functions/generic/function.hh>
+#include <dune/xt/functions/grid-function.hh>
 
 #include <dune/gdt/functionals/vector-based.hh>
 #include <dune/gdt/local/bilinear-forms/integrals.hh>
@@ -67,7 +68,7 @@ int main(int argc, char* argv[])
     const XT::Functions::GenericFunction<d> source(3, [](const auto& x, const auto& /*param*/) {
       return M_PI_2 * M_PI * std::cos(M_PI_2 * x[0]) * std::cos(M_PI_2 * x[1]);
     });
-    const XT::Functions::GenericFunction<d> exact_solution(
+    const XT::Functions::GridFunction<E> exact_solution(XT::Functions::GenericFunction<d>(
         3,
         /*evaluate=*/
         [](const auto& x, const auto& /*param*/) { return std::cos(M_PI_2 * x[0]) * std::cos(M_PI_2 * x[1]); },
@@ -81,7 +82,7 @@ int main(int argc, char* argv[])
           FieldMatrix<double, 1, d> result;
           result[0] = {pre * std::sin(x_arg) * std::cos(y_arg), pre * std::cos(x_arg) * std::sin(y_arg)};
           return result;
-        });
+        }));
 
     auto grid = XT::Grid::make_cube_grid<G>(/*lower_left=*/-1., /*upper_right=*/1., /*num_elements=*/128);
     auto grid_view = grid.leaf_view();
@@ -110,7 +111,7 @@ int main(int argc, char* argv[])
 
     solution.visualize("solution");
 
-    const auto error = solution - exact_solution.as_grid_function<E>();
+    const auto error = solution - exact_solution;
 
     auto h1_prod = make_bilinear_form(grid_view, error, error);
     h1_prod += LocalElementIntegralBilinearForm<E>(LocalLaplaceIntegrand<E>(diffusion));

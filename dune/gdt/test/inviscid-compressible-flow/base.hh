@@ -23,6 +23,7 @@
 #include <dune/xt/grid/gridprovider/cube.hh>
 #include <dune/xt/functions/base/sliced.hh>
 #include <dune/xt/functions/interfaces/element-functions.hh>
+#include <dune/xt/functions/grid-function.hh>
 
 #include <dune/gdt/interpolations/default.hh>
 #include <dune/gdt/local/integrands/identity.hh>

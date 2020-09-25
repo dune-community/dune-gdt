@@ -21,6 +21,7 @@
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/functions/constant.hh>
 #include <dune/xt/functions/generic/function.hh>
+#include <dune/xt/functions/grid-function.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/interpolations/boundary.hh>
