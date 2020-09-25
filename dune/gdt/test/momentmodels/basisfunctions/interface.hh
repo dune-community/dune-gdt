@@ -19,8 +19,10 @@
 #include <dune/xt/common/string.hh>
 #include <dune/xt/common/tuple.hh>
 
-#include <dune/xt/data/quadratures.hh>
-#include <dune/xt/data/spherical_quadratures.hh>
+#if HAVE_DUNE_XT_DATA
+#  include <dune/xt/data/quadratures.hh>
+#  include <dune/xt/data/spherical_quadratures.hh>
+#endif
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/test/momentmodels/triangulation.hh>
