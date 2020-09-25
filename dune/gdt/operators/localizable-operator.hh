@@ -280,16 +280,10 @@ public:
     , assembly_grid_view_(assembly_grid_view)
     , source_space_(source_space)
     , range_space_(range_space)
-    , linear_(true)
     , use_tbb_(use_tbb)
   {}
 
   LocalizableOperator(ThisType&& source) = default;
-
-  bool linear() const override final
-  {
-    return linear_;
-  }
 
   const SourceSpaceType& source_space() const override final
   {

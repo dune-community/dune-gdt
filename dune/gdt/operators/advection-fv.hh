@@ -88,6 +88,11 @@ public:
     , periodicity_exception_(std::move(source.periodicity_exception_))
   {}
 
+  bool linear() const override final
+  {
+    return numerical_flux_->linear();
+  }
+
   using BaseType::append;
 
   /// \name Non-periodic boundary treatment

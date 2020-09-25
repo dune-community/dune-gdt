@@ -129,6 +129,11 @@ public:
 
   AdvectionDgOperator(ThisType&& source) = default;
 
+  bool linear() const override final
+  {
+    return numerical_flux_->linear();
+  }
+
   using BaseType::append;
 
   /// \name Non-periodic boundary treatment
