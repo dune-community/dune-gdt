@@ -92,7 +92,7 @@ private:
 
 
 /**
- * \brief Interpolates a localizable function within a given space [most general variant].
+ * \brief Interpolates a grid function within a given space [most general variant].
  *
  * Simply uses interpolate() of the target spaces global basis().
  *
@@ -121,7 +121,7 @@ default_interpolation(const XT::Functions::GridFunctionInterface<XT::Grid::extra
 
 
 /**
- * \brief Interpolates a localizable function within a given space [uses target.space().grid_view() as
+ * \brief Interpolates a grid function within a given space [uses target.space().grid_view() as
  *        interpolation_grid_view].
  **/
 template <class GV, size_t r, size_t rC, class R, class V>
@@ -133,7 +133,7 @@ void default_interpolation(const XT::Functions::GridFunctionInterface<XT::Grid::
 
 
 /**
- * \brief Interpolates a localizable function within a given space [creates a suitable target function].
+ * \brief Interpolates a grid function within a given space [creates a suitable target function].
  **/
 template <class VectorType, class GV, size_t r, size_t rC, class R, class IGVT>
 std::enable_if_t<
@@ -151,7 +151,7 @@ default_interpolation(const XT::Functions::GridFunctionInterface<XT::Grid::extra
 
 
 /**
- * \brief Interpolates a localizable function within a given space [creates a suitable target function, uses
+ * \brief Interpolates a grid function within a given space [creates a suitable target function, uses
  *        target_space.grid_view() as interpolation_grid_view].
  **/
 template <class VectorType, class GV, size_t r, size_t rC, class R>
