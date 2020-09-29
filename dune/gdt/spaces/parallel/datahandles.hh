@@ -576,8 +576,10 @@ struct SharedDOFGatherScatter
     bool remote_entity_has_dofs;
     buff.read(remote_entity_has_dofs);
 
+    // LocalView::value_type cannot be bool due to the std::vector specialization, see
+    // https://github.com/dune-community/dune-gdt/issues/192
     for (std::size_t i = 0; i < local_view.size(); ++i) {
-      local_view[i] |= remote_entity_has_dofs;
+      local_view[i] |= static_cast<typename LocalView::value_type>(remote_entity_has_dofs);
     }
     return true;
   }
