@@ -21,6 +21,7 @@
 #include <dune/xt/la/container.hh>
 
 #include <dune/xt/functions/interfaces/grid-function.hh>
+#include <dune/xt/functions/visualization.hh>
 
 #include <dune/gdt/local/discretefunction.hh>
 #include <dune/gdt/discretefunction/dof-vector.hh>
@@ -142,9 +143,9 @@ public:
   using BaseType::visualize_gradient;
 
   /**
-   * \brief Visualizes the function using Dune::XT::Functions::GridFunctionInterface::visualize on the grid view
+   * \brief Visualizes the function using Dune::XT::Functions::visualize on the grid view
    *        associated with the space.
-   * \sa    Dune::XT::Functions::GridFunctionInterface::visualize
+   * \sa    Dune::XT::Functions::visualize
    * \note  Subsampling is enabled by default for functions of order greater than one.
    */
   void visualize(const std::string filename,
@@ -153,13 +154,13 @@ public:
   {
     const bool subsampling =
         param.has_key("subsampling") ? static_cast<bool>(param.get("subsampling")[0]) : (space_.max_polorder() > 1);
-    this->visualize(space_.grid_view(), filename, subsampling, vtk_output_type, param);
+    XT::Functions::visualize(*this, space_.grid_view(), filename, subsampling, vtk_output_type, param);
   }
 
   /**
-   * \brief Visualizes the function using Dune::XT::Functions::GridFunctionInterface::visualize on the grid view
+   * \brief Visualizes the gradient of the function using Dune::XT::Functions::visualize_gradient on the grid view
    *        associated with the space.
-   * \sa    Dune::XT::Functions::GridFunctionInterface::visualize
+   * \sa    Dune::XT::Functions::visualize_gradient
    * \note  Subsampling is enabled by default for functions of order greater than one.
    */
   void visualize_gradient(const std::string filename,
@@ -168,7 +169,7 @@ public:
   {
     const bool subsampling =
         param.has_key("subsampling") ? static_cast<bool>(param.get("subsampling")[0]) : (space_.max_polorder() > 1);
-    this->visualize_gradient(space_.grid_view(), filename, subsampling, vtk_output_type, param);
+    XT::Functions::visualize_gradient(*this, space_.grid_view(), filename, subsampling, vtk_output_type, param);
   }
 
 protected:
