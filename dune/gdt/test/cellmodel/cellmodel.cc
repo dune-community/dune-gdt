@@ -1172,7 +1172,7 @@ void CellModelSolver::get_deim_entities(const MapperInterface<PGV>& mapper,
 
 void CellModelSolver::get_unique_deim_dofs(std::vector<size_t>& unique_range_dofs,
                                            const std::vector<size_t>& range_dofs,
-                                           const size_t DXTC_DEBUG_ONLY(max_dof_value)) const
+                                           DXTC_DEBUG_ONLY const size_t max_dof_value) const
 {
   unique_range_dofs = range_dofs;
   std::sort(unique_range_dofs.begin(), unique_range_dofs.end());
