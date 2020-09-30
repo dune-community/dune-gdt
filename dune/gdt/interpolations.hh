@@ -53,7 +53,7 @@ interpolate(const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_
             const GridView<IGVT>& interpolation_grid_view)
 {
   auto target_function = make_discrete_function<VectorType>(target_space);
-  if (target.space().type() == SpaceType::raviart_thomas)
+  if (target_space.type() == SpaceType::raviart_thomas)
     raviart_thomas_interpolation(source, target_function, interpolation_grid_view);
   else
     default_interpolation(source, target_function, interpolation_grid_view);
@@ -67,10 +67,10 @@ interpolate(const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_
             const SpaceInterface<GV, r, rC, R>& target_space)
 {
   auto target_function = make_discrete_function<VectorType>(target_space);
-  if (target.space().type() == SpaceType::raviart_thomas)
-    raviart_thomas_interpolation(source, target_function, target.space().grid_view());
+  if (target_space.type() == SpaceType::raviart_thomas)
+    raviart_thomas_interpolation(source, target_function, target_space.grid_view());
   else
-    default_interpolation(source, target_function, target.space().grid_view());
+    default_interpolation(source, target_function, target_space.grid_view());
   return target_function;
 }
 
