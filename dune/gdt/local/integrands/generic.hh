@@ -62,11 +62,13 @@ public:
     return std::make_unique<ThisType>(*this);
   }
 
+protected:
   void post_bind(const E& ele) override final
   {
     post_bind_(ele);
   }
 
+public:
   int order(const LocalTestBasisType& basis, const XT::Common::Parameter& param = {}) const override final
   {
     return order_(basis, this->parse_parameter(param));
@@ -150,11 +152,13 @@ public:
     return std::make_unique<ThisType>(*this);
   }
 
+protected:
   void post_bind(const E& ele) override final
   {
     post_bind_(ele);
   }
 
+public:
   int order(const LocalTestBasisType& test_basis,
             const LocalAnsatzBasisType& ansatz_basis,
             const XT::Common::Parameter& param = {}) const override final
@@ -192,6 +196,88 @@ private:
 }; // class GenericLocalBinaryElementIntegrand
 
 
+template <class I, size_t r = 1, size_t rC = 1, class RF = double, class F = double>
+class GenericLocalUnaryIntersectionIntegrand : public LocalUnaryIntersectionIntegrandInterface<I, r, rC, RF, F>
+{
+  using ThisType = GenericLocalUnaryIntersectionIntegrand;
+  using BaseType = LocalUnaryIntersectionIntegrandInterface<I, r, rC, RF, F>;
+
+public:
+  using typename BaseType::DomainType;
+  using typename BaseType::LocalTestBasisType;
+
+  using GenericOrderFunctionType =
+      std::function<int(const LocalTestBasisType& /*basis*/, const XT::Common::Parameter& /*param*/)>;
+  using GenericEvaluateFunctionType = std::function<void(const LocalTestBasisType& /*basis*/,
+                                                         const DomainType& /*point_in_reference_intersection*/,
+                                                         DynamicVector<F>& /*result*/,
+                                                         const XT::Common::Parameter& /*param*/)>;
+  using GenericPostBindFunctionType = std::function<void(const I& /*intersection*/)>;
+
+  GenericLocalUnaryIntersectionIntegrand(
+      GenericOrderFunctionType order_function,
+      GenericEvaluateFunctionType evaluate_function,
+      GenericPostBindFunctionType post_bind_function = [](const I&) {},
+      bool use_inside_bases = true,
+      const XT::Common::ParameterType& param_type = {})
+    : BaseType(param_type)
+    , order_(order_function)
+    , evaluate_(evaluate_function)
+    , post_bind_(post_bind_function)
+    , inside_(use_inside_bases)
+  {}
+
+  GenericLocalUnaryIntersectionIntegrand(const ThisType& other) = default;
+
+  std::unique_ptr<BaseType> copy_as_unary_intersection_integrand() const override final
+  {
+    return std::make_unique<ThisType>(*this);
+  }
+
+protected:
+  void post_bind(const I& intersect) override final
+  {
+    post_bind_(intersect);
+  }
+
+public:
+  bool inside() const override final
+  {
+    return inside_;
+  }
+
+  int order(const LocalTestBasisType& basis, const XT::Common::Parameter& param = {}) const override final
+  {
+    return order_(basis, this->parse_parameter(param));
+  }
+
+  using BaseType::evaluate;
+
+  void evaluate(const LocalTestBasisType& basis,
+                const DomainType& point_in_reference_intersection,
+                DynamicVector<F>& result,
+                const XT::Common::Parameter& param = {}) const override final
+  {
+    // prepare storage
+    const size_t size = basis.size(param);
+    if (result.size() < size)
+      result.resize(size);
+    // evaluate
+    evaluate_(basis, point_in_reference_intersection, result, this->parse_parameter(param));
+    // check
+    DUNE_THROW_IF(result.size() < size,
+                  Exceptions::integrand_error,
+                  "basis.size(param) = " << size << "\n   result.size() = " << result.size());
+  } // ... evaluate(...)
+
+private:
+  const GenericOrderFunctionType order_;
+  const GenericEvaluateFunctionType evaluate_;
+  const GenericPostBindFunctionType post_bind_;
+  const bool inside_;
+}; // class GenericLocalUnaryIntersectionIntegrand
+
+
 template <class I,
           size_t t_r = 1,
           size_t t_rC = 1,
@@ -219,7 +305,7 @@ public:
                                                          const DomainType& /*point_in_reference_intersection*/,
                                                          DynamicMatrix<F>& /*result*/,
                                                          const XT::Common::Parameter& /*param*/)>;
-  using GenericPostBindFunctionType = std::function<void(const I& /*ele*/)>;
+  using GenericPostBindFunctionType = std::function<void(const I& /*intersection*/)>;
 
   GenericLocalBinaryIntersectionIntegrand(
       GenericOrderFunctionType order_function,
@@ -234,13 +320,7 @@ public:
     , inside_(use_inside_bases)
   {}
 
-  GenericLocalBinaryIntersectionIntegrand(const ThisType& other)
-    : BaseType(other)
-    , order_(other.order_)
-    , evaluate_(other.evaluate_)
-    , post_bind_(other.post_bind_)
-    , inside_(other.inside_)
-  {}
+  GenericLocalBinaryIntersectionIntegrand(const ThisType& other) = default;
 
   std::unique_ptr<BaseType> copy_as_binary_intersection_integrand() const override final
   {
@@ -271,7 +351,8 @@ public:
                 const DomainType& point_in_reference_intersection,
                 DynamicMatrix<F>& result,
                 const XT::Common::Parameter& param = {}) const override final
-  { // prepare storage
+  {
+    // prepare storage
     const size_t rows = test_basis.size(param);
     const size_t cols = ansatz_basis.size(param);
     if (result.rows() < rows || result.cols() < cols)
