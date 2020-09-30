@@ -10,22 +10,22 @@
 #ifndef DUNE_GDT_MOMENTMODELS_BASISFUNCTIONS_INTERFACE_HH
 #define DUNE_GDT_MOMENTMODELS_BASISFUNCTIONS_INTERFACE_HH
 
-#include <memory>
-#include <vector>
-#include <string>
-
-#include <dune/xt/common/math.hh>
-#include <dune/xt/common/parallel/threadmanager.hh>
-#include <dune/xt/common/string.hh>
-#include <dune/xt/common/tuple.hh>
-
 #if HAVE_DUNE_XT_DATA
+
+#  include <memory>
+#  include <vector>
+#  include <string>
+
+#  include <dune/xt/common/math.hh>
+#  include <dune/xt/common/parallel/threadmanager.hh>
+#  include <dune/xt/common/string.hh>
+#  include <dune/xt/common/tuple.hh>
+
 #  include <dune/xt/data/quadratures.hh>
 #  include <dune/xt/data/spherical_quadratures.hh>
-#endif
 
-#include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/test/momentmodels/triangulation.hh>
+#  include <dune/gdt/discretefunction/default.hh>
+#  include <dune/gdt/test/momentmodels/triangulation.hh>
 
 namespace Dune {
 namespace GDT {
@@ -37,12 +37,12 @@ Dune::DynamicMatrix<FieldType> tridiagonal_matrix_inverse(const DynamicMatrix<Fi
 {
   typedef Dune::DynamicMatrix<FieldType> MatrixType;
   size_t cols = rows;
-#ifndef NDEBUG
+#  ifndef NDEBUG
   for (size_t rr = 0; rr < rows; ++rr)
     for (size_t cc = 0; cc < cols; ++cc)
       if ((cc > rr + 1 || cc + 1 < rr) && XT::Common::FloatCmp::ne(matrix[rr][cc], 0.))
         DUNE_THROW(XT::Common::Exceptions::you_are_using_this_wrong, "Matrix has to be tridiagonal!");
-#endif // NDEBUG
+#  endif // NDEBUG
   MatrixType ret(rows, rows, 0);
   Dune::FieldVector<FieldType, rows + 1> a(0), b(0), c(0), theta(0);
   Dune::FieldVector<FieldType, rows + 2> phi(0);
@@ -76,12 +76,12 @@ Dune::DynamicMatrix<FieldType> tridiagonal_matrix_inverse(const DynamicMatrix<Fi
       }
     } // jj
   } // ii
-#ifndef NDEBUG
+#  ifndef NDEBUG
   for (size_t ii = 0; ii < rows; ++ii)
     for (size_t jj = 0; jj < cols; ++jj)
       if (std::isnan(ret[ii][jj]) || std::isinf(ret[ii][jj]))
         DUNE_THROW(Dune::MathError, "Inversion of triangular matrix failed!");
-#endif
+#  endif
   return ret;
 } // ... tridiagonal_matrix_inverse(...)
 
@@ -412,7 +412,7 @@ public:
                                                                               const size_t additional_refinements = 0)
   {
     QuadraturesType ret(num_intervals);
-#if HAVE_DUNE_XT_DATA
+#  if HAVE_DUNE_XT_DATA
     const auto quads_per_interval = std::pow(2, additional_refinements);
     const auto quadrature_boundaries = create_1d_partitioning(num_intervals * quads_per_interval);
     // quadrature on reference interval [0, 1]
@@ -432,21 +432,21 @@ public:
         } // quad_points
       } // jj
     } // quad_cells
-#else // HAVE_DUNE_XT_DATA
+#  else // HAVE_DUNE_XT_DATA
     DUNE_THROW(XT::Common::Exceptions::dependency_missing, "dune-xt-data");
-#endif
+#  endif
     return ret;
   }
 
   template <size_t dD = dimDomain>
   static std::enable_if_t<dD == 3, QuadraturesType> lebedev_quadrature(const size_t quad_order)
   {
-#if HAVE_DUNE_XT_DATA
+#  if HAVE_DUNE_XT_DATA
     return QuadraturesType(1, XT::Data::LebedevQuadrature<DomainFieldType, true>::get(quad_order));
-#else
+#  else
     DUNE_THROW(XT::Common::Exceptions::dependency_missing, "dune-xt-data");
     return QuadraturesType();
-#endif
+#  endif
   }
 
   static RangeFieldType unit_ball_volume_exact()
@@ -466,12 +466,12 @@ public:
   RangeFieldType unit_ball_volume_quad() const
   {
     RangeFieldType ret(0.);
-#if HAVE_DUNE_XT_DATA
+#  if HAVE_DUNE_XT_DATA
     for (const auto& quad_point : XT::Data::merged_quadrature(quadratures_))
       ret += quad_point.weight();
-#else
+#  else
     DUNE_THROW(XT::Common::Exceptions::dependency_missing, "dune-xt-data");
-#endif
+#  endif
     return ret;
   }
 
@@ -525,14 +525,14 @@ protected:
                                                                     const size_t num_threads)
   {
     std::vector<MergedQuadratureIterator> ret(num_threads + 1);
-#if HAVE_DUNE_XT_DATA
+#  if HAVE_DUNE_XT_DATA
     const size_t size = XT::Data::merged_quadrature(quadratures).size();
     for (size_t ii = 0; ii < num_threads; ++ii)
       ret[ii] = XT::Data::merged_quadrature(quadratures).iterator(size / num_threads * ii);
     ret[num_threads] = XT::Data::merged_quadrature(quadratures).iterator(size);
-#else
+#  else
     DUNE_THROW(XT::Common::Exceptions::dependency_missing, "dune-xt-data");
-#endif
+#  endif
     return ret;
   }
 
@@ -541,7 +541,7 @@ protected:
                                    const size_t v_index,
                                    const bool reflecting = false) const
   {
-#if HAVE_DUNE_XT_DATA
+#  if HAVE_DUNE_XT_DATA
     const size_t num_threads =
         std::min(XT::Common::threadManager().max_threads(), XT::Data::merged_quadrature(quadratures).size());
     const auto decomposition = create_decomposition(quadratures, num_threads);
@@ -563,9 +563,9 @@ protected:
     matrix *= 0.;
     for (size_t ii = 0; ii < num_threads; ++ii)
       matrix += local_matrices[ii];
-#else
+#  else
     DUNE_THROW(XT::Common::Exceptions::dependency_missing, "dune-xt-data");
-#endif
+#  endif
   } // void parallel_quadrature(...)
 
   virtual void calculate_in_thread(MatrixType& local_matrix,
@@ -600,7 +600,7 @@ protected:
   virtual DynamicRangeType integrated_initializer(const QuadraturesType& quadratures) const
   {
     DynamicRangeType ret(dimRange, 0.);
-#if HAVE_DUNE_XT_DATA
+#  if HAVE_DUNE_XT_DATA
     const size_t num_threads =
         std::min(XT::Common::threadManager().max_threads(), XT::Data::merged_quadrature(quadratures).size());
     const auto decomposition = create_decomposition(quadratures, num_threads);
@@ -618,9 +618,9 @@ protected:
     // add local matrices
     for (size_t ii = 0; ii < num_threads; ++ii)
       ret += local_vectors[ii];
-#else
+#  else
     DUNE_THROW(XT::Common::Exceptions::dependency_missing, "dune-xt-data");
-#endif
+#  endif
     return ret;
   }
 
@@ -657,4 +657,5 @@ const size_t
 } // namespace GDT
 } // namespace Dune
 
+#endif // HAVE_DUNE_XT_DATA
 #endif // DUNE_GDT_MOMENTMODELS_BASISFUNCTIONS_INTERFACE_HH

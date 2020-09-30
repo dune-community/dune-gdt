@@ -11,6 +11,8 @@
 #ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_LEGENDRE_HH
 #define DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_LEGENDRE_HH
 
+#if HAVE_DUNE_XT_DATA
+
 #include "interface.hh"
 
 namespace Dune {
@@ -262,4 +264,5 @@ private:
 } // namespace GDT
 } // namespace Dune
 
+#endif // HAVE_DUNE_XT_DATA
 #endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_LEGENDRE_HH
