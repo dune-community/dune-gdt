@@ -18,6 +18,7 @@
 #include <dune/xt/la/container/istl.hh>
 
 #include <dune/xt/grid/entity.hh>
+#include <dune/xt/grid/integrals.hh>
 #include <dune/xt/grid/intersection.hh>
 #include <dune/xt/grid/boundaryinfo/normalbased.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
@@ -139,27 +140,21 @@ struct OswaldInterpolationOperatorOnLeafViewTest : public ::testing::Test
               (d > 1) ? XT::Grid::diameter(intersection)
                       : (std::min(XT::Grid::diameter(inside_element), XT::Grid::diameter(outside_element)));
           // compute L2 jump norm
-          const auto l2_jump_norm2 =
-              LocalIntersectionIntegralFunctional<I>(
-                  [](const auto& inside_function, const auto& outside_function, const auto& param) {
-                    return std::max(inside_function.order(param), outside_function.order(param));
-                  },
-                  [&](const auto& inside_basis,
-                      const auto& outside_basis,
-                      const auto& point_in_reference_intersection,
-                      auto& result,
-                      const auto& param) {
-                    const auto point_in_inside_reference_element =
-                        intersection.geometryInInside().global(point_in_reference_intersection);
-                    const auto point_in_outside_reference_element =
-                        intersection.geometryInOutside().global(point_in_reference_intersection);
-                    const auto inside_values = inside_basis.evaluate_set(point_in_inside_reference_element, param);
-                    const auto outside_values = outside_basis.evaluate_set(point_in_outside_reference_element, param);
-                    for (size_t ii = 0; ii < inside_basis.size(param); ++ii)
-                      for (size_t jj = 0; jj < outside_basis.size(param); ++jj)
-                        result[ii][jj] = std::pow(inside_values[ii] - outside_values[ii], 2);
-                  })
-                  .apply(intersection, *difference_inside, *difference_outside)[0][0];
+          const auto l2_jump_norm2 = XT::Grid::intersection_integral(
+              intersection,
+              /*function=*/
+              [&](const auto& point_in_reference_intersection) {
+                const auto point_in_inside_reference_element =
+                    intersection.geometryInInside().global(point_in_reference_intersection);
+                const auto point_in_outside_reference_element =
+                    intersection.geometryInOutside().global(point_in_reference_intersection);
+                const auto inside_values = difference_inside->evaluate_set(point_in_inside_reference_element);
+                const auto outside_values = difference_outside->evaluate_set(point_in_outside_reference_element);
+                assert(inside_values.size() == 1);
+                assert(outside_values.size() == 1);
+                return std::pow(inside_values[0] - outside_values[0], 2);
+              },
+              /*order=*/2 * std::max(difference_inside->order(), difference_outside->order()));
           // associate intersection corners with global vertex IDs
           auto local_vertex_indicators_inside = vertex_indicators.local_discrete_function(inside_element);
           const auto& inside_reference_element = ReferenceElements<D, d>::general(inside_element.type());
@@ -188,23 +183,17 @@ struct OswaldInterpolationOperatorOnLeafViewTest : public ::testing::Test
           const auto intersection_diameter =
               (d > 1) ? XT::Grid::diameter(intersection) : XT::Grid::diameter(inside_element);
           // compute L2 jump norm
-          const auto l2_jump_norm2 =
-              LocalIntersectionIntegralFunctional<I>(
-                  [](const auto& inside_function, const auto& /*outside_function*/, const auto& param) {
-                    return inside_function.order(param);
-                  },
-                  [&](const auto& inside_basis,
-                      const auto& /*outside_basis*/,
-                      const auto& point_in_reference_intersection,
-                      auto& result,
-                      const auto& param) {
-                    const auto point_in_inside_reference_element =
-                        intersection.geometryInInside().global(point_in_reference_intersection);
-                    const auto inside_values = inside_basis.evaluate_set(point_in_inside_reference_element, param);
-                    for (size_t ii = 0; ii < inside_basis.size(param); ++ii)
-                      result[ii][0] = std::pow(inside_values[ii], 2);
-                  })
-                  .apply(intersection, *difference_inside, *difference_inside)[0][0];
+          const auto l2_jump_norm2 = XT::Grid::intersection_integral(
+              intersection,
+              /*function=*/
+              [&](const auto& point_in_reference_intersection) {
+                const auto point_in_inside_reference_element =
+                    intersection.geometryInInside().global(point_in_reference_intersection);
+                const auto inside_values = difference_inside->evaluate_set(point_in_inside_reference_element);
+                assert(inside_values.size() == 1);
+                return std::pow(inside_values[0], 2);
+              },
+              /*order=*/2 * difference_inside->order());
           // associate intersection corners with global vertex IDs
           auto local_vertex_indicators_inside = vertex_indicators.local_discrete_function(inside_element);
           const auto& inside_reference_element = ReferenceElements<D, d>::general(inside_element.type());
@@ -274,27 +263,21 @@ struct OswaldInterpolationOperatorOnLeafViewTest : public ::testing::Test
               (d > 1) ? XT::Grid::diameter(intersection)
                       : (std::min(XT::Grid::diameter(inside_element), XT::Grid::diameter(outside_element)));
           // compute L2 jump norm
-          const auto l2_jump_norm2 =
-              LocalIntersectionIntegralFunctional<I>(
-                  [](const auto& inside_function, const auto& outside_function, const auto& param) {
-                    return std::max(inside_function.order(param), outside_function.order(param));
-                  },
-                  [&](const auto& inside_basis,
-                      const auto& outside_basis,
-                      const auto& point_in_reference_intersection,
-                      auto& result,
-                      const auto& param) {
-                    const auto point_in_inside_reference_element =
-                        intersection.geometryInInside().global(point_in_reference_intersection);
-                    const auto point_in_outside_reference_element =
-                        intersection.geometryInOutside().global(point_in_reference_intersection);
-                    const auto inside_values = inside_basis.evaluate_set(point_in_inside_reference_element, param);
-                    const auto outside_values = outside_basis.evaluate_set(point_in_outside_reference_element, param);
-                    for (size_t ii = 0; ii < inside_basis.size(param); ++ii)
-                      for (size_t jj = 0; jj < outside_basis.size(param); ++jj)
-                        result[ii][jj] = std::pow(inside_values[ii] - outside_values[ii], 2);
-                  })
-                  .apply(intersection, *difference_inside, *difference_outside)[0][0];
+          const auto l2_jump_norm2 = XT::Grid::intersection_integral(
+              intersection,
+              /*function=*/
+              [&](const auto& point_in_reference_intersection) {
+                const auto point_in_inside_reference_element =
+                    intersection.geometryInInside().global(point_in_reference_intersection);
+                const auto point_in_outside_reference_element =
+                    intersection.geometryInOutside().global(point_in_reference_intersection);
+                const auto inside_values = difference_inside->evaluate_set(point_in_inside_reference_element);
+                const auto outside_values = difference_outside->evaluate_set(point_in_outside_reference_element);
+                assert(inside_values.size() == 1);
+                assert(outside_values.size() == 1);
+                return std::pow(inside_values[0] - outside_values[0], 2);
+              },
+              /*order=*/2 * std::max(difference_inside->order(), difference_outside->order()));
           // associate intersection corners with global vertex IDs
           auto local_vertex_indicators_inside = vertex_indicators.local_discrete_function(inside_element);
           const auto& inside_reference_element = ReferenceElements<D, d>::general(inside_element.type());
@@ -323,23 +306,17 @@ struct OswaldInterpolationOperatorOnLeafViewTest : public ::testing::Test
           const auto intersection_diameter =
               (d > 1) ? XT::Grid::diameter(intersection) : XT::Grid::diameter(inside_element);
           // compute L2 jump norm
-          const auto l2_jump_norm2 =
-              LocalIntersectionIntegralFunctional<I>(
-                  [](const auto& inside_function, const auto& /*outside_function*/, const auto& param) {
-                    return inside_function.order(param);
-                  },
-                  [&](const auto& inside_basis,
-                      const auto& /*outside_basis*/,
-                      const auto& point_in_reference_intersection,
-                      auto& result,
-                      const auto& param) {
-                    const auto point_in_inside_reference_element =
-                        intersection.geometryInInside().global(point_in_reference_intersection);
-                    const auto inside_values = inside_basis.evaluate_set(point_in_inside_reference_element, param);
-                    for (size_t ii = 0; ii < inside_basis.size(param); ++ii)
-                      result[ii][0] = std::pow(inside_values[ii], 2);
-                  })
-                  .apply(intersection, *difference_inside, *difference_inside)[0][0];
+          const auto l2_jump_norm2 = XT::Grid::intersection_integral(
+              intersection,
+              /*function=*/
+              [&](const auto& point_in_reference_intersection) {
+                const auto point_in_inside_reference_element =
+                    intersection.geometryInInside().global(point_in_reference_intersection);
+                const auto inside_values = difference_inside->evaluate_set(point_in_inside_reference_element);
+                assert(inside_values.size() == 1);
+                return std::pow(inside_values[0], 2);
+              },
+              /*order=*/2 * difference_inside->order());
           // associate intersection corners with global vertex IDs
           auto local_vertex_indicators_inside = vertex_indicators.local_discrete_function(inside_element);
           const auto& inside_reference_element = ReferenceElements<D, d>::general(inside_element.type());
