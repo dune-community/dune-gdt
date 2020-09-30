@@ -23,6 +23,7 @@
 #include <dune/xt/grid/layers.hh>
 #include <dune/xt/functions/derivatives.hh>
 #include <dune/xt/functions/interfaces/grid-function.hh>
+#include <dune/xt/functions/visualization.hh>
 
 #include <dune/gdt/functionals/vector-based.hh>
 #include <dune/gdt/local/functionals/integrals.hh>
@@ -133,11 +134,12 @@ protected:
     if (DXTC_TEST_CONFIG_GET("setup.visualize", false)) {
       const std::string prefix = XT::Common::Test::get_unique_test_name() + "_problem_";
       const std::string postfix = "_ref_" + XT::Common::to_string(refinement_level);
-      //      self.diffusion_factor().visualize(current_space.grid_view(), prefix + "diffusion_factor" + postfix);
-      self.diffusion().visualize(current_space.grid_view(), prefix + "diffusion" + postfix);
-      self.force().visualize(current_space.grid_view(), prefix + "force" + postfix);
-      //      self.dirichlet().visualize(current_space.grid_view(), prefix + "dirichlet" + postfix);
-      //      self.neumann().visualize(current_space.grid_view(), prefix + "neumann" + postfix);
+      //      XT::Functions::visualize(self.diffusion_factor(), current_space.grid_view(), prefix + "diffusion_factor" +
+      //      postfix);
+      XT::Functions::visualize(self.diffusion(), current_space.grid_view(), prefix + "diffusion" + postfix);
+      XT::Functions::visualize(self.force(), current_space.grid_view(), prefix + "force" + postfix);
+      //      XT::Functions::visualize(self.dirichlet(), current_space.grid_view(), prefix + "dirichlet" + postfix);
+      //      XT::Functions::visualize(self.neumann(), current_space.grid_view(), prefix + "neumann" + postfix);
     }
     Timer timer;
     const auto solution = make_discrete_function(current_space, self.solve(current_space));
