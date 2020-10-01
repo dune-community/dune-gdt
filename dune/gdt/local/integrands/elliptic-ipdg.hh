@@ -355,7 +355,7 @@ namespace internal {
 template <Method method>
 struct method_dependent_typename
 {
-  typedef void type;
+  using type = void;
 };
 
 
@@ -1203,17 +1203,17 @@ class BoundaryRHS : public LocalFaceIntegrandInterface<internal::BoundaryRHSTrai
                                                                                    method>,
                                                        1>
 {
-  typedef LocalEllipticIntegrand<DiffusionFactorImp, DiffusionTensorImp> EllipticType;
-  typedef BoundaryRHS<DirichletImp, DiffusionFactorImp, DiffusionTensorImp, method> ThisType;
+  using EllipticType = LocalEllipticIntegrand<DiffusionFactorImp, DiffusionTensorImp>;
+  using ThisType = BoundaryRHS<DirichletImp, DiffusionFactorImp, DiffusionTensorImp, method>;
 
 public:
-  typedef internal::BoundaryRHSTraits<DirichletImp, DiffusionFactorImp, DiffusionTensorImp, method> Traits;
-  typedef typename Traits::DirichletType DirichletType;
-  typedef typename Traits::DiffusionFactorType DiffusionFactorType;
-  typedef typename Traits::DiffusionTensorType DiffusionTensorType;
-  typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
-  typedef typename Traits::EntityType EntityType;
-  typedef typename Traits::DomainFieldType DomainFieldType;
+  using Traits = internal::BoundaryRHSTraits<DirichletImp, DiffusionFactorImp, DiffusionTensorImp, method>;
+  using DirichletType = typename Traits::DirichletType;
+  using DiffusionFactorType = typename Traits::DiffusionFactorType;
+  using DiffusionTensorType = typename Traits::DiffusionTensorType;
+  using LocalfunctionTupleType = typename Traits::LocalfunctionTupleType;
+  using EntityType = typename Traits::EntityType;
+  using DomainFieldType = typename Traits::DomainFieldType;
   static constexpr size_t d = Traits::d;
 
   BoundaryRHS(const DirichletType& dirichlet,
@@ -1399,7 +1399,7 @@ public:
       const Dune::FieldVector<DomainFieldType, d - 1>& local_point,
       Dune::DynamicVector<R>& ret) const
   {
-    typedef XT::Common::FieldMatrix<R, d, d> TensorType;
+    using TensorType = XT::Common::FieldMatrix<R, d, d>;
     // clear ret
     ret *= 0.0;
     // get local point (which is in intersection coordinates) in entity coordinates

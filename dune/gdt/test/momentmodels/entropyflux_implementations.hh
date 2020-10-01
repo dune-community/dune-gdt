@@ -3292,8 +3292,8 @@ public:
                 : tau_;
     thread_local SparseMatrixType H(basis_dimRange, basis_dimRange, pattern_, 0);
 #      if HAVE_EIGEN
-    typedef ::Eigen::SparseMatrix<RangeFieldType, ::Eigen::ColMajor> ColMajorBackendType;
-    typedef ::Eigen::SimplicialLDLT<ColMajorBackendType> SolverType;
+    using ColMajorBackendType = ::Eigen::SparseMatrix<RangeFieldType, ::Eigen::ColMajor>;
+    using SolverType = ::Eigen::SimplicialLDLT<ColMajorBackendType>;
     thread_local SolverType solver;
     ColMajorBackendType colmajor_copy(H.backend());
 #      else // HAVE_EIGEN
@@ -3537,9 +3537,9 @@ public:
 #      if HAVE_EIGEN
     thread_local VectorType u_vec(basis_dimRange, 0., 0);
     std::copy(u.begin(), u.end(), u_vec.begin());
-    typedef ::Eigen::SparseMatrix<RangeFieldType, ::Eigen::ColMajor> ColMajorBackendType;
+    using ColMajorBackendType = ::Eigen::SparseMatrix<RangeFieldType, ::Eigen::ColMajor>;
     ColMajorBackendType colmajor_copy(H.backend());
-    typedef ::Eigen::SimplicialLDLT<ColMajorBackendType> SolverType;
+    using SolverType = ::Eigen::SimplicialLDLT<ColMajorBackendType>;
     SolverType solver;
     solver.analyzePattern(colmajor_copy);
     solver.factorize(colmajor_copy);
@@ -3590,9 +3590,9 @@ public:
   {
     thread_local VectorType solution(basis_dimRange, 0., 0), tmp_rhs(basis_dimRange, 0., 0);
 #      if HAVE_EIGEN
-    typedef ::Eigen::SparseMatrix<RangeFieldType, ::Eigen::ColMajor> ColMajorBackendType;
+    using ColMajorBackendType = ::Eigen::SparseMatrix<RangeFieldType, ::Eigen::ColMajor>;
     ColMajorBackendType colmajor_copy(H.backend());
-    typedef ::Eigen::SimplicialLDLT<ColMajorBackendType> SolverType;
+    using SolverType = ::Eigen::SimplicialLDLT<ColMajorBackendType>;
     SolverType solver;
     solver.analyzePattern(colmajor_copy);
     solver.factorize(colmajor_copy);

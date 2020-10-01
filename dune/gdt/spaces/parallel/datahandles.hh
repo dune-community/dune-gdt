@@ -57,13 +57,13 @@ private:
   }
 
 public:
-  typedef E DataType;
+  using DataType = E;
 
   // Wrap the grid's communication buffer to enable sending leaf ordering sizes along with the data
   static constexpr bool wrap_buffer = true;
 
   // export original data type to fix up size information forwarded to standard gather / scatter functors
-  typedef E OriginalDataType;
+  using OriginalDataType = E;
 
   template <class GV, size_t r, size_t rD, class R>
   bool contains(const SpaceInterface<GV, r, rD, R>& space, int /*dim*/, int codim) const
@@ -90,7 +90,7 @@ public:
 template <typename E>
 struct EntityDataCommunicationDescriptor
 {
-  typedef E DataType;
+  using DataType = E;
   // Data is per entity, so we don't need to send leaf ordering size and thus can avoid wrapping the
   // grid's communication buffer
   static constexpr bool wrap_buffer = false;
@@ -216,7 +216,7 @@ class DataGatherScatter
 {
 
 public:
-  typedef std::size_t size_t;
+  using size_t = std::size_t;
 
   template <typename MessageBuffer, typename Entity, typename LocalView>
   bool gather(MessageBuffer& buff, const Entity& /*e*/, const LocalView& local_view) const
@@ -268,7 +268,7 @@ class DataEntityGatherScatter
 {
 
 public:
-  typedef std::size_t size_t;
+  using size_t = std::size_t;
 
   template <typename MessageBuffer, typename Entity, typename LocalView>
   bool gather(MessageBuffer& buff, const Entity& e, const LocalView& local_view) const
@@ -340,14 +340,13 @@ class MinDataHandle
                            DataGatherScatter<MinGatherScatter>,
                            DofDataCommunicationDescriptor<typename VectorType::ScalarType>>
 {
-  typedef SpaceDataHandle<GV,
-                          r,
-                          rD,
-                          R,
-                          VectorType,
-                          DataGatherScatter<MinGatherScatter>,
-                          DofDataCommunicationDescriptor<typename VectorType::ScalarType>>
-      BaseType;
+  using BaseType = SpaceDataHandle<GV,
+                                   r,
+                                   rD,
+                                   R,
+                                   VectorType,
+                                   DataGatherScatter<MinGatherScatter>,
+                                   DofDataCommunicationDescriptor<typename VectorType::ScalarType>>;
 
 public:
   MinDataHandle(const SpaceInterface<GV, r, rD, R>& sp, VectorType& v_)
@@ -408,8 +407,8 @@ template <class GV, size_t r, size_t rD, class R, class VectorType>
 class GhostDataHandle
   : public SpaceDataHandle<GV, r, rD, R, VectorType, GhostGatherScatter, EntityDataCommunicationDescriptor<bool>>
 {
-  typedef SpaceDataHandle<GV, r, rD, R, VectorType, GhostGatherScatter, EntityDataCommunicationDescriptor<bool>>
-      BaseType;
+  using BaseType =
+      SpaceDataHandle<GV, r, rD, R, VectorType, GhostGatherScatter, EntityDataCommunicationDescriptor<bool>>;
 
   //  static_assert((std::is_same<typename VectorType::ScalarType, bool>::value),
   //                "GhostDataHandle expects a vector of bool values");
@@ -521,14 +520,13 @@ class DisjointPartitioningDataHandle
                            DisjointPartitioningGatherScatter<typename VectorType::ScalarType>,
                            EntityDataCommunicationDescriptor<typename VectorType::ScalarType>>
 {
-  typedef SpaceDataHandle<GV,
-                          r,
-                          rD,
-                          R,
-                          VectorType,
-                          DisjointPartitioningGatherScatter<typename VectorType::ScalarType>,
-                          EntityDataCommunicationDescriptor<typename VectorType::ScalarType>>
-      BaseType;
+  using BaseType = SpaceDataHandle<GV,
+                                   r,
+                                   rD,
+                                   R,
+                                   VectorType,
+                                   DisjointPartitioningGatherScatter<typename VectorType::ScalarType>,
+                                   EntityDataCommunicationDescriptor<typename VectorType::ScalarType>>;
 
 public:
   //! Creates a new DisjointPartitioningDataHandle.
@@ -597,8 +595,8 @@ template <class GV, size_t r, size_t rD, class R, class VectorType>
 class SharedDOFDataHandle
   : public SpaceDataHandle<GV, r, rD, R, VectorType, SharedDOFGatherScatter, EntityDataCommunicationDescriptor<bool>>
 {
-  typedef SpaceDataHandle<GV, r, rD, R, VectorType, SharedDOFGatherScatter, EntityDataCommunicationDescriptor<bool>>
-      BaseType;
+  using BaseType =
+      SpaceDataHandle<GV, r, rD, R, VectorType, SharedDOFGatherScatter, EntityDataCommunicationDescriptor<bool>>;
 
   //  static_assert((std::is_same<typename VectorType::ScalarType, bool>::value),
   //                "SharedDOFDataHandle expects a vector of bool values");
@@ -640,7 +638,7 @@ class SpaceNeighborDataHandle
   // overhead of invoking the whole SpaceType infrastructure.
 
 public:
-  typedef RankIndex DataType;
+  using DataType = RankIndex;
 
   SpaceNeighborDataHandle(const SpaceInterface<GV, r, rD, R>& space, RankIndex rank, std::set<RankIndex>& neighbors)
     : space_(space)

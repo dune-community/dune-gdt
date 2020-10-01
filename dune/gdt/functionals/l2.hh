@@ -169,7 +169,7 @@ template <class FunctionType,
           class Field = typename Space::RangeFieldType>
 class L2FaceVectorFunctional : public VectorBasedFunctional<Vector, Space, GridLayer, Field>
 {
-  typedef VectorBasedFunctional<Vector, Space, GridLayer, Field> BaseType;
+  using BaseType = VectorBasedFunctional<Vector, Space, GridLayer, Field>;
 
 public:
   using typename BaseType::GridLayerType;

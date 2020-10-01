@@ -33,7 +33,7 @@ public:
   static constexpr size_t num_intervals = size_t(-1);
 
 private:
-  typedef MomentBasisInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols, 1, entropy> BaseType;
+  using BaseType = MomentBasisInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols, 1, entropy>;
 
 public:
   using typename BaseType::DomainType;

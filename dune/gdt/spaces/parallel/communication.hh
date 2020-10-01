@@ -29,7 +29,7 @@ template <class ViewImp,
               typename XT::Grid::extract_grid<ViewImp>::type::CollectiveCommunication>::value>
 struct DofCommunicationChooser
 {
-  typedef Dune::XT::SequentialCommunication Type;
+  using Type = Dune::XT::SequentialCommunication;
 
   static Type* create(const ViewImp& /*gridView*/)
   {

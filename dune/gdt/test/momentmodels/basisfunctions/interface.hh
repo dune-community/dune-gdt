@@ -35,7 +35,7 @@ namespace GDT {
 template <class FieldType, int rows>
 Dune::DynamicMatrix<FieldType> tridiagonal_matrix_inverse(const DynamicMatrix<FieldType>& matrix)
 {
-  typedef Dune::DynamicMatrix<FieldType> MatrixType;
+  using MatrixType = Dune::DynamicMatrix<FieldType>;
   size_t cols = rows;
 #  ifndef NDEBUG
   for (size_t rr = 0; rr < rows; ++rr)

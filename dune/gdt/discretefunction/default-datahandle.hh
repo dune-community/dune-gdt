@@ -33,7 +33,7 @@ public:
   {}
 
   //! export type of data for message buffer
-  typedef typename DiscreteFunctionType::SpaceType::D DataType;
+  using DataType = typename DiscreteFunctionType::SpaceType::D;
 
   //! returns true if data for this codim should be communicated
   bool contains(int /*dim*/, int codim) const
