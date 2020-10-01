@@ -24,6 +24,7 @@
 #include <dune/xt/functions/interfaces/function.hh>
 #include <dune/xt/functions/interfaces/grid-function.hh>
 #include <dune/xt/functions/generic/grid-function.hh>
+#include <dune/xt/functions/visualization.hh>
 
 #include <dune/gdt/operators/interfaces.hh>
 #include <dune/gdt/discretefunction/default.hh>
@@ -364,12 +365,13 @@ public:
   {
     size_t counter = 0;
     for (const auto& pair : solution()) {
-      pair.second->visualize(pair.second->space().grid_view(),
-                             prefix + "_" + Dune::XT::Common::to_string(counter),
-                             false,
-                             VTK::appendedraw,
-                             {},
-                             visualizer);
+      XT::Functions::visualize(*pair.second,
+                               pair.second->space().grid_view(),
+                               prefix + "_" + Dune::XT::Common::to_string(counter),
+                               false,
+                               VTK::appendedraw,
+                               {},
+                               visualizer);
       ++counter;
     }
   }
@@ -465,12 +467,13 @@ public:
   {
     const auto& grid_view = discrete_sol.space().grid_view();
     if (visualize)
-      discrete_sol.visualize(discrete_sol.space().grid_view(),
-                             prefix + "_" + XT::Common::to_string(step),
-                             false,
-                             VTK::appendedraw,
-                             {},
-                             visualizer);
+      XT::Functions::visualize(discrete_sol,
+                               discrete_sol.space().grid_view(),
+                               prefix + "_" + XT::Common::to_string(step),
+                               false,
+                               VTK::appendedraw,
+                               {},
+                               visualizer);
     if (write_discrete)
       write_to_textfile(discrete_sol, grid_view, prefix, step, t, stringifier);
     if (write_exact)

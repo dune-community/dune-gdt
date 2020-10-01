@@ -10,8 +10,8 @@
 
 #if HAVE_DUNE_XT_DATA
 
-#include <dune/gdt/test/momentmodels/kinetictransport/testcases.hh>
-#include <dune/gdt/test/momentmodels/mn-discretization.hh>
+#  include <dune/gdt/test/momentmodels/kinetictransport/testcases.hh>
+#  include <dune/gdt/test/momentmodels/mn-discretization.hh>
 
 using Yasp1 = Dune::YaspGrid<1, Dune::EquidistantOffsetCoordinates<double, 1>>;
 using Yasp2 = Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>;
@@ -20,12 +20,12 @@ using Yasp3 = Dune::YaspGrid<3, Dune::EquidistantOffsetCoordinates<double, 3>>;
 constexpr Dune::GDT::EntropyType entropy = Dune::GDT::EntropyType::BoseEinstein;
 
 using YaspGridTestCasesAll = testing::Types<
-#if HAVE_CLP
+#  if HAVE_CLP
     Dune::GDT::SourceBeamMnTestCase<Yasp1, Dune::GDT::LegendreMomentBasis<double, double, 7, 1, entropy>, false>,
     Dune::GDT::SourceBeamMnTestCase<Yasp1, Dune::GDT::LegendreMomentBasis<double, double, 7, 1, entropy>, true>,
     Dune::GDT::PlaneSourceMnTestCase<Yasp1, Dune::GDT::LegendreMomentBasis<double, double, 7, 1, entropy>, false>,
     Dune::GDT::PlaneSourceMnTestCase<Yasp1, Dune::GDT::LegendreMomentBasis<double, double, 7, 1, entropy>, true>,
-#endif
+#  endif
     Dune::GDT::
         SourceBeamMnTestCase<Yasp1, Dune::GDT::PartialMomentBasis<double, 1, double, 8, 1, 1, 1, entropy>, false>,
     Dune::GDT::SourceBeamMnTestCase<Yasp1, Dune::GDT::PartialMomentBasis<double, 1, double, 8, 1, 1, 1, entropy>, true>,
@@ -37,16 +37,16 @@ using YaspGridTestCasesAll = testing::Types<
         PointSourceMnTestCase<Yasp3, Dune::GDT::HatFunctionMomentBasis<double, 3, double, 0, 1, 3, entropy>, false>,
     Dune::GDT::
         PointSourceMnTestCase<Yasp3, Dune::GDT::HatFunctionMomentBasis<double, 3, double, 0, 1, 3, entropy>, true>
-#if HAVE_CLP
+#  if HAVE_CLP
     ,
     Dune::GDT::PointSourceMnTestCase<Yasp3,
                                      Dune::GDT::RealSphericalHarmonicsMomentBasis<double, double, 2, 3, false, entropy>,
                                      true>
-#endif
-#if HAVE_QHULL
+#  endif
+#  if HAVE_QHULL
     ,
     Dune::GDT::PointSourceMnTestCase<Yasp3, Dune::GDT::PartialMomentBasis<double, 3, double, 0, 1, 3, 1, entropy>, true>
-#endif
+#  endif
     >;
 
 TYPED_TEST_SUITE(HyperbolicMnTest, YaspGridTestCasesAll);

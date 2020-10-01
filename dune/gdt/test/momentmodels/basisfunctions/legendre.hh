@@ -13,7 +13,7 @@
 
 #if HAVE_DUNE_XT_DATA
 
-#include "interface.hh"
+#  include "interface.hh"
 
 namespace Dune {
 namespace GDT {

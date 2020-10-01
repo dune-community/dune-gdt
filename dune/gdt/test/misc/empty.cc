@@ -39,5 +39,5 @@ using E = Grid::extract_entity_t<G>;
 
 GTEST_TEST(empty, main)
 {
-  Functions::GridFunction<E> function({1, [](const auto& x, const auto& param) { return x[1]; }});
+  Functions::GridFunction<E> function({1, [](const auto& x, const auto& /*param*/) { return x[1]; }});
 }
