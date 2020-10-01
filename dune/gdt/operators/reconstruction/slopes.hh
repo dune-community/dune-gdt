@@ -586,7 +586,8 @@ public:
       for (const auto& coeffs : plane_coefficients_) {
         const auto& a = coeffs.first;
         const auto& b = coeffs.second;
-        RangeFieldType theta_li = (b - a * u) / (a * u_bar_minus_u);
+        const auto denominator = a * u_bar_minus_u;
+        RangeFieldType theta_li = XT::Common::is_zero(denominator) ? -1. : (b - a * u) / denominator;
         if (XT::Common::FloatCmp::le(theta_li, 1.))
           theta = std::max(theta, theta_li);
       } // coeffs
@@ -729,7 +730,8 @@ private:
     for (const auto& coeffs : plane_coefficients_[jj]) {
       const auto& a = coeffs.first;
       const auto& b = coeffs.second;
-      RangeFieldType theta_li = (b - a * u) / (a * u_bar_minus_u);
+      const auto denominator = a * u_bar_minus_u;
+      RangeFieldType theta_li = XT::Common::is_zero(denominator) ? -1. : (b - a * u) / denominator;
       if (XT::Common::FloatCmp::le(theta_li, 1.))
         theta = std::max(theta, theta_li);
     } // coeffs

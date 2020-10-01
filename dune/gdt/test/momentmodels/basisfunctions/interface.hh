@@ -516,7 +516,6 @@ protected:
     for (size_t ii = 0; ii < num_threads; ++ii)
       ret[ii] = XT::Data::merged_quadrature(quadratures).iterator(size / num_threads * ii);
     ret[num_threads] = XT::Data::merged_quadrature(quadratures).iterator(size);
-    DUNE_THROW(XT::Common::Exceptions::dependency_missing, "dune-xt-data");
     return ret;
   }
 
