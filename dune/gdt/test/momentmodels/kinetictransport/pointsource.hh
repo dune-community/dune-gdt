@@ -12,7 +12,9 @@
 #ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_POINTSOURCE_HH
 #define DUNE_GDT_HYPERBOLIC_PROBLEMS_POINTSOURCE_HH
 
-#include "base.hh"
+#if HAVE_DUNE_XT_DATA
+
+#  include "base.hh"
 
 namespace Dune {
 namespace GDT {
@@ -142,5 +144,7 @@ protected:
 
 } // namespace GDT
 } // namespace Dune
+
+#endif // HAVE_DUNE_XT_DATA
 
 #endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_POINTSOURCE_HH

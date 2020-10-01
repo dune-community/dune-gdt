@@ -11,20 +11,20 @@
 #ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_PARTIALMOMENTS_HH
 #define DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_PARTIALMOMENTS_HH
 
-
-#if HAVE_QHULL
-#  include <boost/iostreams/stream.hpp>
-#  include <boost/iostreams/device/null.hpp>
+#if HAVE_DUNE_XT_DATA
+#  if HAVE_QHULL
+#    include <boost/iostreams/stream.hpp>
+#    include <boost/iostreams/device/null.hpp>
 //#  include <boost/math/special_functions/lambert_w.hpp>
-#  include <dune/xt/common/disable_warnings.hh>
-#  include <libqhullcpp/Qhull.h>
-#  include <libqhullcpp/QhullFacetList.h>
-#  include <dune/xt/common/reenable_warnings.hh>
-#endif // HAVE_QHULL
+#    include <dune/xt/common/disable_warnings.hh>
+#    include <libqhullcpp/Qhull.h>
+#    include <libqhullcpp/QhullFacetList.h>
+#    include <dune/xt/common/reenable_warnings.hh>
+#  endif // HAVE_QHULL
 
-#include <dune/xt/common/fvector.hh>
+#  include <dune/xt/common/fvector.hh>
 
-#include "interface.hh"
+#  include "interface.hh"
 
 namespace Dune {
 namespace GDT {
@@ -692,7 +692,7 @@ private:
       [[maybe_unused]] std::vector<XT::Common::FieldVector<RangeFieldType, block_size>>& points,
       [[maybe_unused]] const size_t jj) const
   {
-#if HAVE_QHULL
+#  if HAVE_QHULL
     orgQhull::Qhull qhull;
     // ignore output
     boost::iostreams::stream<boost::iostreams::null_sink> null_ostream((boost::iostreams::null_sink()));
@@ -746,9 +746,9 @@ private:
       DUNE_THROW(Dune::MathError, "There should be such a coefficient!");
     block_plane_coefficients.erase(coeff_to_erase_it);
     plane_coefficients_[jj] = block_plane_coefficients;
-#else // HAVE_QHULL
+#  else // HAVE_QHULL
     DUNE_THROW(Dune::NotImplemented, "You are missing Qhull!");
-#endif // HAVE_QHULL
+#  endif // HAVE_QHULL
   }
 
   void
@@ -817,4 +817,5 @@ constexpr size_t
 } // namespace GDT
 } // namespace Dune
 
+#endif // HAVE_DUNE_XT_DATA
 #endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_PARTIALMOMENTS_HH

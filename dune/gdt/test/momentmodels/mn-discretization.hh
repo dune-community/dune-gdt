@@ -8,32 +8,34 @@
 #ifndef DUNE_GDT_TEST_HYPERBOLIC_MN_DISCRETIZATION_HH
 #define DUNE_GDT_TEST_HYPERBOLIC_MN_DISCRETIZATION_HH
 
-#include <chrono>
+#if HAVE_DUNE_XT_DATA
 
-#include <dune/xt/common/parallel/threadmanager.hh>
-#include <dune/xt/common/string.hh>
-#include <dune/xt/test/gtest/gtest.h>
+#  include <chrono>
 
-#include <dune/xt/grid/information.hh>
-#include <dune/xt/grid/gridprovider.hh>
+#  include <dune/xt/common/parallel/threadmanager.hh>
+#  include <dune/xt/common/string.hh>
+#  include <dune/xt/test/gtest/gtest.h>
 
-#include <dune/xt/la/container.hh>
+#  include <dune/xt/grid/information.hh>
+#  include <dune/xt/grid/gridprovider.hh>
 
-#include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/operators/advection-fv-entropybased.hh>
-#include <dune/gdt/operators/advection-fv.hh>
-#include <dune/gdt/interpolations/default.hh>
-#include <dune/gdt/test/momentmodels/entropysolver.hh>
-#include <dune/gdt/local/numerical-fluxes/kinetic.hh>
-#include <dune/gdt/local/operators/advection-fv.hh>
-#include <dune/gdt/spaces/l2/finite-volume.hh>
-#include <dune/gdt/tools/timestepper/fractional-step.hh>
-#include <dune/gdt/tools/timestepper/explicit-rungekutta.hh>
-#include <dune/gdt/tools/timestepper/matrix-exponential-kinetic-isotropic.hh>
+#  include <dune/xt/la/container.hh>
 
-#include <dune/gdt/test/momentmodels/kineticequation.hh>
+#  include <dune/gdt/discretefunction/default.hh>
+#  include <dune/gdt/operators/advection-fv-entropybased.hh>
+#  include <dune/gdt/operators/advection-fv.hh>
+#  include <dune/gdt/interpolations/default.hh>
+#  include <dune/gdt/test/momentmodels/entropysolver.hh>
+#  include <dune/gdt/local/numerical-fluxes/kinetic.hh>
+#  include <dune/gdt/local/operators/advection-fv.hh>
+#  include <dune/gdt/spaces/l2/finite-volume.hh>
+#  include <dune/gdt/tools/timestepper/fractional-step.hh>
+#  include <dune/gdt/tools/timestepper/explicit-rungekutta.hh>
+#  include <dune/gdt/tools/timestepper/matrix-exponential-kinetic-isotropic.hh>
 
-#include "pn-discretization.hh"
+#  include <dune/gdt/test/momentmodels/kineticequation.hh>
+
+#  include "pn-discretization.hh"
 
 template <class GV, class ProblemType, class MapType>
 class BoundaryFluxesFunctor : public Dune::XT::Grid::IntersectionFunctor<GV>
@@ -346,5 +348,7 @@ struct HyperbolicMnTest
     EXPECT_NEAR(ResultsType::linfnorm, linfnorm, ResultsType::linfnorm * tol);
   }
 };
+
+#endif // HAVE_DUNE_XT_DATA
 
 #endif // DUNE_GDT_TEST_HYPERBOLIC_MN_DISCRETIZATION_HH

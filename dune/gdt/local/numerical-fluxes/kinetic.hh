@@ -11,12 +11,14 @@
 #ifndef DUNE_GDT_LOCAL_NUMERICAL_FLUXES_KINETIC_HH
 #define DUNE_GDT_LOCAL_NUMERICAL_FLUXES_KINETIC_HH
 
-#include <dune/xt/la/container.hh>
+#if HAVE_DUNE_XT_DATA
 
-#include <dune/gdt/test/momentmodels/basisfunctions.hh>
-#include <dune/gdt/test/momentmodels/entropyflux.hh>
+#  include <dune/xt/la/container.hh>
 
-#include "interface.hh"
+#  include <dune/gdt/test/momentmodels/basisfunctions.hh>
+#  include <dune/gdt/test/momentmodels/entropyflux.hh>
+
+#  include "interface.hh"
 
 namespace Dune {
 namespace GDT {
@@ -164,5 +166,7 @@ NumericalKineticFlux<I, MomentBasis> make_numerical_kinetic_flux(
 
 } // namespace GDT
 } // namespace Dune
+
+#endif // HAVE_DUNE_XT_DATA
 
 #endif // DUNE_GDT_LOCAL_NUMERICAL_FLUXES_KINETIC_HH

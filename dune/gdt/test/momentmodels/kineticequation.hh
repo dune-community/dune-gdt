@@ -11,10 +11,12 @@
 #ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_KINETICEQUATION_HH
 #define DUNE_GDT_HYPERBOLIC_PROBLEMS_KINETICEQUATION_HH
 
-#include <dune/xt/grid/gridprovider.hh>
+#if HAVE_DUNE_XT_DATA
 
-#include <dune/xt/functions/generic/flux-function.hh>
-#include <dune/xt/functions/generic/function.hh>
+#  include <dune/xt/grid/gridprovider.hh>
+
+#  include <dune/xt/functions/generic/flux-function.hh>
+#  include <dune/xt/functions/generic/function.hh>
 
 namespace Dune {
 namespace GDT {
@@ -98,5 +100,7 @@ protected:
 
 } // namespace GDT
 } // namespace Dune
+
+#endif // HAVE_DUNE_XT_DATA
 
 #endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_KINETICEQUATION_HH

@@ -10,6 +10,8 @@
 #ifndef DUNE_GDT_TEST_STATIONARY_HEAT_EQUATION_OS2015_HH
 #define DUNE_GDT_TEST_STATIONARY_HEAT_EQUATION_OS2015_HH
 
+#include <dune/common/typetraits.hh>
+
 #include <dune/xt/test/gtest/gtest.h>
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/la/container/eye-matrix.hh>
@@ -28,6 +30,8 @@ namespace Dune {
 namespace GDT {
 namespace Test {
 
+
+#if HAVE_DUNE_XT_DATA
 
 /**
  * \brief Problem definition from [1], Section 6.1
@@ -60,12 +64,12 @@ struct OS2015MultiscaleProblem
   {
     if (std::is_same<G, YASP_2D_EQUIDISTANT_OFFSET>::value) {
       return XT::Grid::make_cube_grid<G>({0., 0.}, {5., 1.}, {100u, 20u});
-#if HAVE_DUNE_ALUGRID
+#  if HAVE_DUNE_ALUGRID
     } else if (std::is_same<G, ALU_2D_SIMPLEX_CONFORMING>::value) {
       auto grid = XT::Grid::make_cube_grid<G>({0., 0.}, {5., 1.}, {100u, 20u});
       grid.global_refine(2);
       return grid;
-#endif // HAVE_DUNE_ALUGRID
+#  endif // HAVE_DUNE_ALUGRID
     } else
       EXPECT_TRUE(false) << "Please add a specialization for '" << XT::Common::Typename<G>::value << "'!";
   } // ... make_initial_grid(...)
@@ -139,6 +143,21 @@ protected:
   OS2015MultiscaleProblem<GV> problem;
 }; // struct OS2015MultiscaleTest
 
+#else // HAVE_DUNE_XT_DATA
+
+template <class GV>
+struct OS2015MultiscaleProblem
+{
+  static_assert(Dune::AlwaysFalse<GV>::value, "You are missing dune-xt-data!");
+};
+
+template <class G>
+class OS2015MultiscaleTest : public StationaryDiffusionIpdgEocStudy<G>
+{
+  static_assert(Dune::AlwaysFalse<G>::value, "You are missing dune-xt-data!");
+};
+
+#endif
 
 } // namespace Test
 } // namespace GDT

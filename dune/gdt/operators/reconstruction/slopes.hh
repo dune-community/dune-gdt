@@ -298,6 +298,7 @@ public:
 }; // class SuperbeeSlope
 
 
+#if HAVE_DUNE_XT_DATA
 template <class GV, class MomentBasis>
 class RealizabilityLimiterBase
 {
@@ -521,7 +522,7 @@ private:
 }; // class Dg1dRealizabilityLimitedSlope<...>
 
 
-#if HAVE_QHULL
+#  if HAVE_QHULL
 // Realizability limiter that ensures that the limited values are within the convex hull of the quadrature points. Uses
 // single limiter variable for all components.
 template <class GV,
@@ -741,7 +742,7 @@ private:
   PlaneCoefficientsType plane_coefficients_;
 }; // class DgConvexHullRealizabilityLimitedSlope<...>
 
-#else // HAVE_QHULL
+#  else // HAVE_QHULL
 
 template <class GV,
           class MomentBasis,
@@ -760,9 +761,9 @@ class DgConvexHullRealizabilityLimitedSlopeSlope
 {
   static_assert(Dune::AlwaysFalse<MomentBasis>::value, "You are missing Qhull!");
 };
-#endif // HAVE_QHULL
+#  endif // HAVE_QHULL
 
-#if HAVE_CLP
+#  if HAVE_CLP
 // Characteristic component-wise realizability limiter that ensures positivity of the components of u in
 // noncharacteristic variables by solving a linear program.
 template <class GV,
@@ -1103,7 +1104,7 @@ private:
 template <class GV, class MomentBasis, class EigenVectorWrapperType, class SlopeType>
 constexpr size_t LpConvexhullRealizabilityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType, SlopeType>::dimRange;
 
-#else // HAVE_CLP
+#  else // HAVE_CLP
 
 template <class GV,
           class MomentBasis,
@@ -1123,7 +1124,8 @@ class LpConvexhullRealizabilityLimitedSlope
   static_assert(Dune::AlwaysFalse<MomentBasis>::value, "You are missing Clp!");
 };
 
-#endif // HAVE_CLP
+#  endif // HAVE_CLP
+#endif // HAVE_DUNE_XT_DATA
 
 
 } // namespace GDT

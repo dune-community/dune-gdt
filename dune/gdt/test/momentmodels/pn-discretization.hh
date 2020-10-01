@@ -8,32 +8,34 @@
 #ifndef DUNE_GDT_TEST_HYPERBOLIC_PN_DISCRETIZATION_HH
 #define DUNE_GDT_TEST_HYPERBOLIC_PN_DISCRETIZATION_HH
 
-#include <dune/common/exceptions.hh>
+#if HAVE_DUNE_XT_DATA
 
-#include <dune/xt/common/parallel/threadmanager.hh>
-#include <dune/xt/common/string.hh>
-#include <dune/xt/test/gtest/gtest.h>
+#  include <dune/common/exceptions.hh>
 
-#include <dune/xt/grid/information.hh>
-#include <dune/xt/grid/gridprovider.hh>
+#  include <dune/xt/common/parallel/threadmanager.hh>
+#  include <dune/xt/common/string.hh>
+#  include <dune/xt/test/gtest/gtest.h>
 
-#include <dune/xt/la/container.hh>
+#  include <dune/xt/grid/information.hh>
+#  include <dune/xt/grid/gridprovider.hh>
 
-#include <dune/xt/functions/checkerboard.hh>
+#  include <dune/xt/la/container.hh>
 
-#include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/operators/advection-fv.hh>
-#include <dune/gdt/operators/advection-with-reconstruction.hh>
-#include <dune/gdt/operators/reconstruction/linear.hh>
-#include <dune/gdt/interpolations/default.hh>
-#include <dune/gdt/local/numerical-fluxes/kinetic.hh>
-#include <dune/gdt/local/numerical-fluxes/lax-friedrichs.hh>
-#include <dune/gdt/local/operators/advection-fv.hh>
-#include <dune/gdt/tools/timestepper/fractional-step.hh>
-#include <dune/gdt/tools/timestepper/explicit-rungekutta.hh>
-#include <dune/gdt/tools/timestepper/matrix-exponential-kinetic-isotropic.hh>
+#  include <dune/xt/functions/checkerboard.hh>
 
-#include <dune/gdt/test/momentmodels/kineticequation.hh>
+#  include <dune/gdt/discretefunction/default.hh>
+#  include <dune/gdt/operators/advection-fv.hh>
+#  include <dune/gdt/operators/advection-with-reconstruction.hh>
+#  include <dune/gdt/operators/reconstruction/linear.hh>
+#  include <dune/gdt/interpolations/default.hh>
+#  include <dune/gdt/local/numerical-fluxes/kinetic.hh>
+#  include <dune/gdt/local/numerical-fluxes/lax-friedrichs.hh>
+#  include <dune/gdt/local/operators/advection-fv.hh>
+#  include <dune/gdt/tools/timestepper/fractional-step.hh>
+#  include <dune/gdt/tools/timestepper/explicit-rungekutta.hh>
+#  include <dune/gdt/tools/timestepper/matrix-exponential-kinetic-isotropic.hh>
+
+#  include <dune/gdt/test/momentmodels/kineticequation.hh>
 
 void parse_momentmodel_arguments(int argc,
                                  char** argv,
@@ -172,9 +174,9 @@ struct FvOperatorChooser<false>
   }
 };
 
-#ifndef USE_FULL_LINEAR_RECONSTRUCTION_OPERATOR
-#  define USE_FULL_LINEAR_RECONSTRUCTION_OPERATOR 0
-#endif
+#  ifndef USE_FULL_LINEAR_RECONSTRUCTION_OPERATOR
+#    define USE_FULL_LINEAR_RECONSTRUCTION_OPERATOR 0
+#  endif
 
 template <class TestCaseType>
 struct HyperbolicPnDiscretization
@@ -253,22 +255,22 @@ struct HyperbolicPnDiscretization
     using AdvectionOperatorType = AdvectionFvOperator<MatrixType, GV, dimRange>;
     using EigenvectorWrapperType = typename EigenvectorWrapperChooser<MomentBasis, AnalyticalFluxType>::type;
     using ReconstructionOperatorType =
-#if USE_FULL_LINEAR_RECONSTRUCTION_OPERATOR
+#  if USE_FULL_LINEAR_RECONSTRUCTION_OPERATOR
         LinearReconstructionOperator<AnalyticalFluxType, BoundaryValueType, GV, MatrixType, EigenvectorWrapperType>;
-#else
+#  else
         PointwiseLinearReconstructionOperator<AnalyticalFluxType,
                                               BoundaryValueType,
                                               GV,
                                               VectorType,
                                               EigenvectorWrapperType>;
-#endif
+#  endif
 
     using ReconstructionFvOperatorType =
-#if USE_FULL_LINEAR_RECONSTRUCTION_OPERATOR
+#  if USE_FULL_LINEAR_RECONSTRUCTION_OPERATOR
         AdvectionWithReconstructionOperator<AdvectionOperatorType, ReconstructionOperatorType>;
-#else
+#  else
         AdvectionWithPointwiseReconstructionOperator<AdvectionOperatorType, ReconstructionOperatorType>;
-#endif
+#  endif
     using FvOperatorType =
         std::conditional_t<TestCaseType::reconstruction, ReconstructionFvOperatorType, AdvectionOperatorType>;
     using OperatorTimeStepperType =
@@ -390,5 +392,7 @@ struct HyperbolicPnTest
     EXPECT_NEAR(ResultsType::linfnorm, linfnorm, ResultsType::linfnorm * ResultsType::tol);
   }
 };
+
+#endif // HAVE_DUNE_XT_DATA
 
 #endif // DUNE_GDT_TEST_HYPERBOLIC_PN_DISCRETIZATION_HH

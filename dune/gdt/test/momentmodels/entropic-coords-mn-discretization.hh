@@ -8,44 +8,46 @@
 #ifndef DUNE_GDT_TEST_HYPERBOLIC_ENTROPIC_COORDS_MN_DISCRETIZATION_HH
 #define DUNE_GDT_TEST_HYPERBOLIC_ENTROPIC_COORDS_MN_DISCRETIZATION_HH
 
-#ifndef ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
-#  define ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING 0
-#endif
+#if HAVE_DUNE_XT_DATA
 
-#include <chrono>
+#  ifndef ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+#    define ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING 0
+#  endif
 
-#include <dune/xt/common/string.hh>
-#include <dune/xt/test/gtest/gtest.h>
+#  include <chrono>
 
-#include <dune/xt/grid/information.hh>
-#include <dune/xt/grid/gridprovider.hh>
+#  include <dune/xt/common/string.hh>
+#  include <dune/xt/test/gtest/gtest.h>
 
-#include <dune/xt/la/container.hh>
+#  include <dune/xt/grid/information.hh>
+#  include <dune/xt/grid/gridprovider.hh>
 
-#include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/interpolations/default.hh>
-#include <dune/gdt/local/numerical-fluxes/kinetic.hh>
-#include <dune/gdt/local/operators/advection-fv.hh>
-#include <dune/gdt/local/operators/generic.hh>
-#include <dune/gdt/operators/advection-fv.hh>
-#include <dune/gdt/operators/advection-fv-entropybased.hh>
-#include <dune/gdt/operators/localizable-operator.hh>
-#include <dune/gdt/operators/reconstruction/linear_kinetic.hh>
-#include <dune/gdt/spaces/l2/finite-volume.hh>
-#include <dune/gdt/test/momentmodels/entropyflux_kineticcoords.hh>
-#include <dune/gdt/test/momentmodels/entropyflux.hh>
-#include <dune/gdt/test/momentmodels/entropysolver.hh>
-#include <dune/gdt/test/momentmodels/hessianinverter.hh>
-#include <dune/gdt/test/momentmodels/density_evaluator.hh>
-#include <dune/gdt/test/momentmodels/min_density_setter.hh>
-#include <dune/gdt/tools/timestepper/adaptive-rungekutta-kinetic.hh>
-#include <dune/gdt/tools/timestepper/explicit-rungekutta.hh>
-#include <dune/gdt/tools/timestepper/fractional-step.hh>
-#include <dune/gdt/tools/timestepper/matrix-exponential-kinetic-isotropic.hh>
+#  include <dune/xt/la/container.hh>
 
-#include <dune/gdt/test/momentmodels/kineticequation.hh>
+#  include <dune/gdt/discretefunction/default.hh>
+#  include <dune/gdt/interpolations/default.hh>
+#  include <dune/gdt/local/numerical-fluxes/kinetic.hh>
+#  include <dune/gdt/local/operators/advection-fv.hh>
+#  include <dune/gdt/local/operators/generic.hh>
+#  include <dune/gdt/operators/advection-fv.hh>
+#  include <dune/gdt/operators/advection-fv-entropybased.hh>
+#  include <dune/gdt/operators/localizable-operator.hh>
+#  include <dune/gdt/operators/reconstruction/linear_kinetic.hh>
+#  include <dune/gdt/spaces/l2/finite-volume.hh>
+#  include <dune/gdt/test/momentmodels/entropyflux_kineticcoords.hh>
+#  include <dune/gdt/test/momentmodels/entropyflux.hh>
+#  include <dune/gdt/test/momentmodels/entropysolver.hh>
+#  include <dune/gdt/test/momentmodels/hessianinverter.hh>
+#  include <dune/gdt/test/momentmodels/density_evaluator.hh>
+#  include <dune/gdt/test/momentmodels/min_density_setter.hh>
+#  include <dune/gdt/tools/timestepper/adaptive-rungekutta-kinetic.hh>
+#  include <dune/gdt/tools/timestepper/explicit-rungekutta.hh>
+#  include <dune/gdt/tools/timestepper/fractional-step.hh>
+#  include <dune/gdt/tools/timestepper/matrix-exponential-kinetic-isotropic.hh>
 
-#include "pn-discretization.hh"
+#  include <dune/gdt/test/momentmodels/kineticequation.hh>
+
+#  include "pn-discretization.hh"
 
 template <class GV, class ProblemType, class MapType, class EntropyFluxType>
 class BoundaryFluxesFunctor : public Dune::XT::Grid::IntersectionFunctor<GV>
@@ -219,31 +221,31 @@ struct HyperbolicEntropicCoordsMnDiscretization
     using ReconstructionAdvectionOperatorType =
         AdvectionWithPointwiseReconstructionOperator<AdvectionOperatorType, ReconstructionOperatorType>;
     using FvOperatorType = ReconstructionAdvectionOperatorType;
-#if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+#  if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
     using MasslumpedOperatorType = EntropicCoordinatesMasslumpedOperator<FvOperatorType, ProblemType>;
-#else
+#  else
     using HessianInverterType = EntropicHessianInverter<MomentBasis, SpaceType, slope, MatrixType>;
     using RhsOperatorType = LocalizableOperator<MatrixType, GV, dimRange>;
     using CombinedOperatorType =
         EntropicCoordinatesCombinedOperator<DensityOperatorType, FvOperatorType, RhsOperatorType, HessianInverterType>;
-#endif
+#  endif
 
 
     constexpr TimeStepperMethods time_stepper_type = TimeStepperMethods::bogacki_shampine;
 // constexpr TimeStepperMethods time_stepper_type = TimeStepperMethods::dormand_prince;
-#if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+#  if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
     using TimeStepperType = KineticAdaptiveRungeKuttaTimeStepper<MasslumpedOperatorType,
                                                                  MinDensitySetterType,
                                                                  DiscreteFunctionType,
                                                                  EntropyFluxType,
                                                                  time_stepper_type>;
-#else
+#  else
     using TimeStepperType = KineticAdaptiveRungeKuttaTimeStepper<CombinedOperatorType,
                                                                  MinDensitySetterType,
                                                                  DiscreteFunctionType,
                                                                  EntropyFluxType,
                                                                  time_stepper_type>;
-#endif
+#  endif
 
     // *************** Calculate dx and initial dt **************************************
     // Dune::XT::Grid::Dimensions<GV> dimensions(grid_view);
@@ -322,9 +324,9 @@ struct HyperbolicEntropicCoordsMnDiscretization
     filename += TestCaseType::reconstruction ? "_ord2" : "_ord1";
     filename += "_" + basis_functions->mn_name();
 
-#if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+#  if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
     MasslumpedOperatorType masslumped_operator(fv_operator, problem, dx, boundary_fluxes);
-#else
+#  else
     HessianInverterType hessian_inverter(*analytical_flux, fv_space);
 
     static const RangeType u_iso = basis_functions->u_iso();
@@ -354,14 +356,14 @@ struct HyperbolicEntropicCoordsMnDiscretization
     RhsOperatorType rhs_operator(grid_view, fv_space, fv_space, true);
     rhs_operator.append(GenericLocalElementOperator<VectorType, GV, dimRange>(rhs_func));
     CombinedOperatorType combined_operator(density_operator, fv_operator, rhs_operator, hessian_inverter);
-#endif
+#  endif
 
     // ******************************** do the time steps ***********************************************************
-#if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+#  if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
     TimeStepperType timestepper(masslumped_operator, min_density_setter, *analytical_flux, alpha, true, 1., atol, rtol);
-#else
+#  else
     TimeStepperType timestepper(combined_operator, min_density_setter, *analytical_flux, alpha, true, 1., atol, rtol);
-#endif
+#  endif
 
     auto begin_time = std::chrono::steady_clock::now();
     auto visualizer = std::make_unique<XT::Functions::GenericVisualizer<dimRange, 1, double>>(
@@ -432,11 +434,11 @@ struct HyperbolicEntropicCoordsMnTest
                      DXTC_CONFIG.get("grid_size", ""),
                      DXTC_CONFIG.get("overlap_size", 2),
                      DXTC_CONFIG.get("t_end", TestCaseType::t_end),
-#if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+#  if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
                      DXTC_CONFIG.get("filename", "masslumped"))
-#else
+#  else
                      DXTC_CONFIG.get("filename", "entropic_coords"))
-#endif
+#  endif
                      .first;
     const double l1norm = norms[0];
     const double l2norm = norms[1];
@@ -447,5 +449,7 @@ struct HyperbolicEntropicCoordsMnTest
     EXPECT_NEAR(ResultsType::linfnorm, linfnorm, ResultsType::linfnorm * ResultsType::tol);
   }
 };
+
+#endif // HAVE_DUNE_XT_DATA
 
 #endif // DUNE_GDT_TEST_HYPERBOLIC_ENTROPIC_COORDS_MN_DISCRETIZATION_HH

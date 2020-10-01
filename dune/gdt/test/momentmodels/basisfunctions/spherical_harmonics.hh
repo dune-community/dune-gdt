@@ -11,16 +11,15 @@
 #ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_BASISFUNCTIONS_SPHERICALHARMONICS_HH
 #define DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_BASISFUNCTIONS_SPHERICALHARMONICS_HH
 
-#include <boost/math/special_functions/legendre.hpp>
-#include <boost/math/special_functions/spherical_harmonic.hpp>
-
 #if HAVE_DUNE_XT_DATA
+#  include <boost/math/special_functions/legendre.hpp>
+#  include <boost/math/special_functions/spherical_harmonic.hpp>
+
 #  include <dune/xt/data/coordinates.hh>
-#endif
 
-#include <dune/xt/common/unused.hh>
+#  include <dune/xt/common/unused.hh>
 
-#include "interface.hh"
+#  include "interface.hh"
 
 namespace Dune {
 namespace GDT {
@@ -647,4 +646,5 @@ const size_t RealSphericalHarmonicsMomentBasis<DomainFieldType, RangeFieldType, 
 } // namespace GDT
 } // namespace Dune
 
+#endif // HAVE_DUNE_XT_DATA
 #endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_BASISFUNCTIONS_SPHERICALHARMONICS_HH

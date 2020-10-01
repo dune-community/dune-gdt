@@ -11,23 +11,25 @@
 #ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_KINETICTRANSPORT_TESTCASES_HH
 #define DUNE_GDT_HYPERBOLIC_PROBLEMS_KINETICTRANSPORT_TESTCASES_HH
 
-#ifndef ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
-#  define ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING 0
-#endif
+#if HAVE_DUNE_XT_DATA
 
-#include <dune/grid/yaspgrid.hh>
+#  ifndef ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+#    define ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING 0
+#  endif
 
-#include <dune/gdt/test/momentmodels/basisfunctions.hh>
-#include <dune/gdt/spaces/l2/finite-volume.hh>
-#include <dune/gdt/spaces/l2/discontinuous-lagrange.hh>
-#include <dune/gdt/tools/timestepper/interface.hh>
-#include <dune/gdt/operators/reconstruction/slopes.hh>
+#  include <dune/grid/yaspgrid.hh>
 
-#include "checkerboard.hh"
-#include "planesource.hh"
-#include "pointsource.hh"
-#include "shadow.hh"
-#include "sourcebeam.hh"
+#  include <dune/gdt/test/momentmodels/basisfunctions.hh>
+#  include <dune/gdt/spaces/l2/finite-volume.hh>
+#  include <dune/gdt/spaces/l2/discontinuous-lagrange.hh>
+#  include <dune/gdt/tools/timestepper/interface.hh>
+#  include <dune/gdt/operators/reconstruction/slopes.hh>
+
+#  include "checkerboard.hh"
+#  include "planesource.hh"
+#  include "pointsource.hh"
+#  include "shadow.hh"
+#  include "sourcebeam.hh"
 
 namespace Dune {
 namespace GDT {
@@ -54,11 +56,11 @@ struct QuadratureChooser<LegendreMomentBasis<double, double, order, 1, entropy>,
 template <size_t dimRange, EntropyType entropy>
 struct QuadratureChooser<HatFunctionMomentBasis<double, 1, double, dimRange, 1, 1, entropy>, false>
 {
-#if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+#  if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
   static constexpr size_t quad_order = 0;
-#else
+#  else
   static constexpr size_t quad_order = 15;
-#endif
+#  endif
   static constexpr size_t quad_refinements = 0;
 };
 
@@ -79,11 +81,11 @@ struct QuadratureChooser<RealSphericalHarmonicsMomentBasis<double, double, order
 template <size_t refinements, EntropyType entropy>
 struct QuadratureChooser<HatFunctionMomentBasis<double, 3, double, refinements, 1, 3, entropy>, false>
 {
-#if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+#  if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
   static constexpr size_t quad_order = 0;
-#else
+#  else
   static constexpr size_t quad_order = refinements == 0 ? 18 /*fekete rule number 7*/ : 9 /*fekete rule number 3*/;
-#endif
+#  endif
   static constexpr size_t quad_refinements = 0;
 };
 
@@ -99,7 +101,7 @@ struct QuadratureChooser<PartialMomentBasis<double, 3, double, refinements, 1, 3
 template <class GV, class MomentBasisImp, class AnalyticalFluxType, class DiscreteFunctionType>
 struct RealizabilityLimiterChooser;
 
-#if HAVE_CLP
+#  if HAVE_CLP
 template <class GV, size_t order, class AnalyticalFluxType, class DiscreteFunctionType, EntropyType entropy>
 struct RealizabilityLimiterChooser<GV,
                                    LegendreMomentBasis<double, double, order, 1, entropy>,
@@ -117,11 +119,11 @@ struct RealizabilityLimiterChooser<GV,
     return std::make_unique<SlopeType>(entropy_flux, basis_functions, epsilon);
   }
 };
-#endif
+#  endif
 
-#ifndef USE_LP_POSITIVITY_LIMITER
-#  define USE_LP_POSITIVITY_LIMITER 0
-#endif // USE_LP_POSITIVITY_LIMITER
+#  ifndef USE_LP_POSITIVITY_LIMITER
+#    define USE_LP_POSITIVITY_LIMITER 0
+#  endif // USE_LP_POSITIVITY_LIMITER
 template <class GV, size_t dimRange, class AnalyticalFluxType, class DiscreteFunctionType, EntropyType entropy>
 struct RealizabilityLimiterChooser<GV,
                                    HatFunctionMomentBasis<double, 1, double, dimRange, 1, 1, entropy>,
@@ -131,7 +133,7 @@ struct RealizabilityLimiterChooser<GV,
   using MomentBasis = HatFunctionMomentBasis<double, 1, double, dimRange, 1, 1, entropy>;
   using EntropyFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
 
-#if HAVE_CLP && USE_LP_POSITIVITY_LIMITER
+#  if HAVE_CLP && USE_LP_POSITIVITY_LIMITER
   template <class EigenVectorWrapperType>
   static std::unique_ptr<LpPositivityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType>>
   make_slope(const EntropyFluxType& entropy_flux, const MomentBasis& /*basis_functions*/, const double epsilon)
@@ -139,7 +141,7 @@ struct RealizabilityLimiterChooser<GV,
     using SlopeType = LpPositivityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType>;
     return std::make_unique<SlopeType>(entropy_flux, epsilon);
   }
-#else // HAVE_CLP
+#  else // HAVE_CLP
   template <class EigenVectorWrapperType>
   static std::unique_ptr<PositivityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType>>
   make_slope(const EntropyFluxType& entropy_flux, const MomentBasis& /*basis_functions*/, const double epsilon)
@@ -147,7 +149,7 @@ struct RealizabilityLimiterChooser<GV,
     using SlopeType = PositivityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType>;
     return std::make_unique<SlopeType>(entropy_flux, epsilon);
   }
-#endif // HAVE_CLP
+#  endif // HAVE_CLP
 };
 
 template <class GV, size_t dimRange, class AnalyticalFluxType, class DiscreteFunctionType, EntropyType entropy>
@@ -168,7 +170,7 @@ struct RealizabilityLimiterChooser<GV,
   }
 };
 
-#if HAVE_CLP
+#  if HAVE_CLP
 template <class GV, size_t order, class AnalyticalFluxType, class DiscreteFunctionType, EntropyType entropy>
 struct RealizabilityLimiterChooser<GV,
                                    RealSphericalHarmonicsMomentBasis<double, double, order, 3, false, entropy>,
@@ -186,7 +188,7 @@ struct RealizabilityLimiterChooser<GV,
     return std::make_unique<SlopeType>(entropy_flux, basis_functions, epsilon);
   }
 };
-#endif
+#  endif
 
 template <class GV, size_t refinements, class AnalyticalFluxType, class DiscreteFunctionType, EntropyType entropy>
 struct RealizabilityLimiterChooser<GV,
@@ -197,7 +199,7 @@ struct RealizabilityLimiterChooser<GV,
   using MomentBasis = HatFunctionMomentBasis<double, 3, double, refinements, 1, 3, entropy>;
   using EntropyFluxType = EntropyBasedFluxFunction<GV, MomentBasis>;
 
-#if HAVE_CLP && USE_LP_POSITIVITY_LIMITER
+#  if HAVE_CLP && USE_LP_POSITIVITY_LIMITER
   template <class EigenVectorWrapperType>
   static std::unique_ptr<LpPositivityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType>>
   make_slope(const EntropyFluxType& entropy_flux, const MomentBasis& /*basis_functions*/, const double epsilon)
@@ -205,7 +207,7 @@ struct RealizabilityLimiterChooser<GV,
     using SlopeType = LpPositivityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType>;
     return std::make_unique<SlopeType>(entropy_flux, epsilon);
   }
-#else // HAVE_CLP
+#  else // HAVE_CLP
   template <class EigenVectorWrapperType>
   static std::unique_ptr<PositivityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType>>
   make_slope(const EntropyFluxType& entropy_flux, const MomentBasis& /*basis_functions*/, const double epsilon)
@@ -213,10 +215,10 @@ struct RealizabilityLimiterChooser<GV,
     using SlopeType = PositivityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType>;
     return std::make_unique<SlopeType>(entropy_flux, epsilon);
   }
-#endif // HAVE_CLP
+#  endif // HAVE_CLP
 };
 
-#if HAVE_QHULL
+#  if HAVE_QHULL
 template <class GV, size_t refinements, class AnalyticalFluxType, class DiscreteFunctionType, EntropyType entropy>
 struct RealizabilityLimiterChooser<GV,
                                    PartialMomentBasis<double, 3, double, refinements, 1, 3, 1, entropy>,
@@ -234,7 +236,7 @@ struct RealizabilityLimiterChooser<GV,
     return std::make_unique<SlopeType>(entropy_flux, basis_functions, epsilon);
   }
 };
-#endif // HAVE_QHULL
+#  endif // HAVE_QHULL
 
 // SourceBeam Pn
 template <class MomentBasisImp, bool reconstruct>
@@ -354,15 +356,15 @@ struct SourceBeamMnExpectedResults<HatFunctionMomentBasis<double, 1, double, 8, 
 template <bool reconstruct>
 struct SourceBeamMnExpectedResults<HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, reconstruct, true>
 {
-#if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+#  if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
   static constexpr double l1norm = reconstruct ? 0. : 262.63836247185793;
   static constexpr double l2norm = reconstruct ? 0. : 163.99470051639508;
   static constexpr double linfnorm = reconstruct ? 0. : 117.29539648827911;
-#else
+#  else
   static constexpr double l1norm = reconstruct ? 293.37213961841047 : 293.65215317219764;
   static constexpr double l2norm = reconstruct ? 184.80977076714944 : 186.15575659185149;
   static constexpr double linfnorm = reconstruct ? 167.62308114606901 : 171.23335702135512;
-#endif
+#  endif
   static constexpr double tol = 1e-4;
 };
 
@@ -508,15 +510,15 @@ struct PlaneSourceMnExpectedResults<HatFunctionMomentBasis<double, 1, double, 8,
 template <bool reconstruct>
 struct PlaneSourceMnExpectedResults<HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, reconstruct, true>
 {
-#if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+#  if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
   static constexpr double l1norm = reconstruct ? 0. : 193.5601239337613;
   static constexpr double l2norm = reconstruct ? 0. : 144.04255848361109;
   static constexpr double linfnorm = reconstruct ? 0. : 116.06926190819375;
-#else
+#  else
   static constexpr double l1norm = reconstruct ? 209.83770090042646 : 196.15223883926521;
   static constexpr double l2norm = reconstruct ? 152.21809308736064 : 145.31986692659103;
   static constexpr double linfnorm = reconstruct ? 116.06926190819375 : 116.06926190819375;
-#endif
+#  endif
   static constexpr double tol = 1e-4;
 };
 
@@ -864,15 +866,15 @@ struct CheckerboardMnExpectedResults<HatFunctionMomentBasis<double, 3, double, 0
 template <bool reconstruct>
 struct CheckerboardMnExpectedResults<HatFunctionMomentBasis<double, 3, double, 0, 1, 3>, reconstruct, true>
 {
-#if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+#  if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
   static constexpr double l1norm = reconstruct ? 0. : 31412.701853922794;
   static constexpr double l2norm = reconstruct ? 0. : 1698.9548900712095;
   static constexpr double linfnorm = reconstruct ? 0. : 96.808125427484413;
-#else
+#  else
   static constexpr double l1norm = reconstruct ? 0. : 33621.567821059143;
   static constexpr double l2norm = reconstruct ? 0. : 1819.509030380794;
   static constexpr double linfnorm = reconstruct ? 0. : 103.50839818407947;
-#endif
+#  endif
   static constexpr double tol = 1e-4;
 };
 
@@ -918,15 +920,15 @@ struct ShadowMnExpectedResults<RealSphericalHarmonicsMomentBasis<double, double,
 template <bool reconstruct>
 struct ShadowMnExpectedResults<HatFunctionMomentBasis<double, 3, double, 0, 1, 3>, reconstruct, true>
 {
-#if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+#  if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
   static constexpr double l1norm = reconstruct ? 0. : 12507.874096169524;
   static constexpr double l2norm = reconstruct ? 0. : 1043.3580257634635;
   static constexpr double linfnorm = reconstruct ? 0. : 91.179218030355813;
-#else
+#  else
   static constexpr double l1norm = reconstruct ? 0. : 20699.700338648003;
   static constexpr double l2norm = reconstruct ? 0. : 2018.2458374236703;
   static constexpr double linfnorm = reconstruct ? 0. : 295.47480751761935;
-#endif
+#  endif
   static constexpr double tol = 1e-4;
 };
 
@@ -952,5 +954,7 @@ struct ShadowMnTestCase : SourceBeamMnTestCase<GridImp, MomentBasisImp, reconstr
 
 } // namespace GDT
 } // namespace Dune
+
+#endif // HAVE_DUNE_XT_DATA
 
 #endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_KINETICTRANSPORT_TESTCASES_HH

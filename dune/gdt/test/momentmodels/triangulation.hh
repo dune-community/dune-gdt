@@ -12,16 +12,18 @@
 #ifndef DUNE_GDT_MOMENTMODELS_TRIANGULATION_HH
 #define DUNE_GDT_MOMENTMODELS_TRIANGULATION_HH
 
-#include <memory>
-#include <vector>
-#include <string>
-#include <mutex>
+#if HAVE_DUNE_XT_DATA
 
-#include <dune/common/typetraits.hh>
+#  include <memory>
+#  include <vector>
+#  include <string>
+#  include <mutex>
 
-#include <dune/geometry/quadraturerules.hh>
+#  include <dune/common/typetraits.hh>
 
-#include <dune/xt/common/fvector.hh>
+#  include <dune/geometry/quadraturerules.hh>
+
+#  include <dune/xt/common/fvector.hh>
 
 namespace Dune {
 namespace GDT {
@@ -500,5 +502,7 @@ private:
 
 } // namespace GDT
 } // namespace Dune
+
+#endif // HAVE_DUNE_XT_DATA
 
 #endif // DUNE_GDT_MOMENTMODELS_TRIANGULATION_HH

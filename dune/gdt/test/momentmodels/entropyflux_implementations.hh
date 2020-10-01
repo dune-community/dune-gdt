@@ -22,6 +22,8 @@
 
 #include <dune/geometry/quadraturerules.hh>
 
+#include <dune/common/typetraits.hh>
+
 #include <dune/xt/common/debug.hh>
 #include <dune/xt/common/fmatrix.hh>
 #include <dune/xt/common/fvector.hh>
@@ -98,6 +100,7 @@ enum class SlopeLimiterType
 };
 
 
+#if HAVE_DUNE_XT_DATA
 /**
  * Unspecialized implementation, should work with all bases
  */
@@ -164,10 +167,10 @@ public:
     , realizability_helper_(basis_functions_,
                             quad_points_,
                             disable_realizability_check_
-#if HAVE_CLP
+#  if HAVE_CLP
                             ,
                             lp_
-#endif
+#  endif
       )
   {
     size_t ll = 0;
@@ -733,7 +736,7 @@ public:
                                  const BasisValuesMatrixType& M,
                                  QuadratureWeightsType& scalar_products) const
   {
-#if HAVE_MKL
+#  if HAVE_MKL
     XT::Common::Cblas::dgemv(XT::Common::Cblas::row_major(),
                              XT::Common::Cblas::no_trans(),
                              static_cast<int>(quad_points_.size()),
@@ -746,13 +749,13 @@ public:
                              0.,
                              scalar_products.data(),
                              1);
-#else
+#  else
     const size_t num_quad_points = quad_points_.size();
     for (size_t ll = 0; ll < num_quad_points; ++ll) {
       const auto* basis_ll = &(M.get_entry_ref(ll, 0.));
       scalar_products[ll] = XT::Common::transform_reduce(beta_in.begin(), beta_in.end(), basis_ll, 0.);
     }
-#endif
+#  endif
   }
 
   // calculates exp(val) for all vals in values
@@ -777,7 +780,7 @@ public:
     return get_isotropic_alpha(basis_functions_.density(u));
   }
 
-#if HAVE_CLP
+#  if HAVE_CLP
   template <class BasisFuncImp = MomentBasis, bool anything = true>
   struct RealizabilityHelper
   {
@@ -854,7 +857,7 @@ public:
     const QuadraturePointsType& quad_points_;
     XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>>& lp_;
   }; // struct RealizabilityHelper<...>
-#else // HAVE_CLP
+#  else // HAVE_CLP
   template <class BasisFuncImp = MomentBasis, bool anything = true>
   struct RealizabilityHelper
   {
@@ -871,7 +874,7 @@ public:
       return true;
     }
   }; // struct RealizabilityHelper<...>
-#endif // HAVE_CLP
+#  endif // HAVE_CLP
 
   // specialization for hatfunctions
   template <size_t dimRange_or_refinements, bool anything>
@@ -882,12 +885,12 @@ public:
     RealizabilityHelper(const MomentBasis& /*basis_functions*/,
                         const std::vector<BasisDomainType>& /*quad_points*/,
                         const bool /*disable_realizability_check*/
-#if HAVE_CLP
+#  if HAVE_CLP
                         ,
                         XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>>& /*lp*/)
-#else
+#  else
     )
-#endif
+#  endif
     {}
 
     static bool is_realizable(const DomainType& u, const bool /*reinitialize*/)
@@ -903,7 +906,7 @@ public:
   // calculate (T_k^{-1} M^T)^T = M T_k^{-T}
   void apply_inverse_matrix(const MatrixType& T_k, BasisValuesMatrixType& M) const
   {
-#if HAVE_MKL
+#  if HAVE_MKL
     // Calculate the transpose here first as this is much faster than passing the matrix to dtrsm and using CblasTrans
     thread_local auto T_k_trans = std::make_unique<MatrixType>(0.);
     copy_transposed(T_k, *T_k_trans);
@@ -920,7 +923,7 @@ public:
                              basis_dimRange,
                              M.data(),
                              matrix_num_cols);
-#else
+#  else
     assert(quad_points_.size() == M.rows());
     VectorType tmp_vec, tmp_vec2;
     for (size_t ll = 0; ll < quad_points_.size(); ++ll) {
@@ -929,7 +932,7 @@ public:
       XT::LA::solve_lower_triangular(T_k, tmp_vec2, tmp_vec);
       std::copy_n(tmp_vec2.begin(), basis_dimRange, M_row);
     }
-#endif
+#  endif
   }
 
   const MomentBasis& basis_functions_;
@@ -946,12 +949,12 @@ public:
   const size_t k_max_;
   const RangeFieldType epsilon_;
   const RealizabilityHelper<> realizability_helper_;
-#if HAVE_CLP
+#  if HAVE_CLP
   mutable XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>> lp_;
-#endif
+#  endif
 };
 
-#if ENTROPY_FLUX_UNSPECIALIZED_USE_ADAPTIVE_CHANGE_OF_BASIS
+#  if ENTROPY_FLUX_UNSPECIALIZED_USE_ADAPTIVE_CHANGE_OF_BASIS
 /** Analytical flux \mathbf{f}(\mathbf{u}) = < \mu \mathbf{m} G_{\hat{\alpha}(\mathbf{u})} >,
  * for the notation see
  * Alldredge, Hauck, O'Leary, Tits, "Adaptive change of basis in entropy-based moment closures for linear kinetic
@@ -1196,7 +1199,7 @@ public:
   const std::unique_ptr<MatrixType> T_minus_one_;
 };
 
-#else // ENTROPY_FLUX_UNSPECIALIZED_USE_ADAPTIVE_CHANGE_OF_BASIS
+#  else // ENTROPY_FLUX_UNSPECIALIZED_USE_ADAPTIVE_CHANGE_OF_BASIS
 
 /** Analytical flux \mathbf{f}(\mathbf{u}) = < \mu \mathbf{m} G_{\hat{\alpha}(\mathbf{u})} >,
  * Simple backtracking Newton without change of basis
@@ -1404,9 +1407,9 @@ public:
   using BaseType::tau_;
   using BaseType::xi_;
 };
-#endif
+#  endif
 
-#if ENTROPY_FLUX_USE_PARTIAL_MOMENTS_SPECIALIZATION
+#  if ENTROPY_FLUX_USE_PARTIAL_MOMENTS_SPECIALIZATION
 /**
  * Specialization for DG basis
  */
@@ -2343,7 +2346,7 @@ public:
             (basis_ll[3] - T_k[3][0] * basis_ll[0] - T_k[3][1] * basis_ll[1] - T_k[3][2] * basis_ll[2]) * diag_inv[3];
       }
     } else {
-#  if HAVE_MKL
+#    if HAVE_MKL
       thread_local LocalMatrixType T_k_trans(0.);
       assert(num_quad_points < size_t(std::numeric_limits<int>::max()));
       // Calculate the transpose here first as this is much faster than passing the matrix to dtrsm and using
@@ -2361,7 +2364,7 @@ public:
                                block_size,
                                M.data(),
                                block_size);
-#  else
+#    else
       LocalVectorType tmp_vec, tmp_vec2;
       for (size_t ll = 0; ll < num_quad_points; ++ll) {
         auto* M_row = &(M.get_entry_ref(ll, 0.));
@@ -2369,7 +2372,7 @@ public:
         XT::LA::solve_lower_triangular(T_k, tmp_vec2, tmp_vec);
         std::copy_n(tmp_vec2.begin(), block_size, M_row);
       }
-#  endif
+#    endif
     }
   }
 
@@ -2382,7 +2385,7 @@ public:
   template <size_t domainDim = dimFlux, class anything = void>
   struct helper
   {
-#  if HAVE_QHULL
+#    if HAVE_QHULL
     static void calculate_plane_coefficients(const MomentBasis& basis_functions)
     {
       if (!basis_functions.plane_coefficients()[0].size())
@@ -2397,7 +2400,7 @@ public:
             return false;
       return true;
     }
-#  else
+#    else
     static void calculate_plane_coefficients(const MomentBasis& /*basis_functions*/)
     {
       std::cerr << "Warning: You are missing Qhull, realizability stopping condition will not be checked!" << std::endl;
@@ -2407,7 +2410,7 @@ public:
     {
       return true;
     }
-#  endif
+#    endif
   }; // class helper<...>
 
   template <class anything>
@@ -2446,10 +2449,10 @@ public:
   const RangeFieldType epsilon_;
   LocalMatrixType T_minus_one_;
 };
-#endif // ENTROPY_FLUX_USE_PARTIAL_MOMENTS_SPECIALIZATION
+#  endif // ENTROPY_FLUX_USE_PARTIAL_MOMENTS_SPECIALIZATION
 
-#if ENTROPY_FLUX_USE_3D_HATFUNCTIONS_SPECIALIZATION
-#  if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+#  if ENTROPY_FLUX_USE_3D_HATFUNCTIONS_SPECIALIZATION
+#    if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
 /**
  * Specialization of EntropyBasedFluxImplementation for 3D Hatfunctions
  */
@@ -3062,7 +3065,7 @@ public:
   XT::LA::SparsityPatternDefault pattern_;
 };
 
-#  else // ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+#    else // ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
 
 /**
  * Specialization of EntropyBasedFluxImplementation for 3D Hatfunctions
@@ -3096,13 +3099,13 @@ public:
   using BasisValuesMatrixType = std::vector<std::vector<LocalVectorType>>;
   using QuadraturePointsType = std::vector<std::vector<BasisDomainType>>;
   using QuadratureWeightsType = std::vector<std::vector<RangeFieldType>>;
-#    if HAVE_EIGEN
+#      if HAVE_EIGEN
   using SparseMatrixType = typename XT::LA::Container<RangeFieldType, XT::LA::Backends::eigen_sparse>::MatrixType;
   using VectorType = typename XT::LA::Container<RangeFieldType, XT::LA::Backends::eigen_sparse>::VectorType;
-#    else
+#      else
   using SparseMatrixType = typename XT::LA::Container<RangeFieldType, XT::LA::default_sparse_backend>::MatrixType;
   using VectorType = typename XT::LA::Container<RangeFieldType, XT::LA::default_sparse_backend>::VectorType;
-#    endif
+#      endif
   using AlphaReturnType = std::pair<VectorType, std::pair<DomainType, RangeFieldType>>;
 
   EntropyBasedFluxImplementation(const MomentBasis& basis_functions,
@@ -3288,14 +3291,14 @@ public:
             tau_ / ((1 + std::sqrt(basis_dimRange) * phi.l2_norm()) * density + std::sqrt(basis_dimRange) * tau_), tau_)
                 : tau_;
     thread_local SparseMatrixType H(basis_dimRange, basis_dimRange, pattern_, 0);
-#    if HAVE_EIGEN
+#      if HAVE_EIGEN
     typedef ::Eigen::SparseMatrix<RangeFieldType, ::Eigen::ColMajor> ColMajorBackendType;
     typedef ::Eigen::SimplicialLDLT<ColMajorBackendType> SolverType;
     thread_local SolverType solver;
     ColMajorBackendType colmajor_copy(H.backend());
-#    else // HAVE_EIGEN
+#      else // HAVE_EIGEN
     thread_local auto solver = XT::LA::make_solver(H);
-#    endif // HAVE_EIGEN
+#      endif // HAVE_EIGEN
 
     // calculate moment vector for isotropic distribution
     VectorType u_iso(basis_dimRange, 0., 0);
@@ -3336,14 +3339,14 @@ public:
         tmp_vec = g_k;
         tmp_vec *= -1;
         try {
-#    if HAVE_EIGEN
+#      if HAVE_EIGEN
           colmajor_copy = H.backend();
           solver.analyzePattern(colmajor_copy);
           solver.factorize(colmajor_copy);
           d_k.backend() = solver.solve(tmp_vec.backend());
-#    else // HAVE_EIGEN
+#      else // HAVE_EIGEN
           solver.apply(tmp_vec, d_k);
-#    endif // HAVE_EIGEN
+#      endif // HAVE_EIGEN
         } catch (const XT::LA::Exceptions::linear_solver_failed& error) {
           if (rr < r_max) {
             break;
@@ -3531,7 +3534,7 @@ public:
   {
     thread_local SparseMatrixType H(basis_dimRange, basis_dimRange, pattern_, 0);
     calculate_hessian(eta_ast_twoprime_vals, M_, H);
-#    if HAVE_EIGEN
+#      if HAVE_EIGEN
     thread_local VectorType u_vec(basis_dimRange, 0., 0);
     std::copy(u.begin(), u.end(), u_vec.begin());
     typedef ::Eigen::SparseMatrix<RangeFieldType, ::Eigen::ColMajor> ColMajorBackendType;
@@ -3542,13 +3545,13 @@ public:
     solver.factorize(colmajor_copy);
     u_vec.backend() = solver.solve(u_vec.backend());
     std::copy(u_vec.begin(), u_vec.end(), u.begin());
-#    else // HAVE_EIGEN
+#      else // HAVE_EIGEN
     auto solver = XT::LA::make_solver(H);
     VectorType Hinv_u_la(basis_dimRange);
     VectorType u_la = XT::Common::convert_to<VectorType>(u);
     solver.apply(u_la, Hinv_u_la);
     u = XT::Common::convert_to<DomainType>(Hinv_u_la);
-#    endif
+#      endif
   } // void apply_inverse_hessian(..)
 
   // J = df/dalpha is the derivative of the flux with respect to alpha.
@@ -3586,26 +3589,26 @@ public:
   void calculate_J_Hinv(SparseMatrixType& J, const SparseMatrixType& H, DynamicRowDerivativeRangeType& ret) const
   {
     thread_local VectorType solution(basis_dimRange, 0., 0), tmp_rhs(basis_dimRange, 0., 0);
-#    if HAVE_EIGEN
+#      if HAVE_EIGEN
     typedef ::Eigen::SparseMatrix<RangeFieldType, ::Eigen::ColMajor> ColMajorBackendType;
     ColMajorBackendType colmajor_copy(H.backend());
     typedef ::Eigen::SimplicialLDLT<ColMajorBackendType> SolverType;
     SolverType solver;
     solver.analyzePattern(colmajor_copy);
     solver.factorize(colmajor_copy);
-#    else // HAVE_EIGEN
+#      else // HAVE_EIGEN
     auto solver = XT::LA::make_solver(H);
-#    endif // HAVE_EIGEN
+#      endif // HAVE_EIGEN
     for (size_t ii = 0; ii < basis_dimRange; ++ii) {
       // copy row to VectorType
       for (size_t kk = 0; kk < basis_dimRange; ++kk)
         tmp_rhs.set_entry(kk, J.get_entry(ii, kk));
         // solve
-#    if HAVE_EIGEN
+#      if HAVE_EIGEN
       solution.backend() = solver.solve(tmp_rhs.backend());
-#    else // HAVE_EIGEN
+#      else // HAVE_EIGEN
       solver.apply(tmp_rhs, solution);
-#    endif
+#      endif
       // copy result to C
       for (size_t kk = 0; kk < basis_dimRange; ++kk)
         ret.set_entry(ii, kk, solution.get_entry(kk));
@@ -3952,11 +3955,11 @@ public:
   const size_t num_faces_;
   XT::LA::SparsityPatternDefault pattern_;
 };
-#  endif // ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
-#endif // ENTROPY_FLUX_USE_3D_HATFUNCTIONS_SPECIALIZATION
+#    endif // ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+#  endif // ENTROPY_FLUX_USE_3D_HATFUNCTIONS_SPECIALIZATION
 
-#if ENTROPY_FLUX_USE_1D_HATFUNCTIONS_SPECIALIZATION
-#  if ENTROPY_FLUX_1D_HATFUNCTIONS_USE_ANALYTICAL_INTEGRALS
+#  if ENTROPY_FLUX_USE_1D_HATFUNCTIONS_SPECIALIZATION
+#    if ENTROPY_FLUX_1D_HATFUNCTIONS_USE_ANALYTICAL_INTEGRALS
 /**
  * Specialization of EntropyBasedFluxImplementation for 1D Hatfunctions with MaxwellBoltzmann entropy
  * (no change of basis, analytic integrals + Taylor)
@@ -4907,9 +4910,9 @@ public:
   const size_t max_taylor_order_;
 };
 
-#  else // ENTROPY_FLUX_1D_HATFUNCTIONS_USE_ANALYTICAL_INTEGRALS
+#    else // ENTROPY_FLUX_1D_HATFUNCTIONS_USE_ANALYTICAL_INTEGRALS
 
-#    if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+#      if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
 /**
  * Specialization of EntropyBasedFluxImplementation for 1D Hatfunctions with 2 point quadrature per element
  */
@@ -5495,7 +5498,7 @@ public:
 };
 
 
-#    else // ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+#      else // ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
 /**
  * Specialization of EntropyBasedFluxImplementation for 1D Hatfunctions (no change of basis, use structure)
  */
@@ -6232,9 +6235,19 @@ public:
   const size_t k_max_;
   const RangeFieldType epsilon_;
 };
-#    endif // ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
-#  endif // ENTROPY_FLUX_1D_HATFUNCTIONS_USE_ANALYTICAL_INTEGRALS
-#endif // ENTROPY_FLUX_USE_1D_HATFUNCTIONS_SPECIALIZATION
+#      endif // ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+#    endif // ENTROPY_FLUX_1D_HATFUNCTIONS_USE_ANALYTICAL_INTEGRALS
+#  endif // ENTROPY_FLUX_USE_1D_HATFUNCTIONS_SPECIALIZATION
+
+#else // HAVE_DUNE_XT_DATA
+
+template <class MomentBasisImp>
+class EntropyBasedFluxImplementation
+{
+  static_assert(Dune::AlwaysFalse<MomentBasisImp>::value, "You are missing dune-xt-data!");
+};
+
+#endif // HAVE_DUNE_XT_DATA
 
 
 } // namespace GDT

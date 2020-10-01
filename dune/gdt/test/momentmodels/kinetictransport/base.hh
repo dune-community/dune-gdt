@@ -11,17 +11,19 @@
 #ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_KINETICTRANSPORTEQUATION_BASE_HH
 #define DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_KINETICTRANSPORTEQUATION_BASE_HH
 
-#include <dune/grid/common/partitionset.hh>
+#if HAVE_DUNE_XT_DATA
 
-#include <dune/xt/functions/constant.hh>
+#  include <dune/grid/common/partitionset.hh>
 
-#include <dune/xt/la/solver.hh>
+#  include <dune/xt/functions/constant.hh>
 
-#include <dune/gdt/test/momentmodels/basisfunctions.hh>
-#include <dune/gdt/test/momentmodels/entropyflux.hh>
-#include <dune/gdt/test/momentmodels/kineticequation.hh>
+#  include <dune/xt/la/solver.hh>
 
-#include "../kineticequation.hh"
+#  include <dune/gdt/test/momentmodels/basisfunctions.hh>
+#  include <dune/gdt/test/momentmodels/entropyflux.hh>
+#  include <dune/gdt/test/momentmodels/kineticequation.hh>
+
+#  include "../kineticequation.hh"
 
 namespace Dune {
 namespace GDT {
@@ -239,5 +241,7 @@ protected:
 
 } // namespace GDT
 } // namespace Dune
+
+#endif // HAVE_DUNE_XT_DATA
 
 #endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_KINETICTRANSPORTEQUATION_BASE_HH

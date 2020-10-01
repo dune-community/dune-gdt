@@ -12,17 +12,19 @@
 #ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_SOURCEBEAM_HH
 #define DUNE_GDT_HYPERBOLIC_PROBLEMS_SOURCEBEAM_HH
 
-#include <cmath>
-#include <memory>
-#include <vector>
-#include <string>
+#if HAVE_DUNE_XT_DATA
 
-#include <dune/xt/common/string.hh>
-#include <dune/xt/common/math.hh>
+#  include <cmath>
+#  include <memory>
+#  include <vector>
+#  include <string>
 
-#include <dune/xt/la/eigen-solver.hh>
+#  include <dune/xt/common/string.hh>
+#  include <dune/xt/common/math.hh>
 
-#include "base.hh"
+#  include <dune/xt/la/eigen-solver.hh>
+
+#  include "base.hh"
 
 namespace Dune {
 namespace GDT {
@@ -423,5 +425,7 @@ protected:
 
 } // namespace GDT
 } // namespace Dune
+
+#endif // HAVE_DUNE_XT_DATA
 
 #endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_SOURCEBEAM_HH
