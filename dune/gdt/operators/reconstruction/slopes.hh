@@ -26,6 +26,7 @@
 
 #include <dune/xt/common/float_cmp.hh>
 #include <dune/xt/common/fvector.hh>
+#include <dune/xt/common/math.hh>
 #include <dune/xt/common/parallel/threadstorage.hh>
 
 #include <dune/gdt/test/momentmodels/basisfunctions/partial_moments.hh>
@@ -476,11 +477,15 @@ public:
         if (!is_epsilon_realizable(ubar0, ubar1, vj, vjplus1, epsilon_)) {
           thetas[2 * ii] = 1.;
         } else {
-          thetas_ii[0] = (epsilon_ - u0) / (ubar0 - u0);
+          thetas_ii[0] = XT::Common::is_zero(ubar0 - u0) ? -1. : (epsilon_ - u0) / (ubar0 - u0);
           thetas_ii[1] =
-              (u0 * vj - u1 + epsilon_ * std::sqrt(std::pow(vj, 2) + 1)) / ((ubar1 - u1) - (ubar0 - u0) * vj);
-          thetas_ii[2] = (u0 * vjplus1 - u1 - epsilon_ * std::sqrt(std::pow(vjplus1, 2) + 1))
-                         / ((ubar1 - u1) - (ubar0 - u0) * vjplus1);
+              XT::Common::is_zero((ubar1 - u1) - (ubar0 - u0) * vj)
+                  ? -1.
+                  : (u0 * vj - u1 + epsilon_ * std::sqrt(std::pow(vj, 2) + 1)) / ((ubar1 - u1) - (ubar0 - u0) * vj);
+          thetas_ii[2] = XT::Common::is_zero((ubar1 - u1) - (ubar0 - u0) * vjplus1)
+                             ? -1.
+                             : (u0 * vjplus1 - u1 - epsilon_ * std::sqrt(std::pow(vjplus1, 2) + 1))
+                                   / ((ubar1 - u1) - (ubar0 - u0) * vjplus1);
           for (size_t ll = 0; ll < 3; ++ll)
             if (thetas_ii[ll] >= 0. && thetas_ii[ll] <= 1.)
               thetas[2 * ii] = std::max(thetas[2 * ii], thetas_ii[ll]);
