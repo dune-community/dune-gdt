@@ -15,7 +15,7 @@
 #include <memory>
 
 #include <dune/common/timer.hh>
-#include <dune/grid/io/file/dgfparser/dgfparser.hh>
+#include <dune/grid/io/file/dgfparser.hh>
 
 #include <dune/xt/common/convergence-study.hh>
 #include <dune/xt/test/common.hh>

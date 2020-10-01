@@ -14,8 +14,6 @@
 
 #include <dune/xt/grid/grids.hh>
 
-#include <dune/gdt/test/instationary-eocstudies/hyperbolic-nonconforming.hh>
-
 #include "base.hh"
 
 using namespace Dune;
