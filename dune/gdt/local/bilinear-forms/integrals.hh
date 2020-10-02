@@ -120,8 +120,8 @@ public:
       // evaluate the integrand
       LOG_(debug) << "   point_in_{reference_element|physical_space} = {" << print(point_in_reference_element) << "|"
                   << print(element.geometry().global(point_in_reference_element))
-                  << "},\n   integration_factor = " << integration_factor
-                  << ", quadrature_weight = " << quadrature_weight << std::endl;
+                  << "},\n   integration_factor = " << factor << ", quadrature_weight = " << quadrature_point.weight()
+                  << std::endl;
       integrand_->evaluate(test_basis, ansatz_basis, point_in_reference_element, integrand_values_, param);
       assert(integrand_values_.rows() >= rows && "This must not happen!");
       assert(integrand_values_.cols() >= cols && "This must not happen!");
