@@ -491,6 +491,13 @@ public:
     this->walk(use_tbb);
     return *this;
   }
+
+  template <class EntityRange>
+  ThisType& assemble_range(const EntityRange& entity_range)
+  {
+    this->walk_range(entity_range);
+    return *this;
+  }
 }; // class MatrixOperator
 
 

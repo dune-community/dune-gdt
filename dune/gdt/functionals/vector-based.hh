@@ -270,6 +270,12 @@ public:
   {
     this->walk(use_tbb);
   }
+
+  template <class EntityRange>
+  void assemble_range(const EntityRange& entity_range)
+  {
+    this->walk_range(entity_range);
+  }
 }; // class VectorBasedFunctional
 
 
