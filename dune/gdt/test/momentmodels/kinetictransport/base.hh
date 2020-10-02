@@ -231,6 +231,12 @@ public:
     return psi_vac_;
   }
 
+  // correct for 1d on interval [-1, 1], override else
+  virtual RangeFieldType rho_vac() const
+  {
+    return psi_vac_ * 2;
+  }
+
 protected:
   using BaseType::basis_functions_;
   const XT::Common::Configuration grid_cfg_;

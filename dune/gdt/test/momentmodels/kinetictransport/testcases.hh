@@ -65,9 +65,27 @@ struct QuadratureChooser<HatFunctionMomentBasis<double, 1, double, dimRange, 1, 
 };
 
 template <size_t dimRange, EntropyType entropy>
+struct QuadratureChooser<HatFunctionMomentBasis<double, 1, double, dimRange, 1, 1, entropy>, true>
+{
+#  if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+  static constexpr size_t quad_order = 0;
+#  else
+  static constexpr size_t quad_order = 45;
+#  endif
+  static constexpr size_t quad_refinements = 0;
+};
+
+template <size_t dimRange, EntropyType entropy>
 struct QuadratureChooser<PartialMomentBasis<double, 1, double, dimRange, 1, 1, 1, entropy>, false>
 {
   static constexpr size_t quad_order = 15;
+  static constexpr size_t quad_refinements = 0;
+};
+
+template <size_t dimRange, EntropyType entropy>
+struct QuadratureChooser<PartialMomentBasis<double, 1, double, dimRange, 1, 1, 1, entropy>, true>
+{
+  static constexpr size_t quad_order = 45;
   static constexpr size_t quad_refinements = 0;
 };
 
@@ -95,7 +113,6 @@ struct QuadratureChooser<PartialMomentBasis<double, 3, double, refinements, 1, 3
   static constexpr size_t quad_order = refinements == 0 ? 18 /*fekete rule number 7*/ : 9 /*fekete rule number 3*/;
   static constexpr size_t quad_refinements = 0;
 };
-
 
 // choose RealizabilityLimiter suitable for MomentBasisImp
 template <class GV, class MomentBasisImp, class AnalyticalFluxType, class DiscreteFunctionType>
@@ -394,6 +411,15 @@ struct SourceBeamMnExpectedResults<PartialMomentBasis<double, 1, double, 8, 1, 1
   static constexpr double l1norm = reconstruct ? 205.71817305290159 : 222.04295463732129;
   static constexpr double l2norm = reconstruct ? 157.69546917388564 : 172.42507406330125;
   static constexpr double linfnorm = reconstruct ? 231.95094711654104 : 235.44527043811087;
+  static constexpr double tol = 1e-5;
+};
+
+template <bool reconstruct>
+struct SourceBeamMnExpectedResults<PartialMomentBasis<double, 1, double, 10, 1, 1>, reconstruct, true>
+{
+  static constexpr double l1norm = reconstruct ? 254.0833726733739 : 273.86564739753874;
+  static constexpr double l2norm = reconstruct ? 192.94877581693061 : 210.81841011876298;
+  static constexpr double linfnorm = reconstruct ? 276.24842313326343 : 282.09730116548945;
   static constexpr double tol = 1e-5;
 };
 

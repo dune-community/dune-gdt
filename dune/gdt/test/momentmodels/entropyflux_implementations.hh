@@ -2202,9 +2202,9 @@ public:
           if constexpr (reconstruct) {
             slope = slope_func(psi_e[ll] - psi_l[ll], psi_r[ll] - psi_e[ll]);
             factor = position > 0 ? psi_e[ll] + 0.5 * slope : psi_e[ll] - 0.5 * slope;
-            factor *= weights[ll] * position;
+            factor *= weights[ll] * std::abs(position);
           } else {
-            factor = psi_e[ll] * weights[ll] * position;
+            factor = psi_e[ll] * weights[ll] * std::abs(position);
           }
           auto& val = position > 0. ? right_flux_value : left_flux_value;
           for (size_t ii = 0; ii < block_size; ++ii)
