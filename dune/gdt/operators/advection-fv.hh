@@ -114,6 +114,11 @@ public:
     return *this;
   }
 
+  const NumericalFluxType& numerical_flux() const
+  {
+    return *numerical_flux_;
+  }
+
   /// \}
 
 private:
