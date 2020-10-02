@@ -67,7 +67,7 @@ public:
                   const PhysicalDomainType& n,
                   const XT::Common::Parameter& param = {}) const override final
   {
-    return numerical_flux_(this->intersection(), x, u, v, n, this->parse_parameter(param));
+    return numerical_flux_(this->intersection(), x, u, v, n, param);
   }
 
 private:
