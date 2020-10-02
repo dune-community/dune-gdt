@@ -15,6 +15,9 @@
 # set up project
 project("dune-gdt" CXX)
 
+set(BUILD_SHARED_LIBS 1)
+set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
+
 cmake_minimum_required(VERSION 3.1)
 
 if(NOT (dune-common_DIR OR dune-common_ROOT OR "${CMAKE_PREFIX_PATH}" MATCHES ".*dune-common.*"))
@@ -37,9 +40,22 @@ include(DuneUtils)
 # start a dune project with information from dune.module
 dune_project()
 if(DUNE_XT_WITH_PYTHON_BINDINGS)
-  dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune MODULE_LIBRARIES dunegdt)
+  dune_enable_all_packages(INCLUDE_DIRS
+                           ${dune-gdt_SOURCE_DIR}/dune
+                           MODULE_LIBRARIES
+                           dunegdt
+                           boltzmann
+                           coordinatetransformedmn
+                           cellmodel
+                           vectors)
 else()
-  dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune)
+  dune_enable_all_packages(INCLUDE_DIRS
+                           ${dune-gdt_SOURCE_DIR}/dune
+                           MODULE_LIBRARIES
+                           boltzmann
+                           coordinatetransformedmn
+                           cellmodel
+                           vectors)
 endif()
 
 add_header_listing()
