@@ -17,6 +17,9 @@ project("dune-gdt" CXX)
 
 cmake_minimum_required(VERSION 3.13)
 
+set(BUILD_SHARED_LIBS 1)
+set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
+
 if("${TRAVIS}" EQUAL "1")
   add_compile_options(-Werror)
 endif()
@@ -43,9 +46,9 @@ add_subdirectory(${dune-xt_MODULE_PATH}/../../pybind11 ${CMAKE_CURRENT_BINARY_DI
 # start a dune project with information from dune.module
 dune_project()
 if(DUNE_XT_WITH_PYTHON_BINDINGS)
-  dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune ${Python3_INCLUDE_DIRS} MODULE_LIBRARIES dunegdt)
+  dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune ${Python3_INCLUDE_DIRS} MODULE_LIBRARIES dunegdt boltzmann coordinatetransformedmn cellmodel vectors)
 else()
-  dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune ${Python3_INCLUDE_DIRS})
+  dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune ${Python3_INCLUDE_DIRS} MODULE_LIBRARIES dunegdt boltzmann coordinatetransformedmn cellmodel vectors)
 endif()
 
 add_header_listing()
