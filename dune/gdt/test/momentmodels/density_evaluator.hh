@@ -172,6 +172,20 @@ public:
     walker.walk(true);
   } // void apply(...)
 
+  template <class ElementRange>
+  void apply_range(const VectorType& alpha,
+                   VectorType& range,
+                   const XT::Common::Parameter& param,
+                   const ElementRange& element_range) const
+  {
+    LocalDensityEvaluatorType local_density_evaluator(
+        space_, alpha, range, analytical_flux_, boundary_distribution_, min_acceptable_density_, param);
+    auto walker = XT::Grid::Walker<typename SpaceType::GridViewType>(space_.grid_view());
+    walker.append(local_density_evaluator);
+    walker.walk_range(element_range);
+  } // void apply(...)
+
+
 private:
   EntropyFluxType& analytical_flux_;
   const SpaceType& space_;
