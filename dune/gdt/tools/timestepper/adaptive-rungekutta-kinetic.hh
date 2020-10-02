@@ -51,7 +51,6 @@ class KineticAdaptiveRungeKuttaTimeStepper : public TimeStepperInterface<Discret
 public:
   using OperatorType = OperatorImp;
   using DiscreteFunctionType = DiscreteFunctionImp;
-
   using DomainFieldType = typename DiscreteFunctionType::DomainFieldType;
   using RangeFieldType = typename DiscreteFunctionType::RangeFieldType;
   using MatrixType = typename Dune::DynamicMatrix<RangeFieldType>;
@@ -60,6 +59,7 @@ public:
   static constexpr size_t q = ButcherArrayProviderType::q;
   using EntropyFluxType = EntropyFluxImp;
   using BaseType::dimRange;
+  using typename BaseType::DiscreteSolutionType;
 
   DiscreteFunctionType get_u(const DiscreteFunctionType& alpha)
   {
@@ -113,6 +113,7 @@ public:
     , b_diff_(b_2_ - b_1_)
     , num_stages_(A_.rows())
     , first_same_as_last_(true)
+    , initial_values_evaluated_(false)
   {
     assert(Dune::XT::Common::FloatCmp::ge(atol_, 0.0));
     assert(Dune::XT::Common::FloatCmp::ge(rtol_, 0.0));
@@ -196,7 +197,7 @@ public:
     RangeFieldType actual_dt = std::min(dt, max_dt);
     // regularization is currently unused but may be used in the near future
     static constexpr bool consider_regularization = false;
-    set_op_param("dt", actual_dt);
+    // set_op_param("dt", actual_dt);
     RangeFieldType mixed_error = std::numeric_limits<RangeFieldType>::max();
     RangeFieldType time_step_scale_factor = 1.0;
     static const std::vector<RangeFieldType> r_sequence = {0, 1e-8, 1e-6, 1e-4, 1e-3, 1e-2, 5e-2, 0.1, 0.5, 1};
@@ -215,7 +216,7 @@ public:
       bool skip_error_computation = false;
       actual_dt *= time_step_scale_factor;
       for (size_t ii = first_stage_to_compute; ii < num_stages_ - 1; ++ii) {
-        set_op_param("t", t + actual_dt * c_[ii]);
+        // set_op_param("t", t + actual_dt * c_[ii]);
         std::fill_n(&(stages_k_[ii]->dofs().vector()[0]), num_dofs, 0.);
         alpha_tmp_->dofs().vector() = alpha_n.dofs().vector();
         for (size_t jj = 0; jj < ii; ++jj)
@@ -252,7 +253,7 @@ public:
           alpha_np1_->dofs().vector().axpy(actual_dt * r_ * b_1_[ii], stages_k_[ii]->dofs().vector());
 
         // calculate last stage
-        set_op_param("t", t + actual_dt * c_[num_stages_ - 1]);
+        // set_op_param("t", t + actual_dt * c_[num_stages_ - 1]);
         std::fill_n(&(stages_k_[num_stages_ - 1]->dofs().vector()[0]), num_dofs, 0.);
         try {
           op_.apply(alpha_np1_->dofs().vector(), stages_k_[num_stages_ - 1]->dofs().vector(), op_param_);
@@ -325,10 +326,43 @@ public:
       last_stage_of_previous_step_ = alpha_n.copy_as_discrete_function();
     last_stage_of_previous_step_->dofs().vector() = stages_k_[num_stages_ - 1]->dofs().vector();
 
+    if (operator_evaluations_) {
+      for (size_t ii = first_stage_to_compute; ii < num_stages_; ++ii)
+        operator_evaluations_->push_back(stages_k_[ii]->dofs().vector());
+    }
+
     t += actual_dt;
 
     return actual_dt * time_step_scale_factor;
   } // ... step(...)
+
+  RangeFieldType next_n_steps(const size_t n,
+                              const RangeFieldType t_end,
+                              const RangeFieldType initial_dt,
+                              const bool /*output_progress*/,
+                              const bool /*with_half_steps*/,
+                              DiscreteSolutionType& sol) override final
+  {
+    RangeFieldType dt = initial_dt;
+    RangeFieldType t = current_time();
+    assert(XT::Common::FloatCmp::ge(t_end - t, 0.0));
+    size_t time_step_counter = 0;
+
+    if (!initial_values_evaluated_ && XT::Common::FloatCmp::eq(t, 0.0)) {
+      sol.insert(sol.end(), std::make_pair(t, current_solution().copy_as_discrete_function()));
+      ++time_step_counter;
+      initial_values_evaluated_ = true;
+    }
+
+    while (XT::Common::FloatCmp::lt(t, t_end) && time_step_counter < n) {
+      RangeFieldType max_dt = XT::Common::FloatCmp::ge(t + dt, t_end) ? t_end - t : dt;
+      dt = step(dt, max_dt);
+      t = current_time();
+      sol.insert(sol.end(), std::make_pair(t, current_solution().copy_as_discrete_function()));
+      ++time_step_counter;
+    }
+    return dt;
+  } // ... next_n_steps(...)
 
 private:
   bool check_for_nan(const RangeFieldType* vec1, const RangeFieldType* vec2, const size_t num_dofs)
@@ -359,6 +393,8 @@ private:
   std::unique_ptr<DiscreteFunctionType> last_stage_of_previous_step_;
   bool first_same_as_last_;
   XT::Common::Parameter op_param_;
+  bool initial_values_evaluated_;
+  using BaseType::operator_evaluations_;
 }; // class KineticAdaptiveRungeKuttaTimeStepper
 
 
