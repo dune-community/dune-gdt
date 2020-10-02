@@ -74,6 +74,7 @@ public:
   using VisualizerType = XT::Functions::VisualizerInterface<dimRange, dimRangeCols, RangeFieldType>;
   using StringifierType = std::function<std::string(const RangeType&)>;
   using ThisType = TimeStepperInterface;
+  using DiscreteVectorType = typename DiscreteFunctionType::VectorType;
 
 private:
   using CurrentSolutionStorageProviderType = typename Dune::XT::Common::StorageProvider<DiscreteFunctionImp>;
@@ -86,6 +87,7 @@ protected:
     , t_(t_0)
     , u_n_(&CurrentSolutionStorageProviderType::access())
     , solution_(&SolutionStorageProviderType::access())
+    , operator_evaluations_(nullptr)
   {}
 
 public:
@@ -109,6 +111,16 @@ public:
    * increased by a wrong dt).
    */
   virtual RangeFieldType step(const RangeFieldType dt, const RangeFieldType max_dt) = 0;
+
+  virtual RangeFieldType step_first(const RangeFieldType /*dt*/, const RangeFieldType /*max_dt*/)
+  {
+    return 0;
+  }
+
+  virtual RangeFieldType step_second(const RangeFieldType /*dt1*/, const RangeFieldType /*actual_dt*/)
+  {
+    return 0;
+  }
 
   const RangeFieldType& current_time() const
   {
@@ -188,6 +200,7 @@ public:
                                const size_t num_output_steps,
                                const bool save_solution,
                                const bool visualize,
+                               const bool with_half_steps,
                                const bool write_discrete,
                                const bool write_exact,
                                const bool reset_begin_time,
@@ -202,7 +215,7 @@ public:
     RangeFieldType dt = initial_dt;
     RangeFieldType t = current_time();
     assert(Dune::XT::Common::FloatCmp::ge(t_end, t));
-    size_t time_step_counter = 0;
+    time_step_counter_ = 0;
 
     const RangeFieldType save_interval = (t_end - t) / num_save_steps;
     const RangeFieldType output_interval =
@@ -237,7 +250,14 @@ public:
 
       // do a timestep
       const auto walltime_before_step = std::chrono::steady_clock::now();
-      dt = step(dt, max_dt);
+      if (with_half_steps) {
+        const auto dt1 = step_first(dt, max_dt);
+        if (save_solution && num_save_steps == size_t(-1))
+          sol.insert(sol.end(), std::make_pair(t + 0.5 * dt, current_solution().copy_as_discrete_function()));
+        dt = step_second(dt1, std::min(dt, max_dt));
+      } else {
+        dt = step(dt, max_dt);
+      }
       const auto walltime_after_step = std::chrono::steady_clock::now();
       t = current_time();
       timepoints_.push_back(t);
@@ -245,7 +265,7 @@ public:
       step_walltimes_.push_back(step_time.count());
 
       // augment time step counter
-      ++time_step_counter;
+      ++time_step_counter_;
 
       // check if data should be written in this timestep (and write)
       if (Dune::XT::Common::FloatCmp::ge(t, next_save_time) || num_save_steps == size_t(-1)) {
@@ -266,7 +286,8 @@ public:
       }
       if (num_output_steps && (Dune::XT::Common::FloatCmp::ge(t, next_output_time) || num_output_steps == size_t(-1))) {
         if (current_solution().space().grid_view().comm().rank() == 0)
-          std::cout << "time step " << time_step_counter << " done, time =" << t << ", current dt= " << dt << std::endl;
+          std::cout << "time step " << time_step_counter_ << " done, time =" << t << ", current dt= " << dt
+                    << std::endl;
         next_output_time += output_interval;
       }
     } // while (t < t_end)
@@ -279,6 +300,92 @@ public:
     return dt;
   } // ... solve(...)
 
+  virtual RangeFieldType next_n_steps(const size_t n,
+                                      const RangeFieldType t_end,
+                                      const RangeFieldType initial_dt,
+                                      const bool output_progress,
+                                      const bool with_half_steps,
+                                      DiscreteSolutionType& sol)
+  {
+    RangeFieldType dt = initial_dt;
+    RangeFieldType t = current_time();
+    assert(XT::Common::FloatCmp::ge(t_end - t, 0.0));
+    size_t time_step_counter = 0;
+
+    if (!initial_values_evaluated && XT::Common::FloatCmp::eq(t, 0.0)) {
+      sol.insert(sol.end(), std::make_pair(t, current_solution().copy_as_discrete_function()));
+      ++time_step_counter;
+      initial_values_evaluated = true;
+    }
+
+    while (XT::Common::FloatCmp::lt(t, t_end) && time_step_counter < n) {
+      RangeFieldType max_dt = dt;
+      // match saving times and t_end exactly
+      if (XT::Common::FloatCmp::ge(t + dt, t_end))
+        max_dt = t_end - t;
+
+      // do a timestep
+      if (with_half_steps) {
+        if (!first_evaluated) {
+          dt1_ = step_first(dt, max_dt);
+          t = current_time();
+          sol.insert(sol.end(), std::make_pair(t + 0.5 * dt, current_solution().copy_as_discrete_function()));
+          first_evaluated = true;
+          ++time_step_counter;
+        }
+        if (time_step_counter != n) {
+          dt = step_second(dt1_, std::min(dt, max_dt));
+          ++time_step_counter;
+          first_evaluated = false;
+          t = current_time();
+          sol.insert(sol.end(), std::make_pair(t, current_solution().copy_as_discrete_function()));
+        }
+      } else {
+        dt = step(dt, max_dt);
+        t = current_time();
+        sol.insert(sol.end(), std::make_pair(t, current_solution().copy_as_discrete_function()));
+        ++time_step_counter;
+      }
+
+      // augment time step counter
+      t = current_time();
+
+      if (output_progress)
+        std::cout << "time step " << time_step_counter << " done, time =" << t << ", current dt= " << dt << std::endl;
+    } // while (t < t_end)
+    return dt;
+  } // ... next_n_steps(...)
+
+  virtual RangeFieldType solve(const RangeFieldType t_end,
+                               const RangeFieldType initial_dt,
+                               const size_t num_save_steps,
+                               const size_t num_output_steps,
+                               const bool save_solution,
+                               const bool visualize,
+                               const bool write_discrete,
+                               const bool write_exact,
+                               const bool reset_begin_time,
+                               const std::string prefix,
+                               const VisualizerType& visualizer,
+                               const StringifierType& stringifier,
+                               const GridFunctionType& exact_solution = dummy_solution())
+  {
+    return solve(t_end,
+                 initial_dt,
+                 num_save_steps,
+                 num_output_steps,
+                 save_solution,
+                 visualize,
+                 false,
+                 write_discrete,
+                 write_exact,
+                 reset_begin_time,
+                 prefix,
+                 visualizer,
+                 stringifier,
+                 exact_solution);
+  }
+
   // default solve, use internal solution
   virtual RangeFieldType solve(const RangeFieldType t_end,
                                const RangeFieldType initial_dt,
@@ -286,6 +393,7 @@ public:
                                const size_t num_output_steps = size_t(-1),
                                const bool save_solution = false,
                                const bool visualize = false,
+                               const bool with_half_steps = false,
                                const bool write_discrete = false,
                                const bool write_exact = false,
                                const bool reset_begin_time = true,
@@ -300,6 +408,7 @@ public:
                  num_output_steps,
                  save_solution,
                  visualize,
+                 with_half_steps,
                  write_discrete,
                  write_exact,
                  reset_begin_time,
@@ -315,6 +424,7 @@ public:
                                const RangeFieldType initial_dt,
                                const size_t num_save_steps,
                                DiscreteSolutionType& sol,
+                               const bool with_half_steps = false,
                                const bool reset_begin_time = false)
   {
     return solve(t_end,
@@ -323,6 +433,7 @@ public:
                  0,
                  true,
                  false,
+                 with_half_steps,
                  false,
                  false,
                  reset_begin_time,
@@ -331,6 +442,12 @@ public:
                  default_visualizer(),
                  vector_stringifier(),
                  dummy_solution());
+  }
+
+  // call this after a call to solve to get the number of timesteps that were done
+  size_t num_timesteps() const
+  {
+    return time_step_counter_;
   }
 
   /**
@@ -480,6 +597,12 @@ public:
       write_to_textfile(exact_sol, grid_view, prefix + "_exact", step, t, stringifier);
   }
 
+  static void reset_static_variables()
+  {
+    initial_values_evaluated = false;
+    first_evaluated = false;
+  }
+
   void write_timings(const std::string& prefix)
   {
     const std::string filename = prefix + "_timings.txt";
@@ -494,18 +617,35 @@ public:
     timings_file.close();
   }
 
+  void set_operator_evaluations(std::vector<DiscreteVectorType>* operator_evaluations)
+  {
+    operator_evaluations_ = operator_evaluations;
+  }
 
 protected:
   RangeFieldType t_;
   DiscreteFunctionType* u_n_;
   DiscreteSolutionType* solution_;
+  std::vector<DiscreteVectorType>* operator_evaluations_;
+  static bool initial_values_evaluated;
+  static double dt1_;
+  static bool first_evaluated;
   std::chrono::time_point<std::chrono::steady_clock> begin_time_;
   std::vector<double> dts_;
   std::vector<double> timepoints_;
   std::vector<double> step_walltimes_;
   std::chrono::duration<double> solve_walltime_;
+  size_t time_step_counter_;
 }; // class TimeStepperInterface
 
+template <class DiscreteFunctionImp>
+bool TimeStepperInterface<DiscreteFunctionImp>::initial_values_evaluated = false;
+
+template <class DiscreteFunctionImp>
+double TimeStepperInterface<DiscreteFunctionImp>::dt1_ = 0.;
+
+template <class DiscreteFunctionImp>
+bool TimeStepperInterface<DiscreteFunctionImp>::first_evaluated = false;
 
 } // namespace GDT
 } // namespace Dune
