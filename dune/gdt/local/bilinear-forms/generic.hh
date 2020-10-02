@@ -70,7 +70,7 @@ public:
       result.resize(rows, cols);
     result *= 0;
     // compute
-    func_(test_basis, ansatz_basis, result, this->parse_parameter(param));
+    func_(test_basis, ansatz_basis, result, param);
   } // ... apply2(...)
 
 private:
