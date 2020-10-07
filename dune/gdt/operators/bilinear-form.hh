@@ -107,9 +107,14 @@ public:
     , grid_view_(grd_vw)
     , source_(src.copy_as_grid_function())
     , range_(rng.copy_as_grid_function())
-    , local_source_(source_->local_function())
-    , local_range_(range_->local_function())
-    , bilinear_form_value_(1, 1, 0.)
+    , local_source_in_(source_->local_function())
+    , local_source_out_(source_->local_function())
+    , local_range_in_(range_->local_function())
+    , local_range_out_(range_->local_function())
+    , bilinear_form_value_in_in_(1, 1, 0.)
+    , bilinear_form_value_in_out_(1, 1, 0.)
+    , bilinear_form_value_out_in_(1, 1, 0.)
+    , bilinear_form_value_out_out_(1, 1, 0.)
     , result_(0)
   {
     LOG__(Logger, info) << Logger::logger.prefix << "BilinearForm(grid_view=" << &grd_vw << ", src=" << &src
@@ -123,15 +128,32 @@ public:
     , grid_view_(other.grid_view_)
     , source_(other.source_->copy_as_grid_function())
     , range_(other.range_->copy_as_grid_function())
-    , local_source_(source_->local_function())
-    , local_range_(range_->local_function())
-    , bilinear_form_value_(other.bilinear_form_value_)
+    , local_source_in_(source_->local_function())
+    , local_source_out_(source_->local_function())
+    , local_range_in_(range_->local_function())
+    , local_range_out_(range_->local_function())
+    , bilinear_form_value_in_in_(other.bilinear_form_value_in_in_)
+    , bilinear_form_value_in_out_(other.bilinear_form_value_in_out_)
+    , bilinear_form_value_out_in_(other.bilinear_form_value_out_in_)
+    , bilinear_form_value_out_out_(other.bilinear_form_value_out_out_)
     , result_(other.result_)
   {
-    for (auto& element_data : other.element_data_) {
-      const auto& local_bilinear_form = *std::get<0>(element_data);
-      auto& param = std::get<1>(element_data);
-      const auto& filter = *std::get<2>(element_data);
+    for (auto& data : other.element_data_) {
+      const auto& local_bilinear_form = *std::get<0>(data);
+      auto& param = std::get<1>(data);
+      const auto& filter = *std::get<2>(data);
+      this->append(local_bilinear_form, param, filter);
+    }
+    for (auto& data : other.coupling_intersection_data_) {
+      const auto& local_bilinear_form = *std::get<0>(data);
+      auto& param = std::get<1>(data);
+      const auto& filter = *std::get<2>(data);
+      this->append(local_bilinear_form, param, filter);
+    }
+    for (auto& data : other.intersection_data_) {
+      const auto& local_bilinear_form = *std::get<0>(data);
+      auto& param = std::get<1>(data);
+      const auto& filter = *std::get<2>(data);
       this->append(local_bilinear_form, param, filter);
     }
   } // BilinearForm(...)
@@ -158,39 +180,42 @@ public:
     return *range_;
   }
 
+  /// \name These methods allow to append local element bilinear forms
+  ///\{
+
   ThisType&
-  append(const LocalElementBilinearFormInterface<E, s_r, s_rC, SR, Result, r_r, r_rC, RR>& local_bilinear_form,
+  append(const LocalElementBilinearFormInterface<E, r_r, r_rC, RR, ResultType, s_r, s_rC, SR>& local_bilinear_form,
          const XT::Common::Parameter& param = {},
          const ElementFilterType& filter = XT::Grid::ApplyOn::AllElements<GV>())
   {
-    LOG__(Logger, info) << Logger::logger.prefix << ".append(local_bilinear_form=" << &local_bilinear_form
+    LOG__(Logger, info) << Logger::logger.prefix << ".append(local_element_bilinear_form=" << &local_bilinear_form
                         << ", param=" << param << ", filter=" << &filter << ")" << std::endl;
     element_data_.emplace_back(local_bilinear_form.copy(), param, std::unique_ptr<ElementFilterType>(filter.copy()));
     return *this;
   }
 
   ThisType&
-  operator+=(const LocalElementBilinearFormInterface<E, s_r, s_rC, SR, Result, r_r, r_rC, RR>& local_bilinear_form)
+  operator+=(const LocalElementBilinearFormInterface<E, r_r, r_rC, RR, ResultType, s_r, s_rC, SR>& local_bilinear_form)
   {
     this->append(local_bilinear_form);
     return *this;
   }
 
-  ThisType& operator+=(std::tuple<const LocalElementBilinearFormInterface<E, s_r, s_rC, SR, Result, r_r, r_rC, RR>&,
+  ThisType& operator+=(std::tuple<const LocalElementBilinearFormInterface<E, r_r, r_rC, RR, ResultType, s_r, s_rC, SR>&,
                                   const XT::Common::Parameter&> local_bilinear_form__param)
   {
     this->append(std::get<0>(local_bilinear_form__param), std::get<1>(local_bilinear_form__param));
     return *this;
   }
 
-  ThisType& operator+=(std::tuple<const LocalElementBilinearFormInterface<E, s_r, s_rC, SR, Result, r_r, r_rC, RR>&,
+  ThisType& operator+=(std::tuple<const LocalElementBilinearFormInterface<E, r_r, r_rC, RR, ResultType, s_r, s_rC, SR>&,
                                   const ElementFilterType&> local_bilinear_form__filter)
   {
     this->append(std::get<0>(local_bilinear_form__filter), {}, std::get<1>(local_bilinear_form__filter));
     return *this;
   }
 
-  ThisType& operator+=(std::tuple<const LocalElementBilinearFormInterface<E, s_r, s_rC, SR, Result, r_r, r_rC, RR>&,
+  ThisType& operator+=(std::tuple<const LocalElementBilinearFormInterface<E, r_r, r_rC, RR, ResultType, s_r, s_rC, SR>&,
                                   const XT::Common::Parameter&,
                                   const ElementFilterType&> local_bilinear_form__param__filter)
   {
@@ -200,42 +225,206 @@ public:
     return *this;
   }
 
+  ///\}
+  /// \name These methods allow to append local coupling intersection bilinear forms
+  ///\{
+
+  ThisType& append(const LocalCouplingIntersectionBilinearFormInterface<I, r_r, r_rC, RR, ResultType, s_r, s_rC, SR>&
+                       local_bilinear_form,
+                   const XT::Common::Parameter& param = {},
+                   const IntersectionFilterType& filter = XT::Grid::ApplyOn::AllElements<GV>())
+  {
+    LOG__(Logger, info) << Logger::logger.prefix
+                        << ".append(local_coupling_intersection_bilinear_form=" << &local_bilinear_form
+                        << ", param=" << param << ", filter=" << &filter << ")" << std::endl;
+    coupling_intersection_data_.emplace_back(
+        local_bilinear_form.copy(), param, std::unique_ptr<IntersectionFilterType>(filter.copy()));
+    return *this;
+  }
+
+  ThisType&
+  operator+=(const LocalCouplingIntersectionBilinearFormInterface<I, r_r, r_rC, RR, ResultType, s_r, s_rC, SR>&
+                 local_bilinear_form)
+  {
+    this->append(local_bilinear_form);
+    return *this;
+  }
+
+  ThisType& operator+=(
+      std::tuple<const LocalCouplingIntersectionBilinearFormInterface<I, r_r, r_rC, RR, ResultType, s_r, s_rC, SR>&,
+                 const XT::Common::Parameter&> local_bilinear_form__param)
+  {
+    this->append(std::get<0>(local_bilinear_form__param), std::get<1>(local_bilinear_form__param));
+    return *this;
+  }
+
+  ThisType& operator+=(
+      std::tuple<const LocalCouplingIntersectionBilinearFormInterface<I, r_r, r_rC, RR, ResultType, s_r, s_rC, SR>&,
+                 const IntersectionFilterType&> local_bilinear_form__filter)
+  {
+    this->append(std::get<0>(local_bilinear_form__filter), {}, std::get<1>(local_bilinear_form__filter));
+    return *this;
+  }
+
+  ThisType& operator+=(
+      std::tuple<const LocalCouplingIntersectionBilinearFormInterface<I, r_r, r_rC, RR, ResultType, s_r, s_rC, SR>&,
+                 const XT::Common::Parameter&,
+                 const IntersectionFilterType&> local_bilinear_form__param__filter)
+  {
+    this->append(std::get<0>(local_bilinear_form__param__filter),
+                 std::get<1>(local_bilinear_form__param__filter),
+                 std::get<2>(local_bilinear_form__param__filter));
+    return *this;
+  }
+
+  ///\}
+  /// \name These methods allow to append local intersection bilinear forms
+  ///\{
+
+  ThisType&
+  append(const LocalIntersectionBilinearFormInterface<I, r_r, r_rC, RR, ResultType, s_r, s_rC, SR>& local_bilinear_form,
+         const XT::Common::Parameter& param = {},
+         const IntersectionFilterType& filter = XT::Grid::ApplyOn::AllElements<GV>())
+  {
+    LOG__(Logger, info) << Logger::logger.prefix << ".append(local_intersection_bilinear_form=" << &local_bilinear_form
+                        << ", param=" << param << ", filter=" << &filter << ")" << std::endl;
+    intersection_data_.emplace_back(
+        local_bilinear_form.copy(), param, std::unique_ptr<IntersectionFilterType>(filter.copy()));
+    return *this;
+  }
+
+  ThisType& operator+=(
+      const LocalIntersectionBilinearFormInterface<I, r_r, r_rC, RR, ResultType, s_r, s_rC, SR>& local_bilinear_form)
+  {
+    this->append(local_bilinear_form);
+    return *this;
+  }
+
+  ThisType&
+  operator+=(std::tuple<const LocalIntersectionBilinearFormInterface<I, r_r, r_rC, RR, ResultType, s_r, s_rC, SR>&,
+                        const XT::Common::Parameter&> local_bilinear_form__param)
+  {
+    this->append(std::get<0>(local_bilinear_form__param), std::get<1>(local_bilinear_form__param));
+    return *this;
+  }
+
+  ThisType&
+  operator+=(std::tuple<const LocalIntersectionBilinearFormInterface<I, r_r, r_rC, RR, ResultType, s_r, s_rC, SR>&,
+                        const IntersectionFilterType&> local_bilinear_form__filter)
+  {
+    this->append(std::get<0>(local_bilinear_form__filter), {}, std::get<1>(local_bilinear_form__filter));
+    return *this;
+  }
+
+  ThisType&
+  operator+=(std::tuple<const LocalIntersectionBilinearFormInterface<I, r_r, r_rC, RR, ResultType, s_r, s_rC, SR>&,
+                        const XT::Common::Parameter&,
+                        const IntersectionFilterType&> local_bilinear_form__param__filter)
+  {
+    this->append(std::get<0>(local_bilinear_form__param__filter),
+                 std::get<1>(local_bilinear_form__param__filter),
+                 std::get<2>(local_bilinear_form__param__filter));
+    return *this;
+  }
+
+  ///\}
+
   void prepare() override final
   {
     result_ = 0;
   }
 
-  Result compute_locally(const E& element)
+  /// \brief Variant of compute_locally to apply all local element bilinear forms
+  ResultType compute_locally(const E& element)
   {
     Result ret = 0;
-    local_source_->bind(element);
-    local_range_->bind(element);
-    DUNE_THROW_IF(local_source_->size() != 1,
-                  Exceptions::bilinear_form_error,
-                  "local_source_->size() = " << local_source_->size());
-    DUNE_THROW_IF(
-        local_range_->size() != 1, Exceptions::bilinear_form_error, "local_range_->size() = " << local_range_->size());
-    for (auto& element_data : element_data_) {
-      const auto& local_bilinear_form = *std::get<0>(element_data);
-      auto& param = std::get<1>(element_data);
-      const auto& filter = *std::get<2>(element_data);
+    local_source_in_->bind(element);
+    local_range_in_->bind(element);
+    for (auto& data : element_data_) {
+      const auto& local_bilinear_form = *std::get<0>(data);
+      auto& param = std::get<1>(data);
+      const auto& filter = *std::get<2>(data);
       if (filter.contains(this->grid_view_, element)) {
-        local_bilinear_form.apply2(*local_source_, *local_range_, bilinear_form_value_, param);
-        assert(bilinear_form_value_.rows() >= 1);
-        assert(bilinear_form_value_.cols() >= 1);
-        ret += bilinear_form_value_[0][0];
+        assert(local_source_in_->size(param) == 1);
+        assert(local_range_in_->size(param) == 1);
+        local_bilinear_form.apply2(*local_range_in_, *local_source_in_, bilinear_form_value_in_in_, param);
+        assert(bilinear_form_value_in_in_.rows() >= 1);
+        assert(bilinear_form_value_in_in_.cols() >= 1);
+        ret += bilinear_form_value_in_in_[0][0];
       }
     }
     return ret;
-  }
+  } // ... compute_locally(...)
+
+  /// \brief Variant of compute_locally to apply all local intersection and coupling intersection bilinear forms
+  ///
+  /// \attention Make sure to call this method only on suitable intersections, neither intersection.neighbor() not
+  ///            the validity of outside_element are checked!
+  ResultType compute_locally(const I& intersection, const E& inside_element, const E& outside_element)
+  {
+    Result ret = 0;
+    local_source_in_->bind(inside_element);
+    local_range_in_->bind(inside_element);
+    local_source_out_->bind(outside_element);
+    local_range_out_->bind(outside_element);
+    for (auto& data : coupling_intersection_data_) {
+      const auto& local_bilinear_form = *std::get<0>(data);
+      auto& param = std::get<1>(data);
+      const auto& filter = *std::get<2>(data);
+      if (filter.contains(this->grid_view_, intersection)) {
+        assert(local_source_in_->size(param) == 1);
+        assert(local_source_out_->size(param) == 1);
+        assert(local_range_in_->size(param) == 1);
+        assert(local_range_out_->size(param) == 1);
+        local_bilinear_form.apply2(intersection,
+                                   *local_range_in_,
+                                   *local_source_in_,
+                                   *local_range_out_,
+                                   *local_source_out_,
+                                   bilinear_form_value_in_in_,
+                                   bilinear_form_value_in_out_,
+                                   bilinear_form_value_out_in_,
+                                   bilinear_form_value_out_out_,
+                                   param);
+        assert(bilinear_form_value_in_in_.rows() * bilinear_form_value_in_in_.cols() >= 1);
+        assert(bilinear_form_value_in_out_.rows() * bilinear_form_value_in_out_.cols() >= 1);
+        assert(bilinear_form_value_out_in_.rows() * bilinear_form_value_out_in_.cols() >= 1);
+        assert(bilinear_form_value_out_out_.rows() * bilinear_form_value_out_out_.cols() >= 1);
+        ret += bilinear_form_value_in_in_[0][0] + bilinear_form_value_in_out_[0][0] + bilinear_form_value_out_in_[0][0]
+               + bilinear_form_value_out_out_[0][0];
+      }
+    }
+    for (auto& data : intersection_data_) {
+      const auto& local_bilinear_form = *std::get<0>(data);
+      auto& param = std::get<1>(data);
+      const auto& filter = *std::get<2>(data);
+      auto apply_bilinear_form_to_one_side = [&](const auto& test_basis, const auto& ansatz_basis) {
+        assert(test_basis.size(param) == 1);
+        assert(ansatz_basis.size(param) == 1);
+        // it does not matter which of the tmp matrices we pick here
+        local_bilinear_form.apply2(intersection, test_basis, ansatz_basis, bilinear_form_value_in_in_, param);
+        assert(bilinear_form_value_in_in_.rows() * bilinear_form_value_in_in_.cols() >= 1);
+        return bilinear_form_value_in_in_[0][0];
+      };
+      if (filter.contains(this->grid_view_, intersection)) {
+        if (local_bilinear_form.inside())
+          ret += apply_bilinear_form_to_one_side(*local_range_in_, *local_source_in_);
+        else
+          ret += apply_bilinear_form_to_one_side(*local_range_out_, *local_source_out_);
+      }
+    }
+    return ret;
+  } // ... compute_locally(...)
 
   void apply_local(const E& element) override final
   {
     result_ += compute_locally(element);
   }
 
-  void apply_local(const I& /*intersection*/, const E& /*inside_element*/, const E& /*outside_element*/) override final
-  {}
+  void apply_local(const I& intersection, const E& inside_element, const E& outside_element) override final
+  {
+    result_ += compute_locally(intersection, inside_element, outside_element);
+  }
 
   void finalize() override final
   {
@@ -265,14 +454,29 @@ protected:
   const GridViewType grid_view_;
   const std::unique_ptr<XT::Functions::GridFunctionInterface<E, s_r, s_rC, SR>> source_;
   const std::unique_ptr<XT::Functions::GridFunctionInterface<E, r_r, r_rC, RR>> range_;
-  std::unique_ptr<typename SourceType::LocalFunctionType> local_source_;
-  std::unique_ptr<typename RangeType::LocalFunctionType> local_range_;
-  DynamicMatrix<Result> bilinear_form_value_;
+  std::unique_ptr<typename SourceType::LocalFunctionType> local_source_in_;
+  std::unique_ptr<typename SourceType::LocalFunctionType> local_source_out_;
+  std::unique_ptr<typename RangeType::LocalFunctionType> local_range_in_;
+  std::unique_ptr<typename RangeType::LocalFunctionType> local_range_out_;
+  DynamicMatrix<Result> bilinear_form_value_in_in_;
+  DynamicMatrix<Result> bilinear_form_value_in_out_;
+  DynamicMatrix<Result> bilinear_form_value_out_in_;
+  DynamicMatrix<Result> bilinear_form_value_out_out_;
   ResultType result_;
-  std::list<std::tuple<std::unique_ptr<LocalElementBilinearFormInterface<E, s_r, s_rC, SR, ResultType, r_r, r_rC, RR>>,
+  std::list<std::tuple<std::unique_ptr<LocalElementBilinearFormInterface<E, r_r, r_rC, RR, ResultType, s_r, s_rC, SR>>,
                        XT::Common::Parameter,
                        std::unique_ptr<ElementFilterType>>>
       element_data_;
+  std::list<std::tuple<
+      std::unique_ptr<LocalCouplingIntersectionBilinearFormInterface<I, r_r, r_rC, RR, ResultType, s_r, s_rC, SR>>,
+      XT::Common::Parameter,
+      std::unique_ptr<IntersectionFilterType>>>
+      coupling_intersection_data_;
+  std::list<
+      std::tuple<std::unique_ptr<LocalIntersectionBilinearFormInterface<I, r_r, r_rC, RR, ResultType, s_r, s_rC, SR>>,
+                 XT::Common::Parameter,
+                 std::unique_ptr<IntersectionFilterType>>>
+      intersection_data_;
 }; // class BilinearForm
 
 
