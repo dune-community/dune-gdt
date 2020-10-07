@@ -116,7 +116,7 @@ public:
   using typename BaseType::IntersectionType;
   using typename BaseType::LocalBasisType;
   using IntegrandType = LocalUnaryIntersectionIntegrandInterface<I, r, rC, R>;
-  //  using GenericIntegrand = GenericLocalUnaryIntersectionIntegrand<I, r, rC, R>;
+  using GenericIntegrand = GenericLocalUnaryIntersectionIntegrand<I, r, rC, R>;
 
   LocalIntersectionIntegralFunctional(const IntegrandType& integrand, const int over_integrate = 0)
     : BaseType(integrand.parameter_type())
@@ -124,14 +124,17 @@ public:
     , over_integrate_(over_integrate)
   {}
 
-  //  LocalIntersectionIntegralFunctional(typename GenericIntegrand::GenericOrderFunctionType order_function,
-  //                                      typename GenericIntegrand::GenericEvaluateFunctionType evaluate_function,
-  //                                      const XT::Common::ParameterType& param_type = {},
-  //                                      const int over_integrate = 0)
-  //    : BaseType(param_type)
-  //    , integrand_(GenericIntegrand(order_function, evaluate_function).copy())
-  //    , over_integrate_(over_integrate)
-  //  {}
+  LocalIntersectionIntegralFunctional(
+      typename GenericIntegrand::GenericOrderFunctionType order_function,
+      typename GenericIntegrand::GenericEvaluateFunctionType evaluate_function,
+      typename GenericIntegrand::GenericPostBindFunctionType post_bind_function = [](const auto&) {},
+      const XT::Common::ParameterType& param_type = {},
+      const int over_integrate = 0)
+    : BaseType(param_type)
+    , integrand_(GenericIntegrand(order_function, evaluate_function, post_bind_function)
+                     .copy_as_unary_intersection_integrand())
+    , over_integrate_(over_integrate)
+  {}
 
   LocalIntersectionIntegralFunctional(const ThisType& other)
     : BaseType(other)
