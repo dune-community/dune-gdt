@@ -121,7 +121,6 @@ private:
             self_.local_finite_elements_.get(geometry_type_, self_.fe_order_));
         size_ = current_local_fe_.access().size();
         order_ = current_local_fe_.access().basis().order();
-        eval_cache_.clear();
       }
     }
 
@@ -147,13 +146,7 @@ private:
     {
       DUNE_THROW_IF(!current_local_fe_.valid(), Exceptions::not_bound_to_an_element_yet, "");
       this->assert_inside_reference_element(point_in_reference_element);
-      const auto it = eval_cache_.find(point_in_reference_element);
-      if (it != eval_cache_.end())
-        result = it->second;
-      else {
-        current_local_fe_.access().basis().evaluate(point_in_reference_element, result);
-        eval_cache_[point_in_reference_element] = result;
-      }
+      current_local_fe_.access().basis().evaluate(point_in_reference_element, result);
     }
 
     void jacobians(const DomainType& point_in_reference_element,
@@ -219,7 +212,6 @@ private:
     size_t size_;
     int order_;
     Dune::GeometryType geometry_type_;
-    mutable std::map<DomainType, std::vector<RangeType>, XT::Common::FieldVectorLess> eval_cache_;
   }; // class LocalizedDefaultGlobalBasis
 
   const GridViewType& grid_view_;
