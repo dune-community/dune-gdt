@@ -4,11 +4,12 @@ __name = Burgers1dExplicitDgP2Test
 visualization_steps                      = 0
 num_refinements                          = 1
 num_additional_refinements_for_reference = 1
+use_fixed_dt                             = 0.003975344848632812
 
 [Burgers1dExplicitDgP2Test.periodic_boundaries__numerical_engquist_osher_flux.results]
 target.h                        = [6.25e-02 3.12e-02]
-norm.L_infty_L_2                = [7.41e-02 6.14e-02]
+norm.L_infty_L_2                = [5.56e-02 4.37e-02]
 quantity.rel_mass_conserv_error = [0.00e+00 0.00e+00]
-quantity.num_timesteps          = [1.32e+02 2.57e+02]
-quantity.CFL                    = [1.94e-01 1.98e-01]
+quantity.num_timesteps          = [2.57e+02 2.57e+02]
+quantity.CFL                    = [9.90e-02 1.98e-01]
 
