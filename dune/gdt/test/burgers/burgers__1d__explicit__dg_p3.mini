@@ -8,7 +8,7 @@ num_additional_refinements_for_reference = 1
 [Burgers1dExplicitDgP3Test.periodic_boundaries__numerical_engquist_osher_flux.results]
 target.h                        = [6.25e-02 3.12e-02]
 norm.L_infty_L_2                = [7.72e-02 6.07e-02]
-quantity.rel_mass_conserv_error = [5.61e-15 1.03e-14]
+quantity.rel_mass_conserv_error = [5.91e-15 1.02e-14]
 quantity.num_timesteps          = [2.92e+02 6.07e+02]
 quantity.CFL                    = [8.70e-02 8.32e-02]
 
