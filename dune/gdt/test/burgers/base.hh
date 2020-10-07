@@ -150,11 +150,14 @@ protected:
   {
     auto& self = *this;
     const auto fv_dt = self.estimate_fixed_explicit_fv_dt(space);
-    const auto dt = self.estimate_fixed_explicit_dt_to_T_end(
-        space,
-        DXTC_TEST_CONFIG_GET("setup.estimate_fixed_explicit_dt.min_dt", 1e-4),
-        T_end,
-        DXTC_TEST_CONFIG_GET("setup.estimate_fixed_explicit_dt.max_overshoot", 1.25));
+    // since estimate_fixed_explicit_dt_to_T_end might be costly, we allow to use a predefined dt here to speed up tests
+    auto dt = DXTC_TEST_CONFIG_GET("setup.use_fixed_dt", -1.);
+    if (dt < 0)
+      dt = self.estimate_fixed_explicit_dt_to_T_end(
+          space,
+          DXTC_TEST_CONFIG_GET("setup.estimate_fixed_explicit_dt.min_dt", 1e-4),
+          T_end,
+          DXTC_TEST_CONFIG_GET("setup.estimate_fixed_explicit_dt.max_overshoot", 1.25));
     self.current_data_["quantity"]["dt"] = dt;
     self.current_data_["quantity"]["explicit_fv_dt"] = fv_dt;
     Timer timer;
