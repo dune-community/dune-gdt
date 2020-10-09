@@ -9,7 +9,7 @@ use_fixed_dt                             = 0.0016714981079101561
 [Burgers1dExplicitDgP3Test.periodic_boundaries__numerical_engquist_osher_flux.results]
 target.h                        = [6.25e-02 3.12e-02]
 norm.L_infty_L_2                = [5.14e-02 4.13e-02]
-quantity.rel_mass_conserv_error = [5.17e-15 1.02e-14]
+quantity.rel_mass_conserv_error = [5.17e-15 1.03e-14]
 quantity.num_timesteps          = [6.07e+02 6.07e+02]
 quantity.CFL                    = [4.17e-02 8.32e-02]
 
