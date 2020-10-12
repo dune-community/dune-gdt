@@ -1,29 +1,49 @@
 __name = InviscidCompressibleFlow1dEulerExplicitFvTest
 
+[InviscidCompressibleFlow1dEulerExplicitFvTest.periodic_boundaries.setup]
+visualization_steps                      = 0
+num_refinements                          = 2
+num_additional_refinements_for_reference = 1
+
 [InviscidCompressibleFlow1dEulerExplicitFvTest.periodic_boundaries.results]
 target.h                        = [1.25e-01 6.25e-02 3.12e-02]
-norm.L_infty_L_2                = [7.75e-01 4.94e-01 3.02e-01]
+norm.L_infty_L_2                = [6.93e-01 4.02e-01 1.78e-01]
 quantity.rel_mass_conserv_error = [0.00e+00 0.00e+00 0.00e+00]
 quantity.num_timesteps          = [6.40e+01 1.26e+02 2.50e+02]
 quantity.CFL                    = [0.99e+00 0.99e+00 0.99e+00]
 
+[InviscidCompressibleFlow1dEulerExplicitFvTest.impermeable_walls_by_direct_euler_treatment.setup]
+visualization_steps                      = 0
+num_refinements                          = 2
+num_additional_refinements_for_reference = 1
+
 [InviscidCompressibleFlow1dEulerExplicitFvTest.impermeable_walls_by_direct_euler_treatment.results]
 target.h                        = [1.25e-01 6.25e-02 3.12e-02]
-norm.L_infty_L_2                = [7.59e-01 5.14e-01 3.13e-01]
+norm.L_infty_L_2                = [6.59e-01 3.99e-01 1.85e-01]
 quantity.rel_mass_conserv_error = [3.50e-01 4.20e-01 4.57e-01]
 quantity.num_timesteps          = [6.40e+01 1.26e+02 2.50e+02]
 quantity.CFL                    = [0.99e+00 0.99e+00 0.99e+00]
 
+[InviscidCompressibleFlow1dEulerExplicitFvTest.impermeable_walls_by_inviscid_mirror_treatment.setup]
+visualization_steps                      = 0
+num_refinements                          = 2
+num_additional_refinements_for_reference = 1
+
 [InviscidCompressibleFlow1dEulerExplicitFvTest.impermeable_walls_by_inviscid_mirror_treatment.results]
 target.h                        = [1.25e-01 6.25e-02 3.12e-02]
-norm.L_infty_L_2                = [7.90e-01 5.25e-01 3.17e-01]
+norm.L_infty_L_2                = [6.87e-01 4.09e-01 1.88e-01]
 quantity.rel_mass_conserv_error = [3.43e-01 4.06e-01 4.51e-01]
 quantity.num_timesteps          = [6.40e+01 1.26e+02 2.50e+02]
 quantity.CFL                    = [0.99e+00 0.99e+00 0.99e+00]
 
+[InviscidCompressibleFlow1dEulerExplicitFvTest.inflow_from_the_left_by_heuristic_euler_treatment_impermeable_wall_right.setup]
+visualization_steps                      = 0
+num_refinements                          = 2
+num_additional_refinements_for_reference = 1
+
 [InviscidCompressibleFlow1dEulerExplicitFvTest.inflow_from_the_left_by_heuristic_euler_treatment_impermeable_wall_right.results]
 target.h                        = [1.25e-01 6.25e-02 3.12e-02]
-norm.L_infty_L_2                = [6.35e-01 4.35e-01 2.53e-01]
+norm.L_infty_L_2                = [5.70e-01 3.56e-01 1.58e-01]
 quantity.rel_mass_conserv_error = [6.36e-01 6.33e-01 6.29e-01]
 quantity.num_timesteps          = [1.39e+02 2.75e+02 5.48e+02]
 quantity.CFL                    = [0.99e+00 0.99e+00 0.99e+00]
