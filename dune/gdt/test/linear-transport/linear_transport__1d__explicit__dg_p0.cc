@@ -32,7 +32,8 @@ TEST_F(LinearTransport1dExplicitDgP0Test, periodic_boundaries__numerical_upwind_
   this->numerical_flux_type_ = "upwind";
   const auto actual_results = this->run();
   const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
-  XT::Test::check_eoc_study_for_success(expected_results, actual_results);
+  XT::Test::check_eoc_study_for_success(
+      expected_results, actual_results, DXTC_TEST_CONFIG_GET("setup.zero_tolerance", 1e-15));
 }
 TEST_F(LinearTransport1dExplicitDgP0Test, periodic_boundaries__numerical_lax_friedrichs_flux)
 {
@@ -41,7 +42,8 @@ TEST_F(LinearTransport1dExplicitDgP0Test, periodic_boundaries__numerical_lax_fri
   this->numerical_flux_type_ = "lax_friedrichs";
   const auto actual_results = this->run();
   const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
-  XT::Test::check_eoc_study_for_success(expected_results, actual_results);
+  XT::Test::check_eoc_study_for_success(
+      expected_results, actual_results, DXTC_TEST_CONFIG_GET("setup.zero_tolerance", 1e-15));
 }
 TEST_F(LinearTransport1dExplicitDgP0Test, periodic_boundaries__numerical_engquist_osher_flux)
 {
@@ -50,7 +52,8 @@ TEST_F(LinearTransport1dExplicitDgP0Test, periodic_boundaries__numerical_engquis
   this->numerical_flux_type_ = "engquist_osher";
   const auto actual_results = this->run();
   const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
-  XT::Test::check_eoc_study_for_success(expected_results, actual_results);
+  XT::Test::check_eoc_study_for_success(
+      expected_results, actual_results, DXTC_TEST_CONFIG_GET("setup.zero_tolerance", 1e-15));
 }
 TEST_F(LinearTransport1dExplicitDgP0Test, periodic_boundaries__numerical_vijayasundaram_flux)
 {
@@ -59,5 +62,6 @@ TEST_F(LinearTransport1dExplicitDgP0Test, periodic_boundaries__numerical_vijayas
   this->numerical_flux_type_ = "vijayasundaram";
   const auto actual_results = this->run();
   const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
-  XT::Test::check_eoc_study_for_success(expected_results, actual_results);
+  XT::Test::check_eoc_study_for_success(
+      expected_results, actual_results, DXTC_TEST_CONFIG_GET("setup.zero_tolerance", 1e-15));
 }

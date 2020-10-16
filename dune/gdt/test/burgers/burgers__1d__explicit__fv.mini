@@ -7,9 +7,10 @@ num_additional_refinements_for_reference = 1
 use_fixed_dt                             = 0.0096815612792968738
 
 [Burgers1dExplicitFvTest.periodic_boundaries__numerical_upwind_flux.results]
+zero_tolerance                  = 1e-15
 target.h                        = [6.25e-02 3.12e-02]
 norm.L_infty_L_2                = [1.31e-01 8.92e-02]
-quantity.rel_mass_conserv_error = [4.43e-16 4.43e-16]
+quantity.rel_mass_conserv_error = [0.00e+00 0.00e+00]
 quantity.num_timesteps          = [1.07e+02 1.07e+02]
 quantity.CFL                    = [2.31e-01 4.80e-01]
 
@@ -21,9 +22,10 @@ num_additional_refinements_for_reference = 1
 use_fixed_dt                             = 0.009193328857421872
 
 [Burgers1dExplicitFvTest.periodic_boundaries__numerical_lax_friedrichs_flux.results]
+zero_tolerance                  = 1e-15
 target.h                        = [6.25e-02 3.12e-02]
 norm.L_infty_L_2                = [1.31e-01 8.77e-02]
-quantity.rel_mass_conserv_error = [5.91e-16 5.91e-16]
+quantity.rel_mass_conserv_error = [0.00e+00 0.00e+00]
 quantity.num_timesteps          = [1.12e+02 1.12e+02]
 quantity.CFL                    = [2.20e-01 4.56e-01]
 
@@ -35,9 +37,10 @@ num_additional_refinements_for_reference = 1
 use_fixed_dt                             = 0.0096815612792968738
 
 [Burgers1dExplicitFvTest.periodic_boundaries__numerical_engquist_osher_flux.results]
+zero_tolerance                  = 1e-15
 target.h                        = [6.25e-02 3.12e-02]
 norm.L_infty_L_2                = [1.31e-01 8.92e-02]
-quantity.rel_mass_conserv_error = [4.43e-16 4.43e-16]
+quantity.rel_mass_conserv_error = [0.00e+00 0.00e+00]
 quantity.num_timesteps          = [1.07e+02 1.07e+02]
 quantity.CFL                    = [2.31e-01 4.80e-01]
 

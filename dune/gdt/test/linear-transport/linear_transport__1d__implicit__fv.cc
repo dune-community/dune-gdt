@@ -33,7 +33,8 @@ TEST_F(LinearTransport1dExplicitFvTest, dt_equals_h)
   this->numerical_flux_type_ = "upwind";
   const auto actual_results = this->run();
   const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
-  XT::Test::check_eoc_study_for_success(expected_results, actual_results, 1.3e-15);
+  XT::Test::check_eoc_study_for_success(
+      expected_results, actual_results, DXTC_TEST_CONFIG_GET("setup.zero_tolerance", 1e-15));
 }
 
 
@@ -45,7 +46,8 @@ TEST_F(LinearTransport1dImplicitFvTest, dt_equals_h)
   this->numerical_flux_type_ = "upwind";
   const auto actual_results = this->run();
   const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
-  XT::Test::check_eoc_study_for_success(expected_results, actual_results, 1.3e-15);
+  XT::Test::check_eoc_study_for_success(
+      expected_results, actual_results, DXTC_TEST_CONFIG_GET("setup.zero_tolerance", 1e-15));
 }
 
 
@@ -74,7 +76,8 @@ TEST_F(LinearTransport1dExplicitWithAutomaticDtTest, automatic_dt)
   this->numerical_flux_type_ = "upwind";
   const auto actual_results = this->run();
   const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
-  XT::Test::check_eoc_study_for_success(expected_results, actual_results, 1.3e-15);
+  XT::Test::check_eoc_study_for_success(
+      expected_results, actual_results, DXTC_TEST_CONFIG_GET("setup.zero_tolerance", 1e-15));
 }
 
 
@@ -86,5 +89,6 @@ TEST_F(LinearTransport1dImplicitFvTest, larger_dt)
   this->numerical_flux_type_ = "upwind";
   const auto actual_results = this->run();
   const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
-  XT::Test::check_eoc_study_for_success(expected_results, actual_results, 1.3e-15);
+  XT::Test::check_eoc_study_for_success(
+      expected_results, actual_results, DXTC_TEST_CONFIG_GET("setup.zero_tolerance", 1e-15));
 }
