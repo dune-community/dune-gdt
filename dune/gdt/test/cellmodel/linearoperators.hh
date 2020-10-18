@@ -501,6 +501,8 @@ public:
   {
     matrix_colmajor_ = matrix_.backend();
     matrix_colmajor_.makeCompressed();
+    // solver_->setDroptol(1e-8);
+    // solver_->setFillfactor(20);
     solver_->analyzePattern(matrix_colmajor_);
     solver_->factorize(matrix_colmajor_);
   }

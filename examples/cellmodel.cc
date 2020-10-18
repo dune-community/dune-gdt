@@ -68,6 +68,7 @@ int main(int argc, char* argv[])
     double Ca = config.template get<double>("problem.Ca", 0.1);
     double Pa = config.template get<double>("problem.Pa", 1.0);
     double Fa = eta * U / (zeta * L);
+    double Fa2 = -Fa;
     const double kappa = eta_rot / eta;
     std::cout << "Ca: " << Ca << ", Be: " << Be << ", Pa: " << Pa << ", Fa: " << Fa << ", Re: " << Re << std::endl;
 
@@ -102,6 +103,7 @@ int main(int argc, char* argv[])
                                  Pa,
                                  Re,
                                  Fa,
+                                 Fa2,
                                  xi,
                                  kappa,
                                  c_1,
@@ -121,7 +123,7 @@ int main(int argc, char* argv[])
                                  gmres_verbose);
 
     auto begin = std::chrono::steady_clock::now();
-    auto result = model_solver.solve(true, write_step, filename, subsampling);
+    model_solver.solve_without_storing(true, write_step, filename, subsampling);
     const std::chrono::duration<double> time = std::chrono::steady_clock::now() - begin;
     std::cout << "Solving took: " << time.count() << " s." << std::endl;
   } catch (Exception& e) {
