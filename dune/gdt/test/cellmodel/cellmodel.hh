@@ -51,7 +51,7 @@ struct CellModelSolver
 {
   using G = ALU_2D_SIMPLEX_CONFORMING;
   // using G = YASP_2D_EQUIDISTANT_OFFSET;
-  static const constexpr size_t d = G::dimension;
+  static constexpr size_t d = G::dimension;
   using GV = typename G::LeafGridView;
   using PGV = XT::Grid::PeriodicGridView<GV>;
   using E = XT::Grid::extract_entity_t<GV>;
@@ -81,12 +81,17 @@ struct CellModelSolver
   using ColMajorBackendType = ::Eigen::SparseMatrix<R, ::Eigen::ColMajor>;
   using RowMajorBackendType = typename MatrixType::BackendType;
   using LUSolverType = ::Eigen::SparseLU<ColMajorBackendType>;
+  using LDLTSolverType = ::Eigen::SimplicialLDLT<ColMajorBackendType>;
   using OfieldDirectSolverType = ::Eigen::SparseLU<ColMajorBackendType>;
   using OfieldSchurSolverType = Dune::RestartedGMResSolver<EigenVectorType>;
   using PerThreadVectorLocalFunc = XT::Common::PerThreadValue<std::unique_ptr<VectorLocalDiscreteFunctionType>>;
   using PerThreadScalarLocalFuncs = XT::Common::PerThreadValue<std::vector<std::unique_ptr<LocalDiscreteFunctionType>>>;
   using PerThreadVectorLocalFuncs =
       XT::Common::PerThreadValue<std::vector<std::unique_ptr<VectorLocalDiscreteFunctionType>>>;
+  using SpaceTypeU = ContinuousLagrangeSpace<PGV, d, R>;
+  using SpaceTypeP = SpaceTypeU;
+  using SpaceTypePhi = ContinuousLagrangeSpace<PGV, 1, R>;
+  using SpaceTypep = SpaceTypePhi;
 
   CellModelSolver(
       const std::string testcase = "single_cell",
@@ -101,6 +106,7 @@ struct CellModelSolver
       const double Pa = 1, // polarization elasticity number
       const double Re = 5e-13, // Reynolds number
       const double Fa = 1., // active force number
+      const double Fa2 = 1., // active force number
       const double xi = 1.1, // alignment of P with the flow, > 0 for rod-like cells and < 0 for oblate ones
       const double kappa = 1.65, // eta_rot/eta, scaling factor between rotational and dynamic viscosity
       const double c_1 = 5., // double well shape parameter
@@ -124,6 +130,121 @@ struct CellModelSolver
   CellModelSolver& operator=(const CellModelSolver&) = delete;
   CellModelSolver& operator=(CellModelSolver&&) = delete;
 
+  struct QuadratureStorage
+  {
+    QuadratureStorage(CellModelSolver& cellmodel,
+                      const int integration_order,
+                      const bool u_values,
+                      const bool u_jacobians,
+                      const bool P_values,
+                      const bool P_jacobians,
+                      const bool P_products,
+                      const bool phi_values,
+                      const bool phi_jacobians)
+      : P_affine_(cellmodel.P_space_.affine())
+      , phi_affine_(cellmodel.phi_space_.affine())
+      , u_basis_size_(cellmodel.u_space_.basis().max_size())
+      , P_basis_size_(cellmodel.P_space_.basis().max_size())
+      , phi_basis_size_(cellmodel.phi_space_.basis().max_size())
+      , u_dofs_(cellmodel.u_tmp_.dofs().vector())
+      // TODO: replace 0 by cell index
+      , P_dofs_(cellmodel.P_tmp_[0].dofs().vector())
+      , P2_dofs_(cellmodel.P2_.dofs().vector())
+      , Pnat_dofs_(cellmodel.Pnat_tmp_[0].dofs().vector())
+      , phi_dofs_(cellmodel.phi_tmp_[0].dofs().vector())
+      , phinat_dofs_(cellmodel.phinat_tmp_[0].dofs().vector())
+      , mu_dofs_(cellmodel.mu_tmp_[0].dofs().vector())
+    {
+      const auto first_element = *cellmodel.grid_view_.template begin<0>();
+      auto u_local_basis = cellmodel.u_space_.basis().localize();
+      auto P_local_basis = cellmodel.P_space_.basis().localize();
+      auto phi_local_basis = cellmodel.phi_space_.basis().localize();
+      P_local_basis->bind(first_element);
+      u_local_basis->bind(first_element);
+      phi_local_basis->bind(first_element);
+      quadrature_ = QuadratureRules<double, d>::rule(first_element.type(), integration_order);
+      if (u_values) {
+        u_basis_evaluated_ =
+            std::vector<std::vector<DomainType>>(quadrature_.size(), std::vector<DomainType>(u_basis_size_));
+        for (size_t ll = 0; ll < quadrature_.size(); ++ll)
+          u_local_basis->evaluate(quadrature_[ll].position(), u_basis_evaluated_[ll]);
+      }
+      if (u_jacobians) {
+        u_basis_jacobians_ = std::vector<std::vector<FieldMatrix<double, 2, 2>>>(
+            quadrature_.size(), std::vector<FieldMatrix<double, 2, 2>>(u_basis_size_));
+        for (size_t ll = 0; ll < quadrature_.size(); ++ll)
+          u_local_basis->finite_element().basis().jacobian(quadrature_[ll].position(), u_basis_jacobians_[ll]);
+      }
+      if (P_values) {
+        P_basis_evaluated_ =
+            std::vector<std::vector<DomainType>>(quadrature_.size(), std::vector<DomainType>(P_basis_size_));
+        for (size_t ll = 0; ll < quadrature_.size(); ++ll)
+          P_local_basis->evaluate(quadrature_[ll].position(), P_basis_evaluated_[ll]);
+      }
+      if (P_jacobians) {
+        P_basis_jacobians_ = std::vector<std::vector<FieldMatrix<double, 2, 2>>>(
+            quadrature_.size(), std::vector<FieldMatrix<double, 2, 2>>(P_basis_size_));
+        for (size_t ll = 0; ll < quadrature_.size(); ++ll)
+          P_local_basis->finite_element().basis().jacobian(quadrature_[ll].position(), P_basis_jacobians_[ll]);
+      }
+      if (P_products) {
+        P_basis_products_ =
+            std::vector<DynamicMatrix<double>>(quadrature_.size(), DynamicMatrix<double>(P_basis_size_, P_basis_size_));
+        for (size_t ll = 0; ll < quadrature_.size(); ++ll)
+          for (size_t ii = 0; ii < P_basis_size_; ++ii)
+            for (size_t jj = 0; jj < P_basis_size_; ++jj)
+              P_basis_products_[ll][ii][jj] = P_basis_evaluated_[ll][ii] * P_basis_evaluated_[ll][jj];
+      }
+      if (phi_values) {
+        phi_basis_evaluated_ = std::vector<std::vector<FieldVector<double, 1>>>(
+            quadrature_.size(), std::vector<FieldVector<double, 1>>(phi_basis_size_));
+        for (size_t ll = 0; ll < quadrature_.size(); ++ll)
+          phi_local_basis->evaluate(quadrature_[ll].position(), phi_basis_evaluated_[ll]);
+      }
+      if (phi_jacobians) {
+        phi_basis_jacobians_ = std::vector<std::vector<FieldMatrix<double, 1, 2>>>(
+            quadrature_.size(), std::vector<FieldMatrix<double, 1, 2>>(phi_basis_size_));
+        for (size_t ll = 0; ll < quadrature_.size(); ++ll)
+          phi_local_basis->finite_element().basis().jacobian(quadrature_[ll].position(), phi_basis_jacobians_[ll]);
+      }
+      integration_factors_ = std::vector<double>(quadrature_.size(), 0.);
+      for (size_t ll = 0; ll < quadrature_.size(); ++ll)
+        integration_factors_[ll] = first_element.geometry().integrationElement(quadrature_[ll].position());
+    }
+
+    const bool P_affine_;
+    const bool phi_affine_;
+    const size_t u_basis_size_;
+    const size_t P_basis_size_;
+    const size_t phi_basis_size_;
+    const VectorType& u_dofs_;
+    const VectorType& P_dofs_;
+    const VectorType& P2_dofs_;
+    const VectorType& Pnat_dofs_;
+    const VectorType& phi_dofs_;
+    const VectorType& phinat_dofs_;
+    const VectorType& mu_dofs_;
+    Dune::QuadratureRule<double, d> quadrature_;
+    std::vector<std::vector<DomainType>> u_basis_evaluated_;
+    std::vector<std::vector<FieldMatrix<double, 2, 2>>> u_basis_jacobians_;
+    std::vector<std::vector<DomainType>> P_basis_evaluated_;
+    std::vector<std::vector<FieldMatrix<double, 2, 2>>> P_basis_jacobians_;
+    std::vector<DynamicMatrix<double>> P_basis_products_;
+    std::vector<std::vector<FieldVector<double, 1>>> phi_basis_evaluated_;
+    std::vector<std::vector<FieldMatrix<double, 1, 2>>> phi_basis_jacobians_;
+    std::vector<double> integration_factors_;
+  };
+
+
+  struct OfieldNonlinearCFunctor;
+  struct OfieldLinearCFunctor;
+  struct OfieldResidualFunctor;
+  struct PfieldResidualFunctor;
+  struct PfieldNonlinearJacobianFunctor;
+  struct PfieldRhsFunctor;
+  struct PfieldBFunctor;
+  struct StokesRhsFunctor;
+
   size_t num_cells() const;
 
   bool linear() const;
@@ -145,6 +266,10 @@ struct CellModelSolver
                                              const double write_step,
                                              const std::string filename = "cellmodel",
                                              const bool subsampling = true);
+
+  // Like solve, but does not store results (useful for visualization)
+  void
+  solve_without_storing(const bool write, const double write_step, const std::string filename, const bool subsampling);
 
   // Like solve, but only computes and returns the next n timesteps
   std::vector<std::vector<VectorType>> next_n_timesteps(const size_t n);
@@ -588,6 +713,7 @@ struct CellModelSolver
   const bool use_tbb_;
   const double Re_;
   double Fa_inv_;
+  double Fa2_inv_;
   double xi_;
   double kappa_;
   double c_1_;
@@ -608,10 +734,10 @@ struct CellModelSolver
   double dx_;
   double epsilon_;
   // Finite element function spaces
-  const ContinuousLagrangeSpace<PGV, d, R> u_space_;
-  const ContinuousLagrangeSpace<PGV, d, R> P_space_;
-  const ContinuousLagrangeSpace<PGV, 1, R> p_space_;
-  const ContinuousLagrangeSpace<PGV, 1, R> phi_space_;
+  const SpaceTypeU u_space_;
+  const SpaceTypeP P_space_;
+  const SpaceTypep p_space_;
+  const SpaceTypePhi phi_space_;
   // Size of finite element vectors
   const size_t size_u_;
   const size_t size_P_;
@@ -637,6 +763,7 @@ struct CellModelSolver
   ViewVectorDiscreteFunctionType u_;
   ViewDiscreteFunctionType p_;
   std::vector<ViewVectorDiscreteFunctionType> P_;
+  VectorDiscreteFunctionType P2_;
   std::vector<ViewVectorDiscreteFunctionType> Pnat_;
   std::vector<ViewDiscreteFunctionType> phi_;
   std::vector<ViewDiscreteFunctionType> phinat_;
@@ -645,7 +772,11 @@ struct CellModelSolver
   MatrixType S_stokes_;
   MatrixViewType A_stokes_;
   MatrixViewType B_stokes_;
+  MatrixViewType C_stokes_;
   MatrixViewType BT_stokes_;
+  MatrixType A_stokes_full_;
+  MatrixType B_stokes_full_;
+  MatrixType C_stokes_full_;
   // pressure mass matrix
   MatrixType M_p_stokes_;
   // Matrix operator for A_stokes_
@@ -654,6 +785,8 @@ struct CellModelSolver
   EigenVectorType stokes_rhs_vector_;
   EigenVectorViewType stokes_f_vector_;
   EigenVectorViewType stokes_g_vector_;
+  // EigenVectorType stokes_f_vector_;
+  // EigenVectorType stokes_g_vector_;
   // Indices for restricted operator in DEIM context
   std::vector<std::vector<size_t>> stokes_deim_source_dofs_;
   // range dofs that were computed by the DEIM algorithm
@@ -700,6 +833,7 @@ struct CellModelSolver
   // Linear solvers and linear operators needed for solvers
   mutable ColMajorBackendType S_colmajor_;
   std::shared_ptr<LUSolverType> stokes_solver_;
+  // std::shared_ptr<LDLTSolverType> stokes_solver_;
   VectorType ofield_tmp_vec_;
   VectorType ofield_tmp_vec2_;
   // Indices for restricted operator in DEIM context
@@ -768,6 +902,9 @@ struct CellModelSolver
   VectorType phi_tmp_vec2_;
   VectorType u_tmp_vec_;
   VectorType P_tmp_vec_;
+  std::vector<DynamicVector<size_t>> global_indices_phi_;
+  std::vector<DynamicVector<size_t>> global_indices_u_;
+  std::vector<DynamicVector<size_t>> global_indices_P_;
   mutable VectorDiscreteFunctionType u_tmp_;
   mutable std::vector<VectorDiscreteFunctionType> P_tmp_;
   mutable std::vector<VectorDiscreteFunctionType> Pnat_tmp_;
@@ -780,6 +917,13 @@ struct CellModelSolver
   mutable std::shared_ptr<PerThreadScalarLocalFuncs> phi_tmp_local_;
   mutable std::shared_ptr<PerThreadScalarLocalFuncs> phinat_tmp_local_;
   mutable std::shared_ptr<PerThreadScalarLocalFuncs> mu_tmp_local_;
+  XT::Grid::RangedPartitioning<PGV, 0> partitioning_;
+  std::shared_ptr<QuadratureStorage> stokes_rhs_quad_;
+  std::shared_ptr<QuadratureStorage> pfield_rhs_quad_;
+  std::shared_ptr<QuadratureStorage> ofield_linear_C_quad_;
+  std::shared_ptr<QuadratureStorage> ofield_residual_and_nonlinear_C_quad_;
+  std::shared_ptr<QuadratureStorage> pfield_B_quad_;
+  std::shared_ptr<QuadratureStorage> pfield_residual_and_nonlinear_jac_quad_;
 };
 
 

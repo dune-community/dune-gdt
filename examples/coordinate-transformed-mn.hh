@@ -23,7 +23,9 @@
 #include <dune/xt/test/gtest/gtest.h>
 
 #include <dune/xt/grid/information.hh>
+#include <dune/xt/grid/filters/intersection.hh>
 #include <dune/xt/grid/gridprovider.hh>
+#include <dune/xt/grid/type_traits.hh>
 
 #include <dune/xt/functions/visualization.hh>
 
@@ -59,26 +61,6 @@
 
 using namespace Dune;
 using namespace Dune::GDT;
-
-//! struct to be used as comparison function e.g. in a std::map<Entity, EntityLess>
-template <class GV>
-struct EntityLess
-{
-  using IndexSet = typename GV::IndexSet;
-  using E = typename GV::Grid::template Codim<0>::Entity;
-
-  EntityLess(const IndexSet& index_set)
-    : index_set_(index_set)
-  {}
-
-  bool operator()(const E& a, const E& b) const
-  {
-    return index_set_.index(a) < index_set_.index(b);
-  }
-
-  const IndexSet& index_set_;
-};
-
 
 template <class ProblemType,
           class GridType =
@@ -641,7 +623,7 @@ public:
     } // ll
   }
 
-  // Mostly copied from boltzmann.hh withou
+  // Mostly copied from boltzmann.hh
   void prepare_restricted_operator(const std::vector<size_t>& output_dofs)
   {
     if (!restricted_op_output_dofs_ || *restricted_op_output_dofs_ != output_dofs) {
@@ -650,8 +632,8 @@ public:
       const auto& mapper = fv_space_->mapper();
       DynamicVector<size_t> global_dofs;
       // calculate entities corresponding to dofs in restricted operator
-      restricted_op_input_entities_ = std::make_shared<std::set<E, EntityLess<GV>>>(grid_view_->indexSet());
-      restricted_op_output_entities_ = std::make_shared<std::set<E, EntityLess<GV>>>(grid_view_->indexSet());
+      restricted_op_input_entities_ = std::make_shared<std::set<E, XT::Grid::EntityLess<GV>>>(grid_view_->indexSet());
+      restricted_op_output_entities_ = std::make_shared<std::set<E, XT::Grid::EntityLess<GV>>>(grid_view_->indexSet());
       for (auto&& entity : elements(*grid_view_))
         maybe_insert_entity(entity, output_dofs, global_dofs);
       // find dofs corresponding to input entities
@@ -660,19 +642,8 @@ public:
         for (const auto& global_dof : global_dofs)
           restricted_op_input_dofs_->push_back(global_dof);
       }
-      // if there are adjacent entities in the output_entities set, we have to make sure we do not apply the advection
-      // operator to the intersection between these entities twice
-      for (auto&& entity : *restricted_op_output_entities_) {
-        const auto inside_index = grid_view_->indexSet().index(entity);
-        (*outside_indices_to_ignore_)[inside_index] = std::set<size_t>();
-        for (auto&& intersection : intersections(*grid_view_, entity)) {
-          if (intersection.neighbor() && restricted_op_output_entities_->count(intersection.outside())) {
-            const auto outside_index = grid_view_->indexSet().index(intersection.outside());
-            if (inside_index > outside_index)
-              (*outside_indices_to_ignore_)[inside_index].insert(outside_index);
-          }
-        } // intersections
-      } // entities
+      XT::Grid::ApplyOn::InnerIntersectionsOnceMap<GV>::fill_ignore_map(
+          *outside_indices_to_ignore_, *restricted_op_output_entities_, *grid_view_);
     }
   } // ... prepare_restricted_operator(...)
 
@@ -724,8 +695,8 @@ private:
   std::shared_ptr<DensityOperatorType> density_operator_;
   std::shared_ptr<MinDensitySetterType> min_density_setter_;
   std::shared_ptr<CombinedOperatorType> combined_operator_;
-  std::shared_ptr<std::set<E, EntityLess<GV>>> restricted_op_input_entities_;
-  std::shared_ptr<std::set<E, EntityLess<GV>>> restricted_op_output_entities_;
+  std::shared_ptr<std::set<E, XT::Grid::EntityLess<GV>>> restricted_op_input_entities_;
+  std::shared_ptr<std::set<E, XT::Grid::EntityLess<GV>>> restricted_op_output_entities_;
   std::shared_ptr<std::vector<size_t>> restricted_op_input_dofs_;
   std::shared_ptr<std::vector<size_t>> restricted_op_output_dofs_;
   std::shared_ptr<std::map<size_t, std::set<size_t>>> outside_indices_to_ignore_;

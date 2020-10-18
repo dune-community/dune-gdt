@@ -27,15 +27,14 @@ foreach(source ${example_sources}) # do some name conversion
   list(APPEND examples_targets ${_targname})
 endforeach(source ${example_sources})
 
+dune_target_link_libraries(examples__cellmodel cellmodel)
+dune_target_link_libraries(examples__cellmodel_restricted_op cellmodel)
+dune_target_link_libraries(examples__cellmodel_test_solvers cellmodel)
+
+dune_target_link_libraries(examples__coordinatetransformedmntest coordinatetransformedmn)
+dune_target_link_libraries(examples__coordinatetransformedmn_restricted_op coordinatetransformedmn)
+
+dune_target_link_libraries(examples__boltzmann boltzmann)
+
 add_custom_target(examples COMMENT "Selected examples showing some of dune-gdt's features.")
 add_dependencies(examples ${examples_targets})
-
-dune_library_add_sources("boltzmann" SOURCES boltzmann-bindings.cc)
-dune_library_add_sources("coordinatetransformedmn" SOURCES coordinate-transformed-mn-bindings.cc)
-dune_library_add_sources("cellmodel"
-                         SOURCES
-                         cellmodel-bindings.cc
-                         ../dune/gdt/test/cellmodel/cellmodel.cc
-                         ../dune/gdt/test/cellmodel/linearsolvers.cc
-                         ../dune/gdt/test/cellmodel/linear-solver-types.cc)
-dune_library_add_sources("vectors" SOURCES xt-vector-bindings.cc)
