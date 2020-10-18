@@ -22,9 +22,10 @@ int main(int argc, char* argv[])
     MPIHelper::instance(argc, argv);
     if (argc > 1)
       DXTC_CONFIG.read_options(argc, argv);
+    const size_t num_threads = DXTC_CONFIG.get("threading.max_count", 1u);
 #if HAVE_TBB
     DXTC_CONFIG.set("threading.partition_factor", 1, true);
-    XT::Common::threadManager().set_max_threads(1);
+    XT::Common::threadManager().set_max_threads(num_threads);
 #endif
 
     XT::Common::TimedLogger().create(DXTC_CONFIG_GET("logger.info", 1), DXTC_CONFIG_GET("logger.debug", -1));

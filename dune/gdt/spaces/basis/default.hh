@@ -55,8 +55,9 @@ public:
     : grid_view_(grid_view)
     , local_finite_elements_(local_finite_elements)
     , fe_order_(order)
-    , max_size_(0)
-  {}
+  {
+    update_after_adapt();
+  }
 
   size_t max_size() const override final
   {

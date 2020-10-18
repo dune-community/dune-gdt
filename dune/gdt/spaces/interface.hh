@@ -107,6 +107,17 @@ public:
 
   virtual int max_polorder() const = 0;
 
+  virtual bool affine() const
+  {
+    // return false for cubic grids 2 or more dimensions, as Q1 elements are already bilinear
+    if constexpr (XT::Grid::is_yaspgrid<G>::value || XT::Grid::is_cube_alugrid<G>::value)
+      return d == 1 && max_polorder() <= 1;
+    else if constexpr (XT::Grid::is_simplex_alugrid<G>::value)
+      return max_polorder() <= 1;
+    else // we cannot tell, might vary between elements
+      return false;
+  }
+
   /**
    * To query if elements of this space (functions) are continuous (i.e., in C^0), use `continuous(0)`.
    */

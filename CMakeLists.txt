@@ -40,23 +40,25 @@ include(DuneUtils)
 # start a dune project with information from dune.module
 dune_project()
 if(DUNE_XT_WITH_PYTHON_BINDINGS)
-  dune_enable_all_packages(INCLUDE_DIRS
-                           ${dune-gdt_SOURCE_DIR}/dune
-                           MODULE_LIBRARIES
-                           dunegdt
-                           boltzmann
-                           coordinatetransformedmn
-                           cellmodel
-                           vectors)
+  dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune MODULE_LIBRARIES dunegdt)
 else()
-  dune_enable_all_packages(INCLUDE_DIRS
-                           ${dune-gdt_SOURCE_DIR}/dune
-                           MODULE_LIBRARIES
-                           boltzmann
-                           coordinatetransformedmn
-                           cellmodel
-                           vectors)
+  dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune)
 endif()
+
+dune_add_library(boltzmann SOURCES examples/boltzmann-bindings.cc)
+dune_add_library(coordinatetransformedmn SOURCES examples/coordinate-transformed-mn-bindings.cc)
+dune_add_library(cellmodel
+                 SOURCES
+                 examples/cellmodel-bindings.cc
+                 dune/gdt/test/cellmodel/cellmodel.cc
+                 dune/gdt/test/cellmodel/linearsolvers.cc
+                 dune/gdt/test/cellmodel/linear-solver-types.cc)
+dune_add_library(vectors SOURCES examples/xt-vector-bindings.cc)
+add_custom_target(hapod_bindings
+                  DEPENDS boltzmann
+                          coordinatetransformedmn
+                          cellmodel
+                          vectors)
 
 add_header_listing()
 make_dependent_modules_sys_included()

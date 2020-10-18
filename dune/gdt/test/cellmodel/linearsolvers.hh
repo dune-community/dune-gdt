@@ -110,6 +110,7 @@ public:
   using IdentityPreconditionerType = IdentityPreconditioner<EigenVectorType>;
   using IterativeSolverPreconditionerType = IterativeSolverPreconditioner<EigenVectorType>;
   using Matrix2InverseOperatorType = Matrix2InverseOperator<EigenVectorType, MatrixType, false>;
+  // using Matrix2InverseOperatorType = Matrix2InverseOperator<EigenVectorType, MatrixType, true>;
 
   CellModelLinearSolverWrapper(std::shared_ptr<LinearOperatorType>,
                                std::shared_ptr<ScalarProductType>,
