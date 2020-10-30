@@ -10,15 +10,17 @@
 #ifndef DUNE_GDT_MOMENTMODELS_HESSIANINVERTER_HH
 #define DUNE_GDT_MOMENTMODELS_HESSIANINVERTER_HH
 
-#include <string>
+#if HAVE_DUNE_XT_DATA
 
-#include <dune/xt/grid/functors/interfaces.hh>
-#include <dune/xt/common/parameter.hh>
+#  include <string>
 
-#include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/test/momentmodels/entropyflux_kineticcoords.hh>
-#include <dune/gdt/operators/interfaces.hh>
-#include <dune/gdt/type_traits.hh>
+#  include <dune/xt/grid/functors/interfaces.hh>
+#  include <dune/xt/common/parameter.hh>
+
+#  include <dune/gdt/discretefunction/default.hh>
+#  include <dune/gdt/test/momentmodels/entropyflux_kineticcoords.hh>
+#  include <dune/gdt/operators/interfaces.hh>
+#  include <dune/gdt/type_traits.hh>
 
 namespace Dune {
 namespace GDT {
@@ -194,5 +196,7 @@ private:
 
 } // namespace GDT
 } // namespace Dune
+
+#endif // HAVE_DUNE_XT_DATA
 
 #endif // DUNE_GDT_MOMENTMODELS_HESSIANINVERTER_HH

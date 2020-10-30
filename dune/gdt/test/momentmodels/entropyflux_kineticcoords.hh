@@ -10,18 +10,20 @@
 #ifndef DUNE_GDT_LOCAL_FLUXES_ENTROPYBASED_KINETICCOORDS_HH
 #define DUNE_GDT_LOCAL_FLUXES_ENTROPYBASED_KINETICCOORDS_HH
 
-#include <list>
-#include <memory>
+#if HAVE_DUNE_XT_DATA
 
-#include <dune/xt/common/float_cmp.hh>
-#include <dune/xt/common/numeric.hh>
-#include <dune/xt/common/vector_less.hh>
+#  include <list>
+#  include <memory>
 
-#include <dune/xt/functions/interfaces/flux-function.hh>
+#  include <dune/xt/common/float_cmp.hh>
+#  include <dune/xt/common/numeric.hh>
+#  include <dune/xt/common/vector_less.hh>
 
-#include <dune/gdt/test/momentmodels/basisfunctions.hh>
-#include <dune/gdt/test/momentmodels/entropyflux_implementations.hh>
-#include <dune/gdt/test/momentmodels/entropyflux.hh>
+#  include <dune/xt/functions/interfaces/flux-function.hh>
+
+#  include <dune/gdt/test/momentmodels/basisfunctions.hh>
+#  include <dune/gdt/test/momentmodels/entropyflux_implementations.hh>
+#  include <dune/gdt/test/momentmodels/entropyflux.hh>
 
 namespace Dune {
 namespace GDT {
@@ -102,17 +104,17 @@ public:
       return 1.;
     }
 
-    virtual RangeReturnType evaluate(const DomainType& /*point_in_reference_element*/,
-                                     const StateType& alpha,
-                                     const XT::Common::Parameter& /*param*/ = {}) const override final
+    RangeReturnType evaluate(const DomainType& /*point_in_reference_element*/,
+                             const StateType& alpha,
+                             const XT::Common::Parameter& /*param*/ = {}) const override final
     {
       return implementation_.evaluate_with_alpha(alpha);
     }
 
-    virtual void jacobian(const DomainType& /*point_in_reference_element*/,
-                          const StateType& alpha,
-                          DynamicJacobianRangeType& result,
-                          const XT::Common::Parameter& /*param*/ = {}) const override final
+    void jacobian(const DomainType& /*point_in_reference_element*/,
+                  const StateType& alpha,
+                  DynamicJacobianRangeType& result,
+                  const XT::Common::Parameter& /*param*/ = {}) const override final
     {
       implementation_.jacobian_with_alpha(alpha, result);
     } // ... jacobian(...)
@@ -347,5 +349,7 @@ private:
 
 } // namespace GDT
 } // namespace Dune
+
+#endif // HAVE_DUNE_XT_DATA
 
 #endif // DUNE_GDT_LOCAL_FLUXES_ENTROPYBASED_KINETICCOORDS_HH

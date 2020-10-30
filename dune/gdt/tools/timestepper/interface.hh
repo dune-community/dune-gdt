@@ -24,6 +24,7 @@
 #include <dune/xt/functions/interfaces/function.hh>
 #include <dune/xt/functions/interfaces/grid-function.hh>
 #include <dune/xt/functions/generic/grid-function.hh>
+#include <dune/xt/functions/visualization.hh>
 
 #include <dune/gdt/operators/interfaces.hh>
 #include <dune/gdt/discretefunction/default.hh>
@@ -51,8 +52,9 @@ struct FloatCmpLt
 template <class DiscreteFunctionImp>
 class TimeStepperInterface
   : Dune::XT::Common::StorageProvider<DiscreteFunctionImp>
-  , Dune::XT::Common::StorageProvider<
-        std::map<typename DiscreteFunctionImp::RangeFieldType, DiscreteFunctionImp, typename internal::FloatCmpLt>>
+  , Dune::XT::Common::StorageProvider<std::map<typename DiscreteFunctionImp::RangeFieldType,
+                                               std::unique_ptr<DiscreteFunctionImp>,
+                                               typename internal::FloatCmpLt>>
 {
 public:
   using DiscreteFunctionType = DiscreteFunctionImp;
@@ -65,7 +67,8 @@ public:
   static constexpr size_t dimRangeCols = DiscreteFunctionType::rC;
   using DomainType = typename DiscreteFunctionType::LocalFunctionType::DomainType;
   using RangeType = typename DiscreteFunctionType::LocalFunctionType::RangeType;
-  using DiscreteSolutionType = typename std::map<RangeFieldType, DiscreteFunctionType, typename internal::FloatCmpLt>;
+  using DiscreteSolutionType =
+      typename std::map<RangeFieldType, std::unique_ptr<DiscreteFunctionType>, typename internal::FloatCmpLt>;
   using GridFunctionType = XT::Functions::GridFunctionInterface<EntityType, dimRange, dimRangeCols, RangeFieldType>;
   using DataHandleType = DiscreteFunctionDataHandle<DiscreteFunctionType>;
   using VisualizerType = XT::Functions::VisualizerInterface<dimRange, dimRangeCols, RangeFieldType>;
@@ -74,8 +77,7 @@ public:
 
 private:
   using CurrentSolutionStorageProviderType = typename Dune::XT::Common::StorageProvider<DiscreteFunctionImp>;
-  using SolutionStorageProviderType = typename Dune::XT::Common::StorageProvider<
-      std::map<RangeFieldType, DiscreteFunctionImp, typename internal::FloatCmpLt>>;
+  using SolutionStorageProviderType = typename Dune::XT::Common::StorageProvider<DiscreteSolutionType>;
 
 protected:
   TimeStepperInterface(const RangeFieldType t_0, DiscreteFunctionType& initial_values)
@@ -211,7 +213,7 @@ public:
 
     // save/visualize initial solution
     if (save_solution)
-      sol.insert(std::make_pair(t, current_solution()));
+      sol.emplace(t, current_solution().copy_as_discrete_function());
     write_files(visualize,
                 write_discrete,
                 write_exact,
@@ -248,7 +250,7 @@ public:
       // check if data should be written in this timestep (and write)
       if (Dune::XT::Common::FloatCmp::ge(t, next_save_time) || num_save_steps == size_t(-1)) {
         if (save_solution)
-          sol.insert(sol.end(), std::make_pair(t, current_solution()));
+          sol.emplace_hint(sol.end(), t, current_solution().copy_as_discrete_function());
         write_files(visualize,
                     write_discrete,
                     write_exact,
@@ -355,7 +357,7 @@ public:
     if (it == solution().end())
       DUNE_THROW(Dune::InvalidStateException,
                  "There is no solution for time " + Dune::XT::Common::to_string(t) + " stored in this object!");
-    return it->second;
+    return *it->second;
   }
 
   virtual void visualize_solution(const std::string prefix = "",
@@ -363,12 +365,13 @@ public:
   {
     size_t counter = 0;
     for (const auto& pair : solution()) {
-      pair.second.visualize(pair.second.space().grid_view(),
-                            prefix + "_" + Dune::XT::Common::to_string(counter),
-                            false,
-                            VTK::appendedraw,
-                            {},
-                            visualizer);
+      XT::Functions::visualize(*pair.second,
+                               pair.second->space().grid_view(),
+                               prefix + "_" + Dune::XT::Common::to_string(counter),
+                               false,
+                               VTK::appendedraw,
+                               {},
+                               visualizer);
       ++counter;
     }
   }
@@ -464,12 +467,13 @@ public:
   {
     const auto& grid_view = discrete_sol.space().grid_view();
     if (visualize)
-      discrete_sol.visualize(discrete_sol.space().grid_view(),
-                             prefix + "_" + XT::Common::to_string(step),
-                             false,
-                             VTK::appendedraw,
-                             {},
-                             visualizer);
+      XT::Functions::visualize(discrete_sol,
+                               discrete_sol.space().grid_view(),
+                               prefix + "_" + XT::Common::to_string(step),
+                               false,
+                               VTK::appendedraw,
+                               {},
+                               visualizer);
     if (write_discrete)
       write_to_textfile(discrete_sol, grid_view, prefix, step, t, stringifier);
     if (write_exact)

@@ -32,6 +32,8 @@ namespace GDT {
  * \todo Create LocalizableOperatorApplicator which accepts a GridFunction as source, derive
  *       LocalizableDiscreteOperatorApplicator from LocalizableOperatorApplicator.
  *
+ * \todo Update like localizable bilinearform
+ *
  * \note Most likely, you want to use LocalizableOperator.
  */
 template <class AssemblyGridView,
@@ -53,17 +55,7 @@ class LocalizableDiscreteOperatorApplicator : public XT::Grid::Walker<AssemblyGr
   static_assert(XT::Grid::is_view<RangeGridView>::value, "");
   static_assert(XT::LA::is_vector<RangeVector>::value, "");
 
-  using ThisType = LocalizableDiscreteOperatorApplicator<AssemblyGridView,
-                                                         SourceVector,
-                                                         source_range_dim,
-                                                         source_range_dim_cols,
-                                                         SourceField,
-                                                         SourceGridView,
-                                                         range_range_dim,
-                                                         range_range_dim_cols,
-                                                         RangeField,
-                                                         RangeGridView,
-                                                         RangeVector>;
+  using ThisType = LocalizableDiscreteOperatorApplicator;
   using BaseType = XT::Grid::Walker<AssemblyGridView>;
 
 public:
@@ -100,18 +92,23 @@ public:
 
   LocalizableDiscreteOperatorApplicator(AssemblyGridViewType assembly_grid_view, const SourceType& src, RangeType& rng)
     : BaseType(assembly_grid_view)
-    , source_(src)
+    , source_(src.copy_as_grid_function())
     , range_(rng)
-    , assembled_(false)
-  {
-    // to detect assembly
-    this->append(
-        [](/*prepare nothing*/) {}, [](const auto&) { /*apply nothing*/ }, [&](/*finalize*/) { assembled_ = true; });
-  }
+  {}
+
+  LocalizableDiscreteOperatorApplicator(const ThisType&) = delete;
+
+  LocalizableDiscreteOperatorApplicator(ThisType& other)
+    : BaseType(other)
+    , source_(other.source_->copy_as_grid_function())
+    , range_(other.range_)
+  {}
+
+  LocalizableDiscreteOperatorApplicator(ThisType&&) = default;
 
   const SourceType& source() const
   {
-    return source_;
+    return *source_;
   }
 
   const RangeType& range() const
@@ -159,19 +156,15 @@ public:
     return *this;
   }
 
-  void assemble(const bool use_tbb = false)
+  ThisType& assemble(const bool use_tbb = false)
   {
-    if (assembled_)
-      return;
-    // This clears all appended operators, which is ok, since we are done after assembling once!
     this->walk(use_tbb);
-    assembled_ = true;
+    return *this;
   }
 
 protected:
-  const SourceType& source_;
+  const std::unique_ptr<SourceType> source_;
   RangeType& range_;
-  bool assembled_;
 }; // class LocalizableDiscreteOperatorApplicator
 
 
@@ -242,28 +235,6 @@ make_localizable_operator_applicator(
       assembly_grid_view, source, range);
 }
 
-template <class AGV,
-          class SV,
-          size_t s_r,
-          size_t s_rC,
-          class SF,
-          class SGV,
-          size_t r_r,
-          size_t r_rC,
-          class RF,
-          class RGV,
-          class RV>
-std::enable_if_t<XT::Grid::is_layer<AGV>::value,
-                 LocalizableDiscreteOperatorApplicator<AGV, SV, s_r, s_rC, SF, SGV, r_r, r_rC, RF, RGV, RV>>
-make_localizable_operator(
-    AGV assembly_grid_view,
-    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<SGV>, s_r, s_rC, SF>& source,
-    DiscreteFunction<RV, RGV, r_r, r_rC, RF>& range)
-{
-  return LocalizableDiscreteOperatorApplicator<AGV, SV, s_r, s_rC, SF, SGV, r_r, r_rC, RF, RGV, RV>(
-      assembly_grid_view, source, range);
-}
-
 
 /**
  * \note See OperatorInterface for a description of the template arguments.
@@ -292,6 +263,7 @@ public:
   using I = XT::Grid::extract_intersection_t<SGV>;
 
   using typename BaseType::MatrixOperatorType;
+  using typename BaseType::RangeFunctionType;
   using typename BaseType::RangeSpaceType;
   using typename BaseType::SourceFunctionInterfaceType;
   using typename BaseType::SourceSpaceType;
@@ -303,13 +275,12 @@ public:
   LocalizableOperator(const AGV& assembly_grid_view,
                       const SourceSpaceType& source_space,
                       const RangeSpaceType& range_space,
-                      const bool linear = true,
                       const bool use_tbb = false)
     : BaseType()
     , assembly_grid_view_(assembly_grid_view)
     , source_space_(source_space)
     , range_space_(range_space)
-    , linear_(linear)
+    , linear_(true)
     , use_tbb_(use_tbb)
   {}
 
@@ -348,6 +319,28 @@ public:
     return *this;
   }
 
+  ThisType& operator+=(const LocalElementOperatorType& local_op)
+  {
+    return this->append(local_op);
+  }
+
+  ThisType&
+  operator+=(const std::tuple<const LocalElementOperatorType&, const XT::Grid::ElementFilter<AGV>&>& op_filter)
+  {
+    return this->append(std::get<0>(op_filter), std::get<1>(op_filter));
+  }
+
+  ThisType& operator+=(const LocalIntersectionOperatorType& local_op)
+  {
+    return this->append(local_op);
+  }
+
+  ThisType& operator+=(
+      const std::tuple<const LocalIntersectionOperatorType&, const XT::Grid::IntersectionFilter<AGV>&>& op_filter)
+  {
+    return this->append(std::get<0>(op_filter), std::get<1>(op_filter));
+  }
+
   using BaseType::apply;
 
   void apply(const SourceFunctionInterfaceType& source_function,
@@ -379,12 +372,31 @@ public:
     DEBUG_THROW_IF(!range.valid(), Exceptions::operator_error, "range contains inf or nan!");
   } // ... apply(...)
 
-  void apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& param = {}) const override
+  // The respective Base::apply would not ent up in the correct apply above!
+  void apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& param = {}) const override final
   {
     DUNE_THROW_IF(!source.valid(), Exceptions::operator_error, "source contains inf or nan!");
     const auto source_function = make_discrete_function(this->source_space_, source);
     apply(source_function, range, param);
   } // ... apply(...)
+
+  // additional convenience apply methods to match the correct one above
+  void apply(const SourceFunctionInterfaceType& source,
+             RangeFunctionType& range,
+             const XT::Common::Parameter& param = {}) const
+  {
+    DUNE_THROW_IF(!this->range_space().contains(range),
+                  Exceptions::operator_error,
+                  "this->range_space() = " << this->range_space() << "\n   range.space() = " << range.space());
+    this->apply(source, range.dofs().vector(), param);
+  }
+
+  RangeFunctionType apply(const SourceFunctionInterfaceType& source, const XT::Common::Parameter& param = {}) const
+  {
+    RangeFunctionType ret(this->range_space());
+    this->apply(source, ret.dofs().vector(), param);
+    return ret;
+  }
 
   std::vector<std::string> jacobian_options() const override final
   {

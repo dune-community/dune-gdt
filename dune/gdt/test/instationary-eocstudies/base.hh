@@ -17,7 +17,7 @@
 #include <memory>
 
 #include <dune/common/timer.hh>
-#include <dune/grid/io/file/dgfparser/dgfparser.hh>
+#include <dune/grid/io/file/dgfparser.hh>
 
 #include <dune/xt/common/convergence-study.hh>
 #include <dune/xt/common/fvector.hh>
@@ -31,6 +31,7 @@
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/functions/base/sliced.hh>
 #include <dune/xt/functions/generic/function.hh>
+#include <dune/xt/functions/grid-function.hh>
 
 #include <dune/gdt/exceptions.hh>
 #include <dune/gdt/functionals/localizable-functional.hh>
@@ -39,10 +40,10 @@
 #include <dune/gdt/local/integrands/abs.hh>
 #include <dune/gdt/local/integrands/identity.hh>
 #include <dune/gdt/local/integrands/product.hh>
+#include <dune/gdt/norms.hh>
 #include <dune/gdt/operators/constant.hh>
 #include <dune/gdt/operators/identity.hh>
 #include <dune/gdt/operators/interfaces.hh>
-#include <dune/gdt/operators/localizable-bilinear-form.hh>
 #include <dune/gdt/operators/matrix-based.hh>
 #include <dune/gdt/prolongations.hh>
 #include <dune/gdt/spaces/bochner.hh>
@@ -174,7 +175,7 @@ public:
       current_data_.clear();
       current_data_["target"]["h"] = grid_width;
       current_data_["quantity"]["num_grid_elements"] = grid_size;
-      current_data_["quantity"]["num_dofs"] = current_space_->mapper().size();
+      current_data_["quantity"]["num_dofs"] = static_cast<double>(current_space_->mapper().size());
     }
     const auto lfill_nicely = [&](const auto& number, const auto& len) {
       std::string ret;
@@ -277,12 +278,7 @@ public:
             return localizable_functional.result();
           };
         } else if (spatial_norm_id == "L_2") {
-          spatial_norm = [&](const DF& func) {
-            auto localizable_product = make_localizable_bilinear_form(reference_space.grid_view(), func, func);
-            localizable_product.append(LocalElementIntegralBilinearForm<E, m>(LocalElementProductIntegrand<E, m>()));
-            localizable_product.assemble();
-            return std::sqrt(localizable_product.result());
-          };
+          spatial_norm = [&](const DF& func) { return l2_norm(reference_space.grid_view(), func); };
         } else
           DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
                      "I do not know how to compute the spatial norm '" << spatial_norm_id << "'!");
@@ -302,13 +298,8 @@ public:
                     make_discrete_function(reference_space, u_t.dofs().vector() - u_h_t.dofs().vector()));
               });
           auto temporal_grid_view = reference_bochner_space.temporal_space().grid_view();
-          using TE = XT::Grid::extract_entity_t<decltype(temporal_grid_view)>;
-          const auto& spatial_norm_as_temporal_grid_function = spatial_norm_function.template as_grid_function<TE>();
-          auto localizable_temporal_product = make_localizable_bilinear_form(
-              temporal_grid_view, spatial_norm_as_temporal_grid_function, spatial_norm_as_temporal_grid_function);
-          localizable_temporal_product.append(LocalElementIntegralBilinearForm<TE>(LocalElementProductIntegrand<TE>()));
-          localizable_temporal_product.assemble();
-          current_data_["norm"][norm_id] = localizable_temporal_product.result();
+          current_data_["norm"][norm_id] =
+              l2_norm(temporal_grid_view, XT::Functions::make_grid_function(spatial_norm_function, temporal_grid_view));
         } else
           DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
                      "I do not know how to compute the temporal norm '" << temporal_norm_id << "'!");
@@ -356,7 +347,7 @@ public:
         }
         current_data_["quantity"][id] = relative_mass_conservation_errors.infinity_norm();
       } else if (id == "num timesteps") {
-        current_data_["quantity"][id] = solution_on_current_grid.vectors().size();
+        current_data_["quantity"][id] = static_cast<double>(solution_on_current_grid.vectors().size());
       } else if (id == "CFL") {
         DUNE_THROW_IF(this->adaptive_timestepping(), InvalidStateException, "");
         const auto time_points = this->time_points_from_vector_array(solution_on_current_grid);

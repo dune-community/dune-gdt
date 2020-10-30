@@ -10,8 +10,10 @@
 // This one has to come first (includes the config.h)!
 #include <dune/xt/test/main.hxx>
 
-#include <dune/gdt/test/momentmodels/kinetictransport/testcases.hh>
-#include <dune/gdt/test/momentmodels/entropic-coords-mn-discretization.hh>
+#if HAVE_DUNE_XT_DATA
+
+#  include <dune/gdt/test/momentmodels/kinetictransport/testcases.hh>
+#  include <dune/gdt/test/momentmodels/entropic-coords-mn-discretization.hh>
 
 using Yasp1 = Dune::YaspGrid<1, Dune::EquidistantOffsetCoordinates<double, 1>>;
 using Yasp2 = Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>;
@@ -29,3 +31,12 @@ TYPED_TEST(HyperbolicEntropicCoordsMnTest, check)
 {
   this->run();
 }
+
+#else // HAVE_DUNE_XT_DATA
+
+GTEST_TEST(HyperbolicEntropicCoordsMnTest, YaspGridTestCasesAll)
+{
+  std::cerr << "Test disabled, missing dune-xt-data!" << std::endl;
+}
+
+#endif // HAVE_DUNE_XT_DATA

@@ -17,6 +17,7 @@
 #include <dune/common/dynmatrix.hh>
 
 #include <dune/xt/common/parameter.hh>
+#include <dune/xt/common/timedlogging.hh>
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/functions/interfaces/element-functions.hh>
@@ -40,18 +41,28 @@ template <class Element,
           size_t ansatz_range_dim = test_range_dim,
           size_t ansatz_range_dim_cols = test_range_dim_cols,
           class AnsatzRangeField = TestRangeField>
-class LocalElementBilinearFormInterface : public XT::Common::ParametricInterface
+class LocalElementBilinearFormInterface
+  : public XT::Common::ParametricInterface
+  , public XT::Common::WithLogger<LocalElementBilinearFormInterface<Element,
+                                                                    test_range_dim,
+                                                                    test_range_dim_cols,
+                                                                    TestRangeField,
+                                                                    Field,
+                                                                    ansatz_range_dim,
+                                                                    ansatz_range_dim_cols,
+                                                                    AnsatzRangeField>>
 {
   static_assert(XT::Grid::is_entity<Element>::value, "");
 
-  using ThisType = LocalElementBilinearFormInterface<Element,
-                                                     test_range_dim,
-                                                     test_range_dim_cols,
-                                                     TestRangeField,
-                                                     Field,
-                                                     ansatz_range_dim,
-                                                     ansatz_range_dim_cols,
-                                                     AnsatzRangeField>;
+  using ThisType = LocalElementBilinearFormInterface;
+  using Logger = XT::Common::WithLogger<LocalElementBilinearFormInterface<Element,
+                                                                          test_range_dim,
+                                                                          test_range_dim_cols,
+                                                                          TestRangeField,
+                                                                          Field,
+                                                                          ansatz_range_dim,
+                                                                          ansatz_range_dim_cols,
+                                                                          AnsatzRangeField>>;
 
 public:
   using E = Element;
@@ -71,9 +82,19 @@ public:
   using LocalTestBasisType = XT::Functions::ElementFunctionSetInterface<E, t_r, t_rC, TR>;
   using LocalAnsatzBasisType = XT::Functions::ElementFunctionSetInterface<E, a_r, a_rC, AR>;
 
-  LocalElementBilinearFormInterface(const XT::Common::ParameterType& param_type = {})
+  LocalElementBilinearFormInterface(const XT::Common::ParameterType& param_type = {},
+                                    const std::string& logging_prefix = "",
+                                    const bool logging_disabled = true)
     : XT::Common::ParametricInterface(param_type)
-  {}
+    , Logger(logging_prefix.empty() ? "LocalElementBilinearForm" : logging_prefix, logging_disabled)
+  {
+    LOG_(debug) << "LocalElementBilinearFormInterface(this=" << this << ", param_type=" << param_type << ")"
+                << std::endl;
+  }
+
+  LocalElementBilinearFormInterface(const ThisType&) = default;
+
+  LocalElementBilinearFormInterface(ThisType&&) = default;
 
   virtual ~LocalElementBilinearFormInterface() = default;
 
@@ -102,7 +123,8 @@ public:
 
 
 /**
- * Interface for local bilinear forms associated with grid intersections.
+ * Interface for local bilinear forms associated with inner grid intersections, applied to test and ansatz bases on
+ * either side.
  *
  * \note Regarding SMP: the bilinear form is copied for each thread, so
  *       - no shared mutable state between copies to be thread safe, but
@@ -116,18 +138,28 @@ template <class Intersection,
           size_t ansatz_range_dim = test_range_dim,
           size_t ansatz_range_dim_cols = test_range_dim_cols,
           class AnsatzRangeField = TestRangeField>
-class LocalIntersectionBilinearFormInterface : public XT::Common::ParametricInterface
+class LocalCouplingIntersectionBilinearFormInterface
+  : public XT::Common::ParametricInterface
+  , public XT::Common::WithLogger<LocalCouplingIntersectionBilinearFormInterface<Intersection,
+                                                                                 test_range_dim,
+                                                                                 test_range_dim_cols,
+                                                                                 TestRangeField,
+                                                                                 Field,
+                                                                                 ansatz_range_dim,
+                                                                                 ansatz_range_dim_cols,
+                                                                                 AnsatzRangeField>>
 {
   static_assert(XT::Grid::is_intersection<Intersection>::value, "");
 
-  using ThisType = LocalIntersectionBilinearFormInterface<Intersection,
-                                                          test_range_dim,
-                                                          test_range_dim_cols,
-                                                          TestRangeField,
-                                                          Field,
-                                                          ansatz_range_dim,
-                                                          ansatz_range_dim_cols,
-                                                          AnsatzRangeField>;
+  using ThisType = LocalCouplingIntersectionBilinearFormInterface;
+  using Logger = XT::Common::WithLogger<LocalCouplingIntersectionBilinearFormInterface<Intersection,
+                                                                                       test_range_dim,
+                                                                                       test_range_dim_cols,
+                                                                                       TestRangeField,
+                                                                                       Field,
+                                                                                       ansatz_range_dim,
+                                                                                       ansatz_range_dim_cols,
+                                                                                       AnsatzRangeField>>;
 
 public:
   using IntersectionType = Intersection;
@@ -150,16 +182,23 @@ public:
   using LocalTestBasisType = XT::Functions::ElementFunctionSetInterface<E, t_r, t_rC, TR>;
   using LocalAnsatzBasisType = XT::Functions::ElementFunctionSetInterface<E, a_r, a_rC, AR>;
 
-  LocalIntersectionBilinearFormInterface(const XT::Common::ParameterType& param_type = {})
+  LocalCouplingIntersectionBilinearFormInterface(const XT::Common::ParameterType& param_type = {},
+                                                 const std::string& logging_prefix = "",
+                                                 const bool logging_disabled = true)
     : XT::Common::ParametricInterface(param_type)
+    , Logger(logging_prefix.empty() ? "LocalCouplingIntersectionBilinearForm" : logging_prefix, logging_disabled)
   {}
 
-  virtual ~LocalIntersectionBilinearFormInterface() = default;
+  LocalCouplingIntersectionBilinearFormInterface(const ThisType&) = default;
+
+  LocalCouplingIntersectionBilinearFormInterface(ThisType&&) = default;
+
+  virtual ~LocalCouplingIntersectionBilinearFormInterface() = default;
 
   virtual std::unique_ptr<ThisType> copy() const = 0;
 
   /**
-   * Computes the application of this bilinear form for all combinations of functions from the bases.
+   * Computes the application of this bilinear form for all combinations of functions from all bases.
    */
   virtual void apply2(const IntersectionType& intersection,
                       const LocalTestBasisType& test_basis_inside,
@@ -171,27 +210,6 @@ public:
                       DynamicMatrix<F>& result_out_in,
                       DynamicMatrix<F>& result_out_out,
                       const XT::Common::Parameter& param = {}) const = 0;
-
-  /**
-   * Variant which consideres the intersection only from the inside.
-   */
-  virtual void apply2(const IntersectionType& intersection,
-                      const LocalTestBasisType& test_basis,
-                      const LocalAnsatzBasisType& ansatz_basis,
-                      DynamicMatrix<F>& result,
-                      const XT::Common::Parameter& param = {}) const
-  {
-    this->apply2(intersection,
-                 test_basis,
-                 ansatz_basis,
-                 test_basis,
-                 ansatz_basis,
-                 result,
-                 unused_result_,
-                 unused_result_,
-                 unused_result_,
-                 param);
-  }
 
   /**
    * This method is provided for convenience and should not be used within library code.
@@ -219,6 +237,100 @@ public:
                  param);
     return {result_in_in, result_in_out, result_out_in, result_out_out};
   } // ... apply2(...)
+}; // class LocalCouplingIntersectionBilinearFormInterface
+
+
+/**
+ * Interface for local bilinear forms associated with grid intersections, applied to test and ansatz bases on only one
+ * side of the intersection.
+ *
+ * \note Regarding SMP: the bilinear form is copied for each thread, so
+ *       - no shared mutable state between copies to be thread safe, but
+ *       - local mutable state is ok.
+ */
+template <class Intersection,
+          size_t test_range_dim = 1,
+          size_t test_range_dim_cols = 1,
+          class TestRangeField = double,
+          class Field = double,
+          size_t ansatz_range_dim = test_range_dim,
+          size_t ansatz_range_dim_cols = test_range_dim_cols,
+          class AnsatzRangeField = TestRangeField>
+class LocalIntersectionBilinearFormInterface
+  : public XT::Common::ParametricInterface
+  , public XT::Common::WithLogger<LocalIntersectionBilinearFormInterface<Intersection,
+                                                                         test_range_dim,
+                                                                         test_range_dim_cols,
+                                                                         TestRangeField,
+                                                                         Field,
+                                                                         ansatz_range_dim,
+                                                                         ansatz_range_dim_cols,
+                                                                         AnsatzRangeField>>
+{
+  static_assert(XT::Grid::is_intersection<Intersection>::value, "");
+
+  using ThisType = LocalIntersectionBilinearFormInterface;
+  using Logger = XT::Common::WithLogger<LocalIntersectionBilinearFormInterface<Intersection,
+                                                                               test_range_dim,
+                                                                               test_range_dim_cols,
+                                                                               TestRangeField,
+                                                                               Field,
+                                                                               ansatz_range_dim,
+                                                                               ansatz_range_dim_cols,
+                                                                               AnsatzRangeField>>;
+
+public:
+  using IntersectionType = Intersection;
+  using ElementType = XT::Grid::extract_inside_element_t<Intersection>;
+
+  using I = Intersection;
+  using E = ElementType;
+  using D = typename ElementType::Geometry::ctype;
+  static const constexpr size_t d = E::dimension;
+  using F = Field;
+
+  using TR = TestRangeField;
+  static const constexpr size_t t_r = test_range_dim;
+  static const constexpr size_t t_rC = test_range_dim_cols;
+
+  using AR = AnsatzRangeField;
+  static const constexpr size_t a_r = ansatz_range_dim;
+  static const constexpr size_t a_rC = ansatz_range_dim_cols;
+
+  using LocalTestBasisType = XT::Functions::ElementFunctionSetInterface<E, t_r, t_rC, TR>;
+  using LocalAnsatzBasisType = XT::Functions::ElementFunctionSetInterface<E, a_r, a_rC, AR>;
+
+  LocalIntersectionBilinearFormInterface(const XT::Common::ParameterType& param_type = {},
+                                         const std::string& logging_prefix = "",
+                                         const bool logging_disabled = true)
+    : XT::Common::ParametricInterface(param_type)
+    , Logger(logging_prefix.empty() ? "LocalIntersectionBilinearForm" : logging_prefix, logging_disabled)
+  {}
+
+  LocalIntersectionBilinearFormInterface(const ThisType&) = default;
+
+  LocalIntersectionBilinearFormInterface(ThisType&&) = default;
+
+  virtual ~LocalIntersectionBilinearFormInterface() = default;
+
+  virtual std::unique_ptr<ThisType> copy() const = 0;
+
+  /**
+   * Flag to document which element the bases are expected to be bound to.
+   */
+  virtual bool inside() const
+  {
+    return true;
+  }
+
+  /**
+   * Computes the application of this bilinear form for all combinations of functions from the bases.
+   */
+  virtual void apply2(const IntersectionType& intersection,
+                      const LocalTestBasisType& test_basis,
+                      const LocalAnsatzBasisType& ansatz_basis,
+                      DynamicMatrix<F>& result,
+                      const XT::Common::Parameter& param = {}) const = 0;
 
   /**
    * This method is provided for convenience and should not be used within library code.

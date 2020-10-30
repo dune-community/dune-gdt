@@ -49,6 +49,9 @@ class LocalElementOperatorInterface
   static_assert(
       std::is_same<XT::Grid::extract_entity_t<SourceGridView>, XT::Grid::extract_entity_t<RangeGridView>>::value, "");
 
+  using ThisType = LocalElementOperatorInterface;
+  using BaseType = XT::Grid::ElementBoundObject<XT::Grid::extract_entity_t<SourceGridView>>;
+
 public:
   using SV = SourceVector;
   using SGV = SourceGridView;
@@ -65,14 +68,12 @@ public:
 
   static constexpr size_t d = LocalRangeType::d;
   using D = typename LocalRangeType::D;
-  using E = typename LocalRangeType::E;
+  using E = typename BaseType::ElementType;
 
   using SourceType = XT::Functions::GridFunctionInterface<E, s_r, s_rC, SR>;
   using LocalSourceType = typename SourceType::LocalFunctionType;
   using DiscreteSourceType = ConstDiscreteFunction<SV, SGV, s_r, s_rC, SR>;
   using SourceSpaceType = typename DiscreteSourceType::SpaceType;
-
-  using ThisType = LocalElementOperatorInterface;
 
   // Allows construction without source, source has to be set by a call to with_source before calling apply
   LocalElementOperatorInterface(const size_t num_local_sources = 1, const XT::Common::ParameterType& param_type = {})

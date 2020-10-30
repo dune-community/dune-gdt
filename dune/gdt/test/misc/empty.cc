@@ -27,5 +27,17 @@
 
 #include <dune/xt/test/main.hxx> // <- this one has to come first (includes the config.h)!
 
+#include <dune/xt/grid/grids.hh>
+#include <dune/xt/grid/type_traits.hh>
+#include <dune/xt/functions/grid-function.hh>
 
-GTEST_TEST(empty, main) {}
+using namespace Dune::XT;
+
+using G = YASP_2D_EQUIDISTANT_OFFSET;
+using E = Grid::extract_entity_t<G>;
+
+
+GTEST_TEST(empty, main)
+{
+  Functions::GridFunction<E> function({1, [](const auto& x, const auto& /*param*/) { return x[1]; }});
+}

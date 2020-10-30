@@ -24,7 +24,7 @@ namespace GDT {
 
 
 /**
- * \brief Wrapper for the map of reconstructed values that fulfills the XT::Functions::LocalizableFunctionInterface
+ * \brief Wrapper for the map of reconstructed values that fulfills the XT::Functions::GridFunctionInterface
  */
 template <class GV, size_t rangeDim, size_t rangeDimCols, class RangeField>
 class DiscreteValuedGridFunction
@@ -122,6 +122,22 @@ public:
     assert(grid_view.size(0) >= 0);
   }
 
+  DiscreteValuedGridFunction(const ThisType&) = default;
+
+  DiscreteValuedGridFunction(ThisType&&) = default;
+
+  std::unique_ptr<ThisType> copy_as_grid_function() const
+  {
+    return std::unique_ptr<ThisType>(*this);
+  }
+
+private:
+  BaseType* copy_as_grid_function_impl() const override final
+  {
+    return new ThisType(*this);
+  }
+
+public:
   std::unique_ptr<LocalFunctionType> local_function() const override final
   {
     return std::make_unique<DiscreteValuedLocalFunction>(values_, index_set_);

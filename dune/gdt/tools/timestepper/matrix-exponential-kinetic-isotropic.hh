@@ -117,8 +117,8 @@ private:
 template <class DiscreteFunctionImp, class MomentBasis>
 class KineticIsotropicTimeStepper : public TimeStepperInterface<DiscreteFunctionImp>
 {
-  typedef KineticIsotropicTimeStepper ThisType;
-  typedef TimeStepperInterface<DiscreteFunctionImp> BaseType;
+  using ThisType = KineticIsotropicTimeStepper;
+  using BaseType = TimeStepperInterface<DiscreteFunctionImp>;
 
 public:
   using typename BaseType::DiscreteFunctionType;

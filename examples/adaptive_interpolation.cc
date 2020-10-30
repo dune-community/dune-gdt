@@ -29,7 +29,7 @@
 #include <dune/xt/grid/gridprovider/cube.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/grid/walker.hh>
-#include <dune/xt/functions/generic/function.hh>
+#include <dune/xt/functions/grid-function.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/interpolations/default.hh>
@@ -44,7 +44,6 @@ using namespace Dune;
 
 // some global defines
 using G = ONED_1D;
-static const constexpr size_t d = G::dimension;
 using GV = typename G::LeafGridView;
 using E = XT::Grid::extract_entity_t<GV>;
 using V = XT::LA::CommonDenseVector<double>;
@@ -64,8 +63,7 @@ V compute_local_l2_norms(const XT::Functions::GridFunctionInterface<E>& func, co
                   auto local_func = func.local_function();
                   local_func->bind(element);
                   // models \int_element 1*phi*psi dx for any phi/psi
-                  const GDT::LocalElementIntegralBilinearForm<E> local_l2_product(
-                      GDT::LocalElementProductIntegrand<E>(1.));
+                  const GDT::LocalElementIntegralBilinearForm<E> local_l2_product(GDT::LocalProductIntegrand<E>(1.));
                   // evaluate local product with phi = psi = local_func
                   const auto element_l2_error2 = local_l2_product.apply2(*local_func, *local_func)[0][0];
                   // store in entry for this element (we keep them unsquared, makes for easier computation of total)
@@ -127,9 +125,10 @@ int main(int argc, char* argv[])
     auto grid_view = grid.leafGridView();
 
     // funtion to interpolate
-    const XT::Functions::GenericFunction<d> cosh(/*approx_pol_order=*/10,
-                                                 [](const auto& x, const auto& /*param*/) { return std::cosh(x); });
-    const auto reference_norm = compute_local_l2_norms(cosh.as_grid_function(grid_view), grid_view).l2_norm();
+    const XT::Functions::GridFunction<E> cosh(
+        {/*approx_pol_order=*/10,
+         /*evaluate=*/[](const auto& x, const auto& /*param*/) { return std::cosh(x); }});
+    const auto reference_norm = compute_local_l2_norms(cosh, grid_view).l2_norm();
 
     // fake solution to demonstrate restriction/prolongation
     auto fv_space = GDT::make_finite_volume_space<1>(grid_view);
@@ -144,7 +143,7 @@ int main(int argc, char* argv[])
       logger.info() << "step " << counter << ", space has " << fv_space.mapper().size() << " DoFs" << std::endl;
 
       // compute local L^2 errors
-      const auto local_errors = compute_local_l2_norms(current_solution - cosh.as_grid_function(grid_view), grid_view);
+      const auto local_errors = compute_local_l2_norms(current_solution - cosh, grid_view);
       logger.info() << "  relative interpolation error: " << local_errors.l2_norm() / reference_norm << std::endl;
       if (local_errors.l2_norm() / reference_norm < tolerance) {
         logger.info() << "target accuracy reached, terminating!" << std::endl;

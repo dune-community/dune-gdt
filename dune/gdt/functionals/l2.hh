@@ -34,6 +34,8 @@ namespace GDT {
  * See also VectorBasedFunctional for the meaning of the different ctors. Some of these will not compile (if GV and
  * AssemblyGridView do not coincide), which is intended.
  *
+ * \todo Check if we still need this!
+ *
  * \sa VectorBasedFunctional
  * \sa FunctionalInterface
  */
@@ -55,7 +57,7 @@ public:
 
 private:
   using LocalFunctionalType = LocalElementIntegralFunctional<ElementType, r, rC, F, DofFieldType>;
-  using LocalIntegrandType = LocalElementProductIntegrand<ElementType, r, F, DofFieldType>;
+  using LocalIntegrandType = LocalProductIntegrand<ElementType, r, F, DofFieldType>;
 
 public:
   L2VolumeVectorFunctional(AssemblyGridView assembly_grid_view,
@@ -67,10 +69,8 @@ public:
                            const ElementFilterType& filter = ApplyOnAllElements())
     : BaseType(assembly_grid_view, source_spc, vec)
   {
-    this->append(LocalFunctionalType(local_binary_to_unary_element_integrand(inducing_function, LocalIntegrandType(1)),
-                                     over_integrate),
-                 param,
-                 filter);
+    this->append(
+        LocalFunctionalType(LocalIntegrandType(1).with_ansatz(inducing_function), over_integrate), param, filter);
   }
 
   L2VolumeVectorFunctional(AssemblyGridView assembly_grid_view,
@@ -81,10 +81,8 @@ public:
                            const ElementFilterType& filter = ApplyOnAllElements())
     : BaseType(assembly_grid_view, source_spc)
   {
-    this->append(LocalFunctionalType(local_binary_to_unary_element_integrand(inducing_function, LocalIntegrandType(1)),
-                                     over_integrate),
-                 param,
-                 filter);
+    this->append(
+        LocalFunctionalType(LocalIntegrandType(1).with_ansatz(inducing_function), over_integrate), param, filter);
   }
 }; // class L2VolumeVectorFunctional
 
@@ -171,7 +169,7 @@ template <class FunctionType,
           class Field = typename Space::RangeFieldType>
 class L2FaceVectorFunctional : public VectorBasedFunctional<Vector, Space, GridLayer, Field>
 {
-  typedef VectorBasedFunctional<Vector, Space, GridLayer, Field> BaseType;
+  using BaseType = VectorBasedFunctional<Vector, Space, GridLayer, Field>;
 
 public:
   using typename BaseType::GridLayerType;

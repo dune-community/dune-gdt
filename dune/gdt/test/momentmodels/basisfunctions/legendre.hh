@@ -11,7 +11,9 @@
 #ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_LEGENDRE_HH
 #define DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_LEGENDRE_HH
 
-#include "interface.hh"
+#if HAVE_DUNE_XT_DATA
+
+#  include "interface.hh"
 
 namespace Dune {
 namespace GDT {
@@ -31,7 +33,7 @@ public:
   static constexpr size_t num_intervals = size_t(-1);
 
 private:
-  typedef MomentBasisInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols, 1, entropy> BaseType;
+  using BaseType = MomentBasisInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols, 1, entropy>;
 
 public:
   using typename BaseType::DomainType;
@@ -87,9 +89,9 @@ public:
     return ret;
   } // ... evaluate(...)
 
-  virtual bool adjust_alpha_to_ensure_min_density(RangeType& alpha,
-                                                  const RangeFieldType rho_min,
-                                                  const RangeType& u) const override final
+  bool adjust_alpha_to_ensure_min_density(RangeType& alpha,
+                                          const RangeFieldType rho_min,
+                                          const RangeType& u) const override final
   {
     if (density(u) < rho_min) {
       alpha = this->alpha_iso(rho_min);
@@ -262,4 +264,5 @@ private:
 } // namespace GDT
 } // namespace Dune
 
+#endif // HAVE_DUNE_XT_DATA
 #endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_LEGENDRE_HH

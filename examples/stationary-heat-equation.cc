@@ -27,6 +27,7 @@
 
 #include <dune/xt/functions/constant.hh>
 #include <dune/xt/functions/generic/function.hh>
+#include <dune/xt/functions/grid-function.hh>
 
 #include <dune/gdt/functionals/vector-based.hh>
 #include <dune/gdt/local/bilinear-forms/integrals.hh>
@@ -34,7 +35,7 @@
 #include <dune/gdt/local/integrands/conversion.hh>
 #include <dune/gdt/local/integrands/laplace.hh>
 #include <dune/gdt/local/integrands/product.hh>
-#include <dune/gdt/operators/localizable-bilinear-form.hh>
+#include <dune/gdt/operators/bilinear-form.hh>
 #include <dune/gdt/operators/matrix-based.hh>
 #include <dune/gdt/spaces/h1/continuous-lagrange.hh>
 #include <dune/gdt/tools/dirichlet-constraints.hh>
@@ -63,12 +64,11 @@ int main(int argc, char* argv[])
     XT::Common::TimedLogger().create(DXTC_CONFIG_GET("logger.info", 1), DXTC_CONFIG_GET("logger.debug", -1));
     auto logger = XT::Common::TimedLogger().get("main");
 
-    const XT::Functions::ConstantFunction<d, d, d> kappa(
-        XT::Common::from_string<FieldMatrix<double, d, d>>("[1 0 0; 0 1 0; 0 0 1]"));
-    const XT::Functions::GenericFunction<d> force(3, [](const auto& x, const auto& /*param*/) {
+    const double diffusion = 1;
+    const XT::Functions::GenericFunction<d> source(3, [](const auto& x, const auto& /*param*/) {
       return M_PI_2 * M_PI * std::cos(M_PI_2 * x[0]) * std::cos(M_PI_2 * x[1]);
     });
-    const XT::Functions::GenericFunction<d> exact_solution(
+    const XT::Functions::GridFunction<E> exact_solution(XT::Functions::GenericFunction<d>(
         3,
         /*evaluate=*/
         [](const auto& x, const auto& /*param*/) { return std::cos(M_PI_2 * x[0]) * std::cos(M_PI_2 * x[1]); },
@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
           FieldMatrix<double, 1, d> result;
           result[0] = {pre * std::sin(x_arg) * std::cos(y_arg), pre * std::cos(x_arg) * std::sin(y_arg)};
           return result;
-        });
+        }));
 
     auto grid = XT::Grid::make_cube_grid<G>(/*lower_left=*/-1., /*upper_right=*/1., /*num_elements=*/128);
     auto grid_view = grid.leaf_view();
@@ -92,11 +92,10 @@ int main(int argc, char* argv[])
     auto space = make_continuous_lagrange_space(grid_view, /*polorder=*/1);
 
     auto lhs_op = make_matrix_operator<M>(space, Stencil::element);
-    lhs_op.append(LocalElementIntegralBilinearForm<E>(LocalLaplaceIntegrand<E>(kappa.as_grid_function<E>())));
+    lhs_op.append(LocalElementIntegralBilinearForm<E>(LocalLaplaceIntegrand<E>(diffusion)));
 
     auto rhs_func = make_vector_functional<V>(space);
-    rhs_func.append(LocalElementIntegralFunctional<E>(
-        local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E>(), force.as_grid_function<E>())));
+    rhs_func.append(LocalElementIntegralFunctional<E>(LocalProductIntegrand<E>().with_ansatz(source)));
 
     auto dirichlet_constraints = make_dirichlet_constraints(space, boundary_info);
 
@@ -112,13 +111,13 @@ int main(int argc, char* argv[])
 
     solution.visualize("solution");
 
-    const auto error = solution - exact_solution.as_grid_function<E>();
+    const auto error = solution - exact_solution;
 
-    auto h1_prod = make_localizable_bilinear_form(grid_view, error, error);
-    h1_prod.append(LocalElementIntegralBilinearForm<E>(LocalLaplaceIntegrand<E>(kappa.as_grid_function<E>())));
+    auto h1_prod = make_bilinear_form(grid_view, error, error);
+    h1_prod += LocalElementIntegralBilinearForm<E>(LocalLaplaceIntegrand<E>(diffusion));
 
-    auto l2_prod = make_localizable_bilinear_form(grid_view, error, error);
-    l2_prod.append(LocalElementIntegralBilinearForm<E>(LocalElementProductIntegrand<E>()));
+    auto l2_prod = make_bilinear_form(grid_view, error, error);
+    l2_prod += LocalElementIntegralBilinearForm<E>(LocalProductIntegrand<E>());
 
     walker.append(h1_prod);
     walker.append(l2_prod);

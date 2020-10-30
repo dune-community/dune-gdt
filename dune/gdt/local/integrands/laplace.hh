@@ -38,21 +38,24 @@ public:
   using typename BaseType::LocalTestBasisType;
 
   explicit LocalLaplaceIntegrand(
-      XT::Functions::GridFunction<E, d, d, F> diffusion = XT::LA::eye_matrix<FieldMatrix<F, d, d>>(d, d))
-    : BaseType()
-    , weight_(diffusion)
-    , local_weight_(weight_.local_function())
+      XT::Functions::GridFunction<E, d, d, F> diffusion = XT::LA::eye_matrix<FieldMatrix<F, d, d>>(d, d),
+      const std::string& logging_prefix = "")
+    : BaseType(diffusion.parameter_type(),
+               logging_prefix.empty() ? "LocalLaplaceIntegrand" : logging_prefix,
+               /*logging_disabled=*/logging_prefix.empty())
+    , weight_(diffusion.copy_as_grid_function())
+    , local_weight_(weight_->local_function())
   {}
 
   LocalLaplaceIntegrand(const ThisType& other)
-    : BaseType(other.parameter_type())
-    , weight_(other.weight_)
-    , local_weight_(weight_.local_function())
+    : BaseType(other)
+    , weight_(other.weight_->copy_as_grid_function())
+    , local_weight_(weight_->local_function())
   {}
 
   LocalLaplaceIntegrand(ThisType&& source) = default;
 
-  std::unique_ptr<BaseType> copy() const override final
+  std::unique_ptr<BaseType> copy_as_binary_element_integrand() const override final
   {
     return std::make_unique<ThisType>(*this);
   }
@@ -91,7 +94,7 @@ public:
     test_basis.jacobians(point_in_reference_element, test_basis_grads_, param);
     ansatz_basis.jacobians(point_in_reference_element, ansatz_basis_grads_, param);
     const auto weight = local_weight_->evaluate(point_in_reference_element, param);
-    // compute elliptic evaluation
+    // compute integrand
     for (size_t ii = 0; ii < rows; ++ii)
       for (size_t jj = 0; jj < cols; ++jj)
         for (size_t rr = 0; rr < r; ++rr)
@@ -99,8 +102,8 @@ public:
   } // ... evaluate(...)
 
 private:
-  XT::Functions::GridFunction<E, d, d, F> weight_;
-  std::unique_ptr<typename XT::Functions::GridFunction<E, d, d, F>::LocalFunctionType> local_weight_;
+  const std::unique_ptr<XT::Functions::GridFunctionInterface<E, d, d, F>> weight_;
+  std::unique_ptr<typename XT::Functions::GridFunctionInterface<E, d, d, F>::LocalFunctionType> local_weight_;
   mutable std::vector<typename LocalTestBasisType::DerivativeRangeType> test_basis_grads_;
   mutable std::vector<typename LocalAnsatzBasisType::DerivativeRangeType> ansatz_basis_grads_;
 }; // class LocalLaplaceIntegrand

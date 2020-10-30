@@ -7,8 +7,10 @@
 // Authors:
 //   Felix Schindler (2018)
 
-#ifndef DUNE_GDT_OPERATORS_LOCALIZABLE_FUNCTIONAL_HH
-#define DUNE_GDT_OPERATORS_LOCALIZABLE_FUNCTIONAL_HH
+#ifndef DUNE_GDT_OPERATORS_LOCALIZABLE_BILINEAR_FORM_HH
+#define DUNE_GDT_OPERATORS_LOCALIZABLE_BILINEAR_FORM_HH
+
+#warning "This header is deprecated, include <dune/gdt/bilinear-form.hh> instead (03.08.2020)!"
 
 #include <dune/xt/la/type_traits.hh>
 #include <dune/xt/grid/type_traits.hh>
@@ -30,7 +32,8 @@ template <class GridView,
           size_t range_range_dim = source_range_dim,
           size_t range_range_dim_cols = source_range_dim_cols,
           class RangeRangeField = SourceRangeField>
-class LocalizableBilinearFormBase : public XT::Grid::Walker<GridView>
+class [[deprecated("Use BilinearForm instead (03.08.2020)!")]] LocalizableBilinearFormBase
+  : public XT::Grid::Walker<GridView>
 {
   static_assert(XT::Grid::is_view<GridView>::value, "");
 
@@ -89,10 +92,10 @@ public:
 
   using BaseType::append;
 
-  ThisType&
-  append(const LocalElementBilinearFormInterface<E, s_r, s_rC, SR, Result, r_r, r_rC, RR>& local_bilinear_form,
-         const XT::Common::Parameter& param = {},
-         const ElementFilterType& filter = ApplyOnAllElements())
+  ThisType& append(
+      const LocalElementBilinearFormInterface<E, s_r, s_rC, SR, Result, r_r, r_rC, RR>& local_bilinear_form,
+      const XT::Common::Parameter& param = {},
+      const ElementFilterType& filter = ApplyOnAllElements())
   {
     local_accumulators_.emplace_back(
         make_local_element_bilinear_form_accumulator<GV>(local_bilinear_form, source_, range_, param));
@@ -101,7 +104,8 @@ public:
   }
 
   ThisType& append(
-      std::unique_ptr<LocalElementBilinearFormInterface<E, s_r, s_rC, SR, Result, r_r, r_rC, RR>>&& local_bilinear_form,
+      std::unique_ptr<
+          LocalElementBilinearFormInterface<E, s_r, s_rC, SR, Result, r_r, r_rC, RR>> && local_bilinear_form,
       const XT::Common::Parameter& param = {},
       const ElementFilterType& filter = ApplyOnAllElements())
   {
@@ -140,11 +144,12 @@ protected:
 
 
 template <class GV, size_t s_r, size_t s_rC, class SR, size_t r_r, size_t r_rC, class RR>
-std::enable_if_t<XT::Grid::is_view<GV>::value, LocalizableBilinearFormBase<GV, s_r, s_rC, SR, double, r_r, r_rC, RR>>
-make_localizable_bilinear_form(
-    GV grid_view,
-    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, s_r, s_rC, SR>& source,
-    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, r_r, r_rC, RR>& range)
+[[deprecated("Use make_bilinear_form instead (03.08.2020)!")]] std::
+    enable_if_t<XT::Grid::is_view<GV>::value, LocalizableBilinearFormBase<GV, s_r, s_rC, SR, double, r_r, r_rC, RR>>
+    make_localizable_bilinear_form(
+        GV grid_view,
+        const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, s_r, s_rC, SR>& source,
+        const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, r_r, r_rC, RR>& range)
 {
   return LocalizableBilinearFormBase<GV, s_r, s_rC, SR, double, r_r, r_rC, RR>(grid_view, source, range);
 }
@@ -153,4 +158,4 @@ make_localizable_bilinear_form(
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_OPERATORS_LOCALIZABLE_FUNCTIONAL_HH
+#endif // DUNE_GDT_OPERATORS_LOCALIZABLE_BILINEAR_FORM_HH

@@ -12,7 +12,7 @@
 
 #include <dune/grid/common/rangegenerators.hh>
 
-#include <dune/xt/functions/generic/function.hh>
+#include <dune/xt/functions/grid-function.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/spaces/mapper/finite-volume.hh>
@@ -227,23 +227,6 @@ raviart_thomas_interpolation(
   }
   return target_function;
 } // ... raviart_thomas_interpolation()
-
-
-template <class VectorType, class GV, class R>
-std::enable_if_t<XT::LA::is_vector<VectorType>::value, DiscreteFunction<VectorType, GV, GV::dimension, 1, R>>
-raviart_thomas_interpolation(
-    const int source_order,
-    const std::function<typename XT::Functions::GenericFunction<GV::dimension, GV::dimension, 1, R>::RangeReturnType(
-        const typename XT::Functions::GenericFunction<GV::dimension, GV::dimension, 1, R>::DomainType&,
-        const XT::Common::Parameter&)> source_evaluate_lambda,
-    const RaviartThomasSpace<GV, R>& target_space)
-{
-  return raviart_thomas_interpolation<VectorType>(
-      XT::Functions::GenericFunction<GV::dimension, GV::dimension, 1, R>(source_order, source_evaluate_lambda)
-          .as_grid_function(target_space.grid_view()),
-      target_space,
-      target_space.grid_view());
-}
 
 
 } // namespace GDT

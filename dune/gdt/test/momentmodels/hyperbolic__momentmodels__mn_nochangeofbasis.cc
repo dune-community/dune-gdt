@@ -10,26 +10,28 @@
 // This one has to come first (includes the config.h)!
 #include <dune/xt/test/main.hxx>
 
-#include <dune/gdt/test/momentmodels/kinetictransport/testcases.hh>
-#include <dune/gdt/test/momentmodels/mn-discretization.hh>
+#if HAVE_DUNE_XT_DATA
+
+#  include <dune/gdt/test/momentmodels/kinetictransport/testcases.hh>
+#  include <dune/gdt/test/momentmodels/mn-discretization.hh>
 
 using Yasp1 = Dune::YaspGrid<1, Dune::EquidistantOffsetCoordinates<double, 1>>;
 using Yasp3 = Dune::YaspGrid<3, Dune::EquidistantOffsetCoordinates<double, 3>>;
 
 using YaspGridTestCasesNoBasisChange = testing::Types<
-#if HAVE_CLP
+#  if HAVE_CLP
     Dune::GDT::SourceBeamMnTestCase<Yasp1, Dune::GDT::LegendreMomentBasis<double, double, 7>, false>,
     Dune::GDT::SourceBeamMnTestCase<Yasp1, Dune::GDT::LegendreMomentBasis<double, double, 7>, true>,
-#endif
+#  endif
     Dune::GDT::SourceBeamMnTestCase<Yasp1, Dune::GDT::HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, false>,
     Dune::GDT::SourceBeamMnTestCase<Yasp1, Dune::GDT::HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, true>
-#if !DXT_DISABLE_LARGE_TESTS
+#  if !DXT_DISABLE_LARGE_TESTS
     ,
-#  if HAVE_CLP
+#    if HAVE_CLP
     Dune::GDT::PointSourceMnTestCase<Yasp3, Dune::GDT::RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, false>,
-#  endif
+#    endif
     Dune::GDT::PointSourceMnTestCase<Yasp3, Dune::GDT::HatFunctionMomentBasis<double, 3, double, 0, 1, 3>, false>
-#endif
+#  endif
     >;
 
 TYPED_TEST_SUITE(HyperbolicMnTest, YaspGridTestCasesNoBasisChange);
@@ -37,3 +39,12 @@ TYPED_TEST(HyperbolicMnTest, check)
 {
   this->run();
 }
+
+#else // HAVE_DUNE_XT_DATA
+
+GTEST_TEST(HyperbolicMnTest, YaspGridTestCasesNoBasisChange)
+{
+  std::cerr << "Test disabled, missing dune-xt-data!" << std::endl;
+}
+
+#endif // HAVE_DUNE_XT_DATA

@@ -14,8 +14,6 @@
 
 #include <dune/xt/grid/grids.hh>
 
-#include <dune/gdt/test/instationary-eocstudies/hyperbolic-nonconforming.hh>
-
 #include "base.hh"
 
 using namespace Dune;
@@ -29,25 +27,28 @@ TEST_F(Burgers1dExplicitFvTest, periodic_boundaries__numerical_upwind_flux)
       DXTC_TEST_CONFIG_GET("setup.visualization_steps", 0); // <- Something like 100 to visualize!
   this->space_type_ = "fv";
   this->numerical_flux_type_ = "upwind";
-  /*const auto actual_results =*/this->run();
-  //  const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
-  //  XT::Test::check_eoc_study_for_success(expected_results, actual_results);
+  const auto actual_results = this->run();
+  const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
+  XT::Test::check_eoc_study_for_success(
+      expected_results, actual_results, DXTC_TEST_CONFIG_GET("results.zero_tolerance", 1e-15));
 }
 TEST_F(Burgers1dExplicitFvTest, periodic_boundaries__numerical_lax_friedrichs_flux)
 {
   this->visualization_steps_ = DXTC_TEST_CONFIG_GET("setup.visualization_steps", 0);
   this->space_type_ = "fv";
   this->numerical_flux_type_ = "lax_friedrichs";
-  /*const auto actual_results =*/this->run();
-  //  const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
-  //  XT::Test::check_eoc_study_for_success(expected_results, actual_results);
+  const auto actual_results = this->run();
+  const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
+  XT::Test::check_eoc_study_for_success(
+      expected_results, actual_results, DXTC_TEST_CONFIG_GET("results.zero_tolerance", 1e-15));
 }
 TEST_F(Burgers1dExplicitFvTest, periodic_boundaries__numerical_engquist_osher_flux)
 {
   this->visualization_steps_ = DXTC_TEST_CONFIG_GET("setup.visualization_steps", 0);
   this->space_type_ = "fv";
   this->numerical_flux_type_ = "engquist_osher";
-  /*const auto actual_results =*/this->run();
-  //  const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
-  //  XT::Test::check_eoc_study_for_success(expected_results, actual_results);
+  const auto actual_results = this->run();
+  const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
+  XT::Test::check_eoc_study_for_success(
+      expected_results, actual_results, DXTC_TEST_CONFIG_GET("results.zero_tolerance", 1e-15));
 }

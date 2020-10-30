@@ -29,7 +29,7 @@ find_package(dune-common REQUIRED)
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules" "${dune-common_MODULE_PATH}")
 include(DuneMacros)
 
-# dune-xt-common
+# dune-xt
 find_package(dune-xt REQUIRED)
 list(APPEND CMAKE_MODULE_PATH "${dune-xt_MODULE_PATH}")
 include(DuneUtils)

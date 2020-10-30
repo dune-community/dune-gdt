@@ -13,6 +13,7 @@
 #ifndef DUNE_GDT_SPACES_BASIS_INTERFACE_HH
 #define DUNE_GDT_SPACES_BASIS_INTERFACE_HH
 
+#include <dune/xt/common/timedlogging.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/functions/interfaces/element-functions.hh>
 
@@ -23,9 +24,13 @@ namespace GDT {
 
 
 template <class E, size_t r = 1, size_t rC = 1, class R = double>
-class LocalizedGlobalFiniteElementInterface : public XT::Functions::ElementFunctionSetInterface<E, r, rC, R>
+class LocalizedGlobalFiniteElementInterface
+  : public XT::Functions::ElementFunctionSetInterface<E, r, rC, R>
+  , public XT::Common::WithLogger<LocalizedGlobalFiniteElementInterface<E, r, rC, R>>
 {
+  using ThisType = LocalizedGlobalFiniteElementInterface;
   using BaseType = XT::Functions::ElementFunctionSetInterface<E, r, rC, R>;
+  using Logger = XT::Common::WithLogger<LocalizedGlobalFiniteElementInterface<E, r, rC, R>>;
 
 public:
   using BaseType::d;
@@ -35,6 +40,16 @@ public:
   using typename BaseType::RangeType;
 
   using LocalFiniteElementType = LocalFiniteElementInterface<D, d, R, r, rC>;
+
+  LocalizedGlobalFiniteElementInterface(const std::string& logging_prefix = "", const bool logging_disabled = true)
+    : Logger(logging_prefix.empty() ? "LocalizedGlobalBasis" : logging_prefix, logging_disabled)
+  {
+    LOG_(info) << "LocalizedGlobalBasis()" << std::endl;
+  }
+
+  LocalizedGlobalFiniteElementInterface(const ThisType&) = default;
+
+  LocalizedGlobalFiniteElementInterface(ThisType&&) = default;
 
   virtual ~LocalizedGlobalFiniteElementInterface() = default;
 
@@ -110,8 +125,12 @@ private:
 
 template <class GV, size_t range_dim = 1, size_t range_dim_columns = 1, class RangeField = double>
 class GlobalBasisInterface
+  : public XT::Common::WithLogger<GlobalBasisInterface<GV, range_dim, range_dim_columns, RangeField>>
 {
   static_assert(XT::Grid::is_view<GV>::value, "");
+
+  using ThisType = GlobalBasisInterface;
+  using Logger = XT::Common::WithLogger<GlobalBasisInterface<GV, range_dim, range_dim_columns, RangeField>>;
 
 public:
   using GridViewType = GV;
@@ -124,6 +143,16 @@ public:
 
   using ElementType = E;
   using LocalizedType = LocalizedGlobalFiniteElementInterface<E, r, rC, R>;
+
+  GlobalBasisInterface(const std::string& logging_prefix = "", const bool logging_disabled = true)
+    : Logger(logging_prefix.empty() ? "GlobalBasis" : logging_prefix, logging_disabled)
+  {
+    LOG_(info) << "GlobalBasis()" << std::endl;
+  }
+
+  GlobalBasisInterface(const ThisType&) = default;
+
+  GlobalBasisInterface(ThisType&&) = default;
 
   virtual ~GlobalBasisInterface() = default;
 

@@ -55,21 +55,21 @@ public:
   using VectorGridFunctionType = XT::Functions::GridFunction<E, vector_size, 1, F>;
   using VectorValues = typename VectorGridFunctionType::LocalFunctionType::RangeReturnType;
 
-  LocalElementGradientValueIntegrand(const VectorGridFunctionType vector_in)
+  LocalElementGradientValueIntegrand(XT::Functions::GridFunction<E, vector_size, 1, F> vector_in)
     : BaseType()
-    , vector_(vector_in)
-    , local_function_(vector_.local_function())
+    , vector_(vector_in.copy_as_grid_function())
+    , local_function_(vector_->local_function())
   {}
 
   LocalElementGradientValueIntegrand(const ThisType& other)
-    : BaseType(other.parameter_type())
-    , vector_(other.vector_)
-    , local_function_(vector_.local_function())
+    : BaseType(other)
+    , vector_(other.vector_->copy_as_grid_function())
+    , local_function_(vector_->local_function())
   {}
 
   LocalElementGradientValueIntegrand(ThisType&& source) = default;
 
-  std::unique_ptr<BaseType> copy() const override final
+  std::unique_ptr<BaseType> copy_as_binary_element_integrand() const override final
   {
     return std::make_unique<ThisType>(*this);
   }
@@ -155,7 +155,7 @@ private:
     }
   };
 
-  const VectorGridFunctionType vector_;
+  const std::unique_ptr<XT::Functions::GridFunctionInterface<E, vector_size, 1, F>> vector_;
   std::unique_ptr<typename VectorGridFunctionType::LocalFunctionType> local_function_;
   mutable VectorValues vector_values_;
   mutable BasisValues values_;

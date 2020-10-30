@@ -37,10 +37,10 @@
 #include <dune/gdt/functionals/vector-based.hh>
 #include <dune/gdt/local/bilinear-forms/integrals.hh>
 #include <dune/gdt/local/functionals/integrals.hh>
-#include <dune/gdt/local/integrands/elliptic.hh>
-#include <dune/gdt/local/integrands/elliptic-ipdg.hh>
+#include <dune/gdt/local/integrands/laplace.hh>
+#include <dune/gdt/local/integrands/laplace-ipdg.hh>
 #include <dune/gdt/local/integrands/product.hh>
-#include <dune/gdt/operators/ipdg-flux-reconstruction.hh>
+#include <dune/gdt/operators/laplace-ipdg-flux-reconstruction.hh>
 #include <dune/gdt/operators/matrix-based.hh>
 #include <dune/gdt/operators/oswald-interpolation.hh>
 #include <dune/gdt/spaces/hdiv/raviart-thomas.hh>
@@ -63,19 +63,19 @@ using I = XT::Grid::extract_intersection_t<GV>;
 using F = double;
 using M = XT::LA::IstlRowMajorSparseMatrix<F>;
 using V = XT::LA::IstlDenseVector<F>;
-static const LocalEllipticIpdgIntegrands::Method ipdg = LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor;
 
 
 std::pair<V, F> compute_local_indicators(const DiscreteFunction<V, GV>& u_h,
                                          const GV& grid_view,
-                                         const XT::Functions::GridFunctionInterface<E>& df,
-                                         const XT::Functions::GridFunctionInterface<E, d, d>& dt,
-                                         const XT::Functions::GridFunctionInterface<E>& f,
+                                         const double& symmetry_prefactor,
+                                         const double& penalty_parameter,
+                                         XT::Functions::GridFunction<E, d, d> weight_function,
+                                         XT::Functions::GridFunction<E, d, d> diffusion,
+                                         XT::Functions::GridFunction<E> f,
                                          const XT::Grid::BoundaryInfo<I>& boundary_info,
                                          const int over_integrate = 3)
 {
   const auto& dg_space = u_h.space();
-  auto diffusion = df * dt;
   // oswald interpolation
   auto oswald_interpolation_operator =
       make_oswald_interpolation_operator<M>(grid_view, dg_space, dg_space, boundary_info);
@@ -83,38 +83,46 @@ std::pair<V, F> compute_local_indicators(const DiscreteFunction<V, GV>& u_h,
   auto u = oswald_interpolation_operator.apply(u_h);
   // flux reconstruction
   auto rt_space = make_raviart_thomas_space(grid_view, std::max(dg_space.max_polorder() - 1, 0));
-  auto reconstruction_op = make_ipdg_flux_reconstruction_operator<M, ipdg>(grid_view, dg_space, rt_space, df, dt);
+  auto reconstruction_op = make_laplace_ipdg_flux_reconstruction_operator<M>(grid_view,
+                                                                             dg_space,
+                                                                             rt_space,
+                                                                             symmetry_prefactor,
+                                                                             /*inner*/ penalty_parameter,
+                                                                             /*dirichlet*/ penalty_parameter,
+                                                                             diffusion,
+                                                                             weight_function);
   auto t_h = reconstruction_op.apply(u_h);
   // the best index set for a grid view of arbitrary elements is a scalar FV space ...
   auto fv_space = GDT::make_finite_volume_space<1>(grid_view);
   // ... and the best thread-safe way to associate data with grid elements is a corresponding discrete function
   auto indicators = GDT::make_discrete_function<V>(fv_space);
   auto walker = XT::Grid::make_walker(grid_view);
-  walker.append([](/*prepare nothing*/) {},
+  walker.append(/*prepare=*/[]() {},
+                /*apply_local=*/
                 [&](const auto& element) {
                   // prepare data functions
-                  auto u_h_el = u_h.local_function();
-                  auto u_el = u.local_function();
-                  auto t_h_el = t_h.local_function();
-                  auto div_t_h_el = XT::Functions::divergence(*t_h_el);
-                  auto f_el = f.local_function();
-                  auto d_el = diffusion.local_function();
-                  u_h_el->bind(element);
-                  u_el->bind(element);
-                  t_h_el->bind(element);
-                  div_t_h_el.bind(element);
-                  f_el->bind(element);
-                  d_el->bind(element);
+                  auto local_u_h = u_h.local_function();
+                  auto local_u = u.local_function();
+                  auto local_t_h = t_h.local_function();
+                  auto div_local_t_h = XT::Functions::divergence(*local_t_h);
+                  auto local_f = f.local_function();
+                  auto local_diffusion = diffusion.local_function();
+                  local_u_h->bind(element);
+                  local_u->bind(element);
+                  local_t_h->bind(element);
+                  div_local_t_h.bind(element);
+                  local_f->bind(element);
+                  local_diffusion->bind(element);
                   // eta_NC
                   const double eta_NC_element_2 =
-                      LocalElementIntegralBilinearForm<E>(LocalEllipticIntegrand<E>(df, dt), over_integrate)
-                          .apply2(*u_h_el - *u_el, *u_h_el - *u_el)[0][0];
+                      LocalElementIntegralBilinearForm<E>(LocalLaplaceIntegrand<E>(diffusion), over_integrate)
+                          .apply2(*local_u_h - *local_u, *local_u_h - *local_u)[0][0];
                   // eta_R
                   // - approximate minimum eigenvalue of the diffusion over the element (evaluate at some points)
                   double min_EV = std::numeric_limits<double>::max();
                   for (auto&& quadrature_point :
-                       QuadratureRules<double, d>::rule(element.type(), d_el->order() + over_integrate)) {
-                    auto diff = d_el->evaluate(quadrature_point.position());
+                       QuadratureRules<double, d>::rule(element.type(), local_diffusion->order() + over_integrate)) {
+                    auto diff = local_diffusion->evaluate(quadrature_point.position());
                     auto eigen_solver =
                         XT::LA::make_eigen_solver(diff,
                                                   {{"type", XT::LA::EigenSolverOptions<decltype(diff)>::types().at(0)},
@@ -127,28 +135,28 @@ std::pair<V, F> compute_local_indicators(const DiscreteFunction<V, GV>& u_h,
                                     << "\n\nmin_EV = " << min_EV);
                   const auto C_P = 1. / (M_PIl * M_PIl); // Poincare constant (known for simplices/cubes)
                   const auto h = XT::Grid::diameter(element);
-                  auto L2_norm_2 =
-                      LocalElementIntegralBilinearForm<E>(LocalElementProductIntegrand<E>(), over_integrate)
-                          .apply2(*f_el - div_t_h_el, *f_el - div_t_h_el)[0][0];
+                  auto L2_norm_2 = LocalElementIntegralBilinearForm<E>(LocalProductIntegrand<E>(), over_integrate)
+                                       .apply2(*local_f - div_local_t_h, *local_f - div_local_t_h)[0][0];
                   const double eta_R_element_2 = (C_P * h * h * L2_norm_2) / min_EV;
                   // eta_DF
                   const double eta_DF_element_2 = XT::Grid::element_integral(
                       element,
                       [&](const auto& xx) {
-                        const auto diff = d_el->evaluate(xx);
-                        const auto diff_inv = XT::LA::invert_matrix(d_el->evaluate(xx));
-                        const auto pressure_grad = u_h_el->jacobian(xx)[0];
-                        const auto t_val = t_h_el->evaluate(xx);
+                        const auto diff = local_diffusion->evaluate(xx);
+                        const auto diff_inv = XT::LA::invert_matrix(local_diffusion->evaluate(xx));
+                        const auto pressure_grad = local_u_h->jacobian(xx)[0];
+                        const auto t_val = local_t_h->evaluate(xx);
                         auto difference = diff * pressure_grad + t_val;
                         return (diff_inv * difference) * difference;
                       },
-                      std::max(d_el->order() + std::max(u_h_el->order() - 1, 0), t_h_el->order()) + over_integrate);
+                      std::max(local_diffusion->order() + std::max(local_u_h->order() - 1, 0), local_t_h->order())
+                          + over_integrate);
                   // compute indicators and estimator
                   auto local_indicator = indicators.local_discrete_function(element);
                   local_indicator->dofs()[0] = std::sqrt(
                       eta_NC_element_2 + std::pow(std::sqrt(eta_R_element_2) + std::sqrt(eta_DF_element_2), 2));
                 },
-                [](/*finalize nothing*/) {});
+                /*finalize=*/[]() {});
   walker.walk(/*parallel=*/true);
   return {indicators.dofs().vector(), indicators.dofs().vector().l2_norm()};
 } // ... compute_local_indicators(...)
@@ -198,20 +206,18 @@ int main(int argc, char* argv[])
 
     // problem
     const Test::ESV2007DiffusionProblem<GV> problem;
-    const XT::Functions::ConstantFunction<d> diff_factor(1.);
-    const auto& df = diff_factor.as_grid_function<E>();
-    const auto& dt = problem.diffusion.as_grid_function<E>();
-    const auto& f = problem.force.as_grid_function<E>();
-    const auto& boundary_info = problem.boundary_info;
 
     // grid
     auto grid_ptr = problem.make_initial_grid().grid_ptr();
     auto& grid = *grid_ptr;
     auto grid_view = grid.leafGridView();
 
-    // space, op and rhs
+    // space
     auto dg_space = make_discontinuous_lagrange_space(grid_view, 1);
     auto current_solution = make_discrete_function<V>(dg_space);
+    const double symmetry_prefactor = 1; // SIPDG
+    const double penalty_parameter = 16; // non-degenerate simplicial grids in 2d
+    const auto& weight_function = problem.diffusion; // SWIPDG, not SIPDG
 
     // the main adaptation loop
     auto helper = make_adaptation_helper(grid, dg_space, current_solution);
@@ -222,22 +228,25 @@ int main(int argc, char* argv[])
 
       // assemble
       auto lhs_op = make_matrix_operator<M>(dg_space, Stencil::element_and_intersection);
-      lhs_op.append(LocalElementIntegralBilinearForm<E>(LocalEllipticIntegrand<E>(df, dt)));
-      lhs_op.append(LocalIntersectionIntegralBilinearForm<I>(LocalEllipticIpdgIntegrands::Inner<I, F, ipdg>(df, dt)),
-                    {},
-                    XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
+      lhs_op.append(LocalElementIntegralBilinearForm<E>(LocalLaplaceIntegrand<E>(problem.diffusion)));
+      lhs_op.append(
+          LocalCouplingIntersectionIntegralBilinearForm<I>(
+              LocalLaplaceIPDGIntegrands::InnerCoupling<I>(symmetry_prefactor, problem.diffusion, weight_function)
+              + LocalIPDGIntegrands::InnerPenalty<I>(penalty_parameter, weight_function)),
+          {},
+          XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
       lhs_op.append(
           LocalIntersectionIntegralBilinearForm<I>(
-              LocalEllipticIpdgIntegrands::DirichletBoundaryLhs<I, F, ipdg>(df, dt)),
+              LocalIPDGIntegrands::BoundaryPenalty<I>(penalty_parameter, weight_function)
+              + LocalLaplaceIPDGIntegrands::DirichletCoupling<I>(symmetry_prefactor, problem.diffusion)),
           {},
-          XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(boundary_info, new XT::Grid::DirichletBoundary()));
+          XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(problem.boundary_info, new XT::Grid::DirichletBoundary()));
       auto rhs_func = make_vector_functional<V>(dg_space);
-      rhs_func.append(LocalElementIntegralFunctional<E>(
-          local_binary_to_unary_element_integrand(LocalElementProductIntegrand<E>(), f)));
+      rhs_func.append(LocalElementIntegralFunctional<E>(LocalProductIntegrand<E>().with_ansatz(problem.force)));
       // ... add Dirichlet here
       // (if we add something here, the oswald interpolation needs to be adapted accordingly!)
       // ... add Neumann here
-      // assemble everything in one grid walk
+      // assemble everything in one grid walk (uses the lhs_op as grid walker)
       lhs_op.append(rhs_func);
       lhs_op.assemble(DXTC_CONFIG_GET("parallel", true));
 
@@ -246,7 +255,14 @@ int main(int argc, char* argv[])
       current_solution.visualize("solution_" + XT::Common::to_string(counter));
 
       // compute local indicators and estimate
-      const auto estimates = compute_local_indicators(current_solution, grid_view, df, dt, f, boundary_info);
+      const auto estimates = compute_local_indicators(current_solution,
+                                                      grid_view,
+                                                      symmetry_prefactor,
+                                                      penalty_parameter,
+                                                      weight_function,
+                                                      problem.diffusion,
+                                                      problem.force,
+                                                      problem.boundary_info);
       const auto indicators = std::move(estimates.first);
       const auto estimate = estimates.second;
       logger.info() << "  estimated error: " << estimate << std::endl;

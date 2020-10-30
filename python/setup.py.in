@@ -24,4 +24,5 @@ setup(name='dune.gdt',
       url='https://github.com/dune-community/dune-gdt',
       packages=['dune.gdt'],
       install_requires=['jinja2', 'where', 'codecov'],
+      extras_requires={'parallel': ['bokeh', 'pymumps', 'metis']},
       )

@@ -9,5 +9,7 @@
 #   René Fritze (2018)
 # ~~~
 
+dune_pybindxi_add_module(dunegdtusercode EXCLUDE_FROM_ALL ${header} dunegdtusercode.cc)
+
 add_subdirectory(dune)
 dxt_add_python_tests()

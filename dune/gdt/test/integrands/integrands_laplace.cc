@@ -39,7 +39,7 @@ struct LaplaceIntegrandTest : public IntegrandTest<G>
   using ScalarIntegrandType = LocalLaplaceIntegrand<E, 1>;
   using VectorIntegrandType = LocalLaplaceIntegrand<E, d>;
 
-  virtual void SetUp() override
+  void SetUp() override
   {
     BaseType::SetUp();
     diffusion_tensor_ = std::make_shared<XT::Functions::GenericGridFunction<E, 2, 2>>(
@@ -52,7 +52,7 @@ struct LaplaceIntegrandTest : public IntegrandTest<G>
         });
   }
 
-  virtual void is_constructable() override final
+  void is_constructable() override final
   {
     [[maybe_unused]] ScalarIntegrandType scalar_integrand1;
     [[maybe_unused]] ScalarIntegrandType scalar_integrand2(XT::LA::eye_matrix<FieldMatrix<D, d, d>>(d, d));

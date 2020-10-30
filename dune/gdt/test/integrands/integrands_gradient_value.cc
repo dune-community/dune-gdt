@@ -39,7 +39,7 @@ struct GradientValueIntegrandTest : public IntegrandTest<G>
   using VectorIntegrandType = LocalElementGradientValueIntegrand<E, d>;
   using VectorIntegrandTestGradType = LocalElementGradientValueIntegrand<E, d, 1, D, D, D, true>;
 
-  virtual void is_constructable() override final
+  void is_constructable() override final
   {
     const XT::Functions::GenericGridFunction<E, d> vector_grid_function(
         2,

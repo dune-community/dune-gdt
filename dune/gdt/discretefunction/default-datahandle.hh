@@ -33,7 +33,7 @@ public:
   {}
 
   //! export type of data for message buffer
-  typedef typename DiscreteFunctionType::SpaceType::D DataType;
+  using DataType = typename DiscreteFunctionType::SpaceType::D;
 
   //! returns true if data for this codim should be communicated
   bool contains(int /*dim*/, int codim) const
@@ -89,7 +89,7 @@ public:
 
   template <class MessageBuffer, class EntityType>
   std::enable_if_t<EntityType::codimension == 0>
-  scatter(MessageBuffer& buff, const EntityType& entity, DXTC_DEBUG_ONLY size_t n)
+  scatter(MessageBuffer& buff, const EntityType& entity, [[maybe_unused]] size_t n)
   {
     assert(mapper_.local_size(entity) == n);
     const auto global_indices = mapper_.global_indices(entity);

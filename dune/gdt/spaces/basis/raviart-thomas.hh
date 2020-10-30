@@ -50,26 +50,35 @@ public:
   using typename BaseType::GridViewType;
   using typename BaseType::LocalizedType;
 
-  RaviartThomasGlobalBasis(const ThisType&) = default;
-  RaviartThomasGlobalBasis(ThisType&&) = default;
-
-  ThisType& operator=(const ThisType&) = delete;
-  ThisType& operator=(ThisType&&) = delete;
-
   RaviartThomasGlobalBasis(const GridViewType& grid_view,
                            const int order,
                            const LocalRaviartThomasFiniteElementFamily<D, d, R>& local_finite_elements,
                            const FiniteVolumeMapper<GL>& element_indices,
-                           const std::vector<DynamicVector<R>>& fe_data)
-    : grid_view_(grid_view)
+                           const std::vector<DynamicVector<R>>& fe_data,
+                           const std::string& logging_prefix)
+    : BaseType(logging_prefix.empty() ? "RtGlobalBasis" : logging_prefix,
+               /*logging_disabled=*/logging_prefix.empty())
+    , grid_view_(grid_view)
     , order_(order)
     , local_finite_elements_(local_finite_elements)
     , element_indices_(element_indices)
     , fe_data_(fe_data)
     , max_size_(0)
   {
+    LOG_(info) << "RtGlobalBasis(grid_view=" << &grid_view << ", order=" << order
+               << ", local_finite_elements=" << &local_finite_elements
+               << ",\n   element_indices.size()=" << element_indices.size() << ", fe_data.size()=" << fe_data.size()
+               << ")" << std::endl;
     this->update_after_adapt();
   }
+
+  RaviartThomasGlobalBasis(const ThisType&) = default;
+
+  RaviartThomasGlobalBasis(ThisType&&) = default;
+
+  ThisType& operator=(const ThisType&) = delete;
+
+  ThisType& operator=(ThisType&&) = delete;
 
   size_t max_size() const override final
   {
@@ -80,14 +89,21 @@ public:
 
   std::unique_ptr<LocalizedType> localize() const override final
   {
-    return std::make_unique<LocalizedRaviartThomasGlobalBasis>(*this);
+    std::string derived_logging_prefix = "";
+    if (this->logger.info_enabled) {
+      derived_logging_prefix = this->logger.prefix + "_localized";
+      this->logger.info() << "localize()" << std::endl;
+    }
+    return std::make_unique<LocalizedRaviartThomasGlobalBasis>(*this, derived_logging_prefix);
   }
 
   void update_after_adapt() override final
   {
+    LOG_(info) << "update_after_adapt()" << std::endl;
     max_size_ = 0;
     for (const auto& gt : grid_view_.indexSet().types(0))
       max_size_ = std::max(max_size_, local_finite_elements_.get(gt, order_).size());
+    LOG_(info) << "  max_size_ = " << max_size_ << std::endl;
   }
 
 private:
@@ -103,11 +119,17 @@ private:
     using typename BaseType::LocalFiniteElementType;
     using typename BaseType::RangeType;
 
-    LocalizedRaviartThomasGlobalBasis(const RaviartThomasGlobalBasis<GL, R>& self)
-      : BaseType()
+    LocalizedRaviartThomasGlobalBasis(const RaviartThomasGlobalBasis<GL, R>& self,
+                                      const std::string& logging_prefix = "")
+      : BaseType(logging_prefix.empty() ? "LocalizedRtGlobalBasis" : logging_prefix,
+                 /*logging_disabled=*/logging_prefix.empty())
       , self_(self)
       , set_data_in_post_bind_(true)
-    {}
+    {
+      LOG_(info) << "LocalizedRtGlobalBasis(self=" << &self
+                 << ", self.element_indices_.size()=" << self.element_indices_.size()
+                 << ", self.fe_data_.size()=" << self.fe_data_.size() << ")" << std::endl;
+    }
 
     LocalizedRaviartThomasGlobalBasis(const ThisType&) = default;
     LocalizedRaviartThomasGlobalBasis(ThisType&&) = default;

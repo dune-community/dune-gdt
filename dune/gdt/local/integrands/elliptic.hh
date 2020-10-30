@@ -53,9 +53,9 @@ public:
   using DiffusionFactorType = XT::Functions::GridFunctionInterface<E, 1, 1, F>;
   using DiffusionTensorType = XT::Functions::GridFunctionInterface<E, d, d, F>;
 
-  LocalEllipticIntegrand(
-      const F& diffusion_factor = F(1),
-      const XT::Common::FieldMatrix<F, d, d>& diffusion_tensor = XT::LA::eye_matrix<FieldMatrix<F, d, d>>(d, d))
+  LocalEllipticIntegrand(const F& diffusion_factor = F(1),
+                         const XT::Common::FieldMatrix<F, d, d>& diffusion_tensor =
+                             XT::LA::eye_matrix<FieldMatrix<F, d, d>>(d, d))
     : BaseType()
     , diffusion_factor_(new XT::Functions::FunctionAsGridFunctionWrapper<E, 1, 1, F>(
           new XT::Functions::ConstantFunction<d, 1, 1, F>(diffusion_factor)))
@@ -83,16 +83,16 @@ public:
   {}
 
   LocalEllipticIntegrand(const ThisType& other)
-    : BaseType(other.parameter_type())
+    : BaseType(other)
     , diffusion_factor_(other.diffusion_factor_)
     , diffusion_tensor_(other.diffusion_tensor_)
     , local_diffusion_factor_(diffusion_factor_.access().local_function())
     , local_diffusion_tensor_(diffusion_tensor_.access().local_function())
   {}
 
-  LocalEllipticIntegrand(ThisType&& source) = default;
+  LocalEllipticIntegrand(ThisType && source) = default;
 
-  std::unique_ptr<BaseType> copy() const override final
+  std::unique_ptr<BaseType> copy_as_binary_element_integrand() const override final
   {
     return std::make_unique<ThisType>(*this);
   }

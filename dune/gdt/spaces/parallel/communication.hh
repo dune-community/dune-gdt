@@ -14,9 +14,7 @@
 
 #include <dune/common/parallel/communicator.hh>
 
-#if HAVE_DUNE_ISTL
-#  include <dune/istl/owneroverlapcopy.hh>
-#endif
+#include <dune/istl/owneroverlapcopy.hh>
 
 #include <dune/xt/common/parallel/helper.hh>
 
@@ -31,7 +29,7 @@ template <class ViewImp,
               typename XT::Grid::extract_grid<ViewImp>::type::CollectiveCommunication>::value>
 struct DofCommunicationChooser
 {
-  typedef Dune::XT::SequentialCommunication Type;
+  using Type = Dune::XT::SequentialCommunication;
 
   static Type* create(const ViewImp& /*gridView*/)
   {
@@ -46,7 +44,7 @@ struct DofCommunicationChooser
 }; // struct DofCommunicationChooser
 
 
-#if HAVE_MPI && HAVE_DUNE_ISTL
+#if HAVE_MPI
 
 
 template <class ViewImp>
@@ -79,7 +77,7 @@ public:
 }; // struct DofCommunicationChooser< ..., true >
 
 
-#endif // HAVE_MPI && HAVE_DUNE_ISTL
+#endif // HAVE_MPI
 
 } // namespace GDT
 } // namespace Dune

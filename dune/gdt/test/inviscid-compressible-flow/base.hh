@@ -23,6 +23,7 @@
 #include <dune/xt/grid/gridprovider/cube.hh>
 #include <dune/xt/functions/base/sliced.hh>
 #include <dune/xt/functions/interfaces/element-functions.hh>
+#include <dune/xt/functions/grid-function.hh>
 
 #include <dune/gdt/interpolations/default.hh>
 #include <dune/gdt/local/integrands/identity.hh>
@@ -250,7 +251,8 @@ protected:
               },
               /*name=*/"periodic_density_variation",
               /*parameter_type=*/{"_t", 1}));
-      local_periodic_density_variation_ = periodic_density_variation_->template as_grid_function<E>().local_function();
+      local_periodic_density_variation_ =
+          XT::Functions::make_grid_function<E>(*periodic_density_variation_).local_function();
       // inflow/outflow left, impermeable wall right
       boundary_info = std::make_unique<XT::Grid::NormalBasedBoundaryInfo<XT::Grid::extract_intersection_t<GV>>>();
       boundary_info->register_new_normal({-1}, new XT::Grid::InflowOutflowBoundary());

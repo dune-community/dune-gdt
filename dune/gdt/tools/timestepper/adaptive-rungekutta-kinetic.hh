@@ -44,19 +44,19 @@ template <class OperatorImp,
           TimeStepperMethods method = TimeStepperMethods::dormand_prince>
 class KineticAdaptiveRungeKuttaTimeStepper : public TimeStepperInterface<DiscreteFunctionImp>
 {
-  typedef TimeStepperInterface<DiscreteFunctionImp> BaseType;
-  typedef typename internal::AdaptiveButcherArrayProvider<typename BaseType::RangeFieldType, method>
-      ButcherArrayProviderType;
+  using BaseType = TimeStepperInterface<DiscreteFunctionImp>;
+  using ButcherArrayProviderType =
+      typename internal::AdaptiveButcherArrayProvider<typename BaseType::RangeFieldType, method>;
 
 public:
-  typedef OperatorImp OperatorType;
-  typedef DiscreteFunctionImp DiscreteFunctionType;
+  using OperatorType = OperatorImp;
+  using DiscreteFunctionType = DiscreteFunctionImp;
 
-  typedef typename DiscreteFunctionType::DomainFieldType DomainFieldType;
-  typedef typename DiscreteFunctionType::RangeFieldType RangeFieldType;
-  typedef typename Dune::DynamicMatrix<RangeFieldType> MatrixType;
-  typedef typename Dune::DynamicVector<RangeFieldType> VectorType;
-  typedef typename std::vector<std::pair<RangeFieldType, DiscreteFunctionType>> SolutionType;
+  using DomainFieldType = typename DiscreteFunctionType::DomainFieldType;
+  using RangeFieldType = typename DiscreteFunctionType::RangeFieldType;
+  using MatrixType = typename Dune::DynamicMatrix<RangeFieldType>;
+  using VectorType = typename Dune::DynamicVector<RangeFieldType>;
+  using SolutionType = typename std::vector<std::pair<RangeFieldType, DiscreteFunctionType>>;
   static constexpr size_t q = ButcherArrayProviderType::q;
   using EntropyFluxType = EntropyFluxImp;
   using BaseType::dimRange;
@@ -104,8 +104,8 @@ public:
     , rtol_(rtol)
     , scale_factor_min_(scale_factor_min)
     , scale_factor_max_(scale_factor_max)
-    , alpha_tmp_(BaseType::current_solution())
-    , alpha_np1_(BaseType::current_solution())
+    , alpha_tmp_(BaseType::current_solution().copy_as_discrete_function())
+    , alpha_np1_(BaseType::current_solution().copy_as_discrete_function())
     , A_(A)
     , b_1_(b_1)
     , b_2_(b_2)
@@ -131,7 +131,7 @@ public:
     }
     // store as many discrete functions as needed for intermediate stages
     for (size_t ii = 0; ii < num_stages_; ++ii) {
-      stages_k_.emplace_back(current_solution());
+      stages_k_.emplace_back(current_solution().copy_as_discrete_function());
     }
   } // constructor KineticAdaptiveRungeKuttaTimeStepper
 
@@ -207,7 +207,7 @@ public:
     const auto num_dofs = alpha_n.dofs().vector().size();
     size_t first_stage_to_compute = 0;
     if (first_same_as_last_ && last_stage_of_previous_step_) {
-      stages_k_[0].dofs().vector() = last_stage_of_previous_step_->dofs().vector();
+      stages_k_[0]->dofs().vector() = last_stage_of_previous_step_->dofs().vector();
       first_stage_to_compute = 1;
     }
     first_same_as_last_ = true;
@@ -216,12 +216,12 @@ public:
       actual_dt *= time_step_scale_factor;
       for (size_t ii = first_stage_to_compute; ii < num_stages_ - 1; ++ii) {
         set_op_param("t", t + actual_dt * c_[ii]);
-        std::fill_n(&(stages_k_[ii].dofs().vector()[0]), num_dofs, 0.);
-        alpha_tmp_.dofs().vector() = alpha_n.dofs().vector();
+        std::fill_n(&(stages_k_[ii]->dofs().vector()[0]), num_dofs, 0.);
+        alpha_tmp_->dofs().vector() = alpha_n.dofs().vector();
         for (size_t jj = 0; jj < ii; ++jj)
-          alpha_tmp_.dofs().vector().axpy(actual_dt * r_ * A_[ii][jj], stages_k_[jj].dofs().vector());
+          alpha_tmp_->dofs().vector().axpy(actual_dt * r_ * A_[ii][jj], stages_k_[jj]->dofs().vector());
         try {
-          op_.apply(alpha_tmp_.dofs().vector(), stages_k_[ii].dofs().vector(), op_param_);
+          op_.apply(alpha_tmp_->dofs().vector(), stages_k_[ii]->dofs().vector(), op_param_);
           if (regularize_if_needed(consider_regularization, r_it, r_sequence)) {
             mixed_error = 1e10;
             skip_error_computation = true;
@@ -247,15 +247,15 @@ public:
 
       if (!skip_error_computation) {
         // compute alpha^{n+1}
-        alpha_np1_.dofs().vector() = alpha_n.dofs().vector();
+        alpha_np1_->dofs().vector() = alpha_n.dofs().vector();
         for (size_t ii = 0; ii < num_stages_ - 1; ++ii)
-          alpha_np1_.dofs().vector().axpy(actual_dt * r_ * b_1_[ii], stages_k_[ii].dofs().vector());
+          alpha_np1_->dofs().vector().axpy(actual_dt * r_ * b_1_[ii], stages_k_[ii]->dofs().vector());
 
         // calculate last stage
         set_op_param("t", t + actual_dt * c_[num_stages_ - 1]);
-        std::fill_n(&(stages_k_[num_stages_ - 1].dofs().vector()[0]), num_dofs, 0.);
+        std::fill_n(&(stages_k_[num_stages_ - 1]->dofs().vector()[0]), num_dofs, 0.);
         try {
-          op_.apply(alpha_np1_.dofs().vector(), stages_k_[num_stages_ - 1].dofs().vector(), op_param_);
+          op_.apply(alpha_np1_->dofs().vector(), stages_k_[num_stages_ - 1]->dofs().vector(), op_param_);
           if (regularize_if_needed(consider_regularization, r_it, r_sequence)) {
             mixed_error = 1e10;
             time_step_scale_factor = 0.9;
@@ -275,14 +275,14 @@ public:
         }
 
         // calculate second approximations of alpha at timestep n+1.
-        alpha_tmp_.dofs().vector() = alpha_n.dofs().vector();
+        alpha_tmp_->dofs().vector() = alpha_n.dofs().vector();
         for (size_t ii = 0; ii < num_stages_; ++ii)
-          alpha_tmp_.dofs().vector().axpy(actual_dt * r_ * b_2_[ii], stages_k_[ii].dofs().vector());
+          alpha_tmp_->dofs().vector().axpy(actual_dt * r_ * b_2_[ii], stages_k_[ii]->dofs().vector());
 
         const auto* alpha_tmp_data =
-            XT::Common::VectorAbstraction<typename DiscreteFunctionType::VectorType>::data(alpha_tmp_.dofs().vector());
+            XT::Common::VectorAbstraction<typename DiscreteFunctionType::VectorType>::data(alpha_tmp_->dofs().vector());
         const auto* alpha_np1_data =
-            XT::Common::VectorAbstraction<typename DiscreteFunctionType::VectorType>::data(alpha_np1_.dofs().vector());
+            XT::Common::VectorAbstraction<typename DiscreteFunctionType::VectorType>::data(alpha_np1_->dofs().vector());
 
         // if b == NaN, std::max(a, b) might return a, so mixed_error might be non-NaN though there are NaNs in the
         // vectors So check for NaNs before
@@ -309,7 +309,8 @@ public:
 
           // maybe adjust alpha to enforce a minimum density or avoid problems with matrix conditions
           if (mixed_error < 1.
-              && min_density_setter_.apply_with_dt(alpha_np1_.dofs().vector(), alpha_np1_.dofs().vector(), actual_dt)) {
+              && min_density_setter_.apply_with_dt(
+                  alpha_np1_->dofs().vector(), alpha_np1_->dofs().vector(), actual_dt)) {
             // we cannot use the first-same-as-last property for the next time step if we changed alpha
             first_same_as_last_ = false;
           }
@@ -317,12 +318,12 @@ public:
       } // if (!skip_error_computation)
     } // while (mixed_error > 1.)
 
-    alpha_n.dofs().vector() = alpha_np1_.dofs().vector();
+    alpha_n.dofs().vector() = alpha_np1_->dofs().vector();
     this->dts_.push_back(actual_dt);
 
     if (!last_stage_of_previous_step_)
-      last_stage_of_previous_step_ = std::make_unique<DiscreteFunctionType>(alpha_n);
-    last_stage_of_previous_step_->dofs().vector() = stages_k_[num_stages_ - 1].dofs().vector();
+      last_stage_of_previous_step_ = alpha_n.copy_as_discrete_function();
+    last_stage_of_previous_step_->dofs().vector() = stages_k_[num_stages_ - 1]->dofs().vector();
 
     t += actual_dt;
 
@@ -346,14 +347,14 @@ private:
   const RangeFieldType rtol_;
   const RangeFieldType scale_factor_min_;
   const RangeFieldType scale_factor_max_;
-  DiscreteFunctionType alpha_tmp_;
-  DiscreteFunctionType alpha_np1_;
+  std::unique_ptr<DiscreteFunctionType> alpha_tmp_;
+  std::unique_ptr<DiscreteFunctionType> alpha_np1_;
   const MatrixType A_;
   const VectorType b_1_;
   const VectorType b_2_;
   const VectorType c_;
   const VectorType b_diff_;
-  std::vector<DiscreteFunctionType> stages_k_;
+  std::vector<std::unique_ptr<DiscreteFunctionType>> stages_k_;
   const size_t num_stages_;
   std::unique_ptr<DiscreteFunctionType> last_stage_of_previous_step_;
   bool first_same_as_last_;

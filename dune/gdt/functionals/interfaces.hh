@@ -36,14 +36,18 @@ namespace GDT {
  * modelled by a SpaceInterface of appropriate dimensions. The functions v_h \in V_h, to which the funtional can be
  * applied, are modelled by ConstDiscreteFunction with an appropriate vector type derived from XT::LA::VectorInterface
  * (modelled by SourceVector).
+ *
+ * \TODO Add parameter dependency!
  */
 template <class SourceVector,
           class SourceGridView,
           size_t source_dim = 1,
           size_t source_dim_cols = 1,
           class Field = double>
-class FunctionalInterface
+class FunctionalInterface : public XT::Common::ParametricInterface
 {
+  using ThisType = FunctionalInterface;
+
 public:
   static constexpr size_t r = source_dim;
   static constexpr size_t rC = source_dim_cols;
@@ -51,8 +55,18 @@ public:
 
   using SourceSpaceType = SpaceInterface<SourceGridView, r, rC, F>;
   using SourceVectorType = SourceVector;
-  using SourceType = ConstDiscreteFunction<SourceVectorType, SourceGridView, r, rC, F>;
+  using ConstSourceFunctionType = ConstDiscreteFunction<SourceVectorType, SourceGridView, r, rC, F>;
   using FieldType = Field;
+
+  explicit FunctionalInterface(const XT::Common::ParameterType param_tp = {})
+    : XT::Common::ParametricInterface(param_tp)
+  {}
+
+  FunctionalInterface(const ThisType& other)
+    : XT::Common::ParametricInterface(other)
+  {}
+
+  FunctionalInterface(ThisType&& source) = default;
 
   virtual ~FunctionalInterface() = default;
 
@@ -63,9 +77,14 @@ public:
 
   virtual const SourceSpaceType& source_space() const = 0;
 
-  virtual FieldType apply(const SourceType& source) const = 0;
+  virtual FieldType apply(const SourceVectorType& /*source*/, const XT::Common::Parameter& /*param*/ = {}) const = 0;
 
   /// \}
+
+  virtual FieldType apply(const ConstSourceFunctionType& source, const XT::Common::Parameter& param = {}) const
+  {
+    return this->apply(source.dofs().vector(), param);
+  }
 
   /**
    * Allows the implementation to do preparatory work (i.e., assemble the vector of a vector-based linear functional).

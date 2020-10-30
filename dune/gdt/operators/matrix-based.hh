@@ -56,12 +56,20 @@ public:
   using typename BaseType::SourceSpaceType;
   using typename BaseType::VectorType;
 
-  ConstMatrixOperator(const SourceSpaceType& source_spc, const RangeSpaceType& range_spc, const MatrixType& mat)
-    : source_space_(source_spc)
+  ConstMatrixOperator(const SourceSpaceType& source_spc,
+                      const RangeSpaceType& range_spc,
+                      const MatrixType& mat,
+                      const std::string& logging_prefix = "")
+    : BaseType({},
+               logging_prefix.empty() ? "MatrixOperator" : logging_prefix,
+               /*logging_disabled=*/logging_prefix.empty())
+    , source_space_(source_spc)
     , range_space_(range_spc)
     , matrix_(mat)
     , linear_solver_(matrix_, source_space_.dof_communicator())
   {
+    LOG_(info) << "ConstMatrixOperator(source_space=" << &source_spc << ", range_space=" << &range_spc
+               << ", matrix=" << &mat << ")" << std::endl;
     DUNE_THROW_IF(matrix_.rows() != range_space_.mapper().size(),
                   XT::Common::Exceptions::shapes_do_not_match,
                   "matrix_.rows() = " << matrix_.rows()
@@ -72,8 +80,17 @@ public:
                                       << "\n   source_space_.mapper().size() = " << source_space_.mapper().size());
   } // ConstMatrixOperator(...)
 
+  ConstMatrixOperator(const ThisType& other)
+    : BaseType(other)
+    , source_space_(other.source_space_)
+    , range_space_(other.range_space_)
+    , matrix_(other.matrix_)
+    , linear_solver_(matrix_, source_space_.dof_communicator())
+  {}
+
   ConstMatrixOperator(ThisType&& source)
-    : source_space_(source.source_space_)
+    : BaseType(source)
+    , source_space_(source.source_space_)
     , range_space_(source.range_space_)
     , matrix_(source.matrix_)
     , linear_solver_(matrix_, source_space_.dof_communicator())
@@ -157,11 +174,14 @@ public:
 
   using BaseType::jacobian;
 
-  void jacobian(const VectorType& /*source*/,
+  void jacobian(const VectorType& source,
                 MatrixOperatorType& jacobian_op,
                 const XT::Common::Configuration& opts,
-                const XT::Common::Parameter& /*param*/ = {}) const override
+                const XT::Common::Parameter& param = {}) const override
   {
+    LOG__(BaseType, info) << BaseType::logger.prefix << ".jacobian(source.sup_norm()=" << source.sup_norm()
+                          << ", jacobian_op.matrix().sup_norm()=" << jacobian_op.matrix().sup_norm()
+                          << ", opts=" << print(opts, {{"oneline", "true"}}) << ", param=" << param << ")" << std::endl;
     DUNE_THROW_IF(
         !opts.has_key("type"), Exceptions::operator_error, "missing key 'type' in given opts!\n\nopts = " << opts);
     const auto type = opts.get<std::string>("type");
@@ -169,7 +189,9 @@ public:
                   Exceptions::operator_error,
                   "requested jacobian type is not one of the available ones!\n\n"
                       << "type = " << type << "\njacobian_options() = " << jacobian_options());
-    jacobian_op.matrix() += matrix_;
+    LOG__(BaseType, debug) << "   adding matrix_ * jacobian_op.scaling (matrix_.sup_norm() = " << matrix_.sup_norm()
+                           << ", jacobian_op.scaling = " << jacobian_op.scaling << ")" << std::endl;
+    jacobian_op.matrix().axpy(jacobian_op.scaling, matrix_);
   } // ... jacobian(...)
 
 private:
@@ -184,19 +206,22 @@ template <class SGV, size_t s_r, size_t s_rC, class F, class RGV, size_t r_r, si
 ConstMatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, SGV, s_r, s_rC, r_r, r_rC, RGV>
 make_matrix_operator(const SpaceInterface<SGV, s_r, s_rC, F>& source_space,
                      const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
-                     const XT::LA::MatrixInterface<M>& matrix)
+                     const XT::LA::MatrixInterface<M>& matrix,
+                     const std::string& logging_prefix = "")
 {
   return ConstMatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, SGV, s_r, s_rC, r_r, r_rC, RGV>(
-      source_space, range_space, matrix.as_imp());
+      source_space, range_space, matrix.as_imp(), logging_prefix);
 }
 
 
 template <class GV, size_t r, size_t rC, class F, class M>
 ConstMatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC>
-make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space, const XT::LA::MatrixInterface<M>& matrix)
+make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space,
+                     const XT::LA::MatrixInterface<M>& matrix,
+                     const std::string& logging_prefix = "")
 {
   return ConstMatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC>(
-      space, space, matrix.as_imp());
+      space, space, matrix.as_imp(), logging_prefix);
 }
 
 
@@ -204,12 +229,14 @@ make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space, const XT::LA::Ma
  * \brief Base class for linear operators which are assembled into a matrix.
  *
  * We derive from the XT::Grid::Walker and povide custom append() methods to allow to add local element and intersection
- * operators. In contrast to the GlobalAssembler we already hold the target matrix (or create one of appropriate size
+ * operators. We already hold the target matrix (or create one of appropriate size
  * and given sparsity pattern), into which we want to assemble. The operator is assembled by walking over the given
  * assembly_grid_view, if you want to assemble an operator only on a smaller grid view, consider to append this operator
  * to another walker or provide appropriate filters.
  *
  * \note See ConstMatrixOperator and OperatorInterface for a description of the template arguments.
+ *
+ * \todo Add logging to intersection and coupling intersection assemblers
  *
  * \sa OperatorInterface
  * \sa ConstMatrixOperator
@@ -223,29 +250,29 @@ class MatrixOperator
 {
   using ThisType = MatrixOperator;
   using MatrixStorage = XT::Common::StorageProvider<M>;
-  using OperatorBaseType = ConstMatrixOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
-  using WalkerBaseType = XT::Grid::Walker<SGV>;
+  using BaseOperatorType = ConstMatrixOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
+  using BaseWalkerType = XT::Grid::Walker<SGV>;
 
 public:
   using AssemblyGridViewType = SGV;
 
-  using typename OperatorBaseType::F;
-  using typename OperatorBaseType::FieldType;
-  using typename OperatorBaseType::MatrixOperatorType;
-  using typename OperatorBaseType::MatrixType;
-  using typename OperatorBaseType::RangeSpaceType;
-  using typename OperatorBaseType::SourceSpaceType;
-  using typename OperatorBaseType::V;
-  using typename OperatorBaseType::VectorType;
+  using typename BaseOperatorType::F;
+  using typename BaseOperatorType::FieldType;
+  using typename BaseOperatorType::MatrixOperatorType;
+  using typename BaseOperatorType::MatrixType;
+  using typename BaseOperatorType::RangeSpaceType;
+  using typename BaseOperatorType::SourceSpaceType;
+  using typename BaseOperatorType::V;
+  using typename BaseOperatorType::VectorType;
 
-  using typename WalkerBaseType::ElementType;
+  using typename BaseWalkerType::ElementType;
   using ElementFilterType = XT::Grid::ElementFilter<SGV>;
   using IntersectionFilterType = XT::Grid::IntersectionFilter<SGV>;
   using ApplyOnAllElements = XT::Grid::ApplyOn::AllElements<SGV>;
   using ApplyOnAllIntersections = XT::Grid::ApplyOn::AllIntersections<SGV>;
 
-  using typename WalkerBaseType::E;
-  using typename WalkerBaseType::I;
+  using typename BaseWalkerType::E;
+  using typename BaseWalkerType::I;
 
   /**
    * Ctor which accept an existing matrix into which to assemble.
@@ -253,30 +280,52 @@ public:
   MatrixOperator(AssemblyGridViewType assembly_grid_view,
                  const SourceSpaceType& source_spc,
                  const RangeSpaceType& range_spc,
-                 MatrixType& mat)
+                 MatrixType& mat,
+                 const std::string& logging_prefix = "")
     : MatrixStorage(mat)
-    , OperatorBaseType(source_spc, range_spc, MatrixStorage::access())
-    , WalkerBaseType(assembly_grid_view)
+    , BaseOperatorType(source_spc, range_spc, MatrixStorage::access(), logging_prefix)
+    , BaseWalkerType(assembly_grid_view)
     , scaling(1.)
-    , assembled_(false)
-  {}
+  {
+    LOG__(BaseOperatorType, info) << "MatrixOperator(assembly_grid_view=" << &assembly_grid_view
+                                  << ", source_space=" << &source_spc << ", range_space=" << &range_spc
+                                  << ", matrix=" << &mat << ")" << std::endl;
+  }
 
   /**
    * Ctor which creates an appropriate matrix into which to assemble from a given sparsity pattern.
    */
-
   MatrixOperator(AssemblyGridViewType assembly_grid_view,
                  const SourceSpaceType& source_spc,
                  const RangeSpaceType& range_spc,
-                 const XT::LA::SparsityPatternDefault& pattern)
+                 const XT::LA::SparsityPatternDefault& pattern,
+                 const std::string& logging_prefix = "")
     : MatrixStorage(new MatrixType(range_spc.mapper().size(), source_spc.mapper().size(), pattern))
-    , OperatorBaseType(source_spc, range_spc, MatrixStorage::access())
-    , WalkerBaseType(assembly_grid_view)
+    , BaseOperatorType(source_spc, range_spc, MatrixStorage::access(), logging_prefix)
+    , BaseWalkerType(assembly_grid_view)
     , scaling(1.)
-    , assembled_(false)
-  {}
+  {
+    LOG__(BaseOperatorType, info) << "MatrixOperator(assembly_grid_view=" << &assembly_grid_view
+                                  << ", source_space=" << &source_spc << ", range_space=" << &range_spc
+                                  << ", pattern=" << &pattern << ")" << std::endl;
+  }
 
-  using OperatorBaseType::matrix;
+  MatrixOperator(const ThisType&) = delete;
+
+  /**
+   * \brief Performs something like a shallow copy, as required by Dune::XT::Grid::ElementAndIntersectionFunctor, i.e.
+   *        the copied operator shares the matrix.
+   */
+  MatrixOperator(ThisType& other) = default;
+
+  MatrixOperator(ThisType&& source) = default;
+
+  typename BaseWalkerType::BaseType* copy() override
+  {
+    return new ThisType(*this);
+  }
+
+  using BaseOperatorType::matrix;
 
   MatrixType& matrix()
   {
@@ -285,19 +334,48 @@ public:
 
   FieldType scaling;
 
-  void clear()
-  {
-    WalkerBaseType::clear();
-    assembled_ = false;
-  }
-
-  using WalkerBaseType::append;
+  using BaseWalkerType::append;
 
   ThisType& append(const LocalElementBilinearFormInterface<E, r_r, r_rC, F, F, s_r, s_rC, F>& local_bilinear_form,
                    const XT::Common::Parameter& param = {},
                    const ElementFilterType& filter = ApplyOnAllElements())
   {
+    std::string derived_logging_prefix = "";
+    if (BaseOperatorType::logger.info_enabled) {
+      static size_t element_assembler_counter = 0;
+      derived_logging_prefix =
+          BaseOperatorType::logger.prefix + "_element_assembler_" + XT::Common::to_string(element_assembler_counter);
+      ++element_assembler_counter;
+      BaseOperatorType::logger.info() << BaseOperatorType::logger.prefix
+                                      << ".append(local_element_bilinear_form=" << &local_bilinear_form
+                                      << ", param=" << param << ", element_filter=" << &filter << ")" << std::endl;
+    }
     using LocalAssemblerType = LocalElementBilinearFormAssembler<M, SGV, r_r, r_rC, F, RGV, SGV, s_r, s_rC, F>;
+    this->append(new LocalAssemblerType(this->range_space(),
+                                        this->source_space(),
+                                        local_bilinear_form,
+                                        MatrixStorage::access(),
+                                        param + XT::Common::Parameter("matrixoperator.scaling", scaling),
+                                        derived_logging_prefix),
+                 filter);
+    return *this;
+  } // ... append(...)
+
+  ThisType&
+  append(const LocalCouplingIntersectionBilinearFormInterface<I, r_r, r_rC, F, F, s_r, s_rC, F>& local_bilinear_form,
+         const XT::Common::Parameter& param = {},
+         const IntersectionFilterType& filter = ApplyOnAllIntersections())
+  {
+    using LocalAssemblerType = LocalCouplingIntersectionBilinearFormAssembler<MatrixType,
+                                                                              AssemblyGridViewType,
+                                                                              r_r,
+                                                                              r_rC,
+                                                                              F,
+                                                                              RGV,
+                                                                              SGV,
+                                                                              s_r,
+                                                                              s_rC,
+                                                                              F>;
     this->append(new LocalAssemblerType(this->range_space(),
                                         this->source_space(),
                                         local_bilinear_form,
@@ -305,7 +383,7 @@ public:
                                         param + XT::Common::Parameter("matrixoperator.scaling", scaling)),
                  filter);
     return *this;
-  }
+  } // ... append(...)
 
   ThisType& append(const LocalIntersectionBilinearFormInterface<I, r_r, r_rC, F, F, s_r, s_rC, F>& local_bilinear_form,
                    const XT::Common::Parameter& param = {},
@@ -339,7 +417,7 @@ public:
                      param + XT::Common::Parameter("matrixoperator.scaling", scaling)),
                  filter);
     return *this;
-  }
+  } // ... append(...)
 
   ThisType& append(const LocalIntersectionOperatorInterface<I, V, SGV, s_r, s_rC, F, r_r, r_rC>& local_operator,
                    const VectorType& source,
@@ -355,40 +433,64 @@ public:
                      param + XT::Common::Parameter("matrixoperator.scaling", scaling)),
                  filter);
     return *this;
+  } // ... append(...)
+
+  /// \}
+
+  /// \{
+  /// \name The main operators to be used, delegating to append.
+
+  ThisType& operator+=(const LocalElementBilinearFormInterface<E, r_r, r_rC, F, F, s_r, s_rC, F>& bilinearform)
+  {
+    return this->append(bilinearform);
+  }
+
+  ThisType& operator+=(const std::tuple<const LocalElementBilinearFormInterface<E, r_r, r_rC, F, F, s_r, s_rC, F>&,
+                                        const XT::Common::Parameter&,
+                                        const ElementFilterType&>& bilinearform_param_filter_tuple)
+  {
+    return this->append(std::get<0>(bilinearform_param_filter_tuple),
+                        std::get<1>(bilinearform_param_filter_tuple),
+                        std::get<2>(bilinearform_param_filter_tuple));
+  }
+
+  ThisType&
+  operator+=(const LocalCouplingIntersectionBilinearFormInterface<I, r_r, r_rC, F, F, s_r, s_rC, F>& bilinearform)
+  {
+    return this->append(bilinearform);
+  }
+
+  ThisType&
+  operator+=(const std::tuple<const LocalCouplingIntersectionBilinearFormInterface<I, r_r, r_rC, F, F, s_r, s_rC, F>&,
+                              const XT::Common::Parameter&,
+                              const IntersectionFilterType&>& bilinearform_param_filter_tuple)
+  {
+    return this->append(std::get<0>(bilinearform_param_filter_tuple),
+                        std::get<1>(bilinearform_param_filter_tuple),
+                        std::get<2>(bilinearform_param_filter_tuple));
+  }
+
+  ThisType& operator+=(const LocalIntersectionBilinearFormInterface<I, r_r, r_rC, F, F, s_r, s_rC, F>& bilinearform)
+  {
+    return this->append(bilinearform);
+  }
+
+  ThisType& operator+=(const std::tuple<const LocalIntersectionBilinearFormInterface<I, r_r, r_rC, F, F, s_r, s_rC, F>&,
+                                        const XT::Common::Parameter&,
+                                        const IntersectionFilterType&>& bilinearform_param_filter_tuple)
+  {
+    return this->append(std::get<0>(bilinearform_param_filter_tuple),
+                        std::get<1>(bilinearform_param_filter_tuple),
+                        std::get<2>(bilinearform_param_filter_tuple));
   }
 
   /// \}
 
   ThisType& assemble(const bool use_tbb = false) override final
   {
-    if (!assembled_) {
-      // This clears all appended operators, which is ok, since we are done after assembling once!
-      this->walk(use_tbb);
-      assembled_ = true;
-    }
+    this->walk(use_tbb);
     return *this;
-  } // ... assemble(...)
-
-  using OperatorBaseType::jacobian;
-
-  /// \todo Store appended local bilinear forms and append them to jacobian_op?
-  void jacobian(const VectorType& source,
-                MatrixOperatorType& jacobian_op,
-                const XT::Common::Configuration& opts,
-                const XT::Common::Parameter& param = {}) const override
-  {
-    DUNE_THROW_IF(!assembled_, Exceptions::operator_error, "This operator has to be assembled to provide a jacobian!");
-    OperatorBaseType::jacobian(source, jacobian_op, opts, param);
   }
-
-  void finalize() override final
-  {
-    WalkerBaseType::finalize();
-    assembled_ = true;
-  } // ... finalize()
-
-private:
-  bool assembled_;
 }; // class MatrixOperator
 
 
@@ -400,26 +502,32 @@ MatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, SGV, s_r, s_rC
 make_matrix_operator(SGV assembly_grid_view,
                      const SpaceInterface<SGV, s_r, s_rC, F>& source_space,
                      const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
-                     XT::LA::MatrixInterface<M>& matrix)
+                     XT::LA::MatrixInterface<M>& matrix,
+                     const std::string& logging_prefix = "")
 {
   return MatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, SGV, s_r, s_rC, r_r, r_rC, RGV>(
-      assembly_grid_view, source_space, range_space, matrix.as_imp());
-}
-
-template <class GV, size_t r, size_t rC, class F, class M>
-MatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC> make_matrix_operator(
-    GV assembly_grid_view, const SpaceInterface<GV, r, rC, F>& space, XT::LA::MatrixInterface<M>& matrix)
-{
-  return MatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC>(
-      assembly_grid_view, space, space, matrix.as_imp());
+      assembly_grid_view, source_space, range_space, matrix.as_imp(), logging_prefix);
 }
 
 template <class GV, size_t r, size_t rC, class F, class M>
 MatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC>
-make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space, XT::LA::MatrixInterface<M>& matrix)
+make_matrix_operator(GV assembly_grid_view,
+                     const SpaceInterface<GV, r, rC, F>& space,
+                     XT::LA::MatrixInterface<M>& matrix,
+                     const std::string& logging_prefix = "")
 {
   return MatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC>(
-      space.grid_view(), space, space, matrix.as_imp());
+      assembly_grid_view, space, space, matrix.as_imp(), logging_prefix);
+}
+
+template <class GV, size_t r, size_t rC, class F, class M>
+MatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC>
+make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space,
+                     XT::LA::MatrixInterface<M>& matrix,
+                     const std::string& logging_prefix = "")
+{
+  return MatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC>(
+      space.grid_view(), space, space, matrix.as_imp(), logging_prefix);
 }
 
 /// \}
@@ -438,10 +546,11 @@ typename std::enable_if<XT::LA::is_matrix<MatrixType>::value,
 make_matrix_operator(SGV assembly_grid_view,
                      const SpaceInterface<SGV, s_r, s_rC, F>& source_space,
                      const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
-                     const XT::LA::SparsityPatternDefault& pattern)
+                     const XT::LA::SparsityPatternDefault& pattern,
+                     const std::string& logging_prefix = "")
 {
   return MatrixOperator<MatrixType, SGV, s_r, s_rC, r_r, r_rC, RGV>(
-      assembly_grid_view, source_space, range_space, pattern);
+      assembly_grid_view, source_space, range_space, pattern, logging_prefix);
 }
 
 /**
@@ -454,9 +563,10 @@ template <class MatrixType, class GV, size_t r, size_t rC, class F>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value, MatrixOperator<MatrixType, GV, r, rC>>::type
 make_matrix_operator(GV assembly_grid_view,
                      const SpaceInterface<GV, r, rC, F>& space,
-                     const XT::LA::SparsityPatternDefault& pattern)
+                     const XT::LA::SparsityPatternDefault& pattern,
+                     const std::string& logging_prefix = "")
 {
-  return MatrixOperator<MatrixType, GV, r, rC>(assembly_grid_view, space, space, pattern);
+  return MatrixOperator<MatrixType, GV, r, rC>(assembly_grid_view, space, space, pattern, logging_prefix);
 }
 
 /**
@@ -467,9 +577,11 @@ auto op = make_matrix_operator<MatrixType>(space, pattern);
  */
 template <class MatrixType, class GV, size_t r, size_t rC, class F>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value, MatrixOperator<MatrixType, GV, r, rC>>::type
-make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space, const XT::LA::SparsityPatternDefault& pattern)
+make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space,
+                     const XT::LA::SparsityPatternDefault& pattern,
+                     const std::string& logging_prefix = "")
 {
-  return MatrixOperator<MatrixType, GV, r, rC>(space.grid_view(), space, space, pattern);
+  return MatrixOperator<MatrixType, GV, r, rC>(space.grid_view(), space, space, pattern, logging_prefix);
 }
 
 /// \}
@@ -488,13 +600,14 @@ typename std::enable_if<XT::LA::is_matrix<MatrixType>::value,
 make_matrix_operator(SGV assembly_grid_view,
                      const SpaceInterface<SGV, s_r, s_rC, F>& source_space,
                      const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
-                     const Stencil stencil = Stencil::element_and_intersection)
+                     const Stencil stencil = Stencil::element_and_intersection,
+                     const std::string& logging_prefix = "")
 {
   return MatrixOperator<MatrixType, SGV, s_r, s_rC, r_r, r_rC, RGV>(
       assembly_grid_view,
       source_space,
       range_space,
-      make_sparsity_pattern(range_space, source_space, assembly_grid_view, stencil));
+      make_sparsity_pattern(range_space, source_space, assembly_grid_view, stencil, logging_prefix));
 }
 
 /**
@@ -507,10 +620,11 @@ template <class MatrixType, class GV, size_t r, size_t rC, class F>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value, MatrixOperator<MatrixType, GV, r, rC>>::type
 make_matrix_operator(GV assembly_grid_view,
                      const SpaceInterface<GV, r, rC, F>& space,
-                     const Stencil stencil = Stencil::element_and_intersection)
+                     const Stencil stencil = Stencil::element_and_intersection,
+                     const std::string& logging_prefix = "")
 {
   return MatrixOperator<MatrixType, GV, r, rC>(
-      assembly_grid_view, space, space, make_sparsity_pattern(space, assembly_grid_view, stencil));
+      assembly_grid_view, space, space, make_sparsity_pattern(space, assembly_grid_view, stencil), logging_prefix);
 }
 
 /**
@@ -522,9 +636,11 @@ auto op = make_matrix_operator<MatrixType>(space, stencil);
 template <class MatrixType, class GV, size_t r, size_t rC, class F>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value, MatrixOperator<MatrixType, GV, r, rC>>::type
 make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space,
-                     const Stencil stencil = Stencil::element_and_intersection)
+                     const Stencil stencil = Stencil::element_and_intersection,
+                     const std::string& logging_prefix = "")
 {
-  return MatrixOperator<MatrixType, GV, r, rC>(space.grid_view(), space, space, make_sparsity_pattern(space, stencil));
+  return MatrixOperator<MatrixType, GV, r, rC>(
+      space.grid_view(), space, space, make_sparsity_pattern(space, stencil), logging_prefix);
 }
 
 /// \}

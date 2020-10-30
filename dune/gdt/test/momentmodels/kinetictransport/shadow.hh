@@ -9,7 +9,9 @@
 #ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_SHADOW_HH
 #define DUNE_GDT_HYPERBOLIC_PROBLEMS_SHADOW_HH
 
-#include "base.hh"
+#if HAVE_DUNE_XT_DATA
+
+#  include "base.hh"
 
 namespace Dune {
 namespace GDT {
@@ -76,7 +78,7 @@ public:
     return std::make_unique<ConstantScalarFunctionType>(0.);
   }
 
-#define USE_DIRAC_BOUNDARY 0
+#  define USE_DIRAC_BOUNDARY 0
   // Boundary value of kinetic equation is either \dirac(v - (1, 0, 0)) or an isotropic beam with density 2,
   // i.e. 2/(4 pi), at x = 0 and psi_vac else
   std::unique_ptr<BoundaryValueType> boundary_values() const override final
@@ -89,12 +91,12 @@ public:
           ret *= psi_vac;
           // left boundary
           if (XT::Common::FloatCmp::eq(x[0], 0.)) {
-#if USE_DIRAC_BOUNDARY
+#  if USE_DIRAC_BOUNDARY
             auto dirac_integrated = basis_functions_.integrate_dirac_at(DomainType{1, 0, 0});
             ret += dirac_integrated;
-#else // USE_DIRAC_BOUNDARY
+#  else // USE_DIRAC_BOUNDARY
                                                     ret += basis_integrated * 2. / (4 * M_PI);
-#endif // USE_DIRAC_BOUNDARY
+#  endif // USE_DIRAC_BOUNDARY
           }
           return ret;
         });
@@ -161,5 +163,7 @@ protected:
 
 } // namespace GDT
 } // namespace Dune
+
+#endif // HAVE_DUNE_XT_DATA
 
 #endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_SHADOW_HH

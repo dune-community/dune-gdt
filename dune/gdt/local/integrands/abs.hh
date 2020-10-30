@@ -28,21 +28,29 @@ class LocalElementAbsIntegrand : public LocalUnaryElementIntegrandInterface<E, r
 
 public:
   using typename BaseType::DomainType;
-  using typename BaseType::LocalBasisType;
+  using typename BaseType::LocalTestBasisType;
 
-  std::unique_ptr<BaseType> copy() const
+  LocalElementAbsIntegrand(const std::string& logging_prefix = "")
+    : BaseType({},
+               logging_prefix.empty() ? "LocalElementAbsIntegrand" : logging_prefix,
+               /*logging_disabled=*/logging_prefix.empty())
+  {}
+
+  LocalElementAbsIntegrand(const ThisType&) = default;
+
+  std::unique_ptr<BaseType> copy_as_unary_element_integrand() const
   {
-    return std::make_unique<ThisType>();
+    return std::make_unique<ThisType>(*this);
   }
 
-  int order(const LocalBasisType& basis, const XT::Common::Parameter& param = {}) const
+  int order(const LocalTestBasisType& basis, const XT::Common::Parameter& param = {}) const
   {
     return basis.order(param);
   }
 
   using BaseType::evaluate;
 
-  void evaluate(const LocalBasisType& basis,
+  void evaluate(const LocalTestBasisType& basis,
                 const DomainType& point_in_reference_element,
                 DynamicVector<F>& result,
                 const XT::Common::Parameter& param = {}) const
@@ -59,7 +67,7 @@ public:
   } // ... evaluate(...)
 
 private:
-  mutable std::vector<typename LocalBasisType::RangeType> basis_values_;
+  mutable std::vector<typename LocalTestBasisType::RangeType> basis_values_;
 }; // class LocalElementAbsIntegrand
 
 

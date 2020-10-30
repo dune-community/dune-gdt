@@ -118,6 +118,11 @@ protected:
   }
 
 public:
+  const VectorType& global() const
+  {
+    return global_vector_;
+  }
+
   size_t size() const
   {
     DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
@@ -211,6 +216,13 @@ public:
 
   LocalDofVector(const ThisType&) = default;
   LocalDofVector(ThisType&&) = default;
+
+  using BaseType::global;
+
+  VectorType& global()
+  {
+    return global_vector_;
+  }
 
   void add_to_entry(const size_t ii, const ScalarType& value)
   {

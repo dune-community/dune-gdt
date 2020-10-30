@@ -96,6 +96,85 @@ private:
 }; // class LocalElementFunctionalAssembler
 
 
+template <class Vector, class GridView, size_t r, size_t rC, class R = double, class SpaceGridView = GridView>
+class LocalIntersectionFunctionalAssembler : public XT::Grid::IntersectionFunctor<GridView>
+{
+  static_assert(XT::LA::is_vector<Vector>::value, "");
+  static_assert(XT::Grid::is_view<GridView>::value, "");
+  static_assert(XT::Grid::is_view<SpaceGridView>::value, "");
+
+  using ThisType = LocalIntersectionFunctionalAssembler<Vector, GridView, r, rC, R, SpaceGridView>;
+  using BaseType = XT::Grid::IntersectionFunctor<GridView>;
+
+public:
+  using typename BaseType::ElementType;
+  using typename BaseType::IntersectionType;
+  using VectorType = Vector;
+  using FieldType = typename VectorType::ScalarType;
+  using SpaceType = SpaceInterface<SpaceGridView, r, rC, R>;
+  using LocalFunctionalType = LocalIntersectionFunctionalInterface<IntersectionType, r, rC, R, FieldType>;
+
+  LocalIntersectionFunctionalAssembler(const SpaceType& space,
+                                       const LocalFunctionalType& local_functional,
+                                       VectorType& global_vector,
+                                       const XT::Common::Parameter& param = {})
+    : space_(space.copy())
+    , local_functional_(local_functional.copy())
+    , global_vector_(global_vector)
+    , param_(param)
+    , local_vector_(space_->mapper().max_local_size())
+    , global_indices_(space_->mapper().max_local_size())
+    , basis_(space_->basis().localize())
+  {
+    DUNE_THROW_IF(global_vector_.size() != space_->mapper().size(),
+                  XT::Common::Exceptions::shapes_do_not_match,
+                  "global_vector.size() = " << global_vector_.size() << "\n  "
+                                            << "space.mapper().size()" << space_->mapper().size());
+  }
+
+  LocalIntersectionFunctionalAssembler(const ThisType& other)
+    : BaseType()
+    , space_(other.space_->copy())
+    , local_functional_(other.local_functional_->copy())
+    , global_vector_(other.global_vector_)
+    , param_(other.param_)
+    , local_vector_(other.local_vector_)
+    , global_indices_(other.global_indices_)
+    , basis_(space_->basis().localize())
+  {}
+
+  LocalIntersectionFunctionalAssembler(ThisType&& source) = default;
+
+  BaseType* copy() override final
+  {
+    return new ThisType(*this);
+  }
+
+  void apply_local(const IntersectionType& intersection,
+                   const ElementType& inside_element,
+                   const ElementType& outside_element) override final
+  {
+    const auto& element = local_functional_->inside() ? inside_element : outside_element;
+    // apply functional
+    basis_->bind(element);
+    local_functional_->apply(intersection, *basis_, local_vector_, param_);
+    // copy local vector to global
+    space_->mapper().global_indices(element, global_indices_);
+    for (size_t jj = 0; jj < basis_->size(param_); ++jj)
+      global_vector_.add_to_entry(global_indices_[jj], local_vector_[jj]);
+  }
+
+private:
+  std::unique_ptr<const SpaceType> space_;
+  std::unique_ptr<LocalFunctionalType> local_functional_;
+  VectorType& global_vector_;
+  XT::Common::Parameter param_;
+  DynamicVector<FieldType> local_vector_;
+  DynamicVector<size_t> global_indices_;
+  mutable std::unique_ptr<typename SpaceType::GlobalBasisType::LocalizedType> basis_;
+}; // class LocalIntersectionFunctionalAssembler
+
+
 } // namespace GDT
 } // namespace Dune
 

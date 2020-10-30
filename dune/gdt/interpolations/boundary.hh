@@ -17,6 +17,7 @@
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/functions/generic/function.hh>
 #include <dune/xt/functions/generic/grid-function.hh>
+#include <dune/xt/functions/grid-function.hh>
 
 #include <dune/gdt/exceptions.hh>
 
@@ -169,7 +170,7 @@ boundary_interpolation(const XT::Functions::FunctionInterface<GridView<IGV>::dim
                        const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridView<IGV>>>& boundary_info,
                        const XT::Grid::BoundaryType& target_boundary_type)
 {
-  boundary_interpolation(source.as_grid_function(interpolation_grid_view),
+  boundary_interpolation(XT::Functions::make_grid_function(source, interpolation_grid_view),
                          target,
                          interpolation_grid_view,
                          boundary_info,
@@ -206,7 +207,7 @@ boundary_interpolation(const XT::Functions::FunctionInterface<GridView<IGV>::dim
                        const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridView<IGV>>>& boundary_info,
                        const XT::Grid::BoundaryType& target_boundary_type)
 {
-  return boundary_interpolation<VectorType>(source.as_grid_function(interpolation_grid_view),
+  return boundary_interpolation<VectorType>(XT::Functions::make_grid_function(source, interpolation_grid_view),
                                             target_space,
                                             interpolation_grid_view,
                                             boundary_info,

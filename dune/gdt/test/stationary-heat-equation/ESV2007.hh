@@ -19,6 +19,7 @@
 #include <dune/xt/grid/grids.hh>
 #include <dune/xt/functions/ESV2007.hh>
 #include <dune/xt/functions/constant.hh>
+#include <dune/xt/functions/grid-function.hh>
 
 #include <dune/gdt/interpolations/default.hh>
 #include <dune/gdt/test/stationary-eocstudies/diffusion-ipdg.hh>
@@ -49,9 +50,9 @@ struct ESV2007DiffusionProblem
   // and a force of order 2.
   ESV2007DiffusionProblem(int force_order = 2)
     : diffusion(XT::LA::eye_matrix<XT::Common::FieldMatrix<double, d, d>>(d, d))
-    , dirichlet(0)
-    , neumann(0)
-    , force(force_order)
+    , dirichlet(0.)
+    , neumann(0.)
+    , force(XT::Functions::ESV2007::Testcase1Force<d, 1>(force_order))
   {}
 
   XT::Grid::GridProvider<G> make_initial_grid() const
@@ -74,10 +75,10 @@ struct ESV2007DiffusionProblem
       EXPECT_TRUE(false) << "Please add a specialization for '" << XT::Common::Typename<G>::value << "'!";
   } // ... make_initial_grid(...)
 
-  const XT::Functions::ConstantFunction<d, d, d> diffusion;
-  const XT::Functions::ConstantFunction<d> dirichlet;
-  const XT::Functions::ConstantFunction<d> neumann;
-  const XT::Functions::ESV2007::Testcase1Force<d, 1> force;
+  const XT::Functions::GridFunction<E, d, d> diffusion;
+  const XT::Functions::GridFunction<E> dirichlet;
+  const XT::Functions::GridFunction<E> neumann;
+  const XT::Functions::GridFunction<E> force;
   const XT::Grid::AllDirichletBoundaryInfo<I> boundary_info;
 }; // class ESV2007DiffusionProblem
 
@@ -104,7 +105,11 @@ class ESV2007DiffusionTest : public StationaryDiffusionIpdgEocStudy<G>
 
 public:
   ESV2007DiffusionTest()
-    : BaseType()
+    : BaseType(
+        /*symmetry_prefactor=*/1,
+        /*inner_penalty=*/8,
+        /*dirichlet_penalty=*/14,
+        /*intersection_diameter=*/[](const auto& intersection) { return intersection.geometry().volume(); })
     , problem(DXTC_TEST_CONFIG_GET("setup.force_order", 2))
   {}
 
@@ -144,12 +149,17 @@ protected:
 
   const FT& diffusion() const override final
   {
-    return problem.diffusion.template as_grid_function<E>();
+    return problem.diffusion;
   }
 
   const FF& force() const override final
   {
-    return problem.force.template as_grid_function<E>();
+    return problem.force;
+  }
+
+  const FT& weight_function() const override final
+  {
+    return this->diffusion();
   }
 
   GP make_initial_grid() override final

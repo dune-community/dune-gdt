@@ -10,20 +10,22 @@
 #ifndef DUNE_GDT_MOMENTMODELS_BASISFUNCTIONS_INTERFACE_HH
 #define DUNE_GDT_MOMENTMODELS_BASISFUNCTIONS_INTERFACE_HH
 
-#include <memory>
-#include <vector>
-#include <string>
+#if HAVE_DUNE_XT_DATA
 
-#include <dune/xt/common/math.hh>
-#include <dune/xt/common/parallel/threadmanager.hh>
-#include <dune/xt/common/string.hh>
-#include <dune/xt/common/tuple.hh>
+#  include <memory>
+#  include <vector>
+#  include <string>
 
-#include <dune/xt/data/quadratures.hh>
-#include <dune/xt/data/spherical_quadratures.hh>
+#  include <dune/xt/common/math.hh>
+#  include <dune/xt/common/parallel/threadmanager.hh>
+#  include <dune/xt/common/string.hh>
+#  include <dune/xt/common/tuple.hh>
 
-#include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/test/momentmodels/triangulation.hh>
+#  include <dune/xt/data/quadratures.hh>
+#  include <dune/xt/data/spherical_quadratures.hh>
+
+#  include <dune/gdt/discretefunction/default.hh>
+#  include <dune/gdt/test/momentmodels/triangulation.hh>
 
 namespace Dune {
 namespace GDT {
@@ -33,14 +35,14 @@ namespace GDT {
 template <class FieldType, int rows>
 Dune::DynamicMatrix<FieldType> tridiagonal_matrix_inverse(const DynamicMatrix<FieldType>& matrix)
 {
-  typedef Dune::DynamicMatrix<FieldType> MatrixType;
+  using MatrixType = Dune::DynamicMatrix<FieldType>;
   size_t cols = rows;
-#ifndef NDEBUG
+#  ifndef NDEBUG
   for (size_t rr = 0; rr < rows; ++rr)
     for (size_t cc = 0; cc < cols; ++cc)
       if ((cc > rr + 1 || cc + 1 < rr) && XT::Common::FloatCmp::ne(matrix[rr][cc], 0.))
         DUNE_THROW(XT::Common::Exceptions::you_are_using_this_wrong, "Matrix has to be tridiagonal!");
-#endif // NDEBUG
+#  endif // NDEBUG
   MatrixType ret(rows, rows, 0);
   Dune::FieldVector<FieldType, rows + 1> a(0), b(0), c(0), theta(0);
   Dune::FieldVector<FieldType, rows + 2> phi(0);
@@ -74,12 +76,12 @@ Dune::DynamicMatrix<FieldType> tridiagonal_matrix_inverse(const DynamicMatrix<Fi
       }
     } // jj
   } // ii
-#ifndef NDEBUG
+#  ifndef NDEBUG
   for (size_t ii = 0; ii < rows; ++ii)
     for (size_t jj = 0; jj < cols; ++jj)
       if (std::isnan(ret[ii][jj]) || std::isinf(ret[ii][jj]))
         DUNE_THROW(Dune::MathError, "Inversion of triangular matrix failed!");
-#endif
+#  endif
   return ret;
 } // ... tridiagonal_matrix_inverse(...)
 
@@ -509,8 +511,8 @@ protected:
   static std::vector<MergedQuadratureIterator> create_decomposition(const QuadraturesType& quadratures,
                                                                     const size_t num_threads)
   {
-    const size_t size = XT::Data::merged_quadrature(quadratures).size();
     std::vector<MergedQuadratureIterator> ret(num_threads + 1);
+    const size_t size = XT::Data::merged_quadrature(quadratures).size();
     for (size_t ii = 0; ii < num_threads; ++ii)
       ret[ii] = XT::Data::merged_quadrature(quadratures).iterator(size / num_threads * ii);
     ret[num_threads] = XT::Data::merged_quadrature(quadratures).iterator(size);
@@ -576,6 +578,7 @@ protected:
 
   virtual DynamicRangeType integrated_initializer(const QuadraturesType& quadratures) const
   {
+    DynamicRangeType ret(dimRange, 0.);
     const size_t num_threads =
         std::min(XT::Common::threadManager().max_threads(), XT::Data::merged_quadrature(quadratures).size());
     const auto decomposition = create_decomposition(quadratures, num_threads);
@@ -591,7 +594,6 @@ protected:
     for (size_t ii = 0; ii < num_threads; ++ii)
       threads[ii].join();
     // add local matrices
-    DynamicRangeType ret(dimRange, 0.);
     for (size_t ii = 0; ii < num_threads; ++ii)
       ret += local_vectors[ii];
     return ret;
@@ -630,4 +632,5 @@ const size_t
 } // namespace GDT
 } // namespace Dune
 
+#endif // HAVE_DUNE_XT_DATA
 #endif // DUNE_GDT_MOMENTMODELS_BASISFUNCTIONS_INTERFACE_HH

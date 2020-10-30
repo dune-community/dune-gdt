@@ -201,7 +201,7 @@ public:
     : BaseType(t_0, initial_values)
     , op_(op)
     , r_(r)
-    , u_i_(BaseType::current_solution())
+    , u_i_(BaseType::current_solution().copy_as_discrete_function())
     , A_(A)
     , b_(b)
     , c_(c)
@@ -219,7 +219,7 @@ public:
     }
     // store as many discrete functions as needed for the stages k
     for (size_t ii = 0; ii < num_stages_; ++ii) {
-      stages_k_.emplace_back(current_solution());
+      stages_k_.emplace_back(current_solution().copy_as_discrete_function());
     }
   } // constructor
 
@@ -244,22 +244,22 @@ public:
     // calculate stages
     auto& u_n = current_solution();
     for (size_t ii = 0; ii < num_stages_; ++ii) {
-      u_i_.dofs().vector() = u_n.dofs().vector();
+      u_i_->dofs().vector() = u_n.dofs().vector();
       for (size_t jj = 0; jj < ii; ++jj)
-        u_i_.dofs().vector() += stages_k_[jj].dofs().vector() * (actual_dt * r_ * (A_[ii][jj]));
+        u_i_->dofs().vector() += stages_k_[jj]->dofs().vector() * (actual_dt * r_ * (A_[ii][jj]));
       // TODO: provide actual_dt to op_. This leads to spurious oscillations in the Lax-Friedrichs flux
       // because actual_dt/dx may become very small.
-      op_.apply(u_i_.dofs().vector(),
-                stages_k_[ii].dofs().vector(),
+      op_.apply(u_i_->dofs().vector(),
+                stages_k_[ii]->dofs().vector(),
                 XT::Common::Parameter({{"t", {t + actual_dt * c_[ii]}}, {"dt", {dt}}}));
-      DataHandleType stages_k_ii_handle(stages_k_[ii]);
-      stages_k_[ii].space().grid_view().template communicate<DataHandleType>(
+      DataHandleType stages_k_ii_handle(*stages_k_[ii]);
+      stages_k_[ii]->space().grid_view().template communicate<DataHandleType>(
           stages_k_ii_handle, Dune::InteriorBorder_All_Interface, Dune::ForwardCommunication);
     }
 
     // calculate value of u at next time step
     for (size_t ii = 0; ii < num_stages_; ++ii)
-      u_n.dofs().vector() += stages_k_[ii].dofs().vector() * (r_ * actual_dt * b_[ii]);
+      u_n.dofs().vector() += stages_k_[ii]->dofs().vector() * (r_ * actual_dt * b_[ii]);
 
     // augment time
     t += actual_dt;
@@ -319,11 +319,11 @@ public:
 private:
   const OperatorType& op_;
   const RangeFieldType r_;
-  DiscreteFunctionType u_i_;
+  std::unique_ptr<DiscreteFunctionType> u_i_;
   const MatrixType A_;
   const VectorType b_;
   const VectorType c_;
-  std::vector<DiscreteFunctionType> stages_k_;
+  std::vector<std::unique_ptr<DiscreteFunctionType>> stages_k_;
   const size_t num_stages_;
 };
 

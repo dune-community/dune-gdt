@@ -21,6 +21,7 @@
 #include <dune/xt/la/container.hh>
 
 #include <dune/xt/functions/interfaces/grid-function.hh>
+#include <dune/xt/functions/visualization.hh>
 
 #include <dune/gdt/local/discretefunction.hh>
 #include <dune/gdt/discretefunction/dof-vector.hh>
@@ -51,6 +52,7 @@ class ConstDiscreteFunction
         range_dim_cols,
         RangeField>
 {
+public:
   using BaseType = XT::Functions::GridFunctionInterface<
       typename internal::AssertArgumentsOfConstDiscreteFunction<Vector, GridView>::E,
       range_dim,
@@ -58,7 +60,6 @@ class ConstDiscreteFunction
       RangeField>;
   using ThisType = ConstDiscreteFunction;
 
-public:
   using ConstDofVectorType = ConstDofVector<Vector, GridView>;
   using SpaceType = SpaceInterface<GridView, range_dim, range_dim_cols, RangeField>;
   using VectorType = Vector;
@@ -77,10 +78,8 @@ public:
   {}
 
   ConstDiscreteFunction(const ThisType&) = default;
-  ConstDiscreteFunction(ThisType&&) = default;
 
-  ThisType& operator=(const ThisType&) = delete;
-  ThisType& operator=(ThisType&&) = delete;
+  ConstDiscreteFunction(ThisType&&) = default;
 
   const SpaceType& space() const
   {
@@ -104,11 +103,28 @@ public:
     return ldf;
   }
 
+  std::unique_ptr<ThisType> copy_as_discrete_function() const
+  {
+    return std::make_unique<ThisType>(*this);
+  }
+
+  std::unique_ptr<ThisType> copy_as_grid_function() const
+  {
+    return std::unique_ptr<ThisType>(*this);
+  }
+
   /**
    * \name ``These methods are required by XT::Functions::GridFunctionInterface.''
    * \{
    */
 
+private:
+  BaseType* copy_as_grid_function_impl() const override final
+  {
+    return new ThisType(*this);
+  }
+
+public:
   std::string name() const override final
   {
     return name_;
@@ -127,9 +143,9 @@ public:
   using BaseType::visualize_gradient;
 
   /**
-   * \brief Visualizes the function using Dune::XT::Functions::GridFunctionInterface::visualize on the grid view
+   * \brief Visualizes the function using Dune::XT::Functions::visualize on the grid view
    *        associated with the space.
-   * \sa    Dune::XT::Functions::GridFunctionInterface::visualize
+   * \sa    Dune::XT::Functions::visualize
    * \note  Subsampling is enabled by default for functions of order greater than one.
    */
   void visualize(const std::string filename,
@@ -138,13 +154,13 @@ public:
   {
     const bool subsampling =
         param.has_key("subsampling") ? static_cast<bool>(param.get("subsampling")[0]) : (space_.max_polorder() > 1);
-    this->visualize(space_.grid_view(), filename, subsampling, vtk_output_type, param);
+    XT::Functions::visualize(*this, space_.grid_view(), filename, subsampling, vtk_output_type, param);
   }
 
   /**
-   * \brief Visualizes the function using Dune::XT::Functions::GridFunctionInterface::visualize on the grid view
+   * \brief Visualizes the gradient of the function using Dune::XT::Functions::visualize_gradient on the grid view
    *        associated with the space.
-   * \sa    Dune::XT::Functions::GridFunctionInterface::visualize
+   * \sa    Dune::XT::Functions::visualize_gradient
    * \note  Subsampling is enabled by default for functions of order greater than one.
    */
   void visualize_gradient(const std::string filename,
@@ -153,9 +169,8 @@ public:
   {
     const bool subsampling =
         param.has_key("subsampling") ? static_cast<bool>(param.get("subsampling")[0]) : (space_.max_polorder() > 1);
-    this->visualize_gradient(space_.grid_view(), filename, subsampling, vtk_output_type, param);
+    XT::Functions::visualize_gradient(*this, space_.grid_view(), filename, subsampling, vtk_output_type, param);
   }
-
 
 protected:
   const SpaceType& space_;
@@ -194,34 +209,29 @@ public:
   using DofVectorType = DofVector<Vector, GridView>;
   using LocalDiscreteFunctionType = LocalDiscreteFunction<Vector, GridView, range_dim, range_dim_cols, RangeField>;
 
-  DiscreteFunction(const SpaceType& spc, VectorType& vector, const std::string nm = "dune.gdt.discretefunction")
+  DiscreteFunction(const SpaceType& spc, VectorType& vector, const std::string nm = "DiscreteFunction")
     : VectorStorage(vector)
     , BaseType(spc, VectorStorage::access(), nm)
     , dofs_(space_.mapper(), VectorStorage::access())
   {}
 
-  DiscreteFunction(const SpaceType& spc, VectorType&& vector, const std::string nm = "dune.gdt.discretefunction")
+  DiscreteFunction(const SpaceType& spc, VectorType&& vector, const std::string nm = "DiscreteFunction")
     : VectorStorage(new VectorType(std::move(vector)))
     , BaseType(spc, VectorStorage::access(), nm)
     , dofs_(space_.mapper(), VectorStorage::access())
   {}
 
-  DiscreteFunction(const SpaceType& spc, const std::string nm = "dune.gdt.discretefunction")
+  DiscreteFunction(const SpaceType& spc, const std::string nm = "DiscreteFunction")
     : VectorStorage(new VectorType(spc.mapper().size(), 0.))
     , BaseType(spc, VectorStorage::access(), nm)
     , dofs_(space_.mapper(), VectorStorage::access())
   {}
 
-  DiscreteFunction(const ThisType& other)
-    : VectorStorage(new VectorType(other.access()))
-    , BaseType(other.space(), VectorStorage::access(), other.name())
-    , dofs_(other.space().mapper(), VectorStorage::access())
-  {}
+  DiscreteFunction(const ThisType&) = delete;
+
+  DiscreteFunction(ThisType& other) = delete;
 
   DiscreteFunction(ThisType&&) = default;
-
-  ThisType& operator=(const ThisType&) = delete;
-  ThisType& operator=(ThisType&&) = delete;
 
   using BaseType::dofs;
 
@@ -243,6 +253,14 @@ public:
     ldf->bind(grid_element);
     return ldf;
   }
+
+  using BaseType::copy_as_discrete_function;
+
+  std::unique_ptr<ThisType> copy_as_discrete_function()
+  {
+    return std::make_unique<ThisType>(space_, dofs_.vector().copy());
+  }
+
   /**
    * \}
    */

@@ -41,17 +41,35 @@ public:
   using typename BaseType::SourceSpaceType;
   using typename BaseType::VectorType;
 
-  ConstantOperator(const SourceSpaceType& src_space, const RangeSpaceType& rng_space, const VectorType& val)
-    : source_space_(src_space)
+  ConstantOperator(const SourceSpaceType& src_space,
+                   const RangeSpaceType& rng_space,
+                   const VectorType& val,
+                   const std::string& logging_prefix = "")
+    : BaseType({},
+               logging_prefix.empty() ? "ConstantOperator" : logging_prefix,
+               /*logging_disabled=*/logging_prefix.empty())
+    , source_space_(src_space)
     , range_space_(rng_space)
     , value_(val)
-  {}
+  {
+    LOG_(info) << "ConstantOperator(source_space=" << &src_space << ", range_space=" << &rng_space
+               << ", value.sup_norm()=" << value_.access().sup_norm() << ")" << std::endl;
+  }
 
-  ConstantOperator(const SourceSpaceType& src_space, const RangeSpaceType& rng_space, VectorType*&& val)
-    : source_space_(src_space)
+  ConstantOperator(const SourceSpaceType& src_space,
+                   const RangeSpaceType& rng_space,
+                   VectorType*&& val,
+                   const std::string& logging_prefix = "")
+    : BaseType({},
+               logging_prefix.empty() ? "ConstantOperator" : logging_prefix,
+               /*logging_disabled=*/logging_prefix.empty())
+    , source_space_(src_space)
     , range_space_(rng_space)
     , value_(std::move(val))
-  {}
+  {
+    LOG_(info) << "ConstantOperator(source_space=" << &src_space << ", range_space=" << &rng_space
+               << ", value.sup_norm()=" << value_.access().sup_norm() << ")" << std::endl;
+  }
 
   const SourceSpaceType& source_space() const override final
   {

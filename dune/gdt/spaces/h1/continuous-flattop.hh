@@ -56,18 +56,34 @@ public:
   ContinuousFlatTopSpace(GridViewType grd_vw, const int fe_order, const D& overlap = 0.5)
     : grid_view_(grd_vw)
     , fe_order_(fe_order)
-    , local_finite_elements_(std::make_unique<LocalFlatTopFiniteElementFamily<D, d, R, r>>(overlap))
+    , overlap_(overlap)
+    , local_finite_elements_(std::make_unique<LocalFlatTopFiniteElementFamily<D, d, R, r>>(overlap_))
     , mapper_(nullptr)
     , basis_(nullptr)
   {
     this->update_after_adapt();
   }
 
-  ContinuousFlatTopSpace(const ThisType&) = default;
+  ContinuousFlatTopSpace(const ThisType& other)
+    : grid_view_(other.grid_view_)
+    , fe_order_(other.fe_order_)
+    , overlap_(other.overlap_)
+    , local_finite_elements_(std::make_unique<LocalFlatTopFiniteElementFamily<D, d, R, r>>(overlap_))
+    , mapper_(nullptr)
+    , basis_(nullptr)
+  {
+    this->update_after_adapt();
+  }
+
   ContinuousFlatTopSpace(ThisType&&) = default;
 
   ThisType& operator=(const ThisType&) = delete;
   ThisType& operator=(ThisType&&) = delete;
+
+  BaseType* copy() const override final
+  {
+    return new ThisType(*this);
+  }
 
   const GridViewType& grid_view() const override final
   {
@@ -144,6 +160,7 @@ public:
 private:
   const GridViewType grid_view_;
   const int fe_order_;
+  const D overlap_;
   std::unique_ptr<const LocalFlatTopFiniteElementFamily<D, d, R, r>> local_finite_elements_;
   std::unique_ptr<MapperImplementation> mapper_;
   std::unique_ptr<GlobalBasisImplementation> basis_;

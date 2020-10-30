@@ -168,19 +168,19 @@ public:
 template <class OperatorImp, class DiscreteFunctionImp, TimeStepperMethods method = TimeStepperMethods::dormand_prince>
 class AdaptiveRungeKuttaTimeStepper : public TimeStepperInterface<DiscreteFunctionImp>
 {
-  typedef TimeStepperInterface<DiscreteFunctionImp> BaseType;
-  typedef typename internal::AdaptiveButcherArrayProvider<typename BaseType::RangeFieldType, method>
-      ButcherArrayProviderType;
+  using BaseType = TimeStepperInterface<DiscreteFunctionImp>;
+  using ButcherArrayProviderType =
+      typename internal::AdaptiveButcherArrayProvider<typename BaseType::RangeFieldType, method>;
 
 public:
-  typedef OperatorImp OperatorType;
-  typedef DiscreteFunctionImp DiscreteFunctionType;
+  using OperatorType = OperatorImp;
+  using DiscreteFunctionType = DiscreteFunctionImp;
 
-  typedef typename DiscreteFunctionType::DomainFieldType DomainFieldType;
-  typedef typename DiscreteFunctionType::RangeFieldType RangeFieldType;
-  typedef typename Dune::DynamicMatrix<RangeFieldType> MatrixType;
-  typedef typename Dune::DynamicVector<RangeFieldType> VectorType;
-  typedef typename std::vector<std::pair<RangeFieldType, DiscreteFunctionType>> SolutionType;
+  using DomainFieldType = typename DiscreteFunctionType::DomainFieldType;
+  using RangeFieldType = typename DiscreteFunctionType::RangeFieldType;
+  using MatrixType = typename Dune::DynamicMatrix<RangeFieldType>;
+  using VectorType = typename Dune::DynamicVector<RangeFieldType>;
+  using SolutionType = typename std::vector<std::pair<RangeFieldType, DiscreteFunctionType>>;
 
   /**
    * \brief Constructor for AdaptiveRungeKuttaTimeStepper time stepper
@@ -245,19 +245,19 @@ public:
   using BaseType::current_time;
   using BaseType::solve;
 
-  virtual RangeFieldType solve(const RangeFieldType t_end,
-                               const RangeFieldType initial_dt,
-                               const size_t num_save_steps,
-                               const size_t num_output_steps,
-                               const bool save_solution,
-                               const bool visualize,
-                               const bool write_discrete,
-                               const bool write_exact,
-                               const std::string prefix,
-                               typename BaseType::DiscreteSolutionType& sol,
-                               const typename BaseType::VisualizerType& visualizer,
-                               const typename BaseType::StringifierType& stringifier,
-                               const typename BaseType::GridFunctionType& exact_solution) override final
+  RangeFieldType solve(const RangeFieldType t_end,
+                       const RangeFieldType initial_dt,
+                       const size_t num_save_steps,
+                       const size_t num_output_steps,
+                       const bool save_solution,
+                       const bool visualize,
+                       const bool write_discrete,
+                       const bool write_exact,
+                       const std::string prefix,
+                       typename BaseType::DiscreteSolutionType& sol,
+                       const typename BaseType::VisualizerType& visualizer,
+                       const typename BaseType::StringifierType& stringifier,
+                       const typename BaseType::GridFunctionType& exact_solution) override final
   {
     const auto ret = BaseType::solve(t_end,
                                      initial_dt,

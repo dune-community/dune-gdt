@@ -11,19 +11,21 @@
 #ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_HATFUNCTIONS_HH
 #define DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_HATFUNCTIONS_HH
 
-#ifndef ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
-#  define ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING 0
-#endif
+#if HAVE_DUNE_XT_DATA
 
-#include <string>
-#include <vector>
+#  ifndef ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+#    define ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING 0
+#  endif
 
-#include <dune/xt/common/fmatrix.hh>
-#include <dune/xt/common/numeric.hh>
+#  include <string>
+#  include <vector>
 
-#include <dune/gdt/test/momentmodels/triangulation.hh>
+#  include <dune/xt/common/fmatrix.hh>
+#  include <dune/xt/common/numeric.hh>
 
-#include "interface.hh"
+#  include <dune/gdt/test/momentmodels/triangulation.hh>
+
+#  include "interface.hh"
 
 namespace Dune {
 namespace GDT {
@@ -181,11 +183,11 @@ public:
 
   static size_t default_quad_order()
   {
-#if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+#  if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
     return 0;
-#else
+#  else
     return 15;
-#endif
+#  endif
   }
 
   using BaseType::default_quad_refinements;
@@ -206,13 +208,13 @@ public:
     : BaseType(BaseType::gauss_lobatto_quadratures(num_intervals, quad_order, quad_refinements))
     , partitioning_(BaseType::create_1d_partitioning(num_intervals))
   {
-#if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+#  if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
     if (quad_order != 0) {
       std::cerr << "Warning: you chose to use masslumping and set quad_order to a value different from zero!"
                 << std::endl;
       std::cerr << "Warning: quad_order will be ignored!" << std::endl;
     }
-#endif
+#  endif
     BaseType::initialize_base_values();
   }
 
@@ -355,13 +357,13 @@ public:
       for (size_t jj = 0; jj < dimRange; ++jj)
         ret[ii][jj] = mass_mat[ii][num_intervals - jj];
     ret.rightmultiply(mass_matrix_inverse());
-#ifndef NDEBUG
+#  ifndef NDEBUG
     for (size_t ii = 0; ii < dimRange; ++ii)
       for (size_t jj = 0; jj < dimRange; ++jj)
         if (std::isnan(ret[ii][jj]) || std::isinf(ret[ii][jj]))
           DUNE_THROW(Dune::MathError,
                      "Calculation of reflection matrix failed for normal n = " + XT::Common::to_string(n));
-#endif
+#  endif
     return ret;
   }
 
@@ -501,11 +503,11 @@ public:
 
   static size_t default_quad_order()
   {
-#if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+#  if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
     return 0;
-#else
+#  else
     return refinements == 0 ? 15 : 9;
-#endif
+#  endif
   }
 
   using BaseType::default_quad_refinements;
@@ -537,13 +539,13 @@ public:
                          const size_t quad_refinements = default_quad_refinements())
     : BaseType(refinements)
   {
-#if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
+#  if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
     if (quad_order != 0) {
       std::cerr << "Warning: you chose to use masslumping and set quad_order to a value different from zero!"
                 << std::endl;
       std::cerr << "Warning: quad_order will be ignored!" << std::endl;
     }
-#endif
+#  endif
     const QuadratureRule<RangeFieldType, 2> reference_quadrature_rule =
         (quad_order == 0) ? vertex_quadrature() : XT::Data::FeketeQuadrature<DomainFieldType>::get(quad_order);
     quadratures_ = triangulation_.quadrature_rules(quad_refinements, reference_quadrature_rule);
@@ -597,9 +599,9 @@ public:
     const auto& vertices = face->vertices();
     bool success = calculate_barycentric_coordinates(v, vertices, ret);
     assert(success);
-#ifdef NDEBUG
+#  ifdef NDEBUG
     static_cast<void>(success);
-#endif
+#  endif
     return ret;
   } // ... evaluate(...)
 
@@ -647,9 +649,9 @@ public:
 
   using BaseType::density;
 
-  virtual bool adjust_alpha_to_ensure_min_density(RangeType& alpha,
-                                                  const RangeFieldType /*rho_min*/,
-                                                  const RangeType& /*u*/) const override final
+  bool adjust_alpha_to_ensure_min_density(RangeType& alpha,
+                                          const RangeFieldType /*rho_min*/,
+                                          const RangeType& /*u*/) const override final
   {
     bool changed = false;
     static const double min_alpha_entry = DXTC_CONFIG_GET("min_alpha_entry", -1000.);
@@ -858,4 +860,5 @@ constexpr size_t
 } // namespace GDT
 } // namespace Dune
 
+#endif // HAVE_DUNE_XT_DATA
 #endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_HATFUNCTIONS_HH

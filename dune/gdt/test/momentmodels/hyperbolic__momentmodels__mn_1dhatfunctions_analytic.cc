@@ -10,8 +10,10 @@
 // This one has to come first (includes the config.h)!
 #include <dune/xt/test/main.hxx>
 
-#include <dune/gdt/test/momentmodels/kinetictransport/testcases.hh>
-#include <dune/gdt/test/momentmodels/mn-discretization.hh>
+#if HAVE_DUNE_XT_DATA
+
+#  include <dune/gdt/test/momentmodels/kinetictransport/testcases.hh>
+#  include <dune/gdt/test/momentmodels/mn-discretization.hh>
 
 using Yasp1 = Dune::YaspGrid<1, Dune::EquidistantOffsetCoordinates<double, 1>>;
 using Yasp2 = Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>;
@@ -28,3 +30,12 @@ TYPED_TEST(HyperbolicMnTest, check)
 {
   this->run(1e-3);
 }
+
+#else // HAVE_DUNE_XT_DATA
+
+GTEST_TEST(HyperbolicMnTest, YaspGridTestCases1dHatAnalytic)
+{
+  std::cerr << "Test disabled, missing dune-xt-data!" << std::endl;
+}
+
+#endif

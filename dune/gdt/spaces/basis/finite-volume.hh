@@ -58,7 +58,7 @@ public:
 
   size_t max_size() const override final
   {
-    return 1;
+    return r;
   }
 
   using BaseType::localize;

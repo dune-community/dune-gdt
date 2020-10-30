@@ -26,6 +26,7 @@
 
 #include <dune/xt/common/float_cmp.hh>
 #include <dune/xt/common/fvector.hh>
+#include <dune/xt/common/math.hh>
 #include <dune/xt/common/parallel/threadstorage.hh>
 
 #include <dune/gdt/test/momentmodels/basisfunctions/partial_moments.hh>
@@ -89,10 +90,10 @@ public:
     return new ThisType(*this);
   }
 
-  virtual VectorType get(const E& /*entity*/,
-                         const StencilType& stencil,
-                         const EigenVectorWrapperType& /*eigenvectors*/,
-                         const size_t /*dd*/) const override final
+  VectorType get(const E& /*entity*/,
+                 const StencilType& stencil,
+                 const EigenVectorWrapperType& /*eigenvectors*/,
+                 const size_t /*dd*/) const override final
   {
     const VectorType& u_left = stencil[0];
     const VectorType& u_right = stencil[2];
@@ -117,10 +118,10 @@ public:
     return new ThisType();
   }
 
-  virtual VectorType get(const E& /*entity*/,
-                         const StencilType& stencil,
-                         const EigenVectorWrapperType& /*eigenvectors*/,
-                         const size_t /*dd*/) const override final
+  VectorType get(const E& /*entity*/,
+                 const StencilType& stencil,
+                 const EigenVectorWrapperType& /*eigenvectors*/,
+                 const size_t /*dd*/) const override final
   {
     const VectorType& u_left = stencil[0];
     const VectorType& u = stencil[1];
@@ -145,10 +146,10 @@ public:
     return new ThisType(*this);
   }
 
-  virtual VectorType get(const E& /*entity*/,
-                         const StencilType& stencil,
-                         const EigenVectorWrapperType& /*eigenvectors*/,
-                         const size_t /*dd*/) const override final
+  VectorType get(const E& /*entity*/,
+                 const StencilType& stencil,
+                 const EigenVectorWrapperType& /*eigenvectors*/,
+                 const size_t /*dd*/) const override final
   {
     const VectorType& u = stencil[1];
     const VectorType& u_right = stencil[2];
@@ -173,10 +174,10 @@ public:
     return new ThisType(*this);
   }
 
-  virtual VectorType get(const E& /*entity*/,
-                         const StencilType& /*stencil*/,
-                         const EigenVectorWrapperType& /*eigenvectors*/,
-                         const size_t /*dd*/) const override final
+  VectorType get(const E& /*entity*/,
+                 const StencilType& /*stencil*/,
+                 const EigenVectorWrapperType& /*eigenvectors*/,
+                 const size_t /*dd*/) const override final
   {
     return VectorType(0.);
   }
@@ -198,10 +199,10 @@ public:
     return new ThisType(*this);
   }
 
-  virtual VectorType get_char(const E& /*entity*/,
-                              const StencilType& stencil,
-                              const EigenVectorWrapperType& eigenvectors,
-                              const size_t dd) const override final
+  VectorType get_char(const E& /*entity*/,
+                      const StencilType& stencil,
+                      const EigenVectorWrapperType& eigenvectors,
+                      const size_t dd) const override final
   {
     const VectorType slope_left = stencil[1] - stencil[0];
     const VectorType slope_right = stencil[2] - stencil[1];
@@ -237,10 +238,10 @@ public:
     return new ThisType(*this);
   }
 
-  virtual VectorType get_char(const E& /*entity*/,
-                              const StencilType& stencil,
-                              const EigenVectorWrapperType& eigenvectors,
-                              const size_t dd) const override final
+  VectorType get_char(const E& /*entity*/,
+                      const StencilType& stencil,
+                      const EigenVectorWrapperType& eigenvectors,
+                      const size_t dd) const override final
   {
     const VectorType& u_left = stencil[0];
     const VectorType& u = stencil[1];
@@ -274,10 +275,10 @@ public:
     return new ThisType(*this);
   }
 
-  virtual VectorType get_char(const E& /*entity*/,
-                              const StencilType& stencil,
-                              const EigenVectorWrapperType& eigenvectors,
-                              const size_t dd) const override final
+  VectorType get_char(const E& /*entity*/,
+                      const StencilType& stencil,
+                      const EigenVectorWrapperType& eigenvectors,
+                      const size_t dd) const override final
   {
     const VectorType slope_left = stencil[1] - stencil[0];
     const VectorType slope_right = stencil[2] - stencil[1];
@@ -297,6 +298,7 @@ public:
 }; // class SuperbeeSlope
 
 
+#if HAVE_DUNE_XT_DATA
 template <class GV, class MomentBasis>
 class RealizabilityLimiterBase
 {
@@ -370,10 +372,10 @@ public:
     return new ThisType(*this);
   }
 
-  virtual VectorType get(const E& entity,
-                         const StencilType& stencil,
-                         const EigenVectorWrapperType& eigenvectors,
-                         const size_t dd) const override final
+  VectorType get(const E& entity,
+                 const StencilType& stencil,
+                 const EigenVectorWrapperType& eigenvectors,
+                 const size_t dd) const override final
   {
     static const VectorType zero_vector(0.);
     const VectorType& u_bar = stencil[1];
@@ -453,10 +455,10 @@ public:
     return new ThisType(*this);
   }
 
-  virtual VectorType get(const E& entity,
-                         const StencilType& stencil,
-                         const EigenVectorWrapperType& eigenvectors,
-                         const size_t dd) const override final
+  VectorType get(const E& entity,
+                 const StencilType& stencil,
+                 const EigenVectorWrapperType& eigenvectors,
+                 const size_t dd) const override final
   {
     const VectorType slope = slope_limiter_.get(entity, stencil, eigenvectors, dd);
     const VectorType& u_bar = stencil[1];
@@ -476,11 +478,15 @@ public:
         if (!is_epsilon_realizable(ubar0, ubar1, vj, vjplus1, epsilon_)) {
           thetas[2 * ii] = 1.;
         } else {
-          thetas_ii[0] = (epsilon_ - u0) / (ubar0 - u0);
+          thetas_ii[0] = XT::Common::is_zero(ubar0 - u0) ? -1. : (epsilon_ - u0) / (ubar0 - u0);
           thetas_ii[1] =
-              (u0 * vj - u1 + epsilon_ * std::sqrt(std::pow(vj, 2) + 1)) / ((ubar1 - u1) - (ubar0 - u0) * vj);
-          thetas_ii[2] = (u0 * vjplus1 - u1 - epsilon_ * std::sqrt(std::pow(vjplus1, 2) + 1))
-                         / ((ubar1 - u1) - (ubar0 - u0) * vjplus1);
+              XT::Common::is_zero((ubar1 - u1) - (ubar0 - u0) * vj)
+                  ? -1.
+                  : (u0 * vj - u1 + epsilon_ * std::sqrt(std::pow(vj, 2) + 1)) / ((ubar1 - u1) - (ubar0 - u0) * vj);
+          thetas_ii[2] = XT::Common::is_zero((ubar1 - u1) - (ubar0 - u0) * vjplus1)
+                             ? -1.
+                             : (u0 * vjplus1 - u1 - epsilon_ * std::sqrt(std::pow(vjplus1, 2) + 1))
+                                   / ((ubar1 - u1) - (ubar0 - u0) * vjplus1);
           for (size_t ll = 0; ll < 3; ++ll)
             if (thetas_ii[ll] >= 0. && thetas_ii[ll] <= 1.)
               thetas[2 * ii] = std::max(thetas[2 * ii], thetas_ii[ll]);
@@ -516,7 +522,7 @@ private:
 }; // class Dg1dRealizabilityLimitedSlope<...>
 
 
-#if HAVE_QHULL
+#  if HAVE_QHULL
 // Realizability limiter that ensures that the limited values are within the convex hull of the quadrature points. Uses
 // single limiter variable for all components.
 template <class GV,
@@ -555,10 +561,10 @@ public:
     return new ThisType(*this);
   }
 
-  virtual VectorType get(const E& entity,
-                         const StencilType& stencil,
-                         const EigenVectorWrapperType& eigenvectors,
-                         const size_t dd) const override final
+  VectorType get(const E& entity,
+                 const StencilType& stencil,
+                 const EigenVectorWrapperType& eigenvectors,
+                 const size_t dd) const override final
   {
     static const VectorType zero_vector(0.);
     const VectorType& u_bar = stencil[1];
@@ -580,7 +586,8 @@ public:
       for (const auto& coeffs : plane_coefficients_) {
         const auto& a = coeffs.first;
         const auto& b = coeffs.second;
-        RangeFieldType theta_li = (b - a * u) / (a * u_bar_minus_u);
+        const auto denominator = a * u_bar_minus_u;
+        RangeFieldType theta_li = XT::Common::is_zero(denominator) ? -1. : (b - a * u) / denominator;
         if (XT::Common::FloatCmp::le(theta_li, 1.))
           theta = std::max(theta, theta_li);
       } // coeffs
@@ -674,10 +681,10 @@ public:
     return new ThisType(*this);
   }
 
-  virtual VectorType get(const E& entity,
-                         const StencilType& stencil,
-                         const EigenVectorWrapperType& eigenvectors,
-                         const size_t dd) const override final
+  VectorType get(const E& entity,
+                 const StencilType& stencil,
+                 const EigenVectorWrapperType& eigenvectors,
+                 const size_t dd) const override final
   {
     const VectorType& u_bar = stencil[1];
     const VectorType slope = slope_limiter_.get(entity, stencil, eigenvectors, dd);
@@ -723,7 +730,8 @@ private:
     for (const auto& coeffs : plane_coefficients_[jj]) {
       const auto& a = coeffs.first;
       const auto& b = coeffs.second;
-      RangeFieldType theta_li = (b - a * u) / (a * u_bar_minus_u);
+      const auto denominator = a * u_bar_minus_u;
+      RangeFieldType theta_li = XT::Common::is_zero(denominator) ? -1. : (b - a * u) / denominator;
       if (XT::Common::FloatCmp::le(theta_li, 1.))
         theta = std::max(theta, theta_li);
     } // coeffs
@@ -736,7 +744,7 @@ private:
   PlaneCoefficientsType plane_coefficients_;
 }; // class DgConvexHullRealizabilityLimitedSlope<...>
 
-#else // HAVE_QHULL
+#  else // HAVE_QHULL
 
 template <class GV,
           class MomentBasis,
@@ -755,9 +763,9 @@ class DgConvexHullRealizabilityLimitedSlopeSlope
 {
   static_assert(Dune::AlwaysFalse<MomentBasis>::value, "You are missing Qhull!");
 };
-#endif // HAVE_QHULL
+#  endif // HAVE_QHULL
 
-#if HAVE_CLP
+#  if HAVE_CLP
 // Characteristic component-wise realizability limiter that ensures positivity of the components of u in
 // noncharacteristic variables by solving a linear program.
 template <class GV,
@@ -799,10 +807,10 @@ public:
     return new ThisType(*this);
   }
 
-  virtual VectorType get(const E& entity,
-                         const StencilType& stencil,
-                         const EigenVectorWrapperType& eigenvectors,
-                         const size_t dd) const override final
+  VectorType get(const E& entity,
+                 const StencilType& stencil,
+                 const EigenVectorWrapperType& eigenvectors,
+                 const size_t dd) const override final
   {
     static const VectorType zero_vector(0.);
     const VectorType& u_bar = stencil[1];
@@ -955,10 +963,10 @@ public:
     return new ThisType(*this);
   }
 
-  virtual VectorType get(const E& entity,
-                         const StencilType& stencil,
-                         const EigenVectorWrapperType& eigenvectors,
-                         const size_t dd) const override final
+  VectorType get(const E& entity,
+                 const StencilType& stencil,
+                 const EigenVectorWrapperType& eigenvectors,
+                 const size_t dd) const override final
   {
     VectorType slope_char = slope_limiter_.get_char(entity, stencil, eigenvectors, dd);
     static const VectorType zero_vector(0.);
@@ -1098,7 +1106,7 @@ private:
 template <class GV, class MomentBasis, class EigenVectorWrapperType, class SlopeType>
 constexpr size_t LpConvexhullRealizabilityLimitedSlope<GV, MomentBasis, EigenVectorWrapperType, SlopeType>::dimRange;
 
-#else // HAVE_CLP
+#  else // HAVE_CLP
 
 template <class GV,
           class MomentBasis,
@@ -1118,7 +1126,8 @@ class LpConvexhullRealizabilityLimitedSlope
   static_assert(Dune::AlwaysFalse<MomentBasis>::value, "You are missing Clp!");
 };
 
-#endif // HAVE_CLP
+#  endif // HAVE_CLP
+#endif // HAVE_DUNE_XT_DATA
 
 
 } // namespace GDT

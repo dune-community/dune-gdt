@@ -15,7 +15,7 @@
 #include <memory>
 
 #include <dune/common/timer.hh>
-#include <dune/grid/io/file/dgfparser/dgfparser.hh>
+#include <dune/grid/io/file/dgfparser.hh>
 
 #include <dune/xt/common/convergence-study.hh>
 #include <dune/xt/test/common.hh>
@@ -39,10 +39,11 @@
 #include <dune/gdt/local/integrands/laplace.hh>
 #include <dune/gdt/local/integrands/identity.hh>
 #include <dune/gdt/local/integrands/product.hh>
+#include <dune/gdt/norms.hh>
 #include <dune/gdt/operators/constant.hh>
 #include <dune/gdt/operators/identity.hh>
 #include <dune/gdt/operators/interfaces.hh>
-#include <dune/gdt/operators/localizable-bilinear-form.hh>
+#include <dune/gdt/operators/bilinear-form.hh>
 #include <dune/gdt/operators/matrix-based.hh>
 #include <dune/gdt/prolongations.hh>
 #include <dune/gdt/spaces/interface.hh>
@@ -161,7 +162,7 @@ public:
       current_data_.clear();
       current_data_["target"]["h"] = grid_width;
       current_data_["quantity"]["num_grid_elements"] = grid_size;
-      current_data_["quantity"]["num_dofs"] = current_space_->mapper().size();
+      current_data_["quantity"]["num_dofs"] = static_cast<double>(current_space_->mapper().size());
     }
     const auto lfill_nicely = [&](const auto& number, const auto& len) {
       std::string ret;
@@ -257,19 +258,14 @@ public:
           };
         } else if (spatial_norm_id == "L_2") {
           spatial_norm = [&](const DF& func) {
-            auto localizable_product = make_localizable_bilinear_form(reference_space.grid_view(), func, func);
-            localizable_product.append(LocalElementIntegralBilinearForm<E, m>(
-                LocalElementProductIntegrand<E, m>(), DXTC_TEST_CONFIG_GET("setup.over_integrate", 3)));
-            localizable_product.assemble(DXTC_TEST_CONFIG_GET("setup.use_tbb", true));
-            return std::sqrt(localizable_product.result());
+            return l2_norm(reference_space.grid_view(), func, DXTC_TEST_CONFIG_GET("setup.over_integrate", 3));
           };
         } else if (spatial_norm_id == "H_1_semi") {
           spatial_norm = [&](const DF& func) {
-            auto localizable_product = make_localizable_bilinear_form(reference_space.grid_view(), func, func);
-            localizable_product.append(LocalElementIntegralBilinearForm<E, m>(
-                LocalLaplaceIntegrand<E, m>(), DXTC_TEST_CONFIG_GET("setup.over_integrate", 3)));
-            localizable_product.assemble(DXTC_TEST_CONFIG_GET("setup.use_tbb", true));
-            return std::sqrt(localizable_product.result());
+            auto product = make_bilinear_form(reference_space.grid_view(), func, func);
+            product += LocalElementIntegralBilinearForm<E, m>(LocalLaplaceIntegrand<E, m>(),
+                                                              DXTC_TEST_CONFIG_GET("setup.over_integrate", 3));
+            return std::sqrt(product.apply2());
           };
         } else
           DUNE_THROW(XT::Common::Exceptions::wrong_input_given,

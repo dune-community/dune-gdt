@@ -21,6 +21,7 @@
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/functions/constant.hh>
 #include <dune/xt/functions/generic/function.hh>
+#include <dune/xt/functions/grid-function.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/interpolations/boundary.hh>
@@ -105,7 +106,7 @@ struct DefaultInterpolationOnLeafViewTest : public ::testing::Test
   void interpolates_correctly(const double expected_l2_error = 1e-14)
   {
     default_interpolation(*source, *range, space->grid_view());
-    const auto l2_error = l2_norm(space->grid_view(), source->template as_grid_function<E>() - *range);
+    const auto l2_error = l2_norm(space->grid_view(), XT::Functions::make_grid_function<E>(*source) - *range);
     EXPECT_LT(l2_error, expected_l2_error)
         << "XT::Common::Test::get_unique_test_name() = '" << XT::Common::Test::get_unique_test_name() << "'";
     const auto local_range = range->local_discrete_function();

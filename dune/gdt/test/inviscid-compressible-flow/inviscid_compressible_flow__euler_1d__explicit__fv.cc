@@ -29,7 +29,8 @@ TEST_F(InviscidCompressibleFlow1dEulerExplicitFvTest, periodic_boundaries)
   this->numerical_flux_type_ = "vijayasundaram";
   const auto actual_results = this->run();
   const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
-  XT::Test::check_eoc_study_for_success(expected_results, actual_results);
+  XT::Test::check_eoc_study_for_success(
+      expected_results, actual_results, DXTC_TEST_CONFIG_GET("results.zero_tolerance", 1e-15));
 }
 TEST_F(InviscidCompressibleFlow1dEulerExplicitFvTest, impermeable_walls_by_direct_euler_treatment)
 {
@@ -38,7 +39,8 @@ TEST_F(InviscidCompressibleFlow1dEulerExplicitFvTest, impermeable_walls_by_direc
   this->boundary_treatment = "impermeable_walls_by_direct_euler_treatment";
   const auto actual_results = this->run();
   const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
-  XT::Test::check_eoc_study_for_success(expected_results, actual_results);
+  XT::Test::check_eoc_study_for_success(
+      expected_results, actual_results, DXTC_TEST_CONFIG_GET("results.zero_tolerance", 1e-15));
 }
 TEST_F(InviscidCompressibleFlow1dEulerExplicitFvTest, impermeable_walls_by_inviscid_mirror_treatment)
 {
@@ -47,7 +49,8 @@ TEST_F(InviscidCompressibleFlow1dEulerExplicitFvTest, impermeable_walls_by_invis
   this->boundary_treatment = "impermeable_walls_by_inviscid_mirror_treatment";
   const auto actual_results = this->run();
   const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
-  XT::Test::check_eoc_study_for_success(expected_results, actual_results);
+  XT::Test::check_eoc_study_for_success(
+      expected_results, actual_results, DXTC_TEST_CONFIG_GET("results.zero_tolerance", 1e-15));
 }
 TEST_F(InviscidCompressibleFlow1dEulerExplicitFvTest,
        inflow_from_the_left_by_heuristic_euler_treatment_impermeable_wall_right)
@@ -58,5 +61,6 @@ TEST_F(InviscidCompressibleFlow1dEulerExplicitFvTest,
   this->boundary_treatment = "inflow_from_the_left_by_heuristic_euler_treatment_impermeable_wall_right";
   const auto actual_results = this->run();
   const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
-  XT::Test::check_eoc_study_for_success(expected_results, actual_results);
+  XT::Test::check_eoc_study_for_success(
+      expected_results, actual_results, DXTC_TEST_CONFIG_GET("results.zero_tolerance", 1e-15));
 }
