@@ -33,5 +33,6 @@ TEST_F(Burgers1dExplicitDgP1Test, periodic_boundaries__numerical_engquist_osher_
   this->numerical_flux_type_ = "engquist_osher";
   const auto actual_results = this->run();
   const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
-  XT::Test::check_eoc_study_for_success(expected_results, actual_results);
+  XT::Test::check_eoc_study_for_success(
+      expected_results, actual_results, DXTC_TEST_CONFIG_GET("results.zero_tolerance", 1e-15));
 }

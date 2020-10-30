@@ -9,7 +9,7 @@ num_additional_refinements_for_reference = 1
 zero_tolerance                  = 1e-15
 target.h                        = [1.25e-01 6.25e-02 3.12e-02]
 norm.L_infty_L_2                = [6.93e-01 4.02e-01 1.78e-01]
-quantity.rel_mass_conserv_error = [0.00e+00 0.00e+00 0.00e+00]
+quantity.rel_mass_conserv_error = [0 0 0]
 quantity.num_timesteps          = [6.40e+01 1.26e+02 2.50e+02]
 quantity.CFL                    = [0.99e+00 0.99e+00 0.99e+00]
 

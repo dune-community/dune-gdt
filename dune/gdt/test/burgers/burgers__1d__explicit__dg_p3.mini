@@ -10,7 +10,7 @@ use_fixed_dt                             = 0.0016714981079101561
 zero_tolerance                  = 1e-13
 target.h                        = [6.25e-02 3.12e-02]
 norm.L_infty_L_2                = [5.14e-02 4.13e-02]
-quantity.rel_mass_conserv_error = [0.00e+00 0.00e+00]
+quantity.rel_mass_conserv_error = [0 0]
 quantity.num_timesteps          = [6.07e+02 6.07e+02]
 quantity.CFL                    = [4.17e-02 8.32e-02]
 

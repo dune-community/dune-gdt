@@ -33,7 +33,7 @@ TEST_F(LinearTransport1dExplicitDgP0Test, periodic_boundaries__numerical_upwind_
   const auto actual_results = this->run();
   const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
   XT::Test::check_eoc_study_for_success(
-      expected_results, actual_results, DXTC_TEST_CONFIG_GET("setup.zero_tolerance", 1e-15));
+      expected_results, actual_results, DXTC_TEST_CONFIG_GET("results.zero_tolerance", 1e-15));
 }
 TEST_F(LinearTransport1dExplicitDgP0Test, periodic_boundaries__numerical_lax_friedrichs_flux)
 {
@@ -43,7 +43,7 @@ TEST_F(LinearTransport1dExplicitDgP0Test, periodic_boundaries__numerical_lax_fri
   const auto actual_results = this->run();
   const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
   XT::Test::check_eoc_study_for_success(
-      expected_results, actual_results, DXTC_TEST_CONFIG_GET("setup.zero_tolerance", 1e-15));
+      expected_results, actual_results, DXTC_TEST_CONFIG_GET("results.zero_tolerance", 1e-15));
 }
 TEST_F(LinearTransport1dExplicitDgP0Test, periodic_boundaries__numerical_engquist_osher_flux)
 {
@@ -53,7 +53,7 @@ TEST_F(LinearTransport1dExplicitDgP0Test, periodic_boundaries__numerical_engquis
   const auto actual_results = this->run();
   const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
   XT::Test::check_eoc_study_for_success(
-      expected_results, actual_results, DXTC_TEST_CONFIG_GET("setup.zero_tolerance", 1e-15));
+      expected_results, actual_results, DXTC_TEST_CONFIG_GET("results.zero_tolerance", 1e-15));
 }
 TEST_F(LinearTransport1dExplicitDgP0Test, periodic_boundaries__numerical_vijayasundaram_flux)
 {
@@ -63,5 +63,5 @@ TEST_F(LinearTransport1dExplicitDgP0Test, periodic_boundaries__numerical_vijayas
   const auto actual_results = this->run();
   const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
   XT::Test::check_eoc_study_for_success(
-      expected_results, actual_results, DXTC_TEST_CONFIG_GET("setup.zero_tolerance", 1e-15));
+      expected_results, actual_results, DXTC_TEST_CONFIG_GET("results.zero_tolerance", 1e-15));
 }

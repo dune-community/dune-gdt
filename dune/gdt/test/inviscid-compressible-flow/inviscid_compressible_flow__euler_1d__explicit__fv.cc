@@ -30,7 +30,7 @@ TEST_F(InviscidCompressibleFlow1dEulerExplicitFvTest, periodic_boundaries)
   const auto actual_results = this->run();
   const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
   XT::Test::check_eoc_study_for_success(
-      expected_results, actual_results, DXTC_TEST_CONFIG_GET("setup.zero_tolerance", 1e-15));
+      expected_results, actual_results, DXTC_TEST_CONFIG_GET("results.zero_tolerance", 1e-15));
 }
 TEST_F(InviscidCompressibleFlow1dEulerExplicitFvTest, impermeable_walls_by_direct_euler_treatment)
 {
@@ -40,7 +40,7 @@ TEST_F(InviscidCompressibleFlow1dEulerExplicitFvTest, impermeable_walls_by_direc
   const auto actual_results = this->run();
   const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
   XT::Test::check_eoc_study_for_success(
-      expected_results, actual_results, DXTC_TEST_CONFIG_GET("setup.zero_tolerance", 1e-15));
+      expected_results, actual_results, DXTC_TEST_CONFIG_GET("results.zero_tolerance", 1e-15));
 }
 TEST_F(InviscidCompressibleFlow1dEulerExplicitFvTest, impermeable_walls_by_inviscid_mirror_treatment)
 {
@@ -50,7 +50,7 @@ TEST_F(InviscidCompressibleFlow1dEulerExplicitFvTest, impermeable_walls_by_invis
   const auto actual_results = this->run();
   const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
   XT::Test::check_eoc_study_for_success(
-      expected_results, actual_results, DXTC_TEST_CONFIG_GET("setup.zero_tolerance", 1e-15));
+      expected_results, actual_results, DXTC_TEST_CONFIG_GET("results.zero_tolerance", 1e-15));
 }
 TEST_F(InviscidCompressibleFlow1dEulerExplicitFvTest,
        inflow_from_the_left_by_heuristic_euler_treatment_impermeable_wall_right)
@@ -62,5 +62,5 @@ TEST_F(InviscidCompressibleFlow1dEulerExplicitFvTest,
   const auto actual_results = this->run();
   const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
   XT::Test::check_eoc_study_for_success(
-      expected_results, actual_results, DXTC_TEST_CONFIG_GET("setup.zero_tolerance", 1e-15));
+      expected_results, actual_results, DXTC_TEST_CONFIG_GET("results.zero_tolerance", 1e-15));
 }

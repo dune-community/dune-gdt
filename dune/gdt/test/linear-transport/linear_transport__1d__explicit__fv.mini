@@ -9,7 +9,7 @@ num_additional_refinements_for_reference = 2
 zero_tolerance                  = 1e-15
 target.h                        = [6.25e-02 3.12e-02 1.56e-02]
 norm.L_infty_L_2                = [1.77e-01 1.25e-01 8.84e-02]
-quantity.rel_mass_conserv_error = [0.00e+00 0.00e+00 0.00e+00]
+quantity.rel_mass_conserv_error = [0 0 0]
 quantity.num_timesteps          = [1.80e+01 3.40e+01 6.60e+01]
 quantity.CFL                    = [2.00e+00 2.00e+00 2.00e+00]
 
@@ -23,7 +23,7 @@ num_additional_refinements_for_reference = 2
 zero_tolerance                  = 1e-15
 target.h                        = [6.25e-02 3.12e-02 1.56e-02]
 norm.L_infty_L_2                = [1.77e-01 1.25e-01 8.84e-02]
-quantity.rel_mass_conserv_error = [0.00e+00 0.00e+00 0.00e+00]
+quantity.rel_mass_conserv_error = [0 0 0]
 quantity.num_timesteps          = [1.80e+01 3.40e+01 6.60e+01]
 quantity.CFL                    = [2.00e+00 2.00e+00 2.00e+00]
 
@@ -36,7 +36,7 @@ num_additional_refinements_for_reference = 2
 zero_tolerance                  = 1e-15
 target.h                        = [6.25e-02 3.12e-02 1.56e-02]
 norm.L_infty_L_2                = [1.77e-01 1.25e-01 8.84e-02]
-quantity.rel_mass_conserv_error = [0.00e+00 0.00e+00 0.00e+00]
+quantity.rel_mass_conserv_error = [0 0 0]
 quantity.num_timesteps          = [1.80e+01 3.40e+01 6.60e+01]
 quantity.CFL                    = [2.00e+00 2.00e+00 2.00e+00]
 
@@ -49,7 +49,7 @@ num_additional_refinements_for_reference = 2
 zero_tolerance                  = 1e-15
 target.h                        = [6.25e-02 3.12e-02 1.56e-02]
 norm.L_infty_L_2                = [1.77e-01 1.25e-01 8.84e-02]
-quantity.rel_mass_conserv_error = [0.00e+00 0.00e+00 0.00e+00]
+quantity.rel_mass_conserv_error = [0 0 0]
 quantity.num_timesteps          = [1.80e+01 3.40e+01 6.60e+01]
 quantity.CFL                    = [2.00e+00 2.00e+00 2.00e+00]
 

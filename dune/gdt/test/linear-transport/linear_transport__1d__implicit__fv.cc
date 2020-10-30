@@ -34,7 +34,7 @@ TEST_F(LinearTransport1dExplicitFvTest, dt_equals_h)
   const auto actual_results = this->run();
   const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
   XT::Test::check_eoc_study_for_success(
-      expected_results, actual_results, DXTC_TEST_CONFIG_GET("setup.zero_tolerance", 1e-15));
+      expected_results, actual_results, DXTC_TEST_CONFIG_GET("results.zero_tolerance", 1e-15));
 }
 
 
@@ -47,7 +47,7 @@ TEST_F(LinearTransport1dImplicitFvTest, dt_equals_h)
   const auto actual_results = this->run();
   const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
   XT::Test::check_eoc_study_for_success(
-      expected_results, actual_results, DXTC_TEST_CONFIG_GET("setup.zero_tolerance", 1e-15));
+      expected_results, actual_results, DXTC_TEST_CONFIG_GET("results.zero_tolerance", 1e-15));
 }
 
 
@@ -77,7 +77,7 @@ TEST_F(LinearTransport1dExplicitWithAutomaticDtTest, automatic_dt)
   const auto actual_results = this->run();
   const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
   XT::Test::check_eoc_study_for_success(
-      expected_results, actual_results, DXTC_TEST_CONFIG_GET("setup.zero_tolerance", 1e-15));
+      expected_results, actual_results, DXTC_TEST_CONFIG_GET("results.zero_tolerance", 1e-15));
 }
 
 
@@ -90,5 +90,5 @@ TEST_F(LinearTransport1dImplicitFvTest, larger_dt)
   const auto actual_results = this->run();
   const auto expected_results = DXTC_TEST_CONFIG_SUB("results");
   XT::Test::check_eoc_study_for_success(
-      expected_results, actual_results, DXTC_TEST_CONFIG_GET("setup.zero_tolerance", 1e-15));
+      expected_results, actual_results, DXTC_TEST_CONFIG_GET("results.zero_tolerance", 1e-15));
 }
