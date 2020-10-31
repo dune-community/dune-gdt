@@ -97,7 +97,7 @@ public:
     , rhs_op_(rhs_op)
     , inverse_hessian_operator_(inverse_hessian_operator)
     , reg_indicators_(advection_op_.source_space().grid_view().size(0), false)
-    , u_update_(advection_op_.source_space().mapper().size())
+    , u_update_(advection_op_.range_space().mapper().size())
     , rhs_update_(u_update_.size())
   {}
 
