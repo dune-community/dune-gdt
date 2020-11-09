@@ -18,61 +18,78 @@ namespace Dune {
 namespace GDT {
 
 
-template <class GV, size_t r, size_t rC, class R, class V, class IGVT>
-std::enable_if_t<std::is_same<XT::Grid::extract_entity_t<GV>, typename IGVT::Grid::template Codim<0>::Entity>::value,
-                 void>
-interpolate(const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, r, rC, R>& source,
-            DiscreteFunction<V, GV, r, rC, R>& target,
-            const GridView<IGVT>& interpolation_grid_view)
+template <class E, size_t r, class R, class V, class GV, class IGV>
+void interpolate(const XT::Functions::GridFunctionInterface<E, r, 1, R>& source,
+                 DiscreteFunction<V, GV, r, 1, R>& target,
+                 const GridView<IGV>& interpolation_grid_view,
+                 const XT::Common::Parameter& param = {})
 {
-  if (target.space().type() == SpaceType::raviart_thomas)
-    raviart_thomas_interpolation(source, target, interpolation_grid_view);
-  else
-    default_interpolation(source, target, interpolation_grid_view);
-}
+  static_assert(std::is_same_v<E, XT::Grid::extract_entity_t<GV>>, "");
+  static_assert(std::is_same_v<E, XT::Grid::extract_entity_t<GridView<IGV>>>, "");
+
+  if constexpr (r == GV::dimension) {
+    if (target.space().type() == SpaceType::raviart_thomas)
+      raviart_thomas_interpolation(source, target, interpolation_grid_view, param);
+    else
+      default_interpolation(source, target, interpolation_grid_view, param);
+  } else
+    default_interpolation(source, target, interpolation_grid_view, param);
+} // ... interpolate(...)
 
 
-template <class GV, size_t r, size_t rC, class R, class V>
-void interpolate(const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, r, rC, R>& source,
-                 DiscreteFunction<V, GV, r, rC, R>& target)
+template <class E, size_t r, class R, class V, class GV>
+void interpolate(const XT::Functions::GridFunctionInterface<E, r, 1, R>& source,
+                 DiscreteFunction<V, GV, r, 1, R>& target,
+                 const XT::Common::Parameter& param = {})
 {
-  if (target.space().type() == SpaceType::raviart_thomas)
-    raviart_thomas_interpolation(source, target, target.space().grid_view());
-  else
-    default_interpolation(source, target, target.space().grid_view());
-}
+  static_assert(std::is_same_v<E, XT::Grid::extract_entity_t<GV>>, "");
+
+  if constexpr (r == GV::dimension) {
+    if (target.space().type() == SpaceType::raviart_thomas)
+      raviart_thomas_interpolation(source, target, param);
+    else
+      default_interpolation(source, target, param);
+  } else
+    default_interpolation(source, target, param);
+} // ... interpolate(...)
 
 
-template <class VectorType, class GV, size_t r, size_t rC, class R, class IGVT>
-std::enable_if_t<
-    XT::LA::is_vector<VectorType>::value
-        && std::is_same<XT::Grid::extract_entity_t<GV>, typename IGVT::Grid::template Codim<0>::Entity>::value,
-    DiscreteFunction<VectorType, GV, r, rC, R>>
-interpolate(const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, r, rC, R>& source,
-            const SpaceInterface<GV, r, rC, R>& target_space,
-            const GridView<IGVT>& interpolation_grid_view)
+template <class VectorType, class GV, size_t r, class R, class E, class IGV>
+DiscreteFunction<VectorType, GV, r, 1, R> interpolate(const XT::Functions::GridFunctionInterface<E, r, 1, R>& source,
+                                                      const SpaceInterface<GV, r, 1, R>& target_space,
+                                                      const GridView<IGV>& interpolation_grid_view,
+                                                      const XT::Common::Parameter& param = {})
 {
-  auto target_function = make_discrete_function<VectorType>(target_space);
-  if (target_space.type() == SpaceType::raviart_thomas)
-    raviart_thomas_interpolation(source, target_function, interpolation_grid_view);
-  else
-    default_interpolation(source, target_function, interpolation_grid_view);
-  return target_function;
-}
+  static_assert(XT::LA::is_vector<VectorType>::value, "");
+  static_assert(std::is_same_v<E, XT::Grid::extract_entity_t<GV>>, "");
+  static_assert(std::is_same_v<E, XT::Grid::extract_entity_t<GridView<IGV>>>, "");
+
+  if constexpr (r == GV::dimension) {
+    if (target_space.type() == SpaceType::raviart_thomas)
+      return raviart_thomas_interpolation<VectorType>(source, target_space, interpolation_grid_view, param);
+    else
+      return default_interpolation<VectorType>(source, target_space, interpolation_grid_view, param);
+  } else
+    return default_interpolation<VectorType>(source, target_space, interpolation_grid_view, param);
+} // ... interpolate(...)
 
 
-template <class VectorType, class GV, size_t r, size_t rC, class R>
-std::enable_if_t<XT::LA::is_vector<VectorType>::value, DiscreteFunction<VectorType, GV, r, rC, R>>
-interpolate(const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, r, rC, R>& source,
-            const SpaceInterface<GV, r, rC, R>& target_space)
+template <class VectorType, class GV, size_t r, class R, class E>
+DiscreteFunction<VectorType, GV, r, 1, R> interpolate(const XT::Functions::GridFunctionInterface<E, r, 1, R>& source,
+                                                      const SpaceInterface<GV, r, 1, R>& target_space,
+                                                      const XT::Common::Parameter& param = {})
 {
-  auto target_function = make_discrete_function<VectorType>(target_space);
-  if (target_space.type() == SpaceType::raviart_thomas)
-    raviart_thomas_interpolation(source, target_function, target_space.grid_view());
-  else
-    default_interpolation(source, target_function, target_space.grid_view());
-  return target_function;
-}
+  static_assert(XT::LA::is_vector<VectorType>::value, "");
+  static_assert(std::is_same_v<E, XT::Grid::extract_entity_t<GV>>, "");
+
+  if constexpr (r == GV::dimension) {
+    if (target_space.type() == SpaceType::raviart_thomas)
+      return raviart_thomas_interpolation<VectorType>(source, target_space, param);
+    else
+      return default_interpolation<VectorType>(source, target_space, param);
+  } else
+    return default_interpolation<VectorType>(source, target_space, param);
+} // ... interpolate(...)
 
 
 } // namespace GDT
