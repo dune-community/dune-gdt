@@ -16,6 +16,7 @@
 #include <dune/xt/la/type_traits.hh>
 
 #include <dune/gdt/exceptions.hh>
+#include <dune/gdt/print.hh>
 
 #include "interfaces.hh"
 
@@ -24,57 +25,78 @@ namespace GDT {
 
 
 /**
- * See also OperatorInterface for a description of the template arguemnts.
+ * See also DiscreteOperatorInterface for a description of the template arguments.
  *
- * \sa OperatorInterface
+ * \sa DiscreteOperatorInterface
  */
-template <class M, class SGV, size_t s_r = 1, size_t s_rC = 1, size_t r_r = s_r, size_t r_rC = s_rC, class RGV = SGV>
-class ConstantOperator : public OperatorInterface<M, SGV, s_r, s_rC, r_r, r_rC, RGV>
+template <class AGV,
+          size_t s_r = 1,
+          size_t s_rC = 1,
+          size_t r_r = s_r,
+          size_t r_rC = s_rC,
+          class F = double,
+          class M = XT::LA::IstlRowMajorSparseMatrix<F>,
+          class SGV = AGV,
+          class RGV = AGV>
+class ConstantDiscreteOperator : public DiscreteOperatorInterface<AGV, s_r, s_rC, r_r, r_rC, F, M, SGV, RGV>
 {
-  using ThisType = ConstantOperator;
-  using BaseType = OperatorInterface<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
+  using ThisType = ConstantDiscreteOperator;
+  using BaseType = DiscreteOperatorInterface<AGV, s_r, s_rC, r_r, r_rC, F, M, SGV, RGV>;
 
 public:
-  using typename BaseType::F;
-  using typename BaseType::MatrixOperatorType;
+  using typename BaseType::AssemblyGridViewType;
   using typename BaseType::RangeSpaceType;
+  using typename BaseType::SourceFunctionType;
   using typename BaseType::SourceSpaceType;
   using typename BaseType::VectorType;
 
-  ConstantOperator(const SourceSpaceType& src_space,
-                   const RangeSpaceType& rng_space,
-                   const VectorType& val,
-                   const std::string& logging_prefix = "")
+  ConstantDiscreteOperator(const AssemblyGridViewType& assembly_grid_vw,
+                           const SourceSpaceType& src_space,
+                           const RangeSpaceType& rng_space,
+                           const VectorType& val,
+                           const std::string& logging_prefix = "")
     : BaseType({},
-               logging_prefix.empty() ? "ConstantOperator" : logging_prefix,
+               logging_prefix.empty() ? "ConstantDiscreteOperator" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
+    , assembly_grid_view_(assembly_grid_vw)
     , source_space_(src_space)
     , range_space_(rng_space)
     , value_(val)
+    , is_zero_(XT::Common::is_zero(value_.access().sup_norm()))
   {
-    LOG_(info) << "ConstantOperator(source_space=" << &src_space << ", range_space=" << &rng_space
+    LOG_(info) << "ConstantDiscreteOperator(source_space=" << &src_space << ", range_space=" << &rng_space
                << ", value.sup_norm()=" << value_.access().sup_norm() << ")" << std::endl;
+    DUNE_THROW_IF(range_space_.mapper().size() != value_.access().size(),
+                  Exceptions::operator_error,
+                  "Given value is not in the range of this ConstantDiscreteOperator!");
   }
 
-  ConstantOperator(const SourceSpaceType& src_space,
-                   const RangeSpaceType& rng_space,
-                   VectorType*&& val,
-                   const std::string& logging_prefix = "")
+  ConstantDiscreteOperator(const AssemblyGridViewType& assembly_grid_vw,
+                           const SourceSpaceType& src_space,
+                           const RangeSpaceType& rng_space,
+                           VectorType*&& val,
+                           const std::string& logging_prefix = "")
     : BaseType({},
-               logging_prefix.empty() ? "ConstantOperator" : logging_prefix,
+               logging_prefix.empty() ? "ConstantDiscreteOperator" : logging_prefix,
                /*logging_disabled=*/logging_prefix.empty())
+    , assembly_grid_view_(assembly_grid_vw)
     , source_space_(src_space)
     , range_space_(rng_space)
     , value_(std::move(val))
+    , is_zero_(XT::Common::is_zero(value_.access().sup_norm()))
   {
-    LOG_(info) << "ConstantOperator(source_space=" << &src_space << ", range_space=" << &rng_space
+    LOG_(info) << "ConstantDiscreteOperator(source_space=" << &src_space << ", range_space=" << &rng_space
                << ", value.sup_norm()=" << value_.access().sup_norm() << ")" << std::endl;
+    DUNE_THROW_IF(range_space_.mapper().size() != value_.access().size(),
+                  Exceptions::operator_error,
+                  "Given value is not in the range of this ConstantDiscreteOperator!");
   }
 
-  const SourceSpaceType& source_space() const override final
-  {
-    return source_space_;
-  }
+  // pull in methods from BilinearFormInterface, OperatorInterface, DiscreteOperatorInterface
+  using BaseType::apply;
+
+  /// \name Required by OperatorInterface.
+  /// \{
 
   const RangeSpaceType& range_space() const override final
   {
@@ -83,79 +105,129 @@ public:
 
   bool linear() const override final
   {
-    return false;
+    return !is_zero_;
   }
 
-  using BaseType::apply;
-
-  void
-  apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& /*param*/ = {}) const override final
+  void apply(SourceFunctionType source_function,
+             VectorType& range_vector,
+             const XT::Common::Parameter& param = {}) const override final
   {
-    DUNE_THROW_IF(!source_space_.contains(source), Exceptions::operator_error, "");
-    DUNE_THROW_IF(!range_space_.contains(range), Exceptions::operator_error, "");
-    DUNE_THROW_IF(!range_space_.contains(value_.access()), Exceptions::operator_error, "");
-    range = value_.access();
+    LOG_(debug) << "apply(source_function=" << &source_function
+                << ", range_vector.sup_norm()=" << range_vector.sup_norm() << ", param=" << param << ")" << std::endl;
+    this->assert_matching_range(range_vector);
+    if (is_zero_) {
+      LOG_(info) << "setting range_vector to zero ..." << std::endl;
+      range_vector *= F(0);
+    } else {
+      LOG_(info) << "setting range_vector to constant value ..." << std::endl;
+      range_vector = value_.access();
+    }
+  } // ... apply(...)
+
+  /// \}
+  /// \name Required by DiscreteOperatorInterface.
+  /// \{
+
+  const SourceSpaceType& source_space() const override final
+  {
+    return source_space_;
   }
 
-  VectorType apply(const VectorType& source, const XT::Common::Parameter& /*param*/ = {}) const override final
+  const AssemblyGridViewType& assembly_grid_view() const override final
   {
-    DUNE_THROW_IF(!source_space_.contains(source), Exceptions::operator_error, "");
-    DUNE_THROW_IF(!range_space_.contains(value_.access()), Exceptions::operator_error, "");
-    return value_.access();
+    return assembly_grid_view_;
   }
 
-  std::vector<std::string> jacobian_options() const override final
+  void apply(const VectorType& source_vector,
+             VectorType& range_vector,
+             const XT::Common::Parameter& param = {}) const override final
   {
-    return {"zero"};
+    LOG_(debug) << "apply(source_vector.sup_norm()=" << source_vector.sup_norm()
+                << ", range_vector.sup_norm()=" << range_vector.sup_norm() << ", param=" << param << ")" << std::endl;
+    this->assert_matching_source(source_vector);
+    this->assert_matching_range(range_vector);
+    if (is_zero_) {
+      LOG_(info) << "setting range_vector to zero ..." << std::endl;
+      range_vector *= F(0);
+    } else {
+      LOG_(info) << "setting range_vector to constant value ..." << std::endl;
+      range_vector = value_.access();
+    }
+  } // ... apply(...)
+
+protected:
+  std::vector<XT::Common::Configuration> all_jacobian_options() const override final
+  {
+    return {{{"type", "zero"}}};
   }
 
-  XT::Common::Configuration jacobian_options(const std::string& type) const override final
-  {
-    DUNE_THROW_IF(type != this->jacobian_options().at(0), Exceptions::operator_error, "type = " << type);
-    return {{"type", type}};
-  }
-
-  using BaseType::jacobian;
-
-  void jacobian(const VectorType& /*source*/,
-                MatrixOperatorType& jacobian_op,
-                const XT::Common::Configuration& opts,
-                const XT::Common::Parameter& /*param*/ = {}) const override final
-  {
-    DUNE_THROW_IF(
-        jacobian_op.source_space().mapper().size() != source_space_.mapper().size(), Exceptions::operator_error, "");
-    DUNE_THROW_IF(
-        jacobian_op.range_space().mapper().size() != range_space_.mapper().size(), Exceptions::operator_error, "");
-    DUNE_THROW_IF(!opts.has_key("type"), Exceptions::operator_error, "opts = \n");
-    DUNE_THROW_IF(
-        opts.get<std::string>("type") != this->jacobian_options().at(0), Exceptions::operator_error, "opts = " << opts);
-    // do nothing
-  } // ... jacobian(...)
+  /// \}
 
 private:
+  const AssemblyGridViewType& assembly_grid_view_;
   const SourceSpaceType& source_space_;
   const RangeSpaceType& range_space_;
   const XT::Common::ConstStorageProvider<VectorType> value_;
-}; // class ConstantOperator
+  const bool is_zero_;
+}; // class ConstantDiscreteOperator
 
 
-template <class Matrix, class SGV, size_t s_r, size_t s_rC, class F, class RGV, size_t r_r, size_t r_rC, class V>
-std::enable_if_t<XT::LA::is_matrix<Matrix>::value, ConstantOperator<Matrix, SGV, s_r, s_rC, r_r, r_rC, RGV>>
-make_constant_operator(const SpaceInterface<SGV, s_r, s_rC, F>& source_space,
-                       const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
-                       const XT::LA::VectorInterface<V>& value)
+template <class AssemblyGridViewType,
+          class SGV,
+          size_t s_r,
+          size_t s_rC,
+          class F,
+          class RGV,
+          size_t r_r,
+          size_t r_rC,
+          class V>
+auto make_constant_operator(const AssemblyGridViewType& assembly_grid_view,
+                            const SpaceInterface<SGV, s_r, s_rC, F>& source_space,
+                            const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
+                            const XT::LA::VectorInterface<V>& value)
 {
-  return ConstantOperator<Matrix, SGV, s_r, s_rC, r_r, r_rC, RGV>(source_space, range_space, value.as_imp());
+  static_assert(XT::Grid::is_view<AssemblyGridViewType>::value, "");
+  using M = XT::LA::matrix_t<typename XT::LA::VectorInterface<V>::derived_type>;
+  return ConstantDiscreteOperator<AssemblyGridViewType, s_r, s_rC, r_r, r_rC, F, M, SGV, RGV>(
+      assembly_grid_view, source_space, range_space, value.as_imp());
+}
+
+template <class AssemblyGridViewType,
+          class SGV,
+          size_t s_r,
+          size_t s_rC,
+          class F,
+          class RGV,
+          size_t r_r,
+          size_t r_rC,
+          class VectorType>
+auto make_constant_operator(const AssemblyGridViewType& assembly_grid_view,
+                            const SpaceInterface<SGV, s_r, s_rC, F>& source_space,
+                            const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
+                            const VectorType*&& value_ptr)
+{
+  static_assert(XT::Grid::is_view<AssemblyGridViewType>::value, "");
+  static_assert(XT::LA::is_vector<VectorType>::value, "");
+  using M = XT::LA::matrix_t<VectorType>;
+  return ConstantDiscreteOperator<AssemblyGridViewType, s_r, s_rC, r_r, r_rC, F, M, SGV, RGV>(
+      assembly_grid_view, source_space, range_space, std::move(value_ptr));
 }
 
 
-template <class SGV, size_t s_r, size_t s_rC, class F, class RGV, size_t r_r, size_t r_rC, class V>
-ConstantOperator<typename XT::LA::Container<F>::MatrixType, SGV, s_r, s_rC, r_r, r_rC, RGV>
-make_constant_operator(const SpaceInterface<SGV, s_r, s_rC, F>& source_space,
-                       const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
-                       const XT::LA::VectorInterface<V>& value)
+template <class GV, size_t r, size_t rC, class F, class V>
+auto make_constant_operator(const SpaceInterface<GV, r, rC, F>& space, const XT::LA::VectorInterface<V>& value)
 {
-  return make_constant_operator<typename XT::LA::Container<F>::MatrixType>(source_space, range_space, value.as_imp());
+  using M = XT::LA::matrix_t<typename XT::LA::VectorInterface<V>::derived_type>;
+  return ConstantDiscreteOperator<GV, r, rC, r, rC, F, M, GV, GV>(space.grid_view(), space, space, value.as_imp());
+}
+
+template <class GV, size_t r, size_t rC, class F, class VectorType>
+auto make_constant_operator(const SpaceInterface<GV, r, rC, F>& space, VectorType*&& value_ptr)
+{
+  static_assert(XT::LA::is_vector<VectorType>::value, "");
+  using M = XT::LA::matrix_t<VectorType>;
+  return ConstantDiscreteOperator<GV, r, rC, r, rC, F, M, GV, GV>(
+      space.grid_view(), space, space, std::move(value_ptr));
 }
 
 
