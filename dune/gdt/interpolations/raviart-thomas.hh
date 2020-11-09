@@ -59,7 +59,7 @@ raviart_thomas_interpolation(
       const auto& local_keys_assosiated_with_intersection = intersection_to_local_key_map[intersection_index];
       if (local_keys_assosiated_with_intersection.size() > 0) {
         const auto intersection_fe =
-            make_local_orthonormal_finite_element<D, d - 1, R>(intersection.type(), rt_fe.order());
+            make_local_orthonormal_finite_element<D, d - 1, R>(intersection.type(), rt_fe.order(param));
         const auto& intersection_Pk_basis = intersection_fe->basis();
         DUNE_THROW_IF(intersection_Pk_basis.size() != local_keys_assosiated_with_intersection.size(),
                       Exceptions::interpolation_error,
@@ -79,9 +79,9 @@ raviart_thomas_interpolation(
             // do a face quadrature, average source
             for (auto&& quadrature_point : QuadratureRules<D, d - 1>::rule(
                      intersection.type(),
-                     std::max(rt_basis->order() + intersection_Pk_basis.order(),
-                              std::max(local_source_element->order(), local_source_neighbor->order())
-                                  + intersection_Pk_basis.order()))) {
+                     std::max(rt_basis->order(param) + intersection_Pk_basis.order(param),
+                              std::max(local_source_element->order(param), local_source_neighbor->order(param))
+                                  + intersection_Pk_basis.order(param)))) {
               const auto point_on_reference_intersection = quadrature_point.position();
               const auto point_in_reference_element =
                   intersection.geometryInInside().global(point_on_reference_intersection);
@@ -93,8 +93,8 @@ raviart_thomas_interpolation(
                   intersection.geometry().integrationElement(point_on_reference_intersection);
               const auto rt_basis_values = rt_basis->evaluate_set(point_in_reference_element);
               const auto intersection_Pk_basis_values = intersection_Pk_basis.evaluate(point_on_reference_intersection);
-              const auto local_source_values = (local_source_element->evaluate(point_in_reference_element)
-                                                + local_source_neighbor->evaluate(point_in_reference_neighbor))
+              const auto local_source_values = (local_source_element->evaluate(point_in_reference_element, param)
+                                                + local_source_neighbor->evaluate(point_in_reference_neighbor, param))
                                                * 0.5;
               for (size_t ii = 0; ii < local_keys_assosiated_with_intersection.size(); ++ii) {
                 const size_t local_key_index = local_keys_assosiated_with_intersection[ii];
@@ -123,8 +123,8 @@ raviart_thomas_interpolation(
           // do a face quadrature
           for (auto&& quadrature_point : QuadratureRules<D, d - 1>::rule(
                    intersection.type(),
-                   std::max(rt_basis->order() + intersection_Pk_basis.order(),
-                            local_source_element->order() + intersection_Pk_basis.order()))) {
+                   std::max(rt_basis->order(param) + intersection_Pk_basis.order(param),
+                            local_source_element->order(param) + intersection_Pk_basis.order(param)))) {
             const auto point_on_reference_intersection = quadrature_point.position();
             const auto point_in_reference_element =
                 intersection.geometryInInside().global(point_on_reference_intersection);
@@ -133,7 +133,7 @@ raviart_thomas_interpolation(
             const auto integration_factor = intersection.geometry().integrationElement(point_on_reference_intersection);
             const auto rt_basis_values = rt_basis->evaluate_set(point_in_reference_element);
             const auto intersection_Pk_basis_values = intersection_Pk_basis.evaluate(point_on_reference_intersection);
-            const auto local_source_values = local_source_element->evaluate(point_in_reference_element);
+            const auto local_source_values = local_source_element->evaluate(point_in_reference_element, param);
             for (size_t ii = 0; ii < local_keys_assosiated_with_intersection.size(); ++ii) {
               const size_t local_key_index = local_keys_assosiated_with_intersection[ii];
               for (size_t jj = 0; jj < intersection_Pk_basis.size(); ++jj)
@@ -169,10 +169,10 @@ raviart_thomas_interpolation(
     const auto element_to_local_key_map = rt_fe.coefficients().local_key_indices(0);
     const auto& local_keys_assosiated_with_element = element_to_local_key_map[0];
     if (local_keys_assosiated_with_element.size() > 0) {
-      DUNE_THROW_IF(rt_basis->order() < 1,
+      DUNE_THROW_IF(rt_basis->order(param) < 1,
                     Exceptions::interpolation_error,
                     "DoFs associated with the element only make sense for orders >= 1!");
-      const auto element_fe = make_local_orthonormal_finite_element<D, d, R, d>(element.type(), rt_fe.order() - 1);
+      const auto element_fe = make_local_orthonormal_finite_element<D, d, R, d>(element.type(), rt_fe.order(param) - 1);
       const auto& element_Pkminus1_basis = element_fe->basis();
       DUNE_THROW_IF(element_Pkminus1_basis.size() != local_keys_assosiated_with_element.size(),
                     Exceptions::interpolation_error,
@@ -182,15 +182,15 @@ raviart_thomas_interpolation(
       XT::LA::CommonDenseMatrix<R> lhs(local_keys_assosiated_with_element.size(), element_Pkminus1_basis.size(), 0);
       XT::LA::CommonDenseVector<R> rhs(element_Pkminus1_basis.size(), 0);
       // do a volume quadrature
-      for (auto&& quadrature_point :
-           QuadratureRules<D, d>::rule(element.type(),
-                                       std::max(rt_basis->order() + element_Pkminus1_basis.order(),
-                                                local_source_element->order() + element_Pkminus1_basis.order()))) {
+      for (auto&& quadrature_point : QuadratureRules<D, d>::rule(
+               element.type(),
+               std::max(rt_basis->order(param) + element_Pkminus1_basis.order(param),
+                        local_source_element->order(param) + element_Pkminus1_basis.order(param)))) {
         const auto point_in_reference_element = quadrature_point.position();
         const auto quadrature_weight = quadrature_point.weight();
         const auto integration_factor = element.geometry().integrationElement(point_in_reference_element);
         const auto rt_basis_values = rt_basis->evaluate_set(point_in_reference_element);
-        const auto element_Pkminus1_basis_values = element_Pkminus1_basis.evaluate(point_in_reference_element);
+        const auto element_Pkminus1_basis_values = element_Pkminus1_basis.evaluate(point_in_reference_element, param);
         const auto local_source_values = local_source_element->evaluate(point_in_reference_element);
         for (size_t ii = 0; ii < local_keys_assosiated_with_element.size(); ++ii) {
           const size_t local_key_index = local_keys_assosiated_with_element[ii];
