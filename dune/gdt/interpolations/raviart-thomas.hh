@@ -25,25 +25,23 @@ namespace GDT {
 /**
  * \note source is averaged on intersections
  */
-template <class VectorType, class GV, class R, class IGV>
-std::enable_if_t<
-    XT::LA::is_vector<VectorType>::value
-        && std::is_same<XT::Grid::extract_entity_t<GV>, typename IGV::Grid::template Codim<0>::Entity>::value,
-    DiscreteFunction<VectorType, GV, GV::dimension, 1, R>>
-raviart_thomas_interpolation(
-    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, GV::dimension, 1, R>& source,
-    const RaviartThomasSpace<GV, R>& target_space,
-    const GridView<IGV>& interpolation_grid_view)
+template <class E, size_t d, class R, class V, class GV, class IGV>
+void raviart_thomas_interpolation(const XT::Functions::GridFunctionInterface<E, d, 1, R>& source,
+                                  const DiscreteFunction<V, GV, d, 1, R>& target,
+                                  const GridView<IGV>& interpolation_grid_view,
+                                  const XT::Common::Parameter& param = {})
 {
+  static_assert(std::is_same_v<E, XT::Grid::extract_entity_t<GV>>, "");
+  static_assert(std::is_same_v<E, XT::Grid::extract_entity_t<GridView<IGV>>>, "");
+  static_assert(d == GV::dimension, "");
+
   using D = typename GridView<IGV>::ctype;
-  static constexpr size_t d = GridView<IGV>::dimension;
   // some preparations
   const FiniteVolumeMapper<GridView<IGV>> element_mapper(interpolation_grid_view);
-  auto target_function = make_discrete_function<VectorType>(target_space);
-  auto local_target = target_function.local_discrete_function();
+  auto local_target = target.local_discrete_function();
   auto local_source_element = source.local_function();
   auto local_source_neighbor = source.local_function();
-  auto rt_basis = target_space.basis().localize();
+  auto rt_basis = target.space().basis().localize();
   for (auto&& element : elements(interpolation_grid_view)) {
     local_target->bind(element);
     local_source_element->bind(element);
@@ -225,8 +223,40 @@ raviart_thomas_interpolation(
                         << "\n   local DoF index: " << ii
                         << "\n   associated local_key: " << rt_fe.coefficients().local_key(ii));
   }
-  return target_function;
 } // ... raviart_thomas_interpolation()
+
+
+template <class E, size_t d, class R, class V, class GV>
+void raviart_thomas_interpolation(const XT::Functions::GridFunctionInterface<E, d, 1, R>& source,
+                                  const DiscreteFunction<V, GV, d, 1, R>& target,
+                                  const XT::Common::Parameter& param = {})
+{
+  raviart_thomas_interpolation(source, target, target.space().grid_view(), param);
+}
+
+
+template <class VectorType, class GV, size_t d, class R, class E, class IGV>
+DiscreteFunction<VectorType, GV, d, 1, R>
+raviart_thomas_interpolation(const XT::Functions::GridFunctionInterface<E, d, 1, R>& source,
+                             const RaviartThomasSpace<GV, R>& target_space,
+                             const GridView<IGV>& interpolation_grid_view,
+                             const XT::Common::Parameter& param = {})
+{
+  static_assert(XT::LA::is_vector<VectorType>::value, "");
+  DiscreteFunction<VectorType, GV, d, 1, R> target(target_space);
+  raviart_thomas_interpolation(source, target, interpolation_grid_view, param);
+  return target;
+}
+
+
+template <class VectorType, class GV, size_t d, class R, class E, class IGV>
+DiscreteFunction<VectorType, GV, d, 1, R>
+raviart_thomas_interpolation(const XT::Functions::GridFunctionInterface<E, d, 1, R>& source,
+                             const RaviartThomasSpace<GV, R>& target_space,
+                             const XT::Common::Parameter& param = {})
+{
+  return raviart_thomas_interpolation(source, target_space, target_space.grid_view(), param);
+}
 
 
 } // namespace GDT
