@@ -28,10 +28,10 @@ template <class AGV,
           class M = XT::LA::IstlRowMajorSparseMatrix<F>,
           class SGV = AGV,
           class RGV = AGV>
-class DiscreteOperator : public DiscreteOperatorInterface<AGV, s_r, s_rC, r_r, r_rC, F, M, SGV, RGV>
+class Operator : public OperatorInterface<AGV, s_r, s_rC, r_r, r_rC, F, M, SGV, RGV>
 {
-  using ThisType = DiscreteOperator;
-  using BaseType = DiscreteOperatorInterface<AGV, s_r, s_rC, r_r, r_rC, F, M, SGV, RGV>;
+  using ThisType = Operator;
+  using BaseType = OperatorInterface<AGV, s_r, s_rC, r_r, r_rC, F, M, SGV, RGV>;
 
 public:
   using typename BaseType::AssemblyGridViewType;
@@ -55,17 +55,21 @@ public:
   using LocalIntersectionOperatorType =
       LocalIntersectionOperatorInterface<I, V, SGV, s_r, s_rC, F, r_r, r_rC, F, RGV, V>;
 
-  DiscreteOperator(const AssemblyGridViewType& assembly_grid_vw,
-                   const SourceSpaceType& source_spc,
-                   const RangeSpaceType& range_spc)
-    : assembly_grid_view_(assembly_grid_vw)
+  Operator(const AssemblyGridViewType& assembly_grid_vw,
+           const SourceSpaceType& source_spc,
+           const RangeSpaceType& range_spc,
+           const std::string& logging_prefix = "",
+           const std::array<bool, 3>& logging_state = {false, false, true})
+    : BaseType({}, logging_prefix.empty() ? "Operator" : logging_prefix, logging_state)
+    , assembly_grid_view_(assembly_grid_vw)
     , source_space_(source_spc)
     , range_space_(range_spc)
     , linear_(true)
   {}
 
-  DiscreteOperator(const ThisType& other)
-    : assembly_grid_view_(other.assembly_grid_view_)
+  Operator(const ThisType& other)
+    : BaseType(other)
+    , assembly_grid_view_(other.assembly_grid_view_)
     , source_space_(other.source_space_)
     , range_space_(other.range_space_)
     , linear_(other.linear_)
@@ -81,7 +85,7 @@ public:
     copy_local_data(other.intersection_data_, intersection_data_);
   } // Operator(...)
 
-  DiscreteOperator(ThisType&& source) = default;
+  Operator(ThisType&& source) = default;
 
   // pull in methods from various base classes
   using BaseType::apply;
@@ -91,10 +95,8 @@ public:
   auto with(SourceFunctionType source_function, VectorType& range_vector, const XT::Common::Parameter& param = {}) const
   {
     this->assert_matching_range(range_vector);
-    OperatorAssembler<ThisType> assembler(*this, source_function, range_vector, param);
-    assembler.logger.prefix = this->logger.prefix + "_assembler";
-    assembler.logger.enable_like(this->logger);
-    return assembler;
+    return ForwardOperatorAssembler<ThisType>(
+        *this, source_function, range_vector, param, this->logger.prefix + "_assembler", this->logger.state);
   }
 
   /// \brief allows to fix the arguments to apply(), the resulting assembler can be appended to a GridWalker
@@ -102,11 +104,12 @@ public:
   {
     this->assert_matching_source(source_vector);
     this->assert_matching_range(range_vector);
-    DiscreteSourceFunctionType source_function(source_space_, source_vector);
-    OperatorAssembler<ThisType> assembler(*this, source_function, range_vector, param);
-    assembler.logger.prefix = this->logger.prefix + "_assembler";
-    assembler.logger.enable_like(this->logger);
-    return assembler;
+    return ForwardOperatorAssembler<ThisType>(*this,
+                                       DiscreteSourceFunctionType(source_space_, source_vector),
+                                       range_vector,
+                                       param,
+                                       this->logger.prefix + "_assembler",
+                                       this->logger.state);
   } // ... with(...)
 
   /// \name Required by OperatorInterface
@@ -134,7 +137,7 @@ public:
   }
 
   /// \}
-  /// \name Required by DiscreteOperatorInterface
+  /// \name Required by OperatorInterface
   /// \{
 
   const AssemblyGridViewType& assembly_grid_view() const override
@@ -164,23 +167,6 @@ protected:
   }
 
 public:
-  void jacobian(SourceFunctionType source_function,
-                MatrixOperatorType& jacobian_op,
-                const XT::Common::Configuration& opts,
-                const XT::Common::Parameter& param = {}) const override
-  {
-    LOG_(debug) << "jacobian(source_function=" << &source_function
-                << ", jacobian_op.sup_norm()=" << jacobian_op.matrix().sup_norm() << print(opts, {{"oneline", "true"}})
-                << ", param=" << param << ")" << std::endl;
-    this->assert_jacobian_opts(opts);
-    LOG_(info) << "interpolating source_function ..." << std::endl;
-    tmp_source_vectors_for_jacobian_with_function_only_.emplace_back(source_space_.mapper().size());
-    auto& source_vector = tmp_source_vectors_for_jacobian_with_function_only_.back();
-    auto tmp_discrete_source_function = make_discrete_function(source_space_, source_vector);
-    interpolate(source_function, tmp_discrete_source_function, param);
-    this->jacobian(source_vector, jacobian_op, opts, param);
-  } // ... jacobian(...)
-
   void jacobian(const VectorType& source_vector,
                 MatrixOperatorType& jacobian_op,
                 const XT::Common::Configuration& opts,
@@ -279,8 +265,7 @@ protected:
   std::list<std::pair<std::unique_ptr<LocalElementOperatorType>, std::unique_ptr<ElementFilterType>>> element_data_;
   std::list<std::pair<std::unique_ptr<LocalIntersectionOperatorType>, std::unique_ptr<IntersectionFilterType>>>
       intersection_data_;
-  mutable std::list<VectorType> tmp_source_vectors_for_jacobian_with_function_only_;
-}; // class DiscreteOperator
+}; // class Operator
 
 
 template <class MatrixType, // <- needs to be manually specified
@@ -292,23 +277,28 @@ template <class MatrixType, // <- needs to be manually specified
           class RGV,
           size_t r_r,
           size_t r_rC>
-auto make_discrete_operator(const AssemblyGridViewType& assembly_grid_view,
-                            const SpaceInterface<SGV, s_r, s_rC, F>& source_space,
-                            const SpaceInterface<RGV, r_r, r_rC, F>& range_space)
+auto make_operator(const AssemblyGridViewType& assembly_grid_view,
+                   const SpaceInterface<SGV, s_r, s_rC, F>& source_space,
+                   const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
+                   const std::string& logging_prefix = "",
+                   const std::array<bool, 3>& logging_state = {false, false, true})
 {
   static_assert(XT::LA::is_matrix<MatrixType>::value, "");
   static_assert(XT::Grid::is_view<AssemblyGridViewType>::value, "");
-  return DiscreteOperator<AssemblyGridViewType, s_r, s_rC, r_r, r_rC, F, MatrixType, SGV, RGV>(
-      assembly_grid_view, source_space, range_space);
+  return Operator<AssemblyGridViewType, s_r, s_rC, r_r, r_rC, F, MatrixType, SGV, RGV>(
+      assembly_grid_view, source_space, range_space, logging_prefix, logging_state);
 }
 
 
 template <class AssemblyGridViewType, class SGV, size_t s_r, size_t s_rC, class F, class RGV, size_t r_r, size_t r_rC>
-auto make_discrete_operator(const AssemblyGridViewType& assembly_grid_view,
-                            const SpaceInterface<SGV, s_r, s_rC, F>& source_space,
-                            const SpaceInterface<RGV, r_r, r_rC, F>& range_space)
+auto make_operator(const AssemblyGridViewType& assembly_grid_view,
+                   const SpaceInterface<SGV, s_r, s_rC, F>& source_space,
+                   const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
+                   const std::string& logging_prefix = "",
+                   const std::array<bool, 3>& logging_state = {false, false, true})
 {
-  return make_discrete_operator<XT::LA::IstlRowMajorSparseMatrix<F>>(assembly_grid_view, source_space, range_space);
+  return make_operator<XT::LA::IstlRowMajorSparseMatrix<F>>(
+      assembly_grid_view, source_space, range_space, logging_prefix, logging_state);
 }
 
 
@@ -317,17 +307,22 @@ template <class MatrixType, // <- needs to be manually specified
           size_t r,
           size_t rC,
           class F>
-auto make_discrete_operator(const SpaceInterface<GV, r, rC, F>& space)
+auto make_operator(const SpaceInterface<GV, r, rC, F>& space,
+                   const std::string& logging_prefix = "",
+                   const std::array<bool, 3>& logging_state = {false, false, true})
 {
   static_assert(XT::LA::is_matrix<MatrixType>::value, "");
-  return DiscreteOperator<GV, r, rC, r, rC, F, MatrixType, GV, GV>(space.grid_view(), space, space);
+  return Operator<GV, r, rC, r, rC, F, MatrixType, GV, GV>(
+      space.grid_view(), space, space, logging_prefix, logging_state);
 }
 
 
 template <class GV, size_t r, size_t rC, class F>
-auto make_discrete_operator(const SpaceInterface<GV, r, rC, F>& space)
+auto make_operator(const SpaceInterface<GV, r, rC, F>& space,
+                   const std::string& logging_prefix = "",
+                   const std::array<bool, 3>& logging_state = {false, false, true})
 {
-  return make_discrete_operator<XT::LA::IstlRowMajorSparseMatrix<F>>(space);
+  return make_operator<XT::LA::IstlRowMajorSparseMatrix<F>>(space, logging_prefix, logging_state);
 }
 
 
