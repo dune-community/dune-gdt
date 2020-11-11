@@ -16,25 +16,13 @@ namespace Dune {
 namespace GDT {
 
 
-// forwards
-template <class AssemblyGridView,
-          size_t s_r,
-          size_t s_rC,
-          size_t r_r,
-          size_t r_rC,
-          class F,
-          class V,
-          class SGV,
-          class RGV>
-class Operator;
-
-
-template <class OperatorType>
-class OperatorAssembler;
+// forward, required in ForwardOperator
+template <class ForwardOperatorType>
+class ForwardOperatorAssembler;
 
 
 template <class AGV, size_t s_r, size_t s_rC, size_t r_r, size_t r_rC, class F, class M, class SGV, class RGV>
-class DiscreteOperator; // include is below
+class Operator; // include is below
 
 
 template <class AssemblyGridView,
@@ -46,10 +34,10 @@ template <class AssemblyGridView,
           class V = XT::LA::IstlDenseVector<F>,
           class SGV = AssemblyGridView,
           class RGV = AssemblyGridView>
-class Operator : public OperatorInterface<SGV, s_r, s_rC, r_r, r_rC, F, V, RGV>
+class ForwardOperator : public ForwardOperatorInterface<SGV, s_r, s_rC, r_r, r_rC, F, V, RGV>
 {
-  using ThisType = Operator;
-  using BaseType = OperatorInterface<SGV, s_r, s_rC, r_r, r_rC, F, V, RGV>;
+  using ThisType = ForwardOperator;
+  using BaseType = ForwardOperatorInterface<SGV, s_r, s_rC, r_r, r_rC, F, V, RGV>;
 
 public:
   using typename BaseType::RangeSpaceType;
@@ -69,14 +57,19 @@ public:
   using LocalIntersectionOperatorType =
       LocalIntersectionOperatorInterface<I, V, SGV, s_r, s_rC, F, r_r, r_rC, F, RGV, V>;
 
-  Operator(const AssemblyGridViewType& assembly_grid_vw, const RangeSpaceType& range_spc)
-    : assembly_grid_view_(assembly_grid_vw)
+  ForwardOperator(const AssemblyGridViewType& assembly_grid_vw,
+                  const RangeSpaceType& range_spc,
+                  const std::string& logging_prefix = "",
+                  const std::array<bool, 3>& logging_state = {false, false, true})
+    : BaseType({}, logging_prefix.empty() ? "ForwardOperator" : logging_prefix, logging_state)
+    , assembly_grid_view_(assembly_grid_vw)
     , range_space_(range_spc)
     , linear_(true)
   {}
 
-  Operator(const ThisType& other)
-    : assembly_grid_view_(other.assembly_grid_view_)
+  ForwardOperator(const ThisType& other)
+    : BaseType(other)
+    , assembly_grid_view_(other.assembly_grid_view_)
     , range_space_(other.range_space_)
     , linear_(other.linear_)
   {
@@ -89,9 +82,9 @@ public:
     };
     copy_local_data(other.element_data_, element_data_);
     copy_local_data(other.intersection_data_, intersection_data_);
-  } // Operator(...)
+  } // ForwardOperator(...)
 
-  Operator(ThisType&& source) = default;
+  ForwardOperator(ThisType&& source) = default;
 
   // pull in methods from various base classes
   using BaseType::apply;
@@ -105,18 +98,16 @@ public:
   auto with(SourceFunctionType source_function, VectorType& range_vector, const XT::Common::Parameter& param = {}) const
   {
     this->assert_matching_range(range_vector);
-    OperatorAssembler<ThisType> assembler(*this, source_function, range_vector, param);
-    assembler.logger.prefix = this->logger.prefix + "_assembler";
-    assembler.logger.enable_like(this->logger);
-    return assembler;
+    return ForwardOperatorAssembler<ThisType>(
+        *this, source_function, range_vector, param, this->logger.prefix + "_assembler", this->logger.state);
   }
 
-  /// \brief allows to obtain the corresponding DiscreteOperator
+  /// \brief allows to obtain the corresponding Operator
   template <class MatrixType = XT::LA::matrix_t<V>>
   auto with(const SpaceInterface<SGV, s_r, s_rC, F>& source_space) const
   {
-    DiscreteOperator<AGV, s_r, s_rC, r_r, r_rC, F, MatrixType, SGV, RGV> discrete_op(
-        assembly_grid_view_, source_space, range_space_);
+    Operator<AGV, s_r, s_rC, r_r, r_rC, F, MatrixType, SGV, RGV> discrete_op(
+        assembly_grid_view_, source_space, range_space_, this->logger.prefix, this->logger.state);
     const auto append_data = [&](const auto& origin) {
       for (const auto& data : origin) {
         const auto& local_operator = *data.first;
@@ -129,7 +120,7 @@ public:
     return discrete_op;
   } // ... with(...)
 
-  /// \name Required by OperatorInterface
+  /// \name Required by ForwardOperatorInterface
   /// \{
 
   const RangeSpaceType& range_space() const override
@@ -221,38 +212,41 @@ protected:
   std::list<std::pair<std::unique_ptr<LocalElementOperatorType>, std::unique_ptr<ElementFilterType>>> element_data_;
   std::list<std::pair<std::unique_ptr<LocalIntersectionOperatorType>, std::unique_ptr<IntersectionFilterType>>>
       intersection_data_;
-}; // class Operator
+}; // class ForwardOperator
 
 
-/// \note This assembler can be used for Operator and DiscreteOperator, we thus use duck-typing
-template <class OperatorType>
-class OperatorAssembler : public XT::Grid::ElementAndIntersectionFunctor<typename OperatorType::AGV>
+/// \note This assembler can be used for ForwardOperator and Operator, we thus use duck-typing
+template <class ForwardOperatorType>
+class ForwardOperatorAssembler : public XT::Grid::ElementAndIntersectionFunctor<typename ForwardOperatorType::AGV>
 {
-  using ThisType = OperatorAssembler;
-  using BaseType = XT::Grid::ElementAndIntersectionFunctor<typename OperatorType::AGV>;
+  using ThisType = ForwardOperatorAssembler;
+  using BaseType = XT::Grid::ElementAndIntersectionFunctor<typename ForwardOperatorType::AGV>;
 
 public:
   using typename BaseType::E;
   using typename BaseType::I;
 
-  static constexpr size_t s_r = OperatorType::s_r;
-  static constexpr size_t s_rC = OperatorType::s_rC;
-  static constexpr size_t r_r = OperatorType::r_r;
-  static constexpr size_t r_rC = OperatorType::r_rC;
-  using F = typename OperatorType::F;
-  using DiscreteRangeFunctionType = typename OperatorType::DiscreteRangeFunctionType;
-  using SourceFunctionType = typename OperatorType::SourceFunctionType;
-  using VectorType = typename OperatorType::VectorType;
-  using LocalElementOperatorType = typename OperatorType::LocalElementOperatorType;
-  using LocalIntersectionOperatorType = typename OperatorType::LocalIntersectionOperatorType;
-  using ElementFilterType = typename OperatorType::ElementFilterType;
-  using IntersectionFilterType = typename OperatorType::IntersectionFilterType;
+  static constexpr size_t s_r = ForwardOperatorType::s_r;
+  static constexpr size_t s_rC = ForwardOperatorType::s_rC;
+  static constexpr size_t r_r = ForwardOperatorType::r_r;
+  static constexpr size_t r_rC = ForwardOperatorType::r_rC;
+  using F = typename ForwardOperatorType::F;
+  using DiscreteRangeFunctionType = typename ForwardOperatorType::DiscreteRangeFunctionType;
+  using SourceFunctionType = typename ForwardOperatorType::SourceFunctionType;
+  using VectorType = typename ForwardOperatorType::VectorType;
+  using LocalElementOperatorType = typename ForwardOperatorType::LocalElementOperatorType;
+  using LocalIntersectionOperatorType = typename ForwardOperatorType::LocalIntersectionOperatorType;
+  using ElementFilterType = typename ForwardOperatorType::ElementFilterType;
+  using IntersectionFilterType = typename ForwardOperatorType::IntersectionFilterType;
 
-  OperatorAssembler(OperatorType oprtr,
-                    SourceFunctionType src,
-                    VectorType& range_vector,
-                    const XT::Common::Parameter& param = {})
-    : operator_(oprtr)
+  ForwardOperatorAssembler(ForwardOperatorType oprtr,
+                           SourceFunctionType src,
+                           VectorType& range_vector,
+                           const XT::Common::Parameter& param = {},
+                           const std::string& logging_prefix = "",
+                           const std::array<bool, 3>& logging_state = {false, false, true})
+    : BaseType(logging_prefix.empty() ? "ForwardOperatorAssembler" : logging_prefix, logging_state)
+    , operator_(oprtr)
     , source_(src.copy_as_grid_function())
     , range_vector_(range_vector)
     , param_(param)
@@ -261,7 +255,7 @@ public:
     , local_range_outside_(range_function_.local_discrete_function())
   {}
 
-  OperatorAssembler(const ThisType& other)
+  ForwardOperatorAssembler(const ThisType& other)
     : operator_(other.operator_)
     , source_(other.source_->copy_as_grid_function())
     , range_vector_(other.range_vector_)
@@ -271,7 +265,7 @@ public:
     , local_range_outside_(range_function_.local_discrete_function())
   {}
 
-  OperatorAssembler(ThisType&& source) = default;
+  ForwardOperatorAssembler(ThisType&& source) = default;
 
   /// \name Required by ElementAndIntersectionFunctor.
   /// \{
@@ -336,7 +330,7 @@ public:
   /// \}
 
 protected:
-  const OperatorType operator_;
+  const ForwardOperatorType operator_;
   const std::unique_ptr<XT::Functions::GridFunctionInterface<E, s_r, s_rC, F>> source_;
   VectorType& range_vector_;
   const XT::Common::Parameter param_;
@@ -346,7 +340,7 @@ protected:
   std::list<std::pair<std::unique_ptr<LocalElementOperatorType>, std::unique_ptr<ElementFilterType>>> element_data_;
   std::list<std::pair<std::unique_ptr<LocalIntersectionOperatorType>, std::unique_ptr<IntersectionFilterType>>>
       intersection_data_;
-}; // class OperatorAssembler
+}; // class ForwardOperatorAssembler
 
 
 template <class AssemblyGridViewType,
@@ -358,10 +352,14 @@ template <class AssemblyGridViewType,
           size_t s_rC = r_rC,
           class V = XT::LA::IstlDenseVector<F>,
           class SGV = RGV>
-auto make_operator(const AssemblyGridViewType& assembly_grid_view, const SpaceInterface<RGV, r_r, r_rC, F>& range_space)
+auto make_forward_operator(const AssemblyGridViewType& assembly_grid_view,
+                           const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
+                           const std::string& logging_prefix = "",
+                           const std::array<bool, 3>& logging_state = {false, false, true})
 {
   static_assert(XT::Grid::is_view<AssemblyGridViewType>::value, "");
-  return Operator<AssemblyGridViewType, s_r, s_rC, r_r, r_rC, F, V, SGV, RGV>(assembly_grid_view, range_space);
+  return ForwardOperator<AssemblyGridViewType, s_r, s_rC, r_r, r_rC, F, V, SGV, RGV>(
+      assembly_grid_view, range_space, logging_prefix, logging_state);
 }
 
 
@@ -373,9 +371,12 @@ template <class GV,
           size_t s_rC = r_rC,
           class V = XT::LA::IstlDenseVector<F>,
           class SGV = GV>
-auto make_operator(const SpaceInterface<GV, r_r, r_rC, F>& space)
+auto make_forward_operator(const SpaceInterface<GV, r_r, r_rC, F>& space,
+                           const std::string& logging_prefix = "",
+                           const std::array<bool, 3>& logging_state = {false, false, true})
 {
-  return Operator<GV, s_r, s_rC, r_r, r_rC, F, V, SGV, GV>(space.grid_view(), space);
+  return ForwardOperator<GV, s_r, s_rC, r_r, r_rC, F, V, SGV, GV>(
+      space.grid_view(), space, logging_prefix, logging_state);
 }
 
 
