@@ -38,9 +38,9 @@ namespace Dune {
 namespace GDT {
 
 
-//// forwards, required for operator +-*/
-// template <class M, class SGV, size_t s_r, size_t s_rC, size_t r_r, size_t r_rC, class RGV>
-// class ConstantOperator;
+//// forwards (required for numeric operators, includes are below)
+template <class AGV, size_t s_r, size_t s_rC, size_t r_r, size_t r_rC, class F, class M, class SGV, class RGV>
+class ConstantOperator;
 
 // template <class M, class SGV, size_t s_r, size_t s_rC, size_t r_r, size_t r_rC, class RGV>
 // class ConstLincombOperator;
@@ -166,14 +166,14 @@ template <class SGV,
           class F = double,
           class Vector = XT::LA::IstlDenseVector<F>,
           class RGV = SGV>
-class OperatorInterface : public BilinearFormInterface<SGV, s_r, s_rC, r_r, r_rC, F, RGV>
+class ForwardOperatorInterface : public BilinearFormInterface<SGV, s_r, s_rC, r_r, r_rC, F, RGV>
 {
   static_assert(XT::LA::is_vector<Vector>::value, "");
 
-  using ThisType = OperatorInterface;
+public:
+  using ThisType = ForwardOperatorInterface;
   using BaseType = BilinearFormInterface<SGV, s_r, s_rC, r_r, r_rC, F, RGV>;
 
-public:
   using typename BaseType::FieldType;
   using typename BaseType::RangeFunctionType;
   using typename BaseType::SourceFunctionType;
@@ -184,19 +184,19 @@ public:
   using RangeSpaceType = SpaceInterface<RGV, r_r, r_rC, F>;
   using DiscreteRangeFunctionType = DiscreteFunction<V, RGV, r_r, r_rC, F>;
 
-  explicit OperatorInterface(const XT::Common::ParameterType& param_type = {},
-                             const std::string& logging_prefix = "",
-                             const bool logging_disabled = true)
-    : BaseType(param_type, logging_prefix.empty() ? "Operator" : logging_prefix, logging_disabled)
+  explicit ForwardOperatorInterface(const XT::Common::ParameterType& param_type = {},
+                                    const std::string& logging_prefix = "",
+                                    const std::array<bool, 3>& logging_state = {false, false, true})
+    : BaseType(param_type, logging_prefix.empty() ? "ForwardOperatorInterface" : logging_prefix, logging_state)
   {
-    LOG_(info) << "Operator(param_type=" << param_type << ")" << std::endl;
+    LOG_(info) << "ForwardOperatorInterface(param_type=" << param_type << ")" << std::endl;
   }
 
-  OperatorInterface(const ThisType& other) = default;
+  ForwardOperatorInterface(const ThisType& other) = default;
 
-  OperatorInterface(ThisType&& source) = default;
+  ForwardOperatorInterface(ThisType&& source) = default;
 
-  virtual ~OperatorInterface() = default;
+  virtual ~ForwardOperatorInterface() = default;
 
   // pull in methods from BilinearFormInterface
   using BaseType::apply2;
@@ -296,7 +296,7 @@ protected:
                                                      << "   discrete_range_function.space().type() = "
                                                      << discrete_range_function.space().type());
   } // ... assert_matching_range(...)
-}; // class OperatorInterface
+}; // class ForwardOperatorInterface
 
 
 /**
@@ -341,15 +341,15 @@ template <class AssemblyGridView,
           class Matrix = XT::LA::IstlRowMajorSparseMatrix<F>,
           class SGV = AssemblyGridView,
           class RGV = AssemblyGridView>
-class DiscreteOperatorInterface : public OperatorInterface<SGV, s_r, s_rC, r_r, r_rC, F, XT::LA::vector_t<Matrix>, RGV>
+class OperatorInterface : public ForwardOperatorInterface<SGV, s_r, s_rC, r_r, r_rC, F, XT::LA::vector_t<Matrix>, RGV>
 {
   static_assert(XT::Grid::is_view<AssemblyGridView>::value, "");
   static_assert(XT::LA::is_matrix<Matrix>::value, "");
 
-  using ThisType = DiscreteOperatorInterface;
-  using BaseType = OperatorInterface<SGV, s_r, s_rC, r_r, r_rC, F, XT::LA::vector_t<Matrix>, RGV>;
-
 public:
+  using ThisType = OperatorInterface;
+  using BaseType = ForwardOperatorInterface<SGV, s_r, s_rC, r_r, r_rC, F, XT::LA::vector_t<Matrix>, RGV>;
+
   using typename BaseType::FieldType;
   using typename BaseType::V;
   using typename BaseType::VectorType;
@@ -368,19 +368,22 @@ public:
   using M = Matrix;
   using MatrixOperatorType = MatrixOperator<AGV, s_r, s_rC, r_r, r_rC, F, M, SGV, RGV>;
 
-  explicit DiscreteOperatorInterface(const XT::Common::ParameterType& param_type = {},
-                                     const std::string& logging_prefix = "",
-                                     const bool logging_disabled = true)
-    : BaseType(param_type, logging_prefix.empty() ? "DiscreteOperator" : logging_prefix, logging_disabled)
+  using ConstLincombOperatorType = ConstLincombOperator<AGV, s_r, s_rC, r_r, r_rC, F, M, SGV, RGV>;
+  using LincombOperatorType = LincombOperator<AGV, s_r, s_rC, r_r, r_rC, F, M, SGV, RGV>;
+
+  explicit OperatorInterface(const XT::Common::ParameterType& param_type = {},
+                             const std::string& logging_prefix = "",
+                             const std::array<bool, 3>& logging_enabled = {false, false, true})
+    : BaseType(param_type, logging_prefix.empty() ? "OperatorInterface" : logging_prefix, logging_enabled)
   {
-    LOG_(info) << "DiscreteOperator(param_type=" << param_type << ")" << std::endl;
+    LOG_(info) << "OperatorInterface(param_type=" << param_type << ")" << std::endl;
   }
 
-  DiscreteOperatorInterface(const ThisType& other) = default;
+  OperatorInterface(const ThisType& other) = default;
 
-  DiscreteOperatorInterface(ThisType&& source) = default;
+  OperatorInterface(ThisType&& source) = default;
 
-  virtual ~DiscreteOperatorInterface() = default;
+  virtual ~OperatorInterface() = default;
 
   // pull in methods from BilinearFormInterface and OperatorInterface
   using BaseType::apply;
@@ -1058,7 +1061,7 @@ protected:
                   "requested inversion type is not one of the available ones!"
                       << "\n\n   type = " << type << "\n   invert_options() = " << print(available_types));
   } // ... assert_jacobian_opts(...)
-}; // class DiscreteOperatorInterface
+}; // class OperatorInterface
 
 
 //  virtual ConstLincombOperatorType operator*(const FieldType& alpha) const
