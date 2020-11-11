@@ -58,10 +58,10 @@ template <class AGV,
           class M = XT::LA::IstlRowMajorSparseMatrix<F>,
           class SGV = AGV,
           class RGV = AGV>
-class ConstMatrixOperator : public DiscreteOperatorInterface<AGV, s_r, s_rC, r_r, r_rC, F, M, SGV, RGV>
+class ConstMatrixOperator : public OperatorInterface<AGV, s_r, s_rC, r_r, r_rC, F, M, SGV, RGV>
 {
   using ThisType = ConstMatrixOperator;
-  using BaseType = DiscreteOperatorInterface<AGV, s_r, s_rC, r_r, r_rC, F, M, SGV, RGV>;
+  using BaseType = OperatorInterface<AGV, s_r, s_rC, r_r, r_rC, F, M, SGV, RGV>;
 
 public:
   using typename BaseType::AssemblyGridViewType;
@@ -114,7 +114,7 @@ public:
     , linear_solver_(matrix_, source_space_.dof_communicator())
   {}
 
-  // pull in methods from BilinearFormInterface, OperatorInterface, DiscreteOperatorInterface
+  // pull in methods from BilinearFormInterface, OperatorInterface, OperatorInterface
   using BaseType::apply;
   using BaseType::apply_inverse;
   using BaseType::jacobian;
@@ -133,7 +133,7 @@ public:
   }
 
   /// \}
-  /// \name Required by DiscreteOperatorInterface.
+  /// \name Required by OperatorInterface.
   /// \{
 
   const SourceSpaceType& source_space() const override
@@ -273,7 +273,7 @@ auto make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space,
  * assembled by walking over the given assembly_grid_view. If you want to assemble an operator only on a smaller grid
  * view, consider to append this operator to another walker or provide appropriate filters.
  *
- * \note See ConstMatrixOperator and DiscreteOperatorInterface for a description of the template arguments.
+ * \note See ConstMatrixOperator and OperatorInterface for a description of the template arguments.
  *
  * \todo Add logging to intersection and coupling intersection assemblers
  *
@@ -344,7 +344,7 @@ public:
 
   /// \brief Defines the scaling of the to-be-appended jacobian contributions
   /// \sa    ConstantMatrixOperator::jacobian
-  /// \sa    DiscreteOperatorInterface::apply_inverse
+  /// \sa    OperatorInterface::apply_inverse
   FieldType scaling;
 
   MatrixOperator(const AssemblyGridViewType& assembly_grid_vw,
