@@ -51,10 +51,11 @@ public:
 
   LocalElementIntegralBilinearForm(const IntegrandType& integrand,
                                    const int over_integrate = 0,
-                                   const std::string& logging_prefix = "")
+                                   const std::string& logging_prefix = "",
+                                   const std::array<bool, 3>& logging_state = {false, false, true})
     : BaseType(integrand.parameter_type(),
                logging_prefix.empty() ? "LocalElementIntegralBilinearForm" : logging_prefix,
-               /*logging_disabled=*/logging_prefix.empty())
+               logging_state)
     , integrand_(integrand.copy_as_binary_element_integrand())
     , over_integrate_(over_integrate)
   {
@@ -66,10 +67,9 @@ public:
                                    typename GenericIntegrand::GenericEvaluateFunctionType evaluate_function,
                                    const XT::Common::ParameterType& param_type = {},
                                    const int over_integrate = 0,
-                                   const std::string& logging_prefix = "")
-    : BaseType(param_type,
-               logging_prefix.empty() ? "LocalElementIntegralBilinearForm" : logging_prefix,
-               /*logging_disabled=*/logging_prefix.empty())
+                                   const std::string& logging_prefix = "",
+                                   const std::array<bool, 3>& logging_state = {false, false, true})
+    : BaseType(param_type, logging_prefix.empty() ? "LocalElementIntegralBilinearForm" : logging_prefix, logging_state)
     , integrand_(GenericIntegrand(order_function, evaluate_function).copy_as_binary_element_integrand())
     , over_integrate_(over_integrate)
   {

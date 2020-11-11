@@ -53,9 +53,9 @@ public:
                                     const LocalBilinearFormType& local_two_form,
                                     MatrixType& global_matrix,
                                     const XT::Common::Parameter& param = {},
-                                    const std::string& logging_prefix = "")
-    : BaseType(logging_prefix.empty() ? "ElementBilinearFormAssembler" : logging_prefix,
-               /*logging_disabled=*/logging_prefix.empty())
+                                    const std::string& logging_prefix = "",
+                                    const std::array<bool, 3>& logging_state = {false, false, true})
+    : BaseType(logging_prefix.empty() ? "ElementBilinearFormAssembler" : logging_prefix, logging_state)
     , test_space_(test_space.copy())
     , ansatz_space_(ansatz_space.copy())
     , local_bilinear_form_(local_two_form.copy())

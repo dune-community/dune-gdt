@@ -54,10 +54,9 @@ public:
   using typename BaseType::LocalTestBasisType;
 
   LocalElementProductIntegrand(XT::Functions::GridFunction<E, r, r, F> weight = {1.},
-                               const std::string& logging_prefix = "")
-    : BaseType({},
-               logging_prefix.empty() ? "ElementProductIntegrand" : logging_prefix,
-               /*logging_disabled=*/logging_prefix.empty())
+                               const std::string& logging_prefix = "",
+                               const std::array<bool, 3>& logging_state = {false, false, true})
+    : BaseType({}, logging_prefix.empty() ? "ElementProductIntegrand" : logging_prefix, logging_state)
     , weight_(weight.copy_as_grid_function())
     , local_weight_(weight_->local_function())
   {

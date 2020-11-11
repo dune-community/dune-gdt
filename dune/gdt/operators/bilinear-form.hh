@@ -82,10 +82,10 @@ public:
       LocalCouplingIntersectionBilinearFormInterface<I, r_r, r_rC, F, F, s_r, s_rC, F>;
   using LocalIntersectionBilinearFormType = LocalIntersectionBilinearFormInterface<I, r_r, r_rC, F, F, s_r, s_rC, F>;
 
-  BilinearForm(const AssemblyGridViewType& assembly_grid_view, const std::string& logging_prefix = "")
-    : BaseType({},
-               logging_prefix.empty() ? "BilinearForm" : logging_prefix,
-               /*logging_disabled=*/logging_prefix.empty())
+  BilinearForm(const AssemblyGridViewType& assembly_grid_view,
+               const std::string& logging_prefix = "",
+               const std::array<bool, 3>& logging_state = {false, false, true})
+    : BaseType({}, logging_prefix.empty() ? "BilinearForm" : logging_prefix, logging_state)
     , assembly_grid_view_(assembly_grid_view)
   {
     LOG_(info) << "BilinearForm(assembly_grid_view=" << &assembly_grid_view << ")" << std::endl;
@@ -114,11 +114,8 @@ public:
             SourceFunctionType source_function,
             const XT::Common::Parameter& param = {}) const
   {
-    BilinearFormAssembler<AGV, s_r, s_rC, r_r, r_rC, F, SGV, RGV> assembler(
-        *this, range_function, source_function, param);
-    assembler.logger.prefix = this->logger.prefix + "_assembler";
-    assembler.logger.enable_like(this->logger);
-    return assembler;
+    return BilinearFormAssembler<AGV, s_r, s_rC, r_r, r_rC, F, SGV, RGV>(
+        *this, range_function, source_function, param, this->logger.prefix + "_assembler", this->logger.state);
   }
 
   /// \brief creates the associated MatrixOperator (which still has to be assembled)
@@ -130,9 +127,7 @@ public:
   {
     static_assert(XT::LA::is_matrix<MatrixType>::value, "");
     MatrixOperator<AGV, s_r, s_rC, r_r, r_rC, F, MatrixType, SGV, RGV> op(
-        assembly_grid_view_, source_space, range_space, matrix, this->logger.prefix + "_matrix");
-    op.logger.prefix = this->logger.prefix + "_assembler";
-    op.logger.enable_like(this->logger);
+        assembly_grid_view_, source_space, range_space, matrix, this->logger.prefix + "_mat", this->logger.state);
     op.append(*this, param);
     return op;
   } // ... with(...)
@@ -149,9 +144,9 @@ public:
         range_space,
         new MatrixType(range_space.mapper().size(),
                        source_space.mapper().size(),
-                       make_element_and_intersection_sparsity_pattern(range_space, source_space, assembly_grid_view_)));
-    op.logger.prefix = this->logger.prefix + "_assembler";
-    op.logger.enable_like(this->logger);
+                       make_element_and_intersection_sparsity_pattern(range_space, source_space, assembly_grid_view_)),
+        this->logger.prefix + "_mat",
+        this->logger.state);
     op.append(*this, param);
     return op;
   } // ... with(...)
@@ -316,9 +311,9 @@ public:
                         RangeFunctionType rng,
                         SourceFunctionType src,
                         const XT::Common::Parameter& param = {},
-                        const std::string& logging_prefix = "")
-    : BaseType(logging_prefix.empty() ? "BilinearFormAssembler" : logging_prefix,
-               /*logging_disabled=*/logging_prefix.empty())
+                        const std::string& logging_prefix = "",
+                        const std::array<bool, 3>& logging_state = {false, false, true})
+    : BaseType(logging_prefix.empty() ? "BilinearFormAssembler" : logging_prefix, logging_state)
     , Propagator(this)
     , bilinear_form_(bilinear_form)
     , range_(rng.copy_as_grid_function())
@@ -508,10 +503,12 @@ template <class GridViewType,
           class F = double,
           class SGV = GridViewType,
           class RGV = GridViewType>
-auto make_bilinear_form(GridViewType grid_view, const std::string& logging_prefix = "")
+auto make_bilinear_form(GridViewType grid_view,
+                        const std::string& logging_prefix = "",
+                        const std::array<bool, 3>& logging_state = {false, false, true})
 {
   static_assert(XT::Grid::is_view<GridViewType>::value, "");
-  return BilinearForm<GridViewType, s_r, s_rC, r_r, r_rC, F, SGV, RGV>(grid_view, logging_prefix);
+  return BilinearForm<GridViewType, s_r, s_rC, r_r, r_rC, F, SGV, RGV>(grid_view, logging_prefix, logging_state);
 }
 
 

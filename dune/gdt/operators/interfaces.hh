@@ -104,11 +104,11 @@ public:
 
   explicit BilinearFormInterface(const XT::Common::ParameterType& param_type = {},
                                  const std::string& logging_prefix = "",
-                                 const bool logging_disabled = true)
+                                 const std::array<bool, 3>& logging_enabled = {false, false, true})
     : XT::Common::ParametricInterface(param_type)
-    , Logger(logging_prefix.empty() ? "BilinearFormInterface" : logging_prefix, logging_disabled)
+    , Logger(logging_prefix.empty() ? "BilinearFormInterface" : logging_prefix, logging_enabled)
   {
-    LOG_(info) << "BilinearForm(param_type=" << param_type << ")" << std::endl;
+    LOG_(info) << "BilinearFormInterface(param_type=" << param_type << ")" << std::endl;
   }
 
   BilinearFormInterface(const ThisType& other) = default;
@@ -244,7 +244,7 @@ public:
     LOG_(debug) << "apply2(range_vector.sup_norm()=" << range_vector.sup_norm()
                 << ", source_function=" << &source_function << ", param=" << param << ")" << std::endl;
     this->assert_matching_range(range_vector);
-    LOG_(info) << "computing apply(source_function, param).dot(range_vector) with euklidean product ..." << std::endl;
+    LOG_(info) << "computing apply(source_function, param).dot(range_vector) ..." << std::endl;
     return this->apply(source_function, param).dofs().vector().dot(range_vector);
   }
 

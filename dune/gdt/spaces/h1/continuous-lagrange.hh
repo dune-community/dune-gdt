@@ -65,9 +65,11 @@ private:
   using GlobalBasisImplementation = DefaultGlobalBasis<GridViewType, r, 1, R>;
 
 public:
-  ContinuousLagrangeSpace(GridViewType grd_vw, const int order, const std::string& logging_prefix = "")
-    : BaseType(logging_prefix.empty() ? "ContinuousLagrangeSpace" : logging_prefix,
-               /*logging_disabled=*/logging_prefix.empty())
+  ContinuousLagrangeSpace(GridViewType grd_vw,
+                          const int order,
+                          const std::string& logging_prefix = "",
+                          const std::array<bool, 3>& logging_state = {false, false, true})
+    : BaseType(logging_prefix.empty() ? "ContinuousLagrangeSpace" : logging_prefix, logging_state)
     , grid_view_(grd_vw)
     , fe_order_(order)
     , local_finite_elements_(std::make_unique<LocalLagrangeFiniteElementFamily<D, d, R, r>>())
