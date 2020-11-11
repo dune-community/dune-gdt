@@ -534,37 +534,6 @@ public:
    *
    * \note You need to call jacobian_op.assemble() to be sure to have the jacobian fully assembled.
    **/
-  virtual void jacobian(SourceFunctionType source_function,
-                        MatrixOperatorType& jacobian_op,
-                        const XT::Common::Configuration& opts,
-                        const XT::Common::Parameter& param = {}) const
-  {
-    LOG_(debug) << "jacobian(source_function=" << &source_function
-                << ", jacobian_op.matrix().sup_norm()=" << jacobian_op.matrix().sup_norm()
-                << ",\n   opts=" << print(opts, {{"oneline", "true"}}) << ",\n   param=" << param << ")" << std::endl;
-    DUNE_THROW_IF(!opts.has_key("type"), Exceptions::operator_error, "opts = " << opts);
-    const auto type = opts.get<std::string>("type");
-    if (type == "zero") {
-      LOG_(info) << "not adding zero jacobian ..." << std::endl;
-      return;
-    } else {
-      DUNE_THROW(Exceptions::operator_error,
-                 "This DiscreteOperator reports to support jacobian(source_function, opts) with any of the opts below,"
-                     << "\n"
-                     << "but its implementation does not override the respective method!"
-                     << "\n\n"
-                     << print(opts));
-    }
-    DUNE_THROW(Exceptions::operator_error,
-               "This DiscreteOperator does not support jacobian(source_function), try jacobian(source_vector)!");
-  } // ... jacobian(...)
-
-  /**
-   * \brief Either appends suitable functors to the jacobian_op (such that the jacobian of this operator is assembled
-   *        additively into jacobian_op) or adds the jacobian of this operator to jacobian_op.matrix().
-   *
-   * \note You need to call jacobian_op.assemble() to be sure to have the jacobian fully assembled.
-   **/
   virtual void jacobian(const VectorType& source_vector,
                         MatrixOperatorType& jacobian_op,
                         const XT::Common::Configuration& opts,
@@ -821,31 +790,6 @@ public:
   }
 
   /// \}
-  /// \name These jacobian variants are provided for convenience (function variants, simplified type/options).
-  /// \{
-
-  virtual void jacobian(SourceFunctionType source_function,
-                        MatrixOperatorType& jacobian_op,
-                        const std::string& type,
-                        const XT::Common::Parameter& param = {}) const
-  {
-    LOG_(debug) << "jacobian(source_function=" << &source_function
-                << ", jacobian_op.matrix().sup_norm()=" << jacobian_op.matrix().sup_norm() << ",\n   type=" << type
-                << ", param=" << param << std::endl;
-    return this->jacobian(source_function, jacobian_op, this->jacobian_options(type), param);
-  }
-
-  virtual void jacobian(SourceFunctionType source_function,
-                        MatrixOperatorType& jacobian_op,
-                        const XT::Common::Parameter& param = {}) const
-  {
-    LOG_(debug) << "jacobian(source_function=" << &source_function
-                << ", jacobian_op.matrix().sup_norm()=" << jacobian_op.matrix().sup_norm() << ", param=" << param
-                << std::endl;
-    return this->jacobian(source_function, jacobian_op, this->jacobian_options().at(0), param);
-  }
-
-  /// \}
   /// \name These jacobian variants are provided for convenience (vector variants, simplified type/options).
   /// \{
 
@@ -869,51 +813,6 @@ public:
                 << std::endl;
     return this->jacobian(source_vector, jacobian_op, this->jacobian_options().at(0), param);
   }
-
-  /// \}
-  /// \name These jacobian variants are provided for convenience (function variants, creates matching return op).
-  /// \{
-
-  virtual MatrixOperatorType jacobian(SourceFunctionType source_function,
-                                      const XT::Common::Configuration& opts,
-                                      const XT::Common::Parameter& param = {}) const
-  {
-    std::string derived_logging_prefix = "";
-    if (this->logger.info_enabled) {
-      derived_logging_prefix = this->logger.prefix + "_jac";
-      this->logger.debug() << "jacobian(source_function=" << &source_function
-                           << ", opts=" << print(opts, {{"oneline", "true"}}) << ", param=" << param << std::endl;
-    }
-    auto jacobian_op = this->empty_jacobian_op(derived_logging_prefix);
-    this->jacobian(source_function, jacobian_op, opts, param);
-    return jacobian_op;
-  } // ... jacobian(...)
-
-  virtual MatrixOperatorType
-  jacobian(SourceFunctionType source_function, const std::string& type, const XT::Common::Parameter& param = {}) const
-  {
-    std::string derived_logging_prefix = "";
-    if (this->logger.info_enabled) {
-      derived_logging_prefix = this->logger.prefix + "_jac";
-      this->logger.info() << "jacobian(source_function=" << &source_function << ", type=" << type << ", param=" << param
-                          << std::endl;
-    }
-    auto jacobian_op = this->empty_jacobian_op(derived_logging_prefix);
-    this->jacobian(source_function, jacobian_op, type, param);
-    return jacobian_op;
-  } // ... jacobian(...)
-
-  virtual MatrixOperatorType jacobian(SourceFunctionType source_function, const XT::Common::Parameter& param = {}) const
-  {
-    std::string derived_logging_prefix = "";
-    if (this->logger.info_enabled) {
-      derived_logging_prefix = this->logger.prefix + "_jac";
-      this->logger.info() << "jacobian(source_function=" << &source_function << ", param=" << param << std::endl;
-    }
-    auto jacobian_op = this->empty_jacobian_op(derived_logging_prefix);
-    this->jacobian(source_function, jacobian_op, param);
-    return jacobian_op;
-  } // ... jacobian(...)
 
   /// \}
   /// \name These jacobian variants are provided for convenience (vector variants, creates matching return op).
