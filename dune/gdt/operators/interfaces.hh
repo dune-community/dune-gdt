@@ -446,7 +446,7 @@ public:
       this->assert_matching_range(range_vector);
       this->assert_matching_source(range_vector);
       LOG_(debug) << "calling norm(discrete_range_function, param)... " << std::endl;
-      // sanity checks for zero are carried out in the BilinearForm
+      // sanity checks for zero are carried out in the BilinearFormInterface
       return this->norm(DiscreteRangeFunctionType(this->range_space(), range_vector), param);
     } else {
       DUNE_THROW(Exceptions::operator_error, "DiscreteOperator does not induce a norm, source and range differ!");
@@ -822,43 +822,30 @@ public:
                                       const XT::Common::Configuration& opts,
                                       const XT::Common::Parameter& param = {}) const
   {
-    std::string derived_logging_prefix = "";
-    if (this->logger.info_enabled) {
-      derived_logging_prefix = this->logger.prefix + "_jac";
-      this->logger.debug() << "jacobian(source_vector.sup_norm()=" << source_vector.sup_norm()
-                           << ", opts=" << print(opts, {{"oneline", "true"}}) << ", param=" << param << std::endl;
-    }
-    auto jacobian_op = this->empty_jacobian_op(derived_logging_prefix);
+    LOG_(debug) << "jacobian(source_vector.sup_norm()=" << source_vector.sup_norm()
+                << ", opts=" << print(opts, {{"oneline", "true"}}) << ", param=" << param << std::endl;
+    auto jacobian_op = this->empty_jacobian_op();
     this->jacobian(source_vector, jacobian_op, opts, param);
     return jacobian_op;
-  } // ... jacobian(...)
+  }
 
   virtual MatrixOperatorType
   jacobian(const VectorType& source_vector, const std::string& type, const XT::Common::Parameter& param = {}) const
   {
-    std::string derived_logging_prefix = "";
-    if (this->logger.info_enabled) {
-      derived_logging_prefix = this->logger.prefix + "_jac";
-      this->logger.info() << "jacobian(source_vector.sup_norm()=" << source_vector.sup_norm() << ", type=" << type
-                          << ", param=" << param << std::endl;
-    }
-    auto jacobian_op = this->empty_jacobian_op(derived_logging_prefix);
+    LOG_(debug) << "jacobian(source_vector.sup_norm()=" << source_vector.sup_norm() << ", type=" << type
+                << ", param=" << param << std::endl;
+    auto jacobian_op = this->empty_jacobian_op();
     this->jacobian(source_vector, jacobian_op, type, param);
     return jacobian_op;
-  } // ... jacobian(...)
+  }
 
   virtual MatrixOperatorType jacobian(const VectorType& source_vector, const XT::Common::Parameter& param = {}) const
   {
-    std::string derived_logging_prefix = "";
-    if (this->logger.info_enabled) {
-      derived_logging_prefix = this->logger.prefix + "_jac";
-      this->logger.info() << "jacobian(source_vector.sup_norm()=" << source_vector.sup_norm() << ", param=" << param
-                          << std::endl;
-    }
-    auto jacobian_op = this->empty_jacobian_op(derived_logging_prefix);
+    LOG_(debug) << "jacobian(source_vector.sup_norm()=" << source_vector.sup_norm() << ", param=" << param << std::endl;
+    auto jacobian_op = this->empty_jacobian_op();
     this->jacobian(source_vector, jacobian_op, param);
     return jacobian_op;
-  } // ... jacobian(...)
+  }
 
   /// \}
   /// \name These jacobian variants are provided for convenience (discrete function variants).
@@ -1010,7 +997,7 @@ public:
   /// \}
 
 protected:
-  MatrixOperatorType empty_jacobian_op(const std::string& logging_prefix = "") const
+  MatrixOperatorType empty_jacobian_op() const
   {
     return MatrixOperatorType(
         this->assembly_grid_view(),
@@ -1020,7 +1007,8 @@ protected:
                        this->source_space().mapper().size(),
                        make_element_and_intersection_sparsity_pattern(
                            this->range_space(), this->source_space(), this->assembly_grid_view())),
-        logging_prefix);
+        this->logger.prefix + "_jac",
+        this->logger.state);
   } // ... empty_jacobian_op(...)
 
   void assert_matching_source(const VectorType& source_vector) const
