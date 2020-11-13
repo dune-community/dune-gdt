@@ -334,8 +334,8 @@ public:
     : BaseType(other)
     , Propagator(this)
     , bilinear_form_(other.bilinear_form_)
-    , source_(other.source_->copy_as_grid_function())
     , range_(other.range_->copy_as_grid_function())
+    , source_(other.source_->copy_as_grid_function())
     , param_(other.param_)
     , local_range_in_(range_->local_function())
     , local_range_out_(range_->local_function())
@@ -503,7 +503,7 @@ template <class GridViewType,
           class F = double,
           class SGV = GridViewType,
           class RGV = GridViewType>
-auto make_bilinear_form(GridViewType grid_view,
+auto make_bilinear_form(const GridViewType& grid_view,
                         const std::string& logging_prefix = "",
                         const std::array<bool, 3>& logging_state = {false, false, true})
 {
