@@ -384,6 +384,6 @@ auto make_forward_operator(const SpaceInterface<GV, r_r, r_rC, F>& space,
 } // namespace GDT
 } // namespace Dune
 
-#include "discrete-operator.hh"
+#include "operator.hh"
 
 #endif // DUNE_GDT_OPERATORS_FORWARD_OPERATOR_HH

@@ -7,8 +7,8 @@
 // Authors:
 //   Felix Schindler (2020)
 
-#ifndef DUNE_GDT_OPERATORS_DISCRETE_OPERATOR_HH
-#define DUNE_GDT_OPERATORS_DISCRETE_OPERATOR_HH
+#ifndef DUNE_GDT_OPERATORS_OPERATOR_HH
+#define DUNE_GDT_OPERATORS_OPERATOR_HH
 
 #include <dune/gdt/local/assembler/operator-fd-jacobian-assemblers.hh>
 
@@ -327,4 +327,4 @@ auto make_operator(const SpaceInterface<GV, r, rC, F>& space,
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_OPERATORS_DISCRETE_OPERATOR_HH
+#endif // DUNE_GDT_OPERATORS_OPERATOR_HH
