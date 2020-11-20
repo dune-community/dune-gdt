@@ -41,7 +41,7 @@
 #include <dune/gdt/local/integrands/laplace-ipdg.hh>
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/operators/laplace-ipdg-flux-reconstruction.hh>
-#include <dune/gdt/operators/matrix-based.hh>
+#include <dune/gdt/operators/matrix.hh>
 #include <dune/gdt/operators/oswald-interpolation.hh>
 #include <dune/gdt/spaces/hdiv/raviart-thomas.hh>
 #include <dune/gdt/spaces/l2/discontinuous-lagrange.hh>

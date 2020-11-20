@@ -515,6 +515,6 @@ auto make_bilinear_form(const GridViewType& grid_view,
 } // namespace GDT
 } // namespace Dune
 
-#include "matrix-based.hh"
+#include "matrix.hh"
 
 #endif // DUNE_GDT_OPERATORS_BILINEAR_FORM_HH

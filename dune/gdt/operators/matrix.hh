@@ -10,8 +10,8 @@
 //   René Milk       (2017)
 //   Tobias Leibner  (2016 - 2018)
 
-#ifndef DUNE_GDT_OPERATORS_MATRIX_BASED_HH
-#define DUNE_GDT_OPERATORS_MATRIX_BASED_HH
+#ifndef DUNE_GDT_OPERATORS_MATRIX_HH
+#define DUNE_GDT_OPERATORS_MATRIX_HH
 
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/common/type_traits.hh>
@@ -807,4 +807,4 @@ auto make_matrix_operator(const SpaceInterface<GV, r_r, r_rC, F>& space,
 
 #include "bilinear-form.hh"
 
-#endif // DUNE_GDT_OPERATORS_MATRIX_BASED_HH
+#endif // DUNE_GDT_OPERATORS_MATRIX_HH

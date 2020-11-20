@@ -33,7 +33,7 @@
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/interpolations.hh>
 #include <dune/gdt/operators/advection-fv.hh>
-#include <dune/gdt/operators/matrix-based.hh>
+#include <dune/gdt/operators/matrix.hh>
 #include <dune/gdt/operators/identity.hh>
 #include <dune/gdt/operators/advection-dg.hh>
 #include <dune/gdt/spaces/bochner.hh>

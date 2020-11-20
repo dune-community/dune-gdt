@@ -17,7 +17,7 @@
 #include <dune/xt/grid/gridprovider/provider.hh>
 #include <dune/xt/la/type_traits.hh>
 
-#include <dune/gdt/operators/matrix-based.hh>
+#include <dune/gdt/operators/matrix.hh>
 #include <dune/gdt/tools/sparsity-pattern.hh>
 
 #include <python/dune/xt/common/configuration.hh>

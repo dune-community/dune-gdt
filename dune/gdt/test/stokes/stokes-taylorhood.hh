@@ -35,7 +35,7 @@
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/local/functionals/integrals.hh>
 #include <dune/gdt/norms.hh>
-#include <dune/gdt/operators/matrix-based.hh>
+#include <dune/gdt/operators/matrix.hh>
 #include <dune/gdt/spaces/h1/continuous-lagrange.hh>
 #include <dune/gdt/tools/dirichlet-constraints.hh>
 #include <dune/gdt/tools/sparsity-pattern.hh>

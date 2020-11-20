@@ -1231,6 +1231,6 @@ protected:
 
 #include "constant.hh"
 #include "lincomb.hh"
-#include "matrix-based.hh"
+#include "matrix.hh"
 
 #endif // DUNE_GDT_OPERATORS_INTERFACES_HH

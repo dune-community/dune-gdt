@@ -44,7 +44,7 @@
 #include <dune/gdt/operators/constant.hh>
 #include <dune/gdt/operators/identity.hh>
 #include <dune/gdt/operators/interfaces.hh>
-#include <dune/gdt/operators/matrix-based.hh>
+#include <dune/gdt/operators/matrix.hh>
 #include <dune/gdt/prolongations.hh>
 #include <dune/gdt/spaces/bochner.hh>
 #include <dune/gdt/spaces/interface.hh>

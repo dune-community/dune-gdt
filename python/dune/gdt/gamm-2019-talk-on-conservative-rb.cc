@@ -38,7 +38,7 @@
 #include <dune/gdt/local/integrands/elliptic.hh>
 #include <dune/gdt/local/integrands/elliptic-ipdg.hh>
 #include <dune/gdt/local/integrands/product.hh>
-#include <dune/gdt/operators/matrix-based.hh>
+#include <dune/gdt/operators/matrix.hh>
 #include <dune/gdt/operators/ipdg-flux-reconstruction.hh>
 #include <dune/gdt/operators/oswald-interpolation.hh>
 #include <dune/gdt/prolongations.hh>
