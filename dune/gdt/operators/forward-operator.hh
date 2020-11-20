@@ -7,8 +7,8 @@
 // Authors:
 //   Felix Schindler (2020)
 
-#ifndef DUNE_GDT_OPERATORS_OPERATOR_HH
-#define DUNE_GDT_OPERATORS_OPERATOR_HH
+#ifndef DUNE_GDT_OPERATORS_FORWARD_OPERATOR_HH
+#define DUNE_GDT_OPERATORS_FORWARD_OPERATOR_HH
 
 #include "interfaces.hh"
 
@@ -386,4 +386,4 @@ auto make_forward_operator(const SpaceInterface<GV, r_r, r_rC, F>& space,
 
 #include "discrete-operator.hh"
 
-#endif // DUNE_GDT_OPERATORS_OPERATOR_HH
+#endif // DUNE_GDT_OPERATORS_FORWARD_OPERATOR_HH
