@@ -10,14 +10,13 @@
 #ifndef DUNE_GDT_OPERATORS_BILINEAR_FORM_HH
 #define DUNE_GDT_OPERATORS_BILINEAR_FORM_HH
 
-//#include <dune/xt/common/parallel/threadstorage.hh>
+#include <dune/xt/common/parallel/threadstorage.hh>
 #include <dune/xt/common/timedlogging.hh>
 #include <dune/xt/la/type_traits.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/grid/walker.hh>
 #include <dune/xt/functions/grid-function.hh>
 
-//#include <dune/gdt/local/assembler/bilinear-form-accumulators.hh>
 #include <dune/gdt/local/bilinear-forms/interfaces.hh>
 #include <dune/gdt/operators/interfaces.hh>
 
@@ -42,10 +41,10 @@ class MatrixOperator; // include is below
 
 
 /**
- * \note We could also allow append() to optionally take a Parameter, to fix the parameter value for this appended
+ * \note We could also allow operator+=() to optionally take a Parameter, to fix the parameter value for this appended
  *       local bilinear form. We would need to extend the list members, not add this parameter dependency and check
- *       in the BilinearFormAssembler for each bilinear form is a parater was provided on append() or if the parameter
- *       provided in apply2() is to be used. We do not yet do so, since the current approach is simpler.
+ *       in the BilinearFormAssembler for each bilinear form is a parater was provided on operator+=() or if the
+ *       parameter provided in apply2() is to be used. We do not yet do so, since the current approach is simpler.
  * \todo Use std::pair instead of std::tuple!
  */
 template <class AssemblyGridView,
@@ -88,7 +87,7 @@ public:
     : BaseType({}, logging_prefix.empty() ? "BilinearForm" : logging_prefix, logging_state)
     , assembly_grid_view_(assembly_grid_view)
   {
-    LOG_(info) << "BilinearForm(assembly_grid_view=" << &assembly_grid_view << ")" << std::endl;
+    LOG_(debug) << "BilinearForm(assembly_grid_view=" << &assembly_grid_view << ")" << std::endl;
   }
 
   BilinearForm(const ThisType& other)
@@ -132,12 +131,13 @@ public:
     return op;
   } // ... with(...)
 
-  /// \brief creates the associated MatrixOperator (has to be assembled)
+  /// \brief creates the associated MatrixOperator (which still has to be assembled)
   template <class MatrixType = XT::LA::IstlRowMajorSparseMatrix<F>>
   auto with(const SpaceInterface<SGV, s_r, s_rC, F>& source_space,
             const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
             const XT::Common::Parameter& param = {}) const
   {
+    static_assert(XT::LA::is_matrix<MatrixType>::value, "");
     MatrixOperator<AGV, s_r, s_rC, r_r, r_rC, F, MatrixType, SGV, RGV> op(
         assembly_grid_view_,
         source_space,
