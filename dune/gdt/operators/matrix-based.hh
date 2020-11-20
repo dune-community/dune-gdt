@@ -316,7 +316,14 @@ public:
    * \brief Performs something like a shallow copy, as required by Dune::XT::Grid::ElementAndIntersectionFunctor, i.e.
    *        the copied operator shares the matrix.
    */
-  MatrixOperator(ThisType& other) = default;
+  MatrixOperator(ThisType& other)
+    : MatrixStorage(other)
+    , BaseOperatorType(other)
+    , BaseWalkerType(other)
+    , scaling(other.scaling)
+  {
+    // If this constructor is defaulted, the Intel Compiler thinks it is deleted (tested with icc 2021.1 Beta 20200827)
+  }
 
   MatrixOperator(ThisType&& source) = default;
 
