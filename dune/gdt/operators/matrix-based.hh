@@ -84,8 +84,8 @@ public:
     , matrix_(mat)
     , linear_solver_(matrix_, source_space_.dof_communicator())
   {
-    LOG_(info) << "ConstMatrixOperator(source_space=" << &source_spc << ", range_space=" << &range_spc
-               << ", matrix=" << &mat << ")" << std::endl;
+    LOG_(debug) << "ConstMatrixOperator(source_space=" << &source_spc << ", range_space=" << &range_spc
+                << ", matrix=" << &mat << ")" << std::endl;
     DUNE_THROW_IF(matrix_.rows() != range_space_.mapper().size(),
                   XT::Common::Exceptions::shapes_do_not_match,
                   "matrix_.rows() = " << matrix_.rows()
@@ -164,7 +164,7 @@ public:
 protected:
   std::vector<XT::Common::Configuration> all_jacobian_options() const override final
   {
-    return {{{"type", "self"}}};
+    return {{{"type", "matrix"}}};
   }
 
 public:
@@ -176,7 +176,7 @@ public:
     LOG_(debug) << "jacobian(source.sup_norm()=" << source.sup_norm()
                 << ", jacobian_op.matrix().sup_norm()=" << jacobian_op.matrix().sup_norm()
                 << ", opts=" << print(opts, {{"oneline", "true"}}) << ", param=" << param << ")" << std::endl;
-    this->assert_jacobian_opts(opts); // ensures that type self is requested
+    this->assert_jacobian_opts(opts); // ensures that type matrix is requested
     LOG_(debug) << "   adding matrix_ * jacobian_op.scaling (matrix_.sup_norm() = " << matrix_.sup_norm()
                 << ", jacobian_op.scaling = " << jacobian_op.scaling << ")" << std::endl;
     jacobian_op.matrix().axpy(jacobian_op.scaling, matrix_);
@@ -363,8 +363,8 @@ public:
     , BaseFunctorType(logging_prefix.empty() ? "MatrixOperator" : logging_prefix, logging_state)
     , scaling(1.)
   {
-    LOG_(info) << "MatrixOperator(assembly_grid_view=" << &assembly_grid_vw << ", source_space=" << &source_spc
-               << ", range_space=" << &range_spc << ", mat=" << &mat << ")" << std::endl;
+    LOG_(debug) << "MatrixOperator(assembly_grid_view=" << &assembly_grid_vw << ", source_space=" << &source_spc
+                << ", range_space=" << &range_spc << ", mat=" << &mat << ")" << std::endl;
   }
 
   MatrixOperator(const AssemblyGridViewType& assembly_grid_vw,
@@ -383,8 +383,8 @@ public:
     , BaseFunctorType(logging_prefix.empty() ? "MatrixOperator" : logging_prefix, logging_state)
     , scaling(1.)
   {
-    LOG_(info) << "MatrixOperator(assembly_grid_view=" << &assembly_grid_vw << ", source_space=" << &source_spc
-               << ", range_space=" << &range_spc << ", mat_ptr=" << &mat_ptr << ")" << std::endl;
+    LOG_(debug) << "MatrixOperator(assembly_grid_view=" << &assembly_grid_vw << ", source_space=" << &source_spc
+                << ", range_space=" << &range_spc << ", mat_ptr=" << &mat_ptr << ")" << std::endl;
   }
 
   MatrixOperator(const ThisType&) = delete;
@@ -530,7 +530,7 @@ public:
     return *this;
   } // ... append(...)
 
-  /// \name These methods allow to compute the jacobian of the appended local operator by finite differences.
+  /// \name These methods allow to compute the jacobian of the appended local operators by finite differences.
   /// \{
 
   ThisType& append(const LocalElementOperatorInterface<V, SGV, s_r, s_rC, F, r_r, r_rC, F, RGV>& local_operator,
@@ -805,6 +805,6 @@ auto make_matrix_operator(const SpaceInterface<GV, r_r, r_rC, F>& space,
 } // namespace GDT
 } // namespace Dune
 
-#include <dune/gdt/operators/bilinear-form.hh>
+#include "bilinear-form.hh"
 
 #endif // DUNE_GDT_OPERATORS_MATRIX_BASED_HH
