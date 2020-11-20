@@ -106,6 +106,7 @@ public:
   template <class MatrixType = XT::LA::matrix_t<V>>
   auto with(const SpaceInterface<SGV, s_r, s_rC, F>& source_space) const
   {
+    static_assert(XT::LA::is_matrix<MatrixType>::value, "");
     Operator<AGV, s_r, s_rC, r_r, r_rC, F, MatrixType, SGV, RGV> discrete_op(
         assembly_grid_view_, source_space, range_space_, this->logger.prefix, this->logger.state);
     const auto append_data = [&](const auto& origin) {
