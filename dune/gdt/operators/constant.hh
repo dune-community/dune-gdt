@@ -37,10 +37,10 @@ template <class SGV,
           class RGV = SGV>
 class ConstantForwardOperator : public ForwardOperatorInterface<SGV, s_r, s_rC, r_r, r_rC, F, V, RGV>
 {
+public:
   using ThisType = ConstantForwardOperator;
   using BaseType = ForwardOperatorInterface<SGV, s_r, s_rC, r_r, r_rC, F, V, RGV>;
 
-public:
   using typename BaseType::RangeSpaceType;
   using typename BaseType::SourceFunctionType;
   using typename BaseType::VectorType;
@@ -54,8 +54,8 @@ public:
     , value_(val)
     , is_zero_(XT::Common::is_zero(value_.access().sup_norm()))
   {
-    LOG_(info) << "ConstantForwardOperator(range_space=" << &rng_space
-               << ", value.sup_norm()=" << value_.access().sup_norm() << ")" << std::endl;
+    LOG_(debug) << "ConstantForwardOperator(range_space=" << &rng_space
+                << ", value.sup_norm()=" << value_.access().sup_norm() << ")" << std::endl;
     this->assert_matching_range(value_.access());
   }
 
@@ -68,8 +68,8 @@ public:
     , value_(std::move(val))
     , is_zero_(XT::Common::is_zero(value_.access().sup_norm()))
   {
-    LOG_(info) << "ConstantForwardOperator(range_space=" << &rng_space
-               << ", value.sup_norm()=" << value_.access().sup_norm() << ")" << std::endl;
+    LOG_(debug) << "ConstantForwardOperator(range_space=" << &rng_space
+                << ", value.sup_norm()=" << value_.access().sup_norm() << ")" << std::endl;
     this->assert_matching_range(value_.access());
   }
 
@@ -173,9 +173,9 @@ public:
     , value_(val)
     , is_zero_(XT::Common::is_zero(value_.access().sup_norm()))
   {
-    LOG_(info) << "ConstantOperator(assembly_grid_view=" << &assembly_grid_vw << ", source_space=" << &src_space
-               << ", range_space=" << &rng_space << ", value.sup_norm()=" << value_.access().sup_norm() << ")"
-               << std::endl;
+    LOG_(debug) << "ConstantOperator(assembly_grid_view=" << &assembly_grid_vw << ", source_space=" << &src_space
+                << ", range_space=" << &rng_space << ", value.sup_norm()=" << value_.access().sup_norm() << ")"
+                << std::endl;
     this->assert_matching_range(value_.access());
   }
 
@@ -192,9 +192,9 @@ public:
     , value_(std::move(val))
     , is_zero_(XT::Common::is_zero(value_.access().sup_norm()))
   {
-    LOG_(info) << "ConstantOperator(assembly_grid_view=" << &assembly_grid_vw << ", source_space=" << &src_space
-               << ", range_space=" << &rng_space << ", value.sup_norm()=" << value_.access().sup_norm() << ")"
-               << std::endl;
+    LOG_(debug) << "ConstantOperator(assembly_grid_view=" << &assembly_grid_vw << ", source_space=" << &src_space
+                << ", range_space=" << &rng_space << ", value.sup_norm()=" << value_.access().sup_norm() << ")"
+                << std::endl;
     this->assert_matching_range(value_.access());
   }
 
