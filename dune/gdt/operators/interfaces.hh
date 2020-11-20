@@ -38,18 +38,18 @@ namespace Dune {
 namespace GDT {
 
 
-//// forwards (required for numeric operators, includes are below)
+// forwards
+// - required for numeric operators, includes are below
 template <class AGV, size_t s_r, size_t s_rC, size_t r_r, size_t r_rC, class F, class M, class SGV, class RGV>
 class ConstantOperator;
 
-// template <class M, class SGV, size_t s_r, size_t s_rC, size_t r_r, size_t r_rC, class RGV>
-// class ConstLincombOperator;
+template <class AGV, size_t s_r, size_t s_rC, size_t r_r, size_t r_rC, class F, class M, class SGV, class RGV>
+class ConstLincombOperator;
 
-// template <class M, class SGV, size_t s_r, size_t s_rC, size_t r_r, size_t r_rC, class RGV>
-// class LincombOperator;
+template <class AGV, size_t s_r, size_t s_rC, size_t r_r, size_t r_rC, class F, class M, class SGV, class RGV>
+class LincombOperator;
 
-
-// forward, required for the jacobian
+// - required for the jacobian, includes are below
 template <class AGV, size_t s_r, size_t s_rC, size_t r_r, size_t r_rC, class F, class M, class SGV, class RGV>
 class MatrixOperator;
 
@@ -108,7 +108,7 @@ public:
     : XT::Common::ParametricInterface(param_type)
     , Logger(logging_prefix.empty() ? "BilinearFormInterface" : logging_prefix, logging_enabled)
   {
-    LOG_(info) << "BilinearFormInterface(param_type=" << param_type << ")" << std::endl;
+    LOG_(debug) << "BilinearFormInterface(param_type=" << param_type << ")" << std::endl;
   }
 
   BilinearFormInterface(const ThisType& other) = default;
@@ -189,7 +189,7 @@ public:
                                     const std::array<bool, 3>& logging_state = {false, false, true})
     : BaseType(param_type, logging_prefix.empty() ? "ForwardOperatorInterface" : logging_prefix, logging_state)
   {
-    LOG_(info) << "ForwardOperatorInterface(param_type=" << param_type << ")" << std::endl;
+    LOG_(debug) << "ForwardOperatorInterface(param_type=" << param_type << ")" << std::endl;
   }
 
   ForwardOperatorInterface(const ThisType& other) = default;
@@ -259,7 +259,7 @@ public:
     LOG_(debug) << "apply(source_function=" << &source_function
                 << ", discrete_range_function=" << &discrete_range_function << ", param=" << param << ")"
                 << "\n"
-                << "redicrecting to discrete apply() variant ..." << std::endl;
+                << "  redicrecting to discrete apply() variant ..." << std::endl;
     this->apply(source_function, discrete_range_function.dofs().vector(), param);
   }
 
@@ -268,7 +268,7 @@ public:
   {
     LOG_(debug) << "apply(source_function=" << &source_function << ", param=" << param << ")"
                 << "\n"
-                << "creating discrete_range_function and redicrecting to discrete apply() variant ..." << std::endl;
+                << "  creating discrete_range_function and redicrecting to discrete apply() variant ..." << std::endl;
     DiscreteRangeFunctionType discrete_range_function(this->range_space());
     this->apply(source_function, discrete_range_function.dofs().vector(), param);
     return discrete_range_function;
@@ -376,7 +376,7 @@ public:
                              const std::array<bool, 3>& logging_enabled = {false, false, true})
     : BaseType(param_type, logging_prefix.empty() ? "OperatorInterface" : logging_prefix, logging_enabled)
   {
-    LOG_(info) << "OperatorInterface(param_type=" << param_type << ")" << std::endl;
+    LOG_(debug) << "OperatorInterface(param_type=" << param_type << ")" << std::endl;
   }
 
   OperatorInterface(const ThisType& other) = default;
@@ -385,7 +385,7 @@ public:
 
   virtual ~OperatorInterface() = default;
 
-  // pull in methods from BilinearFormInterface and OperatorInterface
+  // pull in methods from various base classes
   using BaseType::apply;
   using BaseType::apply2;
   using BaseType::norm;
@@ -640,7 +640,6 @@ public:
                              const XT::Common::Configuration& opts,
                              const XT::Common::Parameter& param = {}) const
   {
-#if 0
     LOG_(debug) << "apply_inverse(range_vector.sup_norm()=" << range_vector.sup_norm()
                 << ", source_vector.sup_norm()=" << source_vector.sup_norm()
                 << ",\n   opts=" << print(opts, {{"oneline", "true"}}) << ",\n   param=" << param << ")" << std::endl;
@@ -656,14 +655,7 @@ public:
       auto update = source_vector.copy();
       auto candidate = source_vector.copy();
       // one matrix for all jacobians
-      MatrixOperatorType jacobian_op(
-            this->assembly_grid_view(),
-            this->source_space(),
-            this->range_space(),
-            new MatrixType(this->range_space().mapper().size(),
-                           this->source_space().mapper().size(),
-                           make_element_and_intersection_sparsity_pattern(
-                               this->range_space(), this->source_space(), this->source_space().grid_view())));
+      auto jacobian_op = this->empty_jacobian_op();
       XT::LA::Solver<M> jacobian_solver(jacobian_op.matrix());
       const auto precision = opts.get("precision", default_opts.get<double>("precision"));
       const auto max_iter = opts.get("max_iter", default_opts.get<size_t>("max_iter"));
@@ -744,27 +736,7 @@ public:
                                                           << "\n"
                                                           << "   available types are " << print(this->invert_options())
                                                           << std::endl);
-#endif // 0
   } // ... apply_inverse(...)
-
-  /// \}
-  /// \name These apply methods are provided for convenience (non-discrete source function variants).
-  /// \{
-
-  virtual void apply(SourceFunctionType source_function,
-                     DiscreteRangeFunctionType& discrete_range_function,
-                     const XT::Common::Parameter& param = {}) const
-  {
-    this->apply(source_function, discrete_range_function.dofs().vector(), param);
-  }
-
-  virtual DiscreteRangeFunctionType apply(SourceFunctionType source_function,
-                                          const XT::Common::Parameter& param = {}) const
-  {
-    DiscreteRangeFunctionType discrete_range_function(this->range_space());
-    this->apply(source_function, discrete_range_function.dofs().vector(), param);
-    return discrete_range_function;
-  }
 
   /// \}
   /// \name These apply methods are provided for convenience (discrete source variants).
@@ -998,6 +970,118 @@ public:
   }
 
   /// \}
+  /// \name const operator* and operator/ variants
+  /// \{
+
+  virtual ConstLincombOperatorType operator*(const FieldType& alpha) const
+  {
+    return make_operator_mul(*this, alpha);
+  }
+
+  virtual ConstLincombOperatorType operator/(const FieldType& alpha) const
+  {
+    return make_operator_div(*this, alpha);
+  }
+
+  /// \}
+  /// \name mutable operator* and operator/ variants
+  /// \{
+
+  virtual LincombOperatorType operator*(const FieldType& alpha)
+  {
+    return make_operator_mul(*this, alpha);
+  }
+
+  virtual LincombOperatorType operator/(const FieldType& alpha)
+  {
+    return make_operator_div(*this, alpha);
+  }
+
+  /// \{
+  /// \name const operator+ variants
+  /// \{
+
+  virtual ConstLincombOperatorType operator+(const ConstLincombOperatorType& other) const
+  {
+    return make_operator_addsub(*this, other, /*add=*/true);
+  }
+
+  virtual ConstLincombOperatorType operator+(const ThisType& other) const
+  {
+    return make_operator_addsub(*this, other, /*add=*/true);
+  }
+
+  /// \note vector is interpreted as a ConstantOperator
+  /// \sa ConstantOperator
+  virtual ConstLincombOperatorType operator+(const VectorType& vector) const
+  {
+    return make_operator_addsub(*this, vector, /*add=*/true);
+  }
+
+  /// \}
+  /// \name mutable operator+ variants
+  /// \{
+
+  virtual LincombOperatorType operator+(LincombOperatorType& other)
+  {
+    return make_operator_addsub(*this, other, /*add=*/true);
+  }
+
+  virtual LincombOperatorType operator+(ThisType& other)
+  {
+    return make_operator_addsub(*this, other, /*add=*/true);
+  }
+
+  /// \note vector is interpreted as a ConstantOperator
+  /// \sa ConstantOperator
+  virtual LincombOperatorType operator+(const VectorType& vector)
+  {
+    return make_operator_addsub(*this, vector, /*add=*/true);
+  }
+
+  /// \}
+  /// \name const operator- variants
+  /// \{
+
+  virtual ConstLincombOperatorType operator-(const ConstLincombOperatorType& other) const
+  {
+    return make_operator_addsub(*this, other, /*add=*/false);
+  }
+
+  virtual ConstLincombOperatorType operator-(const ThisType& other) const
+  {
+    return make_operator_addsub(*this, other, /*add=*/false);
+  }
+
+  /// \note vector is interpreted as a ConstantOperator
+  /// \sa ConstantOperator
+  virtual ConstLincombOperatorType operator-(const VectorType& vector) const
+  {
+    return make_operator_addsub(*this, vector, /*add=*/false);
+  }
+
+  /// \}
+  /// \name mutable operator- variants
+  /// \{
+
+  virtual LincombOperatorType operator-(LincombOperatorType& other)
+  {
+    return make_operator_addsub(*this, other, /*add=*/false);
+  }
+
+  virtual LincombOperatorType operator-(ThisType& other)
+  {
+    return make_operator_addsub(*this, other, /*add=*/false);
+  }
+
+  /// \note vector is interpreted as a ConstantOperator
+  /// \sa ConstantOperator
+  virtual LincombOperatorType operator-(const VectorType& vector)
+  {
+    return make_operator_addsub(*this, vector, /*add=*/false);
+  }
+
+  /// \}
 
 protected:
   MatrixOperatorType empty_jacobian_op() const
@@ -1061,268 +1145,92 @@ protected:
                   "requested inversion type is not one of the available ones!"
                       << "\n\n   type = " << type << "\n   invert_options() = " << print(available_types));
   } // ... assert_jacobian_opts(...)
+
+  // used in derived classes, template required for add(self, ...) to resolve correctly
+  template <typename SelfType>
+  static auto make_operator_mul(SelfType& self, const FieldType& alpha)
+  {
+    constexpr bool is_mutable = std::is_same_v<SelfType, std::remove_const_t<SelfType>>;
+    using ReturnType = std::conditional_t<is_mutable, LincombOperatorType, ConstLincombOperatorType>;
+    if (self.logger.debug_enabled()) // cannot use LOG_(debug) here
+      self.logger.debug() << "operator*(this=" << (is_mutable ? "mutable" : "const") << ", alpha=" << alpha << ")"
+                          << std::endl;
+    ReturnType ret(self.assembly_grid_view(),
+                   self.source_space(),
+                   self.range_space(),
+                   "(" + self.logger.prefix + ")*" + XT::Common::to_string(alpha),
+                   self.logger.state);
+    ret.add(self, alpha);
+    return ret;
+  } // ... make_operator_mul(...)
+
+  // used in derived classes, template required for add(self, ...) to resolve correctly
+  template <typename SelfType>
+  static auto make_operator_div(SelfType& self, const FieldType& alpha)
+  {
+    constexpr bool is_mutable = std::is_same_v<SelfType, std::remove_const_t<SelfType>>;
+    using ReturnType = std::conditional_t<is_mutable, LincombOperatorType, ConstLincombOperatorType>;
+    if (self.logger.debug_enabled()) // cannot use LOG_(debug) here
+      self.logger.debug() << "operator/(this=" << (is_mutable ? "mutable" : "const") << ", alpha=" << alpha << ")"
+                          << std::endl;
+    ReturnType ret(self.assembly_grid_view(),
+                   self.source_space(),
+                   self.range_space(),
+                   "(" + self.logger.prefix + ")/" + XT::Common::to_string(alpha),
+                   self.logger.state);
+    ret.add(self, 1. / alpha);
+    return ret;
+  } // ... make_operator_div(...)
+
+  // used in derived classes, template required for add(self, ...) to resolve correctly
+  template <typename SelfType, typename OtherType>
+  static auto make_operator_addsub(SelfType& self, OtherType& other, const bool add)
+  {
+    constexpr bool is_mutable = std::is_same_v<SelfType, std::remove_const_t<SelfType>>;
+    using ReturnType = std::conditional_t<is_mutable, LincombOperatorType, ConstLincombOperatorType>;
+    constexpr bool other_is_lincomb = std::is_same_v<std::remove_const_t<OtherType>, ReturnType>;
+    if (self.logger.debug_enabled()) // cannot use LOG_(debug) here
+      self.logger.debug() << "operator" << (add ? "+" : "-") << "(this=" << (is_mutable ? "mutable" : "const")
+                          << ", other_" << (is_mutable ? "" : "const_") << (other_is_lincomb ? "lincomb_" : "")
+                          << "op=" << &other << ")" << std::endl;
+    ReturnType ret(self.assembly_grid_view(),
+                   self.source_space(),
+                   self.range_space(),
+                   self.logger.prefix + " + " + other.logger.prefix,
+                   self.logger.get_state_or(other.logger.state));
+    ret.add(self, 1.);
+    ret.add(other, add ? 1. : -1.);
+    return ret;
+  } // ... make_operator_addsub(...)
+
+  // used in derived classes, template required for add(self, ...) to resolve correctly
+  template <typename SelfType>
+  static auto make_operator_addsub(SelfType& self, const VectorType& vector, const bool add)
+  {
+    constexpr bool is_mutable = std::is_same_v<SelfType, std::remove_const_t<SelfType>>;
+    using ReturnType = std::conditional_t<is_mutable, LincombOperatorType, ConstLincombOperatorType>;
+    if (self.logger.debug_enabled()) // cannot use LOG_(debug) here
+      self.logger.debug() << "operator" << (add ? "+" : "-") << "(this=" << (is_mutable ? "mutable" : "const")
+                          << ", vector.sup_norm()=" << vector.sup_norm() << ")" << std::endl;
+    ReturnType ret(self.assembly_grid_view(),
+                   self.source_space(),
+                   self.range_space(),
+                   self.logger.prefix + " " + (add ? "+" : "-") + " vec",
+                   self.logger.state);
+    ret.add(self, 1.);
+    ret.add(new ConstantOperator<AGV, s_r, s_rC, r_r, r_rC, F, M, SGV, RGV>(
+                self.assembly_grid_view(), self.source_space(), self.range_space(), vector, "vec", self.logger.state),
+            add ? 1. : -1.);
+    return ret;
+  } // ... make_operator_addsub(...)
 }; // class OperatorInterface
-
-
-//  virtual ConstLincombOperatorType operator*(const FieldType& alpha) const
-//  {
-//    std::string derived_logging_prefix = "";
-//    if (this->logger.debug_enabled) {
-//      derived_logging_prefix = this->logger.prefix + "*" + XT::Common::to_string(alpha);
-//      this->logger.debug() << "operator*(alpha=" << alpha << ")" << std::endl;
-//    }
-//    ConstLincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
-//    ret.add(*this, alpha);
-//    return ret;
-//  }
-
-//  virtual LincombOperatorType operator*(const FieldType& alpha)
-//  {
-//    std::string derived_logging_prefix = "";
-//    if (this->logger.debug_enabled) {
-//      derived_logging_prefix = this->logger.prefix + "*" + XT::Common::to_string(alpha);
-//      this->logger.debug() << "operator*(alpha=" << alpha << ")" << std::endl;
-//    }
-//    LincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
-//    ret.add(*this, alpha);
-//    return ret;
-//  }
-
-//  virtual ConstLincombOperatorType operator/(const FieldType& alpha) const
-//  {
-//    std::string derived_logging_prefix = "";
-//    if (this->logger.debug_enabled) {
-//      derived_logging_prefix = this->logger.prefix + "/" + XT::Common::to_string(alpha);
-//      this->logger.debug() << "operator/(alpha=" << alpha << ")" << std::endl;
-//    }
-//    ConstLincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
-//    ret.add(*this, 1. / alpha);
-//    return ret;
-//  }
-
-//  virtual LincombOperatorType operator/(const FieldType& alpha)
-//  {
-//    std::string derived_logging_prefix = "";
-//    if (this->logger.debug_enabled) {
-//      derived_logging_prefix = this->logger.prefix + "/" + XT::Common::to_string(alpha);
-//      this->logger.debug() << "operator/(alpha=" << alpha << ")" << std::endl;
-//    }
-//    LincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
-//    ret.add(*this, 1. / alpha);
-//    return ret;
-//  }
-
-//  /// \name const operator+ variants
-//  /// \{
-
-//  virtual ConstLincombOperatorType operator+(const ConstLincombOperatorType& other) const
-//  {
-//    std::string derived_logging_prefix = "";
-//    if (this->logger.debug_enabled) {
-//      derived_logging_prefix = "ConstLincombOperator";
-//      this->logger.debug() << "operator+(other_const_lincomb_op=" << &other << ")" << std::endl;
-//    }
-//    ConstLincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
-//    ret.add(*this, 1.);
-//    ret.add(other, 1.);
-//    return ret;
-//  }
-
-//  virtual ConstLincombOperatorType operator+(const ThisType& other) const
-//  {
-//    std::string derived_logging_prefix = "";
-//    if (this->logger.debug_enabled) {
-//      derived_logging_prefix = "ConstLincombOperator";
-//      this->logger.debug() << "operator+(other_const_op=" << &other << ")" << std::endl;
-//    }
-//    ConstLincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
-//    ret.add(*this, 1.);
-//    ret.add(other, 1.);
-//    return ret;
-//  }
-
-//  /**
-//   * \note vector is interpreted as a ConstantOperator
-//   * \sa ConstantOperator
-//   */
-//  virtual ConstLincombOperatorType operator+(const VectorType& vector) const
-//  {
-//    std::string derived_logging_prefix_clop = "";
-//    std::string derived_logging_prefix_cop = "";
-//    if (this->logger.debug_enabled) {
-//      derived_logging_prefix_clop = "ConstLincombOperator";
-//      derived_logging_prefix_cop = "ConstantOperator";
-//      this->logger.debug() << "operator+(vector.sup_norm()=" << vector.sup_norm() << ")" << std::endl;
-//    }
-//    ConstLincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix_clop);
-//    ret.add(*this, 1.);
-//    ret.add(new ConstantOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>(
-//                this->source_space(), this->range_space(), vector, derived_logging_prefix_cop),
-//            1.);
-//    return ret;
-//  }
-
-//  /// \}
-//  /// \name mutable operator+ variants
-//  /// \{
-
-//  virtual LincombOperatorType operator+(LincombOperatorType& other)
-//  {
-//    std::string derived_logging_prefix = "";
-//    if (this->logger.debug_enabled) {
-//      derived_logging_prefix = "LincombOperator";
-//      this->logger.debug() << "operator+(other_lincomb_op=" << &other << ")" << std::endl;
-//    }
-//    LincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
-//    ret.add(*this, 1.);
-//    ret.add(other, 1.);
-//    return ret;
-//  }
-
-//  virtual LincombOperatorType operator+(ThisType& other)
-//  {
-//    std::string derived_logging_prefix = "";
-//    if (this->logger.debug_enabled) {
-//      derived_logging_prefix = "LincombOperator";
-//      this->logger.debug() << "operator+(other_op=" << &other << ")" << std::endl;
-//    }
-//    LincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
-//    ret.add(*this, 1.);
-//    ret.add(other, 1.);
-//    return ret;
-//  }
-
-//  /**
-//   * \note vector is interpreted as a ConstantOperator
-//   * \sa ConstantOperator
-//   */
-//  virtual LincombOperatorType operator+(const VectorType& vector)
-//  {
-//    std::string derived_logging_prefix_lop = "";
-//    std::string derived_logging_prefix_cop = "";
-//    if (this->logger.debug_enabled) {
-//      derived_logging_prefix_lop = "LincombOperator";
-//      derived_logging_prefix_cop = "ConstantOperator";
-//      this->logger.debug() << "operator+(vector.sup_norm()=" << vector.sup_norm() << ")" << std::endl;
-//    }
-//    LincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix_lop);
-//    ret.add(*this, 1.);
-//    ret.add(new ConstantOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>(
-//                this->source_space(), this->range_space(), vector, derived_logging_prefix_cop),
-//            1.);
-//    return ret;
-//  }
-
-//  /// \}
-//  /// \name const operator- variants
-//  /// \{
-
-//  virtual ConstLincombOperatorType operator-(const ConstLincombOperatorType& other) const
-//  {
-//    std::string derived_logging_prefix = "";
-//    if (this->logger.debug_enabled) {
-//      derived_logging_prefix = "ConstLincombOperator";
-//      this->logger.debug() << "operator-(other_const_lincomb_op=" << &other << ")" << std::endl;
-//    }
-//    ConstLincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
-//    ret.add(*this, 1.);
-//    ret.add(other, -1.);
-//    return ret;
-//  }
-
-//  virtual ConstLincombOperatorType operator-(const ThisType& other) const
-//  {
-//    std::string derived_logging_prefix = "";
-//    if (this->logger.debug_enabled) {
-//      derived_logging_prefix = "ConstLincombOperator";
-//      this->logger.debug() << "operator-(other_op=" << &other << ")" << std::endl;
-//    }
-//    ConstLincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
-//    ret.add(*this, 1.);
-//    ret.add(other, -1.);
-//    return ret;
-//  }
-
-//  /**
-//   * \note vector is interpreted as a ConstantOperator
-//   * \sa ConstantOperator
-//   */
-//  virtual ConstLincombOperatorType operator-(const VectorType& vector) const
-//  {
-//    std::string derived_logging_prefix_clop = "";
-//    std::string derived_logging_prefix_cop = "";
-//    if (this->logger.debug_enabled) {
-//      derived_logging_prefix_clop = "ConstLincombOperator";
-//      derived_logging_prefix_cop = "ConstantOperator";
-//      this->logger.debug() << "operator-(vector.sup_norm()=" << vector.sup_norm() << ")" << std::endl;
-//    }
-//    ConstLincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix_clop);
-//    ret.add(*this, 1.);
-//    ret.add(new ConstantOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>(
-//                this->source_space(), this->range_space(), vector, derived_logging_prefix_cop),
-//            -1.);
-//    return ret;
-//  }
-
-//  /// \}
-//  /// \name mutable operator- variants between arbitrary operators
-//  /// \{
-
-//  virtual LincombOperatorType operator-(LincombOperatorType& other)
-//  {
-//    std::string derived_logging_prefix = "";
-//    if (this->logger.debug_enabled) {
-//      derived_logging_prefix = "LincombOperator";
-//      this->logger.debug() << "operator-(other_lincomb_op=" << &other << ")" << std::endl;
-//    }
-//    LincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
-//    ret.add(*this, 1.);
-//    ret.add(other, -1.);
-//    return ret;
-//  }
-
-//  virtual LincombOperatorType operator-(ThisType& other)
-//  {
-//    std::string derived_logging_prefix = "";
-//    if (this->logger.debug_enabled) {
-//      derived_logging_prefix = "LincombOperator";
-//      this->logger.debug() << "operator-(other_op=" << &other << ")" << std::endl;
-//    }
-//    LincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix);
-//    ret.add(*this, 1.);
-//    ret.add(other, -1.);
-//    return ret;
-//  }
-
-//  /**
-//   * \note vector is interpreted as a ConstantOperator
-//   * \sa ConstantOperator
-//   */
-//  virtual LincombOperatorType operator-(const VectorType& vector)
-//  {
-//    std::string derived_logging_prefix_lop = "";
-//    std::string derived_logging_prefix_cop = "";
-//    if (this->logger.debug_enabled) {
-//      derived_logging_prefix_lop = "LincombOperator";
-//      derived_logging_prefix_cop = "ConstantOperator";
-//      this->logger.debug() << "operator-(vector.sup_norm()=" << vector.sup_norm() << ")" << std::endl;
-//    }
-//    LincombOperatorType ret(this->source_space(), this->range_space(), derived_logging_prefix_lop);
-//    ret.add(*this, 1.);
-//    ret.add(new ConstantOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>(
-//                this->source_space(), this->range_space(), vector, derived_logging_prefix_cop),
-//            -1.);
-//    return ret;
-//  }
-
-/// \}
 
 
 } // namespace GDT
 } // namespace Dune
 
 #include "constant.hh"
-//#include "lincomb.hh"
+#include "lincomb.hh"
 #include "matrix-based.hh"
 
 #endif // DUNE_GDT_OPERATORS_INTERFACES_HH
