@@ -105,11 +105,11 @@ public:
     this->assert_matching_source(source_vector);
     this->assert_matching_range(range_vector);
     return ForwardOperatorAssembler<ThisType>(*this,
-                                       DiscreteSourceFunctionType(source_space_, source_vector),
-                                       range_vector,
-                                       param,
-                                       this->logger.prefix + "_assembler",
-                                       this->logger.state);
+                                              DiscreteSourceFunctionType(source_space_, source_vector),
+                                              range_vector,
+                                              param,
+                                              this->logger.prefix + "_assembler",
+                                              this->logger.state);
   } // ... with(...)
 
   /// \name Required by OperatorInterface
@@ -289,7 +289,6 @@ auto make_operator(const AssemblyGridViewType& assembly_grid_view,
       assembly_grid_view, source_space, range_space, logging_prefix, logging_state);
 }
 
-
 template <class AssemblyGridViewType, class SGV, size_t s_r, size_t s_rC, class F, class RGV, size_t r_r, size_t r_rC>
 auto make_operator(const AssemblyGridViewType& assembly_grid_view,
                    const SpaceInterface<SGV, s_r, s_rC, F>& source_space,
@@ -315,7 +314,6 @@ auto make_operator(const SpaceInterface<GV, r, rC, F>& space,
   return Operator<GV, r, rC, r, rC, F, MatrixType, GV, GV>(
       space.grid_view(), space, space, logging_prefix, logging_state);
 }
-
 
 template <class GV, size_t r, size_t rC, class F>
 auto make_operator(const SpaceInterface<GV, r, rC, F>& space,
