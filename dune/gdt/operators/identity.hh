@@ -15,7 +15,7 @@
 #include <dune/xt/la/type_traits.hh>
 
 #include <dune/gdt/exceptions.hh>
-#include <dune/gdt/local/bilinear-forms/generic.hh>
+#include <dune/gdt/local/operators/generic.hh>
 
 #include "interfaces.hh"
 
@@ -23,135 +23,167 @@ namespace Dune {
 namespace GDT {
 
 
-/**
- * See also OperatorInterface for a description of the template arguemnts.
- *
- * \sa OperatorInterface
- */
-template <class M, class GV, size_t r = 1, size_t rC = 1>
-class IdentityOperator : public OperatorInterface<M, GV, r, rC>
+template <class GV, size_t r = 1, size_t rC = 1, class F = double, class M = XT::LA::IstlRowMajorSparseMatrix<F>>
+class IdentityOperator : public OperatorInterface<GV, r, rC, r, rC, F, M, GV, GV>
 {
-  using ThisType = IdentityOperator;
-  using BaseType = OperatorInterface<M, GV, r, rC>;
-
 public:
-  using typename BaseType::F;
+  using ThisType = IdentityOperator;
+  using BaseType = OperatorInterface<GV, r, rC, r, rC, F, M, GV, GV>;
+
+  using typename BaseType::AssemblyGridViewType;
   using typename BaseType::MatrixOperatorType;
   using typename BaseType::RangeSpaceType;
+  using typename BaseType::SourceFunctionType;
   using typename BaseType::SourceSpaceType;
   using typename BaseType::VectorType;
 
-  IdentityOperator(const SourceSpaceType& spc)
-    : space_(spc)
-  {}
-
-  bool linear() const override final
+  IdentityOperator(const SourceSpaceType& space,
+                   const std::string& logging_prefix = "",
+                   const std::array<bool, 3>& logging_state = {false, false, true})
+    : BaseType({}, logging_prefix.empty() ? "IdentityOperator" : logging_prefix, logging_state)
+    , space_(space)
   {
-    return true;
+    LOG_(debug) << "IdentityOperator(space=" << &space << ")" << std::endl;
   }
 
-  const SourceSpaceType& source_space() const override final
-  {
-    return space_;
-  }
+  // pull in methods from various base classes
+  using BaseType::apply;
+  using BaseType::apply_inverse;
+  using BaseType::jacobian;
+
+  /// \name Required by OperatorInterface.
+  /// \{
 
   const RangeSpaceType& range_space() const override final
   {
     return space_;
   }
 
-  using BaseType::apply;
-
-  void
-  apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& /*param*/ = {}) const override final
+  bool linear() const override final
   {
-    DUNE_THROW_IF(!space_.contains(source), Exceptions::operator_error, "");
-    DUNE_THROW_IF(!space_.contains(range), Exceptions::operator_error, "");
-    range = source;
+    return true;
   }
 
-  std::vector<std::string> invert_options() const override final
+  /// \}
+  /// \name Required by OperatorInterface.
+  /// \{
+
+  const SourceSpaceType& source_space() const override final
   {
-    return {"identity"};
+    return space_;
   }
 
-  XT::Common::Configuration invert_options(const std::string& type) const override final
+  const AssemblyGridViewType& assembly_grid_view() const override final
   {
-    DUNE_THROW_IF(type != this->invert_options().at(0), Exceptions::operator_error, "type = " << type);
-    return {{"type", type}};
+    return space_.grid_view();
   }
 
-  using BaseType::apply_inverse;
-
-  void apply_inverse(const VectorType& range,
-                     VectorType& source,
-                     const XT::Common::Configuration& opts,
-                     const XT::Common::Parameter& /*param*/ = {}) const override final
+  void apply(const VectorType& source_vector,
+             VectorType& range_vector,
+             const XT::Common::Parameter& param = {}) const override final
   {
-    DUNE_THROW_IF(!space_.contains(range), Exceptions::operator_error, "");
-    DUNE_THROW_IF(!space_.contains(source), Exceptions::operator_error, "");
-    DUNE_THROW_IF(!opts.has_key("type"), Exceptions::operator_error, "");
-    DUNE_THROW_IF(
-        opts.get<std::string>("type") != this->invert_options().at(0), Exceptions::operator_error, "opts = " << opts);
-    source = range;
+    LOG_(debug) << "apply(source_vector.sup_norm()=" << source_vector.sup_norm()
+                << ", range_vector.sup_norm()=" << range_vector.sup_norm() << ", param=" << param << ")" << std::endl;
+    this->assert_matching_source(source_vector);
+    this->assert_matching_range(range_vector);
+    LOG_(info) << "setting range_vector = source_vector ..." << std::endl;
+    range_vector = source_vector;
+  } // ... apply(...)
+
+protected:
+  std::vector<XT::Common::Configuration> all_jacobian_options() const override final
+  {
+    return {{{"type", "identity"}}};
   }
 
-  std::vector<std::string> jacobian_options() const override final
+  virtual std::vector<XT::Common::Configuration> all_invert_options() const
   {
-    return {"identity"};
+    return {{{"type", "identity"}}};
   }
 
-  XT::Common::Configuration jacobian_options(const std::string& type) const override final
-  {
-    DUNE_THROW_IF(type != this->jacobian_options().at(0), Exceptions::operator_error, "type = " << type);
-    return {{"type", type}};
-  }
-
-  using BaseType::jacobian;
-
-  void jacobian(const VectorType& /*source*/,
+public:
+  void jacobian(const VectorType& source_vector,
                 MatrixOperatorType& jacobian_op,
                 const XT::Common::Configuration& opts,
-                const XT::Common::Parameter& /*param*/ = {}) const override final
+                const XT::Common::Parameter& param = {}) const override final
   {
-    DUNE_THROW_IF(jacobian_op.source_space().mapper().size() != space_.mapper().size(), Exceptions::operator_error, "");
-    DUNE_THROW_IF(jacobian_op.range_space().mapper().size() != space_.mapper().size(), Exceptions::operator_error, "");
-    DUNE_THROW_IF(!opts.has_key("type"), Exceptions::operator_error, "opts = \n");
-    DUNE_THROW_IF(
-        opts.get<std::string>("type") != this->jacobian_options().at(0), Exceptions::operator_error, "opts = " << opts);
-    jacobian_op.append(GenericLocalElementBilinearForm<XT::Grid::extract_entity_t<GV>, r, rC, F>(
-        [](const auto& test_basis, const auto& /*ansatz_basis*/, auto& result, const auto& param) {
-          for (size_t ii = 0; ii < test_basis.size(param); ++ii)
-            result[ii][ii] = 1.;
-        }));
+    LOG_(debug) << "jacobian(source_vector.sup_norm()=" << source_vector.sup_norm()
+                << ", jacobian_op.matrix().sup_norm()=" << jacobian_op.matrix().sup_norm()
+                << ", opts=" << print(opts, {{"oneline", "true"}}) << ", param=" << param << ")" << std::endl;
+    this->assert_jacobian_opts(opts); // ensures that type identity is requested
+    LOG_(info) << "adding unit diagonal to jacobian_op ..." << std::endl;
+    const F unit = jacobian_op.scaling;
+    const size_t size = jacobian_op.matrix().rows();
+    DUNE_THROW_IF(jacobian_op.matrix().cols() != size, Exceptions::operator_error, "jacobian_op is not square!");
+    for (size_t ii = 0; ii < size; ++ii)
+      jacobian_op.matrix().add_to_entry(ii, ii, unit);
   } // ... jacobian(...)
+
+  void apply_inverse(const VectorType& range_vector,
+                     VectorType& source_vector,
+                     const XT::Common::Configuration& opts,
+                     const XT::Common::Parameter& param = {}) const override final
+  {
+    LOG_(debug) << "apply_inverse(range_vector.sup_norm()=" << source_vector.sup_norm()
+                << ", source_vector.sup_norm()=" << source_vector.sup_norm()
+                << ", opts=" << print(opts, {{"oneline", "true"}}) << ", param=" << param << ")" << std::endl;
+    this->assert_apply_inverse_opts(opts); // ensures that type identity is requested
+    LOG_(info) << "setting source_vector = range_vector ..." << std::endl;
+    source_vector = range_vector;
+  } // ... apply_inverse(...)
+
+  /// \}
 
 private:
   const SourceSpaceType& space_;
-}; // class IdentityOperator
+}; // namespace GDT
 
 
-template <class Matrix, class GV, size_t r, size_t rC, class F>
-std::enable_if_t<XT::LA::is_matrix<Matrix>::value, IdentityOperator<Matrix, GV, r, rC>>
-make_identity_operator(const SpaceInterface<GV, r, rC, F>& space)
+template <class MatrixType, // <- needs to be manually specified
+          class GV,
+          size_t r,
+          size_t rC,
+          class F>
+auto make_identity_operator(const SpaceInterface<GV, r, rC, F>& space,
+                            const std::string& logging_prefix = "",
+                            const std::array<bool, 3>& logging_state = {false, false, true})
 {
-  return IdentityOperator<Matrix, GV, r, rC>(space);
+  static_assert(XT::LA::is_matrix<MatrixType>::value, "");
+  return IdentityOperator<GV, r, rC, F, MatrixType>(space.grid_view(), space, space, logging_prefix, logging_state);
 }
-
 
 template <class GV, size_t r, size_t rC, class F>
-IdentityOperator<typename XT::LA::Container<F>::MatrixType, GV, r, rC>
-make_identity_operator(const SpaceInterface<GV, r, rC, F>& space)
+auto make_identity_operator(const SpaceInterface<GV, r, rC, F>& space,
+                            const std::string& logging_prefix = "",
+                            const std::array<bool, 3>& logging_state = {false, false, true})
 {
-  return IdentityOperator<typename XT::LA::Container<F>::MatrixType, GV, r, rC>(space);
+  return make_identity_operator<XT::LA::IstlRowMajorSparseMatrix<F>>(space, logging_prefix, logging_state);
 }
 
 
-template <class M, class GV, size_t r, size_t rC>
-IdentityOperator<M, GV, r, rC> make_identity_operator(const OperatorInterface<M, GV, r, rC, r, rC, GV>& op)
+template <class GV, size_t r, size_t rC, class F, class M>
+auto make_identity_operator(const OperatorInterface<GV, r, rC, r, rC, F, M, GV, GV>& some_operator,
+                            const std::string& logging_prefix = "",
+                            const std::array<bool, 3>& logging_state = {false, false, true})
 {
-  return IdentityOperator<M, GV, r, rC>(op.source_space());
-}
+  // check if source and range coincide
+  const auto& source = some_operator.source_space();
+  const auto& range = some_operator.range_space();
+  DUNE_THROW_IF(source.type() != range.type(),
+                Exceptions::operator_error,
+                "Can not create IdentityOperator like given operator, source and range do not coincide!"
+                    << "\n"
+                    << "   source.type() = " << source.type() << "\n"
+                    << "   range.type() = " << range.type());
+  DUNE_THROW_IF(source.mapper().size() != range.mapper().size(),
+                Exceptions::operator_error,
+                "Can not create IdentityOperator like given operator, source and range do not coincide!"
+                    << "\n"
+                    << "   source.mapper().size() = " << source.mapper().size() << "\n"
+                    << "   range.mapper().size() = " << range.mapper().size());
+  // we still cannot rule out different source and range, but have no further means to check
+  return IdentityOperator<GV, r, rC, F, M>(source, logging_prefix, logging_state);
+} // ... make_identity_operator(...)
 
 
 } // namespace GDT
