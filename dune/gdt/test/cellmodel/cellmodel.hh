@@ -106,7 +106,6 @@ struct CellModelSolver
       const double Pa = 1, // polarization elasticity number
       const double Re = 5e-13, // Reynolds number
       const double Fa = 1., // active force number
-      const double Fa2 = 1., // active force number
       const double xi = 1.1, // alignment of P with the flow, > 0 for rod-like cells and < 0 for oblate ones
       const double kappa = 1.65, // eta_rot/eta, scaling factor between rotational and dynamic viscosity
       const double c_1 = 5., // double well shape parameter
@@ -236,8 +235,8 @@ struct CellModelSolver
   };
 
 
-  struct OfieldNonlinearCFunctor;
-  struct OfieldLinearCFunctor;
+  struct OfieldNonlinearS10Functor;
+  struct OfieldPrepareFunctor;
   struct OfieldResidualFunctor;
   struct PfieldResidualFunctor;
   struct PfieldNonlinearJacobianFunctor;
@@ -713,13 +712,10 @@ struct CellModelSolver
   const bool use_tbb_;
   const double Re_;
   double Fa_inv_;
-  double Fa2_inv_;
   double xi_;
   double kappa_;
   double c_1_;
   double Pa_;
-  double last_pfield_Pa_;
-  double last_ofield_Pa_;
   double beta_;
   double gamma_;
   double Be_;
@@ -771,16 +767,14 @@ struct CellModelSolver
   // Stokes system matrix S = (A B; B^T 0) and views on matrix blocks
   MatrixType S_stokes_;
   MatrixViewType A_stokes_;
-  MatrixViewType B_stokes_;
-  MatrixViewType C_stokes_;
   MatrixViewType BT_stokes_;
+  MatrixViewType C_stokes_;
+  MatrixViewType B_stokes_;
   MatrixType A_stokes_full_;
   MatrixType B_stokes_full_;
   MatrixType C_stokes_full_;
   // pressure mass matrix
   MatrixType M_p_stokes_;
-  // Matrix operator for A_stokes_
-  std::shared_ptr<MatrixOperator<MatrixViewType, PGV, d>> A_stokes_op_;
   // finite element vector rhs = (f; g) for stokes system and views on velocity and pressure parts f and g
   EigenVectorType stokes_rhs_vector_;
   EigenVectorViewType stokes_f_vector_;
@@ -810,20 +804,16 @@ struct CellModelSolver
   XT::LA::SparsityPatternDefault ofield_submatrix_pattern_;
   // Orientation field mass matrix
   MatrixType M_ofield_;
-  MatrixType A_ofield_;
+  MatrixType B_ofield_;
   // Part of C that is independent of phi and dt
-  MatrixType C_ofield_elliptic_part_;
+  MatrixType E_ofield_;
   // Whole linear part of C (elliptic part + phi-dependent part)
-  MatrixType C_ofield_linear_part_;
+  MatrixType C_ofield_incl_coeffs_and_sign_;
   // Whole linear part of C (elliptic part + phi-dependent part)
-  mutable MatrixType C_ofield_nonlinear_part_;
+  mutable MatrixType Dd_f_ofield_incl_coeffs_and_sign_;
   // Linear part of ofield schur matrix M/dt + A - 1/kappa C
   MatrixType S_schur_ofield_linear_part_;
   // Matrix operators for orientation field matrices
-  std::shared_ptr<MatrixOperator<MatrixType, PGV, d>> M_ofield_op_;
-  mutable std::shared_ptr<MatrixOperator<MatrixType, PGV, d>> A_ofield_op_;
-  mutable std::shared_ptr<MatrixOperator<MatrixType, PGV, d>> C_ofield_linear_part_op_;
-  mutable std::shared_ptr<MatrixOperator<MatrixType, PGV, d>> C_ofield_nonlinear_part_op_;
   OfieldMatrixLinearPartOperator<VectorType, MatrixType, CellModelSolver> ofield_jac_linear_op_;
   OfieldLinearSolver ofield_solver_;
   // finite element vector rhs = (f; g) for ofield system and views on P and Pnat parts f and g
@@ -853,16 +843,13 @@ struct CellModelSolver
   // Phase field system matrix S = (M/dt+D E 0; G H J; A 0 C)
   MatrixType M_pfield_;
   MatrixType B_pfield_;
-  MatrixType M_ell_pfield_;
-  MatrixType M_nonlin_pfield_;
-  MatrixType Dphi_f_pfield_;
+  MatrixType E_pfield_;
+  MatrixType Dmu_f_pfield_;
+  MatrixType Dphi_f_pfield_incl_coeffs_and_sign_;
   mutable ColMajorBackendType M_pfield_colmajor_;
   mutable ColMajorBackendType S_pfield_colmajor_;
   // Pfield solvers and linear operators
   // Matrix operators for phasefield matrices
-  std::shared_ptr<MatrixOperator<MatrixType, PGV, 1>> B_pfield_op_;
-  std::shared_ptr<MatrixOperator<MatrixType, PGV, 1>> Dphi_f_pfield_op_;
-  std::shared_ptr<MatrixOperator<MatrixType, PGV, 1>> M_nonlin_pfield_op_;
   PfieldMatrixLinearPartOperator<VectorType, MatrixType, CellModelSolver> pfield_jac_linear_op_;
   PfieldLinearSolver pfield_solver_;
   MatrixType pfield_preconditioner_matrix_;
@@ -920,8 +907,8 @@ struct CellModelSolver
   XT::Grid::RangedPartitioning<PGV, 0> partitioning_;
   std::shared_ptr<QuadratureStorage> stokes_rhs_quad_;
   std::shared_ptr<QuadratureStorage> pfield_rhs_quad_;
-  std::shared_ptr<QuadratureStorage> ofield_linear_C_quad_;
-  std::shared_ptr<QuadratureStorage> ofield_residual_and_nonlinear_C_quad_;
+  std::shared_ptr<QuadratureStorage> ofield_prepare_quad_;
+  std::shared_ptr<QuadratureStorage> ofield_residual_and_nonlinear_S10_quad_;
   std::shared_ptr<QuadratureStorage> pfield_B_quad_;
   std::shared_ptr<QuadratureStorage> pfield_residual_and_nonlinear_jac_quad_;
 };

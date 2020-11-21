@@ -287,9 +287,11 @@ public:
     , BaseWalkerType(assembly_grid_view)
     , scaling(1.)
   {
+#if 0
     LOG__(BaseOperatorType, info) << "MatrixOperator(assembly_grid_view=" << &assembly_grid_view
                                   << ", source_space=" << &source_spc << ", range_space=" << &range_spc
                                   << ", matrix=" << &mat << ")" << std::endl;
+#endif
   }
 
   /**
@@ -305,9 +307,11 @@ public:
     , BaseWalkerType(assembly_grid_view)
     , scaling(1.)
   {
+#if 0
     LOG__(BaseOperatorType, info) << "MatrixOperator(assembly_grid_view=" << &assembly_grid_view
                                   << ", source_space=" << &source_spc << ", range_space=" << &range_spc
                                   << ", pattern=" << &pattern << ")" << std::endl;
+#endif
   }
 
   MatrixOperator(const ThisType&) = delete;

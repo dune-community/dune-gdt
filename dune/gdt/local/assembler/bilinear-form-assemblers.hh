@@ -68,10 +68,12 @@ public:
     , test_basis_(test_space_->basis().localize())
     , ansatz_basis_(ansatz_space_->basis().localize())
   {
+#if 0
     LOG_(info) << "ElementBilinearFormAssembler(test_space=" << &test_space << ", ansatz_space=" << &ansatz_space
                << ", local_two_form=" << &local_two_form
                << ",\n   global_matrix.sup_norm()=" << global_matrix.sup_norm() << ", param=" << param << ")"
                << std::endl;
+#endif
     DUNE_THROW_IF(global_matrix_.rows() != test_space_->mapper().size(),
                   XT::Common::Exceptions::shapes_do_not_match,
                   "global_matrix_.rows() = " << global_matrix_.rows() << "\n  "
@@ -80,9 +82,11 @@ public:
                   XT::Common::Exceptions::shapes_do_not_match,
                   "global_matrix_.cols() = " << global_matrix_.cols() << "\n  "
                                              << "ansatz_space_->mapper().size()" << ansatz_space_->mapper().size());
+#if 0
     LOG_(debug) << "   scaling_ = " << scaling_ << "\n   {test|ansatz}_space.mapper().max_local_size() = {"
                 << test_space_->mapper().max_local_size() << "|" << ansatz_space_->mapper().max_local_size() << "}"
                 << std::endl;
+#endif
   }
 
   LocalElementBilinearFormAssembler(const ThisType& other)
@@ -109,15 +113,19 @@ public:
 
   void apply_local(const ElementType& element) override final
   {
+#if 0
     LOG_(info) << "apply_local(element=" << print(element) << ")" << std::endl;
+#endif
     // apply bilinear form
     test_basis_->bind(element);
     ansatz_basis_->bind(element);
     local_bilinear_form_->apply2(*test_basis_, *ansatz_basis_, local_matrix_, param_);
+#if 0
     LOG_(debug) << "   scaling_ = " << scaling_ << ", param_ = " << param_
                 << "\n   {test|ansatz}_basis_->size(param_) = {" << test_basis_->size(param_) << "|"
                 << ansatz_basis_->size(param_) << "}"
                 << "\n   local_matrix_ = " << print(local_matrix_, {{"oneline", "true"}}) << std::endl;
+#endif
     // copy local matrix to global matrix
     test_space_->mapper().global_indices(element, global_test_indices_);
     ansatz_space_->mapper().global_indices(element, global_ansatz_indices_);
