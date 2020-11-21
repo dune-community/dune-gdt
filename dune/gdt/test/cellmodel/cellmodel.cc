@@ -62,7 +62,11 @@
 using namespace Dune;
 using namespace Dune::GDT;
 
+// assuming a structured uniform grid simplifies things
 static constexpr bool structured_uniform_grid = true;
+// we will usually have the beta parameter set to 0
+static constexpr bool consider_beta_param = false;
+// choose quadrature order this much higher than actually needed
 static constexpr int overintegrate = 2;
 
 template <class DiscreteFunc>
@@ -128,7 +132,6 @@ CellModelSolver::CellModelSolver(const std::string testcase,
                                  const double Pa, // polarization elasticity number
                                  const double Re, // Reynolds number
                                  const double Fa, // active force number
-                                 const double Fa2, // active force number for contractile stress
                                  const double xi, // alignment of P with the flow, > 0 for rod-like cells and < 0 for
                                                   // oblate ones
                                  const double kappa, // eta_rot/eta, scaling factor between rotational and dynamic
@@ -156,13 +159,10 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   , use_tbb_(use_tbb)
   , Re_(Re)
   , Fa_inv_(1. / Fa)
-  , Fa2_inv_(1. / Fa2)
   , xi_(xi)
   , kappa_(kappa)
   , c_1_(c_1)
   , Pa_(Pa)
-  , last_pfield_Pa_(Pa_)
-  , last_ofield_Pa_(Pa_)
   , beta_(beta)
   , gamma_(gamma)
   , Be_(Be)
@@ -198,11 +198,10 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   , P2_(P_space_, "P2")
   , S_stokes_(size_u_ + size_p_, size_u_ + size_p_, create_stokes_pattern(u_space_, p_space_), 100)
   , A_stokes_(S_stokes_, 0, size_u_, 0, size_u_)
-  , B_stokes_(S_stokes_, 0, size_u_, size_u_, size_u_ + size_p_)
+  , BT_stokes_(S_stokes_, 0, size_u_, size_u_, size_u_ + size_p_)
   , C_stokes_(S_stokes_, size_u_, size_u_ + size_p_, size_u_, size_u_ + size_p_)
-  , BT_stokes_(S_stokes_, size_u_, size_u_ + size_p_, 0, size_u_)
+  , B_stokes_(S_stokes_, size_u_, size_u_ + size_p_, 0, size_u_)
   , M_p_stokes_(size_p_, size_p_, make_element_sparsity_pattern(p_space_, p_space_, grid_view_), 100)
-  , A_stokes_op_(std::make_shared<MatrixOperator<MatrixViewType, PGV, d>>(grid_view_, u_space_, u_space_, A_stokes_))
   , stokes_rhs_vector_(size_u_ + size_p_, 0., num_mutexes_u_)
   , stokes_f_vector_(stokes_rhs_vector_, 0, size_u_)
   , stokes_g_vector_(stokes_rhs_vector_, size_u_, size_u_ + size_p_)
@@ -212,24 +211,20 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   , u_dirichlet_constraints_(make_dirichlet_constraints(u_space_, boundary_info_))
   , ofield_submatrix_pattern_(make_element_sparsity_pattern(P_space_, P_space_, grid_view_))
   , M_ofield_(size_P_, size_P_, ofield_submatrix_pattern_, num_mutexes_ofield_)
-  , A_ofield_(size_P_, size_P_, ofield_submatrix_pattern_, num_mutexes_ofield_)
-  , C_ofield_elliptic_part_(size_P_, size_P_, ofield_submatrix_pattern_, num_mutexes_ofield_)
-  , C_ofield_linear_part_(size_P_, size_P_, ofield_submatrix_pattern_, num_mutexes_ofield_)
-  , C_ofield_nonlinear_part_(size_P_, size_P_, ofield_submatrix_pattern_, num_mutexes_ofield_)
+  , B_ofield_(size_P_, size_P_, ofield_submatrix_pattern_, num_mutexes_ofield_)
+  , E_ofield_(size_P_, size_P_, ofield_submatrix_pattern_, num_mutexes_ofield_)
+  , C_ofield_incl_coeffs_and_sign_(size_P_, size_P_, ofield_submatrix_pattern_, num_mutexes_ofield_)
+  , Dd_f_ofield_incl_coeffs_and_sign_(size_P_, size_P_, ofield_submatrix_pattern_, num_mutexes_ofield_)
   , S_schur_ofield_linear_part_(size_P_, size_P_, ofield_submatrix_pattern_, 0)
-  , M_ofield_op_(std::make_shared<MatrixOperator<MatrixType, PGV, d>>(grid_view_, P_space_, P_space_, M_ofield_))
-  , A_ofield_op_(std::make_shared<MatrixOperator<MatrixType, PGV, d>>(grid_view_, P_space_, P_space_, A_ofield_))
-  , C_ofield_linear_part_op_(
-        std::make_shared<MatrixOperator<MatrixType, PGV, d>>(grid_view_, P_space_, P_space_, C_ofield_linear_part_))
-  , C_ofield_nonlinear_part_op_(
-        std::make_shared<MatrixOperator<MatrixType, PGV, d>>(grid_view_, P_space_, P_space_, C_ofield_nonlinear_part_))
-  , ofield_jac_linear_op_(M_ofield_, A_ofield_, C_ofield_linear_part_, dt_, kappa_, this)
+  , ofield_jac_linear_op_(*this)
   , ofield_solver_(dt_,
                    kappa_,
+                   Pa_,
                    M_ofield_,
-                   A_ofield_,
-                   C_ofield_linear_part_,
-                   C_ofield_nonlinear_part_,
+                   E_ofield_,
+                   B_ofield_,
+                   C_ofield_incl_coeffs_and_sign_,
+                   Dd_f_ofield_incl_coeffs_and_sign_,
                    ofield_solver_type,
                    ofield_mass_matrix_solver_type,
                    ofield_submatrix_pattern_,
@@ -257,25 +252,20 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   , pfield_submatrix_pattern_(make_element_sparsity_pattern(phi_space_, phi_space_, grid_view_))
   , M_pfield_(size_phi_, size_phi_, pfield_submatrix_pattern_, num_mutexes_pfield_)
   , B_pfield_(size_phi_, size_phi_, pfield_submatrix_pattern_, num_mutexes_pfield_)
-  , M_ell_pfield_(size_phi_, size_phi_, pfield_submatrix_pattern_, num_mutexes_pfield_)
-  , M_nonlin_pfield_(size_phi_, size_phi_, pfield_submatrix_pattern_, num_mutexes_pfield_)
-  , Dphi_f_pfield_(size_phi_, size_phi_, pfield_submatrix_pattern_, num_mutexes_pfield_)
-  , B_pfield_op_(std::make_shared<MatrixOperator<MatrixType, PGV, 1>>(grid_view_, phi_space_, phi_space_, B_pfield_))
-  , Dphi_f_pfield_op_(
-        std::make_shared<MatrixOperator<MatrixType, PGV, 1>>(grid_view_, phi_space_, phi_space_, Dphi_f_pfield_))
-  , M_nonlin_pfield_op_(
-        std::make_shared<MatrixOperator<MatrixType, PGV, 1>>(grid_view_, phi_space_, phi_space_, M_nonlin_pfield_))
-  , pfield_jac_linear_op_(M_pfield_, B_pfield_, M_ell_pfield_, dt_, gamma_, epsilon_, Be_, this)
+  , E_pfield_(size_phi_, size_phi_, pfield_submatrix_pattern_, num_mutexes_pfield_)
+  , Dmu_f_pfield_(size_phi_, size_phi_, pfield_submatrix_pattern_, num_mutexes_pfield_)
+  , Dphi_f_pfield_incl_coeffs_and_sign_(size_phi_, size_phi_, pfield_submatrix_pattern_, num_mutexes_pfield_)
+  , pfield_jac_linear_op_(*this)
   , pfield_solver_(dt_,
                    gamma_,
                    epsilon_,
                    Be_,
                    Ca_,
                    M_pfield_,
-                   M_ell_pfield_,
+                   E_pfield_,
                    B_pfield_,
-                   Dphi_f_pfield_,
-                   M_nonlin_pfield_,
+                   Dphi_f_pfield_incl_coeffs_and_sign_,
+                   Dmu_f_pfield_,
                    pfield_solver_type,
                    pfield_mass_matrix_solver_type,
                    pfield_submatrix_pattern_,
@@ -317,6 +307,14 @@ CellModelSolver::CellModelSolver(const std::string testcase,
         grid_view_,
         use_tbb ? DXTC_CONFIG_GET("threading.partition_factor", 1u) * XT::Common::threadManager().current_threads() : 1)
 {
+  if constexpr (!structured_uniform_grid) {
+    DUNE_THROW(Dune::NotImplemented,
+               "Not maintained, search for structured_uniform_grid in the code and fix the 'else' branches");
+  }
+  if (!consider_beta_param && !XT::Common::is_zero(beta_)) {
+    DUNE_THROW(Dune::InvalidStateException,
+               "Beta is set to a non-zero value but is ignored as consider_beta_param == false");
+  }
   std::cout << dx_ << ", " << epsilon_ << std::endl;
 
   /************************** create and project initial values*****************************************
@@ -363,7 +361,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
     P_initial_funcs.emplace_back(std::make_shared<const XT::Functions::GenericFunction<d, d>>(
         50,
         /*evaluate=*/
-        [& phi_in = phi_initial_funcs[0]](const auto& x, const auto& param) {
+        [& phi_in = phi_initial_funcs[0]](const auto& /*x*/, const auto& /*param*/) {
           // auto rand1 = ((std::rand() % 2000) - 1000) / 20000.;
           // auto rand2 = ((std::rand() % 2000) - 1000) / 20000.;
           // auto ret = FieldVector<double, d>({1. + rand1, 0. +
@@ -480,16 +478,16 @@ CellModelSolver::CellModelSolver(const std::string testcase,
           // auto ret = FieldVector<double, d>({1. + rand1, 0. +
           // rand2});
 
-          // double rand1 = std::rand() - RAND_MAX / 2;
-          // double rand2 = std::rand() - RAND_MAX / 2;
-          // rand1 /= std::sqrt(rand1 * rand1 + rand2 * rand2);
-          // rand2 /= std::sqrt(rand1 * rand1 + rand2 * rand2);
-          // auto ret = FieldVector<double, d>({rand1, rand2});
+          double rand1 = std::rand() - RAND_MAX / 2;
+          double rand2 = std::rand() - RAND_MAX / 2;
+          rand1 /= std::sqrt(rand1 * rand1 + rand2 * rand2);
+          rand2 /= std::sqrt(rand1 * rand1 + rand2 * rand2);
+          auto ret = FieldVector<double, d>({rand1, rand2});
 
           // small bias to point more in x direction
           // if (((x[0] > 9.5 && x[0] < 10.5) || (x[0] > 19.5 && x[0] < 20.5)) && x[1] > 14.5 && x[1] < 15.5)
           // ret[0] += (ret[0] > 0) ? 0.05 : -0.05;
-          auto ret = FieldVector<double, d>({1., 0.});
+          // auto ret = FieldVector<double, d>({1., 0.});
           ret *= (phi_in->evaluate(x, param) + 1.) / 2.;
           return ret;
         },
@@ -556,47 +554,48 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   if (Re_ > 1e-2)
     DUNE_THROW(NotImplemented, "No Navier-Stokes solver implemented yet!");
 
-  MatrixOperator<MatrixViewType, PGV, 1, 1, d> B_stokes_op(grid_view_, p_space_, u_space_, B_stokes_);
+  MatrixOperator<MatrixViewType, PGV, d> A_stokes_op(grid_view_, u_space_, u_space_, A_stokes_);
+  MatrixOperator<MatrixViewType, PGV, 1, 1, d> BT_stokes_op(grid_view_, p_space_, u_space_, BT_stokes_);
   MatrixOperator<MatrixType, PGV, 1, 1, 1> M_p_stokes_op(grid_view_, p_space_, p_space_, M_p_stokes_);
-  // calculate A_{ij} as \int \nabla v_i \nabla v_j
-  // A_stokes_op_->append(LocalElementIntegralBilinearForm<E, d>(LocalSymmetricEllipticIntegrand<E>(1.)));
-  A_stokes_op_->append(LocalElementIntegralBilinearForm<E, d>(LocalLaplaceIntegrand<E, d>()));
-  // calculate B_{ij} as \int \nabla p_i div(v_j)
-  B_stokes_op.append(LocalElementIntegralBilinearForm<E, d, 1, double, double, 1>(
-      LocalElementAnsatzValueTestDivProductIntegrand<E>(-1.)));
+  // Stokes matrix is [A B^T; B C]
+  // calculate A_{ij} as \int 0.5 \nabla v_i \nabla v_j
+  A_stokes_op.append(LocalElementIntegralBilinearForm<E, d>(LocalLaplaceIntegrand<E, d>(0.5)));
+  // calculate (B^T)_{ij} as \int p_i div(v_j)
+  BT_stokes_op.append(LocalElementIntegralBilinearForm<E, d, 1, double, double, 1>(
+      LocalElementAnsatzValueTestDivProductIntegrand<E>()));
   M_p_stokes_op.append(LocalElementIntegralBilinearForm<E, 1>(LocalElementProductScalarWeightIntegrand<E, 1>()));
 
   auto p_basis_integrated_functional = make_vector_functional(p_space_, p_basis_integrated_vector_);
   const XT::Functions::ConstantGridFunction<E> one_function(1);
   p_basis_integrated_functional.append(
       LocalElementIntegralFunctional<E, 1>(LocalElementProductScalarWeightIntegrand<E, 1>().with_ansatz(one_function)));
-  B_stokes_op.append(p_basis_integrated_functional);
+  BT_stokes_op.append(p_basis_integrated_functional);
 
   // Dirichlet constrainst for u
-  A_stokes_op_->append(u_dirichlet_constraints_);
+  A_stokes_op.append(u_dirichlet_constraints_);
   // assemble everything
-  A_stokes_op_->append(B_stokes_op);
-  A_stokes_op_->append(M_p_stokes_op);
+  A_stokes_op.append(BT_stokes_op);
+  A_stokes_op.append(M_p_stokes_op);
   std::cout << "Assembling stokes..." << std::flush;
-  A_stokes_op_->assemble(use_tbb_);
+  A_stokes_op.assemble(use_tbb_);
   std::cout << "done" << std::endl;
 
   // Fix value of p at first DoF to 0 to ensure the uniqueness of the solution, i.e, we have set the p_size_-th row of
-  // [A B; B^T 0] to the unit vector.
-  const size_t dof_index = 0;
+  // [A B^T; B 0] to the unit vector.
+  static constexpr size_t dof_index = 0;
   S_stokes_.set_entry(size_u_ + dof_index, size_u_ + dof_index, 1.);
-  B_stokes_.clear_col(dof_index);
+  BT_stokes_.clear_col(dof_index);
   stokes_g_vector_.set_entry(dof_index, 0.);
 
   u_dirichlet_constraints_.apply(A_stokes_, false, true);
   for (const auto& DoF : u_dirichlet_constraints_.dirichlet_DoFs())
-    B_stokes_.clear_row(DoF);
+    BT_stokes_.clear_row(DoF);
 
-  // Set B^T
-  const auto B_pattern = B_stokes_.pattern();
+  // Set B
+  const auto BT_pattern = BT_stokes_.pattern();
   for (size_t ii = 0; ii < size_u_; ii++)
-    for (const auto& jj : B_pattern.inner(ii))
-      BT_stokes_.set_entry(jj, ii, B_stokes_.get_entry(ii, jj));
+    for (const auto& jj : BT_pattern.inner(ii))
+      B_stokes_.set_entry(jj, ii, BT_stokes_.get_entry(ii, jj));
 
   std::cout << "Setting up stokes solver..." << std::flush;
   S_colmajor_ = S_stokes_.backend();
@@ -605,34 +604,19 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   stokes_solver_->factorize(S_colmajor_);
   std::cout << "done" << std::endl;
 
-  const auto pattern_A = make_element_sparsity_pattern(u_space_, u_space_, grid_view_);
-  const auto pattern_B = make_element_sparsity_pattern(u_space_, p_space_, grid_view_);
-  A_stokes_full_ = MatrixType(size_u_, size_u_, pattern_A);
-  B_stokes_full_ = MatrixType(size_u_, size_p_, pattern_B);
-  XT::LA::SparsityPatternDefault C_pattern(size_p_);
-  C_pattern.insert(0, 0);
-  for (size_t ii = 0; ii < size_u_; ++ii)
-    for (const auto& jj : pattern_A.inner(ii))
-      A_stokes_full_.set_entry(ii, jj, A_stokes_.get_entry(ii, jj));
-  for (size_t ii = 0; ii < size_u_; ++ii)
-    for (const auto& jj : pattern_B.inner(ii))
-      B_stokes_full_.set_entry(ii, jj, B_stokes_.get_entry(ii, jj));
-  C_stokes_full_ = MatrixType(size_p_, size_p_, C_pattern);
-  C_stokes_full_.set_entry(0, 0, C_stokes_.get_entry(0, 0));
-
-
   /*************************************************************************************************
    ************************************ Orientationfield *******************************************
    *************************************************************************************************/
   // calculate M_{ij} as \int \psi_i phi_j
-  M_ofield_op_->append(LocalElementIntegralBilinearForm<E, d>(LocalElementProductScalarWeightIntegrand<E, d>(1.)));
-  C_ofield_elliptic_part_ *= 0.;
-  MatrixOperator<MatrixType, PGV, d> ofield_elliptic_op(grid_view_, P_space_, P_space_, C_ofield_elliptic_part_);
-  ofield_elliptic_op.append(LocalElementIntegralBilinearForm<E, d>(LocalLaplaceIntegrand<E, d>(-1. / Pa_)));
-  M_ofield_op_->append(ofield_elliptic_op);
+  MatrixOperator<MatrixType, PGV, d> M_ofield_op(grid_view_, P_space_, P_space_, M_ofield_);
+  M_ofield_op.append(LocalElementIntegralBilinearForm<E, d>(LocalElementProductScalarWeightIntegrand<E, d>(1.)));
+  E_ofield_ *= 0.;
+  MatrixOperator<MatrixType, PGV, d> E_ofield_op(grid_view_, P_space_, P_space_, E_ofield_);
+  E_ofield_op.append(LocalElementIntegralBilinearForm<E, d>(LocalLaplaceIntegrand<E, d>()));
+  M_ofield_op.append(E_ofield_op);
 
   std::cout << "Assembling ofield..." << std::flush;
-  M_ofield_op_->assemble(use_tbb_);
+  M_ofield_op.assemble(use_tbb_);
   std::cout << "done" << std::endl;
   std::cout << "Setting up ofield_solver..." << std::flush;
   ofield_solver_.setup();
@@ -644,9 +628,9 @@ CellModelSolver::CellModelSolver(const std::string testcase,
 
   MatrixOperator<MatrixType, PGV, 1> M_pfield_op(grid_view_, phi_space_, phi_space_, M_pfield_);
   M_pfield_op.append(LocalElementIntegralBilinearForm<E, 1>(LocalElementProductScalarWeightIntegrand<E, 1>(1.)));
-  MatrixOperator<MatrixType, PGV, 1> M_ell_pfield_op(grid_view_, phi_space_, phi_space_, M_ell_pfield_);
-  M_ell_pfield_op.append(LocalElementIntegralBilinearForm<E, 1>(LocalLaplaceIntegrand<E, 1>(1.)));
-  M_pfield_op.append(M_ell_pfield_op);
+  MatrixOperator<MatrixType, PGV, 1> E_pfield_op(grid_view_, phi_space_, phi_space_, E_pfield_);
+  E_pfield_op.append(LocalElementIntegralBilinearForm<E, 1>(LocalLaplaceIntegrand<E, 1>(1.)));
+  M_pfield_op.append(E_pfield_op);
   std::cout << "Assembling pfield..." << std::flush;
   M_pfield_op.assemble(use_tbb_);
   std::cout << "done" << std::endl;
@@ -686,11 +670,11 @@ CellModelSolver::CellModelSolver(const std::string testcase,
                                             false,
                                             false,
                                             true,
-                                            false,
+                                            consider_beta_param,
                                             false,
                                             true,
                                             false);
-    ofield_linear_C_quad_ = std::make_shared<QuadratureStorage>(
+    ofield_prepare_quad_ = std::make_shared<QuadratureStorage>(
         *this,
         std::max(u_space_.max_polorder(), phi_space_.max_polorder()) + 2 * P_space_.max_polorder() + overintegrate,
         true,
@@ -700,7 +684,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
         false,
         true,
         false);
-    ofield_residual_and_nonlinear_C_quad_ = std::make_shared<QuadratureStorage>(
+    ofield_residual_and_nonlinear_S10_quad_ = std::make_shared<QuadratureStorage>(
         *this, 4 * P_space_.max_polorder() + overintegrate, false, false, true, false, true, false, false);
     pfield_B_quad_ =
         std::make_shared<QuadratureStorage>(*this,
@@ -725,12 +709,13 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   }
 } // constructor
 
-struct CellModelSolver::OfieldNonlinearCFunctor : public XT::Grid::ElementFunctor<PGV>
+// Computes the nonlinear part of the lower left block of the ofield matrix (i.e., -c_1/Pa D_d f(d))
+struct CellModelSolver::OfieldNonlinearS10Functor : public XT::Grid::ElementFunctor<PGV>
 {
-  using ThisType = OfieldNonlinearCFunctor;
+  using ThisType = OfieldNonlinearS10Functor;
   using BaseType = typename XT::Grid::ElementFunctor<PGV>;
 
-  OfieldNonlinearCFunctor(CellModelSolver& cellmodel, const QuadratureStorage& quad_storage)
+  OfieldNonlinearS10Functor(CellModelSolver& cellmodel, const QuadratureStorage& quad_storage)
     : cellmodel_(cellmodel)
     , quad_storage_(quad_storage)
     , P_(0.)
@@ -740,12 +725,12 @@ struct CellModelSolver::OfieldNonlinearCFunctor : public XT::Grid::ElementFuncto
     , minus_frac_c1_Pa_(-cellmodel_.c_1_ / cellmodel_.Pa_)
   {}
 
-  OfieldNonlinearCFunctor(const ThisType& other) = default;
-  OfieldNonlinearCFunctor(ThisType&&) = default;
+  OfieldNonlinearS10Functor(const ThisType& other) = default;
+  OfieldNonlinearS10Functor(ThisType&&) = default;
 
   XT::Grid::ElementFunctor<PGV>* copy() override final
   {
-    return new OfieldNonlinearCFunctor(*this);
+    return new OfieldNonlinearS10Functor(*this);
   }
 
   void apply_local(const E& element) override final
@@ -779,7 +764,8 @@ struct CellModelSolver::OfieldNonlinearCFunctor : public XT::Grid::ElementFuncto
       const auto offset_ii = ii * P_basis_size;
       const auto index_ii = global_indices_P[ii];
       for (size_t jj = 0; jj < P_basis_size; ++jj)
-        cellmodel_.C_ofield_nonlinear_part_.add_to_entry(index_ii, global_indices_P[jj], result_[offset_ii + jj]);
+        cellmodel_.Dd_f_ofield_incl_coeffs_and_sign_.add_to_entry(
+            index_ii, global_indices_P[jj], result_[offset_ii + jj]);
     }
   }
 
@@ -790,14 +776,15 @@ struct CellModelSolver::OfieldNonlinearCFunctor : public XT::Grid::ElementFuncto
   std::vector<double> result_;
   std::vector<double> P_coeffs_;
   const double minus_frac_c1_Pa_;
-}; // struct OfieldNonlinearCFunctor
+}; // struct OfieldNonlinearS10Functor
 
-struct CellModelSolver::OfieldLinearCFunctor : public XT::Grid::ElementFunctor<PGV>
+// Computes the two ofield matrices B(u) and C(phi)
+struct CellModelSolver::OfieldPrepareFunctor : public XT::Grid::ElementFunctor<PGV>
 {
-  using ThisType = OfieldLinearCFunctor;
+  using ThisType = OfieldPrepareFunctor;
   using BaseType = typename XT::Grid::ElementFunctor<PGV>;
 
-  OfieldLinearCFunctor(CellModelSolver& cellmodel, const QuadratureStorage& quad_storage)
+  OfieldPrepareFunctor(CellModelSolver& cellmodel, const QuadratureStorage& quad_storage)
     : cellmodel_(cellmodel)
     , quad_storage_(quad_storage)
     , u_(0.)
@@ -818,12 +805,12 @@ struct CellModelSolver::OfieldLinearCFunctor : public XT::Grid::ElementFunctor<P
     , grad_u_T_factor_(-(1. + cellmodel_.xi_) / 2.)
   {}
 
-  OfieldLinearCFunctor(const ThisType& other) = default;
-  OfieldLinearCFunctor(ThisType&&) = default;
+  OfieldPrepareFunctor(const ThisType& other) = default;
+  OfieldPrepareFunctor(ThisType&&) = default;
 
   XT::Grid::ElementFunctor<PGV>* copy() override final
   {
-    return new OfieldLinearCFunctor(*this);
+    return new OfieldPrepareFunctor(*this);
   }
 
   void apply_local(const E& element) override final
@@ -902,8 +889,8 @@ struct CellModelSolver::OfieldLinearCFunctor : public XT::Grid::ElementFunctor<P
       const auto index_ii = global_indices_P[ii];
       for (size_t jj = 0; jj < P_basis_size; ++jj) {
         const auto index_jj = global_indices_P[jj];
-        cellmodel_.A_ofield_.add_to_entry(index_ii, index_jj, result1_[offset_ii + jj]);
-        cellmodel_.C_ofield_linear_part_.add_to_entry(index_ii, index_jj, result2_[offset_ii + jj]);
+        cellmodel_.B_ofield_.add_to_entry(index_ii, index_jj, result1_[offset_ii + jj]);
+        cellmodel_.C_ofield_incl_coeffs_and_sign_.add_to_entry(index_ii, index_jj, result2_[offset_ii + jj]);
       } // jj
     } // ii
   } // ... apply_local(...)
@@ -928,8 +915,9 @@ struct CellModelSolver::OfieldLinearCFunctor : public XT::Grid::ElementFunctor<P
   const double frac_c1_Pa_;
   const double grad_u_factor_;
   const double grad_u_T_factor_;
-}; // struct OfieldLinearCFunctor
+}; // struct OfieldPrepareFunctor
 
+// Computes nonlinear part of ofield residual (-c_1/Pa f(d))
 struct CellModelSolver::OfieldResidualFunctor : public XT::Grid::ElementFunctor<PGV>
 {
   using ThisType = OfieldResidualFunctor;
@@ -986,6 +974,7 @@ struct CellModelSolver::OfieldResidualFunctor : public XT::Grid::ElementFunctor<
   const double minus_frac_c1_Pa_;
 }; // struct OfieldResidualFunctor
 
+// Computes nonlinear parts of pfield residual (1/(Be eps^2) f(phi, mu) and 1/eps g(phi))
 struct CellModelSolver::PfieldResidualFunctor : public XT::Grid::ElementFunctor<PGV>
 {
   using ThisType = PfieldResidualFunctor;
@@ -1003,7 +992,6 @@ struct CellModelSolver::PfieldResidualFunctor : public XT::Grid::ElementFunctor<
     , result2_(quad_storage_.phi_basis_size_)
     , phi_coeffs_(quad_storage_.phi_basis_size_)
     , mu_coeffs_(quad_storage_.phi_basis_size_)
-    , Ca_inv_(1. / cellmodel_.Ca_)
     , eps_inv_(1. / cellmodel_.epsilon_)
     , inv_Be_eps2_(1. / (cellmodel_.Be_ * std::pow(cellmodel_.epsilon_, 2)))
   {}
@@ -1035,7 +1023,7 @@ struct CellModelSolver::PfieldResidualFunctor : public XT::Grid::ElementFunctor<
       mu = XT::Common::transform_reduce(
           mu_coeffs_.begin(), mu_coeffs_.end(), quad_storage_.phi_basis_evaluated_[ll].begin(), 0.);
       const auto factor = quad_storage_.integration_factors_[ll] * quadrature[ll].weight();
-      const auto factor1 = (Ca_inv_ + inv_Be_eps2_ * (3. * phi * phi - 1)) * mu * factor;
+      const auto factor1 = inv_Be_eps2_ * (3. * phi * phi - 1) * mu * factor;
       for (size_t ii = 0; ii < phi_basis_size; ++ii)
         result1_[ii] += quad_storage_.phi_basis_evaluated_[ll][ii] * factor1;
       const auto factor2 = eps_inv_ * (phi * phi - 1) * phi * factor;
@@ -1057,11 +1045,11 @@ struct CellModelSolver::PfieldResidualFunctor : public XT::Grid::ElementFunctor<
   std::vector<double> result2_;
   std::vector<double> phi_coeffs_;
   std::vector<double> mu_coeffs_;
-  const double Ca_inv_;
   const double eps_inv_;
   const double inv_Be_eps2_;
 }; // struct PfieldResidualFunctor
 
+// Computes nonlinear parts of pfield jacobian (1/(Be eps^2) Dphi_f(phi, mu) and Dmu_f(phi) = Dphi_g(phi))
 struct CellModelSolver::PfieldNonlinearJacobianFunctor : public XT::Grid::ElementFunctor<PGV>
 {
   using ThisType = PfieldNonlinearJacobianFunctor;
@@ -1122,8 +1110,8 @@ struct CellModelSolver::PfieldNonlinearJacobianFunctor : public XT::Grid::Elemen
       const auto index_ii = global_indices_phi[ii];
       for (size_t jj = 0; jj < phi_basis_size; ++jj) {
         const auto index_jj = global_indices_phi[jj];
-        cellmodel_.M_nonlin_pfield_.add_to_entry(index_ii, index_jj, result1_[offset_ii + jj]);
-        cellmodel_.Dphi_f_pfield_.add_to_entry(index_ii, index_jj, result2_[offset_ii + jj]);
+        cellmodel_.Dmu_f_pfield_.add_to_entry(index_ii, index_jj, result1_[offset_ii + jj]);
+        cellmodel_.Dphi_f_pfield_incl_coeffs_and_sign_.add_to_entry(index_ii, index_jj, result2_[offset_ii + jj]);
       } // jj
     } // ii
   }
@@ -1137,6 +1125,7 @@ struct CellModelSolver::PfieldNonlinearJacobianFunctor : public XT::Grid::Elemen
   const double six_inv_Be_eps2_;
 }; // struct PfieldNonlinearJacobianFunctor
 
+// Computes pfield rhs (-c1/(2 Pa) a(d) and term controlled by beta if beta != 0)
 struct CellModelSolver::PfieldRhsFunctor : public XT::Grid::ElementFunctor<PGV>
 {
   using ThisType = PfieldRhsFunctor;
@@ -1178,35 +1167,42 @@ struct CellModelSolver::PfieldRhsFunctor : public XT::Grid::ElementFunctor<PGV>
       P_coeffs_[ii] = quad_storage_.P_dofs_[global_indices_P[ii]];
     const auto& geometry = element.geometry();
     const bool geometry_affine = geometry.affine();
-    J_inv_T_ = geometry.jacobianInverseTransposed(geometry.center());
-    if (quad_storage_.P_affine_ && geometry_affine) {
-      for (size_t ii = 0; ii < P_basis_size; ++ii)
-        for (size_t rr = 0; rr < d; ++rr)
-          J_inv_T_.mv(quad_storage_.P_basis_jacobians_[0][ii][rr], P_basis_jacobians_transformed_[0][ii][rr]);
-      grad_P_ *= 0.;
-      for (size_t ii = 0; ii < P_basis_size; ++ii)
-        grad_P_.axpy(P_coeffs_[ii], P_basis_jacobians_transformed_[0][ii]);
-    }
-    for (size_t ll = 0; ll < quadrature.size(); ++ll) {
-      if (!geometry_affine)
-        J_inv_T_ = geometry.jacobianInverseTransposed(quadrature[ll].position());
-      if (!(quad_storage_.P_affine_ && geometry_affine)) {
+
+    if constexpr (consider_beta_param) {
+      J_inv_T_ = geometry.jacobianInverseTransposed(geometry.center());
+      if (quad_storage_.P_affine_ && geometry_affine) {
         for (size_t ii = 0; ii < P_basis_size; ++ii)
           for (size_t rr = 0; rr < d; ++rr)
-            J_inv_T_.mv(quad_storage_.P_basis_jacobians_[ll][ii][rr], P_basis_jacobians_transformed_[ll][ii][rr]);
+            J_inv_T_.mv(quad_storage_.P_basis_jacobians_[0][ii][rr], P_basis_jacobians_transformed_[0][ii][rr]);
         grad_P_ *= 0.;
         for (size_t ii = 0; ii < P_basis_size; ++ii)
-          grad_P_.axpy(P_coeffs_[ii], P_basis_jacobians_transformed_[ll][ii]);
+          grad_P_.axpy(P_coeffs_[ii], P_basis_jacobians_transformed_[0][ii]);
       }
+    }
+    for (size_t ll = 0; ll < quadrature.size(); ++ll) {
       double div_P(0.);
-      for (size_t ii = 0; ii < d; ++ii)
-        div_P += grad_P_[ii][ii];
+      if constexpr (consider_beta_param) {
+        if (!geometry_affine)
+          J_inv_T_ = geometry.jacobianInverseTransposed(quadrature[ll].position());
+        if (!(quad_storage_.P_affine_ && geometry_affine)) {
+          for (size_t ii = 0; ii < P_basis_size; ++ii)
+            for (size_t rr = 0; rr < d; ++rr)
+              J_inv_T_.mv(quad_storage_.P_basis_jacobians_[ll][ii][rr], P_basis_jacobians_transformed_[ll][ii][rr]);
+          grad_P_ *= 0.;
+          for (size_t ii = 0; ii < P_basis_size; ++ii)
+            grad_P_.axpy(P_coeffs_[ii], P_basis_jacobians_transformed_[ll][ii]);
+        }
+        for (size_t ii = 0; ii < d; ++ii)
+          div_P += grad_P_[ii][ii];
+      }
       P_ *= 0.;
       for (size_t ii = 0; ii < P_basis_size; ++ii)
         P_.axpy(P_coeffs_[ii], quad_storage_.P_basis_evaluated_[ll][ii]);
 
-      const double factor = (P_.two_norm2() * minus_frac_c1_twoPa_ + div_P * minus_frac_beta_Pa_)
-                            * quad_storage_.integration_factors_[ll] * quadrature[ll].weight();
+      double factor =
+          P_.two_norm2() * minus_frac_c1_twoPa_ * quad_storage_.integration_factors_[ll] * quadrature[ll].weight();
+      if constexpr (consider_beta_param)
+        factor += div_P * minus_frac_beta_Pa_ * quad_storage_.integration_factors_[ll] * quadrature[ll].weight();
       for (size_t ii = 0; ii < phi_basis_size; ++ii)
         result_[ii] += quad_storage_.phi_basis_evaluated_[ll][ii] * factor;
     } // ll
@@ -1227,6 +1223,7 @@ struct CellModelSolver::PfieldRhsFunctor : public XT::Grid::ElementFunctor<PGV>
   FieldMatrix<double, 2, 2> J_inv_T_;
 }; // struct PfieldRhsFunctor
 
+// Computes pfield B(u)
 struct CellModelSolver::PfieldBFunctor : public XT::Grid::ElementFunctor<PGV>
 {
   using ThisType = PfieldBFunctor;
@@ -1290,7 +1287,7 @@ struct CellModelSolver::PfieldBFunctor : public XT::Grid::ElementFunctor<PGV>
         phi_basis_grads[ii].mv(u_, basis_grad_ii_times_u);
         const double factor_ii = basis_grad_ii_times_u * factor;
         for (size_t jj = 0; jj < phi_basis_size; ++jj)
-          result_[offset_ii + jj] -= quad_storage_.phi_basis_evaluated_[ll][jj] * factor_ii;
+          result_[offset_ii + jj] += quad_storage_.phi_basis_evaluated_[ll][jj] * factor_ii;
       } // ii
     } // ll
     for (size_t ii = 0; ii < phi_basis_size; ++ii) {
@@ -1311,6 +1308,7 @@ struct CellModelSolver::PfieldBFunctor : public XT::Grid::ElementFunctor<PGV>
   std::vector<double> phi_coeffs_;
 }; // struct PfieldBFunctor
 
+// Computes Stokes rhs
 struct CellModelSolver::StokesRhsFunctor : public XT::Grid::ElementFunctor<PGV>
 {
   using ThisType = StokesRhsFunctor;
@@ -1430,17 +1428,14 @@ struct CellModelSolver::StokesRhsFunctor : public XT::Grid::ElementFunctor<PGV>
       grad_P_.mtv(Pnat_, grad_P_T_Pnat_plus_phinat_grad_phi);
       grad_P_T_Pnat_plus_phinat_grad_phi.axpy(phinat, grad_phi_[0]);
       const auto Fa_inv_phi_tilde = cellmodel_.Fa_inv_ * phi_tilde;
-      const auto Fa2_inv_phi_tilde = cellmodel_.Fa2_inv_ * phi_tilde;
       for (size_t ii = 0; ii < u_basis_size; ++ii) {
         const auto& u_basis_grad_ii = u_basis_jacobians_transformed_[ll][ii];
         const auto& u_basis_val_ii = quad_storage_.u_basis_evaluated_[ll][ii];
         for (size_t mm = 0; mm < d; ++mm) {
-          const auto factor1_mm = (Fa_inv_phi_tilde * P_[mm] - xi_p_1_ * Pnat_[mm]) * factor;
+          const auto factor1_mm = (Fa_inv_phi_tilde * P_[mm] + xi_p_1_ * Pnat_[mm]) * factor;
           const auto factor2_mm = xi_m_1_ * P_[mm] * factor;
-          const auto factor3_mm = Fa2_inv_phi_tilde * P2_[mm] * factor;
           result_[ii] += grad_P_T_Pnat_plus_phinat_grad_phi[mm] * u_basis_val_ii[mm] * factor
-                         + (P2_ * u_basis_grad_ii[mm]) * factor3_mm + (P_ * u_basis_grad_ii[mm]) * factor1_mm
-                         - (Pnat_ * u_basis_grad_ii[mm]) * factor2_mm;
+                         - (P_ * u_basis_grad_ii[mm]) * factor1_mm - (Pnat_ * u_basis_grad_ii[mm]) * factor2_mm;
         } // mm
       } // ii
       // } // kk
@@ -1893,21 +1888,25 @@ const CellModelSolver::VectorType& CellModelSolver::pfield_vec(const size_t cell
 
 void CellModelSolver::prepare_stokes_operator(const bool restricted)
 {
-  u_tmp_.dofs().vector() = u_.dofs().vector();
-  for (size_t kk = 0; kk < num_cells_; kk++) {
-    phi_tmp_[kk].dofs().vector() = phi_[kk].dofs().vector();
-    phinat_tmp_[kk].dofs().vector() = phinat_[kk].dofs().vector();
-    P_tmp_[kk].dofs().vector() = P_[kk].dofs().vector();
-    Pnat_tmp_[kk].dofs().vector() = Pnat_[kk].dofs().vector();
+  if constexpr (!structured_uniform_grid) {
+    u_tmp_.dofs().vector() = u_.dofs().vector();
+    for (size_t kk = 0; kk < num_cells_; kk++) {
+      phi_tmp_[kk].dofs().vector() = phi_[kk].dofs().vector();
+      phinat_tmp_[kk].dofs().vector() = phinat_[kk].dofs().vector();
+      P_tmp_[kk].dofs().vector() = P_[kk].dofs().vector();
+      Pnat_tmp_[kk].dofs().vector() = Pnat_[kk].dofs().vector();
+    }
   }
   assemble_stokes_rhs(restricted);
 }
 
 void CellModelSolver::prepare_ofield_operator(const size_t cell, const bool restricted)
 {
-  u_tmp_.dofs().vector() = u_.dofs().vector();
-  P_tmp_[cell].dofs().vector() = P_[cell].dofs().vector();
-  phi_tmp_[cell].dofs().vector() = phi_[cell].dofs().vector();
+  if constexpr (!structured_uniform_grid) {
+    u_tmp_.dofs().vector() = u_.dofs().vector();
+    P_tmp_[cell].dofs().vector() = P_[cell].dofs().vector();
+    phi_tmp_[cell].dofs().vector() = phi_[cell].dofs().vector();
+  }
   ofield_jac_linear_op_.prepare(cell, restricted);
   assemble_ofield_rhs(cell, restricted);
   assemble_ofield_linear_jacobian(cell, restricted);
@@ -2269,7 +2268,7 @@ void CellModelSolver::assemble_nonlinear_part_of_ofield_residual(VectorType& res
   // nonlinear part
   VectorViewType res1_vec(residual, size_P_, 2 * size_P_);
   if constexpr (structured_uniform_grid) {
-    OfieldResidualFunctor functor(*this, *ofield_residual_and_nonlinear_C_quad_, res1_vec);
+    OfieldResidualFunctor functor(*this, *ofield_residual_and_nonlinear_S10_quad_, res1_vec);
     XT::Grid::Walker<PGV> walker(grid_view_);
     walker.append(functor);
     if (!restricted)
@@ -2331,10 +2330,11 @@ CellModelSolver::apply_ofield_helper(const VectorType& y, const size_t cell, con
     const ConstVectorViewType source_P(source, 0, size_P_);
     const auto mv = mv_func<ConstVectorViewType, VectorType>(restricted);
     const auto add = add_func<VectorViewType, VectorType>(restricted);
-    mv(C_ofield_nonlinear_part_, source_P, P_tmp_vec_, Pnat_range_dofs);
+    mv(Dd_f_ofield_incl_coeffs_and_sign_, source_P, P_tmp_vec_, Pnat_range_dofs);
     add(range_Pnat, P_tmp_vec_, Pnat_range_dofs);
   } else {
-    fill_tmp_ofield(cell, source, restricted);
+    if constexpr (!structured_uniform_grid)
+      fill_tmp_ofield(cell, source, restricted);
     assemble_nonlinear_part_of_ofield_residual(residual, cell, restricted);
   }
   if (restricted) {
@@ -2348,24 +2348,10 @@ CellModelSolver::apply_ofield_helper(const VectorType& y, const size_t cell, con
   }
 }
 
-void CellModelSolver::update_ofield_parameters(const double Pa, const size_t cell, const bool restricted)
+void CellModelSolver::update_ofield_parameters(const double Pa, const size_t /*cell*/, const bool /*restricted*/)
 {
-  DUNE_THROW_IF(
-      cell != 0, Dune::NotImplemented, "This may not work for several cells, check before removing this line!");
-  // Pa may have been set to a new value already (via update_pfield_parameters)
-  if (XT::Common::FloatCmp::ne(Pa, last_ofield_Pa_)) {
-    std::cout << "Ofield params updated, old Pa = " << last_ofield_Pa_ << ", new Pa = " << Pa << std::endl;
-    Pa_ = Pa;
-    last_ofield_Pa_ = Pa_;
-    const auto& P_range_dofs = P_deim_range_dofs_[cell];
-    set_mat_to_zero(C_ofield_elliptic_part_, restricted, ofield_submatrix_pattern_, P_range_dofs);
-    MatrixOperator<MatrixType, PGV, d> ofield_elliptic_op(grid_view_, P_space_, P_space_, C_ofield_elliptic_part_);
-    ofield_elliptic_op.append(LocalElementIntegralBilinearForm<E, d>(LocalLaplaceIntegrand<E, d>(-1. / Pa_)));
-    if (!restricted)
-      ofield_elliptic_op.assemble(use_tbb_);
-    else
-      ofield_elliptic_op.assemble_range(ofield_deim_entities_[cell]);
-  }
+  Pa_ = Pa;
+  ofield_solver_.set_params(dt_, kappa_, Pa_);
 }
 
 // Applies cell-th phase field operator (applies F if phase field equation is F(y) = 0)
@@ -2407,20 +2393,18 @@ CellModelSolver::apply_pfield_helper(const VectorType& y, const size_t cell, con
     const auto vector_axpy = vector_axpy_func<VectorViewType, VectorType>(restricted);
     const auto scal = scal_func<VectorType>(restricted);
     const auto add = add_func<VectorViewType, VectorType>(restricted);
-    // apply missing parts of J (including the linear 1./Ca_ part)
-    mv(M_nonlin_pfield_, source_mu, tmp_vec, phinat_range_dofs);
+    // apply missing parts of J
+    mv(Dmu_f_pfield_, source_mu, tmp_vec, phinat_range_dofs);
     vector_axpy(range_phinat, 1. / (Be_ * std::pow(epsilon_, 2)), tmp_vec, phinat_range_dofs);
-    mv(M_pfield_, source_mu, tmp_vec, phinat_range_dofs);
-    vector_axpy(range_phinat, 1. / Ca_, tmp_vec, phinat_range_dofs);
     // apply missing parts of A
-    mv(M_nonlin_pfield_, source_phi, tmp_vec, mu_range_dofs);
-    scal(tmp_vec, 1. / epsilon_, mu_range_dofs);
-    add(range_mu, tmp_vec, mu_range_dofs);
+    mv(Dmu_f_pfield_, source_phi, tmp_vec, mu_range_dofs);
+    vector_axpy(range_mu, 1. / epsilon_, tmp_vec, mu_range_dofs);
     // apply G
-    mv(Dphi_f_pfield_, source_phi, tmp_vec, phinat_range_dofs);
+    mv(Dphi_f_pfield_incl_coeffs_and_sign_, source_phi, tmp_vec, phinat_range_dofs);
     add(range_phinat, tmp_vec, phinat_range_dofs);
   } else {
-    fill_tmp_pfield(cell, source, restricted);
+    if constexpr (!structured_uniform_grid)
+      fill_tmp_pfield(cell, source, restricted);
     assemble_nonlinear_part_of_pfield_residual(residual, cell, restricted);
   }
   if (restricted) {
@@ -2435,22 +2419,12 @@ CellModelSolver::apply_pfield_helper(const VectorType& y, const size_t cell, con
 }
 
 void CellModelSolver::update_pfield_parameters(
-    const double Be, const double Ca, const double Pa, const size_t cell, const bool restricted)
+    const double Be, const double Ca, const double Pa, const size_t /*cell*/, const bool /*restricted*/)
 {
-  DUNE_THROW_IF(
-      cell != 0, Dune::NotImplemented, "This may not work for several cells, check before removing this line!");
-  if (XT::Common::FloatCmp::ne(Be, Be_) || XT::Common::FloatCmp::ne(Ca, Ca_)
-      || XT::Common::FloatCmp::ne(Pa, last_pfield_Pa_)) {
-    std::cout << "Pfield params updated, old (Be, Ca, Pa) = " << Be_ << ", " << Ca_ << ", " << last_pfield_Pa_
-              << ", new = " << Be << ", " << Ca << ", " << Pa << std::endl;
-    Be_ = Be;
-    Ca_ = Ca;
-    Pa_ = Pa;
-    last_pfield_Pa_ = Pa_;
-    XT::Common::Parameter param({{"gamma", {gamma_}}, {"epsilon", {epsilon_}}, {"Be", {Be_}}, {"Ca", {Ca_}}});
-    pfield_jac_linear_op_.set_params(param, restricted);
-    pfield_solver_.set_params(param, restricted);
-  }
+  Be_ = Be;
+  Ca_ = Ca;
+  Pa_ = Pa;
+  pfield_solver_.set_params(gamma_, epsilon_, Be_, Ca_);
 }
 
 //******************************************************************************************************************
@@ -2463,66 +2437,6 @@ CellModelSolver::VectorType CellModelSolver::apply_inverse_stokes_operator() con
   EigenVectorType ret(size_u_ + size_p_);
   ret.backend() = stokes_solver_->solve(stokes_rhs_vector_.backend());
   return XT::Common::convert_to<VectorType>(ret);
-
-#if 0
-  VectorType ret(size_u_ + size_p_);
-  EigenVectorType ret_u(size_u_);
-  EigenVectorType ret_p(size_p_);
-
-  // XT::LA::SaddlePointSolver<EigenVectorType, MatrixType> solver(A_stokes_full_, B_stokes_full_, B_stokes_full_, C_stokes_full_);
-
-
-
-
-
-
-
-
-
-  EigenVectorType rhs_f(size_u_);
-  EigenVectorType rhs_g(size_p_);
-  for (size_t ii = 0; ii < size_u_; ++ii)
-    rhs_f[ii] = stokes_f_vector_[ii];
-  for (size_t ii = 0; ii < size_p_; ++ii)
-    rhs_g[ii] = stokes_g_vector_[ii];
-  // solver.apply(rhs_f, rhs_g, ret_u, ret_p, "cg_cg_schurcomplement");
-
-
-
-      // calculate rhs B2^T A^{-1} f - g
-      auto Ainv_f = rhs_f;
-      auto rhs_p = rhs_g;
-      static XT::LA::SchurComplementOperator<EigenVectorType, MatrixType> schur_complement_op(
-          A_stokes_full_,
-          B_stokes_full_,
-          B_stokes_full_,
-          C_stokes_full_,
-          XT::LA::SolverOptions<MatrixType>::options("cg.diagonal.lower"));
-      // Solve S p = rhs
-      static XT::LA::IdentityPreconditioner<XT::LA::SchurComplementOperator<EigenVectorType, MatrixType>> prec(SolverCategory::Category::sequential);
-      static Dune::CGSolver<EigenVectorType> outer_solver(schur_complement_op, prec, 1e-10, 10000, 0, false);
-
-      Ainv_f.backend() = schur_complement_op.A_inv().solve(rhs_f.backend());
-      B_stokes_full_.mtv(Ainv_f, rhs_p);
-      rhs_p -= rhs_g;
-      static InverseOperatorResult res;
-      outer_solver.apply(ret_p, rhs_p, res);
-
-      // Now solve u = A^{-1}(f - B1 p)
-      auto rhs_u = rhs_f;
-      rhs_u -= B_stokes_full_ * ret_p;
-      ret_u.backend() = schur_complement_op.A_inv().solve(rhs_u.backend());
-
-
-
-
-
-  for (size_t ii = 0; ii < size_u_; ++ii)
-    ret[ii] = ret_u[ii];
-  for (size_t ii = 0; ii < size_p_; ++ii)
-    ret[size_u_ + ii] = ret_p[ii];
-  return ret;
-#endif
 }
 
 // Applies inverse orientation field operator (solves F(y) = 0)
@@ -2833,7 +2747,7 @@ void CellModelSolver::assemble_ofield_rhs(const size_t cell, const bool restrict
   const auto& P_range_dofs = P_deim_range_dofs_[cell];
   const auto mv = mv_func<VectorViewType, VectorViewType>(restricted);
   mv(M_ofield_, P_[cell].dofs().vector(), ofield_f_vector_, P_range_dofs);
-  if (XT::Common::FloatCmp::ne(beta_, 0.)) {
+  if constexpr (consider_beta_param) {
     const auto& Pnat_range_dofs = Pnat_deim_range_dofs_[cell];
     auto g_functional = make_vector_functional(P_space_, ofield_g_vector_);
     const auto scal = scal_func<VectorViewType>(restricted);
@@ -2872,7 +2786,6 @@ void CellModelSolver::assemble_pfield_rhs(const size_t cell, const bool restrict
   const auto scal = scal_func<VectorViewType>(restricted);
   scal(pfield_r1_vector_, 0., phinat_range_dofs);
   if constexpr (structured_uniform_grid) {
-    DUNE_THROW_IF(XT::Common::FloatCmp::ne(beta_, 0.), Dune::NotImplemented, "");
     PfieldRhsFunctor functor(*this, *pfield_rhs_quad_, pfield_r1_vector_);
     XT::Grid::Walker<PGV> walker(grid_view_);
     walker.append(functor);
@@ -2914,11 +2827,9 @@ void CellModelSolver::assemble_pfield_rhs(const size_t cell, const bool restrict
 void CellModelSolver::assemble_ofield_linear_jacobian(const size_t cell, const bool restricted)
 {
   const auto& P_range_dofs = P_deim_range_dofs_[cell];
-  set_mat_to_zero(A_ofield_, restricted, ofield_submatrix_pattern_, P_range_dofs);
-  // TODO: add restricted version
-  C_ofield_linear_part_.backend() = C_ofield_elliptic_part_.backend();
+  set_mat_to_zero(B_ofield_, restricted, ofield_submatrix_pattern_, P_range_dofs);
   if constexpr (structured_uniform_grid) {
-    OfieldLinearCFunctor functor(*this, *ofield_linear_C_quad_);
+    OfieldPrepareFunctor functor(*this, *ofield_prepare_quad_);
     XT::Grid::Walker<PGV> walker(grid_view_);
     walker.append(functor);
     if (!restricted)
@@ -2945,12 +2856,11 @@ void CellModelSolver::assemble_ofield_linear_jacobian(const size_t cell, const b
           ret -= grad_u_T;
           return ret;
         });
-    A_ofield_op_->clear();
-    A_ofield_op_->append(
+    MatrixOperator<MatrixType, PGV, d> B_ofield_op(grid_view_, P_space_, P_space_, B_ofield_);
+    B_ofield_op.clear();
+    B_ofield_op.append(
         LocalElementIntegralBilinearForm<E, d>(LocalElementProductIntegrand<E, d>(Omega_minus_xi_D_transposed)));
-    A_ofield_op_->append(LocalElementIntegralBilinearForm<E, d>(LocalElementGradientValueIntegrand<E, d>(u_)));
-    C_ofield_linear_part_op_->clear();
-    C_ofield_linear_part_op_->append(*A_ofield_op_);
+    B_ofield_op.append(LocalElementIntegralBilinearForm<E, d>(LocalElementGradientValueIntegrand<E, d>(u_)));
 
     // calculate linear part S_10 = C
     XT::Functions::GenericGridFunction<E, 1, 1> c1_Pa_inv_phi(
@@ -2962,19 +2872,20 @@ void CellModelSolver::assemble_ofield_linear_jacobian(const size_t cell, const b
           const auto phi = this->eval_phi(cell, x_local, param);
           return factor * phi;
         });
-    C_ofield_linear_part_op_->append(
+    MatrixOperator<MatrixType, PGV, d> C_ofield_op(grid_view_, P_space_, P_space_, C_ofield_incl_coeffs_and_sign_);
+    C_ofield_op.append(
         LocalElementIntegralBilinearForm<E, d>(LocalElementProductScalarWeightIntegrand<E, d>(c1_Pa_inv_phi)));
     if (!restricted)
-      C_ofield_linear_part_op_->assemble(use_tbb_);
+      C_ofield_op.assemble(use_tbb_);
     else
-      C_ofield_linear_part_op_->assemble_range(ofield_deim_entities_[cell]);
-
+      C_ofield_op.assemble_range(ofield_deim_entities_[cell]);
   } // else (structured_uniform_grid)
   // In the restricted case, we cannot use the solver anyway
   if (ofield_solver_.is_schur_solver() && !restricted) {
     S_schur_ofield_linear_part_.backend() = M_ofield_.backend();
-    S_schur_ofield_linear_part_.axpy(dt_, A_ofield_);
-    S_schur_ofield_linear_part_.axpy(-dt_ / kappa_, C_ofield_linear_part_);
+    S_schur_ofield_linear_part_.axpy(dt_, B_ofield_);
+    S_schur_ofield_linear_part_.axpy(-dt_ / kappa_, C_ofield_incl_coeffs_and_sign_);
+    S_schur_ofield_linear_part_.axpy(dt_ / (kappa_ * Pa_), E_ofield_);
   }
 } // ... assemble_ofield_linear_jacobian(...)
 
@@ -2983,23 +2894,24 @@ void CellModelSolver::assemble_ofield_linear_jacobian(const size_t cell, const b
 // jacobian
 void CellModelSolver::assemble_ofield_nonlinear_jacobian(const VectorType& y, const size_t cell, const bool restricted)
 {
-  fill_tmp_ofield(cell, y, restricted);
+  if constexpr (!structured_uniform_grid)
+    fill_tmp_ofield(cell, y, restricted);
   assemble_C_ofield_nonlinear_part(cell, restricted);
   if (!restricted) {
     if (ofield_solver_.is_schur_solver()) {
       ofield_solver_.schur_matrix() = S_schur_ofield_linear_part_;
-      ofield_solver_.schur_matrix().axpy(-dt_ / kappa_, C_ofield_nonlinear_part_);
+      ofield_solver_.schur_matrix().axpy(-dt_ / kappa_, Dd_f_ofield_incl_coeffs_and_sign_);
     }
     ofield_solver_.prepare(cell, restricted);
   }
 }
 
-
 void CellModelSolver::assemble_C_ofield_nonlinear_part(const size_t cell, const bool restricted)
 {
-  set_mat_to_zero(C_ofield_nonlinear_part_, restricted, ofield_submatrix_pattern_, Pnat_deim_range_dofs_[cell]);
+  set_mat_to_zero(
+      Dd_f_ofield_incl_coeffs_and_sign_, restricted, ofield_submatrix_pattern_, Pnat_deim_range_dofs_[cell]);
   if constexpr (structured_uniform_grid) {
-    OfieldNonlinearCFunctor functor(*this, *ofield_residual_and_nonlinear_C_quad_);
+    OfieldNonlinearS10Functor functor(*this, *ofield_residual_and_nonlinear_S10_quad_);
     XT::Grid::Walker<PGV> walker(grid_view_);
     walker.append(functor);
     if (!restricted)
@@ -3017,22 +2929,23 @@ void CellModelSolver::assemble_C_ofield_nonlinear_part(const size_t cell, const 
           const auto P_n = this->eval_P(cell, x_local, param);
           return factor * P_n.two_norm2();
         });
-    C_ofield_nonlinear_part_op_->clear();
-    C_ofield_nonlinear_part_op_->append(
+
+    MatrixOperator<MatrixType, PGV, d> S10_ofield_op(grid_view_, P_space_, P_space_, Dd_f_ofield_incl_coeffs_and_sign_);
+    S10_ofield_op.clear();
+    S10_ofield_op.append(
         LocalElementIntegralBilinearForm<E, d>(LocalElementProductScalarWeightIntegrand<E, d>(c1_Pa_P2)));
-    C_ofield_nonlinear_part_op_->append(LocalElementIntegralBilinearForm<E, d>(
+    S10_ofield_op.append(LocalElementIntegralBilinearForm<E, d>(
         LocalElementOtimesMatrixIntegrand<E, d>(P_tmp_[cell], -2. * c_1_ / Pa_)));
     if (!restricted)
-      C_ofield_nonlinear_part_op_->assemble(use_tbb_);
+      S10_ofield_op.assemble(use_tbb_);
     else
-      C_ofield_nonlinear_part_op_->assemble_range(ofield_deim_entities_[cell]);
+      S10_ofield_op.assemble_range(ofield_deim_entities_[cell]);
   }
 }
 
 // assembles linear part of phase field jacobian
 void CellModelSolver::assemble_pfield_linear_jacobian(const size_t cell, const bool restricted)
 {
-  // assemble matrix S_{00} = M + dt D
   assemble_B_pfield(cell, restricted);
 }
 
@@ -3074,27 +2987,29 @@ void CellModelSolver::assemble_B_pfield(const size_t cell, const bool restricted
           ret *= -1;
           return ret;
         });
-    B_pfield_op_->clear();
-    B_pfield_op_->append(
+    MatrixOperator<MatrixType, PGV, 1> B_pfield_op(grid_view_, phi_space_, phi_space_, B_pfield_);
+    B_pfield_op.clear();
+    B_pfield_op.append(
         LocalElementIntegralBilinearForm<E, 1>(LocalElementGradientValueIntegrand<E, 1, 1, R, R, R, true>(minus_u)));
     if (!restricted)
-      B_pfield_op_->assemble(use_tbb_);
+      B_pfield_op.assemble(use_tbb_);
     else
-      B_pfield_op_->assemble_range(pfield_deim_entities_[cell]);
+      B_pfield_op.assemble_range(pfield_deim_entities_[cell]);
   }
 }
 
 // assembles nonlinear part of phase field jacobian
 void CellModelSolver::assemble_pfield_nonlinear_jacobian(const VectorType& y, const size_t cell, const bool restricted)
 {
-  fill_tmp_pfield(cell, y, restricted);
+  if constexpr (!structured_uniform_grid)
+    fill_tmp_pfield(cell, y, restricted);
   // clear matrices
   const auto& phinat_range_dofs = phinat_deim_range_dofs_[cell];
   const auto& mu_range_dofs = mu_deim_range_dofs_[cell];
-  set_mat_to_zero(M_nonlin_pfield_, restricted, pfield_submatrix_pattern_, mu_range_dofs);
+  set_mat_to_zero(Dmu_f_pfield_, restricted, pfield_submatrix_pattern_, mu_range_dofs);
   if (restricted)
-    set_mat_to_zero(M_nonlin_pfield_, restricted, pfield_submatrix_pattern_, phinat_range_dofs);
-  set_mat_to_zero(Dphi_f_pfield_, restricted, pfield_submatrix_pattern_, phinat_range_dofs);
+    set_mat_to_zero(Dmu_f_pfield_, restricted, pfield_submatrix_pattern_, phinat_range_dofs);
+  set_mat_to_zero(Dphi_f_pfield_incl_coeffs_and_sign_, restricted, pfield_submatrix_pattern_, phinat_range_dofs);
   if constexpr (structured_uniform_grid) {
     DUNE_THROW_IF(num_cells_ > 1, Dune::NotImplemented, "");
     PfieldNonlinearJacobianFunctor functor(*this, *pfield_residual_and_nonlinear_jac_quad_);
@@ -3116,13 +3031,14 @@ void CellModelSolver::assemble_pfield_nonlinear_jacobian(const VectorType& y, co
           const R phi_n = this->eval_phi(cell, x_local, param);
           return (3. * phi_n * phi_n - 1.);
         });
-    M_nonlin_pfield_op_->clear();
-    M_nonlin_pfield_op_->append(
+    MatrixOperator<MatrixType, PGV, 1> M_nonlin_pfield_op(grid_view_, phi_space_, phi_space_, Dmu_f_pfield_);
+    M_nonlin_pfield_op.clear();
+    M_nonlin_pfield_op.append(
         LocalElementIntegralBilinearForm<E, 1>(LocalElementProductScalarWeightIntegrand<E, 1>(M_nonlin_prefactor)));
     if (!restricted)
-      M_nonlin_pfield_op_->assemble(use_tbb_);
+      M_nonlin_pfield_op.assemble(use_tbb_);
     else
-      M_nonlin_pfield_op_->assemble_range(pfield_deim_entities_[cell]);
+      M_nonlin_pfield_op.assemble_range(pfield_deim_entities_[cell]);
     // assemble_Dphi_f
     XT::Functions::GenericGridFunction<E, 1, 1> Dphi_f_prefactor(
         /*order = */ num_cells_ > 1 ? 2 * phi_space_.max_polorder() + 20 : 2 * phi_space_.max_polorder(),
@@ -3161,13 +3077,15 @@ void CellModelSolver::assemble_pfield_nonlinear_jacobian(const VectorType& y, co
           } // num_cells > 1
           return ret;
         });
-    Dphi_f_pfield_op_->clear();
-    Dphi_f_pfield_op_->append(
+    MatrixOperator<MatrixType, PGV, 1> Dphi_f_pfield_op(
+        grid_view_, phi_space_, phi_space_, Dphi_f_pfield_incl_coeffs_and_sign_);
+    Dphi_f_pfield_op.clear();
+    Dphi_f_pfield_op.append(
         LocalElementIntegralBilinearForm<E, 1>(LocalElementProductScalarWeightIntegrand<E, 1>(Dphi_f_prefactor)));
     if (!restricted)
-      Dphi_f_pfield_op_->assemble(use_tbb_);
+      Dphi_f_pfield_op.assemble(use_tbb_);
     else
-      Dphi_f_pfield_op_->assemble_range(pfield_deim_entities_[cell]);
+      Dphi_f_pfield_op.assemble_range(pfield_deim_entities_[cell]);
   } // else (structured_uniform_grid)
 }
 
@@ -3206,7 +3124,6 @@ void CellModelSolver::assemble_nonlinear_part_of_pfield_residual(VectorType& res
         },
         /*evaluate_func*/
         [cell,
-         Ca_inv = 1. / Ca_,
          In_inv = 1. / In_,
          eps_inv = 1. / epsilon_,
          num_cells = num_cells_,
@@ -3215,7 +3132,7 @@ void CellModelSolver::assemble_nonlinear_part_of_pfield_residual(VectorType& res
           // evaluate P, divP
           const auto phi_n = this->eval_phi(cell, x_local, param);
           const auto mu_n = this->eval_mu(cell, x_local, param);
-          auto ret = (Ca_inv + inv_Be_eps2 * (3. * phi_n * phi_n - 1)) * mu_n;
+          auto ret = inv_Be_eps2 * (3. * phi_n * phi_n - 1) * mu_n;
           if (num_cells > 1) {
             R wsum = 0.;
             R Bsum = 0.;
