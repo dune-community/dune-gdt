@@ -58,9 +58,6 @@ class IterativeSolver;
 template <class X, class Y>
 class Preconditioner;
 
-template <class X, class M, class T>
-class PfieldPhiMatrixOperator;
-
 template <class X, class M>
 class MatrixToLinearOperator;
 
@@ -136,8 +133,6 @@ public:
   // Has to be called after mass matrix is assembled.
   void setup();
 
-  void set_params(const XT::Common::Parameter& param, const bool restricted = false);
-
   void prepare(const size_t cell, const bool restricted);
 
   // Calling this method will result in ret = M^{-1} rhs.
@@ -204,22 +199,21 @@ public:
   using EigenVectorType = typename CellModelLinearSolverWrapper::EigenVectorType;
   using LinearOperatorType = typename CellModelLinearSolverWrapper::LinearOperatorType;
   using ScalarProductType = typename CellModelLinearSolverWrapper::ScalarProductType;
-  using SchurMatrixLinearOperatorType = PfieldPhiMatrixOperator<EigenVectorType, MatrixType, ThisType>;
   using SystemMatrixLinearOperatorType = MatrixToLinearOperator<EigenVectorType, MatrixType>;
   using PhiScalarProductType = MassMatrixScalarProduct<EigenVectorType, MatrixType>;
   using PfieldScalarProductType = PfieldScalarProduct<EigenVectorType, MatrixType>;
   using MatrixViewType = XT::LA::MatrixView<MatrixType>;
 
-  PfieldLinearSolver(const double gamma,
+  PfieldLinearSolver(const double dt,
+                     const double gamma,
                      const double epsilon,
                      const double Be,
                      const double Ca,
-                     const double dt,
                      const MatrixType& M,
-                     const MatrixType& K,
-                     const MatrixType& D,
-                     const MatrixType& G,
-                     const MatrixType& M_nonlin,
+                     const MatrixType& E,
+                     const MatrixType& B,
+                     const MatrixType& Dphi_f_incl_coeffs_and_sign,
+                     const MatrixType& Dmu_f,
                      const CellModelLinearSolverType solver_type,
                      const CellModelMassMatrixSolverType mass_matrix_solver_type,
                      const XT::LA::SparsityPatternDefault& submatrix_pattern,
@@ -234,7 +228,7 @@ public:
   // Has to be called after mass matrix is assembled.
   void setup();
 
-  void set_params(const XT::Common::Parameter& param, const bool restricted = false);
+  void set_params(const double gamma, const double epsilon, const double Be, const double Ca);
 
   void prepare(const size_t cell, const bool restricted = false);
 
@@ -268,16 +262,16 @@ private:
 
   std::shared_ptr<Dune::ScalarProduct<EigenVectorType>> create_scalar_product();
 
-  const R dt_;
+  R dt_;
   R gamma_;
   R epsilon_;
   R Be_;
   R Ca_;
   const MatrixType& M_;
-  const MatrixType& K_;
+  const MatrixType& E_;
   const MatrixType& B_;
-  const MatrixType& Dphi_f_;
-  const MatrixType& M_nonlin_;
+  const MatrixType& Dphi_f_incl_coeffs_and_sign_;
+  const MatrixType& Dmu_f_;
   CellModelLinearSolverType solver_type_;
   const bool is_schur_solver_;
   const size_t size_phi_;
@@ -316,12 +310,14 @@ public:
   using OfieldScalarProductType = OfieldScalarProduct<EigenVectorType, MatrixType>;
   using MatrixViewType = XT::LA::MatrixView<MatrixType>;
 
-  OfieldLinearSolver(const double kappa,
-                     const double dt,
+  OfieldLinearSolver(const double dt,
+                     const double kappa,
+                     const double Pa,
                      const MatrixType& M,
-                     const MatrixType& A,
-                     const MatrixType& C_linear,
-                     const MatrixType& C_nonlinear,
+                     const MatrixType& E_,
+                     const MatrixType& B,
+                     const MatrixType& C_incl_coeffs_and_sign,
+                     const MatrixType& Dd_f_incl_coeffs_and_sign,
                      const CellModelLinearSolverType solver_type,
                      const CellModelMassMatrixSolverType mass_matrix_solver_type,
                      const XT::LA::SparsityPatternDefault& submatrix_pattern,
@@ -336,7 +332,7 @@ public:
   // Has to be called after mass matrix is assembled.
   void setup();
 
-  void set_params(const XT::Common::Parameter& param, const bool restricted = false);
+  void set_params(const double dt, const double kappa, const double Pa);
 
   void prepare(const size_t cell, const bool restricted = false);
 
@@ -365,12 +361,14 @@ private:
 
   std::shared_ptr<Dune::ScalarProduct<EigenVectorType>> create_scalar_product();
 
-  const R dt_;
+  R dt_;
   R kappa_;
+  R Pa_;
   const MatrixType& M_;
-  const MatrixType& A_;
-  const MatrixType& C_linear_part_;
-  const MatrixType& C_nonlinear_part_;
+  const MatrixType& E_;
+  const MatrixType& B_;
+  const MatrixType& C_incl_coeffs_and_sign_;
+  const MatrixType& Dd_f_incl_coeffs_and_sign_;
   const bool is_schur_solver_;
   const size_t size_P_;
   std::shared_ptr<MatrixType> S_;
