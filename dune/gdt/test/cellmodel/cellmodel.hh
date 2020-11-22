@@ -81,7 +81,7 @@ struct CellModelSolver
   using ColMajorBackendType = ::Eigen::SparseMatrix<R, ::Eigen::ColMajor>;
   using RowMajorBackendType = typename MatrixType::BackendType;
   using LUSolverType = ::Eigen::SparseLU<ColMajorBackendType>;
-  using LDLTSolverType = ::Eigen::SimplicialLDLT<ColMajorBackendType>;
+  // using LDLTSolverType = ::Eigen::SimplicialLDLT<ColMajorBackendType>;
   using OfieldDirectSolverType = ::Eigen::SparseLU<ColMajorBackendType>;
   using OfieldSchurSolverType = Dune::RestartedGMResSolver<EigenVectorType>;
   using PerThreadVectorLocalFunc = XT::Common::PerThreadValue<std::unique_ptr<VectorLocalDiscreteFunctionType>>;
@@ -148,7 +148,6 @@ struct CellModelSolver
       , u_dofs_(cellmodel.u_tmp_.dofs().vector())
       // TODO: replace 0 by cell index
       , P_dofs_(cellmodel.P_tmp_[0].dofs().vector())
-      , P2_dofs_(cellmodel.P2_.dofs().vector())
       , Pnat_dofs_(cellmodel.Pnat_tmp_[0].dofs().vector())
       , phi_dofs_(cellmodel.phi_tmp_[0].dofs().vector())
       , phinat_dofs_(cellmodel.phinat_tmp_[0].dofs().vector())
@@ -218,7 +217,6 @@ struct CellModelSolver
     const size_t phi_basis_size_;
     const VectorType& u_dofs_;
     const VectorType& P_dofs_;
-    const VectorType& P2_dofs_;
     const VectorType& Pnat_dofs_;
     const VectorType& phi_dofs_;
     const VectorType& phinat_dofs_;
@@ -759,28 +757,18 @@ struct CellModelSolver
   ViewVectorDiscreteFunctionType u_;
   ViewDiscreteFunctionType p_;
   std::vector<ViewVectorDiscreteFunctionType> P_;
-  VectorDiscreteFunctionType P2_;
   std::vector<ViewVectorDiscreteFunctionType> Pnat_;
   std::vector<ViewDiscreteFunctionType> phi_;
   std::vector<ViewDiscreteFunctionType> phinat_;
   std::vector<ViewDiscreteFunctionType> mu_;
   // Stokes system matrix S = (A B; B^T 0) and views on matrix blocks
   MatrixType S_stokes_;
-  MatrixViewType A_stokes_;
-  MatrixViewType BT_stokes_;
-  MatrixViewType C_stokes_;
-  MatrixViewType B_stokes_;
-  MatrixType A_stokes_full_;
-  MatrixType B_stokes_full_;
-  MatrixType C_stokes_full_;
   // pressure mass matrix
-  MatrixType M_p_stokes_;
+  // MatrixType M_p_stokes_;
   // finite element vector rhs = (f; g) for stokes system and views on velocity and pressure parts f and g
   EigenVectorType stokes_rhs_vector_;
   EigenVectorViewType stokes_f_vector_;
   EigenVectorViewType stokes_g_vector_;
-  // EigenVectorType stokes_f_vector_;
-  // EigenVectorType stokes_g_vector_;
   // Indices for restricted operator in DEIM context
   std::vector<std::vector<size_t>> stokes_deim_source_dofs_;
   // range dofs that were computed by the DEIM algorithm
@@ -792,7 +780,7 @@ struct CellModelSolver
   // Entities that we have to walk over to calculate values at range dofs
   std::vector<E> stokes_deim_entities_;
   // vector containing integrals of pressure basis functions (for normalizing such that \int p = 0)
-  VectorType p_basis_integrated_vector_;
+  // VectorType p_basis_integrated_vector_;
   // stokes tmp vectors
   VectorType stokes_tmp_vec_;
   VectorType stokes_tmp_vec2_;
@@ -802,16 +790,12 @@ struct CellModelSolver
   // Set to 1 by default to get 0 on the boundary instead of -1.
   // Sparsity pattern of one block of orientation field system matrix
   XT::LA::SparsityPatternDefault ofield_submatrix_pattern_;
-  // Orientation field mass matrix
+  // Orientation field matrices
   MatrixType M_ofield_;
   MatrixType B_ofield_;
-  // Part of C that is independent of phi and dt
   MatrixType E_ofield_;
-  // Whole linear part of C (elliptic part + phi-dependent part)
   MatrixType C_ofield_incl_coeffs_and_sign_;
-  // Whole linear part of C (elliptic part + phi-dependent part)
   mutable MatrixType Dd_f_ofield_incl_coeffs_and_sign_;
-  // Linear part of ofield schur matrix M/dt + A - 1/kappa C
   MatrixType S_schur_ofield_linear_part_;
   // Matrix operators for orientation field matrices
   OfieldMatrixLinearPartOperator<VectorType, MatrixType, CellModelSolver> ofield_jac_linear_op_;
@@ -821,9 +805,7 @@ struct CellModelSolver
   VectorViewType ofield_f_vector_;
   VectorViewType ofield_g_vector_;
   // Linear solvers and linear operators needed for solvers
-  mutable ColMajorBackendType S_colmajor_;
   std::shared_ptr<LUSolverType> stokes_solver_;
-  // std::shared_ptr<LDLTSolverType> stokes_solver_;
   VectorType ofield_tmp_vec_;
   VectorType ofield_tmp_vec2_;
   // Indices for restricted operator in DEIM context
@@ -846,15 +828,10 @@ struct CellModelSolver
   MatrixType E_pfield_;
   MatrixType Dmu_f_pfield_;
   MatrixType Dphi_f_pfield_incl_coeffs_and_sign_;
-  mutable ColMajorBackendType M_pfield_colmajor_;
-  mutable ColMajorBackendType S_pfield_colmajor_;
   // Pfield solvers and linear operators
   // Matrix operators for phasefield matrices
   PfieldMatrixLinearPartOperator<VectorType, MatrixType, CellModelSolver> pfield_jac_linear_op_;
   PfieldLinearSolver pfield_solver_;
-  MatrixType pfield_preconditioner_matrix_;
-  mutable ColMajorBackendType pfield_preconditioner_matrix_colmajor_;
-  std::shared_ptr<LUSolverType> pfield_preconditioner_solver_;
   // Phase field rhs vector (r0 r1 r2)
   VectorType pfield_rhs_vector_;
   VectorViewType pfield_r0_vector_;

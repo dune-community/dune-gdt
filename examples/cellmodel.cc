@@ -45,37 +45,35 @@ int main(int argc, char* argv[])
     const int pol_order = config.template get<int>("fem.degree", 1, 0, 0);
 
     // problem parameters
-    double L = config.template get<double>("problem.L", 1e-6);
-    double U = config.template get<double>("problem.U", 1e-6);
-    double rho = config.template get<double>("problem.rho", 1.e3);
-    double eta = config.template get<double>("problem.eta", 2.e3);
-    double sigma = config.template get<double>("problem.sigma", 0.0188);
-    double b_N = config.template get<double>("problem.b_N", 1.26e-14);
-    double k = config.template get<double>("problem.k", 2.e-9);
-    double xi = config.template get<double>("problem.xi", 1.1);
-    double eta_rot = config.template get<double>("problem.eta_rot", 3.3e3);
-    double zeta = config.template get<double>("problem.zeta", 2.e3);
-    double epsilon = config.template get<double>("problem.epsilon", 0.21);
-    double gamma = config.template get<double>("problem.gamma", 0.025);
-    double c_1 = config.template get<double>("problem.c_1", 5.);
-    double beta = config.template get<double>("problem.beta", 0.);
-    double In = config.template get<double>("problem.In", 1.);
-    double Re = rho * U * L / eta;
-    double Ca = 2. * std::sqrt(2) / 3. * eta * U / sigma;
-    double Be = 4. * std::sqrt(2) / 3. * eta * U * L * L / b_N;
-    double Pa = eta * U * L / k;
-    // double Be = config.template get<double>("problem.Be", 0.3);
-    // double Ca = config.template get<double>("problem.Ca", 0.1);
-    // double Pa = config.template get<double>("problem.Pa", 1.0);
-    double Fa = eta * U / (zeta * L);
-    const double kappa = eta_rot / eta;
-    std::cout << "Ca: " << Ca << ", Be: " << Be << ", Pa: " << Pa << ", Fa: " << Fa << ", Re: " << Re << std::endl;
+    const double epsilon = config.template get<double>("problem.epsilon", 0.21);
+    const double gamma = config.template get<double>("problem.gamma", 0.025);
+    const double c_1 = config.template get<double>("problem.c_1", 5.);
+    const double kappa = config.template get<double>("problem.kappa", 1.);
+    const double xi = config.template get<double>("problem.xi", 1.1);
+    const double In = config.template get<double>("problem.In", 1.);
+    const double Re = 1e-13;
+    const double Be = config.template get<double>("problem.Be", 1.0);
+    const double Ca = config.template get<double>("problem.Ca", 1.0);
+    const double Pa = config.template get<double>("problem.Pa", 1.0);
+    const double Fa = config.template get<double>("problem.Fa", 1.0);
+    const double beta = 0.;
 
     // output
-    std::string filename = config.get("output.filename", "cellmodel");
     bool subsampling = config.get<bool>("output.subsampling", false);
     // a negative value of write step is interpreted as "write all steps"
     double write_step = config.template get<double>("output.write_step", -1.);
+    std::string filename = config.get("output.prefix", "cpp");
+    filename += XT::Grid::is_yaspgrid<typename CellModelSolver::G>::value ? "_cube" : "_simplex";
+    filename += XT::Common::to_string(num_elements_x) + "x" + XT::Common::to_string(num_elements_y);
+    filename += "_Be" + XT::Common::to_string(Be);
+    filename += "_Ca" + XT::Common::to_string(Ca);
+    filename += "_Pa" + XT::Common::to_string(Pa);
+    filename += "_Fa" + XT::Common::to_string(Fa);
+    filename += "_dt" + XT::Common::to_string(dt);
+    filename += "_writestep" + XT::Common::to_string(write_step);
+    filename += "_polorder" + XT::Common::to_string(pol_order);
+
+    // solver
     const double gmres_reduction = DXTC_CONFIG_GET("gmres_reduction", 1e-13);
     const int gmres_restart = DXTC_CONFIG_GET("gmres_restart", 100);
     const double inner_gmres_reduction = DXTC_CONFIG_GET("inner_gmres_reduction", 1e-3);

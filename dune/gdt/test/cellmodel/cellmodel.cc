@@ -195,17 +195,12 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   , p_view_(stokes_vector_, size_u_, size_u_ + size_p_)
   , u_(u_space_, u_view_, "u")
   , p_(p_space_, p_view_, "p")
-  , P2_(P_space_, "P2")
   , S_stokes_(size_u_ + size_p_, size_u_ + size_p_, create_stokes_pattern(u_space_, p_space_), 100)
-  , A_stokes_(S_stokes_, 0, size_u_, 0, size_u_)
-  , BT_stokes_(S_stokes_, 0, size_u_, size_u_, size_u_ + size_p_)
-  , C_stokes_(S_stokes_, size_u_, size_u_ + size_p_, size_u_, size_u_ + size_p_)
-  , B_stokes_(S_stokes_, size_u_, size_u_ + size_p_, 0, size_u_)
-  , M_p_stokes_(size_p_, size_p_, make_element_sparsity_pattern(p_space_, p_space_, grid_view_), 100)
+  // , M_p_stokes_(size_p_, size_p_, make_element_sparsity_pattern(p_space_, p_space_, grid_view_), 100)
   , stokes_rhs_vector_(size_u_ + size_p_, 0., num_mutexes_u_)
   , stokes_f_vector_(stokes_rhs_vector_, 0, size_u_)
   , stokes_g_vector_(stokes_rhs_vector_, size_u_, size_u_ + size_p_)
-  , p_basis_integrated_vector_(size_p_)
+  // , p_basis_integrated_vector_(size_p_)
   , stokes_tmp_vec_(size_u_ + size_p_)
   , stokes_tmp_vec2_(size_u_ + size_p_)
   , u_dirichlet_constraints_(make_dirichlet_constraints(u_space_, boundary_info_))
@@ -321,7 +316,6 @@ CellModelSolver::CellModelSolver(const std::string testcase,
    ************************** we only need initial values for P and phi *******************************/
 
   std::shared_ptr<const XT::Functions::FunctionInterface<d, d>> u_initial_func;
-  std::shared_ptr<const XT::Functions::FunctionInterface<d, d>> P2_initial_func;
   std::vector<std::shared_ptr<const XT::Functions::FunctionInterface<d>>> phi_initial_funcs;
   std::vector<std::shared_ptr<const XT::Functions::FunctionInterface<d, d>>> P_initial_funcs;
 
@@ -361,21 +355,21 @@ CellModelSolver::CellModelSolver(const std::string testcase,
     P_initial_funcs.emplace_back(std::make_shared<const XT::Functions::GenericFunction<d, d>>(
         50,
         /*evaluate=*/
-        [& phi_in = phi_initial_funcs[0]](const auto& /*x*/, const auto& /*param*/) {
+        [& phi_in = phi_initial_funcs[0]](const auto& x, const auto& param) {
           // auto rand1 = ((std::rand() % 2000) - 1000) / 20000.;
           // auto rand2 = ((std::rand() % 2000) - 1000) / 20000.;
           // auto ret = FieldVector<double, d>({1. + rand1, 0. +
           // rand2});
-          double rand1 = std::rand() - RAND_MAX / 2;
-          double rand2 = std::rand() - RAND_MAX / 2;
-          rand1 /= std::sqrt(rand1 * rand1 + rand2 * rand2);
-          rand2 /= std::sqrt(rand1 * rand1 + rand2 * rand2);
-          auto ret = FieldVector<double, d>({rand1, rand2});
+          // double rand1 = std::rand() - RAND_MAX / 2;
+          // double rand2 = std::rand() - RAND_MAX / 2;
+          // rand1 /= std::sqrt(rand1 * rand1 + rand2 * rand2);
+          // rand2 /= std::sqrt(rand1 * rand1 + rand2 * rand2);
+          // auto ret = FieldVector<double, d>({rand1, rand2});
           // small bias to point more in x direction
           // if (((x[0] > 9.5 && x[0] < 10.5) || (x[0] > 19.5 && x[0] < 20.5)) && x[1] > 14.5 && x[1] < 15.5)
           // ret[0] += (ret[0] > 0) ? 0.05 : -0.05;
-          // auto ret = FieldVector<double, d>({1., 0.});
-          // ret *= (phi_in->evaluate(x, param) + 1.) / 2.;
+          auto ret = FieldVector<double, d>({1., 0.});
+          ret *= (phi_in->evaluate(x, param) + 1.) / 2.;
           return ret;
         },
         /*name=*/"P_initial"));
@@ -492,26 +486,6 @@ CellModelSolver::CellModelSolver(const std::string testcase,
           return ret;
         },
         /*name=*/"P_initial"));
-    auto r2 = [](const auto& xr) { return 30 - xr[0]; };
-    auto phi_P2 = make_shared<XT::Functions::GenericFunction<d>>(
-        50,
-        /*evaluate=*/
-        [r2, epsilon = epsilon_](const auto& x, const auto& /*param*/) {
-          return std::tanh(r2(x) / (std::sqrt(2.) * epsilon));
-        },
-        /*name=*/"phi_P2");
-    P2_initial_func = std::make_shared<const XT::Functions::GenericFunction<d, d>>(
-        50,
-        /*evaluate=*/
-        [phi_P2, center4, phi = phi_initial_funcs[0]](const auto& x, const auto& param) {
-          auto ret = FieldVector<double, d>({x[0] - center4[0], x[1] - center4[1]});
-          if (ret.two_norm() > 1e-8)
-            ret /= ret.two_norm();
-          ret *= (phi_P2->evaluate(x, param) + 1.) / 2.;
-          ret *= (phi->evaluate(x, param) + 1.) / 2.;
-          return ret;
-        },
-        /*name=*/"P2_initial");
     u_initial_func = std::make_shared<const XT::Functions::ConstantFunction<d, d>>(0.);
   } else {
     DUNE_THROW(Dune::NotImplemented, "Unknown testcase");
@@ -526,7 +500,6 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   XT::Grid::AllDirichletBoundaryInfo<PI> all_dirichlet_boundary_info;
   default_interpolation(*u_initial_func, u_);
   // create system and temporary vectors, DiscreteFunctions, etc.
-  default_interpolation(*P2_initial_func, P2_);
   for (size_t kk = 0; kk < num_cells_; kk++) {
     P_view_.emplace_back(ofield_vectors_[kk], 0, size_P_);
     Pnat_view_.emplace_back(ofield_vectors_[kk], size_P_, 2 * size_P_);
@@ -551,31 +524,33 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   /*************************************************************************************************
    *************************************** Stokes **************************************************
    *************************************************************************************************/
-  if (Re_ > 1e-2)
-    DUNE_THROW(NotImplemented, "No Navier-Stokes solver implemented yet!");
 
-  MatrixOperator<MatrixViewType, PGV, d> A_stokes_op(grid_view_, u_space_, u_space_, A_stokes_);
-  MatrixOperator<MatrixViewType, PGV, 1, 1, d> BT_stokes_op(grid_view_, p_space_, u_space_, BT_stokes_);
-  MatrixOperator<MatrixType, PGV, 1, 1, 1> M_p_stokes_op(grid_view_, p_space_, p_space_, M_p_stokes_);
+  MatrixViewType A_stokes(S_stokes_, 0, size_u_, 0, size_u_);
+  MatrixViewType BT_stokes(S_stokes_, 0, size_u_, size_u_, size_u_ + size_p_);
+  MatrixViewType C_stokes(S_stokes_, size_u_, size_u_ + size_p_, size_u_, size_u_ + size_p_);
+  MatrixViewType B_stokes(S_stokes_, size_u_, size_u_ + size_p_, 0, size_u_);
+  MatrixOperator<MatrixViewType, PGV, d> A_stokes_op(grid_view_, u_space_, u_space_, A_stokes);
+  MatrixOperator<MatrixViewType, PGV, 1, 1, d> BT_stokes_op(grid_view_, p_space_, u_space_, BT_stokes);
+  // MatrixOperator<MatrixType, PGV, 1, 1, 1> M_p_stokes_op(grid_view_, p_space_, p_space_, M_p_stokes_);
   // Stokes matrix is [A B^T; B C]
   // calculate A_{ij} as \int 0.5 \nabla v_i \nabla v_j
   A_stokes_op.append(LocalElementIntegralBilinearForm<E, d>(LocalLaplaceIntegrand<E, d>(0.5)));
   // calculate (B^T)_{ij} as \int p_i div(v_j)
   BT_stokes_op.append(LocalElementIntegralBilinearForm<E, d, 1, double, double, 1>(
       LocalElementAnsatzValueTestDivProductIntegrand<E>()));
-  M_p_stokes_op.append(LocalElementIntegralBilinearForm<E, 1>(LocalElementProductScalarWeightIntegrand<E, 1>()));
+  // M_p_stokes_op.append(LocalElementIntegralBilinearForm<E, 1>(LocalElementProductScalarWeightIntegrand<E, 1>()));
 
-  auto p_basis_integrated_functional = make_vector_functional(p_space_, p_basis_integrated_vector_);
-  const XT::Functions::ConstantGridFunction<E> one_function(1);
-  p_basis_integrated_functional.append(
-      LocalElementIntegralFunctional<E, 1>(LocalElementProductScalarWeightIntegrand<E, 1>().with_ansatz(one_function)));
-  BT_stokes_op.append(p_basis_integrated_functional);
+  // auto p_basis_integrated_functional = make_vector_functional(p_space_, p_basis_integrated_vector_);
+  // const XT::Functions::ConstantGridFunction<E> one_function(1);
+  // p_basis_integrated_functional.append(
+  // LocalElementIntegralFunctional<E, 1>(LocalElementProductScalarWeightIntegrand<E, 1>().with_ansatz(one_function)));
+  // BT_stokes_op.append(p_basis_integrated_functional);
 
   // Dirichlet constrainst for u
   A_stokes_op.append(u_dirichlet_constraints_);
   // assemble everything
   A_stokes_op.append(BT_stokes_op);
-  A_stokes_op.append(M_p_stokes_op);
+  // A_stokes_op.append(M_p_stokes_op);
   std::cout << "Assembling stokes..." << std::flush;
   A_stokes_op.assemble(use_tbb_);
   std::cout << "done" << std::endl;
@@ -584,24 +559,21 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   // [A B^T; B 0] to the unit vector.
   static constexpr size_t dof_index = 0;
   S_stokes_.set_entry(size_u_ + dof_index, size_u_ + dof_index, 1.);
-  BT_stokes_.clear_col(dof_index);
+  BT_stokes.clear_col(dof_index);
   stokes_g_vector_.set_entry(dof_index, 0.);
 
-  u_dirichlet_constraints_.apply(A_stokes_, false, true);
+  u_dirichlet_constraints_.apply(A_stokes, false, true);
   for (const auto& DoF : u_dirichlet_constraints_.dirichlet_DoFs())
-    BT_stokes_.clear_row(DoF);
+    BT_stokes.clear_row(DoF);
 
   // Set B
-  const auto BT_pattern = BT_stokes_.pattern();
+  const auto BT_pattern = BT_stokes.pattern();
   for (size_t ii = 0; ii < size_u_; ii++)
     for (const auto& jj : BT_pattern.inner(ii))
-      B_stokes_.set_entry(jj, ii, BT_stokes_.get_entry(ii, jj));
+      B_stokes.set_entry(jj, ii, BT_stokes.get_entry(ii, jj));
 
-  std::cout << "Setting up stokes solver..." << std::flush;
-  S_colmajor_ = S_stokes_.backend();
-  S_colmajor_.makeCompressed();
-  stokes_solver_->analyzePattern(S_colmajor_);
-  stokes_solver_->factorize(S_colmajor_);
+  std::cout << "Factorizing Stokes system matrix..." << std::flush;
+  stokes_solver_->compute(S_stokes_.backend());
   std::cout << "done" << std::endl;
 
   /*************************************************************************************************
@@ -1318,7 +1290,6 @@ struct CellModelSolver::StokesRhsFunctor : public XT::Grid::ElementFunctor<PGV>
     : cellmodel_(cellmodel)
     , quad_storage_(quad_storage)
     , P_(0.)
-    , P2_(0.)
     , Pnat_(0.)
     , grad_P_(0.)
     , grad_phi_(0.)
@@ -1327,7 +1298,6 @@ struct CellModelSolver::StokesRhsFunctor : public XT::Grid::ElementFunctor<PGV>
     , phi_basis_jacobians_transformed_(quad_storage_.phi_basis_jacobians_)
     , result_(quad_storage_.u_basis_size_)
     , P_coeffs_(quad_storage_.P_basis_size_)
-    , P2_coeffs_(quad_storage_.P_basis_size_)
     , Pnat_coeffs_(quad_storage_.P_basis_size_)
     , phi_coeffs_(quad_storage_.phi_basis_size_)
     , phinat_coeffs_(quad_storage_.phi_basis_size_)
@@ -1357,7 +1327,6 @@ struct CellModelSolver::StokesRhsFunctor : public XT::Grid::ElementFunctor<PGV>
     const auto& quadrature = quad_storage_.quadrature_;
     for (size_t ii = 0; ii < P_basis_size; ++ii) {
       P_coeffs_[ii] = quad_storage_.P_dofs_[global_indices_P[ii]];
-      P2_coeffs_[ii] = quad_storage_.P2_dofs_[global_indices_P[ii]];
       Pnat_coeffs_[ii] = quad_storage_.Pnat_dofs_[global_indices_P[ii]];
     }
     for (size_t ii = 0; ii < phi_basis_size; ++ii) {
@@ -1400,11 +1369,9 @@ struct CellModelSolver::StokesRhsFunctor : public XT::Grid::ElementFunctor<PGV>
 
       // for (size_t kk = 0; kk < num_cells_; ++kk) {
       P_ *= 0.;
-      P2_ *= 0.;
       Pnat_ *= 0.;
       for (size_t ii = 0; ii < P_basis_size; ++ii) {
         P_.axpy(P_coeffs_[ii], quad_storage_.P_basis_evaluated_[ll][ii]);
-        P2_.axpy(P2_coeffs_[ii], quad_storage_.P_basis_evaluated_[ll][ii]);
         Pnat_.axpy(Pnat_coeffs_[ii], quad_storage_.P_basis_evaluated_[ll][ii]);
       }
       if (!quad_storage_.P_affine_ || !geometry_affine) {
@@ -1447,7 +1414,6 @@ struct CellModelSolver::StokesRhsFunctor : public XT::Grid::ElementFunctor<PGV>
   CellModelSolver& cellmodel_;
   const QuadratureStorage& quad_storage_;
   DomainType P_;
-  DomainType P2_;
   DomainType Pnat_;
   FieldMatrix<double, 2, 2> grad_P_;
   FieldMatrix<double, 1, 2> grad_phi_;
@@ -1456,7 +1422,6 @@ struct CellModelSolver::StokesRhsFunctor : public XT::Grid::ElementFunctor<PGV>
   std::vector<std::vector<FieldMatrix<double, 1, 2>>> phi_basis_jacobians_transformed_;
   std::vector<double> result_;
   std::vector<double> P_coeffs_;
-  std::vector<double> P2_coeffs_;
   std::vector<double> Pnat_coeffs_;
   std::vector<double> phi_coeffs_;
   std::vector<double> phinat_coeffs_;
@@ -1699,7 +1664,7 @@ CellModelSolver::VectorType CellModelSolver::apply_stokes_product_operator(const
   VectorViewType p_ret_view(ret, size_u_, size_u_ + size_p_);
   // The Orientation field variables and u have the same basis so use M_ofield_
   M_ofield_.mv(u_view, u_ret_view);
-  M_p_stokes_.mv(p_view, p_ret_view);
+  // M_p_stokes_.mv(p_view, p_ret_view);
   return ret;
 }
 
@@ -1765,7 +1730,6 @@ void CellModelSolver::visualize(const std::string& prefix,
   if (vtu) {
     XT::Functions::internal::add_to_vtkwriter(*vtk_writer, u_);
     XT::Functions::internal::add_to_vtkwriter(*vtk_writer, p_);
-    XT::Functions::internal::add_to_vtkwriter(*vtk_writer, P2_);
     std::vector<VectorType> phi_vec(num_cells_, VectorType(size_phi_, 0.));
     std::vector<std::shared_ptr<ConstDiscreteFunctionType>> phi_funcs(num_cells_);
     for (size_t kk = 0; kk < num_cells_; ++kk) {
@@ -1888,25 +1852,25 @@ const CellModelSolver::VectorType& CellModelSolver::pfield_vec(const size_t cell
 
 void CellModelSolver::prepare_stokes_operator(const bool restricted)
 {
-  if constexpr (!structured_uniform_grid) {
-    u_tmp_.dofs().vector() = u_.dofs().vector();
-    for (size_t kk = 0; kk < num_cells_; kk++) {
-      phi_tmp_[kk].dofs().vector() = phi_[kk].dofs().vector();
-      phinat_tmp_[kk].dofs().vector() = phinat_[kk].dofs().vector();
-      P_tmp_[kk].dofs().vector() = P_[kk].dofs().vector();
-      Pnat_tmp_[kk].dofs().vector() = Pnat_[kk].dofs().vector();
-    }
+  // copy VectorViews to actual vectors to improve performance
+  u_tmp_.dofs().vector() = u_.dofs().vector();
+  for (size_t kk = 0; kk < num_cells_; kk++) {
+    phi_tmp_[kk].dofs().vector() = phi_[kk].dofs().vector();
+    phinat_tmp_[kk].dofs().vector() = phinat_[kk].dofs().vector();
+    P_tmp_[kk].dofs().vector() = P_[kk].dofs().vector();
+    Pnat_tmp_[kk].dofs().vector() = Pnat_[kk].dofs().vector();
   }
+  // assemble
   assemble_stokes_rhs(restricted);
 }
 
 void CellModelSolver::prepare_ofield_operator(const size_t cell, const bool restricted)
 {
-  if constexpr (!structured_uniform_grid) {
-    u_tmp_.dofs().vector() = u_.dofs().vector();
-    P_tmp_[cell].dofs().vector() = P_[cell].dofs().vector();
-    phi_tmp_[cell].dofs().vector() = phi_[cell].dofs().vector();
-  }
+  // copy VectorViews to actual vectors to improve performance
+  u_tmp_.dofs().vector() = u_.dofs().vector();
+  P_tmp_[cell].dofs().vector() = P_[cell].dofs().vector();
+  phi_tmp_[cell].dofs().vector() = phi_[cell].dofs().vector();
+  // assemble
   ofield_jac_linear_op_.prepare(cell, restricted);
   assemble_ofield_rhs(cell, restricted);
   assemble_ofield_linear_jacobian(cell, restricted);
@@ -2333,8 +2297,7 @@ CellModelSolver::apply_ofield_helper(const VectorType& y, const size_t cell, con
     mv(Dd_f_ofield_incl_coeffs_and_sign_, source_P, P_tmp_vec_, Pnat_range_dofs);
     add(range_Pnat, P_tmp_vec_, Pnat_range_dofs);
   } else {
-    if constexpr (!structured_uniform_grid)
-      fill_tmp_ofield(cell, source, restricted);
+    fill_tmp_ofield(cell, source, restricted);
     assemble_nonlinear_part_of_ofield_residual(residual, cell, restricted);
   }
   if (restricted) {
@@ -2393,18 +2356,17 @@ CellModelSolver::apply_pfield_helper(const VectorType& y, const size_t cell, con
     const auto vector_axpy = vector_axpy_func<VectorViewType, VectorType>(restricted);
     const auto scal = scal_func<VectorType>(restricted);
     const auto add = add_func<VectorViewType, VectorType>(restricted);
-    // apply missing parts of J
+    // apply missing parts of S_12
     mv(Dmu_f_pfield_, source_mu, tmp_vec, phinat_range_dofs);
     vector_axpy(range_phinat, 1. / (Be_ * std::pow(epsilon_, 2)), tmp_vec, phinat_range_dofs);
-    // apply missing parts of A
+    // apply missing parts of S_20
     mv(Dmu_f_pfield_, source_phi, tmp_vec, mu_range_dofs);
     vector_axpy(range_mu, 1. / epsilon_, tmp_vec, mu_range_dofs);
-    // apply G
+    // apply S_10
     mv(Dphi_f_pfield_incl_coeffs_and_sign_, source_phi, tmp_vec, phinat_range_dofs);
     add(range_phinat, tmp_vec, phinat_range_dofs);
   } else {
-    if constexpr (!structured_uniform_grid)
-      fill_tmp_pfield(cell, source, restricted);
+    fill_tmp_pfield(cell, source, restricted);
     assemble_nonlinear_part_of_pfield_residual(residual, cell, restricted);
   }
   if (restricted) {
@@ -2827,7 +2789,9 @@ void CellModelSolver::assemble_pfield_rhs(const size_t cell, const bool restrict
 void CellModelSolver::assemble_ofield_linear_jacobian(const size_t cell, const bool restricted)
 {
   const auto& P_range_dofs = P_deim_range_dofs_[cell];
+  const auto& Pnat_range_dofs = Pnat_deim_range_dofs_[cell];
   set_mat_to_zero(B_ofield_, restricted, ofield_submatrix_pattern_, P_range_dofs);
+  set_mat_to_zero(C_ofield_incl_coeffs_and_sign_, restricted, ofield_submatrix_pattern_, Pnat_range_dofs);
   if constexpr (structured_uniform_grid) {
     OfieldPrepareFunctor functor(*this, *ofield_prepare_quad_);
     XT::Grid::Walker<PGV> walker(grid_view_);
@@ -2894,8 +2858,7 @@ void CellModelSolver::assemble_ofield_linear_jacobian(const size_t cell, const b
 // jacobian
 void CellModelSolver::assemble_ofield_nonlinear_jacobian(const VectorType& y, const size_t cell, const bool restricted)
 {
-  if constexpr (!structured_uniform_grid)
-    fill_tmp_ofield(cell, y, restricted);
+  fill_tmp_ofield(cell, y, restricted);
   assemble_C_ofield_nonlinear_part(cell, restricted);
   if (!restricted) {
     if (ofield_solver_.is_schur_solver()) {
@@ -3001,8 +2964,7 @@ void CellModelSolver::assemble_B_pfield(const size_t cell, const bool restricted
 // assembles nonlinear part of phase field jacobian
 void CellModelSolver::assemble_pfield_nonlinear_jacobian(const VectorType& y, const size_t cell, const bool restricted)
 {
-  if constexpr (!structured_uniform_grid)
-    fill_tmp_pfield(cell, y, restricted);
+  fill_tmp_pfield(cell, y, restricted);
   // clear matrices
   const auto& phinat_range_dofs = phinat_deim_range_dofs_[cell];
   const auto& mu_range_dofs = mu_deim_range_dofs_[cell];
@@ -3398,7 +3360,7 @@ XT::LA::SparsityPatternDefault CellModelSolver::create_stokes_pattern(const Spac
   return pattern;
 }
 
-// sets temporary orientation field discrete functions to source values
+// Copies P_, Pnat_ (which are VectorViews) to vectors to improve performance in the subsequent operations
 void CellModelSolver::fill_tmp_ofield(const size_t cell, const VectorType& source, const bool restricted) const
 {
   if (!restricted) {
@@ -3420,7 +3382,7 @@ void CellModelSolver::fill_tmp_ofield(const size_t cell, const VectorType& sourc
   }
 }
 
-// sets temporary phase field discrete functions to source values
+// Copies phi_, phinat_, mu_ (which are VectorViews) to vectors to improve performance in the subsequent operations
 void CellModelSolver::fill_tmp_pfield(const size_t cell, const VectorType& source, const bool restricted) const
 {
   if (!restricted) {

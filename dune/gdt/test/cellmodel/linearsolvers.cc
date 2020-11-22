@@ -54,7 +54,7 @@ CellModelLinearSolverWrapper::CellModelLinearSolverWrapper(
     std::shared_ptr<Dune::ScalarProduct<EigenVectorType>> scalar_product,
     const MatrixType& M,
     MatrixType& S,
-    MatrixType& S_preconditioner,
+    std::shared_ptr<MatrixType>& S_preconditioner,
     const CellModelLinearSolverType solver_type,
     const CellModelMassMatrixSolverType mass_matrix_solver_type,
     const size_t num_cells,
@@ -210,7 +210,7 @@ void CellModelLinearSolverWrapper::apply_outer_solver(EigenVectorType& ret, Eige
 std::shared_ptr<CellModelLinearSolverWrapper::InverseOperatorType>
 CellModelLinearSolverWrapper::create_preconditioner_inverse_op(std::shared_ptr<DuneLinearOperatorType> linear_op,
                                                                ScalarProductType& scalar_product,
-                                                               MatrixType& S_preconditioner,
+                                                               std::shared_ptr<MatrixType>& S_preconditioner,
                                                                const R inner_reduction,
                                                                const int inner_verbose,
                                                                const int inner_maxit,
@@ -346,16 +346,15 @@ PfieldLinearSolver::PfieldLinearSolver(const double dt,
   , Dmu_f_(Dmu_f)
   , solver_type_(solver_type)
   , is_schur_solver_(is_schur_solver_type(solver_type))
+  , submatrix_pattern_(submatrix_pattern)
   , size_phi_(M_.rows())
   , S_(CellModelLinearSolverWrapper::create_system_matrix(
         is_schur_solver_, 3 * size_phi_, system_matrix_pattern(submatrix_pattern)))
-  , S_preconditioner_(
-        create_pfield_preconditioner_matrix(solver_type, preconditioner_matrix_pattern(submatrix_pattern)))
   , wrapper_(create_linear_operator(),
              create_scalar_product(),
              M_,
              *S_,
-             *S_preconditioner_,
+             S_preconditioner_,
              solver_type,
              mass_matrix_solver_type,
              num_cells,
@@ -390,6 +389,8 @@ void PfieldLinearSolver::setup()
   S_11_ = M_;
   S_22_ = M_;
   if (solver_type_ == CellModelLinearSolverType::gmres) {
+    S_preconditioner_ =
+        create_pfield_preconditioner_matrix(solver_type_, preconditioner_matrix_pattern(submatrix_pattern_));
     MatrixViewType ret_00(*S_preconditioner_, 0, size_phi_, 0, size_phi_);
     MatrixViewType ret_01(*S_preconditioner_, 0, size_phi_, size_phi_, 2 * size_phi_);
     MatrixViewType ret_11(*S_preconditioner_, size_phi_, 2 * size_phi_, size_phi_, 2 * size_phi_);
@@ -404,22 +405,30 @@ void PfieldLinearSolver::setup()
     ret_20 = M_ * 2. / epsilon_ + E_ * epsilon_;
   }
   wrapper_.setup();
+  // free memory, factorization is stored in Matrix2InverseOperator if needed
+  S_preconditioner_ = nullptr;
 }
 
 void PfieldLinearSolver::set_params(const double gamma, const double epsilon, const double Be, const double Ca)
 {
+  bool setup_needed = XT::Common::is_zero(gamma - gamma_);
+  if (solver_type_ == CellModelLinearSolverType::gmres) {
+    setup_needed |= XT::Common::is_zero(epsilon - epsilon_);
+    setup_needed |= XT::Common::is_zero(Be - Be_);
+    setup_needed |= XT::Common::is_zero(Ca - Ca_);
+  }
   gamma_ = gamma;
   epsilon_ = epsilon;
   Be_ = Be;
   Ca_ = Ca;
+  if (setup_needed)
+    setup();
 }
 
 void PfieldLinearSolver::prepare(const size_t cell, const bool restricted)
 {
-  if (!is_schur_solver_) {
-    S_00_ = M_;
-    S_00_.axpy(dt_, B_);
-  }
+  S_00_ = M_;
+  S_00_.axpy(-dt_, B_);
   wrapper_.prepare(cell, restricted);
 }
 
@@ -559,7 +568,7 @@ OfieldLinearSolver::OfieldLinearSolver(const double dt,
              create_scalar_product(),
              M_,
              *S_,
-             *S_preconditioner_,
+             S_preconditioner_,
              solver_type,
              mass_matrix_solver_type,
              num_cells,
