@@ -98,8 +98,8 @@ public:
     const auto axpy = cellmodel_solver_.template vector_axpy_func<Vector>(restricted_);
     const auto add = cellmodel_solver_.template add_func<Vector>(restricted_);
     const MatrixType& M = cellmodel_solver_.M_ofield_;
-    const MatrixType& E = cellmodel_solver_.B_ofield_;
-    const MatrixType& B = cellmodel_solver_.E_ofield_;
+    const MatrixType& E = cellmodel_solver_.E_ofield_;
+    const MatrixType& B = cellmodel_solver_.B_ofield_;
     const MatrixType& C_incl_coeffs_and_sign = cellmodel_solver_.C_ofield_incl_coeffs_and_sign_;
     // copy to temporary vectors (we do not use vector views to improve performance of mv)
     if (!restricted_) {
@@ -338,7 +338,7 @@ public:
   using IncompleteLUTSolverType = ::Eigen::IncompleteLUT<Field>;
   using SolverType = std::conditional_t<use_incomplete_lut, IncompleteLUTSolverType, LUSolverType>;
 
-  Matrix2InverseOperator(const MatrixType& matrix)
+  Matrix2InverseOperator(const std::shared_ptr<MatrixType>& matrix)
     : matrix_(matrix)
     , solver_(std::make_shared<SolverType>())
   {}
@@ -355,12 +355,9 @@ public:
 
   void prepare()
   {
-    matrix_colmajor_ = matrix_.backend();
-    matrix_colmajor_.makeCompressed();
-    // solver_->setDroptol(1e-8);
-    // solver_->setFillfactor(20);
-    solver_->analyzePattern(matrix_colmajor_);
-    solver_->factorize(matrix_colmajor_);
+    // solver_->setDroptol(1e-6);
+    solver_->setFillfactor(40);
+    solver_->compute(matrix_->backend());
   }
 
   //! Category of the solver (see SolverCategory::Category)
@@ -370,8 +367,7 @@ public:
   }
 
 private:
-  const MatrixType& matrix_;
-  ColMajorMatrixType matrix_colmajor_;
+  const std::shared_ptr<MatrixType>& matrix_;
   std::shared_ptr<SolverType> solver_;
 };
 
