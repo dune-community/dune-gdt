@@ -24,6 +24,14 @@ enum class CellModelLinearSolverType
   schur_fgmres_bicgstab
 };
 
+enum class StokesSolverType
+{
+  direct,
+  schur_cg_A_direct,
+  schur_cg_A_direct_prec_mass,
+  schur_cg_A_direct_prec_masslumped
+};
+
 enum class CellModelMassMatrixSolverType
 {
   sparse_ldlt,
@@ -33,6 +41,8 @@ enum class CellModelMassMatrixSolverType
 };
 
 CellModelLinearSolverType string_to_solver_type(const std::string& type_string);
+
+StokesSolverType string_to_stokes_solver_type(const std::string& type_string);
 
 CellModelMassMatrixSolverType string_to_mass_matrix_solver_type(const std::string& type_string);
 

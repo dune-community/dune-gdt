@@ -32,6 +32,7 @@
 #include <dune/gdt/tools/dirichlet-constraints.hh>
 #include <dune/gdt/spaces/h1/continuous-lagrange.hh>
 
+#include "linear-solver-types.hh"
 #include "linearoperators.hh"
 #include "linearsolvers.hh"
 #include "preconditioners.hh"
@@ -84,14 +85,12 @@ struct CellModelSolver
   using LDLTSolverType = ::Eigen::SimplicialLDLT<ColMajorBackendType>;
   using OfieldDirectSolverType = ::Eigen::SparseLU<ColMajorBackendType>;
   using OfieldSchurSolverType = Dune::RestartedGMResSolver<EigenVectorType>;
-  using PerThreadVectorLocalFunc = XT::Common::PerThreadValue<std::unique_ptr<VectorLocalDiscreteFunctionType>>;
-  using PerThreadScalarLocalFuncs = XT::Common::PerThreadValue<std::vector<std::unique_ptr<LocalDiscreteFunctionType>>>;
-  using PerThreadVectorLocalFuncs =
-      XT::Common::PerThreadValue<std::vector<std::unique_ptr<VectorLocalDiscreteFunctionType>>>;
   using SpaceTypeU = ContinuousLagrangeSpace<PGV, d, R>;
   using SpaceTypeP = SpaceTypeU;
   using SpaceTypePhi = ContinuousLagrangeSpace<PGV, 1, R>;
   using SpaceTypep = SpaceTypePhi;
+  using StokesMassMatrixPreconditionerType = EigenLinearSolverPreconditioner<EigenVectorType, LDLTSolverType>;
+  using StokesSchurComplementType = StokesSchurComplementOperator<EigenVectorType, MatrixType, CellModelSolver>;
 
   CellModelSolver(
       const std::string testcase = "single_cell",
@@ -109,14 +108,14 @@ struct CellModelSolver
       const double xi = 1.1, // alignment of P with the flow, > 0 for rod-like cells and < 0 for oblate ones
       const double kappa = 1.65, // eta_rot/eta, scaling factor between rotational and dynamic viscosity
       const double c_1 = 5., // double well shape parameter
-      const double beta = 0., // alignment of P with the boundary of cell
       const double gamma = 0.025, // phase field mobility coefficient
       const double epsilon = 0.21, // phase field parameter
-      const double In = 1., // interaction parameter
+      const int overintegrate = 2,
       const CellModelLinearSolverType pfield_solver_type = CellModelLinearSolverType::gmres,
       const CellModelMassMatrixSolverType pfield_mass_matrix_solver_type = CellModelMassMatrixSolverType::sparse_ldlt,
       const CellModelLinearSolverType ofield_solver_type = CellModelLinearSolverType::schur_gmres,
       const CellModelMassMatrixSolverType ofield_mass_matrix_solver_type = CellModelMassMatrixSolverType::sparse_ldlt,
+      const StokesSolverType stokes_solver_type = StokesSolverType::schur_cg_A_direct_prec_mass,
       const double outer_reduction = 1e-14,
       const int outer_restart = 100,
       const int outer_verbose = 0,
@@ -521,41 +520,6 @@ struct CellModelSolver
   // Dofs needed for evaluation of range_dofs computed in compute_restricted_pfield_dofs()
   const std::vector<std::vector<size_t>>& pfield_deim_source_dofs(const size_t cell) const;
 
-  // private:
-  //******************************************************************************************************************
-  //************ The following methods all bind or evaluate the respective temporary discrete function ***************
-  //******************************************************************************************************************
-
-  void bind_u(const E& element) const;
-
-  DomainRetType eval_u(const DomainType& x_local, const XT::Common::Parameter& param) const;
-
-  JacobianRetType grad_u(const DomainType& x_local, const XT::Common::Parameter& param) const;
-
-  void bind_P(const size_t cell, const E& element) const;
-
-  DomainRetType eval_P(const size_t cell, const DomainType& x_local, const XT::Common::Parameter& param) const;
-
-  JacobianRetType grad_P(const size_t cell, const DomainType& x_local, const XT::Common::Parameter& param) const;
-
-  void bind_Pnat(const size_t cell, const E& element) const;
-
-  DomainRetType eval_Pnat(const size_t cell, const DomainType& x_local, const XT::Common::Parameter& param) const;
-
-  void bind_phi(const size_t cell, const E& element) const;
-
-  R eval_phi(const size_t cell, const DomainType& x_local, const XT::Common::Parameter& param);
-
-  DomainRetType grad_phi(const size_t cell, const DomainType& x_local, const XT::Common::Parameter& param);
-
-  void bind_phinat(const size_t cell, const E& element) const;
-
-  R eval_phinat(const size_t cell, const DomainType& x_local, const XT::Common::Parameter& param);
-
-  void bind_mu(const size_t cell, const E& element) const;
-
-  R eval_mu(const size_t cell, const DomainType& x_local, const XT::Common::Parameter& param);
-
   //******************************************************************************************************************
   //****************  Linear algebra operations acting only on parts of the given matrices and vectors ***************
   //******************************************************************************************************************
@@ -693,10 +657,6 @@ struct CellModelSolver
   // TODO: use appropriate norm (?)
   double pfield_residual_norm(const VectorType& residual) const;
 
-  R B_func(const size_t kk, const DomainType& x_local, const XT::Common::Parameter& param);
-
-  R w_func(const size_t kk, const DomainType& x_local, const XT::Common::Parameter& param);
-
   //******************************************************************************************************************
   //*******************************************  Member variables ****************************************************
   //******************************************************************************************************************
@@ -714,11 +674,9 @@ struct CellModelSolver
   double kappa_;
   double c_1_;
   double Pa_;
-  double beta_;
   double gamma_;
   double Be_;
   double Ca_;
-  double In_;
   const double vol_domain_;
   const size_t num_cells_;
   // Grid and grid views
@@ -762,20 +720,23 @@ struct CellModelSolver
   std::vector<ViewDiscreteFunctionType> phinat_;
   std::vector<ViewDiscreteFunctionType> mu_;
   // Stokes system matrix S = (A B; B^T 0) and views on matrix blocks
-  MatrixType S_stokes_;
   MatrixType A_stokes_;
-  MatrixType B_stokes_;
-  // pressure mass matrix
-  MatrixType M_p_stokes_;
+  MatrixType BT_stokes_;
+  const StokesSolverType stokes_solver_type_;
+  std::shared_ptr<LUSolverType> stokes_solver_;
+  std::shared_ptr<StokesSchurComplementType> stokes_schur_complement_;
+  std::shared_ptr<Dune::CGSolver<EigenVectorType>> stokes_schur_solver_;
+  std::shared_ptr<LDLTSolverType> stokes_A_solver_;
   std::shared_ptr<LDLTSolverType> M_p_stokes_solver_;
-  mutable EigenSolverPreconditioner<EigenVectorType, LDLTSolverType> M_p_stokes_preconditioner_;
-  mutable LumpedMassMatrixPreconditioner<EigenVectorType> M_p_stokes_lumped_preconditioner_;
+  std::shared_ptr<Dune::Preconditioner<EigenVectorType, EigenVectorType>> stokes_preconditioner_;
+  StokesMatrixLinearOperator<VectorType, MatrixType, CellModelSolver> stokes_jac_linear_op_;
   // finite element vector rhs = (f; g) for stokes system and views on velocity and pressure parts f and g
   EigenVectorType stokes_rhs_vector_;
   EigenVectorViewType stokes_f_vector_;
   EigenVectorViewType stokes_g_vector_;
   // Indices for restricted operator in DEIM context
   std::vector<std::vector<size_t>> stokes_deim_source_dofs_;
+  size_t p_deim_source_dofs_begin_;
   // range dofs that were computed by the DEIM algorithm
   std::shared_ptr<std::vector<size_t>> stokes_deim_range_dofs_;
   std::vector<size_t> stokes_deim_unique_range_dofs_;
@@ -813,9 +774,6 @@ struct CellModelSolver
   VectorType ofield_rhs_vector_;
   VectorViewType ofield_f_vector_;
   VectorViewType ofield_g_vector_;
-  // Linear solvers and linear operators needed for solvers
-  std::shared_ptr<LUSolverType> stokes_solver_;
-  std::shared_ptr<LDLTSolverType> stokes_A_solver_;
   VectorType ofield_tmp_vec_;
   VectorType ofield_tmp_vec2_;
   // Indices for restricted operator in DEIM context
@@ -885,12 +843,6 @@ struct CellModelSolver
   mutable std::vector<DiscreteFunctionType> phi_tmp_;
   mutable std::vector<DiscreteFunctionType> phinat_tmp_;
   mutable std::vector<DiscreteFunctionType> mu_tmp_;
-  mutable std::shared_ptr<PerThreadVectorLocalFunc> u_tmp_local_;
-  mutable std::shared_ptr<PerThreadVectorLocalFuncs> P_tmp_local_;
-  mutable std::shared_ptr<PerThreadVectorLocalFuncs> Pnat_tmp_local_;
-  mutable std::shared_ptr<PerThreadScalarLocalFuncs> phi_tmp_local_;
-  mutable std::shared_ptr<PerThreadScalarLocalFuncs> phinat_tmp_local_;
-  mutable std::shared_ptr<PerThreadScalarLocalFuncs> mu_tmp_local_;
   XT::Grid::RangedPartitioning<PGV, 0> partitioning_;
   std::shared_ptr<QuadratureStorage> stokes_rhs_quad_;
   std::shared_ptr<QuadratureStorage> pfield_rhs_quad_;
