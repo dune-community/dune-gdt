@@ -27,6 +27,87 @@
 
 #include "linear-solver-types.hh"
 
+namespace Eigen {
+
+
+class PfieldIncompleteLUTPreconditioner
+{
+  typedef double Scalar;
+  typedef Matrix<Scalar, Dynamic, 1> Vector;
+  typedef IncompleteLUT<double> IncompleteLUTSolverType;
+
+public:
+  typedef typename Vector::StorageIndex StorageIndex;
+  enum
+  {
+    ColsAtCompileTime = Dynamic,
+    MaxColsAtCompileTime = Dynamic
+  };
+
+  PfieldIncompleteLUTPreconditioner()
+    : incomplete_lut_solver_(nullptr)
+  {}
+
+  explicit PfieldIncompleteLUTPreconditioner(const IncompleteLUTSolverType* ilut_solver)
+    : incomplete_lut_solver_(ilut_solver)
+  {}
+
+  Index rows() const
+  {
+    return incomplete_lut_solver_->rows();
+  }
+  Index cols() const
+  {
+    return incomplete_lut_solver_->cols();
+  }
+
+  template <typename MatType>
+  PfieldIncompleteLUTPreconditioner& analyzePattern(const MatType& /*mat*/)
+  {
+    return *this;
+  }
+
+  template <typename MatType>
+  PfieldIncompleteLUTPreconditioner& factorize(const MatType& /*mat*/)
+  {
+    return *this;
+  }
+
+  template <typename MatType>
+  PfieldIncompleteLUTPreconditioner& compute(const MatType& mat)
+  {
+    return factorize(mat);
+  }
+
+  /** \internal */
+  template <typename Rhs, typename Dest>
+  void _solve_impl(const Rhs& b, Dest& x) const
+  {
+    x = incomplete_lut_solver_->solve(b);
+  }
+
+  void set_lut_solver_(const IncompleteLUTSolverType* ilut_solver)
+  {
+    incomplete_lut_solver_ = ilut_solver;
+  }
+
+  template <typename Rhs>
+  inline const Solve<PfieldIncompleteLUTPreconditioner, Rhs> solve(const MatrixBase<Rhs>& b) const
+  {
+    return Solve<PfieldIncompleteLUTPreconditioner, Rhs>(*this, b.derived());
+  }
+
+  ComputationInfo info()
+  {
+    return Success;
+  }
+
+protected:
+  const IncompleteLUTSolverType* incomplete_lut_solver_;
+};
+
+} // namespace Eigen
+
 namespace Dune {
 
 
@@ -185,6 +266,9 @@ private:
   std::shared_ptr<PreconditionerType> preconditioner_;
   std::shared_ptr<IterativeSolverType> outer_solver_;
   mutable std::vector<EigenVectorType> previous_update_;
+  // ::Eigen::IncompleteLUT<double> eigen_lut_solver_;
+  // ::Eigen::PfieldIncompleteLUTPreconditioner pfield_lut_preconditioner_;
+  // mutable ::Eigen::BiCGSTAB<RowMajorBackendType, ::Eigen::PfieldIncompleteLUTPreconditioner> bicgsolver_;
 }; // class CellModelLinearSolverWrapper<...>
 
 
