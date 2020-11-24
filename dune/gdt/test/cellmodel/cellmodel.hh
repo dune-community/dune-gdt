@@ -81,7 +81,7 @@ struct CellModelSolver
   using ColMajorBackendType = ::Eigen::SparseMatrix<R, ::Eigen::ColMajor>;
   using RowMajorBackendType = typename MatrixType::BackendType;
   using LUSolverType = ::Eigen::SparseLU<ColMajorBackendType>;
-  // using LDLTSolverType = ::Eigen::SimplicialLDLT<ColMajorBackendType>;
+  using LDLTSolverType = ::Eigen::SimplicialLDLT<ColMajorBackendType>;
   using OfieldDirectSolverType = ::Eigen::SparseLU<ColMajorBackendType>;
   using OfieldSchurSolverType = Dune::RestartedGMResSolver<EigenVectorType>;
   using PerThreadVectorLocalFunc = XT::Common::PerThreadValue<std::unique_ptr<VectorLocalDiscreteFunctionType>>;
@@ -425,7 +425,7 @@ struct CellModelSolver
   //******************************************************************************************************************
 
   // Applies inverse stokes operator (solves F(y) = 0)
-  VectorType apply_inverse_stokes_operator() const;
+  VectorType apply_inverse_stokes_operator();
 
   // Applies inverse orientation field operator (solves F(y) = 0)
   // y_guess is the initial guess for the Newton iteration
@@ -763,8 +763,13 @@ struct CellModelSolver
   std::vector<ViewDiscreteFunctionType> mu_;
   // Stokes system matrix S = (A B; B^T 0) and views on matrix blocks
   MatrixType S_stokes_;
+  MatrixType A_stokes_;
+  MatrixType B_stokes_;
   // pressure mass matrix
-  // MatrixType M_p_stokes_;
+  MatrixType M_p_stokes_;
+  std::shared_ptr<LDLTSolverType> M_p_stokes_solver_;
+  mutable EigenSolverPreconditioner<EigenVectorType, LDLTSolverType> M_p_stokes_preconditioner_;
+  mutable LumpedMassMatrixPreconditioner<EigenVectorType> M_p_stokes_lumped_preconditioner_;
   // finite element vector rhs = (f; g) for stokes system and views on velocity and pressure parts f and g
   EigenVectorType stokes_rhs_vector_;
   EigenVectorViewType stokes_f_vector_;
@@ -784,6 +789,10 @@ struct CellModelSolver
   // stokes tmp vectors
   VectorType stokes_tmp_vec_;
   VectorType stokes_tmp_vec2_;
+  EigenVectorType stokes_p_tmp_vec_;
+  EigenVectorType stokes_p_tmp_vec2_;
+  EigenVectorType stokes_u_tmp_vec_;
+  EigenVectorType stokes_u_tmp_vec2_;
   // Dirichlet constraints
   const XT::Grid::AllDirichletBoundaryInfo<PI> boundary_info_;
   DirichletConstraints<PI, SpaceInterface<PGV, d, 1, R>> u_dirichlet_constraints_;
@@ -806,6 +815,7 @@ struct CellModelSolver
   VectorViewType ofield_g_vector_;
   // Linear solvers and linear operators needed for solvers
   std::shared_ptr<LUSolverType> stokes_solver_;
+  std::shared_ptr<LDLTSolverType> stokes_A_solver_;
   VectorType ofield_tmp_vec_;
   VectorType ofield_tmp_vec2_;
   // Indices for restricted operator in DEIM context

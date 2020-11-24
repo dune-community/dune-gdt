@@ -196,13 +196,21 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   , u_(u_space_, u_view_, "u")
   , p_(p_space_, p_view_, "p")
   , S_stokes_(size_u_ + size_p_, size_u_ + size_p_, create_stokes_pattern(u_space_, p_space_), 100)
-  // , M_p_stokes_(size_p_, size_p_, make_element_sparsity_pattern(p_space_, p_space_, grid_view_), 100)
+  , A_stokes_(size_u_, size_u_, make_element_sparsity_pattern(u_space_, u_space_, grid_view_), 100)
+  , B_stokes_(size_p_, size_u_, make_element_sparsity_pattern(p_space_, u_space_, grid_view_), 100)
+  , M_p_stokes_(size_p_, size_p_, make_element_sparsity_pattern(p_space_, p_space_, grid_view_), 100)
+  , M_p_stokes_solver_(std::make_shared<LDLTSolverType>())
+  , M_p_stokes_preconditioner_(M_p_stokes_solver_)
   , stokes_rhs_vector_(size_u_ + size_p_, 0., num_mutexes_u_)
   , stokes_f_vector_(stokes_rhs_vector_, 0, size_u_)
   , stokes_g_vector_(stokes_rhs_vector_, size_u_, size_u_ + size_p_)
   // , p_basis_integrated_vector_(size_p_)
   , stokes_tmp_vec_(size_u_ + size_p_)
   , stokes_tmp_vec2_(size_u_ + size_p_)
+  , stokes_p_tmp_vec_(size_p_)
+  , stokes_p_tmp_vec2_(size_p_)
+  , stokes_u_tmp_vec_(size_u_)
+  , stokes_u_tmp_vec2_(size_u_)
   , u_dirichlet_constraints_(make_dirichlet_constraints(u_space_, boundary_info_))
   , ofield_submatrix_pattern_(make_element_sparsity_pattern(P_space_, P_space_, grid_view_))
   , M_ofield_(size_P_, size_P_, ofield_submatrix_pattern_, num_mutexes_ofield_)
@@ -234,7 +242,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   , ofield_f_vector_(ofield_rhs_vector_, 0, size_P_)
   , ofield_g_vector_(ofield_rhs_vector_, size_P_, 2 * size_P_)
   , stokes_solver_(std::make_shared<LUSolverType>())
-  // , stokes_solver_(std::make_shared<LDLTSolverType>())
+  , stokes_A_solver_(std::make_shared<LDLTSolverType>())
   , ofield_tmp_vec_(2 * size_P_, 0.)
   , ofield_tmp_vec2_(2 * size_P_, 0., num_mutexes_ofield_)
   , ofield_deim_source_dofs_(num_cells_)
@@ -525,20 +533,19 @@ CellModelSolver::CellModelSolver(const std::string testcase,
    *************************************** Stokes **************************************************
    *************************************************************************************************/
 
-  MatrixViewType A_stokes(S_stokes_, 0, size_u_, 0, size_u_);
-  MatrixViewType BT_stokes(S_stokes_, 0, size_u_, size_u_, size_u_ + size_p_);
-  MatrixViewType C_stokes(S_stokes_, size_u_, size_u_ + size_p_, size_u_, size_u_ + size_p_);
-  MatrixViewType B_stokes(S_stokes_, size_u_, size_u_ + size_p_, 0, size_u_);
-  MatrixOperator<MatrixViewType, PGV, d> A_stokes_op(grid_view_, u_space_, u_space_, A_stokes);
-  MatrixOperator<MatrixViewType, PGV, 1, 1, d> BT_stokes_op(grid_view_, p_space_, u_space_, BT_stokes);
-  // MatrixOperator<MatrixType, PGV, 1, 1, 1> M_p_stokes_op(grid_view_, p_space_, p_space_, M_p_stokes_);
+  MatrixViewType A_stokes_view(S_stokes_, 0, size_u_, 0, size_u_);
+  MatrixViewType BT_stokes_view(S_stokes_, 0, size_u_, size_u_, size_u_ + size_p_);
+  MatrixViewType B_stokes_view(S_stokes_, size_u_, size_u_ + size_p_, 0, size_u_);
+  MatrixOperator<MatrixViewType, PGV, d> A_stokes_op(grid_view_, u_space_, u_space_, A_stokes_view);
+  MatrixOperator<MatrixViewType, PGV, 1, 1, d> BT_stokes_op(grid_view_, p_space_, u_space_, BT_stokes_view);
+  MatrixOperator<MatrixType, PGV, 1, 1, 1> M_p_stokes_op(grid_view_, p_space_, p_space_, M_p_stokes_);
   // Stokes matrix is [A B^T; B C]
   // calculate A_{ij} as \int 0.5 \nabla v_i \nabla v_j
   A_stokes_op.append(LocalElementIntegralBilinearForm<E, d>(LocalLaplaceIntegrand<E, d>(0.5)));
   // calculate (B^T)_{ij} as \int p_i div(v_j)
   BT_stokes_op.append(LocalElementIntegralBilinearForm<E, d, 1, double, double, 1>(
       LocalElementAnsatzValueTestDivProductIntegrand<E>()));
-  // M_p_stokes_op.append(LocalElementIntegralBilinearForm<E, 1>(LocalElementProductScalarWeightIntegrand<E, 1>()));
+  M_p_stokes_op.append(LocalElementIntegralBilinearForm<E, 1>(LocalElementProductScalarWeightIntegrand<E, 1>()));
 
   // auto p_basis_integrated_functional = make_vector_functional(p_space_, p_basis_integrated_vector_);
   // const XT::Functions::ConstantGridFunction<E> one_function(1);
@@ -550,30 +557,44 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   A_stokes_op.append(u_dirichlet_constraints_);
   // assemble everything
   A_stokes_op.append(BT_stokes_op);
-  // A_stokes_op.append(M_p_stokes_op);
+  A_stokes_op.append(M_p_stokes_op);
   std::cout << "Assembling stokes..." << std::flush;
   A_stokes_op.assemble(use_tbb_);
   std::cout << "done" << std::endl;
+  EigenVectorType M_p_stokes_lumped(size_p_, 0.);
+  const auto M_p_pattern = make_element_sparsity_pattern(p_space_, p_space_, grid_view_);
+  for (size_t ii = 0; ii < size_p_; ++ii)
+    for (const size_t jj : M_p_pattern.inner(ii))
+      M_p_stokes_lumped[ii] += M_p_stokes_.get_entry(ii, jj);
+  M_p_stokes_lumped_preconditioner_ = LumpedMassMatrixPreconditioner<EigenVectorType>(M_p_stokes_lumped);
 
   // Fix value of p at first DoF to 0 to ensure the uniqueness of the solution, i.e, we have set the p_size_-th row of
   // [A B^T; B 0] to the unit vector.
   static constexpr size_t dof_index = 0;
   S_stokes_.set_entry(size_u_ + dof_index, size_u_ + dof_index, 1.);
-  BT_stokes.clear_col(dof_index);
+  BT_stokes_view.clear_col(dof_index);
   stokes_g_vector_.set_entry(dof_index, 0.);
 
-  u_dirichlet_constraints_.apply(A_stokes, false, true);
+  u_dirichlet_constraints_.apply(A_stokes_view, false, true);
   for (const auto& DoF : u_dirichlet_constraints_.dirichlet_DoFs())
-    BT_stokes.clear_row(DoF);
+    BT_stokes_view.clear_row(DoF);
 
   // Set B
-  const auto BT_pattern = BT_stokes.pattern();
+  const auto BT_pattern = BT_stokes_view.pattern();
   for (size_t ii = 0; ii < size_u_; ii++)
     for (const auto& jj : BT_pattern.inner(ii))
-      B_stokes.set_entry(jj, ii, BT_stokes.get_entry(ii, jj));
+      B_stokes_view.set_entry(jj, ii, BT_stokes_view.get_entry(ii, jj));
 
   std::cout << "Factorizing Stokes system matrix..." << std::flush;
-  stokes_solver_->compute(S_stokes_.backend());
+  A_stokes_ = A_stokes_view;
+  B_stokes_ = B_stokes_view;
+  stokes_A_solver_->compute(A_stokes_.backend());
+  if (stokes_A_solver_->info() != ::Eigen::Success)
+    DUNE_THROW(Dune::InvalidStateException, "Failed to invert stokes A matrix!");
+  M_p_stokes_solver_->compute(M_p_stokes_.backend());
+  if (M_p_stokes_solver_->info() != ::Eigen::Success)
+    DUNE_THROW(Dune::InvalidStateException, "Failed to invert M_p_stokes matrix!");
+  // stokes_solver_->compute(S_stokes_.backend());
   std::cout << "done" << std::endl;
 
   /*************************************************************************************************
@@ -2394,10 +2415,45 @@ void CellModelSolver::update_pfield_parameters(
 //******************************************************************************************************************
 
 // Applies inverse stokes operator (solves F(y) = 0)
-CellModelSolver::VectorType CellModelSolver::apply_inverse_stokes_operator() const
+CellModelSolver::VectorType CellModelSolver::apply_inverse_stokes_operator()
 {
   EigenVectorType ret(size_u_ + size_p_);
-  ret.backend() = stokes_solver_->solve(stokes_rhs_vector_.backend());
+
+  // calculate rhs B A^{-1} f
+  auto& p = stokes_p_tmp_vec_;
+  auto& B_Ainv_f = stokes_p_tmp_vec2_;
+  auto& Ainv_f = stokes_u_tmp_vec_;
+  auto& rhs_u = stokes_u_tmp_vec2_;
+  rhs_u = stokes_f_vector_;
+  Ainv_f.backend() = stokes_A_solver_->solve(rhs_u.backend());
+  B_stokes_.mv(Ainv_f, B_Ainv_f);
+
+  // Solve S p = rhs
+  using SchurComplementType = StokesSchurComplementOperator<EigenVectorType, MatrixType, CellModelSolver>;
+  SchurComplementType schur_comp(*this);
+  // XT::LA::IdentityPreconditioner<SchurComplementType> identity_prec(SolverCategory::Category::sequential);
+  // Dune::CGSolver<EigenVectorType> outer_solver(schur_comp, M_p_stokes_preconditioner_, 1e-13, 1000, 2, false);
+  Dune::CGSolver<EigenVectorType> outer_solver(schur_comp, M_p_stokes_lumped_preconditioner_, 1e-13, 1000, 2, false);
+  // Dune::CGSolver<EigenVectorType> outer_solver(schur_comp, identity_prec, 1e-13, 1000, 2, false);
+  InverseOperatorResult res;
+  outer_solver.apply(p, B_Ainv_f, res);
+
+  // Now solve u = A^{-1}(f - B^T p)
+  auto& BT_p = stokes_u_tmp_vec_;
+  B_stokes_.mtv(p, BT_p);
+  // rhs_u already contains f
+  rhs_u -= BT_p;
+  auto& u = stokes_u_tmp_vec_;
+  u.backend() = stokes_A_solver_->solve(rhs_u.backend());
+
+
+  // ret.backend() = stokes_solver_->solve(stokes_rhs_vector_.backend());
+  // return XT::Common::convert_to<VectorType>(ret);
+
+  for (size_t ii = 0; ii < size_u_; ++ii)
+    ret.set_entry(ii, u.get_entry(ii));
+  for (size_t ii = 0; ii < size_p_; ++ii)
+    ret.set_entry(size_u_ + ii, p.get_entry(ii));
   return XT::Common::convert_to<VectorType>(ret);
 }
 

@@ -82,6 +82,75 @@ private:
   SolverCategory::Category category_;
 };
 
+template <class VectorType, class SolverType>
+class EigenSolverPreconditioner : public Dune::Preconditioner<VectorType, VectorType>
+{
+public:
+  using domain_type = VectorType;
+  using range_type = VectorType;
+  using field_type = typename VectorType::ScalarType;
+
+  EigenSolverPreconditioner(std::shared_ptr<SolverType> solver)
+    : solver_(solver)
+  {}
+
+  //! Category of the preconditioner (see SolverCategory::Category)
+  SolverCategory::Category category() const override final
+  {
+    return SolverCategory::Category::sequential;
+  }
+
+  void pre(domain_type&, range_type&) override final {}
+
+  void apply(domain_type& v, const range_type& d) override final
+  {
+    v.backend() = solver_->solve(d.backend());
+  }
+
+  void post(domain_type&) override final {}
+
+private:
+  std::shared_ptr<SolverType> solver_;
+};
+
+
+template <class VectorType>
+class LumpedMassMatrixPreconditioner : public Dune::Preconditioner<VectorType, VectorType>
+{
+public:
+  using domain_type = VectorType;
+  using range_type = VectorType;
+  using field_type = typename VectorType::ScalarType;
+
+  LumpedMassMatrixPreconditioner() = default;
+
+  LumpedMassMatrixPreconditioner(const VectorType& lumped_mass_matrix_diag)
+    : inverse_lumped_mass_matrix_diag_(lumped_mass_matrix_diag.size())
+  {
+    for (size_t ii = 0; ii < lumped_mass_matrix_diag.size(); ++ii)
+      inverse_lumped_mass_matrix_diag_.set_entry(ii, 1. / lumped_mass_matrix_diag.get_entry(ii));
+  }
+
+  //! Category of the preconditioner (see SolverCategory::Category)
+  SolverCategory::Category category() const override final
+  {
+    return SolverCategory::Category::sequential;
+  }
+
+  void pre(domain_type&, range_type&) override final {}
+
+  void apply(domain_type& v, const range_type& d) override final
+  {
+    assert(inverse_lumped_mass_matrix_diag_.size() == d.size());
+    for (size_t ii = 0; ii < inverse_lumped_mass_matrix_diag_.size(); ++ii)
+      v.set_entry(ii, d.get_entry(ii) * inverse_lumped_mass_matrix_diag_.get_entry(ii));
+  }
+
+  void post(domain_type&) override final {}
+
+private:
+  VectorType inverse_lumped_mass_matrix_diag_;
+};
 
 } // namespace Dune
 

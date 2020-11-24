@@ -103,6 +103,8 @@ CellModelLinearSolverWrapper::CellModelLinearSolverWrapper(
                                           outer_verbose,
                                           is_schur_solver_ ? M_.rows() : S_.rows()))
   , previous_update_(num_cells, EigenVectorType(S_.rows(), 0.))
+// , eigen_lut_solver_()
+// , bicgsolver_()
 {
   if (direct_solver_) {
     S_colmajor_->makeCompressed();
@@ -137,6 +139,10 @@ void CellModelLinearSolverWrapper::setup()
     mass_matrix_cg_incomplete_cholesky_solver_->compute(M_.backend());
   if (solver_type_ == CellModelLinearSolverType::gmres) {
     dynamic_cast<Matrix2InverseOperatorType*>(preconditioner_inverse_op_.get())->prepare();
+    // bicgsolver_.preconditioner().set_lut_solver_(&eigen_lut_solver_);
+    // eigen_lut_solver_.setFillfactor(40);
+    // eigen_lut_solver_.compute(S_preconditioner_->backend());
+    // bicgsolver_.analyzePattern(S_.backend());
   }
 }
 
@@ -188,6 +194,9 @@ CellModelLinearSolverWrapper::apply_system_matrix_solver(const VectorType& rhs, 
     case CellModelLinearSolverType::fgmres_gmres:
     case CellModelLinearSolverType::fgmres_bicgstab:
     case CellModelLinearSolverType::fgmres_amg:
+      // bicgsolver_.factorize(S_.backend());
+      // update.backend() = bicgsolver_.solveWithGuess(rhs_eig.backend(), previous_update_[cell].backend());
+      // previous_update_[cell] = update;
       outer_solver_->apply(previous_update_[cell], rhs_eig, res);
       update = previous_update_[cell];
       break;

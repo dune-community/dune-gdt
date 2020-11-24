@@ -324,6 +324,53 @@ private:
   mutable Vector tmp_vec_;
 };
 
+// For a saddle point matrix (A B^T; B C) this models the Schur complement (B A^{-1} B^T - C)
+// We assume that A is spd and C has a single entry -1 in the upper left corner (to fix the value of p to 0 at that DoF)
+template <class VectorType, class MatrixType, class CellModelSolverType>
+class StokesSchurComplementOperator : public LinearOperatorWrapper<MatrixType, VectorType>
+{
+  using BaseType = LinearOperatorWrapper<MatrixType, VectorType>;
+
+public:
+  using Vector = VectorType;
+  using Matrix = MatrixType;
+  using Field = typename VectorType::ScalarType;
+
+  StokesSchurComplementOperator(const CellModelSolverType& cellmodel_solver)
+    : BaseType(cellmodel_solver.A_stokes_, cellmodel_solver.size_u_)
+    , cellmodel_solver_(cellmodel_solver)
+    , tmp_vec_u1_(cellmodel_solver.size_u_)
+    , tmp_vec_u2_(cellmodel_solver.size_u_)
+  {}
+
+  void apply(const Vector& x, Vector& y) const override final
+  {
+    // we want to calculate y = (B A^{-1} B^T - C) x
+    // calculate B x
+    auto& B_x = tmp_vec_u1_;
+    cellmodel_solver_.B_stokes_.mtv(x, B_x);
+    // calculate A^{-1} B1 x
+    auto& Ainv_B_x = tmp_vec_u2_;
+    Ainv_B_x.backend() = cellmodel_solver_.stokes_A_solver_->solve(B_x.backend());
+    // apply B^T
+    cellmodel_solver_.B_stokes_.mv(Ainv_B_x, y);
+    // add -Cx
+    y[0] = x[0];
+  }
+
+  const Matrix& getmat() const override final
+  {
+    DUNE_THROW(Dune::NotImplemented, "");
+    return cellmodel_solver_.S_stokes_;
+  }
+
+private:
+  const CellModelSolverType& cellmodel_solver_;
+  // vectors to store intermediate results
+  mutable Vector tmp_vec_u1_;
+  mutable Vector tmp_vec_u2_;
+};
+
 
 template <class VectorType, class MatrixType, bool use_incomplete_lut = false>
 class Matrix2InverseOperator : public Dune::InverseOperator<VectorType, VectorType>
