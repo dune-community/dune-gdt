@@ -83,14 +83,16 @@ private:
 };
 
 template <class VectorType, class SolverType>
-class EigenSolverPreconditioner : public Dune::Preconditioner<VectorType, VectorType>
+class EigenLinearSolverPreconditioner : public Dune::Preconditioner<VectorType, VectorType>
 {
 public:
   using domain_type = VectorType;
   using range_type = VectorType;
   using field_type = typename VectorType::ScalarType;
 
-  EigenSolverPreconditioner(std::shared_ptr<SolverType> solver)
+  EigenLinearSolverPreconditioner() = default;
+
+  EigenLinearSolverPreconditioner(std::shared_ptr<SolverType> solver)
     : solver_(solver)
   {}
 

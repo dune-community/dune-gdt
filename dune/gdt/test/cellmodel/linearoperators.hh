@@ -168,6 +168,102 @@ private:
   mutable Vector tmp_vec_;
 };
 
+template <class VectorType, class MatrixType, class CellModelSolverType>
+class StokesMatrixLinearOperator : public LinearOperatorWrapper<MatrixType, VectorType>
+{
+  using BaseType = LinearOperatorWrapper<MatrixType, VectorType>;
+
+public:
+  using Vector = VectorType;
+  using Matrix = MatrixType;
+  using Field = typename VectorType::ScalarType;
+
+  // Matrix dimensions are
+  // A: m x m, B1, B2: m x n, C: n x n
+  StokesMatrixLinearOperator(const CellModelSolverType& cellmodel_solver)
+    : BaseType(cellmodel_solver.A_stokes_, cellmodel_solver.size_u_ + cellmodel_solver.size_p_)
+    , cellmodel_solver_(cellmodel_solver)
+    , x_u_(cellmodel_solver.size_u_, 0., 0)
+    , x_p_(cellmodel_solver.size_p_, 0., 0)
+    , y_u_(cellmodel_solver.size_u_, 0., 0)
+    , y_p_(cellmodel_solver.size_p_, 0., 0)
+    , tmp_vec_u_(cellmodel_solver.size_u_, 0., 0)
+  {}
+
+  /*! \brief apply operator to x:  \f$ y = S(x) \f$
+        The input vector is consistent and the output must also be
+     consistent on the interior+border partition.
+   */
+  void apply(const Vector& x, Vector& y) const override final
+  {
+    // get some variables from cellmodel_solver_
+    const auto size_u = cellmodel_solver_.size_u_;
+    const auto size_p = cellmodel_solver_.size_p_;
+    const auto& u_dofs = cellmodel_solver_.u_deim_range_dofs_;
+    const auto& p_dofs = cellmodel_solver_.p_deim_range_dofs_;
+    const auto mv = cellmodel_solver_.template mv_func<Vector>(restricted_);
+    const auto axpy = cellmodel_solver_.template vector_axpy_func<Vector>(restricted_);
+    const auto add = cellmodel_solver_.template add_func<Vector>(restricted_);
+    const MatrixType& A = cellmodel_solver_.A_stokes_;
+    const MatrixType& BT = cellmodel_solver_.BT_stokes_;
+    // copy to temporary vectors (we do not use vector views to improve performance of mv)
+    if (!restricted_) {
+      for (size_t ii = 0; ii < size_u; ++ii)
+        x_u_[ii] = x[ii];
+      for (size_t ii = 0; ii < size_p; ++ii)
+        x_p_[ii] = x[size_u + ii];
+    } else {
+      const auto& source_dofs = cellmodel_solver_.stokes_deim_source_dofs_[2];
+      const auto& p_begin = cellmodel_solver_.p_deim_source_dofs_begin_;
+      for (size_t ii = 0; ii < p_begin; ++ii)
+        x_u_[source_dofs[ii]] = x[source_dofs[ii]];
+      for (size_t ii = p_begin; ii < source_dofs.size(); ++ii)
+        x_p_[source_dofs[ii] - size_u] = x[source_dofs[ii]];
+    }
+    // apply matrices
+    // first row
+    mv(A, x_u_, y_u_, u_dofs);
+    mv(BT, x_p_, tmp_vec_u_, u_dofs);
+    add(y_u_, tmp_vec_u_, u_dofs);
+    // TODO: restricted version
+    BT.mtv(x_u_, y_p_);
+    y_p_[0] = x_p_[0];
+    // copy to result vector
+    if (!restricted_) {
+      for (size_t ii = 0; ii < size_u; ++ii)
+        y[ii] = y_u_[ii];
+      for (size_t ii = 0; ii < size_p; ++ii)
+        y[size_u + ii] = y_p_[ii];
+    } else {
+      for (const auto& dof : u_dofs)
+        y[dof] = y_u_[dof];
+      for (const auto& dof : p_dofs)
+        y[size_u + dof] = y_p_[dof];
+    }
+  }
+
+  void prepare(const size_t /*cell*/, const bool restricted = false) override final
+  {
+    restricted_ = restricted;
+  }
+
+  virtual const Matrix& getmat() const override final
+  {
+    DUNE_THROW(Dune::NotImplemented, "");
+    return cellmodel_solver_.A_stokes_;
+  }
+
+private:
+  const CellModelSolverType& cellmodel_solver_;
+  bool restricted_;
+  // vectors to store intermediate results
+  mutable Vector x_u_;
+  mutable Vector x_p_;
+  mutable Vector y_u_;
+  mutable Vector y_p_;
+  mutable Vector tmp_vec_u_;
+};
+
 template <class VectorType, class MatrixType>
 class MatrixToLinearOperator : public LinearOperatorWrapper<MatrixType, VectorType>
 {
@@ -346,14 +442,14 @@ public:
   void apply(const Vector& x, Vector& y) const override final
   {
     // we want to calculate y = (B A^{-1} B^T - C) x
-    // calculate B x
-    auto& B_x = tmp_vec_u1_;
-    cellmodel_solver_.B_stokes_.mtv(x, B_x);
+    // calculate B^T x
+    auto& BT_x = tmp_vec_u1_;
+    cellmodel_solver_.BT_stokes_.mv(x, BT_x);
     // calculate A^{-1} B1 x
-    auto& Ainv_B_x = tmp_vec_u2_;
-    Ainv_B_x.backend() = cellmodel_solver_.stokes_A_solver_->solve(B_x.backend());
-    // apply B^T
-    cellmodel_solver_.B_stokes_.mv(Ainv_B_x, y);
+    auto& Ainv_BT_x = tmp_vec_u2_;
+    Ainv_BT_x.backend() = cellmodel_solver_.stokes_A_solver_->solve(BT_x.backend());
+    // apply B
+    cellmodel_solver_.BT_stokes_.mtv(Ainv_BT_x, y);
     // add -Cx
     y[0] = x[0];
   }
@@ -361,7 +457,7 @@ public:
   const Matrix& getmat() const override final
   {
     DUNE_THROW(Dune::NotImplemented, "");
-    return cellmodel_solver_.S_stokes_;
+    return cellmodel_solver_.A_stokes_;
   }
 
 private:
@@ -403,7 +499,8 @@ public:
   void prepare()
   {
     // solver_->setDroptol(1e-6);
-    solver_->setFillfactor(40);
+    solver_->setFillfactor(DXTC_CONFIG_GET("pfield_ilu_fillfactor", 20));
+    std::cout << "pfield fillfactor :" << DXTC_CONFIG_GET("pfield_ilu_fillfactor", 20) << std::endl;
     solver_->compute(matrix_->backend());
   }
 

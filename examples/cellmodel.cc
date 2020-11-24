@@ -42,7 +42,10 @@ int main(int argc, char* argv[])
     // timestepping
     double t_end = config.template get<double>("fem.t_end", 340.);
     double dt = config.template get<double>("fem.dt", 0.005);
+
+    // orders
     const int pol_order = config.template get<int>("fem.degree", 1, 0, 0);
+    const int overintegrate = config.template get<int>("fem.superintegration_order", 2, 0, 0);
 
     // problem parameters
     const double epsilon = config.template get<double>("problem.epsilon", 0.21);
@@ -50,13 +53,11 @@ int main(int argc, char* argv[])
     const double c_1 = config.template get<double>("problem.c_1", 5.);
     const double kappa = config.template get<double>("problem.kappa", 1.);
     const double xi = config.template get<double>("problem.xi", 1.1);
-    const double In = config.template get<double>("problem.In", 1.);
     const double Re = 1e-13;
     const double Be = config.template get<double>("problem.Be", 1.0);
     const double Ca = config.template get<double>("problem.Ca", 1.0);
     const double Pa = config.template get<double>("problem.Pa", 1.0);
     const double Fa = config.template get<double>("problem.Fa", 1.0);
-    const double beta = 0.;
 
     // output
     bool subsampling = config.get<bool>("output.subsampling", false);
@@ -87,6 +88,8 @@ int main(int argc, char* argv[])
         string_to_solver_type(DXTC_CONFIG_GET("ofield_solver_type", "schur_gmres"));
     const CellModelMassMatrixSolverType ofield_mass_matrix_solver_type =
         string_to_mass_matrix_solver_type(DXTC_CONFIG_GET("ofield_mass_matrix_solver_type", "sparse_ldlt"));
+    const StokesSolverType stokes_solver_type =
+        string_to_stokes_solver_type(DXTC_CONFIG_GET("stokes_solver_type", "schur_cg_A_direct_prec_mass"));
 
     CellModelSolver model_solver(testcase,
                                  t_end,
@@ -103,14 +106,14 @@ int main(int argc, char* argv[])
                                  xi,
                                  kappa,
                                  c_1,
-                                 beta,
                                  gamma,
                                  epsilon,
-                                 In,
+                                 overintegrate,
                                  pfield_solver_type,
                                  pfield_mass_matrix_solver_type,
                                  ofield_solver_type,
                                  ofield_mass_matrix_solver_type,
+                                 stokes_solver_type,
                                  gmres_reduction,
                                  gmres_restart,
                                  gmres_verbose,

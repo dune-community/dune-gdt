@@ -36,6 +36,22 @@ CellModelLinearSolverType string_to_solver_type(const std::string& type_string)
   return CellModelLinearSolverType::direct;
 }
 
+StokesSolverType string_to_stokes_solver_type(const std::string& type_string)
+{
+  if (type_string == "direct")
+    return StokesSolverType::direct;
+  else if (type_string == "schur_cg_A_direct")
+    return StokesSolverType::schur_cg_A_direct;
+  else if (type_string == "schur_cg_A_direct_prec_mass")
+    return StokesSolverType::schur_cg_A_direct_prec_mass;
+  else if (type_string == "schur_cg_A_direct_prec_masslumped")
+    return StokesSolverType::schur_cg_A_direct_prec_masslumped;
+  else
+    DUNE_THROW(Dune::InvalidStateException, "Stokes solver type " + std::string(type_string) + " unknown!");
+  return StokesSolverType::direct;
+}
+
+
 CellModelMassMatrixSolverType string_to_mass_matrix_solver_type(const std::string& type_string)
 {
   if (type_string == "sparse_ldlt")
