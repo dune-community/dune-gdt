@@ -104,7 +104,7 @@ public:
 
   explicit BilinearFormInterface(const XT::Common::ParameterType& param_type = {},
                                  const std::string& logging_prefix = "",
-                                 const std::array<bool, 3>& logging_enabled = {false, false, true})
+                                 const std::array<bool, 3>& logging_enabled = {{false, false, true}})
     : XT::Common::ParametricInterface(param_type)
     , Logger(logging_prefix.empty() ? "BilinearFormInterface" : logging_prefix, logging_enabled)
   {
@@ -186,7 +186,7 @@ public:
 
   explicit ForwardOperatorInterface(const XT::Common::ParameterType& param_type = {},
                                     const std::string& logging_prefix = "",
-                                    const std::array<bool, 3>& logging_state = {false, false, true})
+                                    const std::array<bool, 3>& logging_state = {{false, false, true}})
     : BaseType(param_type, logging_prefix.empty() ? "ForwardOperatorInterface" : logging_prefix, logging_state)
   {
     LOG_(debug) << "ForwardOperatorInterface(param_type=" << param_type << ")" << std::endl;
@@ -373,7 +373,7 @@ public:
 
   explicit OperatorInterface(const XT::Common::ParameterType& param_type = {},
                              const std::string& logging_prefix = "",
-                             const std::array<bool, 3>& logging_enabled = {false, false, true})
+                             const std::array<bool, 3>& logging_enabled = {{false, false, true}})
     : BaseType(param_type, logging_prefix.empty() ? "OperatorInterface" : logging_prefix, logging_enabled)
   {
     LOG_(debug) << "OperatorInterface(param_type=" << param_type << ")" << std::endl;

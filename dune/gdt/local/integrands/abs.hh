@@ -30,10 +30,9 @@ public:
   using typename BaseType::DomainType;
   using typename BaseType::LocalTestBasisType;
 
-  LocalElementAbsIntegrand(const std::string& logging_prefix = "")
-    : BaseType({},
-               logging_prefix.empty() ? "LocalElementAbsIntegrand" : logging_prefix,
-               /*logging_disabled=*/logging_prefix.empty())
+  LocalElementAbsIntegrand(const std::string& logging_prefix = "",
+                           const std::array<bool, 3>& logging_state = {{false, false, true}})
+    : BaseType({}, logging_prefix.empty() ? "LocalElementAbsIntegrand" : logging_prefix, logging_state)
   {}
 
   LocalElementAbsIntegrand(const ThisType&) = default;

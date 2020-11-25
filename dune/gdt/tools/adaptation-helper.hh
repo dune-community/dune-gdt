@@ -45,9 +45,10 @@ public:
   using G = typename GV::Grid;
   static_assert(!XT::Grid::is_yaspgrid<G>::value, "The PersistentContainer is known to segfault for YaspGrid!");
 
-  AdaptationHelper(G& grd, const std::string& logging_prefix = "")
-    : Logger(logging_prefix.empty() ? "AdaptationHelper" : logging_prefix,
-             /*logging_disabled=*/logging_prefix.empty())
+  AdaptationHelper(G& grd,
+                   const std::string& logging_prefix = "",
+                   const std::array<bool, 3>& logging_state = {{false, false, true}})
+    : Logger(logging_prefix.empty() ? "AdaptationHelper" : logging_prefix, logging_state)
     , grid_(grd)
     , data_(new std::remove_reference_t<decltype(*data_)>)
   {

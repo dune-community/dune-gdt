@@ -71,11 +71,11 @@ public:
                                       const SourceType& source,
                                       const RangeType& range,
                                       const XT::Common::Parameter& param = {},
-                                      const std::string& logging_prefix = "")
+                                      const std::string& logging_prefix = "",
+                                      const std::array<bool, 3>& logging_state = {{false, false, true}})
     : BaseType()
     , Propagator(this)
-    , Logger(logging_prefix.empty() ? "ElementBilinearFormAccumulator" : logging_prefix,
-             /*logging_disabled=*/logging_prefix.empty())
+    , Logger(logging_prefix.empty() ? "ElementBilinearFormAccumulator" : logging_prefix, logging_state)
     , local_bilinear_form_(local_bilinear_form.copy())
     , source_(source.copy_as_grid_function())
     , range_(range.copy_as_grid_function())
@@ -162,10 +162,11 @@ make_local_element_bilinear_form_accumulator(
     const XT::Functions::GridFunctionInterface<E, s_r, s_rC, SF>& source,
     const XT::Functions::GridFunctionInterface<E, r_r, r_rC, RF>& range,
     const XT::Common::Parameter& param = {},
-    const std::string& logging_prefix = "")
+    const std::string& logging_prefix = "",
+    const std::array<bool, 3>& logging_state = {{false, false, true}})
 {
   return std::make_unique<LocalElementBilinearFormAccumulator<GridView, s_r, s_rC, SF, R, r_r, r_rC, RF>>(
-      local_bilinear_form, source, range, param, logging_prefix);
+      local_bilinear_form, source, range, param, logging_prefix, logging_state);
 }
 
 

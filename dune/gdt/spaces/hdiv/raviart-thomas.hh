@@ -67,9 +67,11 @@ private:
   using GlobalBasisImplementation = RaviartThomasGlobalBasis<GV, R>;
 
 public:
-  RaviartThomasSpace(GridViewType grd_vw, const int order, const std::string& logging_prefix = "")
-    : BaseType(logging_prefix.empty() ? "RtSpace" : logging_prefix,
-               /*logging_disabled=*/logging_prefix.empty())
+  RaviartThomasSpace(GridViewType grd_vw,
+                     const int order,
+                     const std::string& logging_prefix = "",
+                     const std::array<bool, 3>& logging_state = {{false, false, true}})
+    : BaseType(logging_prefix.empty() ? "RtSpace" : logging_prefix, logging_state)
     , grid_view_(grd_vw)
     , order_(order)
     , local_finite_elements_()
@@ -81,7 +83,8 @@ public:
              local_finite_elements_,
              element_indices_,
              fe_data_,
-             logging_prefix.empty() ? "" : logging_prefix + "Basis")
+             logging_prefix.empty() ? "" : logging_prefix + "_basis",
+             logging_state)
   {
     LOG_(info) << "RaviartThomasSpace(grid_view=" << &grd_vw << ", order=" << order << ")" << std::endl;
     DUNE_THROW_IF(order_ != 0, Exceptions::space_error, "Higher orders are not testet yet!");

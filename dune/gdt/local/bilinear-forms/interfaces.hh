@@ -84,7 +84,7 @@ public:
 
   LocalElementBilinearFormInterface(const XT::Common::ParameterType& param_type = {},
                                     const std::string& logging_prefix = "",
-                                    const std::array<bool, 3>& logging_state = {false, false, true})
+                                    const std::array<bool, 3>& logging_state = {{false, false, true}})
     : XT::Common::ParametricInterface(param_type)
     , Logger(logging_prefix.empty() ? "LocalElementBilinearForm" : logging_prefix, logging_state)
   {
@@ -184,9 +184,9 @@ public:
 
   LocalCouplingIntersectionBilinearFormInterface(const XT::Common::ParameterType& param_type = {},
                                                  const std::string& logging_prefix = "",
-                                                 const bool logging_disabled = true)
+                                                 const std::array<bool, 3>& logging_state = {{false, false, true}})
     : XT::Common::ParametricInterface(param_type)
-    , Logger(logging_prefix.empty() ? "LocalCouplingIntersectionBilinearForm" : logging_prefix, logging_disabled)
+    , Logger(logging_prefix.empty() ? "LocalCouplingIntersectionBilinearForm" : logging_prefix, logging_state)
   {}
 
   LocalCouplingIntersectionBilinearFormInterface(const ThisType&) = default;
@@ -302,9 +302,9 @@ public:
 
   LocalIntersectionBilinearFormInterface(const XT::Common::ParameterType& param_type = {},
                                          const std::string& logging_prefix = "",
-                                         const bool logging_disabled = true)
+                                         const std::array<bool, 3>& logging_state = {{false, false, true}})
     : XT::Common::ParametricInterface(param_type)
-    , Logger(logging_prefix.empty() ? "LocalIntersectionBilinearForm" : logging_prefix, logging_disabled)
+    , Logger(logging_prefix.empty() ? "LocalIntersectionBilinearForm" : logging_prefix, logging_state)
   {}
 
   LocalIntersectionBilinearFormInterface(const ThisType&) = default;

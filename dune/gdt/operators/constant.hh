@@ -48,7 +48,7 @@ public:
   ConstantForwardOperator(const RangeSpaceType& rng_space,
                           const VectorType& val,
                           const std::string& logging_prefix = "",
-                          const std::array<bool, 3>& logging_state = {false, false, true})
+                          const std::array<bool, 3>& logging_state = {{false, false, true}})
     : BaseType({}, logging_prefix.empty() ? "ConstantForwardOperator" : logging_prefix, logging_state)
     , range_space_(rng_space)
     , value_(val)
@@ -62,7 +62,7 @@ public:
   ConstantForwardOperator(const RangeSpaceType& rng_space,
                           VectorType*&& val,
                           const std::string& logging_prefix = "",
-                          const std::array<bool, 3>& logging_state = {false, false, true})
+                          const std::array<bool, 3>& logging_state = {{false, false, true}})
     : BaseType({}, logging_prefix.empty() ? "ConstantForwardOperator" : logging_prefix, logging_state)
     , range_space_(rng_space)
     , value_(std::move(val))
@@ -118,7 +118,7 @@ template <class GV, size_t r, size_t rC, class F, class V>
 auto make_constant_forward_operator(const SpaceInterface<GV, r, rC, F>& space,
                                     const XT::LA::VectorInterface<V>& value,
                                     const std::string& logging_prefix = "",
-                                    const std::array<bool, 3>& logging_state = {false, false, true})
+                                    const std::array<bool, 3>& logging_state = {{false, false, true}})
 {
   using V_ = typename XT::LA::VectorInterface<V>::derived_type;
   return ConstantForwardOperator<GV, r, rC, r, rC, F, V_, GV>(space, value.as_imp(), logging_prefix, logging_state);
@@ -128,7 +128,7 @@ template <class GV, size_t r, size_t rC, class F, class VectorType>
 auto make_constant_forward_operator(const SpaceInterface<GV, r, rC, F>& space,
                                     VectorType*&& value_ptr,
                                     const std::string& logging_prefix = "",
-                                    const std::array<bool, 3>& logging_state = {false, false, true})
+                                    const std::array<bool, 3>& logging_state = {{false, false, true}})
 {
   static_assert(XT::LA::is_vector<VectorType>::value, "");
   return ConstantForwardOperator<GV, r, rC, r, rC, F, VectorType, GV>(
@@ -165,7 +165,7 @@ public:
                    const RangeSpaceType& rng_space,
                    const VectorType& val,
                    const std::string& logging_prefix = "",
-                   const std::array<bool, 3>& logging_state = {false, false, true})
+                   const std::array<bool, 3>& logging_state = {{false, false, true}})
     : BaseType({}, logging_prefix.empty() ? "ConstantOperator" : logging_prefix, logging_state)
     , assembly_grid_view_(assembly_grid_vw)
     , source_space_(src_space)
@@ -184,7 +184,7 @@ public:
                    const RangeSpaceType& rng_space,
                    VectorType*&& val,
                    const std::string& logging_prefix = "",
-                   const std::array<bool, 3>& logging_state = {false, false, true})
+                   const std::array<bool, 3>& logging_state = {{false, false, true}})
     : BaseType({}, logging_prefix.empty() ? "ConstantOperator" : logging_prefix, logging_state)
     , assembly_grid_view_(assembly_grid_vw)
     , source_space_(src_space)
@@ -293,7 +293,7 @@ auto make_constant_operator(const AssemblyGridViewType& assembly_grid_view,
                             const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
                             const XT::LA::VectorInterface<V>& value,
                             const std::string& logging_prefix = "",
-                            const std::array<bool, 3>& logging_state = {false, false, true})
+                            const std::array<bool, 3>& logging_state = {{false, false, true}})
 {
   static_assert(XT::Grid::is_view<AssemblyGridViewType>::value, "");
   using M = XT::LA::matrix_t<typename XT::LA::VectorInterface<V>::derived_type>;
@@ -315,7 +315,7 @@ auto make_constant_operator(const AssemblyGridViewType& assembly_grid_view,
                             const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
                             const VectorType*&& value_ptr,
                             const std::string& logging_prefix = "",
-                            const std::array<bool, 3>& logging_state = {false, false, true})
+                            const std::array<bool, 3>& logging_state = {{false, false, true}})
 {
   static_assert(XT::Grid::is_view<AssemblyGridViewType>::value, "");
   static_assert(XT::LA::is_vector<VectorType>::value, "");
@@ -328,7 +328,7 @@ template <class GV, size_t r, size_t rC, class F, class V>
 auto make_constant_operator(const SpaceInterface<GV, r, rC, F>& space,
                             const XT::LA::VectorInterface<V>& value,
                             const std::string& logging_prefix = "",
-                            const std::array<bool, 3>& logging_state = {false, false, true})
+                            const std::array<bool, 3>& logging_state = {{false, false, true}})
 {
   using M = XT::LA::matrix_t<typename XT::LA::VectorInterface<V>::derived_type>;
   return ConstantOperator<GV, r, rC, r, rC, F, M, GV, GV>(
@@ -339,7 +339,7 @@ template <class GV, size_t r, size_t rC, class F, class VectorType>
 auto make_constant_operator(const SpaceInterface<GV, r, rC, F>& space,
                             VectorType*&& value_ptr,
                             const std::string& logging_prefix = "",
-                            const std::array<bool, 3>& logging_state = {false, false, true})
+                            const std::array<bool, 3>& logging_state = {{false, false, true}})
 {
   static_assert(XT::LA::is_vector<VectorType>::value, "");
   using M = XT::LA::matrix_t<VectorType>;

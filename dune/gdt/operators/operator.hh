@@ -59,7 +59,7 @@ public:
            const SourceSpaceType& source_spc,
            const RangeSpaceType& range_spc,
            const std::string& logging_prefix = "",
-           const std::array<bool, 3>& logging_state = {false, false, true})
+           const std::array<bool, 3>& logging_state = {{false, false, true}})
     : BaseType({}, logging_prefix.empty() ? "Operator" : logging_prefix, logging_state)
     , assembly_grid_view_(assembly_grid_vw)
     , source_space_(source_spc)
@@ -281,7 +281,7 @@ auto make_operator(const AssemblyGridViewType& assembly_grid_view,
                    const SpaceInterface<SGV, s_r, s_rC, F>& source_space,
                    const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
                    const std::string& logging_prefix = "",
-                   const std::array<bool, 3>& logging_state = {false, false, true})
+                   const std::array<bool, 3>& logging_state = {{false, false, true}})
 {
   static_assert(XT::LA::is_matrix<MatrixType>::value, "");
   static_assert(XT::Grid::is_view<AssemblyGridViewType>::value, "");
@@ -294,7 +294,7 @@ auto make_operator(const AssemblyGridViewType& assembly_grid_view,
                    const SpaceInterface<SGV, s_r, s_rC, F>& source_space,
                    const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
                    const std::string& logging_prefix = "",
-                   const std::array<bool, 3>& logging_state = {false, false, true})
+                   const std::array<bool, 3>& logging_state = {{false, false, true}})
 {
   return make_operator<XT::LA::IstlRowMajorSparseMatrix<F>>(
       assembly_grid_view, source_space, range_space, logging_prefix, logging_state);
@@ -308,7 +308,7 @@ template <class MatrixType, // <- needs to be manually specified
           class F>
 auto make_operator(const SpaceInterface<GV, r, rC, F>& space,
                    const std::string& logging_prefix = "",
-                   const std::array<bool, 3>& logging_state = {false, false, true})
+                   const std::array<bool, 3>& logging_state = {{false, false, true}})
 {
   static_assert(XT::LA::is_matrix<MatrixType>::value, "");
   return Operator<GV, r, rC, r, rC, F, MatrixType, GV, GV>(
@@ -318,7 +318,7 @@ auto make_operator(const SpaceInterface<GV, r, rC, F>& space,
 template <class GV, size_t r, size_t rC, class F>
 auto make_operator(const SpaceInterface<GV, r, rC, F>& space,
                    const std::string& logging_prefix = "",
-                   const std::array<bool, 3>& logging_state = {false, false, true})
+                   const std::array<bool, 3>& logging_state = {{false, false, true}})
 {
   return make_operator<XT::LA::IstlRowMajorSparseMatrix<F>>(space, logging_prefix, logging_state);
 }

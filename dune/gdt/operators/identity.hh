@@ -39,7 +39,7 @@ public:
 
   IdentityOperator(const SourceSpaceType& space,
                    const std::string& logging_prefix = "",
-                   const std::array<bool, 3>& logging_state = {false, false, true})
+                   const std::array<bool, 3>& logging_state = {{false, false, true}})
     : BaseType({}, logging_prefix.empty() ? "IdentityOperator" : logging_prefix, logging_state)
     , space_(space)
   {
@@ -146,7 +146,7 @@ template <class MatrixType, // <- needs to be manually specified
           class F>
 auto make_identity_operator(const SpaceInterface<GV, r, rC, F>& space,
                             const std::string& logging_prefix = "",
-                            const std::array<bool, 3>& logging_state = {false, false, true})
+                            const std::array<bool, 3>& logging_state = {{false, false, true}})
 {
   static_assert(XT::LA::is_matrix<MatrixType>::value, "");
   return IdentityOperator<GV, r, rC, F, MatrixType>(space.grid_view(), space, space, logging_prefix, logging_state);
@@ -155,7 +155,7 @@ auto make_identity_operator(const SpaceInterface<GV, r, rC, F>& space,
 template <class GV, size_t r, size_t rC, class F>
 auto make_identity_operator(const SpaceInterface<GV, r, rC, F>& space,
                             const std::string& logging_prefix = "",
-                            const std::array<bool, 3>& logging_state = {false, false, true})
+                            const std::array<bool, 3>& logging_state = {{false, false, true}})
 {
   return make_identity_operator<XT::LA::IstlRowMajorSparseMatrix<F>>(space, logging_prefix, logging_state);
 }
@@ -164,7 +164,7 @@ auto make_identity_operator(const SpaceInterface<GV, r, rC, F>& space,
 template <class GV, size_t r, size_t rC, class F, class M>
 auto make_identity_operator(const OperatorInterface<GV, r, rC, r, rC, F, M, GV, GV>& some_operator,
                             const std::string& logging_prefix = "",
-                            const std::array<bool, 3>& logging_state = {false, false, true})
+                            const std::array<bool, 3>& logging_state = {{false, false, true}})
 {
   // check if source and range coincide
   const auto& source = some_operator.source_space();

@@ -41,10 +41,11 @@ public:
 
   Inner(const std::function<double(const I&)>& intersection_diameter =
             LocalIPDGIntegrands::internal::default_intersection_diameter<I>(),
-        const std::string& logging_prefix = "")
+        const std::string& logging_prefix = "",
+        const std::array<bool, 3>& logging_state = {{false, false, true}})
     : BaseType({},
                logging_prefix.empty() ? "LocalJumpIntegrands::Inner" : logging_prefix,
-               /*logging_disabled=*/logging_prefix.empty())
+               logging_state)
     , intersection_diameter_(intersection_diameter)
   {}
 
@@ -176,10 +177,11 @@ public:
 
   Boundary(const std::function<double(const I&)>& intersection_diameter =
                LocalIPDGIntegrands::internal::default_intersection_diameter<I>(),
-           const std::string& logging_prefix = "")
+           const std::string& logging_prefix = "",
+           const std::array<bool, 3>& logging_state = {{false, false, true}})
     : BaseType({},
                logging_prefix.empty() ? "LocalJumpIntegrands::Boundary" : logging_prefix,
-               /*logging_disabled=*/logging_prefix.empty())
+               logging_state)
     , intersection_diameter_(intersection_diameter)
   {}
 

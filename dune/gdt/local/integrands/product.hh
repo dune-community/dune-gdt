@@ -55,7 +55,7 @@ public:
 
   LocalElementProductIntegrand(XT::Functions::GridFunction<E, r, r, F> weight = {1.},
                                const std::string& logging_prefix = "",
-                               const std::array<bool, 3>& logging_state = {false, false, true})
+                               const std::array<bool, 3>& logging_state = {{false, false, true}})
     : BaseType({}, logging_prefix.empty() ? "ElementProductIntegrand" : logging_prefix, logging_state)
     , weight_(weight.copy_as_grid_function())
     , local_weight_(weight_->local_function())
@@ -160,10 +160,9 @@ public:
   using GridFunctionType = XT::Functions::GridFunctionInterface<E, r, r, F>;
 
   LocalCouplingIntersectionProductIntegrand(XT::Functions::GridFunction<E, r, r, F> weight = {1.},
-                                            const std::string& logging_prefix = "")
-    : BaseType({},
-               logging_prefix.empty() ? "LocalCouplingIntersectionProductIntegrand" : logging_prefix,
-               /*logging_disabled=*/logging_prefix.empty())
+                                            const std::string& logging_prefix = "",
+                                            const std::array<bool, 3>& logging_state = {{false, false, true}})
+    : BaseType({}, logging_prefix.empty() ? "LocalCouplingIntersectionProductIntegrand" : logging_prefix, logging_state)
     , weight_(weight.copy_as_grid_function())
     , local_weight_in_(weight_->local_function())
     , local_weight_out_(weight_->local_function())
@@ -293,10 +292,9 @@ public:
 
   LocalIntersectionProductIntegrand(XT::Functions::GridFunction<E, r, r, F> weight = {1.},
                                     const bool use_inside_bases = true,
-                                    const std::string& logging_prefix = "")
-    : BaseType({},
-               logging_prefix.empty() ? "LocalIntersectionProductIntegrand" : logging_prefix,
-               /*logging_disabled=*/logging_prefix.empty())
+                                    const std::string& logging_prefix = "",
+                                    const std::array<bool, 3>& logging_state = {{false, false, true}})
+    : BaseType({}, logging_prefix.empty() ? "LocalIntersectionProductIntegrand" : logging_prefix, logging_state)
     , weight_(weight.copy_as_grid_function())
     , local_weight_(weight_->local_function())
     , inside_(use_inside_bases)

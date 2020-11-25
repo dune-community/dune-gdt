@@ -60,7 +60,7 @@ public:
   ForwardOperator(const AssemblyGridViewType& assembly_grid_vw,
                   const RangeSpaceType& range_spc,
                   const std::string& logging_prefix = "",
-                  const std::array<bool, 3>& logging_state = {false, false, true})
+                  const std::array<bool, 3>& logging_state = {{false, false, true}})
     : BaseType({}, logging_prefix.empty() ? "ForwardOperator" : logging_prefix, logging_state)
     , assembly_grid_view_(assembly_grid_vw)
     , range_space_(range_spc)
@@ -245,7 +245,7 @@ public:
                            VectorType& range_vector,
                            const XT::Common::Parameter& param = {},
                            const std::string& logging_prefix = "",
-                           const std::array<bool, 3>& logging_state = {false, false, true})
+                           const std::array<bool, 3>& logging_state = {{false, false, true}})
     : BaseType(logging_prefix.empty() ? "ForwardOperatorAssembler" : logging_prefix, logging_state)
     , operator_(oprtr)
     , source_(src.copy_as_grid_function())
@@ -356,7 +356,7 @@ template <class AssemblyGridViewType,
 auto make_forward_operator(const AssemblyGridViewType& assembly_grid_view,
                            const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
                            const std::string& logging_prefix = "",
-                           const std::array<bool, 3>& logging_state = {false, false, true})
+                           const std::array<bool, 3>& logging_state = {{false, false, true}})
 {
   static_assert(XT::Grid::is_view<AssemblyGridViewType>::value, "");
   return ForwardOperator<AssemblyGridViewType, s_r, s_rC, r_r, r_rC, F, V, SGV, RGV>(
@@ -374,7 +374,7 @@ template <class GV,
           class SGV = GV>
 auto make_forward_operator(const SpaceInterface<GV, r_r, r_rC, F>& space,
                            const std::string& logging_prefix = "",
-                           const std::array<bool, 3>& logging_state = {false, false, true})
+                           const std::array<bool, 3>& logging_state = {{false, false, true}})
 {
   return ForwardOperator<GV, s_r, s_rC, r_r, r_rC, F, V, SGV, GV>(
       space.grid_view(), space, logging_prefix, logging_state);

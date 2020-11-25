@@ -61,10 +61,11 @@ public:
       const double& penalty,
       XT::Functions::GridFunction<E, d, d> weight_function = 1.,
       const std::function<double(const I&)>& intersection_diameter = internal::default_intersection_diameter<I>(),
-      const std::string& logging_prefix = "")
+      const std::string& logging_prefix = "",
+      const std::array<bool, 3>& logging_state = {{false, false, true}})
     : BaseType(weight_function.parameter_type(),
                logging_prefix.empty() ? "LocalIPDGIntegrands::InnerPenalty" : logging_prefix,
-               /*logging_disabled=*/logging_prefix.empty())
+               logging_state)
     , penalty_(penalty)
     , weight_(weight_function.copy_as_grid_function())
     , intersection_diameter_(intersection_diameter)
@@ -203,10 +204,11 @@ public:
       const double& penalty,
       XT::Functions::GridFunction<E, d, d> weight_function = 1.,
       const std::function<double(const I&)>& intersection_diameter = internal::default_intersection_diameter<I>(),
-      const std::string& logging_prefix = "")
+      const std::string& logging_prefix = "",
+      const std::array<bool, 3>& logging_state = {{false, false, true}})
     : BaseType(weight_function.parameter_type(),
                logging_prefix.empty() ? "LocalIPDGIntegrands::BoundaryPenalty" : logging_prefix,
-               /*logging_disabled=*/logging_prefix.empty())
+               logging_state)
     , penalty_(penalty)
     , weight_(weight_function.copy_as_grid_function())
     , intersection_diameter_(intersection_diameter)

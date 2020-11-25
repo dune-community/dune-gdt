@@ -40,10 +40,11 @@ public:
   using typename BaseType::LocalTestBasisType;
 
   explicit LocalLinearAdvectionIntegrand(XT::Functions::GridFunction<E, d, 1, F> direction,
-                                         const std::string& logging_prefix = "")
+                                         const std::string& logging_prefix = "",
+                                         const std::array<bool, 3>& logging_state = {{false, false, true}})
     : BaseType(direction.parameter_type(),
                logging_prefix.empty() ? "LocalLinearAdvectionIntegrand" : logging_prefix,
-               /*logging_disabled=*/logging_prefix.empty())
+               logging_state)
     , direction_(direction.copy_as_grid_function())
     , local_direction_(direction_->local_function())
   {

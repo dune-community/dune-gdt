@@ -76,7 +76,7 @@ public:
                       const RangeSpaceType& range_spc,
                       const MatrixType& mat,
                       const std::string& logging_prefix = "",
-                      const std::array<bool, 3>& logging_state = {false, false, true})
+                      const std::array<bool, 3>& logging_state = {{false, false, true}})
     : BaseType({}, logging_prefix.empty() ? "ConstMatrixOperator" : logging_prefix, logging_state)
     , assembly_grid_view_(assembly_grid_vw)
     , source_space_(source_spc)
@@ -352,7 +352,7 @@ public:
                  const RangeSpaceType& range_spc,
                  MatrixType& mat,
                  const std::string& logging_prefix = "",
-                 const std::array<bool, 3>& logging_state = {false, false, true})
+                 const std::array<bool, 3>& logging_state = {{false, false, true}})
     : MatrixStorage(mat)
     , BaseOperatorType(assembly_grid_vw,
                        source_spc,
@@ -372,7 +372,7 @@ public:
                  const RangeSpaceType& range_spc,
                  MatrixType*&& mat_ptr,
                  const std::string& logging_prefix = "",
-                 const std::array<bool, 3>& logging_state = {false, false, true})
+                 const std::array<bool, 3>& logging_state = {{false, false, true}})
     : MatrixStorage(std::move(mat_ptr))
     , BaseOperatorType(assembly_grid_vw,
                        source_spc,
