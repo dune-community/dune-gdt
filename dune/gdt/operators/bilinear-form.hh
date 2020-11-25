@@ -144,7 +144,7 @@ public:
         range_space,
         new MatrixType(range_space.mapper().size(),
                        source_space.mapper().size(),
-                       make_element_and_intersection_sparsity_pattern(range_space, source_space, assembly_grid_view_)),
+                       make_sparsity_pattern(range_space, source_space, assembly_grid_view_)),
         this->logger.prefix + "_mat",
         this->logger.state);
     op.append(*this, param);
