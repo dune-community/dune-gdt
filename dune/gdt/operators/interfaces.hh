@@ -129,11 +129,10 @@ public:
   /// \brief Allows the implementation to do preparatory work (i.e., assemble the matrix of a matrix-based operator).
   /// \note In general, you have to call this method before calling apply2!
   /// \todo Drop use_tbb, has to be specified on construction or somewhere else
-  virtual ThisType& assemble(const bool use_tbb = false)
+  virtual void assemble(const bool use_tbb = false)
   {
     LOG_(debug) << "assemble(use_tbb=" << use_tbb << ")" << std::endl;
     LOG_(info) << "not assembling bilinear form" << std::endl;
-    return *this;
   }
 
   FieldType norm(RangeFunctionType range_function, const XT::Common::Parameter& param = {}) const
@@ -402,7 +401,7 @@ public:
   virtual const AssemblyGridViewType& assembly_grid_view() const = 0;
 
   /// \}
-  /// \name These methods are required by OperatorInterface and default-implemented here.
+  /// \name These methods are required by ForwardOperatorInterface and default-implemented here.
   /// \{
 
   /// \brief Carries out an interpolation of source_function and calls the other apply() afterwards (not optimal!).

@@ -504,11 +504,10 @@ public:
   /// \name Required by BilinearFormInterface.
   /// \{
 
-  typename OperatorType::BaseType::BaseType& assemble(const bool use_tbb = false) override final
+  void assemble(const bool use_tbb = false) override final
   {
     for (auto& oo : ops_)
       oo.access().assemble(use_tbb);
-    return *this;
   }
 
   /// \}

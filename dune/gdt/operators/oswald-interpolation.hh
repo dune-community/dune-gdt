@@ -109,10 +109,10 @@ public:
     return range_space_;
   }
 
-  ThisType& assemble(const bool use_tbb = false) override final
+  void assemble(const bool use_tbb = false) override final
   {
     if (assembled_)
-      return *this;
+      return;
     // create conforming space of same order to be used as mapper for the global Lagrange points
     const auto order = range_space_.min_polorder();
     DUNE_THROW_IF(

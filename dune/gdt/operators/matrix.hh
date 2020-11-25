@@ -60,10 +60,10 @@ template <class AGV,
           class RGV = AGV>
 class ConstMatrixOperator : public OperatorInterface<AGV, s_r, s_rC, r_r, r_rC, F, M, SGV, RGV>
 {
+public:
   using ThisType = ConstMatrixOperator;
   using BaseType = OperatorInterface<AGV, s_r, s_rC, r_r, r_rC, F, M, SGV, RGV>;
 
-public:
   using typename BaseType::AssemblyGridViewType;
   using typename BaseType::MatrixOperatorType;
   using typename BaseType::MatrixType;
@@ -303,12 +303,13 @@ class MatrixOperator
   , public ConstMatrixOperator<AGV, s_r, s_rC, r_r, r_rC, F, M, SGV, RGV>
   , public XT::Grid::ElementAndIntersectionFunctor<AGV>
 {
-  using ThisType = MatrixOperator;
   using MatrixStorage = XT::Common::StorageProvider<M>;
+
+public:
+  using ThisType = MatrixOperator;
   using BaseOperatorType = ConstMatrixOperator<AGV, s_r, s_rC, r_r, r_rC, F, M, SGV, RGV>;
   using BaseFunctorType = XT::Grid::ElementAndIntersectionFunctor<AGV>;
 
-public:
   using BaseOperatorType::logger;
   using typename BaseOperatorType::AssemblyGridViewType;
   using typename BaseOperatorType::FieldType;
@@ -469,12 +470,11 @@ public:
   /// \name Required by BilinearFormInterface
   /// \{
 
-  BaseOperatorType& assemble(const bool use_tbb = false) override final
+  void assemble(const bool use_tbb = false) override final
   {
     XT::Grid::Walker<AGV> walker(this->assembly_grid_view_);
     walker.append(*this);
     walker.walk(use_tbb);
-    return *this;
   }
 
   /// \}
