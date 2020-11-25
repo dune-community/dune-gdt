@@ -46,6 +46,10 @@ public:
     LOG_(debug) << "IdentityOperator(space=" << &space << ")" << std::endl;
   }
 
+  IdentityOperator(const ThisType& other) = default;
+
+  IdentityOperator(ThisType&& source) = default;
+
   // pull in methods from various base classes
   using BaseType::apply;
   using BaseType::apply_inverse;

@@ -73,6 +73,10 @@ public:
     this->assert_matching_range(value_.access());
   }
 
+  ConstantForwardOperator(const ThisType& other) = default;
+
+  ConstantForwardOperator(ThisType&& source) = default;
+
   // pull in methods from various base classes
   using BaseType::apply;
 
@@ -197,6 +201,10 @@ public:
                 << std::endl;
     this->assert_matching_range(value_.access());
   }
+
+  ConstantOperator(const ThisType& other) = default;
+
+  ConstantOperator(ThisType&& source) = default;
 
   // pull in methods from various base classes
   using BaseType::apply;
