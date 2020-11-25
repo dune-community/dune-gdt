@@ -163,7 +163,7 @@ template <class TGV, size_t t_r, size_t t_rC, class TR, class AGV, size_t a_r, s
 XT::LA::SparsityPatternDefault make_sparsity_pattern(const SpaceInterface<TGV, t_r, t_rC, TR>& test_space,
                                                      const SpaceInterface<AGV, a_r, a_rC, AR>& ansatz_space,
                                                      const GV& grid_view,
-                                                     const Stencil stencil)
+                                                     const Stencil stencil = Stencil::automatic)
 {
   if (stencil == Stencil::element)
     return make_element_sparsity_pattern(test_space, ansatz_space, grid_view);
@@ -171,7 +171,13 @@ XT::LA::SparsityPatternDefault make_sparsity_pattern(const SpaceInterface<TGV, t
     return make_intersection_sparsity_pattern(test_space, ansatz_space, grid_view);
   else if (stencil == Stencil::element_and_intersection)
     return make_element_and_intersection_sparsity_pattern(test_space, ansatz_space, grid_view);
-  else
+  else if (stencil == Stencil::automatic) {
+    if (test_space.continuous(0) || ansatz_space.continuous(0) || test_space.continuous_normal_components()
+        || ansatz_space.continuous_normal_components())
+      return make_element_and_intersection_sparsity_pattern(test_space, ansatz_space, grid_view);
+    else
+      return make_element_sparsity_pattern(test_space, ansatz_space, grid_view);
+  } else
     DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
                "Unknown Stencil encountered (see below), add an appropriate method!"
                    << "\n   stencil = " << stencil);
@@ -179,15 +185,17 @@ XT::LA::SparsityPatternDefault make_sparsity_pattern(const SpaceInterface<TGV, t
 
 
 template <class SGV, size_t r, size_t rC, class R, class GV>
-XT::LA::SparsityPatternDefault
-make_sparsity_pattern(const SpaceInterface<SGV, r, rC, R>& space, const GV& grid_view, const Stencil stencil)
+XT::LA::SparsityPatternDefault make_sparsity_pattern(const SpaceInterface<SGV, r, rC, R>& space,
+                                                     const GV& grid_view,
+                                                     const Stencil stencil = Stencil::automatic)
 {
   return make_sparsity_pattern(space, space, grid_view, stencil);
 }
 
 
 template <class GV, size_t r, size_t rC, class R>
-XT::LA::SparsityPatternDefault make_sparsity_pattern(const SpaceInterface<GV, r, rC, R>& space, const Stencil stencil)
+XT::LA::SparsityPatternDefault make_sparsity_pattern(const SpaceInterface<GV, r, rC, R>& space,
+                                                     const Stencil stencil = Stencil::automatic)
 {
   return make_sparsity_pattern(space, space.grid_view(), stencil);
 }

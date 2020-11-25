@@ -56,7 +56,8 @@ enum class Stencil
 {
   element,
   intersection,
-  element_and_intersection
+  element_and_intersection,
+  automatic
 };
 
 
