@@ -683,7 +683,7 @@ template <class MatrixType, // <- needs to be manually specified
           size_t r,
           size_t rC,
           class F>
-auto make_lincomb_operator(const SpaceInterface<GV, r, r, F>& space,
+auto make_lincomb_operator(const SpaceInterface<GV, r, rC, F>& space,
                            const std::string& logging_prefix = "",
                            const std::array<bool, 3>& logging_state = {{false, false, true}})
 {
@@ -693,7 +693,7 @@ auto make_lincomb_operator(const SpaceInterface<GV, r, r, F>& space,
 }
 
 template <class GV, size_t r, size_t rC, class F>
-auto make_lincomb_operator(const SpaceInterface<GV, r, r, F>& space,
+auto make_lincomb_operator(const SpaceInterface<GV, r, rC, F>& space,
                            const std::string& logging_prefix = "",
                            const std::array<bool, 3>& logging_state = {{false, false, true}})
 {
