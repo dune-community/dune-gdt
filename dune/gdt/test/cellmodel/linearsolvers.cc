@@ -72,8 +72,6 @@ CellModelLinearSolverWrapper::CellModelLinearSolverWrapper(
   , solver_type_(solver_type)
   , mass_matrix_solver_type_(mass_matrix_solver_type)
   , is_schur_solver_(is_schur_solver_type(solver_type))
-  , S_colmajor_(solver_type == CellModelLinearSolverType::direct ? std::make_shared<ColMajorBackendType>(S_.backend())
-                                                                 : nullptr)
   , mass_matrix_lu_solver_(mass_matrix_solver_type_ == CellModelMassMatrixSolverType::sparse_lu
                                ? std::make_shared<LUSolverType>()
                                : nullptr)
@@ -107,8 +105,8 @@ CellModelLinearSolverWrapper::CellModelLinearSolverWrapper(
 // , bicgsolver_()
 {
   if (direct_solver_) {
-    S_colmajor_->makeCompressed();
-    direct_solver_->analyzePattern(*S_colmajor_);
+    S_.backend().makeCompressed();
+    direct_solver_->analyzePattern(S_.backend());
   }
 }
 
@@ -183,12 +181,14 @@ CellModelLinearSolverWrapper::apply_system_matrix_solver(const VectorType& rhs, 
 {
   auto rhs_eig = XT::Common::convert_to<EigenVectorType>(rhs);
   EigenVectorType update(rhs.size());
-  Dune::InverseOperatorResult res;
   switch (solver_type_) {
     case CellModelLinearSolverType::direct:
-      *S_colmajor_ = S_.backend();
-      direct_solver_->factorize(*S_colmajor_);
+      statistics_.clear();
+      direct_solver_->compute(S_.backend());
+      if (direct_solver_->info() != ::Eigen::Success)
+        DUNE_THROW(Dune::MathError, "Factorization of system matrix failed!");
       update.backend() = direct_solver_->solve(rhs_eig.backend());
+      statistics_.iterations = 1;
       break;
     case CellModelLinearSolverType::gmres:
     case CellModelLinearSolverType::fgmres_gmres:
@@ -197,7 +197,8 @@ CellModelLinearSolverWrapper::apply_system_matrix_solver(const VectorType& rhs, 
       // bicgsolver_.factorize(S_.backend());
       // update.backend() = bicgsolver_.solveWithGuess(rhs_eig.backend(), previous_update_[cell].backend());
       // previous_update_[cell] = update;
-      outer_solver_->apply(previous_update_[cell], rhs_eig, res);
+      statistics_.clear();
+      outer_solver_->apply(previous_update_[cell], rhs_eig, statistics_);
       update = previous_update_[cell];
       break;
     case CellModelLinearSolverType::schur_gmres:
@@ -210,10 +211,8 @@ CellModelLinearSolverWrapper::apply_system_matrix_solver(const VectorType& rhs, 
 
 void CellModelLinearSolverWrapper::apply_outer_solver(EigenVectorType& ret, EigenVectorType& rhs) const
 {
-  Dune::InverseOperatorResult res;
-  // if (solver_type_ == CellModelLinearSolverType::fgmres_amg)
-  // dynamic_cast<AMGPreconditionerType*>(preconditioner_.get())->recalculateHierarchy();
-  outer_solver_->apply(ret, rhs, res);
+  statistics_.clear();
+  outer_solver_->apply(ret, rhs, statistics_);
 }
 
 std::shared_ptr<CellModelLinearSolverWrapper::InverseOperatorType>

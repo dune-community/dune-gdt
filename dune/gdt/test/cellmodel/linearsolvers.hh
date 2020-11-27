@@ -227,7 +227,6 @@ public:
 
   void apply_outer_solver(EigenVectorType& ret, EigenVectorType& rhs) const;
 
-private:
   std::shared_ptr<InverseOperatorType>
   create_preconditioner_inverse_op(std::shared_ptr<DuneLinearOperatorType> linear_op,
                                    ScalarProductType& scalar_product,
@@ -269,6 +268,7 @@ private:
   // ::Eigen::IncompleteLUT<double> eigen_lut_solver_;
   // ::Eigen::PfieldIncompleteLUTPreconditioner pfield_lut_preconditioner_;
   // mutable ::Eigen::BiCGSTAB<RowMajorBackendType, ::Eigen::PfieldIncompleteLUTPreconditioner> bicgsolver_;
+  mutable Dune::InverseOperatorResult statistics_;
 }; // class CellModelLinearSolverWrapper<...>
 
 
@@ -337,7 +337,6 @@ public:
                                  EigenVectorType& ret,
                                  const EigenVectorType* initial_guess = nullptr) const;
 
-private:
   void set_nonlinear_part_of_S() const;
 
   VectorType apply_schur_solver(const VectorType& rhs, const size_t cell) const;
@@ -437,7 +436,6 @@ public:
 
   MatrixType& schur_matrix();
 
-private:
   void set_nonlinear_part_of_S() const;
 
   VectorType apply_schur_solver(const VectorType& rhs, const size_t cell) const;

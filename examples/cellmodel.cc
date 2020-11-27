@@ -59,11 +59,32 @@ int main(int argc, char* argv[])
     const double Pa = config.template get<double>("problem.Pa", 1.0);
     const double Fa = config.template get<double>("problem.Fa", 1.0);
 
+    // solver
+    const double gmres_reduction = DXTC_CONFIG_GET("gmres_reduction", 1e-13);
+    const int gmres_restart = DXTC_CONFIG_GET("gmres_restart", 100);
+    const double inner_gmres_reduction = DXTC_CONFIG_GET("inner_gmres_reduction", 1e-3);
+    const int inner_gmres_maxit = DXTC_CONFIG_GET("inner_gmres_maxit", 10);
+    const int gmres_verbose = DXTC_CONFIG_GET("gmres_verbose", 0);
+    const std::string pfield_solver_type_string = DXTC_CONFIG_GET("pfield_solver_type", "gmres");
+    const CellModelLinearSolverType pfield_solver_type = string_to_solver_type(pfield_solver_type_string);
+    const CellModelMassMatrixSolverType pfield_mass_matrix_solver_type =
+        string_to_mass_matrix_solver_type(DXTC_CONFIG_GET("pfield_mass_matrix_solver_type", "sparse_ldlt"));
+    const std::string ofield_solver_type_string = DXTC_CONFIG_GET("ofield_solver_type", "schur_gmres");
+    const CellModelLinearSolverType ofield_solver_type = string_to_solver_type(ofield_solver_type_string);
+    const CellModelMassMatrixSolverType ofield_mass_matrix_solver_type =
+        string_to_mass_matrix_solver_type(DXTC_CONFIG_GET("ofield_mass_matrix_solver_type", "sparse_ldlt"));
+    const std::string stokes_solver_type_string = DXTC_CONFIG_GET("stokes_solver_type", "schur_cg_A_direct_prec_mass");
+    const StokesSolverType stokes_solver_type = string_to_stokes_solver_type(stokes_solver_type_string);
+
     // output
     bool subsampling = config.get<bool>("output.subsampling", false);
     // a negative value of write step is interpreted as "write all steps"
     double write_step = config.template get<double>("output.write_step", -1.);
     std::string filename = config.get("output.prefix", "cpp");
+    filename += "_" + testcase;
+    filename += "_pfield_" + pfield_solver_type_string;
+    filename += "_ofield_" + ofield_solver_type_string;
+    filename += "_stokes_" + stokes_solver_type_string;
     filename += XT::Grid::is_yaspgrid<typename CellModelSolver::G>::value ? "_cube" : "_simplex";
     filename += XT::Common::to_string(num_elements_x) + "x" + XT::Common::to_string(num_elements_y);
     filename += "_Be" + XT::Common::to_string(Be);
@@ -74,22 +95,6 @@ int main(int argc, char* argv[])
     filename += "_writestep" + XT::Common::to_string(write_step);
     filename += "_polorder" + XT::Common::to_string(pol_order);
 
-    // solver
-    const double gmres_reduction = DXTC_CONFIG_GET("gmres_reduction", 1e-13);
-    const int gmres_restart = DXTC_CONFIG_GET("gmres_restart", 100);
-    const double inner_gmres_reduction = DXTC_CONFIG_GET("inner_gmres_reduction", 1e-3);
-    const int inner_gmres_maxit = DXTC_CONFIG_GET("inner_gmres_maxit", 10);
-    const int gmres_verbose = DXTC_CONFIG_GET("gmres_verbose", 0);
-    const CellModelLinearSolverType pfield_solver_type =
-        string_to_solver_type(DXTC_CONFIG_GET("pfield_solver_type", "gmres"));
-    const CellModelMassMatrixSolverType pfield_mass_matrix_solver_type =
-        string_to_mass_matrix_solver_type(DXTC_CONFIG_GET("pfield_mass_matrix_solver_type", "sparse_ldlt"));
-    const CellModelLinearSolverType ofield_solver_type =
-        string_to_solver_type(DXTC_CONFIG_GET("ofield_solver_type", "schur_gmres"));
-    const CellModelMassMatrixSolverType ofield_mass_matrix_solver_type =
-        string_to_mass_matrix_solver_type(DXTC_CONFIG_GET("ofield_mass_matrix_solver_type", "sparse_ldlt"));
-    const StokesSolverType stokes_solver_type =
-        string_to_stokes_solver_type(DXTC_CONFIG_GET("stokes_solver_type", "schur_cg_A_direct_prec_mass"));
 
     CellModelSolver model_solver(testcase,
                                  t_end,

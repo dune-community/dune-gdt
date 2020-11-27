@@ -47,6 +47,12 @@ namespace Dune {
 template <class X, class Y, class F>
 class FGMResSolver;
 
+struct SolverStatistics
+{
+  std::vector<size_t> iterations_;
+  std::vector<std::chrono::duration<double>> solve_time_;
+  std::chrono::duration<double> setup_time_;
+};
 
 struct CellModelSolver
 {
@@ -305,7 +311,8 @@ struct CellModelSolver
                  const double t,
                  const bool subsampling = true,
                  const bool vtu = true,
-                 const bool txt = false) const;
+                 const bool txt = false,
+                 const bool timings = true) const;
 
   //******************************************************************************************************************
   //*******************************  Methods to get and set variable values   ****************************************
@@ -724,6 +731,7 @@ struct CellModelSolver
   MatrixType BT_stokes_;
   const StokesSolverType stokes_solver_type_;
   std::shared_ptr<LUSolverType> stokes_solver_;
+  SolverStatistics stokes_solver_statistics_;
   std::shared_ptr<StokesSchurComplementType> stokes_schur_complement_;
   std::shared_ptr<Dune::CGSolver<EigenVectorType>> stokes_schur_solver_;
   std::shared_ptr<LDLTSolverType> stokes_A_solver_;
@@ -770,6 +778,7 @@ struct CellModelSolver
   // Matrix operators for orientation field matrices
   OfieldMatrixLinearPartOperator<VectorType, MatrixType, CellModelSolver> ofield_jac_linear_op_;
   OfieldLinearSolver ofield_solver_;
+  SolverStatistics ofield_solver_statistics_;
   // finite element vector rhs = (f; g) for ofield system and views on P and Pnat parts f and g
   VectorType ofield_rhs_vector_;
   VectorViewType ofield_f_vector_;
@@ -800,6 +809,7 @@ struct CellModelSolver
   // Matrix operators for phasefield matrices
   PfieldMatrixLinearPartOperator<VectorType, MatrixType, CellModelSolver> pfield_jac_linear_op_;
   PfieldLinearSolver pfield_solver_;
+  SolverStatistics pfield_solver_statistics_;
   // Phase field rhs vector (r0 r1 r2)
   VectorType pfield_rhs_vector_;
   VectorViewType pfield_r0_vector_;
