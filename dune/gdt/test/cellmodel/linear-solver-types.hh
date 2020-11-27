@@ -18,7 +18,6 @@ enum class CellModelLinearSolverType
   gmres,
   fgmres_gmres,
   fgmres_bicgstab,
-  fgmres_amg,
   schur_gmres,
   schur_fgmres_gmres,
   schur_fgmres_bicgstab

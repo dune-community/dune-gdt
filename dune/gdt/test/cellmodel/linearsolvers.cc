@@ -15,8 +15,6 @@
 
 #include <dune/istl/operators.hh>
 #include <dune/istl/solvers.hh>
-#include <dune/istl/paamg/fastamg.hh>
-#include <dune/istl/paamg/aggregates.hh>
 
 #include <dune/xt/common/configuration.hh>
 
@@ -30,6 +28,7 @@
 
 #include <Eigen/IterativeLinearSolvers>
 #include <Eigen/SparseLU>
+#include <unsupported/Eigen/SparseExtra>
 
 #include "gmres.hh"
 #include "fgmres.hh"
@@ -181,10 +180,13 @@ CellModelLinearSolverWrapper::apply_system_matrix_solver(const VectorType& rhs, 
 {
   auto rhs_eig = XT::Common::convert_to<EigenVectorType>(rhs);
   EigenVectorType update(rhs.size());
+  // static int counter = 0;
   switch (solver_type_) {
     case CellModelLinearSolverType::direct:
       statistics_.clear();
-      direct_solver_->compute(S_.backend());
+      // Eigen::saveMarket(S_.backend(), "S_" + XT::Common::to_string(counter) + ".mtx");
+      // Eigen::saveMarketVector(rhs_eig.backend(),  "S_" + XT::Common::to_string(counter++) + "_b.mtx");
+      direct_solver_->factorize(S_.backend());
       if (direct_solver_->info() != ::Eigen::Success)
         DUNE_THROW(Dune::MathError, "Factorization of system matrix failed!");
       update.backend() = direct_solver_->solve(rhs_eig.backend());
@@ -193,7 +195,6 @@ CellModelLinearSolverWrapper::apply_system_matrix_solver(const VectorType& rhs, 
     case CellModelLinearSolverType::gmres:
     case CellModelLinearSolverType::fgmres_gmres:
     case CellModelLinearSolverType::fgmres_bicgstab:
-    case CellModelLinearSolverType::fgmres_amg:
       // bicgsolver_.factorize(S_.backend());
       // update.backend() = bicgsolver_.solveWithGuess(rhs_eig.backend(), previous_update_[cell].backend());
       // previous_update_[cell] = update;
@@ -243,7 +244,6 @@ CellModelLinearSolverWrapper::create_preconditioner_inverse_op(std::shared_ptr<D
       return std::make_shared<Matrix2InverseOperatorType>(S_preconditioner);
     case CellModelLinearSolverType::direct:
     case CellModelLinearSolverType::schur_gmres:
-    case CellModelLinearSolverType::fgmres_amg:
       return nullptr;
   }
 }
@@ -251,27 +251,9 @@ CellModelLinearSolverWrapper::create_preconditioner_inverse_op(std::shared_ptr<D
 std::shared_ptr<CellModelLinearSolverWrapper::PreconditionerType>
     CellModelLinearSolverWrapper::create_preconditioner(std::shared_ptr<DuneLinearOperatorType> /*linear_op*/)
 {
-  if (solver_type_ == CellModelLinearSolverType::fgmres_amg) {
-    //  typedef Dune::Amg::AggregationCriterion<Dune::Amg::UnSymmetricCriterion<MatrixType,Dune::Amg::FirstDiagonal>>
-    //  CriterionBase; typedef Dune::Amg::CoarsenCriterion<CriterionBase> Criterion; int N=100; int coarsenTarget=1200;
-    //  int ml=10;
-    //  Criterion criterion(15,coarsenTarget);
-    //  criterion.setDefaultValuesAnisotropic(2, 2);
-    //  criterion.setAlpha(.67);
-    //  criterion.setBeta(1.0e-4);
-    //  criterion.setMaxLevel(ml);
-    //  criterion.setSkipIsolated(false);
-    //  Dune::Amg::Parameters parms;
-    //  return std::make_shared<AMGPreconditionerType>(*linear_op, criterion, parms, false);
-    return std::make_shared<IterativeSolverPreconditionerType>(preconditioner_inverse_op_,
-                                                               SolverCategory::Category::sequential);
-    // } else if (solver_type_ == CellModelLinearSolverType::gmres) {
-    // return std::make_shared<InverseOperator2Preconditioner<InverseOperatorType>>(*preconditioner_inverse_op_);
-  } else {
-    return preconditioner_inverse_op_
-               ? std::make_shared<InverseOperator2Preconditioner<InverseOperatorType>>(*preconditioner_inverse_op_)
-               : nullptr;
-  }
+  return preconditioner_inverse_op_
+             ? std::make_shared<InverseOperator2Preconditioner<InverseOperatorType>>(*preconditioner_inverse_op_)
+             : nullptr;
 }
 
 std::shared_ptr<CellModelLinearSolverWrapper::IterativeSolverType>
@@ -305,7 +287,6 @@ CellModelLinearSolverWrapper::create_iterative_solver(std::shared_ptr<DuneLinear
                                                vector_size);
     case CellModelLinearSolverType::fgmres_gmres:
     case CellModelLinearSolverType::fgmres_bicgstab:
-    case CellModelLinearSolverType::fgmres_amg:
     case CellModelLinearSolverType::schur_fgmres_gmres:
     case CellModelLinearSolverType::schur_fgmres_bicgstab:
       return std::make_shared<FGMResSolverType>(*linear_op,
