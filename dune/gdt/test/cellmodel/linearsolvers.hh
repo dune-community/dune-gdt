@@ -24,6 +24,7 @@
 #include <Eigen/IterativeLinearSolvers>
 #include <Eigen/SparseLU>
 #include <Eigen/SparseCholesky>
+#include <Eigen/UmfPackSupport>
 
 #include "linear-solver-types.hh"
 
@@ -167,7 +168,8 @@ public:
   using EigenVectorType = XT::LA::EigenDenseVector<R>;
   using ColMajorBackendType = ::Eigen::SparseMatrix<R, ::Eigen::ColMajor>;
   using RowMajorBackendType = typename MatrixType::BackendType;
-  using LUSolverType = ::Eigen::SparseLU<ColMajorBackendType>;
+  // using LUSolverType = ::Eigen::SparseLU<ColMajorBackendType>;
+  using LUSolverType = ::Eigen::UmfPackLU<ColMajorBackendType>;
   using LDLTSolverType = ::Eigen::SimplicialLDLT<ColMajorBackendType>;
   using CGSolverType = ::Eigen::ConjugateGradient<RowMajorBackendType, Eigen::Lower | Eigen::Upper>;
   using CGIncompleteCholeskySolverType =

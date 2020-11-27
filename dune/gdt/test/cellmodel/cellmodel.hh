@@ -15,6 +15,7 @@
 
 #include <Eigen/IterativeLinearSolvers>
 #include <Eigen/SparseLU>
+#include <Eigen/UmfPackSupport>
 
 #include <dune/xt/grid/grids.hh>
 #include <dune/xt/grid/gridprovider.hh>
@@ -87,9 +88,9 @@ struct CellModelSolver
   using JacobianRetType = XT::Common::FieldMatrix<R, d, d>;
   using ColMajorBackendType = ::Eigen::SparseMatrix<R, ::Eigen::ColMajor>;
   using RowMajorBackendType = typename MatrixType::BackendType;
-  using LUSolverType = ::Eigen::SparseLU<ColMajorBackendType>;
+  // using LUSolverType = ::Eigen::SparseLU<ColMajorBackendType>;
+  using LUSolverType = ::Eigen::UmfPackLU<ColMajorBackendType>;
   using LDLTSolverType = ::Eigen::SimplicialLDLT<ColMajorBackendType>;
-  using OfieldDirectSolverType = ::Eigen::SparseLU<ColMajorBackendType>;
   using OfieldSchurSolverType = Dune::RestartedGMResSolver<EigenVectorType>;
   using SpaceTypeU = ContinuousLagrangeSpace<PGV, d, R>;
   using SpaceTypeP = SpaceTypeU;
