@@ -303,7 +303,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   std::vector<std::shared_ptr<const XT::Functions::FunctionInterface<d, d>>> P_initial_funcs;
 
   // interpolate initial and boundary values
-  if (testcase == "single_cell" || testcase == "channel") {
+  if (testcase == "single_cell" || testcase == "channel" || testcase == "single_cell_dirichlet") {
     // Initially, cell is circular with Radius R=5 and placed in the center of the domain
     // \Omega = [0, 30]^2
     // Initial condition for \phi thus is \tanh(\frac{r}{\sqrt{2}\epsilon}) with r the signed distance function to the
@@ -2859,7 +2859,7 @@ void CellModelSolver::copy_ld_to_hd_vec(const std::vector<size_t> dofs, const Ve
 XT::Common::FieldVector<CellModelSolver::R, CellModelSolver::d>
 CellModelSolver::get_lower_left(const std::string& testcase)
 {
-  if (testcase == "single_cell" || testcase == "channel" || testcase == "drosophila_wing")
+  if (testcase == "single_cell" || testcase == "single_cell_dirichlet" || testcase == "channel" || testcase == "drosophila_wing")
     return {{0., 0.}};
   else
     DUNE_THROW(Dune::NotImplemented, "Unknown testcase");
@@ -2870,7 +2870,7 @@ CellModelSolver::get_lower_left(const std::string& testcase)
 XT::Common::FieldVector<CellModelSolver::R, CellModelSolver::d>
 CellModelSolver::get_upper_right(const std::string& testcase)
 {
-  if (testcase == "single_cell")
+  if (testcase == "single_cell" || testcase == "single_cell_dirichlet")
     return {{30., 30.}};
   else if (testcase == "drosophila_wing")
     return {{60., 30.}};
@@ -2886,6 +2886,8 @@ std::string CellModelSolver::get_periodic_directions(const std::string& testcase
 {
   if (testcase == "single_cell" || testcase == "channel" || testcase == "drosophila_wing")
     return "01";
+  else if (testcase == "single_cell_dirichlet")
+    return "00";
   else
     DUNE_THROW(Dune::NotImplemented, "Unknown testcase");
   return "";
@@ -2894,7 +2896,7 @@ std::string CellModelSolver::get_periodic_directions(const std::string& testcase
 // get number of cells from testcase name
 size_t CellModelSolver::get_num_cells(const std::string& testcase)
 {
-  if (testcase == "single_cell" || testcase == "channel" || testcase == "drosophila_wing")
+  if (testcase == "single_cell" || testcase == "single_cell_dirichlet" || testcase == "channel" || testcase == "drosophila_wing")
     return 1;
   else
     DUNE_THROW(Dune::NotImplemented, "Unknown testcase");
