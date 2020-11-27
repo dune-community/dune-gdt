@@ -498,9 +498,10 @@ public:
 
   void prepare()
   {
-    // solver_->setDroptol(1e-6);
-    solver_->setFillfactor(DXTC_CONFIG_GET("pfield_ilu_fillfactor", 20));
-    std::cout << "pfield fillfactor :" << DXTC_CONFIG_GET("pfield_ilu_fillfactor", 20) << std::endl;
+    if constexpr (use_incomplete_lut) {
+      // solver_->setDroptol(1e-6);
+      solver_->setFillfactor(DXTC_CONFIG_GET("pfield_ilu_fillfactor", 80));
+    }
     solver_->compute(matrix_->backend());
   }
 

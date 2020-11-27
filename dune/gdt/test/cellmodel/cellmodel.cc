@@ -338,7 +338,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
     P_initial_funcs.emplace_back(std::make_shared<const XT::Functions::GenericFunction<d, d>>(
         50,
         /*evaluate=*/
-        [& phi_in = phi_initial_funcs[0]](const auto& x, const auto& param) {
+        [&phi_in = phi_initial_funcs[0]](const auto& x, const auto& param) {
           // auto rand1 = ((std::rand() % 2000) - 1000) / 20000.;
           // auto rand2 = ((std::rand() % 2000) - 1000) / 20000.;
           // auto ret = FieldVector<double, d>({1. + rand1, 0. +
@@ -398,7 +398,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
     P_initial_funcs.emplace_back(std::make_shared<const XT::Functions::GenericFunction<d, d>>(
         50,
         /*evaluate=*/
-        [& phi_in = phi_initial_funcs[0]](const auto& x, const auto& param) {
+        [&phi_in = phi_initial_funcs[0]](const auto& x, const auto& param) {
           // auto rand1 = ((std::rand() % 2000) - 1000) / 20000.;
           // auto rand2 = ((std::rand() % 2000) - 1000) / 20000.;
           // auto ret = FieldVector<double, d>({1. + rand1, 0. +
@@ -514,13 +514,17 @@ CellModelSolver::CellModelSolver(const std::string testcase,
     S_stokes.set_entry(size_u_, size_u_, 1.); // C matrix
     // Factor system matrix
     std::cout << "Factorizing Stokes system matrix..." << std::flush;
+    auto t1 = std::chrono::high_resolution_clock::now();
     stokes_solver_->compute(S_stokes.backend());
+    stokes_solver_statistics_.setup_time_ = std::chrono::high_resolution_clock::now() - t1;
     if (stokes_solver_->info() != ::Eigen::Success)
       DUNE_THROW(Dune::InvalidStateException, "Failed to invert stokes system matrix!");
     std::cout << "done" << std::endl;
   } else {
     std::cout << "Factorizing stokes A matrix..." << std::flush;
+    auto t1 = std::chrono::high_resolution_clock::now();
     stokes_A_solver_->compute(A_stokes_.backend());
+    stokes_solver_statistics_.setup_time_ = std::chrono::high_resolution_clock::now() - t1;
     if (stokes_A_solver_->info() != ::Eigen::Success)
       DUNE_THROW(Dune::InvalidStateException, "Failed to invert stokes A matrix!");
     std::cout << "done" << std::endl;
@@ -531,7 +535,9 @@ CellModelSolver::CellModelSolver(const std::string testcase,
       std::cout << "Factorizing pressure mass matrix..." << std::flush;
       M_p_stokes_solver_ = std::make_shared<LDLTSolverType>();
       stokes_preconditioner_ = std::make_shared<StokesMassMatrixPreconditionerType>(M_p_stokes_solver_);
+      t1 = std::chrono::high_resolution_clock::now();
       M_p_stokes_solver_->compute(M_p_stokes.backend());
+      stokes_solver_statistics_.setup_time_ += std::chrono::high_resolution_clock::now() - t1;
       if (M_p_stokes_solver_->info() != ::Eigen::Success)
         DUNE_THROW(Dune::InvalidStateException, "Failed to invert M_p_stokes matrix!");
       std::cout << "done" << std::endl;
@@ -563,7 +569,9 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   M_ofield_op.assemble(use_tbb_);
   std::cout << "done" << std::endl;
   std::cout << "Setting up ofield_solver..." << std::flush;
+  auto t1 = std::chrono::high_resolution_clock::now();
   ofield_solver_.setup();
+  ofield_solver_statistics_.setup_time_ = std::chrono::high_resolution_clock::now() - t1;
   std::cout << "done" << std::endl;
 
   /*************************************************************************************************
@@ -579,7 +587,9 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   M_pfield_op.assemble(use_tbb_);
   std::cout << "done" << std::endl;
   std::cout << "Setting up pfield_solver..." << std::flush;
+  t1 = std::chrono::high_resolution_clock::now();
   pfield_solver_.setup();
+  pfield_solver_statistics_.setup_time_ = std::chrono::high_resolution_clock::now() - t1;
   std::cout << "done" << std::endl;
 
 
@@ -1660,7 +1670,8 @@ void CellModelSolver::visualize(const std::string& prefix,
                                 const double t,
                                 const bool subsampling,
                                 const bool vtu,
-                                const bool txt) const
+                                const bool txt,
+                                const bool timings) const
 {
   auto vtk_writer = XT::Functions::internal::create_vtkwriter(u_.space().grid_view(), subsampling);
   std::string postfix = "_" + XT::Common::to_string(step);
@@ -1698,6 +1709,65 @@ void CellModelSolver::visualize(const std::string& prefix,
       write_to_textfile(mu_[kk], prefix, step, t);
     } // kk
   } // if (txt)
+  if (timings) {
+    const auto& pfield_solve_times = pfield_solver_statistics_.solve_time_;
+    const auto& ofield_solve_times = ofield_solver_statistics_.solve_time_;
+    const auto& stokes_solve_times = stokes_solver_statistics_.solve_time_;
+    const auto& pfield_iterations = pfield_solver_statistics_.iterations_;
+    const auto& ofield_iterations = ofield_solver_statistics_.iterations_;
+    const auto& stokes_iterations = stokes_solver_statistics_.iterations_;
+    assert(pfield_solve_times.size() == pfield_iterations.size());
+    assert(ofield_solve_times.size() == ofield_iterations.size());
+    assert(stokes_solve_times.size() == stokes_iterations.size());
+    const double pfield_total_solve_time =
+        std::accumulate(pfield_solve_times.begin(), pfield_solve_times.end(), std::chrono::duration<double>(0.))
+            .count();
+    const double ofield_total_solve_time =
+        std::accumulate(ofield_solve_times.begin(), ofield_solve_times.end(), std::chrono::duration<double>(0.))
+            .count();
+    const double stokes_total_solve_time =
+        std::accumulate(stokes_solve_times.begin(), stokes_solve_times.end(), std::chrono::duration<double>(0.))
+            .count();
+    const double pfield_average_time_per_solve =
+        pfield_solve_times.size() == 0 ? 0. : pfield_total_solve_time / pfield_solve_times.size();
+    const double ofield_average_time_per_solve =
+        ofield_solve_times.size() == 0 ? 0. : ofield_total_solve_time / ofield_solve_times.size();
+    const double stokes_average_time_per_solve =
+        stokes_solve_times.size() == 0 ? 0. : stokes_total_solve_time / stokes_solve_times.size();
+    const double pfield_average_num_iterations =
+        pfield_solve_times.size() == 0
+            ? 0.
+            : std::accumulate(pfield_iterations.begin(), pfield_iterations.end(), 0) / double(pfield_iterations.size());
+    const double ofield_average_num_iterations =
+        ofield_solve_times.size() == 0
+            ? 0.
+            : std::accumulate(ofield_iterations.begin(), ofield_iterations.end(), 0) / double(ofield_iterations.size());
+    const double stokes_average_num_iterations =
+        stokes_solve_times.size() == 0
+            ? 0.
+            : std::accumulate(stokes_iterations.begin(), stokes_iterations.end(), 0) / double(stokes_iterations.size());
+    std::string timings_filename = prefix + "_timings.txt";
+    // check if file exists
+    bool file_exists;
+    {
+      std::ifstream timings_file(timings_filename);
+      file_exists = timings_file.good();
+    }
+    std::ofstream timings_file(timings_filename, std::ios_base::app);
+    if (!file_exists) {
+      timings_file << "pf_solves pf_average_its pf_setup_time pf_av_solve_time | "
+                   << "of_solves of_average_its of_setup_time of_av_solve_time | "
+                   << "st_solves st_average_its st_setup_time st_av_solve_time" << std::endl;
+    }
+    timings_file << pfield_iterations.size() << " " << pfield_average_num_iterations << " " << std::fixed
+                 << std::setprecision(4) << pfield_solver_statistics_.setup_time_.count() << " "
+                 << pfield_average_time_per_solve << " | " << ofield_iterations.size() << " "
+                 << ofield_average_num_iterations << " " << ofield_solver_statistics_.setup_time_.count() << " "
+                 << ofield_average_time_per_solve << " | " << stokes_iterations.size() << " "
+                 << stokes_average_num_iterations << " " << stokes_solver_statistics_.setup_time_.count() << " "
+                 << stokes_average_time_per_solve << std::endl;
+    timings_file.close();
+  }
 } // void visualize(...)
 
 //******************************************************************************************************************
@@ -2314,8 +2384,11 @@ void CellModelSolver::update_pfield_parameters(
 CellModelSolver::VectorType CellModelSolver::apply_inverse_stokes_operator()
 {
   EigenVectorType ret(size_u_ + size_p_);
+  auto t1 = std::chrono::high_resolution_clock::now();
   if (stokes_solver_type_ == StokesSolverType::direct) {
     ret.backend() = stokes_solver_->solve(stokes_rhs_vector_.backend());
+    stokes_solver_statistics_.iterations_.emplace_back(1);
+    stokes_solver_statistics_.solve_time_.emplace_back(std::chrono::high_resolution_clock::now() - t1);
     return XT::Common::convert_to<VectorType>(ret);
   } else {
     // calculate rhs B A^{-1} f
@@ -2326,11 +2399,9 @@ CellModelSolver::VectorType CellModelSolver::apply_inverse_stokes_operator()
     rhs_u = stokes_f_vector_;
     Ainv_f.backend() = stokes_A_solver_->solve(rhs_u.backend());
     BT_stokes_.mtv(Ainv_f, B_Ainv_f);
-
     // Solve S p = rhs
     InverseOperatorResult res;
     stokes_schur_solver_->apply(p, B_Ainv_f, res);
-
     // Now solve u = A^{-1}(f - B^T p)
     auto& BT_p = stokes_u_tmp_vec_;
     BT_stokes_.mv(p, BT_p);
@@ -2338,11 +2409,12 @@ CellModelSolver::VectorType CellModelSolver::apply_inverse_stokes_operator()
     rhs_u -= BT_p;
     auto& u = stokes_u_tmp_vec_;
     u.backend() = stokes_A_solver_->solve(rhs_u.backend());
-
     for (size_t ii = 0; ii < size_u_; ++ii)
       ret.set_entry(ii, u.get_entry(ii));
     for (size_t ii = 0; ii < size_p_; ++ii)
       ret.set_entry(size_u_ + ii, p.get_entry(ii));
+    stokes_solver_statistics_.iterations_.emplace_back(res.iterations);
+    stokes_solver_statistics_.solve_time_.emplace_back(std::chrono::high_resolution_clock::now() - t1);
     return XT::Common::convert_to<VectorType>(ret);
   }
 }
@@ -2383,7 +2455,10 @@ CellModelSolver::VectorType CellModelSolver::apply_inverse_ofield_operator(const
 
     // *********** solve system *************
     residual *= -1.;
+    auto t1 = std::chrono::high_resolution_clock::now();
     update = ofield_solver_.apply(residual, cell);
+    ofield_solver_statistics_.iterations_.emplace_back(ofield_solver_.wrapper_.statistics_.iterations);
+    ofield_solver_statistics_.solve_time_.emplace_back(std::chrono::high_resolution_clock::now() - t1);
 
     DUNE_THROW_IF(iter >= max_iter,
                   Exceptions::operator_error,
@@ -2454,7 +2529,10 @@ CellModelSolver::VectorType CellModelSolver::apply_inverse_pfield_operator(const
 
     // *********** solve system *************
     residual *= -1.;
+    auto t1 = std::chrono::high_resolution_clock::now();
     update = pfield_solver_.apply(residual, cell);
+    pfield_solver_statistics_.iterations_.emplace_back(pfield_solver_.wrapper_.statistics_.iterations);
+    pfield_solver_statistics_.solve_time_.emplace_back(std::chrono::high_resolution_clock::now() - t1);
 
     DUNE_THROW_IF(iter >= max_iter,
                   Exceptions::operator_error,
