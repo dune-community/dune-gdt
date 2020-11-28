@@ -89,6 +89,8 @@ int main(int argc, char* argv[])
         string_to_solver_type(DXTC_CONFIG_GET("ofield_solver_type", "schur_gmres"));
     const CellModelMassMatrixSolverType ofield_mass_matrix_solver_type =
         string_to_mass_matrix_solver_type(DXTC_CONFIG_GET("ofield_mass_matrix_solver_type", "sparse_ldlt"));
+    const std::string stokes_solver_type_string = DXTC_CONFIG_GET("stokes_solver_type", "schur_cg_A_direct_prec_mass");
+    const StokesSolverType stokes_solver_type = string_to_stokes_solver_type(stokes_solver_type_string);
 
     CellModelSolver model_solver(testcase,
                                  t_end,
@@ -112,6 +114,7 @@ int main(int argc, char* argv[])
                                  pfield_mass_matrix_solver_type,
                                  ofield_solver_type,
                                  ofield_mass_matrix_solver_type,
+                                 stokes_solver_type,
                                  gmres_reduction,
                                  gmres_restart,
                                  gmres_verbose,
@@ -141,6 +144,7 @@ int main(int argc, char* argv[])
                                   pfield_mass_matrix_solver_type,
                                   ofield_solver_type,
                                   ofield_mass_matrix_solver_type,
+                                  stokes_solver_type,
                                   gmres_reduction,
                                   gmres_restart,
                                   gmres_verbose,

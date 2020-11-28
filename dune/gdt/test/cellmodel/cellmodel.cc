@@ -294,6 +294,9 @@ CellModelSolver::CellModelSolver(const std::string testcase,
         use_tbb ? DXTC_CONFIG_GET("threading.partition_factor", 1u) * XT::Common::threadManager().current_threads() : 1)
 {
   std::cout << dx_ << ", " << epsilon_ << std::endl;
+  std::cout << "DOFs: Pfield " << XT::Common::to_string(3 * size_phi_) << ", Ofield "
+            << XT::Common::to_string(2 * size_P_) << ", Stokes " << XT::Common::to_string(size_u_ + size_p_)
+            << std::endl;
 
   /************************** create and project initial values*****************************************
    ************************** we only need initial values for P and phi *******************************/
@@ -338,7 +341,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
     P_initial_funcs.emplace_back(std::make_shared<const XT::Functions::GenericFunction<d, d>>(
         50,
         /*evaluate=*/
-        [&phi_in = phi_initial_funcs[0]](const auto& x, const auto& param) {
+        [& phi_in = phi_initial_funcs[0]](const auto& x, const auto& param) {
           // auto rand1 = ((std::rand() % 2000) - 1000) / 20000.;
           // auto rand2 = ((std::rand() % 2000) - 1000) / 20000.;
           // auto ret = FieldVector<double, d>({1. + rand1, 0. +
@@ -398,7 +401,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
     P_initial_funcs.emplace_back(std::make_shared<const XT::Functions::GenericFunction<d, d>>(
         50,
         /*evaluate=*/
-        [&phi_in = phi_initial_funcs[0]](const auto& x, const auto& param) {
+        [& phi_in = phi_initial_funcs[0]](const auto& x, const auto& param) {
           // auto rand1 = ((std::rand() % 2000) - 1000) / 20000.;
           // auto rand2 = ((std::rand() % 2000) - 1000) / 20000.;
           // auto ret = FieldVector<double, d>({1. + rand1, 0. +
@@ -2859,7 +2862,8 @@ void CellModelSolver::copy_ld_to_hd_vec(const std::vector<size_t> dofs, const Ve
 XT::Common::FieldVector<CellModelSolver::R, CellModelSolver::d>
 CellModelSolver::get_lower_left(const std::string& testcase)
 {
-  if (testcase == "single_cell" || testcase == "single_cell_dirichlet" || testcase == "channel" || testcase == "drosophila_wing")
+  if (testcase == "single_cell" || testcase == "single_cell_dirichlet" || testcase == "channel"
+      || testcase == "drosophila_wing")
     return {{0., 0.}};
   else
     DUNE_THROW(Dune::NotImplemented, "Unknown testcase");
@@ -2896,7 +2900,8 @@ std::string CellModelSolver::get_periodic_directions(const std::string& testcase
 // get number of cells from testcase name
 size_t CellModelSolver::get_num_cells(const std::string& testcase)
 {
-  if (testcase == "single_cell" || testcase == "single_cell_dirichlet" || testcase == "channel" || testcase == "drosophila_wing")
+  if (testcase == "single_cell" || testcase == "single_cell_dirichlet" || testcase == "channel"
+      || testcase == "drosophila_wing")
     return 1;
   else
     DUNE_THROW(Dune::NotImplemented, "Unknown testcase");
