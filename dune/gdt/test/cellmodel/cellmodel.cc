@@ -55,6 +55,8 @@
 
 #include <Eigen/IterativeLinearSolvers>
 
+#include <boost/geometry.hpp>
+
 #include "fgmres.hh"
 #include "linearsolvers.hh"
 #include "cellmodel.hh"
@@ -341,7 +343,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
     P_initial_funcs.emplace_back(std::make_shared<const XT::Functions::GenericFunction<d, d>>(
         50,
         /*evaluate=*/
-        [& phi_in = phi_initial_funcs[0]](const auto& x, const auto& param) {
+        [&phi_in = phi_initial_funcs[0]](const auto& x, const auto& param) {
           // auto rand1 = ((std::rand() % 2000) - 1000) / 20000.;
           // auto rand2 = ((std::rand() % 2000) - 1000) / 20000.;
           // auto ret = FieldVector<double, d>({1. + rand1, 0. +
@@ -360,19 +362,24 @@ CellModelSolver::CellModelSolver(const std::string testcase,
         },
         /*name=*/"P_initial"));
     u_initial_func = std::make_shared<const XT::Functions::ConstantFunction<d, d>>(0.);
-  } else if (testcase == "drosophila_wing") {
+  } else if (testcase == "cell_isolation_experiment") {
+    // Initially, cell is elongated with Radius R=5 and placed in the center of the domain
+    // \Omega = [0, 30]^2
+    // Initial condition for \phi thus is \tanh(\frac{r}{\sqrt{2}\epsilon}) with r the signed distance function to the
+    // membrane, i.e. r(x) = 5 - |(15, 15) - x|.
     FieldVector<double, d> center{upper_right_[0] / 2., upper_right_[1] / 2.};
-    const double a = 8.;
-    const double b = 3.;
-    const double c = 5.;
-    FieldVector<double, d> center2{center[0] + a, center[1]};
-    FieldVector<double, d> center3{center[0] - a, center[1] + b};
-    FieldVector<double, d> center4{10, 25};
-    auto r = [center, center2, a, b, c](const auto& xr) {
-      return std::max(c
-                          - std::sqrt(std::pow(std::max(std::abs(xr[0] - center[0]) - a, 0.), 2)
-                                      + std::pow(std::max(std::abs(xr[1] - center[1]) - b, 0.), 2)),
-                      b + c - (center2 - xr).two_norm());
+    using BoostPointType = boost::geometry::model::point<double, 2, boost::geometry::cs::cartesian>;
+    using BoostRingType = boost::geometry::model::ring<BoostPointType>;
+    using BoostPolygonType = boost::geometry::model::polygon<BoostPointType>;
+    // A ring does not have holes
+    BoostRingType ring{{15., 25.}, {15., 20.}, {25., 15.}, {27., 20.}, {26., 22.}, {15., 25.}};
+    // BoostRingType ring{{15., 25.}, {15., 20.}, {24., 15.}, {26., 20.}, {25., 22.}, {15., 25.}};
+    // A polygon can have holes, here we add the same inner and outer ring to only get the boundary of the cell
+    BoostPolygonType polygon{ring, ring};
+    auto r = [ring, polygon](const auto& xr) {
+      BoostPointType point{xr[0], xr[1]};
+      const double distance = boost::geometry::distance(polygon, point);
+      return boost::geometry::within(point, ring) ? distance : -distance;
     };
     phi_initial_funcs.emplace_back(std::make_shared<XT::Functions::GenericFunction<d>>(
         50,
@@ -382,41 +389,12 @@ CellModelSolver::CellModelSolver(const std::string testcase,
         },
         /*name=*/"phi_initial"));
 
-    // initial condition for P is (1,0) + \delta where \delta(x) is vector-valued with random entries following an
-    // uniform distribution on the interval [-0.05, 0.05]; restrict to cytoplasm by multiplying with (\phi + 1)/2
-    std::srand(1); // set seed for std::rand to 1
-    //     P_initial_funcs.emplace_back(std::make_shared<const XT::Functions::GenericFunction<d, d>>(
-    //         50,
-    //         /*evaluate=*/
-    //         [&phi_in = phi_initial_funcs[0]](const auto& x, const auto& param) {
-    //           // auto rand1 = ((std::rand() % 2000) - 1000) / 20000.;
-    //           // auto rand2 = ((std::rand() % 2000) - 1000) / 20000.;
-    //           // auto ret = FieldVector<double, d>({1. + rand1, 0. +
-    //           // rand2});
-    //           auto ret = FieldVector<double, d>({1., 0.});
-    //           ret *= (phi_in->evaluate(x, param) + 1.) / 2.;
-    //           return ret;
-    //         },
-    //         /*name=*/"P_initial"));
     P_initial_funcs.emplace_back(std::make_shared<const XT::Functions::GenericFunction<d, d>>(
         50,
         /*evaluate=*/
-        [& phi_in = phi_initial_funcs[0]](const auto& x, const auto& param) {
-          // auto rand1 = ((std::rand() % 2000) - 1000) / 20000.;
-          // auto rand2 = ((std::rand() % 2000) - 1000) / 20000.;
-          // auto ret = FieldVector<double, d>({1. + rand1, 0. +
-          // rand2});
-
-          double rand1 = std::rand() - RAND_MAX / 2;
-          double rand2 = std::rand() - RAND_MAX / 2;
-          rand1 /= std::sqrt(rand1 * rand1 + rand2 * rand2);
-          rand2 /= std::sqrt(rand1 * rand1 + rand2 * rand2);
-          auto ret = FieldVector<double, d>({rand1, rand2});
-
-          // small bias to point more in x direction
-          // if (((x[0] > 9.5 && x[0] < 10.5) || (x[0] > 19.5 && x[0] < 20.5)) && x[1] > 14.5 && x[1] < 15.5)
-          // ret[0] += (ret[0] > 0) ? 0.05 : -0.05;
+        [&phi_in = phi_initial_funcs[0]](const auto& x, const auto& param) {
           // auto ret = FieldVector<double, d>({1., 0.});
+          auto ret = FieldVector<double, d>({-0.82, 0.57});
           ret *= (phi_in->evaluate(x, param) + 1.) / 2.;
           return ret;
         },
@@ -2863,7 +2841,7 @@ XT::Common::FieldVector<CellModelSolver::R, CellModelSolver::d>
 CellModelSolver::get_lower_left(const std::string& testcase)
 {
   if (testcase == "single_cell" || testcase == "single_cell_dirichlet" || testcase == "channel"
-      || testcase == "drosophila_wing")
+      || testcase == "cell_isolation_experiment")
     return {{0., 0.}};
   else
     DUNE_THROW(Dune::NotImplemented, "Unknown testcase");
@@ -2876,8 +2854,8 @@ CellModelSolver::get_upper_right(const std::string& testcase)
 {
   if (testcase == "single_cell" || testcase == "single_cell_dirichlet")
     return {{30., 30.}};
-  else if (testcase == "drosophila_wing")
-    return {{60., 30.}};
+  else if (testcase == "cell_isolation_experiment")
+    return {{40., 40.}};
   else if (testcase == "channel")
     return {{160., 40.}};
   else
@@ -2888,9 +2866,9 @@ CellModelSolver::get_upper_right(const std::string& testcase)
 // get directions in which domain is periodic from testcase name
 std::string CellModelSolver::get_periodic_directions(const std::string& testcase)
 {
-  if (testcase == "single_cell" || testcase == "channel" || testcase == "drosophila_wing")
+  if (testcase == "single_cell" || testcase == "channel")
     return "01";
-  else if (testcase == "single_cell_dirichlet")
+  else if (testcase == "single_cell_dirichlet" || testcase == "cell_isolation_experiment")
     return "00";
   else
     DUNE_THROW(Dune::NotImplemented, "Unknown testcase");
@@ -2901,7 +2879,7 @@ std::string CellModelSolver::get_periodic_directions(const std::string& testcase
 size_t CellModelSolver::get_num_cells(const std::string& testcase)
 {
   if (testcase == "single_cell" || testcase == "single_cell_dirichlet" || testcase == "channel"
-      || testcase == "drosophila_wing")
+      || testcase == "cell_isolation_experiment")
     return 1;
   else
     DUNE_THROW(Dune::NotImplemented, "Unknown testcase");
