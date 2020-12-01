@@ -1850,6 +1850,7 @@ void CellModelSolver::prepare_stokes_operator(const bool restricted)
   }
   // assemble
   assemble_stokes_rhs(restricted);
+  stokes_jac_linear_op_.prepare(0, restricted);
 }
 
 void CellModelSolver::prepare_ofield_operator(const size_t cell, const bool restricted)
@@ -1935,6 +1936,11 @@ void CellModelSolver::compute_restricted_stokes_dofs(const std::vector<size_t>& 
     sort_and_remove_duplicates_in_deim_source_dofs(source_dofs);
     p_deim_source_dofs_begin_ =
         std::lower_bound(source_dofs[2].begin(), source_dofs[2].end(), size_u_) - source_dofs[2].begin();
+    // extract relevant cols of B^T to be able to apply B rapidly
+    B_stokes_restricted_ = DenseMatrixType(p_range_dofs.size(), p_deim_source_dofs_begin_, 0., 0);
+    for (size_t ii = 0; ii < p_range_dofs.size(); ++ii)
+      for (size_t jj = 0; jj < p_deim_source_dofs_begin_; ++jj)
+        B_stokes_restricted_.set_entry(ii, jj, BT_stokes_.get_entry(source_dofs[2][jj], p_range_dofs[ii]));
   } // if (not already computed)
 } // void compute_restricted_stokes_dofs(...)
 
@@ -2189,16 +2195,9 @@ CellModelSolver::VectorType
 CellModelSolver::apply_stokes_helper(const VectorType& y, const bool restricted, const bool jacobian)
 {
   const auto& unique_range_dofs = stokes_deim_unique_range_dofs_;
-  auto& source = stokes_tmp_vec_;
   auto& residual = stokes_tmp_vec2_;
-  VectorViewType residual_u(residual, 0, size_u_);
-  VectorViewType residual_p(residual, size_u_, size_u_ + size_p_);
   // copy values to high-dimensional vector
-  if (restricted)
-    copy_ld_to_hd_vec(stokes_deim_source_dofs_[2], y, source);
-  else
-    source = y;
-  stokes_jac_linear_op_.apply(source, residual);
+  stokes_jac_linear_op_.apply(y, residual);
   if (!jacobian) {
     const auto sub = sub_func<VectorType, EigenVectorType>(restricted);
     sub(residual, stokes_rhs_vector_, unique_range_dofs);
@@ -2364,20 +2363,26 @@ void CellModelSolver::update_pfield_parameters(
 // Applies inverse stokes operator (solves F(y) = 0)
 CellModelSolver::VectorType CellModelSolver::apply_inverse_stokes_operator()
 {
+  return apply_inverse_stokes_helper(stokes_rhs_vector_);
+}
+
+CellModelSolver::VectorType CellModelSolver::apply_inverse_stokes_helper(const EigenVectorType& rhs)
+{
   EigenVectorType ret(size_u_ + size_p_);
   auto t1 = std::chrono::high_resolution_clock::now();
   if (stokes_solver_type_ == StokesSolverType::direct) {
-    ret.backend() = stokes_solver_->solve(stokes_rhs_vector_.backend());
+    ret.backend() = stokes_solver_->solve(rhs.backend());
     stokes_solver_statistics_.iterations_.emplace_back(1);
     stokes_solver_statistics_.solve_time_.emplace_back(std::chrono::high_resolution_clock::now() - t1);
     return XT::Common::convert_to<VectorType>(ret);
   } else {
+    ConstEigenVectorViewType rhs_u_view(rhs, 0, size_u_);
     // calculate rhs B A^{-1} f
     auto& p = stokes_p_tmp_vec_;
     auto& B_Ainv_f = stokes_p_tmp_vec2_;
     auto& Ainv_f = stokes_u_tmp_vec_;
     auto& rhs_u = stokes_u_tmp_vec2_;
-    rhs_u = stokes_f_vector_;
+    rhs_u = rhs_u_view;
     Ainv_f.backend() = stokes_A_solver_->solve(rhs_u.backend());
     BT_stokes_.mtv(Ainv_f, B_Ainv_f);
     // Solve S p = rhs
@@ -2616,8 +2621,7 @@ CellModelSolver::VectorType CellModelSolver::apply_stokes_jacobian(const VectorT
 CellModelSolver::VectorType CellModelSolver::apply_inverse_stokes_jacobian(const VectorType& rhs)
 {
   EigenVectorType rhs_eigen = XT::Common::convert_to<EigenVectorType>(rhs);
-  EigenVectorType ret(stokes_solver_->solve(rhs_eigen.backend()));
-  return XT::Common::convert_to<VectorType>(ret);
+  return apply_inverse_stokes_helper(rhs_eigen);
 }
 
 //******************************************************************************************************************

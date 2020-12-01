@@ -209,29 +209,41 @@ public:
     const MatrixType& A = cellmodel_solver_.A_stokes_;
     const MatrixType& BT = cellmodel_solver_.BT_stokes_;
     // copy to temporary vectors (we do not use vector views to improve performance of mv)
+    const auto& source_dofs = cellmodel_solver_.stokes_deim_source_dofs_[2];
+    const auto p_begin = cellmodel_solver_.p_deim_source_dofs_begin_;
+    Vector x_u_restricted_, x_p_restricted_, y_p_restricted_;
     if (!restricted_) {
       for (size_t ii = 0; ii < size_u; ++ii)
         x_u_[ii] = x[ii];
       for (size_t ii = 0; ii < size_p; ++ii)
         x_p_[ii] = x[size_u + ii];
     } else {
-      const auto& source_dofs = cellmodel_solver_.stokes_deim_source_dofs_[2];
-      const auto& p_begin = cellmodel_solver_.p_deim_source_dofs_begin_;
-      for (size_t ii = 0; ii < p_begin; ++ii)
-        x_u_[source_dofs[ii]] = x[source_dofs[ii]];
-      for (size_t ii = p_begin; ii < source_dofs.size(); ++ii)
-        x_p_[source_dofs[ii] - size_u] = x[source_dofs[ii]];
+      assert(x.size() >= p_begin);
+      assert(x.size() == source_dofs.size());
+      x_u_restricted_ = Vector(p_begin);
+      x_p_restricted_ = Vector(source_dofs.size() - p_begin);
+      y_p_restricted_ = Vector(p_dofs.size());
+      for (size_t ii = 0; ii < p_begin; ++ii) {
+        x_u_[source_dofs[ii]] = x[ii];
+        x_u_restricted_[ii] = x[ii];
+      }
+      for (size_t ii = p_begin; ii < source_dofs.size(); ++ii) {
+        x_p_[source_dofs[ii] - size_u] = x[ii];
+        x_p_restricted_[ii - p_begin] = x[ii];
+      }
     }
     // apply matrices
     // first row
     mv(A, x_u_, y_u_, u_dofs);
     mv(BT, x_p_, tmp_vec_u_, u_dofs);
     add(y_u_, tmp_vec_u_, u_dofs);
-    // TODO: restricted version
-    BT.mtv(x_u_, y_p_);
-    y_p_[0] = x_p_[0];
+    if (restricted_)
+      cellmodel_solver_.B_stokes_restricted_.mv(x_u_restricted_, y_p_restricted_);
+    else
+      BT.mtv(x_u_, y_p_);
     // copy to result vector
     if (!restricted_) {
+      y_p_[0] = x_p_[0];
       for (size_t ii = 0; ii < size_u; ++ii)
         y[ii] = y_u_[ii];
       for (size_t ii = 0; ii < size_p; ++ii)
@@ -239,8 +251,8 @@ public:
     } else {
       for (const auto& dof : u_dofs)
         y[dof] = y_u_[dof];
-      for (const auto& dof : p_dofs)
-        y[size_u + dof] = y_p_[dof];
+      for (size_t ii = 0; ii < p_dofs.size(); ++ii)
+        y[size_u + p_dofs[ii]] = (p_dofs[ii] == 0) ? x_p_restricted_[0] : y_p_restricted_[ii];
     }
   }
 
