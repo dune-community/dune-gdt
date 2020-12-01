@@ -66,6 +66,7 @@ struct CellModelSolver
   using I = XT::Grid::extract_intersection_t<GV>;
   using PI = XT::Grid::extract_intersection_t<PGV>;
   using MatrixType = XT::LA::EigenRowMajorSparseMatrix<double>;
+  using DenseMatrixType = XT::LA::EigenDenseMatrix<double>;
   using VectorType = XT::LA::CommonDenseVector<double>;
   using EigenVectorType = XT::LA::EigenDenseVector<double>;
   using MatrixViewType = XT::LA::MatrixView<MatrixType>;
@@ -433,6 +434,7 @@ struct CellModelSolver
 
   // Applies inverse stokes operator (solves F(y) = 0)
   VectorType apply_inverse_stokes_operator();
+  VectorType apply_inverse_stokes_helper(const EigenVectorType& rhs);
 
   // Applies inverse orientation field operator (solves F(y) = 0)
   // y_guess is the initial guess for the Newton iteration
@@ -730,6 +732,7 @@ struct CellModelSolver
   // Stokes system matrix S = (A B; B^T 0) and views on matrix blocks
   MatrixType A_stokes_;
   MatrixType BT_stokes_;
+  DenseMatrixType B_stokes_restricted_;
   const StokesSolverType stokes_solver_type_;
   std::shared_ptr<LUSolverType> stokes_solver_;
   SolverStatistics stokes_solver_statistics_;
