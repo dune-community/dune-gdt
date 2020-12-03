@@ -227,7 +227,7 @@ int main(int argc, char* argv[])
       logger.info() << "step " << counter << ", space has " << dg_space.mapper().size() << " DoFs" << std::endl;
 
       // assemble
-      auto lhs_op = make_matrix_operator<M>(dg_space, Stencil::element_and_intersection);
+      auto lhs_op = make_matrix_operator<M>(dg_space);
       lhs_op.append(LocalElementIntegralBilinearForm<E>(LocalLaplaceIntegrand<E>(problem.diffusion)));
       lhs_op.append(
           LocalCouplingIntersectionIntegralBilinearForm<I>(
