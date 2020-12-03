@@ -80,7 +80,7 @@ make_intersection_sparsity_pattern(const SpaceInterface<TGV, t_r, t_rC, TR>& tes
   DynamicVector<size_t> column_indices(ansatz_space.mapper().max_local_size(), 0);
   for (auto&& element : elements(grid_view)) {
     test_space.mapper().global_indices(element, row_indices);
-    for (auto& intersection : intersections(grid_view, element)) {
+    for (auto&& intersection : intersections(grid_view, element)) {
       if (intersection.neighbor()) {
         const auto neighbour = intersection.outside();
         ansatz_space.mapper().global_indices(neighbour, column_indices);
@@ -172,8 +172,8 @@ XT::LA::SparsityPatternDefault make_sparsity_pattern(const SpaceInterface<TGV, t
   else if (stencil == Stencil::element_and_intersection)
     return make_element_and_intersection_sparsity_pattern(test_space, ansatz_space, grid_view);
   else if (stencil == Stencil::automatic) {
-    if (test_space.continuous(0) || ansatz_space.continuous(0) || test_space.continuous_normal_components()
-        || ansatz_space.continuous_normal_components())
+    if (!(test_space.continuous(0) || ansatz_space.continuous(0) || test_space.continuous_normal_components()
+          || ansatz_space.continuous_normal_components()))
       return make_element_and_intersection_sparsity_pattern(test_space, ansatz_space, grid_view);
     else
       return make_element_sparsity_pattern(test_space, ansatz_space, grid_view);
