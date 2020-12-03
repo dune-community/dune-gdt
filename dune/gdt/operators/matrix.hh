@@ -76,7 +76,7 @@ public:
                       const RangeSpaceType& range_spc,
                       const MatrixType& mat,
                       const std::string& logging_prefix = "",
-                      const std::array<bool, 3>& logging_state = {{false, false, true}})
+                      const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseType({}, logging_prefix.empty() ? "ConstMatrixOperator" : logging_prefix, logging_state)
     , assembly_grid_view_(assembly_grid_vw)
     , source_space_(source_spc)
@@ -175,7 +175,7 @@ public:
   {
     LOG_(debug) << "jacobian(source.sup_norm()=" << source.sup_norm()
                 << ", jacobian_op.matrix().sup_norm()=" << jacobian_op.matrix().sup_norm()
-                << ", opts=" << print(opts, {{"oneline", "true"}}) << ", param=" << param << ")" << std::endl;
+                << ", opts=" << print(opts, {{"oneline", "true"}}) << ", param=" << print(param) << ")" << std::endl;
     this->assert_jacobian_opts(opts); // ensures that type matrix is requested
     LOG_(debug) << "   adding matrix_ * jacobian_op.scaling (matrix_.sup_norm() = " << matrix_.sup_norm()
                 << ", jacobian_op.scaling = " << jacobian_op.scaling << ")" << std::endl;
@@ -353,7 +353,7 @@ public:
                  const RangeSpaceType& range_spc,
                  MatrixType& mat,
                  const std::string& logging_prefix = "",
-                 const std::array<bool, 3>& logging_state = {{false, false, true}})
+                 const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : MatrixStorage(mat)
     , BaseOperatorType(assembly_grid_vw,
                        source_spc,
@@ -373,7 +373,7 @@ public:
                  const RangeSpaceType& range_spc,
                  MatrixType*&& mat_ptr,
                  const std::string& logging_prefix = "",
-                 const std::array<bool, 3>& logging_state = {{false, false, true}})
+                 const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : MatrixStorage(std::move(mat_ptr))
     , BaseOperatorType(assembly_grid_vw,
                        source_spc,
