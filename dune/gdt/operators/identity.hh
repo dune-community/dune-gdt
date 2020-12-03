@@ -100,7 +100,7 @@ protected:
     return {{{"type", "identity"}}};
   }
 
-  virtual std::vector<XT::Common::Configuration> all_invert_options() const
+  std::vector<XT::Common::Configuration> all_invert_options() const override final
   {
     return {{{"type", "identity"}}};
   }
