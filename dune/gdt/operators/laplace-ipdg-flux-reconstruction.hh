@@ -38,27 +38,30 @@ namespace GDT {
  * \todo Directly make use of LocalIPDGIntegrands::InnerPenalty and LocalLaplaceIPDGIntegrands::InnerCoupling, (not
  *       clear how yet)!
  */
-template <class M, class AssemblyGridView, class SGV = AssemblyGridView, class RGV = AssemblyGridView>
-class LaplaceIpdgFluxReconstructionOperator : public OperatorInterface<M, SGV, 1, 1, RGV::dimension, 1, RGV>
+template <class AssemblyGridView,
+          class F = double,
+          class V = XT::LA::IstlDenseVector<F>,
+          class SGV = AssemblyGridView,
+          class RGV = AssemblyGridView>
+class LaplaceIpdgFluxReconstructionOperator : public ForwardOperatorInterface<SGV, 1, 1, RGV::dimension, 1, F, V, RGV>
 {
   static_assert(XT::Grid::is_view<AssemblyGridView>::value, "");
-  using BaseType = OperatorInterface<M, SGV, 1, 1, RGV::dimension, 1, RGV>;
-  using ThisType = LaplaceIpdgFluxReconstructionOperator;
 
 public:
-  using typename BaseType::F;
+  using ThisType = LaplaceIpdgFluxReconstructionOperator;
+  using BaseType = ForwardOperatorInterface<SGV, 1, 1, RGV::dimension, 1, F, V, RGV>;
+
   using typename BaseType::RangeSpaceType;
-  using typename BaseType::SourceSpaceType;
+  using typename BaseType::SourceFunctionType;
   using typename BaseType::VectorType;
 
   using AGV = AssemblyGridView;
   using AssemblyGridViewType = AGV;
   using E = XT::Grid::extract_entity_t<AssemblyGridViewType>;
   using I = XT::Grid::extract_intersection_t<AssemblyGridViewType>;
-  static constexpr size_t d = RGV::dimension;
+  static constexpr size_t d = AGV::dimension;
 
-  LaplaceIpdgFluxReconstructionOperator(AssemblyGridViewType assembly_grid_view,
-                                        const SourceSpaceType& src_spc,
+  LaplaceIpdgFluxReconstructionOperator(const AssemblyGridViewType& assembly_grid_view,
                                         const RangeSpaceType& rng_spc,
                                         const double& symmetry_prefactor,
                                         const double& inner_penalty,
@@ -67,18 +70,16 @@ public:
                                         XT::Functions::GridFunction<E, d, d> weight_function = {1.},
                                         const std::function<double(const I&)>& intersection_diameter =
                                             LocalIPDGIntegrands::internal::default_intersection_diameter<I>(),
-                                        const std::string& logging_prefix = "")
-    : BaseType({},
-               logging_prefix.empty() ? "LaplaceIpdgFluxReconstructionOperator" : logging_prefix,
-               /*logging_disabled=*/logging_prefix.empty())
+                                        const std::string& logging_prefix = "",
+                                        const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
+    : BaseType({}, logging_prefix.empty() ? "LaplaceIpdgFluxReconstructionOperator" : logging_prefix, logging_state)
     , assembly_grid_view_(assembly_grid_view)
-    , source_space_(src_spc)
     , range_space_(rng_spc)
     , symmetry_prefactor_(symmetry_prefactor)
     , inner_penalty_(inner_penalty)
     , dirichlet_penalty_(dirichlet_penalty)
-    , diffusion_(diffusion)
-    , weight_function_(weight_function)
+    , diffusion_(diffusion.copy_as_grid_function())
+    , weight_function_(weight_function.copy_as_grid_function())
     , intersection_diameter_(intersection_diameter)
     , element_mapper_(assembly_grid_view_)
   {
@@ -86,63 +87,53 @@ public:
     DUNE_THROW_IF(range_space_.max_polorder() != 0, Exceptions::operator_error, "Not implemented yet!");
   }
 
-  // manual copy ctor due to element_mapper_
+  // manual copy ctor due to diffusion_, weight_ and element_mapper_
   LaplaceIpdgFluxReconstructionOperator(const ThisType& other)
     : BaseType(other)
     , assembly_grid_view_(other.assembly_grid_view_)
-    , source_space_(other.source_space_)
     , range_space_(other.range_space_)
     , symmetry_prefactor_(other.symmetry_prefactor_)
     , inner_penalty_(other.inner_penalty_)
     , dirichlet_penalty_(other.dirichlet_penalty_)
-    , diffusion_(other.diffusion_)
-    , weight_function_(other.weight_function_)
+    , diffusion_(other.diffusion_->copy_as_grid_function())
+    , weight_function_(other.weight_function_->copy_as_grid_function())
     , intersection_diameter_(other.intersection_diameter_)
     , element_mapper_(assembly_grid_view_)
   {}
 
   LaplaceIpdgFluxReconstructionOperator(ThisType&&) = default;
 
-  bool linear() const override final
-  {
-    return true;
-  }
+  // pull in methods from various base classes
+  using BaseType::apply;
 
-  const SourceSpaceType& source_space() const override final
-  {
-    return source_space_;
-  }
+  /// \name Required by ForwardOperatorInterface
+  /// \{
 
   const RangeSpaceType& range_space() const override final
   {
     return range_space_;
   }
 
-  using BaseType::apply;
+  bool linear() const override final
+  {
+    return true;
+  }
 
-  void apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& param = {}) const override final
+  void apply(SourceFunctionType source_function,
+             VectorType& range_vector,
+             const XT::Common::Parameter& param = {}) const override final
   {
     using D = typename AssemblyGridView::ctype;
-    // some checks
-    DUNE_THROW_IF(!source.valid(), Exceptions::operator_error, "source contains inf or nan!");
-    DUNE_THROW_IF(!source_space_.contains(source),
-                  Exceptions::operator_error,
-                  "source is not contained in source_space()!\n   source.size() = "
-                      << source.size() << "\n   source_space().mappe().size() = " << source_space_.mapper().size());
-    DUNE_THROW_IF(!range_space_.contains(range),
-                  Exceptions::operator_error,
-                  "range is not contained in range_space()!\n   range.size() = "
-                      << range.size() << "\n   range_space().mappe().size() = " << range_space_.mapper().size());
-    const auto source_function = make_discrete_function(source_space_, source);
-    auto range_function = make_discrete_function(range_space_, range);
+    this->assert_matching_range(range_vector);
+    auto range_function = make_discrete_function(range_space_, range_vector);
     // some preparations
     auto local_range = range_function.local_discrete_function();
     auto local_source_element = source_function.local_function();
     auto local_source_neighbor = source_function.local_function();
-    auto local_diffusion_element = diffusion_.local_function();
-    auto local_diffusion_neighbor = diffusion_.local_function();
-    auto local_weight_element = weight_function_.local_function();
-    auto local_weight_neighbor = weight_function_.local_function();
+    auto local_diffusion_element = diffusion_->local_function();
+    auto local_diffusion_neighbor = diffusion_->local_function();
+    auto local_weight_element = weight_function_->local_function();
+    auto local_weight_neighbor = weight_function_->local_function();
     auto rt_basis = range_space_.basis().localize();
     for (auto&& element : elements(assembly_grid_view_)) {
       local_range->bind(element);
@@ -319,43 +310,82 @@ public:
     }
   } // ... apply(...)
 
+  /// \}
+
 private:
-  const AssemblyGridViewType assembly_grid_view_;
-  const SourceSpaceType& source_space_;
+  const AssemblyGridViewType& assembly_grid_view_;
   const RangeSpaceType& range_space_;
   const double symmetry_prefactor_;
   const double inner_penalty_;
   const double dirichlet_penalty_;
-  const XT::Functions::GridFunction<E, d, d> diffusion_;
-  const XT::Functions::GridFunction<E, d, d> weight_function_;
+  const std::unique_ptr<XT::Functions::GridFunctionInterface<E, d, d>> diffusion_;
+  const std::unique_ptr<XT::Functions::GridFunctionInterface<E, d, d>> weight_function_;
   const std::function<double(const I&)> intersection_diameter_;
   const FiniteVolumeMapper<AssemblyGridViewType> element_mapper_;
 }; // class LaplaceIpdgFluxReconstructionOperator
 
 
-template <class M, class AGV, class SGV, class RGV>
-LaplaceIpdgFluxReconstructionOperator<M, AGV, SGV, RGV> make_laplace_ipdg_flux_reconstruction_operator(
-    AGV assembly_grid_view,
-    const SpaceInterface<SGV>& source_space,
-    const SpaceInterface<RGV, RGV::dimension>& range_space,
+template <class VectorType, // <- has to be specified manually
+          class AGV,
+          class RGV,
+          class F>
+auto make_laplace_ipdg_flux_reconstruction_operator(
+    const AGV& assembly_grid_view,
+    const SpaceInterface<RGV, RGV::dimension, 1, F>& range_space,
     const double& symmetry_prefactor,
     const double& inner_penalty,
     const double& dirichlet_penalty,
-    XT::Functions::GridFunction<XT::Grid::extract_entity_t<AGV>, RGV::dimension, RGV::dimension> diffusion,
-    XT::Functions::GridFunction<XT::Grid::extract_entity_t<AGV>, RGV::dimension, RGV::dimension> weight_function = {1.},
+    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<AGV>, AGV::dimension, AGV::dimension, F>&
+        diffusion,
+    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<AGV>, AGV::dimension, AGV::dimension, F>&
+        weight_function = {1.},
     const std::function<double(const XT::Grid::extract_intersection_t<AGV>&)>& intersection_diameter =
-        LocalIPDGIntegrands::internal::default_intersection_diameter<XT::Grid::extract_intersection_t<AGV>>())
+        LocalIPDGIntegrands::internal::default_intersection_diameter<XT::Grid::extract_intersection_t<AGV>>(),
+    const std::string& logging_prefix = "",
+    const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
 {
-  return LaplaceIpdgFluxReconstructionOperator<M, AGV, SGV, RGV>(assembly_grid_view,
-                                                                 source_space,
-                                                                 range_space,
-                                                                 symmetry_prefactor,
-                                                                 inner_penalty,
-                                                                 dirichlet_penalty,
-                                                                 diffusion,
-                                                                 weight_function,
-                                                                 intersection_diameter);
-}
+  static_assert(XT::LA::is_vector<VectorType>::value, "");
+  return LaplaceIpdgFluxReconstructionOperator<AGV, F, VectorType, AGV, RGV>(assembly_grid_view,
+                                                                             range_space,
+                                                                             symmetry_prefactor,
+                                                                             inner_penalty,
+                                                                             dirichlet_penalty,
+                                                                             diffusion,
+                                                                             weight_function,
+                                                                             intersection_diameter,
+                                                                             logging_prefix,
+                                                                             logging_state);
+} // ... make_laplace_ipdg_flux_reconstruction_operator(...)
+
+
+template <class AGV, class RGV, class F>
+auto make_laplace_ipdg_flux_reconstruction_operator(
+    const AGV& assembly_grid_view,
+    const SpaceInterface<RGV, RGV::dimension, 1, F>& range_space,
+    const double& symmetry_prefactor,
+    const double& inner_penalty,
+    const double& dirichlet_penalty,
+    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<AGV>, AGV::dimension, AGV::dimension, F>&
+        diffusion,
+    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<AGV>, AGV::dimension, AGV::dimension, F>&
+        weight_function = {1.},
+    const std::function<double(const XT::Grid::extract_intersection_t<AGV>&)>& intersection_diameter =
+        LocalIPDGIntegrands::internal::default_intersection_diameter<XT::Grid::extract_intersection_t<AGV>>(),
+    const std::string& logging_prefix = "",
+    const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
+{
+  using V = XT::LA::IstlDenseVector<F>;
+  return make_laplace_ipdg_flux_reconstruction_operator<V>(assembly_grid_view,
+                                                           range_space,
+                                                           symmetry_prefactor,
+                                                           inner_penalty,
+                                                           dirichlet_penalty,
+                                                           diffusion,
+                                                           weight_function,
+                                                           intersection_diameter,
+                                                           logging_prefix,
+                                                           logging_state);
+} // ... make_laplace_ipdg_flux_reconstruction_operator(...)
 
 
 } // namespace GDT
