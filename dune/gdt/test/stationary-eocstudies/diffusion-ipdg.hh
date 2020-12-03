@@ -151,18 +151,18 @@ protected:
       if (norm_id == "eta_NC") {
         norm_it = remaining_norms.erase(norm_it); // ... but rather here ...
         // compute estimate
-        auto oswald_interpolation_operator = make_oswald_interpolation_operator<M>(
-            current_space.grid_view(), current_space, current_space, boundary_info());
+        auto oswald_interpolation_operator =
+            make_oswald_interpolation_operator<V>(current_space.grid_view(), current_space, boundary_info());
         oswald_interpolation_operator.assemble(/*parallel=*/true);
         const auto h1_interpolation = oswald_interpolation_operator.apply(solution);
-        self.current_data_["norm"][norm_id] =
-            laplace_norm(current_space.grid_view(), /*weight=*/diffusion(), solution - h1_interpolation);
+        auto h1_semi_product = make_bilinear_form(current_space.grid_view());
+        h1_semi_product += LocalElementIntegralBilinearForm<E>(LocalLaplaceIntegrand<E>(/*weight=*/diffusion()));
+        self.current_data_["norm"][norm_id] = h1_semi_product.norm(solution - h1_interpolation);
       } else if (norm_id == "eta_R") {
         norm_it = remaining_norms.erase(norm_it); // ... or here ...
         // compute estimate
         auto rt_space = make_raviart_thomas_space(current_space.grid_view(), current_space.max_polorder() - 1);
-        auto reconstruction_op = make_laplace_ipdg_flux_reconstruction_operator<M>(current_space.grid_view(),
-                                                                                   current_space,
+        auto reconstruction_op = make_laplace_ipdg_flux_reconstruction_operator<V>(current_space.grid_view(),
                                                                                    rt_space,
                                                                                    symmetry_prefactor_,
                                                                                    inner_penalty_,
@@ -215,8 +215,7 @@ protected:
         norm_it = remaining_norms.erase(norm_it); // ... or here ...
         // compute estimate
         auto rt_space = make_raviart_thomas_space(current_space.grid_view(), current_space.max_polorder() - 1);
-        auto reconstruction_op = make_laplace_ipdg_flux_reconstruction_operator<M>(current_space.grid_view(),
-                                                                                   current_space,
+        auto reconstruction_op = make_laplace_ipdg_flux_reconstruction_operator<V>(current_space.grid_view(),
                                                                                    rt_space,
                                                                                    symmetry_prefactor_,
                                                                                    inner_penalty_,
@@ -282,46 +281,50 @@ protected:
 
   std::unique_ptr<O> make_residual_operator(const S& space) override
   {
-    // define lhs operator (has to be a pointer to allow the residual operator to manage the memory in the end)
-    auto lhs_op = std::make_unique<MatrixOperator<M, GV>>(make_matrix_operator<M>(
-        space,
-        (space_type_.size() >= 2 && space_type_.substr(0, 2) == "cg") ? Stencil::element
-                                                                      : Stencil::element_and_intersection));
-    // - volume term
-    lhs_op->append(LocalElementIntegralBilinearForm<E>(LocalLaplaceIntegrand<E>(this->diffusion())));
-    // - inner faces
-    lhs_op->append(LocalCouplingIntersectionIntegralBilinearForm<I>(
-                       LocalLaplaceIPDGIntegrands::InnerCoupling<I>(1., this->diffusion(), this->weight_function())),
-                   {},
-                   XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
-    lhs_op->append(LocalCouplingIntersectionIntegralBilinearForm<I>(LocalIPDGIntegrands::InnerPenalty<I>(
-                       inner_penalty_, this->weight_function(), intersection_diameter_)),
-                   {},
-                   XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
-    // - Dirichlet faces
-    lhs_op->append(
-        LocalIntersectionIntegralBilinearForm<I>(
-            LocalLaplaceIPDGIntegrands::DirichletCoupling<I>(1., this->diffusion())),
-        {},
-        XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(this->boundary_info(), new XT::Grid::DirichletBoundary()));
-    lhs_op->append(
-        LocalIntersectionIntegralBilinearForm<I>(LocalIPDGIntegrands::BoundaryPenalty<I>(
-            dirichlet_penalty_, this->weight_function(), intersection_diameter_)),
-        {},
-        XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(this->boundary_info(), new XT::Grid::DirichletBoundary()));
-    // define rhs functional
+    // define lhs operator, therefore
+    // * create a bilinear form with
+    auto lhs_bilinear_form = make_bilinear_form(space.grid_view());
+    //   - volume term
+    lhs_bilinear_form += LocalElementIntegralBilinearForm<E>(LocalLaplaceIntegrand<E>(this->diffusion()));
+    //   - inner faces
+    lhs_bilinear_form += {LocalCouplingIntersectionIntegralBilinearForm<I>(LocalLaplaceIPDGIntegrands::InnerCoupling<I>(
+                              1., this->diffusion(), this->weight_function())),
+                          XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>()};
+    lhs_bilinear_form += {LocalCouplingIntersectionIntegralBilinearForm<I>(LocalIPDGIntegrands::InnerPenalty<I>(
+                              inner_penalty_, this->weight_function(), intersection_diameter_)),
+                          XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>()};
+    //   - Dirichlet faces
+    lhs_bilinear_form +=
+        {LocalIntersectionIntegralBilinearForm<I>(
+             LocalLaplaceIPDGIntegrands::DirichletCoupling<I>(1., this->diffusion())),
+         XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(this->boundary_info(), new XT::Grid::DirichletBoundary())};
+    lhs_bilinear_form +=
+        {LocalIntersectionIntegralBilinearForm<I>(LocalIPDGIntegrands::BoundaryPenalty<I>(
+             dirichlet_penalty_, this->weight_function(), intersection_diameter_)),
+         XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(this->boundary_info(), new XT::Grid::DirichletBoundary())};
+    // * turn bilinear form into matrix operator
+    //   note: usually, we would call `auto lhs_op = lhs_bilinear_form.template with<M>(space, space);`, but we require
+    //         the pointer for residual_op to manage the memory
+    auto lhs_op = std::make_unique<typename O::MatrixOperatorType>(make_matrix_operator<M>(space));
+    lhs_op->append(lhs_bilinear_form);
+    // define rhs functional with
     auto rhs_func = make_vector_functional<V>(space);
+    // - volume term
     rhs_func.append(LocalElementIntegralFunctional<E>(LocalProductIntegrand<E>().with_ansatz(this->force())));
     // ... add Dirichlet here
     // (if we add something here, the oswald interpolation in compute() needs to be adapted accordingly!)
     // ... add Neumann here
     // assemble everything in one grid walk
-    lhs_op->append(rhs_func);
-    lhs_op->assemble(DXTC_TEST_CONFIG_GET("setup.use_tbb", true));
-    // build residual operator
-    auto residual_op = std::make_unique<ConstLincombOperator<M, GV>>(space, space);
+    XT::Grid::Walker<GV> walker(space.grid_view());
+    walker.append(*lhs_op);
+    walker.append(rhs_func);
+    walker.walk(DXTC_TEST_CONFIG_GET("setup.use_tbb", true));
+    // build residual operator (need pointers for residual_op to manage the memory)
+    auto residual_op = std::make_unique<typename O::LincombOperatorType>(make_lincomb_operator<M>(space));
     residual_op->add(lhs_op.release(), 1.);
-    residual_op->add(new ConstantOperator<M, GV>(space, space, new V(std::move(rhs_func.vector()))), -1);
+    residual_op->add(new ConstantOperator<GV, 1, 1, 1, 1, R, M>(
+                         space.grid_view(), space, space, new V(std::move(rhs_func.vector()))),
+                     -1);
     return residual_op;
   } // ... make_residual_operator(...)
 
