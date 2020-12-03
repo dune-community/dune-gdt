@@ -27,6 +27,7 @@
 #include <dune/xt/la/solver.hh>
 #include <dune/xt/la/type_traits.hh>
 
+#include <dune/gdt/algorithms/newton.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/exceptions.hh>
 #include <dune/gdt/interpolations.hh>
@@ -621,7 +622,9 @@ protected:
    */
   virtual std::vector<XT::Common::Configuration> all_invert_options() const
   {
-    return {{{"type", "newton"}, {"precision", "1e-7"}, {"max_iter", "100"}, {"max_dampening_iter", "1000"}}};
+    auto newton_opts = default_newton_solve_options();
+    newton_opts["type"] = "newton";
+    return {newton_opts};
   }
 
 public:
@@ -646,90 +649,9 @@ public:
     this->assert_matching_source(source_vector);
     this->assert_apply_inverse_opts(opts);
     const auto type = opts.get<std::string>("type");
-    const XT::Common::Configuration default_opts = this->invert_options(type);
     if (type == "newton") {
-      // some preparations
-      auto residual_op = *this - range_vector;
-      auto residual = range_vector.copy();
-      auto update = source_vector.copy();
-      auto candidate = source_vector.copy();
-      // one matrix for all jacobians
-      auto jacobian_op = this->empty_jacobian_op();
-      XT::LA::Solver<M> jacobian_solver(jacobian_op.matrix());
-      const auto precision = opts.get("precision", default_opts.get<double>("precision"));
-      const auto max_iter = opts.get("max_iter", default_opts.get<size_t>("max_iter"));
-      const auto max_dampening_iter = opts.get("max_dampening_iter", default_opts.get<size_t>("max_iter"));
       LOG_(info) << "computing inverse by dampened newton ..." << std::endl;
-      size_t l = 0;
-      Timer timer;
-      while (true) {
-        timer.reset();
-        LOG_(debug) << "l = " << l << ": computing residual ... " << std::flush;
-        residual_op.apply(source_vector, residual, param);
-        auto res = residual.l2_norm();
-        LOG_(debug) << "took " << timer.elapsed() << "s, |residual|_l2 = " << res << std::endl;
-        if (res < precision) {
-          LOG_(debug) << "       residual below tolerance, succeeded!" << std::endl;
-          break;
-        }
-        DUNE_THROW_IF(l >= max_iter,
-                      Exceptions::operator_error,
-                      "max iterations reached!\n|residual|_l2 = " << res << "\nopts:\n"
-                                                                  << opts);
-        LOG_(debug) << "       computing jacobi matrix ... " << std::flush;
-        timer.reset();
-        jacobian_op.matrix() *= 0.;
-        residual_op.jacobian(source_vector, jacobian_op, {{"type", residual_op.jacobian_options().at(0)}}, param);
-        jacobian_op.assemble(/*use_tbb=*/true);
-        LOG_(debug) << "took " << timer.elapsed() << "s\n       solving for defect ... " << std::flush;
-        timer.reset();
-        residual *= -1.;
-        update = source_vector; // <- initial guess for the linear solver
-        bool linear_solve_succeeded = false;
-        std::vector<std::string> tried_linear_solvers;
-        for (const auto& linear_solver_type : jacobian_solver.types()) {
-          try {
-            tried_linear_solvers.push_back(linear_solver_type);
-            jacobian_solver.apply(
-                residual,
-                update,
-                {{"type", linear_solver_type}, {"precision", XT::Common::to_string(0.1 * precision)}});
-            linear_solve_succeeded = true;
-            break;
-          } catch (const XT::LA::Exceptions::linear_solver_failed&) {
-          }
-        }
-        DUNE_THROW_IF(!linear_solve_succeeded,
-                      Exceptions::operator_error,
-                      "could not solve linear system for defect!\nTried the following linear solvers: "
-                          << tried_linear_solvers << "\nopts:\n"
-                          << opts);
-        LOG_(debug) << "took " << timer.elapsed() << "s";
-        if (tried_linear_solvers.size() > 1) {
-          LOG_(debug) << ", took " << tried_linear_solvers.size() << " attempts with different linear solvers";
-        }
-        LOG_(debug) << "\n       computing update ... " << std::flush;
-        timer.reset();
-        // try the automatic dampening strategy proposed in [DF2015, Sec. 8.4.4.1, p. 432]
-        size_t k = 0;
-        auto candidate_res = 2 * res; // any number such that we enter the while loop at least once
-        double lambda = 1;
-        while (!(candidate_res / res < 1)) {
-          DUNE_THROW_IF(k >= max_dampening_iter,
-                        Exceptions::operator_error,
-                        "max iterations reached when trying to compute automatic dampening!\n|residual|_l2 = "
-                            << res << "\nl = " << l << "\nopts:\n"
-                            << opts);
-          candidate = source_vector + update * lambda;
-          residual_op.apply(candidate, residual, param);
-          candidate_res = residual.l2_norm();
-          lambda /= 2;
-          k += 1;
-        }
-        source_vector = candidate;
-        LOG_(debug) << "took " << timer.elapsed() << "s and a dampening of " << 2 * lambda << std::endl;
-        l += 1;
-      }
+      newton_solve(*this, range_vector, source_vector, param, opts);
     } else
       DUNE_THROW(Exceptions::operator_error,
                  "unknown apply_inverse type requested (" << type << "),"

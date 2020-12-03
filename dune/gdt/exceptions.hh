@@ -72,7 +72,7 @@ class basis_error : public space_error
 class discrete_function_error : public Exception
 {};
 
-class newton_error : public Exception
+class newton_error : public operator_error
 {};
 
 
