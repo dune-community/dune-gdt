@@ -674,13 +674,13 @@ auto make_matrix_operator(const AssemblyGridViewType& assembly_grid_view,
 } // ... make_matrix_operator(...)
 
 
-template <class GV, size_t s_r, size_t s_rC, class F, size_t r_r, size_t r_rC>
-auto make_matrix_operator(const SpaceInterface<GV, r_r, r_rC, F>& space,
+template <class GV, size_t r, size_t rC, class F>
+auto make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space,
                           const XT::LA::SparsityPatternDefault& pattern,
                           const std::string& logging_prefix = "")
 {
   using M = XT::LA::IstlRowMajorSparseMatrix<F>;
-  return MatrixOperator<GV, s_r, s_rC, r_r, r_rC, F, M, GV, GV>(
+  return MatrixOperator<GV, r, rC, r, rC, F, M, GV, GV>(
       space.grid_view(), space, space, new M(space.mapper().size(), space.mapper().size(), pattern), logging_prefix);
 }
 
@@ -691,13 +691,13 @@ auto make_matrix_operator(const SpaceInterface<GV, r_r, r_rC, F>& space,
  auto op = make_matrix_operator<MatrixType>(space, pattern);
 \endcode
  */
-template <class MatrixType, class GV, size_t s_r, size_t s_rC, class F, size_t r_r, size_t r_rC>
-auto make_matrix_operator(const SpaceInterface<GV, r_r, r_rC, F>& space,
+template <class MatrixType, class GV, size_t r, size_t rC, class F>
+auto make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space,
                           const XT::LA::SparsityPatternDefault& pattern,
                           const std::string& logging_prefix = "")
 {
   static_assert(XT::LA::is_matrix<MatrixType>::value, "");
-  return MatrixOperator<GV, s_r, s_rC, r_r, r_rC, F, MatrixType, GV, GV>(
+  return MatrixOperator<GV, r, rC, r, rC, F, MatrixType, GV, GV>(
       space.grid_view(),
       space,
       space,
@@ -715,7 +715,7 @@ template <class AssemblyGridViewType, class SGV, size_t s_r, size_t s_rC, class 
 auto make_matrix_operator(const AssemblyGridViewType& assembly_grid_view,
                           const SpaceInterface<SGV, s_r, s_rC, F>& source_space,
                           const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
-                          const Stencil stencil = Stencil::element_and_intersection,
+                          const Stencil stencil = Stencil::automatic,
                           const std::string& logging_prefix = "")
 {
   using M = XT::LA::IstlRowMajorSparseMatrix<F>;
@@ -748,7 +748,7 @@ template <class MatrixType,
 auto make_matrix_operator(const AssemblyGridViewType& assembly_grid_view,
                           const SpaceInterface<SGV, s_r, s_rC, F>& source_space,
                           const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
-                          const Stencil stencil = Stencil::element_and_intersection,
+                          const Stencil stencil = Stencil::automatic,
                           const std::string& logging_prefix = "")
 {
   static_assert(XT::LA::is_matrix<MatrixType>::value, "");
@@ -763,13 +763,13 @@ auto make_matrix_operator(const AssemblyGridViewType& assembly_grid_view,
 } // ... make_matrix_operator(...)
 
 
-template <class GV, size_t s_r, size_t s_rC, class F, size_t r_r, size_t r_rC>
-auto make_matrix_operator(const SpaceInterface<GV, r_r, r_rC, F>& space,
-                          const Stencil stencil = Stencil::element_and_intersection,
+template <class GV, size_t r, size_t rC, class F>
+auto make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space,
+                          const Stencil stencil = Stencil::automatic,
                           const std::string& logging_prefix = "")
 {
   using M = XT::LA::IstlRowMajorSparseMatrix<F>;
-  return MatrixOperator<GV, s_r, s_rC, r_r, r_rC, F, M, GV, GV>(
+  return MatrixOperator<GV, r, rC, r, rC, F, M, GV, GV>(
       space.grid_view(),
       space,
       space,
@@ -784,13 +784,13 @@ auto make_matrix_operator(const SpaceInterface<GV, r_r, r_rC, F>& space,
  auto op = make_matrix_operator<MatrixType>(space, stencil);
 \endcode
  */
-template <class MatrixType, class GV, size_t s_r, size_t s_rC, class F, size_t r_r, size_t r_rC>
-auto make_matrix_operator(const SpaceInterface<GV, r_r, r_rC, F>& space,
-                          const Stencil stencil = Stencil::element_and_intersection,
+template <class MatrixType, class GV, size_t r, size_t rC, class F>
+auto make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space,
+                          const Stencil stencil = Stencil::automatic,
                           const std::string& logging_prefix = "")
 {
   static_assert(XT::LA::is_matrix<MatrixType>::value, "");
-  return MatrixOperator<GV, s_r, s_rC, r_r, r_rC, F, MatrixType, GV, GV>(
+  return MatrixOperator<GV, r, rC, r, rC, F, MatrixType, GV, GV>(
       space.grid_view(),
       space,
       space,
