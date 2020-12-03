@@ -24,9 +24,7 @@ namespace Dune {
 namespace GDT {
 
 
-/// See also
-/// \sa ForwardOperatorInterface
-/// for a description of the template arguments.
+/// \todo add zero_threshhold?
 template <class SGV,
           size_t s_r = 1,
           size_t s_rC = 1,
@@ -101,13 +99,8 @@ public:
                 << ", range_vector.sup_norm()=" << range_vector.sup_norm() << ", param=" << print(param) << ")"
                 << std::endl;
     this->assert_matching_range(range_vector);
-    if (is_zero_) {
-      LOG_(info) << "setting range_vector to zero ..." << std::endl;
-      range_vector *= F(0);
-    } else {
-      LOG_(info) << "setting range_vector to constant value ..." << std::endl;
-      range_vector = value_.access();
-    }
+    LOG_(info) << "setting range_vector to " << (is_zero_ ? "0" : "constant value") << " ..." << std::endl;
+    range_vector = value_.access();
   } // ... apply(...)
 
   /// \}
@@ -141,9 +134,8 @@ auto make_constant_forward_operator(const SpaceInterface<GV, r, rC, F>& space,
 }
 
 
-/// See also
-/// \sa OperatorInterface
-/// for a description of the template arguments.
+/// \todo add zero_threshhold?
+/// \todo only set those dofs to zero which are associated with assembly_grid_view?
 template <class AGV,
           size_t s_r = 1,
           size_t s_rC = 1,
@@ -232,13 +224,8 @@ public:
                 << ", range_vector.sup_norm()=" << range_vector.sup_norm() << ", param=" << print(param) << ")"
                 << std::endl;
     this->assert_matching_range(range_vector);
-    if (is_zero_) {
-      LOG_(info) << "setting range_vector to zero ..." << std::endl;
-      range_vector *= F(0);
-    } else {
-      LOG_(info) << "setting range_vector to constant value ..." << std::endl;
-      range_vector = value_.access();
-    }
+    LOG_(info) << "setting range_vector to " << (is_zero_ ? "0" : "constant value") << " ..." << std::endl;
+    range_vector = value_.access();
   } // ... apply(...)
 
   /// \}
@@ -264,13 +251,8 @@ public:
                 << std::endl;
     this->assert_matching_source(source_vector);
     this->assert_matching_range(range_vector);
-    if (is_zero_) {
-      LOG_(info) << "setting range_vector to zero ..." << std::endl;
-      range_vector *= F(0);
-    } else {
-      LOG_(info) << "setting range_vector to constant value ..." << std::endl;
-      range_vector = value_.access();
-    }
+    LOG_(info) << "setting range_vector to " << (is_zero_ ? "0" : "constant value") << " ..." << std::endl;
+    range_vector = value_.access();
   } // ... apply(...)
 
 protected:
