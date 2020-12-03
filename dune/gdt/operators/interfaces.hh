@@ -695,6 +695,7 @@ public:
                 update,
                 {{"type", linear_solver_type}, {"precision", XT::Common::to_string(0.1 * precision)}});
             linear_solve_succeeded = true;
+            break;
           } catch (const XT::LA::Exceptions::linear_solver_failed&) {
           }
         }
