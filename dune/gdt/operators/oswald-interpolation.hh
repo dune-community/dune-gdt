@@ -33,38 +33,39 @@ namespace Dune {
 namespace GDT {
 
 
-template <class M,
-          class AssemblyGridView,
-          size_t dim = 1,
-          size_t dim_cols = 1,
+template <class AssemblyGridView,
+          size_t r = 1,
+          size_t rC = 1,
+          class F = double,
+          class V = XT::LA::IstlDenseVector<F>,
           class SGV = AssemblyGridView,
           class RGV = AssemblyGridView>
-class OswaldInterpolationOperator : public OperatorInterface<M, SGV, dim, dim_cols, dim, dim_cols, RGV>
+class OswaldInterpolationOperator : public ForwardOperatorInterface<SGV, r, rC, r, rC, F, V, RGV>
 {
   static_assert(XT::Grid::is_view<AssemblyGridView>::value, "");
-  static_assert(dim == 1, "I did not think about this yet, feel free to implement!");
-  static_assert(dim_cols == 1, "I did not think about this yet, feel free to implement!");
-  using BaseType = OperatorInterface<M, SGV, dim, dim_cols, dim, dim_cols, RGV>;
-  using ThisType = OswaldInterpolationOperator;
+  static_assert(r == 1, "I did not think about this yet, feel free to implement!");
+  static_assert(rC == 1, "I did not think about this yet, feel free to implement!");
 
 public:
+  using ThisType = OswaldInterpolationOperator;
+  using BaseType = ForwardOperatorInterface<SGV, r, rC, r, rC, F, V, RGV>;
+
   using typename BaseType::RangeSpaceType;
-  using typename BaseType::SourceSpaceType;
+  using typename BaseType::SourceFunctionType;
   using typename BaseType::VectorType;
 
   using AGV = AssemblyGridView;
   using AssemblyGridViewType = AGV;
   using I = XT::Grid::extract_intersection_t<AssemblyGridViewType>;
 
-  /**
-   * \param boundary_info To determine the Dirichlet boundary DoFs on which to set the range to zero.
-   */
-  OswaldInterpolationOperator(AssemblyGridViewType assembly_grid_view,
-                              const SourceSpaceType& src_spc,
+  /// \param boundary_info To determine the Dirichlet boundary DoFs on which to set the range to zero.
+  OswaldInterpolationOperator(const AssemblyGridViewType& assembly_grid_view,
                               const RangeSpaceType& rng_spc,
-                              const XT::Grid::BoundaryInfo<I>& boundary_info)
-    : assembly_grid_view_(assembly_grid_view)
-    , source_space_(src_spc)
+                              const XT::Grid::BoundaryInfo<I>& boundary_info,
+                              const std::string& logging_prefix = "",
+                              const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
+    : BaseType({}, logging_prefix.empty() ? "OswaldInterpolationOperator" : logging_prefix, logging_state)
+    , assembly_grid_view_(assembly_grid_view)
     , range_space_(rng_spc)
     , boundary_info_(boundary_info)
     , assembled_(false)
@@ -76,14 +77,13 @@ public:
         range_space_.min_polorder() != range_space_.max_polorder(), Exceptions::operator_error, "Not implemented yet!");
   }
 
-  /**
-   * Does not set any boundary DoFs to zero.
-   */
+  /// Does not set any boundary DoFs to zero.
   OswaldInterpolationOperator(const AssemblyGridViewType& assembly_grid_view,
-                              const SourceSpaceType& src_spc,
-                              const RangeSpaceType& rng_spc)
-    : assembly_grid_view_(assembly_grid_view)
-    , source_space_(src_spc)
+                              const RangeSpaceType& rng_spc,
+                              const std::string& logging_prefix = "",
+                              const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
+    : BaseType({}, logging_prefix.empty() ? "OswaldInterpolationOperator" : logging_prefix, logging_state)
+    , assembly_grid_view_(assembly_grid_view)
     , range_space_(rng_spc)
     , boundary_info_(new XT::Grid::AllNeumannBoundaryInfo<I>()) // Anything without Dirichlet
     , assembled_(false)
@@ -94,20 +94,15 @@ public:
         range_space_.min_polorder() != range_space_.max_polorder(), Exceptions::operator_error, "Not implemented yet!");
   }
 
-  bool linear() const override final
-  {
-    return true;
-  }
+  OswaldInterpolationOperator(const ThisType& other) = default;
 
-  const SourceSpaceType& source_space() const override final
-  {
-    return source_space_;
-  }
+  OswaldInterpolationOperator(ThisType&& source) = default;
 
-  const RangeSpaceType& range_space() const override final
-  {
-    return range_space_;
-  }
+  // pull in methods from various base classes
+  using BaseType::apply;
+
+  /// \name Required by BilinearFormInterface
+  /// \{
 
   void assemble(const bool use_tbb = false) override final
   {
@@ -148,27 +143,36 @@ public:
       }
     }
     assembled_ = true;
-    return *this;
   } // ... assemble(...)
 
-  using BaseType::apply;
+  /// \}
+  /// \name Required by ForwardOperatorInterface
+  /// \{
 
-  void
-  apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& /*param*/ = {}) const override final
+  bool linear() const override final
+  {
+    return true;
+  }
+
+  const RangeSpaceType& range_space() const override final
+  {
+    return range_space_;
+  }
+
+  void apply(SourceFunctionType source_function,
+             VectorType& range_vector,
+             const XT::Common::Parameter& /*param*/ = {}) const override final
   {
     // some checks
     DUNE_THROW_IF(!assembled_, Exceptions::operator_error, "You need to call assemble() first!");
-    DUNE_THROW_IF(!source.valid(), Exceptions::operator_error, "source contains inf or nan!");
-    DUNE_THROW_IF(!source_space_.contains(source), Exceptions::operator_error, "");
-    DUNE_THROW_IF(!range_space_.contains(range), Exceptions::operator_error, "");
-    const auto source_function = make_discrete_function(source_space_, source);
+    this->assert_matching_range(range_vector);
     auto local_source = source_function.local_function();
     DynamicVector<size_t> global_DoF_indices(range_space_.mapper().max_local_size());
     // clear range on those DoFs associated with assembly_grid_view_ individually
     // (might only be a subset, range *= 0 would clear too much)
     for (const auto& DoF_id : global_DoF_id_to_global_LP_id_map_)
       if (DoF_id != std::numeric_limits<size_t>::max())
-        range[DoF_id] = 0;
+        range_vector[DoF_id] = 0;
     // walk the grid to average on all inner Lagrange points
     auto range_basis = range_space_.basis().localize();
     for (auto&& element : elements(assembly_grid_view_)) {
@@ -188,19 +192,20 @@ public:
         const auto& DoFs_per_global_LP = global_LP_id_to_global_DoF_id_map_.at(global_LP_id);
         const auto source_value = local_source->evaluate(lagrange_point)[0] / DoFs_per_global_LP.size();
         for (const auto& DoF_id : DoFs_per_global_LP) {
-          range[DoF_id] += source_value;
+          range_vector[DoF_id] += source_value;
         }
       }
     }
     // set Dirichlet DoFs to zero
     for (const auto& global_LP_id : boundary_LPs_)
       for (const auto& global_DoF_id : global_LP_id_to_global_DoF_id_map_.at(global_LP_id))
-        range[global_DoF_id] = 0;
+        range_vector[global_DoF_id] = 0;
   } // ... apply(...)
 
+  /// \}
+
 private:
-  const AssemblyGridViewType assembly_grid_view_;
-  const SourceSpaceType& source_space_;
+  const AssemblyGridViewType& assembly_grid_view_;
   const RangeSpaceType& range_space_;
   const XT::Common::ConstStorageProvider<XT::Grid::BoundaryInfo<I>> boundary_info_;
   bool assembled_;
@@ -210,15 +215,36 @@ private:
 }; // class OswaldInterpolationOperator
 
 
-template <class MatrixType, class AssemblyGridView, class SGV, size_t dim, size_t dim_cols, class RGV>
-OswaldInterpolationOperator<MatrixType, AssemblyGridView, dim, dim_cols, SGV, RGV> make_oswald_interpolation_operator(
+template <class VectorType, //  <- has to be specified manually
+          class AssemblyGridView,
+          class RGV,
+          size_t r,
+          size_t rC,
+          class F>
+auto make_oswald_interpolation_operator(
     const AssemblyGridView& assembly_grid_view,
-    const SpaceInterface<SGV, dim, dim_cols>& source_space,
-    const SpaceInterface<RGV, dim, dim_cols>& range_space,
-    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<AssemblyGridView>>& boundary_info)
+    const SpaceInterface<RGV, r, rC, F>& range_space,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<AssemblyGridView>>& boundary_info,
+    const std::string& logging_prefix = "",
+    const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
 {
-  return OswaldInterpolationOperator<MatrixType, AssemblyGridView, dim, dim_cols, SGV, RGV>(
-      assembly_grid_view, source_space, range_space, boundary_info);
+  static_assert(XT::LA::is_vector<VectorType>::value, "");
+  return OswaldInterpolationOperator<AssemblyGridView, r, rC, F, VectorType, AssemblyGridView, RGV>(
+      assembly_grid_view, range_space, boundary_info, logging_prefix, logging_state);
+}
+
+
+template <class AssemblyGridView, class RGV, size_t r, size_t rC, class F>
+auto make_oswald_interpolation_operator(
+    const AssemblyGridView& assembly_grid_view,
+    const SpaceInterface<RGV, r, rC, F>& range_space,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<AssemblyGridView>>& boundary_info,
+    const std::string& logging_prefix = "",
+    const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
+{
+  using V = XT::LA::IstlDenseVector<F>;
+  return make_oswald_interpolation_operator<V>(
+      assembly_grid_view, range_space, boundary_info, logging_prefix, logging_state);
 }
 
 
