@@ -52,7 +52,7 @@ public:
                        const SourceSpaceType& src_space,
                        const RangeSpaceType& rng_space,
                        const std::string& logging_prefix = "",
-                       const std::array<bool, 3>& logging_enabled = {{false, false, true}})
+                       const std::array<bool, 3>& logging_enabled = XT::Common::default_logger_state())
     : BaseType({}, logging_prefix.empty() ? "ConstLincombOperator" : logging_prefix, logging_enabled)
     , assembly_grid_view_(assembly_grid_vw)
     , source_space_(src_space)
@@ -96,7 +96,7 @@ public:
              const XT::Common::Parameter& param = {}) const override final
   {
     LOG_(debug) << "apply(source_function=" << &source_function
-                << ", range_vector.sup_norm()=" << range_vector.sup_norm() << ", param=" << param << ")" << std::endl;
+                << ", range_vector.sup_norm()=" << range_vector.sup_norm() << ", param=" << print(param) << ")" << std::endl;
     this->assert_matching_range(range_vector);
     LOG_(info) << "applying " << this->num_ops() << " operators ..." << std::endl;
     range_vector.set_all(0);
@@ -127,7 +127,7 @@ public:
              const XT::Common::Parameter& param = {}) const override final
   {
     LOG_(debug) << "apply(source_vector.sup_norm()=" << source_vector.sup_norm()
-                << ", range_vector.sup_norm()=" << range_vector.sup_norm() << ", param=" << param << ")" << std::endl;
+                << ", range_vector.sup_norm()=" << range_vector.sup_norm() << ", param=" << print(param) << ")" << std::endl;
     this->assert_matching_source(source_vector);
     this->assert_matching_range(range_vector);
     LOG_(info) << "applying " << this->num_ops() << " operators ..." << std::endl;
@@ -166,7 +166,7 @@ public:
 
     LOG_(debug) << "jacobian(source_vector.sup_norm()=" << source_vector.sup_norm()
                 << ", jacobian_op.matrix().sup_norm()=" << jacobian_op.matrix().sup_norm()
-                << ",\n   opts=" << print(opts, {{"oneline", "true"}}) << ",\n   param=" << param << ")" << std::endl;
+                << ",\n   opts=" << print(opts, {{"oneline", "true"}}) << ",\n   param=" << print(param) << ")" << std::endl;
     this->assert_matching_source(source_vector);
     this->assert_jacobian_opts(opts); // ensures that "lincomb" is requested
     using XT::Common::to_string;
@@ -192,7 +192,7 @@ public:
       const auto scaling = jacobian_op.scaling;
       // add op
       jacobian_op.scaling *= this->coeff(ii);
-      LOG_(debug) << "   backing up scaling = " << scaling << ",\n   this->coeff(ii) = " << this->coeff(ii)
+      LOG_(debug) << "   backing up scaling = " << scaling << "\n   this->coeff(ii) = " << this->coeff(ii)
                   << "\n   jacobian_op.scaling = " << jacobian_op.scaling << std::endl;
       this->op(ii).jacobian(source_vector, jacobian_op, op_opts, param);
       // restore scaling
@@ -260,7 +260,7 @@ public:
       const_ops_.emplace_back(op.const_ops_[ii]);
       coeffs_.emplace_back(coeff * op.coeffs_[ii]);
     }
-  }
+  } // ... add(...)
 
   // we need this, otherwise add(OperatorType*&&) would be used
   void add(ThisType*&& op, const FieldType& coeff = 1.)
@@ -401,7 +401,7 @@ auto make_const_lincomb_operator(const AssemblyGridViewType& assembly_grid_view,
                                  const SpaceInterface<SGV, s_r, s_rC, F>& source_space,
                                  const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
                                  const std::string& logging_prefix = "",
-                                 const std::array<bool, 3>& logging_state = {{false, false, true}})
+                                 const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
 {
   static_assert(XT::Grid::is_view<AssemblyGridViewType>::value, "");
   static_assert(XT::LA::is_matrix<MatrixType>::value, "");
@@ -414,7 +414,7 @@ auto make_const_lincomb_operator(const AssemblyGridViewType& assembly_grid_view,
                                  const SpaceInterface<SGV, s_r, s_rC, F>& source_space,
                                  const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
                                  const std::string& logging_prefix = "",
-                                 const std::array<bool, 3>& logging_state = {{false, false, true}})
+                                 const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
 {
   return make_const_lincomb_operator<XT::LA::IstlRowMajorSparseMatrix<F>>(
       assembly_grid_view, source_space, range_space, logging_prefix, logging_state);
@@ -428,7 +428,7 @@ template <class MatrixType, // <- needs to be manually specified
           class F>
 auto make_const_lincomb_operator(const SpaceInterface<GV, r, r, F>& space,
                                  const std::string& logging_prefix = "",
-                                 const std::array<bool, 3>& logging_state = {{false, false, true}})
+                                 const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
 {
   static_assert(XT::LA::is_matrix<MatrixType>::value, "");
   return ConstLincombOperator<GV, r, rC, r, rC, F, MatrixType, GV, GV>(
@@ -438,7 +438,7 @@ auto make_const_lincomb_operator(const SpaceInterface<GV, r, r, F>& space,
 template <class GV, size_t r, size_t rC, class F>
 auto make_const_lincomb_operator(const SpaceInterface<GV, r, r, F>& space,
                                  const std::string& logging_prefix = "",
-                                 const std::array<bool, 3>& logging_state = {{false, false, true}})
+                                 const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
 {
   return make_const_lincomb_operator<XT::LA::IstlRowMajorSparseMatrix<F>>(space, logging_prefix, logging_state);
 }
@@ -472,7 +472,7 @@ public:
                   const SourceSpaceType& src_space,
                   const RangeSpaceType& rng_space,
                   const std::string& logging_prefix = "",
-                  const std::array<bool, 3>& logging_enabled = {{false, false, true}})
+                  const std::array<bool, 3>& logging_enabled = XT::Common::default_logger_state())
     : BaseType(assembly_grid_vw,
                src_space,
                rng_space,
@@ -658,7 +658,7 @@ auto make_lincomb_operator(const AssemblyGridViewType& assembly_grid_view,
                            const SpaceInterface<SGV, s_r, s_rC, F>& source_space,
                            const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
                            const std::string& logging_prefix = "",
-                           const std::array<bool, 3>& logging_state = {{false, false, true}})
+                           const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
 {
   static_assert(XT::Grid::is_view<AssemblyGridViewType>::value, "");
   static_assert(XT::LA::is_matrix<MatrixType>::value, "");
@@ -671,7 +671,7 @@ auto make_lincomb_operator(const AssemblyGridViewType& assembly_grid_view,
                            const SpaceInterface<SGV, s_r, s_rC, F>& source_space,
                            const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
                            const std::string& logging_prefix = "",
-                           const std::array<bool, 3>& logging_state = {{false, false, true}})
+                           const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
 {
   return make_lincomb_operator<XT::LA::IstlRowMajorSparseMatrix<F>>(
       assembly_grid_view, source_space, range_space, logging_prefix, logging_state);
@@ -685,7 +685,7 @@ template <class MatrixType, // <- needs to be manually specified
           class F>
 auto make_lincomb_operator(const SpaceInterface<GV, r, rC, F>& space,
                            const std::string& logging_prefix = "",
-                           const std::array<bool, 3>& logging_state = {{false, false, true}})
+                           const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
 {
   static_assert(XT::LA::is_matrix<MatrixType>::value, "");
   return LincombOperator<GV, r, rC, r, rC, F, MatrixType, GV, GV>(
@@ -695,7 +695,7 @@ auto make_lincomb_operator(const SpaceInterface<GV, r, rC, F>& space,
 template <class GV, size_t r, size_t rC, class F>
 auto make_lincomb_operator(const SpaceInterface<GV, r, rC, F>& space,
                            const std::string& logging_prefix = "",
-                           const std::array<bool, 3>& logging_state = {{false, false, true}})
+                           const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
 {
   return make_lincomb_operator<XT::LA::IstlRowMajorSparseMatrix<F>>(space, logging_prefix, logging_state);
 }
