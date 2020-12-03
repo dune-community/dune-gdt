@@ -68,7 +68,7 @@ public:
   ContinuousLagrangeSpace(GridViewType grd_vw,
                           const int order,
                           const std::string& logging_prefix = "",
-                          const std::array<bool, 3>& logging_state = {{false, false, true}})
+                          const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseType(logging_prefix.empty() ? "ContinuousLagrangeSpace" : logging_prefix, logging_state)
     , grid_view_(grd_vw)
     , fe_order_(order)

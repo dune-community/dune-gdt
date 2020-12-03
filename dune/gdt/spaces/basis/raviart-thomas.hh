@@ -56,7 +56,7 @@ public:
                            const FiniteVolumeMapper<GL>& element_indices,
                            const std::vector<DynamicVector<R>>& fe_data,
                            const std::string& logging_prefix = "",
-                           const std::array<bool, 3>& logging_state = {{false, false, true}})
+                           const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseType(logging_prefix.empty() ? "RtGlobalBasis" : logging_prefix, logging_state)
     , grid_view_(grid_view)
     , order_(order)
@@ -118,7 +118,7 @@ private:
 
     LocalizedRaviartThomasGlobalBasis(const RaviartThomasGlobalBasis<GL, R>& self,
                                       const std::string& logging_prefix = "",
-                                      const std::array<bool, 3>& logging_state = {{false, false, true}})
+                                      const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
       : BaseType(logging_prefix.empty() ? "LocalizedRtGlobalBasis" : logging_prefix, logging_state)
       , self_(self)
       , set_data_in_post_bind_(true)

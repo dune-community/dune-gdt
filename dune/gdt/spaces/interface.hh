@@ -73,7 +73,7 @@ public:
   using DofCommunicatorType = typename DofCommunicationChooser<GridViewType>::Type;
 
   SpaceInterface(const std::string& logging_prefix = "",
-                 const std::array<bool, 3>& logging_state = {{false, false, true}})
+                 const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : Logger(logging_prefix.empty() ? "Space" : logging_prefix, logging_state)
     , dof_communicator_(nullptr)
     , adapted_(false)
