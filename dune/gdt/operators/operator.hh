@@ -13,7 +13,7 @@
 #include <dune/gdt/local/assembler/operator-fd-jacobian-assemblers.hh>
 
 #include "interfaces.hh"
-#include "operator.hh"
+#include "forward-operator.hh"
 
 namespace Dune {
 namespace GDT {
@@ -58,12 +58,14 @@ public:
   Operator(const AssemblyGridViewType& assembly_grid_vw,
            const SourceSpaceType& source_spc,
            const RangeSpaceType& range_spc,
+           const bool requires_assembly = false,
            const std::string& logging_prefix = "",
            const std::array<bool, 3>& logging_state = {{false, false, true}})
     : BaseType({}, logging_prefix.empty() ? "Operator" : logging_prefix, logging_state)
     , assembly_grid_view_(assembly_grid_vw)
     , source_space_(source_spc)
     , range_space_(range_spc)
+    , requires_assembly_(requires_assembly)
     , linear_(true)
   {}
 
@@ -72,6 +74,7 @@ public:
     , assembly_grid_view_(other.assembly_grid_view_)
     , source_space_(other.source_space_)
     , range_space_(other.range_space_)
+    , requires_assembly_(other.requires_assembly_)
     , linear_(other.linear_)
   {
     const auto copy_local_data = [](const auto& origin, auto& target) {
@@ -129,12 +132,16 @@ public:
              VectorType& range_vector,
              const XT::Common::Parameter& param = {}) const override
   {
+    DUNE_THROW_IF(requires_assembly_,
+                  Exceptions::operator_error,
+                  "You need to call assemble() first (or a derived class forgot to set requires_assembly_ to true in "
+                  "assemble())!");
     this->assert_matching_range(range_vector);
     auto assembler = this->with(source_function, range_vector, param);
     XT::Grid::Walker<AGV> walker(this->assembly_grid_view_);
     walker.append(assembler);
     walker.walk(/*use_tbb=*/true);
-  }
+  } // ... apply(...)
 
   /// \}
   /// \name Required by OperatorInterface
@@ -261,6 +268,7 @@ protected:
   const AssemblyGridViewType& assembly_grid_view_;
   const SourceSpaceType& source_space_;
   const RangeSpaceType& range_space_;
+  bool requires_assembly_;
   bool linear_;
   std::list<std::pair<std::unique_ptr<LocalElementOperatorType>, std::unique_ptr<ElementFilterType>>> element_data_;
   std::list<std::pair<std::unique_ptr<LocalIntersectionOperatorType>, std::unique_ptr<IntersectionFilterType>>>
