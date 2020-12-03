@@ -54,11 +54,16 @@ void interpolate(const XT::Functions::GridFunctionInterface<E, r, 1, R>& source,
 } // ... interpolate(...)
 
 
-template <class VectorType, class GV, size_t r, class R, class E, class IGV>
-DiscreteFunction<VectorType, GV, r, 1, R> interpolate(const XT::Functions::GridFunctionInterface<E, r, 1, R>& source,
-                                                      const SpaceInterface<GV, r, 1, R>& target_space,
-                                                      const GridView<IGV>& interpolation_grid_view,
-                                                      const XT::Common::Parameter& param = {})
+template <class VectorType, // <- has to be specified manually
+          class GV,
+          size_t r,
+          class R,
+          class E,
+          class IGV>
+auto interpolate(const XT::Functions::GridFunctionInterface<E, r, 1, R>& source,
+                 const SpaceInterface<GV, r, 1, R>& target_space,
+                 const GridView<IGV>& interpolation_grid_view,
+                 const XT::Common::Parameter& param = {})
 {
   static_assert(XT::LA::is_vector<VectorType>::value, "");
   static_assert(std::is_same_v<E, XT::Grid::extract_entity_t<GV>>, "");
@@ -73,11 +78,24 @@ DiscreteFunction<VectorType, GV, r, 1, R> interpolate(const XT::Functions::GridF
     return default_interpolation<VectorType>(source, target_space, interpolation_grid_view, param);
 } // ... interpolate(...)
 
+template <class GV, size_t r, class R, class E, class IGV>
+auto interpolate(const XT::Functions::GridFunctionInterface<E, r, 1, R>& source,
+                 const SpaceInterface<GV, r, 1, R>& target_space,
+                 const GridView<IGV>& interpolation_grid_view,
+                 const XT::Common::Parameter& param = {})
+{
+  return interpolate<XT::LA::IstlDenseVector<R>>(source, target_space, interpolation_grid_view, param);
+}
 
-template <class VectorType, class GV, size_t r, class R, class E>
-DiscreteFunction<VectorType, GV, r, 1, R> interpolate(const XT::Functions::GridFunctionInterface<E, r, 1, R>& source,
-                                                      const SpaceInterface<GV, r, 1, R>& target_space,
-                                                      const XT::Common::Parameter& param = {})
+
+template <class VectorType, // <- has to be specified manually
+          class GV,
+          size_t r,
+          class R,
+          class E>
+auto interpolate(const XT::Functions::GridFunctionInterface<E, r, 1, R>& source,
+                 const SpaceInterface<GV, r, 1, R>& target_space,
+                 const XT::Common::Parameter& param = {})
 {
   static_assert(XT::LA::is_vector<VectorType>::value, "");
   static_assert(std::is_same_v<E, XT::Grid::extract_entity_t<GV>>, "");
@@ -90,6 +108,14 @@ DiscreteFunction<VectorType, GV, r, 1, R> interpolate(const XT::Functions::GridF
   } else
     return default_interpolation<VectorType>(source, target_space, param);
 } // ... interpolate(...)
+
+template <class GV, size_t r, class R, class E>
+auto interpolate(const XT::Functions::GridFunctionInterface<E, r, 1, R>& source,
+                 const SpaceInterface<GV, r, 1, R>& target_space,
+                 const XT::Common::Parameter& param = {})
+{
+  return interpolate<XT::LA::IstlDenseVector<R>>(source, target_space, param);
+}
 
 
 } // namespace GDT
