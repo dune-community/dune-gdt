@@ -80,15 +80,18 @@ private:
 }; // class NumericalUpwindFlux
 
 
-template <class I, size_t d, size_t m, class R>
-NumericalUpwindFlux<I, d, m, R>
-make_numerical_upwind_flux(const XT::Functions::FluxFunctionInterface<I, m, d, m, R>& flux)
+template <class E, size_t d, size_t m, class R>
+auto make_numerical_upwind_flux(const XT::Functions::FluxFunctionInterface<E, m, d, m, R>& flux)
 {
+  using I = XT::Grid::extract_entity_t<E>;
   return NumericalUpwindFlux<I, d, m, R>(flux);
 }
 
-template <class I, size_t d, size_t m, class R>
-NumericalUpwindFlux<I, d, m, R> make_numerical_upwind_flux(const XT::Functions::FunctionInterface<m, d, m, R>& flux)
+template <class I, // <- has to be specified manually
+          size_t d,
+          size_t m,
+          class R>
+auto make_numerical_upwind_flux(const XT::Functions::FunctionInterface<m, d, m, R>& flux)
 {
   return NumericalUpwindFlux<I, d, m, R>(flux);
 }
