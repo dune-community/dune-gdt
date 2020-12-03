@@ -10,6 +10,8 @@
 #ifndef DUNE_GDT_OPERATORS_FORWARD_OPERATOR_HH
 #define DUNE_GDT_OPERATORS_FORWARD_OPERATOR_HH
 
+#include <dune/gdt/print.hh>
+
 #include "interfaces.hh"
 
 namespace Dune {
@@ -60,7 +62,7 @@ public:
   ForwardOperator(const AssemblyGridViewType& assembly_grid_vw,
                   const RangeSpaceType& range_spc,
                   const std::string& logging_prefix = "",
-                  const std::array<bool, 3>& logging_state = {{false, false, true}})
+                  const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseType({}, logging_prefix.empty() ? "ForwardOperator" : logging_prefix, logging_state)
     , assembly_grid_view_(assembly_grid_vw)
     , range_space_(range_spc)
@@ -245,7 +247,7 @@ public:
                            VectorType& range_vector,
                            const XT::Common::Parameter& param = {},
                            const std::string& logging_prefix = "",
-                           const std::array<bool, 3>& logging_state = {{false, false, true}})
+                           const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseType(logging_prefix.empty() ? "ForwardOperatorAssembler" : logging_prefix, logging_state)
     , operator_(oprtr)
     , source_(src.copy_as_grid_function())
@@ -255,6 +257,10 @@ public:
     , local_range_inside_(range_function_.local_discrete_function())
     , local_range_outside_(range_function_.local_discrete_function())
   {
+    LOG_(debug) << "ForwardOperatorAssembler(oprtr=" << &oprtr << ", src=" << &src
+                << ", range_vector.sup_norm()=" << range_vector.sup_norm() << ", param=" << print(param) << ")" << std::endl;
+    LOG_(info) << "preparing {" << operator_.element_data().size() << "|" << operator_.intersection_data().size()
+               << "} local {element|intersection} operators ..." << std::endl;
     set_source_in_local_ops(operator_.element_data(), element_data_);
     set_source_in_local_ops(operator_.intersection_data(), intersection_data_);
   } // ForwardOperatorAssembler(...)
@@ -284,12 +290,16 @@ public:
 
   void prepare() override
   {
-    // clear range
+    LOG_(debug) << "prepare()" << std::endl;
+    LOG_(info) << "clearing range_vector ..." << std::endl;
     range_vector_.set_all(0);
   } // ... prepare(...)
 
   void apply_local(const E& element) override
   {
+    LOG_(debug) << "apply_local(element=" << print(element) << ")"
+                << "\n"
+                << "  applying " << element_data_.size() << " local operators ..." << std::endl;
     if (element_data_.size() > 0)
       local_range_inside_->bind(element);
     for (auto& data : element_data_) {
@@ -304,6 +314,10 @@ public:
 
   void apply_local(const I& intersection, const E& inside_element, const E& outside_element) override
   {
+    LOG_(debug) << "apply_local(intersection=" << print(intersection) << ", inside_element=" << print(inside_element)
+                << ", outside_element=" << print(outside_element) << ")"
+                << "\n"
+                << "  applying " << intersection_data_.size() << " local operators ..." << std::endl;
     if (intersection_data_.size() > 0) {
       local_range_inside_->bind(inside_element);
       local_range_outside_->bind(outside_element);
@@ -320,6 +334,7 @@ public:
 
   void finalize() override
   {
+    LOG_(debug) << "finalize()" << std::endl;
     element_data_.clear();
     intersection_data_.clear();
   }
@@ -362,7 +377,7 @@ template <class AssemblyGridViewType,
 auto make_forward_operator(const AssemblyGridViewType& assembly_grid_view,
                            const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
                            const std::string& logging_prefix = "",
-                           const std::array<bool, 3>& logging_state = {{false, false, true}})
+                           const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
 {
   static_assert(XT::Grid::is_view<AssemblyGridViewType>::value, "");
   return ForwardOperator<AssemblyGridViewType, s_r, s_rC, r_r, r_rC, F, V, SGV, RGV>(
@@ -380,7 +395,7 @@ template <class GV,
           class SGV = GV>
 auto make_forward_operator(const SpaceInterface<GV, r_r, r_rC, F>& space,
                            const std::string& logging_prefix = "",
-                           const std::array<bool, 3>& logging_state = {{false, false, true}})
+                           const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
 {
   return ForwardOperator<GV, s_r, s_rC, r_r, r_rC, F, V, SGV, GV>(
       space.grid_view(), space, logging_prefix, logging_state);
