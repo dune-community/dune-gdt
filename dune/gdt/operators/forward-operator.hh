@@ -254,7 +254,10 @@ public:
     , range_function_(operator_.range_space(), range_vector_)
     , local_range_inside_(range_function_.local_discrete_function())
     , local_range_outside_(range_function_.local_discrete_function())
-  {}
+  {
+    set_source_in_local_ops(operator_.element_data(), element_data_);
+    set_source_in_local_ops(operator_.intersection_data(), intersection_data_);
+  } // ForwardOperatorAssembler(...)
 
   ForwardOperatorAssembler(const ThisType& other)
     : operator_(other.operator_)
@@ -264,7 +267,10 @@ public:
     , range_function_(operator_.range_space(), range_vector_)
     , local_range_inside_(range_function_.local_discrete_function())
     , local_range_outside_(range_function_.local_discrete_function())
-  {}
+  {
+    set_source_in_local_ops(operator_.element_data(), element_data_);
+    set_source_in_local_ops(operator_.intersection_data(), intersection_data_);
+  }
 
   ForwardOperatorAssembler(ThisType&& source) = default;
 
@@ -280,16 +286,6 @@ public:
   {
     // clear range
     range_vector_.set_all(0);
-    // set source in local operators
-    const auto set_source_in_local_ops = [&](const auto& origin, auto& target) {
-      for (const auto& data : origin) {
-        const auto& local_operator = *data.first;
-        const auto& filter = *data.second;
-        target.emplace_back(local_operator.with_source(*source_), filter.copy());
-      }
-    };
-    set_source_in_local_ops(operator_.element_data(), element_data_);
-    set_source_in_local_ops(operator_.intersection_data(), intersection_data_);
   } // ... prepare(...)
 
   void apply_local(const E& element) override
@@ -331,6 +327,16 @@ public:
   /// \}
 
 protected:
+  template <class Origin, class Target>
+  void set_source_in_local_ops(const Origin& origin, Target& target)
+  {
+    for (const auto& data : origin) {
+      const auto& local_operator = *data.first;
+      const auto& filter = *data.second;
+      target.emplace_back(local_operator.with_source(*source_), filter.copy());
+    }
+  } // ... set_source_in_local_ops(...)
+
   const ForwardOperatorType operator_;
   const std::unique_ptr<XT::Functions::GridFunctionInterface<E, s_r, s_rC, F>> source_;
   VectorType& range_vector_;
