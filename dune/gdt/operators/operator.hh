@@ -60,7 +60,7 @@ public:
            const RangeSpaceType& range_spc,
            const bool requires_assembly = false,
            const std::string& logging_prefix = "",
-           const std::array<bool, 3>& logging_state = {{false, false, true}})
+           const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseType({}, logging_prefix.empty() ? "Operator" : logging_prefix, logging_state)
     , assembly_grid_view_(assembly_grid_vw)
     , source_space_(source_spc)
@@ -132,6 +132,9 @@ public:
              VectorType& range_vector,
              const XT::Common::Parameter& param = {}) const override
   {
+    LOG_(debug) << "apply(source_function=" << &source_function
+                << ", range_vector.sup_norm()=" << range_vector.sup_norm() << ", param=" << print(param) << ")"
+                << std::endl;
     DUNE_THROW_IF(requires_assembly_,
                   Exceptions::operator_error,
                   "You need to call assemble() first (or a derived class forgot to set requires_assembly_ to true in "
@@ -181,7 +184,7 @@ public:
   {
     LOG_(debug) << "jacobian(source_vector.sup_norm()=" << source_vector.sup_norm()
                 << ", jacobian_op.sup_norm()=" << jacobian_op.matrix().sup_norm() << print(opts, {{"oneline", "true"}})
-                << ", param=" << param << ")" << std::endl;
+                << ", param=" << print(param) << ")" << std::endl;
     this->assert_jacobian_opts(opts); // ensures that type finite-differences is requested
     this->assert_matching_source(source_vector);
     const std::string type = opts.get<std::string>("type");
@@ -242,7 +245,7 @@ public:
   {
     const auto& local_operator = local_operator__filter.first;
     const auto& filter = local_operator__filter.second;
-    LOG_(info) << "+=(local_element_operator=" << &local_operator << ", intersection_filter=" << &filter << ")"
+    LOG_(info) << "+=(local_intersection_operator=" << &local_operator << ", intersection_filter=" << &filter << ")"
                << std::endl;
     this->extend_parameter_type(local_operator.parameter_type());
     linear_ = linear_ && local_operator.linear();
@@ -289,7 +292,7 @@ auto make_operator(const AssemblyGridViewType& assembly_grid_view,
                    const SpaceInterface<SGV, s_r, s_rC, F>& source_space,
                    const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
                    const std::string& logging_prefix = "",
-                   const std::array<bool, 3>& logging_state = {{false, false, true}})
+                   const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
 {
   static_assert(XT::LA::is_matrix<MatrixType>::value, "");
   static_assert(XT::Grid::is_view<AssemblyGridViewType>::value, "");
@@ -302,7 +305,7 @@ auto make_operator(const AssemblyGridViewType& assembly_grid_view,
                    const SpaceInterface<SGV, s_r, s_rC, F>& source_space,
                    const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
                    const std::string& logging_prefix = "",
-                   const std::array<bool, 3>& logging_state = {{false, false, true}})
+                   const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
 {
   return make_operator<XT::LA::IstlRowMajorSparseMatrix<F>>(
       assembly_grid_view, source_space, range_space, logging_prefix, logging_state);
@@ -316,7 +319,7 @@ template <class MatrixType, // <- needs to be manually specified
           class F>
 auto make_operator(const SpaceInterface<GV, r, rC, F>& space,
                    const std::string& logging_prefix = "",
-                   const std::array<bool, 3>& logging_state = {{false, false, true}})
+                   const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
 {
   static_assert(XT::LA::is_matrix<MatrixType>::value, "");
   return Operator<GV, r, rC, r, rC, F, MatrixType, GV, GV>(
@@ -326,7 +329,7 @@ auto make_operator(const SpaceInterface<GV, r, rC, F>& space,
 template <class GV, size_t r, size_t rC, class F>
 auto make_operator(const SpaceInterface<GV, r, rC, F>& space,
                    const std::string& logging_prefix = "",
-                   const std::array<bool, 3>& logging_state = {{false, false, true}})
+                   const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
 {
   return make_operator<XT::LA::IstlRowMajorSparseMatrix<F>>(space, logging_prefix, logging_state);
 }
