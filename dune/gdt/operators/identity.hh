@@ -39,7 +39,7 @@ public:
 
   IdentityOperator(const SourceSpaceType& space,
                    const std::string& logging_prefix = "",
-                   const std::array<bool, 3>& logging_state = {{false, false, true}})
+                   const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseType({}, logging_prefix.empty() ? "IdentityOperator" : logging_prefix, logging_state)
     , space_(space)
   {
@@ -87,7 +87,7 @@ public:
              const XT::Common::Parameter& param = {}) const override final
   {
     LOG_(debug) << "apply(source_vector.sup_norm()=" << source_vector.sup_norm()
-                << ", range_vector.sup_norm()=" << range_vector.sup_norm() << ", param=" << param << ")" << std::endl;
+                << ", range_vector.sup_norm()=" << range_vector.sup_norm() << ", param=" << print(param) << ")" << std::endl;
     this->assert_matching_source(source_vector);
     this->assert_matching_range(range_vector);
     LOG_(info) << "setting range_vector = source_vector ..." << std::endl;
@@ -113,7 +113,7 @@ public:
   {
     LOG_(debug) << "jacobian(source_vector.sup_norm()=" << source_vector.sup_norm()
                 << ", jacobian_op.matrix().sup_norm()=" << jacobian_op.matrix().sup_norm()
-                << ", opts=" << print(opts, {{"oneline", "true"}}) << ", param=" << param << ")" << std::endl;
+                << ", opts=" << print(opts, {{"oneline", "true"}}) << ", param=" << print(param) << ")" << std::endl;
     this->assert_jacobian_opts(opts); // ensures that type identity is requested
     LOG_(info) << "adding unit diagonal to jacobian_op ..." << std::endl;
     const F unit = jacobian_op.scaling;
@@ -130,7 +130,7 @@ public:
   {
     LOG_(debug) << "apply_inverse(range_vector.sup_norm()=" << source_vector.sup_norm()
                 << ", source_vector.sup_norm()=" << source_vector.sup_norm()
-                << ", opts=" << print(opts, {{"oneline", "true"}}) << ", param=" << param << ")" << std::endl;
+                << ", opts=" << print(opts, {{"oneline", "true"}}) << ", param=" << print(param) << ")" << std::endl;
     this->assert_apply_inverse_opts(opts); // ensures that type identity is requested
     LOG_(info) << "setting source_vector = range_vector ..." << std::endl;
     source_vector = range_vector;
@@ -140,7 +140,7 @@ public:
 
 private:
   const SourceSpaceType& space_;
-}; // namespace GDT
+}; // class IdentityOperator
 
 
 template <class MatrixType, // <- needs to be manually specified
@@ -150,7 +150,7 @@ template <class MatrixType, // <- needs to be manually specified
           class F>
 auto make_identity_operator(const SpaceInterface<GV, r, rC, F>& space,
                             const std::string& logging_prefix = "",
-                            const std::array<bool, 3>& logging_state = {{false, false, true}})
+                            const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
 {
   static_assert(XT::LA::is_matrix<MatrixType>::value, "");
   return IdentityOperator<GV, r, rC, F, MatrixType>(space.grid_view(), space, space, logging_prefix, logging_state);
@@ -159,7 +159,7 @@ auto make_identity_operator(const SpaceInterface<GV, r, rC, F>& space,
 template <class GV, size_t r, size_t rC, class F>
 auto make_identity_operator(const SpaceInterface<GV, r, rC, F>& space,
                             const std::string& logging_prefix = "",
-                            const std::array<bool, 3>& logging_state = {{false, false, true}})
+                            const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
 {
   return make_identity_operator<XT::LA::IstlRowMajorSparseMatrix<F>>(space, logging_prefix, logging_state);
 }
@@ -168,7 +168,7 @@ auto make_identity_operator(const SpaceInterface<GV, r, rC, F>& space,
 template <class GV, size_t r, size_t rC, class F, class M>
 auto make_identity_operator(const OperatorInterface<GV, r, rC, r, rC, F, M, GV, GV>& some_operator,
                             const std::string& logging_prefix = "",
-                            const std::array<bool, 3>& logging_state = {{false, false, true}})
+                            const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
 {
   // check if source and range coincide
   const auto& source = some_operator.source_space();
