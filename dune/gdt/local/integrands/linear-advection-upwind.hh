@@ -42,7 +42,7 @@ public:
 
   InnerCoupling(XT::Functions::GridFunction<E, d> direction,
                 const std::string& logging_prefix = "",
-                const std::array<bool, 3>& logging_state = {{false, false, true}})
+                const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseType(direction.parameter_type(),
                logging_prefix.empty() ? "LocalLinearAdvectionUpwindIntegrands::InnerCoupling" : logging_prefix,
                logging_state)
@@ -102,7 +102,7 @@ public:
                 << "},\n    point_in_{reference_intersection|physical_space}={"
                 << print(point_in_reference_intersection) << "|"
                 << print(this->intersection().geometry().global(point_in_reference_intersection))
-                << "},\n    param=" << param << ")" << std::endl;
+                << "},\n    param=" << print(param) << ")" << std::endl;
     // Prepare sotrage, ...
     this->ensure_size_and_clear_results(test_basis_inside,
                                         ansatz_basis_inside,
@@ -184,7 +184,7 @@ public:
   DirichletCoupling(XT::Functions::GridFunction<E, d> direction,
                     XT::Functions::GridFunction<E> dirichlet_data = 0.,
                     const std::string& logging_prefix = "",
-                    const std::array<bool, 3>& logging_state = {{false, false, true}})
+                    const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseUnaryType(direction.parameter_type() + dirichlet_data.parameter_type(),
                     logging_prefix.empty() ? "LocalLinearAdvectionUpwindIntegrands::DirichletCoupling" : logging_prefix,
                     logging_state)
@@ -249,7 +249,7 @@ public:
     LOG_(debug) << "evaluate(test_basis.size()=" << test_basis.size(param)
                 << ",\n    point_in_{reference_intersection|physical_space}={" << print(point_in_reference_intersection)
                 << "|" << print(this->intersection().geometry().global(point_in_reference_intersection))
-                << "},\n    param=" << param << ")" << std::endl;
+                << "},\n    param=" << print(param) << ")" << std::endl;
     // Prepare sotrage, ...
     BaseUnaryType::ensure_size_and_clear_results(test_basis, result, param);
     // evaluate ...
@@ -299,7 +299,7 @@ public:
                 << ", ansatz_basis.size()=" << ansatz_basis.size(param)
                 << ",\n    point_in_{reference_intersection|physical_space}={" << print(point_in_reference_intersection)
                 << "|" << print(this->intersection().geometry().global(point_in_reference_intersection))
-                << "},\n    param=" << param << ")" << std::endl;
+                << "},\n    param=" << print(param) << ")" << std::endl;
     // Prepare sotrage, ...
     BaseBinaryType::ensure_size_and_clear_results(test_basis, ansatz_basis, result, param);
     // evaluate ...

@@ -52,7 +52,7 @@ public:
   LocalElementIntegralBilinearForm(const IntegrandType& integrand,
                                    const int over_integrate = 0,
                                    const std::string& logging_prefix = "",
-                                   const std::array<bool, 3>& logging_state = {{false, false, true}})
+                                   const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseType(integrand.parameter_type(),
                logging_prefix.empty() ? "LocalElementIntegralBilinearForm" : logging_prefix,
                logging_state)
@@ -68,13 +68,13 @@ public:
                                    const XT::Common::ParameterType& param_type = {},
                                    const int over_integrate = 0,
                                    const std::string& logging_prefix = "",
-                                   const std::array<bool, 3>& logging_state = {{false, false, true}})
+                                   const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseType(param_type, logging_prefix.empty() ? "LocalElementIntegralBilinearForm" : logging_prefix, logging_state)
     , integrand_(GenericIntegrand(order_function, evaluate_function).copy_as_binary_element_integrand())
     , over_integrate_(over_integrate)
   {
     LOG_(info) << "LocalElementIntegralBilinearForm(this=" << this << ", order_function=" << &order_function
-               << ", evaluate_function=" << evaluate_function << ", param_type=" << param_type
+               << ", evaluate_function=" << evaluate_function << ", param_type=" << print(param_type)
                << ", over_integrate=" << over_integrate << ")" << std::endl;
   }
 
@@ -100,7 +100,7 @@ public:
               const XT::Common::Parameter& param = {}) const override final
   {
     LOG_(debug) << "apply2(test_basis.size()=" << test_basis.size(param)
-                << ", ansatz_basis.size()=" << ansatz_basis.size(param) << ", param=" << param << ")" << std::endl;
+                << ", ansatz_basis.size()=" << ansatz_basis.size(param) << ", param=" << print(param) << ")" << std::endl;
     // prepare integand
     const auto& element = ansatz_basis.element();
     assert(test_basis.element() == element && "This must not happen!");
@@ -170,7 +170,7 @@ public:
   LocalCouplingIntersectionIntegralBilinearForm(const IntegrandType& integrand,
                                                 const int over_integrate = 0,
                                                 const std::string& logging_prefix = "",
-                                                const std::array<bool, 3>& logging_state = {{false, false, true}})
+                                                const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseType(integrand.parameter_type(),
                logging_prefix.empty() ? "LocalCouplingIntersectionIntegralBilinearForm" : logging_prefix,
                logging_state)
@@ -307,7 +307,7 @@ public:
   LocalIntersectionIntegralBilinearForm(const IntegrandType& integrand,
                                         const int over_integrate = 0,
                                         const std::string& logging_prefix = "",
-                                        const std::array<bool, 3>& logging_state = {{false, false, true}})
+                                        const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseType(integrand.parameter_type(),
                logging_prefix.empty() ? "LocalIntersectionIntegralBilinearForm" : logging_prefix,
                logging_state)

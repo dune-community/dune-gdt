@@ -83,7 +83,7 @@ public:
 
   BilinearForm(const AssemblyGridViewType& assembly_grid_view,
                const std::string& logging_prefix = "",
-               const std::array<bool, 3>& logging_state = {{false, false, true}})
+               const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseType({}, logging_prefix.empty() ? "BilinearForm" : logging_prefix, logging_state)
     , assembly_grid_view_(assembly_grid_view)
   {
@@ -312,7 +312,7 @@ public:
                         SourceFunctionType src,
                         const XT::Common::Parameter& param = {},
                         const std::string& logging_prefix = "",
-                        const std::array<bool, 3>& logging_state = {{false, false, true}})
+                        const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseType(logging_prefix.empty() ? "BilinearFormAssembler" : logging_prefix, logging_state)
     , Propagator(this)
     , bilinear_form_(bilinear_form)
@@ -505,7 +505,7 @@ template <class GridViewType,
           class RGV = GridViewType>
 auto make_bilinear_form(const GridViewType& grid_view,
                         const std::string& logging_prefix = "",
-                        const std::array<bool, 3>& logging_state = {{false, false, true}})
+                        const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
 {
   static_assert(XT::Grid::is_view<GridViewType>::value, "");
   return BilinearForm<GridViewType, s_r, s_rC, r_r, r_rC, F, SGV, RGV>(grid_view, logging_prefix, logging_state);

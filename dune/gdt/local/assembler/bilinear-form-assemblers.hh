@@ -54,7 +54,7 @@ public:
                                     MatrixType& global_matrix,
                                     const XT::Common::Parameter& param = {},
                                     const std::string& logging_prefix = "",
-                                    const std::array<bool, 3>& logging_state = {{false, false, true}})
+                                    const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseType(logging_prefix.empty() ? "ElementBilinearFormAssembler" : logging_prefix, logging_state)
     , test_space_(test_space.copy())
     , ansatz_space_(ansatz_space.copy())
@@ -70,7 +70,7 @@ public:
   {
     LOG_(info) << "ElementBilinearFormAssembler(test_space=" << &test_space << ", ansatz_space=" << &ansatz_space
                << ", local_two_form=" << &local_two_form
-               << ",\n   global_matrix.sup_norm()=" << global_matrix.sup_norm() << ", param=" << param << ")"
+               << ",\n   global_matrix.sup_norm()=" << global_matrix.sup_norm() << ", param=" << print(param) << ")"
                << std::endl;
     DUNE_THROW_IF(global_matrix_.rows() != test_space_->mapper().size(),
                   XT::Common::Exceptions::shapes_do_not_match,

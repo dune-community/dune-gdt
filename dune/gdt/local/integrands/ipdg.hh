@@ -62,7 +62,7 @@ public:
       XT::Functions::GridFunction<E, d, d> weight_function = 1.,
       const std::function<double(const I&)>& intersection_diameter = internal::default_intersection_diameter<I>(),
       const std::string& logging_prefix = "",
-      const std::array<bool, 3>& logging_state = {{false, false, true}})
+      const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseType(weight_function.parameter_type(),
                logging_prefix.empty() ? "LocalIPDGIntegrands::InnerPenalty" : logging_prefix,
                logging_state)
@@ -205,7 +205,7 @@ public:
       XT::Functions::GridFunction<E, d, d> weight_function = 1.,
       const std::function<double(const I&)>& intersection_diameter = internal::default_intersection_diameter<I>(),
       const std::string& logging_prefix = "",
-      const std::array<bool, 3>& logging_state = {{false, false, true}})
+      const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseType(weight_function.parameter_type(),
                logging_prefix.empty() ? "LocalIPDGIntegrands::BoundaryPenalty" : logging_prefix,
                logging_state)

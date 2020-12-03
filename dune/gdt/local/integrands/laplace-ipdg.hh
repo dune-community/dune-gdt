@@ -48,7 +48,7 @@ public:
                 XT::Functions::GridFunction<E, d, d> diffusion,
                 XT::Functions::GridFunction<E, d, d> weight_function = {1.},
                 const std::string& logging_prefix = "",
-                const std::array<bool, 3>& logging_state = {{false, false, true}})
+                const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseType(diffusion.parameter_type() + weight_function.parameter_type(),
                logging_prefix.empty() ? "LocalLaplaceIPDGIntegrands::InnerCoupling" : logging_prefix,
                logging_state)
@@ -239,7 +239,7 @@ public:
                     XT::Functions::GridFunction<E, d, d> diffusion,
                     XT::Functions::GridFunction<E> dirichlet_data = 0.,
                     const std::string& logging_prefix = "",
-                    const std::array<bool, 3>& logging_state = {{false, false, true}})
+                    const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseUnaryType(diffusion.parameter_type() + dirichlet_data.parameter_type(),
                     logging_prefix.empty() ? "LocalLaplaceIPDGIntegrands::DirichletCoupling" : logging_prefix,
                     logging_state)

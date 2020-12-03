@@ -55,7 +55,7 @@ public:
 
   LocalElementProductIntegrand(XT::Functions::GridFunction<E, r, r, F> weight = {1.},
                                const std::string& logging_prefix = "",
-                               const std::array<bool, 3>& logging_state = {{false, false, true}})
+                               const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseType({}, logging_prefix.empty() ? "ElementProductIntegrand" : logging_prefix, logging_state)
     , weight_(weight.copy_as_grid_function())
     , local_weight_(weight_->local_function())
@@ -90,7 +90,7 @@ public:
             const XT::Common::Parameter& param = {}) const override final
   {
     LOG_(debug) << "order(element=" << XT::Grid::print(this->element()) << ", {test|ansatz}_basis.size()={"
-                << test_basis.size(param) << "|" << ansatz_basis.size(param) << "}, param=" << param
+                << test_basis.size(param) << "|" << ansatz_basis.size(param) << "}, param=" << print(param)
                 << ")\n     local_weight.order() = " << local_weight_->order(param)
                 << "\n     test_basis.order() = " << test_basis.order(param)
                 << "\n     ansatz_basis.order() = " << ansatz_basis.order(param) << "\n     returning "
@@ -108,7 +108,7 @@ public:
   {
     LOG_(debug) << "evaluate({test|ansatz}_basis.size()={" << test_basis.size(param) << "|" << ansatz_basis.size(param)
                 << "}, point_in_{reference_element|physical_space} = {" << print(point_in_reference_element) << "|"
-                << print(this->element().geometry().global(point_in_reference_element)) << "}, param=" << param << ")"
+                << print(this->element().geometry().global(point_in_reference_element)) << "}, param=" << print(param) << ")"
                 << std::endl;
     // prepare storage
     const size_t rows = test_basis.size(param);
@@ -161,7 +161,7 @@ public:
 
   LocalCouplingIntersectionProductIntegrand(XT::Functions::GridFunction<E, r, r, F> weight = {1.},
                                             const std::string& logging_prefix = "",
-                                            const std::array<bool, 3>& logging_state = {{false, false, true}})
+                                            const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseType({}, logging_prefix.empty() ? "LocalCouplingIntersectionProductIntegrand" : logging_prefix, logging_state)
     , weight_(weight.copy_as_grid_function())
     , local_weight_in_(weight_->local_function())
@@ -293,7 +293,7 @@ public:
   LocalIntersectionProductIntegrand(XT::Functions::GridFunction<E, r, r, F> weight = {1.},
                                     const bool use_inside_bases = true,
                                     const std::string& logging_prefix = "",
-                                    const std::array<bool, 3>& logging_state = {{false, false, true}})
+                                    const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseType({}, logging_prefix.empty() ? "LocalIntersectionProductIntegrand" : logging_prefix, logging_state)
     , weight_(weight.copy_as_grid_function())
     , local_weight_(weight_->local_function())

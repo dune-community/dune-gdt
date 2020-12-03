@@ -41,7 +41,7 @@ public:
 
   explicit LocalLinearAdvectionIntegrand(XT::Functions::GridFunction<E, d, 1, F> direction,
                                          const std::string& logging_prefix = "",
-                                         const std::array<bool, 3>& logging_state = {{false, false, true}})
+                                         const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseType(direction.parameter_type(),
                logging_prefix.empty() ? "LocalLinearAdvectionIntegrand" : logging_prefix,
                logging_state)
@@ -88,7 +88,7 @@ public:
                 << ", ansatz_basis.size()=" << ansatz_basis.size(param)
                 << ",\n    point_in_{reference_element|physical_space}={" << print(point_in_reference_element) << "|"
                 << print(this->element().geometry().global(point_in_reference_element)) << "}"
-                << ",\n    param=" << param << ")" << std::endl;
+                << ",\n    param=" << print(param) << ")" << std::endl;
     // prepare storage
     const size_t rows = test_basis.size(param);
     const size_t cols = ansatz_basis.size(param);

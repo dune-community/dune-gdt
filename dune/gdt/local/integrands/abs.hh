@@ -31,7 +31,7 @@ public:
   using typename BaseType::LocalTestBasisType;
 
   LocalElementAbsIntegrand(const std::string& logging_prefix = "",
-                           const std::array<bool, 3>& logging_state = {{false, false, true}})
+                           const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseType({}, logging_prefix.empty() ? "LocalElementAbsIntegrand" : logging_prefix, logging_state)
   {}
 

@@ -84,11 +84,11 @@ public:
 
   LocalElementBilinearFormInterface(const XT::Common::ParameterType& param_type = {},
                                     const std::string& logging_prefix = "",
-                                    const std::array<bool, 3>& logging_state = {{false, false, true}})
+                                    const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : XT::Common::ParametricInterface(param_type)
     , Logger(logging_prefix.empty() ? "LocalElementBilinearForm" : logging_prefix, logging_state)
   {
-    LOG_(debug) << "LocalElementBilinearFormInterface(this=" << this << ", param_type=" << param_type << ")"
+    LOG_(debug) << "LocalElementBilinearFormInterface(this=" << this << ", param_type=" << print(param_type) << ")"
                 << std::endl;
   }
 
@@ -184,7 +184,7 @@ public:
 
   LocalCouplingIntersectionBilinearFormInterface(const XT::Common::ParameterType& param_type = {},
                                                  const std::string& logging_prefix = "",
-                                                 const std::array<bool, 3>& logging_state = {{false, false, true}})
+                                                 const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : XT::Common::ParametricInterface(param_type)
     , Logger(logging_prefix.empty() ? "LocalCouplingIntersectionBilinearForm" : logging_prefix, logging_state)
   {}
@@ -235,7 +235,7 @@ public:
                  result_out_in,
                  result_out_out,
                  param);
-    return {result_in_in, result_in_out, result_out_in, result_out_out};
+    return {{result_in_in, result_in_out, result_out_in, result_out_out}};
   } // ... apply2(...)
 }; // class LocalCouplingIntersectionBilinearFormInterface
 
@@ -302,7 +302,7 @@ public:
 
   LocalIntersectionBilinearFormInterface(const XT::Common::ParameterType& param_type = {},
                                          const std::string& logging_prefix = "",
-                                         const std::array<bool, 3>& logging_state = {{false, false, true}})
+                                         const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : XT::Common::ParametricInterface(param_type)
     , Logger(logging_prefix.empty() ? "LocalIntersectionBilinearForm" : logging_prefix, logging_state)
   {}

@@ -42,7 +42,7 @@ public:
   Inner(const std::function<double(const I&)>& intersection_diameter =
             LocalIPDGIntegrands::internal::default_intersection_diameter<I>(),
         const std::string& logging_prefix = "",
-        const std::array<bool, 3>& logging_state = {{false, false, true}})
+        const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseType({},
                logging_prefix.empty() ? "LocalJumpIntegrands::Inner" : logging_prefix,
                logging_state)
@@ -178,7 +178,7 @@ public:
   Boundary(const std::function<double(const I&)>& intersection_diameter =
                LocalIPDGIntegrands::internal::default_intersection_diameter<I>(),
            const std::string& logging_prefix = "",
-           const std::array<bool, 3>& logging_state = {{false, false, true}})
+           const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseType({},
                logging_prefix.empty() ? "LocalJumpIntegrands::Boundary" : logging_prefix,
                logging_state)
