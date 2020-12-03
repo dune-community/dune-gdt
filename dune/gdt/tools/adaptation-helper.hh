@@ -47,7 +47,7 @@ public:
 
   AdaptationHelper(G& grd,
                    const std::string& logging_prefix = "",
-                   const std::array<bool, 3>& logging_state = {{false, false, true}})
+                   const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : Logger(logging_prefix.empty() ? "AdaptationHelper" : logging_prefix, logging_state)
     , grid_(grd)
     , data_(new std::remove_reference_t<decltype(*data_)>)
