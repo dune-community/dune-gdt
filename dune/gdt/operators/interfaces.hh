@@ -105,11 +105,11 @@ public:
 
   explicit BilinearFormInterface(const XT::Common::ParameterType& param_type = {},
                                  const std::string& logging_prefix = "",
-                                 const std::array<bool, 3>& logging_enabled = {{false, false, true}})
+                                 const std::array<bool, 3>& logging_enabled = XT::Common::default_logger_state())
     : XT::Common::ParametricInterface(param_type)
     , Logger(logging_prefix.empty() ? "BilinearFormInterface" : logging_prefix, logging_enabled)
   {
-    LOG_(debug) << "BilinearFormInterface(param_type=" << param_type << ")" << std::endl;
+    LOG_(debug) << "BilinearFormInterface(param_type=" << print(param_type) << ")" << std::endl;
   }
 
   BilinearFormInterface(const ThisType& other) = default;
@@ -138,7 +138,7 @@ public:
 
   FieldType norm(RangeFunctionType range_function, const XT::Common::Parameter& param = {}) const
   {
-    LOG_(debug) << "norm(range_function=" << &range_function << ", param=" << param << ")" << std::endl;
+    LOG_(debug) << "norm(range_function=" << &range_function << ", param=" << print(param) << ")" << std::endl;
     if constexpr (std::is_same_v<RE, SE> && (r_r == s_r) && (r_rC == s_rC)) {
       LOG_(debug) << "calling apply2(range_function, range_function, param)... " << std::endl;
       const auto result = this->apply2(range_function, range_function, param);
@@ -186,10 +186,10 @@ public:
 
   explicit ForwardOperatorInterface(const XT::Common::ParameterType& param_type = {},
                                     const std::string& logging_prefix = "",
-                                    const std::array<bool, 3>& logging_state = {{false, false, true}})
+                                    const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseType(param_type, logging_prefix.empty() ? "ForwardOperatorInterface" : logging_prefix, logging_state)
   {
-    LOG_(debug) << "ForwardOperatorInterface(param_type=" << param_type << ")" << std::endl;
+    LOG_(debug) << "ForwardOperatorInterface(param_type=" << print(param_type) << ")" << std::endl;
   }
 
   ForwardOperatorInterface(const ThisType& other) = default;
@@ -226,7 +226,7 @@ public:
                            const XT::Common::Parameter& param = {}) const override
   {
     LOG_(debug) << "apply2(range_function=" << &range_function << ", source_function=" << &source_function
-                << ", param=" << param << ")" << std::endl;
+                << ", param=" << print(param) << ")" << std::endl;
     LOG_(info) << "interpolating range_function ..." << std::endl;
     auto discrete_range_function = interpolate<V>(range_function, this->range_space(), param);
     LOG_(debug) << "calling discrete apply2() variant ..." << std::endl;
@@ -242,7 +242,7 @@ public:
                            const XT::Common::Parameter& param = {}) const
   {
     LOG_(debug) << "apply2(range_vector.sup_norm()=" << range_vector.sup_norm()
-                << ", source_function=" << &source_function << ", param=" << param << ")" << std::endl;
+                << ", source_function=" << &source_function << ", param=" << print(param) << ")" << std::endl;
     this->assert_matching_range(range_vector);
     LOG_(info) << "computing apply(source_function, param).dot(range_vector) ..." << std::endl;
     return this->apply(source_function, param).dofs().vector().dot(range_vector);
@@ -257,7 +257,7 @@ public:
                      const XT::Common::Parameter& param = {}) const
   {
     LOG_(debug) << "apply(source_function=" << &source_function
-                << ", discrete_range_function=" << &discrete_range_function << ", param=" << param << ")"
+                << ", discrete_range_function=" << &discrete_range_function << ", param=" << print(param) << ")"
                 << "\n"
                 << "  redicrecting to discrete apply() variant ..." << std::endl;
     this->apply(source_function, discrete_range_function.dofs().vector(), param);
@@ -266,7 +266,7 @@ public:
   virtual DiscreteRangeFunctionType apply(SourceFunctionType source_function,
                                           const XT::Common::Parameter& param = {}) const
   {
-    LOG_(debug) << "apply(source_function=" << &source_function << ", param=" << param << ")"
+    LOG_(debug) << "apply(source_function=" << &source_function << ", param=" << print(param) << ")"
                 << "\n"
                 << "  creating discrete_range_function and redicrecting to discrete apply() variant ..." << std::endl;
     DiscreteRangeFunctionType discrete_range_function(this->range_space());
@@ -373,10 +373,10 @@ public:
 
   explicit OperatorInterface(const XT::Common::ParameterType& param_type = {},
                              const std::string& logging_prefix = "",
-                             const std::array<bool, 3>& logging_enabled = {{false, false, true}})
+                             const std::array<bool, 3>& logging_enabled = XT::Common::default_logger_state())
     : BaseType(param_type, logging_prefix.empty() ? "OperatorInterface" : logging_prefix, logging_enabled)
   {
-    LOG_(debug) << "OperatorInterface(param_type=" << param_type << ")" << std::endl;
+    LOG_(debug) << "OperatorInterface(param_type=" << print(param_type) << ")" << std::endl;
   }
 
   OperatorInterface(const ThisType& other) = default;
@@ -411,7 +411,8 @@ public:
                      const XT::Common::Parameter& param = {}) const override
   {
     LOG_(debug) << "apply(source_function=" << &source_function
-                << ", range_vector.sup_norm()=" << range_vector.sup_norm() << ", param=" << param << ")" << std::endl;
+                << ", range_vector.sup_norm()=" << range_vector.sup_norm() << ", param=" << print(param) << ")"
+                << std::endl;
     this->assert_matching_range(range_vector);
     LOG_(info) << "interpolating source_function ..." << std::endl;
     auto discrete_source_function = interpolate<V>(source_function, this->source_space());
@@ -426,7 +427,8 @@ public:
   apply2(const VectorType& range_vector, const VectorType& source_vector, const XT::Common::Parameter& param = {}) const
   {
     LOG_(debug) << "apply2(range_vector.sup_norm()=" << range_vector.sup_norm()
-                << ", source_vector.sup_norm()=" << source_vector.sup_norm() << ", param=" << param << ")" << std::endl;
+                << ", source_vector.sup_norm()=" << source_vector.sup_norm() << ", param=" << print(param) << ")"
+                << std::endl;
     this->assert_matching_range(range_vector);
     this->assert_matching_source(source_vector);
     LOG_(info) << "computing apply(source, param).dot(range_vector) with euklidean product ..." << std::endl;
@@ -444,7 +446,8 @@ public:
 
   FieldType norm(const VectorType& range_vector, const XT::Common::Parameter& param = {}) const
   {
-    LOG_(debug) << "norm(range_vector.sup_norm=" << range_vector.sup_norm() << ", param=" << param << ")" << std::endl;
+    LOG_(debug) << "norm(range_vector.sup_norm=" << range_vector.sup_norm() << ", param=" << print(param) << ")"
+                << std::endl;
     if constexpr ((r_r == s_r) && (r_rC == s_rC)) {
       this->assert_matching_range(range_vector);
       this->assert_matching_source(range_vector);
@@ -544,7 +547,8 @@ public:
   {
     LOG_(debug) << "jacobian(source_vector.sup_norm()=" << source_vector.sup_norm()
                 << ", jacobian_op.matrix().sup_norm()=" << jacobian_op.matrix().sup_norm()
-                << ",\n   opts=" << print(opts, {{"oneline", "true"}}) << ",\n   param=" << param << ")" << std::endl;
+                << ",\n   opts=" << print(opts, {{"oneline", "true"}}) << ",\n   param=" << print(param) << ")"
+                << std::endl;
     this->assert_matching_source(source_vector);
     DUNE_THROW_IF(!opts.has_key("type"), Exceptions::operator_error, "opts = " << opts);
     const auto type = opts.get<std::string>("type");
@@ -644,7 +648,8 @@ public:
   {
     LOG_(debug) << "apply_inverse(range_vector.sup_norm()=" << range_vector.sup_norm()
                 << ", source_vector.sup_norm()=" << source_vector.sup_norm()
-                << ",\n   opts=" << print(opts, {{"oneline", "true"}}) << ",\n   param=" << param << ")" << std::endl;
+                << ",\n   opts=" << print(opts, {{"oneline", "true"}}) << ",\n   param=" << print(param) << ")"
+                << std::endl;
     this->assert_matching_range(range_vector);
     this->assert_matching_source(source_vector);
     this->assert_apply_inverse_opts(opts);
@@ -697,7 +702,7 @@ public:
   {
     LOG_(debug) << "jacobian(source_vector.sup_norm()=" << source_vector.sup_norm()
                 << ", jacobian_op.matrix().sup_norm()=" << jacobian_op.matrix().sup_norm() << ",\n   type=" << type
-                << ", param=" << param << std::endl;
+                << ", param=" << print(param) << std::endl;
     return this->jacobian(source_vector, jacobian_op, this->jacobian_options(type), param);
   }
 
@@ -706,7 +711,7 @@ public:
                         const XT::Common::Parameter& param = {}) const
   {
     LOG_(debug) << "jacobian(source_vector.sup_norm()=" << source_vector.sup_norm()
-                << ", jacobian_op.matrix().sup_norm()=" << jacobian_op.matrix().sup_norm() << ", param=" << param
+                << ", jacobian_op.matrix().sup_norm()=" << jacobian_op.matrix().sup_norm() << ", param=" << print(param)
                 << std::endl;
     return this->jacobian(source_vector, jacobian_op, this->jacobian_options().at(0), param);
   }
@@ -720,7 +725,7 @@ public:
                                       const XT::Common::Parameter& param = {}) const
   {
     LOG_(debug) << "jacobian(source_vector.sup_norm()=" << source_vector.sup_norm()
-                << ", opts=" << print(opts, {{"oneline", "true"}}) << ", param=" << param << std::endl;
+                << ", opts=" << print(opts, {{"oneline", "true"}}) << ", param=" << print(param) << std::endl;
     auto jacobian_op = this->empty_jacobian_op();
     this->jacobian(source_vector, jacobian_op, opts, param);
     return jacobian_op;
@@ -730,7 +735,7 @@ public:
   jacobian(const VectorType& source_vector, const std::string& type, const XT::Common::Parameter& param = {}) const
   {
     LOG_(debug) << "jacobian(source_vector.sup_norm()=" << source_vector.sup_norm() << ", type=" << type
-                << ", param=" << param << std::endl;
+                << ", param=" << print(param) << std::endl;
     auto jacobian_op = this->empty_jacobian_op();
     this->jacobian(source_vector, jacobian_op, type, param);
     return jacobian_op;
@@ -738,7 +743,8 @@ public:
 
   virtual MatrixOperatorType jacobian(const VectorType& source_vector, const XT::Common::Parameter& param = {}) const
   {
-    LOG_(debug) << "jacobian(source_vector.sup_norm()=" << source_vector.sup_norm() << ", param=" << param << std::endl;
+    LOG_(debug) << "jacobian(source_vector.sup_norm()=" << source_vector.sup_norm() << ", param=" << print(param)
+                << std::endl;
     auto jacobian_op = this->empty_jacobian_op();
     this->jacobian(source_vector, jacobian_op, param);
     return jacobian_op;
@@ -1005,21 +1011,24 @@ public:
 
   /// \}
 
-protected:
   MatrixOperatorType empty_jacobian_op() const
   {
+    std::string prefix = this->logger.prefix + "_jac";
+    for (auto&& character : {"(", ")", "+", "-", "*", "/"})
+      if (this->logger.prefix.find(character) != std::string::npos)
+        prefix = "(" + this->logger.prefix + ")_jac";
     return MatrixOperatorType(
         this->assembly_grid_view(),
         this->source_space(),
         this->range_space(),
         new MatrixType(this->range_space().mapper().size(),
                        this->source_space().mapper().size(),
-                       make_element_and_intersection_sparsity_pattern(
-                           this->range_space(), this->source_space(), this->assembly_grid_view())),
-        this->logger.prefix + "_jac",
+                       make_sparsity_pattern(this->range_space(), this->source_space(), this->assembly_grid_view())),
+        prefix,
         this->logger.state);
   } // ... empty_jacobian_op(...)
 
+protected:
   void assert_matching_source(const VectorType& source_vector) const
   {
     DUNE_THROW_IF(!this->source_space().contains(source_vector),
@@ -1118,7 +1127,7 @@ protected:
     ReturnType ret(self.assembly_grid_view(),
                    self.source_space(),
                    self.range_space(),
-                   self.logger.prefix + " + " + other.logger.prefix,
+                   self.logger.prefix + " " + (add ? "+" : "-") + " " + other.logger.prefix,
                    self.logger.get_state_or(other.logger.state));
     ret.add(self, 1.);
     ret.add(other, add ? 1. : -1.);
@@ -1134,14 +1143,15 @@ protected:
     if (self.logger.debug_enabled()) // cannot use LOG_(debug) here
       self.logger.debug() << "operator" << (add ? "+" : "-") << "(this=" << (is_mutable ? "mutable" : "const")
                           << ", vector.sup_norm()=" << vector.sup_norm() << ")" << std::endl;
+    const std::string id = XT::Common::is_zero(vector.sup_norm()) ? "0" : "vec";
     ReturnType ret(self.assembly_grid_view(),
                    self.source_space(),
                    self.range_space(),
-                   self.logger.prefix + " " + (add ? "+" : "-") + " vec",
+                   self.logger.prefix + " " + (add ? "+" : "-") + " " + id,
                    self.logger.state);
     ret.add(self, 1.);
     ret.add(new ConstantOperator<AGV, s_r, s_rC, r_r, r_rC, F, M, SGV, RGV>(
-                self.assembly_grid_view(), self.source_space(), self.range_space(), vector, "vec", self.logger.state),
+                self.assembly_grid_view(), self.source_space(), self.range_space(), vector, id, self.logger.state),
             add ? 1. : -1.);
     return ret;
   } // ... make_operator_addsub(...)
