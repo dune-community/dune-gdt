@@ -76,7 +76,7 @@ protected:
   using M = typename XT::LA::Container<R, la>::MatrixType;
   using V = XT::LA::vector_t<M>;
   using DF = DiscreteFunction<V, GV, m>;
-  using O = OperatorInterface<M, GV, m>;
+  using O = OperatorInterface<GV, m, 1, m, 1, R, M>;
 
 public:
   using E = XT::Grid::extract_entity_t<GV>;
@@ -258,14 +258,13 @@ public:
           };
         } else if (spatial_norm_id == "L_2") {
           spatial_norm = [&](const DF& func) {
-            return l2_norm(reference_space.grid_view(), func, DXTC_TEST_CONFIG_GET("setup.over_integrate", 3));
+            return l2_norm(
+                reference_space.grid_view(), func, /*weight=*/1., DXTC_TEST_CONFIG_GET("setup.over_integrate", 3));
           };
         } else if (spatial_norm_id == "H_1_semi") {
           spatial_norm = [&](const DF& func) {
-            auto product = make_bilinear_form(reference_space.grid_view(), func, func);
-            product += LocalElementIntegralBilinearForm<E, m>(LocalLaplaceIntegrand<E, m>(),
-                                                              DXTC_TEST_CONFIG_GET("setup.over_integrate", 3));
-            return std::sqrt(product.apply2());
+            return h1_semi_norm(
+                reference_space.grid_view(), func, /*weight=*/1., DXTC_TEST_CONFIG_GET("setup.over_integrate", 3));
           };
         } else
           DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
