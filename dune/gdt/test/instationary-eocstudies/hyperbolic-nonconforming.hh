@@ -120,9 +120,14 @@ protected:
       return nullptr;
     }
     if (space_type_ == "fv")
-      return std::make_unique<AdvectionFvOperator<M, GV, m>>(space.grid_view(), *numerical_flux, space, space);
+      return std::make_unique<AdvectionFvOperator<GV, m, R, M>>(
+          space.grid_view(),
+          *numerical_flux,
+          space,
+          space,
+          /*periodicity_exception=*/XT::Grid::ApplyOn::NoIntersections<GV>());
     else
-      return std::make_unique<AdvectionDgOperator<M, GV, m>>(
+      return std::make_unique<AdvectionDgOperator<GV, m, R, M>>(
           space.grid_view(),
           *numerical_flux,
           space,
