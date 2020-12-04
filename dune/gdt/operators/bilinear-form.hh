@@ -495,20 +495,25 @@ public:
 }; // class BilinearFormAssembler
 
 
-template <class GridViewType,
-          size_t s_r = 1,
-          size_t r_r = s_r,
-          size_t s_rC = 1,
-          size_t r_rC = s_rC,
-          class F = double,
-          class SGV = GridViewType,
-          class RGV = GridViewType>
+template <size_t s_r, // <- needs to be specified manually
+          size_t s_rC, // <- needs to be specified manually
+          size_t r_r, // <- needs to be specified manually
+          size_t r_rC, // <- needs to be specified manually
+          class GridViewType>
 auto make_bilinear_form(const GridViewType& grid_view,
                         const std::string& logging_prefix = "",
                         const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
 {
   static_assert(XT::Grid::is_view<GridViewType>::value, "");
-  return BilinearForm<GridViewType, s_r, s_rC, r_r, r_rC, F, SGV, RGV>(grid_view, logging_prefix, logging_state);
+  return BilinearForm<GridViewType, s_r, s_rC, r_r, r_rC>(grid_view, logging_prefix, logging_state);
+}
+
+template <class GridViewType>
+auto make_bilinear_form(const GridViewType& grid_view,
+                        const std::string& logging_prefix = "",
+                        const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
+{
+  return make_bilinear_form<1, 1, 1, 1>(grid_view, logging_prefix, logging_state);
 }
 
 
