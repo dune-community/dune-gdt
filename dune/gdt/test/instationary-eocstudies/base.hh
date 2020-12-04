@@ -23,7 +23,8 @@
 #include <dune/xt/common/fvector.hh>
 #include <dune/xt/common/string.hh>
 #include <dune/xt/common/timedlogging.hh>
-#include <dune/xt/test/gtest/gtest.h>
+#include <dune/xt/common/timedlogging.hh>
+#include <dune/xt/test/common.hh>
 #include <dune/xt/la/container.hh>
 #include <dune/xt/la/container/vector-array/list.hh>
 #include <dune/xt/la/type_traits.hh>
@@ -78,7 +79,7 @@ protected:
   using V = XT::LA::vector_t<M>;
   using DF = DiscreteFunction<V, GV, m>;
   using BS = BochnerSpace<GV, m>;
-  using O = OperatorInterface<M, GV, m>;
+  using O = OperatorInterface<GV, m, 1, m, 1, R, M>;
 
 public:
   InstationaryEocStudy(
@@ -86,9 +87,8 @@ public:
       const std::string timestepping,
       std::function<void(const DiscreteBochnerFunction<V, GV, m>&, const std::string&)> visualizer =
           [](const auto& /*solution*/, const auto& /*prefix*/) { /*no visualization by default*/ },
-      const size_t num_refinements = DXTC_CONFIG_GET("num_refinements", 3),
-      const size_t num_additional_refinements_for_reference =
-          DXTC_CONFIG_GET("num_additional_refinements_for_reference", 2))
+      const size_t num_refinements = 3,
+      const size_t num_additional_refinements_for_reference = 2)
     : T_end_(T_end)
     , timestepping_(timestepping)
     , num_refinements_(num_refinements)
@@ -327,7 +327,7 @@ public:
           auto func = make_discrete_function(current_space, vec);
           FieldVector<double, m> results(0);
           for (size_t ss = 0; ss < m; ++ss) {
-            auto component_function = XT::Functions::make_sliced_function<1>(func, {ss});
+            auto component_function = XT::Functions::make_sliced_function<1>(func, {{ss}});
             auto l1_functional = make_localizable_functional(current_space.grid_view(), component_function);
             l1_functional.append(LocalElementIntegralFunctional<E>(LocalElementIdentityIntegrand<E>()));
             l1_functional.assemble(/*use_tbb=*/true);
@@ -426,10 +426,11 @@ protected:
 
 
 template <class V, class GV, size_t m, class M>
-XT::LA::ListVectorArray<V> solve_instationary_system_explicit_euler(const DiscreteFunction<V, GV, m>& initial_values,
-                                                                    const OperatorInterface<M, GV, m>& spatial_op,
-                                                                    const double T_end,
-                                                                    const double dt)
+XT::LA::ListVectorArray<V>
+solve_instationary_system_explicit_euler(const DiscreteFunction<V, GV, m>& initial_values,
+                                         const OperatorInterface<GV, m, 1, m, 1, M>& spatial_op,
+                                         const double T_end,
+                                         const double dt)
 {
   // initial values
   XT::LA::ListVectorArray<V> solution(
@@ -448,15 +449,20 @@ XT::LA::ListVectorArray<V> solve_instationary_system_explicit_euler(const Discre
 
 
 template <class V, class GV, size_t m, class M>
-XT::LA::ListVectorArray<V> solve_instationary_system_implicit_euler(const DiscreteFunction<V, GV, m>& initial_values,
-                                                                    const OperatorInterface<M, GV, m>& spatial_op,
-                                                                    const double T_end,
-                                                                    const double dt)
+XT::LA::ListVectorArray<V>
+solve_instationary_system_implicit_euler(const DiscreteFunction<V, GV, m>& initial_values,
+                                         const OperatorInterface<GV, m, 1, m, 1, M>& spatial_op,
+                                         const double T_end,
+                                         const double dt)
 {
   // some preparations
+  XT::Common::DefaultLogger logger(
+      "solve_instationary_system_implicit_euler",
+      {{DXTC_TEST_CONFIG_GET("setup.logger.info", false), DXTC_TEST_CONFIG_GET("setup.logger.info", false), true}});
+  LOG(debug) << "(initial_values.sup_norm()=" << initial_values.dofs().vector().sup_norm()
+             << ", spatial_op=" << &spatial_op << ", T_end=" << T_end << ", dt=" << dt << ")" << std::endl;
   auto id = make_identity_operator(spatial_op);
   V zero(spatial_op.range_space().mapper().size(), 0.);
-  auto logger = XT::Common::TimedLogger().get("gdt.test.solve_instationary_system_implicit_euler");
   // initial values
   XT::LA::ListVectorArray<V> solution(
       spatial_op.source_space().mapper().size(), /*length=*/0, /*reserve=*/std::ceil(T_end / (dt)));
@@ -464,7 +470,7 @@ XT::LA::ListVectorArray<V> solve_instationary_system_implicit_euler(const Discre
   // timestepping
   double time = 0.;
   while (time < T_end + dt) {
-    logger.debug() << "time = " << time << ": stepping with dt=" << dt << "..." << std::endl;
+    LOG(debug) << "time = " << time << ": \tstepping with dt=" << dt << "..." << std::endl;
     time += dt;
     const auto& u_n = solution.back().vector();
     auto residual_op = (id - u_n) / dt + spatial_op;
