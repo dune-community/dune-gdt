@@ -96,7 +96,8 @@ public:
              const XT::Common::Parameter& param = {}) const override final
   {
     LOG_(debug) << "apply(source_function=" << &source_function
-                << ", range_vector.sup_norm()=" << range_vector.sup_norm() << ", param=" << print(param) << ")" << std::endl;
+                << ", range_vector.sup_norm()=" << range_vector.sup_norm() << ", param=" << print(param) << ")"
+                << std::endl;
     this->assert_matching_range(range_vector);
     LOG_(info) << "applying " << this->num_ops() << " operators ..." << std::endl;
     range_vector.set_all(0);
@@ -127,7 +128,8 @@ public:
              const XT::Common::Parameter& param = {}) const override final
   {
     LOG_(debug) << "apply(source_vector.sup_norm()=" << source_vector.sup_norm()
-                << ", range_vector.sup_norm()=" << range_vector.sup_norm() << ", param=" << print(param) << ")" << std::endl;
+                << ", range_vector.sup_norm()=" << range_vector.sup_norm() << ", param=" << print(param) << ")"
+                << std::endl;
     this->assert_matching_source(source_vector);
     this->assert_matching_range(range_vector);
     LOG_(info) << "applying " << this->num_ops() << " operators ..." << std::endl;
@@ -166,7 +168,8 @@ public:
 
     LOG_(debug) << "jacobian(source_vector.sup_norm()=" << source_vector.sup_norm()
                 << ", jacobian_op.matrix().sup_norm()=" << jacobian_op.matrix().sup_norm()
-                << ",\n   opts=" << print(opts, {{"oneline", "true"}}) << ",\n   param=" << print(param) << ")" << std::endl;
+                << ",\n   opts=" << print(opts, {{"oneline", "true"}}) << ",\n   param=" << print(param) << ")"
+                << std::endl;
     this->assert_matching_source(source_vector);
     this->assert_jacobian_opts(opts); // ensures that "lincomb" is requested
     using XT::Common::to_string;
@@ -254,7 +257,11 @@ public:
     this->logger.state_or(op.logger.state);
     LOG_(debug) << "add(const_lincomb_op_ref=" << &op << ", coeff=" << coeff << ")" << std::endl;
     this->extend_parameter_type(op.parameter_type());
-    // only adding op itself would lead to segfaults if op is a temporary
+    // only adding op itself would lead to segfaults if op is a temporary, so we need to
+    // - keep all those operators alive that op cared about
+    for (auto shrd_ptr : op.keep_alive_)
+      this->keep_alive_.emplace_back(shrd_ptr);
+    // - take over ops linear decomposition
     for (size_t ii = 0; ii < op.num_ops(); ++ii) {
       LOG_(debug) << "  adding op=" << &(op.const_ops_[ii]) << ", coeff=" << coeff << std::endl;
       const_ops_.emplace_back(op.const_ops_[ii]);
