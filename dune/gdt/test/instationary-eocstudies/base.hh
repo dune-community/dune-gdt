@@ -473,8 +473,8 @@ solve_instationary_system_implicit_euler(const DiscreteFunction<V, GV, m>& initi
     LOG(debug) << "time = " << time << ": \tstepping with dt=" << dt << "..." << std::endl;
     time += dt;
     const auto& u_n = solution.back().vector();
-    auto residual_op = (id - u_n) / dt + spatial_op;
     auto u_n_plus_one = u_n.copy();
+    auto residual_op = (id - u_n) / dt + spatial_op;
     residual_op.apply_inverse(zero,
                               u_n_plus_one,
                               DXTC_CONFIG.has_sub("solve_instationary_system_implicit_euler.apply_inverse")
