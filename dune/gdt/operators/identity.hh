@@ -87,7 +87,8 @@ public:
              const XT::Common::Parameter& param = {}) const override final
   {
     LOG_(debug) << "apply(source_vector.sup_norm()=" << source_vector.sup_norm()
-                << ", range_vector.sup_norm()=" << range_vector.sup_norm() << ", param=" << print(param) << ")" << std::endl;
+                << ", range_vector.sup_norm()=" << range_vector.sup_norm() << ", param=" << print(param) << ")"
+                << std::endl;
     this->assert_matching_source(source_vector);
     this->assert_matching_range(range_vector);
     LOG_(info) << "setting range_vector = source_vector ..." << std::endl;
@@ -153,7 +154,7 @@ auto make_identity_operator(const SpaceInterface<GV, r, rC, F>& space,
                             const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
 {
   static_assert(XT::LA::is_matrix<MatrixType>::value, "");
-  return IdentityOperator<GV, r, rC, F, MatrixType>(space.grid_view(), space, space, logging_prefix, logging_state);
+  return IdentityOperator<GV, r, rC, F, MatrixType>(space, logging_prefix, logging_state);
 }
 
 template <class GV, size_t r, size_t rC, class F>
