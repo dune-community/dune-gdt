@@ -150,6 +150,7 @@ private:
   StencilsType stencils_;
 };
 
+
 template <class AnalyticalFluxType,
           class BoundaryValueType,
           class GV,
@@ -296,6 +297,7 @@ private:
   LocalDofVectorType local_dof_vector_;
 }; // class LocalLinearReconstructionOperator
 
+
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
           class GV,
@@ -304,12 +306,22 @@ template <class AnalyticalFluxImp,
               AnalyticalFluxImp,
               FieldMatrix<typename BoundaryValueImp::R, BoundaryValueImp::r, BoundaryValueImp::r>,
               FieldVector<typename BoundaryValueImp::R, BoundaryValueImp::r>>>
-class LinearReconstructionOperator : public OperatorInterface<MatrixImp, GV, BoundaryValueImp::r>
+class LinearReconstructionOperator
+  : public OperatorInterface<GV,
+                             BoundaryValueImp::r,
+                             1,
+                             BoundaryValueImp::r,
+                             1,
+                             typename BoundaryValueImp::R,
+                             MatrixImp>
 {
-  using BaseType = OperatorInterface<MatrixImp, GV, BoundaryValueImp::r>;
-
 public:
+  using ThisType = LinearReconstructionOperator;
+  using BaseType =
+      OperatorInterface<GV, BoundaryValueImp::r, 1, BoundaryValueImp::r, 1, typename BoundaryValueImp::R, MatrixImp>;
+
   using typename BaseType::RangeSpaceType;
+  using typename BaseType::SourceFunctionType;
   using typename BaseType::SourceSpaceType;
   using typename BaseType::VectorType;
 
@@ -317,7 +329,6 @@ public:
   using BoundaryValueType = BoundaryValueImp;
   using EigenvectorWrapperType = EigenvectorWrapperImp;
   using LocalVectorType = typename EigenvectorWrapperType::VectorType;
-  using MatrixType = typename EigenvectorWrapperType::MatrixType;
   using E = XT::Grid::extract_entity_t<GV>;
   using SlopeType = SlopeBase<E, EigenvectorWrapperType>;
   static constexpr size_t dimDomain = BoundaryValueType::d;
@@ -329,7 +340,8 @@ public:
                                const SourceSpaceType& source_space,
                                const SlopeType& slope = default_minmod_slope(),
                                const bool flux_is_affine = false)
-    : analytical_flux_(analytical_flux)
+    : BaseType(analytical_flux.parameter_type())
+    , analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
     , source_space_(source_space)
     , range_space_(source_space_.grid_view(), 1)
@@ -337,29 +349,33 @@ public:
     , flux_is_affine_(flux_is_affine)
   {}
 
-  bool linear() const override final
-  {
-    return false;
-  }
+  // pull in methods from various base classes
+  using BaseType::apply;
 
-  const SourceSpaceType& source_space() const override final
-  {
-    return source_space_;
-  }
+  /// \name Required by ForwardOperatorInterface.
+  /// \{
 
   const RangeSpaceType& range_space() const override final
   {
     return range_space_;
   }
 
-  void apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& param) const override
+  bool linear() const override final
   {
+    return false;
+  }
+
+  // avoid non-optimal default implementation in OperatorInterface
+  void apply(SourceFunctionType source_function,
+             VectorType& range_vector,
+             const XT::Common::Parameter& param = {}) const override final
+  {
+    this->assert_matching_range(range_vector);
     // evaluate cell averages
-    const auto& grid_view = source_space_.grid_view();
+    const auto& grid_view = this->assembly_grid_view();
     const auto& index_set = grid_view.indexSet();
     std::vector<LocalVectorType> source_values(index_set.size(0));
-    auto source_func = make_discrete_function(source_space(), source);
-    const auto local_source = source_func.local_function();
+    const auto local_source = source_function.local_function();
     for (const auto& entity : Dune::elements(grid_view)) {
       local_source->bind(entity);
       const auto entity_index = index_set.index(entity);
@@ -373,11 +389,36 @@ public:
                                                                            ReconstructionSpaceType,
                                                                            VectorType,
                                                                            EigenvectorWrapperType>(
-        source_values, range_space_, range, analytical_flux_, boundary_values_, slope_, param, flux_is_affine_);
+        source_values, range_space_, range_vector, analytical_flux_, boundary_values_, slope_, param, flux_is_affine_);
     auto walker = XT::Grid::Walker<GV>(grid_view);
     walker.append(local_reconstruction_operator);
     walker.walk(true);
-  } // void apply(...)
+  } // ... apply(...)
+
+  /// \}
+  /// \name Required by OperatorInterface.
+  /// \{
+
+  const SourceSpaceType& source_space() const override final
+  {
+    return source_space_;
+  }
+
+  const AssemblyGridViewType& assembly_grid_view() const override final
+  {
+    return source_space_.grid_view();
+  }
+
+  void apply(const VectorType& source_vector,
+             VectorType& range_vector,
+             const XT::Common::Parameter& param = {}) const override final
+  {
+    this->assert_matching_source(source_vector);
+    this->assert_matching_range(range_vector);
+    this->apply(make_discrete_function(source_space_, source_vector), range_vector, param);
+  }
+
+  /// \}
 
 private:
   static SlopeType& default_minmod_slope()

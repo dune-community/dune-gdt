@@ -23,63 +23,128 @@ namespace GDT {
 
 template <class OperatorImp, class InverseHessianOperatorImp>
 class EntropicCoordinatesOperator
-  : public OperatorInterface<typename OperatorImp::MatrixType, typename OperatorImp::SGV, OperatorImp::s_r>
+  : public OperatorInterface<typename OperatorImp::AGV,
+                             OperatorImp::s_r,
+                             OperatorImp::s_rC,
+                             OperatorImp::r_r,
+                             OperatorImp::r_rC,
+                             typename OperatorImp::F,
+                             typename OperatorImp::M,
+                             typename OperatorImp::SGV,
+                             typename OperatorImp::RGV>
 {
-  using BaseType = OperatorInterface<typename OperatorImp::MatrixType, typename OperatorImp::SGV, OperatorImp::s_r>;
-
 public:
+  using ThisType = EntropicCoordinatesOperator;
+  using BaseType = OperatorInterface<typename OperatorImp::AGV,
+                                     OperatorImp::s_r,
+                                     OperatorImp::s_rC,
+                                     OperatorImp::r_r,
+                                     OperatorImp::r_rC,
+                                     typename OperatorImp::F,
+                                     typename OperatorImp::M,
+                                     typename OperatorImp::SGV,
+                                     typename OperatorImp::RGV>;
+
   using typename BaseType::RangeSpaceType;
+  using typename BaseType::SourceFunctionType;
   using typename BaseType::SourceSpaceType;
   using typename BaseType::VectorType;
 
   using OperatorType = OperatorImp;
   using InverseHessianOperatorType = InverseHessianOperatorImp;
 
-  EntropicCoordinatesOperator(const OperatorType& operator_in,
-                              const InverseHessianOperatorType& inverse_hessian_operator)
-    : operator_(operator_in)
+  EntropicCoordinatesOperator(const OperatorType& opertr, const InverseHessianOperatorType& inverse_hessian_operator)
+    : BaseType(opertr.parameter_type() + inverse_hessian_operator.parameter_type())
+    , operator_(opertr)
     , inverse_hessian_operator_(inverse_hessian_operator)
   {}
 
-  bool linear() const override final
-  {
-    return false;
-  }
+  // pull in methods from various base classes
+  using BaseType::apply;
+
+  /// \name Required by ForwardOperatorInterface.
+  /// \{
 
   const SourceSpaceType& source_space() const override final
   {
     return operator_.source_space();
   }
 
+  bool linear() const override final
+  {
+    return false;
+  }
+
+  // avoid non-optimal default implementation in OperatorInterface
+  void apply(SourceFunctionType source_function,
+             VectorType& range_vector,
+             const XT::Common::Parameter& param = {}) const override final
+  {
+    this->assert_matching_range(range_vector);
+    VectorType u_update = range_vector.copy();
+    u_update.set_all(0.);
+    operator_.apply(source_function, u_update, param);
+    inverse_hessian_operator_.apply_inverse_hessian(u_update, range_vector, param);
+  }
+
+  /// \}
+  /// \name Required by OperatorInterface.
+  /// \{
+
   const RangeSpaceType& range_space() const override final
   {
     return operator_.range_space();
   }
 
-  void apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& param) const override final
+  const AssemblyGridViewType& assembly_grid_view() const override final
   {
-    VectorType u_update = range;
-    std::fill(u_update.begin(), u_update.end(), 0.);
-    operator_.apply(source, u_update, param);
-    inverse_hessian_operator_.apply_inverse_hessian(u_update, range, param);
+    return operator_.assembly_grid_view();
   }
+
+  void apply(const VectorType& source_vector,
+             VectorType& range_vector,
+             const XT::Common::Parameter& param = {}) const override final
+  {
+    this->assert_matching_source(source_vector);
+    this->assert_matching_range(range_vector);
+    VectorType u_update = range_vector.copy();
+    u_update.set_all(0.);
+    operator_.apply(source_vector, u_update, param);
+    inverse_hessian_operator_.apply_inverse_hessian(u_update, range_vector, param);
+  }
+
+  /// \}
 
   const OperatorType& operator_;
   const InverseHessianOperatorType& inverse_hessian_operator_;
 }; // class EntropicCoordinatesOperator<...>
 
+
 template <class DensityOperatorImp, class AdvectionOperatorImp, class RhsOperatorImp, class InverseHessianOperatorImp>
 class EntropicCoordinatesCombinedOperator
-  : public OperatorInterface<typename AdvectionOperatorImp::MatrixType,
+  : public OperatorInterface<typename AdvectionOperatorImp::AGV,
+                             AdvectionOperatorImp::s_r,
+                             AdvectionOperatorImp::s_rC,
+                             AdvectionOperatorImp::r_r,
+                             AdvectionOperatorImp::r_rC,
+                             typename AdvectionOperatorImp::F,
+                             typename AdvectionOperatorImp::M,
                              typename AdvectionOperatorImp::SGV,
-                             AdvectionOperatorImp::s_r>
+                             typename AdvectionOperatorImp::RGV>
 {
-  using BaseType = OperatorInterface<typename AdvectionOperatorImp::MatrixType,
+  using ThisType = EntropicCoordinatesCombinedOperator;
+  using BaseType = OperatorInterface<typename AdvectionOperatorImp::AGV,
+                                     AdvectionOperatorImp::s_r,
+                                     AdvectionOperatorImp::s_rC,
+                                     AdvectionOperatorImp::r_r,
+                                     AdvectionOperatorImp::r_rC,
+                                     typename AdvectionOperatorImp::F,
+                                     typename AdvectionOperatorImp::M,
                                      typename AdvectionOperatorImp::SGV,
-                                     AdvectionOperatorImp::s_r>;
+                                     typename AdvectionOperatorImp::RGV>;
 
-public:
   using typename BaseType::RangeSpaceType;
+  using typename BaseType::SourceFunctionType;
   using typename BaseType::SourceSpaceType;
   using typename BaseType::VectorType;
 
@@ -92,7 +157,9 @@ public:
                                       const AdvectionOperatorType& advection_op,
                                       const RhsOperatorType& rhs_op,
                                       const InverseHessianOperatorType& inverse_hessian_operator)
-    : density_op_(density_op)
+    : BaseType(density_op.parameter_type() + advection_op.parameter_type() + rhs_op.parameter_type()
+               + inverse_hessian_operator.parameter_type())
+    , density_op_(density_op)
     , advection_op_(advection_op)
     , rhs_op_(rhs_op)
     , inverse_hessian_operator_(inverse_hessian_operator)
@@ -101,33 +168,71 @@ public:
     , rhs_update_(u_update_.size())
   {}
 
-  bool linear() const override final
-  {
-    return false;
-  }
+  // pull in methods from various base classes
+  using BaseType::apply;
 
-  const SourceSpaceType& source_space() const override final
-  {
-    return advection_op_.source_space();
-  }
+  /// \name Required by ForwardOperatorInterface.
+  /// \{
 
   const RangeSpaceType& range_space() const override final
   {
     return advection_op_.range_space();
   }
 
-  void apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& param) const override final
+  bool linear() const override final
   {
-    density_op_.apply(source, range, param);
-    u_update_ = range;
-    rhs_update_ = range;
-    advection_op_.apply(range, u_update_, param);
+    return false;
+  }
+
+  // avoid non-optimal default implementation in OperatorInterface
+  void apply(SourceFunctionType source_function,
+             VectorType& range_vector,
+             const XT::Common::Parameter& param = {}) const override final
+  {
+    this->assert_matching_range(range_vector);
+    density_op_.apply(source_function, range_vector, param);
+    u_update_ = range_vector;
+    rhs_update_ = range_vector;
+    advection_op_.apply(range_vector, u_update_, param);
     u_update_ *= -1.;
-    rhs_op_.apply(range, rhs_update_, param);
+    rhs_op_.apply(range_vector, rhs_update_, param);
     u_update_ += rhs_update_;
     std::fill(reg_indicators_.begin(), reg_indicators_.end(), false);
-    inverse_hessian_operator_.apply_inverse_hessian(u_update_, reg_indicators_, range, param);
+    inverse_hessian_operator_.apply_inverse_hessian(u_update_, reg_indicators_, range_vector, param);
+  } // ... apply(...)
+
+  /// \}
+  /// \name Required by OperatorInterface.
+  /// \{
+
+  const SourceSpaceType& source_space() const override final
+  {
+    return advection_op_.source_space();
   }
+
+  const AssemblyGridViewType& assembly_grid_view() const override final
+  {
+    return advection_op_.assembly_grid_view();
+  }
+
+  void apply(const VectorType& source_vector,
+             VectorType& range_vector,
+             const XT::Common::Parameter& param = {}) const override final
+  {
+    this->assert_matching_source(source_vector);
+    this->assert_matching_range(range_vector);
+    density_op_.apply(source_vector, range_vector, param);
+    u_update_ = range_vector;
+    rhs_update_ = range_vector;
+    advection_op_.apply(range_vector, u_update_, param);
+    u_update_ *= -1.;
+    rhs_op_.apply(range_vector, rhs_update_, param);
+    u_update_ += rhs_update_;
+    std::fill(reg_indicators_.begin(), reg_indicators_.end(), false);
+    inverse_hessian_operator_.apply_inverse_hessian(u_update_, reg_indicators_, range_vector, param);
+  } // ... apply(...)
+
+  /// \}
 
   const std::vector<bool>& reg_indicators() const
   {
@@ -141,21 +246,36 @@ public:
   mutable std::vector<bool> reg_indicators_;
   mutable VectorType u_update_;
   mutable VectorType rhs_update_;
-}; // class EntropicCoordinatesCombinedOperator<...>
+}; // class EntropicCoordinatesCombinedOperator
 
 
 template <class AdvectionOperatorType, class ProblemType>
 class EntropicCoordinatesMasslumpedOperator
-  : public OperatorInterface<typename AdvectionOperatorType::MatrixType,
+  : public OperatorInterface<typename AdvectionOperatorType::AGV,
+                             AdvectionOperatorType::s_r,
+                             AdvectionOperatorType::s_rC,
+                             AdvectionOperatorType::r_r,
+                             AdvectionOperatorType::r_rC,
+                             typename AdvectionOperatorType::F,
+                             typename AdvectionOperatorType::M,
                              typename AdvectionOperatorType::SGV,
-                             AdvectionOperatorType::s_r>
+                             typename AdvectionOperatorType::RGV>
 {
-  using BaseType = OperatorInterface<typename AdvectionOperatorType::MatrixType,
-                                     typename AdvectionOperatorType::SGV,
-                                     AdvectionOperatorType::s_r>;
-
 public:
+  using ThisType = EntropicCoordinatesMasslumpedOperator;
+  using BaseType = OperatorInterface<typename AdvectionOperatorType::AGV,
+                                     AdvectionOperatorType::s_r,
+                                     AdvectionOperatorType::s_rC,
+                                     AdvectionOperatorType::r_r,
+                                     AdvectionOperatorType::r_rC,
+                                     typename AdvectionOperatorType::F,
+                                     typename AdvectionOperatorType::M,
+                                     typename AdvectionOperatorType::SGV,
+                                     typename AdvectionOperatorType::RGV>;
+
+
   using typename BaseType::RangeSpaceType;
+  using typename BaseType::SourceFunctionType;
   using typename BaseType::SourceSpaceType;
   using typename BaseType::VectorType;
   static constexpr size_t dimDomain = AdvectionOperatorType::SGV::dimension;
@@ -172,7 +292,8 @@ public:
                                         const ProblemType& problem,
                                         const RangeFieldType dx,
                                         const BoundaryFluxesMapType& boundary_fluxes)
-    : advection_op_(advection_op)
+    : BaseType(advection_op.parameter_type())
+    , advection_op_(advection_op)
     , u_iso_(problem.basis_functions().u_iso())
     , basis_integrated_(problem.basis_functions().integrated())
     , sigma_a_(problem.sigma_a())
@@ -218,6 +339,17 @@ public:
     } else {
       DUNE_THROW(Dune::NotImplemented, "Only implemented for dimDomain == 1 or dimDomain == 3");
     }
+  } // EntropicCoordinatesMasslumpedOperator(...)
+
+  // pull in methods from various base classes
+  using BaseType::apply;
+
+  /// \name Required by ForwardOperatorInterface.
+  /// \{
+
+  const RangeSpaceType& range_space() const override final
+  {
+    return advection_op_.range_space();
   }
 
   bool linear() const override final
@@ -225,22 +357,40 @@ public:
     return false;
   }
 
+  // Drop this override to allow for the default implementation in OperatorInterface, which interpolates source_function
+  // and calls the other apply below.
+  void apply(SourceFunctionType /*source_function*/,
+             VectorType& /*range_vector*/,
+             const XT::Common::Parameter& /*param*/ = {}) const override final
+  {
+    DUNE_THROW(Exceptions::operator_error,
+               "Not available for non-discrete functions, call apply(source_vector, range_vector, param) instead!");
+  }
+
+  /// \}
+  /// \name Required by OperatorInterface.
+  /// \{
+
   const SourceSpaceType& source_space() const override final
   {
     return advection_op_.source_space();
   }
 
-  const RangeSpaceType& range_space() const override final
+  const AssemblyGridViewType& assembly_grid_view() const override final
   {
-    return advection_op_.range_space();
+    return advection_operator_.assembly_grid_view();
   }
 
-  void apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& /*param*/) const override final
+  void apply(const VectorType& source_vector,
+             VectorType& range_vector,
+             const XT::Common::Parameter& /*param*/ = {}) const override final
   {
+    this->assert_matching_source(source_vector);
+    this->assert_matching_range(range_vector);
     // Store evaluations of exp(alpha_i)
-    assert(source.size() < size_t(std::numeric_limits<int>::max()));
-    XT::Common::Mkl::exp(static_cast<int>(source.size()), source.data(), exp_evaluations_.data());
-    auto* range_data = range.data();
+    assert(source_vector.size() < size_t(std::numeric_limits<int>::max()));
+    XT::Common::Mkl::exp(static_cast<int>(source_vector.size()), source_vector.data(), exp_evaluations_.data());
+    auto* range_data = range_vector.data();
     const auto& grid_view = source_space().grid_view();
     const size_t num_entities = grid_view.size(0);
     if constexpr (dimDomain == 1) {
@@ -291,6 +441,8 @@ public:
     else
       apply_inverse_hessian_3d(num_entities, range_data, psi);
   } // void apply(...)
+
+  /// \}
 
   void flux_1d(RangeFieldType* BOOST_RESTRICT range_entity,
                RangeFieldType* BOOST_RESTRICT range_left,
@@ -409,21 +561,35 @@ public:
   const BoundaryFluxesMapType& boundary_fluxes_;
   const DomainType lower_left_;
   const DomainType upper_right_;
-}; // namespace Dune
+}; // class EntropicCoordinatesMasslumpedOperator
 
 
 template <class AdvectionOperatorImp, class EntropySolverImp>
 class EntropyBasedMomentFvOperator
-  : public OperatorInterface<typename AdvectionOperatorImp::MatrixType,
+  : public OperatorInterface<typename AdvectionOperatorImp::AGV,
+                             AdvectionOperatorImp::s_r,
+                             AdvectionOperatorImp::s_rC,
+                             AdvectionOperatorImp::r_r,
+                             AdvectionOperatorImp::r_rC,
+                             typename AdvectionOperatorImp::F,
+                             typename AdvectionOperatorImp::M,
                              typename AdvectionOperatorImp::SGV,
-                             AdvectionOperatorImp::s_r>
+                             typename AdvectionOperatorImp::RGV>
 {
-  using BaseType = OperatorInterface<typename AdvectionOperatorImp::MatrixType,
-                                     typename AdvectionOperatorImp::SGV,
-                                     AdvectionOperatorImp::s_r>;
-
 public:
+  using ThisType = EntropyBasedMomentFvOperator;
+  using BaseType = OperatorInterface<typename AdvectionOperatorImp::AGV,
+                                     AdvectionOperatorImp::s_r,
+                                     AdvectionOperatorImp::s_rC,
+                                     AdvectionOperatorImp::r_r,
+                                     AdvectionOperatorImp::r_rC,
+                                     typename AdvectionOperatorImp::F,
+                                     typename AdvectionOperatorImp::M,
+                                     typename AdvectionOperatorImp::SGV,
+                                     typename AdvectionOperatorImp::RGV>;
+
   using typename BaseType::RangeSpaceType;
+  using typename BaseType::SourceFunctionType;
   using typename BaseType::SourceSpaceType;
   using typename BaseType::VectorType;
 
@@ -431,18 +597,20 @@ public:
   using EntropySolverType = EntropySolverImp;
 
   EntropyBasedMomentFvOperator(const AdvectionOperatorType& advection_operator, const EntropySolverType& entropy_solver)
-    : advection_operator_(advection_operator)
+    : BaseType(advection_operator.parameter_type())
+    , advection_operator_(advection_operator)
     , entropy_solver_(entropy_solver)
   {}
+
+  // pull in methods from various base classes
+  using BaseType::apply;
+
+  /// \name Required by ForwardOperatorInterface.
+  /// \{
 
   bool linear() const override final
   {
     return false;
-  }
-
-  const SourceSpaceType& source_space() const override final
-  {
-    return advection_operator_.source_space();
   }
 
   const RangeSpaceType& range_space() const override final
@@ -450,15 +618,46 @@ public:
     return advection_operator_.range_space();
   }
 
-  void apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& param) const override final
+  // Drop this override to allow for the default implementation in OperatorInterface, which interpolates source_function
+  // and calls the other apply below. If entropy_solver_ supports apply(source_function, range_vector), simply fill this
+  // apply() with the code from the other one
+  void apply(SourceFunctionType /*source_function*/,
+             VectorType& /*range_vector*/,
+             const XT::Common::Parameter& /*param*/ = {}) const override final
   {
-    // solve optimization problems and regularize if necessary
-    VectorType regularized = range;
-    entropy_solver_.apply(source, regularized, param);
-
-    std::fill(range.begin(), range.end(), 0.);
-    advection_operator_.apply(regularized, range, param);
+    DUNE_THROW(Exceptions::operator_error,
+               "Not available for non-discrete functions, call apply(source_vector, range_vector, param) instead!");
   }
+
+  /// \}
+  /// \name Required by OperatorInterface.
+  /// \{
+
+  const SourceSpaceType& source_space() const override final
+  {
+    return advection_operator_.source_space();
+  }
+
+  const AssemblyGridViewType& assembly_grid_view() const override final
+  {
+    return advection_operator_.assembly_grid_view();
+  }
+
+  void apply(const VectorType& source_vector,
+             VectorType& range_vector,
+             const XT::Common::Parameter& param = {}) const override final
+  {
+    this->assert_matching_source(source_vector);
+    this->assert_matching_range(range_vector);
+    // solve optimization problems and regularize if necessary
+    VectorType regularized = range_vector;
+    entropy_solver_.apply(source_vector, regularized, param);
+
+    range_vector.set_all(0.);
+    advection_operator_.apply(regularized, range_vector, param);
+  } // ... apply(...)
+
+  /// \}
 
   const AdvectionOperatorType& advection_operator_;
   const EntropySolverType& entropy_solver_;

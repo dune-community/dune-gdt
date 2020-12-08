@@ -115,6 +115,7 @@ constexpr size_t EigenvectorWrapperBase<AnalyticalFluxType, MatrixImp, VectorImp
 template <class AnalyticalFluxType, class MatrixImp, class VectorImp>
 constexpr size_t EigenvectorWrapperBase<AnalyticalFluxType, MatrixImp, VectorImp>::dimRange;
 
+
 // This class does not perform any computations, use this class if you want to reconstruct in ordinary coordinates
 // instead of characteristic coordinates
 template <class AnalyticalFluxType, class VectorImp>
@@ -163,6 +164,7 @@ public:
 private:
   static const MatrixType zero_ = 0.;
 };
+
 
 template <class AnalyticalFluxType,
           class MatrixType = XT::LA::CommonDenseMatrix<typename AnalyticalFluxType::R>,

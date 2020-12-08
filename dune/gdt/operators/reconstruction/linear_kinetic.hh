@@ -113,6 +113,7 @@ private:
 
 }; // class LocalPointwiseLinearKineticReconstructionOperator
 
+
 // Does not reconstruct a full first-order DG function, but only stores the reconstructed values at the intersection
 // centers. This avoids the interpolation in this operator and the evaluation of the reconstructed function in the
 // finite volume operator which are both quite expensive for large dimRange.
