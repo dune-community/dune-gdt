@@ -202,7 +202,7 @@ public:
   // pull in methods from various base classes
   using BaseType::apply;
 
-  /// \name Required by OperatorInterface.
+  /// \name Required by ForwardOperatorInterface.
   /// \{
 
   const RangeSpaceType& range_space() const override final
