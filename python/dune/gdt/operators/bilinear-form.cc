@@ -40,14 +40,14 @@ class BilinearForm
   using GP = XT::Grid::GridProvider<G>;
 
 public:
-  using type = GDT::BilinearForm<GV, s_r, 1, double, double, r_r>;
+  using type = GDT::BilinearForm<GV, s_r, 1, r_r>;
   using base_type = XT::Grid::ElementAndIntersectionFunctor<GV>;
   using bound_type = pybind11::class_<type, base_type>;
 
 private:
   using E = typename type::E;
   using I = typename type::I;
-  using F = typename type::ResultType;
+  using F = typename type::FieldType;
 
 public:
   static bound_type bind(pybind11::module& m,
@@ -227,5 +227,5 @@ PYBIND11_MODULE(_operators_bilinear_form, m)
 
   py::module::import("dune.gdt._local_bilinear_forms_element_interface");
 
-  BilinearForm_for_all_grids<XT::Grid::bindings::AvailableGridTypes>::bind(m);
+//  BilinearForm_for_all_grids<XT::Grid::bindings::AvailableGridTypes>::bind(m);
 }

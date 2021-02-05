@@ -98,7 +98,7 @@ public:
                    });
 
     // methods from walker base, to allow for overloads
-    XT::Grid::bindings::Walker<G>::addbind_methods(c);
+    XT::Grid::bindings::Walker<GV>::addbind_methods(c);
 
     // methods from functional base, to allow for overloads
     bindings::FunctionalInterface<V, G, s_r>::addbind_methods(c);

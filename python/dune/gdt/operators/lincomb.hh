@@ -35,8 +35,8 @@ template <class M, class GV, size_t s = 1, size_t r = s>
 class ConstLincombOperator
 {
   using G = std::decay_t<XT::Grid::extract_grid_t<GV>>;
-  using type = GDT::ConstLincombOperator<M, GV, s, 1, r, 1>;
-  using base_type = GDT::OperatorInterface<M, GV, s, 1, r, 1>;
+  using type = GDT::ConstLincombOperator<GV, s, 1, r, 1>; // M
+  using base_type = GDT::OperatorInterface<GV, s, 1, r, 1>; // M
   using V = typename type::VectorType;
   using SS = typename type::SourceSpaceType;
   using RS = typename type::RangeSpaceType;
@@ -53,7 +53,7 @@ public:
     using namespace pybind11::literals;
 
     // methods from operator base, to allow for overloads
-    bindings::OperatorInterface<M, GV, s, r>::addbind_methods(c);
+    bindings::OperatorInterface<M, GV, s, r>::addbind_methods(c); // M
 
     // our methods
     c.def(
@@ -117,8 +117,8 @@ template <class M, class GV, size_t s = 1, size_t r = s>
 class LincombOperator
 {
   using G = std::decay_t<XT::Grid::extract_grid_t<GV>>;
-  using type = GDT::LincombOperator<M, GV, s, 1, r, 1>;
-  using base_type = GDT::ConstLincombOperator<M, GV, s, 1, r, 1>;
+  using type = GDT::LincombOperator<GV, s, 1, r, 1>; // M
+  using base_type = GDT::ConstLincombOperator<GV, s, 1, r, 1>;  // M
   using V = typename type::VectorType;
   using SS = typename type::SourceSpaceType;
   using RS = typename type::RangeSpaceType;
@@ -138,7 +138,7 @@ public:
     using namespace pybind11::literals;
 
     const auto ClassName = XT::Common::to_camel_case(
-        bindings::OperatorInterface<M, GV, s, r>::class_name(matrix_id, grid_id, layer_id, class_id));
+        bindings::OperatorInterface<M, GV, s, r>::class_name(matrix_id, grid_id, layer_id, class_id));  // M
     bound_type c(m,
                  ClassName.c_str(),
                  (XT::Common::to_camel_case(class_id) + " (" + grid_id + ", " + matrix_id + " variant)").c_str());
