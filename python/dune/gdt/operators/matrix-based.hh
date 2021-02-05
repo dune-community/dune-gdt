@@ -41,8 +41,8 @@ class MatrixOperator
   using GP = XT::Grid::GridProvider<G>;
 
 public:
-  using type = GDT::MatrixOperator<M, GV, s, 1, r>;
-  using base_operator_type = GDT::OperatorInterface<M, GV, s, 1, r>;
+  using type = GDT::MatrixOperator<GV, s, 1, r>;  // M
+  using base_operator_type = GDT::OperatorInterface<GV, s, 1, r>;  // M
   using base_walker_type = XT::Grid::Walker<GV>;
   using bound_type = pybind11::class_<type, base_operator_type, base_walker_type>;
 
@@ -192,7 +192,7 @@ public:
     using namespace pybind11::literals;
 
     const auto ClassName = XT::Common::to_camel_case(
-        bindings::OperatorInterface<M, GV, s, r>::class_name(matrix_id, grid_id, layer_id, class_id));
+        bindings::OperatorInterface<M, GV, s, r>::class_name(matrix_id, grid_id, layer_id, class_id));  // M
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
     c.def(
         py::init(
@@ -254,7 +254,7 @@ public:
     XT::Grid::bindings::Walker<G>::addbind_methods(c);
 
     // methods from operator base, to allow for overloads
-    bindings::OperatorInterface<M, GV, s, r>::addbind_methods(c);
+    bindings::OperatorInterface<M, GV, s, r>::addbind_methods(c);  // M
 
     // additional methods
     c.def("clear", [](type& self) { self.clear(); });

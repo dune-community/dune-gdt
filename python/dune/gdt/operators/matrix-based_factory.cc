@@ -53,8 +53,8 @@ PYBIND11_MODULE(_operators_matrix_based_factory, m)
   //                               LA::bindings::Sparse,
   //                               XT::Grid::bindings::AvailableGridTypes>::bind(m, "eigen_sparse");
   //#endif
-  MatrixOperatorFactory_for_all_grids<LA::IstlRowMajorSparseMatrix<double>,
-                                      LA::bindings::Istl,
-                                      void,
-                                      XT::Grid::bindings::AvailableGridTypes>::bind(m, "istl_sparse");
+//  MatrixOperatorFactory_for_all_grids<LA::IstlRowMajorSparseMatrix<double>,
+//                                      LA::bindings::Istl,
+//                                      void,
+//                                      XT::Grid::bindings::AvailableGridTypes>::bind(m, "istl_sparse");
 }
