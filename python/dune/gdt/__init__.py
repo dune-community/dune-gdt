@@ -85,20 +85,38 @@ for mod_name in (     # order should not matter!
 
 
 def visualize_function(function, grid=None, subsampling=False):
-    assert function.dim_domain == 2, f'Not implemented yet for {function.dim_domain}-dimensional grids!'
-    assert function.dim_range == 1, f'Not implemented yet for {function.dim_domain}-dimensional functions!'
-    tmpfile = NamedTemporaryFile(mode='wb', delete=False, suffix='.vtu').name
-    failed = False
-    try:     # discrete function
-        function.visualize(filename=tmpfile[:-4])
-        return plot(tmpfile, color_attribute_name=function.name)
-    except TypeError:
-        failed = True
-    except AttributeError:
-        failed = True
+    assert function.dim_domain <= 2, f'Not implemented yet for {function.dim_domain}-dimensional grids!'
+    if function.dim_domain == 1:
+        import numpy as np
+        from matplotlib import pyplot as plt
+        from dune.xt.functions import GridFunction
+        from dune.gdt import ContinuousLagrangeSpace, default_interpolation, DiscreteFunction
 
-    if failed:
-        from dune.xt.functions import visualize_function as visualize_xt_function
+        assert grid # not optimal
+        P1_space = ContinuousLagrangeSpace(grid, order=1)
+        interpolation_points = np.array(P1_space.interpolation_points(), copy=False)[:, 0]
+        piecewise_linear_interpolant = default_interpolation(GridFunction(grid, function), P1_space)
+        values = np.array(piecewise_linear_interpolant.dofs.vector, copy=False)
 
-        assert grid
-        return visualize_xt_function(function, grid, subsampling=subsampling)
+        plt.figure()
+        plt.title(f'{function.name}')
+        plt.plot(interpolation_points, values)
+
+        return plt.gca()
+    elif function.dim_domain == 2:
+        assert function.dim_range == 1, f'Not implemented yet for {function.dim_domain}-dimensional functions!'
+        tmpfile = NamedTemporaryFile(mode='wb', delete=False, suffix='.vtu').name
+        failed = False
+        try:     # discrete function
+            function.visualize(filename=tmpfile[:-4])
+            return plot(tmpfile, color_attribute_name=function.name)
+        except TypeError:
+            failed = True
+        except AttributeError:
+            failed = True
+
+        if failed:
+            from dune.xt.functions import visualize_function as visualize_xt_function
+
+            assert grid
+            return visualize_xt_function(function, grid, subsampling=subsampling)
