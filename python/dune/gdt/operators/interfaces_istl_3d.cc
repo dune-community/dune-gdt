@@ -29,8 +29,8 @@ PYBIND11_MODULE(_operators_interfaces_istl_3d, m)
 
   py::module::import("dune.gdt._spaces_interface");
 
-//  OperatorInterface_for_all_grids<LA::IstlRowMajorSparseMatrix<double>,
-//                                  LA::bindings::Istl,
-//                                  void,
-//                                  XT::Grid::bindings::Available3dGridTypes>::bind(m, "istl_sparse");
+  OperatorInterface_for_all_grids<LA::IstlRowMajorSparseMatrix<double>,
+                                  LA::bindings::Istl,
+                                  void,
+                                  XT::Grid::bindings::Available3dGridTypes>::bind(m, "istl_sparse");
 }
