@@ -32,27 +32,38 @@ struct OperatorInterface_for_all_grids
     using Dune::GDT::bindings::ConstLincombOperator;
     using Dune::GDT::bindings::LincombOperator;
     using Dune::GDT::bindings::MatrixOperator;
+    using Dune::GDT::bindings::BilinearFormInterface;
+//    using Dune::GDT::bindings::ForwardOperatorInterface;
     using Dune::GDT::bindings::OperatorInterface;
     using Dune::XT::Grid::bindings::grid_name;
 
+
     OperatorInterface<M, GV>::bind(m, matrix_id, grid_name<G>::value());
-    ConstLincombOperator<M, GV>::bind(m, matrix_id, grid_name<G>::value());
-    LincombOperator<M, GV>::bind(m, matrix_id, grid_name<G>::value());
+//    BilinearFormInterface<GV>::bind(m, matrix_id, grid_name<G>::value());
+//    ForwardOperatorInterface<GV>::bind(m, matrix_id, grid_name<G>::value());
+//    ConstLincombOperator<M, GV>::bind(m, matrix_id, grid_name<G>::value());
+//    LincombOperator<M, GV>::bind(m, matrix_id, grid_name<G>::value());
 //    MatrixOperator<M, MT, ST, GV>::bind_type(m, matrix_id, grid_name<G>::value());
     if (d > 1) {
       OperatorInterface<M, GV, d, 1>::bind(m, matrix_id, grid_name<G>::value());
-      ConstLincombOperator<M, GV, d, 1>::bind(m, matrix_id, grid_name<G>::value());
-      LincombOperator<M, GV, d, 1>::bind(m, matrix_id, grid_name<G>::value());
+//      BilinearFormInterface<GV, d, 1>::bind(m, matrix_id, grid_name<G>::value());
+//      ForwardOperatorInterface<GV, d, 1>::bind(m, matrix_id, grid_name<G>::value());
+//      ConstLincombOperator<M, GV, d, 1>::bind(m, matrix_id, grid_name<G>::value());
+//      LincombOperator<M, GV, d, 1>::bind(m, matrix_id, grid_name<G>::value());
 //      MatrixOperator<M, MT, ST, GV, d, 1>::bind_type(m, matrix_id, grid_name<G>::value());
 
       OperatorInterface<M, GV, 1, d>::bind(m, matrix_id, grid_name<G>::value());
-      ConstLincombOperator<M, GV, 1, d>::bind(m, matrix_id, grid_name<G>::value());
-      LincombOperator<M, GV, 1, d>::bind(m, matrix_id, grid_name<G>::value());
+//      BilinearFormInterface<GV, 1, d>::bind(m, matrix_id, grid_name<G>::value());
+//      ForwardOperatorInterface<GV, 1, d>::bind(m, matrix_id, grid_name<G>::value());
+//      ConstLincombOperator<M, GV, 1, d>::bind(m, matrix_id, grid_name<G>::value());
+//      LincombOperator<M, GV, 1, d>::bind(m, matrix_id, grid_name<G>::value());
 //      MatrixOperator<M, MT, ST, GV, 1, d>::bind_type(m, matrix_id, grid_name<G>::value());
 
       OperatorInterface<M, GV, d, d>::bind(m, matrix_id, grid_name<G>::value());
-      ConstLincombOperator<M, GV, d, d>::bind(m, matrix_id, grid_name<G>::value());
-      LincombOperator<M, GV, d, d>::bind(m, matrix_id, grid_name<G>::value());
+//      BilinearFormInterface<GV, d, d>::bind(m, matrix_id, grid_name<G>::value());
+//      ForwardOperatorInterface<GV, d, d>::bind(m, matrix_id, grid_name<G>::value());
+//      ConstLincombOperator<M, GV, d, d>::bind(m, matrix_id, grid_name<G>::value());
+//      LincombOperator<M, GV, d, d>::bind(m, matrix_id, grid_name<G>::value());
 //      MatrixOperator<M, MT, ST, GV, d, d>::bind_type(m, matrix_id, grid_name<G>::value());
     }
     // add your extra dimensions here

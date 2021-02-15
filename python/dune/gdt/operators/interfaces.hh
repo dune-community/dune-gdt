@@ -18,6 +18,7 @@
 #include <dune/xt/common/python.hh>
 #include <dune/xt/common/string.hh>
 #include <dune/xt/grid/type_traits.hh>
+#include <dune/xt/grid/gridprovider/provider.hh>
 #include <dune/xt/la/container.hh>
 #include <python/dune/xt/common/exceptions.bindings.hh>
 #include <python/dune/xt/common/parameter.hh>
@@ -38,6 +39,7 @@ class OperatorInterface
 {
   using G = std::decay_t<XT::Grid::extract_grid_t<GV>>;
   using type = GDT::OperatorInterface<GV, s_r, 1, r_r, 1>;  // M ?
+//  using base_type = GDT::ForwardOperatorInterface<GV, s_r, 1, r_r, 1>; <--- cannnot be binded yet because of pure virtual functions
   using V = typename type::VectorType;
   using SS = typename type::SourceSpaceType;
   using SF = typename type::SourceFunctionType;
@@ -50,6 +52,7 @@ class OperatorInterface
 
 public:
   using bound_type = pybind11::class_<type>;
+//  using bound_type = pybind11::class_<type, base_type>;
 
 private:
   template <class Source, class Range, class T, typename... options>
@@ -431,6 +434,127 @@ public:
     return c;
   } // ... bind(...)
 }; // class OperatorInterface
+
+
+// Interface has pure virtual methods, workaround from https://pybind11.readthedocs.io/en/stable/advanced/classes.html
+//template <class SGV, size_t s_r = 1, size_t r_r = s_r>
+//class PyBilinearFormInterface : public GDT::BilinearFormInterface<SGV, s_r, 1, r_r> {
+//public:
+//    using BaseType = GDT::BilinearFormInterface<SGV, s_r, 1, r_r>;
+
+//    /* Inherit the constructors */
+//    using BaseType::BilinearFormInterface;
+
+//    using typename BaseType::FieldType;
+//    using typename BaseType::RangeFunctionType;
+//    using typename BaseType::SourceFunctionType;
+
+//    /* Trampoline (need one for each virtual function) */
+//    FieldType apply2(RangeFunctionType r, SourceFunctionType s, const Dune::XT::Common::Parameter& param) override {
+//        PYBIND11_OVERRIDE_PURE(
+//            BaseType::FieldType, /* Return type */
+//            BaseType,            /* Parent class */
+//            apply2,              /* Name of function in C++ (must match Python name) */
+//            r, s, param
+//        );
+//    }
+//};
+
+
+template <class SGV, size_t s_r = 1, size_t r_r = s_r>
+class BilinearFormInterface
+{
+  using SG = std::decay_t<XT::Grid::extract_grid_t<SGV>>;
+  static const size_t d = SG::dimension;
+  using GP = XT::Grid::GridProvider<SG>;
+
+public:
+  using type = GDT::BilinearFormInterface<SGV, s_r, 1, r_r>;
+//  using bound_type = pybind11::class_<type, PyBilinearFormInterface<SGV, s_r, r_r>>;
+  using bound_type = pybind11::class_<type>;
+
+private:
+//  using E = typename type::E;
+//  using I = typename type::I;
+  using F = typename type::FieldType;
+
+public:
+  static bound_type bind(pybind11::module& m,
+                         const std::string& grid_id,
+                         const std::string& layer_id = "",
+                         const std::string& class_id = "bilinear_form_interface")
+  {
+    namespace py = pybind11;
+    using namespace pybind11::literals;
+
+    std::string class_name = class_id;
+    class_name += "_" + grid_id;
+    if (!layer_id.empty())
+      class_name += "_" + layer_id;
+    class_name += "_" + XT::Common::to_string(r_r) + "d_range";
+    class_name += "_" + XT::Common::to_string(s_r) + "d_source";
+    const auto ClassName = XT::Common::to_camel_case(class_name);
+
+    bound_type c(m, ClassName.c_str(), ClassName.c_str());
+    c.def(py::init<>());
+    c.def(py::init([](const Dune::XT::Common::ParameterType& param_type,
+                      const std::string& logging_prefix) {
+            return new type(param_type, logging_prefix);
+          }),
+          "param_type"_a = "{}",
+          "logging_prefix"_a = "");
+
+    return c;
+  } // ... bind(...)
+}; // class BilinearFormInterface
+
+
+template <class SGV, size_t s_r = 1, size_t r_r = s_r>
+class ForwardOperatorInterface
+{
+  using SG = std::decay_t<XT::Grid::extract_grid_t<SGV>>;
+  static const size_t d = SG::dimension;
+  using GP = XT::Grid::GridProvider<SG>;
+
+public:
+  using type = GDT::ForwardOperatorInterface<SGV, s_r, 1, r_r>;
+  using base_type = GDT::BilinearFormInterface<SGV, s_r, 1, r_r>;
+  using bound_type = pybind11::class_<type, base_type>;
+
+private:
+//  using E = typename type::E;
+//  using I = typename type::I;
+  using F = typename type::FieldType;
+
+public:
+  static bound_type bind(pybind11::module& m,
+                         const std::string& grid_id,
+                         const std::string& layer_id = "",
+                         const std::string& class_id = "forward_operator_interface")
+  {
+    namespace py = pybind11;
+    using namespace pybind11::literals;
+
+    std::string class_name = class_id;
+    class_name += "_" + grid_id;
+    if (!layer_id.empty())
+      class_name += "_" + layer_id;
+    class_name += "_" + XT::Common::to_string(r_r) + "d_range";
+    class_name += "_" + XT::Common::to_string(s_r) + "d_source";
+    const auto ClassName = XT::Common::to_camel_case(class_name);
+
+    bound_type c(m, ClassName.c_str(), ClassName.c_str());
+    c.def(py::init([](const Dune::XT::Common::ParameterType& param_type,
+                      const std::string& logging_prefix) {
+            return new type(param_type, logging_prefix);
+          }),
+          "param_type"_a = "{}",
+          "logging_prefix"_a = "",
+          py::keep_alive<0, 1>());
+
+    return c;
+  } // ... bind(...)
+}; // class ForwardOperatorInterface
 
 
 } // namespace bindings
