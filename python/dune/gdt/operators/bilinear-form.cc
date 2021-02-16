@@ -49,6 +49,7 @@ private:
   using E = typename type::E;
   using I = typename type::I;
   using F = typename type::FieldType;
+  using LocalElementBilinearFormType = typename type::LocalElementBilinearFormType;
 
 public:
   static bound_type bind(pybind11::module& m,
@@ -82,24 +83,23 @@ public:
 //    c.def(
 //        "append",
 //        [](type& self,
-//           const LocalElementBilinearFormInterface<E, r_r, 1, F, F, s_r, 1, F>& local_bilinear_form,
+//           const LocalElementBilinearFormType<E, r_r, 1, F, F, s_r, 1, F>& local_bilinear_form,
 //           const XT::Common::Parameter& param,
 //           const XT::Grid::ElementFilter<GV>& filter) { self.append(local_bilinear_form, param, filter); },
 //        "local_element_bilinear_form"_a,
 //        "param"_a = XT::Common::Parameter(),
 //        "element_filter"_a = XT::Grid::ApplyOn::AllElements<GV>());
-//    c.def("__iadd__", // function ptr signature required for the right return type
-//          (type & (type::*)(const LocalElementBilinearFormInterface<E, r_r, 1, F, F, s_r, 1, F>&)) & type::operator+=,
-//          "local_element_bilinear_form"_a,
-//          py::is_operator());
-//    c.def("__iadd__", // function ptr signature required for the right return type
-//          (type
-//           & (type::*)(const std::tuple<const LocalElementBilinearFormInterface<E, r_r, 1, F, F, s_r, 1, F>&,
-//                                        const XT::Common::Parameter&,
-//                                        const XT::Grid::ElementFilter<GV>&>&))
-//              & type::operator+=,
-//          "tuple_of_localelementbilinearform_param_elementfilter"_a,
-//          py::is_operator());
+    c.def("__iadd__", // function ptr signature required for the right return type
+          (type & (type::*)(const LocalElementBilinearFormType&)) & type::operator+=,
+          "local_element_bilinear_form"_a,
+          py::is_operator());
+    c.def("__iadd__", // function ptr signature required for the right return type
+          (type
+           & (type::*)(const std::tuple<const LocalElementBilinearFormType&,
+                                        const XT::Grid::ElementFilter<GV>&>&))
+              & type::operator+=,
+          "tuple_of_localelementbilinearform_param_elementfilter"_a,
+          py::is_operator());
 //    c.def(
 //        "append",
 //        [](type& self,
@@ -151,21 +151,14 @@ public:
 //        "parallel"_a = false,
 //        py::call_guard<py::gil_scoped_release>());
 
-//    // factories
-//    const auto FactoryName = XT::Common::to_camel_case(class_id);
-//    m.def(
-//        FactoryName.c_str(),
-//        [](GP& grid,
-//           XT::Functions::GridFunction<E, s_r> source,
-//           XT::Functions::GridFunction<E, r_r> range,
-//           const std::string& logging_prefix) { return new type(grid.leaf_view(), source, range, logging_prefix); },
-//        "grid"_a,
-//        "source"_a,
-//        "range"_a,
-//        "logging_prefix"_a = "",
-//        py::keep_alive<0, 1>(),
-//        py::keep_alive<0, 2>(),
-//        py::keep_alive<0, 3>());
+    // factories
+    const auto FactoryName = XT::Common::to_camel_case(class_id);
+    m.def(
+        FactoryName.c_str(),
+        [](GP& grid, const std::string& logging_prefix) { return new type(grid.leaf_view(), logging_prefix); },
+        "grid"_a,
+        "logging_prefix"_a = "",
+        py::keep_alive<0, 1>());
 
     return c;
   } // ... bind(...)
