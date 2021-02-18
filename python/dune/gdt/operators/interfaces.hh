@@ -34,12 +34,13 @@ namespace GDT {
 namespace bindings {
 
 
-template <class M, class GV, size_t s_r = 1, size_t r_r = s_r>
+template <class M, class AGV, size_t s_r = 1, size_t r_r = s_r, class SGV = AGV, class RGV = AGV>
 class OperatorInterface
 {
-  using G = std::decay_t<XT::Grid::extract_grid_t<GV>>;
-  using type = GDT::OperatorInterface<GV, s_r, 1, r_r, 1>;  // M ?
-//  using base_type = GDT::ForwardOperatorInterface<GV, s_r, 1, r_r, 1>; <--- cannnot be binded yet because of pure virtual functions
+  using G = std::decay_t<XT::Grid::extract_grid_t<AGV>>;
+  using type = GDT::OperatorInterface<AGV, s_r, 1, r_r, 1, double, M, SGV, RGV>;
+  //  using base_type = GDT::ForwardOperatorInterface<AGV, s_r, 1, r_r, 1>; <--- cannnot be binded yet because of pure
+  //  virtual functions
   using V = typename type::VectorType;
   using SS = typename type::SourceSpaceType;
   using SF = typename type::SourceFunctionType;
@@ -52,7 +53,7 @@ class OperatorInterface
 
 public:
   using bound_type = pybind11::class_<type>;
-//  using bound_type = pybind11::class_<type, base_type>;
+  //  using bound_type = pybind11::class_<type, base_type>;
 
 private:
   template <class Source, class Range, class T, typename... options>
@@ -61,15 +62,15 @@ private:
     namespace py = pybind11;
     using namespace pybind11::literals;
 
-//    c.def(
-//        "apply",
-//        [](T& self, const Source& source, Range& range, const XT::Common::Parameter& param) {
-//          self.apply(source, range, param);
-//        },
-//        "source"_a,
-//        "range"_a,
-//        "param"_a = XT::Common::Parameter(),
-//        py::call_guard<py::gil_scoped_release>());
+    //    c.def(
+    //        "apply",
+    //        [](T& self, const Source& source, Range& range, const XT::Common::Parameter& param) {
+    //          self.apply(source, range, param);
+    //        },
+    //        "source"_a,
+    //        "range"_a,
+    //        "param"_a = XT::Common::Parameter(),
+    //        py::call_guard<py::gil_scoped_release>());
     c.def(
         "apply",
         [](T& self, const Source& source, const XT::Common::Parameter& param) { return self.apply(source, param); },
@@ -212,7 +213,7 @@ public:
     // most methods are available for vectors ...
     addbind_vector_or_function_methods<V, V>(c);
     // ... and discrete fucntions
-//    addbind_vector_or_function_methods<SF, RF>(c);   // <-- does not work yet (GridFunction -> DiscreteFunction)
+    //    addbind_vector_or_function_methods<SF, RF>(c);   // <-- does not work yet (GridFunction -> DiscreteFunction)
 
     c.def(
         "assemble", [](T& self, const bool parallel) { self.assemble(parallel); }, "parallel"_a = false);
@@ -437,9 +438,9 @@ public:
 
 
 // Interface has pure virtual methods, workaround from https://pybind11.readthedocs.io/en/stable/advanced/classes.html
-//template <class SGV, size_t s_r = 1, size_t r_r = s_r>
-//class PyBilinearFormInterface : public GDT::BilinearFormInterface<SGV, s_r, 1, r_r> {
-//public:
+// template <class SGV, size_t s_r = 1, size_t r_r = s_r>
+// class PyBilinearFormInterface : public GDT::BilinearFormInterface<SGV, s_r, 1, r_r> {
+// public:
 //    using BaseType = GDT::BilinearFormInterface<SGV, s_r, 1, r_r>;
 
 //    /* Inherit the constructors */
@@ -470,12 +471,12 @@ class BilinearFormInterface
 
 public:
   using type = GDT::BilinearFormInterface<SGV, s_r, 1, r_r>;
-//  using bound_type = pybind11::class_<type, PyBilinearFormInterface<SGV, s_r, r_r>>;
+  //  using bound_type = pybind11::class_<type, PyBilinearFormInterface<SGV, s_r, r_r>>;
   using bound_type = pybind11::class_<type>;
 
 private:
-//  using E = typename type::E;
-//  using I = typename type::I;
+  //  using E = typename type::E;
+  //  using I = typename type::I;
   using F = typename type::FieldType;
 
 public:
@@ -497,8 +498,7 @@ public:
 
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
     c.def(py::init<>());
-    c.def(py::init([](const Dune::XT::Common::ParameterType& param_type,
-                      const std::string& logging_prefix) {
+    c.def(py::init([](const Dune::XT::Common::ParameterType& param_type, const std::string& logging_prefix) {
             return new type(param_type, logging_prefix);
           }),
           "param_type"_a = "{}",
@@ -522,8 +522,8 @@ public:
   using bound_type = pybind11::class_<type, base_type>;
 
 private:
-//  using E = typename type::E;
-//  using I = typename type::I;
+  //  using E = typename type::E;
+  //  using I = typename type::I;
   using F = typename type::FieldType;
 
 public:
@@ -544,8 +544,7 @@ public:
     const auto ClassName = XT::Common::to_camel_case(class_name);
 
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
-    c.def(py::init([](const Dune::XT::Common::ParameterType& param_type,
-                      const std::string& logging_prefix) {
+    c.def(py::init([](const Dune::XT::Common::ParameterType& param_type, const std::string& logging_prefix) {
             return new type(param_type, logging_prefix);
           }),
           "param_type"_a = "{}",
