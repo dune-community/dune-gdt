@@ -213,7 +213,7 @@ public:
     c.def(
         py::init(
             [](GP& grid, const SS& source_space, const RS& range_space, M& matrix, const std::string& logging_prefix) {
-              return new type(grid.leaf_view_ref(), source_space, range_space, matrix, logging_prefix);
+              return new type(grid.leaf_view(), source_space, range_space, matrix, logging_prefix);
             }),
         "grid"_a,
         "source_space"_a,
@@ -230,7 +230,7 @@ public:
                       const RS& range_space,
                       const XT::LA::SparsityPatternDefault& pattern,
                       const std::string& logging_prefix) {
-            return new type(grid.leaf_view_ref(),
+            return new type(grid.leaf_view(),
                             source_space,
                             range_space,
                             new M(range_space.mapper().size(), source_space.mapper().size(), pattern),
@@ -247,12 +247,12 @@ public:
           py::keep_alive<1, 4>());
     c.def(py::init([](GP& grid, const SS& source_space, const RS& range_space, const std::string& logging_prefix) {
             return new type(
-                grid.leaf_view_ref(),
+                grid.leaf_view(),
                 source_space,
                 range_space,
                 new M(range_space.mapper().size(),
                       source_space.mapper().size(),
-                      make_element_and_intersection_sparsity_pattern(range_space, source_space, grid.leaf_view_ref())),
+                      make_element_and_intersection_sparsity_pattern(range_space, source_space, grid.leaf_view())),
                 logging_prefix);
           }),
           "grid"_a,
@@ -466,7 +466,7 @@ public:
     c.def(
         py::init(
             [](GP& grid, const SS& source_space, const RS& range_space, M& matrix, const std::string& logging_prefix) {
-              return new type(grid.leaf_view_ref(), source_space, range_space, matrix, logging_prefix);
+              return new type(grid.leaf_view(), source_space, range_space, matrix, logging_prefix);
             }),
         "grid"_a,
         "source_space"_a,
