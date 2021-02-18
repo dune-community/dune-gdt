@@ -71,7 +71,7 @@ public:
   using typename BaseType::SourceSpaceType;
   using typename BaseType::VectorType;
 
-  ConstMatrixOperator(const AssemblyGridViewType& assembly_grid_vw,
+  ConstMatrixOperator(const AssemblyGridViewType assembly_grid_vw,
                       const SourceSpaceType& source_spc,
                       const RangeSpaceType& range_spc,
                       const MatrixType& mat,
@@ -225,7 +225,7 @@ public:
   }
 
 protected:
-  const AssemblyGridViewType& assembly_grid_view_;
+  const AssemblyGridViewType assembly_grid_view_;
   const SourceSpaceType& source_space_;
   const RangeSpaceType& range_space_;
   const MatrixType& matrix_;
@@ -348,7 +348,7 @@ public:
   /// \sa    OperatorInterface::apply_inverse
   FieldType scaling;
 
-  MatrixOperator(const AssemblyGridViewType& assembly_grid_vw,
+  MatrixOperator(const AssemblyGridViewType assembly_grid_vw,
                  const SourceSpaceType& source_spc,
                  const RangeSpaceType& range_spc,
                  MatrixType& mat,
@@ -368,7 +368,7 @@ public:
                 << ", range_space=" << &range_spc << ", mat=" << &mat << ")" << std::endl;
   }
 
-  MatrixOperator(const AssemblyGridViewType& assembly_grid_vw,
+  MatrixOperator(const AssemblyGridViewType assembly_grid_vw,
                  const SourceSpaceType& source_spc,
                  const RangeSpaceType& range_spc,
                  MatrixType*&& mat_ptr,
