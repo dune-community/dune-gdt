@@ -567,7 +567,7 @@ public:
 
   ThisType& operator+=(ThisType& other)
   {
-    this->logger.state_or(op.logger.state);
+    this->logger.state_or(other.logger.state);
     LOG_(debug) << "operator+=(other_lincomb_op=" << &other << ")" << std::endl;
     this->extend_parameter_type(other.parameter_type());
     for (size_t ii = 0; ii < other.num_ops(); ++ii) {
@@ -582,7 +582,7 @@ public:
 
   ThisType& operator-=(ThisType& other)
   {
-    this->logger.state_or(op.logger.state);
+    this->logger.state_or(other.logger.state);
     this->extend_parameter_type(other.parameter_type());
     LOG_(debug) << "operator-=(other_lincomb_op=" << &other << ")" << std::endl;
     for (size_t ii = 0; ii < other.num_ops(); ++ii) {
