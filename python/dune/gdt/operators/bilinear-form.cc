@@ -73,7 +73,7 @@ public:
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
     c.def(py::init([](GP& grid,
                       const std::string& logging_prefix) {
-            return new type(grid.leaf_view_ref(), logging_prefix);
+            return new type(grid.leaf_view(), logging_prefix);
           }),
           "grid"_a,
           "logging_prefix"_a = "",
