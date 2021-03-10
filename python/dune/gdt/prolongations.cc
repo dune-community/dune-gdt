@@ -41,6 +41,8 @@ class prolong
   using E = XT::Grid::extract_entity_t<GV>;
   using DF = DiscreteFunction<V, GV, r>;
   using S = typename DF::SpaceType;
+  using BS = GDT::BochnerSpace<GV, r>;
+  using BDF = DiscreteBochnerFunction<V, GV, r>;
 
 public:
   static void bind(pybind11::module& m, const std::string& function_id = "prolong")
@@ -75,6 +77,39 @@ public:
           "la_backend"_a,
           py::call_guard<py::gil_scoped_release>());
   } // ... bind(...)
+
+  static void bind_space_time(pybind11::module& m, const std::string& function_id = "prolong_space_time")
+  {
+    namespace py = pybind11;
+    using namespace pybind11::literals;
+
+    m.def(
+        function_id.c_str(),
+        [](const BDF& source, BDF& target) { GDT::prolong(source, target); },
+        "source"_a,
+        "target"_a,
+        py::call_guard<py::gil_scoped_release>());
+    if (std::is_same<VectorTag, XT::LA::bindings::Istl>::value)
+      m.def(
+          function_id.c_str(),
+          [](const BDF& source, const BS& target_space, const VectorTag&) {
+            return GDT::prolong<V>(source, target_space);
+          },
+          "source"_a,
+          "target"_a,
+          "la_backend"_a = XT::LA::bindings::Istl(),
+          py::call_guard<py::gil_scoped_release>());
+    else
+      m.def(
+          function_id.c_str(),
+          [](const BDF& source, const BS& target_space, const VectorTag&) {
+            return GDT::prolong<V>(source, target_space);
+          },
+          "source"_a,
+          "target"_a,
+          "la_backend"_a,
+          py::call_guard<py::gil_scoped_release>());
+  } // ... bind_space_time(...)
 }; // class prolong
 
 
@@ -95,8 +130,11 @@ struct prolong_for_all_grids
     using Dune::GDT::bindings::prolong;
 
     prolong<V, VT, GV>::bind(m);
-    if (d > 1)
+    prolong<V, VT, GV>::bind_space_time(m);
+    if (d > 1) {
       prolong<V, VT, GV, d>::bind(m);
+      prolong<V, VT, GV, d>::bind_space_time(m);
+    }
     // add your extra dimensions here
     // ...
     prolong_for_all_grids<V, VT, Dune::XT::Common::tuple_tail_t<GridTypes>>::bind(m);
