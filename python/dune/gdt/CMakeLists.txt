@@ -169,6 +169,7 @@ dune_pybindxi_add_module(_operators_laplace_ipdg_flux_reconstruction
 dune_pybindxi_add_module(_operators_matrix_based_factory EXCLUDE_FROM_ALL ${header} operators/matrix-based_factory.cc)
 dune_pybindxi_add_module(_operators_operator EXCLUDE_FROM_ALL ${header} operators/operator.cc)
 dune_pybindxi_add_module(_prolongations EXCLUDE_FROM_ALL ${header} prolongations.cc)
+dune_pybindxi_add_module(_spaces_bochner EXCLUDE_FROM_ALL ${header} spaces/bochner.cc)
 dune_pybindxi_add_module(_spaces_h1_continuous_lagrange EXCLUDE_FROM_ALL ${header} spaces/h1/continuous-lagrange.cc)
 dune_pybindxi_add_module(_spaces_hdiv_raviart_thomas EXCLUDE_FROM_ALL ${header} spaces/hdiv/raviart-thomas.cc)
 dune_pybindxi_add_module(_spaces_interface EXCLUDE_FROM_ALL ${header} spaces/interface.cc)
