@@ -13,7 +13,13 @@
 
 file(GLOB_RECURSE header "*.hh")
 
-dune_pybindxi_add_module(_discretefunction_discretefunction EXCLUDE_FROM_ALL ${header}
+dune_pybindxi_add_module(_discretefunction_bochner
+                         EXCLUDE_FROM_ALL
+                         ${header}
+                         discretefunction/bochner.cc)
+dune_pybindxi_add_module(_discretefunction_discretefunction
+                         EXCLUDE_FROM_ALL
+                         ${header}
                          discretefunction/discretefunction.cc)
 dune_pybindxi_add_module(_discretefunction_dof_vector EXCLUDE_FROM_ALL ${header} discretefunction/dof-vector.cc)
 dune_pybindxi_add_module(_functionals_interfaces_common EXCLUDE_FROM_ALL ${header} functionals/interfaces_common.cc)

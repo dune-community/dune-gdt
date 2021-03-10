@@ -16,6 +16,7 @@ from dune.xt import guarded_import
 from dune.xt.common.vtk.plot import plot
 
 for mod_name in (     # order should not matter!
+        '_discretefunction_bochner',
         '_discretefunction_discretefunction',
         '_discretefunction_dof_vector',
         '_functionals_interfaces_common',
