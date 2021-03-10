@@ -13,6 +13,10 @@
 
 file(GLOB_RECURSE header "*.hh")
 
+dune_pybindxi_add_module(_discretefunction_bochner
+                         EXCLUDE_FROM_ALL
+                         ${header}
+                         discretefunction/bochner.cc)
 dune_pybindxi_add_module(_discretefunction_discretefunction
                          EXCLUDE_FROM_ALL
                          ${header}
