@@ -84,7 +84,7 @@ public:
                                        const MinDensitySetterType& min_density_setter,
                                        const EntropyFluxType& entropy_flux,
                                        DiscreteFunctionType& initial_values,
-                                       const bool /*use_first_same_as_last_property*/ = true,
+                                       const bool use_first_same_as_last_property = true,
                                        const RangeFieldType r = 1.0,
                                        const RangeFieldType atol = 1e-3,
                                        const RangeFieldType rtol = 1e-2,
@@ -112,7 +112,7 @@ public:
     , c_(c)
     , b_diff_(b_2_ - b_1_)
     , num_stages_(A_.rows())
-    , first_same_as_last_(true)
+    , first_same_as_last_(use_first_same_as_last_property)
   {
     assert(Dune::XT::Common::FloatCmp::ge(atol_, 0.0));
     assert(Dune::XT::Common::FloatCmp::ge(rtol_, 0.0));
@@ -214,6 +214,7 @@ public:
     while (!(mixed_error < 1.)) {
       bool skip_error_computation = false;
       actual_dt *= time_step_scale_factor;
+      set_op_param("dt", actual_dt);
       for (size_t ii = first_stage_to_compute; ii < num_stages_ - 1; ++ii) {
         set_op_param("t", t + actual_dt * c_[ii]);
         std::fill_n(&(stages_k_[ii]->dofs().vector()[0]), num_dofs, 0.);

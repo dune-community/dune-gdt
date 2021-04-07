@@ -219,10 +219,30 @@ public:
   void store_evaluations(const DomainType& /*entity_center*/,
                          size_t entity_index,
                          StateType& alpha,
-                         const RangeFieldType /*rho_min*/,
+                         const RangeFieldType psi_min,
                          bool check = true)
   {
     implementation_->store_exp_evaluations(exp_evaluations_[entity_index], alpha);
+    // local
+    // for (auto& block : exp_evaluations_[entity_index])
+    //   for (auto& val : block)
+    //     if (val < psi_min)
+    //       val = psi_min;
+    // for (auto& val : exp_evaluations_[entity_index])
+    //   if (val < psi_min)
+    //     val = psi_min;
+
+    // symmetric
+    // bool adjust = false;
+    // for (const auto& val : exp_evaluations_[entity_index]) {
+    //   if (val < psi_min) {
+    //     adjust = true;
+    //     break;
+    //   }
+    // }
+    // if (adjust)
+    //   for (auto& val : exp_evaluations_[entity_index])
+    //     val += psi_min;
     if constexpr (entropy != EntropyType::MaxwellBoltzmann) {
       implementation_->store_eta_ast_prime_vals(exp_evaluations_[entity_index], eta_ast_prime_storage_[entity_index]);
       implementation_->store_eta_ast_twoprime_vals(exp_evaluations_[entity_index],
