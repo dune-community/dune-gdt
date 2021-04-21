@@ -1,3 +1,4 @@
+from dune.gdt import visualize_function
 from dune.gdt._discretefunction_bochner import DiscreteBochnerFunction
 from dune.gdt._discretefunction_discretefunction import DiscreteFunction
 from dune.gdt._interpolations_boundary import boundary_interpolation
