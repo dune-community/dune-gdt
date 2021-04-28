@@ -211,67 +211,70 @@ private:
       namespace py = pybind11;
       using namespace pybind11::literals;
       using CGP = XT::Grid::CouplingGridProvider<AGV>;
-      m.def(
-          FactoryName.c_str(),
-          [](CGP& grid,
-             const SS& source_space,
-             const RS& range_space,
-             const MatrixTag&,
-             const XT::LA::SparsityPatternDefault& pattern,
-             const std::string& logging_prefix) {
-            return new type(grid.coupling_view(),
-                            source_space,
-                            range_space,
-                            new M(range_space.mapper().size(), source_space.mapper().size(), pattern),
-                            logging_prefix);
-          },
-          "grid"_a,
-          "source_space"_a,
-          "range_space"_a,
-          "la_backend"_a,
-          "sparsity_pattern"_a,
-          "logging_prefix"_a = "",
-          py::keep_alive<0, 1>()
-          //          py::keep_alive<0, 2>()
-      );
+//      m.def(
+//          FactoryName.c_str(),
+//          [](CGP& grid,
+//             const SS& source_space,
+//             const RS& range_space,
+//             const MatrixTag&,
+//             const XT::LA::SparsityPatternDefault& pattern,
+//             const std::string& logging_prefix) {
+//            return new type(grid.coupling_view(),
+//                            source_space,
+//                            range_space,
+//                            new M(range_space.mapper().size(), source_space.mapper().size(), pattern),
+//                            logging_prefix);
+//          },
+//          "grid"_a,
+//          "source_space"_a,
+//          "range_space"_a,
+//          "la_backend"_a,
+//          "sparsity_pattern"_a,
+//          "logging_prefix"_a = "",
+//          py::keep_alive<0, 1>()
+//          //          py::keep_alive<0, 2>()
+//      );
       if (std::is_same<MatrixTag, XT::LA::bindings::Istl>::value) {
+//        m.def(
+//            FactoryName.c_str(),
+//            [](CGP& grid,
+//               const SS& source_space,
+//               const RS& range_space,
+//               const XT::LA::SparsityPatternDefault& pattern,
+//               const MatrixTag&,
+//               const std::string& logging_prefix) {
+//              return new type(grid.coupling_view(),
+//                              source_space,
+//                              range_space,
+//                              new M(range_space.mapper().size(), source_space.mapper().size(), pattern),
+//                              logging_prefix);
+//            },
+//            "grid"_a,
+//            "source_space"_a,
+//            "range_space"_a,
+//            "sparsity_pattern"_a,
+//            "la_backend"_a = MatrixTag(),
+//            "logging_prefix"_a = "",
+//            py::keep_alive<0, 1>()
+//            //            py::keep_alive<0, 2>()
+//        );
         m.def(
             FactoryName.c_str(),
             [](CGP& grid,
                const SS& source_space,
                const RS& range_space,
-               const XT::LA::SparsityPatternDefault& pattern,
                const MatrixTag&,
                const std::string& logging_prefix) {
-              return new type(grid.coupling_view(),
-                              source_space,
-                              range_space,
-                              new M(range_space.mapper().size(), source_space.mapper().size(), pattern),
-                              logging_prefix);
-            },
-            "grid"_a,
-            "source_space"_a,
-            "range_space"_a,
-            "sparsity_pattern"_a,
-            "la_backend"_a = MatrixTag(),
-            "logging_prefix"_a = "",
-            py::keep_alive<0, 1>()
-            //            py::keep_alive<0, 2>()
-        );
-        m.def(
-            FactoryName.c_str(),
-            [](CGP& grid,
-               const SS& source_space,
-               const RS& range_space,
-               const MatrixTag&,
-               const std::string& logging_prefix) {
-              return new type(grid.coupling_view(),
+              const auto cv = grid.coupling_view();
+              /// which sparsity pattern for the coupling matrix??
+              auto pattern = make_intersection_sparsity_pattern(
+                  range_space, source_space, cv);
+              return new type(cv,
                               source_space,
                               range_space,
                               new M(range_space.mapper().size(),
                                     source_space.mapper().size(),
-                                    make_element_and_intersection_sparsity_pattern(
-                                        range_space, source_space, grid.coupling_view())),
+                                    pattern),
                               logging_prefix);
             },
             "grid"_a,
