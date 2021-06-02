@@ -119,8 +119,8 @@ struct LocalLaplaceIPDGInnerCouplingIntegrand_for_all_grids
       using CCI = Dune::XT::Grid::internal::CouplingIntersectionWithCorrectNormal<CI, I>;
       using Coupling = Dune::XT::Grid::bindings::CouplingIntersection<G, G>;
       Dune::GDT::bindings::LocalLaplaceIPDGInnerCouplingIntegrand<G, CCI, Coupling>::bind(m, "coupling");
-#endif
     }
+#endif
     LocalLaplaceIPDGInnerCouplingIntegrand_for_all_grids<Dune::XT::Common::tuple_tail_t<GridTypes>>::bind(m);
   }
 };
