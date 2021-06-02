@@ -13,7 +13,9 @@
 #include <dune/pybindxi/stl.h>
 
 #include <dune/xt/grid/type_traits.hh>
+#include <dune/xt/grid/dd/glued.hh>
 #include <dune/xt/grid/grids.hh>
+#include <dune/xt/grid/view/coupling.hh>
 
 #include <dune/gdt/local/integrands/interfaces.hh>
 
@@ -39,34 +41,66 @@ struct LocalQuaternaryIntersectionIntegrandInterface_for_all_grids
     using Dune::GDT::bindings::LocalQuaternaryIntersectionIntegrandInterface;
     using Dune::GDT::bindings::LocalQuaternaryIntersectionIntegrandSum;
 
-    LocalQuaternaryIntersectionIntegrandInterface<G, I>::bind(m);
+    LocalQuaternaryIntersectionIntegrandInterface<G, I>::bind(m, "leaf");
     if (d > 1) {
-      LocalQuaternaryIntersectionIntegrandInterface<G, I, 1, 1, F, F, d, 1, F>::bind(m);
-      LocalQuaternaryIntersectionIntegrandInterface<G, I, 1, 1, F, F, d, d, F>::bind(m);
-      LocalQuaternaryIntersectionIntegrandInterface<G, I, d, 1, F, F, 1, 1, F>::bind(m);
-      LocalQuaternaryIntersectionIntegrandInterface<G, I, d, 1, F, F, d, 1, F>::bind(m);
-      LocalQuaternaryIntersectionIntegrandInterface<G, I, d, 1, F, F, d, d, F>::bind(m);
-      LocalQuaternaryIntersectionIntegrandInterface<G, I, d, d, F, F, 1, 1, F>::bind(m);
-      LocalQuaternaryIntersectionIntegrandInterface<G, I, d, d, F, F, d, 1, F>::bind(m);
-      LocalQuaternaryIntersectionIntegrandInterface<G, I, d, d, F, F, d, d, F>::bind(m);
+      LocalQuaternaryIntersectionIntegrandInterface<G, I, 1, 1, F, F, d, 1, F>::bind(m, "leaf");
+      LocalQuaternaryIntersectionIntegrandInterface<G, I, 1, 1, F, F, d, d, F>::bind(m, "leaf");
+      LocalQuaternaryIntersectionIntegrandInterface<G, I, d, 1, F, F, 1, 1, F>::bind(m, "leaf");
+      LocalQuaternaryIntersectionIntegrandInterface<G, I, d, 1, F, F, d, 1, F>::bind(m, "leaf");
+      LocalQuaternaryIntersectionIntegrandInterface<G, I, d, 1, F, F, d, d, F>::bind(m, "leaf");
+      LocalQuaternaryIntersectionIntegrandInterface<G, I, d, d, F, F, 1, 1, F>::bind(m, "leaf");
+      LocalQuaternaryIntersectionIntegrandInterface<G, I, d, d, F, F, d, 1, F>::bind(m, "leaf");
+      LocalQuaternaryIntersectionIntegrandInterface<G, I, d, d, F, F, d, d, F>::bind(m, "leaf");
     }
     // add your extra dimensions here
     // ...
+#if HAVE_DUNE_GRID_GLUE
+    if constexpr (d == 2) {
+      using GridGlueType = Dune::XT::Grid::DD::Glued<G, G, Dune::XT::Grid::Layers::leaf>;
+      using CI = typename GridGlueType::GlueType::Intersection;
+      using CCI = Dune::XT::Grid::internal::CouplingIntersectionWithCorrectNormal<CI, I>;
+      LocalQuaternaryIntersectionIntegrandInterface<G, CCI>::bind(m, "coupling");
+      LocalQuaternaryIntersectionIntegrandInterface<G, CCI, 1, 1, F, F, d, 1, F>::bind(m, "coupling");
+      LocalQuaternaryIntersectionIntegrandInterface<G, CCI, 1, 1, F, F, d, d, F>::bind(m, "coupling");
+      LocalQuaternaryIntersectionIntegrandInterface<G, CCI, d, 1, F, F, 1, 1, F>::bind(m, "coupling");
+      LocalQuaternaryIntersectionIntegrandInterface<G, CCI, d, 1, F, F, d, 1, F>::bind(m, "coupling");
+      LocalQuaternaryIntersectionIntegrandInterface<G, CCI, d, 1, F, F, d, d, F>::bind(m, "coupling");
+      LocalQuaternaryIntersectionIntegrandInterface<G, CCI, d, d, F, F, 1, 1, F>::bind(m, "coupling");
+      LocalQuaternaryIntersectionIntegrandInterface<G, CCI, d, d, F, F, d, 1, F>::bind(m, "coupling");
+      LocalQuaternaryIntersectionIntegrandInterface<G, CCI, d, d, F, F, d, d, F>::bind(m, "coupling");
+    }
+#endif
 
     // we need to bind LocalQuaternaryIntersectionIntegrandSum here, since it requires the above interface
-    LocalQuaternaryIntersectionIntegrandSum<G, I>::bind(m);
+    LocalQuaternaryIntersectionIntegrandSum<G, I>::bind(m, "leaf");
     if (d > 1) {
-      LocalQuaternaryIntersectionIntegrandSum<G, I, 1, 1, F, F, d, 1, F>::bind(m);
-      LocalQuaternaryIntersectionIntegrandSum<G, I, 1, 1, F, F, d, d, F>::bind(m);
-      LocalQuaternaryIntersectionIntegrandSum<G, I, d, 1, F, F, 1, 1, F>::bind(m);
-      LocalQuaternaryIntersectionIntegrandSum<G, I, d, 1, F, F, d, 1, F>::bind(m);
-      LocalQuaternaryIntersectionIntegrandSum<G, I, d, 1, F, F, d, d, F>::bind(m);
-      LocalQuaternaryIntersectionIntegrandSum<G, I, d, d, F, F, 1, 1, F>::bind(m);
-      LocalQuaternaryIntersectionIntegrandSum<G, I, d, d, F, F, d, 1, F>::bind(m);
-      LocalQuaternaryIntersectionIntegrandSum<G, I, d, d, F, F, d, d, F>::bind(m);
+      LocalQuaternaryIntersectionIntegrandSum<G, I, 1, 1, F, F, d, 1, F>::bind(m, "leaf");
+      LocalQuaternaryIntersectionIntegrandSum<G, I, 1, 1, F, F, d, d, F>::bind(m, "leaf");
+      LocalQuaternaryIntersectionIntegrandSum<G, I, d, 1, F, F, 1, 1, F>::bind(m, "leaf");
+      LocalQuaternaryIntersectionIntegrandSum<G, I, d, 1, F, F, d, 1, F>::bind(m, "leaf");
+      LocalQuaternaryIntersectionIntegrandSum<G, I, d, 1, F, F, d, d, F>::bind(m, "leaf");
+      LocalQuaternaryIntersectionIntegrandSum<G, I, d, d, F, F, 1, 1, F>::bind(m, "leaf");
+      LocalQuaternaryIntersectionIntegrandSum<G, I, d, d, F, F, d, 1, F>::bind(m, "leaf");
+      LocalQuaternaryIntersectionIntegrandSum<G, I, d, d, F, F, d, d, F>::bind(m, "leaf");
     }
     // add your extra dimensions here
     // ...
+#if HAVE_DUNE_GRID_GLUE
+    if constexpr (d == 2) {
+      using GridGlueType = Dune::XT::Grid::DD::Glued<G, G, Dune::XT::Grid::Layers::leaf>;
+      using CI = typename GridGlueType::GlueType::Intersection;
+      using CCI = Dune::XT::Grid::internal::CouplingIntersectionWithCorrectNormal<CI, I>;
+      LocalQuaternaryIntersectionIntegrandSum<G, CCI>::bind(m, "coupling");
+      LocalQuaternaryIntersectionIntegrandSum<G, CCI, 1, 1, F, F, d, 1, F>::bind(m, "coupling");
+      LocalQuaternaryIntersectionIntegrandSum<G, CCI, 1, 1, F, F, d, d, F>::bind(m, "coupling");
+      LocalQuaternaryIntersectionIntegrandSum<G, CCI, d, 1, F, F, 1, 1, F>::bind(m, "coupling");
+      LocalQuaternaryIntersectionIntegrandSum<G, CCI, d, 1, F, F, d, 1, F>::bind(m, "coupling");
+      LocalQuaternaryIntersectionIntegrandSum<G, CCI, d, 1, F, F, d, d, F>::bind(m, "coupling");
+      LocalQuaternaryIntersectionIntegrandSum<G, CCI, d, d, F, F, 1, 1, F>::bind(m, "coupling");
+      LocalQuaternaryIntersectionIntegrandSum<G, CCI, d, d, F, F, d, 1, F>::bind(m, "coupling");
+      LocalQuaternaryIntersectionIntegrandSum<G, CCI, d, d, F, F, d, d, F>::bind(m, "coupling");
+    }
+#endif
 
     LocalQuaternaryIntersectionIntegrandInterface_for_all_grids<Dune::XT::Common::tuple_tail_t<GridTypes>>::bind(m);
   }

@@ -12,15 +12,18 @@
 #include <dune/pybindxi/pybind11.h>
 #include <dune/pybindxi/stl.h>
 
-#include <dune/xt/grid/type_traits.hh>
+#include <dune/xt/grid/dd/glued.hh>
 #include <dune/xt/grid/grids.hh>
 #include <dune/xt/grid/gridprovider/provider.hh>
+#include <dune/xt/grid/view/coupling.hh>
+#include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/local/integrands/laplace-ipdg.hh>
 
 #include <python/dune/xt/common/configuration.hh>
 #include <python/dune/xt/common/fvector.hh>
 #include <python/dune/xt/grid/grids.bindings.hh>
+#include <python/dune/xt/grid/traits.hh>
 
 
 namespace Dune {
@@ -28,7 +31,7 @@ namespace GDT {
 namespace bindings {
 
 
-template <class G, class I>
+template <class G, class I, class intersection_type>
 class LocalLaplaceIPDGInnerCouplingIntegrand
 {
   using E = XT::Grid::extract_entity_t<G>;
@@ -59,16 +62,17 @@ public:
       class_name += "_" + XT::Common::Typename<F>::value(/*fail_wo_typeid=*/true);
     const auto ClassName = XT::Common::to_camel_case(class_name);
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
-    c.def(py::init([](const double& symmetry_prefactor,
-                      const XT::Functions::GridFunctionInterface<E, d, d, F>& diffusion,
-                      const XT::Functions::GridFunctionInterface<E, d, d, F>& weight,
-                      const std::string& logging_prefix) {
-            return new type(symmetry_prefactor, diffusion, weight, logging_prefix);
-          }),
+    c.def(py::init(
+              [](const double& symmetry_prefactor,
+                 const XT::Functions::GridFunctionInterface<E, d, d, F>& diffusion,
+                 const XT::Functions::GridFunctionInterface<E, d, d, F>& weight,
+                 const std::string& logging_prefix,
+                 const intersection_type&) { return new type(symmetry_prefactor, diffusion, weight, logging_prefix); }),
           "symmetry_prefactor"_a,
           "diffusion"_a,
           "weight"_a = F(1),
-          "logging_prefix"_a = "");
+          "logging_prefix"_a = "",
+          "intersection_type"_a = XT::Grid::bindings::LeafIntersection());
 
     // factory
     const auto FactoryName = XT::Common::to_camel_case(class_id);
@@ -77,13 +81,15 @@ public:
         [](const double& symmetry_prefactor,
            const XT::Functions::GridFunctionInterface<E, d, d, F>& diffusion,
            const XT::Functions::GridFunctionInterface<E, d, d, F>& weight,
-           const std::string& logging_prefix) {
+           const std::string& logging_prefix,
+           const intersection_type&) {
           return new type(symmetry_prefactor, diffusion, weight, logging_prefix);
         },
         "symmetry_prefactor"_a,
         "diffusion"_a,
         "weight"_a = F(1),
-        "logging_prefix"_a = "");
+        "logging_prefix"_a = "",
+        "intersection_type"_a = XT::Grid::bindings::LeafIntersection());
 
     return c;
   } // ... bind(...)
@@ -93,7 +99,6 @@ public:
 } // namespace bindings
 } // namespace GDT
 } // namespace Dune
-
 
 template <class GridTypes = Dune::XT::Grid::bindings::AvailableGridTypes>
 struct LocalLaplaceIPDGInnerCouplingIntegrand_for_all_grids
@@ -105,8 +110,17 @@ struct LocalLaplaceIPDGInnerCouplingIntegrand_for_all_grids
 
   static void bind(pybind11::module& m)
   {
-    Dune::GDT::bindings::LocalLaplaceIPDGInnerCouplingIntegrand<G, I>::bind(m);
-
+    Dune::GDT::bindings::LocalLaplaceIPDGInnerCouplingIntegrand<G, I, Dune::XT::Grid::bindings::LeafIntersection>::bind(
+        m, "leaf");
+#if HAVE_DUNE_GRID_GLUE
+    if constexpr (d == 2) {
+      using GridGlueType = Dune::XT::Grid::DD::Glued<G, G, Dune::XT::Grid::Layers::leaf>;
+      using CI = typename GridGlueType::GlueType::Intersection;
+      using CCI = Dune::XT::Grid::internal::CouplingIntersectionWithCorrectNormal<CI, I>;
+      using Coupling = Dune::XT::Grid::bindings::CouplingIntersection<G, G>;
+      Dune::GDT::bindings::LocalLaplaceIPDGInnerCouplingIntegrand<G, CCI, Coupling>::bind(m, "coupling");
+#endif
+    }
     LocalLaplaceIPDGInnerCouplingIntegrand_for_all_grids<Dune::XT::Common::tuple_tail_t<GridTypes>>::bind(m);
   }
 };
