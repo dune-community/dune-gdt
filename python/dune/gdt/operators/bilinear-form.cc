@@ -36,18 +36,20 @@ namespace GDT {
 namespace bindings {
 
 
-template <class GV, size_t s_r = 1, size_t r_r = s_r>
+template <class AGV, size_t s_r = 1, size_t r_r = s_r, class SGV = AGV, class RGV = AGV>
 class BilinearForm
 {
-  using G = std::decay_t<XT::Grid::extract_grid_t<GV>>;
+  using G = std::decay_t<XT::Grid::extract_grid_t<AGV>>;
   static const size_t d = G::dimension;
   using GP = XT::Grid::GridProvider<G>;
 
 public:
-  using type = GDT::BilinearForm<GV, s_r, 1, r_r>;
-  using base_type = GDT::BilinearFormInterface<GV, s_r, 1, r_r>;
-  //  using bound_type = pybind11::class_<type, base_type>; <--- need to bind BilinearFormInterFace for that
+  using type = GDT::BilinearForm<AGV, s_r, 1, r_r, 1, double, SGV, RGV>;
+  // The base_type cannnot be binded yet because it has pure virtual functions
+  //  using base_type = GDT::BilinearFormInterface<SGV, s_r, 1, r_r, 1, double, RGV>; /
+  //  using bound_type = pybind11::class_<type, base_type>;
   using bound_type = pybind11::class_<type>;
+
 
 private:
   using E = typename type::E;
@@ -80,11 +82,12 @@ public:
           (type & (type::*)(const LocalElementBilinearFormType&)) & type::operator+=,
           "local_element_bilinear_form"_a,
           py::is_operator());
-    c.def("__iadd__", // function ptr signature required for the right return type
-          (type & (type::*)(const std::tuple<const LocalElementBilinearFormType&, const XT::Grid::ElementFilter<GV>&>&))
-              & type::operator+=,
-          "tuple_of_localelementbilinearform_elementfilter"_a,
-          py::is_operator());
+    c.def(
+        "__iadd__", // function ptr signature required for the right return type
+        (type & (type::*)(const std::tuple<const LocalElementBilinearFormType&, const XT::Grid::ElementFilter<AGV>&>&))
+            & type::operator+=,
+        "tuple_of_localelementbilinearform_elementfilter"_a,
+        py::is_operator());
     //    c.def(
     //        "append",
     //        [](type& self,
@@ -101,7 +104,7 @@ public:
     c.def("__iadd__", // function ptr signature required for the right return type
           (type
            & (type::*)(const std::tuple<const LocalCouplingIntersectionBilinearFormType&,
-                                        const XT::Grid::IntersectionFilter<GV>&>&))
+                                        const XT::Grid::IntersectionFilter<AGV>&>&))
               & type::operator+=,
           "tuple_of_localcouplingintersectionbilinearform_intersectionfilter"_a,
           py::is_operator());
@@ -121,7 +124,7 @@ public:
     c.def("__iadd__", // function ptr signature required for the right return type
           (type
            & (type::*)(const std::tuple<const LocalIntersectionBilinearFormType&,
-                                        const XT::Grid::IntersectionFilter<GV>&>&))
+                                        const XT::Grid::IntersectionFilter<AGV>&>&))
               & type::operator+=,
           "tuple_of_localintersectionbilinearform_intersectionfilter"_a,
           py::is_operator());
@@ -187,7 +190,7 @@ public:
     const auto ClassName = XT::Common::to_camel_case(class_name);
 
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
-    c.def(py::init([](XT::Grid::CouplingGridProvider<GV>& grid, const std::string& logging_prefix) {
+    c.def(py::init([](XT::Grid::CouplingGridProvider<AGV>& grid, const std::string& logging_prefix) {
             return new type(grid.coupling_view(), logging_prefix);
           }),
           "grid"_a,
@@ -200,7 +203,7 @@ public:
     const auto FactoryName = XT::Common::to_camel_case(class_id);
     m.def(
         FactoryName.c_str(),
-        [](XT::Grid::CouplingGridProvider<GV>& grid, const std::string& logging_prefix) {
+        [](XT::Grid::CouplingGridProvider<AGV>& grid, const std::string& logging_prefix) {
           return new type(grid.coupling_view(), logging_prefix);
         },
         "grid"_a,
@@ -242,11 +245,11 @@ struct BilinearForm_for_all_grids
     if constexpr (d == 2) {
       using GridGlueType = Dune::XT::Grid::DD::Glued<G, G, Dune::XT::Grid::Layers::leaf>;
       using CGV = Dune::XT::Grid::CouplingGridView<GridGlueType>;
-      BilinearForm<CGV>::bind_coupling(m, grid_name<G>::value(), "coupling");
+      BilinearForm<CGV, 1, 1, LGV, LGV>::bind_coupling(m, grid_name<G>::value(), "coupling");
       if (d > 1) {
-        BilinearForm<CGV, d, 1>::bind_coupling(m, grid_name<G>::value(), "coupling");
-        BilinearForm<CGV, 1, d>::bind_coupling(m, grid_name<G>::value(), "coupling");
-        BilinearForm<CGV, d, d>::bind_coupling(m, grid_name<G>::value(), "coupling");
+        BilinearForm<CGV, d, 1, LGV, LGV>::bind_coupling(m, grid_name<G>::value(), "coupling");
+        BilinearForm<CGV, 1, d, LGV, LGV>::bind_coupling(m, grid_name<G>::value(), "coupling");
+        BilinearForm<CGV, d, d, LGV, LGV>::bind_coupling(m, grid_name<G>::value(), "coupling");
       }
     }
 #endif
