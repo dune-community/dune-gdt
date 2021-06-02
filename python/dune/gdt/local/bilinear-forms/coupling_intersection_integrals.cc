@@ -14,6 +14,8 @@
 
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/grid/grids.hh>
+#include <dune/xt/grid/dd/glued.hh>
+#include <dune/xt/grid/view/coupling.hh>
 
 #include <dune/gdt/local/bilinear-forms/integrals.hh>
 
@@ -116,19 +118,36 @@ struct LocalCouplingIntersectionIntegralBilinearForm_for_all_grids
   {
     using Dune::GDT::bindings::LocalCouplingIntersectionIntegralBilinearForm;
 
-    LocalCouplingIntersectionIntegralBilinearForm<G, I>::bind(m);
+    LocalCouplingIntersectionIntegralBilinearForm<G, I>::bind(m, "leaf");
     if (d > 1) {
-      LocalCouplingIntersectionIntegralBilinearForm<G, I, 1, 1, F, F, d, 1, F>::bind(m);
-      LocalCouplingIntersectionIntegralBilinearForm<G, I, 1, 1, F, F, d, d, F>::bind(m);
-      LocalCouplingIntersectionIntegralBilinearForm<G, I, d, 1, F, F, 1, 1, F>::bind(m);
-      LocalCouplingIntersectionIntegralBilinearForm<G, I, d, 1, F, F, d, 1, F>::bind(m);
-      LocalCouplingIntersectionIntegralBilinearForm<G, I, d, 1, F, F, d, d, F>::bind(m);
-      LocalCouplingIntersectionIntegralBilinearForm<G, I, d, d, F, F, 1, 1, F>::bind(m);
-      LocalCouplingIntersectionIntegralBilinearForm<G, I, d, d, F, F, d, 1, F>::bind(m);
-      LocalCouplingIntersectionIntegralBilinearForm<G, I, d, d, F, F, d, d, F>::bind(m);
+      LocalCouplingIntersectionIntegralBilinearForm<G, I, 1, 1, F, F, d, 1, F>::bind(m, "leaf");
+      LocalCouplingIntersectionIntegralBilinearForm<G, I, 1, 1, F, F, d, d, F>::bind(m, "leaf");
+      LocalCouplingIntersectionIntegralBilinearForm<G, I, d, 1, F, F, 1, 1, F>::bind(m, "leaf");
+      LocalCouplingIntersectionIntegralBilinearForm<G, I, d, 1, F, F, d, 1, F>::bind(m, "leaf");
+      LocalCouplingIntersectionIntegralBilinearForm<G, I, d, 1, F, F, d, d, F>::bind(m, "leaf");
+      LocalCouplingIntersectionIntegralBilinearForm<G, I, d, d, F, F, 1, 1, F>::bind(m, "leaf");
+      LocalCouplingIntersectionIntegralBilinearForm<G, I, d, d, F, F, d, 1, F>::bind(m, "leaf");
+      LocalCouplingIntersectionIntegralBilinearForm<G, I, d, d, F, F, d, d, F>::bind(m, "leaf");
     }
     // add your extra dimensions here
     // ...
+#if HAVE_DUNE_GRID_GLUE
+    if constexpr (d == 2) {
+      using GridGlueType = Dune::XT::Grid::DD::Glued<G, G, Dune::XT::Grid::Layers::leaf>;
+      using CI = typename GridGlueType::GlueType::Intersection;
+      using CCI = Dune::XT::Grid::internal::CouplingIntersectionWithCorrectNormal<CI, I>;
+      LocalCouplingIntersectionIntegralBilinearForm<G, CCI>::bind(m, "coupling");
+      LocalCouplingIntersectionIntegralBilinearForm<G, CCI, 1, 1, F, F, d, 1, F>::bind(m, "coupling");
+      LocalCouplingIntersectionIntegralBilinearForm<G, CCI, 1, 1, F, F, d, d, F>::bind(m, "coupling");
+      LocalCouplingIntersectionIntegralBilinearForm<G, CCI, d, 1, F, F, 1, 1, F>::bind(m, "coupling");
+      LocalCouplingIntersectionIntegralBilinearForm<G, CCI, d, 1, F, F, d, 1, F>::bind(m, "coupling");
+      LocalCouplingIntersectionIntegralBilinearForm<G, CCI, d, 1, F, F, d, d, F>::bind(m, "coupling");
+      LocalCouplingIntersectionIntegralBilinearForm<G, CCI, d, d, F, F, 1, 1, F>::bind(m, "coupling");
+      LocalCouplingIntersectionIntegralBilinearForm<G, CCI, d, d, F, F, d, 1, F>::bind(m, "coupling");
+      LocalCouplingIntersectionIntegralBilinearForm<G, CCI, d, d, F, F, d, d, F>::bind(m, "coupling");
+    }
+#endif
+
     LocalCouplingIntersectionIntegralBilinearForm_for_all_grids<Dune::XT::Common::tuple_tail_t<GridTypes>>::bind(m);
   }
 };
