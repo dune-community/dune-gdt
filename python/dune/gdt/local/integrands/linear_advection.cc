@@ -57,18 +57,25 @@ public:
     const auto ClassName = XT::Common::to_camel_case(class_name);
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
     c.def(py::init([](const XT::Functions::GridFunctionInterface<E, d, 1, F>& direction,
-                      const std::string& logging_prefix) { return new type(direction, logging_prefix); }),
+                      const bool advection_in_divergence_form,
+                      const std::string& logging_prefix) {
+            return new type(direction, advection_in_divergence_form, logging_prefix);
+          }),
           "direction"_a,
+          "advection_in_divergence_form"_a = true,
           "logging_prefix"_a = "");
 
     // factories
     const auto FactoryName = XT::Common::to_camel_case(class_id);
     m.def(
         FactoryName.c_str(),
-        [](const XT::Functions::GridFunctionInterface<E, d, 1, F>& direction, const std::string& logging_prefix) {
-          return new type(direction, logging_prefix);
+        [](const XT::Functions::GridFunctionInterface<E, d, 1, F>& direction,
+           const bool advection_in_divergence_form,
+           const std::string& logging_prefix) {
+          return new type(direction, advection_in_divergence_form, logging_prefix);
         },
         "direction"_a,
+        "advection_in_divergence_form"_a = true,
         "logging_prefix"_a = "");
 
     return c;
