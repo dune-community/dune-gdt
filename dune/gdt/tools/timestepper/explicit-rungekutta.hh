@@ -180,6 +180,7 @@ public:
 
   using BaseType::current_solution;
   using BaseType::current_time;
+  using BaseType::dimRange;
 
   /**
    * \brief Constructor for RungeKutta time stepper
@@ -206,6 +207,8 @@ public:
     , b_(b)
     , c_(c)
     , num_stages_(A_.rows())
+    , relaxationupdate_stages_(num_stages_)
+    , last_entropy_(0)
   {
     assert(A_.rows() == A_.cols() && "A has to be a square matrix");
     assert(b_.size() == A_.rows());
@@ -234,24 +237,39 @@ public:
     : ExplicitRungeKuttaTimeStepper(op, initial_values, r, t_0)
   {}
 
-  RangeFieldType step(const RangeFieldType dt, const RangeFieldType max_dt) override final
+  RangeFieldType
+  step(const RangeFieldType dt, const RangeFieldType max_dt, const std::string prefix = "") override final
   {
+    auto& u_n = current_solution();
     const RangeFieldType actual_dt = std::min(dt, max_dt);
     auto& t = current_time();
-
     this->dts_.push_back(actual_dt);
 
+    const auto local_u = u_n.local_discrete_function();
+    std::vector<double> val_vector;
+    const auto& grid_view = u_n.space().grid_view();
+    const auto& quadratures = op_.entropy_solver().entropy_flux().basis_functions().quadratures();
+    static const auto merged_quads = XT::Data::merged_quadrature(quadratures);
+    static const auto basis_vals = get_basis_vals(merged_quads);
+    if (XT::Common::FloatCmp::eq(t, 0.)) {
+      last_entropy_ = compute_entropy(local_u, grid_view, merged_quads, basis_vals, val_vector);
+      write_entropy(local_u, grid_view, 0., merged_quads, basis_vals, t, actual_dt, val_vector, prefix);
+    }
+
     // calculate stages
-    auto& u_n = current_solution();
+    double relaxationupdate = 0.;
     for (size_t ii = 0; ii < num_stages_; ++ii) {
       u_i_->dofs().vector() = u_n.dofs().vector();
       for (size_t jj = 0; jj < ii; ++jj)
         u_i_->dofs().vector() += stages_k_[jj]->dofs().vector() * (actual_dt * r_ * (A_[ii][jj]));
       // TODO: provide actual_dt to op_. This leads to spurious oscillations in the Lax-Friedrichs flux
       // because actual_dt/dx may become very small.
-      op_.apply(u_i_->dofs().vector(),
-                stages_k_[ii]->dofs().vector(),
-                XT::Common::Parameter({{"t", {t + actual_dt * c_[ii]}}, {"dt", {dt}}}));
+      relaxationupdate_stages_[ii] = 0.;
+      op_.apply_and_compute_relax(u_i_->dofs().vector(),
+                                  stages_k_[ii]->dofs().vector(),
+                                  XT::Common::Parameter({{"t", {t + actual_dt * c_[ii]}}, {"dt", {dt}}}),
+                                  relaxationupdate_stages_[ii]);
+      relaxationupdate += b_[ii] * relaxationupdate_stages_[ii];
       DataHandleType stages_k_ii_handle(*stages_k_[ii]);
       stages_k_[ii]->space().grid_view().template communicate<DataHandleType>(
           stages_k_ii_handle, Dune::InteriorBorder_All_Interface, Dune::ForwardCommunication);
@@ -263,6 +281,8 @@ public:
 
     // augment time
     t += actual_dt;
+
+    write_entropy(local_u, grid_view, relaxationupdate, merged_quads, basis_vals, t, actual_dt, val_vector, prefix);
 
     return dt;
   } // ... step(...)
@@ -317,6 +337,84 @@ public:
   }
 
 private:
+  template <class MergedQuadratureType>
+  std::vector<XT::Common::FieldVector<double, dimRange>> get_basis_vals(const MergedQuadratureType& merged_quads)
+  {
+    const auto& basis_functions = op_.entropy_solver().entropy_flux().basis_functions();
+    std::vector<XT::Common::FieldVector<double, dimRange>> basis_vals(merged_quads.size());
+    size_t kk = 0;
+    for (auto it = merged_quads.begin(); it != merged_quads.end(); ++it, ++kk) {
+      const auto& quad_point = *it;
+      const auto& v = quad_point.position();
+      basis_vals[kk] = basis_functions.evaluate(v, it.first_index());
+    }
+    return basis_vals;
+  }
+
+  template <class GV, class LocalDiscreteFunctionType, class MergedQuadratureType, class BasisValsType>
+  void write_entropy(LocalDiscreteFunctionType& local_u,
+                     const GV& grid_view,
+                     const double relaxationupdate,
+                     const MergedQuadratureType& merged_quads,
+                     const BasisValsType& basis_vals,
+                     const double t,
+                     const double dt,
+                     std::vector<double>& val_vector,
+                     std::string prefix = "entropy")
+  {
+    const std::string entropy_filename = prefix + "_entropy.txt";
+    std::ofstream entropy_file(entropy_filename, std::ios_base::app);
+    const double entropy = compute_entropy(local_u, grid_view, merged_quads, basis_vals, val_vector);
+    const double diff =
+        XT::Common::FloatCmp::eq(t, 0.) ? 0. : compensated_sum({entropy, -1. * last_entropy_, -dt * relaxationupdate});
+    entropy_file << XT::Common::to_string(t) << " " << XT::Common::to_string(entropy, 15) << " "
+                 << XT::Common::to_string(diff, 15) << " " << XT::Common::to_string(std::abs(diff), 15) << std::endl;
+    entropy_file.close();
+    last_entropy_ = entropy;
+  }
+
+  template <class GV, class LocalDiscreteFunctionType, class MergedQuadratureType, class BasisValsType>
+  double compute_entropy(LocalDiscreteFunctionType& local_u,
+                         const GV& grid_view,
+                         const MergedQuadratureType& merged_quads,
+                         const BasisValsType& basis_vals,
+                         std::vector<double>& vals)
+  {
+    vals.clear();
+    XT::Common::FieldVector<RangeFieldType, dimRange> local_u_vec;
+    for (auto&& entity : Dune::elements(grid_view)) {
+      local_u->bind(entity);
+      for (size_t jj = 0; jj < dimRange; ++jj)
+        local_u_vec[jj] = local_u->dofs().get_entry(jj);
+      const auto alpha = op_.entropy_solver().entropy_flux().get_alpha(local_u_vec, true)->first;
+      size_t kk = 0;
+      for (auto it = merged_quads.begin(); it != merged_quads.end(); ++it, ++kk) {
+        const auto& quad_point = *it;
+        const auto alpha_n_b = alpha * basis_vals[kk];
+        vals.push_back(std::exp(alpha_n_b) * (alpha_n_b - 1) * quad_point.weight());
+      } // quad_points
+    } // entities
+    return compensated_sum(vals);
+  }
+
+
+  double compensated_sum(const std::vector<double>& input) const
+  {
+    double sum = 0.0;
+    double c = 0.0; // A running compensation for lost low-order bits.
+
+    for (const double val : input) {
+      double t = sum + val;
+      if (std::abs(sum) >= std::abs(val))
+        c += (sum - t) + val; // If sum is bigger, low-order digits of input[i] are lost.
+      else
+        c += (val - t) + sum; // Else low-order digits of sum are lost.
+      sum = t;
+    }
+    return sum + c; // Correction only applied once in the very end.
+  }
+
+
   const OperatorType& op_;
   const RangeFieldType r_;
   std::unique_ptr<DiscreteFunctionType> u_i_;
@@ -325,6 +423,8 @@ private:
   const VectorType c_;
   std::vector<std::unique_ptr<DiscreteFunctionType>> stages_k_;
   const size_t num_stages_;
+  std::vector<double> relaxationupdate_stages_;
+  double last_entropy_;
 };
 
 

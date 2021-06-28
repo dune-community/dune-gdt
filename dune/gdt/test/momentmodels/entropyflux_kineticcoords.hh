@@ -211,15 +211,17 @@ public:
         densities_stencil, precomputed_fluxes, dd);
   }
 
-  void apply_inverse_hessian(const size_t entity_index, StateType& u) const
+  void apply_inverse_hessian(const size_t entity_index, StateType& u, const double dt) const
   {
-    implementation_->apply_inverse_hessian((*eta_ast_twoprime_evaluations_)[entity_index], u);
+    if (entity_index == 0)
+      std::cout << dt << std::endl;
+    implementation_->apply_inverse_hessian((*eta_ast_twoprime_evaluations_)[entity_index], u, dt);
   }
 
   void store_evaluations(const DomainType& /*entity_center*/,
                          size_t entity_index,
                          StateType& alpha,
-                         const RangeFieldType psi_min,
+                         const RangeFieldType /*psi_min*/,
                          bool check = true)
   {
     implementation_->store_exp_evaluations(exp_evaluations_[entity_index], alpha);

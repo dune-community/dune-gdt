@@ -124,24 +124,39 @@ public:
     rhs_op_.apply(range, rhs_update_, param);
     u_update_ += rhs_update_;
     std::fill(reg_indicators_.begin(), reg_indicators_.end(), false);
-    inverse_hessian_operator_.apply_inverse_hessian(u_update_, reg_indicators_, range, param);
+    DUNE_THROW(Dune::NotImplemented, "Kaputt!");
+    // inverse_hessian_operator_.apply_inverse_hessian(u_update_, reg_indicators_, range, param);
   }
 
-  template <class ElementRange>
-  void apply_range(const VectorType& source,
-                   VectorType& range,
-                   const XT::Common::Parameter& param,
-                   const ElementRange& output_range,
-                   const ElementRange& input_range)
+  void apply_and_compute_relax(const VectorType& source,
+                               VectorType& range,
+                               const XT::Common::Parameter& param,
+                               double& relaxationupdate) const
   {
-    // TODO: replace full-dimensional copies if critical for performance of reduced model
-    density_op_.apply_range(source, range, param, input_range);
-    advection_op_.apply_range(range, u_update_, param, output_range, input_range);
+    density_op_.apply(source, range, param);
+    advection_op_.apply(range, u_update_, param);
     u_update_ *= -1.;
-    rhs_op_.apply_range(range, rhs_update_, param, output_range);
+    rhs_op_.apply(range, rhs_update_, param);
     u_update_ += rhs_update_;
-    inverse_hessian_operator_.apply_inverse_hessian_range(u_update_, reg_indicators_, range, param, output_range);
+    std::fill(reg_indicators_.begin(), reg_indicators_.end(), false);
+    inverse_hessian_operator_.apply_inverse_hessian(u_update_, source, reg_indicators_, range, param, relaxationupdate);
   }
+
+  // template <class ElementRange>
+  // void apply_range(const VectorType& source,
+  //                  VectorType& range,
+  //                  const XT::Common::Parameter& param,
+  //                  const ElementRange& output_range,
+  //                  const ElementRange& input_range)
+  // {
+  //   // TODO: replace full-dimensional copies if critical for performance of reduced model
+  //   density_op_.apply_range(source, range, param, input_range);
+  //   advection_op_.apply_range(range, u_update_, param, output_range, input_range);
+  //   u_update_ *= -1.;
+  //   rhs_op_.apply_range(range, rhs_update_, param, output_range);
+  //   u_update_ += rhs_update_;
+  //   inverse_hessian_operator_.apply_inverse_hessian_range(u_update_, reg_indicators_, range, param, output_range);
+  // }
 
   const std::vector<bool>& reg_indicators() const
   {
@@ -426,7 +441,7 @@ public:
 }; // namespace Dune
 
 
-template <class AdvectionOperatorImp, class EntropySolverImp>
+template <class AdvectionOperatorImp, class EntropySolverImp, class EntropyCalculatorImp>
 class EntropyBasedMomentFvOperator
   : public OperatorInterface<typename AdvectionOperatorImp::MatrixType,
                              typename AdvectionOperatorImp::SGV,
@@ -443,10 +458,14 @@ public:
 
   using AdvectionOperatorType = AdvectionOperatorImp;
   using EntropySolverType = EntropySolverImp;
+  using EntropyCalculatorType = EntropyCalculatorImp;
 
-  EntropyBasedMomentFvOperator(const AdvectionOperatorType& advection_operator, const EntropySolverType& entropy_solver)
+  EntropyBasedMomentFvOperator(const AdvectionOperatorType& advection_operator,
+                               const EntropySolverType& entropy_solver,
+                               const EntropyCalculatorType& entropy_calculator)
     : advection_operator_(advection_operator)
     , entropy_solver_(entropy_solver)
+    , entropy_calculator_(entropy_calculator)
   {}
 
   bool linear() const override final
@@ -464,6 +483,11 @@ public:
     return advection_operator_.range_space();
   }
 
+  const EntropySolverType& entropy_solver() const
+  {
+    return entropy_solver_;
+  }
+
   void apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& param) const override final
   {
     // solve optimization problems and regularize if necessary
@@ -474,9 +498,120 @@ public:
     advection_operator_.apply(regularized, range, param);
   }
 
+  void apply_and_compute_relax(const VectorType& source,
+                               VectorType& range,
+                               const XT::Common::Parameter& param,
+                               double& relaxationupdate) const
+  {
+    // solve optimization problems and regularize if necessary
+    VectorType regularized = range;
+    entropy_solver_.apply(source, regularized, param);
+
+    std::fill(range.begin(), range.end(), 0.);
+    advection_operator_.apply(regularized, range, param);
+
+    relaxationupdate = 0.;
+    entropy_calculator_.apply(source, range, param, relaxationupdate);
+  }
+
   const AdvectionOperatorType& advection_operator_;
   const EntropySolverType& entropy_solver_;
+  const EntropyCalculatorType& entropy_calculator_;
 }; // class EntropyBasedMomentFvOperator<...>
+
+
+template <class AdvectionOperatorImp, class EntropySolverImp, class EntropyCalculatorImp, class RhsOperatorImp>
+class EntropyBasedMomentCombinedFvOperator
+  : public OperatorInterface<typename AdvectionOperatorImp::MatrixType,
+                             typename AdvectionOperatorImp::SGV,
+                             AdvectionOperatorImp::s_r>
+{
+  using BaseType = OperatorInterface<typename AdvectionOperatorImp::MatrixType,
+                                     typename AdvectionOperatorImp::SGV,
+                                     AdvectionOperatorImp::s_r>;
+
+public:
+  using typename BaseType::RangeSpaceType;
+  using typename BaseType::SourceSpaceType;
+  using typename BaseType::VectorType;
+
+  using AdvectionOperatorType = AdvectionOperatorImp;
+  using EntropySolverType = EntropySolverImp;
+  using EntropyCalculatorType = EntropyCalculatorImp;
+  using RhsOperatorType = RhsOperatorImp;
+
+  EntropyBasedMomentCombinedFvOperator(const AdvectionOperatorType& advection_operator,
+                                       const EntropySolverType& entropy_solver,
+                                       const EntropyCalculatorType& entropy_calculator,
+                                       const RhsOperatorType& rhs_op)
+    : advection_operator_(advection_operator)
+    , entropy_solver_(entropy_solver)
+    , entropy_calculator_(entropy_calculator)
+    , rhs_op_(rhs_op)
+    , rhs_update_(advection_operator_.range_space().mapper().size())
+  {}
+
+  bool linear() const override final
+  {
+    return false;
+  }
+
+  const SourceSpaceType& source_space() const override final
+  {
+    return advection_operator_.source_space();
+  }
+
+  const RangeSpaceType& range_space() const override final
+  {
+    return advection_operator_.range_space();
+  }
+
+  const EntropySolverType& entropy_solver() const
+  {
+    return entropy_solver_;
+  }
+
+  void apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& param) const override final
+  {
+    // solve optimization problems and regularize if necessary
+    VectorType regularized = range;
+    entropy_solver_.apply(source, regularized, param);
+
+    std::fill(range.begin(), range.end(), 0.);
+    advection_operator_.apply(regularized, range, param);
+    range *= -1;
+    std::fill(rhs_update_.begin(), rhs_update_.end(), 0.);
+    rhs_op_.apply(regularized, rhs_update_, param);
+    range += rhs_update_;
+  }
+
+  void apply_and_compute_relax(const VectorType& source,
+                               VectorType& range,
+                               const XT::Common::Parameter& param,
+                               double& relaxationupdate) const
+  {
+    // solve optimization problems and regularize if necessary
+    VectorType regularized = range;
+    entropy_solver_.apply(source, regularized, param);
+
+    std::fill(range.begin(), range.end(), 0.);
+    advection_operator_.apply(regularized, range, param);
+
+    range *= -1;
+    std::fill(rhs_update_.begin(), rhs_update_.end(), 0.);
+    rhs_op_.apply(regularized, rhs_update_, param);
+    range += rhs_update_;
+
+    relaxationupdate = 0.;
+    entropy_calculator_.apply(source, range, param, relaxationupdate);
+  }
+
+  const AdvectionOperatorType& advection_operator_;
+  const EntropySolverType& entropy_solver_;
+  const EntropyCalculatorType& entropy_calculator_;
+  const RhsOperatorType& rhs_op_;
+  mutable VectorType rhs_update_;
+}; // class EntropyBasedMomentCombinedFvOperator<...>
 
 
 } // namespace GDT

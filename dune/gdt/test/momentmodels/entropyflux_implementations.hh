@@ -312,12 +312,17 @@ public:
   {
     DomainType ret(0.);
     const size_t num_quad_points = quad_weights_.size();
+    auto& summands = flux_value_storage();
     for (size_t ll = 0; ll < num_quad_points; ++ll) {
       const auto factor_ll = eta_ast_prime_vals[ll] * quad_weights_[ll];
       const auto* basis_ll = &(M_.get_entry_ref(ll, 0.));
-      for (size_t ii = 0; ii < basis_dimRange; ++ii)
-        ret[ii] += basis_ll[ii] * factor_ll;
+      for (size_t ii = 0; ii < basis_dimRange; ++ii) {
+        // ret[ii] += basis_ll[ii] * factor_ll;
+        summands[ii].push_back(basis_ll[ii] * factor_ll);
+      }
     } // ll
+    for (size_t ii = 0; ii < basis_dimRange; ++ii)
+      ret[ii] = compensated_sum(summands[ii]);
     return ret;
   }
 
@@ -360,22 +365,47 @@ public:
     const size_t num_quad_points = quad_weights_.size();
     // matrix is symmetric, we only use lower triangular part
     RangeFieldType factor_ll, factor_ll_ii;
+    auto& H_vals = H_value_storage();
     for (size_t ll = 0; ll < num_quad_points; ++ll) {
       factor_ll = eta_ast_twoprime_vals[ll] * quad_weights_[ll];
       const auto* basis_ll = &(M.get_entry_ref(ll, 0.));
       for (size_t ii = 0; ii < basis_dimRange; ++ii) {
-        auto* H_row = &(H[ii][0]);
+        // auto* H_row = &(H[ii][0]);
         factor_ll_ii = basis_ll[ii] * factor_ll;
-        for (size_t kk = 0; kk <= ii; ++kk)
-          H_row[kk] += basis_ll[kk] * factor_ll_ii;
+        for (size_t kk = 0; kk <= ii; ++kk) {
+          // H_row[kk] += basis_ll[kk] * factor_ll_ii;
+          H_vals[ii][kk].push_back(basis_ll[kk] * factor_ll_ii);
+        }
       } // ii
     } // ll
+    for (size_t ii = 0; ii < basis_dimRange; ++ii)
+      for (size_t kk = 0; kk <= ii; ++kk)
+        H[ii][kk] = compensated_sum(H_vals[ii][kk]);
   } // void calculate_hessian(...)
 
-  void apply_inverse_hessian(const QuadratureWeightsType& eta_ast_twoprime_vals, DomainType& u) const
+  // void apply_inverse_hessian(const QuadratureWeightsType& eta_ast_twoprime_vals, DomainType& u) const
+  // {
+  //   thread_local auto H = std::make_unique<MatrixType>();
+  //   calculate_hessian(eta_ast_twoprime_vals, M_, *H);
+  //   XT::LA::cholesky(*H);
+  //   thread_local DomainType tmp_vec;
+  //   XT::LA::solve_lower_triangular(*H, tmp_vec, u);
+  //   XT::LA::solve_lower_triangular_transposed(*H, u, tmp_vec);
+  // }
+
+  void apply_inverse_hessian(const QuadratureWeightsType& eta_ast_twoprime_vals, DomainType& u, const double dt) const
   {
     thread_local auto H = std::make_unique<MatrixType>();
     calculate_hessian(eta_ast_twoprime_vals, M_, *H);
+    const double reg_param = DXTC_CONFIG_GET("massmatrix_regularization", 0.);
+    if (!XT::Common::is_zero(reg_param)) {
+      for (size_t ii = 0; ii < basis_dimRange; ++ii) {
+        /* (*H)[ii][ii] += dt * 2./(2. * ii + 1.); */
+        (*H)[ii][ii] += std::min(dt, reg_param) * 2. / (2. * ii + 1.);
+        /* (*H)[ii][ii] += dt; */
+      }
+      /* (*H)[0][0] += dt; */
+    }
     XT::LA::cholesky(*H);
     thread_local DomainType tmp_vec;
     XT::LA::solve_lower_triangular(*H, tmp_vec, u);
@@ -602,13 +632,15 @@ public:
       } // ll
     }
 
-    BasisDomainType coord(0.5);
-    coord[dd] = 0;
-    auto& left_flux_value = flux_values[coord];
-    coord[dd] = 1;
-    auto& right_flux_value = flux_values[coord];
-    std::fill(right_flux_value.begin(), right_flux_value.end(), 0.);
-    std::fill(left_flux_value.begin(), left_flux_value.end(), 0.);
+    // BasisDomainType coord(0.5);
+    // coord[dd] = 0;
+    // auto& left_flux_value = flux_values[coord];
+    // coord[dd] = 1;
+    // auto& right_flux_value = flux_values[coord];
+    // std::fill(right_flux_value.begin(), right_flux_value.end(), 0.);
+    // std::fill(left_flux_value.begin(), left_flux_value.end(), 0.);
+    auto& left_flux_value = flux_value_storage();
+    auto& right_flux_value = flux_value_storage2();
     RangeFieldType factor;
     for (size_t ll = 0; ll < quad_points_.size(); ++ll) {
       const auto position = quad_points_[ll][dd];
@@ -620,11 +652,37 @@ public:
       }
       auto& val = position > 0. ? right_flux_value : left_flux_value;
       const auto* basis_ll = &(M_.get_entry_ref(ll, 0.));
-      for (size_t ii = 0; ii < basis_dimRange; ++ii)
-        val[ii] += basis_ll[ii] * factor;
+      for (size_t ii = 0; ii < basis_dimRange; ++ii) {
+        // val[ii] += basis_ll[ii] * factor;
+        val[ii].push_back(basis_ll[ii] * factor);
+      }
     } // ll
+    BasisDomainType coord(0.5);
+    coord[dd] = 0;
+    auto& left_flux_value_result = flux_values[coord];
+    coord[dd] = 1;
+    auto& right_flux_value_result = flux_values[coord];
+    for (size_t ii = 0; ii < basis_dimRange; ++ii) {
+      left_flux_value_result[ii] = compensated_sum(left_flux_value[ii]);
+      right_flux_value_result[ii] = compensated_sum(right_flux_value[ii]);
+    }
   } // void calculate_reconstructed_fluxes(...)
 
+  double compensated_sum(const std::vector<double>& input) const
+  {
+    double sum = 0.0;
+    double c = 0.0; // A running compensation for lost low-order bits.
+
+    for (const double val : input) {
+      double t = sum + val;
+      if (std::abs(sum) >= std::abs(val))
+        c += (sum - t) + val; // If sum is bigger, low-order digits of input[i] are lost.
+      else
+        c += (val - t) + sum; // Else low-order digits of sum are lost.
+      sum = t;
+    }
+    return sum + c; // Correction only applied once in the very end.
+  }
 
   // ============================================================================================
   // ================================== Helper functions ========================================
@@ -691,6 +749,34 @@ public:
     thread_local QuadratureWeightsType work_vec;
     work_vec.resize(quad_points_.size());
     return work_vec;
+  }
+
+  // temporary vectors to store inner products and exponentials
+  FieldVector<std::vector<double>, basis_dimRange>& flux_value_storage() const
+  {
+    thread_local FieldVector<std::vector<double>, basis_dimRange> work_vec;
+    for (auto&& vec : work_vec)
+      vec.clear();
+    return work_vec;
+  }
+
+  // temporary vectors to store inner products and exponentials
+  FieldVector<std::vector<double>, basis_dimRange>& flux_value_storage2() const
+  {
+    thread_local FieldVector<std::vector<double>, basis_dimRange> work_vec;
+    for (auto&& vec : work_vec)
+      vec.clear();
+    return work_vec;
+  }
+
+  // temporary vectors to store inner products and exponentials
+  FieldMatrix<std::vector<double>, basis_dimRange, basis_dimRange>& H_value_storage() const
+  {
+    thread_local FieldMatrix<std::vector<double>, basis_dimRange, basis_dimRange> work_mat;
+    for (auto&& row : work_mat)
+      for (auto&& vec : row)
+        vec.clear();
+    return work_mat;
   }
 
   // temporary vectors to store inner products and exponentials
@@ -2454,7 +2540,7 @@ public:
 #  if ENTROPY_FLUX_USE_3D_HATFUNCTIONS_SPECIALIZATION
 #    if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
 /**
- * Specialization of EntropyBasedFluxImplementation for 3D Hatfunctions
+ * Specialization of EntropyBasedFluxImplementation for 3D Hatfunctions using masslumping
  */
 template <class D, class R, size_t dimRange_or_refinements, size_t fluxDim, EntropyType entropy>
 class EntropyBasedFluxImplementation<HatFunctionMomentBasis<D, 3, R, dimRange_or_refinements, 1, fluxDim, entropy>>

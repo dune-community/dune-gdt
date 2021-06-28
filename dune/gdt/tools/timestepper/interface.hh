@@ -108,7 +108,7 @@ public:
    * solve will never finish execution (if current_time is not increased) or give wrong results (if current time is
    * increased by a wrong dt).
    */
-  virtual RangeFieldType step(const RangeFieldType dt, const RangeFieldType max_dt) = 0;
+  virtual RangeFieldType step(const RangeFieldType dt, const RangeFieldType max_dt, const std::string prefix) = 0;
 
   const RangeFieldType& current_time() const
   {
@@ -237,7 +237,7 @@ public:
 
       // do a timestep
       const auto walltime_before_step = std::chrono::steady_clock::now();
-      dt = step(dt, max_dt);
+      dt = step(dt, max_dt, prefix);
       const auto walltime_after_step = std::chrono::steady_clock::now();
       t = current_time();
       timepoints_.push_back(t);
