@@ -92,16 +92,24 @@ public:
   {
     local_alpha_->bind(entity);
     local_range_->bind(entity);
-    const auto& basis_functions = analytical_flux_.basis_functions();
+    const auto entity_index = space_.grid_view().indexSet().index(entity);
+    // const auto& basis_functions = analytical_flux_.basis_functions();
     const auto& local_alpha_dofs = local_alpha_->dofs();
     for (size_t ii = 0; ii < dimRange; ++ii)
       alpha_tmp_[ii] = local_alpha_dofs.get_entry(ii);
+    analytical_flux_.store_evaluations(entity.geometry().center(), entity_index, alpha_tmp_, min_acceptable_density_);
+    // const auto& ansatz_values = analytical_flux_.eta_ast_prime_evaluations()[entity_index];
     static const double adjust_dt = DXTC_CONFIG_GET("adjust_dt", 1.0e-3);
     if (dt_ < adjust_dt) {
-      const bool changed = basis_functions.adjust_alpha_to_ensure_min_density(
-          alpha_tmp_, min_acceptable_density_, analytical_flux_.get_u(alpha_tmp_));
-      if (changed)
-        changed_ = true;
+      // const bool changed = basis_functions.adjust_alpha_to_ensure_min_density(
+      //     alpha_tmp_, min_acceptable_density_, analytical_flux_.get_u(alpha_tmp_));
+      // for (const auto& val : ansatz_values) {
+      //   if (val < min_acceptable_density_) {
+      //     alpha_tmp_ += basis_functions.alpha_iso(min_acceptable_density_);
+      //     changed_ = true;
+      //     break;
+      //   }
+      // }
     }
     auto& local_range_dofs = local_range_->dofs();
     for (size_t ii = 0; ii < dimRange; ++ii)

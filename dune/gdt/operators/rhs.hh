@@ -5,29 +5,23 @@
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Tobias Leibner (2018)
+//   Rene Milk      (2017 - 2018)
+//   Tobias Leibner (2017)
 
-#ifndef DUNE_GDT_MOMENTMODELS_ENTROPYSOLVER_HH
-#define DUNE_GDT_MOMENTMODELS_ENTROPYSOLVER_HH
+#ifndef DUNE_GDT_OPERATORS_FV_RHS_HH
+#define DUNE_GDT_OPERATORS_FV_RHS_HH
 
-#if HAVE_DUNE_XT_DATA
+#include <boost/config.hpp>
 
-#  include <string>
-
-#  include <dune/xt/grid/functors/interfaces.hh>
-#  include <dune/xt/common/parameter.hh>
-
-#  include <dune/gdt/discretefunction/default.hh>
-#  include <dune/gdt/test/momentmodels/entropyflux.hh>
-#  include <dune/gdt/operators/interfaces.hh>
-#  include <dune/gdt/type_traits.hh>
+#include <dune/xt/common/mkl.hh>
+#include <dune/xt/common/numeric.hh>
+#include <dune/gdt/operators/interfaces.hh>
 
 namespace Dune {
 namespace GDT {
 
-
 template <class SpaceType, class VectorType, class MomentBasis>
-class LocalEntropySolver : public XT::Grid::ElementFunctor<typename SpaceType::GridViewType>
+class LocalRhsOperator : public XT::Grid::ElementFunctor<typename SpaceType::GridViewType>
 {
   using GridViewType = typename SpaceType::GridViewType;
   using BaseType = XT::Grid::ElementFunctor<GridViewType>;
@@ -40,46 +34,52 @@ class LocalEntropySolver : public XT::Grid::ElementFunctor<typename SpaceType::G
   static constexpr size_t dimRange = EntropyFluxType::basis_dimRange;
   using DiscreteFunctionType = DiscreteFunction<VectorType, GridViewType, dimRange, 1, RangeFieldType>;
   using ConstDiscreteFunctionType = ConstDiscreteFunction<VectorType, GridViewType, dimRange, 1, RangeFieldType>;
+  using RangeFieldVector = XT::Common::FieldVector<RangeFieldType, dimRange>;
+  using ScalarFunctionType = XT::Functions::FunctionInterface<dimFlux, 1, 1, RangeFieldType>;
 
 public:
-  explicit LocalEntropySolver(const SpaceType& space,
-                              const VectorType& source_dofs,
-                              VectorType& range_dofs,
-                              const EntropyFluxType& analytical_flux,
-                              const RangeFieldType min_acceptable_density,
-                              const XT::Common::Parameter& param,
-                              const std::string filename = "")
+  explicit LocalRhsOperator(const SpaceType& space,
+                            const VectorType& source_dofs,
+                            VectorType& range_dofs,
+                            const MomentBasis& basis_functions,
+                            const RangeFieldVector& basis_integrated,
+                            const RangeFieldVector& u_iso,
+                            const ScalarFunctionType& sigma_a,
+                            const ScalarFunctionType& sigma_s,
+                            const ScalarFunctionType& Q)
     : space_(space)
     , source_(space_, source_dofs, "source")
     , local_source_(source_.local_discrete_function())
     , range_(space_, range_dofs, "range")
     , local_range_(range_.local_discrete_function())
-    , analytical_flux_(analytical_flux)
-    , local_flux_(analytical_flux_.derived_local_function())
-    , min_acceptable_density_(min_acceptable_density)
-    , param_(param)
-    , filename_(filename.empty() ? "" : (filename + "_regularization.txt"))
+    , basis_functions_(basis_functions)
+    , sigma_a_(sigma_a)
+    , sigma_s_(sigma_s)
+    , Q_(Q)
+    , u_iso_(u_iso)
+    , basis_integrated_(basis_integrated)
     , index_set_(space_.grid_view().indexSet())
   {}
 
-  explicit LocalEntropySolver(LocalEntropySolver& other)
+  explicit LocalRhsOperator(LocalRhsOperator& other)
     : BaseType(other)
     , space_(other.space_)
     , source_(space_, other.source_.dofs().vector(), "source")
     , local_source_(source_.local_discrete_function())
     , range_(space_, other.range_.dofs().vector(), "range")
     , local_range_(range_.local_discrete_function())
-    , analytical_flux_(other.analytical_flux_)
-    , local_flux_(analytical_flux_.derived_local_function())
-    , min_acceptable_density_(other.min_acceptable_density_)
-    , param_(other.param_)
-    , filename_(other.filename_)
+    , basis_functions_(other.basis_functions_)
+    , sigma_a_(other.sigma_a_)
+    , sigma_s_(other.sigma_s_)
+    , Q_(other.Q_)
+    , u_iso_(other.u_iso_)
+    , basis_integrated_(other.basis_integrated_)
     , index_set_(space_.grid_view().indexSet())
   {}
 
   XT::Grid::ElementFunctor<GridViewType>* copy() override final
   {
-    return new LocalEntropySolver(*this);
+    return new LocalRhsOperator(*this);
   }
 
   void apply_local(const EntityType& entity) override final
@@ -89,27 +89,17 @@ public:
     XT::Common::FieldVector<RangeFieldType, dimRange> u;
     for (size_t ii = 0; ii < dimRange; ++ii)
       u[ii] = local_source_->dofs().get_entry(ii);
-    const auto& basis_functions = analytical_flux_.basis_functions();
-    basis_functions.ensure_min_density(u, min_acceptable_density_);
-    local_flux_->bind(entity);
-    const auto alpha_ret = local_flux_->get_alpha(u, true);
-    const auto regularization_params = alpha_ret->second;
+    const auto center = entity.geometry().center();
+    const auto sigma_a_value = sigma_a_.evaluate(center)[0];
+    const auto sigma_s_value = sigma_s_.evaluate(center)[0];
+    const auto sigma_t_value = sigma_a_value + sigma_s_value;
+    const auto Q_value = Q_.evaluate(center)[0];
+    auto ret = u;
+    ret *= -sigma_t_value;
+    ret.axpy(basis_functions_.density(u) * sigma_s_value, u_iso_);
+    ret.axpy(Q_value, basis_integrated_);
     for (size_t ii = 0; ii < dimRange; ++ii)
-      local_range_->dofs().set_entry(ii, regularization_params.first[ii]);
-    const auto s = regularization_params.second;
-    if (s > 0.) {
-      if (!filename_.empty()) {
-        static std::mutex outfile_lock;
-        outfile_lock.lock();
-        std::ofstream outfile(filename_, std::ios_base::app);
-        outfile << param_.get("t")[0];
-        for (size_t ii = 0; ii < dimFlux; ++ii)
-          outfile << " " << entity.geometry().center()[ii];
-        outfile << " " << s << " ";
-        outfile << XT::Common::to_string(u, 15) << std::endl;
-        outfile_lock.unlock();
-      }
-    }
+      local_range_->dofs().add_to_entry(ii, ret[ii]);
   } // void apply_local(...)
 
 private:
@@ -118,19 +108,19 @@ private:
   std::unique_ptr<typename ConstDiscreteFunctionType::ConstLocalDiscreteFunctionType> local_source_;
   DiscreteFunctionType range_;
   std::unique_ptr<typename DiscreteFunctionType::LocalDiscreteFunctionType> local_range_;
-  const EntropyFluxType& analytical_flux_;
-  std::unique_ptr<typename EntropyFluxType::Localfunction> local_flux_;
-  const RangeFieldType min_acceptable_density_;
-  const XT::Common::Parameter& param_;
-  const std::string filename_;
+  const MomentBasis& basis_functions_;
+  const ScalarFunctionType& sigma_a_;
+  const ScalarFunctionType& sigma_s_;
+  const ScalarFunctionType& Q_;
+  const RangeFieldVector& u_iso_;
+  const RangeFieldVector& basis_integrated_;
   const typename SpaceType::GridViewType::IndexSet& index_set_;
-}; // class LocalEntropySolver<...>
-
+}; // class LocalRhsOperator<...>
 
 template <class MomentBasisImp,
           class SpaceImp,
           class MatrixType = typename XT::LA::Container<typename MomentBasisImp::RangeFieldType>::MatrixType>
-class EntropySolver : public OperatorInterface<MatrixType, typename SpaceImp::GridViewType, MomentBasisImp::dimRange, 1>
+class RhsOperator : public OperatorInterface<MatrixType, typename SpaceImp::GridViewType, MomentBasisImp::dimRange, 1>
 {
   using BaseType = OperatorInterface<MatrixType, typename SpaceImp::GridViewType, MomentBasisImp::dimRange, 1>;
 
@@ -143,15 +133,24 @@ public:
   using EntropyFluxType = EntropyBasedFluxFunction<typename SpaceType::GridViewType, MomentBasis>;
   using RangeFieldType = typename MomentBasis::RangeFieldType;
   using LocalVectorType = typename EntropyFluxType::VectorType;
+  static constexpr size_t dimFlux = EntropyFluxType::dimFlux;
+  static constexpr size_t dimRange = EntropyFluxType::basis_dimRange;
+  using ScalarFunctionType = XT::Functions::FunctionInterface<dimFlux, 1, 1, RangeFieldType>;
+  using RangeFieldVector = XT::Common::FieldVector<RangeFieldType, dimRange>;
 
-  EntropySolver(const EntropyFluxType& analytical_flux,
-                const SpaceType& space,
-                const RangeFieldType min_acceptable_density,
-                const std::string filename = "")
+  RhsOperator(const EntropyFluxType& analytical_flux,
+              const SpaceType& space,
+              const ScalarFunctionType& sigma_a,
+              const ScalarFunctionType& sigma_s,
+              const ScalarFunctionType& Q)
     : analytical_flux_(analytical_flux)
     , space_(space)
-    , min_acceptable_density_(min_acceptable_density)
-    , filename_(filename)
+    , basis_functions_(analytical_flux_.basis_functions())
+    , sigma_a_(sigma_a)
+    , sigma_s_(sigma_s)
+    , Q_(Q)
+    , u_iso_(basis_functions_.u_iso())
+    , basis_integrated_(basis_functions_.integrated())
   {}
 
   bool linear() const override final
@@ -169,31 +168,27 @@ public:
     return space_;
   }
 
-  const EntropyFluxType& entropy_flux() const
-  {
-    return analytical_flux_;
-  }
-
   void apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& param) const override final
   {
-    LocalEntropySolver<SpaceType, VectorType, MomentBasis> local_entropy_solver(
-        space_, source, range, analytical_flux_, min_acceptable_density_, param, filename_);
+    LocalRhsOperator<SpaceType, VectorType, MomentBasis> local_rhs_operator(
+        space_, source, range, basis_functions_, basis_integrated_, u_iso_, sigma_a_, sigma_s_, Q_);
     auto walker = XT::Grid::Walker<typename SpaceType::GridViewType>(space_.grid_view());
-    walker.append(local_entropy_solver);
+    walker.append(local_rhs_operator);
     walker.walk(true);
-  } // void apply(...)
+  }
 
-private:
   const EntropyFluxType& analytical_flux_;
   const SpaceType& space_;
-  const RangeFieldType min_acceptable_density_;
-  const std::string filename_;
-}; // class EntropySolver<...>
+  const MomentBasis& basis_functions_;
+  const ScalarFunctionType& sigma_a_;
+  const ScalarFunctionType& sigma_s_;
+  const ScalarFunctionType& Q_;
+  const RangeFieldVector u_iso_;
+  const RangeFieldVector basis_integrated_;
+}; // class RhsOperator<...>
 
 
 } // namespace GDT
 } // namespace Dune
 
-#endif // HAVE_DUNE_XT_DATA
-
-#endif // DUNE_GDT_MOMENTMODELS_ENTROPYSOLVER_HH
+#endif // DUNE_GDT_OPERATORS_FV_RHS_HH

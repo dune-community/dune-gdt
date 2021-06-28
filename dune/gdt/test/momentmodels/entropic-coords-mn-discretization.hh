@@ -232,7 +232,7 @@ struct HyperbolicEntropicCoordsMnDiscretization
 
 
     constexpr TimeStepperMethods time_stepper_type = TimeStepperMethods::bogacki_shampine;
-// constexpr TimeStepperMethods time_stepper_type = TimeStepperMethods::dormand_prince;
+    // constexpr TimeStepperMethods time_stepper_type = TimeStepperMethods::dormand_prince;
 #  if ENTROPY_FLUX_HATFUNCTIONS_USE_MASSLUMPING
     using TimeStepperType = KineticAdaptiveRungeKuttaTimeStepper<MasslumpedOperatorType,
                                                                  MinDensitySetterType,
@@ -257,7 +257,7 @@ struct HyperbolicEntropicCoordsMnDiscretization
     // assumes equally-sized entities
     const auto first_entity = *grid_view.template begin<0>();
     const auto first_intersection = *grid_view.ibegin(first_entity);
-    RangeFieldType dx = first_entity.geometry().volume() / first_intersection.geometry().volume();
+    // RangeFieldType dx = first_entity.geometry().volume() / first_intersection.geometry().volume();
 
     // *********************** create operators and timesteppers ************************************
     NumericalKineticFlux<GV, MomentBasis, EntropyFluxType> numerical_flux(*analytical_flux, *basis_functions);
@@ -377,7 +377,7 @@ struct HyperbolicEntropicCoordsMnDiscretization
 
     // The hessian has entries in the order of psi_min, the inverse thus scales with 1/psi_min, and thus the timestep
     // should be psi_min to get an update of order 1
-    double initial_dt = dx / 100.; // std::min(dt, min_acceptable_density);
+    double initial_dt = 1e-15;
     timestepper.solve(t_end,
                       initial_dt,
                       num_save_steps,

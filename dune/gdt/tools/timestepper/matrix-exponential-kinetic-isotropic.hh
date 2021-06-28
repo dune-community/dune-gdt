@@ -145,7 +145,7 @@ public:
     , Q_(Q)
   {}
 
-  RangeFieldType step(const RangeFieldType dt, const RangeFieldType max_dt) override final
+  RangeFieldType step(const RangeFieldType dt, const RangeFieldType max_dt, const std::string /*prefix*/) override final
   {
     const RangeFieldType actual_dt = std::min(dt, max_dt);
     auto& t = current_time();

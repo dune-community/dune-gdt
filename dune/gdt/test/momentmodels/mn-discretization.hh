@@ -26,6 +26,8 @@
 #  include <dune/gdt/operators/advection-fv.hh>
 #  include <dune/gdt/interpolations/default.hh>
 #  include <dune/gdt/test/momentmodels/entropysolver.hh>
+#  include <dune/gdt/operators/rhs.hh>
+#  include <dune/gdt/test/momentmodels/entropycalculator.hh>
 #  include <dune/gdt/local/numerical-fluxes/kinetic.hh>
 #  include <dune/gdt/local/operators/advection-fv.hh>
 #  include <dune/gdt/spaces/l2/finite-volume.hh>
@@ -115,6 +117,7 @@ struct HyperbolicMnDiscretization
     static constexpr size_t dimRange = MomentBasis::dimRange;
     static constexpr auto la_backend = TestCaseType::la_backend;
     using DomainType = FieldVector<RangeFieldType, dimDomain>;
+    using RangeType = FieldVector<RangeFieldType, dimRange>;
     using MatrixType = typename XT::LA::Container<RangeFieldType, la_backend>::MatrixType;
     using VectorType = typename XT::LA::Container<RangeFieldType, la_backend>::VectorType;
     using DynamicRangeType = DynamicVector<RangeFieldType>;
@@ -136,8 +139,9 @@ struct HyperbolicMnDiscretization
         quad_order == size_t(-1) ? MomentBasis::default_quad_order() : quad_order,
         quad_refinements == size_t(-1) ? MomentBasis::default_quad_refinements() : quad_refinements);
     const RangeFieldType psi_vac = DXTC_CONFIG_GET("psi_vac", 1e-8 / basis_functions->unit_ball_volume());
+    const double tau = DXTC_CONFIG_GET("opt_tau", 1e-9);
     const std::unique_ptr<ProblemType> problem_ptr =
-        std::make_unique<ProblemType>(*basis_functions, grid_view, psi_vac, grid_config, false);
+        std::make_unique<ProblemType>(*basis_functions, grid_view, psi_vac, grid_config, false, tau);
     const auto& problem = *problem_ptr;
     const auto initial_values = problem.initial_values();
     const auto boundary_values = problem.boundary_values();
@@ -150,7 +154,7 @@ struct HyperbolicMnDiscretization
     // using, so for the tests we disable this cache to get reproducible results.
     if (disable_thread_cache)
       dynamic_cast<EntropyFluxType*>(analytical_flux.get())->disable_thread_cache();
-    const RangeFieldType CFL = DXTC_CONFIG.get("timestepper.CFL", problem.CFL());
+    // const RangeFieldType CFL = DXTC_CONFIG.get("timestepper.CFL", problem.CFL());
 
     // ***************** project initial values to discrete function *********************
     // create a discrete function for the solution
@@ -164,6 +168,7 @@ struct HyperbolicMnDiscretization
     using AdvectionOperatorType = AdvectionFvOperator<MatrixType, GV, dimRange>;
     using EigenvectorWrapperType = typename EigenvectorWrapperChooser<MomentBasis, AnalyticalFluxType>::type;
     using EntropySolverType = EntropySolver<MomentBasis, SpaceType, MatrixType>;
+    using EntropyCalculatorType = EntropyCalculator<MomentBasis, SpaceType, MatrixType>;
     using ReconstructionOperatorType = PointwiseLinearReconstructionOperator<AnalyticalFluxType,
                                                                              BoundaryValueType,
                                                                              GV,
@@ -171,14 +176,24 @@ struct HyperbolicMnDiscretization
                                                                              EigenvectorWrapperType>;
     using ReconstructionAdvectionOperatorType =
         AdvectionWithPointwiseReconstructionOperator<AdvectionOperatorType, ReconstructionOperatorType>;
-    using FvOperatorType = EntropyBasedMomentFvOperator<
-        std::conditional_t<TestCaseType::reconstruction, ReconstructionAdvectionOperatorType, AdvectionOperatorType>,
-        EntropySolverType>;
+    // using FvOperatorType = EntropyBasedMomentFvOperator<
+    //     std::conditional_t<TestCaseType::reconstruction,
+    //                        ReconstructionAdvectionOperatorType,
+    //                        AdvectionOperatorType>,
+    //     EntropySolverType,
+    //     EntropyCalculatorType>;
     constexpr TimeStepperMethods time_stepper_type = TimeStepperMethods::explicit_rungekutta_second_order_ssp;
-    using OperatorTimeStepperType =
-        ExplicitRungeKuttaTimeStepper<FvOperatorType, DiscreteFunctionType, time_stepper_type>;
-    using RhsTimeStepperType = KineticIsotropicTimeStepper<DiscreteFunctionType, MomentBasis>;
-    using TimeStepperType = StrangSplittingTimeStepper<RhsTimeStepperType, OperatorTimeStepperType>;
+    using RhsOperatorType = RhsOperator<MomentBasis, SpaceType, MatrixType>;
+    using FvOperatorType = EntropyBasedMomentCombinedFvOperator<
+        std::conditional_t<TestCaseType::reconstruction, ReconstructionAdvectionOperatorType, AdvectionOperatorType>,
+        EntropySolverType,
+        EntropyCalculatorType,
+        RhsOperatorType>;
+    using TimeStepperType = ExplicitRungeKuttaTimeStepper<FvOperatorType, DiscreteFunctionType, time_stepper_type>;
+    // using OperatorTimeStepperType =
+    //     ExplicitRungeKuttaTimeStepper<FvOperatorType, DiscreteFunctionType, time_stepper_type>;
+    // using RhsTimeStepperType = KineticIsotropicTimeStepper<DiscreteFunctionType, MomentBasis>;
+    // using TimeStepperType = StrangSplittingTimeStepper<RhsTimeStepperType, OperatorTimeStepperType>;
 
     // *************** Calculate dx and initial dt **************************************
     Dune::XT::Grid::Dimensions<GV> dimensions(grid_view);
@@ -187,7 +202,8 @@ struct HyperbolicMnDiscretization
       dx /= std::sqrt(2);
     else if constexpr (dimDomain == 3)
       dx /= std::sqrt(3);
-    RangeFieldType dt = CFL * dx;
+    // RangeFieldType dt = CFL * dx;
+    const RangeFieldType dt = DXTC_CONFIG.get("timestepper.dt", problem.CFL() * dx);
 
     // *********************** create operators and timesteppers ************************************
     NumericalKineticFlux<GV, MomentBasis> numerical_flux(*analytical_flux, *basis_functions);
@@ -266,17 +282,52 @@ struct HyperbolicMnDiscretization
                                      fv_space,
                                      problem.psi_vac() * basis_functions->unit_ball_volume() / 10,
                                      filename);
-    FvOperatorType fv_operator(
-        FvOperatorChooser<TestCaseType::reconstruction>::choose(advection_operator, reconstruction_advection_operator),
-        entropy_solver);
+    EntropyCalculatorType entropy_calculator(*(dynamic_cast<EntropyFluxType*>(analytical_flux.get())), fv_space);
 
-    // ******************************** do the time steps ***********************************************************
+    // static const RangeType u_iso = basis_functions->u_iso();
+    // static const RangeType basis_integrated = basis_functions->integrated();
     const auto sigma_a = problem.sigma_a();
     const auto sigma_s = problem.sigma_s();
     const auto Q = problem.Q();
-    OperatorTimeStepperType timestepper_op(fv_operator, u, -1.0);
-    RhsTimeStepperType timestepper_rhs(*basis_functions, u, *sigma_a, *sigma_s, *Q);
-    TimeStepperType timestepper(timestepper_rhs, timestepper_op);
+    // auto rhs_func = [&](const auto& source,
+    //                     const auto& local_source,
+    //                     auto& local_range,
+    //                     const Dune::XT::Common::Parameter& /*param*/) {
+    //   const auto& element = local_range.element();
+    //   local_source[0]->bind(element);
+    //   const auto center = element.geometry().center();
+    //   // const auto& u_elem = analytical_flux->get_precomputed_u(fv_space.grid_view().indexSet().index(element));
+    //   const auto u_elem = local_source[0]->evaluate(center);
+    //   const auto sigma_a_value = sigma_a->evaluate(center)[0];
+    //   const auto sigma_s_value = sigma_s->evaluate(center)[0];
+    //   const auto sigma_t_value = sigma_a_value + sigma_s_value;
+    //   const auto Q_value = Q->evaluate(center)[0];
+    //   auto ret = u_elem;
+    //   ret *= -sigma_t_value;
+    //   ret.axpy(basis_functions->density(u_elem) * sigma_s_value, u_iso);
+    //   ret.axpy(Q_value, basis_integrated);
+    //   auto& range_dofs = local_range.dofs();
+    //   for (size_t ii = 0; ii < dimRange; ++ii)
+    //     range_dofs.add_to_entry(ii, ret[ii]);
+    // };
+    RhsOperatorType rhs_operator(
+        *(dynamic_cast<EntropyFluxType*>(analytical_flux.get())), fv_space, *sigma_a, *sigma_s, *Q);
+
+    // rhs_operator.append(GenericLocalElementOperator<VectorType, GV, dimRange>(rhs_func, 1));
+    FvOperatorType fv_operator(
+        FvOperatorChooser<TestCaseType::reconstruction>::choose(advection_operator, reconstruction_advection_operator),
+        entropy_solver,
+        entropy_calculator,
+        rhs_operator);
+
+    // ******************************** do the time steps ***********************************************************
+    // const auto sigma_a = problem.sigma_a();
+    // const auto sigma_s = problem.sigma_s();
+    // const auto Q = problem.Q();
+    // OperatorTimeStepperType timestepper_op(fv_operator, u, -1.0);
+    TimeStepperType timestepper(fv_operator, u);
+    // RhsTimeStepperType timestepper_rhs(*basis_functions, u, *sigma_a, *sigma_s, *Q);
+    // TimeStepperType timestepper(timestepper_rhs, timestepper_op);
 
     auto begin_time = std::chrono::steady_clock::now();
     timestepper.solve(t_end,
