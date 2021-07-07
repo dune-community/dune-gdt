@@ -31,8 +31,8 @@ class InstallPlatlib(install):
         self.install_lib = self.install_platlib
 
 
-setup(name='dune.gdt',
-      version='${DUNE_GDT_VERSION}',
+setup(name='dune-gdt',
+      version='0.3-dev',
       namespace_packages=['dune'],
       description='Python for Dune-Gdt',
       author='The dune-gdt devs',
