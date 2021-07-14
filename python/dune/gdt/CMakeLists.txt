@@ -61,6 +61,10 @@ dune_pybindxi_add_module(_local_bilinear_forms_restricted_intersection_integrals
                          EXCLUDE_FROM_ALL
                          ${header}
                          local/bilinear-forms/restricted_intersection_integrals.cc)
+dune_pybindxi_add_module(_local_bilinear_forms_vectorized_element_integrals
+                         EXCLUDE_FROM_ALL
+                         ${header}
+                         local/bilinear-forms/vectorized_element_integrals.cc)
 dune_pybindxi_add_module(_local_functionals_element_integrals
                          EXCLUDE_FROM_ALL
                          ${header}
@@ -81,6 +85,10 @@ dune_pybindxi_add_module(_local_functionals_restricted_intersection_integrals
                          EXCLUDE_FROM_ALL
                          ${header}
                          local/functionals/restricted_intersection_integrals.cc)
+dune_pybindxi_add_module(_local_functionals_vectorized_element_integrals
+                         EXCLUDE_FROM_ALL
+                         ${header}
+                         local/functionals/vectorized_element_integrals.cc)
 dune_pybindxi_add_module(_local_integrands_binary_element_interface
                          EXCLUDE_FROM_ALL
                          ${header}
