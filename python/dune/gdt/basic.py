@@ -12,9 +12,11 @@ from dune.gdt._local_bilinear_forms_restricted_coupling_intersection_integrals i
         LocalCouplingIntersectionRestrictedIntegralBilinearForm)
 from dune.gdt._local_bilinear_forms_restricted_intersection_integrals import (
         LocalIntersectionRestrictedIntegralBilinearForm)
+from dune.gdt._local_bilinear_forms_vectorized_element_integrals import VectorizedLocalElementIntegralBilinearForm
 from dune.gdt._local_functionals_element_integrals import LocalElementIntegralFunctional
 from dune.gdt._local_functionals_intersection_integrals import LocalIntersectionIntegralFunctional
 from dune.gdt._local_functionals_restricted_intersection_integrals import LocalIntersectionRestrictedIntegralFunctional
+from dune.gdt._local_functionals_vectorized_element_integrals import VectorizedLocalElementIntegralFunctional
 from dune.gdt._local_integrands_element_product import LocalElementProductIntegrand
 from dune.gdt._local_integrands_intersection_product import (
         LocalIntersectionNormalComponentProductIntegrand, LocalIntersectionProductIntegrand)
