@@ -1,6 +1,7 @@
 from dune.gdt import visualize_function
 from dune.gdt._discretefunction_bochner import DiscreteBochnerFunction
 from dune.gdt._discretefunction_discretefunction import DiscreteFunction
+from dune.gdt._functionals_vector_based import VectorFunctional
 from dune.gdt._interpolations_boundary import boundary_interpolation
 from dune.gdt._interpolations_default import default_interpolation
 from dune.gdt._interpolations_oswald import oswald_interpolation
