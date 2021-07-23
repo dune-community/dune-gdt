@@ -380,7 +380,7 @@ void PfieldLinearSolver::setup()
   if (num_pfield_variables_ == 1) {
     *S_ = M_;
     S_->axpy(-dt_, B_);
-    S_->axpy(-dt_ * gamma_ * epsilon_ / Ca_, E_);
+    S_->axpy(dt_ * gamma_ * epsilon_ / Ca_, E_);
   } else {
     S_01_ = E_;
     S_01_ *= gamma_ * dt_;
@@ -433,7 +433,7 @@ void PfieldLinearSolver::prepare(const size_t cell, const bool restricted)
   S_00_ = M_;
   S_00_.axpy(-dt_, B_);
   if (num_pfield_variables_ == 1)
-    S_00_.axpy(-dt_ * gamma_ * epsilon_ / Ca_, E_);
+    S_00_.axpy(dt_ * gamma_ * epsilon_ / Ca_, E_);
   wrapper_.prepare(cell, restricted);
 }
 
@@ -526,7 +526,7 @@ void PfieldLinearSolver::set_nonlinear_part_of_S() const
   if (num_pfield_variables_ == 1) {
     S_00_ = M_;
     S_00_.axpy(-dt_, B_);
-    S_00_.axpy(-dt_ * gamma_ * epsilon_ / Ca_, E_);
+    S_00_.axpy(dt_ * gamma_ * epsilon_ / Ca_, E_);
     S_00_.axpy(dt_ * gamma_ * 1 / (epsilon_ * Ca_), Dmu_f_);
   } else if (num_pfield_variables_ == 3) {
     S_10_ = Dphi_f_incl_coeffs_and_sign_;

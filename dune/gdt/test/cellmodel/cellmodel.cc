@@ -959,7 +959,7 @@ struct CellModelSolver::PfieldResidualFunctor : public XT::Grid::ElementFunctor<
       mu_coeffs_[ii] = quad_storage_.mu_dofs_[global_indices_phi[ii]];
     }
     const auto& quadrature = quad_storage_.quadrature_;
-    const double prefactor2 = cellmodel_.num_pfield_variables_ > 1 ? eps_inv_ : -dt_gamma_div_eps_Ca_;
+    const double prefactor2 = cellmodel_.num_pfield_variables_ > 1 ? eps_inv_ : dt_gamma_div_eps_Ca_;
     for (size_t ll = 0; ll < quadrature.size(); ++ll) {
       phi = XT::Common::transform_reduce(
           phi_coeffs_.begin(), phi_coeffs_.end(), quad_storage_.phi_basis_evaluated_[ll].begin(), 0.);
