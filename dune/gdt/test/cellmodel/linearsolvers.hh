@@ -290,7 +290,8 @@ public:
   using PfieldScalarProductType = PfieldScalarProduct<EigenVectorType, MatrixType>;
   using MatrixViewType = XT::LA::MatrixView<MatrixType>;
 
-  PfieldLinearSolver(const double dt,
+  PfieldLinearSolver(const size_t num_pfield_variables,
+                     const double dt,
                      const double gamma,
                      const double epsilon,
                      const double Be,
@@ -326,11 +327,13 @@ public:
                                                                   const XT::LA::SparsityPatternDefault& pattern);
 
   // creates sparsity pattern of phasefield system matrix
-  static XT::LA::SparsityPatternDefault system_matrix_pattern(const XT::LA::SparsityPatternDefault& submatrix_pattern);
+  static XT::LA::SparsityPatternDefault system_matrix_pattern(const XT::LA::SparsityPatternDefault& submatrix_pattern,
+                                                              const size_t num_pfield_variables);
 
   // creates sparsity pattern of phasefield preconditioner matrix
   static XT::LA::SparsityPatternDefault
-  preconditioner_matrix_pattern(const XT::LA::SparsityPatternDefault& submatrix_pattern);
+  preconditioner_matrix_pattern(const XT::LA::SparsityPatternDefault& submatrix_pattern,
+                                const size_t num_pfield_variables);
 
   // Calling this method will result in ret = M^{-1} rhs.
   // Note: Writing rhs_mu.backend() = solver->solve(rhs_mu.backend()) gives wrong results for CG solver, ret may not be
@@ -347,6 +350,7 @@ public:
 
   std::shared_ptr<Dune::ScalarProduct<EigenVectorType>> create_scalar_product();
 
+  size_t num_pfield_variables_;
   R dt_;
   R gamma_;
   R epsilon_;

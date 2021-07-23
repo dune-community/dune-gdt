@@ -38,6 +38,8 @@ int main(int argc, char* argv[])
     // grid config
     unsigned int num_elements_x = config.template get<unsigned int>("grid.NX", static_cast<unsigned int>(90));
     unsigned int num_elements_y = config.template get<unsigned int>("grid.NY", static_cast<unsigned int>(90));
+    num_elements_x = DXTC_CONFIG_GET("NX", num_elements_x);
+    num_elements_y = DXTC_CONFIG_GET("NY", num_elements_y);
 
     // timestepping
     double t_end = config.template get<double>("fem.t_end", 340.);
@@ -65,6 +67,8 @@ int main(int argc, char* argv[])
     const double inner_gmres_reduction = DXTC_CONFIG_GET("inner_gmres_reduction", 1e-3);
     const int inner_gmres_maxit = DXTC_CONFIG_GET("inner_gmres_maxit", 10);
     const int gmres_verbose = DXTC_CONFIG_GET("gmres_verbose", 0);
+    const bool bending = DXTC_CONFIG_GET("bending", true);
+    const bool conservative = DXTC_CONFIG_GET("conservative", true);
     const std::string pfield_solver_type_string = DXTC_CONFIG_GET("pfield_solver_type", "gmres");
     const CellModelLinearSolverType pfield_solver_type = string_to_solver_type(pfield_solver_type_string);
     const CellModelMassMatrixSolverType pfield_mass_matrix_solver_type =
@@ -81,6 +85,10 @@ int main(int argc, char* argv[])
     // a negative value of write step is interpreted as "write all steps"
     double write_step = config.template get<double>("output.write_step", -1.);
     std::string filename = config.get("output.prefix", "cpp");
+    if (bending && conservative)
+      filename += "_ch";
+    else
+      filename += "_ac";
     filename += "_" + testcase;
     filename += "_pfield_" + pfield_solver_type_string;
     filename += "_ofield_" + ofield_solver_type_string;
@@ -124,7 +132,9 @@ int main(int argc, char* argv[])
                                  gmres_verbose,
                                  inner_gmres_reduction,
                                  inner_gmres_maxit,
-                                 gmres_verbose);
+                                 gmres_verbose,
+                                 bending,
+                                 conservative);
 
     auto begin = std::chrono::steady_clock::now();
     model_solver.solve_without_storing(true, write_step, filename, subsampling);

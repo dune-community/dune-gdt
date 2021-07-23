@@ -129,7 +129,9 @@ struct CellModelSolver
       const int outer_verbose = 0,
       const double inner_reduction = 1e-3,
       const int inner_maxit = 10,
-      const int inner_verbose = 0);
+      const int inner_verbose = 0,
+      const double bending = true,
+      const double conservative = true);
 
   CellModelSolver(const CellModelSolver&) = delete;
   CellModelSolver(CellModelSolver&&) = delete;
@@ -708,6 +710,7 @@ struct CellModelSolver
   const size_t num_mutexes_u_;
   const size_t num_mutexes_ofield_;
   const size_t num_mutexes_pfield_;
+  const size_t num_pfield_variables_;
   // Finite element vectors for phase field, orientation field and stokes system
   // There is one phase field and orientation field per cell
   VectorType stokes_vector_;
@@ -858,6 +861,8 @@ struct CellModelSolver
   mutable std::vector<DiscreteFunctionType> phinat_tmp_;
   mutable std::vector<DiscreteFunctionType> mu_tmp_;
   XT::Grid::RangedPartitioning<PGV, 0> partitioning_;
+  const bool bending_;
+  const bool conservative_;
   std::shared_ptr<QuadratureStorage> stokes_rhs_quad_;
   std::shared_ptr<QuadratureStorage> pfield_rhs_quad_;
   std::shared_ptr<QuadratureStorage> ofield_prepare_quad_;

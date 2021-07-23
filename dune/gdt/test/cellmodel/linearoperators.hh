@@ -321,7 +321,7 @@ public:
   // Matrix dimensions are
   // A: m x m, B1, B2: m x n, C: n x n
   PfieldMatrixLinearPartOperator(const CellModelSolverType& cellmodel_solver)
-    : BaseType(cellmodel_solver.M_pfield_, 3 * cellmodel_solver.M_pfield_.rows())
+    : BaseType(cellmodel_solver.M_pfield_, cellmodel_solver.num_pfield_variables_ * cellmodel_solver.M_pfield_.rows())
     , cellmodel_solver_(cellmodel_solver)
     , x_phi_(cellmodel_solver.size_phi_, 0., 0)
     , x_phinat_(cellmodel_solver.size_phi_, 0., 0)
@@ -338,74 +338,116 @@ public:
    */
   void apply(const Vector& x, Vector& y) const override final
   {
-    // get some variables from cellmodel_solver_
-    const MatrixType& M = cellmodel_solver_.M_pfield_;
-    const MatrixType& B = cellmodel_solver_.B_pfield_;
-    const MatrixType& E = cellmodel_solver_.E_pfield_;
-    const auto size_phi = cellmodel_solver_.size_phi_;
-    const auto dt = cellmodel_solver_.dt_;
-    const auto gamma = cellmodel_solver_.gamma_;
-    const auto epsilon = cellmodel_solver_.epsilon_;
-    const auto Be = cellmodel_solver_.Be_;
-    const auto Ca = cellmodel_solver_.Ca_;
-    const auto mv = cellmodel_solver_.template mv_func<Vector>(restricted_);
-    const auto axpy = cellmodel_solver_.template vector_axpy_func<Vector>(restricted_);
-    const auto scal = cellmodel_solver_.template scal_func<Vector>(restricted_);
-    const auto& phi_dofs = cellmodel_solver_.phi_deim_range_dofs_[cell_];
-    const auto& phinat_dofs = cellmodel_solver_.phinat_deim_range_dofs_[cell_];
-    const auto& mu_dofs = cellmodel_solver_.mu_deim_range_dofs_[cell_];
+    if (cellmodel_solver_.bending_ && cellmodel_solver_.conservative_) {
+      // get some variables from cellmodel_solver_
+      const MatrixType& M = cellmodel_solver_.M_pfield_;
+      const MatrixType& B = cellmodel_solver_.B_pfield_;
+      const MatrixType& E = cellmodel_solver_.E_pfield_;
+      const auto size_phi = cellmodel_solver_.size_phi_;
+      const auto dt = cellmodel_solver_.dt_;
+      const auto gamma = cellmodel_solver_.gamma_;
+      const auto epsilon = cellmodel_solver_.epsilon_;
+      const auto Be = cellmodel_solver_.Be_;
+      const auto Ca = cellmodel_solver_.Ca_;
+      const auto mv = cellmodel_solver_.template mv_func<Vector>(restricted_);
+      const auto axpy = cellmodel_solver_.template vector_axpy_func<Vector>(restricted_);
+      const auto scal = cellmodel_solver_.template scal_func<Vector>(restricted_);
+      const auto& phi_dofs = cellmodel_solver_.phi_deim_range_dofs_[cell_];
+      const auto& phinat_dofs = cellmodel_solver_.phinat_deim_range_dofs_[cell_];
+      const auto& mu_dofs = cellmodel_solver_.mu_deim_range_dofs_[cell_];
 
-    // copy to temporary vectors (we do not use vector views to improve performance of mv)
-    if (!restricted_) {
-      for (size_t ii = 0; ii < size_phi; ++ii) {
-        x_phi_[ii] = x[ii];
-        x_phinat_[ii] = x[size_phi + ii];
-        x_mu_[ii] = x[2 * size_phi + ii];
+      // copy to temporary vectors (we do not use vector views to improve performance of mv)
+      if (!restricted_) {
+        for (size_t ii = 0; ii < size_phi; ++ii) {
+          x_phi_[ii] = x[ii];
+          x_phinat_[ii] = x[size_phi + ii];
+          x_mu_[ii] = x[2 * size_phi + ii];
+        }
+      } else {
+        const auto& source_dofs = cellmodel_solver_.pfield_deim_source_dofs_[cell_][0];
+        const auto& phinat_begin = cellmodel_solver_.phinat_deim_source_dofs_begin_[cell_];
+        const auto& mu_begin = cellmodel_solver_.mu_deim_source_dofs_begin_[cell_];
+        for (size_t ii = 0; ii < phinat_begin; ++ii)
+          x_phi_[source_dofs[ii]] = x[source_dofs[ii]];
+        for (size_t ii = phinat_begin; ii < mu_begin; ++ii)
+          x_phinat_[source_dofs[ii] - size_phi] = x[source_dofs[ii]];
+        for (size_t ii = mu_begin; ii < source_dofs.size(); ++ii)
+          x_mu_[source_dofs[ii] - 2 * size_phi] = x[source_dofs[ii]];
+      } // if (!restricted)
+      // apply matrices
+      // first row
+      mv(M, x_phi_, y_phi_, phi_dofs);
+      mv(B, x_phi_, tmp_vec_, phi_dofs);
+      axpy(y_phi_, -dt, tmp_vec_, phi_dofs);
+      mv(E, x_phinat_, tmp_vec_, phi_dofs);
+      axpy(y_phi_, dt * gamma, tmp_vec_, phi_dofs);
+      // second row
+      mv(M, x_phinat_, y_phinat_, phinat_dofs);
+      mv(E, x_mu_, tmp_vec_, phinat_dofs);
+      axpy(y_phinat_, 1. / Be, tmp_vec_, phinat_dofs);
+      // third row (and M * mu from second row)
+      mv(M, x_mu_, y_mu_, mu_dofs);
+      if (restricted_)
+        mv(M, x_mu_, y_mu_, phinat_dofs);
+      axpy(y_phinat_, 1. / Ca, y_mu_, phinat_dofs);
+      mv(E, x_phi_, tmp_vec_, mu_dofs);
+      axpy(y_mu_, epsilon, tmp_vec_, mu_dofs);
+      // copy to result vector
+      if (!restricted_) {
+        for (size_t ii = 0; ii < size_phi; ++ii) {
+          y[ii] = y_phi_[ii];
+          y[size_phi + ii] = y_phinat_[ii];
+          y[2 * size_phi + ii] = y_mu_[ii];
+        }
+      } else {
+        for (const auto& dof : phi_dofs)
+          y[dof] = y_phi_[dof];
+        for (const auto& dof : phinat_dofs)
+          y[size_phi + dof] = y_phinat_[dof];
+        for (const auto& dof : mu_dofs)
+          y[2 * size_phi + dof] = y_mu_[dof];
+      } // if (!restricted)
+    } else if (!cellmodel_solver_.bending_ && !cellmodel_solver_.conservative_) {
+      // get some variables from cellmodel_solver_
+      const MatrixType& M = cellmodel_solver_.M_pfield_;
+      const MatrixType& B = cellmodel_solver_.B_pfield_;
+      const MatrixType& E = cellmodel_solver_.E_pfield_;
+      const auto size_phi = cellmodel_solver_.size_phi_;
+      const auto dt = cellmodel_solver_.dt_;
+      const auto gamma = cellmodel_solver_.gamma_;
+      const auto epsilon = cellmodel_solver_.epsilon_;
+      const auto Ca = cellmodel_solver_.Ca_;
+      const auto mv = cellmodel_solver_.template mv_func<Vector>(restricted_);
+      const auto axpy = cellmodel_solver_.template vector_axpy_func<Vector>(restricted_);
+      const auto scal = cellmodel_solver_.template scal_func<Vector>(restricted_);
+      const auto& phi_dofs = cellmodel_solver_.phi_deim_range_dofs_[cell_];
+      // copy to temporary vectors (we do not use vector views to improve performance of mv)
+      if (!restricted_) {
+        for (size_t ii = 0; ii < size_phi; ++ii)
+          x_phi_[ii] = x[ii];
+      } else {
+        const auto& source_dofs = cellmodel_solver_.pfield_deim_source_dofs_[cell_][0];
+        for (size_t ii = 0; ii < source_dofs.size(); ++ii)
+          x_phi_[source_dofs[ii]] = x[source_dofs[ii]];
+      }
+      // apply matrices
+      // first row
+      mv(M, x_phi_, y_phi_, phi_dofs);
+      mv(B, x_phi_, tmp_vec_, phi_dofs);
+      axpy(y_phi_, -dt, tmp_vec_, phi_dofs);
+      mv(E, x_phi_, tmp_vec_, phi_dofs);
+      axpy(y_phi_, -dt * gamma * epsilon / Ca, tmp_vec_, phi_dofs);
+      // copy to result vector
+      if (!restricted_) {
+        for (size_t ii = 0; ii < size_phi; ++ii)
+          y[ii] = y_phi_[ii];
+      } else {
+        for (const auto& dof : phi_dofs)
+          y[dof] = y_phi_[dof];
       }
     } else {
-      const auto& source_dofs = cellmodel_solver_.pfield_deim_source_dofs_[cell_][0];
-      const auto& phinat_begin = cellmodel_solver_.phinat_deim_source_dofs_begin_[cell_];
-      const auto& mu_begin = cellmodel_solver_.mu_deim_source_dofs_begin_[cell_];
-      for (size_t ii = 0; ii < phinat_begin; ++ii)
-        x_phi_[source_dofs[ii]] = x[source_dofs[ii]];
-      for (size_t ii = phinat_begin; ii < mu_begin; ++ii)
-        x_phinat_[source_dofs[ii] - size_phi] = x[source_dofs[ii]];
-      for (size_t ii = mu_begin; ii < source_dofs.size(); ++ii)
-        x_mu_[source_dofs[ii] - 2 * size_phi] = x[source_dofs[ii]];
-    } // if (!restricted)
-    // apply matrices
-    // first row
-    mv(M, x_phi_, y_phi_, phi_dofs);
-    mv(B, x_phi_, tmp_vec_, phi_dofs);
-    axpy(y_phi_, -dt, tmp_vec_, phi_dofs);
-    mv(E, x_phinat_, tmp_vec_, phi_dofs);
-    axpy(y_phi_, dt * gamma, tmp_vec_, phi_dofs);
-    // second row
-    mv(M, x_phinat_, y_phinat_, phinat_dofs);
-    mv(E, x_mu_, tmp_vec_, phinat_dofs);
-    axpy(y_phinat_, 1. / Be, tmp_vec_, phinat_dofs);
-    // third row (and M * mu from second row)
-    mv(M, x_mu_, y_mu_, mu_dofs);
-    if (restricted_)
-      mv(M, x_mu_, y_mu_, phinat_dofs);
-    axpy(y_phinat_, 1. / Ca, y_mu_, phinat_dofs);
-    mv(E, x_phi_, tmp_vec_, mu_dofs);
-    axpy(y_mu_, epsilon, tmp_vec_, mu_dofs);
-    // copy to result vector
-    if (!restricted_) {
-      for (size_t ii = 0; ii < size_phi; ++ii) {
-        y[ii] = y_phi_[ii];
-        y[size_phi + ii] = y_phinat_[ii];
-        y[2 * size_phi + ii] = y_mu_[ii];
-      }
-    } else {
-      for (const auto& dof : phi_dofs)
-        y[dof] = y_phi_[dof];
-      for (const auto& dof : phinat_dofs)
-        y[size_phi + dof] = y_phinat_[dof];
-      for (const auto& dof : mu_dofs)
-        y[2 * size_phi + dof] = y_mu_[dof];
-    } // if (!restricted)
+      DUNE_THROW(Dune::NotImplemented, "Not implemented yet for this combination of bending and conservative!");
+    }
   }
 
   void prepare(const size_t cell, const bool restricted = false) override final
