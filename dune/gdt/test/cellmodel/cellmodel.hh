@@ -161,7 +161,8 @@ struct CellModelSolver
       , phi_dofs_(cellmodel.phi_tmp_[0].dofs().vector())
       , phinat_dofs_(cellmodel.num_pfield_variables_ == 1 ? cellmodel.phi_tmp_[0].dofs().vector()
                                                           : cellmodel.phinat_tmp_[0].dofs().vector())
-      , mu_dofs_(cellmodel.mu_tmp_[0].dofs().vector())
+      , mu_dofs_(cellmodel.num_pfield_variables_ == 1 ? cellmodel.phi_tmp_[0].dofs().vector()
+                                                      : cellmodel.mu_tmp_[0].dofs().vector())
     {
       const auto first_element = *cellmodel.grid_view_.template begin<0>();
       auto u_local_basis = cellmodel.u_space_.basis().localize();
