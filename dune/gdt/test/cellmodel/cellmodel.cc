@@ -423,19 +423,25 @@ CellModelSolver::CellModelSolver(const std::string testcase,
     P_view_.emplace_back(ofield_vectors_[kk], 0, size_P_);
     Pnat_view_.emplace_back(ofield_vectors_[kk], size_P_, 2 * size_P_);
     phi_view_.emplace_back(pfield_vectors_[kk], 0, size_phi_);
-    phinat_view_.emplace_back(pfield_vectors_[kk], size_phi_, 2 * size_phi_);
-    mu_view_.emplace_back(pfield_vectors_[kk], 2 * size_phi_, 3 * size_phi_);
+    if (num_pfield_variables_ > 1) {
+      phinat_view_.emplace_back(pfield_vectors_[kk], size_phi_, 2 * size_phi_);
+      mu_view_.emplace_back(pfield_vectors_[kk], 2 * size_phi_, 3 * size_phi_);
+    }
     const auto kk_str = XT::Common::to_string(kk);
     P_.emplace_back(make_discrete_function(P_space_, P_view_[kk], "P_" + kk_str));
     Pnat_.emplace_back(make_discrete_function(P_space_, Pnat_view_[kk], "Pnat_" + kk_str));
     phi_.emplace_back(make_discrete_function(phi_space_, phi_view_[kk], "phi_" + kk_str));
-    phinat_.emplace_back(make_discrete_function(phi_space_, phinat_view_[kk], "phinat_" + kk_str));
-    mu_.emplace_back(make_discrete_function(phi_space_, mu_view_[kk], "mu_" + kk_str));
+    if (num_pfield_variables_ > 1) {
+      phinat_.emplace_back(make_discrete_function(phi_space_, phinat_view_[kk], "phinat_" + kk_str));
+      mu_.emplace_back(make_discrete_function(phi_space_, mu_view_[kk], "mu_" + kk_str));
+    }
     P_tmp_.emplace_back(P_space_);
     Pnat_tmp_.emplace_back(P_space_);
     phi_tmp_.emplace_back(phi_space_);
-    phinat_tmp_.emplace_back(phi_space_);
-    mu_tmp_.emplace_back(phi_space_);
+    if (num_pfield_variables_ > 1) {
+      phinat_tmp_.emplace_back(phi_space_);
+      mu_tmp_.emplace_back(phi_space_);
+    }
     default_interpolation(*phi_initial_funcs[kk], phi_[kk]);
     default_interpolation(*P_initial_funcs[kk], P_[kk]);
   }
@@ -1585,16 +1591,18 @@ std::vector<std::vector<CellModelSolver::VectorType>> CellModelSolver::next_n_ti
 // with vec.
 CellModelSolver::VectorType CellModelSolver::apply_pfield_product_operator(const VectorType& vec) const
 {
-  VectorType ret(3 * size_phi_);
+  VectorType ret(num_pfield_variables_ * size_phi_);
   ConstVectorViewType phi_view(vec, 0, size_phi_);
-  ConstVectorViewType phinat_view(vec, size_phi_, 2 * size_phi_);
-  ConstVectorViewType mu_view(vec, 2 * size_phi_, 3 * size_phi_);
   VectorViewType phi_ret_view(ret, 0, size_phi_);
-  VectorViewType phinat_ret_view(ret, size_phi_, 2 * size_phi_);
-  VectorViewType mu_ret_view(ret, 2 * size_phi_, 3 * size_phi_);
   M_pfield_.mv(phi_view, phi_ret_view);
-  M_pfield_.mv(phinat_view, phinat_ret_view);
-  M_pfield_.mv(mu_view, mu_ret_view);
+  if (num_pfield_variables_ > 1) {
+    ConstVectorViewType phinat_view(vec, size_phi_, 2 * size_phi_);
+    ConstVectorViewType mu_view(vec, 2 * size_phi_, 3 * size_phi_);
+    VectorViewType phinat_ret_view(ret, size_phi_, 2 * size_phi_);
+    VectorViewType mu_ret_view(ret, 2 * size_phi_, 3 * size_phi_);
+    M_pfield_.mv(phinat_view, phinat_ret_view);
+    M_pfield_.mv(mu_view, mu_ret_view);
+  }
   return ret;
 }
 
@@ -1883,7 +1891,8 @@ void CellModelSolver::prepare_stokes_operator(const bool restricted)
   u_tmp_.dofs().vector() = u_.dofs().vector();
   for (size_t kk = 0; kk < num_cells_; kk++) {
     phi_tmp_[kk].dofs().vector() = phi_[kk].dofs().vector();
-    phinat_tmp_[kk].dofs().vector() = phinat_[kk].dofs().vector();
+    if (num_pfield_variables_ > 1)
+      phinat_tmp_[kk].dofs().vector() = phinat_[kk].dofs().vector();
     P_tmp_[kk].dofs().vector() = P_[kk].dofs().vector();
     Pnat_tmp_[kk].dofs().vector() = Pnat_[kk].dofs().vector();
   }
@@ -1912,7 +1921,8 @@ void CellModelSolver::prepare_pfield_operator(const size_t cell, const bool rest
   P_tmp_[cell].dofs().vector() = P_[cell].dofs().vector();
   for (size_t kk = 0; kk < num_cells_; kk++) {
     phi_tmp_[kk].dofs().vector() = phi_[kk].dofs().vector();
-    mu_tmp_[kk].dofs().vector() = mu_[kk].dofs().vector();
+    if (num_pfield_variables_ > 1)
+      mu_tmp_[kk].dofs().vector() = mu_[kk].dofs().vector();
   }
   assemble_pfield_rhs(cell, restricted);
   assemble_pfield_linear_jacobian(cell, restricted);
