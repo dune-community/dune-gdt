@@ -159,7 +159,8 @@ struct CellModelSolver
       , P_dofs_(cellmodel.P_tmp_[0].dofs().vector())
       , Pnat_dofs_(cellmodel.Pnat_tmp_[0].dofs().vector())
       , phi_dofs_(cellmodel.phi_tmp_[0].dofs().vector())
-      , phinat_dofs_(cellmodel.phinat_tmp_[0].dofs().vector())
+      , phinat_dofs_(cellmodel.num_pfield_variables == 1 ? cellmodel.phi_tmp_[0].dofs().vector()
+                                                         : cellmodel.phinat_tmp_[0].dofs().vector())
       , mu_dofs_(cellmodel.mu_tmp_[0].dofs().vector())
     {
       const auto first_element = *cellmodel.grid_view_.template begin<0>();
