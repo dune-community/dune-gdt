@@ -1040,7 +1040,8 @@ struct CellModelSolver::PfieldNonlinearJacobianFunctor : public XT::Grid::Elemen
     const auto phi_basis_size = quad_storage_.phi_basis_size_;
     for (size_t ii = 0; ii < phi_basis_size; ++ii) {
       phi_coeffs_[ii] = quad_storage_.phi_dofs_[global_indices_phi[ii]];
-      mu_coeffs_[ii] = quad_storage_.mu_dofs_[global_indices_phi[ii]];
+      if (cellmodel_.num_pfield_variables_ > 1)
+        mu_coeffs_[ii] = quad_storage_.mu_dofs_[global_indices_phi[ii]];
     }
     const auto& quadrature = quad_storage_.quadrature_;
     for (size_t ll = 0; ll < quadrature.size(); ++ll) {
@@ -1055,11 +1056,13 @@ struct CellModelSolver::PfieldNonlinearJacobianFunctor : public XT::Grid::Elemen
       for (size_t ii = 0; ii < phi_basis_size; ++ii) {
         const auto offset_ii = ii * phi_basis_size;
         const auto factor1_ii = quad_storage_.phi_basis_evaluated_[ll][ii] * factor1;
-        const auto factor2_ii = quad_storage_.phi_basis_evaluated_[ll][ii] * factor2;
         for (size_t jj = 0; jj < phi_basis_size; ++jj)
           result1_[offset_ii + jj] += quad_storage_.phi_basis_evaluated_[ll][jj] * factor1_ii;
-        for (size_t jj = 0; jj < phi_basis_size; ++jj)
-          result2_[offset_ii + jj] += quad_storage_.phi_basis_evaluated_[ll][jj] * factor2_ii;
+        if (cellmodel_.num_pfield_variables_ > 1) {
+          const auto factor2_ii = quad_storage_.phi_basis_evaluated_[ll][ii] * factor2;
+          for (size_t jj = 0; jj < phi_basis_size; ++jj)
+            result2_[offset_ii + jj] += quad_storage_.phi_basis_evaluated_[ll][jj] * factor2_ii;
+        }
       } // ii
     } // ll
     for (size_t ii = 0; ii < phi_basis_size; ++ii) {
@@ -1068,7 +1071,8 @@ struct CellModelSolver::PfieldNonlinearJacobianFunctor : public XT::Grid::Elemen
       for (size_t jj = 0; jj < phi_basis_size; ++jj) {
         const auto index_jj = global_indices_phi[jj];
         cellmodel_.Dmu_f_pfield_.add_to_entry(index_ii, index_jj, result1_[offset_ii + jj]);
-        cellmodel_.Dphi_f_pfield_incl_coeffs_and_sign_.add_to_entry(index_ii, index_jj, result2_[offset_ii + jj]);
+        if (cellmodel_.num_pfield_variables_ > 1)
+          cellmodel_.Dphi_f_pfield_incl_coeffs_and_sign_.add_to_entry(index_ii, index_jj, result2_[offset_ii + jj]);
       } // jj
     } // ii
   }
@@ -1355,8 +1359,9 @@ struct CellModelSolver::StokesRhsFunctor : public XT::Grid::ElementFunctor<PGV>
         for (size_t mm = 0; mm < d; ++mm) {
           const auto factor1_mm = (Fa_inv_phi_tilde * P_[mm] + xi_p_1_ * Pnat_[mm]) * factor;
           const auto factor2_mm = xi_m_1_ * P_[mm] * factor;
-          result_[ii] += grad_P_T_Pnat_plus_phinat_grad_phi[mm] * u_basis_val_ii[mm] * factor
-                         - (P_ * u_basis_grad_ii[mm]) * factor1_mm - (Pnat_ * u_basis_grad_ii[mm]) * factor2_mm;
+          if (cellmodel_.num_pfield_variables_ > 1)
+            result_[ii] += grad_P_T_Pnat_plus_phinat_grad_phi[mm] * u_basis_val_ii[mm] * factor;
+          result_[ii] += -(P_ * u_basis_grad_ii[mm]) * factor1_mm - (Pnat_ * u_basis_grad_ii[mm]) * factor2_mm;
           if (cellmodel_.num_pfield_variables_ == 1) {
             const auto factor3_mm = (eps_div_Ca_ * grad_phi_[0][mm]) * factor;
             result_[ii] += (grad_phi_[0] * u_basis_grad_ii[mm]) * factor3_mm;
@@ -2050,6 +2055,8 @@ void CellModelSolver::compute_restricted_pfield_dofs(const std::vector<size_t>& 
   if (!pfield_deim_range_dofs_[cell] || *pfield_deim_range_dofs_[cell] != range_dofs) {
     // We need to keep the original range_dofs which is unordered and may contain duplicates, as the restricted
     // operator will return exactly these dofs. For computations, however, we often need unique dofs.
+    if (num_pfield_variables_ != 3)
+      DUNE_THROW(Dune::NotImplemented, "Restricted operator has not yet been adapted!");
     pfield_deim_range_dofs_[cell] = std::make_shared<std::vector<size_t>>(range_dofs);
     auto& unique_range_dofs = pfield_deim_unique_range_dofs_[cell];
     get_unique_deim_dofs(unique_range_dofs, range_dofs, 3 * size_phi_);
@@ -2716,7 +2723,6 @@ void CellModelSolver::assemble_ofield_rhs(const size_t cell, const bool restrict
 void CellModelSolver::assemble_pfield_rhs(const size_t cell, const bool restricted)
 {
   const auto& phi_range_dofs = phi_deim_range_dofs_[cell];
-  const auto& phinat_range_dofs = phinat_deim_range_dofs_[cell];
   // calculate r0
   const auto mv = mv_func<VectorType, VectorViewType>(restricted);
   auto& phi_n = phi_tmp_vec2_;
@@ -2728,6 +2734,7 @@ void CellModelSolver::assemble_pfield_rhs(const size_t cell, const bool restrict
     PfieldRhsFunctor functor(*this, *pfield_rhs_quad_, pfield_r0_vector_);
     walker.append(functor);
   } else {
+    const auto& phinat_range_dofs = phinat_deim_range_dofs_[cell];
     scal(pfield_r1_vector_, 0., phinat_range_dofs);
     PfieldRhsFunctor functor(*this, *pfield_rhs_quad_, pfield_r1_vector_);
     walker.append(functor);
@@ -2832,12 +2839,16 @@ void CellModelSolver::assemble_pfield_nonlinear_jacobian(const VectorType& y, co
 {
   fill_tmp_pfield(cell, y, restricted);
   // clear matrices
-  const auto& phinat_range_dofs = phinat_deim_range_dofs_[cell];
-  const auto& mu_range_dofs = mu_deim_range_dofs_[cell];
-  set_mat_to_zero(Dmu_f_pfield_, restricted, pfield_submatrix_pattern_, mu_range_dofs);
-  if (restricted)
-    set_mat_to_zero(Dmu_f_pfield_, restricted, pfield_submatrix_pattern_, phinat_range_dofs);
-  set_mat_to_zero(Dphi_f_pfield_incl_coeffs_and_sign_, restricted, pfield_submatrix_pattern_, phinat_range_dofs);
+  if (num_pfield_variables_ == 1) {
+    set_mat_to_zero(Dmu_f_pfield_, restricted, pfield_submatrix_pattern_, phi_deim_range_dofs_[cell]);
+  } else {
+    const auto& phinat_range_dofs = phinat_deim_range_dofs_[cell];
+    const auto& mu_range_dofs = mu_deim_range_dofs_[cell];
+    set_mat_to_zero(Dmu_f_pfield_, restricted, pfield_submatrix_pattern_, mu_range_dofs);
+    if (restricted)
+      set_mat_to_zero(Dmu_f_pfield_, restricted, pfield_submatrix_pattern_, phinat_range_dofs);
+    set_mat_to_zero(Dphi_f_pfield_incl_coeffs_and_sign_, restricted, pfield_submatrix_pattern_, phinat_range_dofs);
+  }
   DUNE_THROW_IF(num_cells_ > 1, Dune::NotImplemented, "");
   PfieldNonlinearJacobianFunctor functor(*this, *pfield_residual_and_nonlinear_jac_quad_);
   XT::Grid::Walker<PGV> walker(grid_view_);
@@ -3008,6 +3019,8 @@ void CellModelSolver::fill_tmp_pfield(const size_t cell, const VectorType& sourc
       mu_tmp_[cell].dofs().vector() = mu_vec;
     }
   } else {
+    if (num_pfield_variables_ == 1)
+      DUNE_THROW(Dune::NotImplemented, "Restricted operator has not yet been adapted!");
     const auto& source_dofs = pfield_deim_source_dofs_[cell][0];
     const size_t phinat_begin = phinat_deim_source_dofs_begin_[cell];
     const size_t mu_begin = mu_deim_source_dofs_begin_[cell];
