@@ -1709,8 +1709,10 @@ void CellModelSolver::visualize(const std::string& prefix,
       }
       // XT::Functions::internal::add_gradient_to_vtkwriter(*vtk_writer, *phi_funcs[kk]);
       XT::Functions::internal::add_gradient_to_vtkwriter(*vtk_writer, phi_[kk]);
-      XT::Functions::internal::add_gradient_to_vtkwriter(*vtk_writer, phinat_[kk]);
-      XT::Functions::internal::add_gradient_to_vtkwriter(*vtk_writer, mu_[kk]);
+      if (num_pfield_variables_ > 1) {
+        XT::Functions::internal::add_gradient_to_vtkwriter(*vtk_writer, phinat_[kk]);
+        XT::Functions::internal::add_gradient_to_vtkwriter(*vtk_writer, mu_[kk]);
+      }
     }
     XT::Functions::internal::write_visualization(*vtk_writer, prefix + postfix);
   } // if (vtu)
