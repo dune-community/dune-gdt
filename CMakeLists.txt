@@ -59,12 +59,7 @@ dune_add_library(cellmodel
                  dune/gdt/test/cellmodel/cellmodel.cc
                  dune/gdt/test/cellmodel/linearsolvers.cc
                  dune/gdt/test/cellmodel/linear-solver-types.cc)
-dune_add_library(vectors SOURCES examples/xt-vector-bindings.cc)
-add_custom_target(hapod_bindings
-                  DEPENDS boltzmann
-                          coordinatetransformedmn
-                          cellmodel
-                          vectors)
+add_custom_target(hapod_bindings DEPENDS boltzmann coordinatetransformedmn cellmodel)
 
 add_header_listing()
 make_dependent_modules_sys_included()

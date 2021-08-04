@@ -11,6 +11,7 @@
 #define DUNE_GDT_TEST_CELLMODEL_PRECONDITIONERS_HH
 
 #include <dune/istl/preconditioner.hh>
+#include <dune/istl/solver.hh>
 
 namespace Dune {
 
@@ -28,19 +29,19 @@ public:
   {}
 
   //! Category of the preconditioner (see SolverCategory::Category)
-  SolverCategory::Category category() const override final
+  SolverCategory::Category category() const final
   {
     return category_;
   }
 
-  void pre(domain_type&, range_type&) override final {}
+  void pre(domain_type&, range_type&) final {}
 
-  void apply(domain_type& v, const range_type& d) override final
+  void apply(domain_type& v, const range_type& d) final
   {
     v = d;
   }
 
-  void post(domain_type&) override final {}
+  void post(domain_type&) final {}
 
 private:
   SolverCategory::Category category_;
@@ -61,21 +62,21 @@ public:
   {}
 
   //! Category of the preconditioner (see SolverCategory::Category)
-  SolverCategory::Category category() const override final
+  SolverCategory::Category category() const final
   {
     return category_;
   }
 
-  void pre(domain_type&, range_type&) override final {}
+  void pre(domain_type&, range_type&) final {}
 
-  void apply(domain_type& v, const range_type& d) override final
+  void apply(domain_type& v, const range_type& d) final
   {
     Dune::InverseOperatorResult res;
     auto d2 = d;
     solver_->apply(v, d2, res);
   }
 
-  void post(domain_type&) override final {}
+  void post(domain_type&) final {}
 
 private:
   std::shared_ptr<SolverType> solver_;
@@ -97,19 +98,19 @@ public:
   {}
 
   //! Category of the preconditioner (see SolverCategory::Category)
-  SolverCategory::Category category() const override final
+  SolverCategory::Category category() const final
   {
     return SolverCategory::Category::sequential;
   }
 
-  void pre(domain_type&, range_type&) override final {}
+  void pre(domain_type&, range_type&) final {}
 
-  void apply(domain_type& v, const range_type& d) override final
+  void apply(domain_type& v, const range_type& d) final
   {
     v.backend() = solver_->solve(d.backend());
   }
 
-  void post(domain_type&) override final {}
+  void post(domain_type&) final {}
 
 private:
   std::shared_ptr<SolverType> solver_;
@@ -134,21 +135,21 @@ public:
   }
 
   //! Category of the preconditioner (see SolverCategory::Category)
-  SolverCategory::Category category() const override final
+  SolverCategory::Category category() const final
   {
     return SolverCategory::Category::sequential;
   }
 
-  void pre(domain_type&, range_type&) override final {}
+  void pre(domain_type&, range_type&) final {}
 
-  void apply(domain_type& v, const range_type& d) override final
+  void apply(domain_type& v, const range_type& d) final
   {
     assert(inverse_lumped_mass_matrix_diag_.size() == d.size());
     for (size_t ii = 0; ii < inverse_lumped_mass_matrix_diag_.size(); ++ii)
       v.set_entry(ii, d.get_entry(ii) * inverse_lumped_mass_matrix_diag_.get_entry(ii));
   }
 
-  void post(domain_type&) override final {}
+  void post(domain_type&) final {}
 
 private:
   VectorType inverse_lumped_mass_matrix_diag_;

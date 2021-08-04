@@ -39,6 +39,8 @@
 #include "preconditioners.hh"
 #include "scalarproducts.hh"
 
+#include <dune/pybindxi/numpy.h>
+
 using namespace Dune::GDT;
 
 namespace Dune {
@@ -302,13 +304,13 @@ struct CellModelSolver
   //******************************************************************************************************************
 
   // Visualizes given vector as phasefield finite element vector
-  void visualize_pfield(const std::string& filename, const VectorType& vec, const bool subsampling = true) const;
+  void visualize_pfield(const std::string& filename, const VectorType& vec, const bool subsampling) const;
 
   // Visualizes given vector as orientation field finite element vector
-  void visualize_ofield(const std::string& filename, const VectorType& vec, const bool subsampling = true) const;
+  void visualize_ofield(const std::string& filename, const VectorType& vec, const bool subsampling) const;
 
   // Visualizes given vector as stokes finite element vector
-  void visualize_stokes(const std::string& filename, const VectorType& vec, const bool subsampling = true) const;
+  void visualize_stokes(const std::string& filename, const VectorType& vec, const bool subsampling) const;
 
   // Visualizes variables currently stored in this class.
   // If txt = true, also writes textfiles containing the values.
@@ -329,18 +331,21 @@ struct CellModelSolver
 
   // Sets given dofs of stokes vector to values
   void set_stokes_vec_dofs(const std::vector<R>& values, const std::vector<size_t>& dofs);
+  void set_stokes_vec_dofs(const pybind11::array_t<double>& values, const pybind11::list& dofs);
 
   // Sets orientation field vector belonging to cell to pfield_vec
   void set_ofield_vec(const size_t cell, const VectorType& ofield_vec);
 
   // Sets given dofs of orientation field vector belonging to cell to values
   void set_ofield_vec_dofs(const size_t cell, const std::vector<R>& values, const std::vector<size_t>& dofs);
+  void set_ofield_vec_dofs(const size_t cell, const pybind11::array_t<double>& values, const pybind11::list& dofs);
 
   // Sets phasefield vector belonging to cell to pfield_vec
   void set_pfield_vec(const size_t cell, const VectorType& pfield_vec);
 
   // Sets given dofs of phasefield vector belonging to cell to pfield_vec
   void set_pfield_vec_dofs(const size_t cell, const std::vector<R>& values, const std::vector<size_t>& dofs);
+  void set_pfield_vec_dofs(const size_t cell, const pybind11::array_t<double>& values, const pybind11::list& dofs);
 
   // Get stokes finite element vector
   const VectorType& stokes_vec();
@@ -430,7 +435,7 @@ struct CellModelSolver
   VectorType apply_pfield_helper(const VectorType& y, const size_t cell, const bool restricted, const bool jacobian);
 
   void update_pfield_parameters(
-      const double Be, const double Ca, const double Pa, const size_t cell_index, const bool restricted = false);
+      const double Be, const double Ca, const double Pa, const size_t cell, const bool restricted = false);
 
   //******************************************************************************************************************
   //******************************************* Apply inverse operators **********************************************
@@ -548,18 +553,17 @@ struct CellModelSolver
       return [](const MatrixType& mat, const VecType1& source, VecType2& range, const std::vector<size_t>&) {
         mat.mv(source, range);
       };
-    } else {
-      return [](const MatrixType& mat, const VecType1& source, VecType2& range, const std::vector<size_t>& rows) {
-        for (const auto& row : rows) {
-          assert(range.size() > row);
-          range[row] = 0.;
-          for (typename MatrixType::BackendType::InnerIterator it(mat.backend(), row); it; ++it) {
-            assert(source.size() > XT::Common::numeric_cast<size_t>(it.col()));
-            range[row] += it.value() * source[it.col()];
-          }
+    }
+    return [](const MatrixType& mat, const VecType1& source, VecType2& range, const std::vector<size_t>& rows) {
+      for (const auto& row : rows) {
+        assert(range.size() > row);
+        range[row] = 0.;
+        for (typename MatrixType::BackendType::InnerIterator it(mat.backend(), row); it; ++it) {
+          assert(source.size() > XT::Common::numeric_cast<size_t>(it.col()));
+          range[row] += it.value() * source[it.col()];
         }
-      };
-    } // if (restricted)
+      }
+    };
   }
 
   // Multiplies given entries of vec by alpha.
@@ -568,12 +572,11 @@ struct CellModelSolver
   {
     if (!restricted) {
       return [](VecType& vec, const R alpha, const std::vector<size_t>&) { vec *= alpha; };
-    } else {
-      return [](VecType& vec, const R alpha, const std::vector<size_t>& dofs) {
-        for (const auto& dof : dofs)
-          vec[dof] *= alpha;
-      };
-    } // if (restricted)
+    }
+    return [](VecType& vec, const R alpha, const std::vector<size_t>& dofs) {
+      for (const auto& dof : dofs)
+        vec[dof] *= alpha;
+    };
   }
 
   // Adds given entries of rhs to respective entries of lhs.
@@ -582,12 +585,11 @@ struct CellModelSolver
   {
     if (!restricted) {
       return [](VecType1& lhs, const VecType2& rhs, const std::vector<size_t>&) { lhs = rhs; };
-    } else {
-      return [](VecType1& lhs, const VecType2& rhs, const std::vector<size_t>& dofs) {
-        for (const auto& dof : dofs)
-          lhs[dof] = rhs[dof];
-      };
-    } // if (restricted)
+    }
+    return [](VecType1& lhs, const VecType2& rhs, const std::vector<size_t>& dofs) {
+      for (const auto& dof : dofs)
+        lhs[dof] = rhs[dof];
+    };
   }
 
   // Adds given entries of rhs to respective entries of lhs.
@@ -596,12 +598,11 @@ struct CellModelSolver
   {
     if (!restricted) {
       return [](VecType1& lhs, const VecType2& rhs, const std::vector<size_t>&) { lhs += rhs; };
-    } else {
-      return [](VecType1& lhs, const VecType2& rhs, const std::vector<size_t>& dofs) {
-        for (const auto& dof : dofs)
-          lhs[dof] += rhs[dof];
-      };
-    } // if (restricted)
+    }
+    return [](VecType1& lhs, const VecType2& rhs, const std::vector<size_t>& dofs) {
+      for (const auto& dof : dofs)
+        lhs[dof] += rhs[dof];
+    };
   }
 
   // Subtracts given entries of rhs from respective entries of lhs.
@@ -610,12 +611,11 @@ struct CellModelSolver
   {
     if (!restricted) {
       return [](VecType1& lhs, const VecType2& rhs, const std::vector<size_t>&) { lhs -= rhs; };
-    } else {
-      return [](VecType1& lhs, const VecType2& rhs, const std::vector<size_t>& dofs) {
-        for (const auto& dof : dofs)
-          lhs[dof] -= rhs[dof];
-      };
-    } // if (restricted)
+    }
+    return [](VecType1& lhs, const VecType2& rhs, const std::vector<size_t>& dofs) {
+      for (const auto& dof : dofs)
+        lhs[dof] -= rhs[dof];
+    };
   }
 
   // Computes lhs += alpha * rhs;
@@ -626,12 +626,11 @@ struct CellModelSolver
     if (!restricted) {
       return
           [](VecType1& lhs, const R alpha, const VecType2& rhs, const std::vector<size_t>&) { lhs.axpy(alpha, rhs); };
-    } else {
-      return [](VecType1& lhs, const R alpha, const VecType2& rhs, const std::vector<size_t>& dofs) {
-        for (const auto& dof : dofs)
-          lhs[dof] += rhs[dof] * alpha;
-      };
-    } // if (restricted)
+    }
+    return [](VecType1& lhs, const R alpha, const VecType2& rhs, const std::vector<size_t>& dofs) {
+      for (const auto& dof : dofs)
+        lhs[dof] += rhs[dof] * alpha;
+    };
   }
 
   // Copies low-dimensional vec to given entries of high-dimensional vec.

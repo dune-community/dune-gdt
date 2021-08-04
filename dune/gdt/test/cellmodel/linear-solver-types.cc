@@ -17,20 +17,19 @@ CellModelLinearSolverType string_to_solver_type(const std::string& type_string)
 {
   if (type_string == "direct")
     return CellModelLinearSolverType::direct;
-  else if (type_string == "gmres")
+  if (type_string == "gmres")
     return CellModelLinearSolverType::gmres;
-  else if (type_string == "fgmres_gmres")
+  if (type_string == "fgmres_gmres")
     return CellModelLinearSolverType::fgmres_gmres;
-  else if (type_string == "fgmres_bicgstab")
+  if (type_string == "fgmres_bicgstab")
     return CellModelLinearSolverType::fgmres_bicgstab;
-  else if (type_string == "schur_gmres")
+  if (type_string == "schur_gmres")
     return CellModelLinearSolverType::schur_gmres;
-  else if (type_string == "schur_fgmres_gmres")
+  if (type_string == "schur_fgmres_gmres")
     return CellModelLinearSolverType::schur_fgmres_gmres;
-  else if (type_string == "schur_fgmres_bicgstab")
+  if (type_string == "schur_fgmres_bicgstab")
     return CellModelLinearSolverType::schur_fgmres_bicgstab;
-  else
-    DUNE_THROW(Dune::InvalidStateException, "Solver type " + std::string(type_string) + " unknown!");
+  DUNE_THROW(Dune::InvalidStateException, "Solver type " + std::string(type_string) + " unknown!");
   return CellModelLinearSolverType::direct;
 }
 
@@ -38,14 +37,13 @@ StokesSolverType string_to_stokes_solver_type(const std::string& type_string)
 {
   if (type_string == "direct")
     return StokesSolverType::direct;
-  else if (type_string == "schur_cg_A_direct")
+  if (type_string == "schur_cg_A_direct")
     return StokesSolverType::schur_cg_A_direct;
-  else if (type_string == "schur_cg_A_direct_prec_mass")
+  if (type_string == "schur_cg_A_direct_prec_mass")
     return StokesSolverType::schur_cg_A_direct_prec_mass;
-  else if (type_string == "schur_cg_A_direct_prec_masslumped")
+  if (type_string == "schur_cg_A_direct_prec_masslumped")
     return StokesSolverType::schur_cg_A_direct_prec_masslumped;
-  else
-    DUNE_THROW(Dune::InvalidStateException, "Stokes solver type " + std::string(type_string) + " unknown!");
+  DUNE_THROW(Dune::InvalidStateException, "Stokes solver type " + std::string(type_string) + " unknown!");
   return StokesSolverType::direct;
 }
 
@@ -54,13 +52,12 @@ CellModelMassMatrixSolverType string_to_mass_matrix_solver_type(const std::strin
 {
   if (type_string == "sparse_ldlt")
     return CellModelMassMatrixSolverType::sparse_ldlt;
-  else if (type_string == "sparse_lu")
+  if (type_string == "sparse_lu")
     return CellModelMassMatrixSolverType::sparse_lu;
-  else if (type_string == "cg")
+  if (type_string == "cg")
     return CellModelMassMatrixSolverType::cg;
-  else if (type_string == "cg_incomplete_cholesky")
+  if (type_string == "cg_incomplete_cholesky")
     return CellModelMassMatrixSolverType::cg_incomplete_cholesky;
-  else
-    DUNE_THROW(Dune::InvalidStateException, "Mass matrix solver type " + std::string(type_string) + " unknown!");
+  DUNE_THROW(Dune::InvalidStateException, "Mass matrix solver type " + std::string(type_string) + " unknown!");
   return CellModelMassMatrixSolverType::sparse_lu;
 }

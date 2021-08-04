@@ -5,7 +5,7 @@
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Tobias Leibner (2019)
+//   Tobias Leibner (2019-2021)
 
 #ifndef DUNE_GDT_TEST_CELLMODEL_LINEARSOLVERS_HH
 #define DUNE_GDT_TEST_CELLMODEL_LINEARSOLVERS_HH
@@ -33,12 +33,12 @@ namespace Eigen {
 
 class PfieldIncompleteLUTPreconditioner
 {
-  typedef double Scalar;
-  typedef Matrix<Scalar, Dynamic, 1> Vector;
-  typedef IncompleteLUT<double> IncompleteLUTSolverType;
+  using Scalar = double;
+  using Vector = Matrix<Scalar, Dynamic, 1>;
+  using IncompleteLUTSolverType = IncompleteLUT<double>;
 
 public:
-  typedef typename Vector::StorageIndex StorageIndex;
+  using StorageIndex = typename Vector::StorageIndex;
   enum
   {
     ColsAtCompileTime = Dynamic,

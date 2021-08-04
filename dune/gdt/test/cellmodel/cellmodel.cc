@@ -349,7 +349,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
     P_initial_funcs.emplace_back(std::make_shared<const XT::Functions::GenericFunction<d, d>>(
         50,
         /*evaluate=*/
-        [& phi_in = phi_initial_funcs[0]](const auto& x, const auto& param) {
+        [&phi_in = phi_initial_funcs[0]](const auto& x, const auto& param) {
           // auto rand1 = ((std::rand() % 2000) - 1000) / 20000.;
           // auto rand2 = ((std::rand() % 2000) - 1000) / 20000.;
           // auto ret = FieldVector<double, d>({1. + rand1, 0. +
@@ -398,7 +398,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
     P_initial_funcs.emplace_back(std::make_shared<const XT::Functions::GenericFunction<d, d>>(
         50,
         /*evaluate=*/
-        [& phi_in = phi_initial_funcs[0]](const auto& x, const auto& param) {
+        [&phi_in = phi_initial_funcs[0]](const auto& x, const auto& param) {
           // auto ret = FieldVector<double, d>({1., 0.});
           auto ret = FieldVector<double, d>({-0.82, 0.57});
           ret *= (phi_in->evaluate(x, param) + 1.) / 2.;
@@ -673,12 +673,12 @@ struct CellModelSolver::OfieldNonlinearS10Functor : public XT::Grid::ElementFunc
   OfieldNonlinearS10Functor(const ThisType& other) = default;
   OfieldNonlinearS10Functor(ThisType&&) = default;
 
-  XT::Grid::ElementFunctor<PGV>* copy() override final
+  XT::Grid::ElementFunctor<PGV>* copy() final
   {
     return new OfieldNonlinearS10Functor(*this);
   }
 
-  void apply_local(const E& element) override final
+  void apply_local(const E& element) final
   {
     std::fill(result_.begin(), result_.end(), 0.);
     const auto index = cellmodel_.grid_view_.indexSet().index(element);
@@ -753,12 +753,12 @@ struct CellModelSolver::OfieldPrepareFunctor : public XT::Grid::ElementFunctor<P
   OfieldPrepareFunctor(const ThisType& other) = default;
   OfieldPrepareFunctor(ThisType&&) = default;
 
-  XT::Grid::ElementFunctor<PGV>* copy() override final
+  XT::Grid::ElementFunctor<PGV>* copy() final
   {
     return new OfieldPrepareFunctor(*this);
   }
 
-  void apply_local(const E& element) override final
+  void apply_local(const E& element) final
   {
     const auto index = cellmodel_.grid_view_.indexSet().index(element);
     const auto& global_indices_P = cellmodel_.global_indices_P_[index];
@@ -883,12 +883,12 @@ struct CellModelSolver::OfieldResidualFunctor : public XT::Grid::ElementFunctor<
   OfieldResidualFunctor(const ThisType& other) = default;
   OfieldResidualFunctor(ThisType&&) = default;
 
-  XT::Grid::ElementFunctor<PGV>* copy() override final
+  XT::Grid::ElementFunctor<PGV>* copy() final
   {
     return new OfieldResidualFunctor(*this);
   }
 
-  void apply_local(const E& element) override final
+  void apply_local(const E& element) final
   {
     std::fill(result_.begin(), result_.end(), 0.);
     const auto index = cellmodel_.grid_view_.indexSet().index(element);
@@ -947,12 +947,12 @@ struct CellModelSolver::PfieldResidualFunctor : public XT::Grid::ElementFunctor<
   PfieldResidualFunctor(const ThisType& other) = default;
   PfieldResidualFunctor(ThisType&&) = default;
 
-  XT::Grid::ElementFunctor<PGV>* copy() override final
+  XT::Grid::ElementFunctor<PGV>* copy() final
   {
     return new PfieldResidualFunctor(*this);
   }
 
-  void apply_local(const E& element) override final
+  void apply_local(const E& element) final
   {
     double phi(0.), mu(0.);
     std::fill(result1_.begin(), result1_.end(), 0.);
@@ -1025,12 +1025,12 @@ struct CellModelSolver::PfieldNonlinearJacobianFunctor : public XT::Grid::Elemen
   PfieldNonlinearJacobianFunctor(const ThisType& other) = default;
   PfieldNonlinearJacobianFunctor(ThisType&&) = default;
 
-  XT::Grid::ElementFunctor<PGV>* copy() override final
+  XT::Grid::ElementFunctor<PGV>* copy() final
   {
     return new PfieldNonlinearJacobianFunctor(*this);
   }
 
-  void apply_local(const E& element) override final
+  void apply_local(const E& element) final
   {
     double phi(0.), mu(0.);
     std::fill(result1_.begin(), result1_.end(), 0.);
@@ -1110,12 +1110,12 @@ struct CellModelSolver::PfieldRhsFunctor : public XT::Grid::ElementFunctor<PGV>
   PfieldRhsFunctor(const ThisType& other) = default;
   PfieldRhsFunctor(ThisType&&) = default;
 
-  XT::Grid::ElementFunctor<PGV>* copy() override final
+  XT::Grid::ElementFunctor<PGV>* copy() final
   {
     return new PfieldRhsFunctor(*this);
   }
 
-  void apply_local(const E& element) override final
+  void apply_local(const E& element) final
   {
     std::fill(result_.begin(), result_.end(), 0.);
     const auto index = cellmodel_.grid_view_.indexSet().index(element);
@@ -1171,12 +1171,12 @@ struct CellModelSolver::PfieldBFunctor : public XT::Grid::ElementFunctor<PGV>
   PfieldBFunctor(const ThisType& other) = default;
   PfieldBFunctor(ThisType&&) = default;
 
-  XT::Grid::ElementFunctor<PGV>* copy() override final
+  XT::Grid::ElementFunctor<PGV>* copy() final
   {
     return new PfieldBFunctor(*this);
   }
 
-  void apply_local(const E& element) override final
+  void apply_local(const E& element) final
   {
     const auto index = cellmodel_.grid_view_.indexSet().index(element);
     const auto& global_indices_phi = cellmodel_.global_indices_phi_[index];
@@ -1266,12 +1266,12 @@ struct CellModelSolver::StokesRhsFunctor : public XT::Grid::ElementFunctor<PGV>
   StokesRhsFunctor(const ThisType& other) = default;
   StokesRhsFunctor(ThisType&&) = default;
 
-  XT::Grid::ElementFunctor<PGV>* copy() override final
+  XT::Grid::ElementFunctor<PGV>* copy() final
   {
     return new StokesRhsFunctor(*this);
   }
 
-  void apply_local(const E& element) override final
+  void apply_local(const E& element) final
   {
     // TODO: replace 0 by cell index
     std::fill(result_.begin(), result_.end(), 0.);
@@ -1810,26 +1810,45 @@ void CellModelSolver::visualize(const std::string& prefix,
 // Sets stokes vector to stokes_vec
 void CellModelSolver::set_stokes_vec(const VectorType& stokes_vec)
 {
+#ifndef NDEBUG
   DUNE_THROW_IF(
       stokes_vec.size() != size_u_ + size_p_, XT::Common::Exceptions::wrong_input_given, "Invalid vector size!");
+#endif
   stokes_vector_ = stokes_vec;
 }
 
 // Sets given dofs of stokes vector to values
 void CellModelSolver::set_stokes_vec_dofs(const std::vector<R>& values, const std::vector<size_t>& dofs)
 {
+#ifndef NDEBUG
   DUNE_THROW_IF(values.size() != dofs.size(),
                 XT::Common::Exceptions::wrong_input_given,
                 "Size of values does not match size of dofs");
+#endif
   for (size_t ii = 0; ii < dofs.size(); ++ii)
     stokes_vector_.set_entry(dofs[ii], values[ii]);
+}
+
+// Sets given dofs of stokes vector to values
+void CellModelSolver::set_stokes_vec_dofs(const pybind11::array_t<double>& values, const pybind11::list& dofs)
+{
+#ifndef NDEBUG
+  DUNE_THROW_IF(static_cast<size_t>(values.size()) != dofs.size(),
+                XT::Common::Exceptions::wrong_input_given,
+                "Size of values does not match size of dofs");
+#endif
+  const auto& values_data = values.unchecked();
+  for (size_t ii = 0; ii < dofs.size(); ++ii)
+    stokes_vector_.set_entry(dofs[ii].cast<size_t>(), values_data[ii]);
 }
 
 // Sets orientation field vector belonging to cell to pfield_vec
 void CellModelSolver::set_ofield_vec(const size_t cell, const VectorType& ofield_vec)
 {
+#ifndef NDEBUG
   DUNE_THROW_IF(cell >= num_cells_, XT::Common::Exceptions::wrong_input_given, "Invalid cell index");
   DUNE_THROW_IF(ofield_vec.size() != 2 * size_P_, XT::Common::Exceptions::wrong_input_given, "Invalid vector size!");
+#endif
   ofield_vectors_[cell] = ofield_vec;
 }
 
@@ -1838,19 +1857,39 @@ void CellModelSolver::set_ofield_vec_dofs(const size_t cell,
                                           const std::vector<R>& values,
                                           const std::vector<size_t>& dofs)
 {
+#ifndef NDEBUG
   DUNE_THROW_IF(cell >= num_cells_, XT::Common::Exceptions::wrong_input_given, "Invalid cell index");
   DUNE_THROW_IF(values.size() != dofs.size(),
                 XT::Common::Exceptions::wrong_input_given,
                 "Size of values does not match size of dofs");
+#endif
   for (size_t ii = 0; ii < dofs.size(); ++ii)
     ofield_vectors_[cell].set_entry(dofs[ii], values[ii]);
+}
+
+// Sets given dofs of orientation field vector belonging to cell to values
+void CellModelSolver::set_ofield_vec_dofs(const size_t cell,
+                                          const pybind11::array_t<double>& values,
+                                          const pybind11::list& dofs)
+{
+#ifndef NDEBUG
+  DUNE_THROW_IF(cell >= num_cells_, XT::Common::Exceptions::wrong_input_given, "Invalid cell index");
+  DUNE_THROW_IF(static_cast<size_t>(values.size()) != dofs.size(),
+                XT::Common::Exceptions::wrong_input_given,
+                "Size of values does not match size of dofs");
+#endif
+  const auto& values_data = values.unchecked();
+  for (size_t ii = 0; ii < dofs.size(); ++ii)
+    ofield_vectors_[cell].set_entry(dofs[ii].cast<size_t>(), values_data[ii]);
 }
 
 // Sets phasefield vector belonging to cell to pfield_vec
 void CellModelSolver::set_pfield_vec(const size_t cell, const VectorType& pfield_vec)
 {
+#ifndef NDEBUG
   DUNE_THROW_IF(cell >= num_cells_, XT::Common::Exceptions::wrong_input_given, "Invalid cell index");
   DUNE_THROW_IF(pfield_vec.size() != 3 * size_phi_, XT::Common::Exceptions::wrong_input_given, "Invalid vector size!");
+#endif
   pfield_vectors_[cell] = pfield_vec;
 }
 
@@ -1859,13 +1898,32 @@ void CellModelSolver::set_pfield_vec_dofs(const size_t cell,
                                           const std::vector<R>& values,
                                           const std::vector<size_t>& dofs)
 {
+#ifndef NDEBUG
   DUNE_THROW_IF(cell >= num_cells_, XT::Common::Exceptions::wrong_input_given, "Invalid cell index");
   DUNE_THROW_IF(values.size() != dofs.size(),
                 XT::Common::Exceptions::wrong_input_given,
                 "Size of values does not match size of dofs");
+#endif
   for (size_t ii = 0; ii < dofs.size(); ++ii)
     pfield_vectors_[cell].set_entry(dofs[ii], values[ii]);
 }
+
+// Sets given dofs of phasefield vector belonging to cell to values
+void CellModelSolver::set_pfield_vec_dofs(const size_t cell,
+                                          const pybind11::array_t<double>& values,
+                                          const pybind11::list& dofs)
+{
+#ifndef NDEBUG
+  DUNE_THROW_IF(cell >= num_cells_, XT::Common::Exceptions::wrong_input_given, "Invalid cell index");
+  DUNE_THROW_IF(static_cast<size_t>(values.size()) != dofs.size(),
+                XT::Common::Exceptions::wrong_input_given,
+                "Size of values does not match size of dofs");
+#endif
+  const auto& values_data = values.unchecked();
+  for (size_t ii = 0; ii < dofs.size(); ++ii)
+    pfield_vectors_[cell].set_entry(dofs[ii].cast<size_t>(), values_data[ii]);
+}
+
 
 // Get stokes finite element vector
 const CellModelSolver::VectorType& CellModelSolver::stokes_vec()
@@ -2265,9 +2323,8 @@ CellModelSolver::apply_stokes_helper(const VectorType& y, const bool restricted,
     for (size_t ii = 0; ii < range_dofs.size(); ++ii)
       ret[ii] = residual[range_dofs[ii]];
     return ret;
-  } else {
-    return residual;
   }
+  return residual;
 }
 
 void CellModelSolver::assemble_nonlinear_part_of_ofield_residual(VectorType& residual,
@@ -2330,15 +2387,15 @@ CellModelSolver::apply_ofield_helper(const VectorType& y, const size_t cell, con
     for (size_t ii = 0; ii < range_dofs.size(); ++ii)
       ret[ii] = residual[range_dofs[ii]];
     return ret;
-  } else {
-    return residual;
   }
+  return residual;
 }
 
-void CellModelSolver::update_ofield_parameters(const double Pa, const size_t /*cell*/, const bool /*restricted*/)
+void CellModelSolver::update_ofield_parameters(const double Pa, const size_t /*cell*/, const bool restricted)
 {
   Pa_ = Pa;
-  ofield_solver_.set_params(dt_, kappa_, Pa_);
+  if (!restricted)
+    ofield_solver_.set_params(dt_, kappa_, Pa_);
 }
 
 // Applies cell-th phase field operator (applies F if phase field equation is F(y) = 0)
@@ -2406,18 +2463,18 @@ CellModelSolver::apply_pfield_helper(const VectorType& y, const size_t cell, con
     for (size_t ii = 0; ii < range_dofs.size(); ++ii)
       ret[ii] = residual[range_dofs[ii]];
     return ret;
-  } else {
-    return residual;
   }
+  return residual;
 }
 
 void CellModelSolver::update_pfield_parameters(
-    const double Be, const double Ca, const double Pa, const size_t /*cell*/, const bool /*restricted*/)
+    const double Be, const double Ca, const double Pa, const size_t /*cell*/, const bool restricted)
 {
   Be_ = Be;
   Ca_ = Ca;
   Pa_ = Pa;
-  pfield_solver_.set_params(gamma_, epsilon_, Be_, Ca_);
+  if (!restricted)
+    pfield_solver_.set_params(gamma_, epsilon_, Be_, Ca_);
 }
 
 //******************************************************************************************************************
@@ -2439,34 +2496,33 @@ CellModelSolver::VectorType CellModelSolver::apply_inverse_stokes_helper(const E
     stokes_solver_statistics_.iterations_.emplace_back(1);
     stokes_solver_statistics_.solve_time_.emplace_back(std::chrono::high_resolution_clock::now() - t1);
     return XT::Common::convert_to<VectorType>(ret);
-  } else {
-    ConstEigenVectorViewType rhs_u_view(rhs, 0, size_u_);
-    // calculate rhs B A^{-1} f
-    auto& p = stokes_p_tmp_vec_;
-    auto& B_Ainv_f = stokes_p_tmp_vec2_;
-    auto& Ainv_f = stokes_u_tmp_vec_;
-    auto& rhs_u = stokes_u_tmp_vec2_;
-    rhs_u = rhs_u_view;
-    Ainv_f.backend() = stokes_A_solver_->solve(rhs_u.backend());
-    BT_stokes_.mtv(Ainv_f, B_Ainv_f);
-    // Solve S p = rhs
-    InverseOperatorResult res;
-    stokes_schur_solver_->apply(p, B_Ainv_f, res);
-    // Now solve u = A^{-1}(f - B^T p)
-    auto& BT_p = stokes_u_tmp_vec_;
-    BT_stokes_.mv(p, BT_p);
-    // rhs_u already contains f
-    rhs_u -= BT_p;
-    auto& u = stokes_u_tmp_vec_;
-    u.backend() = stokes_A_solver_->solve(rhs_u.backend());
-    for (size_t ii = 0; ii < size_u_; ++ii)
-      ret.set_entry(ii, u.get_entry(ii));
-    for (size_t ii = 0; ii < size_p_; ++ii)
-      ret.set_entry(size_u_ + ii, p.get_entry(ii));
-    stokes_solver_statistics_.iterations_.emplace_back(res.iterations);
-    stokes_solver_statistics_.solve_time_.emplace_back(std::chrono::high_resolution_clock::now() - t1);
-    return XT::Common::convert_to<VectorType>(ret);
   }
+  ConstEigenVectorViewType rhs_u_view(rhs, 0, size_u_);
+  // calculate rhs B A^{-1} f
+  auto& p = stokes_p_tmp_vec_;
+  auto& B_Ainv_f = stokes_p_tmp_vec2_;
+  auto& Ainv_f = stokes_u_tmp_vec_;
+  auto& rhs_u = stokes_u_tmp_vec2_;
+  rhs_u = rhs_u_view;
+  Ainv_f.backend() = stokes_A_solver_->solve(rhs_u.backend());
+  BT_stokes_.mtv(Ainv_f, B_Ainv_f);
+  // Solve S p = rhs
+  InverseOperatorResult res;
+  stokes_schur_solver_->apply(p, B_Ainv_f, res);
+  // Now solve u = A^{-1}(f - B^T p)
+  auto& BT_p = stokes_u_tmp_vec_;
+  BT_stokes_.mv(p, BT_p);
+  // rhs_u already contains f
+  rhs_u -= BT_p;
+  auto& u = stokes_u_tmp_vec_;
+  u.backend() = stokes_A_solver_->solve(rhs_u.backend());
+  for (size_t ii = 0; ii < size_u_; ++ii)
+    ret.set_entry(ii, u.get_entry(ii));
+  for (size_t ii = 0; ii < size_p_; ++ii)
+    ret.set_entry(size_u_ + ii, p.get_entry(ii));
+  stokes_solver_statistics_.iterations_.emplace_back(res.iterations);
+  stokes_solver_statistics_.solve_time_.emplace_back(std::chrono::high_resolution_clock::now() - t1);
+  return XT::Common::convert_to<VectorType>(ret);
 }
 
 // Applies inverse orientation field operator (solves F(y) = 0)
@@ -2921,8 +2977,7 @@ CellModelSolver::get_lower_left(const std::string& testcase)
   if (testcase == "single_cell" || testcase == "single_cell_dirichlet" || testcase == "channel"
       || testcase == "cell_isolation_experiment")
     return {{0., 0.}};
-  else
-    DUNE_THROW(Dune::NotImplemented, "Unknown testcase");
+  DUNE_THROW(Dune::NotImplemented, "Unknown testcase");
   return FieldVector<R, d>();
 }
 
@@ -2932,12 +2987,11 @@ CellModelSolver::get_upper_right(const std::string& testcase)
 {
   if (testcase == "single_cell" || testcase == "single_cell_dirichlet")
     return {{30., 30.}};
-  else if (testcase == "cell_isolation_experiment")
+  if (testcase == "cell_isolation_experiment")
     return {{40., 40.}};
-  else if (testcase == "channel")
+  if (testcase == "channel")
     return {{160., 40.}};
-  else
-    DUNE_THROW(Dune::NotImplemented, "Unknown testcase");
+  DUNE_THROW(Dune::NotImplemented, "Unknown testcase");
   return FieldVector<R, d>();
 }
 
@@ -2946,10 +3000,9 @@ std::string CellModelSolver::get_periodic_directions(const std::string& testcase
 {
   if (testcase == "single_cell" || testcase == "channel")
     return "01";
-  else if (testcase == "single_cell_dirichlet" || testcase == "cell_isolation_experiment")
+  if (testcase == "single_cell_dirichlet" || testcase == "cell_isolation_experiment")
     return "00";
-  else
-    DUNE_THROW(Dune::NotImplemented, "Unknown testcase");
+  DUNE_THROW(Dune::NotImplemented, "Unknown testcase");
   return "";
 }
 
@@ -2959,8 +3012,7 @@ size_t CellModelSolver::get_num_cells(const std::string& testcase)
   if (testcase == "single_cell" || testcase == "single_cell_dirichlet" || testcase == "channel"
       || testcase == "cell_isolation_experiment")
     return 1;
-  else
-    DUNE_THROW(Dune::NotImplemented, "Unknown testcase");
+  DUNE_THROW(Dune::NotImplemented, "Unknown testcase");
   return 0;
 }
 

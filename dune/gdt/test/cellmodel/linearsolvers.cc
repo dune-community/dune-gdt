@@ -5,7 +5,7 @@
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Tobias Leibner (2019)
+//   Tobias Leibner (2019-2021)
 
 #include "config.h"
 
@@ -414,11 +414,11 @@ void PfieldLinearSolver::setup()
 
 void PfieldLinearSolver::set_params(const double gamma, const double epsilon, const double Be, const double Ca)
 {
-  bool setup_needed = XT::Common::is_zero(gamma - gamma_);
+  bool setup_needed = !XT::Common::is_zero(gamma - gamma_);
   if (solver_type_ == CellModelLinearSolverType::gmres) {
-    setup_needed |= XT::Common::is_zero(epsilon - epsilon_);
-    setup_needed |= XT::Common::is_zero(Be - Be_);
-    setup_needed |= XT::Common::is_zero(Ca - Ca_);
+    setup_needed |= !XT::Common::is_zero(epsilon - epsilon_);
+    setup_needed |= !XT::Common::is_zero(Be - Be_);
+    setup_needed |= !XT::Common::is_zero(Ca - Ca_);
   }
   gamma_ = gamma;
   epsilon_ = epsilon;

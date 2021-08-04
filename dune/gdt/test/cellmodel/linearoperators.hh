@@ -11,9 +11,12 @@
 #define DUNE_GDT_TEST_CELLMODEL_LINEAROPERATORS_HH
 
 #include <dune/istl/operators.hh>
+#include <dune/istl/solver.hh>
+#include <dune/xt/common/configuration.hh>
 #include <dune/xt/common/parameter.hh>
 
 #include <Eigen/UmfPackSupport>
+#include <Eigen/IterativeLinearSolvers>
 
 namespace Dune {
 
@@ -35,7 +38,7 @@ public:
 
   using BaseType::apply;
 
-  void applyscaleadd(Field alpha, const Vector& x, Vector& y) const override final
+  void applyscaleadd(Field alpha, const Vector& x, Vector& y) const final
   {
     auto& Sx = tmp_vec_;
     apply(x, Sx);
@@ -44,7 +47,7 @@ public:
 
   virtual void prepare(const size_t /*cell*/, const bool /*restricted*/ = false) {}
 
-  virtual const Matrix& getmat() const override
+  const Matrix& getmat() const override
   {
     return M_;
   }
@@ -87,7 +90,7 @@ public:
         The input vector is consistent and the output must also be
      consistent on the interior+border partition.
    */
-  void apply(const Vector& x, Vector& y) const override final
+  void apply(const Vector& x, Vector& y) const final
   {
     // get some variables from cellmodel_solver_
     const auto dt = cellmodel_solver_.dt_;
@@ -146,13 +149,13 @@ public:
     }
   }
 
-  void prepare(const size_t cell, const bool restricted = false) override final
+  void prepare(const size_t cell, const bool restricted = false) final
   {
     cell_ = cell;
     restricted_ = restricted;
   }
 
-  virtual const Matrix& getmat() const override final
+  virtual const Matrix& getmat() const final
   {
     DUNE_THROW(Dune::NotImplemented, "");
     return cellmodel_solver_.M_ofield_;
@@ -196,7 +199,7 @@ public:
         The input vector is consistent and the output must also be
      consistent on the interior+border partition.
    */
-  void apply(const Vector& x, Vector& y) const override final
+  void apply(const Vector& x, Vector& y) const final
   {
     // get some variables from cellmodel_solver_
     const auto size_u = cellmodel_solver_.size_u_;
@@ -209,8 +212,6 @@ public:
     const MatrixType& A = cellmodel_solver_.A_stokes_;
     const MatrixType& BT = cellmodel_solver_.BT_stokes_;
     // copy to temporary vectors (we do not use vector views to improve performance of mv)
-    const auto& source_dofs = cellmodel_solver_.stokes_deim_source_dofs_[2];
-    const auto p_begin = cellmodel_solver_.p_deim_source_dofs_begin_;
     Vector x_u_restricted_, x_p_restricted_, y_p_restricted_;
     if (!restricted_) {
       for (size_t ii = 0; ii < size_u; ++ii)
@@ -218,6 +219,8 @@ public:
       for (size_t ii = 0; ii < size_p; ++ii)
         x_p_[ii] = x[size_u + ii];
     } else {
+      const auto& source_dofs = cellmodel_solver_.stokes_deim_source_dofs_[2];
+      const auto p_begin = cellmodel_solver_.p_deim_source_dofs_begin_;
       assert(x.size() >= p_begin);
       assert(x.size() == source_dofs.size());
       x_u_restricted_ = Vector(p_begin);
@@ -256,12 +259,12 @@ public:
     }
   }
 
-  void prepare(const size_t /*cell*/, const bool restricted = false) override final
+  void prepare(const size_t /*cell*/, const bool restricted = false) final
   {
     restricted_ = restricted;
   }
 
-  virtual const Matrix& getmat() const override final
+  const Matrix& getmat() const final
   {
     DUNE_THROW(Dune::NotImplemented, "");
     return cellmodel_solver_.A_stokes_;
@@ -299,7 +302,7 @@ public:
         The input vector is consistent and the output must also be
      consistent on the interior+border partition.
    */
-  void apply(const Vector& x, Vector& y) const override final
+  void apply(const Vector& x, Vector& y) const final
   {
     M_.mv(x, y);
   }
@@ -336,7 +339,7 @@ public:
         The input vector is consistent and the output must also be
      consistent on the interior+border partition.
    */
-  void apply(const Vector& x, Vector& y) const override final
+  void apply(const Vector& x, Vector& y) const final
   {
     // get some variables from cellmodel_solver_
     const MatrixType& M = cellmodel_solver_.M_pfield_;
@@ -436,13 +439,13 @@ public:
     }
   }
 
-  void prepare(const size_t cell, const bool restricted = false) override final
+  void prepare(const size_t cell, const bool restricted = false) final
   {
     cell_ = cell;
     restricted_ = restricted;
   }
 
-  virtual const Matrix& getmat() const override final
+  virtual const Matrix& getmat() const final
   {
     DUNE_THROW(Dune::NotImplemented, "");
     return cellmodel_solver_.M_pfield_;
@@ -481,7 +484,7 @@ public:
     , tmp_vec_u2_(cellmodel_solver.size_u_)
   {}
 
-  void apply(const Vector& x, Vector& y) const override final
+  void apply(const Vector& x, Vector& y) const final
   {
     // we want to calculate y = (B A^{-1} B^T - C) x
     // calculate B^T x
@@ -496,7 +499,7 @@ public:
     y[0] = x[0];
   }
 
-  const Matrix& getmat() const override final
+  const Matrix& getmat() const final
   {
     DUNE_THROW(Dune::NotImplemented, "");
     return cellmodel_solver_.A_stokes_;
@@ -528,12 +531,12 @@ public:
     , solver_(std::make_shared<SolverType>())
   {}
 
-  virtual void apply(VectorType& x, VectorType& b, InverseOperatorResult& /*res*/) override final
+  virtual void apply(VectorType& x, VectorType& b, InverseOperatorResult& /*res*/) final
   {
     x.backend() = solver_->solve(b.backend());
   }
 
-  virtual void apply(VectorType& x, VectorType& b, double /*reduction*/, InverseOperatorResult& res) override final
+  virtual void apply(VectorType& x, VectorType& b, double /*reduction*/, InverseOperatorResult& res) final
   {
     apply(x, b, res);
   }
@@ -548,7 +551,7 @@ public:
   }
 
   //! Category of the solver (see SolverCategory::Category)
-  virtual SolverCategory::Category category() const override final
+  virtual SolverCategory::Category category() const final
   {
     return SolverCategory::Category::sequential;
   }
