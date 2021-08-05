@@ -187,8 +187,11 @@ CellModelLinearSolverWrapper::apply_system_matrix_solver(const VectorType& rhs, 
       // Eigen::saveMarket(S_.backend(), "S_" + XT::Common::to_string(counter) + ".mtx");
       // Eigen::saveMarketVector(rhs_eig.backend(),  "S_" + XT::Common::to_string(counter++) + "_b.mtx");
       direct_solver_->factorize(S_.backend());
-      if (direct_solver_->info() != ::Eigen::Success)
+      if (direct_solver_->info() != ::Eigen::Success) {
+	direct_solver_->umfpackReportInfo();
+	direct_solver_->umfpackReportStatus();
         DUNE_THROW(Dune::MathError, "Factorization of system matrix failed!");
+      }
       update.backend() = direct_solver_->solve(rhs_eig.backend());
       statistics_.iterations = 1;
       break;
@@ -246,6 +249,8 @@ CellModelLinearSolverWrapper::create_preconditioner_inverse_op(std::shared_ptr<D
     case CellModelLinearSolverType::schur_gmres:
       return nullptr;
   }
+  DUNE_THROW(Dune::NotImplemented, "Unknown linear solver type");
+  return nullptr;
 }
 
 std::shared_ptr<CellModelLinearSolverWrapper::PreconditionerType>
@@ -300,6 +305,8 @@ CellModelLinearSolverWrapper::create_iterative_solver(std::shared_ptr<DuneLinear
     case CellModelLinearSolverType::direct:
       return nullptr;
   }
+  DUNE_THROW(Dune::NotImplemented, "Unknown linear solver type");
+  return nullptr;
 }
 
 
