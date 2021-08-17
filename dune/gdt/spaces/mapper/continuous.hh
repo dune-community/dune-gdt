@@ -36,25 +36,7 @@ class ContinuousMapper : public MapperInterface<GV>
   using ThisType = ContinuousMapper;
   using BaseType = MapperInterface<GV>;
 
-  template <int d>
-  struct GeometryTypeLayout
-  {
-    GeometryTypeLayout(std::set<GeometryType>&& types)
-      : types_(std::move(types))
-    {}
-
-    GeometryTypeLayout(const GeometryTypeLayout<d>&) = default;
-    GeometryTypeLayout(GeometryTypeLayout<d>&&) = default;
-
-    bool contains(const GeometryType& gt) const
-    {
-      return types_.count(gt) > 0;
-    }
-
-    const std::set<GeometryType> types_;
-  };
-
-  using Implementation = MultipleCodimMultipleGeomTypeMapper<GV, GeometryTypeLayout>;
+  using Implementation = MultipleCodimMultipleGeomTypeMapper<GV>;
 
 public:
   using BaseType::d;
@@ -178,7 +160,7 @@ public:
     DUNE_THROW_IF(all_DoF_attached_geometry_types_.size() == 0,
                   Exceptions::mapper_error,
                   "This must not happen, the finite elements report no DoFs attached to (sub)entities!");
-    mapper_.update();
+    mapper_.update(grid_view_);
   } // ... update_after_adapt(...)
 
 private:

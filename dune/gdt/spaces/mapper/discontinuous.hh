@@ -111,7 +111,7 @@ public:
 
   void update_after_adapt() override final
   {
-    mapper_.update();
+    mapper_.update(grid_view_);
     size_ = 0;
     max_num_dofs_ = 0;
     if (offset_.size() != mapper_.size())
