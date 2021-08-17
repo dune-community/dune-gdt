@@ -50,3 +50,4 @@ build-*
 .idea
 tags
 .vscode
+compile_commands.json
