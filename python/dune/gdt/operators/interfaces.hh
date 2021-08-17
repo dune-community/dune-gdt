@@ -19,7 +19,6 @@
 #include <dune/xt/common/string.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/la/container.hh>
-#include <python/dune/xt/common/exceptions.bindings.hh>
 #include <python/dune/xt/common/parameter.hh>
 #include <python/dune/xt/common/configuration.hh>
 #include <python/dune/xt/grid/grids.bindings.hh>
