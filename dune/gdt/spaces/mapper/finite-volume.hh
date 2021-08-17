@@ -109,7 +109,7 @@ public:
 
   void update_after_adapt() override final
   {
-    mapper_.update();
+    mapper_.update(grid_view_);
   }
 
 private:
