@@ -33,13 +33,15 @@ include(DuneMacros)
 find_package(dune-xt REQUIRED)
 list(APPEND CMAKE_MODULE_PATH "${dune-xt_MODULE_PATH}")
 include(DuneUtils)
+find_package(Python3)
+add_subdirectory(${dune-xt_MODULE_PATH}/../../pybind11 ${CMAKE_CURRENT_BINARY_DIR}/pybind11)
 
 # start a dune project with information from dune.module
 dune_project()
 if(DUNE_XT_WITH_PYTHON_BINDINGS)
-  dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune MODULE_LIBRARIES dunegdt)
+  dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune ${Python3_INCLUDE_DIRS} MODULE_LIBRARIES dunegdt)
 else()
-  dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune)
+  dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune ${Python3_INCLUDE_DIRS})
 endif()
 
 add_header_listing()
