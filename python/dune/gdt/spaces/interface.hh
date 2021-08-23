@@ -86,7 +86,7 @@ public:
                 points->set_entry(global_DoF_indices[ii], jj, global_point[jj]);
             }
           }
-          return std::move(points);
+          return points;
         },
         py::call_guard<py::gil_scoped_release>());
     c.def("__repr__", [](const type& self) {

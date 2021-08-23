@@ -32,7 +32,7 @@ struct ProductIntegrandTest : public IntegrandTest<G>
   using ScalarIntegrandType = LocalElementProductIntegrand<E, 1>;
   using VectorIntegrandType = LocalElementProductIntegrand<E, d>;
 
-  void is_constructable() override final
+  void is_constructable() final
   {
     [[maybe_unused]] ScalarIntegrandType scalar_integrand1;
     [[maybe_unused]] ScalarIntegrandType scalar_integrand2(1.);
@@ -55,7 +55,7 @@ struct ProductIntegrandTest : public IntegrandTest<G>
     [[maybe_unused]] VectorIntegrandType vector_integrand5(matrix_grid_function);
   }
 
-  virtual void evaluates_correctly_for_scalar_bases()
+  void evaluates_correctly_for_scalar_bases()
   {
     const XT::Functions::GenericGridFunction<E, 1> scalar_inducing_function(
         2, [](const E&) {}, [](const DomainType& x, const XT::Common::Parameter&) { return x[0] * x[1]; });
@@ -75,7 +75,7 @@ struct ProductIntegrandTest : public IntegrandTest<G>
     }
   }
 
-  virtual void evaluates_correctly_for_vector_bases()
+  void evaluates_correctly_for_vector_bases()
   {
     const XT::Functions::GenericGridFunction<E, 2, 2> inducing_function(
         1,
@@ -104,7 +104,7 @@ struct ProductIntegrandTest : public IntegrandTest<G>
     }
   }
 
-  virtual void is_integrated_correctly()
+  void is_integrated_correctly()
   {
     ScalarIntegrandType integrand(1.);
     const auto& grid_view = grid_provider_->leaf_view();
@@ -147,6 +147,7 @@ TYPED_TEST(ProductIntegrandTest, is_constructable)
 {
   this->is_constructable();
 }
+
 TYPED_TEST(ProductIntegrandTest, evaluates_correctly_for_scalar_bases)
 {
   this->evaluates_correctly_for_scalar_bases();

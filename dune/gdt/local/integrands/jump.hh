@@ -183,10 +183,13 @@ public:
     , intersection_diameter_(intersection_diameter)
   {}
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wextra"
   Boundary(const ThisType& other)
     : BaseType(other)
     , intersection_diameter_(other.intersection_diameter_)
   {}
+#pragma GCC diagnostic pop
 
   Boundary(ThisType&& source) = default;
 
