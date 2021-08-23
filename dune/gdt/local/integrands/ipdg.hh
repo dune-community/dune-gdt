@@ -31,10 +31,9 @@ static std::function<double(const Intersection&)> default_intersection_diameter(
     if (Intersection::Entity::dimension == 1) {
       if (intersection.neighbor())
         return 0.5 * (XT::Grid::diameter(intersection.inside()) + XT::Grid::diameter(intersection.outside()));
-      else
-        return XT::Grid::diameter(intersection.inside());
-    } else
-      return XT::Grid::diameter(intersection);
+      return XT::Grid::diameter(intersection.inside());
+    }
+    return XT::Grid::diameter(intersection);
   };
 } // ... default_intersection_diameter(...)
 
@@ -83,13 +82,13 @@ public:
 
   InnerPenalty(ThisType&& source) = default;
 
-  std::unique_ptr<BaseType> copy_as_quaternary_intersection_integrand() const override final
+  std::unique_ptr<BaseType> copy_as_quaternary_intersection_integrand() const final
   {
     return std::make_unique<ThisType>(*this);
   }
 
 protected:
-  void post_bind(const IntersectionType& intrsctn) override final
+  void post_bind(const IntersectionType& intrsctn) final
   {
     DUNE_THROW_IF(
         !intrsctn.neighbor(), Exceptions::integrand_error, "This integrand cannot be used on a boundary intersection!");
@@ -102,7 +101,7 @@ public:
             const LocalAnsatzBasisType& ansatz_basis_inside,
             const LocalTestBasisType& test_basis_outside,
             const LocalAnsatzBasisType& ansatz_basis_outside,
-            const XT::Common::Parameter& param = {}) const override final
+            const XT::Common::Parameter& param = {}) const final
   {
     return std::max(local_weight_in_->order(param), local_weight_out_->order(param))
            + std::max(test_basis_inside.order(param), test_basis_outside.order(param))
@@ -120,7 +119,7 @@ public:
                 DynamicMatrix<F>& result_in_out,
                 DynamicMatrix<F>& result_out_in,
                 DynamicMatrix<F>& result_out_out,
-                const XT::Common::Parameter& param = {}) const override final
+                const XT::Common::Parameter& param = {}) const final
   {
     // Prepare sotrage, ...
     this->ensure_size_and_clear_results(test_basis_inside,
@@ -213,6 +212,8 @@ public:
     , local_weight_(weight_->local_function())
   {}
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wextra"
   BoundaryPenalty(const ThisType& other)
     : BaseType(other)
     , penalty_(other.penalty_)
@@ -220,29 +221,30 @@ public:
     , intersection_diameter_(other.intersection_diameter_)
     , local_weight_(weight_->local_function())
   {}
+#pragma GCC diagnostic pop
 
   BoundaryPenalty(ThisType&& source) = default;
 
-  std::unique_ptr<BaseType> copy_as_binary_intersection_integrand() const override final
+  std::unique_ptr<BaseType> copy_as_binary_intersection_integrand() const final
   {
     return std::make_unique<ThisType>(*this);
   }
 
 protected:
-  void post_bind(const IntersectionType& intersection) override final
+  void post_bind(const IntersectionType& intersection) final
   {
     local_weight_->bind(intersection.inside());
   }
 
 public:
-  bool inside() const override final
+  bool inside() const final
   {
     return true; // We expect the bases to be bound to the inside (see evaluate).
   }
 
   int order(const LocalTestBasisType& test_basis,
             const LocalAnsatzBasisType& ansatz_basis,
-            const XT::Common::Parameter& param = {}) const override final
+            const XT::Common::Parameter& param = {}) const final
   {
     return local_weight_->order(param) + test_basis.order(param) + ansatz_basis.order(param);
   }
@@ -253,7 +255,7 @@ public:
                 const LocalAnsatzBasisType& ansatz_basis,
                 const DomainType& point_in_reference_intersection,
                 DynamicMatrix<F>& result,
-                const XT::Common::Parameter& param = {}) const override final
+                const XT::Common::Parameter& param = {}) const final
   {
     // Prepare sotrage, ...
     const size_t rows = test_basis.size(param);

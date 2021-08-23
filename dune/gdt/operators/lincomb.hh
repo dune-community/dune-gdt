@@ -116,7 +116,7 @@ public:
     return coeffs_[ii];
   }
 
-  bool linear() const override final
+  bool linear() const final
   {
     for (const auto& op : const_ops_)
       if (!op.access().linear())
@@ -124,19 +124,19 @@ public:
     return true;
   }
 
-  const SourceSpaceType& source_space() const override final
+  const SourceSpaceType& source_space() const final
   {
     return source_space_;
   }
 
-  const RangeSpaceType& range_space() const override final
+  const RangeSpaceType& range_space() const final
   {
     return range_space_;
   }
 
   using BaseType::apply;
 
-  void apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& param = {}) const override final
+  void apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& param = {}) const final
   {
     range.set_all(0);
     auto tmp = range;
@@ -147,12 +147,12 @@ public:
     }
   } // ... append(...)
 
-  std::vector<std::string> jacobian_options() const override final
+  std::vector<std::string> jacobian_options() const final
   {
     return {"lincomb"};
   }
 
-  XT::Common::Configuration jacobian_options(const std::string& type) const override final
+  XT::Common::Configuration jacobian_options(const std::string& type) const final
   {
     DUNE_THROW_IF(type != this->jacobian_options().at(0), Exceptions::operator_error, "type = " << type);
     using XT::Common::to_string;
@@ -177,7 +177,7 @@ public:
   void jacobian(const VectorType& source,
                 MatrixOperatorType& jacobian_op,
                 const XT::Common::Configuration& opts,
-                const XT::Common::Parameter& param = {}) const override final
+                const XT::Common::Parameter& param = {}) const final
   {
     LOG_(debug) << this->logger.prefix << "jacobian.(source.sup_norm()=" << source.sup_norm()
                 << ", jacobian_op.matrix().sup_norm()=" << jacobian_op.matrix().sup_norm()
@@ -286,14 +286,14 @@ public:
 
   // We need to override some operator+-*/ from the interface to avoid segfaults due to temporaries
 
-  ConstLincombOperatorType operator*(const FieldType& alpha) const override final
+  ConstLincombOperatorType operator*(const FieldType& alpha) const final
   {
     ConstLincombOperatorType ret(*this); // logging is inherited by copy ctor
     ret *= alpha;
     return ret;
   }
 
-  ConstLincombOperatorType operator/(const FieldType& alpha) const override final
+  ConstLincombOperatorType operator/(const FieldType& alpha) const final
   {
     ConstLincombOperatorType ret(*this); // logging is inherited by copy ctor
     ret /= alpha;
@@ -302,21 +302,21 @@ public:
 
   using BaseType::operator+;
 
-  ConstLincombOperatorType operator+(const ConstLincombOperatorType& other) const override final
+  ConstLincombOperatorType operator+(const ConstLincombOperatorType& other) const final
   {
     ConstLincombOperatorType ret(*this); // logging is inherited by copy ctor
     ret += other;
     return ret;
   }
 
-  ConstLincombOperatorType operator+(const BaseType& other) const override final
+  ConstLincombOperatorType operator+(const BaseType& other) const final
   {
     ConstLincombOperatorType ret(*this); // logging is inherited by copy ctor
     ret += other;
     return ret;
   }
 
-  ConstLincombOperatorType operator+(const VectorType& vector) const override final
+  ConstLincombOperatorType operator+(const VectorType& vector) const final
   {
     std::string derived_logging_prefix = "";
     if (this->logger.debug_enabled) {
@@ -332,21 +332,21 @@ public:
 
   using BaseType::operator-;
 
-  ConstLincombOperatorType operator-(const ConstLincombOperatorType& other) const override final
+  ConstLincombOperatorType operator-(const ConstLincombOperatorType& other) const final
   {
     ConstLincombOperatorType ret(*this); // logging is inherited by copy ctor
     ret += other;
     return ret;
   }
 
-  ConstLincombOperatorType operator-(const BaseType& other) const override final
+  ConstLincombOperatorType operator-(const BaseType& other) const final
   {
     ConstLincombOperatorType ret(*this); // logging is inherited by copy ctor
     ret += other;
     return ret;
   }
 
-  ConstLincombOperatorType operator-(const VectorType& vector) const override final
+  ConstLincombOperatorType operator-(const VectorType& vector) const final
   {
     std::string derived_logging_prefix = "";
     if (this->logger.debug_enabled) {
@@ -463,7 +463,7 @@ public:
     return ops_[ii].access();
   }
 
-  OperatorType& assemble(const bool use_tbb = false) override final
+  OperatorType& assemble(const bool use_tbb = false) final
   {
     for (auto& oo : ops_)
       oo.access().assemble(use_tbb);
@@ -519,7 +519,7 @@ public:
 
   using BaseType::operator/;
 
-  LincombOperatorType operator/(const FieldType& alpha) override final
+  LincombOperatorType operator/(const FieldType& alpha) final
   {
     LincombOperatorType ret(*this); // logging is inherited by copy ctor
     ret /= alpha;
@@ -528,21 +528,21 @@ public:
 
   using BaseType::operator+;
 
-  LincombOperatorType operator+(LincombOperatorType& other) override final
+  LincombOperatorType operator+(LincombOperatorType& other) final
   {
     LincombOperatorType ret(*this); // logging is inherited by copy ctor
     ret += other;
     return ret;
   }
 
-  LincombOperatorType operator+(OperatorType& other) override final
+  LincombOperatorType operator+(OperatorType& other) final
   {
     LincombOperatorType ret(*this); // logging is inherited by copy ctor
     ret += other;
     return ret;
   }
 
-  LincombOperatorType operator+(const VectorType& vector) override final
+  LincombOperatorType operator+(const VectorType& vector) final
   {
     std::string derived_logging_prefix = "";
     if (this->logger.debug_enabled) {
@@ -558,21 +558,21 @@ public:
 
   using BaseType::operator-;
 
-  LincombOperatorType operator-(LincombOperatorType& other) override final
+  LincombOperatorType operator-(LincombOperatorType& other) final
   {
     LincombOperatorType ret(*this); // logging is inherited by copy ctor
     ret -= other;
     return ret;
   }
 
-  LincombOperatorType operator-(OperatorType& other) override final
+  LincombOperatorType operator-(OperatorType& other) final
   {
     LincombOperatorType ret(*this); // logging is inherited by copy ctor
     ret -= other;
     return ret;
   }
 
-  LincombOperatorType operator-(const VectorType& vector) override final
+  LincombOperatorType operator-(const VectorType& vector) final
   {
     std::string derived_logging_prefix = "";
     if (this->logger.debug_enabled) {

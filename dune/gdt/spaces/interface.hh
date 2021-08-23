@@ -49,7 +49,7 @@ class ConstDiscreteFunction;
 template <class GridView, size_t range_dim = 1, size_t range_dim_columns = 1, class RangeField = double>
 class SpaceInterface : public XT::Common::WithLogger<SpaceInterface<GridView, range_dim, range_dim_columns, RangeField>>
 {
-  static_assert(XT::Grid::is_view<GridView>::value, "");
+  static_assert(XT::Grid::is_view<GridView>::value);
   using ThisType = SpaceInterface;
   using Logger = XT::Common::WithLogger<SpaceInterface<GridView, range_dim, range_dim_columns, RangeField>>;
 

@@ -11,7 +11,6 @@
 #define DUNE_GDT_PYTHON_OPERATORS_MATRIX_BASED_HH
 
 #include <dune/pybindxi/pybind11.h>
-#include <dune/pybindxi/stl.h>
 
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/grid/gridprovider/provider.hh>

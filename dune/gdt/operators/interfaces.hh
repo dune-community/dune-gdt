@@ -44,14 +44,14 @@ template <class Matrix,
           class RangeGridView>
 class AssertArgumentsOfOperatorInterface
 {
-  static_assert(XT::LA::is_matrix<Matrix>::value, "");
-  static_assert(XT::Grid::is_view<SourceGridView>::value, "");
-  static_assert(source_dim > 0, "");
-  static_assert(source_dim_cols > 0, "");
-  static_assert(range_dim > 0, "");
-  static_assert(range_dim_cols > 0, "");
-  static_assert(XT::Grid::is_view<RangeGridView>::value, "");
-  static_assert(SourceGridView::dimension == RangeGridView::dimension, "");
+  static_assert(XT::LA::is_matrix<Matrix>::value);
+  static_assert(XT::Grid::is_view<SourceGridView>::value);
+  static_assert(source_dim > 0);
+  static_assert(source_dim_cols > 0);
+  static_assert(range_dim > 0);
+  static_assert(range_dim_cols > 0);
+  static_assert(XT::Grid::is_view<RangeGridView>::value);
+  static_assert(SourceGridView::dimension == RangeGridView::dimension);
 }; // class AssertArgumentsOfOperatorInterface
 
 
@@ -179,7 +179,7 @@ public:
 
   OperatorInterface(ThisType&& source) = default;
 
-  virtual ~OperatorInterface() = default;
+  ~OperatorInterface() override = default;
 
   /// \name These methods have to be implemented.
   /// \{
@@ -489,10 +489,9 @@ invert_options(some_type).get<std::string>("type") == some_type
    */
   virtual XT::Common::Configuration invert_options(const std::string& type) const
   {
-    if (type == "newton") {
+    if (type == "newton")
       return {{"type", type}, {"precision", "1e-7"}, {"max_iter", "100"}, {"max_dampening_iter", "1000"}};
-    } else
-      DUNE_THROW(Exceptions::operator_error, "type = " << type);
+    DUNE_THROW(Exceptions::operator_error, "type = " << type);
   } // ... invert_options(...)
 
   /**

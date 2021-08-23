@@ -13,7 +13,6 @@
 #define PYTHON_DUNE_GDT_OPERATORS_INTERFACES_HH
 
 #include <dune/pybindxi/pybind11.h>
-#include <dune/pybindxi/stl.h>
 
 #include <dune/xt/common/python.hh>
 #include <dune/xt/common/string.hh>

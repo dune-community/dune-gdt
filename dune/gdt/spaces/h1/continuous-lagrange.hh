@@ -95,64 +95,64 @@ public:
 
   ThisType& operator=(ThisType&&) = delete;
 
-  BaseType* copy() const override final
+  BaseType* copy() const final
   {
     return new ThisType(*this);
   }
 
-  const GridViewType& grid_view() const override final
+  const GridViewType& grid_view() const final
   {
     return grid_view_;
   }
 
-  const MapperType& mapper() const override final
+  const MapperType& mapper() const final
   {
     assert(mapper_ && "This must not happen!");
     return *mapper_;
   }
 
-  const GlobalBasisType& basis() const override final
+  const GlobalBasisType& basis() const final
   {
     assert(basis_ && "This must not happen!");
     return *basis_;
   }
 
-  const LocalFiniteElementFamilyType& finite_elements() const override final
+  const LocalFiniteElementFamilyType& finite_elements() const final
   {
     return *local_finite_elements_;
   }
 
-  SpaceType type() const override final
+  SpaceType type() const final
   {
     return SpaceType::continuous_lagrange;
   }
 
-  int min_polorder() const override final
+  int min_polorder() const final
   {
     return fe_order_;
   }
 
-  int max_polorder() const override final
+  int max_polorder() const final
   {
     return fe_order_;
   }
 
-  bool continuous(const int diff_order) const override final
+  bool continuous(const int diff_order) const final
   {
     return diff_order == 0;
   }
 
-  bool continuous_normal_components() const override final
+  bool continuous_normal_components() const final
   {
     return true;
   }
 
-  bool is_lagrangian() const override final
+  bool is_lagrangian() const final
   {
     return true;
   }
 
-  void update_after_adapt() override final
+  void update_after_adapt() final
   {
     // check: the mapper does not work for non-conforming intersections
     if (d == 3 && grid_view_.indexSet().types(0).size() != 1)
