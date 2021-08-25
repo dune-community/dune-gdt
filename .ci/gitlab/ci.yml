@@ -5,6 +5,7 @@ include:
 
 variables:
   MY_MODULE: 'dune-gdt'
+  REGISTRY: zivgitlab.wwu.io/ag-ohlberger/dune-community/dune-gdt-super
 
 unstable_gcc:
   extends: .jobtpl
