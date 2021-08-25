@@ -9,6 +9,8 @@
 
 #include <string>
 
+#include "config.h"
+
 #include <dune/common/exceptions.hh>
 
 #include "linear-solver-types.hh"

@@ -188,8 +188,8 @@ CellModelLinearSolverWrapper::apply_system_matrix_solver(const VectorType& rhs, 
       // Eigen::saveMarketVector(rhs_eig.backend(),  "S_" + XT::Common::to_string(counter++) + "_b.mtx");
       direct_solver_->factorize(S_.backend());
       if (direct_solver_->info() != ::Eigen::Success) {
-	direct_solver_->umfpackReportInfo();
-	direct_solver_->umfpackReportStatus();
+        direct_solver_->printUmfpackInfo();
+        direct_solver_->printUmfpackStatus();
         DUNE_THROW(Dune::MathError, "Factorization of system matrix failed!");
       }
       update.backend() = direct_solver_->solve(rhs_eig.backend());

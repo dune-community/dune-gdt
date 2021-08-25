@@ -10,10 +10,13 @@
 #include <chrono>
 #include <cstdlib>
 
+#include "config.h"
+
 #include <dune/istl/operators.hh>
 #include <dune/istl/solvers.hh>
 
 #include <dune/xt/common/numeric.hh>
+#include <dune/xt/common/math.hh>
 
 #include <dune/xt/la/container/common.hh>
 #include <dune/xt/la/container/eigen.hh>
