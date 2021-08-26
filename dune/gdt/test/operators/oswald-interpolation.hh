@@ -140,7 +140,7 @@ struct OswaldInterpolationOperatorOnLeafViewTest : public ::testing::Test
               (d > 1) ? XT::Grid::diameter(intersection)
                       : (std::min(XT::Grid::diameter(inside_element), XT::Grid::diameter(outside_element)));
           // compute L2 jump norm
-          const auto l2_jump_norm2 = XT::Grid::intersection_integral(
+          const auto l2_jump_norm2 = XT::Grid::intersection_integral<I>(
               intersection,
               /*function=*/
               [&](const auto& point_in_reference_intersection) {
@@ -183,7 +183,7 @@ struct OswaldInterpolationOperatorOnLeafViewTest : public ::testing::Test
           const auto intersection_diameter =
               (d > 1) ? XT::Grid::diameter(intersection) : XT::Grid::diameter(inside_element);
           // compute L2 jump norm
-          const auto l2_jump_norm2 = XT::Grid::intersection_integral(
+          const auto l2_jump_norm2 = XT::Grid::intersection_integral<I>(
               intersection,
               /*function=*/
               [&](const auto& point_in_reference_intersection) {
@@ -263,7 +263,7 @@ struct OswaldInterpolationOperatorOnLeafViewTest : public ::testing::Test
               (d > 1) ? XT::Grid::diameter(intersection)
                       : (std::min(XT::Grid::diameter(inside_element), XT::Grid::diameter(outside_element)));
           // compute L2 jump norm
-          const auto l2_jump_norm2 = XT::Grid::intersection_integral(
+          const auto l2_jump_norm2 = XT::Grid::intersection_integral<I>(
               intersection,
               /*function=*/
               [&](const auto& point_in_reference_intersection) {
@@ -306,7 +306,7 @@ struct OswaldInterpolationOperatorOnLeafViewTest : public ::testing::Test
           const auto intersection_diameter =
               (d > 1) ? XT::Grid::diameter(intersection) : XT::Grid::diameter(inside_element);
           // compute L2 jump norm
-          const auto l2_jump_norm2 = XT::Grid::intersection_integral(
+          const auto l2_jump_norm2 = XT::Grid::intersection_integral<I>(
               intersection,
               /*function=*/
               [&](const auto& point_in_reference_intersection) {

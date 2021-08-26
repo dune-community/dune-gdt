@@ -71,14 +71,14 @@ public:
 
   LocalElementProductIntegrand(ThisType&& source) = default;
 
-  std::unique_ptr<BaseType> copy_as_binary_element_integrand() const override final
+  std::unique_ptr<BaseType> copy_as_binary_element_integrand() const final
   {
     LOG_(debug) << "copy_as_binary_element_integrand()" << std::endl;
     return std::make_unique<ThisType>(*this);
   }
 
 protected:
-  void post_bind(const ElementType& ele) override final
+  void post_bind(const ElementType& ele) final
   {
     LOG_(debug) << "post_bind(element=" << XT::Grid::print(ele) << ")" << std::endl;
     local_weight_->bind(ele);
@@ -87,7 +87,7 @@ protected:
 public:
   int order(const LocalTestBasisType& test_basis,
             const LocalAnsatzBasisType& ansatz_basis,
-            const XT::Common::Parameter& param = {}) const override final
+            const XT::Common::Parameter& param = {}) const final
   {
     LOG_(debug) << "order(element=" << XT::Grid::print(this->element()) << ", {test|ansatz}_basis.size()={"
                 << test_basis.size(param) << "|" << ansatz_basis.size(param) << "}, param=" << print(param)
@@ -104,12 +104,12 @@ public:
                 const LocalAnsatzBasisType& ansatz_basis,
                 const DomainType& point_in_reference_element,
                 DynamicMatrix<F>& result,
-                const XT::Common::Parameter& param = {}) const override final
+                const XT::Common::Parameter& param = {}) const final
   {
     LOG_(debug) << "evaluate({test|ansatz}_basis.size()={" << test_basis.size(param) << "|" << ansatz_basis.size(param)
                 << "}, point_in_{reference_element|physical_space} = {" << print(point_in_reference_element) << "|"
-                << print(this->element().geometry().global(point_in_reference_element)) << "}, param=" << print(param) << ")"
-                << std::endl;
+                << print(this->element().geometry().global(point_in_reference_element)) << "}, param=" << print(param)
+                << ")" << std::endl;
     // prepare storage
     const size_t rows = test_basis.size(param);
     const size_t cols = ansatz_basis.size(param);
@@ -159,9 +159,10 @@ public:
 
   using GridFunctionType = XT::Functions::GridFunctionInterface<E, r, r, F>;
 
-  LocalCouplingIntersectionProductIntegrand(XT::Functions::GridFunction<E, r, r, F> weight = {1.},
-                                            const std::string& logging_prefix = "",
-                                            const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
+  LocalCouplingIntersectionProductIntegrand(
+      XT::Functions::GridFunction<E, r, r, F> weight = {1.},
+      const std::string& logging_prefix = "",
+      const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseType({}, logging_prefix.empty() ? "LocalCouplingIntersectionProductIntegrand" : logging_prefix, logging_state)
     , weight_(weight.copy_as_grid_function())
     , local_weight_in_(weight_->local_function())
@@ -177,13 +178,13 @@ public:
 
   LocalCouplingIntersectionProductIntegrand(ThisType&& source) = default;
 
-  std::unique_ptr<BaseType> copy_as_quaternary_intersection_integrand() const override final
+  std::unique_ptr<BaseType> copy_as_quaternary_intersection_integrand() const final
   {
     return std::make_unique<ThisType>(*this);
   }
 
 protected:
-  void post_bind(const IntersectionType& intersct) override final
+  void post_bind(const IntersectionType& intersct) final
   {
     auto inside_element = intersct.inside();
     local_weight_in_->bind(inside_element);
@@ -198,7 +199,7 @@ public:
             const LocalAnsatzBasisType& ansatz_basis_inside,
             const LocalTestBasisType& test_basis_outside,
             const LocalAnsatzBasisType& ansatz_basis_outside,
-            const XT::Common::Parameter& param = {}) const override final
+            const XT::Common::Parameter& param = {}) const final
   {
     return std::max(local_weight_in_->order(param), local_weight_out_->order(param))
            + std::max(test_basis_inside.order(param), test_basis_outside.order(param))
@@ -216,7 +217,7 @@ public:
                 DynamicMatrix<F>& result_in_out,
                 DynamicMatrix<F>& result_out_in,
                 DynamicMatrix<F>& result_out_out,
-                const XT::Common::Parameter& param = {}) const override final
+                const XT::Common::Parameter& param = {}) const final
   {
     // prepare sotrage
     const size_t rows_in = test_basis_inside.size(param);
@@ -300,22 +301,25 @@ public:
     , inside_(use_inside_bases)
   {}
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wextra"
   LocalIntersectionProductIntegrand(const ThisType& other)
     : BaseType(other)
     , weight_(other.weight_->copy_as_grid_function())
     , local_weight_(weight_->local_function())
     , inside_(other.inside_)
   {}
+#pragma GCC diagnostic pop
 
   LocalIntersectionProductIntegrand(ThisType&& source) = default;
 
-  std::unique_ptr<BaseType> copy_as_binary_intersection_integrand() const override final
+  std::unique_ptr<BaseType> copy_as_binary_intersection_integrand() const final
   {
     return std::make_unique<ThisType>(*this);
   }
 
 protected:
-  void post_bind(const IntersectionType& intersct) override final
+  void post_bind(const IntersectionType& intersct) final
   {
     if (inside_)
       local_weight_->bind(intersct.inside());
@@ -326,14 +330,14 @@ protected:
   } // ... post_bind(...)
 
 public:
-  bool inside() const override final
+  bool inside() const final
   {
     return inside_;
   }
 
   int order(const LocalTestBasisType& test_basis,
             const LocalAnsatzBasisType& ansatz_basis,
-            const XT::Common::Parameter& param = {}) const override final
+            const XT::Common::Parameter& param = {}) const final
   {
     return local_weight_->order(param) + test_basis.order(param) + ansatz_basis.order(param);
   }
@@ -344,7 +348,7 @@ public:
                 const LocalAnsatzBasisType& ansatz_basis,
                 const DomainType& point_in_reference_intersection,
                 DynamicMatrix<F>& result,
-                const XT::Common::Parameter& param = {}) const override final
+                const XT::Common::Parameter& param = {}) const final
   {
     // prepare sotrage
     this->ensure_size_and_clear_results(test_basis, ansatz_basis, result, param);

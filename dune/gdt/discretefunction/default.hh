@@ -35,8 +35,8 @@ namespace internal {
 template <class Vector, class GridView>
 struct AssertArgumentsOfConstDiscreteFunction
 {
-  static_assert(XT::LA::is_vector<Vector>::value, "");
-  static_assert(XT::Grid::is_view<GridView>::value, "");
+  static_assert(XT::LA::is_vector<Vector>::value);
+  static_assert(XT::Grid::is_view<GridView>::value);
   using E = XT::Grid::extract_entity_t<GridView>;
 };
 

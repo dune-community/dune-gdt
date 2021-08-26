@@ -60,13 +60,13 @@ public:
 
   InnerCoupling(ThisType&& source) = default;
 
-  std::unique_ptr<BaseType> copy_as_quaternary_intersection_integrand() const override final
+  std::unique_ptr<BaseType> copy_as_quaternary_intersection_integrand() const final
   {
     return std::make_unique<ThisType>(*this);
   }
 
 protected:
-  void post_bind(const IntersectionType& intrsctn) override final
+  void post_bind(const IntersectionType& intrsctn) final
   {
     DUNE_THROW_IF(
         !intrsctn.neighbor(), Exceptions::integrand_error, "This integrand cannot be used on a boundary intersection!");
@@ -79,7 +79,7 @@ public:
             const LocalAnsatzBasisType& ansatz_basis_inside,
             const LocalTestBasisType& /*test_basis_outside*/,
             const LocalAnsatzBasisType& ansatz_basis_outside,
-            const XT::Common::Parameter& param = {}) const override final
+            const XT::Common::Parameter& param = {}) const final
   {
     return local_direction_in_->order(param) + test_basis_inside.order(param)
            + std::max(ansatz_basis_inside.order(param), ansatz_basis_outside.order(param));
@@ -94,7 +94,7 @@ public:
                 DynamicMatrix<F>& result_in_out,
                 DynamicMatrix<F>& result_out_in,
                 DynamicMatrix<F>& result_out_out,
-                const XT::Common::Parameter& param = {}) const override final
+                const XT::Common::Parameter& param = {}) const final
   {
     LOG_(debug) << "evaluate(test_basis_{inside|outside}.size()={" << test_basis_inside.size(param) << "|"
                 << test_basis_outside.size(param) << "},\n    ansatz_basis_{inside|outside}.size()={"
@@ -201,6 +201,8 @@ public:
                << ", dirichlet_data=" << &dirichlet_data << ")" << std::endl;
   }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wextra"
   DirichletCoupling(const ThisType& other)
     : BaseUnaryType(other)
     , BaseBinaryType(other)
@@ -209,11 +211,12 @@ public:
     , local_direction_(direction_->local_function())
     , local_dirichlet_data_(dirichlet_data_->local_function())
   {}
+#pragma GCC diagnostic pop
 
   DirichletCoupling(ThisType&& source) = default;
 
 protected:
-  void post_bind(const IntersectionType& intersection) override final
+  void post_bind(const IntersectionType& intersection) final
   {
     const auto inside_element = intersection.inside();
     local_direction_->bind(inside_element);
@@ -221,7 +224,7 @@ protected:
   }
 
 public:
-  bool inside() const override final
+  bool inside() const final
   {
     return true; // We expect the bases to be bound to the inside (see evaluate and post_bind).
   }
@@ -229,12 +232,12 @@ public:
   /// \name Required by LocalUnaryIntersectionIntegrandInterface.
   /// \{
 
-  std::unique_ptr<BaseUnaryType> copy_as_unary_intersection_integrand() const override final
+  std::unique_ptr<BaseUnaryType> copy_as_unary_intersection_integrand() const final
   {
     return std::make_unique<ThisType>(*this);
   }
 
-  int order(const LocalTestBasisType& test_basis, const XT::Common::Parameter& param = {}) const override final
+  int order(const LocalTestBasisType& test_basis, const XT::Common::Parameter& param = {}) const final
   {
     return local_dirichlet_data_->order(param) + local_direction_->order(param) + test_basis.order(param);
   }
@@ -244,7 +247,7 @@ public:
   void evaluate(const LocalTestBasisType& test_basis,
                 const DomainType& point_in_reference_intersection,
                 DynamicVector<F>& result,
-                const XT::Common::Parameter& param = {}) const override final
+                const XT::Common::Parameter& param = {}) const final
   {
     LOG_(debug) << "evaluate(test_basis.size()=" << test_basis.size(param)
                 << ",\n    point_in_{reference_intersection|physical_space}={" << print(point_in_reference_intersection)
@@ -275,14 +278,14 @@ public:
   /// \name Required by LocalBinaryIntersectionIntegrandInterface.
   /// \{
 
-  std::unique_ptr<BaseBinaryType> copy_as_binary_intersection_integrand() const override final
+  std::unique_ptr<BaseBinaryType> copy_as_binary_intersection_integrand() const final
   {
     return std::make_unique<ThisType>(*this);
   }
 
   int order(const LocalTestBasisType& test_basis,
             const LocalAnsatzBasisType& ansatz_basis,
-            const XT::Common::Parameter& param = {}) const override final
+            const XT::Common::Parameter& param = {}) const final
   {
     return local_direction_->order(param) + test_basis.order(param) + ansatz_basis.order(param);
   }
@@ -293,7 +296,7 @@ public:
                 const LocalAnsatzBasisType& ansatz_basis,
                 const DomainType& point_in_reference_intersection,
                 DynamicMatrix<F>& result,
-                const XT::Common::Parameter& param = {}) const override final
+                const XT::Common::Parameter& param = {}) const final
   {
     LOG_(debug) << "evaluate(test_basis.size()=" << test_basis.size(param)
                 << ", ansatz_basis.size()=" << ansatz_basis.size(param)

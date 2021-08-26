@@ -37,7 +37,8 @@ void raviart_thomas_interpolation(const XT::Functions::GridFunctionInterface<E, 
   static_assert(d == GV::dimension, "");
   XT::Common::DefaultLogger logger("raviart_thomas_interpolation");
   LOG(debug) << "(source=" << &source << ", target=" << &target
-             << ", interpolation_grid_view=" << &interpolation_grid_view << ", param=" << print(param) << ")" << std::endl;
+             << ", interpolation_grid_view=" << &interpolation_grid_view << ", param=" << print(param) << ")"
+             << std::endl;
   if (target.space().type() != SpaceType::raviart_thomas)
     LOG(warn) << "target.space().type() is " << target.space().type() << ", not raviart_thomas! Continuing anyway ..."
               << std::endl;

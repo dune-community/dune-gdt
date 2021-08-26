@@ -43,20 +43,20 @@ public:
 
   LocalUnaryElementIntegrandSum(ThisType&& source) = default;
 
-  std::unique_ptr<BaseType> copy_as_unary_element_integrand() const override final
+  std::unique_ptr<BaseType> copy_as_unary_element_integrand() const final
   {
     return std::make_unique<ThisType>(*this);
   }
 
 protected:
-  void post_bind(const ElementType& elmnt) override final
+  void post_bind(const ElementType& elmnt) final
   {
     left_.access().bind(elmnt);
     right_.access().bind(elmnt);
   }
 
 public:
-  int order(const LocalTestBasisType& basis, const XT::Common::Parameter& param = {}) const override final
+  int order(const LocalTestBasisType& basis, const XT::Common::Parameter& param = {}) const final
   {
     return std::max(left_.access().order(basis, param), right_.access().order(basis, param));
   }
@@ -66,7 +66,7 @@ public:
   void evaluate(const LocalTestBasisType& basis,
                 const DomainType& point_in_reference_element,
                 DynamicVector<F>& result,
-                const XT::Common::Parameter& param = {}) const override final
+                const XT::Common::Parameter& param = {}) const final
   {
     // Each integrand clears its storage, so we let the left one write into ...
     left_.access().evaluate(basis, point_in_reference_element, result, param);
@@ -106,33 +106,36 @@ public:
                   "left.inside() = " << left.inside() << "\n   right.inside() = " << right.inside());
   }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wextra"
   LocalUnaryIntersectionIntegrandSum(const ThisType& other)
     : BaseType(other)
     , left_(other.left_.access().copy_as_unary_intersection_integrand().release())
     , right_(other.right_.access().copy_as_unary_intersection_integrand().release())
   {}
+#pragma GCC diagnostic pop
 
   LocalUnaryIntersectionIntegrandSum(ThisType&& source) = default;
 
-  std::unique_ptr<BaseType> copy_as_unary_intersection_integrand() const override final
+  std::unique_ptr<BaseType> copy_as_unary_intersection_integrand() const final
   {
     return std::make_unique<ThisType>(*this);
   }
 
 protected:
-  void post_bind(const IntersectionType& intrsctn) override final
+  void post_bind(const IntersectionType& intrsctn) final
   {
     left_.access().bind(intrsctn);
     right_.access().bind(intrsctn);
   }
 
 public:
-  bool inside() const override final
+  bool inside() const final
   {
     return left_.access().inside();
   }
 
-  int order(const LocalTestBasisType& basis, const XT::Common::Parameter& param = {}) const override final
+  int order(const LocalTestBasisType& basis, const XT::Common::Parameter& param = {}) const final
   {
     return std::max(left_.access().order(basis, param), right_.access().order(basis, param));
   }
@@ -142,7 +145,7 @@ public:
   void evaluate(const LocalTestBasisType& basis,
                 const DomainType& point_in_reference_intersection,
                 DynamicVector<F>& result,
-                const XT::Common::Parameter& param = {}) const override final
+                const XT::Common::Parameter& param = {}) const final
   {
     // Each integrand clears its storage, so we let the left one write into ...
     left_.access().evaluate(basis, point_in_reference_intersection, result, param);
@@ -187,13 +190,13 @@ public:
 
   LocalBinaryElementIntegrandSum(ThisType&& source) = default;
 
-  std::unique_ptr<BaseType> copy_as_binary_element_integrand() const override final
+  std::unique_ptr<BaseType> copy_as_binary_element_integrand() const final
   {
     return std::make_unique<ThisType>(*this);
   }
 
 protected:
-  void post_bind(const ElementType& elmnt) override final
+  void post_bind(const ElementType& elmnt) final
   {
     left_.access().bind(elmnt);
     right_.access().bind(elmnt);
@@ -202,7 +205,7 @@ protected:
 public:
   int order(const LocalTestBasisType& test_basis,
             const LocalAnsatzBasisType& ansatz_basis,
-            const XT::Common::Parameter& param = {}) const override final
+            const XT::Common::Parameter& param = {}) const final
   {
     return std::max(left_.access().order(test_basis, ansatz_basis, param),
                     right_.access().order(test_basis, ansatz_basis, param));
@@ -214,7 +217,7 @@ public:
                 const LocalAnsatzBasisType& ansatz_basis,
                 const DomainType& point_in_reference_element,
                 DynamicMatrix<F>& result,
-                const XT::Common::Parameter& param = {}) const override final
+                const XT::Common::Parameter& param = {}) const final
   {
     // Each integrand clears its storage, so we let the left one write into ...
     left_.access().evaluate(test_basis, ansatz_basis, point_in_reference_element, result, param);
@@ -240,7 +243,7 @@ class LocalBinaryIntersectionIntegrandSum
   : public LocalBinaryIntersectionIntegrandInterface<I, t_r, t_rC, TF, F, a_r, a_rC, AF>
 {
   using BaseType = LocalBinaryIntersectionIntegrandInterface<I, t_r, t_rC, TF, F, a_r, a_rC, AF>;
-  using ThisType = LocalBinaryIntersectionIntegrandSum<I, t_r, t_rC, TF, F, a_r, a_rC, AF>;
+  using ThisType = LocalBinaryIntersectionIntegrandSum;
 
 public:
   using typename BaseType::DomainType;
@@ -258,35 +261,38 @@ public:
                   "left.inside() = " << left.inside() << "\n   right.inside() = " << right.inside());
   }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wextra"
   LocalBinaryIntersectionIntegrandSum(const ThisType& other)
     : BaseType(other)
     , left_(other.left_.access().copy_as_binary_intersection_integrand().release())
     , right_(other.right_.access().copy_as_binary_intersection_integrand().release())
   {}
+#pragma GCC diagnostic pop
 
   LocalBinaryIntersectionIntegrandSum(ThisType&& source) = default;
 
-  std::unique_ptr<BaseType> copy_as_binary_intersection_integrand() const override final
+  std::unique_ptr<BaseType> copy_as_binary_intersection_integrand() const final
   {
     return std::make_unique<ThisType>(*this);
   }
 
 protected:
-  void post_bind(const IntersectionType& intrsctn) override final
+  void post_bind(const IntersectionType& intrsctn) final
   {
     left_.access().bind(intrsctn);
     right_.access().bind(intrsctn);
   }
 
 public:
-  bool inside() const override final
+  bool inside() const final
   {
     return left_.access().inside();
   }
 
   int order(const LocalTestBasisType& test_basis,
             const LocalAnsatzBasisType& ansatz_basis,
-            const XT::Common::Parameter& param = {}) const override final
+            const XT::Common::Parameter& param = {}) const final
   {
     return std::max(left_.access().order(test_basis, ansatz_basis, param),
                     right_.access().order(test_basis, ansatz_basis, param));
@@ -298,7 +304,7 @@ public:
                 const LocalAnsatzBasisType& ansatz_basis,
                 const DomainType& point_in_reference_intersection,
                 DynamicMatrix<F>& result,
-                const XT::Common::Parameter& param = {}) const override final
+                const XT::Common::Parameter& param = {}) const final
   {
     // Each integrand clears its storage, so we let the left one write into ...
     left_.access().evaluate(test_basis, ansatz_basis, point_in_reference_intersection, result, param);
@@ -346,13 +352,13 @@ public:
 
   LocalQuaternaryIntersectionIntegrandSum(ThisType&& source) = default;
 
-  std::unique_ptr<BaseType> copy_as_quaternary_intersection_integrand() const override final
+  std::unique_ptr<BaseType> copy_as_quaternary_intersection_integrand() const final
   {
     return std::make_unique<ThisType>(*this);
   }
 
 protected:
-  void post_bind(const IntersectionType& intrsctn) override final
+  void post_bind(const IntersectionType& intrsctn) final
   {
     left_.access().bind(intrsctn);
     right_.access().bind(intrsctn);
@@ -363,7 +369,7 @@ public:
             const LocalAnsatzBasisType& ansatz_basis_inside,
             const LocalTestBasisType& test_basis_outside,
             const LocalAnsatzBasisType& ansatz_basis_outside,
-            const XT::Common::Parameter& param = {}) const override final
+            const XT::Common::Parameter& param = {}) const final
   {
     return std::max(
         left_.access().order(test_basis_inside, ansatz_basis_inside, test_basis_outside, ansatz_basis_outside, param),
@@ -381,7 +387,7 @@ public:
                 DynamicMatrix<F>& result_in_out,
                 DynamicMatrix<F>& result_out_in,
                 DynamicMatrix<F>& result_out_out,
-                const XT::Common::Parameter& param = {}) const override final
+                const XT::Common::Parameter& param = {}) const final
   {
     // Each integrand clears its storage, so we let the left one write into ...
     left_.access().evaluate(test_basis_inside,

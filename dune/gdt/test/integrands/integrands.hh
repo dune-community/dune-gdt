@@ -38,7 +38,7 @@ namespace Test {
 template <class G>
 struct IntegrandTest : public ::testing::Test
 {
-  static_assert(XT::Grid::is_grid<G>::value, "");
+  static_assert(XT::Grid::is_grid<G>::value);
 
   using GV = typename G::LeafGridView;
   using D = typename GV::ctype;

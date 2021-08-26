@@ -79,6 +79,7 @@ protected:
   void post_bind(const ElementType& ent) override
   {
     basis_->bind(ent);
+    basis_size_ = basis_->size();
     dof_vector_.bind(ent);
   }
 
@@ -125,7 +126,7 @@ public:
         result[ii] = dof_vector_[ii];
     } else {
       basis_->evaluate(point_in_reference_element, basis_values_, param);
-      for (size_t ii = 0; ii < basis_->size(); ++ii)
+      for (size_t ii = 0; ii < basis_size_; ++ii)
         result.axpy(dof_vector_[ii], basis_values_[ii]);
     }
     return result;
@@ -140,7 +141,7 @@ public:
       return result;
     } else {
       basis_->jacobians(point_in_reference_element, basis_derivatives_, param);
-      for (size_t ii = 0; ii < basis_->size(); ++ii)
+      for (size_t ii = 0; ii < basis_size_; ++ii)
         result.axpy(dof_vector_[ii], basis_derivatives_[ii]);
     }
     return result;
@@ -189,7 +190,7 @@ public:
     } else {
       result *= 0;
       basis_->evaluate(point_in_reference_element, dynamic_basis_values_, param);
-      for (size_t ii = 0; ii < basis_->size(); ++ii)
+      for (size_t ii = 0; ii < basis_size_; ++ii)
         result.axpy(dof_vector_[ii], dynamic_basis_values_[ii]);
     }
   } // ... evaluate(...)
@@ -205,7 +206,7 @@ public:
       return;
     } else {
       basis_->jacobians(point_in_reference_element, dynamic_basis_derivatives_, param);
-      for (size_t ii = 0; ii < basis_->size(); ++ii)
+      for (size_t ii = 0; ii < basis_size_; ++ii)
         result.axpy(dof_vector_[ii], dynamic_basis_derivatives_[ii]);
     }
   } // ... jacobian(...)
@@ -254,7 +255,7 @@ public:
     } else {
       R result(0);
       basis_->evaluate(point_in_reference_element, basis_values_, param);
-      for (size_t ii = 0; ii < basis_->size(); ++ii)
+      for (size_t ii = 0; ii < basis_size_; ++ii)
         result += dof_vector_[ii] * basis_values_[ii][row];
       return result;
     }
@@ -272,7 +273,7 @@ public:
     } else {
       SingleDerivativeRangeReturnType result(0);
       basis_->jacobians(point_in_reference_element, basis_derivatives_, param);
-      for (size_t ii = 0; ii < basis_->size(); ++ii)
+      for (size_t ii = 0; ii < basis_size_; ++ii)
         result.axpy(dof_vector_[ii], basis_derivatives_[ii][row]);
       return result;
     }
@@ -285,6 +286,7 @@ private:
   const bool space_is_fv_;
   ConstLocalDofVectorType dof_vector_;
   std::unique_ptr<LocalBasisType> basis_;
+  mutable size_t basis_size_;
   mutable std::vector<RangeType> basis_values_;
   mutable std::vector<DynamicRangeType> dynamic_basis_values_;
   mutable std::vector<DerivativeRangeType> basis_derivatives_;

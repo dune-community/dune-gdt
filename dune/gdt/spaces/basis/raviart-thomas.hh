@@ -41,9 +41,9 @@ class RaviartThomasGlobalBasis : public GlobalBasisInterface<GL, GL::dimension, 
   using BaseType = GlobalBasisInterface<GL, GL::dimension, 1, R>;
 
 public:
-  using BaseType::d;
-  using BaseType::r;
-  using BaseType::rC;
+  static constexpr size_t d = BaseType::d;
+  static constexpr size_t r = BaseType::r;
+  static constexpr size_t rC = BaseType::rC;
   using typename BaseType::D;
   using typename BaseType::E;
   using typename BaseType::ElementType;

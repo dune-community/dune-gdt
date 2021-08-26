@@ -114,21 +114,27 @@ private:
   protected:
     void post_bind(const ElementType& elemnt) override final
     {
-      current_local_fe_ = XT::Common::ConstStorageProvider<LocalFiniteElementInterface<D, d, R, r, rC>>(
-          self_.local_finite_elements_.get(elemnt.type(), self_.fe_order_));
+      auto&& new_geometry_type = elemnt.type();
+      if (geometry_type_ != new_geometry_type) {
+        geometry_type_ = new_geometry_type;
+        current_local_fe_ = XT::Common::ConstStorageProvider<LocalFiniteElementInterface<D, d, R, r, rC>>(
+            self_.local_finite_elements_.get(geometry_type_, self_.fe_order_));
+        size_ = current_local_fe_.access().size();
+        order_ = current_local_fe_.access().basis().order();
+      }
     }
 
   public:
     size_t size(const XT::Common::Parameter& /*param*/ = {}) const override final
     {
       DUNE_THROW_IF(!current_local_fe_.valid(), Exceptions::not_bound_to_an_element_yet, "");
-      return current_local_fe_.access().size();
+      return size_;
     }
 
     int order(const XT::Common::Parameter& /*param*/ = {}) const override final
     {
       DUNE_THROW_IF(!current_local_fe_.valid(), Exceptions::not_bound_to_an_element_yet, "");
-      return current_local_fe_.access().basis().order();
+      return order_;
     }
 
     using BaseType::evaluate;
@@ -160,7 +166,8 @@ private:
       // function gradients) to get the transposed jacobian of the basis function (basis function gradient).
       const auto J_inv_T = this->element().geometry().jacobianInverseTransposed(point_in_reference_element);
       auto tmp_value = result[0][0];
-      for (size_t ii = 0; ii < current_local_fe_.access().basis().size(); ++ii)
+      const size_t basis_size = current_local_fe_.access().basis().size();
+      for (size_t ii = 0; ii < basis_size; ++ii)
         for (size_t rr = 0; rr < r; ++rr) {
           J_inv_T.mv(result[ii][rr], tmp_value);
           result[ii][rr] = tmp_value;
@@ -202,6 +209,9 @@ private:
   private:
     const DefaultGlobalBasis<GV, r, rC, R>& self_;
     XT::Common::ConstStorageProvider<LocalFiniteElementInterface<D, d, R, r, rC>> current_local_fe_;
+    size_t size_;
+    int order_;
+    Dune::GeometryType geometry_type_;
   }; // class LocalizedDefaultGlobalBasis
 
   const GridViewType& grid_view_;

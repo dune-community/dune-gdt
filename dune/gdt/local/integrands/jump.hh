@@ -43,9 +43,7 @@ public:
             LocalIPDGIntegrands::internal::default_intersection_diameter<I>(),
         const std::string& logging_prefix = "",
         const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
-    : BaseType({},
-               logging_prefix.empty() ? "LocalJumpIntegrands::Inner" : logging_prefix,
-               logging_state)
+    : BaseType({}, logging_prefix.empty() ? "LocalJumpIntegrands::Inner" : logging_prefix, logging_state)
     , intersection_diameter_(intersection_diameter)
   {}
 
@@ -179,16 +177,17 @@ public:
                LocalIPDGIntegrands::internal::default_intersection_diameter<I>(),
            const std::string& logging_prefix = "",
            const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
-    : BaseType({},
-               logging_prefix.empty() ? "LocalJumpIntegrands::Boundary" : logging_prefix,
-               logging_state)
+    : BaseType({}, logging_prefix.empty() ? "LocalJumpIntegrands::Boundary" : logging_prefix, logging_state)
     , intersection_diameter_(intersection_diameter)
   {}
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wextra"
   Boundary(const ThisType& other)
     : BaseType(other)
     , intersection_diameter_(other.intersection_diameter_)
   {}
+#pragma GCC diagnostic pop
 
   Boundary(ThisType&& source) = default;
 

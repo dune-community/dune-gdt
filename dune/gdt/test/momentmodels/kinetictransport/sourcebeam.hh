@@ -127,21 +127,13 @@ public:
   // sigma_a = 1 if x <= 2, 0 else
   std::unique_ptr<ScalarFunctionType> sigma_a() const override
   {
-    return std::make_unique<GenericScalarFunctionType>(
-        0, [](const DomainType& x, const XT::Common::Parameter&) { return x[0] > 2 ? 0. : 1.; });
+    return create_sigma_a_function(1., 0.);
   }
 
   // sigma_s = 0 if x <= 1, 2 if 1 < x <= 2, 10 else
   std::unique_ptr<ScalarFunctionType> sigma_s() const override
   {
-    return std::make_unique<GenericScalarFunctionType>(0, [](const DomainType& x, const XT::Common::Parameter&) {
-      if (x[0] > 2)
-        return 10.;
-      else if (x[0] > 1)
-        return 2.;
-      else
-        return 0.;
-    });
+    return create_sigma_s_function(0., 2., 10.);
   }
 
   // Q = 0.5 if 1 <= x <= 1.5, 0 else
@@ -149,6 +141,27 @@ public:
   {
     return std::make_unique<GenericScalarFunctionType>(
         0, [](const DomainType& x, const XT::Common::Parameter&) { return x[0] < 1 || x[0] > 1.5 ? 0. : 0.5; });
+  }
+
+  std::unique_ptr<ScalarFunctionType> create_sigma_a_function(const RangeFieldType value_left,
+                                                              const RangeFieldType value_right) const
+  {
+    return std::make_unique<GenericScalarFunctionType>(
+        0, [=](const DomainType& x, const XT::Common::Parameter&) { return x[0] > 2 ? value_right : value_left; });
+  }
+
+  std::unique_ptr<ScalarFunctionType> create_sigma_s_function(const RangeFieldType value_left,
+                                                              const RangeFieldType value_middle,
+                                                              const RangeFieldType value_right) const
+  {
+    return std::make_unique<GenericScalarFunctionType>(0, [=](const DomainType& x, const XT::Common::Parameter&) {
+      if (x[0] > 2)
+        return value_right;
+      else if (x[0] > 1)
+        return value_middle;
+      else
+        return value_left;
+    });
   }
 
 protected:

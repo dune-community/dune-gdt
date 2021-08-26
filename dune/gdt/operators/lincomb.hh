@@ -77,12 +77,12 @@ public:
   /// \name Required by OperatorInterface.
   /// \{
 
-  const RangeSpaceType& range_space() const override final
+  const RangeSpaceType& range_space() const final
   {
     return range_space_;
   }
 
-  bool linear() const override final
+  bool linear() const final
   {
     for (const auto& op : const_ops_)
       if (!op.access().linear())
@@ -93,7 +93,7 @@ public:
   // avoid non-optimal default implementation in OperatorInterface
   void apply(SourceFunctionType source_function,
              VectorType& range_vector,
-             const XT::Common::Parameter& param = {}) const override final
+             const XT::Common::Parameter& param = {}) const final
   {
     LOG_(debug) << "apply(source_function=" << &source_function
                 << ", range_vector.sup_norm()=" << range_vector.sup_norm() << ", param=" << print(param) << ")"
@@ -113,19 +113,18 @@ public:
   /// \name Required by OperatorInterface.
   /// \{
 
-  const SourceSpaceType& source_space() const override final
+  const SourceSpaceType& source_space() const final
   {
     return source_space_;
   }
 
-  const AssemblyGridViewType& assembly_grid_view() const override final
+  const AssemblyGridViewType& assembly_grid_view() const final
   {
     return assembly_grid_view_;
   }
 
-  void apply(const VectorType& source_vector,
-             VectorType& range_vector,
-             const XT::Common::Parameter& param = {}) const override final
+  void
+  apply(const VectorType& source_vector, VectorType& range_vector, const XT::Common::Parameter& param = {}) const final
   {
     LOG_(debug) << "apply(source_vector.sup_norm()=" << source_vector.sup_norm()
                 << ", range_vector.sup_norm()=" << range_vector.sup_norm() << ", param=" << print(param) << ")"
@@ -143,7 +142,7 @@ public:
   } // ... apply(...)
 
 protected:
-  std::vector<XT::Common::Configuration> all_jacobian_options() const override final
+  std::vector<XT::Common::Configuration> all_jacobian_options() const final
   {
     std::vector<XT::Common::Configuration> ret(1);
     auto& cfg = ret[0];
@@ -338,39 +337,39 @@ public:
   ///       temporaries (which we achieve since *this has the correct type here to select the correct add)
   /// \{
 
-  ConstLincombOperatorType operator*(const FieldType& alpha) const override final
+  ConstLincombOperatorType operator*(const FieldType& alpha) const final
   {
     return BaseType::make_operator_mul(*this, alpha);
   }
 
-  ConstLincombOperatorType operator/(const FieldType& alpha) const override final
+  ConstLincombOperatorType operator/(const FieldType& alpha) const final
   {
     return BaseType::make_operator_div(*this, alpha);
   }
 
-  ConstLincombOperatorType operator+(const ConstLincombOperatorType& other) const override final
+  ConstLincombOperatorType operator+(const ConstLincombOperatorType& other) const final
   {
     return BaseType::make_operator_addsub(*this, other, /*add=*/true);
   }
 
-  ConstLincombOperatorType operator+(const BaseType& other) const override final
+  ConstLincombOperatorType operator+(const BaseType& other) const final
   {
     return BaseType::make_operator_addsub(*this, other, /*add=*/true);
   }
 
   /// \note vector is interpreted as a ConstantOperator
   /// \sa ConstantOperator
-  ConstLincombOperatorType operator+(const VectorType& vector) const override final
+  ConstLincombOperatorType operator+(const VectorType& vector) const final
   {
     return BaseType::make_operator_addsub(*this, vector, /*add=*/true);
   }
 
-  ConstLincombOperatorType operator-(const ConstLincombOperatorType& other) const override final
+  ConstLincombOperatorType operator-(const ConstLincombOperatorType& other) const final
   {
     return BaseType::make_operator_addsub(*this, other, /*add=*/false);
   }
 
-  ConstLincombOperatorType operator-(const BaseType& other) const override final
+  ConstLincombOperatorType operator-(const BaseType& other) const final
   {
     return BaseType::make_operator_addsub(*this, other, /*add=*/false);
   }
@@ -378,7 +377,7 @@ public:
   /// \note vector is interpreted as a ConstantOperator
   /// \sa ConstantOperator
   // we need to implement this to have *this the correct type in the add() below
-  ConstLincombOperatorType operator-(const VectorType& vector) const override final
+  ConstLincombOperatorType operator-(const VectorType& vector) const final
   {
     return BaseType::make_operator_addsub(*this, vector, /*add=*/false);
   }
@@ -511,7 +510,7 @@ public:
   /// \name Required by BilinearFormInterface.
   /// \{
 
-  void assemble(const bool use_tbb = false) override final
+  void assemble(const bool use_tbb = false) final
   {
     for (auto& oo : ops_)
       oo.access().assemble(use_tbb);
@@ -601,46 +600,46 @@ public:
   ///       temporaries (which we achieve since *this has the correct type here to select the correct add)
   /// \{
 
-  LincombOperatorType operator*(const FieldType& alpha)override final
+  LincombOperatorType operator*(const FieldType& alpha)final
   {
     return OperatorType::make_operator_mul(*this, alpha);
   }
 
-  LincombOperatorType operator/(const FieldType& alpha) override final
+  LincombOperatorType operator/(const FieldType& alpha) final
   {
     return OperatorType::make_operator_div(*this, alpha);
   }
 
-  LincombOperatorType operator+(LincombOperatorType& other) override final
+  LincombOperatorType operator+(LincombOperatorType& other) final
   {
     return OperatorType::make_operator_addsub(*this, other, /*add=*/true);
   }
 
-  LincombOperatorType operator+(OperatorType& other) override final
+  LincombOperatorType operator+(OperatorType& other) final
   {
     return OperatorType::make_operator_addsub(*this, other, /*add=*/true);
   }
 
   /// \note vector is interpreted as a ConstantOperator
   /// \sa ConstantOperator
-  LincombOperatorType operator+(const VectorType& vector) override final
+  LincombOperatorType operator+(const VectorType& vector) final
   {
     return OperatorType::make_operator_addsub(*this, vector, /*add=*/true);
   }
 
-  LincombOperatorType operator-(LincombOperatorType& other) override final
+  LincombOperatorType operator-(LincombOperatorType& other) final
   {
     return OperatorType::make_operator_addsub(*this, other, /*add=*/false);
   }
 
-  LincombOperatorType operator-(OperatorType& other) override final
+  LincombOperatorType operator-(OperatorType& other) final
   {
     return OperatorType::make_operator_addsub(*this, other, /*add=*/false);
   }
 
   /// \note vector is interpreted as a ConstantOperator
   /// \sa ConstantOperator
-  LincombOperatorType operator-(const VectorType& vector) override final
+  LincombOperatorType operator-(const VectorType& vector) final
   {
     return OperatorType::make_operator_addsub(*this, vector, /*add=*/false);
   }

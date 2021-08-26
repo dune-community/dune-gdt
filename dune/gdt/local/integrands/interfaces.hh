@@ -75,7 +75,7 @@ class LocalUnaryElementIntegrandInterface
   , public XT::Common::WithLogger<
         LocalUnaryElementIntegrandInterface<Element, range_dim, range_dim_cols, RangeField, Field>>
 {
-  static_assert(XT::Grid::is_entity<Element>::value, "");
+  static_assert(XT::Grid::is_entity<Element>::value);
 
   using ThisType = LocalUnaryElementIntegrandInterface;
   using Logger = XT::Common::WithLogger<
@@ -102,7 +102,7 @@ public:
     , Logger(logging_prefix.empty() ? "LocalUnaryElementIntegrand" : logging_prefix, logging_state)
   {}
 
-  virtual ~LocalUnaryElementIntegrandInterface() = default;
+  ~LocalUnaryElementIntegrandInterface() override = default;
 
   virtual std::unique_ptr<ThisType> copy_as_unary_element_integrand() const = 0;
 
@@ -172,7 +172,7 @@ class LocalBinaryElementIntegrandInterface
                                                                        ansatz_range_dim_cols,
                                                                        AnsatzRangeField>>
 {
-  static_assert(XT::Grid::is_entity<Element>::value, "");
+  static_assert(XT::Grid::is_entity<Element>::value);
 
   using ThisType = LocalBinaryElementIntegrandInterface;
   using Logger = XT::Common::WithLogger<LocalBinaryElementIntegrandInterface<Element,
@@ -214,7 +214,13 @@ public:
                 << std::endl;
   }
 
-  virtual ~LocalBinaryElementIntegrandInterface() = default;
+  ~LocalBinaryElementIntegrandInterface() override = default;
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wextra"
+  LocalBinaryElementIntegrandInterface(const LocalBinaryElementIntegrandInterface& other) = default;
+  LocalBinaryElementIntegrandInterface(LocalBinaryElementIntegrandInterface&& other) = default;
+#pragma GCC diagnostic pop
 
   template <class... Args>
   LocalBinaryToUnaryElementIntegrand<E, t_r, t_rC, TR, F, a_r, a_rC, AR> with_ansatz(Args&&... args) const
@@ -298,13 +304,12 @@ class LocalUnaryIntersectionIntegrandInterface
   , public XT::Common::WithLogger<
         LocalUnaryIntersectionIntegrandInterface<Intersection, range_dim, range_dim_cols, RangeField, Field>>
 {
-  static_assert(XT::Grid::is_intersection<Intersection>::value, "");
+  static_assert(XT::Grid::is_intersection<Intersection>::value);
 
   using ThisType = LocalUnaryIntersectionIntegrandInterface;
   using BaseParametricType = XT::Common::ParametricInterface;
   using BaseIntersectionBoundObjectType = XT::Grid::IntersectionBoundObject<Intersection>;
-  using Logger = XT::Common::WithLogger<
-      LocalUnaryIntersectionIntegrandInterface<Intersection, range_dim, range_dim_cols, RangeField, Field>>;
+  using Logger = XT::Common::WithLogger<ThisType>;
 
 public:
   using typename XT::Grid::IntersectionBoundObject<Intersection>::IntersectionType;
@@ -323,9 +328,10 @@ public:
   using DomainType = FieldVector<D, d - 1>;
   using LocalTestBasisType = XT::Functions::ElementFunctionSetInterface<E, r, rC, RF>;
 
-  LocalUnaryIntersectionIntegrandInterface(const XT::Common::ParameterType& param_type = {},
-                                           const std::string& logging_prefix = "",
-                                           const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
+  LocalUnaryIntersectionIntegrandInterface(
+      const XT::Common::ParameterType& param_type = {},
+      const std::string& logging_prefix = "",
+      const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseParametricType(param_type)
     , BaseIntersectionBoundObjectType()
     , Logger(logging_prefix.empty() ? "LocalUnaryIntersectionIntegrand" : logging_prefix, logging_state)
@@ -333,7 +339,7 @@ public:
 
   LocalUnaryIntersectionIntegrandInterface(const ThisType&) = default;
 
-  virtual ~LocalUnaryIntersectionIntegrandInterface() = default;
+  ~LocalUnaryIntersectionIntegrandInterface() override = default;
 
   virtual std::unique_ptr<ThisType> copy_as_unary_intersection_integrand() const = 0;
 
@@ -422,19 +428,12 @@ class LocalBinaryIntersectionIntegrandInterface
                                                                             ansatz_range_dim_cols,
                                                                             AnsatzRangeField>>
 {
-  static_assert(XT::Grid::is_intersection<Intersection>::value, "");
+  static_assert(XT::Grid::is_intersection<Intersection>::value);
 
   using ThisType = LocalBinaryIntersectionIntegrandInterface;
   using BaseParametricType = XT::Common::ParametricInterface;
   using BaseIntersectionBoundObjectType = XT::Grid::IntersectionBoundObject<Intersection>;
-  using Logger = XT::Common::WithLogger<LocalBinaryIntersectionIntegrandInterface<Intersection,
-                                                                                  test_range_dim,
-                                                                                  test_range_dim_cols,
-                                                                                  TestRangeField,
-                                                                                  Field,
-                                                                                  ansatz_range_dim,
-                                                                                  ansatz_range_dim_cols,
-                                                                                  AnsatzRangeField>>;
+  using Logger = XT::Common::WithLogger<ThisType>;
 
 public:
   using typename XT::Grid::IntersectionBoundObject<Intersection>::IntersectionType;
@@ -458,9 +457,10 @@ public:
   using LocalTestBasisType = XT::Functions::ElementFunctionSetInterface<E, t_r, t_rC, TR>;
   using LocalAnsatzBasisType = XT::Functions::ElementFunctionSetInterface<E, a_r, a_rC, AR>;
 
-  LocalBinaryIntersectionIntegrandInterface(const XT::Common::ParameterType& param_type = {},
-                                            const std::string& logging_prefix = "",
-                                            const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
+  LocalBinaryIntersectionIntegrandInterface(
+      const XT::Common::ParameterType& param_type = {},
+      const std::string& logging_prefix = "",
+      const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseParametricType(param_type)
     , BaseIntersectionBoundObjectType()
     , Logger(logging_prefix.empty() ? "LocalBinaryIntersectionIntegrand" : logging_prefix, logging_state)
@@ -468,7 +468,7 @@ public:
 
   LocalBinaryIntersectionIntegrandInterface(const ThisType& other) = default;
 
-  virtual ~LocalBinaryIntersectionIntegrandInterface() = default;
+  ~LocalBinaryIntersectionIntegrandInterface() override = default;
 
   template <class... Args>
   LocalBinaryToUnaryIntersectionIntegrand<I, t_r, t_rC, TR, F, a_r, a_rC, AR> with_ansatz(Args&&... args) const
@@ -562,7 +562,7 @@ class LocalQuaternaryIntersectionIntegrandInterface
                                                                                 ansatz_range_dim_cols,
                                                                                 AnsatzRangeField>>
 {
-  static_assert(XT::Grid::is_intersection<Intersection>::value, "");
+  static_assert(XT::Grid::is_intersection<Intersection>::value);
 
   using ThisType = LocalQuaternaryIntersectionIntegrandInterface;
   using Logger = XT::Common::WithLogger<LocalQuaternaryIntersectionIntegrandInterface<Intersection,
@@ -596,15 +596,16 @@ public:
   using LocalTestBasisType = XT::Functions::ElementFunctionSetInterface<E, t_r, t_rC, TR>;
   using LocalAnsatzBasisType = XT::Functions::ElementFunctionSetInterface<E, a_r, a_rC, AR>;
 
-  LocalQuaternaryIntersectionIntegrandInterface(const XT::Common::ParameterType& param_type = {},
-                                                const std::string& logging_prefix = "",
-                                                const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
+  LocalQuaternaryIntersectionIntegrandInterface(
+      const XT::Common::ParameterType& param_type = {},
+      const std::string& logging_prefix = "",
+      const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : XT::Common::ParametricInterface(param_type)
     , XT::Grid::IntersectionBoundObject<Intersection>()
     , Logger(logging_prefix.empty() ? "LocalQuaternaryIntersectionIntegrand" : logging_prefix, logging_state)
   {}
 
-  virtual ~LocalQuaternaryIntersectionIntegrandInterface() = default;
+  ~LocalQuaternaryIntersectionIntegrandInterface() override = default;
 
   virtual std::unique_ptr<ThisType> copy_as_quaternary_intersection_integrand() const = 0;
 

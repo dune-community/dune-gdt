@@ -186,7 +186,13 @@ public:
    * \brief Performs something like a shallow copy, as required by Dune::XT::Grid::ElementAndIntersectionFunctor, i.e.
    *        the copied functional shares the vector.
    */
-  VectorBasedFunctional(ThisType& other) = default;
+  VectorBasedFunctional(ThisType& other)
+    : VectorStorage(other)
+    , BaseFunctionalType(other)
+    , BaseWalkerType(other)
+  {
+    // If this constructor is defaulted, the Intel Compiler thinks it is deleted (tested with icc 2021.1 Beta 20200827)
+  }
 
   VectorBasedFunctional(ThisType&&) = default;
 
@@ -269,6 +275,12 @@ public:
   void assemble(const bool use_tbb = false) override final
   {
     this->walk(use_tbb);
+  }
+
+  template <class EntityRange>
+  void assemble_range(const EntityRange& entity_range)
+  {
+    this->walk_range(entity_range);
   }
 }; // class VectorBasedFunctional
 

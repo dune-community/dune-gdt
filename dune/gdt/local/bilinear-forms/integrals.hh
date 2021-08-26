@@ -100,7 +100,8 @@ public:
               const XT::Common::Parameter& param = {}) const override final
   {
     LOG_(debug) << "apply2(test_basis.size()=" << test_basis.size(param)
-                << ", ansatz_basis.size()=" << ansatz_basis.size(param) << ", param=" << print(param) << ")" << std::endl;
+                << ", ansatz_basis.size()=" << ansatz_basis.size(param) << ", param=" << print(param) << ")"
+                << std::endl;
     // prepare integand
     const auto& element = ansatz_basis.element();
     assert(test_basis.element() == element && "This must not happen!");
@@ -114,22 +115,21 @@ public:
     // loop over all quadrature points
     const auto integrand_order = integrand_->order(test_basis, ansatz_basis) + over_integrate_;
     for (const auto& quadrature_point : QuadratureRules<D, d>::rule(element.type(), integrand_order)) {
-      const auto point_in_reference_element = quadrature_point.position();
+      const auto& point_in_reference_element = quadrature_point.position();
       // integration factors
-      const auto integration_factor = element.geometry().integrationElement(point_in_reference_element);
-      const auto quadrature_weight = quadrature_point.weight();
+      const auto factor = element.geometry().integrationElement(point_in_reference_element) * quadrature_point.weight();
       // evaluate the integrand
       LOG_(debug) << "   point_in_{reference_element|physical_space} = {" << print(point_in_reference_element) << "|"
                   << print(element.geometry().global(point_in_reference_element))
-                  << "},\n   integration_factor = " << integration_factor
-                  << ", quadrature_weight = " << quadrature_weight << std::endl;
+                  << "},\n   integration_factor = " << factor << ", quadrature_weight = " << quadrature_point.weight()
+                  << std::endl;
       integrand_->evaluate(test_basis, ansatz_basis, point_in_reference_element, integrand_values_, param);
       assert(integrand_values_.rows() >= rows && "This must not happen!");
       assert(integrand_values_.cols() >= cols && "This must not happen!");
       // compute integral
       for (size_t ii = 0; ii < rows; ++ii)
         for (size_t jj = 0; jj < cols; ++jj)
-          result[ii][jj] += integrand_values_[ii][jj] * integration_factor * quadrature_weight;
+          result[ii][jj] += integrand_values_[ii][jj] * factor;
     } // loop over all quadrature points
     LOG_(debug) << "  result = " << result << std::endl;
   } // ... apply(...)
@@ -167,10 +167,11 @@ public:
 
   using IntegrandType = LocalQuaternaryIntersectionIntegrandInterface<I, t_r, t_rC, TR, F, a_r, a_rC, AR>;
 
-  LocalCouplingIntersectionIntegralBilinearForm(const IntegrandType& integrand,
-                                                const int over_integrate = 0,
-                                                const std::string& logging_prefix = "",
-                                                const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
+  LocalCouplingIntersectionIntegralBilinearForm(
+      const IntegrandType& integrand,
+      const int over_integrate = 0,
+      const std::string& logging_prefix = "",
+      const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseType(integrand.parameter_type(),
                logging_prefix.empty() ? "LocalCouplingIntersectionIntegralBilinearForm" : logging_prefix,
                logging_state)

@@ -72,10 +72,9 @@ class BilinearFormInterface
                                                         Field,
                                                         RangeGridView>>
 {
-  static_assert(XT::Grid::is_view<SourceGridView>::value, "");
-  static_assert(XT::Grid::is_view<RangeGridView>::value, "");
-  static_assert(SourceGridView::dimension == RangeGridView::dimension, "");
-
+  static_assert(XT::Grid::is_view<SourceGridView>::value);
+  static_assert(XT::Grid::is_view<RangeGridView>::value);
+  static_assert(SourceGridView::dimension == RangeGridView::dimension);
   using ThisType = BilinearFormInterface;
   using Logger = XT::Common::WithLogger<BilinearFormInterface<SourceGridView,
                                                               source_dim,
@@ -383,7 +382,7 @@ public:
 
   OperatorInterface(ThisType&& source) = default;
 
-  virtual ~OperatorInterface() = default;
+  ~OperatorInterface() override = default;
 
   // pull in methods from various base classes
   using BaseType::apply;

@@ -13,13 +13,11 @@
 #define PYTHON_DUNE_GDT_OPERATORS_INTERFACES_HH
 
 #include <dune/pybindxi/pybind11.h>
-#include <dune/pybindxi/stl.h>
 
 #include <dune/xt/common/python.hh>
 #include <dune/xt/common/string.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/la/container.hh>
-#include <python/dune/xt/common/exceptions.bindings.hh>
 #include <python/dune/xt/common/parameter.hh>
 #include <python/dune/xt/common/configuration.hh>
 #include <python/dune/xt/grid/grids.bindings.hh>

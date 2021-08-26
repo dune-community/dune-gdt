@@ -164,7 +164,7 @@ class EntropicCoordinatesCombinedOperator
     , rhs_op_(rhs_op)
     , inverse_hessian_operator_(inverse_hessian_operator)
     , reg_indicators_(advection_op_.source_space().grid_view().size(0), false)
-    , u_update_(advection_op_.source_space().mapper().size())
+    , u_update_(advection_op_.range_space().mapper().size())
     , rhs_update_(u_update_.size())
   {}
 
@@ -222,8 +222,6 @@ class EntropicCoordinatesCombinedOperator
     this->assert_matching_source(source_vector);
     this->assert_matching_range(range_vector);
     density_op_.apply(source_vector, range_vector, param);
-    u_update_ = range_vector;
-    rhs_update_ = range_vector;
     advection_op_.apply(range_vector, u_update_, param);
     u_update_ *= -1.;
     rhs_op_.apply(range_vector, rhs_update_, param);
@@ -233,6 +231,22 @@ class EntropicCoordinatesCombinedOperator
   } // ... apply(...)
 
   /// \}
+
+  template <class ElementRange>
+  void apply_range(const VectorType& source,
+                   VectorType& range,
+                   const XT::Common::Parameter& param,
+                   const ElementRange& output_range,
+                   const ElementRange& input_range)
+  {
+    // TODO: replace full-dimensional copies if critical for performance of reduced model
+    density_op_.apply_range(source, range, param, input_range);
+    advection_op_.apply_range(range, u_update_, param, output_range, input_range);
+    u_update_ *= -1.;
+    rhs_op_.apply_range(range, rhs_update_, param, output_range);
+    u_update_ += rhs_update_;
+    inverse_hessian_operator_.apply_inverse_hessian_range(u_update_, reg_indicators_, range, param, output_range);
+  }
 
   const std::vector<bool>& reg_indicators() const
   {

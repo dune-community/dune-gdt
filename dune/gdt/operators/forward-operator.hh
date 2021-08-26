@@ -258,7 +258,8 @@ public:
     , local_range_outside_(range_function_.local_discrete_function())
   {
     LOG_(debug) << "ForwardOperatorAssembler(oprtr=" << &oprtr << ", src=" << &src
-                << ", range_vector.sup_norm()=" << range_vector.sup_norm() << ", param=" << print(param) << ")" << std::endl;
+                << ", range_vector.sup_norm()=" << range_vector.sup_norm() << ", param=" << print(param) << ")"
+                << std::endl;
     LOG_(info) << "preparing {" << operator_.element_data().size() << "|" << operator_.intersection_data().size()
                << "} local {element|intersection} operators ..." << std::endl;
     set_source_in_local_ops(operator_.element_data(), element_data_);

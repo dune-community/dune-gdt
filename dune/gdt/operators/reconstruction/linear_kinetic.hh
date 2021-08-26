@@ -157,6 +157,23 @@ public:
     walker.walk(true);
   } // void apply(...)
 
+  template <class ElementRange>
+  void apply_range(const VectorType& /*source*/,
+                   ReconstructedFunctionType& range,
+                   const XT::Common::Parameter& param,
+                   const ElementRange& element_range) const
+  {
+    // do reconstruction
+    const auto& grid_view = space_.grid_view();
+    auto local_reconstruction_operator =
+        LocalPointwiseLinearKineticReconstructionOperator<GV, AnalyticalFluxType, LocalVectorType>(
+            range, grid_view, analytical_flux_, param);
+    auto walker = XT::Grid::Walker<GV>(grid_view);
+    walker.append(local_reconstruction_operator);
+    walker.walk_range(element_range);
+  } // void apply(...)
+
+
 private:
   const SpaceType& space_;
   const AnalyticalFluxType& analytical_flux_;

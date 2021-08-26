@@ -159,12 +159,15 @@ public:
     , local_binary_integrand_(local_binary_integrand.copy_as_binary_intersection_integrand())
   {}
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wextra"
   LocalBinaryToUnaryIntersectionIntegrand(const ThisType& other)
     : BaseType(other)
     , inducing_function_as_ansatz_basis_(other.inducing_function_as_ansatz_basis_->copy_as_grid_function())
     , local_function_(inducing_function_as_ansatz_basis_->local_function())
     , local_binary_integrand_(other.local_binary_integrand_->copy_as_binary_intersection_integrand())
   {}
+#pragma GCC diagnostic pop
 
   LocalBinaryToUnaryIntersectionIntegrand(ThisType&&) = default;
 
