@@ -54,7 +54,8 @@ public:
                Storage::access().basis().copy(),
                Storage::access().coefficients().copy(),
                Storage::access().interpolation().copy(),
-               {ReferenceElements<D, d>::general(geometry_type).position(0, 0)})
+               {ReferenceElements<D, d>::general(geometry_type).position(0, 0)},
+               /*powered=*/(r == 1) ? false : true)
   {}
 }; // class LocalZeroOrderLagrangeFiniteElement
 
