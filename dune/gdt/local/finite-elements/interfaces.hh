@@ -291,6 +291,11 @@ public:
     return false;
   }
 
+  virtual bool powered() const
+  {
+    return false;
+  }
+
   /**
    * \brief Lagrange points associated with this local finite element (in reference element coordinates).
    *
@@ -300,7 +305,7 @@ public:
    * Thus it always holds that
    *
 \code
-assert(lagrange_points.size() == size() * r * rC);
+assert(lagrange_points.size() * r * rC == size());
 \endcode
    *
    * Regarding the relation between a Lagrange point and an element of the basis, we have the following: in the scalar

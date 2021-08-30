@@ -59,13 +59,15 @@ public:
                             BasisType*&& bas_ptr,
                             CoefficientsType*&& coeffs_ptr,
                             InterpolationType*&& inter_ptr,
-                            std::vector<DomainType> lps = {})
+                            std::vector<DomainType> lps = {},
+                            const bool pwrd = false)
     : geometry_type_(bas_ptr->geometry_type())
     , order_(ord)
     , basis_(std::move(bas_ptr))
     , coefficients_(std::move(coeffs_ptr))
     , interpolation_(std::move(inter_ptr))
     , lagrange_points_(lps)
+    , powered_(pwrd)
   {
     check_input();
   }
@@ -112,6 +114,11 @@ public:
     return lagrange_points_;
   }
 
+  bool powered() const override final
+  {
+    return powered_;
+  }
+
 private:
   void check_input()
   {
@@ -144,6 +151,7 @@ private:
   const XT::Common::ConstStorageProvider<CoefficientsType> coefficients_;
   const XT::Common::ConstStorageProvider<InterpolationType> interpolation_;
   const std::vector<DomainType> lagrange_points_;
+  const bool powered_;
 }; // class LocalFiniteElementDefault
 
 
