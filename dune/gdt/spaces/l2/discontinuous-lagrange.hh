@@ -75,10 +75,11 @@ private:
   using GlobalBasisImplementation = DefaultGlobalBasis<GridViewType, r, 1, R>;
 
 public:
-  DiscontinuousLagrangeSpace(GridViewType grd_vw, const int order = 1)
+  DiscontinuousLagrangeSpace(GridViewType grd_vw, const int order = 1, const bool dimws_glbl_mppng = false)
     : BaseType()
     , grid_view_(grd_vw)
     , order_(order)
+    , dimwise_global_mapping((r == 1) ? false : dimws_glbl_mppng) // does not make sense in the scalar case
     , local_finite_elements_(std::make_unique<const LocalLagrangeFiniteElementFamily<D, d, R, r>>())
     , mapper_(nullptr)
     , basis_(nullptr)
@@ -90,6 +91,7 @@ public:
     : BaseType(other)
     , grid_view_(other.grid_view_)
     , order_(other.order_)
+    , dimwise_global_mapping(other.dimwise_global_mapping)
     , local_finite_elements_(std::make_unique<const LocalLagrangeFiniteElementFamily<D, d, R, r>>())
     , mapper_(nullptr)
     , basis_(nullptr)
@@ -166,7 +168,8 @@ public:
     if (mapper_)
       mapper_->update_after_adapt();
     else
-      mapper_ = std::make_unique<MapperImplementation>(grid_view_, *local_finite_elements_, order_);
+      mapper_ =
+          std::make_unique<MapperImplementation>(grid_view_, *local_finite_elements_, order_, dimwise_global_mapping);
     // ... and basis
     if (basis_)
       basis_->update_after_adapt();
@@ -178,6 +181,11 @@ public:
 private:
   const GridViewType grid_view_;
   const int order_;
+
+public:
+  const bool dimwise_global_mapping;
+
+private:
   std::unique_ptr<const LocalLagrangeFiniteElementFamily<D, d, R, r>> local_finite_elements_;
   std::unique_ptr<MapperImplementation> mapper_;
   std::unique_ptr<GlobalBasisImplementation> basis_;
@@ -188,9 +196,10 @@ private:
  * \sa DiscontinuousLagrangeSpace
  */
 template <size_t r, class GV, class R = double>
-DiscontinuousLagrangeSpace<GV, r, R> make_discontinuous_lagrange_space(GV grid_view, const int order)
+DiscontinuousLagrangeSpace<GV, r, R>
+make_discontinuous_lagrange_space(GV grid_view, const int order, const bool dimwise_global_mapping = false)
 {
-  return DiscontinuousLagrangeSpace<GV, r, R>(grid_view, order);
+  return DiscontinuousLagrangeSpace<GV, r, R>(grid_view, order, dimwise_global_mapping);
 }
 
 
@@ -198,9 +207,10 @@ DiscontinuousLagrangeSpace<GV, r, R> make_discontinuous_lagrange_space(GV grid_v
  * \sa DiscontinuousLagrangeSpace
  */
 template <class GV, class R = double>
-DiscontinuousLagrangeSpace<GV, 1, R> make_discontinuous_lagrange_space(GV grid_view, const int order)
+DiscontinuousLagrangeSpace<GV, 1, R>
+make_discontinuous_lagrange_space(GV grid_view, const int order, const bool dimwise_global_mapping = false)
 {
-  return DiscontinuousLagrangeSpace<GV, 1, R>(grid_view, order);
+  return DiscontinuousLagrangeSpace<GV, 1, R>(grid_view, order, dimwise_global_mapping);
 }
 
 
