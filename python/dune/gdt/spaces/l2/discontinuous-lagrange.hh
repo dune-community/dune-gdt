@@ -54,11 +54,38 @@ public:
       class_name += "_" + XT::Common::Typename<R>::value(/*fail_wo_typeid=*/true);
     const auto ClassName = XT::Common::to_camel_case(class_name);
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
-    c.def(py::init([](XT::Grid::GridProvider<G>& grid_provider, const int order) {
-            return new type(grid_provider.leaf_view(), order); // Otherwise we get an error here!
+    c.def_property_readonly("dimwise_global_mapping", [](type& self) { return self.dimwise_global_mapping; });
+    c.def(py::init([](XT::Grid::GridProvider<G>& grid_provider, const int order, const bool dimwise_global_mapping) {
+            return new type(grid_provider.leaf_view(), order, dimwise_global_mapping); // Otherwise we get an error
+                                                                                       // here!
           }),
           "grid_provider"_a,
-          "order"_a);
+          "order"_a,
+          "dimwise_global_mapping"_a = (r == 1) ? false : true);
+    c.def(
+        "interpolation_points",
+        [](type& self) {
+          DUNE_THROW_IF(self.min_polorder() != self.max_polorder(),
+                        XT::Common::Exceptions::wrong_input_given,
+                        "Not implemented for varying polynomial degree!");
+          const GDT::DiscontinuousLagrangeSpace<GV, 1, R> scalar_self(self.grid_view(), self.min_polorder());
+          const auto& global_basis = scalar_self.basis();
+          auto basis = global_basis.localize();
+          DynamicVector<size_t> global_DoF_indices(scalar_self.mapper().max_local_size());
+          auto points = std::make_unique<XT::LA::CommonDenseMatrix<double>>(scalar_self.mapper().size(), size_t(d), 0.);
+          for (auto&& element : elements(scalar_self.grid_view())) {
+            basis->bind(element);
+            scalar_self.mapper().global_indices(element, global_DoF_indices);
+            auto local_lagrange_points = basis->finite_element().lagrange_points();
+            for (size_t ii = 0; ii < basis->size(); ++ii) {
+              auto global_point = element.geometry().global(local_lagrange_points[ii]);
+              for (size_t jj = 0; jj < size_t(d); ++jj)
+                points->set_entry(global_DoF_indices[ii], jj, global_point[jj]);
+            }
+          }
+          return std::move(points);
+        },
+        py::call_guard<py::gil_scoped_release>());
     c.def("__repr__", [](const type& self) {
       std::stringstream ss;
       ss << self;
@@ -71,20 +98,28 @@ public:
     if (r == 1)
       m.def(
           XT::Common::to_camel_case(space_type_name).c_str(),
-          [](XT::Grid::GridProvider<G>& grid, const int order, const XT::Grid::bindings::Dimension<r>&) {
-            return new type(grid.leaf_view(), order); // Otherwise we get an error here!
+          [](XT::Grid::GridProvider<G>& grid,
+             const int order,
+             const bool dimwise_global_mapping,
+             const XT::Grid::bindings::Dimension<r>&) {
+            return new type(grid.leaf_view(), order, dimwise_global_mapping); // Otherwise we get an error here!
           },
           "grid"_a,
           "order"_a,
+          "dimwise_global_mapping"_a = (r == 1) ? false : true,
           "dim_range"_a = XT::Grid::bindings::Dimension<r>());
     else
       m.def(
           XT::Common::to_camel_case(space_type_name).c_str(),
-          [](XT::Grid::GridProvider<G>& grid, const int order, const XT::Grid::bindings::Dimension<r>&) {
-            return new type(grid.leaf_view(), order); // Otherwise we get an error here!
+          [](XT::Grid::GridProvider<G>& grid,
+             const int order,
+             const bool dimwise_global_mapping,
+             const XT::Grid::bindings::Dimension<r>&) {
+            return new type(grid.leaf_view(), order, dimwise_global_mapping); // Otherwise we get an error here!
           },
           "grid"_a,
           "order"_a,
+          "dimwise_global_mapping"_a = (r == 1) ? false : true,
           "dim_range"_a);
 
     return c;
