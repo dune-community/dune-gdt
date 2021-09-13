@@ -35,12 +35,15 @@ void raviart_thomas_interpolation(const XT::Functions::GridFunctionInterface<E, 
   static_assert(std::is_same_v<E, XT::Grid::extract_entity_t<GV>>, "");
   static_assert(std::is_same_v<E, XT::Grid::extract_entity_t<GridView<IGV>>>, "");
   static_assert(d == GV::dimension, "");
+  // enable after newer dune-xt is available
+#if 0
   XT::Common::DefaultLogger logger("raviart_thomas_interpolation");
   LOG(debug) << "(source=" << &source << ", target=" << &target
              << ", interpolation_grid_view=" << &interpolation_grid_view << ", param=" << param << ")" << std::endl;
   if (target.space().type() != SpaceType::raviart_thomas)
     LOG(warn) << "target.space().type() is " << target.space().type() << ", not raviart_thomas! Continuing anyway ..."
               << std::endl;
+#endif
   using D = typename GridView<IGV>::ctype;
   // some preparations
   const FiniteVolumeMapper<GridView<IGV>> element_mapper(interpolation_grid_view);
