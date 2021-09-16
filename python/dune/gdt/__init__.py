@@ -15,6 +15,8 @@ from tempfile import NamedTemporaryFile
 from dune.xt import guarded_import
 from dune.xt.common.vtk.plot import plot
 
+from ._version import __version__
+
 for mod_name in (     # order should not matter!
         '_discretefunction_bochner',
         '_discretefunction_discretefunction',
@@ -84,7 +86,6 @@ for mod_name in (     # order should not matter!
         '_tools_dirichlet_constraints',
         '_tools_grid_quality_estimates',
         '_tools_sparsity_pattern',
-        '_version',
 ):
     guarded_import(globals(), 'dune.gdt', mod_name)
 
