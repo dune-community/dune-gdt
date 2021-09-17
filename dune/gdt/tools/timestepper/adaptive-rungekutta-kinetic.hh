@@ -226,7 +226,7 @@ public:
       first_stage_to_compute = 1;
     }
     first_same_as_last_ = true;
-    const bool apply_gamma_relaxation = DXTC_CONFIG_GET("apply_gamma_relaxation", 1);
+    const bool apply_gamma_relaxation = DXTC_CONFIG_GET("apply_gamma_relaxation", 0);
     // double min_gamma = 0.;
     double gamma = last_gamma_;
     double relaxationupdate(0.);
