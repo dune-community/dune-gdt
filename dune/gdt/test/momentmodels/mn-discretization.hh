@@ -117,7 +117,7 @@ struct HyperbolicMnDiscretization
     static constexpr size_t dimRange = MomentBasis::dimRange;
     static constexpr auto la_backend = TestCaseType::la_backend;
     using DomainType = FieldVector<RangeFieldType, dimDomain>;
-    using RangeType = FieldVector<RangeFieldType, dimRange>;
+    // using RangeType = FieldVector<RangeFieldType, dimRange>;
     using MatrixType = typename XT::LA::Container<RangeFieldType, la_backend>::MatrixType;
     using VectorType = typename XT::LA::Container<RangeFieldType, la_backend>::VectorType;
     using DynamicRangeType = DynamicVector<RangeFieldType>;

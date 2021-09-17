@@ -13,6 +13,7 @@
 #define DUNE_GDT_TIMESTEPPER_EXPLICIT_RUNGEKUTTA_HH
 
 #include <utility>
+#include <numeric>
 
 #include "enums.hh"
 #include "interface.hh"
@@ -249,8 +250,8 @@ public:
     std::vector<double> val_vector;
     const auto& grid_view = u_n.space().grid_view();
     const auto& quadratures = op_.entropy_solver().entropy_flux().basis_functions().quadratures();
-    static const auto merged_quads = XT::Data::merged_quadrature(quadratures);
-    static const auto basis_vals = get_basis_vals(merged_quads);
+    const auto merged_quads = XT::Data::merged_quadrature(quadratures);
+    const auto basis_vals = get_basis_vals(merged_quads);
     if (XT::Common::FloatCmp::eq(t, 0.)) {
       last_entropy_ = compute_entropy(local_u, grid_view, merged_quads, basis_vals, val_vector);
       write_entropy(local_u, grid_view, 0., merged_quads, basis_vals, t, actual_dt, val_vector, prefix);
@@ -390,7 +391,7 @@ private:
       size_t kk = 0;
       for (auto it = merged_quads.begin(); it != merged_quads.end(); ++it, ++kk) {
         const auto& quad_point = *it;
-        const auto alpha_n_b = alpha * basis_vals[kk];
+        const auto alpha_n_b = std::inner_product(alpha.begin(), alpha.end(), basis_vals[kk].begin(), 0.);
         vals.push_back(std::exp(alpha_n_b) * (alpha_n_b - 1) * quad_point.weight());
       } // quad_points
     } // entities

@@ -168,7 +168,7 @@ public:
     return space_;
   }
 
-  void apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& param) const override final
+  void apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& /*param*/) const override final
   {
     LocalRhsOperator<SpaceType, VectorType, MomentBasis> local_rhs_operator(
         space_, source, range, basis_functions_, basis_integrated_, u_iso_, sigma_a_, sigma_s_, Q_);

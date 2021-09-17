@@ -13,6 +13,7 @@
 #if HAVE_DUNE_XT_DATA
 
 #  include <string>
+#  include <numeric>
 
 #  include <dune/xt/grid/functors/interfaces.hh>
 #  include <dune/xt/common/parameter.hh>
@@ -91,7 +92,7 @@ public:
     }
     local_flux_->bind(entity);
     const auto alpha = local_flux_->get_alpha(u_n, true)->first;
-    relaxationupdate_ += alpha * u_update;
+    relaxationupdate_ += std::inner_product(alpha.begin(), alpha.end(), u_update.begin(), 0.);
   } // void apply_local(...)
 
 private:
@@ -145,6 +146,8 @@ public:
   {
     return space_;
   }
+
+  using BaseType::apply;
 
   void
   apply(const VectorType& /*u_n*/, VectorType& /*range*/, const XT::Common::Parameter& /*param*/) const override final
