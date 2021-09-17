@@ -211,8 +211,8 @@ public:
     std::vector<double> val_vector;
     const auto& grid_view = alpha_n.space().grid_view();
     const auto& quadratures = entropy_flux_.basis_functions().quadratures();
-    static const auto merged_quads = XT::Data::merged_quadrature(quadratures);
-    static const auto basis_vals = get_basis_vals(merged_quads);
+    const auto merged_quads = XT::Data::merged_quadrature(quadratures);
+    const auto basis_vals = get_basis_vals(merged_quads);
     if (XT::Common::is_zero(t)) {
       last_entropy_ = compute_entropy(local_alpha, grid_view, merged_quads, basis_vals, val_vector);
       write_entropy(local_alpha, grid_view, 0, merged_quads, basis_vals, t, actual_dt, val_vector, prefix);
@@ -352,16 +352,10 @@ public:
           d->dofs().vector() *= 0.;
           for (size_t ii = 0; ii < num_stages_ - 1; ++ii)
             d->dofs().vector().axpy(actual_dt * r_ * b_1_[ii], stages_k_[ii]->dofs().vector());
-          const auto& grid_view = alpha_n.space().grid_view();
-          const auto local_alpha = alpha_n.local_discrete_function();
           const auto local_d = d->local_discrete_function();
-          const auto& quadratures = entropy_flux_.basis_functions().quadratures();
-          static const auto merged_quads = XT::Data::merged_quadrature(quadratures);
-          static const auto basis_vals = get_basis_vals(merged_quads);
           // eta \circ eta_{\ast}^{\prime} = exp(x)(x - 1) for MaxwellBoltzmann entropy
           const bool visualize_gamma = DXTC_CONFIG_GET("visualize_gamma", 0);
-          std::vector<double> val_vector;
-          std::cout << "relupdate: " << XT::Common::to_string(relaxationupdate, 15) << std::endl;
+          // std::cout << "relupdate: " << XT::Common::to_string(relaxationupdate, 15) << std::endl;
           if (visualize_gamma) {
             write_gamma(
                 local_alpha, local_d, grid_view, merged_quads, basis_vals, actual_dt, relaxationupdate, val_vector);
@@ -550,7 +544,6 @@ private:
                  const double relaxationupdate,
                  std::vector<double>& vals)
   {
-    double ret = 0.;
     vals.clear();
     XT::Common::FieldVector<RangeFieldType, dimRange> local_alpha_vec, local_alpha_gamma_vec;
     for (auto&& entity : Dune::elements(grid_view)) {
@@ -580,7 +573,6 @@ private:
                          const BasisValsType& basis_vals,
                          std::vector<double>& vals)
   {
-    double ret = 0.;
     vals.clear();
     XT::Common::FieldVector<RangeFieldType, dimRange> local_alpha_vec;
     for (auto&& entity : Dune::elements(grid_view)) {
@@ -650,7 +642,8 @@ private:
     const std::string entropy_filename = prefix + "_entropy.txt";
     std::ofstream entropy_file(entropy_filename, std::ios_base::app);
     const double entropy = compute_entropy(local_alpha, grid_view, merged_quads, basis_vals, val_vector);
-    const double diff = (t == 0) ? 0. : compensated_sum({entropy, -1. * last_entropy_, -dt * relaxationupdate});
+    const double diff =
+        XT::Common::is_zero(t) ? 0. : compensated_sum({entropy, -1. * last_entropy_, -dt * relaxationupdate});
     entropy_file << XT::Common::to_string(t) << " " << XT::Common::to_string(entropy, 15) << " "
                  << XT::Common::to_string(diff, 15) << " " << XT::Common::to_string(std::abs(diff), 15) << std::endl;
     entropy_file.close();

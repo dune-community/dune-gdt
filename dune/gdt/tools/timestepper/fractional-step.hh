@@ -62,7 +62,7 @@ public:
   } // constructor
 
   RangeFieldType
-  step(const RangeFieldType dt, const RangeFieldType max_dt, const std::string prefix = "") override final
+  step(const RangeFieldType dt, const RangeFieldType max_dt, const std::string /*prefix*/ = "") override final
   {
     auto& t = current_time();
     const RangeFieldType actual_dt = std::min(dt, max_dt);
@@ -116,7 +116,7 @@ public:
   } // constructor
 
   RangeFieldType
-  step(const RangeFieldType dt, const RangeFieldType max_dt, const std::string prefix = "") override final
+  step(const RangeFieldType dt, const RangeFieldType max_dt, const std::string /*prefix*/ = "") override final
   {
     auto& t = current_time();
     const RangeFieldType actual_dt = std::min(dt, max_dt);

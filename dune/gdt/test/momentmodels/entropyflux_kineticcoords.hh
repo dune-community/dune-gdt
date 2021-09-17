@@ -213,8 +213,8 @@ public:
 
   void apply_inverse_hessian(const size_t entity_index, StateType& u, const double dt) const
   {
-    if (entity_index == 0)
-      std::cout << dt << std::endl;
+    // if (entity_index == 0)
+    //   std::cout << dt << std::endl;
     implementation_->apply_inverse_hessian((*eta_ast_twoprime_evaluations_)[entity_index], u, dt);
   }
 

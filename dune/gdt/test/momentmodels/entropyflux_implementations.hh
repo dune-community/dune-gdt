@@ -1964,7 +1964,8 @@ public:
     } // jj
   } // void calculate_hessian(...)
 
-  void apply_inverse_hessian(const QuadratureWeightsType& eta_ast_twoprime_vals, DomainType& u) const
+  void
+  apply_inverse_hessian(const QuadratureWeightsType& eta_ast_twoprime_vals, DomainType& u, const double /*dt*/) const
   {
     thread_local auto H = std::make_unique<BlockMatrixType>();
     calculate_hessian(eta_ast_twoprime_vals, M_, *H);
@@ -2898,7 +2899,8 @@ public:
     calculate_hessian(eta_ast_twoprime_vals, H);
   } // void calculate_hessian(...)
 
-  void apply_inverse_hessian(const QuadratureWeightsType& eta_ast_twoprime_vals, DomainType& u) const
+  void
+  apply_inverse_hessian(const QuadratureWeightsType& eta_ast_twoprime_vals, DomainType& u, const double /*dt*/) const
   {
     thread_local std::vector<RangeFieldType> H(basis_dimRange);
     calculate_hessian(eta_ast_twoprime_vals, H);
@@ -3616,7 +3618,8 @@ public:
     calculate_hessian(eta_ast_twoprime_vals, M, H);
   } // void calculate_hessian(...)
 
-  void apply_inverse_hessian(const QuadratureWeightsType& eta_ast_twoprime_vals, DomainType& u) const
+  void
+  apply_inverse_hessian(const QuadratureWeightsType& eta_ast_twoprime_vals, DomainType& u, const double /*dt*/) const
   {
     thread_local SparseMatrixType H(basis_dimRange, basis_dimRange, pattern_, 0);
     calculate_hessian(eta_ast_twoprime_vals, M_, H);
@@ -5175,7 +5178,7 @@ public:
         try {
           // only works for Maxwell-Boltzmann entropy, here, working_storage contains exp(alpha^T b) due to the call to
           // calculate_gradient
-          apply_inverse_hessian(working_storage(), d_k);
+          apply_inverse_hessian(working_storage(), d_k, 0);
         } catch (const Dune::MathError&) {
           if (rr < r_max)
             break;
@@ -5353,7 +5356,8 @@ public:
         grid_points_[basis_dimRange - 1] * eta_ast_twoprime_vals[dimRange - 2].back() * interval_length / 2.;
   } // void calculate_J(...)
 
-  void apply_inverse_hessian(const QuadratureWeightsType& eta_ast_twoprime_vals, DomainType& u) const
+  void
+  apply_inverse_hessian(const QuadratureWeightsType& eta_ast_twoprime_vals, DomainType& u, const double /*dt*/) const
   {
 
     RangeFieldType* u_ptr = &(u[0]);
@@ -5970,7 +5974,7 @@ public:
     } // jj (intervals)
   } // void calculate_J(...)
 
-  void apply_inverse_hessian(const QuadratureWeightsType& density_evaluations, DomainType& u) const
+  void apply_inverse_hessian(const QuadratureWeightsType& density_evaluations, DomainType& u, const double /*dt*/) const
   {
     thread_local VectorType H_diag;
     thread_local FieldVector<RangeFieldType, dimRange - 1> H_subdiag;
