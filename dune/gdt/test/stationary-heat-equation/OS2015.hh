@@ -31,7 +31,7 @@ namespace GDT {
 namespace Test {
 
 
-#if HAVE_DUNE_XT_DATA
+#if HAVE_SPE10_DATA
 
 /**
  * \brief Problem definition from [1], Section 6.1
@@ -52,7 +52,7 @@ struct OS2015MultiscaleProblem
 
   OS2015MultiscaleProblem()
     : diffusion_factor(1)
-    , diffusion_tensor(XT::Data::spe10_model1_filename(), {0., 0.}, {5., 1.})
+    , diffusion_tensor(SPE10_MODEL1_FILENAME, {0., 0.}, {5., 1.})
     , dirichlet(0)
     , neumann(0)
     , force({/*domain_with_positive_value=*/{{{0.95, 1.1}, {0.3, 0.45}}, 2e3},
@@ -143,18 +143,18 @@ protected:
   OS2015MultiscaleProblem<GV> problem;
 }; // struct OS2015MultiscaleTest
 
-#else // HAVE_DUNE_XT_DATA
+#else // HAVE_SPE10_DATA
 
 template <class GV>
 struct OS2015MultiscaleProblem
 {
-  static_assert(Dune::AlwaysFalse<GV>::value, "You are missing dune-xt-data!");
+  static_assert(Dune::AlwaysFalse<GV>::value, "You are missing the spe10 data files!");
 };
 
 template <class G>
 class OS2015MultiscaleTest : public StationaryDiffusionIpdgEocStudy<G>
 {
-  static_assert(Dune::AlwaysFalse<G>::value, "You are missing dune-xt-data!");
+  static_assert(Dune::AlwaysFalse<G>::value, "You are missing the spe10 data files!");
 };
 
 #endif
