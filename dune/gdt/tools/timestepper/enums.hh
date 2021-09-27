@@ -28,8 +28,7 @@ enum class TimeStepperMethods
   implicit_euler,
   implicit_midpoint,
   trapezoidal_rule,
-  diagonally_implicit_other,
-  matrix_exponential
+  diagonally_implicit_other
 };
 
 enum class TimeStepperSplittingMethods
