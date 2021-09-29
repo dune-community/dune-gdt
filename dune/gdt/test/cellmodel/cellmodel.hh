@@ -59,8 +59,8 @@ struct SolverStatistics
 
 struct CellModelSolver
 {
-  using G = ALU_2D_SIMPLEX_CONFORMING;
-  // using G = YASP_2D_EQUIDISTANT_OFFSET;
+  // using G = ALU_2D_SIMPLEX_CONFORMING;
+  using G = YASP_2D_EQUIDISTANT_OFFSET;
   static constexpr size_t d = G::dimension;
   using GV = typename G::LeafGridView;
   using PGV = XT::Grid::PeriodicGridView<GV>;
