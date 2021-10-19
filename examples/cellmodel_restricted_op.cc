@@ -398,7 +398,6 @@ int main(int argc, char* argv[])
       for (auto& entry : ofield_state)
         entry += double_distrib(rng);
 
-      std::cout << "Hello" << std::endl;
       std::this_thread::sleep_for(std::chrono::seconds(2));
       auto begin = std::chrono::steady_clock::now();
       VectorType restricted_result, restricted_jac_result;
@@ -407,16 +406,15 @@ int main(int argc, char* argv[])
         stokes_restricted_prep_time += std::chrono::steady_clock::now() - begin;
         const size_t num_source_dofs = stokes_source_dofs.size();
         VectorType restricted_source(num_source_dofs, 0.);
-        for (size_t ii = 0; ii < num_source_dofs; ++ii)
-          restricted_source[ii] = stokes_source[stokes_source_dofs[ii]];
+        for (size_t jj = 0; jj < num_source_dofs; ++jj)
+          restricted_source[jj] = stokes_source[stokes_source_dofs[jj]];
         begin = std::chrono::steady_clock::now();
-        auto restricted_result = model_solver.apply_stokes_operator(restricted_source, true);
+        restricted_result = model_solver.apply_stokes_operator(restricted_source, true);
         stokes_restricted_apply_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
         restricted_jac_result = model_solver.apply_stokes_jacobian(restricted_source, true);
         stokes_restricted_jac_time += std::chrono::steady_clock::now() - begin;
       }
-      std::cout << "Hello end" << std::endl;
       std::this_thread::sleep_for(std::chrono::seconds(2));
       begin = std::chrono::steady_clock::now();
       model_solver2.prepare_stokes_operator(false);

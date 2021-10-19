@@ -151,7 +151,8 @@ CellModelSolver::CellModelSolver(const std::string testcase,
                                  const int inner_verbose,
                                  const double bending,
                                  const double conservative)
-  : lower_left_(get_lower_left(testcase))
+  : testcase_(testcase)
+  , lower_left_(get_lower_left(testcase))
   , upper_right_(get_upper_right(testcase))
   , t_end_(t_end)
   , dt_(dt)
@@ -309,166 +310,12 @@ CellModelSolver::CellModelSolver(const std::string testcase,
             << XT::Common::to_string(2 * size_P_) << ", Stokes " << XT::Common::to_string(size_u_ + size_p_)
             << std::endl;
 
-  /************************** create and project initial values*****************************************
-   ************************** we only need initial values for P and phi *******************************/
-
-  std::shared_ptr<const XT::Functions::FunctionInterface<d, d>> u_initial_func;
-  std::vector<std::shared_ptr<const XT::Functions::FunctionInterface<d>>> phi_initial_funcs;
-  std::vector<std::shared_ptr<const XT::Functions::FunctionInterface<d, d>>> P_initial_funcs;
-
-  // interpolate initial and boundary values
-  if (testcase == "single_cell" || testcase == "channel" || testcase == "single_cell_dirichlet") {
-    // Initially, cell is circular with Radius R=5 and placed in the center of the domain
-    // \Omega = [0, 30]^2
-    // Initial condition for \phi thus is \tanh(\frac{r}{\sqrt{2}\epsilon}) with r the signed distance function to the
-    // membrane, i.e. r(x) = 5 - |(15, 15) - x|.
-    FieldVector<double, d> center{upper_right_[0] / 2., upper_right_[1] / 2.};
-    // FieldVector<double, d> center{0., upper_right_[1] / 2.};
-    auto r = [center](const auto& xr) { return 5.0 - (center - xr).two_norm(); };
-    phi_initial_funcs.emplace_back(std::make_shared<XT::Functions::GenericFunction<d>>(
-        50,
-        /*evaluate=*/
-        [r, epsilon = epsilon_](const auto& x, const auto& /*param*/) {
-          return std::tanh(r(x) / (std::sqrt(2.) * epsilon));
-        },
-        /*name=*/"phi_initial"));
-
-    // initial condition for P is (1,0) + \delta where \delta(x) is vector-valued with random entries following an
-    // uniform distribution on the interval [-0.05, 0.05]; restrict to cytoplasm by multiplying with (\phi + 1)/2
-    std::srand(1); // set seed for std::rand to 1
-    //     P_initial_funcs.emplace_back(std::make_shared<const XT::Functions::GenericFunction<d, d>>(
-    //         50,
-    //         /*evaluate=*/
-    //         [&phi_in = phi_initial_funcs[0]](const auto& x, const auto& param) {
-    //           // auto rand1 = ((std::rand() % 2000) - 1000) / 20000.;
-    //           // auto rand2 = ((std::rand() % 2000) - 1000) / 20000.;
-    //           // auto ret = FieldVector<double, d>({1. + rand1, 0. +
-    //           // rand2});
-    //           auto ret = FieldVector<double, d>({1., 0.});
-    //           ret *= (phi_in->evaluate(x, param) + 1.) / 2.;
-    //           return ret;
-    //         },
-    //         /*name=*/"P_initial"));
-    P_initial_funcs.emplace_back(std::make_shared<const XT::Functions::GenericFunction<d, d>>(
-        50,
-        /*evaluate=*/
-        [&phi_in = phi_initial_funcs[0]](const auto& x, const auto& param) {
-          // auto rand1 = ((std::rand() % 2000) - 1000) / 20000.;
-          // auto rand2 = ((std::rand() % 2000) - 1000) / 20000.;
-          // auto ret = FieldVector<double, d>({1. + rand1, 0. +
-          // rand2});
-          // double rand1 = std::rand() - RAND_MAX / 2;
-          // double rand2 = std::rand() - RAND_MAX / 2;
-          // rand1 /= std::sqrt(rand1 * rand1 + rand2 * rand2);
-          // rand2 /= std::sqrt(rand1 * rand1 + rand2 * rand2);
-          // auto ret = FieldVector<double, d>({rand1, rand2});
-          // small bias to point more in x direction
-          // if (((x[0] > 9.5 && x[0] < 10.5) || (x[0] > 19.5 && x[0] < 20.5)) && x[1] > 14.5 && x[1] < 15.5)
-          // ret[0] += (ret[0] > 0) ? 0.05 : -0.05;
-          auto ret = FieldVector<double, d>({1., 0.});
-          ret *= (phi_in->evaluate(x, param) + 1.) / 2.;
-          return ret;
-        },
-        /*name=*/"P_initial"));
-    u_initial_func = std::make_shared<const XT::Functions::ConstantFunction<d, d>>(0.);
-  } else if (testcase == "cell_isolation_experiment") {
-    // Initially, cell is elongated with Radius R=5 and placed in the center of the domain
-    // \Omega = [0, 30]^2
-    // Initial condition for \phi thus is \tanh(\frac{r}{\sqrt{2}\epsilon}) with r the signed distance function to the
-    // membrane, i.e. r(x) = 5 - |(15, 15) - x|.
-    FieldVector<double, d> center{upper_right_[0] / 2., upper_right_[1] / 2.};
-    using BoostPointType = boost::geometry::model::point<double, 2, boost::geometry::cs::cartesian>;
-    using BoostRingType = boost::geometry::model::ring<BoostPointType>;
-    using BoostPolygonType = boost::geometry::model::polygon<BoostPointType>;
-    // A ring does not have holes
-    BoostRingType ring{{15., 25.}, {15., 20.}, {25., 15.}, {27., 20.}, {26., 22.}, {15., 25.}};
-    // BoostRingType ring{{15.2, 25.}, {15., 24.8}, {15., 20.}, {25., 15.}, {27., 20.}, {26., 22.}, {15.2, 25.}};
-    // A polygon can have holes, here we add the same inner and outer ring to only get the boundary of the cell
-    BoostPolygonType polygon{ring, ring};
-    auto r = [ring, polygon](const auto& xr) {
-      BoostPointType point{xr[0], xr[1]};
-      const double distance = boost::geometry::distance(polygon, point);
-      return boost::geometry::within(point, ring) ? distance : -distance;
-    };
-    phi_initial_funcs.emplace_back(std::make_shared<XT::Functions::GenericFunction<d>>(
-        50,
-        /*evaluate=*/
-        [r, epsilon = epsilon_](const auto& x, const auto& /*param*/) {
-          return std::tanh(r(x) / (std::sqrt(2.) * epsilon));
-        },
-        /*name=*/"phi_initial"));
-
-    P_initial_funcs.emplace_back(std::make_shared<const XT::Functions::GenericFunction<d, d>>(
-        50,
-        /*evaluate=*/
-        [&phi_in = phi_initial_funcs[0]](const auto& x, const auto& param) {
-          // auto ret = FieldVector<double, d>({1., 0.});
-          auto ret = FieldVector<double, d>({-0.82, 0.57});
-          ret *= (phi_in->evaluate(x, param) + 1.) / 2.;
-          return ret;
-        },
-        /*name=*/"P_initial"));
-    u_initial_func = std::make_shared<const XT::Functions::ConstantFunction<d, d>>(0.);
-  } else if (testcase == "cell_for_paper") {
-    using BoostPointType = boost::geometry::model::point<double, 2, boost::geometry::cs::cartesian>;
-    using BoostRingType = boost::geometry::model::ring<BoostPointType>;
-    using BoostPolygonType = boost::geometry::model::polygon<BoostPointType>;
-    // A ring does not have holes
-    // Computing the distance to an ellipsis seems to be hard, so we just use a triangulation
-    FieldVector<double, d> center{upper_right_[0] / 2., upper_right_[1] / 2.};
-    const size_t num_points = 100;
-    const double num_points_d = static_cast<double>(num_points);
-    const double a = 7;
-    const double b = 5;
-    std::vector<BoostPointType> y1s, y2s;
-    for (size_t i = 0; i < num_points; ++i) {
-      const double x = center[0] + (2 * i / (num_points_d - 1) - 1) * a;
-      const double q = b * std::sqrt(1 - std::pow((x - center[0]) / a, 2));
-      y1s.emplace_back(BoostPointType{x, center[1] + q});
-      y2s.emplace_back(BoostPointType{x, center[1] - q});
-    }
-    for (size_t i = 0; i < y2s.size(); ++i)
-      y1s.emplace_back(y2s[y2s.size() - 1 - i]);
-    for (auto&& point : y1s) {
-      std::cout << point.get<0>() << ", " << point.get<1>() << std::endl;
-    }
-    BoostRingType ring(y1s.begin(), y1s.end());
-    // A polygon can have holes, here we add the same inner and outer ring to only get the boundary of the cell
-    BoostPolygonType polygon{ring, ring};
-    auto r = [ring, polygon](const auto& xr) {
-      BoostPointType point{xr[0], xr[1]};
-      const double distance = boost::geometry::distance(polygon, point);
-      return boost::geometry::within(point, ring) ? distance : -distance;
-    };
-    phi_initial_funcs.emplace_back(std::make_shared<XT::Functions::GenericFunction<d>>(
-        50,
-        /*evaluate=*/
-        [r, epsilon = epsilon_](const auto& x, const auto& /*param*/) {
-          return std::tanh(r(x) / (std::sqrt(2.) * epsilon));
-        },
-        /*name=*/"phi_initial"));
-    P_initial_funcs.emplace_back(std::make_shared<const XT::Functions::GenericFunction<d, d>>(
-        50,
-        /*evaluate=*/
-        [&phi_in = phi_initial_funcs[0]](const auto& x, const auto& param) {
-          auto ret = FieldVector<double, d>({1., 0.});
-          ret *= (phi_in->evaluate(x, param) + 1.) / 2.;
-          return ret;
-        },
-        /*name=*/"P_initial"));
-    u_initial_func = std::make_shared<const XT::Functions::ConstantFunction<d, d>>(0.);
-  } else {
-    DUNE_THROW(Dune::NotImplemented, "Unknown testcase");
-  }
-
   /*************************************************************************************************
-   ******************************* create variables, set initial values ****************************
+   *********************************** create helper variables  ************************************
    *************************************************************************************************/
 
   // On the non-periodic boundaries, use Dirichlet boundary conditions u = 0, Neumann boundary
   // conditions for the other variables
-  XT::Grid::AllDirichletBoundaryInfo<PI> all_dirichlet_boundary_info;
-  default_interpolation(*u_initial_func, u_);
   // create system and temporary vectors, DiscreteFunctions, etc.
   for (size_t kk = 0; kk < num_cells_; kk++) {
     P_view_.emplace_back(ofield_vectors_[kk], 0, size_P_);
@@ -493,14 +340,15 @@ CellModelSolver::CellModelSolver(const std::string testcase,
       phinat_tmp_.emplace_back(phi_space_);
       mu_tmp_.emplace_back(phi_space_);
     }
-    default_interpolation(*phi_initial_funcs[kk], phi_[kk]);
-    default_interpolation(*P_initial_funcs[kk], P_[kk]);
   }
+
+  /************************** create and project initial values *****************************************
+   ************************** we only need initial values for P and phi *******************************/
+  set_initial_values(testcase);
 
   /*************************************************************************************************
    *************************************** Stokes **************************************************
    *************************************************************************************************/
-
 
   MatrixOperator<MatrixType, PGV, d> A_stokes_op(grid_view_, u_space_, u_space_, A_stokes_);
   MatrixOperator<MatrixType, PGV, 1, 1, d> BT_stokes_op(grid_view_, p_space_, u_space_, BT_stokes_);
@@ -704,6 +552,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
                                           true,
                                           false);
 } // constructor
+
 
 // Computes the nonlinear part of the lower left block of the ofield matrix (i.e., -c_1/Pa D_d f(d))
 struct CellModelSolver::OfieldNonlinearS10Functor : public XT::Grid::ElementFunctor<PGV>
@@ -1465,6 +1314,12 @@ bool CellModelSolver::linear() const
 bool CellModelSolver::finished() const
 {
   return XT::Common::FloatCmp::eq(t_end_, t_);
+}
+
+void CellModelSolver::reset()
+{
+  t_ = 0.;
+  set_initial_values(testcase_);
 }
 
 //******************************************************************************************************************
@@ -3157,4 +3012,166 @@ double CellModelSolver::ofield_residual_norm(const VectorType& residual) const
 double CellModelSolver::pfield_residual_norm(const VectorType& residual) const
 {
   return residual.l2_norm();
+}
+
+void CellModelSolver::set_initial_values(const std::string& testcase)
+{
+  std::shared_ptr<const XT::Functions::FunctionInterface<d, d>> u_initial_func;
+  std::vector<std::shared_ptr<const XT::Functions::FunctionInterface<d>>> phi_initial_funcs;
+  std::vector<std::shared_ptr<const XT::Functions::FunctionInterface<d, d>>> P_initial_funcs;
+  std::fill(stokes_vector_.begin(), stokes_vector_.end(), 0.);
+  for (size_t kk = 0; kk < num_cells_; kk++) {
+    std::fill(pfield_vectors_[kk].begin(), pfield_vectors_[kk].end(), 0.);
+    std::fill(ofield_vectors_[kk].begin(), ofield_vectors_[kk].end(), 0.);
+  }
+
+  // interpolate initial and boundary values
+  if (testcase == "single_cell" || testcase == "channel" || testcase == "single_cell_dirichlet") {
+    // Initially, cell is circular with Radius R=5 and placed in the center of the domain
+    // \Omega = [0, 30]^2
+    // Initial condition for \phi thus is \tanh(\frac{r}{\sqrt{2}\epsilon}) with r the signed distance function to the
+    // membrane, i.e. r(x) = 5 - |(15, 15) - x|.
+    FieldVector<double, d> center{upper_right_[0] / 2., upper_right_[1] / 2.};
+    // FieldVector<double, d> center{0., upper_right_[1] / 2.};
+    auto r = [center](const auto& xr) { return 5.0 - (center - xr).two_norm(); };
+    phi_initial_funcs.emplace_back(std::make_shared<XT::Functions::GenericFunction<d>>(
+        50,
+        /*evaluate=*/
+        [r, epsilon = epsilon_](const auto& x, const auto& /*param*/) {
+          return std::tanh(r(x) / (std::sqrt(2.) * epsilon));
+        },
+        /*name=*/"phi_initial"));
+
+    // initial condition for P is (1,0) + \delta where \delta(x) is vector-valued with random entries following an
+    // uniform distribution on the interval [-0.05, 0.05]; restrict to cytoplasm by multiplying with (\phi + 1)/2
+    std::srand(1); // set seed for std::rand to 1
+    //     P_initial_funcs.emplace_back(std::make_shared<const XT::Functions::GenericFunction<d, d>>(
+    //         50,
+    //         /*evaluate=*/
+    //         [&phi_in = phi_initial_funcs[0]](const auto& x, const auto& param) {
+    //           // auto rand1 = ((std::rand() % 2000) - 1000) / 20000.;
+    //           // auto rand2 = ((std::rand() % 2000) - 1000) / 20000.;
+    //           // auto ret = FieldVector<double, d>({1. + rand1, 0. +
+    //           // rand2});
+    //           auto ret = FieldVector<double, d>({1., 0.});
+    //           ret *= (phi_in->evaluate(x, param) + 1.) / 2.;
+    //           return ret;
+    //         },
+    //         /*name=*/"P_initial"));
+    P_initial_funcs.emplace_back(std::make_shared<const XT::Functions::GenericFunction<d, d>>(
+        50,
+        /*evaluate=*/
+        [&phi_in = phi_initial_funcs[0]](const auto& x, const auto& param) {
+          // auto rand1 = ((std::rand() % 2000) - 1000) / 20000.;
+          // auto rand2 = ((std::rand() % 2000) - 1000) / 20000.;
+          // auto ret = FieldVector<double, d>({1. + rand1, 0. +
+          // rand2});
+          // double rand1 = std::rand() - RAND_MAX / 2;
+          // double rand2 = std::rand() - RAND_MAX / 2;
+          // rand1 /= std::sqrt(rand1 * rand1 + rand2 * rand2);
+          // rand2 /= std::sqrt(rand1 * rand1 + rand2 * rand2);
+          // auto ret = FieldVector<double, d>({rand1, rand2});
+          // small bias to point more in x direction
+          // if (((x[0] > 9.5 && x[0] < 10.5) || (x[0] > 19.5 && x[0] < 20.5)) && x[1] > 14.5 && x[1] < 15.5)
+          // ret[0] += (ret[0] > 0) ? 0.05 : -0.05;
+          auto ret = FieldVector<double, d>({1., 0.});
+          ret *= (phi_in->evaluate(x, param) + 1.) / 2.;
+          return ret;
+        },
+        /*name=*/"P_initial"));
+    u_initial_func = std::make_shared<const XT::Functions::ConstantFunction<d, d>>(0.);
+  } else if (testcase == "cell_isolation_experiment") {
+    // Initially, cell is elongated with Radius R=5 and placed in the center of the domain
+    // \Omega = [0, 30]^2
+    // Initial condition for \phi thus is \tanh(\frac{r}{\sqrt{2}\epsilon}) with r the signed distance function to the
+    // membrane, i.e. r(x) = 5 - |(15, 15) - x|.
+    FieldVector<double, d> center{upper_right_[0] / 2., upper_right_[1] / 2.};
+    using BoostPointType = boost::geometry::model::point<double, 2, boost::geometry::cs::cartesian>;
+    using BoostRingType = boost::geometry::model::ring<BoostPointType>;
+    using BoostPolygonType = boost::geometry::model::polygon<BoostPointType>;
+    // A ring does not have holes
+    BoostRingType ring{{15., 25.}, {15., 20.}, {25., 15.}, {27., 20.}, {26., 22.}, {15., 25.}};
+    // BoostRingType ring{{15.2, 25.}, {15., 24.8}, {15., 20.}, {25., 15.}, {27., 20.}, {26., 22.}, {15.2, 25.}};
+    // A polygon can have holes, here we add the same inner and outer ring to only get the boundary of the cell
+    BoostPolygonType polygon{ring, ring};
+    auto r = [ring, polygon](const auto& xr) {
+      BoostPointType point{xr[0], xr[1]};
+      const double distance = boost::geometry::distance(polygon, point);
+      return boost::geometry::within(point, ring) ? distance : -distance;
+    };
+    phi_initial_funcs.emplace_back(std::make_shared<XT::Functions::GenericFunction<d>>(
+        50,
+        /*evaluate=*/
+        [r, epsilon = epsilon_](const auto& x, const auto& /*param*/) {
+          return std::tanh(r(x) / (std::sqrt(2.) * epsilon));
+        },
+        /*name=*/"phi_initial"));
+
+    P_initial_funcs.emplace_back(std::make_shared<const XT::Functions::GenericFunction<d, d>>(
+        50,
+        /*evaluate=*/
+        [&phi_in = phi_initial_funcs[0]](const auto& x, const auto& param) {
+          // auto ret = FieldVector<double, d>({1., 0.});
+          auto ret = FieldVector<double, d>({-0.82, 0.57});
+          ret *= (phi_in->evaluate(x, param) + 1.) / 2.;
+          return ret;
+        },
+        /*name=*/"P_initial"));
+    u_initial_func = std::make_shared<const XT::Functions::ConstantFunction<d, d>>(0.);
+  } else if (testcase == "cell_for_paper") {
+    using BoostPointType = boost::geometry::model::point<double, 2, boost::geometry::cs::cartesian>;
+    using BoostRingType = boost::geometry::model::ring<BoostPointType>;
+    using BoostPolygonType = boost::geometry::model::polygon<BoostPointType>;
+    // A ring does not have holes
+    // Computing the distance to an ellipsis seems to be hard, so we just use a triangulation
+    FieldVector<double, d> center{upper_right_[0] / 2., upper_right_[1] / 2.};
+    const size_t num_points = 100;
+    const double num_points_d = static_cast<double>(num_points);
+    const double a = 7;
+    const double b = 5;
+    std::vector<BoostPointType> y1s, y2s;
+    for (size_t i = 0; i < num_points; ++i) {
+      const double x = center[0] + (2 * i / (num_points_d - 1) - 1) * a;
+      const double q = b * std::sqrt(1 - std::pow((x - center[0]) / a, 2));
+      y1s.emplace_back(BoostPointType{x, center[1] + q});
+      y2s.emplace_back(BoostPointType{x, center[1] - q});
+    }
+    for (size_t i = 0; i < y2s.size(); ++i)
+      y1s.emplace_back(y2s[y2s.size() - 1 - i]);
+    for (auto&& point : y1s) {
+      std::cout << point.get<0>() << ", " << point.get<1>() << std::endl;
+    }
+    BoostRingType ring(y1s.begin(), y1s.end());
+    // A polygon can have holes, here we add the same inner and outer ring to only get the boundary of the cell
+    BoostPolygonType polygon{ring, ring};
+    auto r = [ring, polygon](const auto& xr) {
+      BoostPointType point{xr[0], xr[1]};
+      const double distance = boost::geometry::distance(polygon, point);
+      return boost::geometry::within(point, ring) ? distance : -distance;
+    };
+    phi_initial_funcs.emplace_back(std::make_shared<XT::Functions::GenericFunction<d>>(
+        50,
+        /*evaluate=*/
+        [r, epsilon = epsilon_](const auto& x, const auto& /*param*/) {
+          return std::tanh(r(x) / (std::sqrt(2.) * epsilon));
+        },
+        /*name=*/"phi_initial"));
+    P_initial_funcs.emplace_back(std::make_shared<const XT::Functions::GenericFunction<d, d>>(
+        50,
+        /*evaluate=*/
+        [&phi_in = phi_initial_funcs[0]](const auto& x, const auto& param) {
+          auto ret = FieldVector<double, d>({1., 0.});
+          ret *= (phi_in->evaluate(x, param) + 1.) / 2.;
+          return ret;
+        },
+        /*name=*/"P_initial"));
+    u_initial_func = std::make_shared<const XT::Functions::ConstantFunction<d, d>>(0.);
+  } else {
+    DUNE_THROW(Dune::NotImplemented, "Unknown testcase");
+  }
+  default_interpolation(*u_initial_func, u_);
+  for (size_t kk = 0; kk < num_cells_; kk++) {
+    default_interpolation(*phi_initial_funcs[kk], phi_[kk]);
+    default_interpolation(*P_initial_funcs[kk], P_[kk]);
+  }
 }

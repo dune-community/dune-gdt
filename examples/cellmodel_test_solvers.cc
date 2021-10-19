@@ -21,9 +21,10 @@ int main(int argc, char* argv[])
     MPIHelper::instance(argc, argv);
     if (argc > 1)
       DXTC_CONFIG.read_options(argc, argv);
+    const size_t num_threads = DXTC_CONFIG.get("threading.max_count", 1u);
 #if HAVE_TBB
     DXTC_CONFIG.set("threading.partition_factor", 1, true);
-    XT::Common::threadManager().set_max_threads(1);
+    XT::Common::threadManager().set_max_threads(num_threads);
 #endif
 
     XT::Common::TimedLogger().create(DXTC_CONFIG_GET("logger.info", 1), DXTC_CONFIG_GET("logger.debug", -1));
@@ -43,6 +44,7 @@ int main(int argc, char* argv[])
     double t_end = config.template get<double>("fem.t_end", 0.1);
     double dt = config.template get<double>("fem.dt", 0.01);
     const int pol_order = config.template get<int>("fem.degree", 1, 0, 0);
+    const int overintegrate = config.template get<int>("fem.superintegration_order", 2, 0, 0);
 
     // problem parameters
     double L = config.template get<double>("problem.L", 1e-6);
@@ -58,8 +60,6 @@ int main(int argc, char* argv[])
     double epsilon = config.template get<double>("problem.epsilon", 0.21);
     double gamma = config.template get<double>("problem.gamma", 0.025);
     double c_1 = config.template get<double>("problem.c_1", 5.);
-    double beta = config.template get<double>("problem.beta", 0.);
-    double In = config.template get<double>("problem.In", 1.);
     double Re = rho * U * L / eta;
     double Ca = 2. * std::sqrt(2) / 3. * eta * U / sigma;
     double Be = 4. * std::sqrt(2) / 3. * eta * U * L * L / b_N;
@@ -81,14 +81,15 @@ int main(int argc, char* argv[])
     const int inner_gmres_maxit = DXTC_CONFIG_GET("inner_gmres_maxit", 10);
     const int gmres_verbose = DXTC_CONFIG_GET("gmres_verbose", 0);
     const CellModelLinearSolverType pfield_solver_type =
-        string_to_solver_type(DXTC_CONFIG_GET("pfield_solver_type", "direct"));
+        string_to_solver_type(DXTC_CONFIG_GET("pfield_solver_type", "gmres"));
     const CellModelMassMatrixSolverType pfield_mass_matrix_solver_type =
         string_to_mass_matrix_solver_type(DXTC_CONFIG_GET("pfield_mass_matrix_solver_type", "sparse_ldlt"));
     const CellModelLinearSolverType ofield_solver_type =
-        string_to_solver_type(DXTC_CONFIG_GET("ofield_solver_type", "direct"));
+        string_to_solver_type(DXTC_CONFIG_GET("ofield_solver_type", "schur_gmres"));
     const CellModelMassMatrixSolverType ofield_mass_matrix_solver_type =
         string_to_mass_matrix_solver_type(DXTC_CONFIG_GET("ofield_mass_matrix_solver_type", "sparse_ldlt"));
-
+    const std::string stokes_solver_type_string = DXTC_CONFIG_GET("stokes_solver_type", "schur_cg_A_direct_prec_mass");
+    const StokesSolverType stokes_solver_type = string_to_stokes_solver_type(stokes_solver_type_string);
 
     CellModelSolver model_solver(testcase,
                                  t_end,
@@ -105,14 +106,14 @@ int main(int argc, char* argv[])
                                  xi,
                                  kappa,
                                  c_1,
-                                 beta,
                                  gamma,
                                  epsilon,
-                                 In,
-                                 CellModelLinearSolverType::gmres,
+                                 overintegrate,
+                                 CellModelLinearSolverType::direct,
                                  CellModelMassMatrixSolverType::sparse_ldlt,
-                                 CellModelLinearSolverType::schur_gmres,
+                                 CellModelLinearSolverType::direct,
                                  CellModelMassMatrixSolverType::sparse_ldlt,
+                                 StokesSolverType::direct,
                                  gmres_reduction,
                                  gmres_restart,
                                  gmres_verbose,
@@ -125,7 +126,7 @@ int main(int argc, char* argv[])
                                   num_elements_x,
                                   num_elements_y,
                                   pol_order,
-                                  false,
+                                  num_threads > 1,
                                   Be,
                                   Ca,
                                   Pa,
@@ -134,29 +135,33 @@ int main(int argc, char* argv[])
                                   xi,
                                   kappa,
                                   c_1,
-                                  beta,
                                   gamma,
                                   epsilon,
-                                  In,
+                                  overintegrate,
                                   pfield_solver_type,
                                   pfield_mass_matrix_solver_type,
                                   ofield_solver_type,
                                   ofield_mass_matrix_solver_type,
+                                  stokes_solver_type,
                                   gmres_reduction,
                                   gmres_restart,
                                   gmres_verbose,
                                   inner_gmres_reduction,
                                   inner_gmres_maxit,
                                   gmres_verbose);
-    std::chrono::duration<double> ref_time(0.);
-    std::chrono::duration<double> time(0.);
+    std::chrono::duration<double> ref_time(0.), time(0.), time_after_reset(0.);
     auto begin = std::chrono::steady_clock::now();
     const auto result2 = model_solver2.solve(false, write_step, filename, subsampling);
     time = std::chrono::steady_clock::now() - begin;
+    model_solver2.reset();
+    begin = std::chrono::steady_clock::now();
+    const auto result_reset = model_solver2.solve(false, write_step, filename, subsampling);
+    time_after_reset = std::chrono::steady_clock::now() - begin;
     begin = std::chrono::steady_clock::now();
     const auto result1 = model_solver.solve(false, write_step, filename, subsampling);
     ref_time = std::chrono::steady_clock::now() - begin;
-    std::cout << "Timings: ref =  " << ref_time.count() << "  vs. tested solvers = " << time.count() << std::endl;
+    std::cout << "Timings: ref =  " << ref_time.count() << "  vs. tested solvers = " << time.count()
+              << " vs. tested solvers after reset " << time_after_reset.count() << std::endl;
     for (size_t ii = 0; ii < result1.size(); ++ii) {
       for (size_t jj = 0; jj < result1[ii].size(); ++jj) {
         for (size_t kk = 0; kk < result1[ii][jj].size(); ++kk) {
@@ -164,6 +169,10 @@ int main(int argc, char* argv[])
             std::cout << "Entries (" << ii << ", " << jj << ", " << kk << ") with different solvers differ by "
                       << std::abs(result1[ii][jj][kk] - result2[ii][jj][kk]) << ", " << result1[ii][jj][kk] << " vs. "
                       << result1[ii][jj][kk] << std::endl;
+          if (XT::Common::FloatCmp::ne(result2[ii][jj][kk], result_reset[ii][jj][kk], 1e-8, 1e-8))
+            std::cout << "Entries (" << ii << ", " << jj << ", " << kk << ") after reset differ by "
+                      << std::abs(result2[ii][jj][kk] - result_reset[ii][jj][kk]) << ", " << result2[ii][jj][kk]
+                      << " vs. " << result_reset[ii][jj][kk] << std::endl;
         } // kk
       } // jj
     } // ii

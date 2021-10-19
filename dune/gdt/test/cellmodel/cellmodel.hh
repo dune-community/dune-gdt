@@ -261,6 +261,9 @@ struct CellModelSolver
 
   bool finished() const;
 
+  // restore initial values (t=0, initial values for fields, ...)
+  void reset();
+
   //******************************************************************************************************************
   //********************************* Solve methods for whole system of equations ************************************
   //******************************************************************************************************************
@@ -670,11 +673,15 @@ struct CellModelSolver
   // TODO: use appropriate norm (?)
   double pfield_residual_norm(const VectorType& residual) const;
 
+  // helper function to set initial_values
+  void set_initial_values(const std::string& testcase);
+
   //******************************************************************************************************************
   //*******************************************  Member variables ****************************************************
   //******************************************************************************************************************
 
   // Model parameters
+  const std::string testcase_;
   XT::Common::FieldVector<R, d> lower_left_;
   XT::Common::FieldVector<R, d> upper_right_;
   const double t_end_;
