@@ -3106,7 +3106,7 @@ void CellModelSolver::set_initial_values(const std::string& testcase)
         /*evaluate=*/
         [&phi_in = phi_initial_funcs[0]](const auto& x, const auto& param) {
           // auto ret = FieldVector<double, d>({1., 0.});
-          auto ret = FieldVector<double, d>({-0.82, 0.57});
+          auto ret = FieldVector<double, d>({0.99, 0.14});
           ret *= (phi_in->evaluate(x, param) + 1.) / 2.;
           return ret;
         },
