@@ -197,9 +197,12 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   , p_(p_space_, p_view_, "p")
   , A_stokes_(size_u_, size_u_, make_element_sparsity_pattern(u_space_, u_space_, grid_view_), 100)
   , BT_stokes_(size_u_, size_p_, make_element_sparsity_pattern(u_space_, p_space_, grid_view_), 100)
+  , M_u_stokes_(size_u_, size_u_, make_element_sparsity_pattern(u_space_, u_space_, grid_view_), 100)
+  , M_p_stokes_(size_p_, size_p_, make_element_sparsity_pattern(p_space_, p_space_, grid_view_), 100)
   , stokes_solver_type_(stokes_solver_type)
   , stokes_solver_(std::make_shared<LUSolverType>())
   , stokes_A_solver_(std::make_shared<LDLTSolverType>())
+  , M_p_stokes_solver_(std::make_shared<LDLTSolverType>())
   , stokes_jac_linear_op_(*this)
   , stokes_rhs_vector_(size_u_ + size_p_, 0., num_mutexes_u_)
   , stokes_f_vector_(stokes_rhs_vector_, 0, size_u_)
@@ -352,13 +355,12 @@ CellModelSolver::CellModelSolver(const std::string testcase,
 
   MatrixOperator<MatrixType, PGV, d> A_stokes_op(grid_view_, u_space_, u_space_, A_stokes_);
   MatrixOperator<MatrixType, PGV, 1, 1, d> BT_stokes_op(grid_view_, p_space_, u_space_, BT_stokes_);
-  MatrixType M_p_stokes(size_p_, size_p_, make_element_sparsity_pattern(p_space_, p_space_, grid_view_), 100);
-  if (stokes_solver_type_ == StokesSolverType::schur_cg_A_direct_prec_mass
-      || stokes_solver_type_ == StokesSolverType::schur_cg_A_direct_prec_masslumped) {
-    MatrixOperator<MatrixType, PGV, 1, 1, 1> M_p_stokes_op(grid_view_, p_space_, p_space_, M_p_stokes);
-    M_p_stokes_op.append(LocalElementIntegralBilinearForm<E, 1>(LocalElementProductScalarWeightIntegrand<E, 1>()));
-    A_stokes_op.append(M_p_stokes_op);
-  }
+  MatrixOperator<MatrixType, PGV, d> M_u_stokes_op(grid_view_, u_space_, u_space_, M_u_stokes_);
+  MatrixOperator<MatrixType, PGV, 1, 1, 1> M_p_stokes_op(grid_view_, p_space_, p_space_, M_p_stokes_);
+  M_u_stokes_op.append(LocalElementIntegralBilinearForm<E, d>(LocalElementProductScalarWeightIntegrand<E, d>(1.)));
+  M_p_stokes_op.append(LocalElementIntegralBilinearForm<E, 1>(LocalElementProductScalarWeightIntegrand<E, 1>()));
+  A_stokes_op.append(M_u_stokes_op);
+  A_stokes_op.append(M_p_stokes_op);
   // Stokes matrix is [A B^T; B C]
   // calculate A_{ij} as \int 0.5 \nabla v_i \nabla v_j
   A_stokes_op.append(LocalElementIntegralBilinearForm<E, d>(LocalLaplaceIntegrand<E, d>(0.5)));
@@ -379,7 +381,6 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   std::cout << "Assembling stokes..." << std::flush;
   A_stokes_op.assemble(use_tbb_);
   std::cout << "done" << std::endl;
-
 
   // apply dirichlet constraints for u
   u_dirichlet_constraints_.apply(A_stokes_, /*clear_only = */ false, /* ensure_symmetry = */ true);
@@ -428,7 +429,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
       M_p_stokes_solver_ = std::make_shared<LDLTSolverType>();
       stokes_preconditioner_ = std::make_shared<StokesMassMatrixPreconditionerType>(M_p_stokes_solver_);
       t1 = std::chrono::high_resolution_clock::now();
-      M_p_stokes_solver_->compute(M_p_stokes.backend());
+      M_p_stokes_solver_->compute(M_p_stokes_.backend());
       stokes_solver_statistics_.setup_time_ += std::chrono::high_resolution_clock::now() - t1;
       if (M_p_stokes_solver_->info() != ::Eigen::Success)
         DUNE_THROW(Dune::InvalidStateException, "Failed to invert M_p_stokes matrix!");
@@ -438,7 +439,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
       const auto M_p_pattern = make_element_sparsity_pattern(p_space_, p_space_, grid_view_);
       for (size_t ii = 0; ii < size_p_; ++ii)
         for (const size_t jj : M_p_pattern.inner(ii))
-          M_p_stokes_lumped[ii] += M_p_stokes.get_entry(ii, jj);
+          M_p_stokes_lumped[ii] += M_p_stokes_.get_entry(ii, jj);
       stokes_preconditioner_ = std::make_shared<LumpedMassMatrixPreconditioner<EigenVectorType>>(M_p_stokes_lumped);
     }
     stokes_schur_complement_ = std::make_shared<StokesSchurComplementType>(*this);
@@ -1502,7 +1503,7 @@ std::vector<std::vector<CellModelSolver::VectorType>> CellModelSolver::next_n_ti
 // with vec.
 CellModelSolver::VectorType CellModelSolver::apply_pfield_product_operator(const VectorType& vec) const
 {
-  VectorType ret(num_pfield_variables_ * size_phi_);
+  VectorType ret(num_pfield_variables_ * size_phi_, 0.);
   ConstVectorViewType phi_view(vec, 0, size_phi_);
   VectorViewType phi_ret_view(ret, 0, size_phi_);
   M_pfield_.mv(phi_view, phi_ret_view);
@@ -1521,7 +1522,7 @@ CellModelSolver::VectorType CellModelSolver::apply_pfield_product_operator(const
 // To calculate the sum of the squared L2 products of P and Pnat, calculate the inner product of the result with vec.
 CellModelSolver::VectorType CellModelSolver::apply_ofield_product_operator(const VectorType& vec) const
 {
-  VectorType ret(2 * size_P_);
+  VectorType ret(2 * size_P_, 0.);
   ConstVectorViewType P_view(vec, 0, size_P_);
   ConstVectorViewType Pnat_view(vec, size_P_, 2 * size_P_);
   VectorViewType P_ret_view(ret, 0, size_P_);
@@ -1531,18 +1532,16 @@ CellModelSolver::VectorType CellModelSolver::apply_ofield_product_operator(const
   return ret;
 }
 
-// applies the ofield mass matrix to P, Pnat
-// To calculate the sum of the squared L2 products of P and Pnat, calculate the inner product of the result with vec.
+// applies the stokes mass matrix to u, p
 CellModelSolver::VectorType CellModelSolver::apply_stokes_product_operator(const VectorType& vec) const
 {
-  VectorType ret(size_u_ + size_p_);
+  VectorType ret(size_u_ + size_p_, 0.);
   ConstVectorViewType u_view(vec, 0, size_u_);
   ConstVectorViewType p_view(vec, size_u_, size_u_ + size_p_);
   VectorViewType u_ret_view(ret, 0, size_u_);
   VectorViewType p_ret_view(ret, size_u_, size_u_ + size_p_);
-  // The Orientation field variables and u have the same basis so use M_ofield_
-  M_ofield_.mv(u_view, u_ret_view);
-  // M_p_stokes_.mv(p_view, p_ret_view);
+  M_u_stokes_.mv(u_view, u_ret_view);
+  M_p_stokes_.mv(p_view, p_ret_view);
   return ret;
 }
 
@@ -3081,17 +3080,12 @@ void CellModelSolver::set_initial_values(const std::string& testcase)
         /*name=*/"P_initial"));
     u_initial_func = std::make_shared<const XT::Functions::ConstantFunction<d, d>>(0.);
   } else if (testcase == "cell_isolation_experiment") {
-    // Initially, cell is elongated with Radius R=5 and placed in the center of the domain
-    // \Omega = [0, 30]^2
-    // Initial condition for \phi thus is \tanh(\frac{r}{\sqrt{2}\epsilon}) with r the signed distance function to the
-    // membrane, i.e. r(x) = 5 - |(15, 15) - x|.
     FieldVector<double, d> center{upper_right_[0] / 2., upper_right_[1] / 2.};
     using BoostPointType = boost::geometry::model::point<double, 2, boost::geometry::cs::cartesian>;
     using BoostRingType = boost::geometry::model::ring<BoostPointType>;
     using BoostPolygonType = boost::geometry::model::polygon<BoostPointType>;
     // A ring does not have holes
-    BoostRingType ring{{15., 25.}, {15., 20.}, {25., 15.}, {27., 20.}, {26., 22.}, {15., 25.}};
-    // BoostRingType ring{{15.2, 25.}, {15., 24.8}, {15., 20.}, {25., 15.}, {27., 20.}, {26., 22.}, {15.2, 25.}};
+    BoostRingType ring{{10., 18.}, {13., 13.}, {19., 13.}, {28.5, 16.}, {25, 23.5}, {15., 23.}, {10, 18.}};
     // A polygon can have holes, here we add the same inner and outer ring to only get the boundary of the cell
     BoostPolygonType polygon{ring, ring};
     auto r = [ring, polygon](const auto& xr) {
