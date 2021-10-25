@@ -32,7 +32,7 @@ class InstallPlatlib(install):
 
 
 setup(name='dune-gdt',
-      version='${DUNE_GDT_VERSION}',
+      version='${dune-gdt_VERSION}',
       namespace_packages=['dune'],
       description='Python for Dune-Gdt',
       author='The dune-gdt devs',
@@ -45,6 +45,6 @@ setup(name='dune-gdt',
           'install': InstallPlatlib,
       },
       distclass=BinaryDistribution,
-      install_requires=['jinja2', 'where', 'codecov', 'dune-xt~=${DUNE_XT_VERSION_MAJOR}.${DUNE_XT_VERSION_MINOR}'],
+      install_requires=['jinja2', 'where', 'codecov', 'dune-xt~=${dune-xt_VERSION_MAJOR}.${dune-xt_VERSION_MINOR}'],
       extras_requires={'parallel': ['bokeh', 'pymumps', 'metis']},
       )

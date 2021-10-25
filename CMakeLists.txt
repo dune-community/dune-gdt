@@ -36,6 +36,10 @@ include(DuneUtils)
 
 # start a dune project with information from dune.module
 dune_project()
+
+include(DuneXtVersionHelper)
+dune_xt_module_version_from_git(dune-gdt)
+
 if(DUNE_XT_WITH_PYTHON_BINDINGS)
   dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune MODULE_LIBRARIES dunegdt)
 else()
