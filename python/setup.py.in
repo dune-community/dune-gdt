@@ -17,6 +17,13 @@ from setuptools import setup, find_packages
 from setuptools.dist import Distribution
 from setuptools.command.install import install
 
+extras_require = {
+  'parallel': ('bokeh', 'pymumps', 'metis'),
+  'visualisation': ('dune-xt[visualisation]~=${dune-xt_VERSION_MAJOR}.${dune-xt_VERSION_MINOR}',)
+}
+
+extras_require['all'] = [p for plist in extras_require.values() for p in plist]
+
 class BinaryDistribution(Distribution):
     """Distribution which always forces a binary package with platform name"""
     def is_pure(self):
@@ -45,6 +52,6 @@ setup(name='dune-gdt',
           'install': InstallPlatlib,
       },
       distclass=BinaryDistribution,
-      install_requires=['jinja2', 'where', 'codecov', 'dune-xt~=${dune-xt_VERSION_MAJOR}.${dune-xt_VERSION_MINOR}'],
-      extras_requires={'parallel': ['bokeh', 'pymumps', 'metis']},
+      install_requires=['dune-xt~=${dune-xt_VERSION_MAJOR}.${dune-xt_VERSION_MINOR}'],
+      extras_require=extras_require,
       )
