@@ -131,6 +131,6 @@ dune_pybindxi_add_module(_tools_adaptation_helper EXCLUDE_FROM_ALL ${header} too
 dune_pybindxi_add_module(_tools_dirichlet_constraints EXCLUDE_FROM_ALL ${header} tools/dirichlet-constraints.cc)
 dune_pybindxi_add_module(_tools_grid_quality_estimates EXCLUDE_FROM_ALL ${header} tools/grid-quality-estimates.cc)
 dune_pybindxi_add_module(_tools_sparsity_pattern EXCLUDE_FROM_ALL ${header} tools/sparsity-pattern.cc)
-dune_pybindxi_add_module(_version EXCLUDE_FROM_ALL ${header} version.cc)
+configure_file(_version.py.in _version.py)
 # dune_pybindxi_add_module(gamm_2019_talk_on_conservative_rb EXCLUDE_FROM_ALL ${header} gamm-2019-talk-on-conservative-
 # rb.cc)
