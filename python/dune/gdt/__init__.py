@@ -13,7 +13,7 @@
 from tempfile import NamedTemporaryFile
 
 from dune.xt import guarded_import
-from dune.xt.common.vtk.plot import plot
+from dune.xt.common.config import config
 
 from ._version import __version__
 
@@ -90,39 +90,42 @@ for mod_name in (     # order should not matter!
     guarded_import(globals(), 'dune.gdt', mod_name)
 
 
-def visualize_function(function, grid=None, subsampling=False):
-    assert function.dim_domain <= 2, f'Not implemented yet for {function.dim_domain}-dimensional grids!'
-    if function.dim_domain == 1:
-        import numpy as np
-        from matplotlib import pyplot as plt
-        from dune.xt.functions import GridFunction
-        from dune.gdt import ContinuousLagrangeSpace, default_interpolation, DiscreteFunction
+if config.HAVE_K3D:
+    from dune.xt.common.vtk.plot import plot
 
-        assert grid # not optimal
-        P1_space = ContinuousLagrangeSpace(grid, order=1)
-        interpolation_points = np.array(P1_space.interpolation_points(), copy=False)[:, 0]
-        piecewise_linear_interpolant = default_interpolation(GridFunction(grid, function), P1_space)
-        values = np.array(piecewise_linear_interpolant.dofs.vector, copy=False)
+    def visualize_function(function, grid=None, subsampling=False):
+        assert function.dim_domain <= 2, f'Not implemented yet for {function.dim_domain}-dimensional grids!'
+        if function.dim_domain == 1:
+            import numpy as np
+            from matplotlib import pyplot as plt
+            from dune.xt.functions import GridFunction
+            from dune.gdt import ContinuousLagrangeSpace, default_interpolation, DiscreteFunction
 
-        plt.figure()
-        plt.title(f'{function.name}')
-        plt.plot(interpolation_points, values)
+            assert grid # not optimal
+            P1_space = ContinuousLagrangeSpace(grid, order=1)
+            interpolation_points = np.array(P1_space.interpolation_points(), copy=False)[:, 0]
+            piecewise_linear_interpolant = default_interpolation(GridFunction(grid, function), P1_space)
+            values = np.array(piecewise_linear_interpolant.dofs.vector, copy=False)
 
-        return plt.gca()
-    elif function.dim_domain == 2:
-        assert function.dim_range == 1, f'Not implemented yet for {function.dim_domain}-dimensional functions!'
-        tmpfile = NamedTemporaryFile(mode='wb', delete=False, suffix='.vtu').name
-        failed = False
-        try:     # discrete function
-            function.visualize(filename=tmpfile[:-4])
-            return plot(tmpfile, color_attribute_name=function.name)
-        except TypeError:
-            failed = True
-        except AttributeError:
-            failed = True
+            plt.figure()
+            plt.title(f'{function.name}')
+            plt.plot(interpolation_points, values)
 
-        if failed:
-            from dune.xt.functions import visualize_function as visualize_xt_function
+            return plt.gca()
+        elif function.dim_domain == 2:
+            assert function.dim_range == 1, f'Not implemented yet for {function.dim_domain}-dimensional functions!'
+            tmpfile = NamedTemporaryFile(mode='wb', delete=False, suffix='.vtu').name
+            failed = False
+            try:     # discrete function
+                function.visualize(filename=tmpfile[:-4])
+                return plot(tmpfile, color_attribute_name=function.name)
+            except TypeError:
+                failed = True
+            except AttributeError:
+                failed = True
 
-            assert grid
-            return visualize_xt_function(function, grid, subsampling=subsampling)
+            if failed:
+                from dune.xt.functions import visualize_function as visualize_xt_function
+
+                assert grid
+                return visualize_xt_function(function, grid, subsampling=subsampling)
