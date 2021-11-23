@@ -1,0 +1,26 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.2.0
+    hooks:
+    -   id: trailing-whitespace
+    -   id: check-yaml
+    -   id: check-added-large-files
+    -   id: debug-statements
+-   repo: https://github.com/pycqa/flake8
+    rev: 3.9.2
+    hooks:
+    -   id: flake8
+        exclude: "^pybind11"
+        args: ["--config=./python/setup.cfg"]
+-   repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: 'v8.0.1'
+    hooks:
+    -   id: clang-format
+        exclude: "^(dune/xt/test/gtest/|pybind11)"
+-   repo: https://github.com/pre-commit/mirrors-yapf
+    rev: 'v0.25.0'
+    hooks:
+    -   id: yapf
+        args: ["--style=.vcsetup/.style.yapf"]
