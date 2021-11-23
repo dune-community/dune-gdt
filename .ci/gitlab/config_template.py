@@ -165,7 +165,7 @@ lint:
 
 tpl = jinja2.Template(tpl)
 images = ['debian-unstable_gcc_full', 'debian_gcc_full', 'debian_clang_full']
-subdirs = [None]
+subdirs = ['gdt']
 kinds = ['cpp', 'headercheck']
 matrix = product(images, subdirs, kinds)
 with open(os.path.join(os.path.dirname(__file__), 'config.yml'), 'wt') as yml:

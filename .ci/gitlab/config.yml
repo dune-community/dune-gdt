@@ -135,7 +135,7 @@ unstable_gcc_full cpp:
     extends: .subdir-test
     variables:
         CI_IMAGE: debian-unstable_gcc_full
-        TESTS_MODULE_SUBDIR: None
+        TESTS_MODULE_SUBDIR: gdt
     tags:
         - dustin
     stage: cpp
@@ -147,7 +147,7 @@ unstable_gcc_full headercheck:
     extends: .subdir-test
     variables:
         CI_IMAGE: debian-unstable_gcc_full
-        TESTS_MODULE_SUBDIR: None
+        TESTS_MODULE_SUBDIR: gdt
     tags:
         - dustin
     stage: headercheck
@@ -159,7 +159,7 @@ gcc_full cpp:
     extends: .subdir-test
     variables:
         CI_IMAGE: debian_gcc_full
-        TESTS_MODULE_SUBDIR: None
+        TESTS_MODULE_SUBDIR: gdt
     tags:
         - dustin
     stage: cpp
@@ -171,7 +171,7 @@ gcc_full headercheck:
     extends: .subdir-test
     variables:
         CI_IMAGE: debian_gcc_full
-        TESTS_MODULE_SUBDIR: None
+        TESTS_MODULE_SUBDIR: gdt
     tags:
         - dustin
     stage: headercheck
@@ -183,7 +183,7 @@ clang_full cpp:
     extends: .subdir-test
     variables:
         CI_IMAGE: debian_clang_full
-        TESTS_MODULE_SUBDIR: None
+        TESTS_MODULE_SUBDIR: gdt
     stage: cpp
     needs: ["debian_clang_full"]
     script:
@@ -193,7 +193,7 @@ clang_full headercheck:
     extends: .subdir-test
     variables:
         CI_IMAGE: debian_clang_full
-        TESTS_MODULE_SUBDIR: None
+        TESTS_MODULE_SUBDIR: gdt
     stage: headercheck
     needs: ["debian_clang_full"]
     script:
