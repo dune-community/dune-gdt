@@ -1,5 +1,5 @@
 ARG BASE
-FROM zivgitlab.wwu.io/ag-ohlberger/dune-community/${MY_MODULE}-super/$BASE
+FROM zivgitlab.wwu.io/ag-ohlberger/dune-community/dune-gdt-super/$BASE
 
 COPY . ${SUPERDIR}/${MY_MODULE}/
 RUN ls -l ${SUPERDIR}/${MY_MODULE}/
