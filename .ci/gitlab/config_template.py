@@ -137,10 +137,8 @@ lint:
     variables:
         CI_IMAGE: {{ image }}
         TESTS_MODULE_SUBDIR: {{ subdir }}
-    {%- if 'gcc' in image %}
     tags:
         - dustin
-    {%- endif %}
     stage: {{kind}}
     needs: ["{{image}}"]
     script:
@@ -153,7 +151,11 @@ lint:
     variables:
         CI_IMAGE: {{ image }}
     tags:
+    {%- if 'clang' in image %}
+        - amm-only
+    {%- else %}
         - dustin
+    {%- endif %}
     stage: python
     needs: ["{{image}}"]
     script:

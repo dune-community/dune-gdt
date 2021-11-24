@@ -184,6 +184,8 @@ clang_full cpp:
     variables:
         CI_IMAGE: debian_clang_full
         TESTS_MODULE_SUBDIR: gdt
+    tags:
+        - dustin
     stage: cpp
     needs: ["debian_clang_full"]
     script:
@@ -194,6 +196,8 @@ clang_full headercheck:
     variables:
         CI_IMAGE: debian_clang_full
         TESTS_MODULE_SUBDIR: gdt
+    tags:
+        - dustin
     stage: headercheck
     needs: ["debian_clang_full"]
     script:
@@ -228,7 +232,7 @@ clang_full python:
     variables:
         CI_IMAGE: debian_clang_full
     tags:
-        - dustin
+        - amm-only
     stage: python
     needs: ["debian_clang_full"]
     script:
