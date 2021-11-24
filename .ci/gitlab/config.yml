@@ -11,12 +11,12 @@ variables:
     GIT_SUBMODULE_STRATEGY: recursive
     TRAVIS_BRANCH: ${CI_COMMIT_REF_NAME}
     TRAVIS_COMMIT: ${CI_COMMIT_SHA}
-    MY_MODULE: dune-gdt
     CCACHE_BASEDIR: ${CI_PROJECT_DIR}
     CCACHE_DIR: "${CI_PROJECT_DIR}/.ccache"
     CCACHE_COMPILERCHECK: content
     CCACHE_COMPRESS: "true"
     PYTEST_ADDOPTS: "-s"
+    MY_MODULE: dune-gdt
     BASE_PROJECT: zivgitlab.wwu.io/ag-ohlberger/dune-community/dune-gdt-super
 
 .image_builder:
@@ -131,7 +131,7 @@ debian_clang_full:
 
 
 
-unstable_gcc_full cpp:
+gdt unstable_gcc_full cpp:
     extends: .subdir-test
     variables:
         CI_IMAGE: debian-unstable_gcc_full
@@ -143,7 +143,7 @@ unstable_gcc_full cpp:
     script:
           - /home/dune-ci/src/${MY_MODULE}/.ci/shared/scripts/test_cpp.bash
 
-unstable_gcc_full headercheck:
+gdt unstable_gcc_full headercheck:
     extends: .subdir-test
     variables:
         CI_IMAGE: debian-unstable_gcc_full
@@ -155,7 +155,7 @@ unstable_gcc_full headercheck:
     script:
           - /home/dune-ci/src/${MY_MODULE}/.ci/shared/scripts/test_headercheck.bash
 
-gcc_full cpp:
+gdt gcc_full cpp:
     extends: .subdir-test
     variables:
         CI_IMAGE: debian_gcc_full
@@ -167,7 +167,7 @@ gcc_full cpp:
     script:
           - /home/dune-ci/src/${MY_MODULE}/.ci/shared/scripts/test_cpp.bash
 
-gcc_full headercheck:
+gdt gcc_full headercheck:
     extends: .subdir-test
     variables:
         CI_IMAGE: debian_gcc_full
@@ -179,7 +179,7 @@ gcc_full headercheck:
     script:
           - /home/dune-ci/src/${MY_MODULE}/.ci/shared/scripts/test_headercheck.bash
 
-clang_full cpp:
+gdt clang_full cpp:
     extends: .subdir-test
     variables:
         CI_IMAGE: debian_clang_full
@@ -191,7 +191,7 @@ clang_full cpp:
     script:
           - /home/dune-ci/src/${MY_MODULE}/.ci/shared/scripts/test_cpp.bash
 
-clang_full headercheck:
+gdt clang_full headercheck:
     extends: .subdir-test
     variables:
         CI_IMAGE: debian_clang_full
