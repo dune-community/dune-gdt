@@ -31,7 +31,9 @@ variables:
     retry:
         max: 2
         when:
-            - always
+            - runner_system_failure
+            - stuck_or_timeout_failure
+            - api_failure
     image: harbor.uni-muenster.de/proxy-docker/library/docker:19.03.12
     variables:
         DOCKER_HOST: tcp://docker:2375/
@@ -69,7 +71,9 @@ variables:
     retry:
         max: 2
         when:
-            - always
+            - runner_system_failure
+            - stuck_or_timeout_failure
+            - api_failure
     image: ${CI_REGISTRY_IMAGE}/ci_testing_${CI_IMAGE}:${CI_COMMIT_SHORT_SHA}
     cache:
       key: "$CI_JOB_NAME"
