@@ -132,7 +132,7 @@ lint:
 {% endfor %}
 
 {% for image, subdir, kind in matrix %}
-{{ image[image.find('debian')+1+6:] }} {{kind}}:
+{{ subdir }} {{ image[image.find('debian')+1+6:] }} {{kind}}:
     extends: .subdir-test
     variables:
         CI_IMAGE: {{ image }}
