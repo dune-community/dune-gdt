@@ -11,20 +11,21 @@
 #   Tobias Leibner  (2018)
 # ~~~
 
-macro(cleanup_target_name arg)
-  string(REPLACE ${PROJECT_SOURCE_DIR} "" targname ${arg})
-  string(REPLACE ".cc" "" targname ${targname})
-  string(REGEX REPLACE "/" "__" targname ${targname})
-  string(REGEX REPLACE "^__" "" targname ${targname})
-endmacro(cleanup_target_name)
+# Removes directory path, .cc suffix and leading __, replaces / with __
+macro(CLEANUP_TARGET_NAME arg)
+  string(REPLACE ${PROJECT_SOURCE_DIR} "" _targname ${arg})
+  string(REPLACE ".cc" "" _targname ${_targname})
+  string(REGEX REPLACE "/" "__" _targname ${_targname})
+  string(REGEX REPLACE "^__" "" _targname ${_targname})
+endmacro(CLEANUP_TARGET_NAME)
 
 file(GLOB_RECURSE example_sources "${CMAKE_CURRENT_SOURCE_DIR}/*.cc")
 foreach(source ${example_sources}) # do some name conversion
-  set(targname ${source})
-  cleanup_target_name(${targname})
-  add_executable(${targname} ${source})
-  list(APPEND examples_targets ${targname})
+  set(_targname ${source})
+  cleanup_target_name(${_targname})
+  add_executable(${_targname} ${source})
+  list(APPEND examples_targets ${_targname})
 endforeach(source ${example_sources})
 
-add_custom_target(examples)
+add_custom_target(examples COMMENT "Selected examples showing some of dune-gdt's features.")
 add_dependencies(examples ${examples_targets})
