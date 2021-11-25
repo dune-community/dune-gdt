@@ -10,5 +10,5 @@
 #   René Fritze     (2018)
 # ~~~
 
-set(modules DuneGdtMacros.cmake)
-install(FILES "${modules}" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/cmake/modules)
+set(_modules DuneGdtMacros.cmake)
+install(FILES "${_modules}" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/cmake/modules)
