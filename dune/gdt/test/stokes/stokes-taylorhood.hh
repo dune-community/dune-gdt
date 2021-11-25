@@ -264,7 +264,11 @@ public:
     EXPECT_TRUE(is_symmetric(A));
     for (const auto& DoF : dirichlet_constraints.dirichlet_DoFs())
       B.clear_row(DoF);
+#if defined(NDEBUG) || HAVE_MKL || HAVE_LAPACKE
+    // This check is very slow if compiled in debug mode without LAPACKE,
+    // so we disable it in that case to avoid a test timeout.
     EXPECT_TRUE(is_positive_definite(A));
+#endif
 
     // Fix value of p at first DoF to 0 to ensure the uniqueness of the solution, i.e, we have set the m-th row of
     // [A B; B^T 0] to the unit vector.
