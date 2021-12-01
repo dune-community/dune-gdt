@@ -122,7 +122,7 @@ public:
   {
     element_indices_.update_after_adapt();
     element_to_global_indices_of_intersections_map_.resize(element_indices_.size());
-    mapper_.update();
+    mapper_.update(grid_view_);
     for (auto&& element : elements(grid_view_)) {
       const auto local_sz = this->local_size(element);
       max_local_size_ = std::max(max_local_size_, local_sz);
