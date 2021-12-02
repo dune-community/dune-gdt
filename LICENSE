@@ -123,10 +123,10 @@ END OF TERMS AND CONDITIONS
 Runtime Exception
 -----------------
 
-As a special exception, you may use the dune-xt-common library without
+As a special exception, you may use the dune-gdt library without
 restriction.  Specifically, if other files instantiate templates or
-use macros or inline functions from one or more of the DUNE source
-files, or you compile one or more of the DUNE source files and link
+use macros or inline functions from one or more of the dune-gdt source
+files, or you compile one or more of the dune-gdt source files and link
 them with other files to produce an executable, this does not by
 itself cause the resulting executable to be covered by the GNU
 General Public License.  This exception does not however invalidate
