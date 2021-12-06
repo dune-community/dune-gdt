@@ -15,7 +15,11 @@
 # set up project
 project("dune-gdt" CXX)
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.13)
+
+if("${TRAVIS}" EQUAL "1")
+  add_compile_options(-Werror)
+endif()
 
 if(NOT
    (dune-common_DIR
