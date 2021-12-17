@@ -46,21 +46,20 @@ add_subdirectory(${dune-xt_MODULE_PATH}/../../pybind11 ${CMAKE_CURRENT_BINARY_DI
 # start a dune project with information from dune.module
 dune_project()
 if(DUNE_XT_WITH_PYTHON_BINDINGS)
-  # dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune ${Python3_INCLUDE_DIRS} MODULE_LIBRARIES dunegdt boltzmann coordinatetransformedmn cellmodel vectors)
-  dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune ${Python3_INCLUDE_DIRS} MODULE_LIBRARIES dunegdt cellmodel)
+  # dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune ${Python3_INCLUDE_DIRS} MODULE_LIBRARIES dunegdt
+  # boltzmann coordinatetransformedmn cellmodel vectors)
+  dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune ${Python3_INCLUDE_DIRS} MODULE_LIBRARIES dunegdt
+                           cellmodel)
 else()
-  # dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune ${Python3_INCLUDE_DIRS} MODULE_LIBRARIES boltzmann coordinatetransformedmn cellmodel vectors)
+  # dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune ${Python3_INCLUDE_DIRS} MODULE_LIBRARIES boltzmann
+  # coordinatetransformedmn cellmodel vectors)
   dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune ${Python3_INCLUDE_DIRS} MODULE_LIBRARIES cellmodel)
 endif()
 
 # dune_library_add_sources(boltzmann SOURCES examples/boltzmann-bindings.cc)
 # dune_library_add_sources(coordinatetransformedmn SOURCES examples/coordinate-transformed-mn-bindings.cc)
-dune_library_add_sources(cellmodel
-                 SOURCES
-                 examples/cellmodel-bindings.cc
-                 dune/gdt/test/cellmodel/cellmodel.cc
-                 dune/gdt/test/cellmodel/linearsolvers.cc
-                 dune/gdt/test/cellmodel/linear-solver-types.cc)
+dune_library_add_sources(cellmodel SOURCES examples/cellmodel-bindings.cc dune/gdt/test/cellmodel/cellmodel.cc
+                         dune/gdt/test/cellmodel/linearsolvers.cc dune/gdt/test/cellmodel/linear-solver-types.cc)
 # add_custom_target(hapod_bindings DEPENDS boltzmann coordinatetransformedmn cellmodel)
 
 add_header_listing()

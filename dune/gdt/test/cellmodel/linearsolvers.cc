@@ -254,7 +254,7 @@ CellModelLinearSolverWrapper::create_preconditioner_inverse_op(std::shared_ptr<D
 }
 
 std::shared_ptr<CellModelLinearSolverWrapper::PreconditionerType>
-    CellModelLinearSolverWrapper::create_preconditioner(std::shared_ptr<DuneLinearOperatorType> /*linear_op*/)
+CellModelLinearSolverWrapper::create_preconditioner(std::shared_ptr<DuneLinearOperatorType> /*linear_op*/)
 {
   return preconditioner_inverse_op_
              ? std::make_shared<InverseOperator2Preconditioner<InverseOperatorType>>(*preconditioner_inverse_op_)
