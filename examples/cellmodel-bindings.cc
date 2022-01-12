@@ -138,9 +138,11 @@ PYBIND11_MODULE(cellmodel, m)
       .def("apply_inverse_pfield_operator", &CellModelSolver::apply_inverse_pfield_operator)
       .def("apply_inverse_ofield_operator", &CellModelSolver::apply_inverse_ofield_operator)
       .def("apply_inverse_stokes_operator", &CellModelSolver::apply_inverse_stokes_operator)
-      .def("apply_pfield_product_operator", &CellModelSolver::apply_pfield_product_operator)
-      .def("apply_ofield_product_operator", &CellModelSolver::apply_ofield_product_operator)
-      .def("apply_stokes_product_operator", &CellModelSolver::apply_stokes_product_operator)
+      .def("apply_pfield_L2_product_operator", &CellModelSolver::apply_pfield_L2_product_operator)
+      .def("apply_ofield_L2_product_operator", &CellModelSolver::apply_ofield_L2_product_operator)
+      .def("apply_stokes_L2_product_operator", &CellModelSolver::apply_stokes_L2_product_operator)
+      .def("apply_pfield_H1_product_operator", &CellModelSolver::apply_pfield_H1_product_operator)
+      .def("apply_ofield_H1_product_operator", &CellModelSolver::apply_ofield_H1_product_operator)
       .def("set_pfield_jacobian_state",
            &CellModelSolver::set_pfield_jacobian_state,
            "source"_a,

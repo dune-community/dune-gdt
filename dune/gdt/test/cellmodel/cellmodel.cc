@@ -1501,7 +1501,7 @@ std::vector<std::vector<CellModelSolver::VectorType>> CellModelSolver::next_n_ti
 // applies the pfield mass matrix to phi, phinat, mu
 // To calculate the sum of the squared L2 products of phi, phinat and mu, calculate the inner product of the result
 // with vec.
-CellModelSolver::VectorType CellModelSolver::apply_pfield_product_operator(const VectorType& vec) const
+CellModelSolver::VectorType CellModelSolver::apply_pfield_L2_product_operator(const VectorType& vec) const
 {
   VectorType ret(num_pfield_variables_ * size_phi_, 0.);
   ConstVectorViewType phi_view(vec, 0, size_phi_);
@@ -1520,7 +1520,7 @@ CellModelSolver::VectorType CellModelSolver::apply_pfield_product_operator(const
 
 // applies the ofield mass matrix to P, Pnat
 // To calculate the sum of the squared L2 products of P and Pnat, calculate the inner product of the result with vec.
-CellModelSolver::VectorType CellModelSolver::apply_ofield_product_operator(const VectorType& vec) const
+CellModelSolver::VectorType CellModelSolver::apply_ofield_L2_product_operator(const VectorType& vec) const
 {
   VectorType ret(2 * size_P_, 0.);
   ConstVectorViewType P_view(vec, 0, size_P_);
@@ -1533,7 +1533,7 @@ CellModelSolver::VectorType CellModelSolver::apply_ofield_product_operator(const
 }
 
 // applies the stokes mass matrix to u, p
-CellModelSolver::VectorType CellModelSolver::apply_stokes_product_operator(const VectorType& vec) const
+CellModelSolver::VectorType CellModelSolver::apply_stokes_L2_product_operator(const VectorType& vec) const
 {
   VectorType ret(size_u_ + size_p_, 0.);
   ConstVectorViewType u_view(vec, 0, size_u_);
@@ -1542,6 +1542,47 @@ CellModelSolver::VectorType CellModelSolver::apply_stokes_product_operator(const
   VectorViewType p_ret_view(ret, size_u_, size_u_ + size_p_);
   M_u_stokes_.mv(u_view, u_ret_view);
   M_p_stokes_.mv(p_view, p_ret_view);
+  return ret;
+}
+
+CellModelSolver::VectorType CellModelSolver::apply_pfield_H1_product_operator(const VectorType& vec) const
+{
+  VectorType ret(num_pfield_variables_ * size_phi_, 0.);
+  ConstVectorViewType phi_view(vec, 0, size_phi_);
+  VectorViewType phi_ret_view(ret, 0, size_phi_);
+  VectorViewType tmp_vec_view(phi_tmp_vec_, 0, size_phi_);
+  M_pfield_.mv(phi_view, phi_ret_view);
+  E_pfield_.mv(phi_view, tmp_vec_view);
+  phi_ret_view += tmp_vec_view;
+  if (num_pfield_variables_ > 1) {
+    ConstVectorViewType phinat_view(vec, size_phi_, 2 * size_phi_);
+    ConstVectorViewType mu_view(vec, 2 * size_phi_, 3 * size_phi_);
+    VectorViewType phinat_ret_view(ret, size_phi_, 2 * size_phi_);
+    VectorViewType mu_ret_view(ret, 2 * size_phi_, 3 * size_phi_);
+    M_pfield_.mv(phinat_view, phinat_ret_view);
+    E_pfield_.mv(phinat_view, tmp_vec_view);
+    phinat_ret_view += tmp_vec_view;
+    M_pfield_.mv(mu_view, mu_ret_view);
+    E_pfield_.mv(mu_view, tmp_vec_view);
+    mu_ret_view += tmp_vec_view;
+  }
+  return ret;
+}
+
+CellModelSolver::VectorType CellModelSolver::apply_ofield_H1_product_operator(const VectorType& vec) const
+{
+  VectorType ret(2 * size_P_, 0.);
+  ConstVectorViewType P_view(vec, 0, size_P_);
+  ConstVectorViewType Pnat_view(vec, size_P_, 2 * size_P_);
+  VectorViewType P_ret_view(ret, 0, size_P_);
+  VectorViewType Pnat_ret_view(ret, size_P_, 2 * size_P_);
+  VectorViewType tmp_vec_view(P_tmp_vec_, 0, size_P_);
+  M_ofield_.mv(P_view, P_ret_view);
+  E_ofield_.mv(P_view, tmp_vec_view);
+  P_ret_view += tmp_vec_view;
+  M_ofield_.mv(Pnat_view, Pnat_ret_view);
+  E_ofield_.mv(Pnat_view, tmp_vec_view);
+  Pnat_ret_view += tmp_vec_view;
   return ret;
 }
 

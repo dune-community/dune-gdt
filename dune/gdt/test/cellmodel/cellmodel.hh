@@ -294,13 +294,18 @@ struct CellModelSolver
   // applies the pfield mass matrix to phi, phinat, mu
   // To calculate the sum of the squared L2 products of phi, phinat and mu, calculate the inner product of the result
   // with vec.
-  VectorType apply_pfield_product_operator(const VectorType& vec) const;
+  VectorType apply_pfield_L2_product_operator(const VectorType& vec) const;
 
   // applies the ofield mass matrix to P, Pnat
   // To calculate the sum of the squared L2 products of P and Pnat, calculate the inner product of the result with vec.
-  VectorType apply_ofield_product_operator(const VectorType& vec) const;
+  VectorType apply_ofield_L2_product_operator(const VectorType& vec) const;
 
-  VectorType apply_stokes_product_operator(const VectorType& vec) const;
+  VectorType apply_stokes_L2_product_operator(const VectorType& vec) const;
+
+  VectorType apply_pfield_H1_product_operator(const VectorType& vec) const;
+
+  VectorType apply_ofield_H1_product_operator(const VectorType& vec) const;
+
 
   //******************************************************************************************************************
   //*****************************************  Visualization   *******************************************************
@@ -857,10 +862,10 @@ struct CellModelSolver
   VectorType pfield_tmp_vec_;
   mutable EigenVectorType pfield_tmp_eigen_;
   VectorType pfield_tmp_vec2_;
-  VectorType phi_tmp_vec_;
+  mutable VectorType phi_tmp_vec_;
   VectorType phi_tmp_vec2_;
-  VectorType u_tmp_vec_;
-  VectorType P_tmp_vec_;
+  mutable VectorType u_tmp_vec_;
+  mutable VectorType P_tmp_vec_;
   std::vector<DynamicVector<size_t>> global_indices_phi_;
   std::vector<DynamicVector<size_t>> global_indices_u_;
   std::vector<DynamicVector<size_t>> global_indices_P_;
