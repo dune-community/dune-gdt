@@ -132,8 +132,8 @@ struct CellModelSolver
       const double inner_reduction = 1e-3,
       const int inner_maxit = 10,
       const int inner_verbose = 0,
-      const double bending = true,
-      const double conservative = true);
+      const bool bending = true,
+      const bool conservative = true);
 
   CellModelSolver(const CellModelSolver&) = delete;
   CellModelSolver(CellModelSolver&&) = delete;
@@ -351,7 +351,7 @@ struct CellModelSolver
   void set_pfield_vec_dofs(const size_t cell, const pybind11::array_t<double>& values, const pybind11::list& dofs);
 
   // Get stokes finite element vector
-  const VectorType& stokes_vec();
+  const VectorType& stokes_vec() const;
 
   // Get orientation field finite element vector belonging to cell
   const VectorType& ofield_vec(const size_t cell);
@@ -468,7 +468,7 @@ struct CellModelSolver
   // As the rows are sparse, there shouldn't be too much performance impact of applying to the whole vector
   VectorType apply_pfield_jacobian(const VectorType& source, const size_t cell, const bool restricted = false);
 
-  VectorType apply_inverse_pfield_jacobian(const VectorType& rhs, const size_t cell);
+  VectorType apply_inverse_pfield_jacobian(const VectorType& rhs, const size_t cell) const;
 
   void set_ofield_jacobian_state(const VectorType& source, const size_t cell, const bool restricted = false);
 
@@ -478,7 +478,7 @@ struct CellModelSolver
   // As the rows are sparse, there shouldn't be too much performance impact of applying to the whole vector
   VectorType apply_ofield_jacobian(const VectorType& source, const size_t cell, const bool restricted = false);
 
-  VectorType apply_inverse_ofield_jacobian(const VectorType& rhs, const size_t cell);
+  VectorType apply_inverse_ofield_jacobian(const VectorType& rhs, const size_t cell) const;
 
   VectorType apply_stokes_jacobian(const VectorType& source, const bool /*restricted*/ = false);
 

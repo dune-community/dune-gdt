@@ -149,8 +149,8 @@ CellModelSolver::CellModelSolver(const std::string testcase,
                                  const double inner_reduction,
                                  const int inner_maxit,
                                  const int inner_verbose,
-                                 const double bending,
-                                 const double conservative)
+                                 const bool bending,
+                                 const bool conservative)
   : testcase_(testcase)
   , lower_left_(get_lower_left(testcase))
   , upper_right_(get_upper_right(testcase))
@@ -383,7 +383,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   std::cout << "done" << std::endl;
 
   // apply dirichlet constraints for u
-  u_dirichlet_constraints_.apply(A_stokes_, /*clear_only = */ false, /* ensure_symmetry = */ true);
+  u_dirichlet_constraints_.apply(A_stokes_, /*only_clear = */ false, /* ensure_symmetry = */ true);
   for (const auto& DoF : u_dirichlet_constraints_.dirichlet_DoFs())
     BT_stokes_.clear_row(DoF);
 
@@ -542,16 +542,16 @@ CellModelSolver::CellModelSolver(const std::string testcase,
                                           false,
                                           true,
                                           true);
-  pfield_residual_and_nonlinear_jac_quad_ =
-      std::make_shared<QuadratureStorage>(*this,
-                                          4 * phi_space_.max_polorder() + overintegrate + 20 * (num_cells_ > 1),
-                                          false,
-                                          false,
-                                          false,
-                                          false,
-                                          false,
-                                          true,
-                                          false);
+  pfield_residual_and_nonlinear_jac_quad_ = std::make_shared<QuadratureStorage>(
+      *this,
+      4 * phi_space_.max_polorder() + overintegrate + 20 * static_cast<int>(num_cells_ > 1),
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false);
 } // constructor
 
 
@@ -1667,21 +1667,21 @@ void CellModelSolver::visualize(const std::string& prefix,
         std::accumulate(stokes_solve_times.begin(), stokes_solve_times.end(), std::chrono::duration<double>(0.))
             .count();
     const double pfield_average_time_per_solve =
-        pfield_solve_times.size() == 0 ? 0. : pfield_total_solve_time / pfield_solve_times.size();
+        pfield_solve_times.empty() ? 0. : pfield_total_solve_time / pfield_solve_times.size();
     const double ofield_average_time_per_solve =
-        ofield_solve_times.size() == 0 ? 0. : ofield_total_solve_time / ofield_solve_times.size();
+        ofield_solve_times.empty() ? 0. : ofield_total_solve_time / ofield_solve_times.size();
     const double stokes_average_time_per_solve =
-        stokes_solve_times.size() == 0 ? 0. : stokes_total_solve_time / stokes_solve_times.size();
+        stokes_solve_times.empty() ? 0. : stokes_total_solve_time / stokes_solve_times.size();
     const double pfield_average_num_iterations =
-        pfield_solve_times.size() == 0
+        pfield_solve_times.empty()
             ? 0.
             : std::accumulate(pfield_iterations.begin(), pfield_iterations.end(), 0) / double(pfield_iterations.size());
     const double ofield_average_num_iterations =
-        ofield_solve_times.size() == 0
+        ofield_solve_times.empty()
             ? 0.
             : std::accumulate(ofield_iterations.begin(), ofield_iterations.end(), 0) / double(ofield_iterations.size());
     const double stokes_average_num_iterations =
-        stokes_solve_times.size() == 0
+        stokes_solve_times.empty()
             ? 0.
             : std::accumulate(stokes_iterations.begin(), stokes_iterations.end(), 0) / double(stokes_iterations.size());
     std::string timings_filename = prefix + "_timings.txt";
@@ -1831,7 +1831,7 @@ void CellModelSolver::set_pfield_vec_dofs(const size_t cell,
 
 
 // Get stokes finite element vector
-const CellModelSolver::VectorType& CellModelSolver::stokes_vec()
+const CellModelSolver::VectorType& CellModelSolver::stokes_vec() const
 {
   return stokes_vector_;
 }
@@ -2602,12 +2602,13 @@ void CellModelSolver::set_pfield_jacobian_state_dofs(const std::vector<R>& sourc
 }
 
 CellModelSolver::VectorType
-CellModelSolver::apply_pfield_jacobian(const VectorType& y, const size_t cell, const bool restricted)
+CellModelSolver::apply_pfield_jacobian(const VectorType& source, const size_t cell, const bool restricted)
 {
-  return apply_pfield_helper(y, cell, restricted, true);
+  return apply_pfield_helper(source, cell, restricted, true);
 }
 
-CellModelSolver::VectorType CellModelSolver::apply_inverse_pfield_jacobian(const VectorType& rhs, const size_t cell)
+CellModelSolver::VectorType CellModelSolver::apply_inverse_pfield_jacobian(const VectorType& rhs,
+                                                                           const size_t cell) const
 {
   return pfield_solver_.apply(rhs, cell);
 }
@@ -2628,19 +2629,20 @@ void CellModelSolver::set_ofield_jacobian_state_dofs(const std::vector<R>& sourc
 }
 
 CellModelSolver::VectorType
-CellModelSolver::apply_ofield_jacobian(const VectorType& y, const size_t cell, const bool restricted)
+CellModelSolver::apply_ofield_jacobian(const VectorType& source, const size_t cell, const bool restricted)
 {
-  return apply_ofield_helper(y, cell, restricted, true);
+  return apply_ofield_helper(source, cell, restricted, true);
 }
 
-CellModelSolver::VectorType CellModelSolver::apply_inverse_ofield_jacobian(const VectorType& rhs, const size_t cell)
+CellModelSolver::VectorType CellModelSolver::apply_inverse_ofield_jacobian(const VectorType& rhs,
+                                                                           const size_t cell) const
 {
   return ofield_solver_.apply(rhs, cell);
 }
 
-CellModelSolver::VectorType CellModelSolver::apply_stokes_jacobian(const VectorType& y, const bool restricted)
+CellModelSolver::VectorType CellModelSolver::apply_stokes_jacobian(const VectorType& source, const bool restricted)
 {
-  return apply_stokes_helper(y, restricted, true);
+  return apply_stokes_helper(source, restricted, true);
 }
 
 CellModelSolver::VectorType CellModelSolver::apply_inverse_stokes_jacobian(const VectorType& rhs)
@@ -3120,7 +3122,7 @@ void CellModelSolver::set_initial_values(const std::string& testcase)
     // Computing the distance to an ellipsis seems to be hard, so we just use a triangulation
     FieldVector<double, d> center{upper_right_[0] / 2., upper_right_[1] / 2.};
     const size_t num_points = 100;
-    const double num_points_d = static_cast<double>(num_points);
+    const auto num_points_d = static_cast<double>(num_points);
     const double a = 7;
     const double b = 5;
     std::vector<BoostPointType> y1s, y2s;
