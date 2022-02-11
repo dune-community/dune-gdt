@@ -33,7 +33,6 @@ include(DuneMacros)
 find_package(dune-xt REQUIRED)
 list(APPEND CMAKE_MODULE_PATH "${dune-xt_MODULE_PATH}")
 include(DuneUtils)
-find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 add_subdirectory(${dune-xt_MODULE_PATH}/../../pybind11 ${CMAKE_CURRENT_BINARY_DIR}/pybind11)
 
 # start a dune project with information from dune.module
