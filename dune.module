@@ -15,5 +15,5 @@
 
 Module: dune-gdt
 Version: 2021.1.8
-Maintainer: felix.schindler@wwu.de
+Maintainer: dune-gdt@dune-community.ovh
 Depends: dune-localfunctions (>= 2.6) dune-xt (>= 2021.1)
