@@ -600,7 +600,7 @@ public:
   ///       temporaries (which we achieve since *this has the correct type here to select the correct add)
   /// \{
 
-  LincombOperatorType operator*(const FieldType& alpha)final
+  LincombOperatorType operator*(const FieldType& alpha) final
   {
     return OperatorType::make_operator_mul(*this, alpha);
   }

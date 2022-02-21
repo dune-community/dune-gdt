@@ -15,7 +15,11 @@
 # set up project
 project("dune-gdt" CXX)
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.13)
+
+if("${TRAVIS}" EQUAL "1")
+  add_compile_options(-Werror)
+endif()
 
 if(NOT
    (dune-common_DIR
@@ -33,7 +37,6 @@ include(DuneMacros)
 find_package(dune-xt REQUIRED)
 list(APPEND CMAKE_MODULE_PATH "${dune-xt_MODULE_PATH}")
 include(DuneUtils)
-find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 add_subdirectory(${dune-xt_MODULE_PATH}/../../pybind11 ${CMAKE_CURRENT_BINARY_DIR}/pybind11)
 
 # start a dune project with information from dune.module
