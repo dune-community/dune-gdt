@@ -81,7 +81,7 @@ public:
       LocalCouplingIntersectionBilinearFormInterface<I, r_r, r_rC, F, F, s_r, s_rC, F>;
   using LocalIntersectionBilinearFormType = LocalIntersectionBilinearFormInterface<I, r_r, r_rC, F, F, s_r, s_rC, F>;
 
-  BilinearForm(const AssemblyGridViewType& assembly_grid_view,
+  BilinearForm(const AssemblyGridViewType assembly_grid_view,
                const std::string& logging_prefix = "",
                const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseType({}, logging_prefix.empty() ? "BilinearForm" : logging_prefix, logging_state)
@@ -266,7 +266,7 @@ public:
   }
 
 protected:
-  const AssemblyGridViewType& assembly_grid_view_;
+  const AssemblyGridViewType assembly_grid_view_;
   std::list<std::tuple<std::unique_ptr<LocalElementBilinearFormType>, std::unique_ptr<ElementFilterType>>>
       element_data_;
   std::list<

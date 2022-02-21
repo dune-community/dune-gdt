@@ -71,7 +71,7 @@ public:
   using typename BaseType::SourceSpaceType;
   using typename BaseType::VectorType;
 
-  ConstMatrixOperator(const AssemblyGridViewType& assembly_grid_vw,
+  ConstMatrixOperator(const AssemblyGridViewType assembly_grid_vw,
                       const SourceSpaceType& source_spc,
                       const RangeSpaceType& range_spc,
                       const MatrixType& mat,
@@ -225,7 +225,7 @@ public:
   }
 
 protected:
-  const AssemblyGridViewType& assembly_grid_view_;
+  const AssemblyGridViewType assembly_grid_view_;
   const SourceSpaceType& source_space_;
   const RangeSpaceType& range_space_;
   const MatrixType& matrix_;
@@ -348,7 +348,7 @@ public:
   /// \sa    OperatorInterface::apply_inverse
   FieldType scaling;
 
-  MatrixOperator(const AssemblyGridViewType& assembly_grid_vw,
+  MatrixOperator(const AssemblyGridViewType assembly_grid_vw,
                  const SourceSpaceType& source_spc,
                  const RangeSpaceType& range_spc,
                  MatrixType& mat,
@@ -368,7 +368,7 @@ public:
                 << ", range_space=" << &range_spc << ", mat=" << &mat << ")" << std::endl;
   }
 
-  MatrixOperator(const AssemblyGridViewType& assembly_grid_vw,
+  MatrixOperator(const AssemblyGridViewType assembly_grid_vw,
                  const SourceSpaceType& source_spc,
                  const RangeSpaceType& range_spc,
                  MatrixType*&& mat_ptr,
@@ -453,7 +453,8 @@ public:
     };
     apply_local_assembler(coupling_intersection_bilinear_form_data_);
     apply_local_assembler(intersection_bilinear_form_data_);
-    apply_local_assembler(intersection_fd_operator_data_);
+    // TODO: fix the following line
+//    apply_local_assembler(intersection_fd_operator_data_);  // <-- for CouplingIntersections, the intersection type here is wrong !
   } // ... apply_local(...)
 
   void finalize() override final

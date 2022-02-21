@@ -17,7 +17,7 @@
 #include <dune/xt/grid/gridprovider/provider.hh>
 #include <dune/xt/la/type_traits.hh>
 
-#include <dune/gdt/operators/localizable-operator.hh>
+#include <dune/gdt/operators/operator.hh>
 
 #include <python/dune/xt/common/configuration.hh>
 #include <python/dune/xt/common/fvector.hh>
@@ -42,8 +42,8 @@ class Operator
   using GP = XT::Grid::GridProvider<G>;
 
 public:
-  using type = GDT::LocalizableOperator<M, GV, s_r, 1, r_r>;
-  using base_type = GDT::OperatorInterface<M, GV, s_r, 1, r_r>;
+  using type = GDT::Operator<GV, s_r, 1, r_r>;  // M
+  using base_type = GDT::OperatorInterface<GV, s_r, 1, r_r>;  // M
   using bound_type = pybind11::class_<type, base_type>;
 
 private:
@@ -79,11 +79,12 @@ public:
     // methods from base, to allow for overrides
     bindings::OperatorInterface<M, GV, s_r, r_r>::addbind_methods(c);
     // our methods overriding/extending the ones from above
-    using SF = typename type::SourceFunctionInterfaceType;
-    using RF = typename type::RangeFunctionType;
+    using SF = typename type::SourceFunctionType;
+//    using RF = typename type::RangeFunctionType;
+    using V = typename type::VectorType;
     c.def(
         "apply",
-        [](type& self, const SF& source, RF& range, const XT::Common::Parameter& param) {
+        [](type& self, const SF& source, V& range, const XT::Common::Parameter& param) {
           self.apply(source, range, param);
         },
         "source"_a,
@@ -97,36 +98,36 @@ public:
         "param"_a = XT::Common::Parameter(),
         py::call_guard<py::gil_scoped_release>());
     // our additional methods
-    c.def(
-        "append",
-        [](type& self, const Eop& local_op, const XT::Grid::ElementFilter<GV>& filter) {
-          self.append(local_op, filter);
-        },
-        "local_element_operator"_a,
-        "element_filter"_a = XT::Grid::ApplyOn::AllElements<GV>());
-    c.def("__iadd__", // function ptr signature required for the right return type
-          (type & (type::*)(const Eop&)) & type::operator+=,
-          "local_element_operator"_a,
-          py::is_operator());
-    c.def("__iadd__", // function ptr signature required for the right return type
-          (type & (type::*)(const std::tuple<const Eop&, const XT::Grid::ElementFilter<GV>&>&)) & type::operator+=,
-          "tuple_of_localelementop_elementfilter"_a,
-          py::is_operator());
-    c.def(
-        "append",
-        [](type& self, const Iop& local_op, const XT::Grid::IntersectionFilter<GV>& filter) {
-          self.append(local_op, filter);
-        },
-        "local_intersection_operator"_a,
-        "intersection_filter"_a = XT::Grid::ApplyOn::AllIntersections<GV>());
-    c.def("__iadd__", // function ptr signature required for the right return type
-          (type & (type::*)(const Iop&)) & type::operator+=,
-          "local_intersection_operator"_a,
-          py::is_operator());
-    c.def("__iadd__", // function ptr signature required for the right return type
-          (type & (type::*)(const std::tuple<const Iop&, const XT::Grid::IntersectionFilter<GV>&>&)) & type::operator+=,
-          "tuple_of_localintersectionop_intersectionfilter"_a,
-          py::is_operator());
+//    c.def(
+//        "append",
+//        [](type& self, const Eop& local_op, const XT::Grid::ElementFilter<GV>& filter) {
+//          self.append(local_op, filter);
+//        },
+//        "local_element_operator"_a,
+//        "element_filter"_a = XT::Grid::ApplyOn::AllElements<GV>());
+//    c.def("__iadd__", // function ptr signature required for the right return type
+//          (type & (type::*)(const Eop&)) & type::operator+=,
+//          "local_element_operator"_a,
+//          py::is_operator());
+//    c.def("__iadd__", // function ptr signature required for the right return type
+//          (type & (type::*)(const std::tuple<const Eop&, const XT::Grid::ElementFilter<GV>&>&)) & type::operator+=,
+//          "tuple_of_localelementop_elementfilter"_a,
+//          py::is_operator());
+//    c.def(
+//        "append",
+//        [](type& self, const Iop& local_op, const XT::Grid::IntersectionFilter<GV>& filter) {
+//          self.append(local_op, filter);
+//        },
+//        "local_intersection_operator"_a,
+//        "intersection_filter"_a = XT::Grid::ApplyOn::AllIntersections<GV>());
+//    c.def("__iadd__", // function ptr signature required for the right return type
+//          (type & (type::*)(const Iop&)) & type::operator+=,
+//          "local_intersection_operator"_a,
+//          py::is_operator());
+//    c.def("__iadd__", // function ptr signature required for the right return type
+//          (type & (type::*)(const std::tuple<const Iop&, const XT::Grid::IntersectionFilter<GV>&>&)) & type::operator+=,
+//          "tuple_of_localintersectionop_intersectionfilter"_a,
+//          py::is_operator());
 
     // factories
     const auto FactoryName = XT::Common::to_camel_case(class_id);

@@ -23,6 +23,7 @@
 #include <python/dune/xt/common/fvector.hh>
 #include <python/dune/xt/common/parameter.hh>
 #include <python/dune/xt/grid/grids.bindings.hh>
+#include <python/dune/xt/grid/dd_glued_gridprovider/provider.cc>
 #include <python/dune/xt/la/traits.hh>
 
 
@@ -140,6 +141,17 @@ public:
         "source_space"_a,
         py::keep_alive<0, 1>());
 
+    if constexpr (d < 3) {
+        // macro_grid_based_boundary_info
+        m.def(
+            FactoryName.c_str(),
+            [](const XT::Grid::MacroGridBasedBoundaryInfo<GV, GV>& boundary_info, const S& space) {
+              return new type(boundary_info, space);
+            },
+            "boundary_info"_a,
+            "source_space"_a,
+            py::keep_alive<0, 1>());
+    }
     return c;
   } // ... bind(...)
 }; // class DirichletConstraints
