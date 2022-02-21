@@ -72,6 +72,7 @@ public:
         "interpolation_points",
         [](type& self) {
           DUNE_THROW_IF(!self.is_lagrangian(), XT::Common::Exceptions::wrong_input_given, "");
+          DUNE_THROW_IF(r != 1, XT::Common::Exceptions::wrong_input_given, "Only implemented for DG spaces atm!");
           const auto& global_basis = self.basis();
           auto basis = global_basis.localize();
           DynamicVector<size_t> global_DoF_indices(self.mapper().max_local_size());
@@ -80,7 +81,7 @@ public:
             basis->bind(element);
             self.mapper().global_indices(element, global_DoF_indices);
             auto local_lagrange_points = basis->finite_element().lagrange_points();
-            for (size_t ii = 0; ii < basis->size(); ++ii) {
+            for (size_t ii = 0; ii < local_lagrange_points.size(); ++ii) {
               auto global_point = element.geometry().global(local_lagrange_points[ii]);
               for (size_t jj = 0; jj < size_t(d); ++jj)
                 points->set_entry(global_DoF_indices[ii], jj, global_point[jj]);

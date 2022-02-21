@@ -330,7 +330,8 @@ public:
                unpowered.basis().copy(),
                unpowered.coefficients().copy(),
                unpowered.interpolation().copy(),
-               unpowered.is_lagrangian() ? unpowered.lagrange_points() : std::vector<DomainType>())
+               unpowered.is_lagrangian() ? unpowered.lagrange_points() : std::vector<DomainType>(),
+               /*powered=*/false)
   {}
 }; // class LocalPowerFiniteElement<1, ...>
 
@@ -352,7 +353,8 @@ public:
                new LocalPowerFiniteElementBasis<power, D, d, R, r>(unpowered.basis()),
                new LocalPowerFiniteElementCoefficients<D, d>(unpowered.coefficients(), power),
                new LocalPowerFiniteElementInterpolation<power, D, d, R, r>(unpowered.interpolation()),
-               unpowered.is_lagrangian() ? unpowered.lagrange_points() : std::vector<DomainType>())
+               unpowered.is_lagrangian() ? unpowered.lagrange_points() : std::vector<DomainType>(),
+               /*powered=*/true)
   {}
 }; // class LocalPowerFiniteElement
 

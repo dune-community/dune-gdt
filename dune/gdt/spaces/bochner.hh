@@ -58,6 +58,21 @@ public:
     return time_interval_;
   }
 
+  std::vector<double> time_points() const
+  {
+    auto temporal_basis = temporal_space_.basis().localize();
+    DynamicVector<size_t> global_DoF_indices(temporal_space_.mapper().max_local_size());
+    std::vector<double> points(temporal_space_.mapper().size(), 0.);
+    for (auto&& time_interval : elements(temporal_space_.grid_view())) {
+      temporal_basis->bind(time_interval);
+      temporal_space_.mapper().global_indices(time_interval, global_DoF_indices);
+      auto local_lagrange_points = temporal_basis->finite_element().lagrange_points();
+      for (size_t ii = 0; ii < temporal_basis->size(); ++ii)
+        points[global_DoF_indices[ii]] = time_interval.geometry().global(local_lagrange_points[ii])[0];
+    }
+    return points;
+  } // ... time_points(...)
+
 private:
   const SpaceInterface<GV, r, rC, R>& spatial_space_;
   const OneDGrid temporal_grid_;

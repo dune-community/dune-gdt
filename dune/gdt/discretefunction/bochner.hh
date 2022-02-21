@@ -50,6 +50,24 @@ public:
                                                   << bochner_space_.spatial_space().mapper().size());
   } // DiscreteBochnerFunction(...)
 
+  DiscreteBochnerFunction(const BochnerSpace<GV, r, rC, R>& bochner_space,
+                          XT::LA::ListVectorArray<V>*&& dof_vectors,
+                          const std::string nm = "")
+    : bochner_space_(bochner_space)
+    , dof_vectors_(std::move(dof_vectors))
+    , name_(nm.empty() ? "DiscreteBochnerFunction" : nm)
+  {
+    DUNE_THROW_IF(this->dof_vectors().length() != bochner_space_.temporal_space().mapper().size(),
+                  Exceptions::space_error,
+                  "\n   this->dof_vectors().length() = " << this->dof_vectors().length() << "\n   "
+                                                         << bochner_space_.temporal_space().mapper().size());
+    for (const auto& vec : this->dof_vectors())
+      DUNE_THROW_IF(vec.vector().size() != bochner_space_.spatial_space().mapper().size(),
+                    Exceptions::space_error,
+                    "\n   vec.vector().size() = " << vec.vector().size() << "\n   "
+                                                  << bochner_space_.spatial_space().mapper().size());
+  } // DiscreteBochnerFunction(...)
+
   DiscreteBochnerFunction(const BochnerSpace<GV, r, rC, R>& bochner_space, const std::string nm = "")
     : bochner_space_(bochner_space)
     , dof_vectors_(new XT::LA::ListVectorArray<V>(bochner_space_.spatial_space().mapper().size(),
@@ -101,10 +119,20 @@ public:
   {
     DUNE_THROW_IF(
         filename_prefix.empty(), XT::Common::Exceptions::wrong_input_given, "filename_prefix must not be empty!");
+    bool use_counter = false;
+    size_t counter = 0;
+    for (const auto& annotated_vector : dof_vectors_.access())
+      if (!annotated_vector.note().has_key("_t"))
+        use_counter = true;
     for (const auto& annotated_vector : dof_vectors_.access()) {
-      const double time = annotated_vector.note().get("_t").at(0);
-      auto df = make_const_discrete_function(bochner_space_.spatial_space(), annotated_vector.vector(), name_);
-      df.visualize(filename_prefix + "_" + XT::Common::to_string(time), vtk_output_type);
+      auto df = make_discrete_function(bochner_space_.spatial_space(), annotated_vector.vector(), name_);
+      if (use_counter) {
+        df.visualize(filename_prefix + "_" + XT::Common::to_string(counter), vtk_output_type);
+        ++counter;
+      } else {
+        const double time = annotated_vector.note().get("_t").at(0);
+        df.visualize(filename_prefix + "_" + XT::Common::to_string(time), vtk_output_type);
+      }
     }
   } // ... visualize(...)
 
@@ -117,17 +145,18 @@ private:
 
 template <class GV, size_t r, size_t rC, class R, class V>
 DiscreteBochnerFunction<V, GV, r, rC, R> make_discrete_bochner_function(const BochnerSpace<GV, r, rC, R>& bochner_space,
-                                                                        XT::LA::ListVectorArray<V>& dof_vectors)
+                                                                        XT::LA::ListVectorArray<V>& dof_vectors,
+                                                                        const std::string name = "")
 {
-  return DiscreteBochnerFunction<V, GV, r, rC, R>(bochner_space, dof_vectors);
+  return DiscreteBochnerFunction<V, GV, r, rC, R>(bochner_space, dof_vectors, name);
 }
 
 
 template <class VectorType, class GV, size_t r, size_t rC, class R>
 typename std::enable_if<XT::LA::is_vector<VectorType>::value, DiscreteBochnerFunction<VectorType, GV, r, rC, R>>::type
-make_discrete_bochner_function(const BochnerSpace<GV, r, rC, R>& bochner_space)
+make_discrete_bochner_function(const BochnerSpace<GV, r, rC, R>& bochner_space, const std::string name = "")
 {
-  return DiscreteBochnerFunction<VectorType, GV, r, rC, R>(bochner_space);
+  return DiscreteBochnerFunction<VectorType, GV, r, rC, R>(bochner_space, name);
 }
 
 

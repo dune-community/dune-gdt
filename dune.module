@@ -14,6 +14,6 @@
 # ~~~
 
 Module: dune-gdt
-Version: 18.11-dev
+Version: 2021.1.8
 Maintainer: dune-gdt@dune-community.ovh
-Depends: dune-localfunctions (>= 2.6) dune-xt (>= 18.11)
+Depends: dune-localfunctions (>= 2.6) dune-xt (>= 2021.1)

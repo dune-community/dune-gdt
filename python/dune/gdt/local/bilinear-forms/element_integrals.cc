@@ -10,16 +10,21 @@
 #include "config.h"
 
 #include <dune/pybindxi/pybind11.h>
+#include <dune/pybindxi/functional.h>
+#include <dune/pybindxi/numpy.h>
 #include <dune/pybindxi/stl.h>
 
 #include <dune/xt/grid/type_traits.hh>
+#include <dune/xt/grid/gridprovider/provider.hh>
 #include <dune/xt/grid/grids.hh>
 
 #include <dune/gdt/local/bilinear-forms/integrals.hh>
 
 #include <python/dune/xt/common/configuration.hh>
 #include <python/dune/xt/common/fvector.hh>
+#include <python/dune/xt/common/parameter.hh>
 #include <python/dune/xt/grid/grids.bindings.hh>
+#include <python/dune/xt/grid/traits.hh>
 
 
 namespace Dune {
