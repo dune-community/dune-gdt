@@ -258,29 +258,29 @@ private:
             py::keep_alive<0, 2>());
 
         // This sparsity pattern probably does not make sense
-//        m.def(
-//            FactoryName.c_str(),
-//            [](CGP& grid,
-//               const SS& source_space,
-//               const RS& range_space,
-//               const MatrixTag&,
-//               const std::string& logging_prefix) {
-//              const auto cv = grid.coupling_view();
-//              /// which sparsity pattern for the coupling matrix??
-//              auto pattern = make_element_and_intersection_sparsity_pattern(range_space, source_space, cv);
-//              return new type(cv,
-//                              source_space,
-//                              range_space,
-//                              new M(range_space.mapper().size(), source_space.mapper().size(), pattern),
-//                              logging_prefix);
-//            },
-//            "grid"_a,
-//            "source_space"_a,
-//            "range_space"_a,
-//            "la_backend"_a = MatrixTag(),
-//            "logging_prefix"_a = "",
-//            py::keep_alive<0, 1>(),
-//            py::keep_alive<0, 2>());
+        //        m.def(
+        //            FactoryName.c_str(),
+        //            [](CGP& grid,
+        //               const SS& source_space,
+        //               const RS& range_space,
+        //               const MatrixTag&,
+        //               const std::string& logging_prefix) {
+        //              const auto cv = grid.coupling_view();
+        //              /// which sparsity pattern for the coupling matrix??
+        //              auto pattern = make_element_and_intersection_sparsity_pattern(range_space, source_space, cv);
+        //              return new type(cv,
+        //                              source_space,
+        //                              range_space,
+        //                              new M(range_space.mapper().size(), source_space.mapper().size(), pattern),
+        //                              logging_prefix);
+        //            },
+        //            "grid"_a,
+        //            "source_space"_a,
+        //            "range_space"_a,
+        //            "la_backend"_a = MatrixTag(),
+        //            "logging_prefix"_a = "",
+        //            py::keep_alive<0, 1>(),
+        //            py::keep_alive<0, 2>());
       }
     }
   }; // struct addbind<false, ...>

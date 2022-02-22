@@ -41,8 +41,7 @@ public:
   using type = GDT::BochnerSpace<GV, r, rC, R>;
   using bound_type = pybind11::class_<type>;
 
-  static bound_type
-  bind(pybind11::module& m, const std::string& grid_id, const std::string& class_id = "bochner_space")
+  static bound_type bind(pybind11::module& m, const std::string& grid_id, const std::string& class_id = "bochner_space")
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
@@ -68,12 +67,13 @@ public:
     if (!std::is_same<R, double>::value)
       space_type_name += "_" + XT::Common::Typename<R>::value(/*fail_wo_typeid=*/true);
     m.def(
-      XT::Common::to_camel_case(space_type_name).c_str(),
-      [](const SpatialSpaceType& spatial_space, const std::vector<double>& time_points) {
-        return new type(spatial_space, time_points); },
-    "spatial_space"_a,
-    "time_points"_a,
-    py::keep_alive<0, 1>()); // spatial_space
+        XT::Common::to_camel_case(space_type_name).c_str(),
+        [](const SpatialSpaceType& spatial_space, const std::vector<double>& time_points) {
+          return new type(spatial_space, time_points);
+        },
+        "spatial_space"_a,
+        "time_points"_a,
+        py::keep_alive<0, 1>()); // spatial_space
 
     return c;
   } // ... bind(...)

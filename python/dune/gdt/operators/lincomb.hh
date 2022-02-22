@@ -117,7 +117,7 @@ class LincombOperator
 {
   using G = std::decay_t<XT::Grid::extract_grid_t<GV>>;
   using type = GDT::LincombOperator<GV, s, 1, r, 1>; // M
-  using base_type = GDT::ConstLincombOperator<GV, s, 1, r, 1>;  // M
+  using base_type = GDT::ConstLincombOperator<GV, s, 1, r, 1>; // M
   using V = typename type::VectorType;
   using SS = typename type::SourceSpaceType;
   using RS = typename type::RangeSpaceType;
@@ -137,7 +137,7 @@ public:
     using namespace pybind11::literals;
 
     const auto ClassName = XT::Common::to_camel_case(
-        bindings::OperatorInterface<M, GV, s, r>::class_name(matrix_id, grid_id, layer_id, class_id));  // M
+        bindings::OperatorInterface<M, GV, s, r>::class_name(matrix_id, grid_id, layer_id, class_id)); // M
     bound_type c(m,
                  ClassName.c_str(),
                  (XT::Common::to_camel_case(class_id) + " (" + grid_id + ", " + matrix_id + " variant)").c_str());

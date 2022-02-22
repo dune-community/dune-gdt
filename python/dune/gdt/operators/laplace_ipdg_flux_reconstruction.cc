@@ -32,32 +32,32 @@ namespace GDT {
 namespace bindings {
 
 
-//template <class M, class MT, class GV>
-//class LaplaceIpdgFluxReconstructionOperator
+// template <class M, class MT, class GV>
+// class LaplaceIpdgFluxReconstructionOperator
 //{
-//  using G = std::decay_t<XT::Grid::extract_grid_t<GV>>;
-//  static const size_t d = G::dimension;
-//  using GP = XT::Grid::GridProvider<G>;
+//   using G = std::decay_t<XT::Grid::extract_grid_t<GV>>;
+//   static const size_t d = G::dimension;
+//   using GP = XT::Grid::GridProvider<G>;
 
-//public:
-//  using type = GDT::LaplaceIpdgFluxReconstructionOperator<M, GV>;
-//  using base_type = GDT::OperatorInterface<M, GV, 1, 1, d>;
-//  using bound_type = pybind11::class_<type, base_type>;
+// public:
+//   using type = GDT::LaplaceIpdgFluxReconstructionOperator<M, GV>;
+//   using base_type = GDT::OperatorInterface<M, GV, 1, 1, d>;
+//   using bound_type = pybind11::class_<type, base_type>;
 
-//private:
-//  using SS = typename type::SourceSpaceType;
-//  using RS = typename type::RangeSpaceType;
-//  using E = typename type::E;
+// private:
+//   using SS = typename type::SourceSpaceType;
+//   using RS = typename type::RangeSpaceType;
+//   using E = typename type::E;
 
-//public:
-//  static bound_type bind(pybind11::module& m,
-//                         const std::string& matrix_id,
-//                         const std::string& grid_id,
-//                         const std::string& layer_id = "",
-//                         const std::string& class_id = "laplace_ipdg_flux_reconstruction_operator")
-//  {
-//    namespace py = pybind11;
-//    using namespace pybind11::literals;
+// public:
+//   static bound_type bind(pybind11::module& m,
+//                          const std::string& matrix_id,
+//                          const std::string& grid_id,
+//                          const std::string& layer_id = "",
+//                          const std::string& class_id = "laplace_ipdg_flux_reconstruction_operator")
+//   {
+//     namespace py = pybind11;
+//     using namespace pybind11::literals;
 
 //    const auto ClassName = XT::Common::to_camel_case(
 //        bindings::OperatorInterface<M, GV, 1, d>::class_name(matrix_id, grid_id, layer_id, class_id));
@@ -175,11 +175,11 @@ namespace bindings {
 } // namespace Dune
 
 
-//template <class M, class MT, class GridTypes = Dune::XT::Grid::bindings::AvailableGridTypes>
-//struct LaplaceIpdgFluxReconstructionOperator_for_all_grids
+// template <class M, class MT, class GridTypes = Dune::XT::Grid::bindings::AvailableGridTypes>
+// struct LaplaceIpdgFluxReconstructionOperator_for_all_grids
 //{
-//  using G = Dune::XT::Common::tuple_head_t<GridTypes>;
-//  using GV = typename G::LeafGridView;
+//   using G = Dune::XT::Common::tuple_head_t<GridTypes>;
+//   using GV = typename G::LeafGridView;
 
 //  static void bind(pybind11::module& m, const std::string& matrix_id)
 //  {
@@ -193,11 +193,11 @@ namespace bindings {
 //  }
 //};
 
-//template <class M, class MT>
-//struct LaplaceIpdgFluxReconstructionOperator_for_all_grids<M, MT, Dune::XT::Common::tuple_null_type>
+// template <class M, class MT>
+// struct LaplaceIpdgFluxReconstructionOperator_for_all_grids<M, MT, Dune::XT::Common::tuple_null_type>
 //{
-//  static void bind(pybind11::module& /*m*/, const std::string& /*matrix_id*/) {}
-//};
+//   static void bind(pybind11::module& /*m*/, const std::string& /*matrix_id*/) {}
+// };
 
 
 PYBIND11_MODULE(_operators_laplace_ipdg_flux_reconstruction, m)
@@ -220,7 +220,8 @@ PYBIND11_MODULE(_operators_laplace_ipdg_flux_reconstruction, m)
   py::module::import("dune.gdt._spaces_interface");
 
   /// \todo Add other linear algebra backends, if required!
-//  LaplaceIpdgFluxReconstructionOperator_for_all_grids<LA::IstlRowMajorSparseMatrix<double>,
-//                                                      LA::bindings::Istl,
-//                                                      XT::Grid::bindings::AvailableGridTypes>::bind(m, "istl_sparse");
+  //  LaplaceIpdgFluxReconstructionOperator_for_all_grids<LA::IstlRowMajorSparseMatrix<double>,
+  //                                                      LA::bindings::Istl,
+  //                                                      XT::Grid::bindings::AvailableGridTypes>::bind(m,
+  //                                                      "istl_sparse");
 }

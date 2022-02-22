@@ -385,12 +385,14 @@ private:
 
 
 /**
- * Given an inducing vector-valued function f, computes `(f * n) * phi * psi` for all combinations of phi and psi in the bases.
+ * Given an inducing vector-valued function f, computes `(f * n) * phi * psi` for all combinations of phi and psi in the
+ * bases.
  *
  * \note Note that f can also be given as a scalar value or omitted.
  */
 template <class I, size_t r = 1, class TR = double, class F = double, class AR = TR>
-class LocalIntersectionNormalComponentProductIntegrand : public LocalBinaryIntersectionIntegrandInterface<I, r, 1, TR, F, r, 1, AR>
+class LocalIntersectionNormalComponentProductIntegrand
+  : public LocalBinaryIntersectionIntegrandInterface<I, r, 1, TR, F, r, 1, AR>
 {
   using ThisType = LocalIntersectionNormalComponentProductIntegrand;
   using BaseType = LocalBinaryIntersectionIntegrandInterface<I, r, 1, TR, F, r, 1, AR>;

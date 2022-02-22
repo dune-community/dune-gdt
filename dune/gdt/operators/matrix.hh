@@ -454,7 +454,8 @@ public:
     apply_local_assembler(coupling_intersection_bilinear_form_data_);
     apply_local_assembler(intersection_bilinear_form_data_);
     // TODO: fix the following line
-//    apply_local_assembler(intersection_fd_operator_data_);  // <-- for CouplingIntersections, the intersection type here is wrong !
+    //    apply_local_assembler(intersection_fd_operator_data_);  // <-- for CouplingIntersections, the intersection
+    //    type here is wrong !
   } // ... apply_local(...)
 
   void finalize() override final

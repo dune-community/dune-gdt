@@ -151,14 +151,14 @@ struct LocalIntersectionProductIntegrands_for_all_grids
 
   static void bind(pybind11::module& m)
   {
-    using Dune::GDT::bindings::LocalIntersectionProductIntegrand;
     using Dune::GDT::bindings::LocalIntersectionNormalComponentProductIntegrand;
+    using Dune::GDT::bindings::LocalIntersectionProductIntegrand;
 
     LocalIntersectionProductIntegrand<G, I>::bind(m);
     LocalIntersectionNormalComponentProductIntegrand<G, I>::bind(m);
     if (d > 1) {
-        LocalIntersectionProductIntegrand<G, I, d>::bind(m);
-        LocalIntersectionNormalComponentProductIntegrand<G, I, d>::bind(m);
+      LocalIntersectionProductIntegrand<G, I, d>::bind(m);
+      LocalIntersectionNormalComponentProductIntegrand<G, I, d>::bind(m);
       // add your extra dimensions here
       // ...
     }
