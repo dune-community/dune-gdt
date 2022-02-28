@@ -139,18 +139,16 @@ public:
    * \}
    */
 
-  using BaseType::visualize;
-  using BaseType::visualize_gradient;
-
   /**
    * \brief Visualizes the function using Dune::XT::Functions::visualize on the grid view
    *        associated with the space.
    * \sa    Dune::XT::Functions::visualize
    * \note  Subsampling is enabled by default for functions of order greater than one.
    */
-  void visualize(const std::string filename,
-                 const VTK::OutputType vtk_output_type = VTK::appendedraw,
-                 const XT::Common::Parameter& param = {}) const
+  [[deprecated("Use visualize(discrete_function) instead (28.02.2022)!")]] void
+  visualize(const std::string filename,
+            const VTK::OutputType vtk_output_type = VTK::appendedraw,
+            const XT::Common::Parameter& param = {}) const
   {
     const bool subsampling =
         param.has_key("subsampling") ? static_cast<bool>(param.get("subsampling")[0]) : (space_.max_polorder() > 1);
@@ -163,9 +161,10 @@ public:
    * \sa    Dune::XT::Functions::visualize_gradient
    * \note  Subsampling is enabled by default for functions of order greater than one.
    */
-  void visualize_gradient(const std::string filename,
-                          const VTK::OutputType vtk_output_type = VTK::appendedraw,
-                          const XT::Common::Parameter& param = {}) const
+  [[deprecated("Use visualize_gradient(discrete_function) instead (28.02.2022)!")]] void
+  visualize_gradient(const std::string filename,
+                     const VTK::OutputType vtk_output_type = VTK::appendedraw,
+                     const XT::Common::Parameter& param = {}) const
   {
     const bool subsampling =
         param.has_key("subsampling") ? static_cast<bool>(param.get("subsampling")[0]) : (space_.max_polorder() > 1);
@@ -318,6 +317,38 @@ make_discrete_function(const SpaceInterface<GV, r, rC, R>& space, const std::str
 {
   return DiscreteFunction<typename XT::LA::Container<R>::VectorType, GV, r, rC, R>(space, nm);
 }
+
+
+using XT::Functions::visualize;
+using XT::Functions::visualize_gradient;
+
+
+template <class V, class GV, size_t r, size_t rC, class R>
+void visualize(
+    const ConstDiscreteFunction<V, GV, r, rC, R>& discrete_function,
+    const std::string path,
+    const bool subsampling = true,
+    const VTK::OutputType vtk_output_type = VTK::appendedraw,
+    const XT::Common::Parameter& param = {},
+    const XT::Functions::VisualizerInterface<r, rC, R>& visualizer = XT::Functions::default_visualizer<r, rC, R>())
+{
+  XT::Functions::visualize(
+      discrete_function, discrete_function.space().grid_view(), path, subsampling, vtk_output_type, param, visualizer);
+}
+
+
+template <class V, class GV, class R>
+void visualize_gradient(const ConstDiscreteFunction<V, GV, 1, 1, R>& discrete_function,
+                        const std::string path,
+                        const bool subsampling = true,
+                        const VTK::OutputType vtk_output_type = VTK::appendedraw,
+                        const XT::Common::Parameter& param = {},
+                        const XT::Functions::VisualizerInterface<GV::dimension, 1, R>& visualizer =
+                            XT::Functions::default_visualizer<GV::dimension, 1, R>())
+{
+  XT::Functions::visualize_gradient(
+      discrete_function, discrete_function.space().grid_view(), path, subsampling, vtk_output_type, param, visualizer);
+} // ... visualize_gradient(...)
 
 
 } // namespace GDT
