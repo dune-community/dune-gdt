@@ -67,7 +67,7 @@ private:
   template <bool needs_sparsity_tag = !std::is_same<SparsityTag, void>::value, bool anything = true>
   struct addbind /*<true, ...>*/
   {
-    static void leaf_factory(pybind11::module& m, const std::string& FactoryName)
+    static void leaf_factory(pybind11::module& /*m*/, const std::string& /*FactoryName*/)
     {
       namespace py = pybind11;
       using namespace pybind11::literals;
@@ -117,7 +117,7 @@ private:
       //          py::keep_alive<0, 2>(),
       //          py::keep_alive<0, 3>());
     }
-    static void coupling_factory(pybind11::module& m, const std::string& FactoryName)
+    static void coupling_factory(pybind11::module& /*m*/, const std::string& /*FactoryName*/)
     {
       namespace py = pybind11;
       using namespace pybind11::literals;
@@ -698,15 +698,16 @@ public:
     return c;
   }
 
-  static void
-  bind_leaf_factory(pybind11::module& m, const std::string& matrix_id, const std::string& class_id = "matrix_operator")
+  static void bind_leaf_factory(pybind11::module& m,
+                                const std::string& /*matrix_id*/,
+                                const std::string& class_id = "matrix_operator")
   {
     const auto FactoryName = XT::Common::to_camel_case(class_id);
     addbind<>::leaf_factory(m, FactoryName);
   }
 
   static void bind_coupling_factory(pybind11::module& m,
-                                    const std::string& matrix_id,
+                                    const std::string& /*matrix_id*/,
                                     const std::string& class_id = "matrix_operator")
   {
     const auto FactoryName = XT::Common::to_camel_case(class_id);
