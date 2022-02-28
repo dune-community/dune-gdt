@@ -151,13 +151,15 @@ public:
     return c;
   } // ... bind(...)
 
-  VectorizedLocalElementIntegralBilinearForm(IntegrandType integrand,
-                                             const int integrand_order = 0,
-                                             const XT::Common::ParameterType& integrand_parameters = {},
-                                             const std::string& logging_prefix = "")
+  VectorizedLocalElementIntegralBilinearForm(
+      IntegrandType integrand,
+      const int integrand_order = 0,
+      const XT::Common::ParameterType& integrand_parameters = {},
+      const std::string& logging_prefix = "",
+      const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
     : BaseType(integrand_parameters,
                logging_prefix.empty() ? "VectorizedLocalElementIntegralBilinearForm" : logging_prefix,
-               /*logging_disabled=*/logging_prefix.empty())
+               logging_state)
     , integrand_(integrand)
     , integrand_order_(integrand_order)
   {

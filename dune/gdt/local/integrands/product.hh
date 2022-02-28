@@ -407,12 +407,14 @@ public:
 
   using GridFunctionType = XT::Functions::GridFunctionInterface<E, d, 1, F>;
 
-  LocalIntersectionNormalComponentProductIntegrand(XT::Functions::GridFunction<E, d, 1, F> weight,
-                                                   const bool use_inside_bases = true,
-                                                   const std::string& logging_prefix = "")
-    : BaseType({},
+  LocalIntersectionNormalComponentProductIntegrand(
+      XT::Functions::GridFunction<E, d, 1, F> weight,
+      const bool use_inside_bases = true,
+      const std::string& logging_prefix = "",
+      const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
+    : BaseType(weight.parameter_type(),
                logging_prefix.empty() ? "LocalIntersectionNormalComponentProductIntegrand" : logging_prefix,
-               /*logging_disabled=*/logging_prefix.empty())
+               logging_state)
     , weight_(weight.copy_as_grid_function())
     , local_weight_(weight_->local_function())
     , inside_(use_inside_bases)
