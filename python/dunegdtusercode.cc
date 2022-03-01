@@ -22,7 +22,7 @@ using namespace Dune;
 
 
 template <class V>
-V& get_vec_ref(py::handle list_element, const bool recurse = true)
+V& get_vec_ref(py::handle list_element)
 {
   try {
     return list_element.cast<V&>();

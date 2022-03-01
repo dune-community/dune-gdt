@@ -122,7 +122,7 @@ struct oswald_interpolation_for_all_grids<V, VT, Dune::XT::Common::tuple_null_ty
 };
 
 
-PYBIND11_MODULE(_interpolations_oswald, m)
+PYBIND11_MODULE(_interpolations_oswald, /*m*/)
 {
   namespace py = pybind11;
   using namespace Dune;

@@ -200,7 +200,7 @@ namespace bindings {
 // };
 
 
-PYBIND11_MODULE(_operators_laplace_ipdg_flux_reconstruction, m)
+PYBIND11_MODULE(_operators_laplace_ipdg_flux_reconstruction, /*m*/)
 {
   namespace py = pybind11;
   using namespace Dune;

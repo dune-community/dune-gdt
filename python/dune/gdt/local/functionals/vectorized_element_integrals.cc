@@ -154,9 +154,7 @@ public:
     result *= 0;
     // collect quadrature data
     // - therefore, count how many quadrature points there are
-    size_t num_quadrature_points = 0;
-    for (const auto& DUNE_UNUSED(quadrature_point) : QuadratureRules<D, d>::rule(element.type(), integrand_order_))
-      ++num_quadrature_points;
+    const size_t num_quadrature_points = QuadratureRules<D, d>::rule(element.type(), integrand_order_).size();
     std::vector<double> integration_factor(num_quadrature_points);
     std::vector<double> quadrature_weight(num_quadrature_points);
     // - and store them in a numpy.ndarray
