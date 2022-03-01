@@ -242,7 +242,7 @@ clang_full python:
     variables:
         CI_IMAGE: debian_clang_full
     tags:
-        - amm-only
+        - lucas
     stage: python
     needs: ["debian_clang_full"]
     script:
