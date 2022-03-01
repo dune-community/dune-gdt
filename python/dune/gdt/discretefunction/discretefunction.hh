@@ -83,7 +83,7 @@ public:
 
     c.def(
         "visualize",
-        [](type& self, const std::string& filename) { return self.visualize(filename, VTK::appendedraw); },
+        [](type& self, const std::string& filename) { return visualize(self, filename, true, VTK::appendedraw); },
         "filename"_a);
 
     m.def(
