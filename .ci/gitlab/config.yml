@@ -100,7 +100,7 @@ variables:
             - runner_system_failure
             - stuck_or_timeout_failure
             - api_failure
-    image: "python:3.9"
+    image: "harbor.uni-muenster.de/proxy-docker/library/python:3.9"
     cache:
       paths:
         - ${CI_PROJECT_DIR}/.cache/pre-commit
