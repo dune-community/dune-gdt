@@ -115,26 +115,11 @@ public:
     return make_discrete_function(bochner_space_.spatial_space(), std::move(result));
   } // ... evaluate(...)
 
-  void visualize(const std::string filename_prefix, const VTK::OutputType vtk_output_type = VTK::appendedraw) const
+  [[deprecated("Use visualize(discrete_bochner_function) instead (01.03.2022)!")]] void
+  visualize(const std::string filename_prefix, const VTK::OutputType vtk_output_type = VTK::appendedraw) const
   {
-    DUNE_THROW_IF(
-        filename_prefix.empty(), XT::Common::Exceptions::wrong_input_given, "filename_prefix must not be empty!");
-    bool use_counter = false;
-    size_t counter = 0;
-    for (const auto& annotated_vector : dof_vectors_.access())
-      if (!annotated_vector.note().has_key("_t"))
-        use_counter = true;
-    for (const auto& annotated_vector : dof_vectors_.access()) {
-      auto df = make_discrete_function(bochner_space_.spatial_space(), annotated_vector.vector(), name_);
-      if (use_counter) {
-        df.visualize(filename_prefix + "_" + XT::Common::to_string(counter), vtk_output_type);
-        ++counter;
-      } else {
-        const double time = annotated_vector.note().get("_t").at(0);
-        df.visualize(filename_prefix + "_" + XT::Common::to_string(time), vtk_output_type);
-      }
-    }
-  } // ... visualize(...)
+    GDT::visualize(*this, filename_prefix, false, vtk_output_type);
+  }
 
 private:
   const BochnerSpace<GV, r, rC, R>& bochner_space_;
@@ -158,6 +143,36 @@ make_discrete_bochner_function(const BochnerSpace<GV, r, rC, R>& bochner_space, 
 {
   return DiscreteBochnerFunction<VectorType, GV, r, rC, R>(bochner_space, name);
 }
+
+
+template <class V, class GV, size_t r, size_t rC, class R>
+void visualize(
+    const DiscreteBochnerFunction<V, GV, r, rC, R>& discrete_bochner_function,
+    const std::string filename_prefix,
+    const bool subsampling = true,
+    const VTK::OutputType vtk_output_type = VTK::appendedraw,
+    const XT::Common::Parameter& param = {},
+    const XT::Functions::VisualizerInterface<r, rC, R>& visualizer = XT::Functions::default_visualizer<r, rC, R>())
+{
+  DUNE_THROW_IF(
+      filename_prefix.empty(), XT::Common::Exceptions::wrong_input_given, "filename_prefix must not be empty!");
+  bool use_counter = false;
+  size_t counter = 0;
+  for (const auto& annotated_vector : discrete_bochner_function.dof_vectors())
+    if (!annotated_vector.note().has_key("_t"))
+      use_counter = true;
+  for (const auto& annotated_vector : discrete_bochner_function.dof_vectors()) {
+    auto df = make_discrete_function(
+        discrete_bochner_function.space().spatial_space(), annotated_vector.vector(), discrete_bochner_function.name());
+    GDT::visualize(df,
+                   filename_prefix + "_" + (use_counter ? XT::Common::to_string(counter) : XT::Common::to_string(time)),
+                   subsampling,
+                   vtk_output_type,
+                   param,
+                   visualizer);
+    ++counter;
+  }
+} // ... visualize(...)
 
 
 } // namespace GDT
