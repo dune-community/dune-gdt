@@ -56,9 +56,9 @@ int main(int argc, char* argv[])
     const double kappa = config.template get<double>("problem.kappa", 1.);
     const double xi = config.template get<double>("problem.xi", 1.1);
     const double Re = 1e-13;
-    const double Be = config.template get<double>("problem.Be", 1.0);
-    const double Ca = config.template get<double>("problem.Ca", 1.0);
-    const double Pa = config.template get<double>("problem.Pa", 1.0);
+    double Be = config.template get<double>("problem.Be", 1.0);
+    double Ca = config.template get<double>("problem.Ca", 1.0);
+    double Pa = config.template get<double>("problem.Pa", 1.0);
     const double Fa = config.template get<double>("problem.Fa", 1.0);
 
     // output
@@ -169,6 +169,7 @@ int main(int argc, char* argv[])
     std::random_device dev;
     std::mt19937 rng(dev());
     std::uniform_int_distribution<typename std::mt19937::result_type> pfield_distrib(0, pfield_size - 1);
+    std::uniform_real_distribution<double> param_distrib(1.0 / 5.0, 5.0);
     std::uniform_int_distribution<typename std::mt19937::result_type> ofield_distrib(0, ofield_size - 1);
     std::uniform_int_distribution<typename std::mt19937::result_type> stokes_distrib(0, stokes_size - 1);
     std::uniform_real_distribution<double> double_distrib(-1., 1.);
@@ -199,6 +200,12 @@ int main(int argc, char* argv[])
     std::chrono::duration<double> stokes_jac_time(0.);
     for (size_t run = 0; run < 10; ++run) {
       std::cout << "Pfield run " << run << std::endl;
+      Be = param_distrib(rng);
+      Pa = param_distrib(rng);
+      Ca = param_distrib(rng);
+      std::cout << "Be: " << Be;
+      std::cout << ", Pa: " << Pa;
+      std::cout << ", Ca: " << Ca << std::endl;
       // std::cout << "Output_dofs: (";
       for (size_t ii = 0; ii < num_output_dofs; ++ii) {
         pfield_output_dofs[ii] = pfield_distrib(rng);
@@ -207,6 +214,8 @@ int main(int argc, char* argv[])
 
       // set ofield and stokes values
       for (size_t kk = 0; kk < num_cells; ++kk) {
+        model_solver.update_pfield_parameters(Be, Ca, Pa, kk, true);
+        model_solver2.update_pfield_parameters(Be, Ca, Pa, kk, false);
         model_solver.compute_restricted_pfield_dofs(pfield_output_dofs, kk);
         const auto& pfield_source_dofs = model_solver.pfield_deim_source_dofs(kk)[0];
         const auto& pfield_ofield_source_dofs = model_solver.pfield_deim_source_dofs(kk)[1];
@@ -252,20 +261,30 @@ int main(int argc, char* argv[])
         for (size_t ii = 0; ii < num_source_dofs; ++ii)
           restricted_source[ii] = pfield_source[pfield_source_dofs[ii]];
         begin = std::chrono::steady_clock::now();
-        auto restricted_result = model_solver.apply_pfield_operator(restricted_source, kk, true);
+        auto restricted_result = model_solver.apply_pfield_residual_operator(restricted_source, kk, true);
+        auto restricted_result_split =
+            model_solver.apply_pfield_residual_operator_without_diagonal_mass_matrices(restricted_source, kk, true);
+        auto restricted_result_diag = model_solver.apply_pfield_diagonal_mass_matrices(restricted_source, kk, true);
         pfield_restricted_apply_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
         auto restricted_jac_result = model_solver.apply_pfield_jacobian(restricted_source, kk, true);
+        auto restricted_jac_result_split =
+            model_solver.apply_pfield_jacobian_without_diagonal_mass_matrices(restricted_source, kk, true);
         pfield_restricted_jac_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
         model_solver2.prepare_pfield_operator(kk, false);
         model_solver2.set_pfield_jacobian_state(pfield_state, kk, false);
         pfield_prep_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
-        auto result = model_solver2.apply_pfield_operator(pfield_source, kk, false);
+        auto result = model_solver2.apply_pfield_residual_operator(pfield_source, kk, false);
+        auto result_split =
+            model_solver2.apply_pfield_residual_operator_without_diagonal_mass_matrices(pfield_source, kk, false);
+        auto result_diag = model_solver2.apply_pfield_diagonal_mass_matrices(pfield_source, kk, false);
         pfield_apply_time += std::chrono::steady_clock::now() - begin;
         begin = std::chrono::steady_clock::now();
         auto jac_result = model_solver2.apply_pfield_jacobian(pfield_source, kk, false);
+        auto jac_result_split =
+            model_solver2.apply_pfield_jacobian_without_diagonal_mass_matrices(pfield_source, kk, false);
         pfield_jac_time += std::chrono::steady_clock::now() - begin;
         // There are differences of about 1e-13, caused by the different mv methods in assemble_pfield_rhs (mv from
         // Eigen vs mv_restricted);
@@ -276,9 +295,32 @@ int main(int argc, char* argv[])
           if (XT::Common::FloatCmp::ne(restricted_result[ii], result[pfield_output_dofs[ii]], apply_tol, apply_tol))
             std::cout << "Failed apply restricted: " << ii << ", " << pfield_output_dofs[ii] << ", "
                       << result[pfield_output_dofs[ii]] << ", " << restricted_result[ii] << std::endl;
+          if (XT::Common::FloatCmp::ne(
+                  restricted_result_split[ii], result_split[pfield_output_dofs[ii]], apply_tol, apply_tol))
+            std::cout << "Failed apply split restricted: " << ii << ", " << pfield_output_dofs[ii] << ", "
+                      << result_split[pfield_output_dofs[ii]] << ", " << restricted_result_split[ii] << std::endl;
+          if (XT::Common::FloatCmp::ne(restricted_result_split[ii] + restricted_result_diag[ii],
+                                       result[pfield_output_dofs[ii]],
+                                       apply_tol,
+                                       apply_tol))
+            std::cout << "Failed apply diag restricted: " << ii << ", " << pfield_output_dofs[ii] << ", "
+                      << result[pfield_output_dofs[ii]] << ", "
+                      << restricted_result_split[ii] + restricted_result_diag[ii] << std::endl;
           if (XT::Common::FloatCmp::ne(restricted_jac_result[ii], jac_result[pfield_output_dofs[ii]], jac_tol, jac_tol))
             std::cout << "Failed apply restricted jacobian: " << ii << ", " << pfield_output_dofs[ii] << ", "
                       << jac_result[pfield_output_dofs[ii]] << ", " << restricted_jac_result[ii] << std::endl;
+          if (XT::Common::FloatCmp::ne(
+                  restricted_jac_result_split[ii], jac_result_split[pfield_output_dofs[ii]], jac_tol, jac_tol))
+            std::cout << "Failed apply restricted split jacobian: " << ii << ", " << pfield_output_dofs[ii] << ", "
+                      << jac_result_split[pfield_output_dofs[ii]] << ", " << restricted_jac_result_split[ii]
+                      << std::endl;
+          if (XT::Common::FloatCmp::ne(restricted_jac_result_split[ii] + restricted_result_diag[ii],
+                                       jac_result[pfield_output_dofs[ii]],
+                                       jac_tol,
+                                       jac_tol))
+            std::cout << "Failed apply restricted diag jacobian: " << ii << ", " << pfield_output_dofs[ii] << ", "
+                      << jac_result[pfield_output_dofs[ii]] << ", "
+                      << restricted_jac_result_split[ii] + restricted_result_diag[ii] << std::endl;
         } // ii
       } // kk
       std::cout << "Ofield run " << run << std::endl;

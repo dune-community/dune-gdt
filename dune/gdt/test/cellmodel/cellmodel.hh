@@ -437,10 +437,18 @@ struct CellModelSolver
   void update_ofield_parameters(const double Pa, const size_t cell, const bool restricted = false);
 
   // Applies cell-th phase field operator (applies F if phase field equation is F(y) = 0)
-  VectorType apply_pfield_operator(const VectorType& y, const size_t cell, const bool restricted = false);
+  VectorType apply_pfield_residual_operator(const VectorType& y, const size_t cell, const bool restricted = false);
+  VectorType apply_pfield_residual_operator_without_diagonal_mass_matrices(const VectorType& y,
+                                                                           const size_t cell,
+                                                                           const bool restricted = false);
+  VectorType apply_pfield_diagonal_mass_matrices(const VectorType& y, const size_t cell, const bool restricted = false);
 
   // Applies either pfield operator or pfield_jacobian (if jacobian is true)
-  VectorType apply_pfield_helper(const VectorType& y, const size_t cell, const bool restricted, const bool jacobian);
+  VectorType apply_pfield_helper(const VectorType& y,
+                                 const size_t cell,
+                                 const bool restricted,
+                                 const bool jacobian,
+                                 const bool without_mass_matrices);
 
   void update_pfield_parameters(
       const double Be, const double Ca, const double Pa, const size_t cell, const bool restricted = false);
@@ -472,6 +480,9 @@ struct CellModelSolver
   // Currently takes a full-dimensional vector, but only applies the rows that are in pfield_range_dofs
   // As the rows are sparse, there shouldn't be too much performance impact of applying to the whole vector
   VectorType apply_pfield_jacobian(const VectorType& source, const size_t cell, const bool restricted = false);
+  VectorType apply_pfield_jacobian_without_diagonal_mass_matrices(const VectorType& source,
+                                                                  const size_t cell,
+                                                                  const bool restricted = false);
 
   VectorType apply_inverse_pfield_jacobian(const VectorType& rhs, const size_t cell) const;
 
@@ -830,6 +841,8 @@ struct CellModelSolver
   // Pfield solvers and linear operators
   // Matrix operators for phasefield matrices
   PfieldMatrixLinearPartOperator<VectorType, MatrixType, CellModelSolver> pfield_jac_linear_op_;
+  PfieldMatrixLinearPartOperator<VectorType, MatrixType, CellModelSolver> pfield_jac_linear_op_without_mass_matrices_;
+  PfieldDiagonalMassMatricesOperator<VectorType, MatrixType, CellModelSolver> pfield_jac_diagonal_mass_matrices_op_;
   PfieldLinearSolver pfield_solver_;
   SolverStatistics pfield_solver_statistics_;
   // Phase field rhs vector (r0 r1 r2)

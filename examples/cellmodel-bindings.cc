@@ -118,7 +118,21 @@ PYBIND11_MODULE(cellmodel, m)
       .def("prepare_pfield_operator", &CellModelSolver::prepare_pfield_operator, "cell"_a, "restricted"_a = false)
       .def("prepare_ofield_operator", &CellModelSolver::prepare_ofield_operator, "cell"_a, "restricted"_a = false)
       .def("prepare_stokes_operator", &CellModelSolver::prepare_stokes_operator, "restricted"_a = false)
-      .def("apply_pfield_operator", &CellModelSolver::apply_pfield_operator, "y"_a, "cell"_a, "restricted"_a = false)
+      .def("apply_pfield_residual_operator",
+           &CellModelSolver::apply_pfield_residual_operator,
+           "y"_a,
+           "cell"_a,
+           "restricted"_a = false)
+      .def("apply_pfield_residual_operator_without_diagonal_mass_matrices",
+           &CellModelSolver::apply_pfield_residual_operator_without_diagonal_mass_matrices,
+           "y"_a,
+           "cell"_a,
+           "restricted"_a = false)
+      .def("apply_pfield_diagonal_mass_matrices",
+           &CellModelSolver::apply_pfield_diagonal_mass_matrices,
+           "y"_a,
+           "cell"_a,
+           "restricted"_a = false)
       .def("apply_ofield_operator", &CellModelSolver::apply_ofield_operator, "y"_a, "cell"_a, "restricted"_a = false)
       .def("apply_stokes_operator", &CellModelSolver::apply_stokes_operator, "y"_a, "restricted"_a = false)
       .def("set_pfield_vec", &CellModelSolver::set_pfield_vec)
@@ -157,6 +171,11 @@ PYBIND11_MODULE(cellmodel, m)
       .def("set_ofield_jacobian_state_dofs", &CellModelSolver::set_ofield_jacobian_state_dofs)
       .def("apply_pfield_jacobian",
            &CellModelSolver::apply_pfield_jacobian,
+           "source"_a,
+           "cell"_a,
+           "restricted"_a = false)
+      .def("apply_pfield_jacobian_without_diagonal_mass_matrices",
+           &CellModelSolver::apply_pfield_jacobian_without_diagonal_mass_matrices,
            "source"_a,
            "cell"_a,
            "restricted"_a = false)

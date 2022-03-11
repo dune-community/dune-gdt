@@ -259,7 +259,9 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   , E_pfield_(size_phi_, size_phi_, pfield_submatrix_pattern_, num_mutexes_pfield_)
   , Dmu_f_pfield_(size_phi_, size_phi_, pfield_submatrix_pattern_, num_mutexes_pfield_)
   , Dphi_f_pfield_incl_coeffs_and_sign_(size_phi_, size_phi_, pfield_submatrix_pattern_, num_mutexes_pfield_)
-  , pfield_jac_linear_op_(*this)
+  , pfield_jac_linear_op_(*this, false)
+  , pfield_jac_linear_op_without_mass_matrices_(*this, true)
+  , pfield_jac_diagonal_mass_matrices_op_(*this)
   , pfield_solver_(num_pfield_variables_,
                    dt_,
                    gamma_,
@@ -1936,6 +1938,8 @@ void CellModelSolver::prepare_pfield_operator(const size_t cell, const bool rest
   assemble_pfield_rhs(cell, restricted);
   assemble_pfield_linear_jacobian(cell, restricted);
   pfield_jac_linear_op_.prepare(cell, restricted);
+  pfield_jac_linear_op_without_mass_matrices_.prepare(cell, restricted);
+  pfield_jac_diagonal_mass_matrices_op_.prepare(cell, restricted);
   if (!restricted)
     pfield_solver_.prepare(cell, restricted);
 }
@@ -2346,13 +2350,22 @@ void CellModelSolver::update_ofield_parameters(const double Pa, const size_t /*c
 
 // Applies cell-th phase field operator (applies F if phase field equation is F(y) = 0)
 CellModelSolver::VectorType
-CellModelSolver::apply_pfield_operator(const VectorType& y, const size_t cell, const bool restricted)
+CellModelSolver::apply_pfield_residual_operator(const VectorType& y, const size_t cell, const bool restricted)
 {
-  return apply_pfield_helper(y, cell, restricted, false);
+  return apply_pfield_helper(y, cell, restricted, false, false);
 }
 
+// Applies cell-th phase field operator without the diagonal mass matrices (applies F if phase field equation is F(y) =
+// (-M phi; -M phinat; -M mu))
+CellModelSolver::VectorType CellModelSolver::apply_pfield_residual_operator_without_diagonal_mass_matrices(
+    const VectorType& y, const size_t cell, const bool restricted)
+{
+  return apply_pfield_helper(y, cell, restricted, false, true);
+}
+
+// Applies (M 0 0; 0 M 0; 0 0 M) where M is the phase field mass matrix
 CellModelSolver::VectorType
-CellModelSolver::apply_pfield_helper(const VectorType& y, const size_t cell, const bool restricted, const bool jacobian)
+CellModelSolver::apply_pfield_diagonal_mass_matrices(const VectorType& y, const size_t cell, const bool restricted)
 {
   auto& source = pfield_tmp_vec_;
   auto& residual = pfield_tmp_vec2_;
@@ -2362,7 +2375,36 @@ CellModelSolver::apply_pfield_helper(const VectorType& y, const size_t cell, con
   else
     source = y;
   // linear part
-  pfield_jac_linear_op_.apply(source, residual);
+  pfield_jac_diagonal_mass_matrices_op_.apply(source, residual);
+  if (restricted) {
+    const auto& range_dofs = *pfield_deim_range_dofs_[cell];
+    VectorType ret(range_dofs.size());
+    for (size_t ii = 0; ii < range_dofs.size(); ++ii)
+      ret[ii] = residual[range_dofs[ii]];
+    return ret;
+  }
+  return residual;
+}
+
+
+CellModelSolver::VectorType CellModelSolver::apply_pfield_helper(const VectorType& y,
+                                                                 const size_t cell,
+                                                                 const bool restricted,
+                                                                 const bool jacobian,
+                                                                 const bool without_mass_matrices)
+{
+  auto& source = pfield_tmp_vec_;
+  auto& residual = pfield_tmp_vec2_;
+  // copy values to high-dimensional vector
+  if (restricted)
+    copy_ld_to_hd_vec(pfield_deim_source_dofs_[cell][0], y, source);
+  else
+    source = y;
+  // linear part
+  if (without_mass_matrices)
+    pfield_jac_linear_op_without_mass_matrices_.apply(source, residual);
+  else
+    pfield_jac_linear_op_.apply(source, residual);
   if (!jacobian) {
     // subtract rhs
     const auto& unique_range_dofs = pfield_deim_unique_range_dofs_[cell];
@@ -2559,7 +2601,7 @@ CellModelSolver::VectorType CellModelSolver::apply_inverse_pfield_operator(const
 
   // ********* compute residual *********
   auto begin = std::chrono::steady_clock::now();
-  auto residual = apply_pfield_operator(y_guess, cell, false);
+  auto residual = apply_pfield_residual_operator(y_guess, cell, false);
   auto res_norm = pfield_residual_norm(residual);
   std::cout << "Newton: Initial Residual: " << res_norm << std::endl;
   std::chrono::duration<double> time = std::chrono::steady_clock::now() - begin;
@@ -2604,7 +2646,7 @@ CellModelSolver::VectorType CellModelSolver::apply_inverse_pfield_operator(const
                       "max iterations reached when trying to compute automatic dampening!\n|residual|_l2 = "
                           << res_norm << "\nl = " << iter << "\n");
         x_n_plus_1 = x_n + update * lambda;
-        residual = apply_pfield_operator(x_n_plus_1, cell, false);
+        residual = apply_pfield_residual_operator(x_n_plus_1, cell, false);
         candidate_res = pfield_residual_norm(residual);
         // std::cout << "Candidate res: " << candidate_res << std::endl;
         lambda /= 2;
@@ -2614,7 +2656,7 @@ CellModelSolver::VectorType CellModelSolver::apply_inverse_pfield_operator(const
       res_norm = candidate_res;
     } else {
       x_n += update;
-      residual = apply_pfield_operator(x_n, cell, false);
+      residual = apply_pfield_residual_operator(x_n, cell, false);
       res_norm = pfield_residual_norm(residual);
     }
     std::cout << "Newton: Iter " << iter << " Current residual: " << res_norm << std::endl;
@@ -2645,9 +2687,14 @@ void CellModelSolver::set_pfield_jacobian_state_dofs(const std::vector<R>& sourc
 CellModelSolver::VectorType
 CellModelSolver::apply_pfield_jacobian(const VectorType& source, const size_t cell, const bool restricted)
 {
-  return apply_pfield_helper(source, cell, restricted, true);
+  return apply_pfield_helper(source, cell, restricted, true, false);
 }
 
+CellModelSolver::VectorType CellModelSolver::apply_pfield_jacobian_without_diagonal_mass_matrices(
+    const VectorType& source, const size_t cell, const bool restricted)
+{
+  return apply_pfield_helper(source, cell, restricted, true, true);
+}
 CellModelSolver::VectorType CellModelSolver::apply_inverse_pfield_jacobian(const VectorType& rhs,
                                                                            const size_t cell) const
 {
@@ -2923,7 +2970,8 @@ XT::Common::FieldVector<CellModelSolver::R, CellModelSolver::d>
 CellModelSolver::get_lower_left(const std::string& testcase)
 {
   if (testcase == "single_cell" || testcase == "single_cell_dirichlet" || testcase == "channel"
-      || testcase == "cell_isolation_experiment" || testcase == "cell_for_paper")
+      || testcase == "cell_isolation_experiment" || testcase == "cell_isolation_experiment_periodic"
+      || testcase == "cell_isolation_experiment_large_periodic" || testcase == "cell_for_paper")
     return {{0., 0.}};
   DUNE_THROW(Dune::NotImplemented, "Unknown testcase");
   return FieldVector<R, d>();
@@ -2935,8 +2983,11 @@ CellModelSolver::get_upper_right(const std::string& testcase)
 {
   if (testcase == "single_cell" || testcase == "single_cell_dirichlet")
     return {{30., 30.}};
-  if (testcase == "cell_isolation_experiment" || testcase == "cell_for_paper")
+  if (testcase == "cell_isolation_experiment" || testcase == "cell_isolation_experiment_periodic"
+      || testcase == "cell_for_paper")
     return {{40., 40.}};
+  if (testcase == "cell_isolation_experiment_large_periodic")
+    return {{80., 80.}};
   if (testcase == "channel")
     return {{160., 40.}};
   DUNE_THROW(Dune::NotImplemented, "Unknown testcase");
@@ -2946,7 +2997,8 @@ CellModelSolver::get_upper_right(const std::string& testcase)
 // get directions in which domain is periodic from testcase name
 std::string CellModelSolver::get_periodic_directions(const std::string& testcase)
 {
-  if (testcase == "single_cell" || testcase == "channel")
+  if (testcase == "single_cell" || testcase == "channel" || testcase == "cell_isolation_experiment_periodic"
+      || testcase == "cell_isolation_experiment_large_periodic")
     return "01";
   if (testcase == "single_cell_dirichlet" || testcase == "cell_isolation_experiment" || testcase == "cell_for_paper")
     return "00";
@@ -2958,7 +3010,8 @@ std::string CellModelSolver::get_periodic_directions(const std::string& testcase
 size_t CellModelSolver::get_num_cells(const std::string& testcase)
 {
   if (testcase == "single_cell" || testcase == "single_cell_dirichlet" || testcase == "channel"
-      || testcase == "cell_isolation_experiment" || testcase == "cell_for_paper")
+      || testcase == "cell_isolation_experiment" || testcase == "cell_isolation_experiment_periodic"
+      || testcase == "cell_isolation_experiment_large_periodic" || testcase == "cell_for_paper")
     return 1;
   DUNE_THROW(Dune::NotImplemented, "Unknown testcase");
   return 0;
@@ -3122,13 +3175,46 @@ void CellModelSolver::set_initial_values(const std::string& testcase)
         },
         /*name=*/"P_initial"));
     u_initial_func = std::make_shared<const XT::Functions::ConstantFunction<d, d>>(0.);
-  } else if (testcase == "cell_isolation_experiment") {
+  } else if (testcase == "cell_isolation_experiment" || testcase == "cell_isolation_experiment_periodic") {
     FieldVector<double, d> center{upper_right_[0] / 2., upper_right_[1] / 2.};
     using BoostPointType = boost::geometry::model::point<double, 2, boost::geometry::cs::cartesian>;
     using BoostRingType = boost::geometry::model::ring<BoostPointType>;
     using BoostPolygonType = boost::geometry::model::polygon<BoostPointType>;
     // A ring does not have holes
     BoostRingType ring{{10., 18.}, {13., 13.}, {19., 13.}, {28.5, 16.}, {25, 23.5}, {15., 23.}, {10, 18.}};
+    // A polygon can have holes, here we add the same inner and outer ring to only get the boundary of the cell
+    BoostPolygonType polygon{ring, ring};
+    auto r = [ring, polygon](const auto& xr) {
+      BoostPointType point{xr[0], xr[1]};
+      const double distance = boost::geometry::distance(polygon, point);
+      return boost::geometry::within(point, ring) ? distance : -distance;
+    };
+    phi_initial_funcs.emplace_back(std::make_shared<XT::Functions::GenericFunction<d>>(
+        50,
+        /*evaluate=*/
+        [r, epsilon = epsilon_](const auto& x, const auto& /*param*/) {
+          return std::tanh(r(x) / (std::sqrt(2.) * epsilon));
+        },
+        /*name=*/"phi_initial"));
+
+    P_initial_funcs.emplace_back(std::make_shared<const XT::Functions::GenericFunction<d, d>>(
+        50,
+        /*evaluate=*/
+        [&phi_in = phi_initial_funcs[0]](const auto& x, const auto& param) {
+          // auto ret = FieldVector<double, d>({1., 0.});
+          auto ret = FieldVector<double, d>({0.99, 0.14});
+          ret *= (phi_in->evaluate(x, param) + 1.) / 2.;
+          return ret;
+        },
+        /*name=*/"P_initial"));
+    u_initial_func = std::make_shared<const XT::Functions::ConstantFunction<d, d>>(0.);
+  } else if (testcase == "cell_isolation_experiment_large_periodic") {
+    FieldVector<double, d> center{upper_right_[0] / 2., upper_right_[1] / 2.};
+    using BoostPointType = boost::geometry::model::point<double, 2, boost::geometry::cs::cartesian>;
+    using BoostRingType = boost::geometry::model::ring<BoostPointType>;
+    using BoostPolygonType = boost::geometry::model::polygon<BoostPointType>;
+    // A ring does not have holes
+    BoostRingType ring{{30., 38.}, {33., 33.}, {39., 33.}, {48.5, 36.}, {45, 43.5}, {35., 43.}, {30, 38.}};
     // A polygon can have holes, here we add the same inner and outer ring to only get the boundary of the cell
     BoostPolygonType polygon{ring, ring};
     auto r = [ring, polygon](const auto& xr) {
