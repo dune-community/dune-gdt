@@ -52,7 +52,6 @@ public:
 
   using BaseType::s_r;
   using BaseType::s_rC;
-  using typename BaseType::F;
   using typename BaseType::V;
 
   using I = XT::Grid::extract_intersection_t<AGV>;

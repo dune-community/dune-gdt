@@ -404,7 +404,7 @@ public:
     return source_space_;
   }
 
-  const AssemblyGridViewType& assembly_grid_view() const override final
+  const auto& assembly_grid_view() const override final
   {
     return source_space_.grid_view();
   }

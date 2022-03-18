@@ -107,7 +107,7 @@ public:
   {
     this->assert_matching_source(source_vector);
     this->assert_matching_range(range_vector);
-    reconstruction_operator_.apply(source_function, reconstruction_, param);
+    reconstruction_operator_.apply(source_vector, reconstruction_, param);
     range_vector.set_all(0.);
     advection_operator_.apply(reconstruction_.dofs().vector, range_vector);
   }

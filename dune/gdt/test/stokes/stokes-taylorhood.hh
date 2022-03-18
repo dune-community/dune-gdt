@@ -217,8 +217,8 @@ public:
     auto pattern_C = make_element_sparsity_pattern(pressure_space, pressure_space, grid_view);
     Matrix A(m, m, pattern_A);
     Matrix B(m, n, pattern_B);
-    MatrixOperator<Matrix, GV, d> A_operator(grid_view, velocity_space, velocity_space, A);
-    MatrixOperator<Matrix, GV, 1, 1, d> B_operator(grid_view, pressure_space, velocity_space, B);
+    MatrixOperator<GV, d> A_operator(grid_view, velocity_space, velocity_space, A);
+    MatrixOperator<GV, 1, 1, d> B_operator(grid_view, pressure_space, velocity_space, B);
     // calculate A_{ij} as \int \nabla v_i \nabla v_j
     A_operator.append(LocalElementIntegralBilinearForm<E, d>(LocalLaplaceIntegrand<E, d>(problem_.diffusion())));
     // calculate B_{ij} as \int -\nabla p_i div(v_j)

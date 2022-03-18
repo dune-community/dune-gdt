@@ -168,9 +168,9 @@ protected:
         });
     if (boundary_treatment.empty()) { // The periodic case
       if (self.space_type_ == "fv")
-        return std::make_unique<AdvectionFvOperator<M, GV, m>>(space.grid_view(), numerical_flux, space, space);
+        return std::make_unique<AdvectionFvOperator<GV, m>>(space.grid_view(), numerical_flux, space, space);
       else
-        return std::make_unique<AdvectionDgOperator<M, GV, m>>(
+        return std::make_unique<AdvectionDgOperator<GV, m>>(
             space.grid_view(),
             numerical_flux,
             space,
@@ -192,12 +192,12 @@ protected:
       boundary_info->register_new_normal({1}, new XT::Grid::ImpermeableBoundary());
       const XT::Grid::ApplyOn::CustomBoundaryIntersections<GV> impermeable_wall_filter(
           *boundary_info, new XT::Grid::ImpermeableBoundary());
-      auto op = std::make_unique<AdvectionFvOperator<M, GV, m>>(space.grid_view(),
-                                                                numerical_flux,
-                                                                space,
-                                                                space,
-                                                                /*use_tbb=*/false,
-                                                                /*periodicity_restriction=*/impermeable_wall_filter);
+      auto op = std::make_unique<AdvectionFvOperator<GV, m>>(space.grid_view(),
+                                                             numerical_flux,
+                                                             space,
+                                                             space,
+                                                             /*use_tbb=*/false,
+                                                             /*periodicity_restriction=*/impermeable_wall_filter);
       // the actual handling of impermeable walls
       op->append(/*numerical_boundary_flux=*/
                  [&](const auto& intersection, const auto& x, const auto& u, auto& ret, const auto& /*param*/) {
@@ -213,12 +213,12 @@ protected:
       boundary_info->register_new_normal({1}, new XT::Grid::ImpermeableBoundary());
       const XT::Grid::ApplyOn::CustomBoundaryIntersections<GV> impermeable_wall_filter(
           *boundary_info, new XT::Grid::ImpermeableBoundary());
-      auto op = std::make_unique<AdvectionFvOperator<M, GV, m>>(space.grid_view(),
-                                                                numerical_flux,
-                                                                space,
-                                                                space,
-                                                                /*use_tbb=*/false,
-                                                                /*periodicity_restriction=*/impermeable_wall_filter);
+      auto op = std::make_unique<AdvectionFvOperator<GV, m>>(space.grid_view(),
+                                                             numerical_flux,
+                                                             space,
+                                                             space,
+                                                             /*use_tbb=*/false,
+                                                             /*periodicity_restriction=*/impermeable_wall_filter);
       // the actual handling of impermeable walls, see [DF2015, p. 415, (8.66 - 8.67)]
       op->append(
           /*boundary_extrapolation=*/
@@ -261,7 +261,7 @@ protected:
           *boundary_info, new XT::Grid::ImpermeableBoundary());
       const XT::Grid::ApplyOn::CustomBoundaryIntersections<GV> inflow_outflow_filter(
           *boundary_info, new XT::Grid::InflowOutflowBoundary());
-      auto op = std::make_unique<AdvectionFvOperator<M, GV, m>>(
+      auto op = std::make_unique<AdvectionFvOperator<GV, m>>(
           space.grid_view(),
           numerical_flux,
           space,

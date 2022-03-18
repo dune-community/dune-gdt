@@ -76,7 +76,6 @@ protected:
   using D = typename AGV::ctype;
 
 public:
-  using typename BaseType::F;
   using typename BaseType::V;
 
   using I = XT::Grid::extract_intersection_t<AGV>;

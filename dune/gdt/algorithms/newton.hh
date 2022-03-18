@@ -11,6 +11,7 @@
 #define DUNE_GDT_ALGORITHMS_NEWTON_HH
 
 #include <dune/xt/common/parameter.hh>
+#include <dune/xt/common/print.hh>
 #include <dune/xt/common/timedlogging.hh>
 #include <dune/xt/la/container/vector-interface.hh>
 #include <dune/xt/la/solver.hh>
