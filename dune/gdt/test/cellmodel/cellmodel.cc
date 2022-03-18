@@ -187,10 +187,9 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   , num_mutexes_u_(use_tbb ? size_u_ / 100 : 0)
   , num_mutexes_ofield_(use_tbb ? size_P_ / 100 : 0)
   , num_mutexes_pfield_(use_tbb ? size_phi_ / 100 : 0)
-  , num_pfield_variables_(!bending && !conservative ? 1 : 3) // TODO: other combinations of bending and conservative
   , stokes_vector_(size_u_ + size_p_, 0.)
   , ofield_vectors_(num_cells_, VectorType(2 * size_P_, 0.))
-  , pfield_vectors_(num_cells_, VectorType(num_pfield_variables_ * size_phi_, 0.))
+  , pfield_vectors_(num_cells_, VectorType(3 * size_phi_, 0.))
   , u_view_(stokes_vector_, 0, size_u_)
   , p_view_(stokes_vector_, size_u_, size_u_ + size_p_)
   , u_(u_space_, u_view_, "u")
@@ -250,6 +249,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   , Pnat_deim_source_dofs_begin_(num_cells_)
   , ofield_deim_range_dofs_(num_cells_)
   , ofield_deim_unique_range_dofs_(num_cells_)
+  , ofield_dofs_unique_to_nonunique_map_(num_cells_)
   , P_deim_range_dofs_(num_cells_)
   , Pnat_deim_range_dofs_(num_cells_)
   , ofield_deim_entities_(num_cells_)
@@ -262,8 +262,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   , pfield_jac_linear_op_(*this, false)
   , pfield_jac_linear_op_without_mass_matrices_(*this, true)
   , pfield_jac_diagonal_mass_matrices_op_(*this)
-  , pfield_solver_(num_pfield_variables_,
-                   dt_,
+  , pfield_solver_(dt_,
                    gamma_,
                    epsilon_,
                    Be_,
@@ -283,7 +282,7 @@ CellModelSolver::CellModelSolver(const std::string testcase,
                    inner_reduction,
                    inner_maxit,
                    inner_verbose)
-  , pfield_rhs_vector_(num_pfield_variables_ * size_phi_, 0., num_mutexes_pfield_)
+  , pfield_rhs_vector_(3 * size_phi_, 0., num_mutexes_pfield_)
   , pfield_r0_vector_(pfield_rhs_vector_, 0, size_phi_)
   , pfield_r1_vector_(pfield_rhs_vector_, size_phi_, 2 * size_phi_)
   , pfield_r2_vector_(pfield_rhs_vector_, 2 * size_phi_, 3 * size_phi_)
@@ -297,13 +296,13 @@ CellModelSolver::CellModelSolver(const std::string testcase,
   , mu_deim_range_dofs_(num_cells_)
   , both_mu_and_phi_deim_range_dofs_(num_cells_)
   , pfield_deim_entities_(num_cells_)
-  , pfield_tmp_vec_(num_pfield_variables_ * size_phi_, 0.)
-  , pfield_tmp_vec2_(num_pfield_variables_ * size_phi_, 0., num_mutexes_pfield_)
+  , pfield_tmp_vec_(3 * size_phi_, 0.)
+  , pfield_tmp_vec2_(3 * size_phi_, 0., num_mutexes_pfield_)
   , phi_tmp_vec_(size_phi_, 0.)
   , phi_tmp_vec2_(size_phi_, 0.)
   , u_tmp_vec_(size_u_, 0.)
   , P_tmp_vec_(size_P_, 0.)
-  , u_tmp_(u_space_)
+  , u_tmp_(size_u_, 0.)
   , partitioning_(
         grid_view_,
         use_tbb ? DXTC_CONFIG_GET("threading.partition_factor", 1u) * XT::Common::threadManager().current_threads() : 1)
@@ -326,25 +325,19 @@ CellModelSolver::CellModelSolver(const std::string testcase,
     P_view_.emplace_back(ofield_vectors_[kk], 0, size_P_);
     Pnat_view_.emplace_back(ofield_vectors_[kk], size_P_, 2 * size_P_);
     phi_view_.emplace_back(pfield_vectors_[kk], 0, size_phi_);
-    if (num_pfield_variables_ > 1) {
-      phinat_view_.emplace_back(pfield_vectors_[kk], size_phi_, 2 * size_phi_);
-      mu_view_.emplace_back(pfield_vectors_[kk], 2 * size_phi_, 3 * size_phi_);
-    }
+    phinat_view_.emplace_back(pfield_vectors_[kk], size_phi_, 2 * size_phi_);
+    mu_view_.emplace_back(pfield_vectors_[kk], 2 * size_phi_, 3 * size_phi_);
     const auto kk_str = XT::Common::to_string(kk);
     P_.emplace_back(make_discrete_function(P_space_, P_view_[kk], "P_" + kk_str));
     Pnat_.emplace_back(make_discrete_function(P_space_, Pnat_view_[kk], "Pnat_" + kk_str));
     phi_.emplace_back(make_discrete_function(phi_space_, phi_view_[kk], "phi_" + kk_str));
-    if (num_pfield_variables_ > 1) {
-      phinat_.emplace_back(make_discrete_function(phi_space_, phinat_view_[kk], "phinat_" + kk_str));
-      mu_.emplace_back(make_discrete_function(phi_space_, mu_view_[kk], "mu_" + kk_str));
-    }
-    P_tmp_.emplace_back(P_space_);
-    Pnat_tmp_.emplace_back(P_space_);
-    phi_tmp_.emplace_back(phi_space_);
-    if (num_pfield_variables_ > 1) {
-      phinat_tmp_.emplace_back(phi_space_);
-      mu_tmp_.emplace_back(phi_space_);
-    }
+    phinat_.emplace_back(make_discrete_function(phi_space_, phinat_view_[kk], "phinat_" + kk_str));
+    mu_.emplace_back(make_discrete_function(phi_space_, mu_view_[kk], "mu_" + kk_str));
+    P_tmp_.emplace_back(size_P_);
+    Pnat_tmp_.emplace_back(size_P_);
+    phi_tmp_.emplace_back(size_phi_);
+    phinat_tmp_.emplace_back(size_phi_);
+    mu_tmp_.emplace_back(size_phi_);
   }
 
   /************************** create and project initial values *****************************************
@@ -590,8 +583,7 @@ struct CellModelSolver::OfieldNonlinearS10Functor : public XT::Grid::ElementFunc
     for (size_t ii = 0; ii < P_basis_size; ++ii)
       P_coeffs_[ii] = quad_storage_.P_dofs_[global_indices_P[ii]];
     for (size_t ll = 0; ll < quad_storage_.quadrature_.size(); ++ll) {
-      const auto& quad_point = quad_storage_.quadrature_[ll];
-      const auto factor = quad_storage_.integration_factors_[ll] * quad_point.weight();
+      const auto factor = quad_storage_.integration_factors_[ll];
       P_ *= 0.;
       for (size_t ii = 0; ii < P_basis_size; ++ii) {
         P_.axpy(P_coeffs_[ii], quad_storage_.P_basis_evaluated_[ll][ii]);
@@ -623,7 +615,7 @@ struct CellModelSolver::OfieldNonlinearS10Functor : public XT::Grid::ElementFunc
   std::vector<double> P_times_P_basis_;
   std::vector<double> result_;
   std::vector<double> P_coeffs_;
-  const double minus_frac_c1_Pa_;
+  double minus_frac_c1_Pa_;
 }; // struct OfieldNonlinearS10Functor
 
 // Computes the two ofield matrices B(u) and C(phi)
@@ -688,7 +680,6 @@ struct CellModelSolver::OfieldPrepareFunctor : public XT::Grid::ElementFunctor<P
           J_inv_T_.mv(quad_storage_.P_basis_jacobians_[0][ii][rr], P_basis_jacobians_transformed_[0][ii][rr]);
     }
     for (size_t ll = 0; ll < quadrature.size(); ++ll) {
-      const auto factor = quad_storage_.integration_factors_[ll] * quadrature[ll].weight();
       if (!geometry_affine)
         J_inv_T_ = geometry.jacobianInverseTransposed(quadrature[ll].position());
       for (size_t ii = 0; ii < u_basis_size; ++ii)
@@ -711,6 +702,7 @@ struct CellModelSolver::OfieldPrepareFunctor : public XT::Grid::ElementFunctor<P
                                                                              : P_basis_jacobians_transformed_[ll];
       for (size_t ii = 0; ii < P_basis_size; ++ii)
         P_basis_grads[ii].mv(u_, P_basis_grad_times_u_[ii]);
+      const auto factor = quad_storage_.integration_factors_[ll];
       const auto factor2 = frac_c1_Pa_ * phi * factor;
       for (size_t ii = 0; ii < P_basis_size; ++ii) {
         const auto offset_ii = ii * P_basis_size;
@@ -804,8 +796,7 @@ struct CellModelSolver::OfieldResidualFunctor : public XT::Grid::ElementFunctor<
       P_ *= 0.;
       for (size_t ii = 0; ii < P_basis_size; ++ii)
         P_.axpy(P_coeffs_[ii], quad_storage_.P_basis_evaluated_[ll][ii]);
-      const auto factor =
-          P_.two_norm2() * minus_frac_c1_Pa_ * quadrature[ll].weight() * quad_storage_.integration_factors_[ll];
+      const auto factor = P_.two_norm2() * minus_frac_c1_Pa_ * quad_storage_.integration_factors_[ll];
       for (size_t ii = 0; ii < P_basis_size; ++ii)
         result_[ii] += (quad_storage_.P_basis_evaluated_[ll][ii] * P_) * factor;
     } // ll
@@ -868,30 +859,24 @@ struct CellModelSolver::PfieldResidualFunctor : public XT::Grid::ElementFunctor<
       mu_coeffs_[ii] = quad_storage_.mu_dofs_[global_indices_phi[ii]];
     }
     const auto& quadrature = quad_storage_.quadrature_;
-    const double prefactor2 = cellmodel_.num_pfield_variables_ > 1 ? eps_inv_ : dt_gamma_div_eps_Ca_;
+    const double prefactor2 = eps_inv_;
     for (size_t ll = 0; ll < quadrature.size(); ++ll) {
       phi = XT::Common::transform_reduce(
           phi_coeffs_.begin(), phi_coeffs_.end(), quad_storage_.phi_basis_evaluated_[ll].begin(), 0.);
-      const auto factor = quad_storage_.integration_factors_[ll] * quadrature[ll].weight();
-      if (cellmodel_.num_pfield_variables_ > 1) {
-        mu = XT::Common::transform_reduce(
-            mu_coeffs_.begin(), mu_coeffs_.end(), quad_storage_.phi_basis_evaluated_[ll].begin(), 0.);
-        const auto factor1 = inv_Be_eps2_ * (3. * phi * phi - 1) * mu * factor;
-        for (size_t ii = 0; ii < phi_basis_size; ++ii)
-          result1_[ii] += quad_storage_.phi_basis_evaluated_[ll][ii] * factor1;
-      }
+      const auto factor = quad_storage_.integration_factors_[ll];
+      mu = XT::Common::transform_reduce(
+          mu_coeffs_.begin(), mu_coeffs_.end(), quad_storage_.phi_basis_evaluated_[ll].begin(), 0.);
+      const auto factor1 = inv_Be_eps2_ * (3. * phi * phi - 1) * mu * factor;
+      for (size_t ii = 0; ii < phi_basis_size; ++ii)
+        result1_[ii] += quad_storage_.phi_basis_evaluated_[ll][ii] * factor1;
       const auto factor2 = prefactor2 * (phi * phi - 1) * phi * factor;
       for (size_t ii = 0; ii < phi_basis_size; ++ii)
         result2_[ii] += quad_storage_.phi_basis_evaluated_[ll][ii] * factor2;
     } // ll
     for (size_t ii = 0; ii < phi_basis_size; ++ii) {
       const auto index_ii = global_indices_phi[ii];
-      if (cellmodel_.num_pfield_variables_ == 1) {
-        res0_vec_.add_to_entry(index_ii, result2_[ii]);
-      } else {
-        res1_vec_.add_to_entry(index_ii, result1_[ii]);
-        res2_vec_.add_to_entry(index_ii, result2_[ii]);
-      }
+      res1_vec_.add_to_entry(index_ii, result1_[ii]);
+      res2_vec_.add_to_entry(index_ii, result2_[ii]);
     } // ii
   }
 
@@ -943,8 +928,7 @@ struct CellModelSolver::PfieldNonlinearJacobianFunctor : public XT::Grid::Elemen
     const auto phi_basis_size = quad_storage_.phi_basis_size_;
     for (size_t ii = 0; ii < phi_basis_size; ++ii) {
       phi_coeffs_[ii] = quad_storage_.phi_dofs_[global_indices_phi[ii]];
-      if (cellmodel_.num_pfield_variables_ > 1)
-        mu_coeffs_[ii] = quad_storage_.mu_dofs_[global_indices_phi[ii]];
+      mu_coeffs_[ii] = quad_storage_.mu_dofs_[global_indices_phi[ii]];
     }
     const auto& quadrature = quad_storage_.quadrature_;
     for (size_t ll = 0; ll < quadrature.size(); ++ll) {
@@ -953,7 +937,7 @@ struct CellModelSolver::PfieldNonlinearJacobianFunctor : public XT::Grid::Elemen
       mu = XT::Common::transform_reduce(
           mu_coeffs_.begin(), mu_coeffs_.end(), quad_storage_.phi_basis_evaluated_[ll].begin(), 0.);
 
-      const auto factor = quad_storage_.integration_factors_[ll] * quadrature[ll].weight();
+      const auto factor = quad_storage_.integration_factors_[ll];
       const auto factor1 = (3 * phi * phi - 1) * factor;
       const auto factor2 = six_inv_Be_eps2_ * phi * mu * factor;
       for (size_t ii = 0; ii < phi_basis_size; ++ii) {
@@ -961,11 +945,9 @@ struct CellModelSolver::PfieldNonlinearJacobianFunctor : public XT::Grid::Elemen
         const auto factor1_ii = quad_storage_.phi_basis_evaluated_[ll][ii] * factor1;
         for (size_t jj = 0; jj < phi_basis_size; ++jj)
           result1_[offset_ii + jj] += quad_storage_.phi_basis_evaluated_[ll][jj] * factor1_ii;
-        if (cellmodel_.num_pfield_variables_ > 1) {
-          const auto factor2_ii = quad_storage_.phi_basis_evaluated_[ll][ii] * factor2;
-          for (size_t jj = 0; jj < phi_basis_size; ++jj)
-            result2_[offset_ii + jj] += quad_storage_.phi_basis_evaluated_[ll][jj] * factor2_ii;
-        }
+        const auto factor2_ii = quad_storage_.phi_basis_evaluated_[ll][ii] * factor2;
+        for (size_t jj = 0; jj < phi_basis_size; ++jj)
+          result2_[offset_ii + jj] += quad_storage_.phi_basis_evaluated_[ll][jj] * factor2_ii;
       } // ii
     } // ll
     for (size_t ii = 0; ii < phi_basis_size; ++ii) {
@@ -974,8 +956,7 @@ struct CellModelSolver::PfieldNonlinearJacobianFunctor : public XT::Grid::Elemen
       for (size_t jj = 0; jj < phi_basis_size; ++jj) {
         const auto index_jj = global_indices_phi[jj];
         cellmodel_.Dmu_f_pfield_.add_to_entry(index_ii, index_jj, result1_[offset_ii + jj]);
-        if (cellmodel_.num_pfield_variables_ > 1)
-          cellmodel_.Dphi_f_pfield_incl_coeffs_and_sign_.add_to_entry(index_ii, index_jj, result2_[offset_ii + jj]);
+        cellmodel_.Dphi_f_pfield_incl_coeffs_and_sign_.add_to_entry(index_ii, index_jj, result2_[offset_ii + jj]);
       } // jj
     } // ii
   }
@@ -1006,8 +987,7 @@ struct CellModelSolver::PfieldRhsFunctor : public XT::Grid::ElementFunctor<PGV>
     , P_basis_jacobians_transformed_(quad_storage_.P_basis_jacobians_)
     , result_(quad_storage_.phi_basis_size_ * quad_storage_.phi_basis_size_)
     , P_coeffs_(quad_storage_.P_basis_size_)
-    , prefactor_((cellmodel_.num_pfield_variables_ == 1 ? cellmodel_.dt_ * cellmodel_.gamma_ : -1.) * cellmodel.c_1_
-                 / (2. * cellmodel_.Pa_))
+    , prefactor_(-cellmodel.c_1_ / (2. * cellmodel_.Pa_))
   {}
 
   PfieldRhsFunctor(const ThisType& other) = default;
@@ -1033,8 +1013,7 @@ struct CellModelSolver::PfieldRhsFunctor : public XT::Grid::ElementFunctor<PGV>
       P_ *= 0.;
       for (size_t ii = 0; ii < P_basis_size; ++ii)
         P_.axpy(P_coeffs_[ii], quad_storage_.P_basis_evaluated_[ll][ii]);
-      const double factor =
-          P_.two_norm2() * prefactor_ * quad_storage_.integration_factors_[ll] * quadrature[ll].weight();
+      const double factor = P_.two_norm2() * prefactor_ * quad_storage_.integration_factors_[ll];
       for (size_t ii = 0; ii < phi_basis_size; ++ii)
         result_[ii] += quad_storage_.phi_basis_evaluated_[ll][ii] * factor;
     } // ll
@@ -1101,7 +1080,7 @@ struct CellModelSolver::PfieldBFunctor : public XT::Grid::ElementFunctor<PGV>
         J_inv_T_.mv(quad_storage_.phi_basis_jacobians_[0][ii][0], phi_basis_jacobians_transformed_[0][ii][0]);
     }
     for (size_t ll = 0; ll < quadrature.size(); ++ll) {
-      const auto factor = quad_storage_.integration_factors_[ll] * quadrature[ll].weight();
+      const auto factor = quad_storage_.integration_factors_[ll];
       if (!geometry_affine)
         J_inv_T_ = geometry.jacobianInverseTransposed(quadrature[ll].position());
       if (!quad_storage_.phi_affine_ || !geometry_affine)
@@ -1214,7 +1193,6 @@ struct CellModelSolver::StokesRhsFunctor : public XT::Grid::ElementFunctor<PGV>
     }
     double phi, phinat;
     for (size_t ll = 0; ll < quadrature.size(); ++ll) {
-      const auto factor = quad_storage_.integration_factors_[ll] * quadrature[ll].weight();
       if (!geometry_affine)
         J_inv_T_ = geometry.jacobianInverseTransposed(quadrature[ll].position());
       for (size_t ii = 0; ii < u_basis_size; ++ii)
@@ -1256,25 +1234,15 @@ struct CellModelSolver::StokesRhsFunctor : public XT::Grid::ElementFunctor<PGV>
       grad_P_.mtv(Pnat_, grad_P_T_Pnat_plus_phinat_grad_phi);
       grad_P_T_Pnat_plus_phinat_grad_phi.axpy(phinat, grad_phi_[0]);
       const auto Fa_inv_phi_tilde = cellmodel_.Fa_inv_ * phi_tilde;
+      const auto factor = quad_storage_.integration_factors_[ll];
       for (size_t ii = 0; ii < u_basis_size; ++ii) {
         const auto& u_basis_grad_ii = u_basis_jacobians_transformed_[ll][ii];
         const auto& u_basis_val_ii = quad_storage_.u_basis_evaluated_[ll][ii];
         for (size_t mm = 0; mm < d; ++mm) {
           const auto factor1_mm = (Fa_inv_phi_tilde * P_[mm] + xi_p_1_ * Pnat_[mm]) * factor;
           const auto factor2_mm = xi_m_1_ * P_[mm] * factor;
-          if (cellmodel_.num_pfield_variables_ > 1)
-            result_[ii] += grad_P_T_Pnat_plus_phinat_grad_phi[mm] * u_basis_val_ii[mm] * factor;
+          result_[ii] += grad_P_T_Pnat_plus_phinat_grad_phi[mm] * u_basis_val_ii[mm] * factor;
           result_[ii] += -(P_ * u_basis_grad_ii[mm]) * factor1_mm - (Pnat_ * u_basis_grad_ii[mm]) * factor2_mm;
-          if (cellmodel_.num_pfield_variables_ == 1) {
-            const auto factor3_mm = (eps_div_Ca_ * grad_phi_[0][mm]) * factor;
-            result_[ii] += (grad_phi_[0] * u_basis_grad_ii[mm]) * factor3_mm;
-            for (size_t nn = 0; nn < d; ++nn) {
-              double grad_P_T_grad_P_mn = 0.;
-              for (size_t kk = 0; kk < d; ++kk)
-                grad_P_T_grad_P_mn += grad_P_[mm][kk] * grad_P_[kk][nn];
-              result_[ii] += grad_P_T_grad_P_mn * u_basis_grad_ii[mm][nn] * Pa_inv_ * factor;
-            } // nn
-          } // if (num_pfield_variables_ == 1)
         } // mm
       } // ii
     } // ll
@@ -1505,18 +1473,16 @@ std::vector<std::vector<CellModelSolver::VectorType>> CellModelSolver::next_n_ti
 // with vec.
 CellModelSolver::VectorType CellModelSolver::apply_pfield_L2_product_operator(const VectorType& vec) const
 {
-  VectorType ret(num_pfield_variables_ * size_phi_, 0.);
+  VectorType ret(3 * size_phi_, 0.);
   ConstVectorViewType phi_view(vec, 0, size_phi_);
   VectorViewType phi_ret_view(ret, 0, size_phi_);
   M_pfield_.mv(phi_view, phi_ret_view);
-  if (num_pfield_variables_ > 1) {
-    ConstVectorViewType phinat_view(vec, size_phi_, 2 * size_phi_);
-    ConstVectorViewType mu_view(vec, 2 * size_phi_, 3 * size_phi_);
-    VectorViewType phinat_ret_view(ret, size_phi_, 2 * size_phi_);
-    VectorViewType mu_ret_view(ret, 2 * size_phi_, 3 * size_phi_);
-    M_pfield_.mv(phinat_view, phinat_ret_view);
-    M_pfield_.mv(mu_view, mu_ret_view);
-  }
+  ConstVectorViewType phinat_view(vec, size_phi_, 2 * size_phi_);
+  ConstVectorViewType mu_view(vec, 2 * size_phi_, 3 * size_phi_);
+  VectorViewType phinat_ret_view(ret, size_phi_, 2 * size_phi_);
+  VectorViewType mu_ret_view(ret, 2 * size_phi_, 3 * size_phi_);
+  M_pfield_.mv(phinat_view, phinat_ret_view);
+  M_pfield_.mv(mu_view, mu_ret_view);
   return ret;
 }
 
@@ -1549,25 +1515,23 @@ CellModelSolver::VectorType CellModelSolver::apply_stokes_L2_product_operator(co
 
 CellModelSolver::VectorType CellModelSolver::apply_pfield_H1_product_operator(const VectorType& vec) const
 {
-  VectorType ret(num_pfield_variables_ * size_phi_, 0.);
+  VectorType ret(3 * size_phi_, 0.);
   ConstVectorViewType phi_view(vec, 0, size_phi_);
   VectorViewType phi_ret_view(ret, 0, size_phi_);
   VectorViewType tmp_vec_view(phi_tmp_vec_, 0, size_phi_);
   M_pfield_.mv(phi_view, phi_ret_view);
   E_pfield_.mv(phi_view, tmp_vec_view);
   phi_ret_view += tmp_vec_view;
-  if (num_pfield_variables_ > 1) {
-    ConstVectorViewType phinat_view(vec, size_phi_, 2 * size_phi_);
-    ConstVectorViewType mu_view(vec, 2 * size_phi_, 3 * size_phi_);
-    VectorViewType phinat_ret_view(ret, size_phi_, 2 * size_phi_);
-    VectorViewType mu_ret_view(ret, 2 * size_phi_, 3 * size_phi_);
-    M_pfield_.mv(phinat_view, phinat_ret_view);
-    E_pfield_.mv(phinat_view, tmp_vec_view);
-    phinat_ret_view += tmp_vec_view;
-    M_pfield_.mv(mu_view, mu_ret_view);
-    E_pfield_.mv(mu_view, tmp_vec_view);
-    mu_ret_view += tmp_vec_view;
-  }
+  ConstVectorViewType phinat_view(vec, size_phi_, 2 * size_phi_);
+  ConstVectorViewType mu_view(vec, 2 * size_phi_, 3 * size_phi_);
+  VectorViewType phinat_ret_view(ret, size_phi_, 2 * size_phi_);
+  VectorViewType mu_ret_view(ret, 2 * size_phi_, 3 * size_phi_);
+  M_pfield_.mv(phinat_view, phinat_ret_view);
+  E_pfield_.mv(phinat_view, tmp_vec_view);
+  phinat_ret_view += tmp_vec_view;
+  M_pfield_.mv(mu_view, mu_ret_view);
+  E_pfield_.mv(mu_view, tmp_vec_view);
+  mu_ret_view += tmp_vec_view;
   return ret;
 }
 
@@ -1601,14 +1565,12 @@ void CellModelSolver::visualize_pfield(const std::string& filename, const Vector
     phi_vec[ii] = vec[ii];
   const auto phi_func = make_discrete_function(phi_space_, phi_vec, "phi");
   XT::Functions::internal::add_to_vtkwriter(*vtk_writer, phi_func);
-  if (num_pfield_variables_ > 1) {
-    const ConstVectorViewType phinat_vec(vec, size_phi_, 2 * size_phi_);
-    const ConstVectorViewType mu_vec(vec, 2 * size_phi_, 3 * size_phi_);
-    const auto phinat_func = make_discrete_function(phi_space_, phinat_vec, "phinat");
-    const auto mu_func = make_discrete_function(phi_space_, mu_vec, "mu");
-    XT::Functions::internal::add_to_vtkwriter(*vtk_writer, phinat_func);
-    XT::Functions::internal::add_to_vtkwriter(*vtk_writer, mu_func);
-  }
+  const ConstVectorViewType phinat_vec(vec, size_phi_, 2 * size_phi_);
+  const ConstVectorViewType mu_vec(vec, 2 * size_phi_, 3 * size_phi_);
+  const auto phinat_func = make_discrete_function(phi_space_, phinat_vec, "phinat");
+  const auto mu_func = make_discrete_function(phi_space_, mu_vec, "mu");
+  XT::Functions::internal::add_to_vtkwriter(*vtk_writer, phinat_func);
+  XT::Functions::internal::add_to_vtkwriter(*vtk_writer, mu_func);
   XT::Functions::internal::write_visualization(*vtk_writer, filename);
 } // void visualize_pfield(...)
 
@@ -1664,16 +1626,12 @@ void CellModelSolver::visualize(const std::string& prefix,
       XT::Functions::internal::add_to_vtkwriter(*vtk_writer, Pnat_[kk]);
       // XT::Functions::internal::add_to_vtkwriter(*vtk_writer, *phi_funcs[kk]);
       XT::Functions::internal::add_to_vtkwriter(*vtk_writer, phi_[kk]);
-      if (num_pfield_variables_ > 1) {
-        XT::Functions::internal::add_to_vtkwriter(*vtk_writer, phinat_[kk]);
-        XT::Functions::internal::add_to_vtkwriter(*vtk_writer, mu_[kk]);
-      }
+      XT::Functions::internal::add_to_vtkwriter(*vtk_writer, phinat_[kk]);
+      XT::Functions::internal::add_to_vtkwriter(*vtk_writer, mu_[kk]);
       // XT::Functions::internal::add_gradient_to_vtkwriter(*vtk_writer, *phi_funcs[kk]);
       XT::Functions::internal::add_gradient_to_vtkwriter(*vtk_writer, phi_[kk]);
-      if (num_pfield_variables_ > 1) {
-        XT::Functions::internal::add_gradient_to_vtkwriter(*vtk_writer, phinat_[kk]);
-        XT::Functions::internal::add_gradient_to_vtkwriter(*vtk_writer, mu_[kk]);
-      }
+      XT::Functions::internal::add_gradient_to_vtkwriter(*vtk_writer, phinat_[kk]);
+      XT::Functions::internal::add_gradient_to_vtkwriter(*vtk_writer, mu_[kk]);
     }
     XT::Functions::internal::write_visualization(*vtk_writer, prefix + postfix);
   } // if (vtu)
@@ -1684,10 +1642,8 @@ void CellModelSolver::visualize(const std::string& prefix,
       write_to_textfile(P_[kk], prefix, step, t);
       write_to_textfile(Pnat_[kk], prefix, step, t);
       write_to_textfile(phi_[kk], prefix, step, t);
-      if (num_pfield_variables_ > 1) {
-        write_to_textfile(phinat_[kk], prefix, step, t);
-        write_to_textfile(mu_[kk], prefix, step, t);
-      }
+      write_to_textfile(phinat_[kk], prefix, step, t);
+      write_to_textfile(mu_[kk], prefix, step, t);
     } // kk
   } // if (txt)
   if (timings) {
@@ -1899,13 +1855,12 @@ const CellModelSolver::VectorType& CellModelSolver::pfield_vec(const size_t cell
 void CellModelSolver::prepare_stokes_operator(const bool restricted)
 {
   // copy VectorViews to actual vectors to improve performance
-  u_tmp_.dofs().vector() = u_.dofs().vector();
+  u_tmp_ = u_.dofs().vector();
   for (size_t kk = 0; kk < num_cells_; kk++) {
-    phi_tmp_[kk].dofs().vector() = phi_[kk].dofs().vector();
-    if (num_pfield_variables_ > 1)
-      phinat_tmp_[kk].dofs().vector() = phinat_[kk].dofs().vector();
-    P_tmp_[kk].dofs().vector() = P_[kk].dofs().vector();
-    Pnat_tmp_[kk].dofs().vector() = Pnat_[kk].dofs().vector();
+    phi_tmp_[kk] = phi_[kk].dofs().vector();
+    phinat_tmp_[kk] = phinat_[kk].dofs().vector();
+    P_tmp_[kk] = P_view_[kk];
+    Pnat_tmp_[kk] = Pnat_view_[kk];
   }
   // assemble
   assemble_stokes_rhs(restricted);
@@ -1915,9 +1870,9 @@ void CellModelSolver::prepare_stokes_operator(const bool restricted)
 void CellModelSolver::prepare_ofield_operator(const size_t cell, const bool restricted)
 {
   // copy VectorViews to actual vectors to improve performance
-  u_tmp_.dofs().vector() = u_.dofs().vector();
-  P_tmp_[cell].dofs().vector() = P_[cell].dofs().vector();
-  phi_tmp_[cell].dofs().vector() = phi_[cell].dofs().vector();
+  u_tmp_ = u_.dofs().vector();
+  P_tmp_[cell] = P_view_[cell];
+  phi_tmp_[cell] = phi_[cell].dofs().vector();
   // assemble
   ofield_jac_linear_op_.prepare(cell, restricted);
   assemble_ofield_rhs(cell, restricted);
@@ -1928,12 +1883,11 @@ void CellModelSolver::prepare_ofield_operator(const size_t cell, const bool rest
 
 void CellModelSolver::prepare_pfield_operator(const size_t cell, const bool restricted)
 {
-  u_tmp_.dofs().vector() = u_.dofs().vector();
-  P_tmp_[cell].dofs().vector() = P_[cell].dofs().vector();
+  u_tmp_ = u_.dofs().vector();
+  P_tmp_[cell] = P_view_[cell];
   for (size_t kk = 0; kk < num_cells_; kk++) {
-    phi_tmp_[kk].dofs().vector() = phi_[kk].dofs().vector();
-    if (num_pfield_variables_ > 1)
-      mu_tmp_[kk].dofs().vector() = mu_[kk].dofs().vector();
+    phi_tmp_[kk] = phi_[kk].dofs().vector();
+    mu_tmp_[kk] = mu_[kk].dofs().vector();
   }
   assemble_pfield_rhs(cell, restricted);
   assemble_pfield_linear_jacobian(cell, restricted);
@@ -2063,8 +2017,6 @@ void CellModelSolver::compute_restricted_pfield_dofs(const std::vector<size_t>& 
   if (!pfield_deim_range_dofs_[cell] || *pfield_deim_range_dofs_[cell] != range_dofs) {
     // We need to keep the original range_dofs which is unordered and may contain duplicates, as the restricted
     // operator will return exactly these dofs. For computations, however, we often need unique dofs.
-    if (num_pfield_variables_ != 3)
-      DUNE_THROW(Dune::NotImplemented, "Restricted operator has not yet been adapted!");
     pfield_deim_range_dofs_[cell] = std::make_shared<std::vector<size_t>>(range_dofs);
     auto& unique_range_dofs = pfield_deim_unique_range_dofs_[cell];
     get_unique_deim_dofs(unique_range_dofs, range_dofs, 3 * size_phi_);
@@ -2098,9 +2050,8 @@ void CellModelSolver::compute_restricted_pfield_dofs(const std::vector<size_t>& 
     auto& source_dofs = pfield_deim_source_dofs_[cell];
     source_dofs.clear();
     source_dofs.resize(3);
-    get_deim_source_dofs(source_dofs[0],
-                         pfield_solver_.system_matrix_pattern(pfield_submatrix_pattern_, num_pfield_variables_),
-                         unique_range_dofs);
+    get_deim_source_dofs(
+        source_dofs[0], pfield_solver_.system_matrix_pattern(pfield_submatrix_pattern_), unique_range_dofs);
 
     // add P and u source dofs for all input entities
     DynamicVector<size_t> global_indices;
@@ -2287,8 +2238,8 @@ void CellModelSolver::assemble_nonlinear_part_of_ofield_residual(VectorType& res
   XT::Grid::Walker<PGV> walker(grid_view_);
   walker.append(functor);
   if (!restricted)
-    walker.walk(partitioning_);
-  // walker.walk(use_tbb_);
+    // walker.walk(partitioning_);
+    walker.walk(use_tbb_);
   else
     walker.walk_range(ofield_deim_entities_[cell]);
 }
@@ -2355,7 +2306,8 @@ CellModelSolver::apply_pfield_residual_operator(const VectorType& y, const size_
   return apply_pfield_helper(y, cell, restricted, false, false);
 }
 
-// Applies cell-th phase field operator without the diagonal mass matrices (applies F if phase field equation is F(y) =
+// Applies cell-th phase field operator without the diagonal mass matrices (applies F if phase field equation is F(y)
+// =
 // (-M phi; -M phinat; -M mu))
 CellModelSolver::VectorType CellModelSolver::apply_pfield_residual_operator_without_diagonal_mass_matrices(
     const VectorType& y, const size_t cell, const bool restricted)
@@ -2420,27 +2372,20 @@ CellModelSolver::VectorType CellModelSolver::apply_pfield_helper(const VectorTyp
     const auto vector_axpy = vector_axpy_func<VectorViewType, VectorType>(restricted);
     const auto scal = scal_func<VectorType>(restricted);
     const auto add = add_func<VectorViewType, VectorType>(restricted);
-    if (num_pfield_variables_ == 1) {
-      const auto& phi_range_dofs = phi_deim_range_dofs_[cell];
-      VectorViewType range_phi(residual, 0, size_phi_);
-      mv(Dmu_f_pfield_, source_phi, tmp_vec, phi_range_dofs);
-      vector_axpy(range_phi, dt_ * gamma_ / (epsilon_ * Ca_), tmp_vec, phi_range_dofs);
-    } else {
-      const auto& phinat_range_dofs = phinat_deim_range_dofs_[cell];
-      const auto& mu_range_dofs = mu_deim_range_dofs_[cell];
-      VectorViewType range_phinat(residual, size_phi_, 2 * size_phi_);
-      VectorViewType range_mu(residual, 2 * size_phi_, 3 * size_phi_);
-      const ConstVectorViewType source_mu(source, 2 * size_phi_, 3 * size_phi_);
-      // apply missing parts of S_12
-      mv(Dmu_f_pfield_, source_mu, tmp_vec, phinat_range_dofs);
-      vector_axpy(range_phinat, 1. / (Be_ * std::pow(epsilon_, 2)), tmp_vec, phinat_range_dofs);
-      // apply missing parts of S_20
-      mv(Dmu_f_pfield_, source_phi, tmp_vec, mu_range_dofs);
-      vector_axpy(range_mu, 1. / epsilon_, tmp_vec, mu_range_dofs);
-      // apply S_10
-      mv(Dphi_f_pfield_incl_coeffs_and_sign_, source_phi, tmp_vec, phinat_range_dofs);
-      add(range_phinat, tmp_vec, phinat_range_dofs);
-    }
+    const auto& phinat_range_dofs = phinat_deim_range_dofs_[cell];
+    const auto& mu_range_dofs = mu_deim_range_dofs_[cell];
+    VectorViewType range_phinat(residual, size_phi_, 2 * size_phi_);
+    VectorViewType range_mu(residual, 2 * size_phi_, 3 * size_phi_);
+    const ConstVectorViewType source_mu(source, 2 * size_phi_, 3 * size_phi_);
+    // apply missing parts of S_12
+    mv(Dmu_f_pfield_, source_mu, tmp_vec, phinat_range_dofs);
+    vector_axpy(range_phinat, 1. / (Be_ * std::pow(epsilon_, 2)), tmp_vec, phinat_range_dofs);
+    // apply missing parts of S_20
+    mv(Dmu_f_pfield_, source_phi, tmp_vec, mu_range_dofs);
+    vector_axpy(range_mu, 1. / epsilon_, tmp_vec, mu_range_dofs);
+    // apply S_10
+    mv(Dphi_f_pfield_incl_coeffs_and_sign_, source_phi, tmp_vec, phinat_range_dofs);
+    add(range_phinat, tmp_vec, phinat_range_dofs);
   } else {
     fill_tmp_pfield(cell, source, restricted);
     assemble_nonlinear_part_of_pfield_residual(residual, cell, restricted);
@@ -2753,8 +2698,8 @@ void CellModelSolver::assemble_stokes_rhs(const bool restricted)
   XT::Grid::Walker<PGV> walker(grid_view_);
   walker.append(functor);
   if (!restricted)
-    walker.walk(partitioning_);
-  // walker.walk(use_tbb_);
+    // walker.walk(partitioning_);
+    walker.walk(use_tbb_);
   else
     walker.walk_range(stokes_deim_entities_);
   // apply dirichlet constraints for u.
@@ -2781,18 +2726,13 @@ void CellModelSolver::assemble_pfield_rhs(const size_t cell, const bool restrict
   mv(M_pfield_, phi_n, pfield_r0_vector_, phi_range_dofs);
   XT::Grid::Walker<PGV> walker(grid_view_);
   const auto scal = scal_func<VectorViewType>(restricted);
-  if (num_pfield_variables_ == 1) {
-    PfieldRhsFunctor functor(*this, *pfield_rhs_quad_, pfield_r0_vector_);
-    walker.append(functor);
-  } else {
-    const auto& phinat_range_dofs = phinat_deim_range_dofs_[cell];
-    scal(pfield_r1_vector_, 0., phinat_range_dofs);
-    PfieldRhsFunctor functor(*this, *pfield_rhs_quad_, pfield_r1_vector_);
-    walker.append(functor);
-  }
+  const auto& phinat_range_dofs = phinat_deim_range_dofs_[cell];
+  scal(pfield_r1_vector_, 0., phinat_range_dofs);
+  PfieldRhsFunctor functor(*this, *pfield_rhs_quad_, pfield_r1_vector_);
+  walker.append(functor);
   if (!restricted)
-    walker.walk(partitioning_);
-  // walker.walk(use_tbb_);
+    // walker.walk(partitioning_);
+    walker.walk(use_tbb_);
   else
     walker.walk_range(pfield_deim_entities_[cell]);
 }
@@ -2808,8 +2748,8 @@ void CellModelSolver::assemble_ofield_linear_jacobian(const size_t cell, const b
   XT::Grid::Walker<PGV> walker(grid_view_);
   walker.append(functor);
   if (!restricted)
-    walker.walk(partitioning_);
-  // walker.walk(use_tbb_);
+    // walker.walk(partitioning_);
+    walker.walk(use_tbb_);
   else
     walker.walk_range(ofield_deim_entities_[cell]);
   // In the restricted case, we cannot use the solver anyway
@@ -2845,8 +2785,8 @@ void CellModelSolver::assemble_C_ofield_nonlinear_part(const size_t cell, const 
   XT::Grid::Walker<PGV> walker(grid_view_);
   walker.append(functor);
   if (!restricted)
-    walker.walk(partitioning_);
-  // walker.walk(use_tbb_);
+    // walker.walk(partitioning_);
+    walker.walk(use_tbb_);
   else
     walker.walk_range(ofield_deim_entities_[cell]);
 }
@@ -2859,15 +2799,14 @@ void CellModelSolver::assemble_pfield_linear_jacobian(const size_t cell, const b
 
 void CellModelSolver::set_mat_to_zero(MatrixType& mat,
                                       const bool restricted,
-                                      const XT::LA::SparsityPatternDefault& pattern,
+                                      const XT::LA::SparsityPatternDefault& /*pattern*/,
                                       const std::vector<size_t>& rows)
 {
   if (!restricted) {
     mat.set_to_zero();
   } else {
     for (const auto& row : rows)
-      for (const auto& col : pattern.inner(row))
-        mat.set_entry(row, col, 0.);
+      mat.backend().row(row) *= 0.;
   }
 }
 
@@ -2879,8 +2818,8 @@ void CellModelSolver::assemble_B_pfield(const size_t cell, const bool restricted
   XT::Grid::Walker<PGV> walker(grid_view_);
   walker.append(functor);
   if (!restricted)
-    walker.walk(partitioning_);
-  // walker.walk(use_tbb_);
+    // walker.walk(partitioning_);
+    walker.walk(use_tbb_);
   else
     walker.walk_range(pfield_deim_entities_[cell]);
 }
@@ -2890,23 +2829,19 @@ void CellModelSolver::assemble_pfield_nonlinear_jacobian(const VectorType& y, co
 {
   fill_tmp_pfield(cell, y, restricted);
   // clear matrices
-  if (num_pfield_variables_ == 1) {
-    set_mat_to_zero(Dmu_f_pfield_, restricted, pfield_submatrix_pattern_, phi_deim_range_dofs_[cell]);
-  } else {
-    const auto& phinat_range_dofs = phinat_deim_range_dofs_[cell];
-    const auto& mu_range_dofs = mu_deim_range_dofs_[cell];
-    set_mat_to_zero(Dmu_f_pfield_, restricted, pfield_submatrix_pattern_, mu_range_dofs);
-    if (restricted)
-      set_mat_to_zero(Dmu_f_pfield_, restricted, pfield_submatrix_pattern_, phinat_range_dofs);
-    set_mat_to_zero(Dphi_f_pfield_incl_coeffs_and_sign_, restricted, pfield_submatrix_pattern_, phinat_range_dofs);
-  }
+  const auto& phinat_range_dofs = phinat_deim_range_dofs_[cell];
+  const auto& mu_range_dofs = mu_deim_range_dofs_[cell];
+  set_mat_to_zero(Dmu_f_pfield_, restricted, pfield_submatrix_pattern_, mu_range_dofs);
+  if (restricted)
+    set_mat_to_zero(Dmu_f_pfield_, restricted, pfield_submatrix_pattern_, phinat_range_dofs);
+  set_mat_to_zero(Dphi_f_pfield_incl_coeffs_and_sign_, restricted, pfield_submatrix_pattern_, phinat_range_dofs);
   DUNE_THROW_IF(num_cells_ > 1, Dune::NotImplemented, "");
   PfieldNonlinearJacobianFunctor functor(*this, *pfield_residual_and_nonlinear_jac_quad_);
   XT::Grid::Walker<PGV> walker(grid_view_);
   walker.append(functor);
   if (!restricted)
-    walker.walk(partitioning_);
-  // walker.walk(use_tbb_);
+    // walker.walk(partitioning_);
+    walker.walk(use_tbb_);
   else
     walker.walk_range(pfield_deim_entities_[cell]);
 }
@@ -2924,8 +2859,8 @@ void CellModelSolver::assemble_nonlinear_part_of_pfield_residual(VectorType& res
   XT::Grid::Walker<PGV> walker(grid_view_);
   walker.append(functor);
   if (!restricted)
-    walker.walk(partitioning_);
-  // walker.walk(use_tbb_);
+    // walker.walk(partitioning_);
+    walker.walk(use_tbb_);
   else
     walker.walk_range(pfield_deim_entities_[cell]);
 } // ... assemble_nonlinear_part_of_pfield_residual(...)
@@ -3044,19 +2979,18 @@ void CellModelSolver::fill_tmp_ofield(const size_t cell, const VectorType& sourc
 {
   if (!restricted) {
     ConstVectorViewType P_vec(source, 0, size_P_);
-    P_tmp_[cell].dofs().vector() = P_vec;
+    P_tmp_[cell] = P_vec;
   } else {
     const auto& source_dofs = ofield_deim_source_dofs_[cell][1];
     const size_t Pnat_begin = Pnat_deim_source_dofs_begin_[cell];
-    auto& P_vec = P_tmp_[cell].dofs().vector();
     if (source.size() == 2 * size_P_) {
       for (size_t ii = 0; ii < Pnat_begin; ++ii)
-        P_vec.set_entry(source_dofs[ii], source[source_dofs[ii]]);
+        P_tmp_[cell].set_entry(source_dofs[ii], source[source_dofs[ii]]);
     } else {
       DUNE_THROW_IF(
           source.size() != source_dofs.size(), XT::Common::Exceptions::wrong_input_given, "Source has wrong size!");
       for (size_t ii = 0; ii < Pnat_begin; ++ii)
-        P_vec.set_entry(source_dofs[ii], source[ii]);
+        P_tmp_[cell].set_entry(source_dofs[ii], source[ii]);
     }
   }
 }
@@ -3066,19 +3000,15 @@ void CellModelSolver::fill_tmp_pfield(const size_t cell, const VectorType& sourc
 {
   if (!restricted) {
     ConstVectorViewType phi_vec(source, 0, size_phi_);
-    phi_tmp_[cell].dofs().vector() = phi_vec;
-    if (num_pfield_variables_ > 1) {
-      ConstVectorViewType mu_vec(source, 2 * size_phi_, 3 * size_phi_);
-      mu_tmp_[cell].dofs().vector() = mu_vec;
-    }
+    phi_tmp_[cell] = phi_vec;
+    ConstVectorViewType mu_vec(source, 2 * size_phi_, 3 * size_phi_);
+    mu_tmp_[cell] = mu_vec;
   } else {
-    if (num_pfield_variables_ == 1)
-      DUNE_THROW(Dune::NotImplemented, "Restricted operator has not yet been adapted!");
     const auto& source_dofs = pfield_deim_source_dofs_[cell][0];
     const size_t phinat_begin = phinat_deim_source_dofs_begin_[cell];
     const size_t mu_begin = mu_deim_source_dofs_begin_[cell];
-    auto& phi_vec = phi_tmp_[cell].dofs().vector();
-    auto& mu_vec = mu_tmp_[cell].dofs().vector();
+    auto& phi_vec = phi_tmp_[cell];
+    auto& mu_vec = mu_tmp_[cell];
     if (source.size() == 3 * size_phi_) {
       for (size_t ii = 0; ii < phinat_begin; ++ii)
         phi_vec.set_entry(source_dofs[ii], source[source_dofs[ii]]);

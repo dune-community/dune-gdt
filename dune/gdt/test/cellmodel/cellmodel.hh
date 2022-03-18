@@ -156,15 +156,13 @@ struct CellModelSolver
       , u_basis_size_(cellmodel.u_space_.basis().max_size())
       , P_basis_size_(cellmodel.P_space_.basis().max_size())
       , phi_basis_size_(cellmodel.phi_space_.basis().max_size())
-      , u_dofs_(cellmodel.u_tmp_.dofs().vector())
+      , u_dofs_(cellmodel.u_tmp_)
       // TODO: replace 0 by cell index
-      , P_dofs_(cellmodel.P_tmp_[0].dofs().vector())
-      , Pnat_dofs_(cellmodel.Pnat_tmp_[0].dofs().vector())
-      , phi_dofs_(cellmodel.phi_tmp_[0].dofs().vector())
-      , phinat_dofs_(cellmodel.num_pfield_variables_ == 1 ? cellmodel.phi_tmp_[0].dofs().vector()
-                                                          : cellmodel.phinat_tmp_[0].dofs().vector())
-      , mu_dofs_(cellmodel.num_pfield_variables_ == 1 ? cellmodel.phi_tmp_[0].dofs().vector()
-                                                      : cellmodel.mu_tmp_[0].dofs().vector())
+      , P_dofs_(cellmodel.P_tmp_[0])
+      , Pnat_dofs_(cellmodel.Pnat_tmp_[0])
+      , phi_dofs_(cellmodel.phi_tmp_[0])
+      , phinat_dofs_(cellmodel.phinat_tmp_[0])
+      , mu_dofs_(cellmodel.mu_tmp_[0])
     {
       const auto first_element = *cellmodel.grid_view_.template begin<0>();
       auto u_local_basis = cellmodel.u_space_.basis().localize();
@@ -220,7 +218,8 @@ struct CellModelSolver
       }
       integration_factors_ = std::vector<double>(quadrature_.size(), 0.);
       for (size_t ll = 0; ll < quadrature_.size(); ++ll)
-        integration_factors_[ll] = first_element.geometry().integrationElement(quadrature_[ll].position());
+        integration_factors_[ll] =
+            first_element.geometry().integrationElement(quadrature_[ll].position()) * quadrature_[ll].weight();
     }
 
     const bool P_affine_;
@@ -734,7 +733,6 @@ struct CellModelSolver
   const size_t num_mutexes_u_;
   const size_t num_mutexes_ofield_;
   const size_t num_mutexes_pfield_;
-  const size_t num_pfield_variables_;
   // Finite element vectors for phase field, orientation field and stokes system
   // There is one phase field and orientation field per cell
   VectorType stokes_vector_;
@@ -781,6 +779,7 @@ struct CellModelSolver
   // range dofs that were computed by the DEIM algorithm
   std::shared_ptr<std::vector<size_t>> stokes_deim_range_dofs_;
   std::vector<size_t> stokes_deim_unique_range_dofs_;
+  std::vector<size_t> stokes_dofs_unique_to_nonunique_map_;
   // range dofs for the respective variables, shifted to range [0, size_phi)
   std::vector<size_t> u_deim_range_dofs_;
   std::vector<size_t> p_deim_range_dofs_;
@@ -818,12 +817,15 @@ struct CellModelSolver
   VectorViewType ofield_g_vector_;
   VectorType ofield_tmp_vec_;
   VectorType ofield_tmp_vec2_;
+  VectorType ofield_tmp_vec_restricted_source_;
+  VectorType ofield_tmp_vec_restricted_range_;
   // Indices for restricted operator in DEIM context
   std::vector<std::vector<std::vector<size_t>>> ofield_deim_source_dofs_;
   std::vector<size_t> Pnat_deim_source_dofs_begin_;
   // range dofs that were computed by the DEIM algorithm
   std::vector<std::shared_ptr<std::vector<size_t>>> ofield_deim_range_dofs_;
   std::vector<std::vector<size_t>> ofield_deim_unique_range_dofs_;
+  std::vector<std::vector<size_t>> ofield_dofs_unique_to_nonunique_map_;
   // range dofs for the respective variables, shifted to range [0, size_phi)
   std::vector<std::vector<size_t>> P_deim_range_dofs_;
   std::vector<std::vector<size_t>> Pnat_deim_range_dofs_;
@@ -863,6 +865,7 @@ struct CellModelSolver
   // range dofs that were computed by the DEIM algorithm
   std::vector<std::shared_ptr<std::vector<size_t>>> pfield_deim_range_dofs_;
   std::vector<std::vector<size_t>> pfield_deim_unique_range_dofs_;
+  std::vector<std::vector<size_t>> pfield_dofs_unique_to_nonunique_map_;
   // range dofs for the respective variables, shifted to range [0, size_phi)
   std::vector<std::vector<size_t>> phi_deim_range_dofs_;
   std::vector<std::vector<size_t>> phinat_deim_range_dofs_;
@@ -882,12 +885,12 @@ struct CellModelSolver
   std::vector<DynamicVector<size_t>> global_indices_phi_;
   std::vector<DynamicVector<size_t>> global_indices_u_;
   std::vector<DynamicVector<size_t>> global_indices_P_;
-  mutable VectorDiscreteFunctionType u_tmp_;
-  mutable std::vector<VectorDiscreteFunctionType> P_tmp_;
-  mutable std::vector<VectorDiscreteFunctionType> Pnat_tmp_;
-  mutable std::vector<DiscreteFunctionType> phi_tmp_;
-  mutable std::vector<DiscreteFunctionType> phinat_tmp_;
-  mutable std::vector<DiscreteFunctionType> mu_tmp_;
+  mutable VectorType u_tmp_;
+  mutable std::vector<VectorType> P_tmp_;
+  mutable std::vector<VectorType> Pnat_tmp_;
+  mutable std::vector<VectorType> phi_tmp_;
+  mutable std::vector<VectorType> phinat_tmp_;
+  mutable std::vector<VectorType> mu_tmp_;
   XT::Grid::RangedPartitioning<PGV, 0> partitioning_;
   const bool bending_;
   const bool conservative_;
@@ -897,6 +900,7 @@ struct CellModelSolver
   std::shared_ptr<QuadratureStorage> ofield_residual_and_nonlinear_S10_quad_;
   std::shared_ptr<QuadratureStorage> pfield_B_quad_;
   std::shared_ptr<QuadratureStorage> pfield_residual_and_nonlinear_jac_quad_;
+  std::shared_ptr<OfieldNonlinearS10Functor> ofield_nonlinear_S10_functor_;
 };
 
 

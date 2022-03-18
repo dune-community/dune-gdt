@@ -45,9 +45,7 @@ public:
     MaxColsAtCompileTime = Dynamic
   };
 
-  PfieldIncompleteLUTPreconditioner()
-    : incomplete_lut_solver_(nullptr)
-  {}
+  PfieldIncompleteLUTPreconditioner() = default;
 
   explicit PfieldIncompleteLUTPreconditioner(const IncompleteLUTSolverType* ilut_solver)
     : incomplete_lut_solver_(ilut_solver)
@@ -93,7 +91,7 @@ public:
   }
 
   template <typename Rhs>
-  inline const Solve<PfieldIncompleteLUTPreconditioner, Rhs> solve(const MatrixBase<Rhs>& b) const
+  inline Solve<PfieldIncompleteLUTPreconditioner, Rhs> solve(const MatrixBase<Rhs>& b) const
   {
     return Solve<PfieldIncompleteLUTPreconditioner, Rhs>(*this, b.derived());
   }
@@ -104,7 +102,7 @@ public:
   }
 
 protected:
-  const IncompleteLUTSolverType* incomplete_lut_solver_;
+  const IncompleteLUTSolverType* incomplete_lut_solver_{};
 };
 
 } // namespace Eigen
@@ -290,8 +288,7 @@ public:
   using PfieldScalarProductType = PfieldScalarProduct<EigenVectorType, MatrixType>;
   using MatrixViewType = XT::LA::MatrixView<MatrixType>;
 
-  PfieldLinearSolver(const size_t num_pfield_variables,
-                     const double dt,
+  PfieldLinearSolver(const double dt,
                      const double gamma,
                      const double epsilon,
                      const double Be,
@@ -324,16 +321,14 @@ public:
   bool is_schur_solver() const;
 
   std::shared_ptr<MatrixType> create_pfield_preconditioner_matrix(const CellModelLinearSolverType solver_type,
-                                                                  const XT::LA::SparsityPatternDefault& pattern);
+                                                                  const XT::LA::SparsityPatternDefault& pattern) const;
 
   // creates sparsity pattern of phasefield system matrix
-  static XT::LA::SparsityPatternDefault system_matrix_pattern(const XT::LA::SparsityPatternDefault& submatrix_pattern,
-                                                              const size_t num_pfield_variables);
+  static XT::LA::SparsityPatternDefault system_matrix_pattern(const XT::LA::SparsityPatternDefault& submatrix_pattern);
 
   // creates sparsity pattern of phasefield preconditioner matrix
   static XT::LA::SparsityPatternDefault
-  preconditioner_matrix_pattern(const XT::LA::SparsityPatternDefault& submatrix_pattern,
-                                const size_t num_pfield_variables);
+  preconditioner_matrix_pattern(const XT::LA::SparsityPatternDefault& submatrix_pattern);
 
   // Calling this method will result in ret = M^{-1} rhs.
   // Note: Writing rhs_mu.backend() = solver->solve(rhs_mu.backend()) gives wrong results for CG solver, ret may not be
@@ -350,7 +345,6 @@ public:
 
   std::shared_ptr<Dune::ScalarProduct<EigenVectorType>> create_scalar_product();
 
-  size_t num_pfield_variables_;
   R dt_;
   R gamma_;
   R epsilon_;

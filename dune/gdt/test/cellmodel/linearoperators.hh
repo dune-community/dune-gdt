@@ -161,7 +161,6 @@ public:
     return cellmodel_solver_.M_ofield_;
   }
 
-private:
   const CellModelSolverType& cellmodel_solver_;
   size_t cell_;
   bool restricted_;
@@ -324,7 +323,7 @@ public:
   // Matrix dimensions are
   // A: m x m, B1, B2: m x n, C: n x n
   PfieldMatrixLinearPartOperator(const CellModelSolverType& cellmodel_solver, const bool exclude_mass_matrices = false)
-    : BaseType(cellmodel_solver.M_pfield_, cellmodel_solver.num_pfield_variables_ * cellmodel_solver.M_pfield_.rows())
+    : BaseType(cellmodel_solver.M_pfield_, 3 * cellmodel_solver.M_pfield_.rows())
     , cellmodel_solver_(cellmodel_solver)
     , x_phi_(cellmodel_solver.size_phi_, 0., 0)
     , x_phinat_(cellmodel_solver.size_phi_, 0., 0)
@@ -463,7 +462,7 @@ public:
   // Matrix dimensions are
   // A: m x m, B1, B2: m x n, C: n x n
   PfieldDiagonalMassMatricesOperator(const CellModelSolverType& cellmodel_solver)
-    : BaseType(cellmodel_solver.M_pfield_, cellmodel_solver.num_pfield_variables_ * cellmodel_solver.M_pfield_.rows())
+    : BaseType(cellmodel_solver.M_pfield_, 3 * cellmodel_solver.M_pfield_.rows())
     , cellmodel_solver_(cellmodel_solver)
     , x_phi_(cellmodel_solver.size_phi_, 0., 0)
     , x_phinat_(cellmodel_solver.size_phi_, 0., 0)
