@@ -179,7 +179,7 @@ protected:
 
   XT::LA::ListVectorArray<V> solve(const S& space, const double T_end) override
   {
-    const auto u_0 = this->make_initial_values(space);
+    auto u_0 = this->make_initial_values(space);
     const auto op = this->make_lhs_operator(space);
     const auto dt = this->current_data_["target"]["h"];
     this->current_data_["quantity"]["dt"] = dt;
