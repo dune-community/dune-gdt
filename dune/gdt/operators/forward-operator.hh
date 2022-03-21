@@ -267,7 +267,8 @@ public:
   } // ForwardOperatorAssembler(...)
 
   ForwardOperatorAssembler(const ThisType& other)
-    : operator_(other.operator_)
+    : BaseType(other.logger.prefix, other.logger.state)
+    , operator_(other.operator_)
     , source_(other.source_->copy_as_grid_function())
     , range_vector_(other.range_vector_)
     , param_(other.param_)
