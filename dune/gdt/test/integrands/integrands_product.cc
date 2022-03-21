@@ -111,7 +111,7 @@ struct ProductIntegrandTest : public IntegrandTest<G>
     const auto space = make_continuous_lagrange_space<1>(grid_view, /*polorder=*/2);
     const auto n = space.mapper().size();
     MatrixType mass_matrix(n, n, make_element_sparsity_pattern(space, space, grid_view));
-    MatrixOperator<MatrixType, GV, 1> product_operator(grid_view, space, space, mass_matrix);
+    MatrixOperator<GV, 1> product_operator(grid_view, space, space, mass_matrix);
     product_operator.append(LocalElementIntegralBilinearForm<E, 1>(integrand));
     product_operator.assemble(true);
     const auto mat_data_ptr = XT::Common::serialize_rowwise(mass_matrix);

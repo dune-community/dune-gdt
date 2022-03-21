@@ -120,7 +120,7 @@ struct LaplaceIntegrandTest : public IntegrandTest<G>
     const auto space = make_continuous_lagrange_space<1>(grid_view, /*polorder=*/2);
     const auto n = space.mapper().size();
     MatrixType stiffness_matrix(n, n, make_element_sparsity_pattern(space, space, grid_view));
-    MatrixOperator<MatrixType, GV, 1> laplace_operator(grid_view, space, space, stiffness_matrix);
+    MatrixOperator<GV, 1> laplace_operator(grid_view, space, space, stiffness_matrix);
     laplace_operator.append(LocalElementIntegralBilinearForm<E, 1>(integrand));
     laplace_operator.assemble(true);
     const auto mat_data_ptr = XT::Common::serialize_rowwise(stiffness_matrix);

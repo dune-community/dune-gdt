@@ -145,8 +145,8 @@ struct GradientValueIntegrandTest : public IntegrandTest<G>
     const auto n = space.mapper().size();
     MatrixType test_grad_mat(n, n, make_element_sparsity_pattern(space, space, grid_view));
     MatrixType ansatz_grad_mat(n, n, make_element_sparsity_pattern(space, space, grid_view));
-    MatrixOperator<MatrixType, GV, d, 1, d, 1> test_grad_op(grid_view, space, space, test_grad_mat);
-    MatrixOperator<MatrixType, GV, d, 1, d, 1> ansatz_grad_op(grid_view, space, space, ansatz_grad_mat);
+    MatrixOperator<GV, d, 1, d, 1> test_grad_op(grid_view, space, space, test_grad_mat);
+    MatrixOperator<GV, d, 1, d, 1> ansatz_grad_op(grid_view, space, space, ansatz_grad_mat);
     test_grad_op.append(LocalElementIntegralBilinearForm<E, d, 1, double, double, d, 1>{test_grad_integrand});
     test_grad_op.assemble(true);
     ansatz_grad_op.append(LocalElementIntegralBilinearForm<E, d, 1, double, double, d, 1>{ansatz_grad_integrand});

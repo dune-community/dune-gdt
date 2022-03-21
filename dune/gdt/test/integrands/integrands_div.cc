@@ -92,8 +92,8 @@ struct DivIntegrandTest : public IntegrandTest<G>
     const auto n = vector_space.mapper().size();
     MatrixType test_div_mat(n, m, make_element_sparsity_pattern(vector_space, scalar_space, grid_view));
     MatrixType ansatz_div_mat(m, n, make_element_sparsity_pattern(scalar_space, vector_space, grid_view));
-    MatrixOperator<MatrixType, GV, 1, 1, d, 1> test_div_op(grid_view, scalar_space, vector_space, test_div_mat);
-    MatrixOperator<MatrixType, GV, d, 1, 1, 1> ansatz_div_op(grid_view, vector_space, scalar_space, ansatz_div_mat);
+    MatrixOperator<GV, 1, 1, d, 1> test_div_op(grid_view, scalar_space, vector_space, test_div_mat);
+    MatrixOperator<GV, d, 1, 1, 1> ansatz_div_op(grid_view, vector_space, scalar_space, ansatz_div_mat);
     test_div_op.append(LocalElementIntegralBilinearForm<E, d, 1, double, double, 1, 1>(test_div_integrand));
     test_div_op.assemble(true);
     ansatz_div_op.append(LocalElementIntegralBilinearForm<E, 1, 1, double, double, d, 1>(ansatz_div_integrand));
