@@ -124,10 +124,10 @@ struct LaplaceIntegrandTest : public IntegrandTest<G>
     laplace_operator.append(LocalElementIntegralBilinearForm<E, 1>(integrand));
     laplace_operator.assemble(true);
     const auto mat_data_ptr = XT::Common::serialize_rowwise(stiffness_matrix);
-    const auto min_entry = *std::min_element(mat_data_ptr.get(), mat_data_ptr.get() + n * n);
-    const auto max_entry = *std::max_element(mat_data_ptr.get(), mat_data_ptr.get() + n * n);
+    const auto min_entry = *std::min_element(mat_data_ptr.begin(), mat_data_ptr.begin() + n * n);
+    const auto max_entry = *std::max_element(mat_data_ptr.begin(), mat_data_ptr.begin() + n * n);
     const auto square_sum = std::accumulate(
-        mat_data_ptr.get(), mat_data_ptr.get() + n * n, 0., [](const auto& a, const auto& b) { return a + b * b; });
+        mat_data_ptr.begin(), mat_data_ptr.begin() + n * n, 0., [](const auto& a, const auto& b) { return a + b * b; });
     EXPECT_NEAR((is_simplex_grid_ ? -2. : -1.896296296296300), min_entry, 1e-13);
     EXPECT_NEAR((is_simplex_grid_ ? 5.777777777777780 : 6.162962962962970), max_entry, 1e-13);
     EXPECT_NEAR((is_simplex_grid_ ? 2481.524691358029 : 1704.099039780521), square_sum, 5e-12);

@@ -100,10 +100,10 @@ struct DivIntegrandTest : public IntegrandTest<G>
     ansatz_div_op.assemble(true);
     EXPECT_TRUE(XT::Common::FloatCmp::eq(test_div_mat, XT::Common::transposed(ansatz_div_mat), 1e-14, 1e-14));
     const auto mat_data_ptr = XT::Common::serialize_rowwise(test_div_mat);
-    const auto min_entry = *std::min_element(mat_data_ptr.get(), mat_data_ptr.get() + n * m);
-    const auto max_entry = *std::max_element(mat_data_ptr.get(), mat_data_ptr.get() + n * m);
+    const auto min_entry = *std::min_element(mat_data_ptr.begin(), mat_data_ptr.begin() + n * m);
+    const auto max_entry = *std::max_element(mat_data_ptr.begin(), mat_data_ptr.begin() + n * m);
     const auto square_sum = std::accumulate(
-        mat_data_ptr.get(), mat_data_ptr.get() + n * m, 0., [](const auto& a, const auto& b) { return a + b * b; });
+        mat_data_ptr.begin(), mat_data_ptr.begin() + n * m, 0., [](const auto& a, const auto& b) { return a + b * b; });
     EXPECT_NEAR((is_simplex_grid_ ? -0.133333333333333 : -0.177777777777778), min_entry, 1e-13);
     EXPECT_NEAR((is_simplex_grid_ ? 0.133333333333333 : 0.177777777777778), max_entry, 1e-13);
     EXPECT_NEAR((is_simplex_grid_ ? 4.515925925925922 : 4.589465020576143), square_sum, 1e-13);

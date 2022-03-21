@@ -115,10 +115,10 @@ struct ProductIntegrandTest : public IntegrandTest<G>
     product_operator.append(LocalElementIntegralBilinearForm<E, 1>(integrand));
     product_operator.assemble(true);
     const auto mat_data_ptr = XT::Common::serialize_rowwise(mass_matrix);
-    const auto min_entry = *std::min_element(mat_data_ptr.get(), mat_data_ptr.get() + n * n);
-    const auto max_entry = *std::max_element(mat_data_ptr.get(), mat_data_ptr.get() + n * n);
+    const auto min_entry = *std::min_element(mat_data_ptr.begin(), mat_data_ptr.begin() + n * n);
+    const auto max_entry = *std::max_element(mat_data_ptr.begin(), mat_data_ptr.begin() + n * n);
     const auto square_sum = std::accumulate(
-        mat_data_ptr.get(), mat_data_ptr.get() + n * n, 0., [](const auto& a, const auto& b) { return a + b * b; });
+        mat_data_ptr.begin(), mat_data_ptr.begin() + n * n, 0., [](const auto& a, const auto& b) { return a + b * b; });
     EXPECT_NEAR((is_simplex_grid_ ? -0.001851851851852 : -0.002962962962963), min_entry, 1e-13);
     EXPECT_NEAR((is_simplex_grid_ ? 0.029629629629630 : 0.047407407407407), max_entry, 1e-13);
     EXPECT_NEAR((is_simplex_grid_ ? 0.058804012345679 : 0.066475994513031), square_sum, 1e-13);

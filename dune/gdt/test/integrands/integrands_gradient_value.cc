@@ -153,10 +153,10 @@ struct GradientValueIntegrandTest : public IntegrandTest<G>
     ansatz_grad_op.assemble(true);
     EXPECT_TRUE(XT::Common::FloatCmp::eq(test_grad_mat, XT::Common::transposed(ansatz_grad_mat), 1e-14, 1e-14));
     const auto mat_data_ptr = XT::Common::serialize_rowwise(test_grad_mat);
-    const auto min_entry = *std::min_element(mat_data_ptr.get(), mat_data_ptr.get() + n * n);
-    const auto max_entry = *std::max_element(mat_data_ptr.get(), mat_data_ptr.get() + n * n);
+    const auto min_entry = *std::min_element(mat_data_ptr.begin(), mat_data_ptr.begin() + n * n);
+    const auto max_entry = *std::max_element(mat_data_ptr.begin(), mat_data_ptr.begin() + n * n);
     const auto square_sum = std::accumulate(
-        mat_data_ptr.get(), mat_data_ptr.get() + n * n, 0., [](const auto& a, const auto& b) { return a + b * b; });
+        mat_data_ptr.begin(), mat_data_ptr.begin() + n * n, 0., [](const auto& a, const auto& b) { return a + b * b; });
     EXPECT_NEAR((is_simplex_grid_ ? -0.133333333333333 : -0.177777777777778), min_entry, 1e-13);
     EXPECT_NEAR((is_simplex_grid_ ? 0.133333333333333 : 0.177777777777778), max_entry, 1e-13);
     EXPECT_NEAR((is_simplex_grid_ ? 5.208148148148139 : 9.178930041152277), square_sum, 1e-13);
