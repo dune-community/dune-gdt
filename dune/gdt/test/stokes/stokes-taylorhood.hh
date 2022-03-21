@@ -314,12 +314,12 @@ public:
       bool visualize = true;
       std::string grid_name = XT::Common::Typename<G>::value();
       if (visualize) {
-        sol_u_func.visualize("solution_u_" + type + "_" + grid_name);
-        sol_p_func.visualize("solution_p_" + type + "_" + grid_name);
-        reference_solution_u.visualize("u_ref_" + grid_name);
-        actual_p_ref.visualize("p_ref_" + grid_name);
-        u_diff.visualize("u_error_" + type + "_" + grid_name);
-        p_diff.visualize("p_error_" + type + "_" + grid_name);
+        GDT::visualize(sol_u_func, "solution_u_" + type + "_" + grid_name);
+        GDT::visualize(sol_p_func, "solution_p_" + type + "_" + grid_name);
+        GDT::visualize(reference_solution_u, "u_ref_" + grid_name);
+        GDT::visualize(actual_p_ref, "p_ref_" + grid_name);
+        GDT::visualize(u_diff, "u_error_" + type + "_" + grid_name);
+        GDT::visualize(p_diff, "p_error_" + type + "_" + grid_name);
       }
       DXTC_EXPECT_FLOAT_LE(l2_norm(problem_.grid_view(), u_diff), expected_error_u);
       DXTC_EXPECT_FLOAT_LE(l2_norm(problem_.grid_view(), p_diff), expected_error_p);

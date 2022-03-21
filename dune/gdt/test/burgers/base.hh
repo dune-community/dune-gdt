@@ -92,8 +92,9 @@ public:
                      std::min(this->T_end_, this->time_points_from_vector_array(solution.dof_vectors()).back());
                  for (size_t ii = 0; ii < this->visualization_steps_; ++ii) {
                    const double time = ii * (end_time / this->visualization_steps_);
-                   solution.evaluate(time).visualize(XT::Common::Test::get_unique_test_name() + "__" + prefix
-                                                     + "_solution_" + XT::Common::to_string(ii));
+                   GDT::visualize(solution.evaluate(time),
+                                  XT::Common::Test::get_unique_test_name() + "__" + prefix + "_solution_"
+                                      + XT::Common::to_string(ii));
                  }
                })
     , visualization_steps_(0)
