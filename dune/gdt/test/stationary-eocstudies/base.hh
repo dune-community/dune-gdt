@@ -85,7 +85,7 @@ public:
       std::function<void(const DF&, const std::string&)> visualizer =
           [](const auto& solution, const auto& prefix) {
             if (DXTC_TEST_CONFIG_GET("setup.visualize", false))
-              solution.visualize(prefix);
+              GDT::visualize(solution, prefix);
           },
       const size_t num_refinements = DXTC_TEST_CONFIG_GET("setup.num_refinements", 3),
       const size_t num_additional_refinements_for_reference =
