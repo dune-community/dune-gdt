@@ -110,11 +110,15 @@ struct ProductIntegrandTest : public IntegrandTest<G>
     const auto& grid_view = grid_provider_->leaf_view();
     const auto space = make_continuous_lagrange_space<1>(grid_view, /*polorder=*/2);
     const auto n = space.mapper().size();
-    MatrixType mass_matrix(n, n, make_element_sparsity_pattern(space, space, grid_view));
-    MatrixOperator<GV, 1> product_operator(grid_view, space, space, mass_matrix);
-    product_operator.append(LocalElementIntegralBilinearForm<E, 1>(integrand));
-    product_operator.assemble(true);
-    const auto mat_data_ptr = XT::Common::serialize_rowwise(mass_matrix);
+
+    BilinearForm<GV, 1> product_form(grid_view);
+    product_form += LocalElementIntegralBilinearForm<E, 1>(integrand);
+    auto product_op = product_form.template with<MatrixType>(space, space);
+    auto walker = XT::Grid::make_walker(grid_view);
+    walker.append(product_op);
+    walker.walk(DXTC_TEST_CONFIG_GET("setup.use_tbb", true));
+
+    const auto mat_data_ptr = XT::Common::serialize_rowwise(product_op.matrix());
     const auto min_entry = *std::min_element(mat_data_ptr.begin(), mat_data_ptr.begin() + n * n);
     const auto max_entry = *std::max_element(mat_data_ptr.begin(), mat_data_ptr.begin() + n * n);
     const auto square_sum = std::accumulate(

@@ -119,11 +119,14 @@ struct LaplaceIntegrandTest : public IntegrandTest<G>
     // std::string grid_name = XT::Common::Typename<G>::value();
     const auto space = make_continuous_lagrange_space<1>(grid_view, /*polorder=*/2);
     const auto n = space.mapper().size();
-    MatrixType stiffness_matrix(n, n, make_element_sparsity_pattern(space, space, grid_view));
-    MatrixOperator<GV, 1> laplace_operator(grid_view, space, space, stiffness_matrix);
-    laplace_operator.append(LocalElementIntegralBilinearForm<E, 1>(integrand));
-    laplace_operator.assemble(true);
-    const auto mat_data_ptr = XT::Common::serialize_rowwise(stiffness_matrix);
+    BilinearForm<GV, 1> laplace_form(grid_view);
+    laplace_form += LocalElementIntegralBilinearForm<E, 1>(integrand);
+    auto laplace_op = laplace_form.template with<MatrixType>(space, space);
+    auto walker = XT::Grid::make_walker(grid_view);
+    walker.append(laplace_op);
+    walker.walk(DXTC_TEST_CONFIG_GET("setup.use_tbb", true));
+
+    const auto mat_data_ptr = XT::Common::serialize_rowwise(laplace_op.matrix());
     const auto min_entry = *std::min_element(mat_data_ptr.begin(), mat_data_ptr.begin() + n * n);
     const auto max_entry = *std::max_element(mat_data_ptr.begin(), mat_data_ptr.begin() + n * n);
     const auto square_sum = std::accumulate(
