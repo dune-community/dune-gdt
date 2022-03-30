@@ -90,16 +90,20 @@ struct DivIntegrandTest : public IntegrandTest<G>
     const auto vector_space = make_continuous_lagrange_space<d>(grid_view, /*polorder=*/2);
     const auto m = scalar_space.mapper().size();
     const auto n = vector_space.mapper().size();
-    MatrixType test_div_mat(n, m, make_element_sparsity_pattern(vector_space, scalar_space, grid_view));
-    MatrixType ansatz_div_mat(m, n, make_element_sparsity_pattern(scalar_space, vector_space, grid_view));
-    MatrixOperator<GV, 1, 1, d, 1> test_div_op(grid_view, scalar_space, vector_space, test_div_mat);
-    MatrixOperator<GV, d, 1, 1, 1> ansatz_div_op(grid_view, vector_space, scalar_space, ansatz_div_mat);
-    test_div_op.append(LocalElementIntegralBilinearForm<E, d, 1, double, double, 1, 1>(test_div_integrand));
-    test_div_op.assemble(true);
-    ansatz_div_op.append(LocalElementIntegralBilinearForm<E, 1, 1, double, double, d, 1>(ansatz_div_integrand));
-    ansatz_div_op.assemble(true);
-    EXPECT_TRUE(XT::Common::FloatCmp::eq(test_div_mat, XT::Common::transposed(ansatz_div_mat), 1e-14, 1e-14));
-    const auto mat_data_ptr = XT::Common::serialize_rowwise(test_div_mat);
+    BilinearForm<GV, 1, 1, d, 1> test_div_form(grid_view);
+    test_div_form += LocalElementIntegralBilinearForm<E, d, 1, double, double, 1, 1>(test_div_integrand);
+    BilinearForm<GV, d, 1, 1, 1> ansatz_div_form(grid_view);
+    ansatz_div_form += LocalElementIntegralBilinearForm<E, 1, 1, double, double, d, 1>(ansatz_div_integrand);
+    auto test_div_op = test_div_form.template with<MatrixType>(scalar_space, vector_space);
+    auto ansatz_div_op = ansatz_div_form.template with<MatrixType>(vector_space, scalar_space);
+    auto walker = XT::Grid::make_walker(grid_view);
+    walker.append(test_div_op);
+    walker.append(ansatz_div_op);
+    walker.walk(DXTC_TEST_CONFIG_GET("setup.use_tbb", true));
+
+    EXPECT_TRUE(
+        XT::Common::FloatCmp::eq(test_div_op.matrix(), XT::Common::transposed(ansatz_div_op.matrix()), 1e-14, 1e-14));
+    const auto mat_data_ptr = XT::Common::serialize_rowwise(test_div_op.matrix());
     const auto min_entry = *std::min_element(mat_data_ptr.begin(), mat_data_ptr.begin() + n * m);
     const auto max_entry = *std::max_element(mat_data_ptr.begin(), mat_data_ptr.begin() + n * m);
     const auto square_sum = std::accumulate(
@@ -107,7 +111,7 @@ struct DivIntegrandTest : public IntegrandTest<G>
     EXPECT_NEAR((is_simplex_grid_ ? -0.133333333333333 : -0.177777777777778), min_entry, 1e-13);
     EXPECT_NEAR((is_simplex_grid_ ? 0.133333333333333 : 0.177777777777778), max_entry, 1e-13);
     EXPECT_NEAR((is_simplex_grid_ ? 4.515925925925922 : 4.589465020576143), square_sum, 1e-13);
-    // std::cout << XT::Common::to_string(test_div_mat, 15) << std::endl;
+    // std::cout << XT::Common::to_string(test_div_op, 15) << std::endl;
   }
 
   using BaseType::grid_provider_;
