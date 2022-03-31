@@ -256,7 +256,7 @@ public:
       const BS reference_bochner_space(reference_space,
                                        time_points_from_vector_array(*reference_solution_on_reference_grid_));
       current_solution_on_reference_grid_ = std::make_unique<XT::LA::ListVectorArray<V>>(
-          prolong<V>(coarse_solution, reference_bochner_space).dof_vectors());
+          std::move(prolong<V>(coarse_solution, reference_bochner_space).dof_vectors()));
       auto& u_h = *current_solution_on_reference_grid_;
       while (!norms_to_compute.empty()) {
         const auto norm_id = norms_to_compute.back();

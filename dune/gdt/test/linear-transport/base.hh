@@ -148,7 +148,9 @@ protected:
     double time = 0.;
     while (time < self.T_end_ + dt) {
       auto u_t = Problem::access().template make_exact_solution__periodic_boundaries<V>(*self.reference_space_, time);
-      self.reference_solution_on_reference_grid_->append(u_t.dofs().vector(), {"_t", time});
+      // no copy in append: without the std::move below, the vector array would hold a reference to a temporary
+      // see https://zivgitlab.uni-muenster.de/ag-ohlberger/dune-community/dune-xt/-/issues/40
+      self.reference_solution_on_reference_grid_->append(std::move(u_t.dofs().vector()), {"_t", time});
       time += dt;
     }
     // visualize
