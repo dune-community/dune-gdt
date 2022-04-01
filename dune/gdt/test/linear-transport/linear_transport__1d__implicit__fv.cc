@@ -83,7 +83,7 @@ TEST_F(LinearTransport1dExplicitWithAutomaticDtTest, automatic_dt)
 
 TEST_F(LinearTransport1dImplicitFvTest, larger_dt)
 {
-  this->dt_factor_ = DXTC_CONFIG_GET("implicit_dt_factor", 10.);
+  this->dt_factor_ = DXTC_TEST_CONFIG_GET("implicit_dt_factor", 10.);
   this->visualization_steps_ = DXTC_TEST_CONFIG_GET("setup.visualization_steps", 0);
   this->space_type_ = "fv";
   this->numerical_flux_type_ = "upwind";
