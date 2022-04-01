@@ -62,9 +62,6 @@ void newton_solve(const OperatorInterface<AGV, s_r, s_rC, r_r, r_rC, F, M, SGV, 
   const auto precision = opts.get("precision", default_opts.get<double>("precision"));
   const auto max_iter = opts.get("max_iter", default_opts.get<size_t>("max_iter"));
   const auto max_dampening_iter = opts.get("max_dampening_iter", default_opts.get<size_t>("max_dampening_iter"));
-  // one matrix for all jacobians
-  auto jacobian_op = residual_op.empty_jacobian_op();
-  auto jacobian_solver = XT::LA::make_solver(jacobian_op.matrix());
   LOG(info) << "solving system by dampened newton:" << std::endl;
   size_t l = 0;
   Timer timer;
@@ -85,12 +82,12 @@ void newton_solve(const OperatorInterface<AGV, s_r, s_rC, r_r, r_rC, F, M, SGV, 
                                                               << opts);
     LOG(info) << prefix << "computing jacobi matrix ... " << std::flush;
     timer.reset();
-    jacobian_op.matrix() *= 0.;
-    residual_op.jacobian(initial_guess, jacobian_op, {{"type", residual_op.jacobian_options().at(0)}}, param);
+    auto jacobian_op = residual_op.jacobian(initial_guess, {{"type", residual_op.jacobian_options().at(0)}}, param);
     jacobian_op.assemble(/*use_tbb=*/true);
     LOG(info) << "took " << timer.elapsed() << "s\n" << prefix << "solving for defect ... " << std::flush;
     timer.reset();
     residual *= -1.;
+    auto jacobian_solver = XT::LA::make_solver(jacobian_op.matrix());
     update = initial_guess; // <- initial guess for the linear solver
     bool linear_solve_succeeded = false;
     std::vector<std::string> tried_linear_solvers;
