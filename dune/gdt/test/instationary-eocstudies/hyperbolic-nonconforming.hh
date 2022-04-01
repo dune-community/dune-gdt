@@ -119,15 +119,16 @@ protected:
       DUNE_THROW(XT::Common::Exceptions::wrong_input_given, "numerical_flux_type_ = " << numerical_flux_type_);
       return nullptr;
     }
+    std::unique_ptr<O> op = nullptr;
     if (space_type_ == "fv")
-      return std::make_unique<AdvectionFvOperator<GV, m, R, M>>(
+      op = std::make_unique<AdvectionFvOperator<GV, m, R, M>>(
           space.grid_view(),
           *numerical_flux,
           space,
           space,
           /*periodicity_exception=*/XT::Grid::ApplyOn::NoIntersections<GV>());
     else
-      return std::make_unique<AdvectionDgOperator<GV, m, R, M>>(
+      op = std::make_unique<AdvectionDgOperator<GV, m, R, M>>(
           space.grid_view(),
           *numerical_flux,
           space,
@@ -136,6 +137,8 @@ protected:
           dg_artificial_viscosity_nu_1_,
           dg_artificial_viscosity_alpha_1_,
           dg_artificial_viscosity_component_);
+    op->assemble();
+    return op;
   } // ... make_lhs_operator(...)
 
   virtual double estimate_fixed_explicit_fv_dt(
