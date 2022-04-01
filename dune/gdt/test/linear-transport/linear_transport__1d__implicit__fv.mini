@@ -32,6 +32,8 @@ quantity.CFL                    = [2.00e+00 2.00e+00 2.00e+00]
 visualization_steps                      = 0
 num_refinements                          = 2
 num_additional_refinements_for_reference = 2
+solve_instationary_system_implicit_euler.apply_inverse.type = newton
+solve_instationary_system_implicit_euler.apply_inverse.max_iter = 248
 
 [LinearTransport1dImplicitFvTest.larger_dt.results]
 zero_tolerance                  = 7.6e-14
