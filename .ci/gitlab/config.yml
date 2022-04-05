@@ -126,10 +126,10 @@ lint:
         - ${PRECOMMIT} check-yaml
 
 
-debian-unstable_gcc_full:
-    extends: .image_builder
-    variables:
-        CI_IMAGE: debian-unstable_gcc_full
+#debian-unstable_gcc_full:
+#    extends: .image_builder
+#    variables:
+#        CI_IMAGE: debian-unstable_gcc_full
 debian_gcc_full:
     extends: .image_builder
     variables:
@@ -141,29 +141,29 @@ debian_clang_full:
 
 
 
-gdt unstable_gcc_full cpp:
-    extends: .subdir-test
-    variables:
-        CI_IMAGE: debian-unstable_gcc_full
-        TESTS_MODULE_SUBDIR: gdt
-    tags:
-        - dustin
-    stage: cpp
-    needs: ["debian-unstable_gcc_full"]
-    script:
-          - /home/dune-ci/src/${MY_MODULE}/.ci/shared/scripts/test_cpp.bash
+#gdt unstable_gcc_full cpp:
+#    extends: .subdir-test
+#    variables:
+#        CI_IMAGE: debian-unstable_gcc_full
+#        TESTS_MODULE_SUBDIR: gdt
+#    tags:
+#        - dustin
+#    stage: cpp
+#    needs: ["debian-unstable_gcc_full"]
+#    script:
+#          - /home/dune-ci/src/${MY_MODULE}/.ci/shared/scripts/test_cpp.bash
 
-gdt unstable_gcc_full headercheck:
-    extends: .subdir-test
-    variables:
-        CI_IMAGE: debian-unstable_gcc_full
-        TESTS_MODULE_SUBDIR: gdt
-    tags:
-        - dustin
-    stage: headercheck
-    needs: ["debian-unstable_gcc_full"]
-    script:
-          - /home/dune-ci/src/${MY_MODULE}/.ci/shared/scripts/test_headercheck.bash
+#gdt unstable_gcc_full headercheck:
+#    extends: .subdir-test
+#    variables:
+#        CI_IMAGE: debian-unstable_gcc_full
+#        TESTS_MODULE_SUBDIR: gdt
+#    tags:
+#        - dustin
+#    stage: headercheck
+#    needs: ["debian-unstable_gcc_full"]
+#    script:
+#          - /home/dune-ci/src/${MY_MODULE}/.ci/shared/scripts/test_headercheck.bash
 
 gdt gcc_full cpp:
     extends: .subdir-test
@@ -215,16 +215,16 @@ gdt clang_full headercheck:
 
 
 
-unstable_gcc_full python:
-    extends: .subdir-test
-    variables:
-        CI_IMAGE: debian-unstable_gcc_full
-    tags:
-        - dustin
-    stage: python
-    needs: ["debian-unstable_gcc_full"]
-    script:
-          - /home/dune-ci/src/${MY_MODULE}/.ci/shared/scripts/test_python.bash
+#unstable_gcc_full python:
+#    extends: .subdir-test
+#    variables:
+#        CI_IMAGE: debian-unstable_gcc_full
+#    tags:
+#        - dustin
+#    stage: python
+#    needs: ["debian-unstable_gcc_full"]
+#    script:
+#          - /home/dune-ci/src/${MY_MODULE}/.ci/shared/scripts/test_python.bash
 
 gcc_full python:
     extends: .subdir-test
