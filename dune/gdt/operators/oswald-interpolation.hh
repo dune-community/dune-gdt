@@ -205,7 +205,7 @@ public:
   /// \}
 
 private:
-  const AssemblyGridViewType& assembly_grid_view_;
+  const AssemblyGridViewType assembly_grid_view_;
   const RangeSpaceType& range_space_;
   const XT::Common::ConstStorageProvider<XT::Grid::BoundaryInfo<I>> boundary_info_;
   bool assembled_;
