@@ -15,7 +15,9 @@ from tempfile import NamedTemporaryFile
 from dune.xt import guarded_import
 from dune.xt.common.config import config
 
-from ._version import __version__
+from . import _version
+
+__version__ = _version.__version__
 
 for mod_name in (     # order should not matter!
         '_discretefunction_bochner',
@@ -99,9 +101,9 @@ if config.HAVE_K3D:
             import numpy as np
             from matplotlib import pyplot as plt
             from dune.xt.functions import GridFunction
-            from dune.gdt import ContinuousLagrangeSpace, default_interpolation, DiscreteFunction
+            from dune.gdt import ContinuousLagrangeSpace, default_interpolation
 
-            assert grid # not optimal
+            assert grid  # not optimal
             P1_space = ContinuousLagrangeSpace(grid, order=1)
             interpolation_points = np.array(P1_space.interpolation_points(), copy=False)[:, 0]
             piecewise_linear_interpolant = default_interpolation(GridFunction(grid, function), P1_space)
