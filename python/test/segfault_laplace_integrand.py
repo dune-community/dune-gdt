@@ -1,3 +1,6 @@
+# flake8: noqa
+# silencing all warnings here, in case import /instruction order was the trigger for the segfault
+
 from dune.xt.grid import Dim, Cube, make_cube_grid
 
 grid = make_cube_grid(Dim(1), [0], [1], [2])
