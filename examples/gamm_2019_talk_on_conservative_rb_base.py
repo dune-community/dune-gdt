@@ -15,7 +15,6 @@ def simulate_single_greedy_step(fom, dg_product, FluxVectorSpace, rtn_product, t
     greedy_data = greedy(
         fom, reductor, training_set, extension_params={'method': 'gram_schmidt'}, max_extensions=max_extensions)
     rom = greedy_data['rd']
-    greedy_mus = greedy_data['max_err_mus']
 
     logger.info('')
     logger.info('building Hdiv_0 RB ...')
