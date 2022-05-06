@@ -9,11 +9,15 @@ def simulate_single_greedy_step(fom, dg_product, FluxVectorSpace, rtn_product, t
     logger.info('building pressure RB ...')
     logger.info('')
 
-    reductor = CoerciveRBReductor(
-        fom, product=dg_product, coercivity_estimator=ExpressionParameterFunctional('switch', fom.parameter_type))
+    reductor = CoerciveRBReductor(fom,
+                                  product=dg_product,
+                                  coercivity_estimator=ExpressionParameterFunctional('switch', fom.parameter_type))
     training_set = fom.parameter_space.sample_uniformly(100)
-    greedy_data = greedy(
-        fom, reductor, training_set, extension_params={'method': 'gram_schmidt'}, max_extensions=max_extensions)
+    greedy_data = greedy(fom,
+                         reductor,
+                         training_set,
+                         extension_params={'method': 'gram_schmidt'},
+                         max_extensions=max_extensions)
     rom = greedy_data['rd']
 
     logger.info('')

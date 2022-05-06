@@ -19,9 +19,9 @@ class Grids(object):
         except KeyError:
             have_alugrid = False
         self.all_parts_fmt = [self.alu_conf_part_fmt, self.alu_cube_part_fmt, self.yasp_part_fmt
-                             ] if have_alugrid else [self.yasp_part_fmt]
+                              ] if have_alugrid else [self.yasp_part_fmt]
         self.all_views_fmt = [self.alu_conf_view_fmt, self.alu_cube_view_fmt, self.yasp_view_fmt
-                             ] if have_alugrid else [self.yasp_view_fmt]
+                              ] if have_alugrid else [self.yasp_view_fmt]
 
 
 class LeafGrids(Grids):

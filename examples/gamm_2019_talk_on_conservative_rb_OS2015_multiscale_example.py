@@ -127,8 +127,8 @@ diffusion_factor = {
 
 
 def make_diffusion_factor_mu(mu):
-    return (function_to_grid_function(ConstantFunction(1)) +
-            function_to_grid_function(ConstantFunction(1 - mu['switch'])) * channel)
+    return (function_to_grid_function(ConstantFunction(1))
+            + function_to_grid_function(ConstantFunction(1 - mu['switch'])) * channel)  # noqa: W503
 
 
 mu_bar = {'switch': 0.1}
@@ -180,7 +180,7 @@ logger.info('discretizing ...')
 
 
 def discretize(num_refinements, polorder=1):
-    grid = GridProvider([0, 0], [5, 1], [100, 20])     # The OS2015 test is [0, 5]x[0, 1], 100x20 elements, ...
+    grid = GridProvider([0, 0], [5, 1], [100, 20])  # The OS2015 test is [0, 5]x[0, 1], 100x20 elements, ...
     grid.refine(num_refinements)
     dg_space = DiscontinuousLagrangeSpace(grid, polorder)
 
@@ -188,18 +188,20 @@ def discretize(num_refinements, polorder=1):
         make_marix_operator(assemble_SWIPDG_matrix(dg_space, diff, diffusion_tensor), 'PRESSURE')
         for diff in diffusion_factor['functions']
     ], diffusion_factor['coefficients'])
-    rhs_func = VectorFunctional(lhs_op.range.make_array((assemble_L2_vector(dg_space, f),)))
-    dg_product = make_marix_operator(
-        assemble_DG_product_matrix(dg_space, diffusion_factor_bar, diffusion_tensor), 'PRESSURE')
+    rhs_func = VectorFunctional(lhs_op.range.make_array((assemble_L2_vector(dg_space, f), )))
+    dg_product = make_marix_operator(assemble_DG_product_matrix(dg_space, diffusion_factor_bar, diffusion_tensor),
+                                     'PRESSURE')
 
-    fom = StationaryDiscretization(
-        lhs_op, rhs_func, products={'energy_penalty': dg_product}, visualizer=DuneGDTVisualizer(dg_space))
+    fom = StationaryDiscretization(lhs_op,
+                                   rhs_func,
+                                   products={'energy_penalty': dg_product},
+                                   visualizer=DuneGDTVisualizer(dg_space))
     fom = fom.with_(parameter_space=CubicParameterSpace(fom.parameter_type, 0.1, 1.))
     fom.enable_caching('disk')
     return grid, dg_space, dg_product, fom
 
 
-grid, dg_space, dg_product, fom = discretize(2)     # ... and 2 refinements with ALU_2D_SIMPLEX_CONFORMING
+grid, dg_space, dg_product, fom = discretize(2)  # ... and 2 refinements with ALU_2D_SIMPLEX_CONFORMING
 PressureVectorSpace = DuneXTVectorSpace(IstlDenseVectorDouble, dg_space.num_DoFs, 'PRESSURE')
 
 logger.info('grid has {} elements'.format(grid.num_elements))
@@ -211,7 +213,7 @@ logger.info('space has {} DoFs'.format(dg_space.num_DoFs))
 
 logger.info('computing reference discretization ...')
 
-reference_grid, reference_dg_space, _, reference_fom = discretize(2 + 1 * 2)
+reference_grid, reference_dg_space, _, reference_fom = discretize(2 + 1*2)
 reference_energy_semi_product = make_marix_operator(
     assemble_energy_semi_product_matrix(reference_dg_space, diffusion_factor_bar, diffusion_tensor), 'PRESSURE')
 ReferencePressureVectorSpace = DuneXTVectorSpace(IstlDenseVectorDouble, reference_dg_space.num_DoFs, 'PRESSURE')
@@ -277,25 +279,21 @@ for nn in range(1, 100):
     logger.info('simulating greedy step {} ...'.format(nn))
 
     greedy_data, estimate_data = simulate_single_greedy_step(
-            fom,
-            dg_product=fom.energy_penalty_product,
-            FluxVectorSpace=FluxVectorSpace,
-            rtn_product=rtn_product,
-            t_h_f=t_h_f,
-            compute_flux_reconstruction=lambda mu, u_RB: compute_flux_reconstruction(
-                grid, dg_space, rtn_space, make_diffusion_factor_mu(mu), diffusion_tensor, u_RB),
-            compute_estimate=lambda mu, u_RB, t_RB_f: compute_estimate(
-                grid,
-                make_discrete_function(dg_space, u_RB, 'u_RB'),
-                make_discrete_function(rtn_space, t_RB_f, 't_RB_f'),
-                f, make_diffusion_factor_mu(mu), diffusion_factor_bar, diffusion_factor_hat, diffusion_tensor,
-                alpha(mu, mu_bar), alpha(mu, mu_hat), gamma(mu, mu_bar)),
-            compute_reference_error=lambda mu, u_RB: reference_dg_norm(
-                    reference_fom.solve(mu)._list[0].impl
-                    - prolong(dg_space, u_RB, reference_dg_space)),
-            max_extensions=nn,
-            num_samples=3
-            )
+        fom,
+        dg_product=fom.energy_penalty_product,
+        FluxVectorSpace=FluxVectorSpace,
+        rtn_product=rtn_product,
+        t_h_f=t_h_f,
+        compute_flux_reconstruction=lambda mu, u_RB: compute_flux_reconstruction(
+            grid, dg_space, rtn_space, make_diffusion_factor_mu(mu), diffusion_tensor, u_RB),
+        compute_estimate=lambda mu, u_RB, t_RB_f: compute_estimate(
+            grid, make_discrete_function(dg_space, u_RB, 'u_RB'), make_discrete_function(rtn_space, t_RB_f, 't_RB_f'),
+            f, make_diffusion_factor_mu(mu), diffusion_factor_bar, diffusion_factor_hat, diffusion_tensor,
+            alpha(mu, mu_bar), alpha(mu, mu_hat), gamma(mu, mu_bar)),
+        compute_reference_error=lambda mu, u_RB: reference_dg_norm(
+            reference_fom.solve(mu)._list[0].impl - prolong(dg_space, u_RB, reference_dg_space)),
+        max_extensions=nn,
+        num_samples=3)
 
     if greedy_data['extensions'] > RB_size:
         RB_size = greedy_data['extensions']

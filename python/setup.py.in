@@ -18,40 +18,45 @@ from setuptools.dist import Distribution
 from setuptools.command.install import install
 
 extras_require = {
-  'parallel': ('bokeh', 'pymumps', 'metis'),
-  'visualisation': ('dune-xt[visualisation]>=${dune-xt_VERSION}',)
+    'parallel': ('bokeh', 'pymumps', 'metis'),
+    'visualisation': ('dune-xt[visualisation]>=${dune-xt_VERSION}', )
 }
 
 extras_require['all'] = [p for plist in extras_require.values() for p in plist]
 
+
 class BinaryDistribution(Distribution):
     """Distribution which always forces a binary package with platform name"""
+
     def is_pure(self):
         return False
+
     def has_ext_modules(self):
         return True
 
 
 class InstallPlatlib(install):
+
     def finalize_options(self):
         install.finalize_options(self)
         self.install_lib = self.install_platlib
 
 
-setup(name='dune-gdt',
-      version='${dune-gdt_VERSION}',
-      namespace_packages=['dune'],
-      description='Python for Dune-Gdt',
-      author='The dune-gdt devs',
-      author_email='felix.schindler@wwu.de',
-      url='https://zivgitlab.uni-muenster.de/ag-ohlberger/dune-community/dune-gdt',
-      packages = find_packages(),
-      package_data = {'': ['*.so']},
-      include_package_data=True,
-      cmdclass={
-          'install': InstallPlatlib,
-      },
-      distclass=BinaryDistribution,
-      install_requires=['dune-xt~=${dune-xt_VERSION_MAJOR}.${dune-xt_VERSION_MINOR}'],
-      extras_require=extras_require,
-      )
+setup(
+    name='dune-gdt',
+    version='${dune-gdt_VERSION}',
+    namespace_packages=['dune'],
+    description='Python for Dune-Gdt',
+    author='The dune-gdt devs',
+    author_email='felix.schindler@wwu.de',
+    url='https://zivgitlab.uni-muenster.de/ag-ohlberger/dune-community/dune-gdt',
+    packages=find_packages(),
+    package_data={'': ['*.so']},
+    include_package_data=True,
+    cmdclass={
+        'install': InstallPlatlib,
+    },
+    distclass=BinaryDistribution,
+    install_requires=['dune-xt~=${dune-xt_VERSION_MAJOR}.${dune-xt_VERSION_MINOR}'],
+    extras_require=extras_require,
+)

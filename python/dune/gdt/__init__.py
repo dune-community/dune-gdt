@@ -19,7 +19,7 @@ from . import _version
 
 __version__ = _version.__version__
 
-for mod_name in (     # order should not matter!
+for mod_name in (  # order should not matter!
         '_discretefunction_bochner',
         '_discretefunction_discretefunction',
         '_discretefunction_dof_vector',
@@ -91,7 +91,6 @@ for mod_name in (     # order should not matter!
 ):
     guarded_import(globals(), 'dune.gdt', mod_name)
 
-
 if config.HAVE_K3D:
     from dune.xt.common.vtk.plot import plot
 
@@ -118,7 +117,7 @@ if config.HAVE_K3D:
             assert function.dim_range == 1, f'Not implemented yet for {function.dim_domain}-dimensional functions!'
             tmpfile = NamedTemporaryFile(mode='wb', delete=False, suffix='.vtu').name
             failed = False
-            try:     # discrete function
+            try:  # discrete function
                 function.visualize(filename=tmpfile[:-4])
                 return plot(tmpfile, color_attribute_name=function.name)
             except TypeError:
