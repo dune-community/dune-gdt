@@ -41,6 +41,7 @@
 #include <dune/gdt/local/integrands/laplace-ipdg.hh>
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/operators/laplace-ipdg-flux-reconstruction.hh>
+#include <dune/gdt/operators/bilinear-form.hh>
 #include <dune/gdt/operators/matrix.hh>
 #include <dune/gdt/operators/oswald-interpolation.hh>
 #include <dune/gdt/spaces/hdiv/raviart-thomas.hh>
@@ -219,6 +220,20 @@ int main(int argc, char* argv[])
     const double penalty_parameter = 16; // non-degenerate simplicial grids in 2d
     const auto& weight_function = problem.diffusion; // SWIPDG, not SIPDG
 
+    // bilinear form (space independent, TODO: refactor functionals similarly)
+    BilinearForm<GV> a(grid_view);
+    a += LocalElementIntegralBilinearForm<E>(LocalLaplaceIntegrand<E>(problem.diffusion));
+    a += {LocalCouplingIntersectionIntegralBilinearForm<I>(
+              LocalLaplaceIPDGIntegrands::InnerCoupling<I>(symmetry_prefactor, problem.diffusion, weight_function)
+              + LocalIPDGIntegrands::InnerPenalty<I>(penalty_parameter, weight_function)),
+          XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>()};
+    a += {LocalIntersectionIntegralBilinearForm<I>(
+              LocalIPDGIntegrands::BoundaryPenalty<I>(penalty_parameter, weight_function)
+              + LocalLaplaceIPDGIntegrands::DirichletCoupling<I>(symmetry_prefactor, problem.diffusion)),
+          XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(problem.boundary_info, new XT::Grid::DirichletBoundary())};
+    // ... add non-trivial Dirichlet here for other problems
+    // (if we add something here, the oswald interpolation needs to be adapted accordingly!)
+
     // the main adaptation loop
     auto helper = make_adaptation_helper(grid, dg_space, current_solution);
     const double tolerance = DXTC_CONFIG_GET("tolerance", 1e-1);
@@ -227,32 +242,19 @@ int main(int argc, char* argv[])
       logger.info() << "step " << counter << ", space has " << dg_space.mapper().size() << " DoFs" << std::endl;
 
       // assemble
-      auto lhs_op = make_matrix_operator<M>(dg_space);
-      lhs_op.append(LocalElementIntegralBilinearForm<E>(LocalLaplaceIntegrand<E>(problem.diffusion)));
-      lhs_op.append(
-          LocalCouplingIntersectionIntegralBilinearForm<I>(
-              LocalLaplaceIPDGIntegrands::InnerCoupling<I>(symmetry_prefactor, problem.diffusion, weight_function)
-              + LocalIPDGIntegrands::InnerPenalty<I>(penalty_parameter, weight_function)),
-          {},
-          XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
-      lhs_op.append(
-          LocalIntersectionIntegralBilinearForm<I>(
-              LocalIPDGIntegrands::BoundaryPenalty<I>(penalty_parameter, weight_function)
-              + LocalLaplaceIPDGIntegrands::DirichletCoupling<I>(symmetry_prefactor, problem.diffusion)),
-          {},
-          XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(problem.boundary_info, new XT::Grid::DirichletBoundary()));
+      auto lhs_op = a.template with<M>(dg_space, dg_space);
       auto rhs_func = make_vector_functional<V>(dg_space);
       rhs_func.append(LocalElementIntegralFunctional<E>(LocalProductIntegrand<E>().with_ansatz(problem.force)));
-      // ... add Dirichlet here
-      // (if we add something here, the oswald interpolation needs to be adapted accordingly!)
-      // ... add Neumann here
+      // ... add non-trivial Neumann here for other problems
       // assemble everything in one grid walk (uses the lhs_op as grid walker)
-      lhs_op.append(rhs_func);
-      lhs_op.assemble(DXTC_CONFIG_GET("parallel", true));
+      auto walker = XT::Grid::make_walker(grid_view);
+      walker.append(lhs_op);
+      walker.append(rhs_func);
+      walker.walk(DXTC_CONFIG_GET("parallel", true));
 
       // solve, use previous solution as initial guess (if the solver supports it)
       XT::LA::make_solver(lhs_op.matrix()).apply(rhs_func.vector(), current_solution.dofs().vector());
-      current_solution.visualize("solution_" + XT::Common::to_string(counter));
+      visualize(current_solution, "solution_" + XT::Common::to_string(counter));
 
       // compute local indicators and estimate
       const auto estimates = compute_local_indicators(current_solution,
