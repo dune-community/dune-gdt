@@ -171,16 +171,19 @@ public:
   using LocalBilinearFormType =
       LocalCouplingIntersectionBilinearFormInterface<I, t_r, t_rC, TR, FieldType, a_r, a_rC, AR>;
 
+  /// \param contributions Array indicating if the in/in, in/out, out/in or out/out contributions are to be assembled
   LocalCouplingIntersectionBilinearFormAssembler(const TestSpaceType& test_space,
                                                  const AnsatzSpaceType& ansatz_space,
                                                  const LocalBilinearFormType& local_two_form,
                                                  MatrixType& global_matrix,
+                                                 const std::array<bool, 4>& contributions = {true, true, true, true},
                                                  const XT::Common::Parameter& param = {})
     : BaseType()
     , test_space_(test_space.copy())
     , ansatz_space_(ansatz_space.copy())
     , local_bilinear_form_(local_two_form.copy())
     , global_matrix_(global_matrix)
+    , contributions_(contributions)
     , param_(param)
     , scaling_(param_.has_key("matrixoperator.scaling") ? param_.get("matrixoperator.scaling").at(0) : 1.)
     , local_matrix_in_in_(test_space_->mapper().max_local_size(), ansatz_space_->mapper().max_local_size())
@@ -212,6 +215,7 @@ public:
     , ansatz_space_(other.ansatz_space_->copy())
     , local_bilinear_form_(other.local_bilinear_form_->copy())
     , global_matrix_(other.global_matrix_)
+    , contributions_(other.contributions_)
     , param_(other.param_)
     , scaling_(other.scaling_)
     , local_matrix_in_in_(test_space_->mapper().max_local_size(), ansatz_space_->mapper().max_local_size())
@@ -260,20 +264,24 @@ public:
     ansatz_space_->mapper().global_indices(inside_element, global_ansatz_indices_in_);
     ansatz_space_->mapper().global_indices(outside_element, global_ansatz_indices_out_);
     for (size_t ii = 0; ii < test_basis_inside_->size(param_); ++ii) {
-      for (size_t jj = 0; jj < ansatz_basis_inside_->size(param_); ++jj)
-        global_matrix_.add_to_entry(
-            global_test_indices_in_[ii], global_ansatz_indices_in_[jj], scaling_ * local_matrix_in_in_[ii][jj]);
-      for (size_t jj = 0; jj < ansatz_basis_outside_->size(param_); ++jj)
-        global_matrix_.add_to_entry(
-            global_test_indices_in_[ii], global_ansatz_indices_out_[jj], scaling_ * local_matrix_in_out_[ii][jj]);
+      if (contributions_[0])
+        for (size_t jj = 0; jj < ansatz_basis_inside_->size(param_); ++jj)
+          global_matrix_.add_to_entry(
+              global_test_indices_in_[ii], global_ansatz_indices_in_[jj], scaling_ * local_matrix_in_in_[ii][jj]);
+      if (contributions_[1])
+        for (size_t jj = 0; jj < ansatz_basis_outside_->size(param_); ++jj)
+          global_matrix_.add_to_entry(
+              global_test_indices_in_[ii], global_ansatz_indices_out_[jj], scaling_ * local_matrix_in_out_[ii][jj]);
     }
     for (size_t ii = 0; ii < test_basis_outside_->size(param_); ++ii) {
-      for (size_t jj = 0; jj < ansatz_basis_inside_->size(param_); ++jj)
-        global_matrix_.add_to_entry(
-            global_test_indices_out_[ii], global_ansatz_indices_in_[jj], scaling_ * local_matrix_out_in_[ii][jj]);
-      for (size_t jj = 0; jj < ansatz_basis_outside_->size(param_); ++jj)
-        global_matrix_.add_to_entry(
-            global_test_indices_out_[ii], global_ansatz_indices_out_[jj], scaling_ * local_matrix_out_out_[ii][jj]);
+      if (contributions_[2])
+        for (size_t jj = 0; jj < ansatz_basis_inside_->size(param_); ++jj)
+          global_matrix_.add_to_entry(
+              global_test_indices_out_[ii], global_ansatz_indices_in_[jj], scaling_ * local_matrix_out_in_[ii][jj]);
+      if (contributions_[3])
+        for (size_t jj = 0; jj < ansatz_basis_outside_->size(param_); ++jj)
+          global_matrix_.add_to_entry(
+              global_test_indices_out_[ii], global_ansatz_indices_out_[jj], scaling_ * local_matrix_out_out_[ii][jj]);
     }
   } // ... apply_local(...)
 
@@ -282,6 +290,7 @@ private:
   const std::unique_ptr<AnsatzSpaceType> ansatz_space_;
   const std::unique_ptr<LocalBilinearFormType> local_bilinear_form_;
   MatrixType& global_matrix_;
+  const std::array<bool, 4> contributions_;
   XT::Common::Parameter param_;
   const double scaling_;
   DynamicMatrix<FieldType> local_matrix_in_in_;
