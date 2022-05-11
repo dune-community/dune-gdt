@@ -492,43 +492,53 @@ public:
   /// \name These methods allow to append the local bilinear forms from a BilinearForm
   /// \{
 
-  ThisType& append(const BilinearFormType& bilinear_form, const XT::Common::Parameter& param = {})
+  /**
+   * \param contributions Array indicating if the element, coupling in/in, in/out, out/in, out/out or non-coupling
+   *                      intersection contributions are to be assembled.
+   **/
+  ThisType& append(const BilinearFormType& bilinear_form,
+                   const XT::Common::Parameter& param = {},
+                   const std::array<bool, 6>& contributions = {true, true, true, true, true, true})
   {
-    for (auto& data : bilinear_form.element_data()) {
-      const auto& local_bilinear_form = *std::get<0>(data);
-      const auto& filter = *std::get<1>(data);
-      element_bilinear_form_data_.emplace_back(
-          new LocalElementBilinearFormAssemblerType(this->range_space(),
-                                                    this->source_space(),
-                                                    local_bilinear_form,
-                                                    MatrixStorage::access(),
-                                                    param + XT::Common::Parameter("matrixoperator.scaling", scaling)),
-          filter.copy());
-    }
-    for (auto& data : bilinear_form.coupling_intersection_data()) {
-      const auto& local_bilinear_form = *std::get<0>(data);
-      const auto& filter = *std::get<1>(data);
-      coupling_intersection_bilinear_form_data_.emplace_back(
-          new LocalCouplingIntersectionBilinearFormAssemblerType(
-              this->range_space(),
-              this->source_space(),
-              local_bilinear_form,
-              MatrixStorage::access(),
-              param + XT::Common::Parameter("matrixoperator.scaling", scaling)),
-          filter.copy());
-    }
-    for (auto& data : bilinear_form.intersection_data()) {
-      const auto& local_bilinear_form = *std::get<0>(data);
-      const auto& filter = *std::get<1>(data);
-      intersection_bilinear_form_data_.emplace_back(
-          new LocalIntersectionBilinearFormAssemblerType(
-              this->range_space(),
-              this->source_space(),
-              local_bilinear_form,
-              MatrixStorage::access(),
-              param + XT::Common::Parameter("matrixoperator.scaling", scaling)),
-          filter.copy());
-    }
+    if (contributions[0])
+      for (auto& data : bilinear_form.element_data()) {
+        const auto& local_bilinear_form = *std::get<0>(data);
+        const auto& filter = *std::get<1>(data);
+        element_bilinear_form_data_.emplace_back(
+            new LocalElementBilinearFormAssemblerType(this->range_space(),
+                                                      this->source_space(),
+                                                      local_bilinear_form,
+                                                      MatrixStorage::access(),
+                                                      param + XT::Common::Parameter("matrixoperator.scaling", scaling)),
+            filter.copy());
+      }
+    if (contributions[1] || contributions[2] || contributions[3] || contributions[4])
+      for (auto& data : bilinear_form.coupling_intersection_data()) {
+        const auto& local_bilinear_form = *std::get<0>(data);
+        const auto& filter = *std::get<1>(data);
+        coupling_intersection_bilinear_form_data_.emplace_back(
+            new LocalCouplingIntersectionBilinearFormAssemblerType(
+                this->range_space(),
+                this->source_space(),
+                local_bilinear_form,
+                MatrixStorage::access(),
+                {contributions[1], contributions[2], contributions[3], contributions[4]},
+                param + XT::Common::Parameter("matrixoperator.scaling", scaling)),
+            filter.copy());
+      }
+    if (contributions[5])
+      for (auto& data : bilinear_form.intersection_data()) {
+        const auto& local_bilinear_form = *std::get<0>(data);
+        const auto& filter = *std::get<1>(data);
+        intersection_bilinear_form_data_.emplace_back(
+            new LocalIntersectionBilinearFormAssemblerType(
+                this->range_space(),
+                this->source_space(),
+                local_bilinear_form,
+                MatrixStorage::access(),
+                param + XT::Common::Parameter("matrixoperator.scaling", scaling)),
+            filter.copy());
+      }
     return *this;
   } // ... append(...)
 
