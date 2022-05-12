@@ -27,18 +27,17 @@
 #include <dune/xt/grid/walker.hh>
 #include <dune/xt/grid/type_traits.hh>
 
-//#include <dune/xt/functions/constant.hh>
 #include <dune/xt/functions/generic/function.hh>
 #include <dune/xt/functions/grid-function.hh>
 
-//#include <dune/gdt/functionals/vector-based.hh>
+#include <dune/gdt/functionals/vector-based.hh>
 #include <dune/gdt/local/bilinear-forms/integrals.hh>
-//#include <dune/gdt/local/functionals/integrals.hh>
-//#include <dune/gdt/local/integrands/conversion.hh>
+#include <dune/gdt/local/functionals/integrals.hh>
+#include <dune/gdt/local/integrands/conversion.hh>
 #include <dune/gdt/local/integrands/laplace.hh>
-//#include <dune/gdt/local/integrands/product.hh>
+#include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/operators/bilinear-form.hh>
-//#include <dune/gdt/operators/matrix.hh>
+#include <dune/gdt/operators/matrix.hh>
 #include <dune/gdt/spaces/l2/discontinuous-lagrange.hh>
 #include <dune/gdt/spaces/h1/continuous-lagrange.hh>
 #include <dune/gdt/tools/sparsity-pattern.hh>
@@ -54,6 +53,7 @@ using namespace Dune::GDT;
 using G_M = YASP_2D_EQUIDISTANT_OFFSET;
 // static const constexpr size_t d = G_M::dimension;
 using GV_M = typename G_M::LeafGridView;
+using I_M = XT::Grid::extract_intersection_t<GV_M>;
 // - local subdomain grids (we use different grids on purpose, if available)
 #if HAVE_DUNE_ALUGRID
 using G_L = ALU_2D_SIMPLEX_CONFORMING;
@@ -66,6 +66,53 @@ using I_L = XT::Grid::extract_intersection_t<GV_L>;
 // - linear algebra
 using M = XT::LA::IstlRowMajorSparseMatrix<double>;
 using V = XT::LA::IstlDenseVector<double>;
+
+
+class MacroGridBasedBoundaryInfo : public XT::Grid::BoundaryInfo<I_L>
+{
+  using BaseType = XT::Grid::BoundaryInfo<I_L>;
+
+public:
+  using typename BaseType::IntersectionType;
+  using MacroBoundaryInfoType = XT::Grid::BoundaryInfo<I_M>;
+  using MacroElementType = XT::Grid::extract_entity_t<GV_M>;
+
+  MacroGridBasedBoundaryInfo(const GV_M& macro_grid_view,
+                             const MacroElementType& macro_element,
+                             const MacroBoundaryInfoType& macro_boundary_info)
+    : macro_grid_view_(macro_grid_view)
+    , macro_element_(macro_element)
+    , macro_boundary_info_(macro_boundary_info)
+  {}
+
+  const XT::Grid::BoundaryType& type(const IntersectionType& intersection) const override final
+  {
+    // find out if this micro intersection lies within the macro element or on a macro intersection
+    for (auto&& macro_intersection : intersections(macro_grid_view_, macro_element_)) {
+      const int num_corners = intersection.geometry().corners();
+      int num_corners_inside = 0;
+      int num_corners_outside = 0;
+      for (int cc = 0; cc < num_corners; ++cc) {
+        const auto micro_corner = intersection.geometry().corner(cc);
+        if (XT::Grid::contains(macro_intersection, micro_corner))
+          ++num_corners_inside;
+        else
+          ++num_corners_outside;
+      }
+      if (num_corners_inside == num_corners && num_corners_outside == 0) {
+        // we found the macro intersection this micro intersection belongs to
+        return macro_boundary_info_.type(macro_intersection);
+      }
+    }
+    // we could not find a macro intersection this micro intersection belongs to
+    return no_boundary_;
+  } // ... type(...)
+
+  const GV_M& macro_grid_view_;
+  const MacroElementType& macro_element_;
+  const MacroBoundaryInfoType& macro_boundary_info_;
+  const XT::Grid::NoBoundary no_boundary_;
+}; // class MacroGridBasedBoundaryInfo
 
 
 int main(int argc, char* argv[])
@@ -82,6 +129,7 @@ int main(int argc, char* argv[])
     // analytical problem
     const double diffusion = 1;
     const double force = 1;
+    const XT::Grid::AllDirichletBoundaryInfo<I_M> boundary_info;
 
     // grid
     auto macro_grid = XT::Grid::make_cube_grid<G_M>(0., 1., 8);
@@ -161,10 +209,11 @@ int main(int argc, char* argv[])
     V global_vector(global_size);
 
     logger.info() << "done" << std::endl;
-    logger.info() << "Assembling subdomain contributions ... " << std::flush;
+    logger.info() << "Assembling subdomain contributions " << std::flush;
 
-    // Assemble local discretization: any approximation of the original problem with zero-Neumann boundary values.
+    // For the local discretization any approximation of the original problem with zero-Neumann boundary values will do.
     for (auto&& macro_element : elements(macro_grid_view)) {
+      logger.info() << "." << std::flush;
       const auto ss = dd_grid.subdomain(macro_element);
       const auto subdomain_grid = dd_grid.local_grid(ss).leaf_view();
       // LHS
@@ -191,11 +240,11 @@ int main(int argc, char* argv[])
       subdomain_walker.walk(DXTC_CONFIG_GET("parallel", true));
     }
 
-    logger.info() << "done" << std::endl;
-    logger.info() << "Assembling coupling contributions ... " << std::flush;
+    logger.info() << " done" << std::endl;
+    logger.info() << "Assembling coupling contributions " << std::flush;
 
-    // Assemble coupling contributions.
     for (auto&& macro_element : elements(macro_grid_view)) {
+      logger.info() << "." << std::flush;
       const auto ss = dd_grid.subdomain(macro_element);
       for (auto&& macro_intersection : intersections(macro_grid_view, macro_element)) {
         if (macro_intersection.neighbor()) {
@@ -259,13 +308,63 @@ int main(int argc, char* argv[])
       }
     }
 
-    // TODO: Assemble boundary contributions.
+    logger.info() << " done" << std::endl;
+    logger.info() << "Assembling boundary contributions " << std::flush;
 
-    // TODO: solve sglobal system and visualize solution
-    //    auto solution = make_discrete_function<V>(space);
-    //    XT::LA::make_solver(lhs_op.matrix()).apply(rhs_func.vector(), solution.dofs().vector());
+    for (auto&& macro_element : elements(macro_grid_view)) {
+      if (dd_grid.boundary(macro_element)) {
+        logger.info() << "." << std::flush;
+        const auto ss = dd_grid.subdomain(macro_element);
+        const auto subdomain_grid = dd_grid.local_grid(ss).leaf_view();
+        // We need to transform the boundary info, so those intersections on the boundary of the subdomain_grid, that
+        // lie on an inner coupling intersection of the macro_grid_view are not falsely detected as boundary.
+        const MacroGridBasedBoundaryInfo local_boundary_info(macro_grid_view, macro_element, boundary_info);
+        // LHS
+        BilinearForm<GV_L> local_bilinear_form(subdomain_grid);
+        local_bilinear_form +=
+            {LocalIntersectionIntegralBilinearForm<I_L>(
+                 LocalIPDGIntegrands::BoundaryPenalty<I_L>(penalty_parameter, weight)
+                 + LocalLaplaceIPDGIntegrands::DirichletCoupling<I_L>(symmetry_prefactor, diffusion)),
+             XT::Grid::ApplyOn::CustomBoundaryIntersections<GV_L>(local_boundary_info,
+                                                                  new XT::Grid::DirichletBoundary())};
+        XT::LA::MatrixView<M> local_matrix(
+            global_matrix, index_offset[ss], index_offset[ss + 1], index_offset[ss], index_offset[ss + 1]);
+        auto subdomain_operator = local_bilinear_form.with(*local_spaces[ss], *local_spaces[ss], local_matrix);
+        // RHS
+        // ... add a contribution for non-trivial Dirichlet data here
+        // ... add a contribution for non-trivial Neumann data here
+        // assembly
+        auto subdomain_walker = XT::Grid::make_walker(subdomain_grid);
+        subdomain_walker.append(subdomain_operator);
+        subdomain_walker.walk(DXTC_CONFIG_GET("parallel", true));
+      }
+    }
 
-    //    solution.visualize("solution");
+    logger.info() << " done" << std::endl;
+    logger.info() << "Solving global system ... " << std::flush;
+
+    auto global_solution = global_vector.copy();
+    XT::LA::make_solver(global_matrix).apply(global_vector, global_solution);
+
+    logger.info() << " done" << std::endl;
+    logger.info() << "Visualizing " << std::flush;
+    auto vtk_writer = XT::Grid::DD::make_glued_vtk_writer(dd_grid);
+    // Unfortunately, we need to keep track of the local vectors for the time of the visualization.
+    std::vector<std::shared_ptr<DiscreteFunction<V, GV_L>>> localized_solutions(dd_grid.num_subdomains(), nullptr);
+    for (auto&& macro_element : elements(macro_grid_view)) {
+      logger.info() << "." << std::flush;
+      const auto ss = dd_grid.subdomain(macro_element);
+      localized_solutions[ss] = std::make_shared<DiscreteFunction<V, GV_L>>(make_discrete_function(*local_spaces[ss]));
+      for (size_t ii = 0; ii < localized_solutions[ss]->dofs().vector().size(); ++ii)
+        localized_solutions[ss]->dofs().vector()[ii] = global_solution[index_offset[ss] + ii];
+      vtk_writer.addVertexData(
+          ss, std::make_shared<XT::Functions::VisualizationAdapter<GV_L, 1, 1, double>>(*localized_solutions[ss]));
+    }
+    const std::string filename = "elliptic_lrbms_fom";
+    vtk_writer.write(filename, VTK::OutputType::appendedraw);
+    logger.info() << " done" << std::endl;
+    logger.info() << "-> see " << filename << ".pvtu" << std::endl;
+
   } catch (Exception& e) {
     std::cerr << "\nDUNE reported error: " << e.what() << std::endl;
     return EXIT_FAILURE;
