@@ -383,9 +383,10 @@ public:
         "bilinear_form"_a,
         "param"_a = XT::Common::Parameter());
     c.def("__iadd__", // function ptr signature required for the right return type
-          (type & (type::*)(const BilinearFormType&, const XT::Common::Parameter&)) & type::append,
+          (type & (type::*)(const BilinearFormType&, const XT::Common::Parameter&, const std::array<bool, 6>&)) & type::append,
           "bilinear_form"_a,
           "param"_a = XT::Common::Parameter(),
+          "contributions"_a = std::array<bool, 6>({true, true, true, true, true, true}),
           py::is_operator());
     //    c.def("__iadd__", // function ptr signature required for the right return type
     //          (type
@@ -558,9 +559,10 @@ public:
         "bilinear_form"_a,
         "param"_a = XT::Common::Parameter());
     c.def("__iadd__", // function ptr signature required for the right return type
-          (type & (type::*)(const BilinearFormType&, const XT::Common::Parameter&)) & type::append,
+          (type & (type::*)(const BilinearFormType&, const XT::Common::Parameter&, const std::array<bool, 6>&)) & type::append,
           "bilinear_form"_a,
           "param"_a = XT::Common::Parameter(),
+          "contributions"_a = std::array<bool, 6>({true, true, true, true, true, true}),
           py::is_operator());
     //    c.def("__iadd__", // function ptr signature required for the right return type
     //          (type
