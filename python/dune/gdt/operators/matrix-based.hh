@@ -11,6 +11,7 @@
 #define DUNE_GDT_PYTHON_OPERATORS_MATRIX_BASED_HH
 
 #include <dune/pybindxi/pybind11.h>
+#include <dune/pybindxi/stl.h>   // <-- for conversion of std::array< ... >, gives registry issue otherwise
 
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/grid/functors/interfaces.hh>
@@ -67,55 +68,55 @@ private:
   template <bool needs_sparsity_tag = !std::is_same<SparsityTag, void>::value, bool anything = true>
   struct addbind /*<true, ...>*/
   {
-    static void leaf_factory(pybind11::module& /*m*/, const std::string& /*FactoryName*/)
+    static void leaf_factory(pybind11::module& m, const std::string& FactoryName)
     {
       namespace py = pybind11;
       using namespace pybind11::literals;
 
-      //      m.def(
-      //          FactoryName.c_str(),
-      //          [](GP& grid,
-      //             const SS& source_space,
-      //             const RS& range_space,
-      //             const MatrixTag&,
-      //             const SparsityTag&,
-      //             const XT::LA::SparsityPatternDefault& pattern,
-      //             const std::string& logging_prefix) {
-      //            return new type(grid.leaf_view(), source_space, range_space, pattern, logging_prefix);
-      //          },
-      //          "grid"_a,
-      //          "source_space"_a,
-      //          "range_space"_a,
-      //          "la_backend"_a,
-      //          "sparsity_type"_a,
-      //          "sparsity_pattern"_a,
-      //          "logging_prefix"_a = "",
-      //          py::keep_alive<0, 1>(),
-      //          py::keep_alive<0, 2>(),
-      //          py::keep_alive<0, 3>());
-      //      m.def(
-      //          FactoryName.c_str(),
-      //          [](GP& grid,
-      //             const SS& source_space,
-      //             const RS& range_space,
-      //             const MatrixTag&,
-      //             const SparsityTag&,
-      //             const std::string& logging_prefix) {
-      //            return new type(grid.leaf_view(),
-      //                            source_space,
-      //                            range_space,
-      //                            make_element_and_intersection_sparsity_pattern(range_space, source_space,
-      //                            grid.leaf_view()), logging_prefix);
-      //          },
-      //          "grid"_a,
-      //          "source_space"_a,
-      //          "range_space"_a,
-      //          "la_backend"_a,
-      //          "sparsity_type"_a,
-      //          "logging_prefix"_a = "",
-      //          py::keep_alive<0, 1>(),
-      //          py::keep_alive<0, 2>(),
-      //          py::keep_alive<0, 3>());
+        m.def(
+            FactoryName.c_str(),
+            [](GP& grid,
+               const SS& source_space,
+               const RS& range_space,
+               const MatrixTag&,
+               const SparsityTag&,
+               const XT::LA::SparsityPatternDefault& pattern,
+               const std::string& logging_prefix) {
+              return new type(grid.leaf_view(), source_space, range_space, pattern, logging_prefix);
+            },
+            "grid"_a,
+            "source_space"_a,
+            "range_space"_a,
+            "la_backend"_a,
+            "sparsity_type"_a,
+            "sparsity_pattern"_a,
+            "logging_prefix"_a = "",
+            py::keep_alive<0, 1>(),
+            py::keep_alive<0, 2>(),
+            py::keep_alive<0, 3>());
+        m.def(
+            FactoryName.c_str(),
+            [](GP& grid,
+               const SS& source_space,
+               const RS& range_space,
+               const MatrixTag&,
+               const SparsityTag&,
+               const std::string& logging_prefix) {
+              return new type(grid.leaf_view(),
+                              source_space,
+                              range_space,
+                              make_element_and_intersection_sparsity_pattern(range_space, source_space,
+                              grid.leaf_view()), logging_prefix);
+            },
+            "grid"_a,
+            "source_space"_a,
+            "range_space"_a,
+            "la_backend"_a,
+            "sparsity_type"_a,
+            "logging_prefix"_a = "",
+            py::keep_alive<0, 1>(),
+            py::keep_alive<0, 2>(),
+            py::keep_alive<0, 3>());
     }
     static void coupling_factory(pybind11::module& /*m*/, const std::string& /*FactoryName*/)
     {
@@ -205,7 +206,6 @@ private:
         );
       }
     }
-
     static void coupling_factory(pybind11::module& m, const std::string& FactoryName)
     {
       namespace py = pybind11;
@@ -298,62 +298,63 @@ public:
     const auto ClassName = XT::Common::to_camel_case(
         bindings::OperatorInterface<M, AGV, s, r, SGV, RGV>::class_name(matrix_id, grid_id, layer_id, class_id));
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
-    //    c.def(
-    //        py::init(
-    //            [](GP& grid, const SS& source_space, const RS& range_space, M& matrix, const std::string&
-    //            logging_prefix) {
-    //              return new type(grid.leaf_view(), source_space, range_space, matrix, logging_prefix);
-    //            }),
-    //        "grid"_a,
-    //        "source_space"_a,
-    //        "range_space"_a,
-    //        "matrix"_a,
-    //        "logging_prefix"_a = "",
-    //        py::keep_alive<0, 1>(),
-    //        py::keep_alive<1, 2>(),
-    //        py::keep_alive<1, 3>(),
-    //        py::keep_alive<1, 4>(),
-    //        py::keep_alive<1, 5>());
-    //    c.def(py::init([](GP& grid,
-    //                      const SS& source_space,
-    //                      const RS& range_space,
-    //                      const XT::LA::SparsityPatternDefault& pattern,
-    //                      const std::string& logging_prefix) {
-    //            return new type(grid.leaf_view(),
-    //                            source_space,
-    //                            range_space,
-    //                            new M(range_space.mapper().size(), source_space.mapper().size(), pattern),
-    //                            logging_prefix);
-    //          }),
-    //          "grid"_a,
-    //          "source_space"_a,
-    //          "range_space"_a,
-    //          "sparsity_pattern"_a,
-    //          "logging_prefix"_a = "",
-    //            py::keep_alive<0, 1>(),
-    //          py::keep_alive<1, 2>(),
-    //          py::keep_alive<1, 3>(),
-    //          py::keep_alive<1, 4>());
-    //    c.def(py::init([](GP& grid, const SS& source_space, const RS& range_space, const std::string& logging_prefix)
-    //    {
-    //            return new type(
-    //                grid.leaf_view(),
-    //                source_space,
-    //                range_space,
-    //                new M(range_space.mapper().size(),
-    //                      source_space.mapper().size(),
-    //                      make_element_and_intersection_sparsity_pattern(range_space, source_space,
-    //                      grid.leaf_view())),
-    //                logging_prefix);
-    //          }),
-    //          "grid"_a,
-    //          "source_space"_a,
-    //          "range_space"_a,
-    //          "logging_prefix"_a = "",
-    //            py::keep_alive<0, 1>(),
-    //          py::keep_alive<1, 2>(),
-    //          py::keep_alive<1, 3>(),
-    //          py::keep_alive<1, 4>());
+
+    c.def(
+        py::init(
+            [](GP& grid, const SS& source_space, const RS& range_space, M& matrix, const std::string&
+            logging_prefix) {
+              return new type(grid.leaf_view(), source_space, range_space, matrix, logging_prefix);
+            }),
+        "grid"_a,
+        "source_space"_a,
+        "range_space"_a,
+        "matrix"_a,
+        "logging_prefix"_a = "",
+        py::keep_alive<0, 1>(),
+        py::keep_alive<1, 2>(),
+        py::keep_alive<1, 3>(),
+        py::keep_alive<1, 4>(),
+        py::keep_alive<1, 5>());
+    c.def(py::init([](GP& grid,
+                      const SS& source_space,
+                      const RS& range_space,
+                      const XT::LA::SparsityPatternDefault& pattern,
+                      const std::string& logging_prefix) {
+            return new type(grid.leaf_view(),
+                            source_space,
+                            range_space,
+                            new M(range_space.mapper().size(), source_space.mapper().size(), pattern),
+                            logging_prefix);
+          }),
+          "grid"_a,
+          "source_space"_a,
+          "range_space"_a,
+          "sparsity_pattern"_a,
+          "logging_prefix"_a = "",
+          py::keep_alive<0, 1>(),
+          py::keep_alive<1, 2>(),
+          py::keep_alive<1, 3>(),
+          py::keep_alive<1, 4>());
+    c.def(py::init([](GP& grid, const SS& source_space, const RS& range_space, const std::string& logging_prefix)
+    {
+            return new type(
+                grid.leaf_view(),
+                source_space,
+                range_space,
+                new M(range_space.mapper().size(),
+                      source_space.mapper().size(),
+                      make_element_and_intersection_sparsity_pattern(range_space, source_space,
+                      grid.leaf_view())),
+                logging_prefix);
+          }),
+          "grid"_a,
+          "source_space"_a,
+          "range_space"_a,
+          "logging_prefix"_a = "",
+          py::keep_alive<0, 1>(),
+          py::keep_alive<1, 2>(),
+          py::keep_alive<1, 3>(),
+          py::keep_alive<1, 4>());
 
     // doing this so complicated to get an actual reference instead of a copy
     c.def_property("matrix",
@@ -368,20 +369,42 @@ public:
                    });
 
     // methods from walker base, to allow for overloads
-    //    XT::Grid::bindings::Walker<AGV>::addbind_methods(c);
+//    XT::Grid::bindings::Walker<AGV>::addbind_methods(c);
 
     // methods from operator base, to allow for overloads
     bindings::OperatorInterface<M, AGV, s, r, SGV, RGV>::addbind_methods(c);
 
     // additional methods
     //    c.def("clear", [](type& self) { self.clear(); });
+
     c.def(
         "append",
-        [](type& self, const BilinearFormType& bilinear_form, const XT::Common::Parameter& param) {
-          self.append(bilinear_form, param);
+        [](type& self,
+           const BilinearFormType& bilinear_form,
+           const XT::Common::Parameter& param,
+           std::array<bool, 6>& contributions) {
+            self.append(bilinear_form, param, contributions);
         },
         "bilinear_form"_a,
-        "param"_a = XT::Common::Parameter());
+        "param"_a = XT::Common::Parameter(),
+        "contributions"_a = std::array<bool, 6>({true, true, true, true, true, true}));
+
+//    c.def(
+//        "append",
+//        [](type& self,
+//           const BilinearFormType& bilinear_form,
+//           const XT::Common::Parameter& param,
+//           const bool& anything,
+//           std::array<bool, 6>& contributions) {
+////            std::array<bool, 6> contributions({true, true, true, true, true, true});
+//            self.append(bilinear_form, param, contributions);
+//        },
+//        "bilinear_form"_a,
+//        "param"_a = XT::Common::Parameter(),
+//        "anything"_a = true,  // <- this is here due to the registry error for append with 3 arguments
+//        "contributions"_a = std::array<bool, 6>({true, true, true, true, true, true})
+//        );
+
 
     // NOTE: THIS METHOD CAN NOT BE BOUND SINCE THIS RESULTS IN A REGISTRY ERROR !
     //    c.def("__iadd__", // function ptr signature required for the right return type
@@ -554,13 +577,27 @@ public:
 
     // additional methods
     //    c.def("clear", [](type& self) { self.clear(); });
+
     c.def(
         "append",
-        [](type& self, const BilinearFormType& bilinear_form, const XT::Common::Parameter& param) {
-          self.append(bilinear_form, param);
+        [](type& self,
+           const BilinearFormType& bilinear_form,
+           const XT::Common::Parameter& param,
+           std::array<bool, 6>& contributions) {
+            self.append(bilinear_form, param, contributions);
         },
         "bilinear_form"_a,
-        "param"_a = XT::Common::Parameter());
+        "param"_a = XT::Common::Parameter(),
+        "contributions"_a = std::array<bool, 6>({true, true, true, true, true, true}));
+
+//    c.def(
+//        "append",
+//        [](type& self, const BilinearFormType& bilinear_form, const XT::Common::Parameter& param, const std::array<bool, 6>& contributions) {
+//          self.append(bilinear_form, param, contributions);
+//        },
+//        "bilinear_form"_a,
+//        "param"_a = XT::Common::Parameter(),
+//        "contributions"_a = std::array<bool, 6>({true, true, true, true, true, true}));
 
     // NOTE: THIS METHOD CAN NOT BE BOUND SINCE THIS RESULTS IN A REGISTRY ERROR !
     //    c.def("__iadd__", // function ptr signature required for the right return type
@@ -644,67 +681,6 @@ public:
     //        py::call_guard<py::gil_scoped_release>());
     return c;
   } // ... bind_coupling_type(...)
-
-
-  //  static void
-  //  bind_factory(pybind11::module& m, const std::string& matrix_id, const std::string& class_id = "matrix_operator")
-  //  {
-  //    namespace py = pybind11;
-  //    using namespace pybind11::literals;
-
-  //    //    // factories
-  //    const auto FactoryName = XT::Common::to_camel_case(class_id);
-  //    //    m.def(
-  //    //        FactoryName.c_str(),
-  //    //        [](GP& grid, const SS& source_space, const RS& range_space, M& matrix, const std::string&
-  //    logging_prefix)
-  //    //        {
-  //    //          return new type(grid.leaf_view(), source_space, range_space, matrix, logging_prefix);
-  //    //        },
-  //    //        "grid"_a,
-  //    //        "source_space"_a,
-  //    //        "range_space"_a,
-  //    //        "matrix"_a,
-  //    //        "logging_prefix"_a = "",
-  //    //        py::keep_alive<0, 1>(),
-  //    //        py::keep_alive<0, 2>(),
-  //    //        py::keep_alive<0, 3>(),
-  //    //        py::keep_alive<0, 4>());
-  //    addbind<>::leaf_factory(m, FactoryName);
-  //    addbind<>::coupling_factory(m, FactoryName);
-  //    //    m.def(
-  //    //        XT::Common::to_camel_case(matrix_id + "_" + class_id).c_str(),
-  //    //        [](GP& grid,
-  //    //           const SS& source_space,
-  //    //           const RS& range_space,
-  //    //           const XT::LA::SparsityPatternDefault& pattern,
-  //    //           const std::string& logging_prefix) {
-  //    //          return new type(grid.leaf_view(),
-  //    //                          source_space,
-  //    //                          range_space,
-  //    //                          new M(range_space.mapper().size(), source_space.mapper().size(), pattern),
-  //    //                          logging_prefix);
-  //    //        },
-  //    //        "grid"_a,
-  //    //        "source_space"_a,
-  //    //        "range_space"_a,
-  //    //        "sparsity_pattern"_a,
-  //    //        "logging_prefix"_a = "",
-  //    //        py::keep_alive<0, 1>(),
-  //    //        py::keep_alive<0, 2>(),
-  //    //        py::keep_alive<0, 3>());
-  //  } // ... bind_factory(...)
-
-  static bound_type bind(pybind11::module& m,
-                         const std::string& matrix_id,
-                         const std::string& grid_id,
-                         const std::string& layer_id = "",
-                         const std::string& class_id = "matrix_operator")
-  {
-    // unused ?
-    auto c = bind_leaf_type(m, matrix_id, grid_id, layer_id, class_id);
-    return c;
-  }
 
   static void bind_leaf_factory(pybind11::module& m,
                                 const std::string& /*matrix_id*/,
