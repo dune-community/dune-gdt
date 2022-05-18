@@ -10,6 +10,7 @@
 #   René Fritze     (2016, 2018)
 # ~~~
 
+import tempfile
 from tempfile import NamedTemporaryFile
 
 from dune.xt import guarded_import
@@ -130,3 +131,17 @@ if config.HAVE_K3D:
 
                 assert grid
                 return visualize_xt_function(function, grid, subsampling=subsampling)
+
+    def visualize_discrete_functions_on_dd_grid(discrete_functions, dd_grid):
+        # TODO: add assertions for discrete functions
+        subdomains = list(range(dd_grid.num_subdomains))
+        tmpfile = tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='.vtu').name
+
+        for ss in subdomains:
+            local_grid = dd_grid.local_grid(ss)
+            function = discrete_functions[ss]
+            post_string = f'_{ss}'
+            function.visualize(filename=tmpfile[:-4] + post_string)
+
+        from dune.xt.common.vtk.plot import plot_all_subdomains
+        plot_all_subdomains(tmpfile[:-4], subdomains, color_attribute_name='discrete_function')
