@@ -13,7 +13,9 @@
 #include <dune/pybindxi/stl.h>
 
 #include <dune/xt/grid/type_traits.hh>
+#include <dune/xt/grid/dd/glued.hh>
 #include <dune/xt/grid/grids.hh>
+#include <dune/xt/grid/view/coupling.hh>
 
 #include <dune/gdt/local/integrands/interfaces.hh>
 
@@ -38,22 +40,42 @@ struct LocalUnaryIntersectionIntegrandInterface_for_all_grids
     using Dune::GDT::bindings::LocalUnaryIntersectionIntegrandInterface;
     using Dune::GDT::bindings::LocalUnaryIntersectionIntegrandSum;
 
-    LocalUnaryIntersectionIntegrandInterface<G, I>::bind(m);
+    LocalUnaryIntersectionIntegrandInterface<G, I>::bind(m, "leaf");
     if (d > 1) {
-      LocalUnaryIntersectionIntegrandInterface<G, I, d, 1>::bind(m);
-      LocalUnaryIntersectionIntegrandInterface<G, I, d, d>::bind(m);
+      LocalUnaryIntersectionIntegrandInterface<G, I, d, 1>::bind(m, "leaf");
+      LocalUnaryIntersectionIntegrandInterface<G, I, d, d>::bind(m, "leaf");
     }
     // add your extra dimensions here
     // ...
+#if HAVE_DUNE_GRID_GLUE
+    if constexpr (d == 2) {
+      using GridGlueType = Dune::XT::Grid::DD::Glued<G, G, Dune::XT::Grid::Layers::leaf>;
+      using CI = typename GridGlueType::GlueType::Intersection;
+      using CCI = Dune::XT::Grid::internal::CouplingIntersectionWithCorrectNormal<CI, I>;
+      LocalUnaryIntersectionIntegrandInterface<G, CCI>::bind(m, "coupling");
+      LocalUnaryIntersectionIntegrandInterface<G, CCI, d, 1>::bind(m, "coupling");
+      LocalUnaryIntersectionIntegrandInterface<G, CCI, d, d>::bind(m, "coupling");
+    }
+#endif
 
     // need to bind LocalUnaryIntersectionIntegrandSum here due to circular dep with interface
-    LocalUnaryIntersectionIntegrandSum<G, I>::bind(m);
+    LocalUnaryIntersectionIntegrandSum<G, I>::bind(m, "leaf");
     if (d > 1) {
-      LocalUnaryIntersectionIntegrandSum<G, I, d, 1>::bind(m);
-      LocalUnaryIntersectionIntegrandSum<G, I, d, d>::bind(m);
+      LocalUnaryIntersectionIntegrandSum<G, I, d, 1>::bind(m, "leaf");
+      LocalUnaryIntersectionIntegrandSum<G, I, d, d>::bind(m, "leaf");
     }
     // add your extra dimensions here
     // ...
+#if HAVE_DUNE_GRID_GLUE
+    if constexpr (d == 2) {
+      using GridGlueType = Dune::XT::Grid::DD::Glued<G, G, Dune::XT::Grid::Layers::leaf>;
+      using CI = typename GridGlueType::GlueType::Intersection;
+      using CCI = Dune::XT::Grid::internal::CouplingIntersectionWithCorrectNormal<CI, I>;
+      LocalUnaryIntersectionIntegrandSum<G, CCI>::bind(m, "coupling");
+      LocalUnaryIntersectionIntegrandSum<G, CCI, d, 1>::bind(m, "coupling");
+      LocalUnaryIntersectionIntegrandSum<G, CCI, d, d>::bind(m, "coupling");
+    }
+#endif
 
     LocalUnaryIntersectionIntegrandInterface_for_all_grids<Dune::XT::Common::tuple_tail_t<GridTypes>>::bind(m);
   }

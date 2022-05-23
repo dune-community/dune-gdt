@@ -12,23 +12,25 @@
 #include <dune/pybindxi/pybind11.h>
 #include <dune/pybindxi/stl.h>
 
-#include <dune/xt/grid/type_traits.hh>
+#include <dune/xt/grid/dd/glued.hh>
 #include <dune/xt/grid/grids.hh>
 #include <dune/xt/grid/gridprovider/provider.hh>
+#include <dune/xt/grid/view/coupling.hh>
+#include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/local/integrands/laplace-ipdg.hh>
 
 #include <python/dune/xt/common/configuration.hh>
 #include <python/dune/xt/common/fvector.hh>
 #include <python/dune/xt/grid/grids.bindings.hh>
-
+#include <python/dune/xt/grid/traits.hh>
 
 namespace Dune {
 namespace GDT {
 namespace bindings {
 
 
-template <class G, class I>
+template <class G, class I, class intersection_type>
 class LocalLaplaceIPDGDirichletCouplingIntegrand
 {
   using E = XT::Grid::extract_entity_t<G>;
@@ -62,22 +64,26 @@ public:
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
     c.def(py::init([](const double& symmetry_prefactor,
                       const XT::Functions::GridFunctionInterface<E, d, d, F>& diffusion,
-                      const std::string& logging_prefix) {
+                      const std::string& logging_prefix,
+                      const intersection_type&) {
             return new type(symmetry_prefactor, diffusion, /*dirichlet_data=*/0., logging_prefix);
           }),
           "symmetry_prefactor"_a,
           "diffusion"_a,
-          "logging_prefix"_a = "");
+          "logging_prefix"_a = "",
+          "intersection_type"_a = XT::Grid::bindings::LeafIntersection());
     c.def(py::init([](const double& symmetry_prefactor,
                       const XT::Functions::GridFunctionInterface<E, d, d, F>& diffusion,
                       const XT::Functions::GridFunctionInterface<E, 1, 1, F>& dirichlet_data,
-                      const std::string& logging_prefix) {
+                      const std::string& logging_prefix,
+                      const intersection_type&) {
             return new type(symmetry_prefactor, diffusion, dirichlet_data, logging_prefix);
           }),
           "symmetry_prefactor"_a,
           "diffusion"_a,
           "dirichlet_data"_a,
-          "logging_prefix"_a = "");
+          "logging_prefix"_a = "",
+          "intersection_type"_a = XT::Grid::bindings::LeafIntersection());
 
     // factories
     const auto FactoryName = XT::Common::to_camel_case(class_id);
@@ -85,24 +91,28 @@ public:
         FactoryName.c_str(),
         [](const double& symmetry_prefactor,
            const XT::Functions::GridFunctionInterface<E, d, d, F>& diffusion,
-           const std::string& logging_prefix) {
+           const std::string& logging_prefix,
+           const intersection_type&) {
           return new type(symmetry_prefactor, diffusion, /*dirichlet_data=*/0., logging_prefix);
         },
         "symmetry_prefactor"_a,
         "diffusion"_a,
-        "logging_prefix"_a = "");
+        "logging_prefix"_a = "",
+        "intersection_type"_a = XT::Grid::bindings::LeafIntersection());
     m.def(
         FactoryName.c_str(),
         [](const double& symmetry_prefactor,
            const XT::Functions::GridFunctionInterface<E, d, d, F>& diffusion,
            const XT::Functions::GridFunctionInterface<E, 1, 1, F>& dirichlet_data,
-           const std::string& logging_prefix) {
+           const std::string& logging_prefix,
+           const intersection_type&) {
           return new type(symmetry_prefactor, diffusion, dirichlet_data, logging_prefix);
         },
         "symmetry_prefactor"_a,
         "diffusion"_a,
         "dirichlet_data"_a,
-        "logging_prefix"_a = "");
+        "logging_prefix"_a = "",
+        "intersection_type"_a = XT::Grid::bindings::LeafIntersection());
 
     return c;
   } // ... bind(...)
@@ -124,8 +134,16 @@ struct LocalLaplaceIPDGDirichletCouplingIntegrand_for_all_grids
 
   static void bind(pybind11::module& m)
   {
-    Dune::GDT::bindings::LocalLaplaceIPDGDirichletCouplingIntegrand<G, I>::bind(m);
-
+    Dune::GDT::bindings::LocalLaplaceIPDGDirichletCouplingIntegrand<G, I, Dune::XT::Grid::bindings::LeafIntersection>::bind(m, "leaf");
+#if HAVE_DUNE_GRID_GLUE
+    if constexpr (d == 2) {
+      using GridGlueType = Dune::XT::Grid::DD::Glued<G, G, Dune::XT::Grid::Layers::leaf>;
+      using CI = typename GridGlueType::GlueType::Intersection;
+      using CCI = Dune::XT::Grid::internal::CouplingIntersectionWithCorrectNormal<CI, I>;
+      using Coupling = Dune::XT::Grid::bindings::CouplingIntersection<G, G>;
+      Dune::GDT::bindings::LocalLaplaceIPDGDirichletCouplingIntegrand<G, CCI, Coupling>::bind(m, "coupling");
+    }
+#endif
     LocalLaplaceIPDGDirichletCouplingIntegrand_for_all_grids<Dune::XT::Common::tuple_tail_t<GridTypes>>::bind(m);
   }
 };
