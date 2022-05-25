@@ -132,9 +132,9 @@ if config.HAVE_K3D:
                 assert grid
                 return visualize_xt_function(function, grid, subsampling=subsampling)
 
-    def visualize_discrete_functions_on_dd_grid(discrete_functions, dd_grid):
+    def visualize_discrete_functions_on_dd_grid(discrete_functions, dd_grid, subdomains=None):
         # TODO: add assertions for discrete functions
-        subdomains = list(range(dd_grid.num_subdomains))
+        subdomains = range(len(discrete_functions)) # subdomains or list(range(dd_grid.num_subdomains))
         tmpfile = tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='.vtu').name
 
         for ss in subdomains:
