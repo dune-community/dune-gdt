@@ -53,23 +53,49 @@ public:
                logging_prefix.empty() ? "LocalLaplaceIPDGIntegrands::InnerCoupling" : logging_prefix,
                logging_state)
     , symmetry_prefactor_(symmetry_prefactor)
-    , diffusion_(diffusion.copy_as_grid_function())
-    , weight_(weight_function.copy_as_grid_function())
-    , local_diffusion_in_(diffusion_->local_function())
-    , local_diffusion_out_(diffusion_->local_function())
-    , local_weight_in_(weight_->local_function())
-    , local_weight_out_(weight_->local_function())
+    , diffusion_in_(diffusion.copy_as_grid_function())
+    , diffusion_out_(diffusion.copy_as_grid_function())
+    , weight_in_(weight_function.copy_as_grid_function())
+    , weight_out_(weight_function.copy_as_grid_function())
+    , local_diffusion_in_(diffusion_in_->local_function())
+    , local_diffusion_out_(diffusion_out_->local_function())
+    , local_weight_in_(weight_in_->local_function())
+    , local_weight_out_(weight_out_->local_function())
+  {}
+
+  InnerCoupling(const double& symmetry_prefactor,
+                XT::Functions::GridFunction<E, d, d> diffusion_inside,
+                XT::Functions::GridFunction<E, d, d> diffusion_outside,
+                XT::Functions::GridFunction<E, d, d> weight_function_inside = {1.},
+                XT::Functions::GridFunction<E, d, d> weight_function_outside = {1.},
+                const std::string& logging_prefix = "",
+                const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
+    : BaseType(diffusion_inside.parameter_type() + diffusion_outside.parameter_type()
+                   + weight_function_inside.parameter_type() + weight_function_outside.parameter_type(),
+               logging_prefix.empty() ? "LocalLaplaceIPDGIntegrands::InnerCoupling" : logging_prefix,
+               logging_state)
+    , symmetry_prefactor_(symmetry_prefactor)
+    , diffusion_in_(diffusion_inside.copy_as_grid_function())
+    , diffusion_out_(diffusion_outside.copy_as_grid_function())
+    , weight_in_(weight_function_inside.copy_as_grid_function())
+    , weight_out_(weight_function_outside.copy_as_grid_function())
+    , local_diffusion_in_(diffusion_in_->local_function())
+    , local_diffusion_out_(diffusion_out_->local_function())
+    , local_weight_in_(weight_in_->local_function())
+    , local_weight_out_(weight_out_->local_function())
   {}
 
   InnerCoupling(const ThisType& other)
     : BaseType(other)
     , symmetry_prefactor_(other.symmetry_prefactor_)
-    , diffusion_(other.diffusion_->copy_as_grid_function())
-    , weight_(other.weight_->copy_as_grid_function())
-    , local_diffusion_in_(diffusion_->local_function())
-    , local_diffusion_out_(diffusion_->local_function())
-    , local_weight_in_(weight_->local_function())
-    , local_weight_out_(weight_->local_function())
+    , diffusion_in_(other.diffusion_in_->copy_as_grid_function())
+    , diffusion_out_(other.diffusion_out_->copy_as_grid_function())
+    , weight_in_(other.weight_in_->copy_as_grid_function())
+    , weight_out_(other.weight_out_->copy_as_grid_function())
+    , local_diffusion_in_(diffusion_in_->local_function())
+    , local_diffusion_out_(diffusion_out_->local_function())
+    , local_weight_in_(weight_in_->local_function())
+    , local_weight_out_(weight_out_->local_function())
   {}
 
   InnerCoupling(ThisType&& source) = default;
@@ -188,8 +214,10 @@ public:
 
 private:
   const double symmetry_prefactor_;
-  const std::unique_ptr<XT::Functions::GridFunctionInterface<E, d, d>> diffusion_;
-  const std::unique_ptr<XT::Functions::GridFunctionInterface<E, d, d>> weight_;
+  const std::unique_ptr<XT::Functions::GridFunctionInterface<E, d, d>> diffusion_in_;
+  const std::unique_ptr<XT::Functions::GridFunctionInterface<E, d, d>> diffusion_out_;
+  const std::unique_ptr<XT::Functions::GridFunctionInterface<E, d, d>> weight_in_;
+  const std::unique_ptr<XT::Functions::GridFunctionInterface<E, d, d>> weight_out_;
   std::unique_ptr<typename XT::Functions::GridFunctionInterface<E, d, d>::LocalFunctionType> local_diffusion_in_;
   std::unique_ptr<typename XT::Functions::GridFunctionInterface<E, d, d>::LocalFunctionType> local_diffusion_out_;
   std::unique_ptr<typename XT::Functions::GridFunctionInterface<E, d, d>::LocalFunctionType> local_weight_in_;

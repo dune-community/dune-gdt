@@ -66,19 +66,39 @@ public:
                logging_prefix.empty() ? "LocalIPDGIntegrands::InnerPenalty" : logging_prefix,
                logging_state)
     , penalty_(penalty)
-    , weight_(weight_function.copy_as_grid_function())
+    , weight_in_(weight_function.copy_as_grid_function())
+    , weight_out_(weight_function.copy_as_grid_function())
     , intersection_diameter_(intersection_diameter)
-    , local_weight_in_(weight_->local_function())
-    , local_weight_out_(weight_->local_function())
+    , local_weight_in_(weight_in_->local_function())
+    , local_weight_out_(weight_out_->local_function())
+  {}
+
+  InnerPenalty(
+      const double& penalty,
+      XT::Functions::GridFunction<E, d, d> weight_function_inside,
+      XT::Functions::GridFunction<E, d, d> weight_function_outside,
+      const std::function<double(const I&)>& intersection_diameter = internal::default_intersection_diameter<I>(),
+      const std::string& logging_prefix = "",
+      const std::array<bool, 3>& logging_state = XT::Common::default_logger_state())
+    : BaseType(weight_function_inside.parameter_type() + weight_function_outside.parameter_type(),
+               logging_prefix.empty() ? "LocalIPDGIntegrands::InnerPenalty" : logging_prefix,
+               logging_state)
+    , penalty_(penalty)
+    , weight_in_(weight_function_inside.copy_as_grid_function())
+    , weight_out_(weight_function_outside.copy_as_grid_function())
+    , intersection_diameter_(intersection_diameter)
+    , local_weight_in_(weight_in_->local_function())
+    , local_weight_out_(weight_out_->local_function())
   {}
 
   InnerPenalty(const ThisType& other)
     : BaseType(other)
     , penalty_(other.penalty_)
-    , weight_(other.weight_->copy_as_grid_function())
+    , weight_in_(other.weight_in_->copy_as_grid_function())
+    , weight_out_(other.weight_out_->copy_as_grid_function())
     , intersection_diameter_(other.intersection_diameter_)
-    , local_weight_in_(weight_->local_function())
-    , local_weight_out_(weight_->local_function())
+    , local_weight_in_(weight_in_->local_function())
+    , local_weight_out_(weight_out_->local_function())
   {}
 
   InnerPenalty(ThisType&& source) = default;
@@ -173,7 +193,8 @@ public:
 
 private:
   const double penalty_;
-  const std::unique_ptr<XT::Functions::GridFunctionInterface<E, d, d>> weight_;
+  const std::unique_ptr<XT::Functions::GridFunctionInterface<E, d, d>> weight_in_;
+  const std::unique_ptr<XT::Functions::GridFunctionInterface<E, d, d>> weight_out_;
   const std::function<double(const I&)> intersection_diameter_;
   std::unique_ptr<typename XT::Functions::GridFunctionInterface<E, d, d>::LocalFunctionType> local_weight_in_;
   std::unique_ptr<typename XT::Functions::GridFunctionInterface<E, d, d>::LocalFunctionType> local_weight_out_;
