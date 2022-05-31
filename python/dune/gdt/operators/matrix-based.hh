@@ -105,8 +105,9 @@ private:
               return new type(grid.leaf_view(),
                               source_space,
                               range_space,
-                              make_element_and_intersection_sparsity_pattern(range_space, source_space,
-                              grid.leaf_view()), logging_prefix);
+                              make_element_and_intersection_sparsity_pattern(
+                                range_space, source_space, grid.leaf_view()),
+                              logging_prefix);
             },
             "grid"_a,
             "source_space"_a,
@@ -117,7 +118,30 @@ private:
             py::keep_alive<0, 1>(),
             py::keep_alive<0, 2>(),
             py::keep_alive<0, 3>());
+        m.def(
+            FactoryName.c_str(),
+            [](GP& grid,
+               const SS& source_space,
+               const RS& range_space,
+               M& mat,
+               const std::string& logging_prefix) {
+              return new type(grid.leaf_view(),
+                              source_space,
+                              range_space,
+                              mat,
+                              logging_prefix);
+            },
+            "grid"_a,
+            "source_space"_a,
+            "range_space"_a,
+            "matrix"_a,
+            "logging_prefix"_a = "",
+            py::keep_alive<0, 1>(),
+            py::keep_alive<0, 2>(),
+            py::keep_alive<0, 3>(),
+            py::keep_alive<0, 4>());
     }
+
     static void coupling_factory(pybind11::module& /*m*/, const std::string& /*FactoryName*/)
     {
       namespace py = pybind11;
@@ -153,8 +177,9 @@ private:
           "la_backend"_a,
           "sparsity_pattern"_a,
           "logging_prefix"_a = "",
-          py::keep_alive<0, 1>()
-          //          py::keep_alive<0, 2>()
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>(),
+          py::keep_alive<0, 3>()
       );
       if (std::is_same<MatrixTag, XT::LA::bindings::Istl>::value) {
         m.def(
@@ -177,8 +202,9 @@ private:
             "sparsity_pattern"_a,
             "la_backend"_a = MatrixTag(),
             "logging_prefix"_a = "",
-            py::keep_alive<0, 1>()
-            //            py::keep_alive<0, 2>()
+            py::keep_alive<0, 1>(),
+            py::keep_alive<0, 2>(),
+            py::keep_alive<0, 3>()
         );
         m.def(
             FactoryName.c_str(),
@@ -201,11 +227,37 @@ private:
             "range_space"_a,
             "la_backend"_a = MatrixTag(),
             "logging_prefix"_a = "",
-            py::keep_alive<0, 1>()
-            //            py::keep_alive<0, 2>()
+            py::keep_alive<0, 1>(),
+            py::keep_alive<0, 2>(),
+            py::keep_alive<0, 3>()
+        );
+        m.def(
+            FactoryName.c_str(),
+            [](GP& grid,
+               const SS& source_space,
+               const RS& range_space,
+               M& mat,
+               const std::string& logging_prefix) {
+              return new type(
+                  grid.leaf_view(),
+                  source_space,
+                  range_space,
+                  mat,
+                  logging_prefix);
+            },
+            "grid"_a,
+            "source_space"_a,
+            "range_space"_a,
+            "matrix"_a,
+            "logging_prefix"_a = "",
+            py::keep_alive<0, 1>(),
+            py::keep_alive<0, 2>(),
+            py::keep_alive<0, 3>(),
+            py::keep_alive<0, 4>()
         );
       }
     }
+
     static void coupling_factory(pybind11::module& m, const std::string& FactoryName)
     {
       namespace py = pybind11;
@@ -255,32 +307,30 @@ private:
             "la_backend"_a = MatrixTag(),
             "logging_prefix"_a = "",
             py::keep_alive<0, 1>(),
-            py::keep_alive<0, 2>());
-
-        // This sparsity pattern probably does not make sense
-        //        m.def(
-        //            FactoryName.c_str(),
-        //            [](CGP& grid,
-        //               const SS& source_space,
-        //               const RS& range_space,
-        //               const MatrixTag&,
-        //               const std::string& logging_prefix) {
-        //              const auto cv = grid.coupling_view();
-        //              /// which sparsity pattern for the coupling matrix??
-        //              auto pattern = make_element_and_intersection_sparsity_pattern(range_space, source_space, cv);
-        //              return new type(cv,
-        //                              source_space,
-        //                              range_space,
-        //                              new M(range_space.mapper().size(), source_space.mapper().size(), pattern),
-        //                              logging_prefix);
-        //            },
-        //            "grid"_a,
-        //            "source_space"_a,
-        //            "range_space"_a,
-        //            "la_backend"_a = MatrixTag(),
-        //            "logging_prefix"_a = "",
-        //            py::keep_alive<0, 1>(),
-        //            py::keep_alive<0, 2>());
+            py::keep_alive<0, 2>(),
+            py::keep_alive<0, 3>());
+      m.def(
+          FactoryName.c_str(),
+          [](CGP& grid,
+             const SS& source_space,
+             const RS& range_space,
+             M& mat,
+             const std::string& logging_prefix) {
+            return new type(grid.coupling_view(),
+                            source_space,
+                            range_space,
+                            mat,
+                            logging_prefix);
+          },
+          "grid"_a,
+          "source_space"_a,
+          "range_space"_a,
+          "matrix"_a,
+          "logging_prefix"_a = "",
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>(),
+          py::keep_alive<0, 3>(),
+          py::keep_alive<0, 4>());
       }
     }
   }; // struct addbind<false, ...>
