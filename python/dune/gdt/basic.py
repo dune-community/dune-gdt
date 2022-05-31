@@ -8,7 +8,7 @@ from dune.gdt._discretefunction_discretefunction import DiscreteFunction
 from dune.gdt._functionals_vector_based import VectorFunctional
 from dune.gdt._interpolations_boundary import boundary_interpolation
 from dune.gdt._interpolations_default import default_interpolation
-from dune.gdt._interpolations_oswald import oswald_interpolation
+# from dune.gdt._interpolations_oswald import oswald_interpolation
 from dune.gdt._local_bilinear_forms_coupling_intersection_integrals import (
     LocalCouplingIntersectionIntegralBilinearForm)
 from dune.gdt._local_bilinear_forms_element_integrals import LocalElementIntegralBilinearForm
@@ -42,8 +42,8 @@ from dune.gdt._local_operators_coupling_intersection_indicator import (
 from dune.gdt._local_operators_element_indicator import LocalElementBilinearFormIndicatorOperator
 from dune.gdt._local_operators_intersection_indicator import LocalIntersectionBilinearFormIndicatorOperator
 from dune.gdt._operators_bilinear_form import BilinearForm
-from dune.gdt._operators_laplace_ipdg_flux_reconstruction import LaplaceIpdgFluxReconstructionOperator
-from dune.gdt._operators_matrix_based_factory import IstlSparseMatrixOperator, MatrixOperator
+# from dune.gdt._operators_laplace_ipdg_flux_reconstruction import LaplaceIpdgFluxReconstructionOperator
+from dune.gdt._operators_matrix_based_factory import MatrixOperator
 from dune.gdt._operators_operator import Operator
 from dune.gdt._prolongations import prolong, prolong_space_time
 from dune.gdt._spaces_bochner import BochnerSpace
