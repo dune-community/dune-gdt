@@ -45,6 +45,7 @@ public:
   using F = typename type::F;
 
   static bound_type bind(pybind11::module& m,
+                         const bool is_coupling_intersection = false,
                          const std::string& layer_id = "",
                          const std::string& grid_id = XT::Grid::bindings::grid_name<G>::value(),
                          const std::string& class_id = "local_laplace_IPDG_inner_coupling_integrand")
@@ -62,32 +63,85 @@ public:
       class_name += "_" + XT::Common::Typename<F>::value(/*fail_wo_typeid=*/true);
     const auto ClassName = XT::Common::to_camel_case(class_name);
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
-    c.def(py::init(
-              [](const double& symmetry_prefactor,
-                 const XT::Functions::GridFunctionInterface<E, d, d, F>& diffusion,
-                 const XT::Functions::GridFunctionInterface<E, d, d, F>& weight,
-                 const std::string& logging_prefix,
-                 const intersection_type&) { return new type(symmetry_prefactor, diffusion, weight, logging_prefix); }),
+    c.def(py::init([](const double& symmetry_prefactor,
+                      const XT::Functions::GridFunctionInterface<E, d, d, F>& diffusion,
+                      const XT::Functions::GridFunctionInterface<E, d, d, F>& weight,
+                      const std::string& logging_prefix) {
+            return new type(symmetry_prefactor, diffusion, weight, logging_prefix);
+          }),
           "symmetry_prefactor"_a,
           "diffusion"_a,
           "weight"_a = F(1),
-          "logging_prefix"_a = "",
-          "intersection_type"_a = XT::Grid::bindings::LeafIntersection());
+          "logging_prefix"_a = "");
+    c.def(py::init([](const double& symmetry_prefactor,
+                      const XT::Functions::GridFunctionInterface<E, d, d, F>& diffusion_inside,
+                      const XT::Functions::GridFunctionInterface<E, d, d, F>& diffusion_outside,
+                      const XT::Functions::GridFunctionInterface<E, d, d, F>& weight_inside,
+                      const XT::Functions::GridFunctionInterface<E, d, d, F>& weight_outside,
+                      const std::string& logging_prefix) {
+            return new type(
+                symmetry_prefactor, diffusion_inside, diffusion_outside, weight_inside, weight_outside, logging_prefix);
+          }),
+          "symmetry_prefactor"_a,
+          "diffusion_inside"_a,
+          "diffusion_outside"_a,
+          "weight_inside"_a = F(1),
+          "weight_outside"_a = F(1),
+          "logging_prefix"_a = "");
 
     // factory
     const auto FactoryName = XT::Common::to_camel_case(class_id);
-    m.def(
-        FactoryName.c_str(),
-        [](const double& symmetry_prefactor,
-           const XT::Functions::GridFunctionInterface<E, d, d, F>& diffusion,
-           const XT::Functions::GridFunctionInterface<E, d, d, F>& weight,
-           const std::string& logging_prefix,
-           const intersection_type&) { return new type(symmetry_prefactor, diffusion, weight, logging_prefix); },
-        "symmetry_prefactor"_a,
-        "diffusion"_a,
-        "weight"_a = F(1),
-        "logging_prefix"_a = "",
-        "intersection_type"_a = XT::Grid::bindings::LeafIntersection());
+    // The standard case (and the only case with a default intersection_type): the leaf
+    if (std::is_same<intersection_type, XT::Grid::bindings::LeafIntersection>::value)
+      m.def(
+          FactoryName.c_str(),
+          [](const double& symmetry_prefactor,
+             const XT::Functions::GridFunctionInterface<E, d, d, F>& diffusion,
+             const XT::Functions::GridFunctionInterface<E, d, d, F>& weight,
+             const intersection_type&,
+             const std::string& logging_prefix) {
+            return new type(symmetry_prefactor, diffusion, weight, logging_prefix);
+          },
+          "symmetry_prefactor"_a,
+          "diffusion"_a,
+          "weight"_a = F(1),
+          "intersection_type"_a = XT::Grid::bindings::LeafIntersection(),
+          "logging_prefix"_a = "");
+    else if (is_coupling_intersection)
+      m.def(
+          FactoryName.c_str(),
+          [](const double& symmetry_prefactor,
+             const XT::Functions::GridFunctionInterface<E, d, d, F>& diffusion_inside,
+             const XT::Functions::GridFunctionInterface<E, d, d, F>& diffusion_outside,
+             const XT::Functions::GridFunctionInterface<E, d, d, F>& weight_inside,
+             const XT::Functions::GridFunctionInterface<E, d, d, F>& weight_outside,
+             const intersection_type&,
+             const std::string& logging_prefix) {
+            return new type(
+                symmetry_prefactor, diffusion_inside, diffusion_outside, weight_inside, weight_outside, logging_prefix);
+          },
+          "symmetry_prefactor"_a,
+          "diffusion_inside"_a,
+          "diffusion_outside"_a,
+          "weight_inside"_a,
+          "weight_outside"_a,
+          "intersection_type"_a,
+          "logging_prefix"_a = "");
+    else // Other non-coupling and non-leaf intersections: same as leaf, but without default intersection_type
+      m.def(
+          FactoryName.c_str(),
+          [](const double& symmetry_prefactor,
+             const XT::Functions::GridFunctionInterface<E, d, d, F>& diffusion,
+             const XT::Functions::GridFunctionInterface<E, d, d, F>& weight,
+             const intersection_type&,
+             const std::string& logging_prefix) {
+            return new type(symmetry_prefactor, diffusion, weight, logging_prefix);
+          },
+          "symmetry_prefactor"_a,
+          "diffusion"_a,
+          "weight"_a = F(1),
+          "intersection_type"_a,
+          "logging_prefix"_a = "");
 
     return c;
   } // ... bind(...)
@@ -109,14 +163,14 @@ struct LocalLaplaceIPDGInnerCouplingIntegrand_for_all_grids
   static void bind(pybind11::module& m)
   {
     Dune::GDT::bindings::LocalLaplaceIPDGInnerCouplingIntegrand<G, I, Dune::XT::Grid::bindings::LeafIntersection>::bind(
-        m, "leaf");
+        m, false, "leaf");
 #if HAVE_DUNE_GRID_GLUE
     if constexpr (d == 2) {
       using GridGlueType = Dune::XT::Grid::DD::Glued<G, G, Dune::XT::Grid::Layers::leaf>;
       using CI = typename GridGlueType::GlueType::Intersection;
       using CCI = Dune::XT::Grid::internal::CouplingIntersectionWithCorrectNormal<CI, I>;
       using Coupling = Dune::XT::Grid::bindings::CouplingIntersection<G, G>;
-      Dune::GDT::bindings::LocalLaplaceIPDGInnerCouplingIntegrand<G, CCI, Coupling>::bind(m, "coupling");
+      Dune::GDT::bindings::LocalLaplaceIPDGInnerCouplingIntegrand<G, CCI, Coupling>::bind(m, true, "coupling");
     }
 #endif
     LocalLaplaceIPDGInnerCouplingIntegrand_for_all_grids<Dune::XT::Common::tuple_tail_t<GridTypes>>::bind(m);

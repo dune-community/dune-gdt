@@ -64,55 +64,80 @@ public:
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
     c.def(py::init([](const double& symmetry_prefactor,
                       const XT::Functions::GridFunctionInterface<E, d, d, F>& diffusion,
-                      const std::string& logging_prefix,
-                      const intersection_type&) {
+                      const std::string& logging_prefix) {
             return new type(symmetry_prefactor, diffusion, /*dirichlet_data=*/0., logging_prefix);
           }),
           "symmetry_prefactor"_a,
           "diffusion"_a,
-          "logging_prefix"_a = "",
-          "intersection_type"_a = XT::Grid::bindings::LeafIntersection());
+          "logging_prefix"_a = "");
     c.def(py::init([](const double& symmetry_prefactor,
                       const XT::Functions::GridFunctionInterface<E, d, d, F>& diffusion,
                       const XT::Functions::GridFunctionInterface<E, 1, 1, F>& dirichlet_data,
-                      const std::string& logging_prefix,
-                      const intersection_type&) {
+                      const std::string& logging_prefix) {
             return new type(symmetry_prefactor, diffusion, dirichlet_data, logging_prefix);
           }),
           "symmetry_prefactor"_a,
           "diffusion"_a,
           "dirichlet_data"_a,
-          "logging_prefix"_a = "",
-          "intersection_type"_a = XT::Grid::bindings::LeafIntersection());
+          "logging_prefix"_a = "");
 
     // factories
     const auto FactoryName = XT::Common::to_camel_case(class_id);
-    m.def(
-        FactoryName.c_str(),
-        [](const double& symmetry_prefactor,
-           const XT::Functions::GridFunctionInterface<E, d, d, F>& diffusion,
-           const std::string& logging_prefix,
-           const intersection_type&) {
-          return new type(symmetry_prefactor, diffusion, /*dirichlet_data=*/0., logging_prefix);
-        },
-        "symmetry_prefactor"_a,
-        "diffusion"_a,
-        "logging_prefix"_a = "",
-        "intersection_type"_a = XT::Grid::bindings::LeafIntersection());
-    m.def(
-        FactoryName.c_str(),
-        [](const double& symmetry_prefactor,
-           const XT::Functions::GridFunctionInterface<E, d, d, F>& diffusion,
-           const XT::Functions::GridFunctionInterface<E, 1, 1, F>& dirichlet_data,
-           const std::string& logging_prefix,
-           const intersection_type&) {
-          return new type(symmetry_prefactor, diffusion, dirichlet_data, logging_prefix);
-        },
-        "symmetry_prefactor"_a,
-        "diffusion"_a,
-        "dirichlet_data"_a,
-        "logging_prefix"_a = "",
-        "intersection_type"_a = XT::Grid::bindings::LeafIntersection());
+    if (std::is_same<intersection_type, XT::Grid::bindings::LeafIntersection>::value) {
+      m.def(
+          FactoryName.c_str(),
+          [](const double& symmetry_prefactor,
+             const XT::Functions::GridFunctionInterface<E, d, d, F>& diffusion,
+             const intersection_type&,
+             const std::string& logging_prefix) {
+            return new type(symmetry_prefactor, diffusion, /*dirichlet_data=*/0., logging_prefix);
+          },
+          "symmetry_prefactor"_a,
+          "diffusion"_a,
+          "intersection_type"_a = XT::Grid::bindings::LeafIntersection(),
+          "logging_prefix"_a = "");
+      m.def(
+          FactoryName.c_str(),
+          [](const double& symmetry_prefactor,
+             const XT::Functions::GridFunctionInterface<E, d, d, F>& diffusion,
+             const XT::Functions::GridFunctionInterface<E, 1, 1, F>& dirichlet_data,
+             const intersection_type&,
+             const std::string& logging_prefix) {
+            return new type(symmetry_prefactor, diffusion, dirichlet_data, logging_prefix);
+          },
+          "symmetry_prefactor"_a,
+          "diffusion"_a,
+          "dirichlet_data"_a,
+          "intersection_type"_a = XT::Grid::bindings::LeafIntersection(),
+          "logging_prefix"_a = "");
+    } else {
+      m.def(
+          FactoryName.c_str(),
+          [](const double& symmetry_prefactor,
+             const XT::Functions::GridFunctionInterface<E, d, d, F>& diffusion,
+             const intersection_type&,
+             const std::string& logging_prefix) {
+            return new type(symmetry_prefactor, diffusion, /*dirichlet_data=*/0., logging_prefix);
+          },
+          "symmetry_prefactor"_a,
+          "diffusion"_a,
+          "intersection_type"_a,
+          "logging_prefix"_a = "");
+      m.def(
+          FactoryName.c_str(),
+          [](const double& symmetry_prefactor,
+             const XT::Functions::GridFunctionInterface<E, d, d, F>& diffusion,
+             const XT::Functions::GridFunctionInterface<E, 1, 1, F>& dirichlet_data,
+             const intersection_type&,
+             const std::string& logging_prefix) {
+            return new type(symmetry_prefactor, diffusion, dirichlet_data, logging_prefix);
+          },
+          "symmetry_prefactor"_a,
+          "diffusion"_a,
+          "dirichlet_data"_a,
+          "intersection_type"_a,
+          "logging_prefix"_a = "");
+    }
 
     return c;
   } // ... bind(...)
@@ -134,7 +159,8 @@ struct LocalLaplaceIPDGDirichletCouplingIntegrand_for_all_grids
 
   static void bind(pybind11::module& m)
   {
-    Dune::GDT::bindings::LocalLaplaceIPDGDirichletCouplingIntegrand<G, I, Dune::XT::Grid::bindings::LeafIntersection>::bind(m, "leaf");
+    Dune::GDT::bindings::LocalLaplaceIPDGDirichletCouplingIntegrand<G, I, Dune::XT::Grid::bindings::LeafIntersection>::
+        bind(m, "leaf");
 #if HAVE_DUNE_GRID_GLUE
     if constexpr (d == 2) {
       using GridGlueType = Dune::XT::Grid::DD::Glued<G, G, Dune::XT::Grid::Layers::leaf>;
