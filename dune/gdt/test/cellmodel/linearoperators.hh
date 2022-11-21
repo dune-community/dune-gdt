@@ -15,7 +15,7 @@
 #include <dune/xt/common/configuration.hh>
 #include <dune/xt/common/parameter.hh>
 
-#include <Eigen/UmfPackSupport>
+// #include <Eigen/UmfPackSupport>
 #include <Eigen/IterativeLinearSolvers>
 
 namespace Dune {
@@ -611,7 +611,8 @@ public:
   using Vector = VectorType;
   using Field = typename VectorType::ScalarType;
   using ColMajorMatrixType = ::Eigen::SparseMatrix<Field, ::Eigen::ColMajor>;
-  using LUSolverType = ::Eigen::UmfPackLU<ColMajorMatrixType>;
+  // using LUSolverType = ::Eigen::UmfPackLU<ColMajorMatrixType>;
+  using LUSolverType = ::Eigen::SparseLU<ColMajorMatrixType>;
   using IncompleteLUTSolverType = ::Eigen::IncompleteLUT<Field>;
   using SolverType = std::conditional_t<use_incomplete_lut, IncompleteLUTSolverType, LUSolverType>;
 

@@ -104,19 +104,22 @@ double estimate_combined_inverse_trace_inequality_constant(const SpaceInterface<
 } // ... estimate_combined_inverse_trace_inequality_constant(...)
 
 
+template<class GV>
+double default_intersection_diameter(const auto& intersection)
+{
+	if (GridView<GV>::dimension == 1) {
+		if (intersection.neighbor())
+			return 0.5 * (XT::Grid::diameter(intersection.inside()) + XT::Grid::diameter(intersection.outside()));
+		else
+			return XT::Grid::diameter(intersection.inside());
+	} else
+		return XT::Grid::diameter(intersection);
+}
+
 template <class GV>
 double estimate_element_to_intersection_equivalence_constant(
     const GridView<GV>& grid_view,
-    const std::function<double(const XT::Grid::extract_intersection_t<GridView<GV>>&)>& intersection_diameter =
-        [](const auto& intersection) {
-          if (GridView<GV>::dimension == 1) {
-            if (intersection.neighbor())
-              return 0.5 * (XT::Grid::diameter(intersection.inside()) + XT::Grid::diameter(intersection.outside()));
-            else
-              return XT::Grid::diameter(intersection.inside());
-          } else
-            return XT::Grid::diameter(intersection);
-        })
+    const std::function<double(const XT::Grid::extract_intersection_t<GridView<GV>>&)>& intersection_diameter = default_intersection_diameter<GV>)
 {
   auto result = std::numeric_limits<double>::min();
   for (auto&& element : elements(grid_view)) {

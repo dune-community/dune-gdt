@@ -15,12 +15,12 @@
 
 #include <Eigen/IterativeLinearSolvers>
 #include <Eigen/SparseLU>
-#include <Eigen/UmfPackSupport>
 
 #include <dune/xt/grid/grids.hh>
 #include <dune/xt/grid/gridprovider.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/grid/view/periodic.hh>
+#include <dune/xt/grid/parallel/partitioning/ranged.hh>
 
 #include <dune/xt/la/container.hh>
 #include <dune/xt/la/container/vector-view.hh>
@@ -91,8 +91,8 @@ struct CellModelSolver
   using JacobianRetType = XT::Common::FieldMatrix<R, d, d>;
   using ColMajorBackendType = ::Eigen::SparseMatrix<R, ::Eigen::ColMajor>;
   using RowMajorBackendType = typename MatrixType::BackendType;
-  // using LUSolverType = ::Eigen::SparseLU<ColMajorBackendType>;
-  using LUSolverType = ::Eigen::UmfPackLU<ColMajorBackendType>;
+  using LUSolverType = ::Eigen::SparseLU<ColMajorBackendType>;
+  // using LUSolverType = ::Eigen::UmfPackLU<ColMajorBackendType>;
   using LDLTSolverType = ::Eigen::SimplicialLDLT<ColMajorBackendType>;
   using OfieldSchurSolverType = Dune::RestartedGMResSolver<EigenVectorType>;
   using SpaceTypeU = ContinuousLagrangeSpace<PGV, d, R>;
@@ -101,6 +101,7 @@ struct CellModelSolver
   using SpaceTypep = SpaceTypePhi;
   using StokesMassMatrixPreconditionerType = EigenLinearSolverPreconditioner<EigenVectorType, LDLTSolverType>;
   using StokesSchurComplementType = StokesSchurComplementOperator<EigenVectorType, MatrixType, CellModelSolver>;
+  using PartitioningType = XT::Grid::RangedPartitioning<PGV, 0>;
 
   CellModelSolver(
       const std::string testcase = "single_cell",
@@ -891,7 +892,7 @@ struct CellModelSolver
   mutable std::vector<VectorType> phi_tmp_;
   mutable std::vector<VectorType> phinat_tmp_;
   mutable std::vector<VectorType> mu_tmp_;
-  XT::Grid::RangedPartitioning<PGV, 0> partitioning_;
+  PartitioningType partitioning_;
   const bool bending_;
   const bool conservative_;
   std::shared_ptr<QuadratureStorage> stokes_rhs_quad_;
