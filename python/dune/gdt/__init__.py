@@ -89,6 +89,7 @@ for mod_name in (  # order should not matter!
         '_tools_dirichlet_constraints',
         '_tools_grid_quality_estimates',
         '_tools_sparsity_pattern',
+        '_tools_interpolate_coarse_basis'
 ):
     guarded_import(globals(), 'dune.gdt', mod_name)
 
